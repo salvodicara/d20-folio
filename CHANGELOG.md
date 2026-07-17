@@ -2,6 +2,70 @@
 
 All notable changes to d20 Folio are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## 0.21.0
+
+**d20 Folio is open source. The complete codebase is now public at
+[github.com/salvodicara/d20-folio](https://github.com/salvodicara/d20-folio) — MIT-licensed code
+building the entire app on the freely-licensed SRD 5.2.1 (CC-BY-4.0) dataset — alongside a richer
+gilded visual identity, rules prose that reads at a glance, the SRD subclass catalogue completed,
+and a round of Italian-locale corrections.**
+
+### Added
+
+- **Open source.** The full d20 Folio codebase is public under the MIT license: anyone can read
+  it, build it, and run their own instance on the complete SRD 5.2.1 (CC-BY-4.0) dataset — every
+  entry in the public tree is SRD content, guard-enforced. The deployed app additionally composes
+  a private content pack of extra licensed-for-personal-use material through a clean build-time
+  seam; the open-source build is complete and fully playable without it.
+- **The legal & attribution page.** `/legal` now carries the exact Creative Commons attribution
+  statements for BOTH System Reference Documents the app draws on — SRD 5.2.1 and SRD 5.1 — as
+  two stacked engraved plaques: the required English statements on the English page, the official
+  Italian statements on the Italian page, with license links covering both documents. The README
+  carries both English statements too.
+- **Rules text that reads at a glance.** Spell, feat, trait, and item descriptions now ink their
+  mechanically load-bearing tokens: damage phrases wear their damage type's own hue ("8d6 Fire
+  damage"), condition names wear their condition's ink, dice, save DCs, and measured distances
+  and durations wear the lit value ink, and Advantage/Disadvantage wear the success/danger inks —
+  in both languages, across the compendium, the pickers, the sheet's feature/spell/item cards,
+  and the level-up reading prose. The compendium's "Mechanics" summaries speak the same grammar,
+  so one entry reads in one voice.
+- **The SRD subclasses ship complete.** The 11 remaining SRD subclass features (Hunter's Prey,
+  Superior Hunter's Defense, Draconic Resilience, Dragon Wings, Dark One's Own Luck, Hurl Through
+  Hell, Sculpt Spells, Overchannel, and more) and 11 SRD magic items (Ioun Stone, Iron Flask,
+  Cube of Force, Ring of Elemental Command, Candle of Invocation, and more) join the public
+  catalogue with SRD 5.2.1 prose in both languages — the four SRD subclasses (Hunter, Draconic
+  Sorcery, Fiend Patron, Evoker) are now complete in the open-source build.
+
+### Changed
+
+- **The gilded identity, richer.** Every hero surface now wears worked-gold framing struck as
+  dimensional two-tone metal — corner fittings that sit ON the frame like bookbinding hardware,
+  engraved ceremonial titling, and a designed treatment per theme (raised top-lit gold in dark,
+  letterpressed bronze in light). Primary buttons play a quiet one-shot gilt glint on hover,
+  picker rows kindle toward candle-gold, and three scene paintings (the candlelit study, its
+  daylight morning sibling, and the sign-in splash) are repainted at full richness — same calm
+  centers where your sheet lives, far more confident edges.
+- **Bug reports respect your privacy.** In-app bug reports filed to the public issue tracker now
+  carry ONLY your own words, coarse metadata (type, severity, screen, locale), and an allowlisted
+  technical slice — your account id, character and campaign ids, routes, and screenshots never
+  reach the public issue; they stay private to the maintainer.
+
+### Fixed
+
+- **Italian locale round.** The compendium mechanics panel localizes its recovery labels (no more
+  raw "Long-Rest" tokens) and its "Pool" flag; the Wizard subclass Evoker is correctly
+  "Invocatore" — and its school "Invocazione" — matching the official Italian SRD; damage-type
+  casing is normalized across the whole Italian catalogue ("danni da Fuoco", "danni Necrotici");
+  the Iron Flask prose elides its articles the way the official Italian SRD prints them; and the
+  returning magic items' Italian names re-anchor on the official Italian SRD (Pietra di Ioun,
+  Ampolla di Ferro, Anello del Comando degli Elementali, and more).
+- **Quieter empty states.** A character with no active conditions no longer shows a "—"
+  placeholder in the status rail — just the add-condition affordance (screen readers still hear
+  "No conditions" / "Nessuna condizione").
+- **Interface polish.** The End Turn button's hover glint actually plays now; the wizard's
+  disabled page-turn seal reads as a quiet opaque disc instead of dissolving into the richer
+  scene painting behind it; and long dialog titles wrap instead of overrunning the card.
+
 ## 0.20.0
 
 **The 2024 rules-correctness wave. Enter what your dice actually said and d20 Folio applies your

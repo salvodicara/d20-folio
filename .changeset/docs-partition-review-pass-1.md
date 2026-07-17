@@ -1,5 +1,0 @@
----
-"d20-folio": patch
----
-
-Docs-partition review pass 1: the pack coverage doc gains its missing `unarmed-fighting` fighting-style row and the two pack item-caster rows (the artifact trident + the celestial mace) the public "Item spell-casting" row points at, drops the double-listed `grappler`, and the pack backlog records the 8 pack-side S12c upcast-backfill spells by name; the snapshot-exclusion enumeration in PROGRESS is restored explicitly (the retrieval scripts live in public `scripts/` — the snapshot builder must exclude them by name); the signup-email config gate is extracted to a pure `resolveMailConfig` with tests pinning the OWNER_EMAIL-unset fail-loud-no-throw branch; and the dev-fixture display name is renamed to the invented equal-length "Coralino di Sanvaldo" everywhere the string is load-bearing only for its wrap shape (dev fixture, CombatHeader/folio.css/DESIGN.md recipes, local test literals), with the identity denylist extended accordingly — the pack-fixture-bound e2e assertions keep the real stored name.
