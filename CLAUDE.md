@@ -85,8 +85,8 @@ layer** (`src/components/ui/*` — hand-written folio components on Radix primit
 tooltip, checkbox, radio-group, switch, slot). NOT shadcn/ui — no `shadcn` package is installed.
 Zustand state · React Router v7 · Firebase (Auth Google-only, Firestore, Storage, Hosting) ·
 Vite PWA (Workbox) · react-i18next (EN + IT) · Vitest (unit) + Playwright (E2E) · ESLint + Prettier ·
-`@changesets/cli` · GitHub Actions (two lean workflows: `ci.yml` — push/PR gate, self-skipping
-while the repo is private; `deploy.yml` — the dispatch-only remote twin of `just deploy`. The
+`@changesets/cli` · GitHub Actions (two lean workflows: `ci.yml` — push/PR gate, LIVE since the
+repo went public 2026-07-17; `deploy.yml` — the dispatch-only remote twin of `just deploy`. The
 local hook gate is authoritative; deploys are LOCAL-primary, `docs/RELEASE.md`). No server/SSR —
 client-side SPA.
 
@@ -130,7 +130,12 @@ content-pack/                        the PRIVATE content pack (docs/ARCHITECTURE
                                      scenarios + pack-only test suites + the 6 live-user conformance
                                      fixtures (content-pack/fixtures/team/*.json); composed
                                      via the `@pack` alias when present (VITE_CONTENT_PACK≠0), else the
-                                     app builds SRD-only
+                                     app builds SRD-only. NOT in this repo: a gitignored SYMLINK to the
+                                     sibling checkout of the private repo salvodicara/d20-folio-content
+                                     (`ln -s ../d20-folio-content/content-pack content-pack`) — recreate
+                                     it in every task worktree; pack tests reach public-root helpers via
+                                     the `@tests/*`/`@scripts/*` aliases (docs/CONTRIBUTING.md → "The
+                                     two build modes")
 .githooks/{pre-commit,pre-push}      strict local CI gate
 ```
 

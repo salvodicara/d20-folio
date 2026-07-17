@@ -283,10 +283,19 @@ private-tree-only paths; this paragraph is the script's single source): the priv
 data-retrieval/ingestion scripts (`scrape_wiki.py`, `ingest_magic_items.py`,
 `analyze_mechanics.py`), `previews/`, and the builder script itself.
 
-Still open before the snapshot cut: gating the pack routes out of
-`tests/e2e/surface-manifest.ts` (`surfaces.ts` and several specs still drive pack fixtures /
-pack scenarios, so the e2e suite is pack-mode-only today; the snapshot's gate — unit + build —
-is green SRD-only).
+**SHIPPED — the repo is PUBLIC (2026-07-17).** The open-sourcing epic (GH #32) is closed: the
+snapshot was cut and `salvodicara/d20-folio` published with fresh history ("feat: initial public
+release"); the split-repo world is live — the public repo is the canonical dev home (justfile,
+hooks, worktree flow) and the private `salvodicara/d20-folio-content` repo carries
+`content-pack/` + archives, composed locally via a gitignored sibling-checkout symlink
+(`content-pack -> ../d20-folio-content/content-pack`, recreated per worktree — docs/CONTRIBUTING.md
+→ "The two build modes"; pack tests reach public-root helpers via the root-anchored `@tests/*` /
+`@scripts/*` aliases, the vitest lanes resolve with `preserveSymlinks`, and the dev server allows
+the pack's real directory — docs/ARCHITECTURE.md → "The content-pack seam"). The spent snapshot
+builder is gone (the public history never carried it). Residual (unchanged by the split): the
+Playwright e2e suite stays pack-mode-only (`surfaces.ts` + several specs drive pack fixtures /
+scenarios); the public `ci.yml` gate — typecheck + lint + unit + build + budget — is green
+SRD-only.
 
 ## Active epic — The full-BG3 pivot (owner-ratified 2026-07-16)
 
@@ -687,8 +696,9 @@ documented in `docs/MECHANICS.md` + `DESIGN.md`.
      byte-identical (proven by the diff — every hunk is `[data-theme="light"]`-scoped or a light-block
      token), text ≥4.72:1 everywhere touched, axe 94/94 both themes, guards pin the ember tokens (the
      ember-penumbra block in `light-theme-backdrop-legibility.guard.test.ts`). DESIGN.md §10.3 updated.
-4. **PARKED (owner).** Local backups + observability/monitoring (both in _Open decisions_) and the
-   open-source / repo-public + legal effort (**GH #32**, awaiting Fable's return). **Legal-page slice
+4. **PARKED (owner).** Local backups + observability/monitoring (both in _Open decisions_). The
+   open-source / repo-public + legal effort (**GH #32**) has since SHIPPED — repo public
+   2026-07-17, split-repo world live (see "Open-sourcing scaffolding shipped" above). **Legal-page slice
    landed (2026-07-09):** the `/legal` page was rebuilt as a proper colophon document — a parchment
    document leaf (the compendium-tome material) with Attribution · Licenses · Trademarks · The App set
    in the document type ramp — and now carries the EXACT dual SRD 5.2.1 + SRD 5.1 / CC-BY-4.0

@@ -3,7 +3,7 @@
  * Recovery (L1): "When you finish a Short Rest, choose expended spell slots to
  * recover with a combined level ≤ ⌈wizard level / 2⌉, none above 5th. 1/Long Rest."
  *
- * S4 — closes the briox Tier-1 row: BEFORE this, the player tapped the 1/LR
+ * S4 — closes the wizard Tier-1 row: BEFORE this, the player tapped the 1/LR
  * action and then HAND-EDITED the slot pools, self-enforcing the cap. This picker
  * enforces the ⌈level/2⌉ cap by construction (a stepper per expended slot level,
  * capped so the running total can never exceed the budget), restores the chosen

@@ -16,7 +16,7 @@
     "dev:emulators": "VITE_USE_EMULATORS=true vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --cache",
+    "lint": "eslint . 'content-pack/**/*.{ts,tsx}' --no-error-on-unmatched-pattern --cache",
     "i18n:check": "node scripts/i18n/check-i18n.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\" \"content-pack/**/*.{ts,tsx,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\" \"content-pack/**/*.{ts,tsx,json}\"",

@@ -10,7 +10,7 @@
  * (`pnpm test:srd-only` / `pnpm build:srd-only`). Consumed by `vite.config.ts`,
  * `vitest.config.ts`, and the i18n leak-lock (`scripts/i18n/catalogue-io.ts`).
  */
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -31,4 +31,17 @@ export function contentPackEnabled(): boolean {
 /** The module the `@pack` alias resolves to for this run. */
 export function packAliasTarget(): string {
   return contentPackEnabled() ? CONTENT_PACK_ENTRY : PACK_EMPTY_ENTRY;
+}
+
+/**
+ * Vite `server.fs.allow` roots for this run. `content-pack/` is a symlink into
+ * the private content repo, and the dev server serves modules by REAL path —
+ * without the pack's real directory on the allow list it 404s every pack
+ * module (`/@fs/…` outside the repo root). Consumed by `vite.config.ts`; the
+ * vitest lanes instead resolve with `preserveSymlinks` (vitest.config.ts).
+ */
+export function fsAllowRoots(): string[] {
+  return contentPackEnabled()
+    ? [ROOT, realpathSync(path.dirname(CONTENT_PACK_ENTRY))]
+    : [ROOT];
 }

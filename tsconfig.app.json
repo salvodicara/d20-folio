@@ -34,10 +34,16 @@
        directory exists (this repo), else to the typed-empty stub (the public
        SRD-only snapshot) — the same fallback the build-time alias applies
        (scripts/content-pack-mode.ts). The SRD-only lane pins the stub via
-       tsconfig.srd-only.json. */
+       tsconfig.srd-only.json. `@tests`/`@scripts` are the root-anchored helper
+       aliases the pack's test suites import public-root helpers through (the
+       pack lives in a separate repo composed via a symlink, so physical
+       relative escapes resolve against the wrong root — mirrored in
+       vitest.config.ts). */
     "paths": {
       "@/*": ["./src/*"],
-      "@pack": ["./content-pack/index.ts", "./src/data/pack-empty.ts"]
+      "@pack": ["./content-pack/index.ts", "./src/data/pack-empty.ts"],
+      "@tests/*": ["./tests/*"],
+      "@scripts/*": ["./scripts/*"]
     }
   },
   "include": ["src", "tests", "content-pack"],

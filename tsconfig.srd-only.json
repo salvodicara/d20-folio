@@ -9,7 +9,9 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.srd-only.tsbuildinfo",
     "paths": {
       "@/*": ["./src/*"],
-      "@pack": ["./src/data/pack-empty.ts"]
+      "@pack": ["./src/data/pack-empty.ts"],
+      "@tests/*": ["./tests/*"],
+      "@scripts/*": ["./scripts/*"]
     }
   },
   "include": ["src", "tests"]

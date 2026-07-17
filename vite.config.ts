@@ -6,7 +6,7 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "path";
 import { runI18nChecks } from "./scripts/i18n/check-i18n.ts";
-import { packAliasTarget } from "./scripts/content-pack-mode.ts";
+import { fsAllowRoots, packAliasTarget } from "./scripts/content-pack-mode.ts";
 
 // i18n build-time LEAK-LOCK (`docs/ARCHITECTURE.md` → i18n-completeness lock 6): fail `vite build` RED on
 // ANY untranslated string. Runs the ONE shared detector set (`scripts/i18n/` —
@@ -233,6 +233,10 @@ export default defineConfig({
       "@pack": packAliasTarget(),
     },
   },
+  // The dev server serves modules by REAL path; allow the pack's real
+  // directory (a symlink into the private content repo — the vitest lanes
+  // instead resolve with preserveSymlinks, vitest.config.ts).
+  server: { fs: { allow: fsAllowRoots() } },
   build: {
     // CODE-SPLIT — split the SRD database, the Firebase SDK, and React-vendor
     // code into their own long-cacheable chunks. The dynamic-import shape on

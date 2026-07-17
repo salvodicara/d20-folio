@@ -16,6 +16,13 @@ const alias = {
   "@": path.resolve(__dirname, "./src"),
   // The content-pack seam — mirrors vite.config.ts.
   "@pack": packAliasTarget(),
+  // Root-anchored test-helper aliases: the pack's suites live in a separate
+  // repo composed in via a symlink, so a physical `../../../tests/…` escape
+  // resolves against the WRONG root once vitest realpaths the test file. Pack
+  // tests import public-root helpers ONLY through these (tsconfig.app.json
+  // mirrors them for the typecheck).
+  "@tests": path.resolve(__dirname, "./tests"),
+  "@scripts": path.resolve(__dirname, "./scripts"),
 };
 
 // The pack's own suites (content-pack/tests/unit) run ONLY in pack mode: they
@@ -31,7 +38,14 @@ const PACK_SLOW_TESTS = contentPackEnabled()
 
 export default defineConfig({
   define,
-  resolve: { alias },
+  // `preserveSymlinks` keeps the pack's modules at their SYMLINK path (inside
+  // this repo root) instead of their real path in the sibling content repo —
+  // without it the jsdom lane anchors the pack tests' bare imports (react, the
+  // testing library) at the content repo, which has no node_modules. Test-lane
+  // only: the production build keeps realpath resolution (pnpm's nested
+  // node_modules symlinks would otherwise duplicate react in the bundle);
+  // vite.config.ts serves the pack's real directory via `server.fs.allow`.
+  resolve: { alias, preserveSymlinks: true },
   test: {
     // ── Fast / slow lanes (docs/ARCHITECTURE.md) ──────────────────────────
     // Two Vitest projects share one coverage run:

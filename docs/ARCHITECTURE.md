@@ -111,6 +111,19 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   `pnpm typecheck:srd-only && pnpm test:srd-only && pnpm build:srd-only` (`just ci-srd-only`) — no
   coverage floors, no pack suites. Suites in `tests/unit` must pass in both modes by construction
   (they iterate whatever the aggregates expose; bare pack ID slugs in allowlists are permitted).
+- **Composition is a symlink; nothing assumes physical nesting.** The maintainer composes the pack
+  as a gitignored symlink to a sibling checkout of the private repo
+  (`content-pack -> ../d20-folio-content/content-pack` — docs/CONTRIBUTING.md → "The two build
+  modes"), so a pack file's REAL path is outside this repo root. Pack tests therefore import
+  public-root helpers only through the root-anchored `@tests/*` / `@scripts/*` aliases (wired in
+  the vitest/vite alias maps + tsconfig `paths`, always valid — they point at the public root in
+  both modes); the vitest lanes resolve with `preserveSymlinks: true` (keeps pack modules at their
+  in-root symlink path, so bare imports anchor at this repo's `node_modules`); the dev server
+  allows the pack's real directory via `server.fs.allow` (`fsAllowRoots()`,
+  `scripts/content-pack-mode.ts`); and `pnpm lint` names the pack glob explicitly (eslint's `.`
+  directory traversal does not follow symlinks; `--no-error-on-unmatched-pattern` keeps the same
+  script valid when no pack is present). The production build keeps realpath resolution; tsc
+  follows the symlinked `include` natively.
 - **Team fixtures** live in `content-pack/fixtures/team/` (personal data); `src/lib/dev-fixtures.ts`
   reads them through `@pack`, so the SRD-only app simply has none. Pack dev scenarios merge into
   `DEV_SCENARIOS` the same way.

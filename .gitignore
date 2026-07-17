@@ -70,9 +70,12 @@ data-scrape/*
 # graphify knowledge-graph output (generated)
 graphify-out/
 
+# The maintainer's local composition symlink into the private content repo
+# (`content-pack -> ../d20-folio-content/content-pack` — docs/CONTRIBUTING.md →
+# "The two build modes"). Never committed: the public repo builds SRD-only.
+/content-pack
+
 # Engine dumps emitted by the pack's team-fixtures-dump.test.ts (regenerable).
-# `content-pack/` is the maintainer's private content pack — absent from the
-# public repo (docs/ARCHITECTURE.md → "The content-pack seam").
 content-pack/fixtures/team/__dumps__/
 
 # Manual Firestore data backups (live character/campaign exports) — they carry real

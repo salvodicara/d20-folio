@@ -39,7 +39,7 @@ on the local critical path, never twice.
 | **pre-commit**           | doc-guard + `lint-staged` + fast unit lane                                                                                       | ~5 s                           | `.githooks/pre-commit`     |
 | **pre-push**             | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e** | ~2 min (max of three, not sum) | `.githooks/pre-push`       |
 | **deploy** (owner-fired) | the FULL gate + the **full Playwright e2e matrix** — primary: `just deploy` (local); remote twin: `gh workflow run deploy.yml`   | full matrix, once per deploy   | `justfile`/`deploy.yml`    |
-| **remote CI** (`ci.yml`) | typecheck + lint + unit + build + budget on every push to `main` and every PR — **dormant while the repo is private**            | one runner per event           | `.github/workflows/ci.yml` |
+| **remote CI** (`ci.yml`) | typecheck + lint + unit + build + budget on every push to `main` and every PR — **live since the repo went public (2026-07-17)** | one runner per event           | `.github/workflows/ci.yml` |
 
 > **Why `workers: 1` in CI, not 2.** A 2nd Playwright worker was measured and REJECTED: on the
 > 2-vCPU `ubuntu-latest` runner one worker already saturates the cores (a full-page Chromium render
@@ -180,6 +180,21 @@ and `VITE_CONTENT_PACK` ≠ `0`. Two lanes exist:
   (`content-pack/tests/unit/**`) join the same fast/slow vitest lanes.
 
 Every suite in `tests/unit` must pass in BOTH modes.
+
+**The maintainer's local composition** is a gitignored symlink into a sibling
+checkout of the private pack repo (`salvodicara/d20-folio-content`):
+
+```sh
+ln -s ../d20-folio-content/content-pack content-pack
+```
+
+Recreate the same symlink inside every task worktree (`just wt-new` does not
+copy it) so the pack-mode gate runs composed there. Because the pack's files
+REALLY live outside the repo root, pack tests import public-root helpers only
+through the root-anchored `@tests/*` / `@scripts/*` aliases (never physical
+`../../../` escapes), the vitest lanes resolve with `preserveSymlinks`, and the
+dev server allows the pack's real directory (`fsAllowRoots()`,
+`scripts/content-pack-mode.ts`).
 
 ## Reading order (especially for AI agents)
 
@@ -580,10 +595,10 @@ workflows live in `.github/workflows/`:
   lint → unit tests → `vite build` → bundle budget, on every push to `main` and every pull
   request. It needs no secrets and no mode flags: with no `content-pack/` in the tree the plain
   commands ARE the SRD-only composition (the presence-based `@pack` seam,
-  `scripts/content-pack-mode.ts`). The job **self-skips while the repo is private**
-  (`if: !github.event.repository.private`) — free-tier Actions minutes exhaust constantly, and the
-  pre-push hook already runs the same checks — so it costs nothing here and gates every push/PR
-  unchanged in the public repo.
+  `scripts/content-pack-mode.ts`). The job **self-skips on a private
+  mirror** (`if: !github.event.repository.private`) and has been live since the repo went public
+  (2026-07-17), gating every push/PR on the free public-repo Actions tier; the pre-push hook
+  remains the authoritative local gate.
 - **Deploy** (`deploy.yml`) — `workflow_dispatch` ONLY, owner-fired (golden rule 22; never on
   push). It mirrors `just deploy` on a runner: compose the private content pack
   (`salvodicara/d20-folio-content` via the `CONTENT_PACK_TOKEN` secret), full gate, full Playwright
