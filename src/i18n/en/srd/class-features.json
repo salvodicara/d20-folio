@@ -1,0 +1,1316 @@
+{
+  "barbarian-berserker-frenzy": {
+    "description": "If you use Reckless Attack while your Rage is active, you deal extra damage to the first target you hit on your turn with a Strength-based attack: roll a number of d6s equal to your Rage Damage bonus (+2, +3 at level 9, +4 at level 16) and add them together. The damage matches the weapon or Unarmed Strike used.",
+    "name": "Frenzy"
+  },
+  "barbarian-berserker-frenzy.grants.0": {
+    "label": "Frenzy"
+  },
+  "barbarian-berserker-intimidating-presence": {
+    "description": "As a Bonus Action, you strike terror into others with your menacing presence and primal power. Each creature of your choice in a 30-foot Emanation originating from you must succeed on a Wisdom saving throw (DC = 8 + your Strength modifier + your Proficiency Bonus) or have the Frightened condition for 1 minute. At the end of each of the Frightened creature's turns, it repeats the save, ending the effect on itself on a success. Once you use this feature, you can't use it again until you finish a Long Rest unless you expend a use of your Rage (no action required) to restore it.",
+    "name": "Intimidating Presence"
+  },
+  "barbarian-berserker-intimidating-presence.mechanics.actions.0": {
+    "description": "Each enemy in a 30-ft Emanation makes a WIS save (DC 8 + STR mod + PB) or is Frightened for 1 min (re-save at end of each of its turns).",
+    "summary": "Enemies in 30 ft: WIS save or Frightened for 1 min"
+  },
+  "barbarian-berserker-mindless-rage": {
+    "description": "You can't be charmed or frightened while raging. If you are charmed or frightened when you enter your rage, the effect is suspended for the duration of the rage.",
+    "name": "Mindless Rage"
+  },
+  "barbarian-berserker-mindless-rage.grants.0": {
+    "label": "Mindless Rage"
+  },
+  "barbarian-berserker-retaliation": {
+    "description": "When you take damage from a creature that is within 5 feet of you, you can use your reaction to make a melee weapon attack against that creature.",
+    "name": "Retaliation"
+  },
+  "barbarian-berserker-retaliation.mechanics.actions.0": {
+    "description": "Make a melee attack against a creature that damaged you within 5 ft."
+  },
+  "barbarian-brutal-strike": {
+    "description": "If you use Reckless Attack, you can forgo Advantage on one Strength-based attack roll on your turn. If the chosen attack hits, the target takes an extra 1d10 damage and you can cause one effect: Forceful Blow (push 15 ft, then move half speed toward target) or Hamstring Blow (reduce speed by 15 ft until start of your next turn).",
+    "name": "Brutal Strike"
+  },
+  "barbarian-danger-sense": {
+    "description": "You gain an uncanny sense of when things aren't as they should be, giving you an edge when you dodge perils. You have Advantage on Dexterity saving throws unless you have the Incapacitated condition.",
+    "name": "Danger Sense"
+  },
+  "barbarian-danger-sense.grants.0": {
+    "description": "Dexterity saving throws"
+  },
+  "barbarian-epic-boon": {
+    "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
+    "name": "Epic Boon"
+  },
+  "barbarian-extra-attack": {
+    "description": "You can attack twice, instead of once, whenever you take the Attack action on your turn.",
+    "name": "Extra Attack"
+  },
+  "barbarian-fast-movement": {
+    "description": "Your speed increases by 10 feet while you aren't wearing heavy armor.",
+    "name": "Fast Movement"
+  },
+  "barbarian-feral-instinct": {
+    "description": "Your instincts are so honed that you have Advantage on Initiative rolls.",
+    "name": "Feral Instinct"
+  },
+  "barbarian-feral-instinct.grants.0": {
+    "description": "Advantage on Initiative rolls"
+  },
+  "barbarian-greater-brutal-strike": {
+    "description": "Your Brutal Strike damage increases to 2d10, and you can apply two different effects when you use it.",
+    "name": "Improved Brutal Strike"
+  },
+  "barbarian-improved-brutal-strike": {
+    "description": "You have new Brutal Strike options: Staggering Blow (target has Disadvantage on its next save and can't make Opportunity Attacks until start of your next turn) or Sundering Blow (next attack roll by another creature against the target gains +5 bonus).",
+    "name": "Improved Brutal Strike"
+  },
+  "barbarian-indomitable-might": {
+    "description": "If your total for a Strength check or Strength saving throw is less than your Strength score, you can use your Strength score in place of the total.",
+    "name": "Indomitable Might"
+  },
+  "barbarian-instinctive-pounce": {
+    "description": "As part of the Bonus Action you take to enter your Rage, you can move up to half your Speed.",
+    "name": "Instinctive Pounce"
+  },
+  "barbarian-persistent-rage": {
+    "description": "When you roll Initiative, you can regain all expended uses of Rage. After you regain uses this way, you can't do so again until you finish a Long Rest. In addition, your Rage now lasts for 10 minutes without you needing to extend it. It ends early only if you have the Unconscious condition or don Heavy armor.",
+    "name": "Persistent Rage"
+  },
+  "barbarian-primal-champion": {
+    "description": "Your Strength and Constitution scores increase by 4. Your maximum for those scores is now 25.",
+    "name": "Primal Champion"
+  },
+  "barbarian-primal-knowledge": {
+    "description": "You gain proficiency in one skill of your choice from the list available to Barbarians at level 1. In addition, while your Rage is active, you can channel primal power: whenever you make an ability check using Acrobatics, Intimidation, Perception, Stealth, or Survival, you can make it as a Strength check even if it normally uses a different ability.",
+    "name": "Primal Knowledge"
+  },
+  "barbarian-rage": {
+    "description": "On your turn, you can enter a Rage as a Bonus Action. While raging, you gain the following benefits: you have Advantage on Strength checks and saves, when you make a Strength-based attack you deal bonus damage equal to your Rage Damage, and you have Resistance to Bludgeoning, Piercing, and Slashing damage. Your Rage lasts until the end of your next turn, and you can extend it round by round (up to a maximum of 10 minutes) by making an attack roll against an enemy, forcing an enemy to make a saving throw, or using a Bonus Action to maintain it. You regain one expended use of Rage on a Short Rest and all of them on a Long Rest.",
+    "name": "Rage"
+  },
+  "barbarian-rage.grants.0": {
+    "label": "Rage"
+  },
+  "barbarian-rage.grants.0.grants.3": {
+    "description": "Strength checks"
+  },
+  "barbarian-rage.grants.0.grants.4": {
+    "description": "Strength saving throws"
+  },
+  "barbarian-rage.mechanics.actions.0": {
+    "description": "Enter a Rage (lasts until the end of your next turn; extendable up to 10 minutes).",
+    "label": "Rage",
+    "summary": "Enter a Rage (extendable up to 10 minutes)"
+  },
+  "barbarian-rage.mechanics.rider": {
+    "label": "Rage Damage"
+  },
+  "barbarian-reckless-attack": {
+    "description": "You can throw aside all concern for defense to attack with increased ferocity. When you make your first attack roll on your turn, you can decide to attack recklessly, giving you Advantage on attack rolls using Strength until the start of your next turn, but attack rolls against you have Advantage during that time.",
+    "name": "Reckless Attack"
+  },
+  "barbarian-reckless-attack.grants.0": {
+    "label": "Reckless Attack"
+  },
+  "barbarian-reckless-attack.grants.0.grants.0": {
+    "description": "Strength-based attack rolls"
+  },
+  "barbarian-reckless-attack.grants.0.grants.1": {
+    "description": "Attacks against you have Advantage"
+  },
+  "barbarian-relentless-rage": {
+    "description": "Your Rage can keep you fighting despite grievous wounds. If you drop to 0 Hit Points while your Rage is active and don't die outright, you can make a DC 10 Constitution saving throw. If you succeed, your Hit Points instead change to a number equal to twice your Barbarian level. Each time you use this feature after the first, the DC increases by 5. When you finish a Short or Long Rest, the DC resets to 10.",
+    "name": "Relentless Rage"
+  },
+  "barbarian-relentless-rage.mechanics.rider": {
+    "label": "CON save DC"
+  },
+  "barbarian-relentless-rage.mechanics.rider.relentlessRageHp": {
+    "label": "Recovery HP"
+  },
+  "barbarian-unarmored-defense": {
+    "description": "While you are not wearing any armor, your Armor Class equals 10 + your Dexterity modifier + your Constitution modifier. You can use a shield and still gain this benefit.",
+    "name": "Unarmored Defense"
+  },
+  "barbarian-weapon-mastery": {
+    "description": "Your training with weapons allows you to use the mastery properties of two kinds of Simple or Martial Melee weapons of your choice with which you have proficiency. Whenever you finish a Long Rest, you can change the kinds of weapons you chose.",
+    "name": "Weapon Mastery"
+  },
+  "bard-asi": {
+    "description": "You can increase one ability score by 2, or two ability scores by 1 each. Alternatively, you can choose a feat. You cannot increase an ability score above 20 using this feature.",
+    "name": "Ability Score Improvement"
+  },
+  "bard-bardic-inspiration": {
+    "description": "You can inspire others through stirring words or music. As a bonus action, you give one creature within 60 feet a Bardic Inspiration die. The creature can add the die to one ability check, attack roll, or saving throw within 10 minutes. You can use this a number of times equal to your Charisma modifier (minimum 1), regaining all uses on a long rest.",
+    "name": "Bardic Inspiration"
+  },
+  "bard-bardic-inspiration.mechanics.actions.0": {
+    "description": "Grant Bardic Inspiration to a creature within 60 ft."
+  },
+  "bard-countercharm": {
+    "description": "As a Reaction when you or a creature within 30 feet of you fails a saving throw against an effect that applies the Charmed or Frightened condition, you can cause that save to be rerolled, and the new roll has Advantage. This costs nothing.",
+    "name": "Countercharm"
+  },
+  "bard-countercharm.mechanics.actions.0": {
+    "description": "Reroll a failed save against the Charmed or Frightened condition; the new roll has Advantage."
+  },
+  "bard-epic-boon": {
+    "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
+    "name": "Epic Boon"
+  },
+  "bard-expertise": {
+    "description": "Choose two of your skill proficiencies. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies. At 9th level, you can choose another two skill proficiencies to gain this benefit.",
+    "name": "Expertise"
+  },
+  "bard-font-of-inspiration": {
+    "description": "You now regain all of your expended uses of Bardic Inspiration when you finish a Short or Long Rest, rather than only on a Long Rest. In addition, you can expend a spell slot (no action required) to regain one expended use of Bardic Inspiration.",
+    "name": "Font of Inspiration"
+  },
+  "bard-jack-of-all-trades": {
+    "description": "You can add half your proficiency bonus, rounded down, to any ability check you make that doesn't already include your proficiency bonus. This represents your broad but shallow expertise across many skills.",
+    "name": "Jack of All Trades"
+  },
+  "bard-lore-additional-magical-secrets": {
+    "description": "You learn two spells of your choice. They can come from the Cleric, Druid, or Wizard spell list, in any combination. Each must be a cantrip or a spell for which you have spell slots. You always have the chosen spells prepared, and whenever you gain a Bard level you can replace one of them with another that meets these requirements.",
+    "name": "Magical Discoveries"
+  },
+  "bard-lore-bonus-proficiencies": {
+    "description": "When you join the College of Lore, you gain proficiency with three skills of your choice. This represents the breadth of knowledge you have accumulated through your studies and travels.",
+    "name": "Bonus Proficiencies"
+  },
+  "bard-lore-cutting-words": {
+    "description": "When a creature you can see within 60 feet makes an attack roll, ability check, or damage roll, you can use your reaction to expend one Bardic Inspiration die and subtract the number rolled from the creature's roll. You can do so after the roll but before effects are applied.",
+    "name": "Cutting Words"
+  },
+  "bard-lore-cutting-words.mechanics.actions.0": {
+    "description": "Subtract Bardic Inspiration die from enemy roll."
+  },
+  "bard-lore-peerless-skill": {
+    "description": "When you fail an ability check or an attack roll, you can expend one use of Bardic Inspiration, roll the Bardic Inspiration die, and add it to the roll, potentially turning the failure into a success. If the roll still fails, this use of Bardic Inspiration isn't expended.",
+    "name": "Peerless Skill"
+  },
+  "bard-lore-peerless-skill.mechanics.actions.0": {
+    "description": "Add Bardic Inspiration die to your ability check."
+  },
+  "bard-magical-secrets": {
+    "description": "Whenever you reach a Bard level (including this one) and your Prepared Spells number increases, you can choose any of your new prepared spells from the Bard, Cleric, Druid, and Wizard spell lists. The chosen spells count as Bard spells for you. You can also replace a prepared spell with one from those lists.",
+    "name": "Magical Secrets"
+  },
+  "bard-spellcasting": {
+    "description": "You have learned to cast spells through music and oration. Charisma is your spellcasting ability. You prepare a number of bard spells equal to your Charisma modifier + your bard level. You can use a musical instrument as a spellcasting focus.",
+    "name": "Spellcasting"
+  },
+  "bard-superior-inspiration": {
+    "description": "When you roll Initiative, you regain expended uses of Bardic Inspiration until you have two (if you have fewer than that). This ensures you enter most combats with at least two dice of inspiration ready.",
+    "name": "Superior Inspiration"
+  },
+  "bard-words-of-creation": {
+    "description": "You have mastered two of the Words of Creation: the words of life and death. You therefore always have the Power Word Heal and Power Word Kill spells prepared. When you cast either spell, you can target a second creature with it if that creature is within 10 feet of the first target.",
+    "name": "Words of Creation"
+  },
+  "cleric-blessed-strikes": {
+    "description": "Divine power infuses you in battle. You gain one of the following options of your choice. Divine Strike: once on each of your turns when you hit a creature with a weapon attack, you can deal an extra 1d8 Necrotic or Radiant damage (your choice; increases to 2d8 with Improved Blessed Strikes). Potent Spellcasting: add your Wisdom modifier to the damage you deal with any Cleric cantrip.",
+    "name": "Blessed Strikes"
+  },
+  "cleric-blessed-strikes.grants.0": {
+    "label": "Blessed Strikes"
+  },
+  "cleric-blessed-strikes.grants.0.options.divine-strike": {
+    "label": "Divine Strike"
+  },
+  "cleric-blessed-strikes.grants.0.options.potent-spellcasting": {
+    "label": "Potent Spellcasting"
+  },
+  "cleric-channel-divinity": {
+    "description": "You gain the ability to channel divine energy directly from your deity, using that energy to fuel magical effects. You start with Turn Undead and an effect determined by your domain. You regain expended uses after a short or long rest.",
+    "name": "Channel Divinity"
+  },
+  "cleric-channel-divinity.mechanics.actions.0": {
+    "description": "Use one of your Channel Divinity options.",
+    "label": "Channel Divinity"
+  },
+  "cleric-divine-intervention": {
+    "description": "You can call on your deity or pantheon to intervene on your behalf. As a Magic action, choose any Cleric spell of level 5 or lower that doesn't require a Reaction to cast. As part of the same action, you cast that spell without expending a spell slot or needing Material components. You can't use this feature again until you finish a Long Rest.",
+    "name": "Divine Intervention"
+  },
+  "cleric-divine-intervention.mechanics.actions.0": {
+    "description": "Magic action: cast any Cleric spell of level 5 or lower (none that cast as a Reaction) for free — no spell slot or Material components. 1/Long Rest.",
+    "summary": "Cast a Cleric spell of level ≤5 free (no slot/Material)"
+  },
+  "cleric-divine-order": {
+    "description": "You dedicate yourself to one of the following sacred roles of your choice. Protector: trained for battle, you gain proficiency with Martial weapons and training with Heavy armor. Thaumaturge: you know one extra cantrip from the Cleric spell list, and you gain a bonus to your Intelligence (Arcana or Religion) checks equal to your Wisdom modifier (minimum +1).",
+    "name": "Divine Order"
+  },
+  "cleric-divine-order.grants.0": {
+    "label": "Divine Order"
+  },
+  "cleric-divine-order.grants.0.options.protector": {
+    "label": "Protector"
+  },
+  "cleric-divine-order.grants.0.options.thaumaturge": {
+    "label": "Thaumaturge"
+  },
+  "cleric-divine-spark": {
+    "description": "As a Magic action, you point your Holy Symbol at another creature you can see within 30 feet and focus divine energy at it. Roll 1d8 and add your Wisdom modifier. You either restore Hit Points to the creature equal to that total, or force it to make a Constitution saving throw — on a failure it takes Necrotic or Radiant damage (your choice) equal to that total, or half as much (rounded down) on a success. You roll an additional d8 at Cleric levels 7 (2d8), 13 (3d8), and 18 (4d8).",
+    "name": "Divine Spark"
+  },
+  "cleric-divine-spark.mechanics.actions.0": {
+    "description": "Channel Divinity: restore HP, or deal Necrotic/Radiant damage (CON save for half) to a creature within 30 ft. Heal/damage = 1d8 + WIS (2d8 at L7, 3d8 at L13, 4d8 at L18).",
+    "summary": "Heal or harm a creature within 30 ft for 1d8 + WIS"
+  },
+  "cleric-epic-boon": {
+    "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
+    "name": "Epic Boon"
+  },
+  "cleric-improved-blessed-strikes": {
+    "description": "The option you chose for Blessed Strikes grows more powerful. Divine Strike: the extra damage of your Divine Strike increases to 2d8. Potent Spellcasting: when you deal Cleric cantrip damage to a creature, you can give yourself or another creature within 60 feet Temporary Hit Points equal to twice your Wisdom modifier.",
+    "name": "Improved Blessed Strikes"
+  },
+  "cleric-improved-divine-intervention": {
+    "description": "You can call on even more powerful divine intervention. When you use your Divine Intervention feature, you can choose Wish when you select a spell. If you do so, you can't use Divine Intervention again until you finish 2d4 Long Rests.",
+    "name": "Greater Divine Intervention"
+  },
+  "cleric-life-blessed-healer": {
+    "description": "When you cast a spell of 1st level or higher that restores hit points to another creature, you also regain hit points equal to 2 + the spell's level.",
+    "name": "Blessed Healer"
+  },
+  "cleric-life-disciple-of-life": {
+    "description": "Your healing spells are more effective. Whenever you use a spell of 1st level or higher to restore hit points to a creature, the creature regains additional hit points equal to 2 + the spell's level.",
+    "name": "Disciple of Life"
+  },
+  "cleric-life-preserve-life": {
+    "description": "As an action, you use Channel Divinity to heal allies. You distribute hit points equal to five times your cleric level among creatures within 30 feet, restoring each to no more than half its hit point maximum.",
+    "name": "Preserve Life"
+  },
+  "cleric-life-preserve-life.mechanics.actions.0": {
+    "description": "Channel Divinity: distribute HP equal to 5 × cleric level among allies within 30 ft.",
+    "label": "Preserve Life",
+    "summary": "Distribute 5 × Cleric level HP among allies within 30 ft"
+  },
+  "cleric-life-supreme-healing": {
+    "description": "When you would normally roll dice to restore hit points with a spell, you instead use the highest number possible for each die. For example, instead of rolling 2d6 to restore hit points, you restore 12.",
+    "name": "Supreme Healing"
+  },
+  "cleric-sear-undead": {
+    "description": "Whenever you use Turn Undead, you can roll a number of d8s equal to your Wisdom modifier (minimum of 1d8) and add the rolls together. Each undead that fails its save against that Turn Undead takes Radiant damage equal to the total. This damage doesn't end the Turn Undead effect.",
+    "name": "Sear Undead"
+  },
+  "cleric-sear-undead.mechanics.actions.0": {
+    "description": "When you Turn Undead, each undead that fails its save also takes (WIS modifier, min 1) d8 Radiant damage. No extra Channel Divinity is spent.",
+    "summary": "Turned undead also take WIS-many d8 Radiant"
+  },
+  "cleric-spellcasting": {
+    "description": "You have learned to draw on divine magic through meditation and prayer. You can cast cleric spells using Wisdom as your spellcasting ability. You prepare spells from the full cleric spell list each day after a long rest.",
+    "name": "Spellcasting"
+  },
+  "cleric-turn-undead": {
+    "description": "As an action, you present your holy symbol and speak a prayer censuring the undead. Each undead within 30 feet that can see or hear you must make a Wisdom saving throw. On a failure, the creature is turned for 1 minute or until it takes damage.",
+    "name": "Turn Undead"
+  },
+  "cleric-turn-undead.mechanics.actions.0": {
+    "description": "Each undead within 30 ft must make a WIS save or be turned for 1 minute.",
+    "summary": "Undead within 30 ft: WIS save or turned for 1 minute"
+  },
+  "druid-archdruid": {
+    "description": "You gain the following benefits. **Evergreen Wild Shape.** When you roll Initiative and have no uses of Wild Shape left, you regain one expended use. **Nature Magician.** You can convert unexpended uses of Wild Shape into a spell slot (no action required); each use is worth 2 spell levels (e.g. two uses = a level-4 slot), and you can do so once per Long Rest. **Longevity.** For every 10 years that pass, your body ages only 1 year.",
+    "name": "Archdruid"
+  },
+  "druid-beast-spells": {
+    "description": "You can concentrate on spells while in Wild Shape form, and you can perform the Somatic and Verbal components of Druid spells while in beast form.",
+    "name": "Beast Spells"
+  },
+  "druid-druidic": {
+    "description": "You know Druidic, the secret language of druids. You can speak it and use it to leave hidden messages. Others can spot such messages with a DC 15 Intelligence (Investigation) check but can't decipher them without magic. You also always have the Speak with Animals spell prepared.",
+    "name": "Druidic"
+  },
+  "druid-elemental-fury": {
+    "description": "The might of the elements flows through you. You gain one of the following options of your choice. Potent Spellcasting: add your Wisdom modifier to the damage you deal with any Druid cantrip. Primal Strike: once on each of your turns when you hit a creature with a weapon attack or a Beast form's attack in Wild Shape, you can deal an extra 1d8 Cold, Fire, Lightning, or Thunder damage (choose when you hit; increases to 2d8 with Improved Elemental Fury).",
+    "name": "Elemental Fury"
+  },
+  "druid-elemental-fury.grants.0": {
+    "label": "Elemental Fury"
+  },
+  "druid-elemental-fury.grants.0.options.potent-spellcasting": {
+    "label": "Potent Spellcasting"
+  },
+  "druid-elemental-fury.grants.0.options.primal-strike": {
+    "label": "Primal Strike"
+  },
+  "druid-epic-boon": {
+    "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
+    "name": "Epic Boon"
+  },
+  "druid-improved-elemental-fury": {
+    "description": "The option you chose for Elemental Fury grows more powerful. Potent Spellcasting: when you cast a Druid cantrip with a range of 10 feet or greater, the spell's range increases by 300 feet. Primal Strike: the extra damage of your Primal Strike increases to 2d8.",
+    "name": "Improved Elemental Fury"
+  },
+  "druid-land-circle-spells": {
+    "description": "Whenever you finish a Long Rest, choose a type of land — Arid, Polar, Temperate, or Tropical. You always have the Circle Spells for that land (and your Druid level and lower) prepared; they don't count against your prepared spells.",
+    "name": "Circle of the Land Spells"
+  },
+  "druid-land-circle-spells.grants.0": {
+    "label": "Land Type"
+  },
+  "druid-land-circle-spells.grants.0.options.arid": {
+    "label": "Arid"
+  },
+  "druid-land-circle-spells.grants.0.options.polar": {
+    "label": "Polar"
+  },
+  "druid-land-circle-spells.grants.0.options.temperate": {
+    "label": "Temperate"
+  },
+  "druid-land-circle-spells.grants.0.options.tropical": {
+    "label": "Tropical"
+  },
+  "druid-land-lands-aid": {
+    "description": "As a Magic action, expend a use of Wild Shape and choose a point within 60 feet. In a 10-foot-radius Sphere, each creature of your choice makes a Constitution saving throw against your spell save DC, taking 2d6 Necrotic damage on a failure (half on success), and one creature of your choice regains 2d6 Hit Points. The damage and healing increase to 3d6 at Druid level 10 and 4d6 at level 14.",
+    "name": "Land's Aid"
+  },
+  "druid-land-lands-aid.mechanics.actions.0": {
+    "description": "Magic action, expend Wild Shape: 2d6 (→3d6 L10, →4d6 L14) Necrotic save + heal one ally 2d6.",
+    "summary": "Expend Wild Shape: 2d6 Necrotic (save) + heal an ally 2d6"
+  },
+  "druid-land-natural-recovery": {
+    "description": "You can cast one of your prepared Circle Spells of level 1+ without expending a spell slot once per Long Rest. In addition, when you finish a Short Rest you can recover expended spell slots with a combined level up to half your Druid level (rounded up), none of them level 6+; once you do, you can't again until a Long Rest.",
+    "name": "Natural Recovery"
+  },
+  "druid-land-natures-sanctuary": {
+    "description": "As a Magic action, expend a use of Wild Shape to conjure spectral trees and vines in a 15-foot Cube within 120 feet for 1 minute (ends if you're Incapacitated or die). You and your allies have Half Cover while in the area, and your allies gain the current Resistance of your Nature's Ward there. As a Bonus Action, you can move the Cube up to 60 feet.",
+    "name": "Nature's Sanctuary"
+  },
+  "druid-land-natures-sanctuary.mechanics.actions.0": {
+    "description": "Magic action, expend Wild Shape: 15-ft Cube, Half Cover + share Nature's Ward Resistance with allies.",
+    "summary": "Expend Wild Shape: 15 ft Cube of Half Cover for allies"
+  },
+  "druid-land-natures-ward": {
+    "description": "You are immune to the Poisoned condition, and you have Resistance to a damage type tied to your current land choice: Arid — Fire, Polar — Cold, Temperate — Lightning, Tropical — Poison.",
+    "name": "Nature's Ward"
+  },
+  "druid-land-natures-ward.grants.1": {
+    "label": "Land Type"
+  },
+  "druid-land-natures-ward.grants.1.options.arid": {
+    "label": "Arid"
+  },
+  "druid-land-natures-ward.grants.1.options.polar": {
+    "label": "Polar"
+  },
+  "druid-land-natures-ward.grants.1.options.temperate": {
+    "label": "Temperate"
+  },
+  "druid-land-natures-ward.grants.1.options.tropical": {
+    "label": "Tropical"
+  },
+  "druid-primal-order": {
+    "description": "You dedicate yourself to one of the following sacred roles of your choice. Magician: you know one extra cantrip from the Druid spell list, and you gain a bonus to your Intelligence (Arcana or Nature) checks equal to your Wisdom modifier (minimum +1). Warden: trained for battle, you gain proficiency with Martial weapons and training with Medium armor.",
+    "name": "Primal Order"
+  },
+  "druid-primal-order.grants.0": {
+    "label": "Primal Order"
+  },
+  "druid-primal-order.grants.0.options.magician": {
+    "label": "Magician"
+  },
+  "druid-primal-order.grants.0.options.warden": {
+    "label": "Warden"
+  },
+  "druid-spellcasting": {
+    "description": "Drawing on the divine essence of nature, you can cast spells to shape that essence to your will. You use Wisdom as your spellcasting ability and prepare spells from the druid spell list after each long rest.",
+    "name": "Spellcasting"
+  },
+  "druid-wild-companion": {
+    "description": "You can expend a use of Wild Shape to cast Find Familiar without material components. The familiar is a Fey instead of its normal creature type and disappears when you finish a Long Rest.",
+    "name": "Wild Companion"
+  },
+  "druid-wild-companion.mechanics.actions.0": {
+    "description": "Expend a spell slot or 1 Wild Shape use to cast Find Familiar (no material components).",
+    "label": "Wild Companion",
+    "summary": "Expend a slot or Wild Shape use to cast Find Familiar"
+  },
+  "druid-wild-resurgence": {
+    "description": "Once per turn, if you have no uses of Wild Shape left, you can expend one spell slot (any level) to regain one use of Wild Shape. In addition, you can expend one use of Wild Shape (no action required) to give yourself one Level 1 spell slot, but you can't do so again until you finish a Long Rest.",
+    "name": "Wild Resurgence"
+  },
+  "druid-wild-shape": {
+    "description": "As a Bonus Action, you can assume the form of a beast using one of your Wild Shape uses. You have 2 uses at level 2 (3 at level 6, 4 at level 17). You regain one expended use on a Short Rest and all expended uses on a Long Rest. While transformed, you use a specific stat block rather than that of a normal beast.",
+    "name": "Wild Shape"
+  },
+  "druid-wild-shape.grants.0": {
+    "trigger": "when you assume a Wild Shape form"
+  },
+  "druid-wild-shape.mechanics.actions.0": {
+    "description": "Transform into a beast form."
+  },
+  "druid-wild-shape.mechanics.rider": {
+    "label": "Max CR"
+  },
+  "fighter-action-surge": {
+    "description": "You can push yourself beyond your normal limits for a moment. On your turn, you can take one additional action. Once you use this feature, you must finish a Short or Long Rest before you can use it again. Starting at 17th level, you can use it twice before a rest.",
+    "name": "Action Surge"
+  },
+  "fighter-action-surge.grants.0": {
+    "label": "Action Surge"
+  },
+  "fighter-action-surge.mechanics.actions.0": {
+    "description": "Take one additional action on your turn.",
+    "label": "Action Surge"
+  },
+  "fighter-champion-additional-fighting-style": {
+    "description": "You choose a second Fighting Style feat.",
+    "name": "Additional Fighting Style"
+  },
+  "fighter-champion-heroic-warrior": {
+    "description": "The thrill of battle drives you toward victory. During combat, you can give yourself Heroic Inspiration whenever you start your turn without it.",
+    "name": "Heroic Warrior"
+  },
+  "fighter-champion-improved-critical": {
+    "description": "Your weapon attacks score a critical hit on a roll of 19 or 20 on the d20.",
+    "name": "Improved Critical"
+  },
+  "fighter-champion-remarkable-athlete": {
+    "description": "You have Advantage on Initiative rolls and Strength (Athletics) checks. In addition, immediately after you score a Critical Hit, you can move up to half your Speed without provoking Opportunity Attacks.",
+    "name": "Remarkable Athlete"
+  },
+  "fighter-champion-remarkable-athlete.grants.0": {
+    "description": "Initiative rolls"
+  },
+  "fighter-champion-remarkable-athlete.grants.1": {
+    "description": "Strength (Athletics) checks"
+  },
+  "fighter-champion-superior-critical": {
+    "description": "Your weapon attacks score a critical hit on a roll of 18-20 on the d20.",
+    "name": "Superior Critical"
+  },
+  "fighter-champion-survivor": {
+    "description": "You attain the pinnacle of resilience in battle, gaining these benefits. Defy Death: You have Advantage on Death Saving Throws. Moreover, when you roll 18-20 on a Death Saving Throw, you gain the benefit of rolling a 20 on it. Heroic Rally: At the start of each of your turns, you regain Hit Points equal to 5 plus your Constitution modifier if you are Bloodied and have at least 1 Hit Point.",
+    "name": "Survivor"
+  },
+  "fighter-champion-survivor.grants.1": {
+    "description": "Death Saving Throws (Defy Death)"
+  },
+  "fighter-epic-boon": {
+    "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
+    "name": "Epic Boon"
+  },
+  "fighter-extra-attack": {
+    "description": "You can attack twice, instead of once, whenever you take the Attack action on your turn.",
+    "name": "Extra Attack"
+  },
+  "fighter-extra-attack-2": {
+    "description": "You can attack three times whenever you take the Attack action on your turn.",
+    "name": "Extra Attack (2)"
+  },
+  "fighter-extra-attack-3": {
+    "description": "You can attack four times whenever you take the Attack action on your turn.",
+    "name": "Extra Attack (3)"
+  },
+  "fighter-fighting-style": {
+    "description": "You adopt a particular style of fighting as your specialty. Choose one Fighting Style feat. You can't take the same Fighting Style feat more than once, even if you get to choose again later.",
+    "name": "Fighting Style"
+  },
+  "fighter-indomitable": {
+    "description": "If you fail a saving throw, you can reroll it with a bonus equal to your Fighter level. You must use the new roll, and you can't use this feature again until you finish a Long Rest. You can use it twice starting at level 13 and three times starting at level 17.",
+    "name": "Indomitable"
+  },
+  "fighter-second-wind": {
+    "description": "As a Bonus Action, you can regain Hit Points equal to 1d10 plus your Fighter level. You can use this feature twice. You regain one expended use on a Short Rest and all uses on a Long Rest. Uses increase at higher levels.",
+    "name": "Second Wind"
+  },
+  "fighter-second-wind.mechanics.actions.0": {
+    "description": "Regain Hit Points.",
+    "label": "Second Wind"
+  },
+  "fighter-tactical-mind.mechanics.actions.0": {
+    "description": "Spend a Second Wind use: +1d10 to a failed check.",
+    "label": "Tactical Mind"
+  },
+  "fighter-studied-attacks": {
+    "description": "You study your opponents and learn from each attack you make. If you make an attack roll against a creature and miss, you have Advantage on your next attack roll against that creature before the end of your next turn.",
+    "name": "Studied Attacks"
+  },
+  "fighter-studied-attacks.grants.0": {
+    "label": "Studied Attacks"
+  },
+  "fighter-studied-attacks.grants.0.grants.0": {
+    "description": "Your next attack against the creature you missed"
+  },
+  "fighter-tactical-master": {
+    "description": "When you attack with a weapon whose mastery property you can use, you can replace that property with the Push, Sap, or Slow property for that attack.",
+    "name": "Tactical Master"
+  },
+  "fighter-tactical-mind": {
+    "description": "You have a mind for tactics on and off the battlefield. When you fail an ability check, you can expend a use of Second Wind to push yourself toward success. Roll 1d10 and add it to the ability check. If the check still fails, the Second Wind use isn't expended.",
+    "name": "Tactical Mind"
+  },
+  "fighter-tactical-shift": {
+    "description": "Whenever you use your Second Wind, you can move up to half your Speed without provoking Opportunity Attacks.",
+    "name": "Tactical Shift"
+  },
+  "fighter-weapon-mastery": {
+    "description": "You can use the mastery property of three kinds of Simple or Martial weapons of your choice, increasing to four kinds at level 4, five at level 10, and six at level 16. Whenever you finish a Long Rest, you can change which weapons you have chosen.",
+    "name": "Weapon Mastery"
+  },
+  "monk-acrobatic-movement": {
+    "description": "While you are not wearing armor or wielding a shield, you gain the ability to move along vertical surfaces and across liquids on your turn without falling during the movement.",
+    "name": "Acrobatic Movement"
+  },
+  "monk-body-and-mind": {
+    "description": "You have honed your body and mind to the peak of perfection. Your Dexterity and Wisdom scores increase by 4. Your maximum for those scores is now 25.",
+    "name": "Body and Mind"
+  },
+  "monk-deflect-attacks": {
+    "description": "When an attack roll hits you and its damage includes Bludgeoning, Piercing, or Slashing damage, you can take a Reaction to reduce that damage by 1d10 + your Dexterity modifier + your Monk level. If you reduce the damage to 0, you can spend 1 Focus Point to redirect some of the attack's force: choose a creature within 5 feet (if the attack was melee) or within 60 feet and not behind Total Cover (if it was ranged). That creature makes a Dexterity saving throw or takes damage of the attack's type equal to two rolls of your Martial Arts die + your Dexterity modifier.",
+    "name": "Deflect Attacks"
+  },
+  "monk-deflect-attacks.mechanics.actions.0": {
+    "description": "Reduce damage from an attack by 1d10 + DEX mod + Monk level."
+  },
+  "monk-deflect-energy": {
+    "description": "You can now use your Deflect Attacks feature against any damage type, not just the damage from weapon attacks.",
+    "name": "Deflect Energy"
+  },
+  "monk-disciplined-survivor": {
+    "description": "Your physical and mental discipline grant you proficiency in all saving throws. Additionally, whenever you make a saving throw and fail, you can spend 1 Focus Point to reroll it, and you must use the new roll.",
+    "name": "Disciplined Survivor"
+  },
+  "monk-empowered-strikes": {
+    "description": "Whenever you deal damage with your Unarmed Strike, it can deal your choice of Force damage or its normal damage type.",
+    "name": "Empowered Strikes"
+  },
+  "monk-epic-boon": {
+    "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
+    "name": "Epic Boon"
+  },
+  "monk-evasion": {
+    "description": "When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail.",
+    "name": "Evasion"
+  },
+  "monk-extra-attack": {
+    "description": "You can attack twice, instead of once, whenever you take the Attack action on your turn.",
+    "name": "Extra Attack"
+  },
+  "monk-flurry-of-blows": {
+    "description": "Immediately after you take the Attack action on your turn, you can spend 1 Focus Point to make two Unarmed Strikes as a Bonus Action.",
+    "name": "Flurry of Blows"
+  },
+  "monk-flurry-of-blows.mechanics.actions.0": {
+    "description": "Spend 1 Focus Point to make 2 unarmed strikes.",
+    "label": "Flurry of Blows",
+    "summary": "Spend 1 Focus Point to make 2 Unarmed Strikes"
+  },
+  "monk-focus": {
+    "description": "Your training allows you to harness mystical energy called Focus Points. You have a number of Focus Points equal to your Monk level. You can spend these points to fuel various focus features such as Flurry of Blows, Patient Defense, and Step of the Wind. You regain all spent Focus Points when you finish a Short or Long Rest.",
+    "name": "Monk's Focus"
+  },
+  "monk-heightened-focus": {
+    "description": "Your Flurry of Blows, Patient Defense, and Step of the Wind gain additional benefits. Flurry: you can make 3 unarmed strikes instead of 2. Patient Defense: you gain a number of Temp HP equal to twice your Martial Arts die. Step: your jump distance is tripled for that turn.",
+    "name": "Heightened Focus"
+  },
+  "monk-martial-arts": {
+    "description": "Your practice of martial arts gives you mastery of combat styles that use unarmed strikes and monk weapons. You gain benefits while unarmored: you can use Dexterity for attack and damage rolls with unarmed strikes and monk weapons, you can roll your Martial Arts die in place of normal damage, and when you use the Attack action you can make one unarmed strike as a Bonus Action.",
+    "name": "Martial Arts"
+  },
+  "monk-martial-arts.mechanics.actions.0": {
+    "description": "Make one unarmed strike after taking the Attack action.",
+    "label": "Martial Arts Strike",
+    "summary": "Make one Unarmed Strike after the Attack action"
+  },
+  "monk-martial-arts.mechanics.rider": {
+    "label": "Martial Arts"
+  },
+  "monk-open-hand-fleet-step": {
+    "description": "When you take a Bonus Action other than Step of the Wind, you can also use Step of the Wind immediately after that Bonus Action.",
+    "name": "Fleet Step"
+  },
+  "monk-open-hand-fleet-step.mechanics.actions.0": {
+    "description": "After you take a Bonus Action other than Step of the Wind, also use Step of the Wind.",
+    "label": "Fleet Step",
+    "summary": "After another Bonus Action, also use Step of the Wind"
+  },
+  "monk-open-hand-quivering-palm": {
+    "description": "You gain the ability to set up lethal vibrations in someone's body. When you hit a creature with an Unarmed Strike, you can expend 4 Focus Points to start imperceptible vibrations that last for a number of days equal to your Monk level. You can use an action to end the vibrations (or forgo one of your attacks when you take the Attack action). The creature must make a Constitution saving throw, taking 10d12 Force damage on a failed save or half as much damage on a successful one. You can have only one creature affected at a time.",
+    "name": "Quivering Palm"
+  },
+  "monk-open-hand-quivering-palm.mechanics.actions.0": {
+    "description": "Spend 4 Focus Points when you hit a creature with an Unarmed Strike to set up lethal vibrations. On ending them the creature makes a CON save, taking 10d12 Force damage on a failure or half as much on a success.",
+    "summary": "4 Focus on an Unarmed hit: set vibrations, 10d12 Force"
+  },
+  "monk-open-hand-technique": {
+    "description": "Whenever you hit a creature with a Flurry of Blows attack, you can impose one of the following effects on the target: Addle — it can't make Opportunity Attacks until the start of its next turn; Push — it must succeed on a Strength save or be pushed up to 15 feet away from you; or Topple — it must succeed on a Dexterity save or have the Prone condition.",
+    "name": "Open Hand Technique"
+  },
+  "monk-open-hand-wholeness-of-body": {
+    "description": "You gain the ability to heal yourself. As a Bonus Action, you regain Hit Points equal to one roll of your Martial Arts die plus your Wisdom modifier (minimum of 1 Hit Point). You can use this a number of times equal to your Wisdom modifier (minimum of once), regaining all expended uses when you finish a Long Rest.",
+    "name": "Wholeness of Body"
+  },
+  "monk-open-hand-wholeness-of-body.mechanics.actions.0": {
+    "description": "Bonus Action: regain Martial Arts die + WIS modifier Hit Points (min 1). No Focus cost.",
+    "label": "Wholeness of Body",
+    "summary": "Regain Martial Arts die + WIS Hit Points (free)"
+  },
+  "monk-patient-defense": {
+    "description": "You can take the Disengage action as a Bonus Action. If you spend 1 Focus Point when you do so, you can also take the Dodge action as part of that Bonus Action.",
+    "name": "Patient Defense"
+  },
+  "monk-patient-defense.mechanics.actions.0": {
+    "description": "Disengage as a Bonus Action (free). Spend 1 Focus: also Dodge.",
+    "label": "Patient Defense",
+    "summary": "Disengage as a Bonus Action; spend 1 Focus: also Dodge"
+  },
+  "monk-perfect-focus": {
+    "description": "When you have fewer than 4 Focus Points at the start of your turn, you regain Focus Points until you have 4.",
+    "name": "Perfect Focus"
+  },
+  "monk-self-restoration": {
+    "description": "At the end of each of your turns, you can remove one of the following conditions from yourself: Charmed, Frightened, or Poisoned. In addition, forgoing food and drink doesn't give you levels of Exhaustion.",
+    "name": "Self-Restoration"
+  },
+  "monk-slow-fall": {
+    "description": "You can use your Reaction when you fall to reduce any Falling damage you take by an amount equal to five times your Monk level.",
+    "name": "Slow Fall"
+  },
+  "monk-step-of-the-wind": {
+    "description": "You can take the Dash action as a Bonus Action. If you spend 1 Focus Point when you do so, you can also take the Disengage action as part of that Bonus Action, and your jump distance is doubled for the turn.",
+    "name": "Step of the Wind"
+  },
+  "monk-step-of-the-wind.mechanics.actions.0": {
+    "description": "Dash as a Bonus Action (free). Spend 1 Focus: also Disengage + double jump.",
+    "label": "Step of the Wind",
+    "summary": "Dash as a Bonus Action; 1 Focus: also Disengage + jump"
+  },
+  "monk-stunning-strike": {
+    "description": "Once per turn when you hit a creature with a Monk weapon or an Unarmed Strike, you can expend 1 Focus Point to attempt a stunning strike. The target must make a Constitution saving throw. On a failed save, it has the Stunned condition until the start of your next turn. On a successful save, its Speed is halved until the start of your next turn, and the next attack roll made against it before then has Advantage.",
+    "name": "Stunning Strike"
+  },
+  "monk-stunning-strike.mechanics.actions.0": {
+    "description": "Once per turn after hitting with a Monk weapon or an Unarmed Strike, spend 1 Focus Point: the target makes a CON save or is Stunned until the start of your next turn (on a success its Speed is halved and the next attack against it has Advantage).",
+    "summary": "On a Monk-weapon/Unarmed hit, 1 Focus: CON save or Stunned"
+  },
+  "monk-superior-defense": {
+    "description": "At the start of your turn, you can expend 3 Focus Points to bolster yourself against harm for 1 minute or until you have the Incapacitated condition. During that time, you have Resistance to all damage except Force damage.",
+    "name": "Superior Defense"
+  },
+  "monk-superior-defense.grants.0": {
+    "label": "Superior Defense"
+  },
+  "monk-superior-defense.mechanics.actions.0": {
+    "description": "Expend 3 Focus Points: Resistance to all damage except Force for 1 minute.",
+    "label": "Superior Defense",
+    "summary": "3 Focus: Resistance to all damage but Force for 1 min"
+  },
+  "monk-unarmored-defense": {
+    "description": "While you are wearing no armor and not wielding a shield, your AC equals 10 + your Dexterity modifier + your Wisdom modifier.",
+    "name": "Unarmored Defense"
+  },
+  "monk-unarmored-movement": {
+    "description": "Your speed increases by 10 feet while you are not wearing armor or wielding a shield. This bonus increases as you gain Monk levels: +15 ft at 6th, +20 ft at 10th, +25 ft at 14th, and +30 ft at 18th level.",
+    "name": "Unarmored Movement"
+  },
+  "monk-unarmored-movement.mechanics.rider": {
+    "label": "Speed"
+  },
+  "monk-uncanny-metabolism": {
+    "description": "When you roll Initiative, you can regain all expended Focus Points. When you do so, roll your Martial Arts die and regain a number of Hit Points equal to your Monk level + the number rolled. Once you use this feature, you can't do so again until you finish a Long Rest.",
+    "name": "Uncanny Metabolism"
+  },
+  "paladin-abjure-foes": {
+    "description": "As a Magic action, you can expend one use of Channel Divinity to present your holy symbol. Each enemy within 60 feet must make a Wisdom save or be Frightened for 1 minute (save ends).",
+    "name": "Abjure Foes"
+  },
+  "paladin-abjure-foes.mechanics.actions.0": {
+    "description": "Channel Divinity: enemies within 60 ft make a WIS save or are Frightened.",
+    "summary": "Enemies within 60 ft: WIS save or Frightened"
+  },
+  "paladin-aura-expansion": {
+    "description": "Your Aura of Protection and Aura of Courage now extend to 30 feet.",
+    "name": "Aura Expansion"
+  },
+  "paladin-aura-of-courage": {
+    "description": "You and friendly creatures within 10 feet of you can't be frightened while you are conscious. At 18th level, the range increases to 30 feet.",
+    "name": "Aura of Courage"
+  },
+  "paladin-aura-of-protection": {
+    "description": "Whenever you or a friendly creature within 10 feet of you must make a saving throw, the creature gains a bonus equal to your Charisma modifier (minimum +1). At 18th level, the range increases to 30 feet.",
+    "name": "Aura of Protection"
+  },
+  "paladin-channel-divinity": {
+    "description": "You can channel divine energy to fuel magical effects. You start with Divine Sense as a Channel Divinity option. You have 2 uses, regain one on a Short Rest, and regain all on a Long Rest. You gain an additional use at level 11.",
+    "name": "Channel Divinity"
+  },
+  "paladin-devotion-aura-of-devotion": {
+    "description": "You and friendly creatures within 10 feet of you can't be charmed while you are conscious. At 18th level, the range increases to 30 feet.",
+    "name": "Aura of Devotion"
+  },
+  "paladin-devotion-holy-nimbus": {
+    "description": "As a Bonus Action, you imbue your Aura of Protection with holy power for 10 minutes or until you end it (no action required). You emit a 30-foot Emanation of Bright Light (sunlight). At the start of each of your turns, each enemy in the emanation takes Radiant damage equal to your Charisma modifier plus your Proficiency Bonus. You have Advantage on any saving throw forced on you by a Fiend or an Undead. Once you use this feature, you can't use it again until you finish a Long Rest, though you can restore your use of it by expending a level 5 spell slot (no action required).",
+    "name": "Holy Nimbus"
+  },
+  "paladin-devotion-holy-nimbus.grants.0": {
+    "label": "Holy Nimbus"
+  },
+  "paladin-devotion-holy-nimbus.grants.0.grants.0": {
+    "description": "Saving throws forced on you by a Fiend or an Undead"
+  },
+  "paladin-devotion-holy-nimbus.mechanics.actions.0": {
+    "description": "Imbue your Aura of Protection for 10 minutes: 30-ft Bright Light emanation; each enemy starting its turn in it takes radiant damage equal to your Charisma modifier + Proficiency Bonus.",
+    "label": "Holy Nimbus",
+    "summary": "30 ft Bright Light aura; enemies inside take CHA + PB"
+  },
+  "paladin-devotion-sacred-weapon": {
+    "description": "When you take the Attack action, you can expend one use of Channel Divinity to imbue one Melee weapon you're holding with positive energy. For 10 minutes or until you use this feature again, you add your Charisma modifier to attack rolls with that weapon (minimum bonus of +1), and each hit deals its normal damage type or Radiant damage. The weapon emits Bright Light in a 20-foot radius and Dim Light 20 feet beyond that. You can end the effect early (no action required); it also ends if you stop carrying the weapon.",
+    "name": "Sacred Weapon"
+  },
+  "paladin-devotion-sacred-weapon.grants.0": {
+    "label": "Sacred Weapon"
+  },
+  "paladin-devotion-sacred-weapon.mechanics.actions.0": {
+    "description": "Channel Divinity (on the Attack action): add CHA (min +1) to attack rolls with one Melee weapon for 10 minutes; hits may deal Radiant damage.",
+    "label": "Sacred Weapon",
+    "summary": "Add CHA to attacks with one weapon for 10 min, Radiant"
+  },
+  "paladin-devotion-smite-of-protection": {
+    "description": "Your magical smite now radiates protective energy. Whenever you cast Divine Smite, you and your allies have Half Cover while in your Aura of Protection. The aura has this benefit until the start of your next turn.",
+    "name": "Smite of Protection"
+  },
+  "paladin-divine-smite": {
+    "description": "You always have the Divine Smite spell prepared. You can cast it without expending a spell slot, but you must finish a Long Rest before you can cast it this way again.",
+    "name": "Paladin's Smite"
+  },
+  "paladin-epic-boon": {
+    "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
+    "name": "Epic Boon"
+  },
+  "paladin-extra-attack": {
+    "description": "You can attack twice, instead of once, whenever you take the Attack action on your turn.",
+    "name": "Extra Attack"
+  },
+  "paladin-faithful-steed": {
+    "description": "You always have the Find Steed spell prepared. You can also cast it once without expending a spell slot, regaining the ability to do so when you finish a Long Rest. When you cast it this way, the steed is Celestial, Fey, or Fiend (your choice).",
+    "name": "Faithful Steed"
+  },
+  "paladin-fighting-style": {
+    "description": "You adopt a particular style of fighting as your specialty. Choose one Fighting Style feat. You can't take the same Fighting Style more than once, even if you get to choose again later.",
+    "name": "Fighting Style"
+  },
+  "paladin-fighting-style-defense": {
+    "description": "While you are wearing armor, you gain a +1 bonus to AC.",
+    "name": "Fighting Style: Defense"
+  },
+  "paladin-lay-on-hands": {
+    "description": "You have a pool of healing power equal to 5 times your Paladin level. As a Bonus Action, you can touch a creature and draw power from the pool to restore a number of Hit Points to that creature, up to the maximum remaining in your pool. You can also expend 5 Hit Points from the pool to remove the Poisoned condition from the creature instead of restoring Hit Points.",
+    "name": "Lay on Hands"
+  },
+  "paladin-lay-on-hands.mechanics.actions.0": {
+    "description": "Touch a creature to restore HP from your pool."
+  },
+  "paladin-radiant-strikes": {
+    "description": "When you hit a target with a Melee weapon or an Unarmed Strike, the target takes an extra 1d8 Radiant damage.",
+    "name": "Radiant Strikes"
+  },
+  "paladin-restoring-touch": {
+    "description": "When you use Lay on Hands on a creature, you can also end one of the following conditions on it: Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned.",
+    "name": "Restoring Touch"
+  },
+  "paladin-spellcasting": {
+    "description": "You have learned to draw on divine magic through meditation and prayer. You use Charisma as your spellcasting ability and prepare spells from the paladin spell list after each long rest.",
+    "name": "Spellcasting"
+  },
+  "paladin-weapon-mastery": {
+    "description": "Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency. Whenever you finish a Long Rest, you can change the kinds of weapons you chose.",
+    "name": "Weapon Mastery"
+  },
+  "ranger-deft-explorer": {
+    "description": "Thanks to your travels, you gain Expertise: choose one of your skill proficiencies with which you lack Expertise, and you gain Expertise in that skill. In addition, you know two languages of your choice.",
+    "name": "Deft Explorer"
+  },
+  "ranger-epic-boon": {
+    "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
+    "name": "Epic Boon"
+  },
+  "ranger-expertise": {
+    "description": "Choose two of your skill proficiencies with which you lack Expertise. You gain Expertise in those skills.",
+    "name": "Expertise"
+  },
+  "ranger-extra-attack": {
+    "description": "You can attack twice, instead of once, whenever you take the Attack action on your turn.",
+    "name": "Extra Attack"
+  },
+  "ranger-favored-enemy": {
+    "description": "You always have the Hunter's Mark spell prepared. You can cast it without expending a spell slot a limited number of times per Long Rest (see the Favored Enemy column of the Ranger table for the count).",
+    "name": "Favored Enemy"
+  },
+  "ranger-feral-senses": {
+    "description": "You gain Blindsight with a range of 30 feet.",
+    "name": "Feral Senses"
+  },
+  "ranger-fighting-style": {
+    "description": "You adopt a particular style of fighting as your specialty. Choose one Fighting Style feat. You can't take the same Fighting Style more than once.",
+    "name": "Fighting Style"
+  },
+  "ranger-foe-slayer": {
+    "description": "The die rolled for your Hunter's Mark spell is a d10 rather than a d6. In addition, you don't need to maintain Concentration on the spell to keep it active for its full duration (it still ends if you cast Hunter's Mark again, or have the Incapacitated condition or die).",
+    "name": "Foe Slayer"
+  },
+  "ranger-hunter-defensive-tactics": {
+    "description": "Choose one option, re-selectable on a Short or Long Rest. Escape the Horde: Opportunity Attacks have Disadvantage against you. Multiattack Defense: when a creature hits you with an attack roll, that creature has Disadvantage on all other attack rolls against you this turn.",
+    "name": "Defensive Tactics"
+  },
+  "ranger-hunter-defensive-tactics.grants.0": {
+    "label": "Defensive Tactics"
+  },
+  "ranger-hunter-defensive-tactics.grants.0.options.escape-the-horde": {
+    "label": "Escape the Horde"
+  },
+  "ranger-hunter-defensive-tactics.grants.0.options.escape-the-horde.grants.0": {
+    "description": "Opportunity Attacks have Disadvantage against you."
+  },
+  "ranger-hunter-defensive-tactics.grants.0.options.multiattack-defense": {
+    "label": "Multiattack Defense"
+  },
+  "ranger-hunter-defensive-tactics.grants.0.options.multiattack-defense.grants.multiattack-defense": {
+    "description": "That creature has Disadvantage on all other attack rolls against you this turn.",
+    "name": "Multiattack Defense",
+    "trigger": "When a creature hits you with an attack roll."
+  },
+  "ranger-hunter-hunters-lore": {
+    "description": "While a creature is marked by your Hunter's Mark, you know whether that creature has any Immunities, Resistances, or Vulnerabilities, and if so, what they are.",
+    "name": "Hunter's Lore"
+  },
+  "ranger-hunter-hunters-prey": {
+    "description": "You gain one of the following feature options of your choice. Whenever you finish a Short or Long Rest, you can replace the chosen option with the other one. Colossus Slayer. When you hit a creature with a weapon, the weapon deals an extra 1d8 damage to the target if it’s missing any of its Hit Points. You can deal this extra damage only once per turn. Horde Breaker. Once on each of your turns when you make an attack with a weapon, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target, that is within the weapon’s range, and that you haven’t attacked this turn.",
+    "name": "Hunter's Prey"
+  },
+  "ranger-hunter-hunters-prey.grants.0": {
+    "label": "Hunter's Prey"
+  },
+  "ranger-hunter-hunters-prey.grants.0.options.colossus-slayer": {
+    "label": "Colossus Slayer"
+  },
+  "ranger-hunter-hunters-prey.grants.0.options.horde-breaker": {
+    "label": "Horde Breaker"
+  },
+  "ranger-hunter-hunters-prey.grants.0.options.horde-breaker.grants.horde-breaker": {
+    "description": "Once on each of your turns when you make an attack with a weapon, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target, that is within the weapon’s range, and that you haven’t attacked this turn.",
+    "name": "Horde Breaker"
+  },
+  "ranger-hunter-superior-hunters-prey": {
+    "description": "Once per turn when you deal damage to a creature marked by your Hunter's Mark, you can also deal that spell's extra damage to a different creature you can see within 30 feet of the first creature.",
+    "name": "Superior Hunter's Prey"
+  },
+  "ranger-hunter-superior-hunters-defense": {
+    "description": "When you take damage, you can take a Reaction to give yourself Resistance to that damage and any other damage of the same type until the end of the current turn.",
+    "name": "Superior Hunter's Defense"
+  },
+  "ranger-hunter-superior-hunters-defense.grants.superior-hunters-defense": {
+    "description": "You can take a Reaction to give yourself Resistance to that damage and any other damage of the same type until the end of the current turn.",
+    "name": "Superior Hunter's Defense",
+    "trigger": "When you take damage."
+  },
+  "ranger-hunter-superior-hunters-defense.mechanics.actions.0": {
+    "description": "When you take damage, give yourself Resistance to that damage and any other damage of the same type until the end of the current turn."
+  },
+  "ranger-natures-veil": {
+    "description": "As a Bonus Action, you can give yourself the Invisible condition until the end of your next turn. You can use this feature a number of times equal to your Wisdom modifier (minimum of once), regaining all uses after a Long Rest.",
+    "name": "Nature's Veil"
+  },
+  "ranger-natures-veil.mechanics.actions.0": {
+    "description": "Become invisible until the start of your next turn."
+  },
+  "ranger-precise-hunter": {
+    "description": "You have Advantage on attack rolls against the target of your Hunter's Mark.",
+    "name": "Precise Hunter"
+  },
+  "ranger-precise-hunter.grants.0": {
+    "description": "Attacks against the target of your Hunter's Mark"
+  },
+  "ranger-relentless-hunter": {
+    "description": "Your Hunter's Mark no longer requires Concentration.",
+    "name": "Relentless Hunter"
+  },
+  "ranger-roving": {
+    "description": "Your Speed increases by 10 feet while you aren't wearing Heavy Armor, and you gain a Climbing speed and Swimming speed equal to your Speed.",
+    "name": "Roving"
+  },
+  "ranger-spellcasting": {
+    "description": "You have learned to use the magical essence of nature to cast spells. You use Wisdom as your spellcasting ability. In the 2024 rules, rangers are prepared casters who choose from the ranger spell list after each long rest.",
+    "name": "Spellcasting"
+  },
+  "ranger-tireless": {
+    "description": "As a Magic action, you can give yourself Temporary Hit Points equal to 1d8 + your Wisdom modifier (minimum of 1). You can use this a number of times equal to your Wisdom modifier (minimum of once), regaining all uses after a Long Rest. Whenever you finish a Short Rest, your Exhaustion level, if any, decreases by 1.",
+    "name": "Tireless"
+  },
+  "ranger-tireless.mechanics.actions.0": {
+    "description": "Gain 1d8 + WIS temporary hit points."
+  },
+  "ranger-weapon-mastery": {
+    "description": "You can use the mastery property of two kinds of Simple or Martial weapons of your choice. Whenever you finish a Long Rest, you can change which weapons you have chosen.",
+    "name": "Weapon Mastery"
+  },
+  "rogue-cunning-action": {
+    "description": "Your quick thinking and agility allow you to move and act quickly. You can take a Bonus Action on each of your turns in combat to take the Dash, Disengage, or Hide action.",
+    "name": "Cunning Action"
+  },
+  "rogue-cunning-action.mechanics.actions.0": {
+    "description": "Dash, Disengage, or Hide as a bonus action.",
+    "label": "Cunning Action"
+  },
+  "rogue-cunning-strike": {
+    "description": "When you deal Sneak Attack damage, you can forgo some dice to apply a special effect: Poison (forgo 1d6, CON save or Poisoned), Trip (forgo 1d6, DEX save or knocked Prone), Withdraw (forgo 1d6, Disengage after hit).",
+    "name": "Cunning Strike"
+  },
+  "rogue-cunning-strike.grants.poison": {
+    "description": "Constitution save or the target has the Poisoned condition for 1 minute (repeats the save at the end of each of its turns). Requires a Poisoner's Kit on your person.",
+    "name": "Poison"
+  },
+  "rogue-cunning-strike.grants.trip": {
+    "description": "If the target is Large or smaller, it must succeed on a Dexterity save or have the Prone condition.",
+    "name": "Trip"
+  },
+  "rogue-cunning-strike.grants.withdraw": {
+    "description": "Immediately after the attack, you move up to half your Speed without provoking Opportunity Attacks.",
+    "name": "Withdraw"
+  },
+  "rogue-devious-strikes": {
+    "description": "You learn additional Cunning Strike effects: Daze (forgo 2d6, CON save or on its next turn it can take only one of move/action/Bonus Action), Knock Out (forgo 6d6, CON save or Unconscious 1 minute), Obscure (forgo 3d6, DEX save or Blinded until end of its next turn).",
+    "name": "Devious Strikes"
+  },
+  "rogue-devious-strikes.grants.daze": {
+    "description": "Constitution save or on its next turn the target can do only one of the following: move, take an action, or take a Bonus Action.",
+    "name": "Daze"
+  },
+  "rogue-devious-strikes.grants.knock-out": {
+    "description": "Constitution save or the target has the Unconscious condition for 1 minute or until it takes any damage (repeats the save at the end of its turns).",
+    "name": "Knock Out"
+  },
+  "rogue-devious-strikes.grants.obscure": {
+    "description": "Dexterity save or the target has the Blinded condition until the end of its next turn.",
+    "name": "Obscure"
+  },
+  "rogue-elusive": {
+    "description": "You are so evasive that attackers rarely gain the upper hand against you. No attack roll has Advantage against you while you aren't Incapacitated.",
+    "name": "Elusive"
+  },
+  "rogue-epic-boon": {
+    "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
+    "name": "Epic Boon"
+  },
+  "rogue-evasion": {
+    "description": "When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail.",
+    "name": "Evasion"
+  },
+  "rogue-expertise": {
+    "description": "Choose two of your skill proficiencies or one skill proficiency and Thieves' Tools. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies. At 6th level, you can choose two more proficiencies to gain this benefit.",
+    "name": "Expertise"
+  },
+  "rogue-improved-cunning-strike": {
+    "description": "You can use up to two Cunning Strike effects when you deal Sneak Attack damage, paying the die cost for each effect.",
+    "name": "Improved Cunning Strike"
+  },
+  "rogue-reliable-talent": {
+    "description": "You have refined your chosen skills until they approach perfection. Whenever you make an ability check that lets you add your proficiency bonus, you can treat a d20 roll of 9 or lower as a 10.",
+    "name": "Reliable Talent"
+  },
+  "rogue-reliable-talent.grants.0": {
+    "description": "Treat a d20 of 9 or lower as a 10 on ability checks with your Proficiency Bonus"
+  },
+  "rogue-slippery-mind": {
+    "description": "Your cunning mind is exceptionally difficult to control. You gain proficiency in Wisdom and Charisma saving throws.",
+    "name": "Slippery Mind"
+  },
+  "rogue-sneak-attack": {
+    "description": "Once per turn, you can deal extra damage to one creature you hit with an attack if you have Advantage on the attack roll or if another enemy of the target is within 5 feet of it. The extra damage is a number of d6 equal to half your Rogue level (rounded up). The attack must use a Finesse or Ranged weapon.",
+    "name": "Sneak Attack"
+  },
+  "rogue-steady-aim": {
+    "description": "As a Bonus Action, you give yourself Advantage on your next attack roll on the current turn. You can use this feature only if you haven't moved during this turn, and after you use it, your speed is 0 until the end of the current turn.",
+    "name": "Steady Aim"
+  },
+  "rogue-steady-aim.mechanics.actions.0": {
+    "description": "Gain Advantage on next attack (no movement this turn).",
+    "label": "Steady Aim",
+    "summary": "Advantage on next attack (no movement this turn)"
+  },
+  "rogue-stroke-of-luck": {
+    "description": "You have an uncanny knack for succeeding when you need to. If your attack misses a target within range, you can turn the miss into a hit. Alternatively, if you fail an ability check, you can treat the d20 roll as a 20. Once you use this feature, you can't use it again until you finish a Short or Long Rest.",
+    "name": "Stroke of Luck"
+  },
+  "rogue-thief-fast-hands": {
+    "description": "You can use the Bonus Action granted by Cunning Action to make a Dexterity (Sleight of Hand) check, use Thieves' Tools to disarm a trap or open a lock, or take the Use an Object action.",
+    "name": "Fast Hands"
+  },
+  "rogue-thief-fast-hands.mechanics.actions.0": {
+    "description": "Sleight of Hand, Thieves' Tools, or Use an Object.",
+    "summary": "Sleight of Hand, Thieves' Tools, or Use an Object"
+  },
+  "rogue-thief-reflexes": {
+    "description": "You have become adept at laying ambushes and quickly escaping danger. You can take two turns during the first round of any combat. You take your first turn at your normal initiative and your second turn at your initiative minus 10. You can't use this feature when you are surprised.",
+    "name": "Thief's Reflexes"
+  },
+  "rogue-thief-second-story-work": {
+    "description": "Climber: You gain a Climb Speed equal to your Speed. Jumper: You can determine your jump distance using your Dexterity rather than your Strength.",
+    "name": "Second-Story Work"
+  },
+  "rogue-thief-supreme-sneak": {
+    "description": "You gain the Stealth Attack Cunning Strike option (Cost: 1d6). If you have the Hide action's Invisible condition, this attack doesn't end that condition on you if you end the turn behind Three-Quarters Cover or Total Cover.",
+    "name": "Supreme Sneak"
+  },
+  "rogue-thief-supreme-sneak.grants.stealth-attack": {
+    "description": "If you have the Hide action's Invisible condition, this attack doesn't end that condition on you, provided you end the turn behind Three-Quarters Cover or Total Cover.",
+    "name": "Stealth Attack"
+  },
+  "rogue-thief-use-magic-device": {
+    "description": "Attunement: You can attune to up to four magic items at once. Charges: Whenever you use a magic item property that expends charges, roll 1d6; on a 6 you use the property without expending the charges. Scrolls: You can use any Spell Scroll, using Intelligence as your spellcasting ability; you cast cantrips and level-1 spells reliably, while a higher-level scroll requires an Intelligence (Arcana) check (DC 10 + the spell's level).",
+    "name": "Use Magic Device"
+  },
+  "rogue-thieves-cant": {
+    "description": "You picked up various languages in the communities where you plied your roguish talents. You know Thieves' Cant and one other language of your choice, which you choose from the language tables.",
+    "name": "Thieves' Cant"
+  },
+  "rogue-uncanny-dodge": {
+    "description": "When an attacker that you can see hits you with an attack, you can use your Reaction to halve the attack's damage against you.",
+    "name": "Uncanny Dodge"
+  },
+  "rogue-uncanny-dodge.mechanics.actions.0": {
+    "description": "Halve the damage of an attack that hits you."
+  },
+  "rogue-weapon-mastery": {
+    "description": "You can use the mastery property of two kinds of Simple or Martial weapons of your choice. Whenever you finish a Long Rest, you can change which weapons you have chosen.",
+    "name": "Weapon Mastery"
+  },
+  "sorcerer-arcane-apotheosis": {
+    "description": "While your Innate Sorcery feature is active, you can use one Metamagic option on each of your turns without spending Sorcery Points on it.",
+    "name": "Arcane Apotheosis"
+  },
+  "sorcerer-asi": {
+    "description": "You can increase one ability score by 2, or two ability scores by 1 each. Alternatively, you can choose a feat. You cannot increase an ability score above 20 using this feature.",
+    "name": "Ability Score Improvement"
+  },
+  "sorcerer-draconic-sorcery-resilience": {
+    "description": "Your Hit Point maximum increases by 3, and it increases by 1 whenever you gain another Sorcerer level. Parts of you are also covered by dragon-like scales. While you aren’t wearing armor, your base Armor Class equals 10 plus your Dexterity and Charisma modifiers.",
+    "name": "Draconic Resilience"
+  },
+  "sorcerer-draconic-sorcery-spells": {
+    "description": "When you reach a Sorcerer level specified in the Draconic Spells table, you thereafter always have the listed spells prepared. Sorcerer level 3: Alter Self, Chromatic Orb, Command, Dragon’s Breath. Level 5: Fear, Fly. Level 7: Arcane Eye, Charm Monster. Level 9: Legend Lore, Summon Dragon.",
+    "name": "Draconic Spells"
+  },
+  "sorcerer-draconic-sorcery-elemental-affinity": {
+    "description": "Choose a damage type associated with dragons: Acid, Cold, Fire, Lightning, or Poison. You have Resistance to that type, and when you cast a spell that deals that damage, you can add your Charisma modifier to one damage roll.",
+    "name": "Elemental Affinity"
+  },
+  "sorcerer-draconic-sorcery-dragon-wings": {
+    "description": "As a Bonus Action, you can cause draconic wings to appear on your back. The wings last for 1 hour or until you dismiss them (no action required). For the duration, you have a Fly Speed of 60 feet. Once you use this feature, you can’t use it again until you finish a Long Rest unless you spend 3 Sorcery Points (no action required) to restore your use of it.",
+    "name": "Dragon Wings"
+  },
+  "sorcerer-draconic-sorcery-dragon-companion": {
+    "description": "You can cast Summon Dragon without a Material component. You can also cast it once without a spell slot, and you regain the ability to cast it in this way when you finish a Long Rest. Whenever you start casting the spell, you can modify it so that it doesn’t require Concentration. If you do so, the spell’s duration becomes 1 minute for that casting.",
+    "name": "Dragon Companion"
+  },
+  "sorcerer-draconic-sorcery-dragon-wings.grants.0": {
+    "label": "Dragon Wings"
+  },
+  "sorcerer-draconic-sorcery-dragon-wings.mechanics.actions.0": {
+    "description": "Cause draconic wings to appear (Fly 60 ft for 1 hour)."
+  },
+  "sorcerer-draconic-sorcery-elemental-affinity.grants.0": {
+    "label": "Draconic Damage Type"
+  },
+  "sorcerer-draconic-sorcery-elemental-affinity.grants.0.options.acid": {
+    "label": "Acid"
+  },
+  "sorcerer-draconic-sorcery-elemental-affinity.grants.0.options.cold": {
+    "label": "Cold"
+  },
+  "sorcerer-draconic-sorcery-elemental-affinity.grants.0.options.fire": {
+    "label": "Fire"
+  },
+  "sorcerer-draconic-sorcery-elemental-affinity.grants.0.options.lightning": {
+    "label": "Lightning"
+  },
+  "sorcerer-draconic-sorcery-elemental-affinity.grants.0.options.poison": {
+    "label": "Poison"
+  },
+  "sorcerer-epic-boon": {
+    "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
+    "name": "Epic Boon"
+  },
+  "sorcerer-font-of-magic": {
+    "description": "You have a pool of sorcery points equal to your sorcerer level. You can use sorcery points to fuel Metamagic options, and you can convert spell slots into sorcery points or sorcery points into spell slots as a bonus action. You regain all spent sorcery points on a long rest.",
+    "name": "Font of Magic"
+  },
+  "sorcerer-innate-sorcery": {
+    "description": "As a Bonus Action, you can activate your Innate Sorcery for 1 minute. While active, you have Advantage on all spell attack rolls and a +1 bonus to your spell save DC. You can use this feature twice, and you regain all expended uses when you finish a Long Rest.",
+    "name": "Innate Sorcery"
+  },
+  "sorcerer-innate-sorcery.grants.0": {
+    "label": "Innate Sorcery"
+  },
+  "sorcerer-innate-sorcery.grants.0.grants.1": {
+    "description": "Sorcerer spell attack rolls"
+  },
+  "sorcerer-innate-sorcery.mechanics.actions.0": {
+    "description": "Activate Innate Sorcery for 1 minute."
+  },
+  "sorcerer-metamagic": {
+    "description": "You gain the ability to twist your spells to suit your needs. You learn two Metamagic options of your choice (Careful, Distant, Empowered, Extended, Heightened, Quickened, Seeking, Subtle, Transmuted, or Twinned Spell). You learn additional options at higher levels. You can use only one Metamagic option on a spell unless otherwise noted.",
+    "name": "Metamagic"
+  },
+  "sorcerer-sorcerous-restoration": {
+    "description": "When you finish a Short Rest, you can regain expended Sorcery Points, but no more than a number equal to half your Sorcerer level (rounded down). After you use this feature, you can't use it again until you finish a Long Rest.",
+    "name": "Sorcerous Restoration"
+  },
+  "sorcerer-sorcerous-restoration.mechanics.actions.0": {
+    "description": "On a Short Rest, regain up to ⌊level/2⌋ Sorcery Points. Once per Long Rest.",
+    "label": "Recover Sorcery Points",
+    "summary": "On a Short Rest, regain up to half level Sorcery Points"
+  },
+  "sorcerer-sorcery-incarnate": {
+    "description": "If you have no uses of Innate Sorcery left, you can still activate it by spending 2 Sorcery Points when you take the Bonus Action. In addition, while your Innate Sorcery is active, you can use up to two Metamagic options on each spell you cast rather than one.",
+    "name": "Sorcery Incarnate"
+  },
+  "sorcerer-spellcasting": {
+    "description": "You can cast sorcerer spells using Charisma as your spellcasting ability. You know a limited number of spells and can cast them using spell slots. You learn additional spells as you gain levels.",
+    "name": "Spellcasting"
+  },
+  "warlock-asi": {
+    "description": "You can increase one ability score by 2, or two ability scores by 1 each. Alternatively, you can choose a feat. You cannot increase an ability score above 20 using this feature.",
+    "name": "Ability Score Improvement"
+  },
+  "warlock-contact-patron": {
+    "description": "You always have the Contact Other Plane spell prepared. You can cast the spell without expending a spell slot to contact your patron, and you automatically succeed on the spell's saving throw. Once you cast it in this way, you can't do so again until you finish a Long Rest.",
+    "name": "Contact Patron"
+  },
+  "warlock-eldritch-invocations": {
+    "description": "You gain one Eldritch Invocation of your choice, such as Pact of the Tome. These are fragments of forbidden knowledge that imbue you with an abiding magical ability. You learn additional invocations at higher levels (per the Eldritch Invocations column) and can replace one invocation you know when you gain a level.",
+    "name": "Eldritch Invocations"
+  },
+  "warlock-eldritch-master": {
+    "description": "Once per Long Rest, you can regain all your expended Pact Magic spell slots.",
+    "name": "Eldritch Master"
+  },
+  "warlock-epic-boon": {
+    "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
+    "name": "Epic Boon"
+  },
+  "warlock-fiend-patron-dark-ones-blessing": {
+    "description": "When you reduce an enemy to 0 HP, you gain Temporary Hit Points equal to your Charisma modifier + your Warlock level (minimum 1). You also gain this benefit if someone else reduces an enemy within 10 feet of you to 0 HP.",
+    "name": "Dark One's Blessing"
+  },
+  "warlock-fiend-patron-dark-ones-own-luck": {
+    "description": "When you make an ability check or a saving throw, you can use this feature to add 1d10 to your roll. You can do so after seeing the roll but before any of the roll’s effects occur. You can use this feature a number of times equal to your Charisma modifier (minimum of once), but you can use it no more than once per roll. You regain all expended uses when you finish a Long Rest.",
+    "name": "Dark One's Own Luck"
+  },
+  "warlock-fiend-patron-dark-ones-blessing.grants.0": {
+    "trigger": "when you reduce an enemy to 0 HP (or one within 10 ft)"
+  },
+  "warlock-fiend-patron-fiendish-resilience": {
+    "description": "Choose one damage type other than Force whenever you finish a Short or Long Rest. You have Resistance to that damage type until you choose a different one.",
+    "name": "Fiendish Resilience"
+  },
+  "warlock-fiend-patron-hurl-through-hell": {
+    "description": "Once per turn when you hit a creature with an attack roll, you can try to instantly transport the target through the Lower Planes. The target must succeed on a Charisma saving throw against your spell save DC, or the target disappears and hurtles through a nightmare landscape. The target takes 8d10 Psychic damage if it isn’t a Fiend, and it has the Incapacitated condition until the end of your next turn, when it returns to the space it previously occupied or the nearest unoccupied space. Once you use this feature, you can’t use it again until you finish a Long Rest unless you expend a Pact Magic spell slot (no action required) to restore your use of it.",
+    "name": "Hurl Through Hell"
+  },
+  "warlock-fiend-patron-fiendish-resilience.grants.0": {
+    "label": "Fiendish Resilience"
+  },
+  "warlock-magical-cunning": {
+    "description": "If all your Pact Magic spell slots are expended, you can perform a special ritual for 1 minute to regain half of them (rounded up). Once you do so, you can't do it again until you finish a Long Rest.",
+    "name": "Magical Cunning"
+  },
+  "warlock-mystic-arcanum-6th": {
+    "description": "Your patron bestows upon you a magical secret called a Mystic Arcanum. Choose one 6th-level warlock spell. You can cast it once without expending a spell slot. You regain the ability to do so after a long rest.",
+    "name": "Mystic Arcanum (6th level)"
+  },
+  "warlock-mystic-arcanum-7th": {
+    "description": "You gain a 7th-level Mystic Arcanum. Choose one 7th-level warlock spell. You can cast it once without expending a spell slot, regaining the ability after a long rest.",
+    "name": "Mystic Arcanum (7th level)"
+  },
+  "warlock-mystic-arcanum-8th": {
+    "description": "You gain an 8th-level Mystic Arcanum. Choose one 8th-level warlock spell. You can cast it once without expending a spell slot, regaining the ability after a long rest.",
+    "name": "Mystic Arcanum (8th level)"
+  },
+  "warlock-mystic-arcanum-9th": {
+    "description": "You gain a 9th-level Mystic Arcanum. Choose one 9th-level warlock spell. You can cast it once without expending a spell slot, regaining the ability after a long rest.",
+    "name": "Mystic Arcanum (9th level)"
+  },
+  "warlock-pact-magic": {
+    "description": "Your arcane research and the magic bestowed on you by your patron allow you to cast warlock spells. Charisma is your spellcasting ability. Your pact magic spell slots recover on a short or long rest, unlike other casters.",
+    "name": "Pact Magic"
+  },
+  "wizard-arcane-recovery": {
+    "description": "Once per Long Rest, when you finish a Short Rest, you can choose expended spell slots to recover. The slots can have a combined level equal to no more than half your wizard level (rounded up), and none of the slots can be 6th level or higher. For example, if you're a level 4 Wizard, you can recover up to two levels' worth of spell slots, regaining either one 2nd-level spell slot or two 1st-level spell slots.",
+    "name": "Arcane Recovery"
+  },
+  "wizard-arcane-recovery.mechanics.actions.0": {
+    "description": "On a Short Rest, recover expended spell slots with total level ≤ ⌈wizard-level/2⌉ (no slot above 5th). Once per Long Rest.",
+    "label": "Recover Spell Slots",
+    "summary": "On a Short Rest, recover slots up to half Wizard level"
+  },
+  "wizard-asi": {
+    "description": "You can increase one ability score by 2, or two ability scores by 1 each. Alternatively, you can choose a feat. You cannot increase an ability score above 20 using this feature.",
+    "name": "Ability Score Improvement"
+  },
+  "wizard-epic-boon": {
+    "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
+    "name": "Epic Boon"
+  },
+  "wizard-evoker-empowered-evocation": {
+    "description": "Whenever you cast a Wizard Evocation spell, you can add your Intelligence modifier to one damage roll of that spell.",
+    "name": "Empowered Evocation"
+  },
+  "wizard-evoker-overchannel": {
+    "description": "You can increase the power of your spells. When you cast a Wizard spell with a spell slot of levels 1–5 that deals damage, you can deal maximum damage with that spell on the turn you cast it. The first time you do so, you suffer no adverse effect. If you use this feature again before you finish a Long Rest, you take 2d12 Necrotic damage for each level of the spell slot immediately after you cast it. This damage ignores Resistance and Immunity. Each time you use this feature again before finishing a Long Rest, the Necrotic damage per spell level increases by 1d12.",
+    "name": "Overchannel"
+  },
+  "wizard-evoker-evocation-savant": {
+    "description": "Choose two Wizard spells from the Evocation school, each of which must be no higher than level 2, and add them to your spellbook for free. In addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Evocation school to your spellbook for free. The chosen spell must be of a level for which you have spell slots.",
+    "name": "Evocation Savant"
+  },
+  "wizard-evoker-potent-cantrip": {
+    "description": "When you cast a cantrip at a creature and miss with the attack roll or the target succeeds on the saving throw, the target takes half the cantrip's damage (if any) but no additional effect.",
+    "name": "Potent Cantrip"
+  },
+  "wizard-evoker-sculpt-spells": {
+    "description": "You can create pockets of relative safety within the effects of your evocations. When you cast an Evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 plus the spell’s level. The chosen creatures automatically succeed on their saving throws against the spell, and they take no damage if they would normally take half damage on a successful save.",
+    "name": "Sculpt Spells"
+  },
+  "wizard-memorize-spell": {
+    "description": "Whenever you finish a Short Rest, you can study your spellbook and replace one of the level 1+ Wizard spells you have prepared with another level 1+ spell from your spellbook. (2024: there is no once-per-Long-Rest limit.)",
+    "name": "Memorize Spell"
+  },
+  "wizard-ritual-adept": {
+    "description": "You can cast any spell as a Ritual if that spell has the Ritual tag and the spell is in your spellbook. You needn't have the spell prepared, but you must have your spellbook in hand while you cast the Ritual.",
+    "name": "Ritual Adept"
+  },
+  "wizard-scholar": {
+    "description": "While studying magic, you also specialized in another field of study. Choose one of the following skills in which you have proficiency: Arcana, History, Investigation, Medicine, Nature, or Religion. You have Expertise in the chosen skill.",
+    "name": "Scholar"
+  },
+  "wizard-signature-spells": {
+    "description": "You always have two 3rd-level wizard spells prepared that don't count against your number of prepared spells. You can cast each of them once at 3rd level without expending a spell slot. You regain the ability to do so after a short or long rest.",
+    "name": "Signature Spells"
+  },
+  "wizard-spell-mastery": {
+    "description": "You have achieved such mastery over certain spells that you can cast them at will. Choose a 1st-level and a 2nd-level wizard spell in your spellbook. You can cast those spells at their lowest level without expending a spell slot when you have them prepared. You can change your selections by spending 8 hours in study.",
+    "name": "Spell Mastery"
+  },
+  "wizard-spellcasting": {
+    "description": "You have learned to cast arcane spells through study and memorization. Intelligence is your spellcasting ability. You prepare spells from your spellbook each day, choosing a number equal to your Intelligence modifier + your wizard level (minimum 1). You need a spellbook and an arcane focus or component pouch to cast.",
+    "name": "Spellcasting"
+  },
+  "monk-slow-fall.mechanics.actions.0": {
+    "description": "Slow Fall — reduce Falling damage you take by 5 × your Monk level"
+  },
+  "cleric-improved-blessed-strikes.grants.0": {
+    "label": "Blessed Strikes"
+  },
+  "cleric-improved-blessed-strikes.grants.0.options.divine-strike": {
+    "label": "Divine Strike"
+  },
+  "cleric-improved-blessed-strikes.grants.0.options.potent-spellcasting": {
+    "label": "Potent Spellcasting"
+  }
+}

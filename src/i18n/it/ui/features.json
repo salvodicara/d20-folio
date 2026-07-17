@@ -1,0 +1,26 @@
+{
+  "features": {
+    "searchPlaceholder": "Cerca privilegi...",
+    "classFeatures": "Privilegi di Classe",
+    "subclassFeatures": "Privilegi di Sottoclasse",
+    "racialTraits": "Tratti Razziali",
+    "feats": "Talenti",
+    "custom": "Personalizzati",
+    "passive": "Passivo",
+    "alwaysActive": "Sempre attivo: nessun uso richiesto",
+    "slotAction": "Azione",
+    "slotBonus": "Azione Bonus",
+    "slotReaction": "Reazione",
+    "slotFree": "Libera",
+    "recoverShortRest": "Riposo Breve",
+    "recoverLongRest": "Riposo Lungo",
+    "recoverManual": "Manuale",
+    "recoverShortBadge": "RB",
+    "recoverLongBadge": "RL",
+    "usesRemaining": "Usi rimasti",
+    "tagResource": "Risorsa",
+    "delete": "Elimina {{name}}",
+    "editCustom": "Modifica {{name}}",
+    "noMatch": "Nessun privilegio corrisponde alla ricerca."
+  }
+}

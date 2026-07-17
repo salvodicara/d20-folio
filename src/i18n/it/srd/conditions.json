@@ -1,0 +1,153 @@
+{
+  "blinded": {
+    "description": "Una creatura accecata non può vedere e fallisce automaticamente qualsiasi prova di caratteristica che richieda la vista. I tiri per colpire contro la creatura hanno Vantaggio, e i tiri per colpire della creatura hanno Svantaggio.",
+    "effects": [
+      "Non può vedere.",
+      "Fallisce automaticamente le prove di caratteristica che richiedono la vista.",
+      "I tiri per colpire contro di te hanno Vantaggio.",
+      "I tuoi tiri per colpire hanno Svantaggio."
+    ],
+    "name": "Accecato"
+  },
+  "charmed": {
+    "description": "Una creatura affascinata non può attaccare l'incantatore né prendere di mira l'incantatore con capacità dannose o effetti magici. L'incantatore ha Vantaggio su qualsiasi prova di caratteristica per interagire socialmente con la creatura.",
+    "effects": [
+      "Non può attaccare l'incantatore né prendere di mira l'incantatore con capacità dannose o effetti magici.",
+      "L'incantatore ha Vantaggio sulle prove di caratteristica per interagire socialmente con te."
+    ],
+    "name": "Affascinato"
+  },
+  "deafened": {
+    "description": "Una creatura assordata non può sentire e fallisce automaticamente qualsiasi prova di caratteristica che richieda l'udito.",
+    "effects": [
+      "Non può sentire.",
+      "Fallisce automaticamente le prove di caratteristica che richiedono l'udito."
+    ],
+    "name": "Assordato"
+  },
+  "exhaustion": {
+    "description": "Mentre hai la condizione Indebolimento, subisci i seguenti effetti. Livelli di Indebolimento: Ogni volta che ricevi la condizione Indebolimento, guadagni 1 livello di Indebolimento. Muori se il tuo livello di Indebolimento è 6. Terminare la Condizione: Completare un Riposo Lungo rimuove 1 dei tuoi livelli di Indebolimento. Quando il tuo livello di Indebolimento raggiunge 0, la condizione termina.",
+    "effects": [
+      "Test con d20 penalizzati: sottrai 2 × il tuo livello di Indebolimento da ogni Test con d20 (prove di caratteristica, tiri per colpire, tiri salvezza).",
+      "Velocità ridotta: sottrai 5 × il livello di Indebolimento dalla tua Velocità.",
+      "Al livello di Indebolimento 6, muori.",
+      "Completare un Riposo Lungo rimuove 1 livello di Indebolimento."
+    ],
+    "name": "Indebolimento"
+  },
+  "frightened": {
+    "description": "Una creatura spaventata ha Svantaggio sulle prove di caratteristica e sui tiri per colpire mentre la fonte della sua paura è entro la linea di vista. La creatura non può avvicinarsi volontariamente alla fonte della sua paura.",
+    "effects": [
+      "Svantaggio sulle prove di caratteristica e sui tiri per colpire mentre la fonte della paura è entro la linea di vista.",
+      "Non può avvicinarsi volontariamente alla fonte della paura."
+    ],
+    "name": "Spaventato"
+  },
+  "grappled": {
+    "description": "La Velocità di una creatura afferrata si riduce a 0 e non può essere aumentata. Ha Svantaggio sui tiri per colpire contro qualsiasi bersaglio diverso da chi la afferra. Chi afferra può trascinarla o trasportarla mentre si muove, a un costo di movimento extra per chi afferra. La condizione termina se chi afferra è Incapacitato o se la creatura afferrata viene spostata al di fuori della portata della presa da un effetto.",
+    "effects": [
+      "La Velocità si riduce a 0 e non può essere aumentata.",
+      "Svantaggio sui tiri per colpire contro qualsiasi bersaglio diverso da chi ti afferra.",
+      "Chi ti afferra può trascinarti o trasportarti, a un costo di movimento extra per lui.",
+      "La condizione termina se chi afferra è Incapacitato.",
+      "La condizione termina se vieni spostato al di fuori della portata della presa da un effetto."
+    ],
+    "name": "Afferrato"
+  },
+  "incapacitated": {
+    "description": "Una creatura incapacitata non può compiere Azioni, Azioni Bonus o Reazioni, la sua Concentrazione si interrompe e non può parlare. Se tira Iniziativa mentre è incapacitata, ha Svantaggio al tiro.",
+    "effects": [
+      "Non può compiere Azioni.",
+      "Non può compiere Azioni Bonus.",
+      "Non può compiere Reazioni.",
+      "La Concentrazione si interrompe.",
+      "Non può parlare.",
+      "Svantaggio ai tiri di Iniziativa effettuati mentre sei Incapacitato."
+    ],
+    "name": "Incapacitato"
+  },
+  "invisible": {
+    "description": "Una creatura invisibile ha Vantaggio al tiro di Iniziativa se era invisibile quando lo ha effettuato. Non è interessata da alcun effetto che richieda che il suo bersaglio sia visto, a meno che chi crea l'effetto non riesca in qualche modo a vederla (anche l'equipaggiamento che indossa o trasporta è occultato). I tiri per colpire contro la creatura hanno Svantaggio, e i tiri per colpire della creatura hanno Vantaggio — a meno che una creatura non riesca in qualche modo a vederla, nel qual caso questo beneficio non si applica contro di essa.",
+    "effects": [
+      "Vantaggio al tiro di Iniziativa se eri invisibile quando lo hai effettuato.",
+      "Occultato — non sei interessato da effetti che richiedono di essere visto (anche l'equipaggiamento), a meno che la fonte non riesca in qualche modo a vederti.",
+      "I tiri per colpire contro di te hanno Svantaggio, e i tuoi tiri per colpire hanno Vantaggio (a meno che una creatura non riesca in qualche modo a vederti)."
+    ],
+    "name": "Invisibile"
+  },
+  "paralyzed": {
+    "description": "Una creatura paralizzata è Incapacitata e non può muoversi o parlare. La creatura fallisce automaticamente i tiri salvezza su Forza e Destrezza. I tiri per colpire contro la creatura hanno Vantaggio. Qualsiasi attacco che colpisce la creatura è un Colpo Critico se l'attaccante è entro 1,5 metri dalla creatura.",
+    "effects": [
+      "Incapacitato (non può compiere Azioni, Azioni Bonus o Reazioni).",
+      "Non può muoversi o parlare.",
+      "Fallisce automaticamente i tiri salvezza su Forza e Destrezza.",
+      "I tiri per colpire contro di te hanno Vantaggio.",
+      "Qualsiasi colpo entro 1,5 metri è un Colpo Critico."
+    ],
+    "name": "Paralizzato"
+  },
+  "petrified": {
+    "description": "Una creatura pietrificata viene trasformata, insieme a tutti gli oggetti non magici che indossa o trasporta, in una sostanza solida inanimata (di solito pietra). Il suo peso aumenta di dieci volte e smette di invecchiare. La creatura è Incapacitata, non può muoversi o parlare ed è inconsapevole di ciò che la circonda. I tiri per colpire contro la creatura hanno Vantaggio. La creatura fallisce automaticamente i tiri salvezza su Forza e Destrezza. La creatura ha Resistenza a tutti i danni. La creatura è immune al Veleno e alle Malattie, sebbene un veleno o una malattia già nel suo sistema sia sospeso, non neutralizzato.",
+    "effects": [
+      "Trasformato in sostanza solida (di solito pietra); peso × 10.",
+      "Incapacitato (non può compiere Azioni, Azioni Bonus o Reazioni).",
+      "Non può muoversi o parlare, inconsapevole dell'ambiente circostante.",
+      "I tiri per colpire contro di te hanno Vantaggio.",
+      "Fallisce automaticamente i tiri salvezza su Forza e Destrezza.",
+      "Resistenza a tutti i danni.",
+      "Immune al Veleno e alle Malattie (quelle esistenti sono sospese).",
+      "Smette di invecchiare."
+    ],
+    "name": "Pietrificato"
+  },
+  "poisoned": {
+    "description": "Una creatura avvelenata ha Svantaggio sui tiri per colpire e sulle prove di caratteristica.",
+    "effects": [
+      "Svantaggio sui tiri per colpire.",
+      "Svantaggio sulle prove di caratteristica."
+    ],
+    "name": "Avvelenato"
+  },
+  "prone": {
+    "description": "L'unica opzione di movimento di una creatura prona è strisciare (ogni 30 cm di movimento costa 30 cm extra), a meno che non si rialzi terminando così la condizione. La creatura ha Svantaggio sui tiri per colpire. Un tiro per colpire contro la creatura ha Vantaggio se l'attaccante è entro 1,5 metri dalla creatura. Altrimenti, il tiro per colpire ha Svantaggio.",
+    "effects": [
+      "L'unica opzione di movimento è strisciare (costa 30 cm extra per ogni 30 cm).",
+      "Può rialzarsi (costa metà della Velocità) per terminare la condizione.",
+      "Svantaggio sui tiri per colpire.",
+      "I tiri per colpire contro di te hanno Vantaggio se l'attaccante è entro 1,5 metri.",
+      "I tiri per colpire contro di te hanno Svantaggio se l'attaccante è oltre 1,5 metri."
+    ],
+    "name": "Prono"
+  },
+  "restrained": {
+    "description": "La Velocità di una creatura trattenuta diventa 0 e non può beneficiare di alcun bonus alla sua Velocità. I tiri per colpire contro la creatura hanno Vantaggio, e i tiri per colpire della creatura hanno Svantaggio. La creatura ha Svantaggio sui tiri salvezza su Destrezza.",
+    "effects": [
+      "La Velocità diventa 0, non può beneficiare di bonus alla Velocità.",
+      "I tiri per colpire contro di te hanno Vantaggio.",
+      "I tuoi tiri per colpire hanno Svantaggio.",
+      "Svantaggio sui tiri salvezza su Destrezza."
+    ],
+    "name": "Trattenuto"
+  },
+  "stunned": {
+    "description": "Una creatura stordita ha la condizione Incapacitato (non può compiere Azioni, Azioni Bonus o Reazioni; la Concentrazione si interrompe; non può parlare). Fallisce automaticamente i tiri salvezza su Forza e Destrezza, e i tiri per colpire contro di essa hanno Vantaggio. A differenza di Paralizzato, Stordito non riduce la Velocità a 0.",
+    "effects": [
+      "Incapacitato (non può compiere Azioni, Azioni Bonus o Reazioni; la Concentrazione si interrompe; non può parlare).",
+      "Fallisce automaticamente i tiri salvezza su Forza e Destrezza.",
+      "I tiri per colpire contro di te hanno Vantaggio."
+    ],
+    "name": "Stordito"
+  },
+  "unconscious": {
+    "description": "Una creatura priva di sensi è Incapacitata, non può muoversi o parlare ed è inconsapevole di ciò che la circonda. La creatura lascia cadere tutto ciò che tiene in mano e cade Prona. La creatura fallisce automaticamente i tiri salvezza su Forza e Destrezza. I tiri per colpire contro la creatura hanno Vantaggio. Qualsiasi attacco che colpisce la creatura è un Colpo Critico se l'attaccante è entro 1,5 metri dalla creatura.",
+    "effects": [
+      "Incapacitato (non può compiere Azioni, Azioni Bonus o Reazioni).",
+      "Non può muoversi o parlare, inconsapevole dell'ambiente circostante.",
+      "Lascia cadere gli oggetti tenuti in mano e cade Prono.",
+      "Fallisce automaticamente i tiri salvezza su Forza e Destrezza.",
+      "I tiri per colpire contro di te hanno Vantaggio.",
+      "Qualsiasi colpo entro 1,5 metri è un Colpo Critico."
+    ],
+    "name": "Privo di Sensi"
+  }
+}

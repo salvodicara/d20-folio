@@ -1,0 +1,95 @@
+{
+  "ability-score-improvement": {
+    "description": "Aumenti un punteggio di caratteristica a tua scelta di 2, oppure puoi aumentare due punteggi di caratteristica a tua scelta di 1. Non puoi aumentare un punteggio di caratteristica oltre 20 usando questo talento.",
+    "name": "Miglioramento dei Punteggi di Caratteristica",
+    "prerequisite": "Livello 4+"
+  },
+  "alert": {
+    "description": "Ottieni i seguenti benefici:\n\n**Competenza in Iniziativa.** Quando tiri Iniziativa, puoi aggiungere il tuo Bonus di Competenza al tiro.\n\n**Scambio di Iniziativa.** Immediatamente dopo aver tirato Iniziativa, puoi scambiare la tua Iniziativa con un alleato consenziente nello stesso combattimento. Non puoi effettuare questo scambio se tu o l'alleato avete la condizione Incapacitato.",
+    "name": "Allerta"
+  },
+  "archery": {
+    "description": "Ottieni un bonus di +2 ai tiri per colpire che effettui con armi a Distanza.",
+    "name": "Tiro con Arco",
+    "prerequisite": "Livello 1+, Gruppo Guerriero o Sacerdote"
+  },
+  "boon-of-combat-prowess": {
+    "description": "Ottieni i seguenti benefici:\n\n**Aumento di Caratteristica.** Aumenti un punteggio di caratteristica a tua scelta di 1, fino a un massimo di 30.\n\n**Mira Impareggiabile.** Quando manchi con un tiro per colpire, puoi colpire invece. Una volta usato questo beneficio, non puoi usarlo di nuovo fino all'inizio del tuo prossimo turno.",
+    "name": "Dono della Prodezza in Combattimento",
+    "prerequisite": "Livello 19+"
+  },
+  "boon-of-dimensional-travel": {
+    "description": "Ottieni i seguenti benefici:\n\n**Aumento di Caratteristica.** Aumenti un punteggio di caratteristica a tua scelta di 1, fino a un massimo di 30.\n\n**Passi Intermittenti.** Immediatamente dopo aver effettuato l'azione Attacco o l'azione Magica, puoi teletrasportarti fino a 9 metri in uno spazio non occupato che puoi vedere.",
+    "name": "Dono del Viaggio Dimensionale",
+    "prerequisite": "Livello 19+"
+  },
+  "boon-of-fate": {
+    "description": "Ottieni i seguenti benefici:\n\n**Aumento di Caratteristica.** Aumenti un punteggio di caratteristica a tua scelta di 1, fino a un massimo di 30.\n\n**Migliorare il Fato.** Quando tu o un'altra creatura entro 18 metri da te ha successo o fallisce un Test con d20, puoi tirare 2d4 e applicare il numero ottenuto come bonus o penalità al tiro del d20. Una volta usato questo beneficio, non puoi usarlo di nuovo fino a quando non tiri Iniziativa o completi un Riposo Breve o Lungo.",
+    "name": "Dono del Fato",
+    "prerequisite": "Livello 19+"
+  },
+  "boon-of-irresistible-offense": {
+    "description": "Ottieni i seguenti benefici:\n\n**Aumento di Caratteristica.** Aumenti il tuo punteggio di Forza o Destrezza di 1, fino a un massimo di 30.\n\n**Superare le Difese.** I danni Contundenti, Perforanti e Taglienti che infliggi ignorano sempre la Resistenza.\n\n**Colpo Travolgente.** Quando ottieni un 20 sul d20 per un tiro per colpire, puoi infliggere danno extra al bersaglio pari al punteggio di caratteristica aumentato da questo talento. Il tipo del danno extra è lo stesso del tipo dell'attacco.",
+    "name": "Dono dell'Offensiva Irresistibile",
+    "prerequisite": "Livello 19+"
+  },
+  "boon-of-spell-recall": {
+    "description": "Ottieni i seguenti benefici:\n\n**Aumento di Caratteristica.** Aumenti il tuo punteggio di Intelligenza, Saggezza o Carisma di 1, fino a un massimo di 30.\n\n**Lancio Gratuito.** Ogni volta che lanci un incantesimo con uno slot di livello 1-4, tira 1d4. Se il numero ottenuto è pari al livello dello slot, lo slot non viene speso.",
+    "name": "Dono del Richiamo degli Incantesimi",
+    "prerequisite": "Livello 19+, capacità Incantesimi o Magia del Patto"
+  },
+  "boon-of-the-night-spirit": {
+    "description": "Ottieni i seguenti benefici:\n\n**Aumento di Caratteristica.** Aumenti un punteggio di caratteristica a tua scelta di 1, fino a un massimo di 30.\n\n**Fondersi con le Ombre.** Mentre sei in Luce Fioca o Oscurità, puoi darti la condizione Invisibile come azione Magica. La condizione termina su di te immediatamente dopo che effettui un'azione, un'Azione Bonus o una Reazione.\n\n**Forma d'Ombra.** Mentre sei in Luce Fioca o Oscurità, hai Resistenza a tutti i danni eccetto Forza, Psichico e Radiante.",
+    "name": "Dono dello Spirito Notturno",
+    "prerequisite": "Livello 19+"
+  },
+  "boon-of-truesight": {
+    "description": "Ottieni i seguenti benefici:\n\n**Aumento di Caratteristica.** Aumenti un punteggio di caratteristica a tua scelta di 1, fino a un massimo di 30.\n\n**Vista Pura.** Hai Vista Pura con un raggio di 18 metri.",
+    "name": "Dono della Vista Pura",
+    "prerequisite": "Livello 19+"
+  },
+  "defense": {
+    "description": "Mentre indossi un'armatura Leggera, Media o Pesante, ottieni un bonus di +1 alla Classe Armatura.",
+    "name": "Difesa",
+    "prerequisite": "Livello 1+, Gruppo Guerriero o Sacerdote"
+  },
+  "grappler": {
+    "description": "Ottieni i seguenti benefici:\n\n**Aumento dei Punteggi di Caratteristica.** Il punteggio di Forza o Destrezza aumenta di 1, fino a un massimo di 20.\n\n**Colpisci e afferra.** Quando il personaggio colpisce una creatura con un colpo senz'armi come parte di un'azione di Attacco nel proprio turno, può usare sia l'opzione Danni che Presa. Questo beneficio è utilizzabile una sola volta per turno.\n\n**Attacco con vantaggio.** Dispone di vantaggio ai tiri per colpire contro le creature che ha afferrato.\n\n**Lottatore rapido.** Il personaggio non deve spendere alcun movimento extra se sposta una creatura che ha afferrato che sia della sua stessa categoria di taglia o inferiore.",
+    "name": "Lottatore",
+    "prerequisite": "Livello 4+, Forza o Destrezza 13+"
+  },
+  "great-weapon-fighting": {
+    "description": "Quando tiri i danni per un attacco effettuato con un'arma da Mischia che stai impugnando a due mani, puoi trattare qualsiasi 1 o 2 su un dado danno come un 3. L'arma deve avere la proprietà Due Mani o Versatile per ottenere questo beneficio.",
+    "name": "Combattere con Armi Possenti",
+    "prerequisite": "Livello 1+, Gruppo Guerriero o Sacerdote"
+  },
+  "magic-initiate-cleric": {
+    "description": "Ottieni i seguenti benefici:\n\n**Due Trucchetti.** Impari due trucchetti a tua scelta dalla lista incantesimi del Chierico.\n\n**Incantesimo di Livello 1.** Scegli un incantesimo di livello 1 dalla lista incantesimi del Chierico. Hai sempre quell'incantesimo preparato. Puoi lanciarlo una volta senza uno slot incantesimo, e recuperi la capacità di lanciarlo in quel modo quando completi un Riposo Lungo. Puoi anche lanciare l'incantesimo usando qualsiasi slot incantesimo che possiedi.\n\n**Cambio Incantesimo.** Ogni volta che ottieni un nuovo livello, puoi sostituire uno degli incantesimi scelti per questo talento con un incantesimo diverso dello stesso livello dalla lista del Chierico.\n\n**Caratteristica da Incantatore.** Intelligenza, Saggezza o Carisma è la tua caratteristica da incantatore per gli incantesimi lanciati con questo talento (scegli quando prendi questo talento).",
+    "name": "Iniziato alla Magia (Chierico)"
+  },
+  "magic-initiate-druid": {
+    "description": "Ottieni i seguenti benefici:\n\n**Due Trucchetti.** Impari due trucchetti a tua scelta dalla lista incantesimi del Druido.\n\n**Incantesimo di Livello 1.** Scegli un incantesimo di livello 1 dalla lista incantesimi del Druido. Hai sempre quell'incantesimo preparato. Puoi lanciarlo una volta senza uno slot incantesimo, e recuperi la capacità di lanciarlo in quel modo quando completi un Riposo Lungo. Puoi anche lanciare l'incantesimo usando qualsiasi slot incantesimo che possiedi.\n\n**Cambio Incantesimo.** Ogni volta che ottieni un nuovo livello, puoi sostituire uno degli incantesimi scelti per questo talento con un incantesimo diverso dello stesso livello dalla lista del Druido.\n\n**Caratteristica da Incantatore.** Intelligenza, Saggezza o Carisma è la tua caratteristica da incantatore per gli incantesimi lanciati con questo talento (scegli quando prendi questo talento).",
+    "name": "Iniziato alla Magia (Druido)"
+  },
+  "magic-initiate-wizard": {
+    "description": "Ottieni i seguenti benefici:\n\n**Due Trucchetti.** Impari due trucchetti a tua scelta dalla lista incantesimi del Mago.\n\n**Incantesimo di Livello 1.** Scegli un incantesimo di livello 1 dalla lista incantesimi del Mago. Hai sempre quell'incantesimo preparato. Puoi lanciarlo una volta senza uno slot incantesimo, e recuperi la capacità di lanciarlo in quel modo quando completi un Riposo Lungo. Puoi anche lanciare l'incantesimo usando qualsiasi slot incantesimo che possiedi.\n\n**Cambio Incantesimo.** Ogni volta che ottieni un nuovo livello, puoi sostituire uno degli incantesimi scelti per questo talento con un incantesimo diverso dello stesso livello dalla lista del Mago.\n\n**Caratteristica da Incantatore.** Intelligenza, Saggezza o Carisma è la tua caratteristica da incantatore per gli incantesimi lanciati con questo talento (scegli quando prendi questo talento).",
+    "name": "Iniziato alla Magia (Mago)"
+  },
+  "savage-attacker": {
+    "description": "Ti sei addestrato per infliggere colpi particolarmente devastanti. Una volta per turno quando colpisci un bersaglio con un'arma, puoi tirare i dadi danno dell'arma due volte e usare uno dei due risultati contro il bersaglio.",
+    "name": "Attaccante Selvaggio"
+  },
+  "skilled": {
+    "description": "Ottieni competenza in una qualsiasi combinazione di tre abilità o strumenti a tua scelta.\n\n**Ripetibile.** Puoi prendere questo talento più di una volta.",
+    "name": "Abile"
+  },
+  "two-weapon-fighting": {
+    "description": "Quando effettui un attacco extra come risultato dell'uso di un'arma che ha la proprietà Leggera, puoi aggiungere il tuo modificatore di caratteristica al danno di quell'attacco se non lo stai già aggiungendo.",
+    "name": "Combattere con Due Armi",
+    "prerequisite": "Livello 1+, Gruppo Guerriero o Sacerdote"
+  },
+  "boon-of-fate.mechanics.actions.0": {
+    "description": "Migliorare il Fato — aggiungi o sottrai 2d4 al risultato della Prova di d20 di una creatura vicina",
+    "summary": "Aggiungi o sottrai 2d4 alla Prova di d20 di una creatura"
+  }
+}

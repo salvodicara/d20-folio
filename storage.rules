@@ -1,0 +1,52 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Admin is DATA-DRIVEN — the SAME `/users/{uid}.role == "admin"` field the
+    // client gate (`useIsAdmin`) and `firestore.rules` (`isAdmin()`) read, via
+    // the cross-service Firestore lookup, so no uid is ever hardcoded here and
+    // the three gates can't drift.
+    function isAdmin() {
+      return request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get("role", "") == "admin";
+    }
+
+    match /users/{uid}/portraits/{fileName} {
+      allow read: if request.auth != null;
+      // create/update: validate size + mime type (request.resource is defined)
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      // delete: no request.resource — only check auth
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+    // N4 — campaign banner: any authenticated user may read/write a campaign's
+    // banner. The {campaignId} is the campaign's unguessable invite code (~70 bits),
+    // so it is the shared secret only its members hold — Storage rules cannot read
+    // Firestore to check membership, so the unguessable path IS the gate (mirrors
+    // the join-by-code model). Writes are size- + image-type-validated.
+    match /campaigns/{campaignId}/banner.jpeg {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
+    // Bug-report screenshots (OWN-37). The owner of the report uploads its own
+    // screenshot to a uid-scoped path; only the admin may read them (the Cloud
+    // Function resolves a signed URL via the Admin SDK, bypassing these rules).
+    // Writes are size- + image-type-validated to keep the free tier tiny.
+    match /bug-reports/{uid}/{fileName} {
+      // Owner can read their own screenshot (needed for getDownloadURL at submit time);
+      // admin can read all.
+      allow read: if request.auth != null
+        && (request.auth.uid == uid || isAdmin());
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
+    }
+  }
+}

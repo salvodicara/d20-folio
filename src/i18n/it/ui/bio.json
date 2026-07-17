@@ -1,0 +1,19 @@
+{
+  "bio": {
+    "confirmReset": {
+      "title": "Cambiare la build?",
+      "message": "Questo ricalcola la scheda e azzera le scelte dipendenti: la sottoclasse, gli incantesimi preparati e le scelte legate alla classe (manovre, suppliche, metamagie, maestrie) potrebbero andare perse.",
+      "confirm": "Cambia comunque",
+      "details": {
+        "subclass": "Sottoclasse azzerata: {{names}}",
+        "feats": "Talenti rimossi: {{names}}",
+        "spells": "Incantesimi rimossi: {{names}}",
+        "features": "Privilegi di classe rimossi: {{count}}",
+        "picks": "Scelte di classe rimosse (manovre, suppliche, metamagie, maestrie, stili): {{count}}",
+        "expertise": "Maestria riportata a competenza: {{names}}",
+        "hp": "PF massimi: {{delta}}",
+        "abilityScores": "Gli aumenti di caratteristica dei livelli rimossi non vengono annullati. Controlla i tuoi punteggi"
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "cleave": {
+    "name": "Doppio Fendente",
+    "summary": "Colpisci una seconda creatura vicina",
+    "description": "Se colpisci una creatura con un tiro per colpire in mischia usando quest'arma, puoi effettuare un tiro per colpire in mischia con l'arma contro una seconda creatura entro 1,5 metri dalla prima che sia anche entro la tua portata. Se colpisci, la seconda creatura subisce i danni dell'arma, ma non aggiungi il tuo modificatore di caratteristica a quei danni a meno che il modificatore non sia negativo. Puoi effettuare questo attacco extra solo una volta per turno."
+  },
+  "graze": {
+    "name": "Colpo di Striscio",
+    "summary": "Infliggi danni anche mancando",
+    "description": "Se il tuo tiro per colpire con quest'arma manca una creatura, puoi infliggere a quella creatura danni pari al modificatore di caratteristica usato per il tiro per colpire. Questi danni sono dello stesso tipo inflitto dall'arma e possono essere aumentati solo aumentando il modificatore di caratteristica."
+  },
+  "nick": {
+    "name": "Graffio",
+    "summary": "Attacco leggero senza Azione Bonus",
+    "description": "Quando effettui l'attacco extra concesso dalla proprietà Leggera, puoi effettuarlo come parte dell'azione di Attacco invece che come Azione Bonus. Puoi effettuare questo attacco extra solo una volta per turno."
+  },
+  "push": {
+    "name": "Spinta",
+    "summary": "Spingi il bersaglio fino a 3 metri",
+    "description": "Se colpisci una creatura con quest'arma, puoi spingere la creatura fino a 3 metri in linea retta lontano da te se è di taglia Grande o inferiore."
+  },
+  "sap": {
+    "name": "Fiaccare",
+    "summary": "Il bersaglio ha Svantaggio al prossimo attacco",
+    "description": "Se colpisci una creatura con quest'arma, quella creatura ha Svantaggio al suo prossimo tiro per colpire prima dell'inizio del tuo prossimo turno."
+  },
+  "slow": {
+    "name": "Lentezza",
+    "summary": "Riduci la Velocità del bersaglio di 3 metri",
+    "description": "Se colpisci una creatura con quest'arma e le infliggi danni, puoi ridurre la sua Velocità di 3 metri fino all'inizio del tuo prossimo turno. Se la creatura viene colpita più di una volta da armi con questa proprietà, la riduzione della Velocità non supera i 3 metri."
+  },
+  "topple": {
+    "name": "Rovesciamento",
+    "summary": "Atterra il bersaglio (TS Costituzione)",
+    "description": "Se colpisci una creatura con quest'arma, puoi costringere la creatura a effettuare un tiro salvezza su Costituzione (CD 8 più il modificatore di caratteristica usato per il tiro per colpire e il tuo Bonus di Competenza). Se fallisce il tiro salvezza, la creatura ottiene la condizione Prono."
+  },
+  "vex": {
+    "name": "Vessazione",
+    "summary": "Vantaggio al tuo prossimo attacco",
+    "description": "Se colpisci una creatura con quest'arma e le infliggi danni, hai Vantaggio al tuo prossimo tiro per colpire contro quella creatura prima della fine del tuo prossimo turno."
+  }
+}

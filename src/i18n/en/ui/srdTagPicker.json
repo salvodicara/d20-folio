@@ -1,0 +1,7 @@
+{
+  "srdTagPicker": {
+    "remove": "Remove {{name}}",
+    "addCustom": "Add \"{{name}}\"",
+    "granted": "Granted by your build"
+  }
+}

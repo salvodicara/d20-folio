@@ -1,0 +1,16 @@
+{
+  "finesse": { "name": "Finesse" },
+  "light": { "name": "Light" },
+  "heavy": { "name": "Heavy" },
+  "loading": { "name": "Loading" },
+  "reach": { "name": "Reach" },
+  "two-handed": { "name": "Two-Handed" },
+  "two-handed-unless-mounted": { "name": "Two-Handed (unless mounted)" },
+  "versatile": { "name": "Versatile ({{die}})" },
+  "thrown": { "name": "Thrown (Range {{range}})" },
+  "ammunition": { "name": "Ammunition (Range {{range}}; {{type}})" },
+  "arrow": { "name": "Arrow" },
+  "bolt": { "name": "Bolt" },
+  "bullet": { "name": "Bullet" },
+  "needle": { "name": "Needle" }
+}

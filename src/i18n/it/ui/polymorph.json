@@ -1,0 +1,19 @@
+{
+  "polymorph": {
+    "transform": "Trasforma",
+    "rubric": "Trasformazione",
+    "title": "Scegli una forma bestiale",
+    "selfTab": "Me stesso",
+    "referenceTab": "Un'altra creatura",
+    "selfHint": "CA, velocità e caratteristiche diventano le sue, più PF temporanei.",
+    "referenceHint": "Solo riferimento. Nulla sulla tua scheda cambia.",
+    "search": "Cerca bestie",
+    "noForms": "Nessuna forma bestiale disponibile al tuo livello.",
+    "crShort": "GS {{cr}}",
+    "speedWalk": "Camminata",
+    "speedBurrow": "Scavo",
+    "traits": "Tratti",
+    "activeForm": "In metamorfosi: {{name}}",
+    "revert": "Torna alla tua forma"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "snapshots": {
+    "title": "Snapshots",
+    "rubric": "History",
+    "hint": "Snapshots capture your character state. Restoring will overwrite your current sheet, and this cannot be undone.",
+    "empty": "No snapshots yet. Snapshots are created automatically before each level-up.",
+    "emptyEyebrow": "No history yet",
+    "emptyTitle": "Nothing to restore",
+    "restore": "Restore",
+    "confirmRestore": "Confirm Restore",
+    "restoring": "Restoring…",
+    "deleting": "Deleting…",
+    "reasonLevelUp": "Level-up",
+    "reasonManual": "Manual",
+    "loadError": "Could not load snapshots.",
+    "restoreError": "Could not restore snapshot.",
+    "deleteError": "Could not delete snapshot.",
+    "button": "History",
+    "saving": "Saving…",
+    "saveNow": "Save snapshot",
+    "saveError": "Could not save snapshot."
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "skills": {
+    "acrobatics": "Acrobazia",
+    "animal-handling": "Addestrare Animali",
+    "arcana": "Arcano",
+    "athletics": "Atletica",
+    "deception": "Inganno",
+    "history": "Storia",
+    "insight": "Intuizione",
+    "intimidation": "Intimidire",
+    "investigation": "Indagare",
+    "medicine": "Medicina",
+    "nature": "Natura",
+    "perception": "Percezione",
+    "performance": "Intrattenere",
+    "persuasion": "Persuasione",
+    "religion": "Religione",
+    "sleight-of-hand": "Rapidità di Mano",
+    "stealth": "Furtività",
+    "survival": "Sopravvivenza",
+    "thieves-tools": "Attrezzi da Scassinatore"
+  }
+}

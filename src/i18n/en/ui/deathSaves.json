@@ -1,0 +1,9 @@
+{
+  "deathSaves": {
+    "title": "Death Saves",
+    "successes": "Successes",
+    "failures": "Failures",
+    "dead": "Character has died.",
+    "critThreshold": "On a roll of {{n}}+ you regain 1 HP"
+  }
+}

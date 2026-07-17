@@ -1,0 +1,39 @@
+{
+  "pdf": {
+    "weaponsAndCantrips": "Armi e Trucchetti da Danno",
+    "inspirationShort": "Isp. Eroica",
+    "footer": "Esportato da d20 Folio",
+    "spellcasting": "Lancio di Incantesimi",
+    "spellAbility": "Caratteristica",
+    "recoveryDawn": "Alba",
+    "sheet": {
+      "xp": "PE",
+      "current": "Attuali",
+      "max": "Mass.",
+      "spent": "Spesi",
+      "size": "Taglia",
+      "score": "Punteggio",
+      "modifier": "Modificatore",
+      "atkBonusDc": "Bonus Att. / CD",
+      "damageType": "Danni e Tipo",
+      "speciesTraits": "Tratti di Specie",
+      "equipmentTraining": "Addestramento e Competenze",
+      "armorTraining": "Addestramento Armature",
+      "armorLight": "Leggere",
+      "armorHeavy": "Pesanti",
+      "backstory": "Storia e Personalità",
+      "attunement": "Sintonia Oggetti Magici",
+      "coins": "Monete",
+      "expended": "Esauriti",
+      "spellTable": "Trucchetti e Incantesimi Preparati",
+      "cp": "MR",
+      "sp": "MA",
+      "ep": "ME",
+      "gp": "MO",
+      "pp": "MP",
+      "spellcastingModifier": "Modificatore da Incantatore",
+      "spellSaveDcFull": "CD Tiro Salvezza",
+      "spellAttackBonus": "Bonus di Attacco"
+    }
+  }
+}

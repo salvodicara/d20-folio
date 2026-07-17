@@ -1,0 +1,11 @@
+{
+  "stats": {
+    "ac": "AC",
+    "dc": "DC",
+    "spd": "Spd",
+    "pb": "PB",
+    "hp": "HP",
+    "lvl": "Lvl",
+    "hitDie": "Hit Die"
+  }
+}

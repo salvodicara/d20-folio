@@ -1,0 +1,35 @@
+{
+  "shortcuts": {
+    "title": "Scorciatoie da tastiera",
+    "rubric": "Scorciatoie",
+    "description": "Un riferimento a tutte le scorciatoie da tastiera, raggruppate per dove funzionano.",
+    "then": "poi",
+    "groups": {
+      "global": "Globali",
+      "encounter": "Scontro (DM)",
+      "palette": "Riquadro comandi"
+    },
+    "rows": {
+      "palette": "Apri o chiudi il riquadro comandi",
+      "help": "Mostra le scorciatoie da tastiera",
+      "goCharacters": "Vai a Personaggi",
+      "goCampaigns": "Vai a Campagne",
+      "goCompendium": "Vai al Compendio",
+      "goSettings": "Vai a Impostazioni",
+      "goAdmin": "Vai ad Admin",
+      "dismiss": "Chiudi il livello in primo piano",
+      "edit": "Attiva o disattiva la modifica",
+      "undo": "Annulla l'ultima azione",
+      "redo": "Ripeti l'ultima azione annullata",
+      "leaveEdit": "Esci dalla modifica",
+      "sheetTabs": "Scheda precedente / successiva",
+      "sheetTabsEnds": "Prima / ultima scheda",
+      "turn": "Turno precedente / successivo",
+      "paletteMove": "Sposta la selezione",
+      "paletteEnds": "Vai al primo / ultimo",
+      "paletteGo": "Apri il risultato selezionato",
+      "paletteClose": "Chiudi il riquadro",
+      "compendiumClose": "Chiudi la voce aperta"
+    }
+  }
+}

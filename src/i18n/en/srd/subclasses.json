@@ -1,0 +1,38 @@
+{
+  "berserker": {
+    "name": "Path of the Berserker"
+  },
+  "champion": {
+    "name": "Champion"
+  },
+  "circle-of-the-land": {
+    "name": "Circle of the Land"
+  },
+  "college-of-lore": {
+    "name": "College of Lore"
+  },
+  "draconic-sorcery": {
+    "name": "Draconic Sorcery"
+  },
+  "evoker": {
+    "name": "Evoker"
+  },
+  "fiend-patron": {
+    "name": "Fiend Patron"
+  },
+  "hunter": {
+    "name": "Hunter"
+  },
+  "life-domain": {
+    "name": "Life Domain"
+  },
+  "oath-of-devotion": {
+    "name": "Oath of Devotion"
+  },
+  "open-hand": {
+    "name": "Warrior of the Open Hand"
+  },
+  "thief": {
+    "name": "Thief"
+  }
+}

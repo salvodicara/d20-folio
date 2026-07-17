@@ -1,0 +1,18 @@
+{
+  "acolyte": {
+    "description": "You devoted yourself to service in a temple, learning sacred rites and providing sacrifices to the god or gods you worship.",
+    "name": "Acolyte"
+  },
+  "criminal": {
+    "description": "You eked out a living in dark alleyways, cutting purses or burgling shops. Perhaps you were part of a small gang of like-minded criminals.",
+    "name": "Criminal"
+  },
+  "sage": {
+    "description": "You spent your formative years traveling between manors and monasteries, studying various tomes and learning the lore of the multiverse.",
+    "name": "Sage"
+  },
+  "soldier": {
+    "description": "You began training for war as soon as you reached adulthood. You might have been part of a standing army, a mercenary company, or a local militia.",
+    "name": "Soldier"
+  }
+}

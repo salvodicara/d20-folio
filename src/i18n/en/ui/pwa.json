@@ -1,0 +1,6 @@
+{
+  "pwa": {
+    "installPrompt": "Install d20 Folio for offline access",
+    "install": "Install"
+  }
+}

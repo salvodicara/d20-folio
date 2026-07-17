@@ -1,0 +1,11 @@
+{
+  "compendium": {
+    "hint": "Ogni specie, classe, incantesimo e oggetto: tutto ricercabile.",
+    "filters": "Filtri",
+    "type": "Tipo",
+    "emptyTitle": "Nessuna voce su questa pagina",
+    "emptyHint": "Nessun elemento corrisponde alla ricerca e ai filtri.",
+    "emptyReset": "Azzera ricerca e filtri",
+    "frontisHint": "Scegli una voce dall'indice per leggerla su questa pagina."
+  }
+}

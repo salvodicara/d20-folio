@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+# Pre-push hook: the FAST-BUT-SAFE gate — owner mandate 2026-06-12 (a GOLDEN
+# RULE): "keep it SAFE, but don't have CI checks run forever — both to save
+# money on GH Actions and to speed up local development."
+#
+# THE GATE SPLIT (docs/GOLDEN_RULES.md rule 14; detail in docs/CONTRIBUTING.md
+# → "The gate split"):
+#   pre-commit  → doc-guard + lint-staged + fast unit lane            (~5 s)
+#   pre-push    → typecheck ∥ lint ∥ unit coverage (CONCURRENT), then
+#                 vite build + budget; rules tests when that surface
+#                 changed                                             (THIS hook)
+#   deploy      → the FULL e2e matrix + `firebase deploy`, ALWAYS owner-fired:
+#                 `just deploy` (primary, local) or
+#                 `gh workflow run deploy.yml` (the remote twin)
+#   remote CI   → ci.yml (typecheck + lint + unit + build + budget on every
+#                 push to main / PR) — dormant while the repo is private;
+#                 THIS local gate is the authoritative enforcer
+#
+# WALL-CLOCK: the three long independent checks (typecheck, lint, unit+coverage)
+# run as CONCURRENT background jobs — each captures to a temp file and the
+# sections print IN ORDER afterwards (readable, never interleaved), failing the
+# push if ANY failed. Nothing was dropped: every check that ran sequentially
+# still runs. The build step runs `vite build` ONLY (not `pnpm build` =
+# `tsc -b && vite build`) — typecheck already ran in the parallel block, and
+# dist/ is byte-identical without re-running it (same trick as ci.yml's
+# Build step).
+#
+# WHY e2e is NOT here: profiled 2026-06-12 — the all-projects Playwright suite
+# is ~9 min and was the entire wall-clock (the non-e2e checks total ~90 s).
+# Pushes land on origin, which is NOT user-facing; users only get code via an
+# owner-fired deploy, and BOTH deploy paths run the full e2e matrix as their
+# gate — so every behavioural check still runs MANDATORILY before code reaches
+# a user, just once per deploy instead of once per push.
+#
+# Install: git config core.hooksPath .githooks
+# NEVER use --no-verify to skip this hook.
+
+set -euo pipefail
+
+echo "==> Pre-push: fast-but-safe gate (typecheck ∥ lint ∥ unit+coverage, then build · budget)..."
+echo ""
+
+# ── Firestore rules tests (emulator) — change-scoped ──────────────────────────
+# Detect whether THIS push changes the rules surface; only then boot the emulator
+# (ordinary pushes stay fast). git feeds pre-push the ref list on stdin as
+# "<local_ref> <local_sha> <remote_ref> <remote_sha>" lines.
+RULES_SURFACE_RE='^(firestore\.rules|tests/rules/)'
+ZERO_SHA='0000000000000000000000000000000000000000'
+rules_changed=false
+
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  if [ "$local_sha" = "$ZERO_SHA" ]; then
+    continue # branch deletion — nothing to verify
+  fi
+  if [ "$remote_sha" != "$ZERO_SHA" ]; then
+    range="$remote_sha..$local_sha"
+  else
+    # New branch on the remote: diff from the merge-base with origin/main.
+    base="$(git merge-base "$local_sha" origin/main 2>/dev/null || true)"
+    if [ -n "$base" ]; then
+      range="$base..$local_sha"
+    else
+      rules_changed=true # can't determine range → fail safe (run them)
+      continue
+    fi
+  fi
+  if git diff --name-only "$range" 2>/dev/null | grep -Eq "$RULES_SURFACE_RE"; then
+    rules_changed=true
+  fi
+done
+
+if [ "$rules_changed" = true ]; then
+  echo "--- Firestore rules tests (rules surface changed → emulator) ---"
+  # The Firestore emulator is a JVM process. Prefer a JDK already on PATH (e.g. the
+  # asdf shim); otherwise resolve the asdf-managed Temurin pinned in .tool-versions
+  # (works even when the asdf shims aren't on this hook's PATH, e.g. IDE git).
+  if ! java -version >/dev/null 2>&1; then
+    _jdk_tv="$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.tool-versions"
+    _jdk_ver="$(awk '/^java /{print $2}' "$_jdk_tv" 2>/dev/null || true)"
+    for _jdk_home in "$HOME/.asdf/installs/java/$_jdk_ver" "$HOME"/.asdf/installs/java/*; do
+      if [ -x "$_jdk_home/bin/java" ]; then
+        export JAVA_HOME="$_jdk_home"
+        export PATH="$_jdk_home/bin:$PATH"
+        break
+      fi
+    done
+  fi
+  if ! java -version >/dev/null 2>&1; then
+    echo "ERROR: this push changes the Firestore rules surface, which must be"
+    echo "       verified against the emulator, but no Java runtime was found."
+    echo "       Install the pinned JDK with:  asdf install   (see .tool-versions)"
+    echo "       See CONTRIBUTING.md -> \"Firestore security rules\"."
+    exit 1
+  fi
+  pnpm test:rules
+  echo ""
+else
+  echo "--- Firestore rules tests: skipped (rules surface unchanged) ---"
+  echo ""
+fi
+
+# ── Typecheck ∥ Lint ∥ Unit+coverage — CONCURRENT (independent checks) ────────
+# The three long checks share no outputs (tsc → .tsbuildinfo, eslint →
+# .eslintcache, vitest → coverage/), so they run as background jobs. Each
+# captures stdout+stderr to its own temp file; we `wait` on all three, then
+# print the sections IN ORDER so the log stays readable (no interleaving), and
+# exit 1 if ANY failed. Same checks, same strictness — only the wall-clock
+# changes (max of the three instead of the sum).
+_gate_tmp="$(mktemp -d)"
+trap 'rm -rf "$_gate_tmp"' EXIT
+
+pnpm typecheck >"$_gate_tmp/typecheck.log" 2>&1 &
+_pid_typecheck=$!
+pnpm lint --max-warnings 0 >"$_gate_tmp/lint.log" 2>&1 &
+_pid_lint=$!
+pnpm test:coverage >"$_gate_tmp/coverage.log" 2>&1 &
+_pid_coverage=$!
+
+_st_typecheck=0
+wait "$_pid_typecheck" || _st_typecheck=$?
+_st_lint=0
+wait "$_pid_lint" || _st_lint=$?
+_st_coverage=0
+wait "$_pid_coverage" || _st_coverage=$?
+
+gate_failed=false
+print_section() { # <title> <logfile> <status>
+  echo "--- $1 ---"
+  cat "$2"
+  if [ "$3" -ne 0 ]; then
+    echo "*** $1 FAILED (exit $3) ***"
+    gate_failed=true
+  fi
+  echo ""
+}
+
+print_section "Typecheck" "$_gate_tmp/typecheck.log" "$_st_typecheck"
+print_section "Lint (full codebase, zero warnings)" "$_gate_tmp/lint.log" "$_st_lint"
+print_section "Unit tests + coverage (80% threshold)" "$_gate_tmp/coverage.log" "$_st_coverage"
+
+if [ "$gate_failed" = true ]; then
+  echo "==> Pre-push BLOCKED: fix the failing section(s) above."
+  exit 1
+fi
+
+# ── Production build (vite only — typecheck already ran above) ────────────────
+echo "--- Build (vite only) ---"
+if ! pnpm exec vite build >"$_gate_tmp/build.log" 2>&1; then
+  cat "$_gate_tmp/build.log"
+  echo "*** Build FAILED ***"
+  exit 1
+fi
+echo "Build OK"
+echo ""
+
+# ── Bundle budget (P3) — runs AFTER build (it reads dist/) ────────────────────
+# The eager-entry + precache ceilings guard (tests/unit/bundle-budget.guard.test.ts)
+# reads the production build, so it can only run once `dist/` exists.
+echo "--- Bundle budget (eager entry + precache ceilings) ---"
+pnpm test:budget
+echo ""
+
+echo "==> Pre-push OK (fast-but-safe gate green)."
+echo "    The full Playwright e2e matrix is the DEPLOY gate — the owner fires"
+echo "    \`just deploy\` (primary, local) or \`gh workflow run deploy.yml\` (remote twin)."

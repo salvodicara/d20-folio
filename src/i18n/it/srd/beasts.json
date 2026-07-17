@@ -1,0 +1,422 @@
+{
+  "panther": {
+    "name": "Pantera"
+  },
+  "ape": {
+    "name": "Scimmia"
+  },
+  "brown-bear": {
+    "name": "Orso bruno"
+  },
+  "dire-wolf": {
+    "name": "Lupo terribile"
+  },
+  "giant-spider": {
+    "name": "Ragno gigante"
+  },
+  "giant-eagle": {
+    "name": "Aquila gigante"
+  },
+  "giant-vulture": {
+    "name": "Avvoltoio gigante"
+  },
+  "giant-octopus": {
+    "name": "Piovra gigante"
+  },
+  "giant-toad": {
+    "name": "Rospo gigante"
+  },
+  "allosaurus": {
+    "name": "Allosauro"
+  },
+  "giant-elk": {
+    "name": "Alce gigante"
+  },
+  "polar-bear": {
+    "name": "Orso polare"
+  },
+  "giant-constrictor-snake": {
+    "name": "Serpente costrittore gigante"
+  },
+  "giant-boar": {
+    "name": "Cinghiale gigante"
+  },
+  "saber-toothed-tiger": {
+    "name": "Tigre dai denti a sciabola"
+  },
+  "mammoth": {
+    "name": "Mammut"
+  },
+  "giant-ape": {
+    "name": "Scimmia gigante"
+  },
+  "tyrannosaurus-rex": {
+    "name": "Tirannosauro"
+  },
+  "ankylosaurus": {
+    "name": "Anchilosauro"
+  },
+  "archelon": {
+    "name": "Archelon"
+  },
+  "axe-beak": {
+    "name": "Becco d'ascia"
+  },
+  "baboon": {
+    "name": "Babbuino"
+  },
+  "badger": {
+    "name": "Tasso"
+  },
+  "bat": {
+    "name": "Pipistrello"
+  },
+  "black-bear": {
+    "name": "Orso nero"
+  },
+  "blood-hawk": {
+    "name": "Falco insanguinato"
+  },
+  "boar": {
+    "name": "Cinghiale"
+  },
+  "camel": {
+    "name": "Cammello"
+  },
+  "cat": {
+    "name": "Gatto"
+  },
+  "constrictor-snake": {
+    "name": "Serpente costrittore"
+  },
+  "crab": {
+    "name": "Granchio"
+  },
+  "crocodile": {
+    "name": "Coccodrillo"
+  },
+  "deer": {
+    "name": "Cervo"
+  },
+  "draft-horse": {
+    "name": "Cavallo da tiro"
+  },
+  "eagle": {
+    "name": "Aquila"
+  },
+  "elephant": {
+    "name": "Elefante"
+  },
+  "elk": {
+    "name": "Alce"
+  },
+  "flying-snake": {
+    "name": "Serpente volante"
+  },
+  "frog": {
+    "name": "Rana"
+  },
+  "giant-badger": {
+    "name": "Tasso gigante"
+  },
+  "giant-bat": {
+    "name": "Pipistrello gigante"
+  },
+  "giant-centipede": {
+    "name": "Millepiedi gigante"
+  },
+  "giant-crab": {
+    "name": "Granchio gigante"
+  },
+  "giant-crocodile": {
+    "name": "Coccodrillo gigante"
+  },
+  "giant-fire-beetle": {
+    "name": "Scarabeo di fuoco gigante"
+  },
+  "giant-frog": {
+    "name": "Rana gigante"
+  },
+  "giant-goat": {
+    "name": "Caprone gigante"
+  },
+  "giant-hyena": {
+    "name": "Iena gigante"
+  },
+  "giant-lizard": {
+    "name": "Lucertola gigante"
+  },
+  "giant-owl": {
+    "name": "Gufo gigante"
+  },
+  "giant-rat": {
+    "name": "Ratto gigante"
+  },
+  "giant-scorpion": {
+    "name": "Scorpione gigante"
+  },
+  "giant-seahorse": {
+    "name": "Cavalluccio marino gigante"
+  },
+  "giant-shark": {
+    "name": "Squalo gigante"
+  },
+  "giant-venomous-snake": {
+    "name": "Serpente velenoso gigante"
+  },
+  "giant-wasp": {
+    "name": "Vespa gigante"
+  },
+  "giant-weasel": {
+    "name": "Donnola gigante"
+  },
+  "giant-wolf-spider": {
+    "name": "Ragno lupo gigante"
+  },
+  "goat": {
+    "name": "Capra"
+  },
+  "hawk": {
+    "name": "Falco"
+  },
+  "hippopotamus": {
+    "name": "Ippopotamo"
+  },
+  "hunter-shark": {
+    "name": "Squalo cacciatore"
+  },
+  "hyena": {
+    "name": "Iena"
+  },
+  "jackal": {
+    "name": "Sciacallo"
+  },
+  "killer-whale": {
+    "name": "Orca"
+  },
+  "lion": {
+    "name": "Leone"
+  },
+  "lizard": {
+    "name": "Lucertola"
+  },
+  "mastiff": {
+    "name": "Mastino"
+  },
+  "mule": {
+    "name": "Mulo"
+  },
+  "octopus": {
+    "name": "Polpo"
+  },
+  "owl": {
+    "name": "Gufo"
+  },
+  "piranha": {
+    "name": "Piranha"
+  },
+  "plesiosaurus": {
+    "name": "Plesiosauro"
+  },
+  "pony": {
+    "name": "Pony"
+  },
+  "pteranodon": {
+    "name": "Pteranodonte"
+  },
+  "rat": {
+    "name": "Ratto"
+  },
+  "raven": {
+    "name": "Corvo"
+  },
+  "reef-shark": {
+    "name": "Squalo di scogliera"
+  },
+  "rhinoceros": {
+    "name": "Rinoceronte"
+  },
+  "riding-horse": {
+    "name": "Cavallo da corsa"
+  },
+  "scorpion": {
+    "name": "Scorpione"
+  },
+  "seahorse": {
+    "name": "Cavalluccio marino"
+  },
+  "spider": {
+    "name": "Ragno"
+  },
+  "tiger": {
+    "name": "Tigre"
+  },
+  "triceratops": {
+    "name": "Triceratopo"
+  },
+  "venomous-snake": {
+    "name": "Serpente velenoso"
+  },
+  "vulture": {
+    "name": "Avvoltoio"
+  },
+  "warhorse": {
+    "name": "Cavallo da guerra"
+  },
+  "weasel": {
+    "name": "Faina"
+  },
+  "wolf": {
+    "name": "Lupo"
+  },
+  "attack.fist": {
+    "name": "Pugno"
+  },
+  "attack.bite": {
+    "name": "Morso"
+  },
+  "attack.claw": {
+    "name": "Artiglio"
+  },
+  "attack.claws": {
+    "name": "Artigli"
+  },
+  "attack.beak": {
+    "name": "Becco"
+  },
+  "attack.talons": {
+    "name": "Serre"
+  },
+  "attack.gore": {
+    "name": "Incornata"
+  },
+  "attack.stomp": {
+    "name": "Calpestio"
+  },
+  "attack.rock": {
+    "name": "Sasso"
+  },
+  "attack.ram": {
+    "name": "Cozzata"
+  },
+  "attack.hooves": {
+    "name": "Zoccoli"
+  },
+  "attack.tusk": {
+    "name": "Zanna"
+  },
+  "attack.tail": {
+    "name": "Coda"
+  },
+  "attack.tentacles": {
+    "name": "Tentacoli"
+  },
+  "attack.constrict": {
+    "name": "Costrizione"
+  },
+  "attack.rend": {
+    "name": "Lacerazione"
+  },
+  "attack.scratch": {
+    "name": "Graffio"
+  },
+  "attack.sting": {
+    "name": "Pungiglione"
+  },
+  "trait.keen-smell": {
+    "name": "Olfatto acuto"
+  },
+  "trait.keen-sight": {
+    "name": "Vista acuta"
+  },
+  "trait.keen-hearing-and-smell": {
+    "name": "Udito e olfatto acuti"
+  },
+  "trait.keen-sight-and-smell": {
+    "name": "Vista e olfatto acuti"
+  },
+  "trait.pack-tactics": {
+    "name": "Tattiche di gruppo"
+  },
+  "trait.pounce": {
+    "name": "Balzo"
+  },
+  "trait.charge": {
+    "name": "Carica"
+  },
+  "trait.relentless": {
+    "name": "Implacabile"
+  },
+  "trait.spider-climb": {
+    "name": "Scalata del ragno"
+  },
+  "trait.web-walker": {
+    "name": "Camminatore della ragnatela"
+  },
+  "trait.amphibious": {
+    "name": "Anfibio"
+  },
+  "trait.standing-leap": {
+    "name": "Salto da fermo"
+  },
+  "trait.hold-breath": {
+    "name": "Trattenere il respiro"
+  },
+  "trait.water-breathing": {
+    "name": "Respirare in acqua"
+  },
+  "trait.trampling-charge": {
+    "name": "Carica travolgente"
+  },
+  "trait.agile": {
+    "name": "Agile"
+  },
+  "trait.beast-of-burden": {
+    "name": "Bestia da soma"
+  },
+  "trait.blood-frenzy": {
+    "name": "Frenesia di sangue"
+  },
+  "trait.bloodied-fury": {
+    "name": "Furia sanguinante"
+  },
+  "trait.bubble-dash": {
+    "name": "Scatto acquatico"
+  },
+  "trait.compression": {
+    "name": "Compressione"
+  },
+  "trait.flyby": {
+    "name": "Volo radente"
+  },
+  "trait.illumination": {
+    "name": "Illuminazione"
+  },
+  "trait.ink-cloud": {
+    "name": "Nuvola d'inchiostro"
+  },
+  "trait.jumper": {
+    "name": "Saltatore"
+  },
+  "trait.mimicry": {
+    "name": "Imitazione"
+  },
+  "trait.nimble-escape": {
+    "name": "Fuga agile"
+  },
+  "trait.poison-resistance": {
+    "name": "Resistenza al veleno"
+  },
+  "trait.rampage": {
+    "name": "Assalto"
+  },
+  "trait.roar": {
+    "name": "Ruggito"
+  },
+  "trait.running-leap": {
+    "name": "Salto con rincorsa"
+  },
+  "trait.trample": {
+    "name": "Calpestio"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "portrait": {
+    "crop": {
+      "title": "Imposta Ritratto",
+      "subtitle": "Trascina per riposizionare · Pizzica o scrolla per lo zoom",
+      "add": "Aggiungi foto",
+      "confirm": "Imposta Ritratto",
+      "zoom": "Zoom",
+      "zoomIn": "Aumenta zoom",
+      "zoomOut": "Riduci zoom",
+      "readError": "Impossibile leggere il file immagine.",
+      "invalidCrop": "Impossibile applicare questo ritaglio. Riprova.",
+      "saveError": "Impossibile salvare il ritratto. Controlla la connessione e riprova.",
+      "cropperError": "Si è verificato un errore caricando lo strumento di ritaglio.",
+      "eyebrow": "Ritratto"
+    },
+    "menu": {
+      "edit": "Modifica ritratto",
+      "view": "Visualizza ritratto",
+      "recrop": "Ritaglia",
+      "replace": "Carica nuova foto",
+      "remove": "Rimuovi foto"
+    }
+  }
+}

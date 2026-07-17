@@ -1,0 +1,8 @@
+{
+  "actionLog": {
+    "title": "Registro Azioni",
+    "clear": "Cancella Registro",
+    "clearTitle": "Cancella registro",
+    "empty": "Nessuna azione registrata. Gli eventi appariranno qui durante il gioco."
+  }
+}

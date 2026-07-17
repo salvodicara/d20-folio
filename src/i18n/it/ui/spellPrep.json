@@ -1,0 +1,12 @@
+{
+  "spellPrep": {
+    "prepared": "Preparato",
+    "notPrepared": "Non Preparato",
+    "preparedHint": "Preparato: seleziona per non preparare",
+    "notPreparedHint": "Non preparato: seleziona per preparare",
+    "alwaysPreparedHint": "Sempre preparato (concesso da tratto): non modificabile",
+    "alwaysPrepared": "Sempre preparato (concesso da tratto): non conta nel limite di incantesimi preparati",
+    "spellMasteryBadge": "MAESTRIA",
+    "signatureSpellBadge": "PERSONALE"
+  }
+}

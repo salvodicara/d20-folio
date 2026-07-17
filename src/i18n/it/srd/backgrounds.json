@@ -1,0 +1,18 @@
+{
+  "acolyte": {
+    "description": "Ti sei dedicato al servizio in un tempio, apprendendo riti sacri e offrendo sacrifici al dio o agli dèi che veneri.",
+    "name": "Accolito"
+  },
+  "criminal": {
+    "description": "Ti sei guadagnato da vivere nei vicoli bui, tagliando borse o svaligiando negozi. Forse facevi parte di una piccola banda di criminali.",
+    "name": "Criminale"
+  },
+  "sage": {
+    "description": "Hai trascorso i tuoi anni formativi viaggiando tra manieri e monasteri, studiando vari tomi e apprendendo la conoscenza del multiverso.",
+    "name": "Saggio"
+  },
+  "soldier": {
+    "description": "Hai iniziato ad addestrarti per la guerra non appena hai raggiunto l'età adulta. Potresti aver fatto parte di un esercito permanente, una compagnia di mercenari o una milizia locale.",
+    "name": "Soldato"
+  }
+}

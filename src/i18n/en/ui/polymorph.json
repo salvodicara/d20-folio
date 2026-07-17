@@ -1,0 +1,19 @@
+{
+  "polymorph": {
+    "transform": "Transform",
+    "rubric": "Transform",
+    "title": "Choose a Beast Form",
+    "selfTab": "Myself",
+    "referenceTab": "Another creature",
+    "selfHint": "Its AC, speeds, and ability scores become yours, plus Temporary HP.",
+    "referenceHint": "Reference only. Nothing on your own sheet changes.",
+    "search": "Search beasts",
+    "noForms": "No Beast forms are available at your level.",
+    "crShort": "CR {{cr}}",
+    "speedWalk": "Walk",
+    "speedBurrow": "Burrow",
+    "traits": "Traits",
+    "activeForm": "Polymorphed: {{name}}",
+    "revert": "Revert form"
+  }
+}

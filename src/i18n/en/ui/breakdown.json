@@ -1,0 +1,16 @@
+{
+  "breakdown": {
+    "rubric": "Breakdown",
+    "base": "Base",
+    "featureBonus": "Feature bonus",
+    "ac": {
+      "formBase": "Form base",
+      "floor": "AC floor",
+      "capped": "capped by armor",
+      "magic": "Magic items"
+    },
+    "spell": {
+      "bonus": "Spellcasting bonuses"
+    }
+  }
+}

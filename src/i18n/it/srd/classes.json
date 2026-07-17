@@ -1,0 +1,38 @@
+{
+  "barbarian": {
+    "name": "Barbaro"
+  },
+  "bard": {
+    "name": "Bardo"
+  },
+  "cleric": {
+    "name": "Chierico"
+  },
+  "druid": {
+    "name": "Druido"
+  },
+  "fighter": {
+    "name": "Guerriero"
+  },
+  "monk": {
+    "name": "Monaco"
+  },
+  "paladin": {
+    "name": "Paladino"
+  },
+  "ranger": {
+    "name": "Ranger"
+  },
+  "rogue": {
+    "name": "Ladro"
+  },
+  "sorcerer": {
+    "name": "Stregone"
+  },
+  "warlock": {
+    "name": "Warlock"
+  },
+  "wizard": {
+    "name": "Mago"
+  }
+}

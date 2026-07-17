@@ -1,0 +1,15 @@
+{
+  "settings": {
+    "language": "Lingua",
+    "theme": "Tema",
+    "darkMode": "Tema Scuro",
+    "lightMode": "Tema Chiaro",
+    "systemMode": "Sistema",
+    "hint": "Il tuo account, l'aspetto e la lingua.",
+    "appearance": "Aspetto",
+    "themeHelp": "Scegli un tema fisso o segui il sistema.",
+    "languageHelp": "Tutto il testo delle regole segue la traduzione dell'SRD.",
+    "noIdentity": "Accesso effettuato",
+    "openAdmin": "Apri strumenti di amministrazione"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "metamagic": {
+    "eyebrow": "Sorcerer",
+    "section": "Metamagic",
+    "costLabel": "Cost",
+    "pickLabel": "Choose your metamagic",
+    "sorceryRemaining_one": "{{count}} SP left",
+    "sorceryRemaining_other": "{{count}} SP left",
+    "notApplicable": "Doesn't apply to this spell",
+    "notEnoughSp": "Not enough Sorcery Points",
+    "onePrimaryRule": "Use one Metamagic option per spell. Empowered and Seeking can stack on top.",
+    "swapsPrimary": "Replaces your current Metamagic option"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "features": {
+    "searchPlaceholder": "Search features...",
+    "classFeatures": "Class Features",
+    "subclassFeatures": "Subclass Features",
+    "racialTraits": "Racial Traits",
+    "feats": "Feats",
+    "custom": "Custom",
+    "passive": "Passive",
+    "alwaysActive": "Always active, no use needed",
+    "slotAction": "Action",
+    "slotBonus": "Bonus Action",
+    "slotReaction": "Reaction",
+    "slotFree": "Free",
+    "recoverShortRest": "Short Rest",
+    "recoverLongRest": "Long Rest",
+    "recoverManual": "Manual",
+    "recoverShortBadge": "SR",
+    "recoverLongBadge": "LR",
+    "usesRemaining": "Uses remaining",
+    "tagResource": "Resource",
+    "delete": "Delete {{name}}",
+    "editCustom": "Edit {{name}}",
+    "noMatch": "No features match your search."
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "actionLog": {
+    "title": "Action Log",
+    "clear": "Clear Log",
+    "clearTitle": "Clear log",
+    "empty": "No actions logged yet. Events will appear here during play."
+  }
+}

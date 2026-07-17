@@ -1,0 +1,27 @@
+{
+  "palette": {
+    "title": "Search the Folio",
+    "rubric": "Ask the Folio",
+    "trigger": "Ask the Folio",
+    "description": "Find a character, a spell or item, or jump to a section.",
+    "placeholder": "Characters, spells, items, sections…",
+    "empty": "No matches",
+    "groupQuick": "Quick actions",
+    "groupSections": "Sections",
+    "groupActions": "Actions",
+    "groupCharacters": "Characters",
+    "groupCampaigns": "Campaigns",
+    "groupCompendium": "Compendium",
+    "actionThemeToLight": "Switch to light theme",
+    "actionThemeToDark": "Switch to dark theme",
+    "actionLangToEn": "Switch to English",
+    "actionLangToIt": "Switch to Italian",
+    "actionNewCharacter": "Create a character",
+    "actionNewCampaign": "Create a campaign",
+    "actionImport": "Import a character (JSON)",
+    "actionReport": "Report a bug or idea",
+    "actionSignOut": "Sign out",
+    "hintGo": "Go",
+    "hintNav": "Navigate"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "compendium": {
+    "hint": "Every species, class, spell, and item, searchable.",
+    "filters": "Filters",
+    "type": "Type",
+    "emptyTitle": "Nothing on this leaf",
+    "emptyHint": "No entries match your search and filters.",
+    "emptyReset": "Clear search & filters",
+    "frontisHint": "Choose an entry from the index to read it on this page."
+  }
+}

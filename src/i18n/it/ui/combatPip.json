@@ -1,0 +1,15 @@
+{
+  "combatPip": {
+    "stateActorTurn": "Turno di {{actor}}",
+    "stateActorTurnUnknown": "Turno nemico",
+    "stateGathering": "In attesa degli altri…",
+    "pipAria": "Round {{round}} · {{state}} · apri {{dest}}",
+    "rollPipAria": "Round {{round}} · tira la tua iniziativa",
+    "initiativeRubric": "Iniziativa · {{name}}",
+    "chooserOpen": "I tuoi altri scontri ({{count}})",
+    "chooserTitle": "I tuoi scontri",
+    "chooserRowState": "R{{round}} · {{state}}",
+    "yourTurnToast": "È il tuo turno",
+    "destGroup": "Vai al Gruppo"
+  }
+}

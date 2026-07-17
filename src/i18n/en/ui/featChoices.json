@@ -1,0 +1,30 @@
+{
+  "featChoices": {
+    "pickCantrips_one": "Pick {{count}} Cantrip",
+    "pickCantrips_other": "Pick {{count}} Cantrips",
+    "pickSpells_one": "Pick {{count}} Spell",
+    "pickSpells_other": "Pick {{count}} Spells",
+    "pickClassCantrips_one": "Pick {{count}} <c>{{className}}</c> Cantrip",
+    "pickClassCantrips_other": "Pick {{count}} <c>{{className}}</c> Cantrips",
+    "pickClassSpells_one": "Pick {{count}} <c>{{className}}</c> Spell",
+    "pickClassSpells_other": "Pick {{count}} <c>{{className}}</c> Spells",
+    "pickSchoolSpells_one": "Pick {{count}} <c>{{school}}</c> {{className}} Spell",
+    "pickSchoolSpells_other": "Pick {{count}} <c>{{school}}</c> {{className}} Spells",
+    "pickRitualSpells_one": "Pick {{count}} Ritual-tagged Spell (any class list)",
+    "pickRitualSpells_other": "Pick {{count}} Ritual-tagged Spells (any class list)",
+    "toSpellbookHint": "Added to your spellbook for free. Prepare them like any other spellbook spell.",
+    "noSpellsAvailable": "No spells match the filters.",
+    "pickSkillsOrTools_one": "Pick {{count}} Skill or Tool",
+    "pickSkillsOrTools_other": "Pick {{count}} Skills or Tools",
+    "pickTools_one": "Pick {{count}} Tool",
+    "pickTools_other": "Pick {{count}} Tools",
+    "pickSkills_one": "Pick {{count}} Skill",
+    "pickSkills_other": "Pick {{count}} Skills",
+    "pickExpertise_one": "Choose {{count}} Skill for Expertise",
+    "pickExpertise_other": "Choose {{count}} Skills for Expertise",
+    "pickLanguages_one": "Pick {{count}} Language",
+    "pickLanguages_other": "Pick {{count}} Languages",
+    "noMatches": "No matches.",
+    "noProficientSkills": "No proficient skills available for Expertise."
+  }
+}

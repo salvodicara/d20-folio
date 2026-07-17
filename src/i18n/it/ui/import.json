@@ -1,0 +1,17 @@
+{
+  "import": {
+    "title": "Importa Personaggio",
+    "success": "\"{{name}}\" importato con successo!",
+    "error": "Importazione non riuscita. Riprova.",
+    "invalidJson": "JSON non valido: impossibile analizzare il file.",
+    "invalidFormat": "Formato non riconosciuto.",
+    "oldFormat": "Questo file proviene da una versione precedente. Chiedi al titolare della campagna una copia rigenerata.",
+    "fileTooLarge": "File troppo grande (massimo 5MB).",
+    "mustBeJson": "Il file deve essere un .json.",
+    "zipImported_one": "Importato {{count}} personaggio",
+    "zipImported_other": "Importati {{count}} personaggi",
+    "zipPartial": "Importati {{imported}}; impossibile importarne {{failed}}",
+    "zipError": "Impossibile importare quel file ZIP.",
+    "zipEmpty": "Quel file ZIP non contiene personaggi."
+  }
+}

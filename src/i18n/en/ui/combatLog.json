@@ -1,0 +1,18 @@
+{
+  "combatLog": {
+    "actionUse": "Used {{name}}",
+    "actionUseAttackOf": "Used {{name}} (attack {{n}} of {{total}})",
+    "hpDamage": "Took {{amount}} damage ({{current}}/{{max}} HP)",
+    "hpHeal": "Healed {{amount}} HP ({{current}}/{{max}} HP)",
+    "tempHpGain": "Gained {{amount}} temporary HP",
+    "conditionGain": "Gained {{condition}}",
+    "conditionLoss": "Lost {{condition}}",
+    "concentrationStart": "Started concentrating on {{spell}}",
+    "deathSaveSuccess": "Death save succeeded ({{successes}} ✓ / {{failures}} ✗)",
+    "deathSaveFailure": "Death save failed ({{successes}} ✓ / {{failures}} ✗)",
+    "shortRest": "Took a Short Rest",
+    "longRest": "Took a Long Rest",
+    "riderUse": "Spent {{rider}} on {{name}}",
+    "effectExpired": "{{name}} ended (duration elapsed)"
+  }
+}

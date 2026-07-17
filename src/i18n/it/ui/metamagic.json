@@ -1,0 +1,14 @@
+{
+  "metamagic": {
+    "eyebrow": "Stregone",
+    "section": "Metamagia",
+    "costLabel": "Costo",
+    "pickLabel": "Scegli la tua metamagia",
+    "sorceryRemaining_one": "{{count}} PS rimasto",
+    "sorceryRemaining_other": "{{count}} PS rimasti",
+    "notApplicable": "Non si applica a questo incantesimo",
+    "notEnoughSp": "Punti Stregoneria insufficienti",
+    "onePrimaryRule": "Usa una sola opzione di Metamagia per incantesimo. Potenziato e Localizzante possono aggiungersi.",
+    "swapsPrimary": "Sostituisce la tua opzione di Metamagia attuale"
+  }
+}

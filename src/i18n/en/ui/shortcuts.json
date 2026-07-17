@@ -1,0 +1,35 @@
+{
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "rubric": "Shortcuts",
+    "description": "A reference of every keyboard shortcut, grouped by where it works.",
+    "then": "then",
+    "groups": {
+      "global": "Global",
+      "encounter": "Encounter (DM)",
+      "palette": "Command palette"
+    },
+    "rows": {
+      "palette": "Toggle the command palette",
+      "help": "Show keyboard shortcuts",
+      "goCharacters": "Go to Characters",
+      "goCampaigns": "Go to Campaigns",
+      "goCompendium": "Go to Compendium",
+      "goSettings": "Go to Settings",
+      "goAdmin": "Go to Admin",
+      "dismiss": "Close the topmost layer",
+      "edit": "Toggle edit mode",
+      "undo": "Undo last action",
+      "redo": "Redo last undone action",
+      "leaveEdit": "Leave edit mode",
+      "sheetTabs": "Previous / next tab",
+      "sheetTabsEnds": "First / last tab",
+      "turn": "Previous / next turn",
+      "paletteMove": "Move the selection",
+      "paletteEnds": "Jump to first / last",
+      "paletteGo": "Open the selected result",
+      "paletteClose": "Close the palette",
+      "compendiumClose": "Close the open entry"
+    }
+  }
+}

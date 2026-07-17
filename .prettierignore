@@ -1,0 +1,15 @@
+data-scrape/
+previews/history/
+
+# Codec-generated canonical artifacts — their byte format is OWNED by the codec
+# (`serializeCharacter` → `JSON.stringify(.., 2)`) and LOCKED by the round-trip test
+# (`team-fixtures-new-export.test.ts`: serialize(parse(file)) === file). Prettier's
+# array-collapsing (e.g. `["smiths-tools"]` on one line) contradicts that exact
+# format, so it must NOT reformat these fixtures.
+content-pack/fixtures/team/
+tests/fixtures/team-v2/
+
+# Vendored third-party skill — its content is OWNED and periodically refreshed by
+# `npx impeccable update` (github.com/pbakaus/impeccable); reformatting it here
+# would just create diff noise against upstream on the next update.
+.claude/skills/impeccable/

@@ -1,0 +1,12 @@
+{
+  "spellPrep": {
+    "prepared": "Prepared",
+    "notPrepared": "Not Prepared",
+    "preparedHint": "Prepared: select to unprepare",
+    "notPreparedHint": "Not prepared: select to prepare",
+    "alwaysPreparedHint": "Always prepared (feature grant): can't be changed",
+    "alwaysPrepared": "Always prepared (feature grant): doesn't count toward your prepared limit",
+    "spellMasteryBadge": "MASTERY",
+    "signatureSpellBadge": "SIGNATURE"
+  }
+}

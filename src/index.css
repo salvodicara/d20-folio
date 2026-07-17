@@ -1,0 +1,1673 @@
+@import "tailwindcss";
+@import "./styles/folio.css";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   d20 Folio · Design Tokens · "Illuminated Folio" (CANONICAL source of truth)
+   ───────────────────────────────────────────────────────────────────────────
+   These :root + [data-theme] blocks are the live, authoritative design tokens —
+   originally ported from previews/folio_design/tokens.css, then hand-tuned for the
+   premium revamp (light surfaces → gilt cream, deeper page field + stronger light
+   elevation for depth, AA-safe gold-as-text, the --input-fill / --carve-shade
+   carved-field pair, the atmospheric --vellum-grain vignette, + the folio-panel /
+   seal / tabstrip / m-nav recipes in styles/folio.css). They are NOT frozen — edit
+   them here when a token is the genuine root cause, and keep the axe a11y gate +
+   the contrast unit tests (verdict-ink-contrast, bg-recessed) green. The @theme
+   bridge at the bottom aliases the subset Tailwind utilities reference to var(--…).
+   [data-theme] scoping is driven by uiStore.applyTheme; [data-motion] mirrors the
+   OS prefers-reduced-motion setting (no in-app toggle).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── § 02 Typography — The Gilded Plate (owner-ratified 2026-07-02) ─────
+     Four registers, three faces:
+       --font-title   Cinzel — the CEREMONIAL titling register (caps-only face:
+                      lowercase renders as small capitals). Reserved for page
+                      titles, the brand lockup, the cockpit identity-band name,
+                      and modal-head titles. NEVER below 14px.
+       --font-display Alegreya — content headings (real lowercase).
+       --font-body    Alegreya — reading prose.
+       --font-numeric Source Serif 4 — numbers, stats, and the uppercase
+                      label/eyebrow register. Tabular LINING figures are pinned
+                      ONCE, app-wide, on `body` below (SS4 and Alegreya both
+                      default to proportional oldstyle text figures). */
+  --font-title: "Cinzel Variable", "Cinzel", "Georgia", serif;
+  --font-display: "Alegreya Variable", "Alegreya", "Georgia", serif;
+  --font-body: "Alegreya Variable", "Alegreya", "Iowan Old Style", "Georgia", serif;
+  --font-numeric: "Source Serif 4", "Georgia", serif;
+
+  /* The SELECTED-frame gradient (BG3 identity T5 — ornament metals): silver
+     over bronze over silver. Theme-agnostic by construction — it derives from
+     the per-theme `--metal-silver`/`--metal-bronze` pair (each theme block
+     strikes its own metals), so ONE definition serves both themes. */
+  --frame-selected: linear-gradient(
+    180deg,
+    var(--metal-silver),
+    var(--metal-bronze) 50%,
+    var(--metal-silver)
+  );
+
+  /* Legibility floor — the smallest size ANY state-cue / label may use. Sub-10px
+     text (the old 8px eyebrows / ritual tag) is illegible at default zoom for
+     low-vision users and degrades badly on reflow. New cues inherit this. */
+  --text-micro: 0.625rem; /* 10px — minimum legible state-cue */
+  --text-2xs: 0.6875rem; /* 11px — marginalia / caption-mono */
+  --text-xs: 0.75rem; /* 12px — caption */
+  --text-sm: 0.8125rem; /* 13px — small */
+  --text-base: 0.9375rem; /* 15px — body */
+  --text-md: 1.0625rem; /* 17px — lede */
+  --text-lg: 1.3125rem; /* 21px — card title */
+  --text-xl: 1.75rem; /* 28px — section heading */
+  --text-2xl: 2.375rem; /* 38px — page title */
+  --text-3xl: 3.25rem; /* 52px — hero */
+  --text-hero: 4.5rem; /* 72px — display */
+
+  --leading-tight: 1.1;
+  --leading-snug: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  --tracking-tight: -0.015em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --tracking-wider: 0.08em;
+  --tracking-widest: 0.18em;
+
+  /* ── § 03 Spacing — Geometric 4 px base ───────────────────────────────── */
+  --sp-1: 0.25rem; /*   4 px */
+  --sp-2: 0.5rem; /*   8 px */
+  --sp-3: 0.75rem; /*  12 px */
+  --sp-4: 1rem; /*  16 px */
+  --sp-5: 1.25rem; /*  20 px — was MISSING; 9 folio.css uses (page gutter, header pad, rail-sec margin, card/chip pad) silently dropped */
+  --sp-6: 1.5rem; /*  24 px */
+  --sp-7: 1.75rem; /*  28 px */
+  --sp-8: 2rem; /*  32 px */
+  --sp-9: 2.25rem; /*  36 px */
+  --sp-10: 2.5rem; /*  40 px */
+  --sp-12: 3rem; /*  48 px */
+  --sp-16: 4rem; /*  64 px */
+  --sp-24: 6rem; /*  96 px */
+  --sp-32: 8rem; /* 128 px */
+
+  /* ── Layout / interaction system tokens ───────────────────────────────── */
+  --touch-min: 44px; /* comfortable touch-target floor (Apple HIG / WCAG 2.5.5) */
+  /* Coordinated shell breakpoints (single source of truth). Note: CSS @media
+     can't read a var() yet, so the literal px values below are mirrored in the
+     folio.css media queries — these tokens DOCUMENT the canonical thresholds so
+     ribbon-hide / drawer-show / header-wrap all flip at ONE coherent width and
+     don't drift (the load-order + 720↔768 split traps the audit flagged). */
+  --bp-mobile: 720px; /* phone: nav rail → bottom nav + drawer; header wraps */
+  --bp-rail: 1180px; /* game-rail drop threshold (matches folio_design previews) */
+
+  /* ── Layout: device safe-area + reading measure (single source) ─────────
+     --safe-bottom feeds every fixed bottom chrome surface (m-nav, m-drawer,
+     .main mobile padding) so notched phones (iOS home indicator / Android
+     gesture bar) never occlude content or controls. Requires
+     viewport-fit=cover on the viewport meta (index.html).
+     --measure caps prose containers (Notes / Lore / feature descriptions) to
+     a readable line length on wide / ultra-wide desktops. */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --measure: 72ch;
+
+  /* ── § 04 Radius — Lapidary (chips are facets, NOT pills) ─────────────── */
+  --radius-sm: 0;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-xl: 8px;
+  --radius-2xl: 12px;
+  --radius-full: 4px; /* chips @ 4px facet — the ONLY true pill is the §21 switch track (999px) */
+  --radius-pill: 999px; /* reserved: switch track only */
+
+  /* ── § 06 Motion — The settling grammar (BG3 identity: motion SETTLES, never
+     travels — short cubic-out fades with tiny translates; spring/bounce is
+     reserved EXCLUSIVELY for warning/urgent notification pops). ── */
+  --m-instant: 90ms;
+  --m-fast: 160ms;
+  --m-normal: 240ms;
+  --m-slow: 380ms;
+  --m-page: 540ms;
+  --ease-settle: cubic-bezier(
+    0.22,
+    1,
+    0.36,
+    1
+  ); /* primary — entrances / presses / expansions ease INTO place, no overshoot */
+  --ease-pop: cubic-bezier(
+    0.34,
+    1.56,
+    0.64,
+    1
+  ); /* spring overshoot — warning/urgent notification pops ONLY */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* secondary — exits / fades */
+  --ease-instant: linear;
+
+  /* ── § 08 Z-index — Standard 7-layer ──────────────────────────────────── */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-overlay: 1000;
+  --z-modal: 2000;
+  --z-toast: 3000;
+  --z-tooltip: 9999;
+  /* Boot / fullscreen loader — above all app chrome (it's shown when there is no
+     content yet). Below the pre-React HTML boot splash, which is its own layer. */
+  --z-boot: 9500;
+
+  /* ── Scrim tiers (theme-independent; BG3 identity epic, owner-ratified
+     2026-07-02). BG3's shipped theme ships exactly TWO modal-scrim weights:
+     black at 46% (standard dialogs) and black at 75% (fullscreen / blocking
+     surfaces — lightbox, character-obscuring overlays). Every overlay backdrop
+     routes through one of these two tokens — never a literal black alpha. ── */
+  --scrim-dim: rgba(0, 0, 0, 0.46);
+  --scrim-heavy: rgba(0, 0, 0, 0.75);
+
+  /* ── Layout — global chrome heights (additive; T3/C5). The sticky topbar is
+     56px; banners that pin beneath it offset by this token instead of a magic
+     `top-14`, so they stay flush if the bar height ever changes. ── */
+  --topbar-h: 56px;
+  /* Mobile bottom-nav height (the realm switcher below --bp-mobile). Pages add it
+     (plus --safe-bottom) as bottom padding so fixed bottom chrome never occludes
+     the last row of content. */
+  --m-nav-h: 58px;
+  /* #63 — ONE shared page-shell content width, so every realm page (roster /
+     campaigns / compendium / settings / admin) AND the topbar inner align to the
+     same column instead of each rolling its own max-w-{3,5,6,7}xl (the page-to-page
+     "shock"). Scales up on large monitors (the @media below) so ultrawide isn't
+     wasted; the cockpit is full-bleed and opts out by not using .page-shell. */
+  --page-max: 76rem; /* ~1216px */
+  /* Owner-generated atmospheric SCENE PLATES (DESIGN.md §13) — PER-THEME art,
+     same world ("Daylight Sibling Plates", owner-ratified): each of the three
+     scene plates ships a candlelit night original (dark) and a daylight twin of
+     the SAME room (light), so switching theme reads as the same place at a
+     different hour. The tokens default to the DARK plates here; the light theme
+     block re-points all three to their daylight siblings — and because CSS only
+     fetches the value a rule actually applies, each theme downloads ONLY its
+     own plates. Were a file ever missing the layer paints
+     nothing and the gilt-gradient fallback baked into each consuming recipe
+     shows instead.
+       --asset-home-hero          the app-wide backdrop (arcane study)
+       --asset-login              the sign-in splash (glowing grimoire altar)
+       --asset-campaign-backdrop  the campaign default (war-table hall) */
+  --asset-home-hero: url("/assets/backgrounds/home-hero.webp");
+  --asset-login: url("/assets/backgrounds/login.webp");
+  --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop.webp");
+
+  /* Compendium "ancient tome" parchment (DESIGN.md #5). A real aged-scroll WebP
+     (OWN-23 — owner-supplied, cropped off its table + watermark) IS the surface now:
+     the `.cmp-tome` recipe covers the tome with it. Light theme shows the warm vellum
+     full-strength (dark ink on parchment); dark theme tones it to an even candlelit
+     umber and reads the same photo as faint texture-only over a warm-dark base, so
+     light ink stays legible. One opacity knob (`--parchment-strength`) tunes the light
+     theme's texture booster; dark sets its own. (The old CSS `--parchment-grain`
+     fibre fallback was retired once the photo shipped — it muddied the image.) */
+  --asset-parchment: url("/assets/textures/parchment.webp");
+  --parchment-strength: 0.5;
+
+  /* BG3-identity panel/tome materials (DESIGN.md §13) — owner-generated,
+     seam-blended tileable WebPs, one per theme. `panel-leather` is the near-black
+     leather grain the dark `.folio-panel` lays under its surface gradient;
+     `panel-light` (owner P8) is its pale cream bookbinding sibling under the
+     light panel the same way; `vellum-dark` is a candlelit dark vellum (graded
+     into the #241c12–#3a2d21 band) that IS the dark `.cmp-tome` surface (light's
+     tome leaf is `parchment.webp` above). */
+  --asset-panel-leather: url("/assets/textures/panel-leather.webp");
+  --asset-panel-light: url("/assets/textures/panel-light.webp");
+  --asset-vellum-dark: url("/assets/textures/vellum-dark.webp");
+
+  /* The engraved brand crest (DESIGN.md §13 — owner-generated Fable batch-1 P6):
+     a bronze d20 in a laurel + acanthus wreath, shipped as an ALPHA-MASK WebP
+     (white ink, alpha = engraving luminance) and rendered via CSS `mask-image`,
+     so the emblem always wears the current theme's accent ink — never a raster
+     colour of its own. Seated as the frontispiece watermark behind every framed
+     masthead on the standard app field (`.page-head-crest`); the art-backed
+     campaign hub omits it (its art is the frontispiece). */
+  --asset-crest: url("/assets/brand/crest.webp");
+
+  /* ── § 01 Palette — mineral pigment ramps (theme-independent) ─────────── */
+  --gold-leaf-50: #f5e6b8;
+  --gold-leaf-100: #ecd28a;
+  --gold-leaf-200: #f0d791;
+  --gold-leaf-300: #d4ac4d;
+  --gold-leaf-400: #c69f45;
+  --gold-leaf-500: #b8923d;
+  --gold-leaf-700: #7a5f24;
+  --gold-leaf-900: #3d2f12;
+
+  --lapis-50: #d8e3f4;
+  --lapis-100: #a8bce0;
+  --lapis-300: #6589c4;
+  --lapis-500: #2a4d8c;
+  --lapis-700: #1a3358;
+  --lapis-900: #0d1a2d;
+
+  --vermilion-50: #f4d4cf;
+  --vermilion-100: #e8a299;
+  --vermilion-300: #d4685a;
+  --vermilion-500: #c0392b;
+  --vermilion-700: #8a2418;
+  --vermilion-900: #4d1208;
+
+  --verdigris-50: #d4e8de;
+  --verdigris-100: #9cc8b3;
+  --verdigris-300: #6ba88a;
+  --verdigris-500: #4a8a6f;
+  --verdigris-700: #2e5a47;
+  --verdigris-900: #163024;
+
+  --amethyst-50: #e0d4ec;
+  --amethyst-100: #b89fd1;
+  --amethyst-300: #8e5cc0;
+  --amethyst-500: #6b3d96;
+  --amethyst-700: #43245d;
+  --amethyst-900: #21132d;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   § 01 Palette · DARK theme (default)
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg-page: #0c0a07;
+  --bg-surface-1: #15110b;
+  --bg-surface-2: #1d1810;
+  --bg-surface-3: #2a2317;
+  /* Warm-black rule (BG3 identity epic, 2026-07-02): every neutral dark
+     surface is RED-BIASED (R > G > B) like BG3's shipped darks (#0b0908 family)
+     — never neutral grey, never blue-cast. The prior #07050a was the one
+     blue-biased outlier (B > R) in the neutral chrome; corrected to the warm
+     twin at the same depth. text-muted/faint keep ~6:1 on it (guarded by the
+     bg-recessed contrast unit test). */
+  --bg-recessed: #0a0705;
+  /* The tone a carved channel's fill darkens toward at its top inner edge (the
+     `.input` recessed gradient). Near-black reads as carved depth on the dark
+     surfaces; the LIGHT theme overrides it to a warm umber so the same gradient
+     reads as a pressed vellum channel instead of muddy olive (black-on-tan). */
+  --carve-shade: #000000;
+  /* Carved-FIELD fill (text inputs / selects / textareas). Dark = the near-black
+     recessed well (deep carve). Light overrides it to a clean light parchment so a
+     field reads as a gently pressed writing area, not the heavy mid-tan slab the
+     deep --bg-recessed produced at field size. Pips / portrait wells keep
+     --bg-recessed; only the writable fields use this. */
+  --input-fill: var(--bg-recessed);
+  /* Shared avatar-placeholder WELL — a recessed vellum/slate gradient behind a
+     carved gold-leaf initial. Re-keyed OFF amethyst (a reserved "magical source"
+     semantic) so the brand's most-repeated identity chip reads in the gold-leaf
+     identity, not the magic hue. Used by .portrait, .ch-portrait, the topbar
+     user fallback; per-class roster tints layer their domain pigment on top. */
+  --portrait-well: radial-gradient(
+    circle at 35% 28%,
+    var(--bg-surface-3),
+    var(--bg-recessed)
+  );
+
+  /* Candlelit translucency (BG3 identity epic T3, owner-ratified 2026-07-02):
+     the alpha the OUTERMOST dark surfaces render at — the page-level panels /
+     rails / framed page-heads sitting directly on the page field (the
+     `.folio-panel` material pseudo, the dark `.page-head.framed` + `.rail`
+     overrides; the topbar already ships its own 92% + blur glass). BG3's main
+     panels are near-black at ~90% alpha so the ambient scene glows through
+     them — that glow-through IS the candlelit effect. NESTED content surfaces
+     (cards, inputs, wells) stay opaque: translucency never compounds.
+     CONTRAST FLOOR: text-muted on the brightest translucent-panel tone
+     composited over the brightest backdrop region must clear 4.5:1 — pinned
+     by the "candlelit translucency composite floor" guard in
+     tests/unit/verdict-ink-contrast.test.ts (at 0.90 the worst case is
+     text-muted on the surface-2 composite ≈ 4.95:1). 0.90 is BG3's exact
+     shipped panel alpha (#E6 ≈ 90%) — verified against 0.92 (too faint) and
+     0.88 (fine, but no headroom win) on the cockpit panels. The light theme
+     defines its own gentler value (morning-light translucency — see the light
+     block). */
+  --panel-alpha: 0.9;
+  /* The candlelit backdrop's presence in dark (was the body::after 0.55
+     fallback; now explicit — mirrors the light block's token — so the
+     composite-floor guard reads the real value). */
+  --app-bg-art-opacity: 0.55;
+
+  --text-primary: #f0e4cb;
+  /* The SPECIAL emphasis tier (BG3 identity epic, 2026-07-02) — BG3's warm-cream
+     "special" text (#fff2b3 family): the register BETWEEN --text-primary and the
+     gold --accent-text. For active/selected titles and the name of the thing you
+     are reading — lit emphasis, not brand gold. 15.6:1 on surface-2 / 13.8:1 on
+     surface-3 (trivially AA; the point is the distinct register). */
+  --text-special: #fff2b3;
+  --text-secondary: #c4b89e;
+  /* nudged lighter one step (#8b7e64 → #988b6e) so muted labels clear AA (4.5:1)
+     even on the darkest --bg-surface-3 recessed cards (was ~3.9:1) without
+     flattening the hierarchy below --text-secondary. */
+  --text-muted: #988b6e;
+  /* text-faint raised to meet ~4.5:1 at the 8-11px sizes it is actually used for
+     (placeholders, .es-note, slot labels, fchip counts) — was #5a5141 (~2.3:1, FAIL).
+     Decoration-only faint should use --border-strong, never this. */
+  --text-faint: #9a8c6e;
+  --text-inverse: #1a1610;
+
+  --border-soft: #241e15;
+  --border-medium: #352c1f;
+  --border-strong: #4d3f29;
+  --border-accent: #6b562f;
+
+  /* Empty/spent PIP recipe (slot diamonds + tracker pips) — the hollow socket
+     of a carved gem. The plain --bg-recessed (#07050a) + --border-strong
+     (#4d3f29) pair vanished on the rail surface (#15110b): border 1.84:1,
+     fill 1.08:1 — both FAIL WCAG 1.4.11 (3:1 non-text). Brighter border
+     (#7a6845 ≈ 3.5:1 vs surface-1) + a fill lifted off pure-black so the empty
+     pip reads as a recessed socket, not a void. Consumed by every pip recipe
+     (.sc-pip.used, .uc-slotpips .sp.used, .trk-pip) so the fix cascades. */
+  --pip-empty-border: #7a6845;
+  --pip-empty-fill: color-mix(in oklab, var(--bg-recessed) 70%, var(--bg-surface-2));
+
+  --accent-primary: var(--gold-leaf-500);
+  --accent-primary-bright: var(--gold-leaf-300);
+  --accent-primary-deep: var(--gold-leaf-700);
+  /* max-contrast accent TEXT (rubrics/eyebrows on gold-tinted bg) — NOT the bright UI-fill gold */
+  --accent-text: var(--gold-leaf-300);
+  /* The BRIGHT gold used ONLY for glows/halos/drop-shadows (never fill, never text).
+     Disambiguates the glow colour from the AA-constrained `--accent-primary` fill/ink:
+     on dark both are bright gold so output is identical; on light `--accent-primary`
+     is a deep umber (#4a380c, body-text AA) that CANNOT glow, so the light override
+     re-points its glows here to a brighter struck gold. */
+  --accent-glow: var(--gold-leaf-500);
+
+  /* Combat-pip destination chip (the "Open {hero}" topbar switch, `.cp-dest-chip`) — a
+     CARVED WARM-BLACK socket in BOTH themes: its gold glyph / portrait-frame / chevron are
+     tuned to read on the dark fill in either theme, so its LABEL ink must be a FIXED light
+     tone too, NOT the theme-flipping `--text-secondary` (that drops to a dark espresso in
+     light and vanished on the dark socket, ~1.3:1 — the owner-reported "Apri Lyra" bug).
+     `--cp-dest-bg` is the DARKEST gradient stop (the contrast worst case). Guarded ≥AA in
+     BOTH themes: `verdict-ink-contrast.test.ts` → "combat-pip dest-chip". */
+  --cp-dest-bg: #191309;
+  --cp-dest-ink: #c4b89e;
+
+  /* § 07 Focus — crisp ring color (dark: gold-300 ≈ 7-9:1; clears WCAG 1.4.11 3:1). */
+  --focus-ring: var(--gold-leaf-300);
+  /* Focus interior WASH (BG3 identity epic, 2026-07-02): BG3 focuses a control by
+     washing its INTERIOR with warm light (#fddda6 at 23–60% alpha), not by ring
+     alone. Additive warmth layered under the a11y ring (the shared :focus-visible
+     recipe) — never a replacement for it. */
+  --focus-wash: rgba(253, 221, 166, 0.25);
+
+  /* § Ornament metals (BG3 identity T5 — DESIGN.md §5 "The ornament vocabulary").
+     The SELECTED frame is silver-over-bronze (BG3's #c0b8b0 → #685644 → #c0b8b0,
+     warmed toward our gold-leaf ramp): silvery tips, bronze heart. These drive
+     `--frame-selected`, the gradient frame that marks the wizard hero altar and
+     the chosen plaque. */
+  --metal-silver: #c4baa9;
+  --metal-bronze: #6e5a3c;
+  /* The gilt-glint sheen ink (wave 2 — the one-shot hover sweep on the
+     struck-gold tier, folio.css): a white haze over the deep dark gold. */
+  --glint-ink: rgba(255, 255, 255, 0.32);
+
+  /* § Reliquary goldwork (the full-BG3 identity push, owner-ratified 2026-07-16 —
+     DESIGN.md §5 "The ornament vocabulary"). The worked-gold CORNER ornament that
+     caps the app's hero frames (framed masthead, gilt-framed hero band, dialogs):
+     one per-theme SVG — a small faceted corner gem + ONE short tapered hairline
+     arm per edge ending in a diamond finial (the discreet-weight rule, owner
+     2026-07-17: the old echo hairline + mid-arm diamond are DELETED — ornament
+     ink never shares air with content ink) — consumed via `border-image` on an
+     overlay pseudo (the
+     `.page-head.framed::before` / `.gilt-frame::after` / `.modal::after` recipe,
+     folio.css), OUTSET so the arms lie on the host's border stroke and the gem
+     caps the corner vertex like a bookbinding fitting (owner, 2026-07-17). Data-URI because CSS custom properties cannot reach inside an
+     SVG url: each theme bakes its own metal. TWO-TONE STRIKE (wave 2, F2): the
+     metal is dimensional, not line-art — the arm/finial GEOMETRY (unfilled defs:
+     a=arm set, h=+diagonal mirror+gem silhouette, q/f=the four corners) is
+     mirrored FIRST and toned AFTER, so the light stays top-left on every corner
+     (toning inside the mirrored unit would flip the bevel upside-down on the
+     bottom corners). Dark = raised struck gold: a near-black under-shadow seat
+     (+1.5,+2) below-right + a faint gold-200 top-edge glint (-1,-1.5) under the
+     gold-300 body; the gem is truly faceted (gold-200 lit top facet / gold-500
+     shaded lower / gold-700 core), placed per-corner UNFLIPPED via use x/y.
+     Edges stay EMPTY: goldwork marks the corner, the 1px border remains the
+     quiet run. */
+  --frame-ornate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500'><defs><g id='a'><path d='M58 37.2 132 39 132 41 58 42.8Z' opacity='.92'/><path d='M138 35 143 40 138 45 133 40Z' opacity='.8'/></g><g id='h'><use href='%23a'/><use href='%23a' transform='matrix(0 1 1 0 0 0)'/><path d='M40 25 55 40 40 55 25 40Z'/></g><g id='q'><use href='%23h'/><use href='%23h' transform='matrix(-1 0 0 1 500 0)'/></g><g id='f'><use href='%23q'/><use href='%23q' transform='matrix(1 0 0 -1 0 500)'/></g><g id='g'><path d='M40 25 55 40 25 40Z' fill='%23f0d791'/><path d='M25 40 55 40 40 55Z' fill='%23b8923d'/><path d='M40 33 47 40 40 47 33 40Z' fill='%237a5f24'/></g></defs><use href='%23f' fill='%23000' opacity='.5' transform='translate(1.5 2)'/><use href='%23f' fill='%23f0d791' opacity='.32' transform='translate(-1 -1.5)'/><use href='%23f' fill='%23d4ac4d'/><use href='%23g'/><use href='%23g' x='420'/><use href='%23g' y='420'/><use href='%23g' x='420' y='420'/></svg>");
+  /* Engraved ceremonial titling (same push): the struck-plate ink for the
+     Cinzel register — a tight dark seat below the glyphs + a faint warm gold
+     underglow, so page/modal titles read struck into the plate instead of flat
+     ink. NEVER gradient text (§7 hard ban holds). */
+  --engrave-title:
+    0 1px 0 rgba(0, 0, 0, 0.6), 0 2px 5px rgba(0, 0, 0, 0.4),
+    0 -1px 14px rgba(212, 172, 77, 0.14);
+
+  --semantic-success: var(--verdigris-300);
+  --semantic-danger: var(--vermilion-300);
+  --semantic-warning: var(--gold-leaf-300);
+  --semantic-info: var(--lapis-300);
+  /* ONE edit-mode voice (amber/gold) — the EditingPill is the sole visual edit
+     indicator. Distinct from --semantic-success (reserved for SaveIndicator). */
+  --edit-accent: var(--gold-leaf-300);
+
+  /* § 09 Action-type slots + magic marker */
+  --at-action: var(--verdigris-300);
+  --at-bonus: var(--lapis-300);
+  --at-reaction: var(--vermilion-300);
+  /* Free actions are NEUTRAL (no economy hue that would collide with action/bonus/
+     reaction or magic). text-muted was too dark to carry the filled "Use" CTA — its
+     ink text washed out; text-secondary is the readable neutral (dark ink on light tan
+     in dark, cream on dark tan in light) without borrowing another slot's meaning. */
+  --at-free: var(--text-secondary);
+  /* ritual / 10-min cast / passive / Action-Surge-style "no action" — neutral like
+     free, and readable: border-medium was so dark its filled "Use" CTA showed ink on
+     near-black. text-secondary is the readable neutral (matches --at-free). */
+  --at-nothing: var(--text-secondary);
+  /* Dark's base hues are already bright, so the flashy graphic variant = the base
+     (the light theme overrides these to vivid values). */
+  --at-action-vivid: var(--at-action);
+  --at-bonus-vivid: var(--at-bonus);
+  --at-reaction-vivid: var(--at-reaction);
+  --at-free-vivid: var(--at-free);
+  --at-nothing-vivid: var(--at-nothing);
+  --at-magic-vivid: var(--at-magic);
+  --at-magic: var(--amethyst-300);
+  /* AA-safe amethyst INK for amethyst-on-dark TEXT (ritual badge, any amethyst
+     label): amethyst-300 (#8e5cc0) is only ~3.7:1 on the dark cards — below the
+     4.5:1 floor for 10px text. amethyst-100 (#b89fd1) clears ~6.5:1. Keep the
+     amethyst-300 BORDER (a 3:1 graphic) but read text from this token. */
+  --amethyst-ink: var(--amethyst-100);
+
+  /* § 10 Spell levels — chromatic rainbow (Cantrip + 1–9) */
+  --sl-c: #8a8a9a;
+  --sl-1: #d54848;
+  --sl-2: #d88440;
+  --sl-3: #d8c850;
+  --sl-4: #5cb060;
+  --sl-5: #4ac0c0;
+  --sl-6: #5a90d8;
+  --sl-7: #9c60d8;
+  --sl-8: #d860a0;
+  --sl-9: #f0f0f0;
+  /* Per-hue seal DIGIT ink. The radial gem body under the digit ≈ mix(--sl 88%
+     black) — roughly the hue. A single dark `--text-inverse` failed AA on the
+     dark hues (red "1" ~2.9:1). Each hue picks the ink (light or dark) that
+     clears 4.5:1 on its own gem body — the dark red/purple take a near-white
+     ink; the light/mid hues take a near-black ink (guarded by the seal-ink
+     contrast unit test). */
+  --sl-c-ink: #0a0608;
+  --sl-1-ink: #fdeef0;
+  --sl-2-ink: #0a0608;
+  --sl-3-ink: #161210;
+  --sl-4-ink: #060e06;
+  --sl-5-ink: #06100f;
+  --sl-6-ink: #060a16;
+  --sl-7-ink: #f6effc;
+  --sl-8-ink: #0a0608;
+  --sl-9-ink: #161210;
+
+  /* § 10b Spell schools — the 8-school ENAMEL set (COMPENDIUM-LUX). The school
+     classifier chip on every codex spell row wears its school's own champlevé
+     enamel, so 421 spells scan by colour (the LEVEL stays on the seal's
+     chromatic rainbow — one hue vocabulary per fact, never two facts sharing
+     one). Hues follow the genre's school associations (BG3 / D&D Beyond
+     iconography) desaturated into the candlelit mineral world; they are
+     CHIP/graphic hues (3:1) — chip TEXT derives via the `.cmp-verdict`
+     color-mix toward `--text-primary` (AA-guarded in
+     tests/unit/verdict-ink-contrast.test.ts). Ids match `SpellSchool` so
+     `var(--school-<id>)` resolves by construction. */
+  --school-abjuration: #6f9ed6;
+  --school-conjuration: #dcb84e;
+  --school-divination: #c9cfe0;
+  --school-enchantment: #e079b0;
+  --school-evocation: #e0604c;
+  --school-illusion: #a884e0;
+  --school-necromancy: #7fb069;
+  --school-transmutation: #c07f52;
+
+  /* § 11 Damage types — D&D Beyond convention (13).
+     These saturated hues are tuned for CHIPS / icons / borders (the 3:1 graphic
+     threshold), NOT for body text. */
+  --dmg-acid: #7ec849;
+  --dmg-bludgeoning: #b09078;
+  --dmg-cold: #8ec8e8;
+  --dmg-fire: #e84830;
+  --dmg-force: #b078e0;
+  --dmg-lightning: #f0d040;
+  --dmg-necrotic: #708070;
+  --dmg-piercing: #b8c0c8;
+  --dmg-poison: #80a838;
+  --dmg-psychic: #e070c0;
+  --dmg-radiant: #f8e8a8;
+  --dmg-slashing: #c89090;
+  --dmg-thunder: #7898b8;
+
+  /* § 11b Damage-type INK — AA-safe ON-TEXT variants (≥4.5:1 on the verdict
+     chip's faint-tinted surface in DARK theme). Used for `.uc-verdict` text;
+     the saturated hue above stays on the chip BORDER (3:1 graphic only). The
+     hues that already clear AA pass through; fire / force / necrotic / poison /
+     thunder are lightened to clear 4.5:1 on the near-black card. */
+  --dmg-acid-ink: #9ed968;
+  --dmg-bludgeoning-ink: #c7a98c;
+  --dmg-cold-ink: #a6d6ef;
+  --dmg-fire-ink: #f4806f;
+  --dmg-force-ink: #c79cec;
+  --dmg-lightning-ink: #f0d040;
+  --dmg-necrotic-ink: #9bb09b;
+  --dmg-piercing-ink: #c8cfd6;
+  --dmg-poison-ink: #a8cc5c;
+  --dmg-psychic-ink: #ec90d2;
+  --dmg-radiant-ink: #f8e8a8;
+  --dmg-slashing-ink: #d6abab;
+  --dmg-thunder-ink: #9fb9d4;
+
+  /* § 13 Conditions — individual hue (15). The base hue is the BORDER (3:1
+     graphic is fine); the `-ink` variant is the AA-safe LABEL text (≥4.5:1 on
+     the 19% tint over surface-2). 8 base hues were sub-AA as text — every chip
+     now lifts its label to a high-lightness ink so a grappled / restrained /
+     unconscious player can always read their own condition. */
+  --cond-blinded: #a8b8c0;
+  --cond-blinded-ink: #c2cdd3;
+  --cond-charmed: #d878a0;
+  --cond-charmed-ink: #eaa5c0;
+  --cond-deafened: #b0b0b8;
+  --cond-deafened-ink: #c8c8d0;
+  --cond-exhaustion: #d88840;
+  --cond-exhaustion-ink: #e8aa72;
+  --cond-frightened: #9070b8;
+  --cond-frightened-ink: #b9a2d6;
+  --cond-grappled: #80684a;
+  --cond-grappled-ink: #c6a87e;
+  --cond-incapacitated: #b06868;
+  --cond-incapacitated-ink: #d79a9a;
+  --cond-invisible: #b8c0d0;
+  --cond-invisible-ink: #ccd3df;
+  --cond-paralyzed: #d8c038;
+  --cond-paralyzed-ink: #e6d56e;
+  --cond-petrified: #888078;
+  --cond-petrified-ink: #c0b8ac;
+  --cond-poisoned: #80a838;
+  --cond-poisoned-ink: #a6c96a;
+  --cond-prone: #a08868;
+  --cond-prone-ink: #c6b393;
+  --cond-restrained: #787870;
+  --cond-restrained-ink: #b6b6ac;
+  --cond-stunned: #e0c850;
+  --cond-stunned-ink: #ecd97e;
+  --cond-unconscious: #484858;
+  --cond-unconscious-ink: #b0b0c0;
+
+  /* § 13 Exhaustion 6-step ramp (amber → crimson; 6 = death) */
+  --ex-1: #d8a050;
+  --ex-2: #d88440;
+  --ex-3: #d86838;
+  --ex-4: #c45838;
+  --ex-5: #b04030;
+  --ex-6: #882028;
+
+  /* § 12 Currencies — metal + deep pair */
+  --cur-pp: #d8dce8;
+  --cur-pp-deep: #6a7480;
+  --cur-gp: #d4a838;
+  --cur-gp-deep: #7a5e20;
+  --cur-ep: #b8c890;
+  --cur-ep-deep: #587038;
+  --cur-sp: #b8c0c8;
+  --cur-sp-deep: #586068;
+  /* Copper brightened (#b86838 → #c87c44): the dimmest metal landed ~4.26:1 as
+     amount text on the dark `.info-card` (under AA) — latent until a campaign holds
+     copper in dark. The brighter antique-copper clears AA there and stays clearly
+     distinct from gold (#d4a838); brightening is monotonic-safe for every axe surface. */
+  --cur-cp: #c87c44;
+  --cur-cp-deep: #6a3818;
+
+  /* § 05 Elevation — Carved + Embossed (dark) */
+  --elev-flat: none;
+  --elev-recessed:
+    inset 0 2px 4px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(0, 0, 0, 0.85),
+    inset 0 -1px 0 rgba(245, 230, 180, 0.04);
+  --elev-resting:
+    inset 0 1px 0 rgba(245, 230, 180, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(0, 0, 0, 0.45), 0 3px 6px rgba(0, 0, 0, 0.35);
+  --elev-raised:
+    inset 0 1px 0 rgba(245, 230, 180, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+    0 3px 0 rgba(0, 0, 0, 0.4), 0 6px 14px rgba(0, 0, 0, 0.45);
+  --elev-floating:
+    inset 0 1px 0 rgba(245, 230, 180, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    0 6px 0 rgba(0, 0, 0, 0.4), 0 14px 32px rgba(0, 0, 0, 0.55);
+  --elev-modal:
+    inset 0 1px 0 rgba(245, 230, 180, 0.14), inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    0 10px 0 rgba(0, 0, 0, 0.42), 0 30px 70px rgba(0, 0, 0, 0.75);
+
+  /* Grounded-glow stroke twin (BG3 identity epic, 2026-07-02): BG3 grounds every
+     glow with a deep muted STROKE of the same hue, so light never floats free of
+     an edge. This is the gold twin (a deep gold-umber between gold-700 and the
+     page); per-hue twins land in a later unit. */
+  --glow-stroke-gold: #5e4a1e;
+
+  /* § 07 Focus — gold-leaf illumination (halo), grounded by a 1px --glow-stroke-gold
+     outer stroke (the BG3 stroke-twin pattern — the bloom sits ON an edge). */
+  --illumination:
+    0 0 0 1px var(--glow-stroke-gold), 0 0 24px rgba(184, 146, 61, 0.2),
+    0 0 1px rgba(212, 172, 77, 0.55);
+
+  /* Vellum grain + atmosphere — a warm gold pool top-left, a cool lapis pool
+     bottom-right, and a soft vignette that lets the page field recede at the edges
+     so the whole tome reads with depth (not a flat charcoal field). Subtle enough
+     that text/cards over it stay clean; fixed so it doesn't scroll. */
+  --vellum-grain:
+    radial-gradient(
+      ellipse 90% 70% at 12% 0%,
+      rgba(184, 146, 61, 0.05) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 90% 70% at 88% 100%,
+      rgba(42, 77, 140, 0.04) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 140% 120% at 50% 38%,
+      transparent 58%,
+      rgba(0, 0, 0, 0.45) 100%
+    );
+
+  /* Home-hero legibility scrim (over the atmospheric art): darkens the left/content
+     zone + fades the band's foot into the page field, so the wordmark + CTA always
+     clear AA regardless of the underlying art. */
+  --scrim-home:
+    linear-gradient(
+      100deg,
+      rgba(8, 7, 4, 0.86) 0%,
+      rgba(8, 7, 4, 0.52) 44%,
+      rgba(8, 7, 4, 0.24) 100%
+    ),
+    linear-gradient(180deg, transparent 50%, var(--bg-page) 100%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   § 01 Palette · LIGHT theme (aged vellum — designed, not adapted)
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  /* Aged-vellum field, DEEPENED so raised surfaces have headroom to lift. The
+     prior page (#efe5c8) sat only ~4 L* below surface-1, so every card read flat
+     on the field (the core "light feels cheaper / AI-cream" failure). Dropping the
+     field to a confident deep vellum (~L*85) opens a ~10 L* gap up to the cards, so
+     the carved/embossed recipes finally read as struck tiles on parchment. The
+     darker field also lifts text contrast and makes the vellum-grain texture read.
+     Surface-1/2 are nudged a touch brighter so the card→field separation is
+     unmistakable; --bg-recessed is held (the muted/faint text AA is tuned to it). */
+  /* DEEP-PARCHMENT light (owner-picked direction A): a deep aged-leather field so the
+     bright ivory cards FLOAT off it with real drama — the light-mode answer to the dark
+     theme's near-black-field pop. The field opens a wide value canyon (~L*72 field vs
+     ~L*95 cards) so every panel reads as a struck tile floating above the tome (BG3
+     aged-parchment depth, not flat AI-cream). The field is only a backdrop — recessed
+     wells live INSIDE cards, so their carve relationship is to surface-1, not the page.
+     The bare field carries chrome + the home-hero backdrop; the deepened inks above
+     (text + accent gold + warning amber) are all tuned to clear AA ON this ground. */
+  --bg-page: #bca268; /* deep burnished parchment field — cards float hard, field text AA-safe */
+  /* Cards stay BRIGHT gilt-ivory (NOT darkened) — the whole drama is the value gap
+     between the deep field and the bright cards. The top-lit surface-2 → surface-1
+     gradient reads as a struck ivory tile catching light. */
+  --bg-surface-1: #f6ead0; /* primary card — bright gilt-ivory, floats off the deep field */
+  --bg-surface-2: #fdf6df; /* the lightest raised tier — near-ivory gilt */
+  --bg-surface-3: #e2d2a8; /* nested surface — above the deep field, below the card */
+  --bg-recessed: #cdbb8e; /* carved-channel fill (inside cards) — deepened to keep its carve */
+  /* Warm umber (not black) so the `.input` recessed gradient reads as a pressed
+     vellum channel; mixing the tan fill toward black went muddy-olive (the dirty
+     textarea / dropdown boxes). See the dark-theme note. */
+  /* Soft warm-brown (not the deep umber) so the carved-field gradient is only a
+     faint inner-top shadow — the --elev-recessed inset does the real carving. A
+     strong umber here banded the top of every select/textarea and read muddy. */
+  --carve-shade: #9c7c44;
+  /* Clean light parchment writing-field (see the dark-theme note). Sits just below
+     the cards so the inset shadow still reads as carved, without the muddy mid-tan
+     of --bg-recessed at field size. Dark text on it clears AA comfortably. */
+  --input-fill: #e7dab4;
+  /* avatar-placeholder well (light vellum) — see the dark-theme note. */
+  --portrait-well: radial-gradient(
+    circle at 35% 28%,
+    var(--bg-surface-3),
+    var(--bg-recessed)
+  );
+
+  --text-primary: #241d12;
+  /* SPECIAL emphasis tier, light sibling (light-parity rebuild) — the "lit
+     emphasis" register, the vellum answer to dark's warm cream. Dark lights a
+     title by going BRIGHTER than the cream body; on parchment the same semantic
+     is a DEEP GILT-ESPRESSO — an ink that reads more LUMINOUS and visibly
+     GOLD-CAST beside the neutral-brown --text-primary, so an open/active card
+     title (the thing you're reading) glows like illuminated-manuscript
+     rubrication rather than flattening into body ink. Distinctly warmer + ~2.8×
+     the relative luminance of --text-primary (locked by verdict-ink-contrast:
+     "special is the more-luminous lit register"), yet still unmistakably INK,
+     not the gold FILL (--accent-primary) or the gold RUBRIC (--accent-text).
+     Clears AA on EVERY ground it can sit on: 10.2:1 on surface-1 / 8.2:1 on
+     surface-3 / 4.95:1 even on the bare deep-parchment field. The prior #33260a
+     sat a hair off --text-primary (no visible lit register); this is the
+     designed sibling. */
+  --text-special: #4a3006;
+  /* Inks for the DEEP-PARCHMENT field (--bg-page #bca268): secondary/muted/faint
+     labels sit directly on the page (wizard `.field-label`, section labels), so they
+     must clear AA on that deep ground. Darker warm-brown ink on the bright ivory cards
+     only reads richer (illuminated-manuscript ink), so darkening is safe app-wide in
+     light. #342912 / #322710 clear ≥4.5:1 on the field AND on every brighter card and
+     the deepest well (--bg-recessed). */
+  /* Deepened one crisp step (light-craft audit): loose eyebrows / italic
+     descriptors on the BARE deep-parchment field (#bca268) — wizard rubrics,
+     settings helper text, the 404 body — read muddy at the prior values, sitting
+     too near the field's own value. A small darkening lands them crisp on the
+     field (and only richer as illuminated-manuscript ink on the bright ivory
+     cards), and — being darker — every AA pin only gains headroom. */
+  --text-secondary: #2e2310;
+  --text-muted: #291e0a;
+  --text-faint: #291e0a;
+  --text-inverse: #fbf4df;
+  /* Text that sits DIRECTLY on the candlelit backdrop (not on a card). The inks
+     above were tuned for the BARE field (#bca268), but the prominent 0.55 art
+     layer paints OVER the field and darkens the void to a deep candlelit brown —
+     so dark ink vanishes there (loose section labels, wizard headings/hints, etc.).
+     This is the ONE "perfect" on-backdrop colour: a warm illuminated-parchment that
+     reads as gilt lettering on the dark scene (paired with a soft dark halo in the
+     `.on-art` recipe so it also clears the occasional lighter candle-lit patch),
+     integrating with the gold/parchment chrome. Dark theme already uses light
+     loose-text, so `.on-art` is a light-theme-only override. */
+  /* On-backdrop text = BRIGHT ink + a crisp dark OUTLINE (no backing — the owner's
+     "dark border"). The candlelit void is a busy mid-tone, so no flat colour reads;
+     a tight dark outline (in the `.on-art` recipe) lets bright text read on BOTH the
+     light gold patches (the dark edge separates it) AND the dark art (the bright
+     fill pops), and the outline is what clears the a11y gate (bright fg vs the dark
+     outline axe credits as the backing). Body = warm white; titles = bright gilt. */
+  --text-on-backdrop: #f8f1de;
+  --text-on-backdrop-title: var(--gold-leaf-100);
+  /* Error/required ink ON the backdrop: the field's --semantic-danger is the deep
+     vermilion-700 ink (vanishes on the dark art exactly like the field text). This
+     is its on-backdrop sibling — a lifted warm vermilion, bright enough to read on
+     the dark scene (relative luminance ≈ 0.49, above the on-art-ink guard's 0.45
+     floor) while still unmistakably "danger" next to the parchment body ink. */
+  --text-on-backdrop-danger: #f2a99c;
+  /* The dark HALO every on-art ink pairs with — ONE token so the treatment can
+     never drift between the `.on-art` leaf, the `.on-art-scope` flips, and the
+     on-art control recipes. Re-struck for the DAYLIGHT plates (the sibling-plate
+     rebuild): the old four-direction 1px offset copies were a hard stroke —
+     right on the night art it borrowed from dark, but on the honey/amber morning
+     plates every loose label read as OUTLINED "game subtitle" text (the
+     scruffy-stroke failure). The daylight halo is a tight dark micro-edge (the
+     a11y separation the bright ink needs on a sunlit patch) plus a soft lifted
+     umber shadow, so on-art text reads as gilt lettering catching light, not a
+     sticker with a border. Contrast still comes from the dark edge: the 2px
+     core sits at the same near-black depth as before. */
+  --on-art-halo:
+    0 0 1px rgba(20, 13, 4, 0.95), 0 0 2px rgba(20, 13, 4, 0.85),
+    0 1px 3px rgba(24, 16, 5, 0.75), 0 2px 10px rgba(28, 19, 6, 0.5);
+
+  /* Daylight sibling plates (DESIGN.md §13 — owner-generated batch 3): light no
+     longer borrows the dark candlelit plates — each scene token re-points to the
+     SAME room painted at morning (P9 daylight study / P11 dawn grimoire / P10
+     daylight war table), pre-graded into the honey/amber band the deep-parchment
+     field hosts. Per-theme loading falls out of the cascade: a light user's
+     browser only ever fetches these three. */
+  --asset-home-hero: url("/assets/backgrounds/home-hero-light.webp");
+  --asset-login: url("/assets/backgrounds/login-light.webp");
+  --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop-light.webp");
+
+  /* OWN-36 — the atmospheric backdrop sits at the SAME prominence as the dark
+     theme (0.55) so the background art is as visible + amazing in light as in
+     dark (owner mandate). The warm parchment field hosts it; content cards float
+     over it. */
+  --app-bg-art-opacity: 0.55;
+
+  /* MORNING-LIGHT TRANSLUCENCY — the daylight sibling of dark's candlelit
+     translucency (T3): the same page-level surfaces (the `.folio-panel`
+     material pseudo, `.rail`, `.page-head.framed`) render at this alpha so the
+     morning scene breathes through the chrome in light exactly as the candle
+     glow does in dark. GENTLER than dark's 0.9: the ivory panels must stay
+     unmistakably bright (the value-canyon card pop is light's signature), and
+     at 0.94 the worst composite (deep ink on a panel over the plate's darkest
+     honey patch) still clears AA with >2x headroom. Nested content surfaces
+     stay opaque — translucency never compounds (same rule as dark). */
+  --panel-alpha: 0.94;
+
+  --border-soft: #d8caa0;
+  --border-medium: #b8a878;
+  --border-strong: #8a7848;
+  --border-accent: #6a4e18;
+
+  /* Empty/spent PIP recipe — MIRROR dark's hollow-outline SEMANTICS on vellum.
+     The prior light recipe filled the socket with the solid muddy-khaki
+     `--bg-recessed`, so an empty/spent pip read as a FILLED tan gem — the
+     hollow-vs-filled reading drifted between themes (dark = a crisp hollow gold
+     ring, light = a solid disc). Now light strikes the empty pip as a hollow
+     carved socket too: a near-transparent centre (a whisper of the recessed
+     channel, so the card ground reads THROUGH the pip = "empty") ringed by a
+     FULL-STRENGTH deep-gold hairline (`--border-accent`, the gold-touched edge),
+     the vellum sibling of dark's brass `#7a6845` outline. So a spent/empty pip
+     reads as an unfilled gold socket in BOTH themes; a lit pip still fills with
+     its `--sl-*` / gilt gem. Border clears 3:1 on the ivory card + the recessed
+     cartouche base; the faint fill keeps a hint of carve without masquerading as
+     a filled gem. */
+  --pip-empty-border: var(--border-accent);
+  --pip-empty-fill: color-mix(in oklab, var(--bg-recessed) 26%, transparent);
+
+  /* The single gold UI-fill (buttons / selection / active-nav) doubles as small gold
+     UI-text on the bare DEEP-PARCHMENT field (--bg-page #bca268), so it must clear AA
+     there. #4a380c clears ≥4.5:1 on the field and reads as a rich antique gold on the
+     fills; lighter antique-gold stops (gold-700 #7a5f24, #6b5219, #54400f) all landed
+     under 4.5:1 on this deep ground. The deep gold-900 --accent-text stays the
+     canonical token for gold rubrics on tinted card backgrounds. */
+  --accent-primary: #4a380c;
+  --accent-primary-bright: var(--gold-leaf-500);
+  --accent-primary-deep: var(--gold-leaf-900);
+  /* deep gold near-black for text on gold-tinted bg — fixes "yellow on yellow" */
+  --accent-text: var(--gold-leaf-900);
+
+  /* Combat-pip dest chip — see the dark block. The socket STAYS a carved warm-black in
+     light too (its gold glyph/chevron/portrait-frame need the dark fill); Fable's full
+     light rebuild may re-tone it, but until then this holds the AA floor via the guard.
+     Same fixed light ink so the "Open {hero}" label reads on the dark fill (~9.4:1),
+     instead of the theme-flipped `--text-secondary` that vanished here (~1.3:1). */
+  --cp-dest-bg: #191309;
+  --cp-dest-ink: #c4b89e;
+
+  /* § 07 Focus — light theme uses deep gold-900 (≈10:1 on vellum); gold-500 was only ~2.1:1, FAIL. */
+  --focus-ring: var(--gold-leaf-900);
+  /* Focus interior wash, light sibling (see the dark note): dark's #fddda6 cream
+     is invisible on cream surfaces, so light washes with STRUCK GOLD (gold-300)
+     — a visible warm gilt tint under dark text (AA untouched at 35% alpha). */
+  --focus-wash: rgba(212, 172, 77, 0.35);
+
+  /* Struck-metal top sheen for carved/embossed surfaces (T8 #62 / C4). The dark
+     recipes hard-code an `inset 0 1px 0 color-mix(--gold-leaf-50 …)` highlight:
+     on near-black surfaces a cream-gold sheen lifts ΔL* ≈ +26 (reads carved), but
+     on light vellum that same mineral sits ~1 step BELOW the surface (ΔL* ≈ −1.5)
+     so the emboss inverts and disappears — the core of "light feels cheaper". A
+     warm near-white catching light is the only highlight that reads on vellum
+     (lifts ΔL* ≈ +5 on surface-1 / +2.5 on surface-2, near the light-surface
+     ceiling). Defined LIGHT-ONLY: dark consumers fall back to their own gold-50
+     literal via `var(--emboss-sheen, …)`, so dark output is byte-identical. */
+  --emboss-sheen: rgba(255, 253, 247, 0.9);
+
+  /* § Ornament metals, light strike (see the dark note): the silvery tips must
+     read as metal ON cream, so light's "silver" is a deep pewter and the bronze
+     heart stays the richer struck tone between them — same silver-bronze-silver
+     alternation, value-inverted for the vellum ground. */
+  --metal-silver: #837a6a;
+  --metal-bronze: #99793f;
+  /* Glint ink, light strike: stronger warm-white so the sweep reads as sun
+     on the already-bright gold-leaf band, not haze. */
+  --glint-ink: rgba(255, 253, 244, 0.5);
+
+  /* § Reliquary goldwork, light strike (see the dark note): the corner ornament
+     is engraved burnished bronze on the ivory bands — the SAME register as the
+     masthead crest's light ink (`--accent-primary-deep`), never a pale gold that
+     would wash out on cream. Slightly higher run opacity than dark (dark ink on
+     light ground needs less luminance but more presence). TWO-TONE, INVERTED to
+     the letterpress logic (like light's --engrave-title): the members are
+     pressed INTO the vellum, so the pair flips — a warm-cream understroke
+     (+1.5,+2) below-right (light catching the groove's far wall) + a faint
+     umber upper shadow wall (-1,-1.5) under the bronze-700 body; the gem is an
+     INTAGLIO facet pair (gold-900 shaded top wall / lit #99793f lower wall /
+     near-black pit core), placed per-corner unflipped. */
+  --frame-ornate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500'><defs><g id='a'><path d='M58 37.2 132 39 132 41 58 42.8Z' opacity='.95'/><path d='M138 35 143 40 138 45 133 40Z' opacity='.85'/></g><g id='h'><use href='%23a'/><use href='%23a' transform='matrix(0 1 1 0 0 0)'/><path d='M40 25 55 40 40 55 25 40Z'/></g><g id='q'><use href='%23h'/><use href='%23h' transform='matrix(-1 0 0 1 500 0)'/></g><g id='f'><use href='%23q'/><use href='%23q' transform='matrix(1 0 0 -1 0 500)'/></g><g id='g'><path d='M40 25 55 40 25 40Z' fill='%233d2f12'/><path d='M25 40 55 40 40 55Z' fill='%2399793f'/><path d='M40 33 47 40 40 47 33 40Z' fill='%23241a08'/></g></defs><use href='%23f' fill='%23fff8e2' opacity='.6' transform='translate(1.5 2)'/><use href='%23f' fill='%233d2f12' opacity='.32' transform='translate(-1 -1.5)'/><use href='%23f' fill='%237a5f24'/><use href='%23g'/><use href='%23g' x='420'/><use href='%23g' y='420'/><use href='%23g' x='420' y='420'/></svg>");
+  /* Engraved ceremonial titling, light strike: letterpress into vellum — a
+     bright warm understroke below the dark glyphs + a whisper of umber lift. */
+  --engrave-title: 0 1px 0 rgba(255, 252, 240, 0.85), 0 2px 3px rgba(74, 56, 12, 0.16);
+
+  --semantic-success: var(--verdigris-700);
+  --semantic-danger: var(--vermilion-700);
+  /* Deep amber — darkened again to clear AA as a warning label on the deepened
+     vellum field (#73500f was 4.45:1 on #dcc995; #6a4a0c clears 4.5+ and stays amber,
+     not brown). Used both as a chip ink and as bare text on the field. */
+  --semantic-warning: #6a4a0c;
+  --semantic-info: var(--lapis-700);
+  /* edit-mode voice (light) — deep gold so it reads on vellum (not yellow-on-gold). */
+  --edit-accent: var(--gold-leaf-900);
+
+  /* § 09 Action-type slots + magic marker (light = deep variants, AA as TEXT) */
+  --at-action: var(--verdigris-700);
+  --at-bonus: var(--lapis-700);
+  --at-reaction: var(--vermilion-700);
+  /* Readable neutral free/no-action colors (see the dark-theme note above). */
+  --at-free: var(--text-secondary);
+  --at-nothing: var(--text-secondary);
+  --at-magic: var(--amethyst-700);
+  /* Flashy graphic variants (owner: light economy colours must be bright /
+     "sgargianti" to scan at a glance). Used ONLY by pure graphics — the card +
+     reaction left borders and the group diamonds + rules — never as text, so
+     the deep --at-* above still carries every label/chip/button at AA. In dark
+     these equal the already-bright base (defined in :root). */
+  --at-action-vivid: #1f9d57;
+  --at-bonus-vivid: #2f6fd0;
+  --at-reaction-vivid: #e0392a;
+  --at-free-vivid: #9298a8;
+  --at-nothing-vivid: #9298a8;
+  --at-magic-vivid: #9a4fd0;
+
+  /* § 10 Spell levels (light) */
+  /* Cantrip seal re-toned for vellum: a muted warm parchment-slate gem that
+     sits ABOVE the cream surface (was #585868 — a dark charcoal block that read
+     as the single un-illuminated, disabled-looking element on the page, breaking
+     the carved-on-vellum metaphor every numbered seal honors). Paired with a
+     DARK ink below so the "CAN" reads as an intentional neutral GEM, not a dark
+     tile. The dark-theme #8a8a9a stays as-is. */
+  /* OWN-36 (owner: "gems/pips/colors must be bright + glowing like dark") — the seal
+     BODIES are now the SAME bright hues as dark, so the gems glow on the light cards
+     instead of reading as deep/muted. They're 3:1 GRAPHICS (the per-hue `-ink` below
+     keeps the digit AA on each bright body, guarded by the seal-ink test), so bright
+     is safe. sl-9 (white in dark) would vanish on cream → a visible platinum; the one
+     place `--sl` is used as TEXT (`.sc-lvl`) is deepened per-theme in folio.css. */
+  --sl-c: #8a8a9a;
+  --sl-1: #d54848;
+  --sl-2: #d88440;
+  --sl-3: #d8c850;
+  --sl-4: #5cb060;
+  --sl-5: #4ac0c0;
+  --sl-6: #5a90d8;
+  --sl-7: #9c60d8;
+  --sl-8: #d860a0;
+  --sl-9: #9498a8;
+  /* Light theme: the seal bodies are DEEP hues (the gem darkens), so a single
+     near-white ink clears AA on every level (the dark `--text-inverse` cream is
+     itself light — but the per-hue token keeps the seal ink theme-coherent). */
+  /* DARK ink on the light cantrip gem (the gem is now a light parchment-slate,
+     so cream ink would vanish) — deep ink clears AA on the #b3aa92-derived body. */
+  /* Per-hue digit ink for the now-bright bodies — the adaptive set (light ink on the
+     dark hues, dark ink on the light hues), matching dark; guarded by the seal-ink
+     contrast unit test against each gem body. */
+  --sl-c-ink: #0a0608;
+  --sl-1-ink: #fdeef0;
+  --sl-2-ink: #0a0608;
+  --sl-3-ink: #161210;
+  --sl-4-ink: #060e06;
+  --sl-5-ink: #06100f;
+  --sl-6-ink: #060a16;
+  --sl-7-ink: #f6effc;
+  --sl-8-ink: #0a0608;
+  --sl-9-ink: #161210;
+
+  /* § 10b Spell schools (light) — the same 8-school enamel set struck DEEP for
+     the vellum leaf (light chips composite their text toward the near-black
+     `--text-primary`, so the base hue must stay dark enough to hold AA after
+     the mix — guarded alongside dark in verdict-ink-contrast). */
+  --school-abjuration: #3a6aa8;
+  --school-conjuration: #96700f;
+  --school-divination: #5c6880;
+  --school-enchantment: #a83e78;
+  --school-evocation: #b03a28;
+  --school-illusion: #7a4cb0;
+  --school-necromancy: #4e7a38;
+  --school-transmutation: #8a5a28;
+
+  /* § 11 Damage types (light) — chip / border / icon hues (3:1 graphic). OWN-36
+     PASS 10: brightened to the vivid end (was deep) so the defense chips read
+     bright + glowing like dark — these feed ONLY the chip border/fill/icon; the
+     LABEL is the AA `--dmg-*-ink` (def-chip) or `--text-primary` (override chip),
+     so legibility is untouched. */
+  --dmg-acid: #5fa030;
+  --dmg-bludgeoning: #9a7038;
+  --dmg-cold: #3a82b0;
+  --dmg-fire: #d03828;
+  --dmg-force: #8a4cc0;
+  --dmg-lightning: #b09010;
+  --dmg-necrotic: #4e6a4e;
+  --dmg-piercing: #74808a;
+  --dmg-poison: #6e9628;
+  --dmg-psychic: #b85aa0;
+  --dmg-radiant: #b89828;
+  --dmg-slashing: #aa5a5a;
+  --dmg-thunder: #506480;
+
+  /* § 11b Damage-type INK (light) — AA-safe ON-TEXT (≥4.5:1 on the cream
+     verdict chip). lightning / acid / radiant / psychic are darkened to clear
+     the floor on vellum; the rest already pass and are kept verbatim. */
+  --dmg-acid-ink: #3c6a1a;
+  --dmg-bludgeoning-ink: #6a4e30;
+  --dmg-cold-ink: #2c688c;
+  --dmg-fire-ink: #a82820;
+  --dmg-force-ink: #6a3898;
+  --dmg-lightning-ink: #6e5a06;
+  --dmg-necrotic-ink: #384838;
+  --dmg-piercing-ink: #50565e;
+  --dmg-poison-ink: #4a6818;
+  --dmg-psychic-ink: #823c6e;
+  --dmg-radiant-ink: #6a560f;
+  --dmg-slashing-ink: #884848;
+  --dmg-thunder-ink: #384858;
+
+  /* § 13 Conditions (light) — OWN-36 PASS 10: SYMMETRIC with dark. The base
+     `--cond-*` is the VIVID border/graphic hue (condColor() feeds it only to the
+     chip border + tint, never to text), and `--cond-*-ink` is the AA-deep LABEL.
+     Dark lightens its ink for the dark ground; light darkens it for cream — same
+     two-token contract, mirrored. The `-ink` values below are byte-identical to
+     the label colour each chip rendered before this pass (base-deep for most,
+     the special deeper ink for the cool/olive/amber ones), so AA is UNCHANGED;
+     only the border + tint + halo brighten so the chips read bright + glowing
+     like dark instead of flat deep. */
+  --cond-blinded: #6e8492;
+  --cond-blinded-ink: #4a5a68;
+  --cond-charmed: #c04578;
+  --cond-charmed-ink: #882858;
+  --cond-deafened: #7e7e8e;
+  --cond-deafened-ink: #585868;
+  --cond-exhaustion: #c06820;
+  --cond-exhaustion-ink: #7a4818;
+  --cond-frightened: #7a52b0;
+  --cond-frightened-ink: #4a3088;
+  --cond-grappled: #8a6438;
+  --cond-grappled-ink: #503820;
+  --cond-incapacitated: #b84848;
+  --cond-incapacitated-ink: #7a2828;
+  --cond-invisible: #8294a6;
+  --cond-invisible-ink: #3e4c5a;
+  --cond-paralyzed: #b89818;
+  --cond-paralyzed-ink: #5e4806;
+  --cond-petrified: #6e665a;
+  --cond-petrified-ink: #383828;
+  --cond-poisoned: #6e9628;
+  --cond-poisoned-ink: #3a5410;
+  --cond-prone: #8a6e4e;
+  --cond-prone-ink: #605040;
+  --cond-restrained: #6e6e62;
+  --cond-restrained-ink: #383830;
+  --cond-stunned: #c0a020;
+  --cond-stunned-ink: #645008;
+  --cond-unconscious: #4a4a60;
+  --cond-unconscious-ink: #1c1c2c;
+
+  /* § 13 Exhaustion ramp (light) */
+  --ex-1: #8a6820;
+  --ex-2: #8a5018;
+  --ex-3: #8a3818;
+  --ex-4: #7a2818;
+  --ex-5: #6a1c10;
+  --ex-6: #4a0c08;
+
+  /* § 12 Currencies (light) */
+  --cur-pp: #788890;
+  --cur-pp-deep: #384048;
+  --cur-gp: #8a6020;
+  --cur-gp-deep: #4a3008;
+  --cur-ep: #6a7050;
+  --cur-ep-deep: #2a3818;
+  --cur-sp: #5a6068;
+  --cur-sp-deep: #2a3038;
+  --cur-cp: #784028;
+  --cur-cp-deep: #4a1c08;
+
+  /* § 05 Elevation — Carved + Embossed (light). Strengthened against the deeper
+     vellum field: the prior drops (5–8% umber) vanished on near-white surfaces, so
+     "raised" tiles read flat. Warmer, deeper umber drops (the parchment casts a real
+     shadow) + a brighter top sheen (struck-metal lift) make every card/panel read as
+     an embossed tile floating above the field, matching the dark theme's depth. */
+  /* DEEPENED for real depth: warm-umber shadows on warm cream read far fainter than
+     black-on-dark, so the prior 0.10–0.22 set left cards looking flat (the core
+     "light feels cheap" failure). The drop shadows now use a deeper, slightly cooler
+     umber at higher opacity + a two-layer soft/contact pair so every card casts a
+     believable shadow on the vellum; the bright top sheen (struck-metal lift) and a
+     hairline umber bottom edge keep the emboss. Tuned to read as a pressed-brass /
+     aged-vellum tile, the BG3/D&D-Beyond premium depth — not a sticker on cream. */
+  /* OWN-36 — deepened against the now-prominent candlelit art field: cards must
+     read as struck ivory tiles floating above a busy atmospheric ground (the dark
+     theme's signature card-pop), so the drops use a deeper warm-umber at higher
+     opacity + a contact pair, and the top sheen is a true struck-metal near-white. */
+  --elev-flat: none;
+  --elev-recessed:
+    inset 0 2px 6px rgba(46, 30, 6, 0.36), inset 0 1px 2px rgba(46, 30, 6, 0.28),
+    inset 0 -1px 0 rgba(255, 253, 247, 0.66);
+  --elev-resting:
+    inset 0 1px 0 rgba(255, 253, 247, 0.92), inset 0 -1px 0 rgba(46, 30, 6, 0.22),
+    0 1px 2px rgba(46, 30, 6, 0.22), 0 6px 16px rgba(46, 30, 6, 0.28);
+  --elev-raised:
+    inset 0 1px 0 rgba(255, 253, 247, 0.98), inset 0 -1px 0 rgba(46, 30, 6, 0.24),
+    0 2px 5px rgba(46, 30, 6, 0.24), 0 12px 28px rgba(46, 30, 6, 0.34);
+  /* Floating chrome (account menu, roster-card menu, popovers) must SEPARATE from
+     the parchment field, not hover flat on it. Light drops read far weaker than
+     dark's near-black drops on cream, so the light float carries a DESIGNED edge:
+     a hairline umber definition ring (0-blur inset-free spread) plus a deepened
+     two-stage drop so the panel lifts unmistakably off the page. */
+  --elev-floating:
+    inset 0 1px 0 rgba(255, 253, 247, 1), inset 0 -1px 0 rgba(46, 30, 6, 0.26),
+    0 0 0 1px rgba(46, 30, 6, 0.12), 0 6px 14px rgba(46, 30, 6, 0.34),
+    0 24px 52px rgba(46, 30, 6, 0.52);
+  --elev-modal:
+    inset 0 1px 0 rgba(255, 253, 247, 1), inset 0 -1px 0 rgba(46, 30, 6, 0.24),
+    0 8px 18px rgba(46, 30, 6, 0.3), 0 44px 92px rgba(46, 30, 6, 0.5);
+
+  /* The lit-ornament halo (selected tiles · active tabs · the section diamond ·
+     the codex open-page row) rides the same ember grammar as `--gilt-glow`: a tight
+     struck-gold core (the ornament still catches gilt) over a warm burnt-umber pool
+     that toasts the ground BELOW it, so a selected surface reads as a hot object on
+     the parchment, not a bright smudge. The gold core stays for the fine diamonds/
+     rules where a downward-only pool would read as a stray drop-shadow. */
+  --illumination:
+    0 0 8px rgba(198, 156, 64, 0.42), 0 0 3px rgba(198, 156, 64, 0.3),
+    0 3px 10px rgba(var(--ember-umber), 0.4), 0 0 1.5px rgba(140, 104, 32, 0.9);
+
+  /* D47 light gilt + surface gradients — light lacked the dark theme's gradients, so
+     every surface read flat/creamy. These give light its own dimensional materials:
+     a gold-leaf gradient (highlight → struck gold → deep) for gilded signature
+     surfaces, and a faint top-lit sheen (lighter top → neutral) so cards/panels read
+     as raised vellum tiles catching light rather than flat fills. Used by recipes. */
+  --gilt-gradient: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--gold-leaf-300) 70%, white) 0%,
+    var(--accent-primary-bright) 42%,
+    var(--accent-primary-deep) 100%
+  );
+  --surface-sheen: linear-gradient(
+    180deg,
+    rgba(255, 252, 240, 0.55) 0%,
+    rgba(255, 252, 240, 0) 38%,
+    rgba(74, 52, 16, 0.05) 100%
+  );
+
+  /* Light vellum: a gilt pool top-left + a faint lapis pool bottom-right + a warm
+     umber vignette so aged parchment reads at the edges (the page is the deeper
+     vellum field; the vignette deepens its corners without dulling the cards). */
+  /* Stronger pools in light than the prior near-invisible set — gold-on-cream reads
+     far more faintly than gold-on-black, so light needs a bolder atmosphere to feel
+     as rich as dark (#62): a confident gilt pool top-left, a cool lapis pool bottom-
+     right, and a deeper umber vignette so the aged parchment reads with real depth at
+     the edges. Tuned to stay clear of the field text's AA (the tints are corner-
+     weighted; text-primary on the warmed cream still clears 4.5:1). */
+  /* D47 full-pass — a WARMER candlelit field: the gilt pool is brighter + reaches
+     further, with a second soft golden hearth-glow low-centre, so the light room
+     reads candlelit (not even cream). Corner/edge-weighted, so field text AA holds. */
+  --vellum-grain:
+    radial-gradient(
+      ellipse 96% 76% at 9% -3%,
+      rgba(188, 142, 48, 0.3) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 50% 116%,
+      rgba(196, 150, 52, 0.14) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 90% 72% at 92% 104%,
+      rgba(38, 70, 132, 0.11) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 150% 130% at 50% 40%,
+      transparent 46%,
+      rgba(58, 40, 10, 0.34) 100%
+    );
+
+  /* Light glows pull a BRIGHTER struck gold than the AA-constrained UI-fill: gold-300
+     (#d4ac4d) visibly blooms on cream where `--accent-primary` (#4a380c, deep umber for
+     body-text AA) reads as a muddy brown smear. `--accent-glow` is the glow-only token
+     (see the dark def) — every gilt halo below routes through it so gold GLOWS on light. */
+  --accent-glow: var(--gold-leaf-300);
+
+  /* EMBER PENUMBRA (light-material grammar "Ember Penumbra", owner-ratified
+     2026-07-11). On dark, magic is luminance — a gold bloom on near-black. On the
+     bright vellum field there is no headroom above ivory for a literal bloom, so a
+     lit gilt control reads as HEAT instead: a warm burnt-umber shadow pools BELOW
+     the control (the parchment toasts around a hot object) under a tight struck-gold
+     hairline. The glow is DARK, not bright — the light sibling of dark's bright-on-
+     black bloom. `--ember-umber` is a redder/warmer burnt tone than the gold-leaf
+     ramp so the pool reads as scorch, not a neutral brown drop-shadow; it is a
+     comma-triplet so recipes compose it at any alpha via `rgba(var(--ember-umber), α)`.
+     Decorative box-shadow only (never text), so AA is untouched. */
+  --ember-umber: 122, 74, 16;
+  /* The ember family's two companions: `--ember-edge` is the deep struck-gilt
+     BORDER a solid-gold small control (LEVEL pill, coins, lit pips, the seal) is
+     ringed with — one step deeper than `--gold-leaf-700` so the enamel reads set,
+     not drawn; `--ember-seat` (a comma-triplet like the umber) is the near-black
+     1–2px SEAT shadow directly under a struck control, the crisp contact line the
+     soft umber pool sits beneath. */
+  --ember-edge: #6b5219;
+  --ember-seat: 74, 44, 8;
+
+  /* The signature gilt AURA is now ember: every light consumer of `--gilt-glow`
+     (gilt-frame hero bands, raised brass tabs, portrait wells, caster tiles, the
+     d20 hero) toasts its ground below instead of ringing a symmetric bright halo. */
+  --gilt-glow:
+    0 0 0 1px color-mix(in oklab, var(--accent-glow) 40%, transparent),
+    0 4px 12px rgba(var(--ember-umber), 0.5), 0 9px 26px rgba(var(--ember-umber), 0.3);
+  /* A tighter sibling ember for smaller gilded atoms (seal, primary CTA, rest coin). */
+  --gilt-glow-sm:
+    0 0 0 1px color-mix(in oklab, var(--accent-glow) 36%, transparent),
+    0 2px 6px rgba(var(--ember-umber), 0.5), 0 5px 14px rgba(var(--ember-umber), 0.28);
+
+  /* Home-hero scrim (light) — a warm vellum wash over the art (content zone left)
+     fading into the page field, AA-preserving on the gilt-cream theme. */
+  --scrim-home:
+    linear-gradient(
+      100deg,
+      rgba(225, 210, 164, 0.92) 0%,
+      rgba(225, 210, 164, 0.6) 44%,
+      rgba(225, 210, 164, 0.3) 100%
+    ),
+    linear-gradient(180deg, transparent 50%, var(--bg-page) 100%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tailwind v4 @theme bridge
+   ───────────────────────────────────────────────────────────────────────────
+   Aliases the SUBSET of folio tokens that Tailwind utilities reference to the
+   var(--…) values above. The utility names are kept identical to the prior
+   palette names (bg-{primary,secondary,tertiary}, text-{primary,secondary},
+   accent[-hover|-muted], border[-subtle], success/error/danger/info/warning,
+   font-{sans,display,title,mono}) so the existing ~2000 utility usages across
+   src/** resolve to folio tokens WITHOUT a per-component rewrite. The full
+   re-skin (mapping components onto the richer folio token set) is a later
+   milestone; M1 just repoints the existing palette. Domain palettes
+   (--sl-/--dmg-/--cond-/--ex-/--cur-/--at-) are consumed inline via
+   style="--sl: var(--sl-3)" per the tokens.css USAGE contract, NOT as
+   Tailwind colors.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@theme {
+  /* Surfaces (map old palette names → folio surface ramp) */
+  --color-bg-primary: var(--bg-page);
+  --color-bg-secondary: var(--bg-surface-1);
+  --color-bg-tertiary: var(--bg-surface-2);
+
+  /* Text */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+
+  /* Accent (gold leaf) */
+  --color-accent: var(--accent-primary);
+  --color-accent-hover: var(--accent-primary-bright);
+  --color-accent-muted: var(--accent-primary-deep);
+  /* Deep, AA-safe gold for TEXT (the light-theme rubric rule: gold text must use
+     --accent-text = gold-leaf-900 in light, not the mid --accent-primary which
+     fails contrast on vellum). Bridged so `text-accent-text` is usable in JSX. */
+  --color-accent-text: var(--accent-text);
+
+  /* Borders. The named tiers MUST each have a `--color-border-*` mapping, or the
+     Tailwind `border-border-<tier>` utilities silently fall back to `currentColor`
+     (Tailwind v4's default) and paint a light "white" border over a dark surface —
+     the D12 HP-pill bug. Keep these in lockstep with the `--border-*` palette. */
+  --color-border: var(--border-medium);
+  --color-border-subtle: var(--border-soft);
+  --color-border-soft: var(--border-soft);
+  --color-border-medium: var(--border-medium);
+  --color-border-strong: var(--border-strong);
+  --color-border-accent: var(--border-accent);
+
+  /* Semantic */
+  --color-success: var(--semantic-success);
+  /* `--color-danger` is the canonical destructive alias — prefer it in new code
+     (`text-danger`, `bg-danger`, …). `--color-error` is a retained alias for the
+     same `--semantic-danger`; it is kept (not removed) because ~27 `*-error`
+     utilities still reference it across the feature layer and an undefined
+     Tailwind utility is a silent no-op. A clean error→danger sweep is a separate
+     feature-layer task (S5). */
+  --color-error: var(--semantic-danger);
+  --color-danger: var(--semantic-danger);
+  --color-info: var(--semantic-info);
+  --color-warning: var(--semantic-warning);
+
+  /* Fonts. Tailwind's `font-mono` utility IS the numeric register (Source
+     Serif 4) — re-pointed here so the existing utility usages keep working;
+     the canonical token name is --font-numeric. */
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-title: var(--font-title);
+  --font-mono: var(--font-numeric);
+
+  /* Radius — lapidary facets */
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-xl: 8px;
+
+  /* Breakpoint — the rail-drop threshold as a NAMED Tailwind variant (`rail:` /
+     `max-rail:`), bridging the canonical --bp-rail width (1180px, above) into
+     utility markup so cockpit columns flip at the SAME threshold the folio.css
+     media queries mirror. The cockpit's three-column HUD mounts at `rail:`;
+     below it the rails recompose behind their disclosures — mounting them at
+     `lg:` (1024) squeezed the center column to ~400px (narrower than a phone)
+     across the 1024–1179 iPad-landscape band. */
+  --breakpoint-rail: 1180px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Base styles (folio — ported from app.css §BASE)
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* The page field lives on <html>, NOT <body> — so the fixed `body::after` backdrop
+   (z-index:-1, hoisted to the root stacking context) paints ABOVE the field but
+   BELOW content, and shows through the transparent body in the empty page voids
+   (#36). With the colour on body, body's own opaque background occluded the
+   backdrop entirely (the fixed pseudo rendered behind the body box). */
+html {
+  background-color: var(--bg-page);
+  /* Reserve the scrollbar's space ALWAYS, so a page that grows past the viewport
+     (e.g. entering the chronicle editor) can't make a classic scrollbar appear and
+     shove the centred content sideways — the horizontal "shift". No effect with
+     macOS overlay scrollbars (gutter is 0); a clean no-op there, a fix elsewhere.
+     scrollbar-gutter stays the SINGLE reservation mechanism (the compensation the
+     scroll-lock injects is zeroed below). */
+  scrollbar-gutter: stable;
+  /* OWN the viewport scrollbar on <html> (the scrolling element) rather than letting
+     it PROPAGATE up from <body>. react-remove-scroll (Radix's modal scroll-lock behind
+     the ⌘K palette + every dialog) locks by setting `body { overflow: hidden }`; while
+     <html> is `overflow: visible` the CSS overflow-propagation rule forwards THAT to the
+     viewport, so opening a dialog didn't just lock scrolling — it REMOVED the viewport
+     scrollbar, blinking the (custom, classic) thumb out on open and back on close: the
+     owner's perceived "jump", even though `scrollbar-gutter` held the geometry steady.
+     `overflow-y: auto` makes <html> non-visible, so the viewport scrollbar is governed
+     HERE (painted whenever the page overflows) and body's lock-time `overflow: hidden`
+     no longer propagates — the thumb stays put through open/close. The lock itself still
+     holds: react-remove-scroll's wheel/touch/keyboard blockers are JS, independent of the
+     body overflow. `auto` (not `scroll`) so `scrollbar-gutter` remains the sole reserver. */
+  overflow-y: auto;
+}
+/* Radix's react-remove-scroll (the modal scroll-lock behind the ⌘K palette + every
+   dialog) removes the classic scrollbar and injects a compensating margin/padding on
+   the locked <body> to keep content from shifting. But `scrollbar-gutter: stable`
+   above ALREADY reserves that space permanently, so the injected compensation would
+   DOUBLE-count and shove the page — the "opening the palette resizes/shifts the page"
+   reflow. `scrollbar-gutter` is the single source of the reservation; zero out the
+   library's compensation on the locked body — this selector outranks its injected
+   `body[data-scroll-locked]` rule (which is itself `!important`) on specificity.
+   No-op with macOS/mobile overlay scrollbars (0 gutter). */
+html body[data-scroll-locked] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+}
+body {
+  font-family: var(--font-body);
+  /* Tabular LINING figures app-wide, pinned ONCE here (inherited — golden
+     rule 6): Alegreya and Source Serif 4 both default to proportional oldstyle
+     text figures, but this is a stat sheet — a digit ("8d6", "HP 42", an AC
+     column) must read at cap height and align in columns in EVERY register.
+     font-feature-settings outranks the font-variant-numeric utilities, so a
+     stray `tabular-nums`/.tnum can never silently drop lining. */
+  font-feature-settings: "tnum", "lnum";
+  background-color: transparent;
+  color: var(--text-primary);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* DEFENSIVE WRAP for user-authored text (MOBILE-SWEEP). A long unbroken string —
+     a pasted URL in the campaign chronicle / session summary / shared note, a long
+     compound name — otherwise extends the PAGE sideways on a phone (the owner's
+     campaign-hub horizontal scroll). `break-word` is inherited app-wide and only
+     breaks a word that cannot fit its line on its own; unlike `anywhere` it does
+     NOT shrink min-content widths, so tight chips/grids (the "DADO / VITA" vital
+     label, folio.css §vitals) keep their intrinsic size and never shatter. Guarded
+     by tests/e2e/mobile-layout.spec.ts (manifest-wide no-horizontal-overflow). */
+  overflow-wrap: break-word;
+}
+
+/* Atmospheric vellum field — the warm-gold / cool-lapis pools + edge vignette that
+   give the tome depth. Painted on a SINGLE viewport-fixed pseudo (z-index:-1) rather
+   than `background-attachment: fixed`: the latter, stacked with `cover` on a tall
+   scroll container, makes Chromium's tiled compositor re-sample the gradient per tile
+   and leak visible seams (the "grid of gradient tiles" bug). A fixed pseudo paints
+   one continuous viewport-sized layer with no seams. Content (z:auto) sits above it;
+   page wrappers stay transparent so it shows through. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background: var(--vellum-grain);
+  pointer-events: none;
+}
+
+/* #36 — optional atmospheric background ART (D&D-Beyond / BG3 feel): a single
+   viewport-fixed painterly image behind the whole app, sitting ABOVE the vellum
+   pools (z:-1) and BELOW all content. Held at a low per-theme opacity so it reads
+   as a subdued, premium backdrop that fills the empty page voids without harming
+   legibility (opaque cards float over it; text lives on cards). FULLY GRACEFUL:
+   `--asset-home-hero` resolves to the shipped `home-hero.webp`; were it ever missing
+   the background-image simply paints nothing, so the opacity acts on an empty layer
+   and the vellum (::before) shows through unchanged. The image itself owns the
+   "moody, low-contrast, dark-edged backdrop" responsibility (see DESIGN.md). To
+   disable app-wide art, set `--app-bg-art: none` on `:root`. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--app-bg-art, var(--asset-home-hero));
+  background-size: cover;
+  /* The campaign hub overrides this with the DM's crop focal (`bannerCrop` centre)
+     so a cropped custom banner positions the cover backdrop; the default asset (and
+     the home hero) keep `center top`. */
+  background-position: var(--app-bg-art-position, center top);
+  background-repeat: no-repeat;
+  opacity: var(--app-bg-art-opacity, 0.55);
+  /* The campaign hub also honours the crop ZOOM: `--app-bg-art-scale` (the cropper's
+     zoom factor) magnifies the `cover` art around the focal so a tightly-cropped
+     banner shows the SAME framing as its list card, not the whole image. Scaling a
+     viewport-filling layer up around an interior point always still covers, so no
+     gaps appear. Default (unset → 1, origin `center top`) is a pixel-identical no-op. */
+  transform-origin: var(--app-bg-art-position, center top);
+  transform: scale(var(--app-bg-art-scale, 1));
+  pointer-events: none;
+}
+/* Daylight sibling plates — the light backdrop is now the theme's OWN daylight
+   plate (P9 daylight study via the light `--asset-home-hero`), pre-graded into
+   the honey band the deep-parchment field hosts, so the old colour-lift filter
+   (a compensation for borrowing the DARK candlelit art) is retired: the plate
+   renders in its native grade, exactly like dark renders its own. */
+[data-theme="light"] body::after {
+  /* THE seam fix (light-craft audit — three independent sightings: campaign hub,
+     member sheet, wizard, create). On dark the art's dark lower band blends into
+     the near-black field, so it fades smoothly; on light the lower band would
+     otherwise hard-CUT against the parchment field mid-viewport, a visible
+     horizontal tone-step. Dissolve the art's lower region into transparency with
+     a designed vertical mask so it melts into `--bg-page` (the field shows
+     through the tail) with no tone-step — the light sibling of dark's natural
+     blend. This changes per-pixel MASK alpha (a dissolve), NOT the owner-ratified
+     0.55 layer opacity, which still governs the art's overall presence above.
+     Kept for the daylight plate too: its honey tones sit near the field so the
+     dissolve is gentle, and it is what keeps ARBITRARY user campaign art (any
+     brightness) from ever cutting a hard edge against the light field. Dark is
+     untouched (this rule is light-only). */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 40%,
+    rgba(0, 0, 0, 0.35) 78%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 40%,
+    rgba(0, 0, 0, 0.35) 78%,
+    transparent 100%
+  );
+}
+/* USER-UPLOADED campaign art under light chrome (the hub raises
+   `data-app-bg-custom` on <html> while a DM's own banner is the backdrop — see
+   `useCampaignBackdrop`). The bundled plates are graded into the parchment world,
+   but a custom upload is ANY image — a pure-white photo, a neon screenshot, a
+   pitch-black render — and raw at 0.55 it can shout against the light chrome or
+   wash the field out. The veil is a designed two-part treatment, applied ONLY to
+   custom art (the owner plates render native):
+     1. a parchment GLAZE — a uniform translucent wash of the field's own hue
+        layered over the image inside the same element, pulling every upload
+        toward the warm honey world (neon cools down, pure white warms up,
+        pitch black lifts toward umber);
+     2. a gentle harmonizer filter — small desaturation + contrast ease, so
+        oversaturated uploads sit back as atmosphere instead of competing with
+        the chrome.
+   Text legibility never depends on the upload: loose text on the backdrop is
+   already the guarded `.on-art` bright-ink + dark-outline register, and the
+   glaze only narrows the art's dynamic range further. Dark theme needs no veil
+   (0.55 over the near-black field tames any upload) and stays byte-identical. */
+[data-theme="light"][data-app-bg-custom] body::after {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--bg-page) 38%, transparent),
+      color-mix(in srgb, var(--bg-page) 38%, transparent)
+    ),
+    var(--app-bg-art, var(--asset-home-hero));
+  filter: saturate(0.82) contrast(0.94);
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* A whisper of parallax-free settle on first paint only (no scroll-jank): the
+     backdrop fades in so a slow image decode never pops. */
+  body::after {
+    animation: app-bg-fade var(--m-slow, 540ms) var(--ease-standard, ease-out) both;
+  }
+}
+@keyframes app-bg-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent-primary) 30%, transparent);
+  color: var(--text-primary);
+}
+
+/* § Scrollbars — JEWELRY-THIN (DESIGN.md §5 "The ornament vocabulary"). The run
+   stays quiet: the track is fully transparent (the page field IS the channel),
+   the thumb a ghost-thin muted bar (~40% alpha, a 4px core inside a 10px hit area
+   via the transparent-border clip) that warms to gold when grabbed, and the
+   scroll buttons are hidden. Global — one quiet jewel-rail everywhere;
+   `min-height` keeps short thumbs looking intentional.
+   ⚠️ The standard `scrollbar-width/color` pair is FIREFOX-ONLY here (the
+   `@supports not selector(::-webkit-scrollbar)` fence): Chromium ≥121 lets the
+   standard properties DISABLE the `::-webkit-scrollbar` styling entirely, so
+   setting both app-wide would silently kill the thumb recipe below. */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--text-muted) 40%, transparent) transparent;
+  }
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background: transparent;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  min-height: 36px;
+  min-width: 36px;
+  border: 3px solid transparent;
+  border-radius: 5px;
+  background: color-mix(in oklab, var(--text-muted) 40%, transparent);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklab, var(--accent-primary) 60%, transparent);
+}
+::-webkit-scrollbar-button {
+  display: none;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* §88 Cursor affordance — ONE systemic rule so what's clickable always shows a
+   pointer and what isn't never lies. Covers native + ARIA interactive roles; a
+   disabled control reads as not-allowed. Component recipes that need a different
+   cursor (text inputs default to text) keep theirs — this only fills the gaps that
+   a per-element approach left inconsistent. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+[role="tab"]:not([aria-disabled="true"]),
+[role="menuitem"]:not([aria-disabled="true"]),
+[role="menuitemradio"],
+[role="menuitemcheckbox"],
+[role="option"]:not([aria-disabled="true"]),
+[role="switch"]:not([aria-disabled="true"]),
+[role="radio"]:not([aria-disabled="true"]),
+summary,
+label[for],
+a[href],
+select:not(:disabled) {
+  cursor: pointer;
+}
+button:disabled,
+[aria-disabled="true"],
+[role="tab"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* § 07 Focus — gold halo on every interactive element.
+   Uses the theme-aware --focus-ring (AA-safe in both themes; the old
+   --accent-primary-bright resolved to gold-500 in light = ~2.1:1, FAIL).
+   The illumination halo is suppressed on programmatically-focused
+   non-interactive containers ([tabindex='-1']) so roving-focus wrappers
+   (e.g. the roster list region) never paint a giant frame around the page. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  /* BG3 focus grammar: the crisp a11y ring PLUS a warm interior wash — the
+     oversized inset spread floods the element's interior with --focus-wash
+     (respecting its radius) under the content. Additive warmth only; component
+     recipes that own their focus box-shadow (.input, .btn.destructive, …)
+     keep their bespoke treatment. */
+  box-shadow:
+    inset 0 0 0 999px var(--focus-wash),
+    var(--illumination);
+  /* No border-radius here — the global rule forced --radius-md onto EVERY
+     focused element, rounding/clipping the gold halo on elements that aren't
+     meant to be rounded (table rows, inline links, full-bleed items). The halo
+     (box-shadow) already follows each element's own border-radius, and every
+     component-level :focus-visible owns its radius (.input, .statcard, etc.). */
+}
+:focus-visible[tabindex="-1"] {
+  outline: none;
+  box-shadow: none;
+}
+
+/* § 2.4.1 Bypass Blocks — skip-to-main link (off-screen until focused) */
+.skip-link {
+  position: fixed;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  z-index: var(--z-tooltip);
+  transform: translateY(calc(-100% - var(--sp-4)));
+  /* opacity:0 makes the resting hide bulletproof — it can never leave a peeking
+     sliver above the topbar if the translate math is ever off; focus restores
+     both. The element stays in the tab order (not display:none), so the skip
+     affordance still works for keyboard users. */
+  opacity: 0;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-raised);
+  font: 600 var(--text-sm) / 1 var(--font-numeric);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  transition:
+    transform var(--m-fast) var(--ease-standard),
+    opacity var(--m-fast) var(--ease-standard);
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  opacity: 1;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: var(--illumination), var(--elev-raised);
+}
+
+/* numeric alignment helper used on every stat number — tabular for column
+   alignment + lining so digits read at cap height in every face */
+.tnum {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Motion — global kill-switch. There is NO in-app animations toggle (removed
+   Owner-feedback 2026-06-07): `data-motion` is a pure mirror of the OS
+   prefers-reduced-motion setting, written to <html> by the index.html boot
+   script + kept in sync by uiStore. So a reduced-motion OS user always lands on
+   [data-motion="reduced"] and every animation collapses. The @media block below
+   is a belt-and-braces guard for the pre-script window (static <html> default is
+   data-motion="auto"): if the OS prefers reduced before JS runs, animations are
+   still killed.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  [data-motion="auto"] *,
+  [data-motion="auto"] *::before,
+  [data-motion="auto"] *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+[data-motion="reduced"] *,
+[data-motion="reduced"] *::before,
+[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}

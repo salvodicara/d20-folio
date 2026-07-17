@@ -1,0 +1,7 @@
+{
+  "srdTagPicker": {
+    "remove": "Rimuovi {{name}}",
+    "addCustom": "Aggiungi \"{{name}}\"",
+    "granted": "Concesso dalle tue scelte"
+  }
+}

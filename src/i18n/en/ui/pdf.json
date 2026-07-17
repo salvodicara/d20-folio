@@ -1,0 +1,39 @@
+{
+  "pdf": {
+    "weaponsAndCantrips": "Weapons & Damage Cantrips",
+    "inspirationShort": "Heroic Insp.",
+    "footer": "Exported from d20 Folio",
+    "spellcasting": "Spellcasting",
+    "spellAbility": "Ability",
+    "recoveryDawn": "Dawn",
+    "sheet": {
+      "xp": "XP",
+      "current": "Current",
+      "max": "Max",
+      "spent": "Spent",
+      "size": "Size",
+      "score": "Score",
+      "modifier": "Modifier",
+      "atkBonusDc": "Atk Bonus / DC",
+      "damageType": "Damage & Type",
+      "speciesTraits": "Species Traits",
+      "equipmentTraining": "Equipment Training & Proficiencies",
+      "armorTraining": "Armor Training",
+      "armorLight": "Light",
+      "armorHeavy": "Heavy",
+      "backstory": "Backstory & Personality",
+      "attunement": "Magic Item Attunement",
+      "coins": "Coins",
+      "expended": "Expended",
+      "spellTable": "Cantrips & Prepared Spells",
+      "cp": "CP",
+      "sp": "SP",
+      "ep": "EP",
+      "gp": "GP",
+      "pp": "PP",
+      "spellcastingModifier": "Spellcasting Modifier",
+      "spellSaveDcFull": "Spell Save DC",
+      "spellAttackBonus": "Spell Attack Bonus"
+    }
+  }
+}

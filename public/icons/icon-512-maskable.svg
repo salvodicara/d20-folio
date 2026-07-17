@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="gFace" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#f5e6b8"/><stop offset="0.5" stop-color="#d4ac4d"/><stop offset="1" stop-color="#7a5f24"/>
+    </linearGradient>
+    <linearGradient id="gMid" x1="0.2" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#d4ac4d"/><stop offset="1" stop-color="#b8923d"/>
+    </linearGradient>
+    <linearGradient id="gDim" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#b8923d"/><stop offset="1" stop-color="#3d2f12"/>
+    </linearGradient>
+    <radialGradient id="gGem" cx="0.42" cy="0.30" r="0.95">
+      <stop offset="0" stop-color="#fbf0cf"/><stop offset="0.55" stop-color="#e8c86c"/><stop offset="1" stop-color="#a9822f"/>
+    </radialGradient>
+    <linearGradient id="gTile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#241a0f"/><stop offset="1" stop-color="#120c06"/>
+    </linearGradient>
+    <radialGradient id="gTileGlow" cx="0.5" cy="0.36" r="0.72">
+      <stop offset="0" stop-color="#3a2a16" stop-opacity="0.85"/><stop offset="1" stop-color="#3a2a16" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#gTile)"/>
+  <rect width="512" height="512" fill="url(#gTileGlow)"/>
+  <g transform="translate(97.5,97.5) scale(3.17)">
+    <polygon points="50,2.3 91,26.1 91,73.9 50,97.7 9,73.9 9,26.1" fill="url(#gDim)" stroke="#3d2f12" stroke-width="2.4" stroke-linejoin="round"/>
+    <polygon points="50,20 50,2.3 9,26.1" fill="url(#gFace)" stroke="#3d2f12" stroke-width="1" stroke-linejoin="round"/>
+    <polygon points="50,20 50,2.3 91,26.1" fill="url(#gFace)" stroke="#3d2f12" stroke-width="1" stroke-linejoin="round"/>
+    <polygon points="50,20 20,70 9,26.1" fill="url(#gMid)" stroke="#3d2f12" stroke-width="1" stroke-linejoin="round"/>
+    <polygon points="50,20 80,70 91,26.1" fill="url(#gMid)" stroke="#3d2f12" stroke-width="1" stroke-linejoin="round"/>
+    <polygon points="20,70 9,26.1 9,73.9" fill="url(#gMid)" stroke="#3d2f12" stroke-width="1" stroke-linejoin="round"/>
+    <polygon points="80,70 91,26.1 91,73.9" fill="url(#gDim)" stroke="#3d2f12" stroke-width="1" stroke-linejoin="round"/>
+    <polygon points="20,70 9,73.9 50,97.7" fill="url(#gDim)" stroke="#3d2f12" stroke-width="1" stroke-linejoin="round"/>
+    <polygon points="80,70 91,73.9 50,97.7" fill="url(#gDim)" stroke="#3d2f12" stroke-width="1" stroke-linejoin="round"/>
+    <polygon points="80,70 20,70 50,97.7" fill="url(#gDim)" stroke="#3d2f12" stroke-width="1" stroke-linejoin="round"/>
+    <polygon points="50,20 80,70 20,70" fill="url(#gGem)" stroke="#f5e6b8" stroke-width="1.4" stroke-linejoin="round"/>
+    <polygon points="50,20 80,70 20,70" fill="#f5e6b8" opacity="0.18"/>
+    <path d="M50,2.3 9,26.1 M50,2.3 91,26.1" fill="none" stroke="#f5e6b8" stroke-width="1" opacity="0.6" stroke-linecap="round"/>
+    <text x="50" y="54" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="35" fill="none" stroke="#f7eccb" stroke-width="2" stroke-linejoin="round" letter-spacing="0.5">20</text>
+    <text x="50" y="54" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" font-size="35" fill="#241a08" stroke="#241a08" stroke-width="0.7" paint-order="stroke" letter-spacing="0.5">20</text>
+  </g>
+</svg>

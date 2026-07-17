@@ -1,0 +1,15 @@
+{
+  "settings": {
+    "language": "Language",
+    "theme": "Theme",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "systemMode": "System",
+    "hint": "Your account, appearance, and language.",
+    "appearance": "Appearance",
+    "themeHelp": "Choose a fixed theme or follow your system.",
+    "languageHelp": "All rules text follows the SRD translation.",
+    "noIdentity": "Signed in",
+    "openAdmin": "Open admin tools"
+  }
+}

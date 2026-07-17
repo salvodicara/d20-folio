@@ -1,0 +1,16 @@
+{
+  "feats": {
+    "feats": "Feats",
+    "category": "Category",
+    "repeatable": "repeatable",
+    "noPrereq": "No prerequisite",
+    "prerequisite": "Prerequisite",
+    "category_origin": "Origin Feat",
+    "category_general": "General Feat",
+    "category_fighting-style": "Fighting Style",
+    "category_epic-boon": "Epic Boon",
+    "category_heritage": "Heritage",
+    "category_planar-pact": "Planar Pact",
+    "category_dark-gift": "Dark Gift"
+  }
+}

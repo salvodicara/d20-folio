@@ -1,0 +1,30 @@
+{
+  "featChoices": {
+    "pickCantrips_one": "Scegli {{count}} trucchetto",
+    "pickCantrips_other": "Scegli {{count}} trucchetti",
+    "pickSpells_one": "Scegli {{count}} incantesimo",
+    "pickSpells_other": "Scegli {{count}} incantesimi",
+    "pickClassCantrips_one": "Scegli {{count}} trucchetto da <c>{{className}}</c>",
+    "pickClassCantrips_other": "Scegli {{count}} trucchetti da <c>{{className}}</c>",
+    "pickClassSpells_one": "Scegli {{count}} incantesimo da <c>{{className}}</c>",
+    "pickClassSpells_other": "Scegli {{count}} incantesimi da <c>{{className}}</c>",
+    "pickSchoolSpells_one": "Scegli {{count}} incantesimo di <c>{{school}}</c> da {{className}}",
+    "pickSchoolSpells_other": "Scegli {{count}} incantesimi di <c>{{school}}</c> da {{className}}",
+    "pickRitualSpells_one": "Scegli {{count}} incantesimo con tag Rituale (da qualsiasi lista)",
+    "pickRitualSpells_other": "Scegli {{count}} incantesimi con tag Rituale (da qualsiasi lista)",
+    "toSpellbookHint": "Aggiunti gratuitamente al tuo libro degli incantesimi: preparali come qualsiasi altro incantesimo del libro.",
+    "noSpellsAvailable": "Nessun incantesimo corrisponde ai filtri.",
+    "pickSkillsOrTools_one": "Scegli {{count}} abilità o strumento",
+    "pickSkillsOrTools_other": "Scegli {{count}} abilità o strumenti",
+    "pickTools_one": "Scegli {{count}} strumento",
+    "pickTools_other": "Scegli {{count}} strumenti",
+    "pickSkills_one": "Scegli {{count}} abilità",
+    "pickSkills_other": "Scegli {{count}} abilità",
+    "pickExpertise_one": "Scegli {{count}} abilità per la Maestria",
+    "pickExpertise_other": "Scegli {{count}} abilità per la Maestria",
+    "pickLanguages_one": "Scegli {{count}} lingua",
+    "pickLanguages_other": "Scegli {{count}} lingue",
+    "noMatches": "Nessuna corrispondenza.",
+    "noProficientSkills": "Nessuna abilità in cui sei competente disponibile per la Maestria."
+  }
+}

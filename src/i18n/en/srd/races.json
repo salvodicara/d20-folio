@@ -1,0 +1,327 @@
+{
+  "dragonborn": {
+    "name": "Dragonborn"
+  },
+  "dragonborn.traits.breath-weapon": {
+    "description": "When you take the Attack action on your turn, you can replace one of your attacks with an exhalation of destructive energy in either a 15-foot Cone or a 30-foot Line that is 5 feet wide (your choice each time). Each creature in that area must make a Dexterity saving throw (DC = 8 + your Constitution modifier + your Proficiency Bonus). On a failed save, a creature takes 1d10 damage of the type associated with your Draconic Ancestry. On a successful save, a creature takes half damage. The damage increases to 2d10 at 5th level, 3d10 at 11th level, and 4d10 at 17th level. You can use your Breath Weapon a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.",
+    "name": "Breath Weapon"
+  },
+  "dragonborn.traits.breath-weapon.mechanics.actions.0": {
+    "description": "Exhale 15-ft Cone or 30-ft Line"
+  },
+  "dragonborn.traits.damage-resistance": {
+    "description": "You have Resistance to the damage type determined by your Draconic Ancestry.",
+    "name": "Damage Resistance"
+  },
+  "dragonborn.traits.darkvision": {
+    "description": "You have Darkvision with a range of 60 feet.",
+    "name": "Darkvision"
+  },
+  "dragonborn.traits.draconic-ancestry": {
+    "description": "You are descended from a dragon. Choose one type of dragon from the Draconic Ancestors table (Black/Acid, Blue/Lightning, Brass/Fire, Bronze/Lightning, Copper/Acid, Gold/Fire, Green/Poison, Red/Fire, Silver/Cold, White/Cold). Your choice determines your Damage Resistance and the damage type of your Breath Weapon.",
+    "name": "Draconic Ancestry"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0": {
+    "label": "Draconic Ancestry"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.black": {
+    "label": "Black (Acid)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.blue": {
+    "label": "Blue (Lightning)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.brass": {
+    "label": "Brass (Fire)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.bronze": {
+    "label": "Bronze (Lightning)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.copper": {
+    "label": "Copper (Acid)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.gold": {
+    "label": "Gold (Fire)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.green": {
+    "label": "Green (Poison)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.red": {
+    "label": "Red (Fire)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.silver": {
+    "label": "Silver (Cold)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.white": {
+    "label": "White (Cold)"
+  },
+  "dragonborn.traits.draconic-flight": {
+    "description": "Starting at level 5, you can channel your draconic energy to summon spectral wings. As a Bonus Action, you can sprout spectral wings from your back that last for 10 minutes or until you retract them as a Bonus Action. While the wings exist, you have a Flying Speed equal to your Speed. Once you use this trait, you can't use it again until you finish a Long Rest.",
+    "name": "Draconic Flight"
+  },
+  "dragonborn.traits.draconic-flight.grants.0": {
+    "label": "Draconic Flight"
+  },
+  "dragonborn.traits.draconic-flight.mechanics.actions.0": {
+    "description": "Sprout spectral wings — Flying Speed = Speed for 10 minutes (1/Long Rest, available from level 5).",
+    "summary": "Spectral wings: Fly Speed = Speed for 10 minutes"
+  },
+  "dwarf": {
+    "name": "Dwarf"
+  },
+  "dwarf.traits.darkvision": {
+    "description": "You have Darkvision with a range of 120 feet.",
+    "name": "Darkvision"
+  },
+  "dwarf.traits.dwarven-resilience": {
+    "description": "You have Resistance to Poison damage. You also have Advantage on saving throws you make to avoid or end the Poisoned condition.",
+    "name": "Dwarven Resilience"
+  },
+  "dwarf.traits.dwarven-resilience.grants.1": {
+    "description": "Saving throws to avoid or end the Poisoned condition"
+  },
+  "dwarf.traits.dwarven-toughness": {
+    "description": "Your Hit Point maximum increases by 1, and it increases by 1 again whenever you gain a level.",
+    "name": "Dwarven Toughness"
+  },
+  "dwarf.traits.stonecunning": {
+    "description": "As a Bonus Action, you gain Tremorsense with a range of 60 feet for 10 minutes. You must be on a stone surface or touching a stone surface to use this Tremorsense. The stone can be natural or worked. You can use this Bonus Action a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.",
+    "name": "Stonecunning"
+  },
+  "dwarf.traits.stonecunning.grants.0": {
+    "label": "Stonecunning active"
+  },
+  "dwarf.traits.stonecunning.mechanics.actions.0": {
+    "description": "Gain Tremorsense 60 ft for 10 min"
+  },
+  "elf": {
+    "name": "Elf"
+  },
+  "elf.traits.darkvision": {
+    "description": "You have Darkvision with a range of 60 feet.",
+    "name": "Darkvision"
+  },
+  "elf.traits.elven-lineage": {
+    "description": "You are part of an Elven Lineage that grants you supernatural abilities. Choose one of the following lineages and gain its traits:\n• Drow — Darkvision range becomes 120 feet. You know the Dancing Lights cantrip. At character level 3, learn Faerie Fire (1/Long Rest, free). At level 5, learn Darkness (1/Long Rest, free). Charisma is your spellcasting ability for these spells.\n• High Elf — You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace it with a different wizard cantrip. At character level 3, learn Detect Magic (1/Long Rest, free). At level 5, learn Misty Step (1/Long Rest, free). Intelligence is your spellcasting ability.\n• Wood Elf — Your Speed becomes 35 feet. You know the Druidcraft cantrip. At character level 3, learn Longstrider (1/Long Rest, free). At level 5, learn Pass without Trace (1/Long Rest, free). Wisdom is your spellcasting ability.",
+    "name": "Elven Lineage"
+  },
+  "elf.traits.elven-lineage.grants.0": {
+    "label": "Elven Lineage"
+  },
+  "elf.traits.elven-lineage.grants.0.options.drow": {
+    "label": "Drow"
+  },
+  "elf.traits.elven-lineage.grants.0.options.high-elf": {
+    "label": "High Elf"
+  },
+  "elf.traits.elven-lineage.grants.0.options.wood-elf": {
+    "label": "Wood Elf"
+  },
+  "elf.traits.fey-ancestry": {
+    "description": "You have Advantage on saving throws you make to avoid or end the Charmed condition. In addition, no spell or effect can put you to sleep.",
+    "name": "Fey Ancestry"
+  },
+  "elf.traits.fey-ancestry.grants.0": {
+    "description": "Saving throws to avoid or end the Charmed condition"
+  },
+  "elf.traits.keen-senses": {
+    "description": "You have proficiency in the Insight, Perception, or Survival skill.",
+    "name": "Keen Senses"
+  },
+  "elf.traits.trance": {
+    "description": "You don't need to sleep, and magic can't put you to sleep. You can finish a Long Rest in 4 hours if you spend those hours in a trancelike meditation, during which you retain consciousness.",
+    "name": "Trance"
+  },
+  "gnome": {
+    "name": "Gnome"
+  },
+  "gnome.traits.darkvision": {
+    "description": "You have Darkvision with a range of 60 feet.",
+    "name": "Darkvision"
+  },
+  "gnome.traits.gnome-cunning": {
+    "description": "You have Advantage on Intelligence, Wisdom, and Charisma saving throws.",
+    "name": "Gnome Cunning"
+  },
+  "gnome.traits.gnome-cunning.grants.0": {
+    "description": "Intelligence saving throws"
+  },
+  "gnome.traits.gnome-cunning.grants.1": {
+    "description": "Wisdom saving throws"
+  },
+  "gnome.traits.gnome-cunning.grants.2": {
+    "description": "Charisma saving throws"
+  },
+  "gnome.traits.gnomish-lineage": {
+    "description": "You are part of a lineage that grants you supernatural abilities. Choose one of the following lineages — Forest Gnome or Rock Gnome — and gain its traits. Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose when you select the lineage). Forest Gnome: You know the Minor Illusion cantrip, and you always have the Speak with Animals spell prepared. You can cast Speak with Animals without a spell slot a number of times equal to your Proficiency Bonus per Long Rest, and also with any spell slots you have. Rock Gnome: You know the Mending and Prestidigitation cantrips. In addition, you can spend 10 minutes casting Prestidigitation to create a Tiny clockwork device (AC 5, 1 HP) — a toy, fire starter, or music box — that produces one chosen Prestidigitation effect when activated with a Bonus Action; you can have three such devices at a time and each falls apart after 8 hours or when you dismantle it.",
+    "name": "Gnomish Lineage"
+  },
+  "gnome.traits.gnomish-lineage.grants.0": {
+    "label": "Gnomish Lineage"
+  },
+  "gnome.traits.gnomish-lineage.grants.0.options.forest-gnome": {
+    "label": "Forest Gnome"
+  },
+  "gnome.traits.gnomish-lineage.grants.0.options.rock-gnome": {
+    "label": "Rock Gnome"
+  },
+  "goliath": {
+    "name": "Goliath"
+  },
+  "goliath.traits.giant-ancestry": {
+    "description": "You are descended from Giants. Choose one of the following benefits — a benefit tied to Cloud, Fire, Frost, Hill, Stone, or Storm Giants: Cloud's Jaunt (teleport 30 ft as a Bonus Action, PB uses/Long Rest), Fire's Burn (1d10 fire damage when you hit with an attack, PB uses/Long Rest), Frost's Chill (1d6 cold + reduce target's Speed by 10 ft when you hit with an attack, PB uses/Long Rest), Hill's Tumble (knock a Large-or-smaller target Prone when you hit with an attack, PB uses/Long Rest), Stone's Endurance (reduce damage by 1d12+CON mod as a Reaction, PB uses/Long Rest), Storm's Thunder (1d8 thunder damage to attacker as a Reaction when you take damage from a creature within 60 ft, PB uses/Long Rest).",
+    "name": "Giant Ancestry"
+  },
+  "goliath.traits.giant-ancestry.grants.0": {
+    "label": "Giant Ancestry"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.clouds-jaunt": {
+    "label": "Cloud's Jaunt"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.clouds-jaunt.grants.clouds-jaunt": {
+    "description": "Magically teleport up to 30 feet to an unoccupied space you can see.",
+    "name": "Cloud's Jaunt"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.fires-burn": {
+    "label": "Fire's Burn"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.fires-burn.grants.fires-burn": {
+    "description": "Deal an extra 1d10 Fire damage to the target.",
+    "name": "Fire's Burn",
+    "trigger": "when you hit a target with an attack roll and deal damage"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.frosts-chill": {
+    "label": "Frost's Chill"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.frosts-chill.grants.frosts-chill": {
+    "description": "Deal an extra 1d6 Cold damage to the target and reduce its Speed by 10 feet until the start of your next turn.",
+    "name": "Frost's Chill",
+    "trigger": "when you hit a target with an attack roll and deal damage"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.hills-tumble": {
+    "label": "Hill's Tumble"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.hills-tumble.grants.hills-tumble": {
+    "description": "Give the target the Prone condition.",
+    "name": "Hill's Tumble",
+    "trigger": "when you hit a Large or smaller creature with an attack roll and deal damage"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.stones-endurance": {
+    "label": "Stone's Endurance"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.stones-endurance.grants.stones-endurance": {
+    "description": "Roll 1d12, add your Constitution modifier, and reduce the damage you take by that total.",
+    "name": "Stone's Endurance",
+    "trigger": "when you take damage"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.storms-thunder": {
+    "label": "Storm's Thunder"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.storms-thunder.grants.storms-thunder": {
+    "description": "Deal 1d8 Thunder damage to the creature that damaged you.",
+    "name": "Storm's Thunder",
+    "trigger": "when you take damage from a creature within 60 feet of you"
+  },
+  "goliath.traits.large-form": {
+    "description": "Starting at character level 5, you can change your size to Large as a Bonus Action if you're in a big enough space. This size change lasts for 10 minutes or until you end it (no action required). For that duration, you have Advantage on Strength checks, and your Speed increases by 10 feet. Once you use this trait, you can't use it again until you finish a Long Rest.",
+    "name": "Large Form"
+  },
+  "goliath.traits.large-form.grants.0": {
+    "label": "Large Form"
+  },
+  "goliath.traits.large-form.grants.0.grants.1": {
+    "description": "Advantage on Strength checks while in Large Form"
+  },
+  "goliath.traits.large-form.mechanics.actions.0": {
+    "description": "Change size to Large for 10 min (available from level 5)",
+    "summary": "Become Large for 10 min (from level 5)"
+  },
+  "goliath.traits.powerful-build": {
+    "description": "You have Advantage on any ability check you make to end the Grappled condition. You also count as one size larger when determining your carrying capacity and the weight you can push, drag, or lift.",
+    "name": "Powerful Build"
+  },
+  "goliath.traits.powerful-build.grants.0": {
+    "description": "Ability checks to end the Grappled condition"
+  },
+  "halfling": {
+    "name": "Halfling"
+  },
+  "halfling.traits.brave": {
+    "description": "You have Advantage on saving throws you make to avoid or end the Frightened condition.",
+    "name": "Brave"
+  },
+  "halfling.traits.brave.grants.0": {
+    "description": "Saving throws to avoid or end the Frightened condition"
+  },
+  "halfling.traits.halfling-nimbleness": {
+    "description": "You can move through the space of any creature that is a size larger than you, but you can't stop in the same space.",
+    "name": "Halfling Nimbleness"
+  },
+  "halfling.traits.luck": {
+    "description": "When you roll a 1 on the d20 of a D20 Test, you can reroll the die, and you must use the new roll.",
+    "name": "Luck"
+  },
+  "halfling.traits.naturally-stealthy": {
+    "description": "You can take the Hide action even when you are obscured only by a creature that is at least one size larger than you.",
+    "name": "Naturally Stealthy"
+  },
+  "human": {
+    "name": "Human"
+  },
+  "human.traits.resourceful": {
+    "description": "You gain Heroic Inspiration whenever you finish a Long Rest.",
+    "name": "Resourceful"
+  },
+  "human.traits.skillful": {
+    "description": "You gain proficiency in one skill of your choice.",
+    "name": "Skillful"
+  },
+  "human.traits.versatile": {
+    "description": "You gain an Origin feat of your choice.",
+    "name": "Versatile"
+  },
+  "orc": {
+    "name": "Orc"
+  },
+  "orc.traits.adrenaline-rush": {
+    "description": "You can take the Dash action as a Bonus Action. When you do so, you gain a number of Temporary Hit Points equal to your Proficiency Bonus. You can use this trait a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Short or Long Rest.",
+    "name": "Adrenaline Rush"
+  },
+  "orc.traits.adrenaline-rush.mechanics.actions.0": {
+    "description": "Dash and gain PB Temporary HP"
+  },
+  "orc.traits.darkvision": {
+    "description": "You have Darkvision with a range of 120 feet.",
+    "name": "Darkvision"
+  },
+  "orc.traits.relentless-endurance": {
+    "description": "When you are reduced to 0 Hit Points but not killed outright, you can drop to 1 Hit Point instead. Once you use this trait, you can't do so again until you finish a Long Rest.",
+    "name": "Relentless Endurance"
+  },
+  "tiefling": {
+    "name": "Tiefling"
+  },
+  "tiefling.traits.darkvision": {
+    "description": "You have Darkvision with a range of 60 feet.",
+    "name": "Darkvision"
+  },
+  "tiefling.traits.fiendish-legacy": {
+    "description": "You are the recipient of a fiendish legacy that grants you supernatural abilities. Choose a legacy from the following options: Abyssal, Chthonic, or Infernal. You gain the 1st-level spell indicated by your chosen legacy. When you reach character level 3, you gain the 2nd-level spell. When you reach character level 5, you gain the 3rd-level spell. You can cast each of these spells without a spell slot once, regaining the ability when you finish a Long Rest. You can also cast them using spell slots. Intelligence, Wisdom, or Charisma is your spellcasting ability (choose when you select this species). Abyssal: Poison Spray (cantrip), Ray of Sickness (3rd), Hold Person (5th). Chthonic: Chill Touch (cantrip), False Life (3rd), Ray of Enfeeblement (5th). Infernal: Fire Bolt (cantrip), Hellish Rebuke (3rd), Darkness (5th).",
+    "name": "Fiendish Legacy"
+  },
+  "tiefling.traits.fiendish-legacy.grants.0": {
+    "label": "Fiendish Legacy"
+  },
+  "tiefling.traits.fiendish-legacy.grants.0.options.abyssal": {
+    "label": "Abyssal"
+  },
+  "tiefling.traits.fiendish-legacy.grants.0.options.chthonic": {
+    "label": "Chthonic"
+  },
+  "tiefling.traits.fiendish-legacy.grants.0.options.infernal": {
+    "label": "Infernal"
+  },
+  "tiefling.traits.otherworldly-presence": {
+    "description": "You know the Thaumaturgy cantrip. When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy trait (Intelligence, Wisdom, or Charisma — chosen when you select this species).",
+    "name": "Otherworldly Presence"
+  }
+}

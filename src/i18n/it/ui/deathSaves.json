@@ -1,0 +1,9 @@
+{
+  "deathSaves": {
+    "title": "Tiri Salvezza contro Morte",
+    "successes": "Successi",
+    "failures": "Fallimenti",
+    "dead": "Il personaggio è morto.",
+    "critThreshold": "Con un tiro di {{n}}+ recuperi 1 PF"
+  }
+}

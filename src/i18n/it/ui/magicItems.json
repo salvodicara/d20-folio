@@ -1,0 +1,26 @@
+{
+  "magicItems": {
+    "rarity": "Rarità",
+    "type": "Tipo",
+    "searchPlaceholder": "Cerca oggetti magici…",
+    "attunement": "Sintonia",
+    "attunementShort": "sintonia",
+    "attunementRequired": "Richiede sintonia",
+    "attunementNone": "Senza sintonia",
+    "rarity_common": "Comune",
+    "rarity_uncommon": "Non comune",
+    "rarity_rare": "Raro",
+    "rarity_very-rare": "Molto raro",
+    "rarity_legendary": "Leggendario",
+    "rarity_artifact": "Artefatto",
+    "type_armor": "Armatura",
+    "type_weapon": "Arma",
+    "type_wondrous": "Meraviglioso",
+    "type_potion": "Pozione",
+    "type_ring": "Anello",
+    "type_rod": "Verga",
+    "type_scroll": "Pergamena",
+    "type_staff": "Bastone",
+    "type_wand": "Bacchetta"
+  }
+}

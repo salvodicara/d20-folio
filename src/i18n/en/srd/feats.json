@@ -1,0 +1,95 @@
+{
+  "ability-score-improvement": {
+    "description": "You increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. You can't increase an ability score above 20 using this feat.",
+    "name": "Ability Score Improvement",
+    "prerequisite": "Level 4+"
+  },
+  "alert": {
+    "description": "You gain the following benefits:\n\n**Initiative Proficiency.** When you roll Initiative, you can add your Proficiency Bonus to the roll.\n\n**Initiative Swap.** Immediately after you roll Initiative, you can swap your Initiative with one willing ally in the same combat. You can't make this swap if you or the ally has the Incapacitated condition.",
+    "name": "Alert"
+  },
+  "archery": {
+    "description": "You gain a +2 bonus to attack rolls you make with Ranged weapons.",
+    "name": "Archery",
+    "prerequisite": "Level 1+, Warrior or Priest Group"
+  },
+  "boon-of-combat-prowess": {
+    "description": "You gain the following benefits:\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Peerless Aim.** When you miss with an attack roll, you can hit instead. Once you use this benefit, you can't use it again until the start of your next turn.",
+    "name": "Boon of Combat Prowess",
+    "prerequisite": "Level 19+"
+  },
+  "boon-of-dimensional-travel": {
+    "description": "You gain the following benefits:\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Blink Steps.** Immediately after you take the Attack action or the Magic action, you can teleport up to 30 feet to an unoccupied space you can see.",
+    "name": "Boon of Dimensional Travel",
+    "prerequisite": "Level 19+"
+  },
+  "boon-of-fate": {
+    "description": "You gain the following benefits:\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Improve Fate.** When you or another creature within 60 feet of you succeeds on or fails a d20 Test, you can roll 2d4 and apply the number rolled as a bonus or penalty to the d20 roll. Once you use this benefit, you can't use it again until you roll Initiative or finish a Short or Long Rest.",
+    "name": "Boon of Fate",
+    "prerequisite": "Level 19+"
+  },
+  "boon-of-irresistible-offense": {
+    "description": "You gain the following benefits:\n\n**Ability Score Increase.** Increase your Strength or Dexterity score by 1, to a maximum of 30.\n\n**Overcome Defenses.** The Bludgeoning, Piercing, and Slashing damage you deal always ignores Resistance.\n\n**Overwhelming Strike.** When you roll a 20 on the d20 for an attack roll, you can deal extra damage to the target equal to the ability score increased by this feat. The extra damage's type is the same as the attack's type.",
+    "name": "Boon of Irresistible Offense",
+    "prerequisite": "Level 19+"
+  },
+  "boon-of-spell-recall": {
+    "description": "You gain the following benefits:\n\n**Ability Score Increase.** Increase your Intelligence, Wisdom, or Charisma score by 1, to a maximum of 30.\n\n**Free Casting.** Whenever you cast a spell with a level 1-4 spell slot, roll 1d4. If the number you roll is the same as the slot's level, the slot isn't expended.",
+    "name": "Boon of Spell Recall",
+    "prerequisite": "Level 19+, Spellcasting or Pact Magic feature"
+  },
+  "boon-of-the-night-spirit": {
+    "description": "You gain the following benefits:\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Merge with Shadows.** While you're within Dim Light or Darkness, you can give yourself the Invisible condition as a Magic action. The condition ends on you immediately after you take an action, a Bonus Action, or a Reaction.\n\n**Shadowy Form.** While you're within Dim Light or Darkness, you have Resistance to all damage except Force, Psychic, and Radiant.",
+    "name": "Boon of the Night Spirit",
+    "prerequisite": "Level 19+"
+  },
+  "boon-of-truesight": {
+    "description": "You gain the following benefits:\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Truesight.** You have Truesight with a range of 60 feet.",
+    "name": "Boon of Truesight",
+    "prerequisite": "Level 19+"
+  },
+  "defense": {
+    "description": "While you're wearing Light, Medium, or Heavy armor, you gain a +1 bonus to Armor Class.",
+    "name": "Defense",
+    "prerequisite": "Level 1+, Warrior or Priest Group"
+  },
+  "grappler": {
+    "description": "You gain the following benefits:\n\n**Ability Score Increase.** Increase your Strength or Dexterity score by 1, to a maximum of 20.\n\n**Punch and Grab.** When you hit a creature with an Unarmed Strike as part of the Attack action on your turn, you can use both the Damage and the Grapple option. You can use this benefit only once per turn.\n\n**Attack Advantage.** You have Advantage on attack rolls against a creature Grappled by you.\n\n**Fast Wrestler.** You don't have to spend extra movement to move a creature Grappled by you if the creature is your size or smaller.",
+    "name": "Grappler",
+    "prerequisite": "Level 4+, Strength or Dexterity 13+"
+  },
+  "great-weapon-fighting": {
+    "description": "When you roll damage for an attack you make with a Melee weapon that you are holding with two hands, you can treat any 1 or 2 on a damage die as a 3. The weapon must have the Two-Handed or Versatile property to gain this benefit.",
+    "name": "Great Weapon Fighting",
+    "prerequisite": "Level 1+, Warrior or Priest Group"
+  },
+  "magic-initiate-cleric": {
+    "description": "You gain the following benefits:\n\n**Two Cantrips.** You learn two cantrips of your choice from the Cleric spell list.\n\n**Level 1 Spell.** Choose a level 1 spell from the Cleric spell list. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have.\n\n**Spell Change.** Whenever you gain a new level, you can replace one of the spells you chose for this feat with a different spell of the same level from the Cleric spell list.\n\n**Spellcasting Ability.** Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this feat (choose when you take this feat).",
+    "name": "Magic Initiate (Cleric)"
+  },
+  "magic-initiate-druid": {
+    "description": "You gain the following benefits:\n\n**Two Cantrips.** You learn two cantrips of your choice from the Druid spell list.\n\n**Level 1 Spell.** Choose a level 1 spell from the Druid spell list. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have.\n\n**Spell Change.** Whenever you gain a new level, you can replace one of the spells you chose for this feat with a different spell of the same level from the Druid spell list.\n\n**Spellcasting Ability.** Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this feat (choose when you take this feat).",
+    "name": "Magic Initiate (Druid)"
+  },
+  "magic-initiate-wizard": {
+    "description": "You gain the following benefits:\n\n**Two Cantrips.** You learn two cantrips of your choice from the Wizard spell list.\n\n**Level 1 Spell.** Choose a level 1 spell from the Wizard spell list. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have.\n\n**Spell Change.** Whenever you gain a new level, you can replace one of the spells you chose for this feat with a different spell of the same level from the Wizard spell list.\n\n**Spellcasting Ability.** Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this feat (choose when you take this feat).",
+    "name": "Magic Initiate (Wizard)"
+  },
+  "savage-attacker": {
+    "description": "You've trained to deal particularly damaging strikes. Once per turn when you hit a target with a weapon, you can roll the weapon's damage dice twice and use either roll against the target.",
+    "name": "Savage Attacker"
+  },
+  "skilled": {
+    "description": "You gain proficiency in any combination of three skills or tools of your choice.\n\n**Repeatable.** You can take this feat more than once.",
+    "name": "Skilled"
+  },
+  "two-weapon-fighting": {
+    "description": "When you make an extra attack as a result of using a weapon that has the Light property, you can add your ability modifier to the damage of that attack if you aren't already adding it to the damage.",
+    "name": "Two-Weapon Fighting",
+    "prerequisite": "Level 1+, Warrior or Priest Group"
+  },
+  "boon-of-fate.mechanics.actions.0": {
+    "description": "Improve Fate — add or subtract 2d4 to a nearby creature's D20 Test result",
+    "summary": "Add or subtract 2d4 to a nearby creature's d20 Test"
+  }
+}

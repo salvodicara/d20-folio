@@ -1,0 +1,42 @@
+{
+  "careful-spell": {
+    "description": "Quando lanci un incantesimo che obbliga altre creature a un tiro salvezza, puoi proteggerne alcune dal pieno effetto. Spendi 1 Punto Stregoneria e scegli un numero di creature fino al tuo modificatore di Carisma (minimo una). Le creature scelte hanno successo automatico al tiro salvezza contro l'incantesimo e non subiscono danni se di norma ne avrebbero subito metà con un tiro riuscito.",
+    "name": "Incantesimo Attento"
+  },
+  "distant-spell": {
+    "description": "Quando lanci un incantesimo con gittata di almeno 1,5 metri, puoi spendere 1 Punto Stregoneria per raddoppiarne la gittata. Oppure quando lanci un incantesimo con gittata di Contatto, puoi spendere 1 Punto Stregoneria per portarne la gittata a 9 metri.",
+    "name": "Incantesimo Distante"
+  },
+  "empowered-spell": {
+    "description": "Quando tiri i danni di un incantesimo, puoi spendere 1 Punto Stregoneria per ritirare un numero di dadi di danno fino al tuo modificatore di Carisma (minimo uno), e devi usare i nuovi risultati. Puoi usare Incantesimo Potenziato anche se hai già usato un'altra opzione di Metamagia in quel lancio.",
+    "name": "Incantesimo Potenziato"
+  },
+  "extended-spell": {
+    "description": "Quando lanci un incantesimo con durata di 1 minuto o più, puoi spendere 1 Punto Stregoneria per raddoppiarne la durata fino a un massimo di 24 ore. Se l'incantesimo richiede Concentrazione, hai Vantaggio ai tiri salvezza per mantenerla.",
+    "name": "Incantesimo Esteso"
+  },
+  "heightened-spell": {
+    "description": "Quando lanci un incantesimo che obbliga una creatura a un tiro salvezza, puoi spendere 2 Punti Stregoneria per dare a un bersaglio Svantaggio ai tiri salvezza contro l'incantesimo.",
+    "name": "Incantesimo Accentuato"
+  },
+  "quickened-spell": {
+    "description": "Quando lanci un incantesimo con tempo di lancio di un'azione, puoi spendere 2 Punti Stregoneria per cambiare il tempo di lancio in un'Azione Bonus per quel lancio. Non puoi modificare un incantesimo in questo modo se hai già lanciato un incantesimo di livello 1+ nel turno corrente, né puoi lanciarne uno dopo in quel turno.",
+    "name": "Incantesimo Rapido"
+  },
+  "seeking-spell": {
+    "description": "Se effettui un tiro per colpire con un incantesimo e manchi, puoi spendere 1 Punto Stregoneria per ritirare il d20, e devi usare il nuovo risultato. Puoi usare Incantesimo Localizzante anche se hai già usato un'altra opzione di Metamagia in quel lancio.",
+    "name": "Incantesimo Localizzante"
+  },
+  "subtle-spell": {
+    "description": "Quando lanci un incantesimo, puoi spendere 1 Punto Stregoneria per lanciarlo senza componenti Verbali, Somatiche o Materiali, salvo le componenti Materiali consumate dall'incantesimo o con un costo specificato.",
+    "name": "Incantesimo Sottile"
+  },
+  "transmuted-spell": {
+    "description": "Quando lanci un incantesimo che infligge un tipo di danno dalla lista seguente, puoi spendere 1 Punto Stregoneria per cambiarne il tipo a uno degli altri elencati: Acido, Freddo, Fuoco, Folgore, Veleno, Tuono.",
+    "name": "Incantesimo Trasmutato"
+  },
+  "twinned-spell": {
+    "description": "Quando lanci un incantesimo, come Ammaliare Persone, che può essere lanciato con uno slot di livello superiore per colpire una creatura aggiuntiva, puoi spendere 1 Punto Stregoneria per aumentare di 1 il livello effettivo dell'incantesimo.",
+    "name": "Incantesimo Sdoppiato"
+  }
+}

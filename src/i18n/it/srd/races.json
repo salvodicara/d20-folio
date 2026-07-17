@@ -1,0 +1,327 @@
+{
+  "dragonborn": {
+    "name": "Dragonide"
+  },
+  "dragonborn.traits.breath-weapon": {
+    "description": "Quando effettui l'azione di Attacco nel tuo turno, puoi sostituire uno dei tuoi attacchi con un'esalazione di energia distruttiva in un Cono di 4,5 metri o una Linea di 9 metri larga 1,5 metri (a tua scelta ogni volta). Ogni creatura in quell'area deve effettuare un tiro salvezza su Destrezza (CD = 8 + il tuo modificatore di Costituzione + il tuo Bonus di Competenza). Se fallisce, la creatura subisce 1d10 danni del tipo associato alla tua Discendenza Draconica. Se riesce, subisce metà dei danni. I danni aumentano a 2d10 al 5° livello, 3d10 all'11° livello e 4d10 al 17° livello. Puoi usare il tuo Soffio un numero di volte pari al tuo Bonus di Competenza, e recuperi tutti gli usi spesi quando completi un Riposo Lungo.",
+    "name": "Soffio"
+  },
+  "dragonborn.traits.breath-weapon.mechanics.actions.0": {
+    "description": "Esala in Cono di 4,5 m o Linea di 9 m"
+  },
+  "dragonborn.traits.damage-resistance": {
+    "description": "Hai Resistenza al tipo di danno determinato dalla tua Discendenza Draconica.",
+    "name": "Resistenza ai Danni"
+  },
+  "dragonborn.traits.darkvision": {
+    "description": "Possiedi Scurovisione con un raggio di 18 metri.",
+    "name": "Scurovisione"
+  },
+  "dragonborn.traits.draconic-ancestry": {
+    "description": "Discendi da un drago. Scegli un tipo di drago dalla tabella Antenati Draconici (Nero/Acido, Blu/Fulmine, Ottone/Fuoco, Bronzo/Fulmine, Rame/Acido, Oro/Fuoco, Verde/Veleno, Rosso/Fuoco, Argento/Freddo, Bianco/Freddo). La tua scelta determina la tua Resistenza ai Danni e il tipo di danno del tuo Soffio.",
+    "name": "Discendenza Draconica"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0": {
+    "label": "Discendenza Draconica"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.black": {
+    "label": "Nero (Acido)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.blue": {
+    "label": "Blu (Fulmine)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.brass": {
+    "label": "Ottone (Fuoco)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.bronze": {
+    "label": "Bronzo (Fulmine)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.copper": {
+    "label": "Rame (Acido)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.gold": {
+    "label": "Oro (Fuoco)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.green": {
+    "label": "Verde (Veleno)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.red": {
+    "label": "Rosso (Fuoco)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.silver": {
+    "label": "Argento (Freddo)"
+  },
+  "dragonborn.traits.draconic-ancestry.grants.0.options.white": {
+    "label": "Bianco (Freddo)"
+  },
+  "dragonborn.traits.draconic-flight": {
+    "description": "Dal 5° livello, puoi canalizzare la tua energia draconica per evocare ali spettrali. Con un'Azione Bonus, puoi far spuntare ali spettrali dalla schiena che durano 10 minuti o finché non le ritrai con un'Azione Bonus. Mentre le ali esistono, hai una Velocità di Volare pari alla tua Velocità. Una volta usato questo tratto, non puoi più usarlo finché non completi un Riposo Lungo.",
+    "name": "Volo Draconico"
+  },
+  "dragonborn.traits.draconic-flight.grants.0": {
+    "label": "Volo Draconico"
+  },
+  "dragonborn.traits.draconic-flight.mechanics.actions.0": {
+    "description": "Fai spuntare ali spettrali — Velocità di Volare = Velocità per 10 minuti (1/Riposo Lungo, disponibile dal 5° livello).",
+    "summary": "Ali spettrali: Velocità di Volo = Velocità per 10 min"
+  },
+  "dwarf": {
+    "name": "Nano"
+  },
+  "dwarf.traits.darkvision": {
+    "description": "Possiedi Scurovisione con un raggio di 36 metri.",
+    "name": "Scurovisione"
+  },
+  "dwarf.traits.dwarven-resilience": {
+    "description": "Hai Resistenza ai danni da Veleno. Hai anche Vantaggio ai tiri salvezza per evitare o terminare la condizione Avvelenato.",
+    "name": "Resilienza Nanica"
+  },
+  "dwarf.traits.dwarven-resilience.grants.1": {
+    "description": "Tiri salvezza per evitare o terminare la condizione Avvelenato"
+  },
+  "dwarf.traits.dwarven-toughness": {
+    "description": "Il tuo massimo di Punti Ferita aumenta di 1, e aumenta di 1 ogni volta che guadagni un livello.",
+    "name": "Robustezza Nanica"
+  },
+  "dwarf.traits.stonecunning": {
+    "description": "Come Azione Bonus, ottieni Percezione delle Vibrazioni con un raggio di 18 metri per 10 minuti. Devi trovarti su una superficie di pietra o toccare una superficie di pietra per usare questa capacità. La pietra può essere naturale o lavorata. Puoi usare questa Azione Bonus un numero di volte pari al tuo Bonus di Competenza, e recuperi tutti gli usi spesi quando completi un Riposo Lungo.",
+    "name": "Affinità con la Pietra"
+  },
+  "dwarf.traits.stonecunning.grants.0": {
+    "label": "Affinità con la Pietra attiva"
+  },
+  "dwarf.traits.stonecunning.mechanics.actions.0": {
+    "description": "Ottieni Percezione delle Vibrazioni 18 m per 10 min"
+  },
+  "elf": {
+    "name": "Elfo"
+  },
+  "elf.traits.darkvision": {
+    "description": "Possiedi Scurovisione con un raggio di 18 metri.",
+    "name": "Scurovisione"
+  },
+  "elf.traits.elven-lineage": {
+    "description": "Fai parte di una Stirpe Elfica che ti concede abilità sovrannaturali. Scegli una delle seguenti stirpi e ottieni i suoi tratti:\n• Drow — Il raggio di Scurovisione diventa 36 metri. Conosci il trucchetto Luci Danzanti. Al 3° livello impari Fuoco Fatuo (1/Riposo Lungo, gratuito). Al 5° impari Oscurità (1/Riposo Lungo, gratuito). Carisma è la tua caratteristica da incantatore.\n• Alto Elfo — Conosci il trucchetto Prestidigitazione. Ogni volta che completi un Riposo Lungo puoi sostituirlo con un diverso trucchetto da mago. Al 3° impari Individuazione del Magico (1/Riposo Lungo, gratuito). Al 5° impari Passo Velato (1/Riposo Lungo, gratuito). Intelligenza è la tua caratteristica.\n• Elfo dei Boschi — La tua Velocità diventa 10,5 metri (35 piedi). Conosci Arti Druidiche. Al 3° impari Passo Allungato (1/Riposo Lungo, gratuito). Al 5° impari Passare Senza Tracce (1/Riposo Lungo, gratuito). Saggezza è la tua caratteristica.",
+    "name": "Stirpe Elfica"
+  },
+  "elf.traits.elven-lineage.grants.0": {
+    "label": "Stirpe Elfica"
+  },
+  "elf.traits.elven-lineage.grants.0.options.drow": {
+    "label": "Drow"
+  },
+  "elf.traits.elven-lineage.grants.0.options.high-elf": {
+    "label": "Alto Elfo"
+  },
+  "elf.traits.elven-lineage.grants.0.options.wood-elf": {
+    "label": "Elfo dei Boschi"
+  },
+  "elf.traits.fey-ancestry": {
+    "description": "Hai Vantaggio ai tiri salvezza per evitare o terminare la condizione Affascinato. Inoltre, nessun incantesimo o effetto può addormentarti.",
+    "name": "Retaggio Fatato"
+  },
+  "elf.traits.fey-ancestry.grants.0": {
+    "description": "Tiri salvezza per evitare o terminare la condizione Affascinato"
+  },
+  "elf.traits.keen-senses": {
+    "description": "Hai competenza nell'abilità Intuizione, Percezione o Sopravvivenza.",
+    "name": "Sensi Acuti"
+  },
+  "elf.traits.trance": {
+    "description": "Non hai bisogno di dormire e la magia non può addormentarti. Puoi completare un Riposo Lungo in 4 ore se trascorri quel tempo in una meditazione simile a una trance, durante la quale mantieni coscienza.",
+    "name": "Trance"
+  },
+  "gnome": {
+    "name": "Gnomo"
+  },
+  "gnome.traits.darkvision": {
+    "description": "Possiedi Scurovisione con un raggio di 18 metri.",
+    "name": "Scurovisione"
+  },
+  "gnome.traits.gnome-cunning": {
+    "description": "Hai Vantaggio ai tiri salvezza su Intelligenza, Saggezza e Carisma.",
+    "name": "Astuzia Gnomesca"
+  },
+  "gnome.traits.gnome-cunning.grants.0": {
+    "description": "Tiri salvezza su Intelligenza"
+  },
+  "gnome.traits.gnome-cunning.grants.1": {
+    "description": "Tiri salvezza su Saggezza"
+  },
+  "gnome.traits.gnome-cunning.grants.2": {
+    "description": "Tiri salvezza su Carisma"
+  },
+  "gnome.traits.gnomish-lineage": {
+    "description": "Fai parte di una stirpe che ti concede abilità sovrannaturali. Scegli una delle seguenti stirpi — Gnomo della Foresta o Gnomo della Roccia — e ottieni i suoi tratti. Intelligenza, Saggezza o Carisma è la tua caratteristica da incantatore per gli incantesimi che lanci con questo tratto (scegli quando selezioni la stirpe). Gnomo della Foresta: Conosci il trucchetto Illusione Minore e hai sempre preparato l'incantesimo Parlare con gli Animali. Puoi lanciare Parlare con gli Animali senza uno slot incantesimo un numero di volte pari al tuo Bonus di Competenza per Riposo Lungo, e anche con qualsiasi slot incantesimo tu abbia. Gnomo della Roccia: Conosci i trucchetti Riparare e Prestidigitazione. Inoltre, puoi impiegare 10 minuti a lanciare Prestidigitazione per creare un Marchingegno Minuscolo (CA 5, 1 PF) — un giocattolo, un accendifuoco o un carillon — che produce un effetto di Prestidigitazione scelto quando attivato con un'Azione Bonus; puoi avere tre marchingegni simili contemporaneamente e ciascuno si disgrega dopo 8 ore o quando lo smantelli.",
+    "name": "Stirpe Gnomesca"
+  },
+  "gnome.traits.gnomish-lineage.grants.0": {
+    "label": "Stirpe Gnomesca"
+  },
+  "gnome.traits.gnomish-lineage.grants.0.options.forest-gnome": {
+    "label": "Gnomo della Foresta"
+  },
+  "gnome.traits.gnomish-lineage.grants.0.options.rock-gnome": {
+    "label": "Gnomo della Roccia"
+  },
+  "goliath": {
+    "name": "Goliath"
+  },
+  "goliath.traits.giant-ancestry": {
+    "description": "Discendi dai Giganti. Scegli uno dei seguenti benefici — un beneficio legato ai Giganti delle Nuvole, del Fuoco, del Gelo, delle Colline, della Pietra o della Tempesta: Balzo delle Nuvole (teletrasporto 9 m come Azione Bonus, usi pari a BC/Riposo Lungo), Bruciatura del Fuoco (1d10 danni da Fuoco quando colpisci con un attacco, usi pari a BC/Riposo Lungo), Gelo del Ghiaccio (1d6 freddo + riduce la Velocità del bersaglio di 3 m quando colpisci con un attacco, usi pari a BC/Riposo Lungo), Spinta della Collina (rendi Prono un bersaglio di taglia Grande o inferiore quando colpisci con un attacco, usi pari a BC/Riposo Lungo), Resistenza della Pietra (riduci i danni di 1d12+mod COS come Reazione, usi pari a BC/Riposo Lungo), Tuono della Tempesta (1d8 danni da Tuono all'attaccante come Reazione quando subisci danni da una creatura entro 18 m, usi pari a BC/Riposo Lungo).",
+    "name": "Discendenza dei Giganti"
+  },
+  "goliath.traits.giant-ancestry.grants.0": {
+    "label": "Discendenza dei Giganti"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.clouds-jaunt": {
+    "label": "Balzo delle Nuvole"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.clouds-jaunt.grants.clouds-jaunt": {
+    "description": "Ti teletrasporti magicamente fino a 9 metri in uno spazio non occupato che puoi vedere.",
+    "name": "Balzo delle Nuvole"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.fires-burn": {
+    "label": "Bruciatura del Fuoco"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.fires-burn.grants.fires-burn": {
+    "description": "Infliggi 1d10 danni da Fuoco aggiuntivi al bersaglio.",
+    "name": "Bruciatura del Fuoco",
+    "trigger": "quando colpisci un bersaglio con un tiro per colpire e infliggi danni"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.frosts-chill": {
+    "label": "Gelo del Ghiaccio"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.frosts-chill.grants.frosts-chill": {
+    "description": "Infliggi 1d6 danni da Freddo aggiuntivi al bersaglio e riduci la sua Velocità di 3 metri fino all'inizio del tuo prossimo turno.",
+    "name": "Gelo del Ghiaccio",
+    "trigger": "quando colpisci un bersaglio con un tiro per colpire e infliggi danni"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.hills-tumble": {
+    "label": "Spinta della Collina"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.hills-tumble.grants.hills-tumble": {
+    "description": "Infliggi al bersaglio la condizione Prono.",
+    "name": "Spinta della Collina",
+    "trigger": "quando colpisci una creatura di taglia Grande o inferiore con un tiro per colpire e infliggi danni"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.stones-endurance": {
+    "label": "Resistenza della Pietra"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.stones-endurance.grants.stones-endurance": {
+    "description": "Tira 1d12, aggiungi il tuo modificatore di Costituzione e riduci i danni che subisci di quel totale.",
+    "name": "Resistenza della Pietra",
+    "trigger": "quando subisci danni"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.storms-thunder": {
+    "label": "Tuono della Tempesta"
+  },
+  "goliath.traits.giant-ancestry.grants.0.options.storms-thunder.grants.storms-thunder": {
+    "description": "Infliggi 1d8 danni da Tuono alla creatura che ti ha danneggiato.",
+    "name": "Tuono della Tempesta",
+    "trigger": "quando subisci danni da una creatura entro 18 metri da te"
+  },
+  "goliath.traits.large-form": {
+    "description": "A partire dal 5° livello del personaggio, puoi cambiare la tua taglia a Grande come Azione Bonus se ti trovi in uno spazio sufficientemente ampio. Questo cambiamento di taglia dura 10 minuti o fino a quando non lo termini (nessuna azione richiesta). Per quella durata, hai Vantaggio alle prove di Forza e la tua Velocità aumenta di 3 metri. Una volta usato questo tratto, non puoi usarlo di nuovo finché non completi un Riposo Lungo.",
+    "name": "Forma Grande"
+  },
+  "goliath.traits.large-form.grants.0": {
+    "label": "Forma Grande"
+  },
+  "goliath.traits.large-form.grants.0.grants.1": {
+    "description": "Vantaggio alle prove di Forza mentre sei in Forma Grande"
+  },
+  "goliath.traits.large-form.mechanics.actions.0": {
+    "description": "Cambia taglia a Grande per 10 min (disponibile dal 5° livello)",
+    "summary": "Diventa Grande per 10 min (dal livello 5)"
+  },
+  "goliath.traits.powerful-build": {
+    "description": "Hai Vantaggio a qualsiasi prova di caratteristica effettui per terminare la condizione Afferrato. Conti anche come una taglia più grande quando determini la tua capacità di carico e il peso che puoi spingere, trascinare o sollevare.",
+    "name": "Corporatura Possente"
+  },
+  "goliath.traits.powerful-build.grants.0": {
+    "description": "Prove di caratteristica per terminare la condizione Afferrato"
+  },
+  "halfling": {
+    "name": "Halfling"
+  },
+  "halfling.traits.brave": {
+    "description": "Hai Vantaggio ai tiri salvezza per evitare o terminare la condizione Spaventato.",
+    "name": "Coraggioso"
+  },
+  "halfling.traits.brave.grants.0": {
+    "description": "Tiri salvezza per evitare o terminare la condizione Spaventato"
+  },
+  "halfling.traits.halfling-nimbleness": {
+    "description": "Puoi muoverti attraverso lo spazio di qualsiasi creatura che sia di una taglia più grande della tua, ma non puoi fermarti nello stesso spazio.",
+    "name": "Agilità Halfling"
+  },
+  "halfling.traits.luck": {
+    "description": "Quando ottieni un 1 sul d20 di un Test con d20, puoi ripetere il tiro e devi usare il nuovo risultato.",
+    "name": "Fortuna"
+  },
+  "halfling.traits.naturally-stealthy": {
+    "description": "Puoi effettuare l'azione Nascondersi anche quando sei oscurato solo da una creatura di almeno una taglia più grande della tua.",
+    "name": "Furtività Naturale"
+  },
+  "human": {
+    "name": "Umano"
+  },
+  "human.traits.resourceful": {
+    "description": "Ottieni Ispirazione Eroica ogni volta che completi un Riposo Lungo.",
+    "name": "Pieno di Risorse"
+  },
+  "human.traits.skillful": {
+    "description": "Ottieni competenza in un'abilità a tua scelta.",
+    "name": "Versatile nelle Abilità"
+  },
+  "human.traits.versatile": {
+    "description": "Ottieni un talento di Origine a tua scelta.",
+    "name": "Versatile"
+  },
+  "orc": {
+    "name": "Orco"
+  },
+  "orc.traits.adrenaline-rush": {
+    "description": "Puoi effettuare l'azione Scatto come Azione Bonus. Quando lo fai, ottieni un numero di Punti Ferita Temporanei pari al tuo Bonus di Competenza. Puoi usare questo tratto un numero di volte pari al tuo Bonus di Competenza, e recuperi tutti gli usi spesi quando completi un Riposo Breve o Lungo.",
+    "name": "Scarica di Adrenalina"
+  },
+  "orc.traits.adrenaline-rush.mechanics.actions.0": {
+    "description": "Scatto e ottieni PF Temporanei pari al BC"
+  },
+  "orc.traits.darkvision": {
+    "description": "Possiedi Scurovisione con un raggio di 36 metri.",
+    "name": "Scurovisione"
+  },
+  "orc.traits.relentless-endurance": {
+    "description": "Quando vieni ridotto a 0 Punti Ferita ma non ucciso sul colpo, puoi scendere a 1 Punto Ferita invece. Una volta usato questo tratto, non puoi farlo di nuovo finché non completi un Riposo Lungo.",
+    "name": "Resistenza Implacabile"
+  },
+  "tiefling": {
+    "name": "Tiefling"
+  },
+  "tiefling.traits.darkvision": {
+    "description": "Possiedi Scurovisione con un raggio di 18 metri.",
+    "name": "Scurovisione"
+  },
+  "tiefling.traits.fiendish-legacy": {
+    "description": "Sei il destinatario di un retaggio immondo che ti concede abilità sovrannaturali. Scegli un retaggio tra le seguenti opzioni: Abissale, Ctonio o Infernale. Ottieni l'incantesimo di 1° livello indicato dal retaggio scelto. Quando raggiungi il 3° livello del personaggio, ottieni l'incantesimo di 2° livello. Quando raggiungi il 5° livello, ottieni l'incantesimo di 3° livello. Puoi lanciare ciascuno di questi incantesimi senza uno slot incantesimo una volta, recuperando la capacità quando completi un Riposo Lungo. Puoi anche lanciarli usando slot incantesimo. Intelligenza, Saggezza o Carisma è la tua caratteristica da incantatore (scegli quando selezioni questa specie). Abissale: Spruzzo Velenoso (trucchetto), Raggio di Malattia (3°), Blocca Persone (5°). Ctonio: Tocco Gelido (trucchetto), Vita Falsa (3°), Raggio di Affaticamento (5°). Infernale: Dardo di Fuoco (trucchetto), Punizione Infernale (3°), Oscurità (5°).",
+    "name": "Retaggio Immondo"
+  },
+  "tiefling.traits.fiendish-legacy.grants.0": {
+    "label": "Retaggio Immondo"
+  },
+  "tiefling.traits.fiendish-legacy.grants.0.options.abyssal": {
+    "label": "Abissale"
+  },
+  "tiefling.traits.fiendish-legacy.grants.0.options.chthonic": {
+    "label": "Ctonio"
+  },
+  "tiefling.traits.fiendish-legacy.grants.0.options.infernal": {
+    "label": "Infernale"
+  },
+  "tiefling.traits.otherworldly-presence": {
+    "description": "Conosci il trucchetto Taumaturgia. Quando lo lanci con questo tratto, l'incantesimo usa la stessa caratteristica da incantatore che usi per il tuo tratto Retaggio Immondo (Intelligenza, Saggezza o Carisma — scelta quando selezioni questa specie).",
+    "name": "Presenza Ultraterrena"
+  }
+}

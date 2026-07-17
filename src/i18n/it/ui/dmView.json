@@ -1,0 +1,14 @@
+{
+  "dmView": {
+    "readonly": "Sola lettura",
+    "readonlyTip": "Sola lettura: stai consultando la scheda di un membro del gruppo",
+    "viewSheet": "Vedi scheda",
+    "backToCampaign": "Torna alla campagna",
+    "notAllowedTitle": "Non puoi consultare questa scheda",
+    "notAllowedBlurb": "Solo il Dungeon Master della campagna può aprire la scheda completa di un membro del gruppo.",
+    "noCharacterTitle": "Nessun personaggio associato",
+    "noCharacterBlurb": "Questo giocatore non ha ancora associato un personaggio alla campagna.",
+    "sheetUnavailableTitle": "Scheda non disponibile",
+    "sheetUnavailableBlurb": "Impossibile caricare la scheda di questo personaggio. Potrebbe essere stata eliminata, oppure non hai più accesso."
+  }
+}

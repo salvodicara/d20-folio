@@ -1,0 +1,16 @@
+{
+  "feats": {
+    "feats": "Talenti",
+    "category": "Categoria",
+    "repeatable": "ripetibile",
+    "noPrereq": "Nessun prerequisito",
+    "prerequisite": "Prerequisito",
+    "category_origin": "Talento di Origine",
+    "category_general": "Talento Generale",
+    "category_fighting-style": "Stile di Combattimento",
+    "category_epic-boon": "Dono Epico",
+    "category_heritage": "Eredità",
+    "category_planar-pact": "Patto Planare",
+    "category_dark-gift": "Dono Oscuro"
+  }
+}

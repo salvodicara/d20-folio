@@ -1,0 +1,67 @@
+{
+  "report": {
+    "rubric": "Help shape the Folio",
+    "title": "Report a bug or suggest an idea",
+    "description": "Tell us what's wrong or what you'd love to see. We'll open it for the maintainer with the details below.",
+    "fieldType": "What kind of report?",
+    "types": {
+      "bug": "Bug",
+      "feature": "Idea",
+      "visual": "Visual",
+      "data": "Data",
+      "performance": "Performance",
+      "other": "Other"
+    },
+    "fieldScreen": "Where?",
+    "fieldScreenHelp": "Auto-detected from your current page. Change it if it's about somewhere else.",
+    "detected": "current page",
+    "fieldSeverity": "How much does it affect you?",
+    "severities": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "fieldTitle": "Summary",
+    "fieldTitleHelp": "One line: what's the gist?",
+    "fieldTitlePlaceholder": "e.g. Spell save DC shows the wrong number",
+    "titleRequired": "Add a short summary so we can find it.",
+    "fieldDescription": "Details",
+    "fieldDescriptionHelp": "What happened, what you expected, and the steps to reproduce it. For an idea, describe what you'd like and why.",
+    "fieldDescriptionPlaceholder": "Steps to reproduce, what you expected, what happened instead…",
+    "fieldScreenshot": "Screenshot",
+    "screenshotAlt": "Screenshot of your current screen",
+    "keepScreenshot": "Attach screenshot again",
+    "noScreenshot": "No screenshot was captured. Your report will still be sent.",
+    "attachDisclosure": "What we'll attach",
+    "attach": {
+      "screen": "Page",
+      "version": "Version",
+      "browser": "Browser",
+      "viewport": "Window size",
+      "themeLocale": "Theme · language",
+      "recentErrors": "Recent errors"
+    },
+    "offlineNote": "You're offline. Your report will be saved and sent automatically when you reconnect.",
+    "submit": "Send report",
+    "submitError": "Couldn't send your report: {{message}}. Please try again.",
+    "errorNoUser": "You need to be signed in to send a report.",
+    "sentTitle": "Thank you!",
+    "sentBody": "Your report is on its way. We're opening it for the maintainer now.",
+    "openedAs": "Opened as issue #{{number}}.",
+    "queuedTitle": "Saved",
+    "queuedBody": "You're offline. We'll send your report as soon as you reconnect.",
+    "viewIssue": "View the issue",
+    "screens": {
+      "roster": "My Characters",
+      "characterCockpit": "Character sheet",
+      "characterCreate": "Character creation",
+      "campaigns": "Campaigns",
+      "campaignHub": "Campaign hub",
+      "compendium": "Compendium",
+      "settings": "Settings",
+      "admin": "Admin",
+      "login": "Sign-in",
+      "other": "Somewhere else"
+    }
+  }
+}

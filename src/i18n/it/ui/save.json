@@ -1,0 +1,9 @@
+{
+  "save": {
+    "saved": "Salvato",
+    "pending": "Non salvato",
+    "saving": "Salvataggio...",
+    "error": "Errore salvataggio",
+    "offline": "Offline"
+  }
+}

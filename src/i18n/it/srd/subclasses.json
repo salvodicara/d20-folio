@@ -1,0 +1,38 @@
+{
+  "berserker": {
+    "name": "Sentiero del Berserker"
+  },
+  "champion": {
+    "name": "Campione"
+  },
+  "circle-of-the-land": {
+    "name": "Circolo della Terra"
+  },
+  "college-of-lore": {
+    "name": "Collegio della Sapienza"
+  },
+  "draconic-sorcery": {
+    "name": "Stregoneria Draconica"
+  },
+  "evoker": {
+    "name": "Invocatore"
+  },
+  "fiend-patron": {
+    "name": "Patrono Immondo"
+  },
+  "hunter": {
+    "name": "Cacciatore"
+  },
+  "life-domain": {
+    "name": "Dominio della Vita"
+  },
+  "oath-of-devotion": {
+    "name": "Giuramento di Devozione"
+  },
+  "open-hand": {
+    "name": "Guerriero della Mano Aperta"
+  },
+  "thief": {
+    "name": "Furfante"
+  }
+}

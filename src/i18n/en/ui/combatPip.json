@@ -1,0 +1,15 @@
+{
+  "combatPip": {
+    "stateActorTurn": "{{actor}}'s turn",
+    "stateActorTurnUnknown": "Enemy turn",
+    "stateGathering": "Waiting for others…",
+    "pipAria": "Round {{round}} · {{state}} · open {{dest}}",
+    "rollPipAria": "Round {{round}} · roll your initiative",
+    "initiativeRubric": "Initiative · {{name}}",
+    "chooserOpen": "Your other combats ({{count}})",
+    "chooserTitle": "Your combats",
+    "chooserRowState": "R{{round}} · {{state}}",
+    "yourTurnToast": "It's your turn",
+    "destGroup": "Go to Party"
+  }
+}

@@ -1,0 +1,597 @@
+{
+  "acid": {
+    "description": "When you take the Attack action, you can replace one of your attacks with throwing a vial of Acid. Target one creature or object you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 + your Dexterity modifier + Proficiency Bonus) or take 2d6 Acid damage.",
+    "name": "Acid"
+  },
+  "alchemists-fire": {
+    "description": "When you take the Attack action, you can replace one of your attacks with throwing a flask of Alchemist's Fire. Target one creature or object you can see within 20 feet. The target must succeed on a Dexterity saving throw (DC 8 + DEX mod + PB) or take 1d4 Fire damage and start burning.",
+    "name": "Alchemist's Fire"
+  },
+  "alchemists-supplies": {
+    "description": "Alchemist's Supplies let you produce useful concoctions, such as Acid or Alchemist's Fire.",
+    "name": "Alchemist's Supplies"
+  },
+  "antitoxin": {
+    "description": "As a Bonus Action, you can drink a vial of Antitoxin to gain Advantage on saving throws to avoid or end the Poisoned condition for 1 hour.",
+    "name": "Antitoxin"
+  },
+  "arcane-focus": {
+    "description": "A crystal, orb, rod, staff, or wand that channels arcane magic, usable as a spellcasting focus.",
+    "name": "Arcane Focus"
+  },
+  "arrows": {
+    "description": "Ammunition for bows. Sold in bundles of 20.",
+    "name": "Arrows"
+  },
+  "artisans-tools": {
+    "name": "Artisan's Tools"
+  },
+  "backpack": {
+    "description": "A Backpack holds up to 30 pounds within 1 cubic foot. It can also serve as a saddlebag.",
+    "name": "Backpack"
+  },
+  "bagpipes": {
+    "description": "Bagpipes are a wind instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play them.",
+    "name": "Bagpipes"
+  },
+  "ball-bearings": {
+    "description": "As a Utilize action, you can spill Ball Bearings to cover a level, 10-foot-square area within 10 feet of yourself. A creature that enters this area for the first time on a turn must succeed on a DC 10 Dexterity saving throw or have the Prone condition.",
+    "name": "Ball Bearings"
+  },
+  "basket": {
+    "name": "Basket",
+    "description": "A Basket holds up to 40 pounds within 2 cubic feet."
+  },
+  "battleaxe": {
+    "name": "Battleaxe"
+  },
+  "bedroll": {
+    "description": "A Bedroll sleeps one Small or Medium creature. While in a Bedroll, you automatically succeed on saving throws against extreme cold.",
+    "name": "Bedroll"
+  },
+  "bell": {
+    "description": "When rung as a Utilize action, a Bell produces a sound that can be heard up to 60 feet away.",
+    "name": "Bell"
+  },
+  "blanket": {
+    "description": "While wrapped in a blanket, you have Advantage on saving throws against extreme cold.",
+    "name": "Blanket"
+  },
+  "block-and-tackle": {
+    "name": "Block and Tackle",
+    "description": "A Block and Tackle lets you hoist up to four times the weight you can normally lift."
+  },
+  "blowgun": {
+    "name": "Blowgun"
+  },
+  "book": {
+    "description": "A Book might contain poetry, historical accounts, scientific theories, or information on almost any subject. A Warlock's Book holds occult lore.",
+    "name": "Book"
+  },
+  "breastplate": {
+    "name": "Breastplate"
+  },
+  "brewers-supplies": {
+    "description": "Brewer's Supplies are used to ferment beverages and purify water.",
+    "name": "Brewer's Supplies"
+  },
+  "bucket": {
+    "name": "Bucket",
+    "description": "A Bucket holds up to half a cubic foot of contents."
+  },
+  "burglars-pack": {
+    "description": "Contains: Backpack, Ball Bearings, Bell, 10 Candles, Crowbar, Hooded Lantern, 7 flasks of Oil, 5 days of Rations, Rope, Tinderbox, and Waterskin.",
+    "name": "Burglar's Pack"
+  },
+  "calligraphers-supplies": {
+    "description": "Calligrapher's Supplies are used to write with elegant, precise lettering.",
+    "name": "Calligrapher's Supplies"
+  },
+  "caltrops": {
+    "description": "As a Utilize action, you can spread Caltrops to cover a 5-foot-square area within 5 feet of yourself. A creature that enters this area must succeed on a DC 15 Dexterity saving throw or take 1 Piercing damage and have its Speed reduced to 0 until the start of its next turn.",
+    "name": "Caltrops"
+  },
+  "candle": {
+    "description": "For 1 hour, a lit Candle sheds Bright Light in a 5-foot radius and Dim Light for an additional 5 feet.",
+    "name": "Candle"
+  },
+  "carpenters-tools": {
+    "description": "Carpenter's Tools are used to build and repair wooden structures and objects.",
+    "name": "Carpenter's Tools"
+  },
+  "cartographers-tools": {
+    "description": "Cartographer's Tools are used to create and read maps.",
+    "name": "Cartographer's Tools"
+  },
+  "chain": {
+    "description": "As a Utilize action, you can wrap a Chain around an unwilling creature within 5 feet that has the Grappled, Incapacitated, or Restrained condition (DC 13 Strength Athletics check). Escaping requires DC 18 Dexterity (Acrobatics), bursting requires DC 20 Strength (Athletics).",
+    "name": "Chain"
+  },
+  "chain-mail": {
+    "name": "Chain Mail"
+  },
+  "chain-shirt": {
+    "name": "Chain Shirt"
+  },
+  "climbers-kit": {
+    "description": "Includes boot tips, gloves, pitons, and a harness. As a Utilize action, you can anchor yourself; you can't fall more than 25 feet from the anchor point.",
+    "name": "Climber's Kit"
+  },
+  "clothes-fine": {
+    "description": "Fine Clothes are made of expensive fabrics. Some events and locations admit only people wearing these clothes.",
+    "name": "Clothes, Fine"
+  },
+  "clothes-travelers": {
+    "description": "Traveler's Clothes are resilient garments designed for travel in various environments.",
+    "name": "Clothes, Traveler's"
+  },
+  "club": {
+    "name": "Club"
+  },
+  "cobblers-tools": {
+    "description": "Cobbler's Tools are used to make and repair footwear.",
+    "name": "Cobbler's Tools"
+  },
+  "component-pouch": {
+    "description": "A Component Pouch is watertight and filled with compartments that hold all the free Material components of your spells.",
+    "name": "Component Pouch"
+  },
+  "cooks-utensils": {
+    "description": "Cook's Utensils are used to prepare meals.",
+    "name": "Cook's Utensils"
+  },
+  "costume": {
+    "description": "An elaborate outfit worn as a disguise or for a performance.",
+    "name": "Costume"
+  },
+  "crossbow-bolts": {
+    "description": "Ammunition for crossbows. Sold in bundles of 20.",
+    "name": "Crossbow Bolts"
+  },
+  "crowbar": {
+    "description": "Using a Crowbar gives you Advantage on Strength checks where the Crowbar's leverage can be applied.",
+    "name": "Crowbar"
+  },
+  "dagger": {
+    "name": "Dagger"
+  },
+  "dart": {
+    "name": "Dart"
+  },
+  "dice-set": {
+    "description": "A Dice Set is a gaming set. Proficiency lets you add your Proficiency Bonus to ability checks you make to play a game that uses it.",
+    "name": "Dice Set"
+  },
+  "diplomats-pack": {
+    "description": "Contains: Chest, Fine Clothes, Ink, 5 Ink Pens, Lamp, 2 Map or Scroll Cases, 4 flasks of Oil, 5 sheets of Paper, 5 sheets of Parchment, Perfume, and Tinderbox.",
+    "name": "Diplomat's Pack"
+  },
+  "disguise-kit": {
+    "description": "A Disguise Kit contains cosmetics, hair dye, small props, and a few pieces of clothing. Proficiency with it lets you add your Proficiency Bonus to Charisma (Deception) checks made to create visual disguises.",
+    "name": "Disguise Kit"
+  },
+  "druidic-focus": {
+    "description": "A sprig of mistletoe, a totem, a wooden staff, or a yew wand, usable as a spellcasting focus for druid spells.",
+    "name": "Druidic Focus"
+  },
+  "drum": {
+    "description": "A Drum is a percussion instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
+    "name": "Drum"
+  },
+  "dulcimer": {
+    "description": "A Dulcimer is a stringed instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
+    "name": "Dulcimer"
+  },
+  "dungeoneers-pack": {
+    "description": "Contains: Backpack, Caltrops, Crowbar, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches, and Waterskin.",
+    "name": "Dungeoneer's Pack"
+  },
+  "entertainers-pack": {
+    "description": "Contains: Backpack, Bedroll, Bell, Bullseye Lantern, 3 Costumes, Mirror, 8 flasks of Oil, 9 days of Rations, Tinderbox, and Waterskin.",
+    "name": "Entertainer's Pack"
+  },
+  "explorers-pack": {
+    "description": "Contains: Backpack, Bedroll, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches, and Waterskin.",
+    "name": "Explorer's Pack"
+  },
+  "flail": {
+    "name": "Flail"
+  },
+  "flute": {
+    "description": "A Flute is a wind instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
+    "name": "Flute"
+  },
+  "forgery-kit": {
+    "description": "A Forgery Kit is used to create convincing fakes of documents and other physical items.",
+    "name": "Forgery Kit"
+  },
+  "gaming-set": {
+    "name": "Gaming Set"
+  },
+  "glaive": {
+    "name": "Glaive"
+  },
+  "glass-bottle": {
+    "name": "Glass Bottle",
+    "description": "A Glass Bottle holds up to 1½ pints."
+  },
+  "glassblowers-tools": {
+    "description": "Glassblower's Tools are used to shape glass.",
+    "name": "Glassblower's Tools"
+  },
+  "grappling-hook": {
+    "description": "As a Utilize action, you can throw the Grappling Hook at a railing, ledge, or other catch within 50 feet (DC 13 Dexterity Acrobatics check). If you tied a Rope to the hook, you can then climb it.",
+    "name": "Grappling Hook"
+  },
+  "greataxe": {
+    "name": "Greataxe"
+  },
+  "greatclub": {
+    "name": "Greatclub"
+  },
+  "greatsword": {
+    "name": "Greatsword"
+  },
+  "halberd": {
+    "name": "Halberd"
+  },
+  "half-plate-armor": {
+    "name": "Half Plate Armor"
+  },
+  "hand-crossbow": {
+    "name": "Hand Crossbow"
+  },
+  "handaxe": {
+    "name": "Handaxe"
+  },
+  "healers-kit": {
+    "description": "Has ten uses. As a Utilize action, you can expend one use to stabilize an Unconscious creature at 0 Hit Points without needing a Wisdom (Medicine) check.",
+    "name": "Healer's Kit"
+  },
+  "heavy-crossbow": {
+    "name": "Heavy Crossbow"
+  },
+  "herbalism-kit": {
+    "description": "An Herbalism Kit includes pouches to store herbs, clippers and leather gloves for collecting plants, a mortar and pestle, and several vials. Proficiency with it lets you add your Proficiency Bonus to checks made to identify or apply herbs and other natural remedies, and to craft antitoxin and healing potions.",
+    "name": "Herbalism Kit"
+  },
+  "hide-armor": {
+    "name": "Hide Armor"
+  },
+  "holy-symbol": {
+    "description": "An amulet, emblem, or reliquary bearing a deity's symbol, usable as a spellcasting focus for cleric and paladin spells.",
+    "name": "Holy Symbol"
+  },
+  "holy-water": {
+    "description": "When you take the Attack action, you can replace one of your attacks with throwing a flask of Holy Water at a creature within 20 feet. The target must succeed on a Dexterity saving throw (DC 8 + DEX mod + PB) or take 2d8 Radiant damage if it is a Fiend or Undead.",
+    "name": "Holy Water"
+  },
+  "horn": {
+    "description": "A Horn is a wind instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
+    "name": "Horn"
+  },
+  "hunting-trap": {
+    "description": "As a Utilize action, set the trap. A creature that steps on it must succeed on a DC 13 Dexterity saving throw or take 1d4 Piercing damage and have Speed reduced to 0. Escaping requires a DC 13 Strength (Athletics) check.",
+    "name": "Hunting Trap"
+  },
+  "ink": {
+    "description": "Ink comes in a 1-ounce bottle, which provides enough ink to write about 500 pages.",
+    "name": "Ink"
+  },
+  "ink-pen": {
+    "name": "Ink Pen",
+    "description": "Using Ink, an Ink Pen is used to write or draw."
+  },
+  "iron-pot": {
+    "name": "Iron Pot",
+    "description": "An Iron Pot holds up to 1 gallon."
+  },
+  "iron-spikes": {
+    "name": "Iron Spikes",
+    "description": "Iron Spikes come in bundles of ten. You can hammer one in to jam a door shut or to tie off a Rope or Chain."
+  },
+  "javelin": {
+    "name": "Javelin"
+  },
+  "jewelers-tools": {
+    "description": "Jeweler's Tools are used to cut and set gemstones.",
+    "name": "Jeweler's Tools"
+  },
+  "ladder": {
+    "name": "Ladder",
+    "description": "A Ladder is 10 feet tall. You must climb to move up or down it."
+  },
+  "lamp": {
+    "description": "A Lamp burns Oil as fuel to cast Bright Light in a 15-foot radius and Dim Light for an additional 30 feet.",
+    "name": "Lamp"
+  },
+  "lance": {
+    "name": "Lance"
+  },
+  "lantern-bullseye": {
+    "description": "Burns Oil to cast Bright Light in a 60-foot Cone and Dim Light for an additional 60 feet.",
+    "name": "Lantern, Bullseye"
+  },
+  "lantern-hooded": {
+    "description": "Burns Oil to cast Bright Light in a 30-foot radius and Dim Light for an additional 30 feet. As a Bonus Action, lower the hood to reduce to Dim Light in a 5-foot radius, or raise it again.",
+    "name": "Lantern, Hooded"
+  },
+  "leather-armor": {
+    "name": "Leather Armor"
+  },
+  "leatherworkers-tools": {
+    "description": "Leatherworker's Tools are used to make and repair leather goods.",
+    "name": "Leatherworker's Tools"
+  },
+  "light-crossbow": {
+    "name": "Light Crossbow"
+  },
+  "light-hammer": {
+    "name": "Light Hammer"
+  },
+  "lock": {
+    "description": "A Lock comes with a key. Without the key, a creature can pick it with Thieves' Tools (DC 15 Dexterity Sleight of Hand check).",
+    "name": "Lock"
+  },
+  "longbow": {
+    "name": "Longbow"
+  },
+  "longsword": {
+    "name": "Longsword"
+  },
+  "lute": {
+    "description": "A Lute is a stringed musical instrument. Proficiency with it lets you add your Proficiency Bonus to Charisma (Performance) checks that rely on the lute.",
+    "name": "Lute"
+  },
+  "lyre": {
+    "description": "A Lyre is a stringed instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
+    "name": "Lyre"
+  },
+  "mace": {
+    "name": "Mace"
+  },
+  "manacles": {
+    "description": "As a Utilize action, bind an unwilling creature that has the Grappled, Incapacitated, or Restrained condition (DC 13 Dexterity Sleight of Hand). Escaping requires DC 20 Dexterity (Sleight of Hand); bursting requires DC 25 Strength (Athletics).",
+    "name": "Manacles"
+  },
+  "map": {
+    "name": "Map",
+    "description": "Consulting an accurate Map gives a +5 bonus to Wisdom (Survival) checks to find your way in the place it depicts."
+  },
+  "map-or-scroll-case": {
+    "name": "Map or Scroll Case",
+    "description": "A Map or Scroll Case holds up to 10 sheets of paper or 5 sheets of parchment."
+  },
+  "masons-tools": {
+    "description": "Mason's Tools are used to build with stone.",
+    "name": "Mason's Tools"
+  },
+  "maul": {
+    "name": "Maul"
+  },
+  "mirror": {
+    "description": "A handheld steel Mirror useful for personal cosmetics, peeking around corners, and reflecting light as a signal.",
+    "name": "Mirror"
+  },
+  "morningstar": {
+    "name": "Morningstar"
+  },
+  "musical-instrument": {
+    "description": "A lute, flute, drum, or other instrument. A bard can use it as a spellcasting focus.",
+    "name": "Musical Instrument"
+  },
+  "musket": {
+    "name": "Musket"
+  },
+  "navigators-tools": {
+    "description": "Navigator's Tools are used to chart a course and follow navigation charts.",
+    "name": "Navigator's Tools"
+  },
+  "net": {
+    "description": "When you take the Attack action, you can replace one attack with throwing a Net at a creature within 15 feet. Target must succeed on a Dexterity saving throw (DC 8 + DEX mod + PB) or have the Restrained condition. Target succeeds automatically if Huge or larger. Escaping: DC 10 Strength (Athletics) check. Net: AC 10, 5 HP.",
+    "name": "Net"
+  },
+  "oil": {
+    "description": "Douse a creature within 20 feet (Dexterity save, DC 8 + DEX mod + PB). If target takes Fire damage within 1 minute, it takes extra 5 Fire damage. Also serves as fuel for Lamps and Lanterns (burns 6 hours).",
+    "name": "Oil"
+  },
+  "padded-armor": {
+    "name": "Padded Armor"
+  },
+  "painters-supplies": {
+    "description": "Painter's Supplies are used to create paintings.",
+    "name": "Painter's Supplies"
+  },
+  "pan-flute": {
+    "description": "A Pan Flute is a wind instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
+    "name": "Pan Flute"
+  },
+  "paper": {
+    "name": "Paper",
+    "description": "One sheet of Paper can hold about 250 handwritten words."
+  },
+  "parchment": {
+    "name": "Parchment",
+    "description": "One sheet of Parchment can hold about 250 handwritten words."
+  },
+  "perfume": {
+    "description": "A small vial of pleasant-smelling perfume.",
+    "name": "Perfume"
+  },
+  "pike": {
+    "name": "Pike"
+  },
+  "pistol": {
+    "name": "Pistol"
+  },
+  "plate-armor": {
+    "name": "Plate Armor"
+  },
+  "playing-card-set": {
+    "description": "A Playing Card Set is a gaming set. Proficiency lets you add your Proficiency Bonus to ability checks you make to play a game that uses it.",
+    "name": "Playing Card Set"
+  },
+  "poison-basic": {
+    "description": "As a Bonus Action, coat one weapon or up to three pieces of ammunition. A creature that takes Piercing or Slashing damage from the poisoned weapon/ammo takes an extra 1d4 Poison damage. Lasts 1 minute or until damage is dealt.",
+    "name": "Poison, Basic"
+  },
+  "poisoners-kit": {
+    "description": "A Poisoner's Kit includes the vials, chemicals, and other equipment necessary for the creation of poisons. Proficiency with it lets you add your Proficiency Bonus to the checks you make to craft poisons.",
+    "name": "Poisoner's Kit"
+  },
+  "pole": {
+    "name": "Pole",
+    "description": "A Pole is 10 feet long. You can use it to touch something up to 10 feet away or to vault with Advantage on a jump check."
+  },
+  "portable-ram": {
+    "name": "Portable Ram",
+    "description": "A Portable Ram grants a +4 bonus to Strength checks made to break down a door; a helper grants Advantage."
+  },
+  "potters-tools": {
+    "description": "Potter's Tools are used to shape and fire clay.",
+    "name": "Potter's Tools"
+  },
+  "pouch": {
+    "name": "Pouch",
+    "description": "A Pouch holds up to 6 pounds within one-fifth of a cubic foot."
+  },
+  "priests-pack": {
+    "description": "Contains: Backpack, Blanket, Holy Water, Lamp, 7 days of Rations, Robe, and Tinderbox.",
+    "name": "Priest's Pack"
+  },
+  "quarterstaff": {
+    "name": "Quarterstaff"
+  },
+  "quiver": {
+    "description": "A case that holds up to 20 arrows.",
+    "name": "Quiver"
+  },
+  "rapier": {
+    "name": "Rapier"
+  },
+  "rations": {
+    "description": "Rations consist of travel-ready food for one day, including jerky, dried fruit, hardtack, and nuts.",
+    "name": "Rations"
+  },
+  "ring-mail": {
+    "name": "Ring Mail"
+  },
+  "robe": {
+    "description": "A loose, flowing outer garment, often worn by spellcasters.",
+    "name": "Robe"
+  },
+  "rope": {
+    "description": "50 feet of rope. As a Utilize action, tie a knot (DC 10 Dexterity Sleight of Hand). Can be burst (DC 20 Strength Athletics). Can bind creatures that are Grappled, Incapacitated, or Restrained (DC 15 Dexterity Acrobatics to escape).",
+    "name": "Rope"
+  },
+  "scale-mail": {
+    "name": "Scale Mail"
+  },
+  "scholars-pack": {
+    "description": "Contains: Backpack, Book, Ink, Ink Pen, Lamp, 10 flasks of Oil, 10 sheets of Parchment, and Tinderbox.",
+    "name": "Scholar's Pack"
+  },
+  "scimitar": {
+    "name": "Scimitar"
+  },
+  "shawm": {
+    "description": "A Shawm is a wind instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
+    "name": "Shawm"
+  },
+  "shield": {
+    "name": "Shield"
+  },
+  "shortbow": {
+    "name": "Shortbow"
+  },
+  "shortsword": {
+    "name": "Shortsword"
+  },
+  "shovel": {
+    "description": "Working for 1 hour, you can dig a hole that is 5 feet on each side in soil or similar material.",
+    "name": "Shovel"
+  },
+  "sickle": {
+    "name": "Sickle"
+  },
+  "signal-whistle": {
+    "name": "Signal Whistle",
+    "description": "When blown as a Utilize action, a Signal Whistle produces a sound heard up to 600 feet away."
+  },
+  "sling": {
+    "name": "Sling"
+  },
+  "smiths-tools": {
+    "description": "Smith's Tools are used to forge and repair metal items.",
+    "name": "Smith's Tools"
+  },
+  "spear": {
+    "name": "Spear"
+  },
+  "spellbook": {
+    "description": "Essential for Wizards, a Spellbook is a leather-bound tome with 100 blank vellum pages suitable for recording spells.",
+    "name": "Spellbook"
+  },
+  "splint-armor": {
+    "name": "Splint Armor"
+  },
+  "string": {
+    "name": "String",
+    "description": "String is 10 feet long. You can tie a knot in it as a Utilize action."
+  },
+  "studded-leather-armor": {
+    "name": "Studded Leather Armor"
+  },
+  "tent": {
+    "description": "A Tent sleeps up to two Small or Medium creatures.",
+    "name": "Tent"
+  },
+  "thieves-tools": {
+    "description": "Thieves' Tools include a small file, a set of lock picks, a small mirror mounted on a metal handle, a set of narrow-bladed scissors, and a pair of pliers. Proficiency with them lets you add your Proficiency Bonus to Dexterity checks made to pick locks or disarm traps.",
+    "name": "Thieves' Tools"
+  },
+  "tinderbox": {
+    "description": "Holds flint, fire steel, and tinder. Lighting a Candle, Lamp, Lantern, or Torch takes a Bonus Action. Lighting any other fire takes 1 minute.",
+    "name": "Tinderbox"
+  },
+  "tinkers-tools": {
+    "description": "A set of tools for making and repairing small objects and mechanisms.",
+    "name": "Tinker's Tools"
+  },
+  "torch": {
+    "description": "Burns for 1 hour, casting Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. Can be used as a Simple Melee weapon dealing 1 Fire damage on a hit.",
+    "name": "Torch"
+  },
+  "trident": {
+    "name": "Trident"
+  },
+  "vial": {
+    "name": "Vial",
+    "description": "A Vial holds up to 4 ounces."
+  },
+  "viol": {
+    "description": "A Viol is a stringed instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
+    "name": "Viol"
+  },
+  "war-pick": {
+    "name": "War Pick"
+  },
+  "warhammer": {
+    "name": "Warhammer"
+  },
+  "waterskin": {
+    "description": "A Waterskin holds up to 4 pints of water.",
+    "name": "Waterskin"
+  },
+  "weavers-tools": {
+    "description": "Weaver's Tools are used to make cloth.",
+    "name": "Weaver's Tools"
+  },
+  "whip": {
+    "name": "Whip"
+  },
+  "woodcarvers-tools": {
+    "description": "Woodcarver's Tools consist of a knife, a gouge, and a small saw. Proficiency with them lets you add your Proficiency Bonus to checks made to carve objects from wood.",
+    "name": "Woodcarver's Tools"
+  }
+}

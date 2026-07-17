@@ -1,0 +1,15 @@
+{
+  "nav": {
+    "characters": "Personaggi",
+    "campaigns": "Campagne",
+    "compendium": "Compendio",
+    "settings": "Impostazioni",
+    "admin": "Admin",
+    "report": "Segnala un problema",
+    "signOut": "Esci",
+    "spells": "Incantesimi",
+    "features": "Privilegi",
+    "addFeature": "Aggiungi Privilegio",
+    "primary": "Principale"
+  }
+}

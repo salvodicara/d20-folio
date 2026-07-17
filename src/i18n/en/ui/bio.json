@@ -1,0 +1,19 @@
+{
+  "bio": {
+    "confirmReset": {
+      "title": "Change build?",
+      "message": "This recomputes your sheet and resets dependent choices: your subclass, prepared spells, and class-specific picks (maneuvers, invocations, metamagic, masteries) may be lost.",
+      "confirm": "Change anyway",
+      "details": {
+        "subclass": "Subclass reset: {{names}}",
+        "feats": "Feats removed: {{names}}",
+        "spells": "Spells removed: {{names}}",
+        "features": "Class features removed: {{count}}",
+        "picks": "Class picks removed (maneuvers, invocations, metamagic, masteries, styles): {{count}}",
+        "expertise": "Expertise back to proficiency: {{names}}",
+        "hp": "Max HP: {{delta}}",
+        "abilityScores": "Ability score increases from removed levels are not reverted. Review your scores"
+      }
+    }
+  }
+}

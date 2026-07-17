@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Pre-commit hook (LEAN — fast): changeset doc-guard + lint-staged + the FAST unit
+# lane (jsdom-free, a few seconds). The FULL gate (typecheck + lint
+# --max-warnings 0 + test:coverage over BOTH lanes + build + budget) runs at
+# pre-push (see .githooks/pre-push — the authoritative gate; ci.yml mirrors it
+# remotely on public push/PR), so broken code can never be PUSHED — while
+# commits stay fast.
+# Owner decision 2026-05-30; fast-lane smoke added 2026-06-09 (R5).
+# Install: git config core.hooksPath .githooks   ·   NEVER use --no-verify.
+
+set -euo pipefail
+
+echo "==> Pre-commit (fast): doc-guard + lint-staged + fast unit lane..."
+
+# ── Doc guard (AI agent workflow) ─────────────────────────────────────────────
+# Every commit must stage a changeset (.changeset/<slug>.md) describing the
+# change — the changeset is what feeds CHANGELOG.md at release time.
+STAGED_CHANGESETS="$(git diff --cached --name-only | grep -E '^\.changeset/[^/]+\.md$' | grep -v '^\.changeset/README\.md$' || true)"
+if [ -z "$STAGED_CHANGESETS" ]; then
+  echo "ERROR: no changeset is staged."
+  echo "Add a changeset describing this change before committing."
+  echo "Run: pnpm changeset   (or create .changeset/<slug>.md by hand), then git add it."
+  exit 1
+fi
+
+# ── Lint + format staged files only (fast) ────────────────────────────────────
+pnpm lint-staged
+
+# ── Fast unit lane (jsdom-free pure-logic .test.ts — seconds) ─────────────────
+# A quick smoke that the engine/data logic still holds. The slow (render/jsdom)
+# lane + coverage thresholds run at pre-push, not here, to keep commits fast.
+echo "--- Fast unit lane (jsdom-free smoke) ---"
+pnpm test:fast
+
+echo "==> Pre-commit OK. (The full gate — both lanes + coverage — runs at pre-push.)"

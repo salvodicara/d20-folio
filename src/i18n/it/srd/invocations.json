@@ -1,0 +1,152 @@
+{
+  "agonizing-blast": {
+    "description": "Scegli uno dei tuoi trucchetti da Warlock conosciuti che infligge danni. Puoi aggiungere il tuo modificatore di Carisma ai tiri per i danni di quell’incantesimo.\nRipetibile. Puoi ottenere questa invocazione più di una volta. Ogni volta che lo fai, scegli un trucchetto idoneo diverso.",
+    "name": "Deflagrazione Agonizzante",
+    "prerequisite": "Warlock di livello 2+, un Trucchetto da Warlock che infligge danni"
+  },
+  "armor-of-shadows": {
+    "description": "Puoi lanciare Armatura del Mago su te stesso senza spendere uno slot incantesimo.",
+    "name": "Armatura di Ombre"
+  },
+  "ascendant-step": {
+    "description": "Puoi lanciare Levitazione su te stesso senza spendere uno slot incantesimo.",
+    "name": "Passo Ascendente",
+    "prerequisite": "Warlock di livello 5+"
+  },
+  "devils-sight": {
+    "description": "Vedi normalmente nella Luce Fioca e nell'Oscurità — sia magica sia non magica — entro 36 metri da te.",
+    "name": "Vista del Diavolo",
+    "prerequisite": "Warlock di livello 2+"
+  },
+  "devouring-blade": {
+    "description": "L'Attacco Extra della tua invocazione Lama Assetata conferisce due attacchi extra anziché uno.",
+    "name": "Lama Divorante",
+    "prerequisite": "Warlock di livello 12+, Supplica Lama Assetata"
+  },
+  "eldritch-mind": {
+    "description": "Hai Vantaggio sui tiri salvezza su Costituzione che effettui per mantenere la Concentrazione.",
+    "name": "Mente Mistica"
+  },
+  "eldritch-mind.grants.0": {
+    "description": "Tiri salvezza su Costituzione per mantenere la Concentrazione"
+  },
+  "eldritch-smite": {
+    "description": "Una volta per turno, quando colpisci una creatura con la tua arma del patto, puoi spendere uno slot incantesimo di Magia del Patto per infliggere 1d8 danni da Forza aggiuntivi al bersaglio, più altri 1d8 per ogni livello dello slot incantesimo, e puoi imporre al bersaglio la condizione Prono se è di taglia Enorme o inferiore.",
+    "name": "Colpo Mistico",
+    "prerequisite": "Warlock di livello 5+, Supplica Patto della Lama"
+  },
+  "eldritch-smite.grants.eldritch-smite": {
+    "name": "Colpo Mistico"
+  },
+  "eldritch-spear": {
+    "description": "Scegli uno dei tuoi trucchetti da Warlock conosciuti che infligge danni e ha una gittata di 3 metri o più. Quando lanci quell’incantesimo, la sua gittata aumenta di un numero di metri pari a 9 volte il tuo livello da Warlock.\nRipetibile. Puoi ottenere questa invocazione più di una volta. Ogni volta che lo fai, scegli un trucchetto idoneo diverso.",
+    "name": "Lancia Esoterica",
+    "prerequisite": "Warlock di livello 2+, un Trucchetto da Warlock che infligge danni"
+  },
+  "fiendish-vigor": {
+    "description": "Puoi lanciare Falsa Vita su te stesso senza spendere uno slot incantesimo. Quando lanci l'incantesimo con questa capacità, non tiri il dado per i Punti Ferita Temporanei: ottieni automaticamente il risultato più alto del dado.",
+    "name": "Vigore Immondo",
+    "prerequisite": "Warlock di livello 2+"
+  },
+  "gaze-of-two-minds": {
+    "description": "Puoi usare un'Azione Bonus per toccare una creatura consenziente e percepire attraverso i suoi sensi fino alla fine del tuo prossimo turno. Finché la creatura si trova sul tuo stesso piano di esistenza, puoi usare un'Azione Bonus nei turni successivi per mantenere questa connessione, estendendone la durata fino alla fine del tuo prossimo turno. La connessione termina se non la mantieni in questo modo.\nMentre percepisci attraverso i sensi dell'altra creatura, benefici di qualunque senso speciale posseduto da quella creatura e puoi lanciare incantesimi come se ti trovassi nel tuo spazio o nello spazio dell'altra creatura, se voi due siete entro 18 metri l'uno dall'altra.",
+    "name": "Sguardo delle Due Menti",
+    "prerequisite": "Warlock di livello 5+"
+  },
+  "gaze-of-two-minds.mechanics.actions.0": {
+    "description": "Tocca una creatura consenziente e percepisci i suoi sensi"
+  },
+  "gift-of-the-depths": {
+    "description": "Puoi respirare sott'acqua e ottieni una Velocità di Nuoto pari alla tua Velocità.\nPuoi anche lanciare Respirare sott'Acqua una volta senza spendere uno slot incantesimo. Recuperi la capacità di lanciarlo in questo modo quando completi un Riposo Lungo.",
+    "name": "Dono delle Profondità",
+    "prerequisite": "Warlock di livello 5+"
+  },
+  "gift-of-the-protectors": {
+    "description": "Una nuova pagina appare nel tuo Libro delle Ombre quando lo evochi. Con il tuo permesso, una creatura può usare un'azione per scrivere il proprio nome su quella pagina, che può contenere un numero di nomi pari al tuo modificatore di Carisma (minimo un nome).\nQuando una creatura il cui nome è sulla pagina viene ridotta a 0 Punti Ferita senza essere uccisa sul colpo, scende invece magicamente a 1 Punto Ferita. Una volta attivata questa magia, nessuna creatura può beneficiarne finché non completi un Riposo Lungo.\nCon un'azione Magia, puoi cancellare un nome sulla pagina toccandolo.",
+    "name": "Dono dei Protettori",
+    "prerequisite": "Warlock di livello 9+, Supplica Patto del Tomo"
+  },
+  "investment-of-the-chain-master": {
+    "description": "Quando lanci Trova Famiglio, infondi nel famiglio evocato una misura del tuo potere esoterico, conferendo alla creatura i seguenti benefici.\nAereo o Acquatico. Il famiglio ottiene una Velocità di Volo o una Velocità di Nuoto (a tua scelta) di 12 metri.\nAttacco Rapido. Con un'Azione Bonus, puoi comandare al famiglio di compiere l'azione di Attacco.\nDanni Necrotici o Radiosi. Ogni volta che il famiglio infligge danni Contundenti, Perforanti o Taglienti, puoi fargli infliggere invece danni Necrotici o Radiosi.\nLa Tua CD. Se il famiglio costringe una creatura a effettuare un tiro salvezza, usa la CD dei tiri salvezza dei tuoi incantesimi.\nResistenza. Quando il famiglio subisce danni, puoi usare una Reazione per conferirgli Resistenza a tali danni.",
+    "name": "Investitura del Signore della Catena",
+    "prerequisite": "Warlock di livello 5+, Supplica Patto della Catena"
+  },
+  "lessons-of-the-first-ones": {
+    "description": "Hai ricevuto conoscenza da un'antica entità del multiverso, che ti permette di ottenere un talento di Origine a tua scelta.\nRipetibile. Puoi ottenere questa invocazione più di una volta. Ogni volta che lo fai, scegli un talento di Origine diverso.",
+    "name": "Insegnamenti dei Primigeni",
+    "prerequisite": "Warlock di livello 2+"
+  },
+  "lifedrinker": {
+    "description": "Una volta per turno, quando colpisci una creatura con la tua arma del patto, puoi infliggere 1d6 danni aggiuntivi da Necrotici, Psichici o Radianti (a tua scelta) alla creatura, e puoi spendere uno dei tuoi Dadi Vita per tirarlo e recuperare un numero di Punti Ferita pari al risultato più il tuo modificatore di Costituzione (minimo 1 Punto Ferita).",
+    "name": "Bevitrice di Vita",
+    "prerequisite": "Warlock di livello 9+, Supplica Patto della Lama"
+  },
+  "lifedrinker.grants.lifedrinker": {
+    "name": "Bevitrice di Vita"
+  },
+  "mask-of-many-faces": {
+    "description": "Puoi lanciare Camuffare se Stesso senza spendere uno slot incantesimo.",
+    "name": "Maschera dai Mille Volti",
+    "prerequisite": "Warlock di livello 2+"
+  },
+  "master-of-myriad-forms": {
+    "description": "Puoi lanciare Alterare se Stesso senza spendere uno slot incantesimo.",
+    "name": "Signore delle Mille Forme",
+    "prerequisite": "Warlock di livello 5+"
+  },
+  "misty-visions": {
+    "description": "Puoi lanciare Immagine Silenziosa senza spendere uno slot incantesimo.",
+    "name": "Visioni Nebbiose",
+    "prerequisite": "Warlock di livello 2+"
+  },
+  "one-with-shadows": {
+    "description": "Mentre ti trovi in un'area di Luce Fioca o Oscurità, puoi lanciare Invisibilità su te stesso senza spendere uno slot incantesimo.",
+    "name": "Tutt'uno con le Ombre",
+    "prerequisite": "Warlock di livello 5+"
+  },
+  "otherworldly-leap": {
+    "description": "Puoi lanciare Saltare su te stesso senza spendere uno slot incantesimo.",
+    "name": "Salto Ultraterreno",
+    "prerequisite": "Warlock di livello 2+"
+  },
+  "pact-of-the-blade": {
+    "description": "Come Azione Bonus, puoi evocare un'arma del patto nella tua mano—un'arma da Mischia Semplice o da Guerra a tua scelta con cui ti leghi—oppure creare un legame con un'arma magica che tocchi; non puoi legarti a un'arma magica se qualcun altro vi è sintonizzato o un altro Warlock vi è già legato. Finché dura il legame, sei competente con l'arma e puoi usarla come Focus da Incantatore.\nOgni volta che attacchi con l'arma legata, puoi usare il tuo modificatore di Carisma per i tiri per colpire e per i danni invece di Forza o Destrezza; e puoi far sì che l'arma infligga danni Necrotici, Psichici o Radianti, oppure il suo normale tipo di danno.\nIl tuo legame con l'arma termina se usi di nuovo l'Azione Bonus di questa caratteristica, se l'arma rimane a più di 1,5 metri da te per 1 minuto o più, o se muori. Un'arma evocata scompare quando il legame termina.",
+    "name": "Patto della Lama"
+  },
+  "pact-of-the-blade.grants.pact-of-the-blade": {
+    "name": "Arma del Patto"
+  },
+  "pact-of-the-chain": {
+    "description": "Apprendi l'incantesimo Trova Famiglio e puoi lanciarlo come azione Magia senza spendere uno slot incantesimo.\nQuando lanci l'incantesimo, scegli una delle forme normali per il tuo famiglio oppure una delle seguenti forme speciali: Diavoletto, Pseudodrago, Quasit, Scheletro, Sfinge della Meraviglia, Folletto o Serpente Velenoso (vedi l'appendice B per il blocco delle statistiche del famiglio).\nInoltre, quando compi l'azione di Attacco, puoi rinunciare a uno dei tuoi attacchi per permettere al tuo famiglio di effettuare un attacco con la sua Reazione.",
+    "name": "Patto della Catena"
+  },
+  "pact-of-the-tome": {
+    "description": "Intrecciando fili d'ombra, evochi un libro nella tua mano al termine di un Riposo Breve o Lungo. Questo Libro delle Ombre (ne determini l'aspetto) contiene magia mistica accessibile solo a te, garantendoti i benefici seguenti. Il libro scompare se evochi un altro libro con questa capacità o se muori.\nTrucchetti e Rituali. Quando il libro appare, scegli tre trucchetti e due incantesimi di 1° livello che abbiano la caratteristica Rituale. Gli incantesimi possono provenire dalla lista incantesimi di qualunque classe e devono essere incantesimi che non hai già preparato. Mentre il libro è con te, hai preparati gli incantesimi scelti, che per te funzionano come incantesimi da Warlock.\nFocus per Incantesimi. Puoi usare il libro come Focus per Incantesimi.",
+    "name": "Patto del Tomo"
+  },
+  "repelling-blast": {
+    "description": "Scegli uno dei tuoi trucchetti da Warlock conosciuti che richiede un tiro per colpire. Quando colpisci una creatura di Taglia Grande o inferiore con quel trucchetto, puoi spingere la creatura fino a 3 metri in linea retta lontano da te.\nRipetibile. Puoi ottenere questa invocazione più di una volta. Ogni volta che lo fai, scegli un trucchetto idoneo diverso.",
+    "name": "Deflagrazione Respingente",
+    "prerequisite": "Warlock di livello 2+, un Trucchetto da Warlock che infligge danni tramite un tiro per colpire"
+  },
+  "thirsting-blade": {
+    "description": "Ottieni la caratteristica Attacco Extra, ma solo con la tua arma del patto. Con quella caratteristica, puoi attaccare due volte con l'arma anziché una sola quando effettui l'azione di Attacco nel tuo turno.",
+    "name": "Lama Assetata",
+    "prerequisite": "Warlock di livello 5+, Supplica Patto della Lama"
+  },
+  "visions-of-distant-realms": {
+    "description": "Puoi lanciare Occhio Arcano senza spendere uno slot incantesimo.",
+    "name": "Visioni di Reami Distanti",
+    "prerequisite": "Warlock di livello 9+"
+  },
+  "whispers-of-the-grave": {
+    "description": "Puoi lanciare Parlare con i Morti senza spendere uno slot incantesimo.",
+    "name": "Sussurri della Tomba",
+    "prerequisite": "Warlock di livello 7+"
+  },
+  "witch-sight": {
+    "description": "Hai Vista Pura con un raggio di 9 metri.",
+    "name": "Vista della Strega",
+    "prerequisite": "Warlock di livello 15+"
+  }
+}

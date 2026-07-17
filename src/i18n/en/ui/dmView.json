@@ -1,0 +1,14 @@
+{
+  "dmView": {
+    "readonly": "Read-only",
+    "readonlyTip": "Read-only: you're viewing a party member's sheet",
+    "viewSheet": "View sheet",
+    "backToCampaign": "Back to campaign",
+    "notAllowedTitle": "You can't view this sheet",
+    "notAllowedBlurb": "Only the campaign's Dungeon Master can open a party member's full sheet.",
+    "noCharacterTitle": "No character attached",
+    "noCharacterBlurb": "This player hasn't attached a character to the campaign yet.",
+    "sheetUnavailableTitle": "Sheet unavailable",
+    "sheetUnavailableBlurb": "This character's sheet couldn't be loaded. It may have been deleted, or you no longer have access."
+  }
+}

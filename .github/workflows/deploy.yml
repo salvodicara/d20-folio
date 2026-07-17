@@ -1,0 +1,87 @@
+name: Deploy
+
+# Owner-fired, dispatch-ONLY — never on push (golden rule 22: deploys are always
+# explicitly owner-triggered). The PRIMARY deploy path is LOCAL: `just deploy`
+# (full gate + full Playwright e2e matrix + `firebase deploy`, run on the
+# owner's machine). This workflow is the remote equivalent of that exact recipe
+# for when a runner is preferable:  gh workflow run deploy.yml --ref main
+#
+# It composes the maintainer's PRIVATE content pack before building: the pack
+# repo (salvodicara/d20-folio-content) keeps the pack under `content-pack/`,
+# which this workflow moves to the repo root — where the presence-based `@pack`
+# seam (scripts/content-pack-mode.ts) expects it — so the deployed app is the
+# full composed catalogue, not the SRD-only default. Requires two repo secrets:
+#   CONTENT_PACK_TOKEN       read access to salvodicara/d20-folio-content
+#   FIREBASE_SERVICE_ACCOUNT the Firebase deploy service-account JSON
+# plus the VITE_FIREBASE_* build secrets below.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120 # the full unsharded e2e matrix is the long pole
+    env:
+      VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+      VITE_FIREBASE_AUTH_DOMAIN: "d20-folio.firebaseapp.com"
+      VITE_FIREBASE_PROJECT_ID: "d20-folio"
+      VITE_FIREBASE_STORAGE_BUCKET: "d20-folio.firebasestorage.app"
+      VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+      VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Checkout the private content pack
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: salvodicara/d20-folio-content
+          token: ${{ secrets.CONTENT_PACK_TOKEN }}
+          path: .pack
+
+      # Land the pack at ./content-pack — existsSync(content-pack/index.ts) is
+      # what flips the `@pack` alias to pack mode (scripts/content-pack-mode.ts).
+      - name: Compose the content pack
+        run: |
+          mv .pack/content-pack ./content-pack
+          rm -rf .pack
+          test -f content-pack/index.ts
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+
+      # The full gate, mirroring `just deploy` (= `just ci` + the e2e matrix).
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint --max-warnings 0
+      - name: Unit tests
+        run: pnpm test
+      - name: Build
+        run: pnpm exec vite build
+      - name: Bundle budget
+        run: pnpm test:budget
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: E2E matrix (full — chromium + mobile + portrait-sw)
+        run: pnpm exec playwright test
+
+      # Same targets as `just deploy`: hosting + Firestore/Storage rules.
+      - name: Deploy to Firebase (hosting + rules)
+        uses: w9jds/firebase-action@7008efd406382c7ee939a5331a502ccaad8f3107 # v13.22.0
+        with:
+          args: deploy --only hosting,firestore:rules,storage --project d20-folio
+        env:
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

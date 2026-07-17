@@ -1,0 +1,597 @@
+{
+  "acid": {
+    "description": "Quando compi l'azione di Attacco, puoi sostituire uno dei tuoi attacchi lanciando una fiala di Acido. Prendi di mira una creatura o oggetto che puoi vedere entro 6 metri da te. Il bersaglio deve superare un tiro salvezza su Destrezza (CD 8 + il tuo modificatore di Destrezza + Bonus di Competenza) o subire 2d6 danni da Acido.",
+    "name": "Acido"
+  },
+  "alchemists-fire": {
+    "description": "Quando compi l'azione di Attacco, puoi sostituire uno dei tuoi attacchi lanciando un fiasco di Fuoco dell'Alchimista. Prendi di mira una creatura o oggetto che puoi vedere entro 6 metri. Il bersaglio deve superare un tiro salvezza su Destrezza (CD 8 + mod DES + BC) o subire 1d4 danni da Fuoco e iniziare a bruciare.",
+    "name": "Fuoco dell'Alchimista"
+  },
+  "alchemists-supplies": {
+    "description": "Le Scorte da Alchimista permettono di produrre miscele utili, come Acido o Fuoco dell'Alchimista.",
+    "name": "Scorte da Alchimista"
+  },
+  "antitoxin": {
+    "description": "Come Azione Bonus, puoi bere una fiala di Antitossina per ottenere Vantaggio sui tiri salvezza per evitare o terminare la condizione Avvelenato per 1 ora.",
+    "name": "Antitossina"
+  },
+  "arcane-focus": {
+    "description": "Un cristallo, globo, bacchetta, bastone o verga che incanala la magia arcana, utilizzabile come focus per gli incantesimi.",
+    "name": "Focus Arcano"
+  },
+  "arrows": {
+    "description": "Munizioni per archi. Vendute in fasci da 20.",
+    "name": "Frecce"
+  },
+  "artisans-tools": {
+    "name": "Strumenti da Artigiano"
+  },
+  "backpack": {
+    "description": "Uno Zaino può contenere fino a 15 kg in circa 30 litri. Può anche essere usato come bisaccia.",
+    "name": "Zaino"
+  },
+  "bagpipes": {
+    "description": "La Cornamusa è uno strumento a fiato. La competenza ti permette di aggiungere il Bonus di Competenza alle prove per suonarla.",
+    "name": "Cornamusa"
+  },
+  "ball-bearings": {
+    "description": "Come azione Utilizzare, puoi spargere le Biglie per coprire un'area piana di 3 metri quadrati entro 3 metri da te. Una creatura che entra in quest'area per la prima volta nel suo turno deve superare un tiro salvezza su Destrezza con CD 10 o ottenere la condizione Prono.",
+    "name": "Biglie"
+  },
+  "basket": {
+    "name": "Cesto",
+    "description": "Un cesto può contenere fino a 20 chilogrammi in circa 60 litri di volume."
+  },
+  "battleaxe": {
+    "name": "Ascia da Battaglia"
+  },
+  "bedroll": {
+    "description": "Un Sacco a Pelo è sufficiente per una creatura Piccola o Media. Mentre sei in un Sacco a Pelo, superi automaticamente i tiri salvezza contro il freddo estremo.",
+    "name": "Sacco a Pelo"
+  },
+  "bell": {
+    "description": "Quando suonato come azione Utilizzare, un Campanello produce un suono udibile fino a 18 metri di distanza.",
+    "name": "Campanello"
+  },
+  "blanket": {
+    "description": "Mentre sei avvolto in una coperta, hai Vantaggio sui tiri salvezza contro il freddo estremo.",
+    "name": "Coperta"
+  },
+  "block-and-tackle": {
+    "name": "Carrucola e paranco",
+    "description": "Carrucola e paranco consentono di sollevare fino a quattro volte il peso massimo che si solleverebbe normalmente."
+  },
+  "blowgun": {
+    "name": "Cerbottana"
+  },
+  "book": {
+    "description": "Un Libro può contenere poesie, resoconti storici, teorie scientifiche o informazioni su quasi ogni argomento. Il Libro di un Warlock raccoglie sapere occulto.",
+    "name": "Libro"
+  },
+  "breastplate": {
+    "name": "Corazza"
+  },
+  "brewers-supplies": {
+    "description": "Le Scorte da Birraio servono a fermentare bevande e purificare l'acqua.",
+    "name": "Scorte da Birraio"
+  },
+  "bucket": {
+    "name": "Secchio",
+    "description": "Un secchio ha una capacità di 14 litri."
+  },
+  "burglars-pack": {
+    "description": "Contiene: Zaino, Biglie, Campanello, 10 Candele, Piede di Porco, Lanterna Schermabile, 7 fiasche di Olio, 5 giorni di Razioni, Corda, Acciarino e Otre.",
+    "name": "Dotazione da Scassinatore"
+  },
+  "calligraphers-supplies": {
+    "description": "Le Scorte da Calligrafo servono a scrivere con caratteri eleganti e precisi.",
+    "name": "Scorte da Calligrafo"
+  },
+  "caltrops": {
+    "description": "Come azione Utilizzare, puoi spargere i Triboli per coprire un'area di 1,5 metri quadrati entro 1,5 metri da te. Una creatura che entra in quest'area deve superare un tiro salvezza su Destrezza con CD 15 o subire 1 danno Perforante e avere la Velocità ridotta a 0 fino all'inizio del suo prossimo turno.",
+    "name": "Triboli"
+  },
+  "candle": {
+    "description": "Per 1 ora, una Candela accesa emette Luce Intensa in un raggio di 1,5 metri e Luce Fioca per ulteriori 1,5 metri.",
+    "name": "Candela"
+  },
+  "carpenters-tools": {
+    "description": "Gli Strumenti da Falegname servono a costruire e riparare strutture e oggetti in legno.",
+    "name": "Strumenti da Falegname"
+  },
+  "cartographers-tools": {
+    "description": "Gli Strumenti da Cartografo servono a creare e leggere mappe.",
+    "name": "Strumenti da Cartografo"
+  },
+  "chain": {
+    "description": "Come azione Utilizzare, puoi avvolgere una Catena attorno a una creatura non consenziente entro 1,5 metri che ha la condizione Afferrato, Incapacitato o Trattenuto (prova di Forza Atletica CD 13). Sfuggire richiede CD 18 Destrezza (Acrobazia), spezzarla richiede CD 20 Forza (Atletica).",
+    "name": "Catena"
+  },
+  "chain-mail": {
+    "name": "Cotta di Maglia"
+  },
+  "chain-shirt": {
+    "name": "Giaco di Maglia"
+  },
+  "climbers-kit": {
+    "description": "Include punte per stivali, guanti, chiodi da roccia e un'imbracatura. Come azione Utilizzare, puoi ancorarti; non puoi cadere per più di 7,5 metri dal punto di ancoraggio.",
+    "name": "Kit da Scalatore"
+  },
+  "clothes-fine": {
+    "description": "Gli Abiti Raffinati sono fatti di tessuti costosi. Alcuni eventi e luoghi ammettono solo persone che indossano questi abiti.",
+    "name": "Abiti Raffinati"
+  },
+  "clothes-travelers": {
+    "description": "Gli Abiti da Viaggio sono indumenti resistenti progettati per viaggiare in vari ambienti.",
+    "name": "Abiti da Viaggio"
+  },
+  "club": {
+    "name": "Randello"
+  },
+  "cobblers-tools": {
+    "description": "Gli Strumenti da Calzolaio servono a confezionare e riparare calzature.",
+    "name": "Strumenti da Calzolaio"
+  },
+  "component-pouch": {
+    "description": "Una Borsa dei Componenti è impermeabile e piena di scomparti che contengono tutti i componenti Materiali gratuiti dei tuoi incantesimi.",
+    "name": "Borsa dei Componenti"
+  },
+  "cooks-utensils": {
+    "description": "Gli Utensili da Cuoco servono a preparare i pasti.",
+    "name": "Utensili da Cuoco"
+  },
+  "costume": {
+    "description": "Un abito elaborato indossato come travestimento o per uno spettacolo.",
+    "name": "Costume"
+  },
+  "crossbow-bolts": {
+    "description": "Munizioni per balestre. Venduti in fasci da 20.",
+    "name": "Quadrelli da Balestra"
+  },
+  "crowbar": {
+    "description": "Usare un Piede di Porco ti dà Vantaggio sulle prove di Forza dove la leva del Piede di Porco può essere applicata.",
+    "name": "Piede di Porco"
+  },
+  "dagger": {
+    "name": "Pugnale"
+  },
+  "dart": {
+    "name": "Dardo"
+  },
+  "dice-set": {
+    "description": "I Dadi sono un set da gioco. La competenza ti permette di aggiungere il tuo Bonus di Competenza alle prove di caratteristica per giocare a un gioco che li utilizza.",
+    "name": "Dadi"
+  },
+  "diplomats-pack": {
+    "description": "Contiene: Baule, Abiti Raffinati, Inchiostro, 5 Penne, Lampada, 2 Custodie per Mappe, 4 fiasche di Olio, 5 fogli di Carta, 5 fogli di Pergamena, Profumo e Acciarino.",
+    "name": "Dotazione da Diplomatico"
+  },
+  "disguise-kit": {
+    "description": "I Trucchi per il Camuffamento contengono cosmetici, tinture per capelli, piccoli oggetti scenici e qualche capo d'abbigliamento. La competenza con essi ti permette di aggiungere il Bonus di Competenza alle prove di Carisma (Inganno) per creare travestimenti visivi.",
+    "name": "Trucchi per il Camuffamento"
+  },
+  "druidic-focus": {
+    "description": "Un ramoscello di vischio, un totem, un bastone di legno o una bacchetta di tasso, utilizzabile come focus per gli incantesimi da druido.",
+    "name": "Focus Druidico"
+  },
+  "drum": {
+    "description": "Il Tamburo è uno strumento a percussione. La competenza ti permette di aggiungere il Bonus di Competenza alle prove per suonarlo.",
+    "name": "Tamburo"
+  },
+  "dulcimer": {
+    "description": "Il Dulcimer è uno strumento a corde. La competenza ti permette di aggiungere il Bonus di Competenza alle prove per suonarlo.",
+    "name": "Dulcimer"
+  },
+  "dungeoneers-pack": {
+    "description": "Contiene: Zaino, Triboli, Piede di Porco, 2 fiasche di Olio, 10 giorni di Razioni, Corda, Acciarino, 10 Torce e Otre.",
+    "name": "Dotazione da Esploratore di Dungeon"
+  },
+  "entertainers-pack": {
+    "description": "Contiene: Zaino, Sacco a Pelo, Campanello, Lanterna Direzionale, 3 Costumi, Specchio, 8 fiasche di Olio, 9 giorni di Razioni, Acciarino e Otre.",
+    "name": "Dotazione da Intrattenitore"
+  },
+  "explorers-pack": {
+    "description": "Contiene: Zaino, Sacco a Pelo, 2 fiasche di Olio, 10 giorni di Razioni, Corda, Acciarino, 10 Torce e Otre.",
+    "name": "Dotazione da Esploratore"
+  },
+  "flail": {
+    "name": "Flagello"
+  },
+  "flute": {
+    "description": "Il Flauto è uno strumento a fiato. La competenza ti permette di aggiungere il Bonus di Competenza alle prove per suonarlo.",
+    "name": "Flauto"
+  },
+  "forgery-kit": {
+    "description": "Gli Arnesi da Falsario servono a creare falsi convincenti di documenti e altri oggetti fisici.",
+    "name": "Arnesi da Falsario"
+  },
+  "gaming-set": {
+    "name": "Set da Gioco"
+  },
+  "glaive": {
+    "name": "Falcione"
+  },
+  "glass-bottle": {
+    "name": "Bottiglia di vetro",
+    "description": "Una bottiglia di vetro ha una capacità di 0,75 litri."
+  },
+  "glassblowers-tools": {
+    "description": "Gli Strumenti da Soffiatore servono a modellare il vetro.",
+    "name": "Strumenti da Soffiatore"
+  },
+  "grappling-hook": {
+    "description": "Come azione Utilizzare, puoi lanciare il Rampino verso una ringhiera, sporgenza o altro appiglio entro 15 metri (prova di Destrezza Acrobazia CD 13). Se hai legato una Corda al rampino, puoi poi arrampicarti.",
+    "name": "Rampino"
+  },
+  "greataxe": {
+    "name": "Ascia Bipenne"
+  },
+  "greatclub": {
+    "name": "Mazza Chiodata"
+  },
+  "greatsword": {
+    "name": "Spadone"
+  },
+  "halberd": {
+    "name": "Alabarda"
+  },
+  "half-plate-armor": {
+    "name": "Mezza Armatura"
+  },
+  "hand-crossbow": {
+    "name": "Balestra a Mano"
+  },
+  "handaxe": {
+    "name": "Accetta"
+  },
+  "healers-kit": {
+    "description": "Ha dieci usi. Come azione Utilizzare, puoi spendere un uso per stabilizzare una creatura Priva di Sensi a 0 Punti Ferita senza bisogno di una prova di Saggezza (Medicina).",
+    "name": "Kit del Guaritore"
+  },
+  "heavy-crossbow": {
+    "name": "Balestra Pesante"
+  },
+  "herbalism-kit": {
+    "description": "Una Borsa da Erborista include borsette per le erbe, cesoie e guanti di cuoio per raccogliere piante, un mortaio con pestello e alcune fiale. La competenza con essa ti permette di aggiungere il Bonus di Competenza alle prove per identificare o applicare erbe e rimedi naturali, e per fabbricare antitossine e pozioni curative.",
+    "name": "Borsa da Erborista"
+  },
+  "hide-armor": {
+    "name": "Armatura di Pelle"
+  },
+  "holy-symbol": {
+    "description": "Un amuleto, un emblema o un reliquiario recante il simbolo di una divinità, utilizzabile come focus per gli incantesimi da chierico e paladino.",
+    "name": "Simbolo Sacro"
+  },
+  "holy-water": {
+    "description": "Quando compi l'azione di Attacco, puoi sostituire uno dei tuoi attacchi lanciando un fiasco di Acqua Santa a una creatura entro 6 metri. Il bersaglio deve superare un tiro salvezza su Destrezza (CD 8 + mod DES + BC) o subire 2d8 danni Radianti se è un Immondo o un Non Morto.",
+    "name": "Acqua Santa"
+  },
+  "horn": {
+    "description": "Il Corno è uno strumento a fiato. La competenza ti permette di aggiungere il Bonus di Competenza alle prove per suonarlo.",
+    "name": "Corno"
+  },
+  "hunting-trap": {
+    "description": "Come azione Utilizzare, piazza la trappola. Una creatura che ci cammina sopra deve superare un tiro salvezza su Destrezza con CD 13 o subire 1d4 danni Perforanti e avere la Velocità ridotta a 0. Sfuggire richiede una prova di Forza (Atletica) con CD 13.",
+    "name": "Trappola da Caccia"
+  },
+  "ink": {
+    "description": "L'Inchiostro viene in una bottiglia da 30 ml, sufficiente per scrivere circa 500 pagine.",
+    "name": "Inchiostro"
+  },
+  "ink-pen": {
+    "name": "Pennino",
+    "description": "Usando pennino e inchiostro è possibile scrivere o disegnare."
+  },
+  "iron-pot": {
+    "name": "Pentola di ferro",
+    "description": "Una pentola di ferro ha una capacità di 4 litri."
+  },
+  "iron-spikes": {
+    "name": "Spuntoni di ferro",
+    "description": "Gli spuntoni di ferro si vendono in fasci da dieci. Conficcandone uno puoi bloccare una porta o assicurarvi una Corda o una Catena."
+  },
+  "javelin": {
+    "name": "Giavellotto"
+  },
+  "jewelers-tools": {
+    "description": "Gli Strumenti da Gioielliere servono a tagliare e incastonare gemme.",
+    "name": "Strumenti da Gioielliere"
+  },
+  "ladder": {
+    "name": "Scala a pioli",
+    "description": "Una scala a pioli è alta 3 metri. Bisogna arrampicarsi per salirvi o scenderne."
+  },
+  "lamp": {
+    "description": "Una Lampada brucia Olio come combustibile per emettere Luce Intensa in un raggio di 4,5 metri e Luce Fioca per ulteriori 9 metri.",
+    "name": "Lampada"
+  },
+  "lance": {
+    "name": "Lancia da Cavaliere"
+  },
+  "lantern-bullseye": {
+    "description": "Brucia Olio per emettere Luce Intensa in un Cono di 18 metri e Luce Fioca per ulteriori 18 metri.",
+    "name": "Lanterna Direzionale"
+  },
+  "lantern-hooded": {
+    "description": "Brucia Olio per emettere Luce Intensa in un raggio di 9 metri e Luce Fioca per ulteriori 9 metri. Come Azione Bonus, abbassa il cappuccio per ridurre a Luce Fioca in un raggio di 1,5 metri, o rialzalo.",
+    "name": "Lanterna Schermabile"
+  },
+  "leather-armor": {
+    "name": "Armatura di Cuoio"
+  },
+  "leatherworkers-tools": {
+    "description": "Gli Strumenti da Conciatore servono a confezionare e riparare oggetti in cuoio.",
+    "name": "Strumenti da Conciatore"
+  },
+  "light-crossbow": {
+    "name": "Balestra Leggera"
+  },
+  "light-hammer": {
+    "name": "Martello Leggero"
+  },
+  "lock": {
+    "description": "Un Lucchetto viene con una chiave. Senza la chiave, una creatura può scassinarlo con gli Arnesi da Scasso (prova di Destrezza Rapidità di Mano con CD 15).",
+    "name": "Lucchetto"
+  },
+  "longbow": {
+    "name": "Arco Lungo"
+  },
+  "longsword": {
+    "name": "Spada Lunga"
+  },
+  "lute": {
+    "description": "Un Liuto è uno strumento musicale a corde. La competenza con esso ti permette di aggiungere il Bonus di Competenza alle prove di Carisma (Esibizione) che si affidano al liuto.",
+    "name": "Liuto"
+  },
+  "lyre": {
+    "description": "La Lira è uno strumento a corde. La competenza ti permette di aggiungere il Bonus di Competenza alle prove per suonarla.",
+    "name": "Lira"
+  },
+  "mace": {
+    "name": "Mazza"
+  },
+  "manacles": {
+    "description": "Come azione Utilizzare, vincola una creatura non consenziente che ha la condizione Afferrato, Incapacitato o Trattenuto (CD 13 Destrezza Rapidità di Mano). Sfuggire richiede CD 20 Destrezza (Rapidità di Mano); spezzarle richiede CD 25 Forza (Atletica).",
+    "name": "Manette"
+  },
+  "map": {
+    "name": "Mappa",
+    "description": "Consultare una mappa accurata concede un bonus di +5 alle prove di Saggezza (Sopravvivenza) per orientarsi nel luogo che raffigura."
+  },
+  "map-or-scroll-case": {
+    "name": "Custodia per mappe o pergamene",
+    "description": "Una custodia per mappe o pergamene contiene fino a 10 fogli di carta o 5 fogli di pergamena."
+  },
+  "masons-tools": {
+    "description": "Gli Strumenti da Muratore servono a costruire con la pietra.",
+    "name": "Strumenti da Muratore"
+  },
+  "maul": {
+    "name": "Maglio"
+  },
+  "mirror": {
+    "description": "Uno Specchio d'acciaio portatile utile per la cura personale, sbirciare dietro gli angoli e riflettere la luce come segnale.",
+    "name": "Specchio"
+  },
+  "morningstar": {
+    "name": "Stella del Mattino"
+  },
+  "musical-instrument": {
+    "description": "Un liuto, un flauto, un tamburo o un altro strumento. Un bardo può usarlo come focus per gli incantesimi.",
+    "name": "Strumento Musicale"
+  },
+  "musket": {
+    "name": "Moschetto"
+  },
+  "navigators-tools": {
+    "description": "Gli Strumenti da Navigatore servono a tracciare una rotta e a seguire le carte di navigazione.",
+    "name": "Strumenti da Navigatore"
+  },
+  "net": {
+    "description": "Quando compi l'azione di Attacco, puoi sostituire un attacco lanciando una Rete a una creatura entro 4,5 metri. Il bersaglio deve superare un tiro salvezza su Destrezza (CD 8 + mod DES + BC) o avere la condizione Trattenuto. Bersagli Enormi o più grandi riescono automaticamente. Sfuggire: prova di Forza (Atletica) CD 10. Rete: CA 10, 5 PF.",
+    "name": "Rete"
+  },
+  "oil": {
+    "description": "Versa su una creatura entro 6 metri (tiro salvezza Destrezza, CD 8 + mod DES + BC). Se il bersaglio subisce danni da Fuoco entro 1 minuto, subisce 5 danni da Fuoco extra. Serve anche come combustibile per Lampade e Lanterne (brucia 6 ore).",
+    "name": "Olio"
+  },
+  "padded-armor": {
+    "name": "Armatura Imbottita"
+  },
+  "painters-supplies": {
+    "description": "Gli Strumenti da Pittore servono a realizzare dipinti.",
+    "name": "Strumenti da Pittore"
+  },
+  "pan-flute": {
+    "description": "Il Flauto di Pan è uno strumento a fiato. La competenza ti permette di aggiungere il Bonus di Competenza alle prove per suonarlo.",
+    "name": "Flauto di Pan"
+  },
+  "paper": {
+    "name": "Carta",
+    "description": "Un foglio di carta può contenere circa 250 parole scritte a mano."
+  },
+  "parchment": {
+    "name": "Pergamena",
+    "description": "Un foglio di pergamena può contenere circa 250 parole scritte a mano."
+  },
+  "perfume": {
+    "description": "Una piccola fiala di profumo dal gradevole aroma.",
+    "name": "Profumo"
+  },
+  "pike": {
+    "name": "Picca"
+  },
+  "pistol": {
+    "name": "Pistola"
+  },
+  "plate-armor": {
+    "name": "Armatura Completa"
+  },
+  "playing-card-set": {
+    "description": "Le Carte da Gioco sono un set da gioco. La competenza ti permette di aggiungere il tuo Bonus di Competenza alle prove di caratteristica per giocare a un gioco che le utilizza.",
+    "name": "Carte da Gioco"
+  },
+  "poison-basic": {
+    "description": "Come Azione Bonus, rivesti un'arma o fino a tre munizioni. Una creatura che subisce danni Perforanti o Taglienti dall'arma/munizione avvelenata subisce 1d4 danni da Veleno extra. Dura 1 minuto o fino a quando il danno viene inflitto.",
+    "name": "Veleno Base"
+  },
+  "poisoners-kit": {
+    "description": "Le Sostanze da Avvelenatore includono le fiale, i prodotti chimici e gli altri strumenti necessari per la creazione di veleni. La competenza con esse ti permette di aggiungere il Bonus di Competenza alle prove per fabbricare veleni.",
+    "name": "Sostanze da Avvelenatore"
+  },
+  "pole": {
+    "name": "Asta",
+    "description": "Un'asta è lunga 3 metri. Si può usare per toccare qualcosa fino a 3 metri di distanza o per prendere lo slancio con Vantaggio in una prova di salto."
+  },
+  "portable-ram": {
+    "name": "Ariete portatile",
+    "description": "Un ariete portatile concede un bonus di +4 alle prove di Forza per sfondare una porta; un aiutante concede Vantaggio."
+  },
+  "potters-tools": {
+    "description": "Gli Strumenti da Vasaio servono a modellare e cuocere l'argilla.",
+    "name": "Strumenti da Vasaio"
+  },
+  "pouch": {
+    "name": "Borsa",
+    "description": "Una borsa può contenere fino a 3 chilogrammi in circa 12 litri di volume."
+  },
+  "priests-pack": {
+    "description": "Contiene: Zaino, Coperta, Acqua Santa, Lampada, 7 giorni di Razioni, Veste e Acciarino.",
+    "name": "Dotazione da Sacerdote"
+  },
+  "quarterstaff": {
+    "name": "Bastone Ferrato"
+  },
+  "quiver": {
+    "description": "Una custodia che contiene fino a 20 frecce.",
+    "name": "Faretra"
+  },
+  "rapier": {
+    "name": "Stocco"
+  },
+  "rations": {
+    "description": "Le Razioni consistono in cibo pronto per il viaggio per un giorno, inclusi carne essiccata, frutta secca, gallette e noci.",
+    "name": "Razioni"
+  },
+  "ring-mail": {
+    "name": "Armatura ad Anelli"
+  },
+  "robe": {
+    "description": "Un'ampia veste esterna fluente, spesso indossata dagli incantatori.",
+    "name": "Veste"
+  },
+  "rope": {
+    "description": "15 metri di corda. Come azione Utilizzare, fai un nodo (CD 10 Destrezza Rapidità di Mano). Può essere spezzata (CD 20 Forza Atletica). Può legare creature Afferrate, Incapacitate o Trattenute (CD 15 Destrezza Acrobazia per fuggire).",
+    "name": "Corda"
+  },
+  "scale-mail": {
+    "name": "Armatura a Scaglie"
+  },
+  "scholars-pack": {
+    "description": "Contiene: Zaino, Libro, Inchiostro, Penna, Lampada, 10 fiasche di Olio, 10 fogli di Pergamena e Acciarino.",
+    "name": "Dotazione da Studioso"
+  },
+  "scimitar": {
+    "name": "Scimitarra"
+  },
+  "shawm": {
+    "description": "La Ciaramella è uno strumento a fiato. La competenza ti permette di aggiungere il Bonus di Competenza alle prove per suonarla.",
+    "name": "Ciaramella"
+  },
+  "shield": {
+    "name": "Scudo"
+  },
+  "shortbow": {
+    "name": "Arco Corto"
+  },
+  "shortsword": {
+    "name": "Spada Corta"
+  },
+  "shovel": {
+    "description": "Lavorando per 1 ora, puoi scavare una buca di 1,5 metri per lato in terreno o materiale simile.",
+    "name": "Pala"
+  },
+  "sickle": {
+    "name": "Falcetto"
+  },
+  "signal-whistle": {
+    "name": "Fischietto da richiamo",
+    "description": "Soffiato come azione di Utilizzo, un fischietto da richiamo produce un suono udibile fino a 180 metri di distanza."
+  },
+  "sling": {
+    "name": "Fionda"
+  },
+  "smiths-tools": {
+    "description": "Gli Strumenti da Fabbro servono a forgiare e riparare oggetti in metallo.",
+    "name": "Strumenti da Fabbro"
+  },
+  "spear": {
+    "name": "Lancia"
+  },
+  "spellbook": {
+    "description": "Fondamentale per i Maghi, un Libro degli Incantesimi è un tomo rilegato in cuoio con 100 pagine vuote di pergamena adatte alla trascrizione degli incantesimi.",
+    "name": "Libro degli Incantesimi"
+  },
+  "splint-armor": {
+    "name": "Armatura a Strisce"
+  },
+  "string": {
+    "name": "Spago",
+    "description": "Una matassa di spago è lunga 3 metri. Come azione di Utilizzo puoi farvi un nodo."
+  },
+  "studded-leather-armor": {
+    "name": "Armatura di Cuoio Borchiato"
+  },
+  "tent": {
+    "description": "Una Tenda può ospitare fino a due creature Piccole o Medie.",
+    "name": "Tenda"
+  },
+  "thieves-tools": {
+    "description": "Gli Arnesi da Scasso includono una piccola lima, un set di grimaldelli, uno specchietto su manico metallico, un paio di forbicine a lama stretta e una pinza. La competenza con questi strumenti ti permette di aggiungere il Bonus di Competenza alle prove di Destrezza per scassinare serrature o disinnescare trappole.",
+    "name": "Arnesi da Scasso"
+  },
+  "tinderbox": {
+    "description": "Contiene selce, acciaio e esca. Accendere una Candela, Lampada, Lanterna o Torcia richiede un'Azione Bonus. Accendere qualsiasi altro fuoco richiede 1 minuto.",
+    "name": "Acciarino"
+  },
+  "tinkers-tools": {
+    "description": "Un set di attrezzi per costruire e riparare piccoli oggetti e meccanismi.",
+    "name": "Strumenti da Inventore"
+  },
+  "torch": {
+    "description": "Brucia per 1 ora, emettendo Luce Intensa in un raggio di 6 metri e Luce Fioca per ulteriori 6 metri. Può essere usata come arma da mischia semplice infliggendo 1 danno da Fuoco a segno.",
+    "name": "Torcia"
+  },
+  "trident": {
+    "name": "Tridente"
+  },
+  "vial": {
+    "name": "Fiala",
+    "description": "Una fiala ha una capacità di 120 millilitri."
+  },
+  "viol": {
+    "description": "La Viola è uno strumento a corde. La competenza ti permette di aggiungere il Bonus di Competenza alle prove per suonarla.",
+    "name": "Viola"
+  },
+  "war-pick": {
+    "name": "Piccone da Guerra"
+  },
+  "warhammer": {
+    "name": "Martello da Guerra"
+  },
+  "waterskin": {
+    "description": "Un Otre contiene fino a 2 litri d'acqua.",
+    "name": "Otre"
+  },
+  "weavers-tools": {
+    "description": "Gli Strumenti da Tessitore servono a tessere stoffa.",
+    "name": "Strumenti da Tessitore"
+  },
+  "whip": {
+    "name": "Frusta"
+  },
+  "woodcarvers-tools": {
+    "description": "Gli Strumenti da Intagliatore consistono in un coltello, uno scalpello e una piccola sega. La competenza con questi strumenti ti permette di aggiungere il Bonus di Competenza alle prove per intagliare oggetti in legno.",
+    "name": "Strumenti da Intagliatore"
+  }
+}

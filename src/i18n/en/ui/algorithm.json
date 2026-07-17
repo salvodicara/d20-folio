@@ -1,0 +1,42 @@
+{
+  "algorithm": {
+    "title": "Combat Algorithm",
+    "subtitle": "Your step-by-step decision tree for combat turns.",
+    "ifKeyword": "IF",
+    "empty": "No combat algorithm defined. Switch to Edit Mode to create a step-by-step combat decision tree for your character.",
+    "addStep": "Add Step",
+    "addSubStep": "Add decision branch",
+    "addBullet": "Add bullet",
+    "stepTitlePlaceholder": "Step title…",
+    "questionPlaceholder": "Decision question (optional)…",
+    "bulletPlaceholder": "Action or outcome…",
+    "indent": "Indent",
+    "importJSON": "Import from JSON",
+    "importJSONRubric": "Import",
+    "importJSONHint": "Edit the example below, then Confirm. Each step has an icon, a title, and one or more decision branches with bullet lines.",
+    "importJSONHintCurrent": "This is your current algorithm in JSON form. Edit it, then Confirm: what you confirm replaces every step.",
+    "importJSONField": "Algorithm JSON",
+    "importJSONPlaceholder": "Edit the example, or paste your own steps here…",
+    "importJSONResetExample": "Reset to example",
+    "importJSONResetCurrent": "Reset to current",
+    "importJSONErrorSyntax": "That isn't valid JSON yet: check for a missing comma, bracket, or quotation mark, then try again.",
+    "importJSONErrorNotArray": "The top level must be a list of steps, wrapped in square brackets [ … ].",
+    "importJSONErrorShape": "Each step needs an icon, a title, and a steps list, and every branch needs a bullets list. Compare yours to the example.",
+    "importJSONSuccess": "Algorithm imported. Tap Undo to revert.",
+    "chooseIcon": "Choose icon",
+    "icon": {
+      "control": "Control",
+      "support": "Support",
+      "melee": "Melee",
+      "defend": "Defend",
+      "burst": "Burst",
+      "magic": "Magic",
+      "move": "Move",
+      "focus": "Focus",
+      "danger": "Danger",
+      "checklist": "Checklist"
+    },
+    "removeStepTitle": "Remove this step?",
+    "removeStepMessage": "This deletes the step and all of its decision branches."
+  }
+}

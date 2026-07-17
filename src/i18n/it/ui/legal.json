@@ -1,0 +1,37 @@
+{
+  "legal": {
+    "link": "Note legali",
+    "title": "Note legali e attribuzione",
+    "subtitle": "I crediti, le licenze e i marchi dietro d20 Folio.",
+    "attribution": {
+      "heading": "Attribuzione",
+      "statement": "Quest'opera include materiale tratto dal System Reference Document 5.2.1 (\"SRD 5.2.1\") di Wizards of the Coast LLC, disponibile all'indirizzo https://www.dndbeyond.com/srd. Il SRD 5.2.1 è concesso in licenza ai sensi della licenza di attribuzione 4.0 Internazionale di Creative Commons, disponibile all'indirizzo https://creativecommons.org/licenses/by/4.0/legalcode.",
+      "statement51": "Questo lavoro include materiale del System Reference Document 5.1 (“SRD 5.1”) di Wizards of the Coast LLC disponibile al sito https://dnd.wizards.com/it/resources/systems-reference-document. L’SRD 5.1 è concesso in licenza sotto l’Attribuzione 4.0 Internazionale di Creative Commons disponibile al sito https://creativecommons.org/licenses/by/4.0/legalcode.it.",
+      "note": "d20 Folio trae i propri contenuti di regole dall'SRD 5.2.1 e dall'SRD 5.1, riprodotti qui secondo i termini della licenza CC-BY-4.0. Le dichiarazioni qui sopra sono le attribuzioni esatte richieste da ciascuna licenza, riportate dai testi ufficiali italiani di Wizards of the Coast."
+    },
+    "licenses": {
+      "heading": "Licenze",
+      "intro": "Due licenze regolano d20 Folio: il contenuto di gioco che riproduce e l'applicazione stessa.",
+      "srdTerm": "Contenuti di regole SRD 5.2.1 e 5.1",
+      "srdDesc": "Le regole, gli incantesimi, le classi e gli altri dati di gioco provengono dai System Reference Document 5.2.1 e 5.1, ciascuno usato secondo la licenza di attribuzione 4.0 Internazionale di Creative Commons.",
+      "appTerm": "Codice sorgente di d20 Folio",
+      "appDesc": "L'applicazione stessa, il suo codice e il suo design, è rilasciata sotto licenza MIT."
+    },
+    "trademarks": {
+      "heading": "Marchi",
+      "body": "Dungeons & Dragons, D&D e i rispettivi loghi sono marchi di Wizards of the Coast LLC e non sono concessi in licenza dall'SRD. I riferimenti qui presenti sono nominativi, fatti solo per descrivere la compatibilità, e non implicano alcuna affiliazione con Wizards of the Coast né alcuna approvazione da parte sua.",
+      "compatible": "Come consentito dai termini di licenza dell'SRD, d20 Folio è compatibile con la quinta edizione."
+    },
+    "app": {
+      "heading": "L'app",
+      "body": "d20 Folio è un compagno gratuito e bilingue per giocare personaggi della quinta edizione (2024). È contenuto amatoriale non ufficiale, creato per un tavolo casalingo, e non è approvato né avallato da Wizards of the Coast.",
+      "editions": "I contenuti delle regole seguono di default l'SRD di D&D 2024; altre edizioni e homebrew sono supportati tramite override personalizzati."
+    },
+    "links": {
+      "ccby": "Creative Commons Attribution 4.0 International",
+      "srd": "System Reference Document 5.2.1",
+      "srd51": "System Reference Document 5.1",
+      "mit": "Licenza MIT"
+    }
+  }
+}

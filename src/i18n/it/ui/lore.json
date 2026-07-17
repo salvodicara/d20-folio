@@ -1,0 +1,40 @@
+{
+  "lore": {
+    "backstory": "Storia",
+    "backstoryPlaceholder": "La storia del tuo personaggio...",
+    "traits": "Tratti della Personalità",
+    "ideals": "Ideali",
+    "bonds": "Legami",
+    "flaws": "Difetti",
+    "personality": "Personalità",
+    "appearance": "Aspetto",
+    "age": "Età",
+    "height": "Altezza",
+    "weight": "Peso",
+    "eyes": "Occhi",
+    "hair": "Capelli",
+    "skin": "Pelle",
+    "alignment": "Allineamento",
+    "player": "Giocatore",
+    "languages": "Lingue",
+    "tools": "Strumenti",
+    "quote": "Citazione / motto",
+    "emptyTitle": "Nessuna storia scritta",
+    "emptyBlurb": "La storia, la personalità e l'aspetto del tuo personaggio vivono qui. Inizia a scrivere in Modalità Modifica.",
+    "levelUpChecklist": "Azioni Post-Livellamento",
+    "alignments": {
+      "lawful-good": "Legale Buono",
+      "neutral-good": "Neutrale Buono",
+      "chaotic-good": "Caotico Buono",
+      "lawful-neutral": "Legale Neutrale",
+      "true-neutral": "Neutrale Vero",
+      "chaotic-neutral": "Caotico Neutrale",
+      "lawful-evil": "Legale Malvagio",
+      "neutral-evil": "Neutrale Malvagio",
+      "chaotic-evil": "Caotico Malvagio",
+      "unaligned": "Non Allineato"
+    },
+    "alignmentPlaceholder": "Seleziona allineamento...",
+    "lineageNotChosen": "Nessuna stirpe scelta: passa alla Modifica per sceglierne una"
+  }
+}

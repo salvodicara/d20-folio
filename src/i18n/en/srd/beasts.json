@@ -1,0 +1,422 @@
+{
+  "panther": {
+    "name": "Panther"
+  },
+  "ape": {
+    "name": "Ape"
+  },
+  "brown-bear": {
+    "name": "Brown Bear"
+  },
+  "dire-wolf": {
+    "name": "Dire Wolf"
+  },
+  "giant-spider": {
+    "name": "Giant Spider"
+  },
+  "giant-eagle": {
+    "name": "Giant Eagle"
+  },
+  "giant-vulture": {
+    "name": "Giant Vulture"
+  },
+  "giant-octopus": {
+    "name": "Giant Octopus"
+  },
+  "giant-toad": {
+    "name": "Giant Toad"
+  },
+  "allosaurus": {
+    "name": "Allosaurus"
+  },
+  "giant-elk": {
+    "name": "Giant Elk"
+  },
+  "polar-bear": {
+    "name": "Polar Bear"
+  },
+  "giant-constrictor-snake": {
+    "name": "Giant Constrictor Snake"
+  },
+  "giant-boar": {
+    "name": "Giant Boar"
+  },
+  "saber-toothed-tiger": {
+    "name": "Saber-Toothed Tiger"
+  },
+  "mammoth": {
+    "name": "Mammoth"
+  },
+  "giant-ape": {
+    "name": "Giant Ape"
+  },
+  "tyrannosaurus-rex": {
+    "name": "Tyrannosaurus Rex"
+  },
+  "ankylosaurus": {
+    "name": "Ankylosaurus"
+  },
+  "archelon": {
+    "name": "Archelon"
+  },
+  "axe-beak": {
+    "name": "Axe Beak"
+  },
+  "baboon": {
+    "name": "Baboon"
+  },
+  "badger": {
+    "name": "Badger"
+  },
+  "bat": {
+    "name": "Bat"
+  },
+  "black-bear": {
+    "name": "Black Bear"
+  },
+  "blood-hawk": {
+    "name": "Blood Hawk"
+  },
+  "boar": {
+    "name": "Boar"
+  },
+  "camel": {
+    "name": "Camel"
+  },
+  "cat": {
+    "name": "Cat"
+  },
+  "constrictor-snake": {
+    "name": "Constrictor Snake"
+  },
+  "crab": {
+    "name": "Crab"
+  },
+  "crocodile": {
+    "name": "Crocodile"
+  },
+  "deer": {
+    "name": "Deer"
+  },
+  "draft-horse": {
+    "name": "Draft Horse"
+  },
+  "eagle": {
+    "name": "Eagle"
+  },
+  "elephant": {
+    "name": "Elephant"
+  },
+  "elk": {
+    "name": "Elk"
+  },
+  "flying-snake": {
+    "name": "Flying Snake"
+  },
+  "frog": {
+    "name": "Frog"
+  },
+  "giant-badger": {
+    "name": "Giant Badger"
+  },
+  "giant-bat": {
+    "name": "Giant Bat"
+  },
+  "giant-centipede": {
+    "name": "Giant Centipede"
+  },
+  "giant-crab": {
+    "name": "Giant Crab"
+  },
+  "giant-crocodile": {
+    "name": "Giant Crocodile"
+  },
+  "giant-fire-beetle": {
+    "name": "Giant Fire Beetle"
+  },
+  "giant-frog": {
+    "name": "Giant Frog"
+  },
+  "giant-goat": {
+    "name": "Giant Goat"
+  },
+  "giant-hyena": {
+    "name": "Giant Hyena"
+  },
+  "giant-lizard": {
+    "name": "Giant Lizard"
+  },
+  "giant-owl": {
+    "name": "Giant Owl"
+  },
+  "giant-rat": {
+    "name": "Giant Rat"
+  },
+  "giant-scorpion": {
+    "name": "Giant Scorpion"
+  },
+  "giant-seahorse": {
+    "name": "Giant Seahorse"
+  },
+  "giant-shark": {
+    "name": "Giant Shark"
+  },
+  "giant-venomous-snake": {
+    "name": "Giant Venomous Snake"
+  },
+  "giant-wasp": {
+    "name": "Giant Wasp"
+  },
+  "giant-weasel": {
+    "name": "Giant Weasel"
+  },
+  "giant-wolf-spider": {
+    "name": "Giant Wolf Spider"
+  },
+  "goat": {
+    "name": "Goat"
+  },
+  "hawk": {
+    "name": "Hawk"
+  },
+  "hippopotamus": {
+    "name": "Hippopotamus"
+  },
+  "hunter-shark": {
+    "name": "Hunter Shark"
+  },
+  "hyena": {
+    "name": "Hyena"
+  },
+  "jackal": {
+    "name": "Jackal"
+  },
+  "killer-whale": {
+    "name": "Killer Whale"
+  },
+  "lion": {
+    "name": "Lion"
+  },
+  "lizard": {
+    "name": "Lizard"
+  },
+  "mastiff": {
+    "name": "Mastiff"
+  },
+  "mule": {
+    "name": "Mule"
+  },
+  "octopus": {
+    "name": "Octopus"
+  },
+  "owl": {
+    "name": "Owl"
+  },
+  "piranha": {
+    "name": "Piranha"
+  },
+  "plesiosaurus": {
+    "name": "Plesiosaurus"
+  },
+  "pony": {
+    "name": "Pony"
+  },
+  "pteranodon": {
+    "name": "Pteranodon"
+  },
+  "rat": {
+    "name": "Rat"
+  },
+  "raven": {
+    "name": "Raven"
+  },
+  "reef-shark": {
+    "name": "Reef Shark"
+  },
+  "rhinoceros": {
+    "name": "Rhinoceros"
+  },
+  "riding-horse": {
+    "name": "Riding Horse"
+  },
+  "scorpion": {
+    "name": "Scorpion"
+  },
+  "seahorse": {
+    "name": "Seahorse"
+  },
+  "spider": {
+    "name": "Spider"
+  },
+  "tiger": {
+    "name": "Tiger"
+  },
+  "triceratops": {
+    "name": "Triceratops"
+  },
+  "venomous-snake": {
+    "name": "Venomous Snake"
+  },
+  "vulture": {
+    "name": "Vulture"
+  },
+  "warhorse": {
+    "name": "Warhorse"
+  },
+  "weasel": {
+    "name": "Weasel"
+  },
+  "wolf": {
+    "name": "Wolf"
+  },
+  "attack.fist": {
+    "name": "Fist"
+  },
+  "attack.bite": {
+    "name": "Bite"
+  },
+  "attack.claw": {
+    "name": "Claw"
+  },
+  "attack.claws": {
+    "name": "Claws"
+  },
+  "attack.beak": {
+    "name": "Beak"
+  },
+  "attack.talons": {
+    "name": "Talons"
+  },
+  "attack.gore": {
+    "name": "Gore"
+  },
+  "attack.stomp": {
+    "name": "Stomp"
+  },
+  "attack.rock": {
+    "name": "Rock"
+  },
+  "attack.ram": {
+    "name": "Ram"
+  },
+  "attack.hooves": {
+    "name": "Hooves"
+  },
+  "attack.tusk": {
+    "name": "Tusk"
+  },
+  "attack.tail": {
+    "name": "Tail"
+  },
+  "attack.tentacles": {
+    "name": "Tentacles"
+  },
+  "attack.constrict": {
+    "name": "Constrict"
+  },
+  "attack.rend": {
+    "name": "Rend"
+  },
+  "attack.scratch": {
+    "name": "Scratch"
+  },
+  "attack.sting": {
+    "name": "Sting"
+  },
+  "trait.keen-smell": {
+    "name": "Keen Smell"
+  },
+  "trait.keen-sight": {
+    "name": "Keen Sight"
+  },
+  "trait.keen-hearing-and-smell": {
+    "name": "Keen Hearing and Smell"
+  },
+  "trait.keen-sight-and-smell": {
+    "name": "Keen Sight and Smell"
+  },
+  "trait.pack-tactics": {
+    "name": "Pack Tactics"
+  },
+  "trait.pounce": {
+    "name": "Pounce"
+  },
+  "trait.charge": {
+    "name": "Charge"
+  },
+  "trait.relentless": {
+    "name": "Relentless"
+  },
+  "trait.spider-climb": {
+    "name": "Spider Climb"
+  },
+  "trait.web-walker": {
+    "name": "Web Walker"
+  },
+  "trait.amphibious": {
+    "name": "Amphibious"
+  },
+  "trait.standing-leap": {
+    "name": "Standing Leap"
+  },
+  "trait.hold-breath": {
+    "name": "Hold Breath"
+  },
+  "trait.water-breathing": {
+    "name": "Water Breathing"
+  },
+  "trait.trampling-charge": {
+    "name": "Trampling Charge"
+  },
+  "trait.agile": {
+    "name": "Agile"
+  },
+  "trait.beast-of-burden": {
+    "name": "Beast of Burden"
+  },
+  "trait.blood-frenzy": {
+    "name": "Blood Frenzy"
+  },
+  "trait.bloodied-fury": {
+    "name": "Bloodied Fury"
+  },
+  "trait.bubble-dash": {
+    "name": "Bubble Dash"
+  },
+  "trait.compression": {
+    "name": "Compression"
+  },
+  "trait.flyby": {
+    "name": "Flyby"
+  },
+  "trait.illumination": {
+    "name": "Illumination"
+  },
+  "trait.ink-cloud": {
+    "name": "Ink Cloud"
+  },
+  "trait.jumper": {
+    "name": "Jumper"
+  },
+  "trait.mimicry": {
+    "name": "Mimicry"
+  },
+  "trait.nimble-escape": {
+    "name": "Nimble Escape"
+  },
+  "trait.poison-resistance": {
+    "name": "Poison Resistance"
+  },
+  "trait.rampage": {
+    "name": "Rampage"
+  },
+  "trait.roar": {
+    "name": "Roar"
+  },
+  "trait.running-leap": {
+    "name": "Running Leap"
+  },
+  "trait.trample": {
+    "name": "Trample"
+  }
+}

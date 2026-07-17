@@ -1,0 +1,42 @@
+{
+  "algorithm": {
+    "title": "Algoritmo di Combattimento",
+    "subtitle": "Il tuo albero decisionale passo-passo per i turni di combattimento.",
+    "ifKeyword": "SE",
+    "empty": "Nessun algoritmo di combattimento definito. Passa alla Modalità Modifica per creare un albero decisionale passo-passo per il tuo personaggio.",
+    "addStep": "Aggiungi Passaggio",
+    "addSubStep": "Aggiungi ramo decisionale",
+    "addBullet": "Aggiungi punto",
+    "stepTitlePlaceholder": "Titolo del passaggio…",
+    "questionPlaceholder": "Domanda decisionale (opzionale)…",
+    "bulletPlaceholder": "Azione o risultato…",
+    "indent": "Rientro",
+    "importJSON": "Importa da JSON",
+    "importJSONRubric": "Importa",
+    "importJSONHint": "Modifica l'esempio qui sotto, poi Conferma. Ogni passo ha un'icona, un titolo e uno o più rami decisionali con righe puntate.",
+    "importJSONHintCurrent": "Questo è il tuo algoritmo attuale in formato JSON. Modificalo, poi Conferma: ciò che confermi sostituisce tutti i passi.",
+    "importJSONField": "JSON dell'algoritmo",
+    "importJSONPlaceholder": "Modifica l'esempio, o incolla qui i tuoi passi…",
+    "importJSONResetExample": "Ripristina l'esempio",
+    "importJSONResetCurrent": "Ripristina l'attuale",
+    "importJSONErrorSyntax": "Non è ancora JSON valido: controlla se manca una virgola, una parentesi o una virgoletta, poi riprova.",
+    "importJSONErrorNotArray": "Il livello principale dev'essere una lista di passi, racchiusa tra parentesi quadre [ … ].",
+    "importJSONErrorShape": "Ogni passo necessita di un'icona, un titolo e una lista di passi, e ogni ramo necessita di una lista di righe puntate. Confronta il tuo con l'esempio.",
+    "importJSONSuccess": "Algoritmo importato: tocca Annulla per ripristinare.",
+    "chooseIcon": "Scegli icona",
+    "icon": {
+      "control": "Controllo",
+      "support": "Supporto",
+      "melee": "Mischia",
+      "defend": "Difesa",
+      "burst": "Esplosione",
+      "magic": "Magia",
+      "move": "Movimento",
+      "focus": "Messa a fuoco",
+      "danger": "Pericolo",
+      "checklist": "Lista"
+    },
+    "removeStepTitle": "Rimuovere questo passo?",
+    "removeStepMessage": "Questo elimina il passo e tutte le sue diramazioni decisionali."
+  }
+}

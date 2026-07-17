@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "module": "esnext",
+    "types": ["node"],
+    "skipLibCheck": true,
+
+    /* The `@/` alias so an admin SCRIPT can import the app engine (pure converters /
+       types) the SAME way the app does — no replicated shape (golden rules 6/10).
+       Scripts are RUN via `node --import ./scripts/alias-loader.mjs`, which resolves the
+       alias at runtime; this maps it for the typecheck. */
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    /* Strict mode — kept in lockstep with tsconfig.app.json so the shared
+       scripts/i18n/* leak detectors typecheck IDENTICALLY whether compiled here
+       (the build gate) or under the app project (the unit guards import them). */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts", "scripts/**/*.ts", "content-pack/scripts/**/*.ts"]
+}

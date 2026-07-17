@@ -1,0 +1,8 @@
+{
+  "notFound": {
+    "eyebrow": "404",
+    "title": "This page is off the map",
+    "blurb": "The page you're looking for doesn't exist, or the character it pointed to is no longer in your folio.",
+    "back": "Back to your characters"
+  }
+}

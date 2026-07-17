@@ -1,0 +1,67 @@
+{
+  "report": {
+    "rubric": "Aiutaci a plasmare il Folio",
+    "title": "Segnala un problema o proponi un'idea",
+    "description": "Raccontaci cosa non va o cosa vorresti vedere. Lo apriremo per chi cura il progetto con i dettagli qui sotto.",
+    "fieldType": "Che tipo di segnalazione?",
+    "types": {
+      "bug": "Problema",
+      "feature": "Idea",
+      "visual": "Grafica",
+      "data": "Dati",
+      "performance": "Prestazioni",
+      "other": "Altro"
+    },
+    "fieldScreen": "Dove?",
+    "fieldScreenHelp": "Rilevata automaticamente dalla pagina attuale. Cambiala se riguarda un'altra sezione.",
+    "detected": "pagina attuale",
+    "fieldSeverity": "Quanto ti penalizza?",
+    "severities": {
+      "low": "Lieve",
+      "medium": "Media",
+      "high": "Grave"
+    },
+    "fieldTitle": "Riassunto",
+    "fieldTitleHelp": "Una riga: qual è il punto?",
+    "fieldTitlePlaceholder": "es. La CD del tiro salvezza degli incantesimi è errata",
+    "titleRequired": "Aggiungi un breve riassunto così possiamo ritrovarla.",
+    "fieldDescription": "Dettagli",
+    "fieldDescriptionHelp": "Cosa è successo, cosa ti aspettavi e i passaggi per riprodurlo. Per un'idea, descrivi cosa vorresti e perché.",
+    "fieldDescriptionPlaceholder": "Passaggi per riprodurre, cosa ti aspettavi, cosa è successo invece…",
+    "fieldScreenshot": "Schermata",
+    "screenshotAlt": "Schermata della tua pagina attuale",
+    "keepScreenshot": "Allega di nuovo la schermata",
+    "noScreenshot": "Nessuna schermata acquisita. La tua segnalazione verrà comunque inviata.",
+    "attachDisclosure": "Cosa alleghiamo",
+    "attach": {
+      "screen": "Pagina",
+      "version": "Versione",
+      "browser": "Browser",
+      "viewport": "Dimensioni finestra",
+      "themeLocale": "Tema · lingua",
+      "recentErrors": "Errori recenti"
+    },
+    "offlineNote": "Sei offline. La tua segnalazione verrà salvata e inviata automaticamente al ripristino della connessione.",
+    "submit": "Invia segnalazione",
+    "submitError": "Impossibile inviare la segnalazione: {{message}}. Riprova.",
+    "errorNoUser": "Devi aver effettuato l'accesso per inviare una segnalazione.",
+    "sentTitle": "Grazie!",
+    "sentBody": "La tua segnalazione è in viaggio. La stiamo aprendo per chi cura il progetto.",
+    "openedAs": "Aperta come issue #{{number}}.",
+    "queuedTitle": "Salvata",
+    "queuedBody": "Sei offline. Invieremo la tua segnalazione appena ti ricolleghi.",
+    "viewIssue": "Apri la issue",
+    "screens": {
+      "roster": "I miei personaggi",
+      "characterCockpit": "Scheda del personaggio",
+      "characterCreate": "Creazione del personaggio",
+      "campaigns": "Campagne",
+      "campaignHub": "Hub della campagna",
+      "compendium": "Compendio",
+      "settings": "Impostazioni",
+      "admin": "Amministrazione",
+      "login": "Accesso",
+      "other": "Un'altra sezione"
+    }
+  }
+}

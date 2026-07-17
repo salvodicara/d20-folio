@@ -1,0 +1,40 @@
+{
+  "lore": {
+    "backstory": "Backstory",
+    "backstoryPlaceholder": "Your character's backstory...",
+    "traits": "Personality Traits",
+    "ideals": "Ideals",
+    "bonds": "Bonds",
+    "flaws": "Flaws",
+    "personality": "Personality",
+    "appearance": "Appearance",
+    "age": "Age",
+    "height": "Height",
+    "weight": "Weight",
+    "eyes": "Eyes",
+    "hair": "Hair",
+    "skin": "Skin",
+    "alignment": "Alignment",
+    "player": "Player",
+    "languages": "Languages",
+    "tools": "Tools",
+    "quote": "Quote / motto",
+    "emptyTitle": "No lore written yet",
+    "emptyBlurb": "Your character's backstory, personality, and appearance live here. Start writing in Edit Mode.",
+    "levelUpChecklist": "Post-Level-Up Actions",
+    "alignments": {
+      "lawful-good": "Lawful Good",
+      "neutral-good": "Neutral Good",
+      "chaotic-good": "Chaotic Good",
+      "lawful-neutral": "Lawful Neutral",
+      "true-neutral": "True Neutral",
+      "chaotic-neutral": "Chaotic Neutral",
+      "lawful-evil": "Lawful Evil",
+      "neutral-evil": "Neutral Evil",
+      "chaotic-evil": "Chaotic Evil",
+      "unaligned": "Unaligned"
+    },
+    "alignmentPlaceholder": "Select alignment...",
+    "lineageNotChosen": "No lineage chosen. Switch to Edit to pick one."
+  }
+}

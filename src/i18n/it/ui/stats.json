@@ -1,0 +1,11 @@
+{
+  "stats": {
+    "ac": "CA",
+    "dc": "CD",
+    "spd": "Vel",
+    "pb": "BC",
+    "hp": "PF",
+    "lvl": "Liv",
+    "hitDie": "Dado Vita"
+  }
+}

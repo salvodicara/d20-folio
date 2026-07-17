@@ -1,0 +1,26 @@
+{
+  "magicItems": {
+    "rarity": "Rarity",
+    "type": "Type",
+    "searchPlaceholder": "Search magic items…",
+    "attunement": "Attunement",
+    "attunementShort": "attune",
+    "attunementRequired": "Requires attunement",
+    "attunementNone": "No attunement",
+    "rarity_common": "Common",
+    "rarity_uncommon": "Uncommon",
+    "rarity_rare": "Rare",
+    "rarity_very-rare": "Very Rare",
+    "rarity_legendary": "Legendary",
+    "rarity_artifact": "Artifact",
+    "type_armor": "Armor",
+    "type_weapon": "Weapon",
+    "type_wondrous": "Wondrous",
+    "type_potion": "Potion",
+    "type_ring": "Ring",
+    "type_rod": "Rod",
+    "type_scroll": "Scroll",
+    "type_staff": "Staff",
+    "type_wand": "Wand"
+  }
+}

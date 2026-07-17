@@ -1,0 +1,27 @@
+{
+  "palette": {
+    "title": "Cerca nel Folio",
+    "rubric": "Chiedi al Folio",
+    "trigger": "Chiedi al Folio",
+    "description": "Trova un personaggio, un incantesimo o oggetto, o salta a una sezione.",
+    "placeholder": "Personaggi, incantesimi, oggetti, sezioni…",
+    "empty": "Nessuna corrispondenza",
+    "groupQuick": "Azioni rapide",
+    "groupSections": "Sezioni",
+    "groupActions": "Azioni",
+    "groupCharacters": "Personaggi",
+    "groupCampaigns": "Campagne",
+    "groupCompendium": "Compendio",
+    "actionThemeToLight": "Passa al tema chiaro",
+    "actionThemeToDark": "Passa al tema scuro",
+    "actionLangToEn": "Passa all'inglese",
+    "actionLangToIt": "Passa all'italiano",
+    "actionNewCharacter": "Crea un personaggio",
+    "actionNewCampaign": "Crea una campagna",
+    "actionImport": "Importa un personaggio (JSON)",
+    "actionReport": "Segnala un problema o un'idea",
+    "actionSignOut": "Esci",
+    "hintGo": "Vai",
+    "hintNav": "Naviga"
+  }
+}

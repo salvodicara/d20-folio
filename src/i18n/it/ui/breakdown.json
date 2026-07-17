@@ -1,0 +1,16 @@
+{
+  "breakdown": {
+    "rubric": "Scomposizione",
+    "base": "Base",
+    "featureBonus": "Bonus da privilegi",
+    "ac": {
+      "formBase": "Base della forma",
+      "floor": "Soglia minima CA",
+      "capped": "limitato dall'armatura",
+      "magic": "Oggetti magici"
+    },
+    "spell": {
+      "bonus": "Bonus agli incantesimi"
+    }
+  }
+}

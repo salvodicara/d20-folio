@@ -1,0 +1,15 @@
+{
+  "nav": {
+    "characters": "Characters",
+    "campaigns": "Campaigns",
+    "compendium": "Compendium",
+    "settings": "Settings",
+    "admin": "Admin",
+    "report": "Report a bug",
+    "signOut": "Sign Out",
+    "spells": "Spells",
+    "features": "Features",
+    "addFeature": "Add Feature",
+    "primary": "Primary"
+  }
+}

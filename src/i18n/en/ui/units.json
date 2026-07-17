@@ -1,0 +1,10 @@
+{
+  "units": {
+    "hp": "HP",
+    "points": "pts",
+    "use": "use",
+    "uses": "uses",
+    "dice": "dice",
+    "treats": "treats"
+  }
+}

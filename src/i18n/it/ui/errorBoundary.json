@@ -1,0 +1,13 @@
+{
+  "errorBoundary": {
+    "eyebrow": "Errore",
+    "title": "Qualcosa è andato storto",
+    "message": "Si è verificato un errore imprevisto. I tuoi dati sono al sicuro. Prova a ricaricare.",
+    "reload": "Ricarica l'app",
+    "retry": "Riprova",
+    "details": "Dettagli errore",
+    "backHome": "Torna ai miei personaggi",
+    "report": "Segnala il problema",
+    "sectionMessage": "Impossibile mostrare questa sezione. Il resto della pagina è a posto."
+  }
+}

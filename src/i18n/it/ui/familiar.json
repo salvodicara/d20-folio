@@ -1,0 +1,14 @@
+{
+  "familiar": {
+    "section": "Potenziamenti del famiglio",
+    "speedMode_fly": "Velocità di Volare",
+    "speedMode_swim": "Velocità di Nuotare",
+    "speedMode_climb": "Velocità di Scalare",
+    "bonusActionAttack": "Attacco Rapido",
+    "bonusActionAttackValue": "Azione bonus per ordinare l'azione di Attacco",
+    "damageConversion": "Tipo di danno",
+    "saveDc": "La tua CD del TS",
+    "reactionResistance": "Resistenza",
+    "reactionResistanceValue": "Reazione per concedere Resistenza al danno subito"
+  }
+}

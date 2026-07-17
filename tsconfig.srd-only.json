@@ -1,0 +1,16 @@
+{
+  /* The SRD-only typecheck lane (`pnpm typecheck:srd-only`): the app WITHOUT the
+     private content pack — `@pack` pinned to the typed-empty stub and the
+     `content-pack/` tree excluded, exactly what the public repo snapshot
+     compiles. Keep in lockstep with tsconfig.app.json (this only overrides the
+     alias + the tree). */
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.srd-only.tsbuildinfo",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@pack": ["./src/data/pack-empty.ts"]
+    }
+  },
+  "include": ["src", "tests"]
+}

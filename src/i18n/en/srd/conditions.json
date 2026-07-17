@@ -1,0 +1,147 @@
+{
+  "blinded": {
+    "description": "A blinded creature can't see and automatically fails any ability check that requires sight. Attack rolls against the creature have Advantage, and the creature's attack rolls have Disadvantage.",
+    "effects": [
+      "Can't see.",
+      "Automatically fails ability checks requiring sight.",
+      "Attack rolls against you have Advantage.",
+      "Your attack rolls have Disadvantage."
+    ],
+    "name": "Blinded"
+  },
+  "charmed": {
+    "description": "A charmed creature can't attack the charmer or target the charmer with harmful abilities or magical effects. The charmer has Advantage on any ability check to interact socially with the creature.",
+    "effects": [
+      "Can't attack the charmer or target the charmer with harmful abilities or magical effects.",
+      "The charmer has Advantage on ability checks to interact socially with you."
+    ],
+    "name": "Charmed"
+  },
+  "deafened": {
+    "description": "A deafened creature can't hear and automatically fails any ability check that requires hearing.",
+    "effects": ["Can't hear.", "Automatically fails ability checks requiring hearing."],
+    "name": "Deafened"
+  },
+  "exhaustion": {
+    "description": "While you have the Exhaustion condition, you experience the following effects. Exhaustion Levels: Each time you receive the Exhaustion condition, you gain 1 Exhaustion level. You die if your Exhaustion level is 6. Ending the Condition: Finishing a Long Rest removes 1 of your Exhaustion levels. When your Exhaustion level reaches 0, the condition ends.",
+    "effects": [
+      "D20 Tests affected: subtract 2 × your Exhaustion level from every D20 Test (ability checks, attack rolls, saving throws).",
+      "Speed reduced: subtract 5 × Exhaustion level from your Speed.",
+      "At Exhaustion level 6, you die.",
+      "Finishing a Long Rest removes 1 Exhaustion level."
+    ],
+    "name": "Exhaustion"
+  },
+  "frightened": {
+    "description": "A frightened creature has Disadvantage on ability checks and attack rolls while the source of its fear is within line of sight. The creature can't willingly move closer to the source of its fear.",
+    "effects": [
+      "Disadvantage on ability checks and attack rolls while the source of fear is within line of sight.",
+      "Can't willingly move closer to the source of fear."
+    ],
+    "name": "Frightened"
+  },
+  "grappled": {
+    "description": "A grappled creature's Speed is reduced to 0 and can't be increased. It has Disadvantage on attack rolls against any target other than the grappler. The grappler can drag or carry it when it moves, at an extra movement cost to the grappler. The condition ends if the grappler is Incapacitated or if the grappled creature is moved outside the grapple's reach by an effect.",
+    "effects": [
+      "Speed is reduced to 0 and can't be increased.",
+      "Disadvantage on attack rolls against any target other than the grappler.",
+      "The grappler can drag or carry you, at extra movement cost to it.",
+      "Condition ends if the grappler is Incapacitated.",
+      "Condition ends if you are moved outside the grapple's reach by an effect."
+    ],
+    "name": "Grappled"
+  },
+  "incapacitated": {
+    "description": "An incapacitated creature can't take Actions, Bonus Actions, or Reactions, its Concentration breaks, and it can't speak. If it rolls Initiative while incapacitated, it has Disadvantage on the roll.",
+    "effects": [
+      "Can't take Actions.",
+      "Can't take Bonus Actions.",
+      "Can't take Reactions.",
+      "Concentration breaks.",
+      "Can't speak.",
+      "Disadvantage on Initiative rolls made while Incapacitated."
+    ],
+    "name": "Incapacitated"
+  },
+  "invisible": {
+    "description": "An invisible creature has Advantage on its Initiative roll if it was invisible when it rolled. It is unaffected by any effect that requires its target to be seen, unless the effect's creator can somehow see it (equipment it wears or carries is concealed too). Attack rolls against the creature have Disadvantage, and the creature's attack rolls have Advantage — unless a creature can somehow see it, which negates this benefit against that creature.",
+    "effects": [
+      "Advantage on your Initiative roll if you were invisible when you rolled.",
+      "Concealed — unaffected by effects that require you to be seen (equipment too), unless the source can somehow see you.",
+      "Attack rolls against you have Disadvantage, and your attack rolls have Advantage (unless a creature can somehow see you)."
+    ],
+    "name": "Invisible"
+  },
+  "paralyzed": {
+    "description": "A paralyzed creature is Incapacitated and can't move or speak. The creature automatically fails Strength and Dexterity saving throws. Attack rolls against the creature have Advantage. Any attack that hits the creature is a Critical Hit if the attacker is within 5 feet of the creature.",
+    "effects": [
+      "Incapacitated (can't take Actions, Bonus Actions, or Reactions).",
+      "Can't move or speak.",
+      "Automatically fails Strength and Dexterity saving throws.",
+      "Attack rolls against you have Advantage.",
+      "Any hit from within 5 feet is a Critical Hit."
+    ],
+    "name": "Paralyzed"
+  },
+  "petrified": {
+    "description": "A petrified creature is transformed, along with any nonmagical objects it is wearing or carrying, into a solid inanimate substance (usually stone). Its weight increases by a factor of ten, and it ceases aging. The creature is Incapacitated, can't move or speak, and is unaware of its surroundings. Attack rolls against the creature have Advantage. The creature automatically fails Strength and Dexterity saving throws. The creature has Resistance to all damage. The creature is immune to Poison and Disease, although a poison or disease already in its system is suspended, not neutralized.",
+    "effects": [
+      "Transformed into solid substance (usually stone); weight × 10.",
+      "Incapacitated (can't take Actions, Bonus Actions, or Reactions).",
+      "Can't move or speak, unaware of surroundings.",
+      "Attack rolls against you have Advantage.",
+      "Automatically fails Strength and Dexterity saving throws.",
+      "Resistance to all damage.",
+      "Immune to Poison and Disease (existing ones suspended).",
+      "Ceases aging."
+    ],
+    "name": "Petrified"
+  },
+  "poisoned": {
+    "description": "A poisoned creature has Disadvantage on attack rolls and ability checks.",
+    "effects": ["Disadvantage on attack rolls.", "Disadvantage on ability checks."],
+    "name": "Poisoned"
+  },
+  "prone": {
+    "description": "A prone creature's only movement option is to crawl (every foot of movement costs 1 extra foot), unless it stands up and thereby ends the condition. The creature has Disadvantage on attack rolls. An attack roll against the creature has Advantage if the attacker is within 5 feet of the creature. Otherwise, the attack roll has Disadvantage.",
+    "effects": [
+      "Only movement option is to crawl (costs 1 extra foot per foot).",
+      "Can stand up (costs half your Speed) to end the condition.",
+      "Disadvantage on attack rolls.",
+      "Attack rolls against you have Advantage if attacker is within 5 feet.",
+      "Attack rolls against you have Disadvantage if attacker is farther than 5 feet."
+    ],
+    "name": "Prone"
+  },
+  "restrained": {
+    "description": "A restrained creature's Speed becomes 0, and it can't benefit from any bonus to its Speed. Attack rolls against the creature have Advantage, and the creature's attack rolls have Disadvantage. The creature has Disadvantage on Dexterity saving throws.",
+    "effects": [
+      "Speed becomes 0, can't benefit from bonuses to Speed.",
+      "Attack rolls against you have Advantage.",
+      "Your attack rolls have Disadvantage.",
+      "Disadvantage on Dexterity saving throws."
+    ],
+    "name": "Restrained"
+  },
+  "stunned": {
+    "description": "A stunned creature has the Incapacitated condition (can't take Actions, Bonus Actions, or Reactions; Concentration breaks; can't speak). It automatically fails Strength and Dexterity saving throws, and attack rolls against it have Advantage. Unlike Paralyzed, Stunned doesn't reduce Speed to 0.",
+    "effects": [
+      "Incapacitated (can't take Actions, Bonus Actions, or Reactions; Concentration breaks; can't speak).",
+      "Automatically fails Strength and Dexterity saving throws.",
+      "Attack rolls against you have Advantage."
+    ],
+    "name": "Stunned"
+  },
+  "unconscious": {
+    "description": "An unconscious creature is Incapacitated, can't move or speak, and is unaware of its surroundings. The creature drops whatever it's holding and falls Prone. The creature automatically fails Strength and Dexterity saving throws. Attack rolls against the creature have Advantage. Any attack that hits the creature is a Critical Hit if the attacker is within 5 feet of the creature.",
+    "effects": [
+      "Incapacitated (can't take Actions, Bonus Actions, or Reactions).",
+      "Can't move or speak, unaware of surroundings.",
+      "Drops held items and falls Prone.",
+      "Automatically fails Strength and Dexterity saving throws.",
+      "Attack rolls against you have Advantage.",
+      "Any hit from within 5 feet is a Critical Hit."
+    ],
+    "name": "Unconscious"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "portrait": {
+    "crop": {
+      "title": "Set Portrait",
+      "subtitle": "Drag to reposition · Pinch or scroll to zoom",
+      "add": "Add photo",
+      "confirm": "Set Portrait",
+      "zoom": "Zoom",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "readError": "Could not read image file.",
+      "invalidCrop": "Could not apply that crop. Please try again.",
+      "saveError": "Couldn't save the portrait. Check your connection and try again.",
+      "cropperError": "Something went wrong loading the cropper.",
+      "eyebrow": "Portrait"
+    },
+    "menu": {
+      "edit": "Edit portrait",
+      "view": "View portrait",
+      "recrop": "Re-crop",
+      "replace": "Upload new",
+      "remove": "Remove photo"
+    }
+  }
+}

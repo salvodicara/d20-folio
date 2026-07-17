@@ -1,0 +1,16 @@
+{
+  "finesse": { "name": "Accurata" },
+  "light": { "name": "Leggera" },
+  "heavy": { "name": "Pesante" },
+  "loading": { "name": "Ricarica" },
+  "reach": { "name": "Portata" },
+  "two-handed": { "name": "Due Mani" },
+  "two-handed-unless-mounted": { "name": "Due Mani (se non in sella)" },
+  "versatile": { "name": "Versatile ({{die}})" },
+  "thrown": { "name": "Da Lancio (Gittata {{range}})" },
+  "ammunition": { "name": "Munizioni (Gittata {{range}}; {{type}})" },
+  "arrow": { "name": "Freccia" },
+  "bolt": { "name": "Dardo" },
+  "bullet": { "name": "Proiettile" },
+  "needle": { "name": "Ago" }
+}

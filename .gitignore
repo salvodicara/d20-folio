@@ -1,0 +1,102 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Vite + build
+node_modules
+dist
+dist-ssr
+# vite-plugin-pwa dev-SW output (generated when VITE_PWA_DEV=true for the
+# portrait-export E2E); never committed.
+dev-dist
+*.local
+
+# Firebase
+.firebase
+firebase-debug.log
+firebase-debug.*.log
+.firebaserc.local
+
+# Env
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage
+
+# Playwright e2e output (reports + per-run artifacts; snapshots ARE committed)
+playwright-report
+test-results
+
+# Misc
+*.tsbuildinfo
+.eslintcache
+rules.compiled
+.changeset-tmp
+
+# Design preview self-review screenshots (reproducible from the HTML).
+# `previews/` exists only in the maintainer's private composition — absent from
+# the public repo.
+previews/folio_design/_shots/
+
+# Local reference data — not tracked (large + regenerable); only the index is.
+# `data-scrape/` exists only in the maintainer's private composition.
+data-scrape/*
+!data-scrape/INDEX.json
+
+# .claude: ignore local-only artifacts; committed skills ARE tracked
+.claude/settings.local.json
+.claude/*.workflow.js
+
+# graphify knowledge-graph output (generated)
+graphify-out/
+
+# Engine dumps emitted by the pack's team-fixtures-dump.test.ts (regenerable).
+# `content-pack/` is the maintainer's private content pack — absent from the
+# public repo (docs/ARCHITECTURE.md → "The content-pack seam").
+content-pack/fixtures/team/__dumps__/
+
+# Manual Firestore data backups (live character/campaign exports) — they carry real
+# uids + storage tokens, so never commit them. Keep them out of root by convention.
+/*-backup.json
+
+# One-off migration snapshot backups (rule-22 recoverability net; real uids) — the
+# scripts write here before applying; never committed.
+scripts/backups/
+
+# Local reference pulls — scratch, never committed
+scratch_*
+
+# Throwaway screenshot-harness output (self-verify shots)
+scratch-shots/
+
+# Local one-off screenshot harness script — regenerable, never committed
+/_shot.mjs
+
+# SAFE-01 kill-switch: the billing-account id cached by `just safe-arm` for
+# `just safe-restore` (real account id — never committed; re-resolvable interactively)
+/.safe-01-billing-account
+
+# Mission preview shots (rule-25 artifacts, never repo content)
+.shots-mission-b/
+.shots-assets/
+.shots-wave2/

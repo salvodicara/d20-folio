@@ -1,0 +1,17 @@
+{
+  "import": {
+    "title": "Import Character",
+    "success": "Imported \"{{name}}\" successfully!",
+    "error": "Import failed. Please try again.",
+    "invalidJson": "Invalid JSON: could not parse file.",
+    "invalidFormat": "Unrecognized format.",
+    "oldFormat": "This file is from an older version. Ask your campaign owner for a regenerated copy.",
+    "fileTooLarge": "File is too large (max 5MB).",
+    "mustBeJson": "File must be a .json file.",
+    "zipImported_one": "Imported {{count}} character",
+    "zipImported_other": "Imported {{count}} characters",
+    "zipPartial": "Imported {{imported}}; {{failed}} couldn't be imported",
+    "zipError": "Couldn't import that ZIP file.",
+    "zipEmpty": "That ZIP has no character files."
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "snapshots": {
+    "title": "Istantanee",
+    "rubric": "Cronologia",
+    "hint": "Le istantanee catturano lo stato del personaggio. Il ripristino sovrascrive il foglio attuale. Non può essere annullato.",
+    "empty": "Nessuna istantanea. Le istantanee vengono create automaticamente prima di ogni aumento di livello.",
+    "emptyEyebrow": "Ancora nessuna cronologia",
+    "emptyTitle": "Niente da ripristinare",
+    "restore": "Ripristina",
+    "confirmRestore": "Conferma Ripristino",
+    "restoring": "Ripristino…",
+    "deleting": "Eliminazione…",
+    "reasonLevelUp": "Aumento di Livello",
+    "reasonManual": "Manuale",
+    "loadError": "Impossibile caricare le istantanee.",
+    "restoreError": "Impossibile ripristinare l'istantanea.",
+    "deleteError": "Impossibile eliminare l'istantanea.",
+    "button": "Cronologia",
+    "saving": "Salvataggio…",
+    "saveNow": "Salva istantanea",
+    "saveError": "Impossibile salvare l'istantanea."
+  }
+}

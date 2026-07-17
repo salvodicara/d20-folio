@@ -1,0 +1,21 @@
+{
+  "common": { "name": "Comune" },
+  "common-sign-language": { "name": "Linguaggio dei Segni Comune" },
+  "draconic": { "name": "Draconico" },
+  "dwarvish": { "name": "Nanico" },
+  "elvish": { "name": "Elfico" },
+  "giant": { "name": "Gigante" },
+  "gnomish": { "name": "Gnomesco" },
+  "goblin": { "name": "Goblin" },
+  "halfling": { "name": "Halfling" },
+  "orc": { "name": "Orchesco" },
+  "abyssal": { "name": "Abissale" },
+  "celestial": { "name": "Celestiale" },
+  "deep-speech": { "name": "Idioma Profondo" },
+  "druidic": { "name": "Druidico" },
+  "infernal": { "name": "Infernale" },
+  "primordial": { "name": "Primordiale" },
+  "sylvan": { "name": "Silvano" },
+  "thieves-cant": { "name": "Gergo dei Ladri" },
+  "undercommon": { "name": "Sottocomune" }
+}

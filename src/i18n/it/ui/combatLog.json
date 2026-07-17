@@ -1,0 +1,18 @@
+{
+  "combatLog": {
+    "actionUse": "Usato {{name}}",
+    "actionUseAttackOf": "Usato {{name}} (attacco {{n}} di {{total}})",
+    "hpDamage": "Subiti {{amount}} danni ({{current}}/{{max}} PF)",
+    "hpHeal": "Curati {{amount}} PF ({{current}}/{{max}} PF)",
+    "tempHpGain": "Ottenuti {{amount}} PF temporanei",
+    "conditionGain": "Ottenuta condizione {{condition}}",
+    "conditionLoss": "Persa condizione {{condition}}",
+    "concentrationStart": "Iniziata concentrazione su {{spell}}",
+    "deathSaveSuccess": "Tiro salvezza contro morte riuscito ({{successes}} ✓ / {{failures}} ✗)",
+    "deathSaveFailure": "Tiro salvezza contro morte fallito ({{successes}} ✓ / {{failures}} ✗)",
+    "shortRest": "Fatto un Riposo Breve",
+    "longRest": "Fatto un Riposo Lungo",
+    "riderUse": "{{rider}} speso su {{name}}",
+    "effectExpired": "{{name}} terminato (durata esaurita)"
+  }
+}

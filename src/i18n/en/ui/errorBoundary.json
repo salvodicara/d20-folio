@@ -1,0 +1,13 @@
+{
+  "errorBoundary": {
+    "eyebrow": "Error",
+    "title": "Something went wrong",
+    "message": "An unexpected error occurred. Your data is safe. Try reloading.",
+    "reload": "Reload app",
+    "retry": "Try again",
+    "details": "Error details",
+    "backHome": "Back to my characters",
+    "report": "Report this problem",
+    "sectionMessage": "This section couldn't be shown. The rest of the page is fine."
+  }
+}
