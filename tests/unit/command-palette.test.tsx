@@ -34,11 +34,11 @@ vi.mock("@/features/campaigns/campaign-io", () => ({
 vi.mock("@/features/roster/import-trigger", () => ({
   triggerCharacterImport: importTriggerMock,
 }));
-// The report action calls the shared after-paint launcher (which defers across
-// animation frames, then pulls in html2canvas); mock it so the palette test
-// stays pure + fast.
+// The report action opens the reporter through the retire-then-open hand-off
+// (openReport captures via html2canvas); mock it so the palette test stays
+// pure + fast.
 vi.mock("@/features/report/open-report", () => ({
-  openReportAfterPaint: openReportMock,
+  openReport: openReportMock,
 }));
 
 import { CommandPalette } from "@/app/shell/CommandPalette";
@@ -268,7 +268,7 @@ describe("CommandPalette — quick actions (OWN-25c)", () => {
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "segnala" } });
     const opt = screen.getByRole("option", { name: /report a bug or idea/i });
     fireEvent.click(opt);
-    // The run() hands off to the shared after-paint launcher.
+    // The run() hands off to the reporter through the retire-then-open seam.
     await waitFor(() => expect(openReportMock).toHaveBeenCalledTimes(1));
   });
 

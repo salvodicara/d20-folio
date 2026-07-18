@@ -11,6 +11,12 @@
  *
  * Runs under BOTH projects: `mobile` (Pixel 7, touch taps — the reported bug) and
  * `chromium` (desktop clicks — pins that the fix never regressed the working path).
+ *
+ * Note: the pre-fix race (navigation pushed while the Back-sentinel's back()
+ * traversal was in flight) fires only under frame contention (parallel-worker
+ * pressure coalescing the rAFs), so this spec is a PROBABILISTIC reproducer of
+ * the old bug; the deterministic pin on the seam contract lives in
+ * tests/unit/overlay-history.test.ts (retireTopOverlayThen).
  */
 
 import { test, expect, type Page } from "@playwright/test";

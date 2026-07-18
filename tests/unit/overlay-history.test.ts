@@ -127,6 +127,55 @@ describe("overlay-history", () => {
       expect(backSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("a NEW overlay raised from the callback pushes its sentinel strictly after the traversal — the landing pop can never consume it", () => {
+      // The close-then-OPEN member of the race class (palette → shortcuts sheet /
+      // bug reporter): a sheet raised while the palette's retire-back() is in
+      // flight pushes its sentinel just in time for the landing pop to eat it —
+      // hardware Back then exits the page instead of closing the sheet. Routed
+      // through the seam, the new sentinel exists only AFTER the pop landed.
+      const backSpy = vi.spyOn(window.history, "back").mockImplementation(() => {});
+      pushOverlayEntry(vi.fn()); // the palette's sentinel
+
+      const closeSheet = vi.fn();
+      const raiseSheet = vi.fn(() => pushOverlayEntry(closeSheet));
+      retireTopOverlayThen(raiseSheet);
+      expect(raiseSheet).not.toHaveBeenCalled(); // traversal in flight — not yet
+
+      fireBack(); // the retirement traversal lands…
+      expect(raiseSheet).toHaveBeenCalledTimes(1); // …and only now the sheet opens
+      // Its sentinel survived the landing pop: the NEXT Back closes the sheet.
+      fireBack();
+      expect(closeSheet).toHaveBeenCalledTimes(1);
+      expect(backSpy).toHaveBeenCalledTimes(1); // only the retirement rewound
+    });
+
+    it("a remounting overlay (setup→cleanup→setup) re-pushes its sentinel only after the cleanup's back() lands", () => {
+      // The StrictMode / Offscreen / Fast-Refresh signature: setup₁ pushes the
+      // sentinel, the immediate cleanup retires it (back() in flight), and
+      // setup₂'s re-push used to land INSIDE that traversal's path — the landing
+      // pop consumed the fresh sentinel, so hardware Back exited the page
+      // instead of closing the overlay. The serialization invariant queues the
+      // re-push behind the traversal.
+      const backSpy = vi.spyOn(window.history, "back").mockImplementation(() => {});
+      const pushSpy = vi.spyOn(window.history, "pushState");
+
+      const cleanup1 = pushOverlayEntry(vi.fn()); // setup₁ — pushes immediately
+      expect(pushSpy).toHaveBeenCalledTimes(1);
+      cleanup1(); // StrictMode cleanup — retirement traversal now in flight
+      expect(backSpy).toHaveBeenCalledTimes(1);
+
+      const close2 = vi.fn();
+      pushOverlayEntry(close2); // setup₂ — its push must WAIT for the landing
+      expect(pushSpy).toHaveBeenCalledTimes(1); // not yet — queued
+
+      fireBack(); // the retirement traversal lands…
+      expect(pushSpy).toHaveBeenCalledTimes(2); // …and only now the sentinel exists
+
+      fireBack(); // a USER Back now closes the remounted overlay — page intact
+      expect(close2).toHaveBeenCalledTimes(1);
+      expect(backSpy).toHaveBeenCalledTimes(1); // no stray extra rewind
+    });
+
     it("runs the callback synchronously when there is no sentinel to retire", () => {
       const backSpy = vi.spyOn(window.history, "back").mockImplementation(() => {});
       const then = vi.fn();

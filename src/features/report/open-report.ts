@@ -46,11 +46,18 @@ export async function openReport(prefill?: ReportPrefill): Promise<void> {
 }
 
 /**
- * Open the reporter AFTER the launching chrome has painted away. Entry points
- * that live inside dismissable chrome (the command palette, the account menu)
- * defer across two animation frames so html2canvas photographs the SCREEN, not
- * the palette/menu mid-unmount. One shared deferral so every launcher behaves
- * identically.
+ * Open the reporter AFTER the launching chrome has painted away. For entry
+ * points inside SENTINEL-FREE dismissable chrome (the account menu — a Radix
+ * dropdown with no overlay-history entry and no html2canvas-ignore mark): defer
+ * across two animation frames so html2canvas photographs the SCREEN, not the
+ * menu mid-unmount.
+ *
+ * NOT for chrome that carries a Back sentinel (the command palette): raising the
+ * reporter while the palette's sentinel-retiring `history.back()` is still in
+ * flight lets the landing traversal consume the reporter's OWN fresh sentinel —
+ * those launchers go through `retireTopOverlayThen(() => void openReport())`
+ * instead (and the palette needs no paint deferral: its overlay is
+ * `excludeFromCapture`).
  */
 export function openReportAfterPaint(prefill?: ReportPrefill): void {
   requestAnimationFrame(() => {

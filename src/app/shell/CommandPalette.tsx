@@ -97,7 +97,7 @@ import type { PickerCtx } from "@/features/compendium/picker";
 import { listSharedCampaigns } from "@/features/campaigns/campaign-io";
 import { PERSONAL_CAMPAIGN_ID } from "@/app/_data/personal-campaign";
 import { triggerCharacterImport } from "@/features/roster/import-trigger";
-import { openReportAfterPaint } from "@/features/report/open-report";
+import { openReport } from "@/features/report/open-report";
 import type { CampaignDoc } from "@/types/campaign";
 
 export interface CommandPaletteProps {
@@ -213,13 +213,15 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   // activate, which closes it), so render stays pure (no per-frame storage read).
   const [recentKeys] = useState(getPaletteRecents);
 
-  // Open the shortcuts sheet AFTER the palette's overlay fully closes (two rAFs —
-  // the same after-close deferral navigation uses), so raising one overlay as
-  // another retires never races the overlay-history sentinels. The palette action
-  // reaches this via `activate()` (which already called `onClose`); the footer
-  // chip closes the palette itself first.
+  // Open the shortcuts sheet only once the palette's Back-sentinel retirement
+  // (`history.back()`) has actually LANDED — the shared race-free hand-off. A
+  // sheet raised while that traversal is still in flight pushes ITS sentinel just
+  // in time for the landing pop to consume it (symptom: hardware Back with the
+  // sheet open exits the page instead of closing it). The palette action reaches
+  // this via `activate()` (which already called `onClose`); the footer chip
+  // closes the palette itself first.
   const openShortcutsSheet = useCallback(() => {
-    requestAnimationFrame(() => requestAnimationFrame(() => setShortcutsOpen(true)));
+    retireTopOverlayThen(() => setShortcutsOpen(true));
   }, [setShortcutsOpen]);
 
   // ── Campaigns (the player's shared campaigns) ────────────────────────────────
@@ -386,10 +388,12 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       {
         key: "act:report",
         // Opens the global bug/feature reporter (OWN-37). `activate()` closes the
-        // palette first; the shared after-paint deferral lets the palette unmount
-        // before html2canvas photographs the SCREEN, then captures + flips the
-        // global `reportOpen` flag.
-        run: () => openReportAfterPaint(),
+        // palette first; the shared retire-then-open hand-off raises the reporter
+        // only once the palette's Back-sentinel traversal has landed (so the
+        // reporter's own sentinel can't be consumed by it). No paint deferral is
+        // needed: the palette overlay is `excludeFromCapture`, so html2canvas
+        // never photographs it, mid-unmount or not.
+        run: () => retireTopOverlayThen(() => void openReport()),
         label: t("palette.actionReport"),
         icon: Bug,
         terms: [
@@ -412,8 +416,8 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       },
       {
         key: "act:shortcuts",
-        // Opens the `?` keyboard-shortcuts sheet (shared uiStore seam). Deferred so
-        // it raises after the palette closes.
+        // Opens the `?` keyboard-shortcuts sheet (shared uiStore seam), raised
+        // through the retire-then-open hand-off (see `openShortcutsSheet`).
         run: openShortcutsSheet,
         // Reuse the sheet's own title ("Keyboard shortcuts") — one canonical label.
         label: t("shortcuts.title"),

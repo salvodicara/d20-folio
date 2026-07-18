@@ -13,6 +13,18 @@
  * Stacking is LIFO: each open overlay tier owns one entry, so Back peels tiers
  * one at a time. This is the SHARED primitive behind `useOverlayBack` — every
  * ModalShell / Dialog / lightbox inherits it; no overlay hand-rolls its own.
+ *
+ * THE SERIALIZATION INVARIANT: a sentinel-retiring `history.back()` is an ASYNC
+ * traversal, and any history mutation issued while it is in flight is destroyed
+ * when it lands — a `pushState` (a navigation, or a NEW overlay's sentinel) gets
+ * rewound right back off (the mobile palette-tap "did nothing" bug; hardware
+ * Back exiting the page instead of closing a freshly raised sheet — including
+ * via StrictMode's setup→cleanup→setup remount, whose second sentinel push used
+ * to land inside its own cleanup's in-flight back()). So EVERY history mutation
+ * this module performs — and every caller-supplied continuation — is queued
+ * behind the pending traversal and flushed on its popstate, the traversal's one
+ * deterministic completion signal. Nothing here ever touches history on a
+ * wall-clock guess.
  */
 
 interface OverlayEntry {
@@ -22,18 +34,35 @@ interface OverlayEntry {
 
 let stack: OverlayEntry[] = [];
 let nextId = 1;
-/** True while WE call `history.back()` to retire a sentinel — swallow that pop. */
-let programmaticPop = false;
-/** Runs when the pending programmatic retirement's popstate lands (see below). */
-let pendingRetireThen: (() => void) | null = null;
+/** True while OUR sentinel-retiring `history.back()` traversal is in flight. */
+let retireInFlight = false;
+/** Ops serialized behind the in-flight traversal, flushed on its popstate. */
+let afterRetire: (() => void)[] = [];
 let listening = false;
 
+/** Run `op` now — or, if a retirement traversal is in flight, once it lands. */
+function runAfterRetire(op: () => void): void {
+  if (retireInFlight) afterRetire.push(op);
+  else op();
+}
+
+/**
+ * Run the queued ops in order — stopping if one of them starts a NEW traversal
+ * (`retireInFlight` flips back on); its own popstate resumes the flush.
+ */
+function flushAfterRetire(): void {
+  while (!retireInFlight) {
+    const op = afterRetire.shift();
+    if (op === undefined) break;
+    op();
+  }
+}
+
 function handlePop(): void {
-  if (programmaticPop) {
-    programmaticPop = false;
-    const then = pendingRetireThen;
-    pendingRetireThen = null;
-    then?.();
+  if (retireInFlight) {
+    // OUR traversal landed — swallow the pop and flush the ops queued behind it.
+    retireInFlight = false;
+    flushAfterRetire();
     return;
   }
   // A user Back consumed the top sentinel → close the topmost overlay.
@@ -56,52 +85,77 @@ export function pushOverlayEntry(close: () => void): () => void {
   ensureListening();
   const id = nextId++;
   stack.push({ id, close });
-  const href = window.location.href;
-  // Clone the live state so RR's key/idx/usr survive — same location, no re-render.
-  window.history.pushState({ ...window.history.state, folioOverlay: id }, "");
+  let pushed = false;
+  let cancelled = false;
+  let href = "";
+  // The sentinel push is serialized behind any in-flight retirement (invariant
+  // above): a push landing inside that traversal's path would be consumed when
+  // it lands — the StrictMode remount signature (setup₂'s push racing cleanup₁'s
+  // back()), after which hardware Back exits the page instead of closing.
+  runAfterRetire(() => {
+    if (cancelled) return; // unmounted before the traversal landed — never existed
+    href = window.location.href;
+    // Clone the live state so RR's key/idx/usr survive — same location, no re-render.
+    window.history.pushState({ ...window.history.state, folioOverlay: id }, "");
+    pushed = true;
+  });
   return () => {
     const idx = stack.findIndex((e) => e.id === id);
     if (idx === -1) return; // already retired by a Back press — nothing to undo
     stack.splice(idx, 1);
-    // Only retire our sentinel if we're STILL on the page that pushed it. If the
-    // URL changed, a real navigation buried the sentinel — a `back()` here would
-    // undo that navigation, so leave the (harmless, same-key) entry in place.
-    if (window.location.href !== href) return;
-    // ROBUSTNESS: only rewind if the LIVE history entry is actually THIS cleanup's
-    // sentinel. A setup→cleanup→setup remount (React StrictMode / Offscreen / Fast
-    // Refresh) or a raced double-retire can leave the browser sitting on a DIFFERENT
-    // entry than the one this cleanup means to retire — same URL, so the href guard
-    // above passes. A blind `history.back()` then rewinds a REAL page entry and
-    // navigates the user off the surface (the dialog-cancel "bounce off the sheet").
-    // The sentinel stamps its `folioOverlay` id into `history.state`; if the current
-    // entry doesn't carry OUR id, we are not on our sentinel, so no-op instead of
-    // overshooting. Failing toward "don't traverse" is always the safe direction —
-    // a stale same-URL sentinel is harmless; a stray navigation is the bug.
-    const live = window.history.state as { folioOverlay?: number } | null;
-    if (live?.folioOverlay !== id) return;
-    programmaticPop = true;
-    window.history.back();
+    if (!pushed) {
+      // The sentinel never reached the history (its push is still queued behind
+      // an in-flight traversal) — cancel the queued push; nothing to rewind.
+      cancelled = true;
+      return;
+    }
+    // The retire itself also serializes behind any in-flight traversal, and its
+    // guards re-check against the LIVE history at execution time:
+    runAfterRetire(() => {
+      // Only retire our sentinel if we're STILL on the page that pushed it. If
+      // the URL changed, a real navigation buried the sentinel — a `back()` here
+      // would undo that navigation, so leave the (harmless, same-key) entry.
+      if (window.location.href !== href) return;
+      // ROBUSTNESS: only rewind if the LIVE history entry is actually THIS
+      // cleanup's sentinel. A remount (React StrictMode / Offscreen / Fast
+      // Refresh) or a raced double-retire can leave the browser sitting on a
+      // DIFFERENT entry than the one this cleanup means to retire — same URL, so
+      // the href guard above passes. A blind `history.back()` then rewinds a
+      // REAL page entry and navigates the user off the surface (the
+      // dialog-cancel "bounce off the sheet"). The sentinel stamps its
+      // `folioOverlay` id into `history.state`; if the current entry doesn't
+      // carry OUR id, we are not on our sentinel, so no-op instead of
+      // overshooting. Failing toward "don't traverse" is always the safe
+      // direction — a stale same-URL sentinel is harmless; a stray navigation is
+      // the bug.
+      const live = window.history.state as { folioOverlay?: number } | null;
+      if (live?.folioOverlay !== id) return;
+      retireInFlight = true;
+      window.history.back();
+    });
   };
 }
 
 /**
- * Retire the TOPMOST overlay's sentinel NOW and run `then` once the `history.back()`
- * traversal has actually LANDED (its popstate) — the race-free way to navigate right
- * after closing an overlay.
+ * Retire the TOPMOST overlay's sentinel NOW and run `then` once the
+ * `history.back()` traversal has actually LANDED (its popstate) — the race-free
+ * way to navigate, or to raise ANOTHER overlay, right after closing one.
  *
- * `history.back()` is an async traversal: a `pushState` issued while it is still in
- * flight gets rewound when the traversal finally lands, silently undoing the
- * navigation (the mobile palette-tap bug — a wall-clock deferral like two rAFs
- * races it and LOSES under mobile frame timing). The popstate is the traversal's
- * one deterministic completion signal, so callers hand their navigation here
- * instead of guessing.
+ * `history.back()` is an async traversal: a `pushState` issued while it is still
+ * in flight gets rewound when the traversal finally lands — silently undoing a
+ * navigation (the mobile palette-tap bug: a wall-clock deferral like two rAFs
+ * races it and LOSES under mobile frame timing) or consuming a freshly raised
+ * overlay's own sentinel (hardware Back then exits the page instead of closing
+ * it). The popstate is the traversal's one deterministic completion signal, so
+ * callers hand their continuation here instead of guessing.
  *
  * The entry is removed from the stack immediately, so the overlay's own cleanup
  * (which runs later, on unmount) finds it already retired and no-ops. This does
  * NOT call the overlay's `close` — the caller drives its own close (it is the
  * overlay acting on itself). If there is no sentinel to retire — or the browser
- * is not sitting on it (already consumed by a user Back, or buried) — there is no
- * traversal to wait for and `then` runs synchronously.
+ * is not sitting on it (already consumed by a user Back, or buried) — there is
+ * no new traversal to wait for and `then` runs synchronously (or, behind an
+ * already-pending traversal, once that lands).
  */
 export function retireTopOverlayThen(then: () => void): void {
   const top = stack[stack.length - 1];
@@ -110,12 +164,12 @@ export function retireTopOverlayThen(then: () => void): void {
       ? null
       : (window.history.state as { folioOverlay?: number } | null);
   if (!top || live?.folioOverlay !== top.id) {
-    then();
+    runAfterRetire(then);
     return;
   }
   stack.pop();
-  programmaticPop = true;
-  pendingRetireThen = then;
+  retireInFlight = true;
+  afterRetire.push(then);
   window.history.back();
 }
 
@@ -123,6 +177,6 @@ export function retireTopOverlayThen(then: () => void): void {
 export function __resetOverlayHistory(): void {
   stack = [];
   nextId = 1;
-  programmaticPop = false;
-  pendingRetireThen = null;
+  retireInFlight = false;
+  afterRetire = [];
 }
