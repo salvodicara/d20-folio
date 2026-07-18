@@ -77,6 +77,7 @@ import {
 import { Dialog, DialogContent, DialogBody, SearchInput, Icon } from "@/components/ui";
 import { Kbd } from "@/components/ui/kbd";
 import { matchesSearch } from "@/lib/search";
+import { retireTopOverlayThen } from "@/lib/overlay-history";
 import { getPaletteRecents, recordPaletteRecent } from "./palette-recents";
 import { useCoarsePointer, isCoarsePointer } from "@/hooks/useCoarsePointer";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -593,19 +594,18 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
     if (hit.run) hit.run();
     else if (hit.to) {
       const to = hit.to;
-      // B21 — defer the navigation two animation frames (the same after-close
-      // deferral `openReportAfterPaint` uses below). `onClose()` above flips the
-      // Dialog's `open` prop to false; `useOverlayBack`'s effect cleanup (which
-      // retires the palette's overlay-history sentinel) only runs once React
-      // flushes that state update, and the sentinel's own `history.back()` is
-      // itself an async browser traversal. Navigating on the very next tick (as
-      // router navigation otherwise does on a microtask) wins that race, tripping
-      // overlay-history's "a real navigation buried the sentinel" bail-out and
-      // stranding a dead same-key Back entry. Two rAFs give the close + the
-      // sentinel's retirement time to fully settle before the route changes.
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => void navigate(to));
-      });
+      // B21 — retire the palette's overlay-history sentinel FIRST, and navigate
+      // only once its `history.back()` traversal has actually LANDED (the
+      // popstate — the traversal's one deterministic completion signal). A
+      // navigation pushed while that traversal is still in flight gets rewound
+      // when it lands, silently undoing the route change — the owner's mobile
+      // bug: tapping a result "did nothing" because two coalesced rAFs (the old
+      // wall-clock deferral) fired the navigate BEFORE the ~7ms traversal
+      // completed, so the fresh /compendium entry was popped right back off.
+      // `retireTopOverlayThen` also removes the entry from the overlay stack, so
+      // the Dialog cleanup (from `onClose()` above) no-ops instead of issuing a
+      // second back() — no dead same-key Back entry, no race, on every device.
+      retireTopOverlayThen(() => void navigate(to));
     }
   }
 

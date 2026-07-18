@@ -700,7 +700,15 @@ Two small seams give the lazy-route SPA native-app navigation (contract in `DESI
   being retired. Without that id guard, a conditionally-mounted modal's cancel/commit could
   `history.back()` off the sheet entirely (`/` → the index redirect → `/characters` — the
   dialog-bounce regression). The hook is wired into the ModalShell / Dialog / lightbox primitives
-  ONCE, so every consumer inherits it — never per-dialog. This composes with the wizards' `useBlocker` (it needs no blocker, sidestepping
+  ONCE, so every consumer inherits it — never per-dialog. **Close-then-navigate goes through
+  `retireTopOverlayThen(cb)`** (same module): the sentinel's silent `history.back()` is an ASYNC
+  traversal, so a `pushState` issued while it is in flight gets rewound when it lands — silently
+  undoing the navigation (the mobile palette-tap bug: a two-rAF wall-clock deferral fired the
+  navigate before the ~7ms traversal completed, so tapping a result "did nothing"; desktop's slower
+  rAF cadence usually won the same race). The primitive retires the top sentinel eagerly (the
+  overlay's own cleanup then no-ops) and runs the callback on the traversal's popstate — its one
+  deterministic completion signal — so a navigation right after closing an overlay (the command
+  palette's `activate`) can never race the rewind on any device. This composes with the wizards' `useBlocker` (it needs no blocker, sidestepping
   React Router's one-blocker-at-a-time limit). **Confirm-tier dialogs opt OUT** (`ModalShell
 backDismiss={false}`, set by `ConfirmDialog`): a store-driven confirm is a transient modal owned
   by a flow — and is frequently opened BY a `useBlocker` guard — so its sentinel-retirement

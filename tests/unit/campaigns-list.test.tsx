@@ -267,7 +267,11 @@ describe("CampaignsListPage", () => {
       // args: uid, code, displayName, photoURL (none here).
       expect(joinMock).toHaveBeenCalledWith("u1", "ABCDEF234567", "Tav", null)
     );
-    expect(navigateSpy).toHaveBeenCalledWith("/campaigns/ABCDEF234567");
+    // Deferred until the modal's Back-sentinel back() traversal lands (the
+    // race-free close-then-navigate hand-off).
+    await waitFor(() =>
+      expect(navigateSpy).toHaveBeenCalledWith("/campaigns/ABCDEF234567")
+    );
   });
 
   it("joins from a pasted invite LINK by extracting the code", async () => {
@@ -283,7 +287,9 @@ describe("CampaignsListPage", () => {
     await waitFor(() =>
       expect(joinMock).toHaveBeenCalledWith("u1", "JOINME12", "Tav", null)
     );
-    expect(navigateSpy).toHaveBeenCalledWith("/campaigns/JOINME12");
+    // Deferred until the modal's Back-sentinel back() traversal lands (the
+    // race-free close-then-navigate hand-off).
+    await waitFor(() => expect(navigateSpy).toHaveBeenCalledWith("/campaigns/JOINME12"));
   });
 
   // ─── OWN-6: the shared 3-dots overflow menu on the campaign card ─────────────

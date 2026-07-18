@@ -16,6 +16,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { retireTopOverlayThen } from "@/lib/overlay-history";
 import { CopyButton } from "@/components/shared/CopyButton";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
@@ -78,7 +79,10 @@ export function CreateCampaignModal({
   function openHub(): void {
     const id = code;
     handleClose();
-    void navigate(`/campaigns/${id}`);
+    // Race-free close-then-navigate: retire the modal's Back sentinel and
+    // navigate only once its back() traversal LANDS — never a navigation the
+    // in-flight rewind undoes, and no dead same-key Back entry left behind.
+    retireTopOverlayThen(() => void navigate(`/campaigns/${id}`));
   }
 
   return (

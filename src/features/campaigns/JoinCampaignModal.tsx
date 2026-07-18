@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { retireTopOverlayThen } from "@/lib/overlay-history";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/authStore";
@@ -55,7 +56,10 @@ export function JoinCampaignModal({
     try {
       const id = await joinCampaign(uid, parsed, displayName, photoURL);
       handleClose();
-      void navigate(`/campaigns/${id}`);
+      // Race-free close-then-navigate: retire the modal's Back sentinel and
+      // navigate only once its back() traversal LANDS — never a navigation the
+      // in-flight rewind undoes, and no dead same-key Back entry left behind.
+      retireTopOverlayThen(() => void navigate(`/campaigns/${id}`));
     } catch (e) {
       setError(t("campaigns.joinError"));
       void e;

@@ -387,7 +387,7 @@ describe("CommandPalette — campaign index (OWN-28c)", () => {
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "keep" } });
     const hit = await screen.findByRole("option", { name: /curse of the keep/i });
     fireEvent.click(hit);
-    // Deferred two animation frames past the close (B21).
+    // Deferred until the sentinel's back() traversal lands (B21).
     await waitFor(() => expect(locationText()).toBe("/campaigns/camp-keep"));
   });
 });
@@ -399,7 +399,17 @@ describe("CommandPalette — overlay-history sentinel on select-then-navigate (B
   // of the file's usual `renderPalette` helper.
   it("retires the Back sentinel before navigating, leaving no dead history entry", async () => {
     __resetOverlayHistory();
-    window.history.replaceState({ key: "b21-base" }, "", "/characters");
+    // Drain any still-queued jsdom history traversals from EARLIER tests (every
+    // unmounted palette retires its sentinel with an async `back()`) so a stale
+    // traversal can't land mid-test and skew the length arithmetic below.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    // PUSH (not replace) the base entry: earlier tests can leave the current
+    // entry BELOW stale forward entries (a landed sentinel-retire back() with
+    // nothing pushed after), which `history.length` still counts — a push
+    // truncates them so the arithmetic below starts from a clean top-of-stack.
+    window.history.pushState({ key: "b21-base" }, "", "/characters");
     const baseLength = window.history.length;
 
     function Harness() {
@@ -422,8 +432,8 @@ describe("CommandPalette — overlay-history sentinel on select-then-navigate (B
     fireEvent.click(screen.getByRole("option", { name: /create a campaign/i }));
 
     await waitFor(() => expect(locationText()).toBe("/campaigns?new=1"));
-    // Let the two-rAF navigation deferral — and the sentinel's own async
-    // `history.back()` traversal — fully settle.
+    // Let the retire-then-navigate hand-off (the sentinel's async `history.back()`
+    // traversal, then the deferred navigation) fully settle.
     await act(async () => {
       await new Promise((r) => setTimeout(r, 50));
     });

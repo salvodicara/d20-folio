@@ -11,7 +11,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { pushOverlayEntry, __resetOverlayHistory } from "@/lib/overlay-history";
+import {
+  pushOverlayEntry,
+  retireTopOverlayThen,
+  __resetOverlayHistory,
+} from "@/lib/overlay-history";
 
 beforeEach(() => {
   __resetOverlayHistory();
@@ -92,5 +96,54 @@ describe("overlay-history", () => {
     // Retiring the LIVE sentinel B still rewinds exactly once — the normal close.
     cleanupB();
     expect(backSpy).toHaveBeenCalledTimes(1);
+  });
+
+  describe("retireTopOverlayThen — the race-free close-then-navigate hand-off", () => {
+    // The mobile palette-tap bug: `history.back()` is an ASYNC traversal, so a
+    // pushState issued while it is in flight gets rewound when it lands, silently
+    // undoing the navigation. The callback must therefore run only once the
+    // traversal's popstate has landed — never on a wall-clock guess.
+
+    it("runs the callback only after the back() traversal lands (its popstate)", () => {
+      // Mock back() so the traversal stays "in flight" until we fire the popstate.
+      const backSpy = vi.spyOn(window.history, "back").mockImplementation(() => {});
+      const close = vi.fn();
+      const cleanup = pushOverlayEntry(close);
+
+      const then = vi.fn();
+      retireTopOverlayThen(then);
+      expect(backSpy).toHaveBeenCalledTimes(1);
+      expect(then).not.toHaveBeenCalled(); // traversal still in flight — must wait
+
+      fireBack(); // the browser lands the programmatic traversal
+      expect(then).toHaveBeenCalledTimes(1);
+      // The programmatic pop is swallowed — it never closes the overlay itself
+      // (the caller drives its own close).
+      expect(close).not.toHaveBeenCalled();
+
+      // The entry was retired eagerly, so the overlay's own later cleanup no-ops:
+      // no second back() to rewind the navigation the callback just performed.
+      cleanup();
+      expect(backSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("runs the callback synchronously when there is no sentinel to retire", () => {
+      const backSpy = vi.spyOn(window.history, "back").mockImplementation(() => {});
+      const then = vi.fn();
+      retireTopOverlayThen(then);
+      expect(then).toHaveBeenCalledTimes(1);
+      expect(backSpy).not.toHaveBeenCalled();
+    });
+
+    it("runs the callback synchronously when the browser is not sitting on the top sentinel", () => {
+      const backSpy = vi.spyOn(window.history, "back").mockImplementation(() => {});
+      pushOverlayEntry(vi.fn());
+      // A user Back already consumed the sentinel's entry (overlay closing now).
+      window.history.replaceState({ key: "base" }, "", "/base");
+      const then = vi.fn();
+      retireTopOverlayThen(then);
+      expect(then).toHaveBeenCalledTimes(1);
+      expect(backSpy).not.toHaveBeenCalled(); // nothing of ours to rewind
+    });
   });
 });

@@ -24,11 +24,16 @@ let stack: OverlayEntry[] = [];
 let nextId = 1;
 /** True while WE call `history.back()` to retire a sentinel — swallow that pop. */
 let programmaticPop = false;
+/** Runs when the pending programmatic retirement's popstate lands (see below). */
+let pendingRetireThen: (() => void) | null = null;
 let listening = false;
 
 function handlePop(): void {
   if (programmaticPop) {
     programmaticPop = false;
+    const then = pendingRetireThen;
+    pendingRetireThen = null;
+    then?.();
     return;
   }
   // A user Back consumed the top sentinel → close the topmost overlay.
@@ -79,9 +84,45 @@ export function pushOverlayEntry(close: () => void): () => void {
   };
 }
 
+/**
+ * Retire the TOPMOST overlay's sentinel NOW and run `then` once the `history.back()`
+ * traversal has actually LANDED (its popstate) — the race-free way to navigate right
+ * after closing an overlay.
+ *
+ * `history.back()` is an async traversal: a `pushState` issued while it is still in
+ * flight gets rewound when the traversal finally lands, silently undoing the
+ * navigation (the mobile palette-tap bug — a wall-clock deferral like two rAFs
+ * races it and LOSES under mobile frame timing). The popstate is the traversal's
+ * one deterministic completion signal, so callers hand their navigation here
+ * instead of guessing.
+ *
+ * The entry is removed from the stack immediately, so the overlay's own cleanup
+ * (which runs later, on unmount) finds it already retired and no-ops. This does
+ * NOT call the overlay's `close` — the caller drives its own close (it is the
+ * overlay acting on itself). If there is no sentinel to retire — or the browser
+ * is not sitting on it (already consumed by a user Back, or buried) — there is no
+ * traversal to wait for and `then` runs synchronously.
+ */
+export function retireTopOverlayThen(then: () => void): void {
+  const top = stack[stack.length - 1];
+  const live =
+    typeof window === "undefined"
+      ? null
+      : (window.history.state as { folioOverlay?: number } | null);
+  if (!top || live?.folioOverlay !== top.id) {
+    then();
+    return;
+  }
+  stack.pop();
+  programmaticPop = true;
+  pendingRetireThen = then;
+  window.history.back();
+}
+
 /** Test-only reset of the module singleton. */
 export function __resetOverlayHistory(): void {
   stack = [];
   nextId = 1;
   programmaticPop = false;
+  pendingRetireThen = null;
 }
