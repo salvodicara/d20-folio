@@ -1271,6 +1271,21 @@ describe("firestore.rules — /bug_reports access (OWN-37)", () => {
     );
   });
 
+  it("rejects a client pre-setting the issue linkage (function-only write-back)", async () => {
+    // A forged issueNumber could alias an unrelated CLOSED issue and get the
+    // report wrongly purged by the inbox reconciliation — function-only fields.
+    const db = testEnv.authenticatedContext("member").firestore();
+    await assertFails(
+      setDoc(doc(db, "bug_reports", "ri"), reportDoc("member", { issueNumber: 1 }))
+    );
+    await assertFails(
+      setDoc(
+        doc(db, "bug_reports", "ru"),
+        reportDoc("member", { issueUrl: "https://github.com/x/y/issues/1" })
+      )
+    );
+  });
+
   it("only the admin can read reports", async () => {
     // Seed one via the privileged context (bypasses rules).
     await testEnv.withSecurityRulesDisabled(async (ctx) => {

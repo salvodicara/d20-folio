@@ -177,11 +177,15 @@ inbox therefore always mirrors the **open** public issues.
 
 The closed-issue lookup is an **unauthenticated** read of the public issues API
 (`src/lib/github-issue-state.ts` — `GET /repos/{GITHUB_REPO}/issues?state=closed`
-against the shared client repo constant, overridable via `VITE_GITHUB_REPO`, cached
-in-memory for the session); no GitHub token ever ships in the client bundle. It
-**degrades gracefully**: any failure (offline, rate-limit) resolves to "unknown"
-and the inbox shows every report behind a quiet note — nothing is hidden and
-**nothing is deleted** on a guess. Reports with NO issue number (`error` /
+against the shared client repo constant, overridable via `VITE_GITHUB_REPO`; pull
+requests, which the issues API interleaves, are filtered out); no GitHub token
+ever ships in the client bundle. A **success** is cached in-memory for the
+session; a failure is NOT cached, so the next load retries. It **degrades
+gracefully**: any failure (offline, rate-limit) resolves to "unknown" and the
+inbox shows every report behind a quiet note — nothing is hidden and **nothing is
+deleted** on a guess. And because only the Cloud Function may write the issue
+linkage (`firestore.rules` forbids a client pre-setting `issueNumber`/`issueUrl`
+at create), a forged issue number can never route a report into the purge. Reports with NO issue number (`error` /
 still-pending) are never purged and always show: they aren't on GitHub, so the
 inbox is the only place the admin can see them.
 

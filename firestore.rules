@@ -341,7 +341,11 @@ service cloud.firestore {
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
         && request.resource.data.screen is string
-        && request.resource.data.severity is string;
+        && request.resource.data.severity is string
+        // Only the Cloud Function writes the issue linkage — a client-forged
+        // issueNumber could point at an unrelated closed issue and get the
+        // report wrongly purged by the inbox reconciliation.
+        && !request.resource.data.keys().hasAny(["issueNumber", "issueUrl"]);
       allow update, delete: if isAdmin();
     }
 

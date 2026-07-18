@@ -1,9 +1,12 @@
 /**
  * getClosedIssueNumbers — the admin bug-inbox closure lookup.
  *
- * Pins: a successful fetch yields the set of closed issue numbers; a non-OK response
- * OR a thrown fetch resolves to `null` (unknown → caller shows all); the result is
- * cached for the session (one network round-trip regardless of callers).
+ * Pins: a successful fetch yields the set of closed issue numbers (pull requests
+ * excluded — the issues API interleaves them); a non-OK response OR a thrown fetch
+ * resolves to `null` (unknown → caller shows all); a SUCCESS is cached for the
+ * session (one network round-trip regardless of callers) but a FAILURE is not —
+ * the next call refetches, so a transient outage never disables reconciliation
+ * for the whole SPA session.
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
@@ -69,5 +72,36 @@ describe("getClosedIssueNumbers", () => {
     const b = await getClosedIssueNumbers();
     expect(a).toBe(b); // same cached set instance
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does NOT cache a failure — the next call refetches (and can succeed)", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue(page([7]));
+    vi.stubGlobal("fetch", fetchMock);
+    // Transient failure → null…
+    expect(await getClosedIssueNumbers()).toBeNull();
+    // …but NOT memoized: the next call retries and gets the real answer.
+    const second = await getClosedIssueNumbers();
+    expect(second?.has(7)).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // The success IS memoized from then on.
+    await getClosedIssueNumbers();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("excludes pull requests from the closed set (the issues API interleaves them)", async () => {
+    const body = [{ number: 3 }, { number: 4, pull_request: { url: "…" } }];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(body),
+      })
+    );
+    const closed = await getClosedIssueNumbers();
+    expect(closed?.has(3)).toBe(true);
+    expect(closed?.has(4)).toBe(false); // a PR, not an issue
   });
 });
