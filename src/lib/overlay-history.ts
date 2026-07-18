@@ -51,10 +51,21 @@ function runAfterRetire(op: () => void): void {
  * (`retireInFlight` flips back on); its own popstate resumes the flush.
  */
 function flushAfterRetire(): void {
-  while (!retireInFlight) {
-    const op = afterRetire.shift();
-    if (op === undefined) break;
-    op();
+  try {
+    while (!retireInFlight) {
+      const op = afterRetire.shift();
+      if (op === undefined) break;
+      op();
+    }
+  } finally {
+    // A THROWING op (a Safari pushState rate-limit SecurityError, a throwing
+    // caller continuation) must not strand the remainder of the queue to
+    // replay on a later, UNRELATED traversal. Unless a new traversal now owns
+    // the remainder (its popstate resumes the flush), drop it: a dropped
+    // sentinel push is harmless (the overlay's cleanup sees `pushed === false`
+    // and no-ops), whereas a stale op firing under a different traversal is
+    // the bug.
+    if (!retireInFlight) afterRetire.length = 0;
   }
 }
 

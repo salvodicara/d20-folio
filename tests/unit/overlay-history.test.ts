@@ -176,6 +176,38 @@ describe("overlay-history", () => {
       expect(backSpy).toHaveBeenCalledTimes(1); // no stray extra rewind
     });
 
+    it("cancels a queued sentinel push when its overlay unmounts before the traversal lands — the sibling is untouched", () => {
+      // The cancel path: an overlay whose sentinel push is still queued behind
+      // an in-flight retirement unmounts again before it lands. Its cleanup
+      // must cancel the queued push (the sentinel never existed — nothing to
+      // push, nothing to rewind), and cancelling one queued overlay must never
+      // touch a sibling queued behind the same traversal.
+      const backSpy = vi.spyOn(window.history, "back").mockImplementation(() => {});
+      const pushSpy = vi.spyOn(window.history, "pushState");
+
+      const cleanupA = pushOverlayEntry(vi.fn()); // pushes immediately
+      expect(pushSpy).toHaveBeenCalledTimes(1);
+      cleanupA(); // retirement traversal now in flight
+      expect(backSpy).toHaveBeenCalledTimes(1);
+
+      const closeB = vi.fn();
+      const cleanupB = pushOverlayEntry(closeB); // queued behind the traversal
+      const closeC = vi.fn();
+      pushOverlayEntry(closeC); // a sibling, queued behind B
+
+      cleanupB(); // B unmounts BEFORE the traversal lands → cancel its push
+      expect(pushSpy).toHaveBeenCalledTimes(1); // no history op for B…
+      expect(backSpy).toHaveBeenCalledTimes(1); // …and nothing to rewind
+
+      fireBack(); // the traversal lands — ONLY C's push flushes (B's cancelled)
+      expect(pushSpy).toHaveBeenCalledTimes(2);
+
+      fireBack(); // a user Back closes C; the cancelled B is never touched
+      expect(closeC).toHaveBeenCalledTimes(1);
+      expect(closeB).not.toHaveBeenCalled();
+      expect(backSpy).toHaveBeenCalledTimes(1);
+    });
+
     it("runs the callback synchronously when there is no sentinel to retire", () => {
       const backSpy = vi.spyOn(window.history, "back").mockImplementation(() => {});
       const then = vi.fn();
