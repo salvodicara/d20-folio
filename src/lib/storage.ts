@@ -236,6 +236,22 @@ export async function deletePortrait(uid: string, charId: string): Promise<void>
 }
 
 /**
+ * Delete a bug-report screenshot (`bug-reports/{uid}/{id}.png`) from Storage —
+ * the Storage half of the admin inbox's report purge (`purgeBugReports`).
+ * Admin-only per `storage.rules`. Ignores "object not found" so a report that
+ * never had a screenshot (or a retried purge) is a safe no-op.
+ */
+export async function deleteBugReportScreenshot(path: string): Promise<void> {
+  if (DEV_BYPASS_AUTH) return; // no real object to delete in bypass
+  try {
+    await deleteObject(ref(storage, path));
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code;
+    if (code !== "storage/object-not-found") throw err;
+  }
+}
+
+/**
  * N4 — upload a campaign banner to `campaigns/{campaignId}/banner.jpeg`, overwriting
  * any existing one (no orphans). Validates size; returns the download URL. The
  * campaign id is an unguessable invite code, so the path is the shared secret any

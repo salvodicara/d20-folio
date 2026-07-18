@@ -68,7 +68,8 @@ export interface BugReportDoc extends ReportForm {
   debugContext: DebugContext;
   /** Storage path of the attached screenshot, once uploaded (admin reference). */
   screenshotPath?: string;
-  /** Firebase download URL of the screenshot — what the function embeds in the issue. */
+  /** Firebase download URL of the screenshot — rendered in the admin inbox ONLY
+   *  (the privacy strip keeps it off the public issue). */
   screenshotUrl?: string;
   /** Written back by the function after the GitHub issue is created. */
   issueNumber?: number;

@@ -42,7 +42,7 @@ import { FREE_TIER_LIMITS } from "@/lib/limits";
 import { sanitizeSession } from "@/lib/sanitize-session";
 import { sanitizeCharacter } from "@/lib/sanitize-character";
 import { cacheToRosterDoc, type RosterCharacterDoc } from "@/lib/character-cache";
-import { deletePortrait } from "@/lib/storage";
+import { deletePortrait, deleteBugReportScreenshot } from "@/lib/storage";
 import { stripUndefined } from "@/lib/strip-undefined";
 import { clearLogFromIDB } from "@/lib/log-persistence";
 import { omitCombatTrio } from "@/lib/combat-state";
@@ -811,14 +811,28 @@ export async function deleteUserAccount(
   await callable({ targetUid, targetEmail });
 }
 
-/** One row in the admin BUG INBOX — the slim fields the console surfaces. */
+/**
+ * One row in the admin BUG INBOX. Beyond the list line (title/badges/meta) it
+ * carries the PRIVATE remainder the public issue deliberately omits — the
+ * description, reporter identity, debug context, and screenshot — which the
+ * inbox's expandable detail renders (admin-only; the privacy strip keeps all of
+ * it off GitHub, so this is the only place the admin can see it).
+ */
 export interface AdminBugReport {
   id: string;
   type: string;
   title: string;
+  description: string;
   status: "new" | "opened" | "error";
   severity: string;
   screen: string;
+  reporterUid: string;
+  locale: string;
+  /** Sanitized client snapshot (url/pathname, appVersion, userAgent, recentErrors…). */
+  debugContext: Record<string, unknown> | null;
+  screenshotUrl: string | null;
+  /** Storage path of the screenshot — what the purge cascade deletes. */
+  screenshotPath: string | null;
   issueUrl: string | null;
   issueNumber: number | null;
   createdAt: Date | null;
@@ -848,16 +862,52 @@ export async function listBugReports(max = 50): Promise<AdminBugReport[]> {
     const status =
       data.status === "opened" ? "opened" : data.status === "error" ? "error" : "new";
     const rawType = String(data.type ?? "other");
+    const debugContext: unknown = data.debugContext;
     return {
       id: d.id,
       type: KNOWN_TYPES.includes(rawType) ? rawType : "other",
       title: String(data.title ?? ""),
+      description: String(data.description ?? ""),
       status,
       severity: String(data.severity ?? "low"),
       screen: String(data.screen ?? ""),
+      reporterUid: String(data.reporterUid ?? ""),
+      locale: String(data.locale ?? "en"),
+      debugContext:
+        typeof debugContext === "object" && debugContext !== null
+          ? (debugContext as Record<string, unknown>)
+          : null,
+      screenshotUrl: typeof data.screenshotUrl === "string" ? data.screenshotUrl : null,
+      screenshotPath:
+        typeof data.screenshotPath === "string" ? data.screenshotPath : null,
       issueUrl: typeof data.issueUrl === "string" ? data.issueUrl : null,
       issueNumber: typeof data.issueNumber === "number" ? data.issueNumber : null,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : null,
     };
   });
+}
+
+/**
+ * Cascade-delete SPENT bug reports (admin only) — the IO half of the inbox's
+ * GitHub-mirror reconciliation (`reconcileBugReports` decides WHICH; this deletes).
+ * Per report: the Storage screenshot FIRST, then the Firestore doc — so a partial
+ * failure can never orphan a file with no doc pointing at it (a surviving doc means
+ * the next inbox load retries; the whole cascade is idempotent by construction).
+ * A per-report failure logs and skips — it never blocks the rest of the batch.
+ */
+export async function purgeBugReports(
+  reports: ReadonlyArray<Pick<AdminBugReport, "id" | "screenshotPath">>
+): Promise<number> {
+  if (DEV_BYPASS_AUTH) return 0; // fixture inbox — nothing real to delete
+  let purged = 0;
+  for (const report of reports) {
+    try {
+      if (report.screenshotPath) await deleteBugReportScreenshot(report.screenshotPath);
+      await deleteDoc(doc(db, "bug_reports", report.id));
+      purged++;
+    } catch (err) {
+      console.warn("bug-report purge failed (retried on next load):", report.id, err);
+    }
+  }
+  return purged;
 }

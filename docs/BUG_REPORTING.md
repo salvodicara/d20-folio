@@ -158,25 +158,38 @@ Firestore doc for the admin inbox and is **never embedded in the public issue**.
   resolved via the cross-service `firestore.get()` (no hardcoded uid); pinned
   by `tests/rules/storage-rules.test.ts`.
 
-### Admin inbox — closed issues drop out
+### Admin inbox — mirrors the open issues (reconciliation)
 
-The report doc records the GitHub `issueNumber` when the function opens the issue, but
-nothing mirrors a later **closure** back into Firestore. So `/admin`'s bug inbox asks
-GitHub which issues are closed and **hides those reports** (owner ruling: a closed
-report doesn't render at all). It's an admin-only surface, so it uses an
-**unauthenticated** read of the public issues API (`src/lib/github-issue-state.ts` —
-`GET /repos/{GITHUB_REPO}/issues?state=closed` against the shared client repo
-constant, overridable via `VITE_GITHUB_REPO`, cached in-memory for the session); no
-GitHub token ever ships in the client bundle. It
-**degrades gracefully**: any failure (offline, rate-limit) resolves to "unknown" and
-the inbox shows every report behind a quiet note rather than hiding what it can't
-verify. Stranded `error` reports (no issue number) always show.
+The full report lifecycle: **report → public issue → issue closed → auto-purge on
+the next admin visit.** GitHub is the durable archive of every filed report; the
+Firestore doc only exists to trigger the function and to carry the PRIVATE
+remainder (reporter identity, debug context, screenshot) while the issue is open.
 
-> ⚠️ The anonymous read only succeeds while the repo is **PUBLIC**. `salvodicara/d20-folio`
-> is currently **private**, so the lookup returns 404 → "unknown" → the inbox shows all
-> reports (including closed) behind the note. The filter activates automatically the
-> moment the repo is public; the only token-free alternative is a webhook Cloud Function
-> mirroring issue state into Firestore (heavier, not built).
+The report doc records the GitHub `issueNumber` when the function opens the issue,
+but nothing mirrors a later **closure** back into Firestore. So on each `/admin`
+load the inbox asks GitHub which issues are closed and **reconciles**
+(`src/lib/bug-report-reconcile.ts` decides, `purgeBugReports` in
+`src/lib/firestore.ts` deletes): every report whose issue is CLOSED is
+cascade-purged — the Storage screenshot **first**, then the Firestore doc, so a
+partial failure can never orphan a file with no doc pointing at it. A failed purge
+logs, skips, and simply retries on the next load (idempotent by construction). The
+inbox therefore always mirrors the **open** public issues.
+
+The closed-issue lookup is an **unauthenticated** read of the public issues API
+(`src/lib/github-issue-state.ts` — `GET /repos/{GITHUB_REPO}/issues?state=closed`
+against the shared client repo constant, overridable via `VITE_GITHUB_REPO`, cached
+in-memory for the session); no GitHub token ever ships in the client bundle. It
+**degrades gracefully**: any failure (offline, rate-limit) resolves to "unknown"
+and the inbox shows every report behind a quiet note — nothing is hidden and
+**nothing is deleted** on a guess. Reports with NO issue number (`error` /
+still-pending) are never purged and always show: they aren't on GitHub, so the
+inbox is the only place the admin can see them.
+
+Each inbox row expands in place into the **private detail** the privacy strip
+keeps off the public issue — the user-written description, the reporter's
+email/uid/locale, the sanitized debug context, and the screenshot rendered inline
+(loaded `crossOrigin`; a load failure shows an explicit "screenshot unavailable"
+state). This admin view is the ONLY surface where that remainder renders.
 
 ---
 

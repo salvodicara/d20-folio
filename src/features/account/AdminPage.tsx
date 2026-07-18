@@ -62,11 +62,13 @@ import {
   listUserCharacters,
   deleteUserAccount,
   listBugReports,
+  purgeBugReports,
   type AdminCampaignSummary,
   type AdminUserCharacter,
   type AdminBugReport,
 } from "@/lib/firestore";
 import { getClosedIssueNumbers } from "@/lib/github-issue-state";
+import { reconcileBugReports } from "@/lib/bug-report-reconcile";
 
 const LAST_VISIT_KEY = "admin_last_visit";
 
@@ -111,9 +113,10 @@ export function AdminPage() {
   const [charCounts, setCharCounts] = useState<Record<string, number> | null>(null);
   const [campaigns, setCampaigns] = useState<AdminCampaignSummary[] | null>(null);
   // The bug inbox — loaded alongside the roster (non-blocking). null until resolved.
-  // Reports whose GitHub issue is CLOSED are filtered out at load (owner ruling: a
-  // closed report doesn't render). `bugClosureUnknown` is true when GitHub couldn't
-  // be reached (offline / private repo) — the inbox then shows all with a quiet note.
+  // Reports whose GitHub issue is CLOSED are PURGED at load (screenshot + doc —
+  // GitHub keeps the archive), so the inbox always mirrors the open public issues.
+  // `bugClosureUnknown` is true when GitHub couldn't be reached (offline /
+  // rate-limit) — the inbox then shows all with a quiet note and deletes nothing.
   const [bugReports, setBugReports] = useState<AdminBugReport[] | null>(null);
   const [bugClosureUnknown, setBugClosureUnknown] = useState(false);
   // Character drill-down: which row is expanded + the per-user roster cache.
@@ -156,23 +159,19 @@ export function AdminPage() {
         listCampaignSummaries()
           .then((list) => alive && setCampaigns(list))
           .catch(() => alive && setCampaigns(null));
-        // Load the reports AND the closed-issue set together, then hide any report
-        // whose GitHub issue is closed. When GitHub is unreachable (`closed === null`)
-        // nothing is hidden and the inbox flags the note (graceful degrade).
+        // Load the reports AND the closed-issue set together, then RECONCILE:
+        // a report whose GitHub issue is CLOSED is spent (GitHub is the durable
+        // archive) — render the keepers and cascade-delete the rest (screenshot,
+        // then doc) fire-and-forget; a failed purge just retries on the next
+        // load. When GitHub is unreachable (`closed === null`) nothing is hidden
+        // or deleted and the inbox flags the note (graceful degrade).
         Promise.all([listBugReports(), getClosedIssueNumbers()])
           .then(([reports, closed]) => {
             if (!alive) return;
-            if (closed) {
-              setBugReports(
-                reports.filter(
-                  (r) => r.issueNumber === null || !closed.has(r.issueNumber)
-                )
-              );
-              setBugClosureUnknown(false);
-            } else {
-              setBugReports(reports);
-              setBugClosureUnknown(true);
-            }
+            const { keep, purge } = reconcileBugReports(reports, closed);
+            setBugReports(keep);
+            setBugClosureUnknown(closed === null);
+            if (purge.length > 0) void purgeBugReports(purge);
           })
           .catch(() => {
             if (!alive) return;
@@ -417,7 +416,7 @@ export function AdminPage() {
 
       {/* ── Bug inbox ─────────────────────────────────────────────────────── */}
       <Section title={t("admin.bugInbox")}>
-        <BugInbox reports={bugReports} closureUnknown={bugClosureUnknown} />
+        <BugInbox reports={bugReports} closureUnknown={bugClosureUnknown} users={users} />
       </Section>
     </main>
   );
@@ -837,24 +836,29 @@ function DeleteConfirm({
 }
 
 /**
- * The BUG INBOX — a read-only list of bug/feature reports. STRANDED `error` reports
+ * The BUG INBOX — the list of open bug/feature reports. STRANDED `error` reports
  * (the Cloud Function failed to open a GitHub issue → otherwise invisible) sort first
  * and wear a danger badge with a re-file hint; `opened` reports link their GitHub
- * issue (the canonical tracker). A minimal safety net, not a second tracker.
+ * issue (the canonical tracker). Each row expands in place (the console's shared
+ * drill-down recipe) into the PRIVATE remainder the public issue omits — the
+ * description, reporter, debug context, and the screenshot rendered inline.
  *
- * Reports whose GitHub issue is CLOSED are filtered out upstream (owner ruling: a
- * closed report doesn't render). When `closureUnknown` is set, GitHub couldn't confirm
- * issue state (offline / private repo), so the list shows everything behind a quiet
- * note rather than hiding blind.
+ * Reports whose GitHub issue is CLOSED are purged upstream (the reconciliation —
+ * GitHub keeps the archive). When `closureUnknown` is set, GitHub couldn't confirm
+ * issue state (offline / rate-limit), so the list shows everything behind a quiet
+ * note rather than hiding or deleting blind.
  */
 function BugInbox({
   reports,
   closureUnknown,
+  users,
 }: {
   reports: AdminBugReport[] | null;
   closureUnknown: boolean;
+  users: AdminUser[];
 }) {
   const { t } = useTranslation();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (reports === null) {
     return (
@@ -889,64 +893,194 @@ function BugInbox({
           <li key={r.id}>
             <InfoCard
               className={cn(
-                "flex flex-col gap-2 sm:flex-row sm:items-center",
+                "flex flex-col gap-2",
                 r.status === "error" && "border-danger/40 bg-danger/5"
               )}
             >
-              <Icon
-                as={Bug}
-                size="sm"
-                decorative
-                className={r.status === "error" ? "text-danger" : "text-text-muted"}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* User-authored titles WRAP (there is no expanded view to read a
-                    clipped one) — mid-string truncation hid the tail on mobile. */}
-                  <span className="break-words font-medium text-text-primary">
-                    {r.title}
-                  </span>
-                  <Badge size="sm">{t(`report.types.${r.type}`)}</Badge>
-                  {r.status === "error" ? (
-                    <Badge size="sm" color="var(--semantic-danger)">
-                      {t("admin.bugStatusError")}
-                    </Badge>
-                  ) : r.status === "opened" ? (
-                    <Badge size="sm" color="var(--semantic-success)">
-                      {t("admin.bugStatusOpened")}
-                    </Badge>
-                  ) : (
-                    <Badge size="sm" color="var(--semantic-info)">
-                      {t("admin.bugStatusNew")}
-                    </Badge>
-                  )}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Icon
+                  as={Bug}
+                  size="sm"
+                  decorative
+                  className={r.status === "error" ? "text-danger" : "text-text-muted"}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* User-authored titles WRAP — mid-string truncation hid the
+                      tail on mobile. */}
+                    <span className="break-words font-medium text-text-primary">
+                      {r.title}
+                    </span>
+                    <Badge size="sm">{t(`report.types.${r.type}`)}</Badge>
+                    {r.status === "error" ? (
+                      <Badge size="sm" color="var(--semantic-danger)">
+                        {t("admin.bugStatusError")}
+                      </Badge>
+                    ) : r.status === "opened" ? (
+                      <Badge size="sm" color="var(--semantic-success)">
+                        {t("admin.bugStatusOpened")}
+                      </Badge>
+                    ) : (
+                      <Badge size="sm" color="var(--semantic-info)">
+                        {t("admin.bugStatusNew")}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="mt-0.5 text-xs text-text-muted">
+                    {t("admin.bugMeta", {
+                      screen: r.screen,
+                      severity: r.severity,
+                      date: formatDate(r.createdAt),
+                    })}
+                    {r.status === "error" && (
+                      <span className="ml-1 text-danger">
+                        · {t("admin.bugErrorHint")}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="mt-0.5 text-xs text-text-muted">
-                  {t("admin.bugMeta", {
-                    screen: r.screen,
-                    severity: r.severity,
-                    date: formatDate(r.createdAt),
-                  })}
-                  {r.status === "error" && (
-                    <span className="ml-1 text-danger">· {t("admin.bugErrorHint")}</span>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  {r.issueUrl && r.issueNumber !== null && (
+                    <a
+                      href={r.issueUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="toolbar-chip shrink-0"
+                    >
+                      <Icon as={ExternalLink} size="sm" decorative />
+                      {t("admin.viewIssue", { number: r.issueNumber })}
+                    </a>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                    aria-expanded={expandedId === r.id}
+                    className="justify-center"
+                  >
+                    {t("admin.bugDetails")}
+                    <Icon
+                      as={ChevronDown}
+                      size="sm"
+                      decorative
+                      className={cn(
+                        "transition-transform",
+                        expandedId === r.id && "rotate-180"
+                      )}
+                    />
+                  </Button>
                 </div>
               </div>
-              {r.issueUrl && r.issueNumber !== null && (
-                <a
-                  href={r.issueUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="toolbar-chip shrink-0"
-                >
-                  <Icon as={ExternalLink} size="sm" decorative />
-                  {t("admin.viewIssue", { number: r.issueNumber })}
-                </a>
+              {expandedId === r.id && (
+                <BugReportDetail
+                  report={r}
+                  reporterEmail={
+                    users.find((u) => u.uid === r.reporterUid)?.email ?? null
+                  }
+                />
               )}
             </InfoCard>
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/** One debug-context value as display text (arrays line-break; objects JSON). */
+function formatDebugValue(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value.map((v) => formatDebugValue(v)).join("\n");
+  if (typeof value === "object" && value !== null) return JSON.stringify(value);
+  return String(value);
+}
+
+/**
+ * The expanded PRIVATE remainder of one report — what the privacy strip keeps off
+ * the public issue, so this admin view is the only place it renders: description,
+ * reporter identity, the sanitized debug context (raw technical key:value lines),
+ * and the screenshot inline. The image is loaded `crossOrigin` and a load failure
+ * shows an explicit "unavailable" state — never a silently blank box (the
+ * portrait-export opaque-cache lesson).
+ */
+function BugReportDetail({
+  report,
+  reporterEmail,
+}: {
+  report: AdminBugReport;
+  reporterEmail: string | null;
+}) {
+  const { t } = useTranslation();
+  const [shotFailed, setShotFailed] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-3 rounded-md border border-hairline bg-surface-2/40 p-3">
+      {/* Description — the user's own words (or an explicit empty state). */}
+      {report.description ? (
+        <p className="text-sm whitespace-pre-wrap break-words text-text-primary">
+          {report.description}
+        </p>
+      ) : (
+        <p className="text-sm text-text-muted">{t("admin.bugNoDescription")}</p>
+      )}
+
+      {/* Reporter identity — admin-only by design. */}
+      <div className="text-xs">
+        <span className="font-medium text-text-secondary">{t("admin.bugReporter")}:</span>{" "}
+        <span className="text-text-primary">{reporterEmail ?? report.reporterUid}</span>{" "}
+        <span className="font-mono text-text-muted">
+          · {report.reporterUid} · {report.locale}
+        </span>
+      </div>
+
+      {/* Sanitized debug context — raw technical key:value lines. */}
+      {report.debugContext && (
+        <div>
+          <p className="text-xs font-medium text-text-secondary">
+            {t("admin.bugContext")}
+          </p>
+          <div className="mt-1 flex flex-col gap-0.5 overflow-x-auto">
+            {Object.entries(report.debugContext).map(([key, value]) => (
+              <div
+                key={key}
+                className="font-mono text-xs whitespace-pre-wrap break-words"
+              >
+                <span className="text-text-muted">{key}:</span>{" "}
+                <span className="text-text-primary">{formatDebugValue(value)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Screenshot — inline, opening full-size in a new tab. */}
+      {report.screenshotUrl && (
+        <div>
+          <p className="text-xs font-medium text-text-secondary">
+            {t("admin.bugScreenshot")}
+          </p>
+          {shotFailed ? (
+            <p className="mt-1 text-xs text-danger">
+              {t("admin.bugScreenshotUnavailable")}
+            </p>
+          ) : (
+            <a
+              href={report.screenshotUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 inline-block"
+            >
+              <img
+                src={report.screenshotUrl}
+                crossOrigin="anonymous"
+                alt={t("admin.bugScreenshot")}
+                className="max-h-64 max-w-full rounded-md border border-hairline"
+                onError={() => setShotFailed(true)}
+              />
+            </a>
+          )}
+        </div>
+      )}
     </div>
   );
 }

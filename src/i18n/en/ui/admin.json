@@ -51,6 +51,12 @@
     "bugErrorHint": "GitHub issue creation failed; re-file manually.",
     "bugMeta": "{{screen}} · {{severity}} · {{date}}",
     "bugClosureUnknown": "Couldn't reach GitHub to check issue status. Showing all reports, including any already closed.",
-    "viewIssue": "Issue #{{number}}"
+    "viewIssue": "Issue #{{number}}",
+    "bugDetails": "Details",
+    "bugNoDescription": "No description provided.",
+    "bugReporter": "Reporter",
+    "bugContext": "Debug context",
+    "bugScreenshot": "Screenshot",
+    "bugScreenshotUnavailable": "The screenshot could not be loaded."
   }
 }

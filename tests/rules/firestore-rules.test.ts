@@ -1282,12 +1282,15 @@ describe("firestore.rules — /bug_reports access (OWN-37)", () => {
     await assertSucceeds(getDoc(doc(admin, "bug_reports", "r2")));
   });
 
-  it("a client cannot update or delete a report (only the function, via admin SDK)", async () => {
+  it("a plain client cannot update or delete a report; the ADMIN can delete (the inbox purge)", async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), "bug_reports", "r3"), reportDoc("member"));
     });
     const member = testEnv.authenticatedContext("member").firestore();
     await assertFails(updateDoc(doc(member, "bug_reports", "r3"), { status: "opened" }));
     await assertFails(deleteDoc(doc(member, "bug_reports", "r3")));
+    // The admin inbox reconciliation deletes a report once its issue closes.
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertSucceeds(deleteDoc(doc(admin, "bug_reports", "r3")));
   });
 });

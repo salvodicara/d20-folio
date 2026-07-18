@@ -329,8 +329,9 @@ service cloud.firestore {
     // Bug / feature reports (OWN-37). A signed-in, non-blocked user CREATES a
     // report shaped for the onCreate Cloud Function (which runs with the Admin
     // SDK and bypasses these rules to write the issueNumber back). Reports carry a
-    // debug context, so only the admin may READ them; no client may update/delete
-    // — only the function does (admin SDK), on write-back.
+    // debug context, so only the ADMIN may read/update/delete — the admin inbox
+    // reads them and purges a report once its GitHub issue closes (the
+    // reconciliation); no other client touches them.
     match /bug_reports/{id} {
       allow read:           if isAdmin();
       allow create:         if isNotBlocked()

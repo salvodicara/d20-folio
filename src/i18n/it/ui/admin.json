@@ -51,6 +51,12 @@
     "bugErrorHint": "Creazione della issue GitHub fallita; registrala manualmente.",
     "bugMeta": "{{screen}} · {{severity}} · {{date}}",
     "bugClosureUnknown": "Impossibile contattare GitHub per verificare lo stato delle issue. Mostro tutte le segnalazioni, comprese quelle già chiuse.",
-    "viewIssue": "Issue #{{number}}"
+    "viewIssue": "Issue #{{number}}",
+    "bugDetails": "Dettagli",
+    "bugNoDescription": "Nessuna descrizione fornita.",
+    "bugReporter": "Autore",
+    "bugContext": "Contesto di debug",
+    "bugScreenshot": "Screenshot",
+    "bugScreenshotUnavailable": "Impossibile caricare lo screenshot."
   }
 }

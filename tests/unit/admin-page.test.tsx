@@ -25,6 +25,7 @@ const {
   countCharactersPerUserMock,
   listCampaignSummariesMock,
   listBugReportsMock,
+  purgeBugReportsMock,
   getClosedIssueNumbersMock,
 } = vi.hoisted(() => ({
   navigateMock: vi.fn(),
@@ -41,6 +42,11 @@ const {
   listBugReportsMock: vi.fn<() => Promise<import("@/lib/firestore").AdminBugReport[]>>(
     () => Promise.resolve([])
   ),
+  purgeBugReportsMock: vi.fn<
+    (
+      reports: ReadonlyArray<{ id: string; screenshotPath: string | null }>
+    ) => Promise<number>
+  >(() => Promise.resolve(0)),
   getClosedIssueNumbersMock: vi.fn<() => Promise<ReadonlySet<number> | null>>(() =>
     Promise.resolve(new Set<number>())
   ),
@@ -57,6 +63,7 @@ vi.mock("@/lib/firestore", () => ({
   countCharactersPerUser: countCharactersPerUserMock,
   listCampaignSummaries: listCampaignSummariesMock,
   listBugReports: listBugReportsMock,
+  purgeBugReports: purgeBugReportsMock,
 }));
 vi.mock("@/lib/github-issue-state", () => ({
   getClosedIssueNumbers: getClosedIssueNumbersMock,
@@ -136,9 +143,19 @@ function seedReports(): import("@/lib/firestore").AdminBugReport[] {
       id: "r-open",
       type: "bug",
       title: "Open report",
+      description: "The tracker desyncs after resting.",
       status: "opened",
       severity: "high",
       screen: "sheet",
+      reporterUid: "u2",
+      locale: "en",
+      debugContext: {
+        pathname: "/characters/c1",
+        appVersion: "0.21.0",
+        recentErrors: ["TypeError: boom"],
+      },
+      screenshotUrl: "https://storage.example/shot.png",
+      screenshotPath: "bug-reports/u2/r-open.png",
       issueUrl: "https://github.com/x/y/issues/10",
       issueNumber: 10,
       createdAt: new Date("2024-06-03"),
@@ -147,9 +164,15 @@ function seedReports(): import("@/lib/firestore").AdminBugReport[] {
       id: "r-closed",
       type: "bug",
       title: "Closed report",
+      description: "",
       status: "opened",
       severity: "low",
       screen: "sheet",
+      reporterUid: "u2",
+      locale: "en",
+      debugContext: null,
+      screenshotUrl: null,
+      screenshotPath: "bug-reports/u2/r-closed.png",
       issueUrl: "https://github.com/x/y/issues/11",
       issueNumber: 11,
       createdAt: new Date("2024-06-02"),
@@ -158,9 +181,15 @@ function seedReports(): import("@/lib/firestore").AdminBugReport[] {
       id: "r-stranded",
       type: "feature",
       title: "Stranded report",
+      description: "",
       status: "error",
       severity: "medium",
       screen: "roster",
+      reporterUid: "u3",
+      locale: "it",
+      debugContext: null,
+      screenshotUrl: null,
+      screenshotPath: null,
       issueUrl: null,
       issueNumber: null,
       createdAt: new Date("2024-06-01"),
@@ -253,12 +282,13 @@ describe("AdminPage", () => {
   });
 });
 
-describe("AdminPage — bug inbox closes-out closed issues", () => {
+describe("AdminPage — bug inbox mirrors the open GitHub issues", () => {
   beforeEach(() => {
+    purgeBugReportsMock.mockReset().mockResolvedValue(1);
     listBugReportsMock.mockResolvedValue(seedReports());
   });
 
-  it("hides a report whose GitHub issue is CLOSED, keeps open + stranded ones", async () => {
+  it("hides a CLOSED-issue report and cascade-purges it; keeps open + stranded ones", async () => {
     // GitHub reports issue #11 as closed.
     getClosedIssueNumbersMock.mockResolvedValue(new Set<number>([11]));
     renderPage();
@@ -269,16 +299,47 @@ describe("AdminPage — bug inbox closes-out closed issues", () => {
     expect(screen.queryByText("Closed report")).not.toBeInTheDocument();
     // No "status unavailable" note when GitHub answered.
     expect(screen.queryByText(/showing all reports/i)).not.toBeInTheDocument();
+    // The spent report is purged — screenshot + doc — and ONLY that one.
+    await waitFor(() => expect(purgeBugReportsMock).toHaveBeenCalledTimes(1));
+    const purged = purgeBugReportsMock.mock.calls[0]?.[0] ?? [];
+    expect(purged.map((r) => r.id)).toEqual(["r-closed"]);
   });
 
-  it("when GitHub state is unavailable, shows ALL reports behind a quiet note", async () => {
-    // Offline / private repo → closure unknown.
+  it("when GitHub state is unavailable, shows ALL reports behind a quiet note and purges NOTHING", async () => {
+    // Offline / rate-limit → closure unknown.
     getClosedIssueNumbersMock.mockResolvedValue(null);
     renderPage();
     expect(await screen.findByText("Open report")).toBeInTheDocument();
-    // Nothing is hidden when closure can't be confirmed.
+    // Nothing is hidden or deleted when closure can't be confirmed.
     expect(screen.getByText("Closed report")).toBeInTheDocument();
     expect(screen.getByText("Stranded report")).toBeInTheDocument();
     expect(screen.getByText(/showing all reports/i)).toBeInTheDocument();
+    expect(purgeBugReportsMock).not.toHaveBeenCalled();
+  });
+
+  it("expands a row into the private detail: description, reporter, context, screenshot", async () => {
+    getClosedIssueNumbersMock.mockResolvedValue(new Set<number>([11]));
+    renderPage();
+    await screen.findByText("Open report");
+    // Nothing private renders until the row is expanded (progressive disclosure).
+    expect(screen.queryByText(/desyncs after resting/i)).not.toBeInTheDocument();
+
+    // Two rendered rows (open + stranded), each with a Details toggle; the rows
+    // sort stranded-first, so the OPEN report's toggle is the second one.
+    const [, openToggle] = screen.getAllByRole("button", { name: /details/i });
+    if (!openToggle) throw new Error("expected a Details toggle on the open report");
+    fireEvent.click(openToggle);
+    // Description + reporter identity (resolved to the user's email) + context.
+    expect(await screen.findByText(/desyncs after resting/i)).toBeInTheDocument();
+    // Bob's email appears in his user row AND (now) as the report's reporter line.
+    expect(screen.getAllByText("bob@example.com").length).toBeGreaterThan(1);
+    expect(screen.getByText(/TypeError: boom/)).toBeInTheDocument();
+    // The screenshot renders inline, CORS-enabled (the opaque-cache lesson).
+    const img = screen.getByRole("img", { name: /screenshot/i });
+    expect(img).toHaveAttribute("src", "https://storage.example/shot.png");
+    expect(img).toHaveAttribute("crossorigin", "anonymous");
+    // A failed image load surfaces the explicit unavailable state, never a blank.
+    fireEvent.error(img);
+    expect(screen.getByText(/could not be loaded/i)).toBeInTheDocument();
   });
 });

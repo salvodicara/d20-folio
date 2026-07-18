@@ -175,18 +175,33 @@ export interface DevBugReport {
   id: string;
   type: string;
   title: string;
+  description: string;
   status: "new" | "opened" | "error";
   severity: string;
   screen: string;
+  reporterUid: string;
+  locale: string;
+  debugContext: Record<string, unknown> | null;
+  screenshotUrl: string | null;
+  screenshotPath: string | null;
   issueUrl: string | null;
   issueNumber: number | null;
   createdAt: Date | null;
 }
 
 /**
+ * A dev-only "captured screenshot" — an SVG-on-gradient data URI, so the inbox's
+ * inline screenshot render is drivable offline (nothing reaches the network and
+ * the visual capture stays deterministic).
+ */
+const DEV_SCREENSHOT_URL =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 270'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232a2438'/%3E%3Cstop offset='1' stop-color='%234a3a6a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='480' height='270' fill='url(%23g)'/%3E%3Crect x='24' y='24' width='432' height='40' rx='6' fill='%23c9a227' opacity='0.35'/%3E%3Crect x='24' y='84' width='280' height='162' rx='6' fill='%23fff' opacity='0.12'/%3E%3Crect x='320' y='84' width='136' height='162' rx='6' fill='%23fff' opacity='0.08'/%3E%3C/svg%3E";
+
+/**
  * Dev-bypass bug inbox — one STRANDED error report (GitHub creation failed, the
- * case the inbox exists to surface), one opened (links its issue), one new. Fixed
- * dates keep the visual/a11y capture deterministic.
+ * case the inbox exists to surface), one opened (links its issue, carries a
+ * description + debug context + screenshot so the DETAIL expansion is drivable
+ * offline), one new. Fixed dates keep the visual/a11y capture deterministic.
  */
 export function devBugReports(): DevBugReport[] {
   return [
@@ -194,9 +209,16 @@ export function devBugReports(): DevBugReport[] {
       id: "rep-error",
       type: "bug",
       title: "Spell slot tracker desyncs after a long rest",
+      description:
+        "Took a long rest at the camp, but the level-2 slots stayed spent until I reloaded the page.",
       status: "error",
       severity: "high",
       screen: "character",
+      reporterUid: "user-garrick",
+      locale: "en",
+      debugContext: null,
+      screenshotUrl: null,
+      screenshotPath: null,
       issueUrl: null,
       issueNumber: null,
       createdAt: new Date("2026-06-06T10:15:00Z"),
@@ -205,9 +227,27 @@ export function devBugReports(): DevBugReport[] {
       id: "rep-opened",
       type: "feature",
       title: "Add a dice-formula tooltip on attack rolls",
+      description:
+        "It would help new players if hovering an attack bonus showed how the number is built (ability + proficiency + magic).",
       status: "opened",
       severity: "low",
       screen: "character",
+      reporterUid: "user-aria",
+      locale: "it",
+      debugContext: {
+        pathname: "/characters/mock-1",
+        appVersion: "0.21.0",
+        gitSha: "8cbd178d",
+        mode: "production",
+        userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X)",
+        viewport: { w: 390, h: 844 },
+        dpr: 3,
+        theme: "dark",
+        online: true,
+        recentErrors: ["TypeError: undefined is not an object (evaluating 'slots[2]')"],
+      },
+      screenshotUrl: DEV_SCREENSHOT_URL,
+      screenshotPath: "bug-reports/user-aria/rep-opened.png",
       issueUrl: "https://github.com/salvodicara/d20-folio/issues/42",
       issueNumber: 42,
       createdAt: new Date("2026-06-05T18:40:00Z"),
@@ -216,9 +256,15 @@ export function devBugReports(): DevBugReport[] {
       id: "rep-new",
       type: "visual",
       title: "Light-theme contrast on the campaign banner caption",
+      description: "",
       status: "new",
       severity: "medium",
       screen: "campaigns",
+      reporterUid: "user-senna",
+      locale: "en",
+      debugContext: null,
+      screenshotUrl: null,
+      screenshotPath: null,
       issueUrl: null,
       issueNumber: null,
       createdAt: new Date("2026-06-07T08:05:00Z"),
