@@ -1,11 +1,16 @@
 /**
- * Shared search matching — case- AND accent-insensitive, bilingual.
+ * Shared search matching — case- AND accent-insensitive, bilingual, tokenized.
  *
  * Every search box in the app filters bilingual SRD content, so a player typing
  * in one language should still find an entry named in the other (e.g. an IT
  * player searching "dash" finds "Scatto", and "furtivita" finds "Furtività").
- * Pass BOTH the localized and the English name as candidates and the query
- * matches if it is a substring of any of them, ignoring case and diacritics.
+ * Pass BOTH the localized and the English name as candidates; the candidates are
+ * joined into ONE normalized haystack and the query is split into whitespace
+ * tokens — the query matches iff EVERY token is a substring of that haystack,
+ * ignoring case and diacritics. Tokenizing makes matching order-independent and
+ * tolerant of interstitial words the query omits: "pozione guarigione" finds
+ * "Pozione di Guarigione" (the "di" simply isn't a query token, so it can't
+ * break the match), while partial tokens ("guar") still match.
  */
 
 const DIACRITICS = /[̀-ͯ]/g;
@@ -16,17 +21,24 @@ export function normalizeSearch(s: string): string {
 }
 
 /**
- * True if the trimmed `query` is a substring of any candidate (case- and
- * accent-insensitive). An empty query matches everything. `undefined`/`null`
- * candidates are skipped, so it is safe to spread optional names.
+ * True if EVERY whitespace token of `query` is a substring of the combined
+ * candidate corpus (case- and accent-insensitive). Candidates are normalized and
+ * joined into one haystack, so a query can spread its tokens across several names
+ * (localized + English + description). An empty/whitespace query matches
+ * everything. `undefined`/`null` candidates are skipped, so it is safe to spread
+ * optional names.
  */
 export function matchesSearch(
   query: string,
   ...candidates: Array<string | undefined | null>
 ): boolean {
-  const q = normalizeSearch(query.trim());
-  if (!q) return true;
-  return candidates.some((c) => c != null && normalizeSearch(c).includes(q));
+  const tokens = normalizeSearch(query).split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+  const haystack = candidates
+    .filter((c): c is string => c != null)
+    .map(normalizeSearch)
+    .join(" ");
+  return tokens.every((tok) => haystack.includes(tok));
 }
 
 /** Tier-2 (description) matches require at least this many query characters —

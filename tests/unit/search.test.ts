@@ -43,6 +43,75 @@ describe("matchesSearch", () => {
   });
 });
 
+describe("matchesSearch — tokenized (order-independent, interstitial-word tolerant)", () => {
+  // Each candidate corpus mirrors a real bilingual entry: [IT name, EN name, description?].
+  const POTION = ["Pozione di Guarigione", "Potion of Healing", "restores hit points"];
+
+  const CASES: Array<{
+    query: string;
+    candidates: Array<string | undefined | null>;
+    expected: boolean;
+    why: string;
+  }> = [
+    // Headline IT case: the interstitial "di" no longer breaks the contiguous substring.
+    {
+      query: "pozione guarigione",
+      candidates: POTION,
+      expected: true,
+      why: "IT tokens skip the interstitial 'di'",
+    },
+    {
+      query: "guarigione pozione",
+      candidates: POTION,
+      expected: true,
+      why: "token order is irrelevant",
+    },
+    {
+      query: "guar poz",
+      candidates: POTION,
+      expected: true,
+      why: "partial tokens still match (prefix of each word)",
+    },
+    // Accents: a diacritic in the query normalizes the same as one in the candidate.
+    {
+      query: "furtività vantaggio",
+      candidates: ["Vantaggio Furtività"],
+      expected: true,
+      why: "accents preserved on both sides",
+    },
+    // Tokens spread across name + EN name + description (candidates are joined into one haystack).
+    {
+      query: "pozione healing restores",
+      candidates: POTION,
+      expected: true,
+      why: "one token per candidate field, all present",
+    },
+    {
+      query: "pozione healing missing",
+      candidates: POTION,
+      expected: false,
+      why: "a token absent everywhere fails the AND",
+    },
+    { query: "", candidates: POTION, expected: true, why: "empty query matches all" },
+    {
+      query: "   ",
+      candidates: POTION,
+      expected: true,
+      why: "whitespace-only query matches all",
+    },
+    // EN parity of the headline case.
+    {
+      query: "healing potion",
+      candidates: POTION,
+      expected: true,
+      why: "EN tokens skip the interstitial 'of'",
+    },
+  ];
+  it.each(CASES)("$query → $expected ($why)", ({ query, candidates, expected }) => {
+    expect(matchesSearch(query, ...candidates)).toBe(expected);
+  });
+});
+
 describe("proseCorpus", () => {
   it("joins parts and flattens markdown emphasis into spaces (a phrase never breaks on a ** boundary)", () => {
     expect(proseCorpus("**Heavy Armor.** While wearing", "Mentre indossi")).toBe(
@@ -101,6 +170,18 @@ describe("rankedSearch — the two-tier wizard-picker filter (owner fb4)", () =>
     expect(rankedSearch("initiative", pool, nameOf, descOf).map((o) => o.id)).toEqual([
       "x",
     ]);
+  });
+
+  it("a multi-word query ranks a NAME hit above a DESCRIPTION-only hit (tokenized)", () => {
+    const pool: Opt[] = [
+      // both tokens land in the NAME (interstitial "di" ignored) → tier 1
+      { id: "p", name: "Pozione di Guarigione", desc: "recuperi punti ferita" },
+      // both tokens land only in the DESCRIPTION → tier 2, appended after every name hit
+      { id: "q", name: "Antidoto", desc: "una pozione per la guarigione" },
+    ];
+    expect(
+      rankedSearch("pozione guarigione", pool, nameOf, descOf).map((o) => o.id)
+    ).toEqual(["p", "q"]);
   });
 
   it("without a desc accessor it is exactly the tier-1 filter", () => {

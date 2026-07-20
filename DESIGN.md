@@ -1058,7 +1058,8 @@ campaign hub if it adopts tabbed IA — never re-roll a second tab look.
 - **Command palette ("Ask the Folio"):** a floating panel (`--bg-surface-2` + `--elev-floating`,
   `--z-overlay`, scrim) with a carved search field and keyboard-navigable result rows (hover/selected
   → `--bg-surface-3` + a left `--accent-primary` marker), section eyebrows, and `aria-current` on the
-  active route. Search is bilingual + accent-insensitive (`matchesSearch`), never raw `includes()`.
+  active route. Search is bilingual + accent-insensitive + token-based (`matchesSearch`), never raw
+  `includes()`.
 
 ### Glossary terms (`GlossaryTip`)
 
@@ -2298,8 +2299,11 @@ a11y gate after any token change.
 Before writing new CSS or a new component, check what existing primitives already solve it (`OptionGrid`,
 `InlineEditable`, `NumberStepper`, `InfoCard`, `SectionHeader`, `Button`, `IconButton`, `Input`,
 `Textarea`, `ModalHead`) and whether a sibling surface already uses the pattern. Search is bilingual +
-accent-insensitive via `matchesSearch` (pass both the localized label and `name.en`) — never roll your
-own search. Pickers reuse `OptionGrid` + picker parts (`PickerSearch`, `FilterChip`, `PickerRow`). One
+accent-insensitive + **token-based** via `matchesSearch` (pass both the localized label and `name.en`)
+— the query is split into whitespace tokens and every token must appear somewhere in the joined
+candidate corpus, so word order and interstitial words ("di"/"of") never break a match ("pozione
+guarigione" finds "Pozione di Guarigione"); never roll your own search. Pickers reuse `OptionGrid` +
+picker parts (`PickerSearch`, `FilterChip`, `PickerRow`). One
 mock, all edge cases: `src/lib/mock.ts → MOCK_CHARACTER` — extend it, never add a second mock.
 
 ### 15.7 Constrained Inputs (Golden Rule 20)

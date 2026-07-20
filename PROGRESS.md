@@ -101,6 +101,15 @@ roster, so a DM transfer/removal converges on the next request). **DEPLOY STEP:*
 2026-07-10 backfill already stamped live docs; the sweep clears the dead ACL residue). Contract:
 `docs/ARCHITECTURE.md` ("Combat-mutable state" → Security + the initiative-SSOT bullet).
 
+**Search matcher tokenized (rule 27 stability fix, 2026-07-21):** the ONE shared `matchesSearch`
+(`src/lib/search.ts`) no longer does a whole-query `includes()` — it splits the normalized query into
+whitespace tokens and matches iff EVERY token is a substring of the joined candidate corpus. Fixes
+the headline IT case ("pozione guarigione" now finds "Pozione di Guarigione" — the interstitial "di"
+can't break the match) and propagates app-wide through the single seam (roster · command palette ·
+every picker). Order-independent, interstitial-word-tolerant, still partial-token / case- /
+accent-insensitive / bilingual; `rankedSearch`'s two-tier name-over-description ranking and the
+`DESC_QUERY_MIN` gate are unchanged. Contract: `DESIGN.md` §15.6.
+
 **v0.18.0 released + DEPLOYED live (2026-07-07):** the release bundled the **Polymorph Phase 2 Beast
 catalogue** (the full CR 0–8 fill — 91 forms, +73 new, EN+IT), the **Fable dark-theme chrome refresh**
 (the glowing-grimoire login splash, the war-table campaign backdrop, and the engraved
