@@ -70,6 +70,42 @@ describe("combat-state — initiative conversion (cockpit string ↔ canonical n
   ])("initiativeToString(%j) → %j", (input, expected) => {
     expect(initiativeToString(input)).toBe(expected);
   });
+
+  // ── Candidate 3 freeze guard — the round-trip is a SETTLING projection ──────────
+  //
+  // The cockpit's `combatStore.initiative` is an arbitrary STRING; it persists to the
+  // `combat/state` subdoc as a NUMBER (`initiativeToNumber`) and echoes back as a
+  // normalized STRING (`initiativeToString`). `TurnEconomyProvider`'s reconcile loop
+  // (setInitiative → updateSession → the `[character]` hydrate effect →
+  // `syncCombatFromSession`, which sets the store again iff `store.initiative !==
+  // sessionInit`) terminates ONLY once the two sides compare equal. That termination is
+  // GUARANTEED iff the round-trip `f(s) = initiativeToString(initiativeToNumber(s))` is a
+  // PROJECTION — every OUTPUT is a fixed point of `f` — so the store settles after at
+  // most one Firestore echo and can NEVER oscillate forever (the total combat-tab freeze
+  // the divergence-never-settles path would cause). This pins idempotency across the edge
+  // values (blank, whitespace, zero, negative, decimal, leading-zero, exponent,
+  // non-numeric, non-finite, signed) so a future normalization change can't regress it.
+  const initiativeRoundTrip = (s: string): string =>
+    initiativeToString(initiativeToNumber(s));
+  it.each([
+    "",
+    "   ",
+    "0",
+    "12",
+    " 12 ",
+    "-3",
+    "12.5",
+    "007",
+    "1e3",
+    "abc",
+    "NaN",
+    "Infinity",
+    "+5",
+  ])("round-trip settles to a fixed point for %j (no reconcile oscillation)", (input) => {
+    const once = initiativeRoundTrip(input);
+    // A SECOND round-trip changes nothing — the reconcile `!==` guard can't re-fire.
+    expect(initiativeRoundTrip(once)).toBe(once);
+  });
 });
 
 describe("combat-state — session → CombatState projection", () => {
