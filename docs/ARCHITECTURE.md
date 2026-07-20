@@ -711,7 +711,14 @@ Two small seams give the lazy-route SPA native-app navigation (contract in `DESI
   then no-ops) and runs the callback on the traversal's popstate — its one deterministic completion
   signal — so whatever follows the close (the palette's `activate` navigation, its shortcuts-sheet
   and bug-reporter raises, the campaign create/join modals' hub navigation) can never race the
-  rewind on any device. This composes with the wizards' `useBlocker` (it needs no blocker, sidestepping
+  rewind on any device. Because that popstate is the ONLY signal that clears the in-flight flag, a
+  **self-healing watchdog** (`beginRetire`, ~1s — far beyond any real sub-frame traversal) guards the
+  one way it could be lost: a MISSED pop (a backgrounded/frozen tab, a browser that coalesces or drops
+  a same-document traversal) would otherwise strand the flag true forever, queuing every later overlay
+  op with nothing to ever flush it (the palette/Back freeze that only a refresh cleared). If the pop
+  never lands, the watchdog does exactly what the missed handler would — clears the flag and drains the
+  queue; the real pop cancels it, so the healthy path is byte-for-byte unchanged and never double-flushes.
+  This composes with the wizards' `useBlocker` (it needs no blocker, sidestepping
   React Router's one-blocker-at-a-time limit). **Confirm-tier dialogs opt OUT** (`ModalShell
 backDismiss={false}`, set by `ConfirmDialog`): a store-driven confirm is a transient modal owned
   by a flow — and is frequently opened BY a `useBlocker` guard — so its sentinel-retirement

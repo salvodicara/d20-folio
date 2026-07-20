@@ -40,6 +40,51 @@ let retireInFlight = false;
 let afterRetire: (() => void)[] = [];
 let listening = false;
 
+/**
+ * SELF-HEALING WATCHDOG — the pending fallback timer armed alongside `retireInFlight`.
+ *
+ * `retireInFlight` is cleared ONLY by the traversal's popstate (`handlePop`). If that
+ * popstate is ever MISSED — a backgrounded/frozen tab, a browser that coalesces or drops
+ * a same-document traversal — the flag would stick true forever and `runAfterRetire`
+ * would queue every later overlay op into `afterRetire` with nothing to ever flush it:
+ * the palette / Back deadlock only a page refresh cleared. This timer is the deterministic
+ * recovery: if it still finds `retireInFlight` true when it fires, it does EXACTLY what the
+ * missed `handlePop` would have — clears the flag and drains the queue. The real popstate
+ * cancels it (`handlePop` clears the ref), so the healthy path is byte-for-byte unchanged
+ * and there is never a double-flush. Tuned so a normal traversal (sub-frame) always wins.
+ */
+let retireWatchdog: ReturnType<typeof setTimeout> | null = null;
+/** Watchdog interval — an order of magnitude beyond any real traversal, so only a
+ *  genuinely dropped/coalesced popstate (never a merely slow one) ever trips it. */
+const RETIRE_WATCHDOG_MS = 1000;
+
+/** Cancel any pending watchdog (the popstate landed, or the singleton is resetting). */
+function cancelRetireWatchdog(): void {
+  if (retireWatchdog !== null) {
+    clearTimeout(retireWatchdog);
+    retireWatchdog = null;
+  }
+}
+
+/**
+ * Set `retireInFlight` and arm the self-healing watchdog — the ONE seam both
+ * traversal-starting sites route through, so a missed popstate can never strand the
+ * queue. Idempotent: a fresh call cancels the prior pending timer first (there is only
+ * ever one traversal in flight, so only one watchdog is ever pending).
+ */
+function beginRetire(): void {
+  retireInFlight = true;
+  if (typeof window === "undefined") return;
+  cancelRetireWatchdog();
+  retireWatchdog = setTimeout(() => {
+    retireWatchdog = null;
+    if (!retireInFlight) return; // a popstate already landed and drained — nothing to heal
+    // The traversal's popstate was missed — do exactly what `handlePop` would have.
+    retireInFlight = false;
+    flushAfterRetire();
+  }, RETIRE_WATCHDOG_MS);
+}
+
 /** Run `op` now — or, if a retirement traversal is in flight, once it lands. */
 function runAfterRetire(op: () => void): void {
   if (retireInFlight) afterRetire.push(op);
@@ -71,7 +116,9 @@ function flushAfterRetire(): void {
 
 function handlePop(): void {
   if (retireInFlight) {
-    // OUR traversal landed — swallow the pop and flush the ops queued behind it.
+    // OUR traversal landed — cancel the self-healing watchdog (the healthy path, so no
+    // double-flush), swallow the pop, and flush the ops queued behind it.
+    cancelRetireWatchdog();
     retireInFlight = false;
     flushAfterRetire();
     return;
@@ -141,7 +188,7 @@ export function pushOverlayEntry(close: () => void): () => void {
       // the bug.
       const live = window.history.state as { folioOverlay?: number } | null;
       if (live?.folioOverlay !== id) return;
-      retireInFlight = true;
+      beginRetire();
       window.history.back();
     });
   };
@@ -179,7 +226,7 @@ export function retireTopOverlayThen(then: () => void): void {
     return;
   }
   stack.pop();
-  retireInFlight = true;
+  beginRetire();
   afterRetire.push(then);
   window.history.back();
 }
@@ -190,4 +237,5 @@ export function __resetOverlayHistory(): void {
   nextId = 1;
   retireInFlight = false;
   afterRetire = [];
+  cancelRetireWatchdog();
 }

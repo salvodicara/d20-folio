@@ -21,7 +21,12 @@ beforeEach(() => {
   __resetOverlayHistory();
   window.history.replaceState({ key: "base" }, "", "/base");
 });
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  // Restore real timers even if a fake-timer test threw before its own restore, so a
+  // leaked fake clock never poisons the next test.
+  vi.useRealTimers();
+});
 
 /** Simulate the browser firing a Back. */
 function fireBack(): void {
@@ -225,6 +230,60 @@ describe("overlay-history", () => {
       retireTopOverlayThen(then);
       expect(then).toHaveBeenCalledTimes(1);
       expect(backSpy).not.toHaveBeenCalled(); // nothing of ours to rewind
+    });
+  });
+
+  describe("self-healing watchdog — a MISSED retirement popstate never deadlocks the queue", () => {
+    // The palette / Back freeze: `retireInFlight` is cleared ONLY by the traversal's
+    // popstate, so a MISSED pop (a backgrounded/frozen tab, a coalesced or dropped
+    // same-document traversal) leaves it stuck true forever — `runAfterRetire` then queues
+    // every later overlay op into `afterRetire` with nothing to ever flush it (refresh-only
+    // recovery). The watchdog is the deterministic self-heal: if the pop never arrives, it
+    // does exactly what the missed `handlePop` would have.
+
+    it("force-clears retireInFlight and flushes the queue when the popstate is missed", () => {
+      vi.useFakeTimers();
+      // back() is mocked → the traversal lands NO popstate (the frozen/coalesced tab).
+      vi.spyOn(window.history, "back").mockImplementation(() => {});
+      const pushSpy = vi.spyOn(window.history, "pushState");
+      pushOverlayEntry(vi.fn()); // a sentinel to retire (pushed synchronously)
+      pushSpy.mockClear();
+
+      const then = vi.fn();
+      retireTopOverlayThen(then); // arms retireInFlight + the watchdog; `then` queued behind it
+      expect(then).not.toHaveBeenCalled(); // traversal "in flight" — no popstate yet
+
+      // A LATER overlay op raised while the (missed) traversal is stuck is queued, its
+      // sentinel NOT yet pushed — the exact deadlock (afterRetire could never drain).
+      const close2 = vi.fn();
+      pushOverlayEntry(close2);
+      expect(pushSpy).not.toHaveBeenCalled(); // queued behind the stuck traversal
+
+      // The watchdog fires and heals exactly as the missed handlePop would have.
+      vi.advanceTimersByTime(1000);
+      expect(then).toHaveBeenCalledTimes(1); // the continuation ran
+      expect(pushSpy).toHaveBeenCalledTimes(1); // the queued sentinel push flushed
+
+      // retireInFlight is clear again: a fresh op runs IMMEDIATELY (not re-queued).
+      pushOverlayEntry(vi.fn());
+      expect(pushSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it("the real popstate cancels the watchdog — the healthy path never double-flushes", () => {
+      vi.useFakeTimers();
+      vi.spyOn(window.history, "back").mockImplementation(() => {});
+      pushOverlayEntry(vi.fn());
+
+      const then = vi.fn();
+      retireTopOverlayThen(then);
+
+      fireBack(); // the traversal's popstate lands within the normal window
+      expect(then).toHaveBeenCalledTimes(1); // flushed once by handlePop
+
+      // The popstate cancelled the pending watchdog, so advancing past its interval must
+      // NOT fire a second, spurious flush.
+      vi.advanceTimersByTime(2000);
+      expect(then).toHaveBeenCalledTimes(1); // still once — no double-flush
     });
   });
 });
