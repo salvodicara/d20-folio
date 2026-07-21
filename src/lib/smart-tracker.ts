@@ -420,6 +420,17 @@ export interface ActionSummary {
    */
   skillCheck?: { dc: number; skill: string };
   /**
+   * RA-13 — resolved Weapon-Mastery NUMBERS for this attack row (SRD "Mastery
+   * Properties"): Topple's save DC (8 + the attack ability modifier + PB — a
+   * Constitution save, per the mastery's glossary text) and Graze's on-miss
+   * damage (= the attack ability modifier, floored at 0 — damage is never
+   * negative). Emitted only when the row actually carries that mastery (its
+   * own owned mastery or a feature-granted extra), so the mastery chip prints
+   * the live number instead of leaving the formula to memory. Locale-free;
+   * consumed by `buildWeaponFacts` (both weapon surfaces read it identically).
+   */
+  masteryDetail?: { toppleDc?: number; grazeDamage?: number };
+  /**
    * G19 — conditions this action can NEUTRALIZE by expending pool HP (Paladin Lay
    * On Hands: 5 HP ends Poisoned; +Restoring Touch's six conditions at Paladin
    * 14). Locale-FREE: `condition` is a stable {@link ConditionId} the presenter
@@ -4988,6 +4999,29 @@ function resolveSpellActions(
 }
 
 /**
+ * RA-13 — the engine-resolved Weapon-Mastery NUMBERS for the tokens riding an
+ * attack: Topple's save DC (8 + the attack ability modifier + PB — a Constitution
+ * save, per the mastery's glossary text) and Graze's on-miss damage (= the attack
+ * ability modifier, floored at 0 — damage is never negative). Only the
+ * number-bearing masteries contribute; every other token is ignored (its chip
+ * keeps the plain glossary label). ONE source for all three weapon surfaces — the
+ * main-hand and dual-wield off-hand rows here in `resolveWeaponActions`, and the
+ * Inventory weapon row (`buildWeaponVM`) — so the combat card and the inventory
+ * card can never disagree on the number (golden rule 6). Locale-free.
+ */
+export function masteryNumbers(
+  tokens: ReadonlyArray<string>,
+  mod: number,
+  pb: number
+): { toppleDc?: number; grazeDamage?: number } {
+  const lower = tokens.map((tk) => tk.toLowerCase());
+  return {
+    ...(lower.includes("topple") ? { toppleDc: 8 + mod + pb } : {}),
+    ...(lower.includes("graze") ? { grazeDamage: Math.max(0, mod) } : {}),
+  };
+}
+
+/**
  * Section 3 + 4 + 5 — weapon & item actions: carried-weapon attack rows (incl.
  * Finesse/ability overrides, flat to-hit & damage riders, reach bonuses, dual-
  * wield off-hand, Unarmed Fighting/Strike), feature-conjured manifested & pact
@@ -5024,6 +5058,10 @@ function resolveWeaponActions(
     weaponCategory?: string;
     /** The weapon's OWNED mastery token (mastery rides every attack with it). */
     weaponMastery?: string;
+    /** RA-13 — this Light weapon's OWN attack ability modifier, feeding the
+     *  off-hand row's resolved Topple DC / Graze number (each off-hand attack
+     *  uses its own weapon's stat, not the main hand's). */
+    mod: number;
     /** How many of this weapon the character carries. A Light weapon held in
      *  quantity ≥2 is itself two weapons, so it enables Two-Weapon Fighting on
      *  its own — the dual-wield gate sums quantities, not entries. */
@@ -5257,6 +5295,11 @@ function resolveWeaponActions(
         damageType,
         attackBonus: weaponAtkBonus,
         attackBreakdown,
+        // RA-13 — this Light weapon's OWN attack ability modifier (computed above
+        // from its own attackStat), for the off-hand row's resolved mastery
+        // numbers: each off-hand attack's Topple DC / Graze damage uses its own
+        // weapon's attack modifier, not the main hand's.
+        mod,
         range,
         // Raw property tokens AS PRINTED — the presenter localizes them.
         properties: [...properties],
@@ -5351,6 +5394,20 @@ function resolveWeaponActions(
       hasOverride: weaponRef.damageOverride != null && weaponRef.damageOverride !== "",
     });
 
+    // The weapon's OWN mastery — only when the character mastered this weapon.
+    const ownedMastery =
+      !isCustom && srdWeapon?.mastery && masteredIds.has(weaponRef.srdId)
+        ? srdWeapon.mastery
+        : undefined;
+    // RA-13 — resolve the number-bearing masteries riding this row (own + any
+    // feature-granted reach extras — Battering Roots' Topple carries the DC too),
+    // through the ONE `masteryNumbers` seam. The chip prints the live number.
+    const masteryDetail = masteryNumbers(
+      [...(ownedMastery ? [ownedMastery] : []), ...reachMasteries],
+      mod,
+      pb
+    );
+
     const summary: RawActionSummary = {
       attackBonus: weaponAtkBonus,
       damage: damageFormula,
@@ -5382,9 +5439,9 @@ function resolveWeaponActions(
       ...(srdWeapon?.weaponCategory ? { weaponCategory: srdWeapon.weaponCategory } : {}),
       // The weapon's OWN mastery — emitted ONLY when the character mastered
       // this weapon (an unowned mastery is never surfaced, by construction).
-      ...(!isCustom && srdWeapon?.mastery && masteredIds.has(weaponRef.srdId)
-        ? { weaponMastery: srdWeapon.mastery }
-        : {}),
+      ...(ownedMastery ? { weaponMastery: ownedMastery } : {}),
+      // RA-13 — the resolved Topple DC / Graze number for the mastery chips.
+      ...(Object.keys(masteryDetail).length > 0 ? { masteryDetail } : {}),
     };
 
     actions.push({
@@ -5510,6 +5567,24 @@ function resolveWeaponActions(
         character,
         ctx.abilityScores
       ).filter((d) => !d.oncePerTurn);
+      // RA-13 Nick — SRD "Mastery Properties — Nick": the Light property's extra
+      // attack is made AS PART OF the Attack action instead of as a Bonus Action
+      // (once per turn). The mastery belongs to the weapon making the attack, so
+      // a Nick-mastered OFF-HAND row costs no Bonus Action: it joins the FREE
+      // economy group (still UI-gated behind a committed Light Attack action).
+      // Nick changes the extra attack's ECONOMY, not its COUNT — the Light
+      // property still grants only ONE off-hand attack per turn, so the UI caps
+      // it as one per-turn resource mutually exclusive across the free+bonus
+      // slots (PlayTab `committedOffHandId` → the committed-card "Used" grammar),
+      // since the uncapped free slot can't enforce that on its own.
+      const nickRides = w.weaponMastery?.toLowerCase() === "nick";
+      // RA-13 — the off-hand row's resolved mastery numbers, from this off-hand
+      // weapon's OWN attack modifier (each off-hand attack uses its own stat).
+      const offMasteryDetail = masteryNumbers(
+        w.weaponMastery ? [w.weaponMastery] : [],
+        w.mod,
+        pb
+      );
       actions.push({
         id: offHandId,
         weaponId: w.srdWeaponId,
@@ -5517,7 +5592,7 @@ function resolveWeaponActions(
         // view (it's a fixed bilingual token, composed at the presenter edge from
         // the `offhand` flag below — the engine can't localize).
         name: w.name,
-        type: "bonus",
+        type: nickRides ? "free" : "bonus",
         source: "weapon",
         offhand: true,
         spellLevel: null,
@@ -5534,6 +5609,9 @@ function resolveWeaponActions(
           ...(w.weaponCategory ? { weaponCategory: w.weaponCategory } : {}),
           // The mastery rides every attack with the weapon, off-hand included.
           ...(w.weaponMastery ? { weaponMastery: w.weaponMastery } : {}),
+          ...(Object.keys(offMasteryDetail).length > 0
+            ? { masteryDetail: offMasteryDetail }
+            : {}),
           ...(offHandExtraDamage.length > 0 ? { extraDamage: offHandExtraDamage } : {}),
         },
         costsSlot: false,

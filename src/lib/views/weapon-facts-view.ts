@@ -117,6 +117,14 @@ export interface WeaponFactsInput {
   mastery?: string | null;
   /** Feature-granted EXTRA masteries on this attack (Battering Roots). */
   extraMasteries?: ReadonlyArray<string>;
+  /**
+   * RA-13 — the engine-resolved Weapon-Mastery numbers for this row: Topple's
+   * save DC (8 + attack mod + PB) and Graze's on-miss damage (the attack
+   * ability modifier). Appended to the matching mastery chip's label
+   * ("Topple · DC 14", "Graze · 3") so the number never lives in memory; the
+   * chip's glossary tip keeps the full rule. Absent → plain mastery labels.
+   */
+  masteryDetail?: { toppleDc?: number; grazeDamage?: number };
   /** Pre-localized per-source damage breakdown lines (from
    *  `localizeDamageBreakdown`) — surfaced on the damage label. */
   breakdown?: ReadonlyArray<BreakdownLine> | null;
@@ -182,6 +190,30 @@ function masteryLabel(token: string, locale: Locale): string {
     : token;
 }
 
+/** The DC word for the mastery-chip suffix — a fixed bilingual token composed at
+ *  the presenter edge (the `OFFHAND_SUFFIX` pattern). */
+const DC_WORD: Record<Locale, string> = { en: "DC", it: "CD" };
+
+/**
+ * RA-13 — append the engine-resolved number to a number-bearing mastery chip:
+ * Topple carries its live save DC, Graze its on-miss damage. Every other
+ * mastery keeps its plain label (the glossary tip carries the rule).
+ */
+function masteryChipLabel(
+  id: string,
+  base: string,
+  detail: WeaponFactsInput["masteryDetail"],
+  locale: Locale
+): string {
+  if (id === "topple" && detail?.toppleDc != null) {
+    return `${base} · ${DC_WORD[locale]} ${detail.toppleDc}`;
+  }
+  if (id === "graze" && detail?.grazeDamage != null) {
+    return `${base} · ${detail.grazeDamage}`;
+  }
+  return base;
+}
+
 /**
  * Build the unified weapon facts VM. Pure mapping: formulas pass through,
  * the range spec gets formatted, and the chips are assembled in the ONE
@@ -214,7 +246,17 @@ export function buildWeaponFacts(input: WeaponFactsInput, locale: Locale): Weapo
   for (const token of masteries) {
     const id = token.toLowerCase();
     if (chips.some((c) => c.kind === "mastery" && c.id === id)) continue;
-    chips.push({ kind: "mastery", id, label: masteryLabel(token, locale) });
+    chips.push({
+      kind: "mastery",
+      id,
+      // RA-13 — Topple/Graze chips print their resolved number.
+      label: masteryChipLabel(
+        id,
+        masteryLabel(token, locale),
+        input.masteryDetail,
+        locale
+      ),
+    });
   }
 
   return {

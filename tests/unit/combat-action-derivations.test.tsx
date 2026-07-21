@@ -16,7 +16,10 @@
  *    producing function in `combat-action-log-type.test.ts`; here we keep just the
  *    two facts that only the render proves: the Actions group's order reflects the
  *    comparator (wiring witness) and the dual-wield off-hand reveal is STATEFUL —
- *    it surfaces only after a Light-weapon attack commits.
+ *    it surfaces only after a Light-weapon attack commits. RA-13 rides here too:
+ *    the TWF once-per-turn off-hand cap only bites through PlayTab's live
+ *    `slotFullFor` closure, so a render proves committing one off-hand marks the
+ *    sibling "Used" while its Bonus slot stays open (the cap, not the budget).
  *  - D9 — a leveled spell's "At Higher Levels" upcast section renders in the
  *    expanded card (mirrors the Spells page); a cantrip shows none.
  *
@@ -89,6 +92,28 @@ function groupActionNames(title: string): string[] {
     .map((l) => l.replace(/^(Cast|Attack|Use): /, ""));
 }
 
+/** The commit CTA `<button>` for a named action, matched across ALL verb states
+ *  (live: Attack/Cast/Use — spent: "Used") on the EXACT trailing name, so a
+ *  card that has spent its token is still found. Returns the element so a test
+ *  reads its real `disabled` — the value UniversalCard wires straight from the
+ *  `slotFullFor → combatCtaState` verdict, i.e. the live PlayTab closure, not a
+ *  re-implemented predicate. Exactly one match is required (throws otherwise, so
+ *  an ambiguous name fails loudly rather than silently picking the wrong card). */
+function ctaButton(name: string): HTMLButtonElement {
+  const wanted = ["Attack", "Cast", "Use", "Used"].map((v) => `${v}: ${name}`);
+  const hits = Array.from(
+    document.querySelectorAll<HTMLButtonElement>("button[aria-label]")
+  ).filter((b) => wanted.includes(b.getAttribute("aria-label") ?? ""));
+  const [only, ...rest] = hits;
+  if (!only || rest.length > 0) {
+    throw new Error(
+      `expected exactly one CTA for "${name}", found ${hits.length}: ` +
+        JSON.stringify(hits.map((b) => b.getAttribute("aria-label")))
+    );
+  }
+  return only;
+}
+
 describe("PlayTab action derivations", () => {
   beforeEach(() => {
     useCharacterStore.setState({ character: null, loading: false, error: null });
@@ -152,6 +177,55 @@ describe("PlayTab action derivations", () => {
     await waitFor(() =>
       expect(groupActionNames("Pinned")).toContain("Dagger (off-hand)")
     );
+  });
+
+  // RA-13 — the TWF once-per-turn off-hand cap, driven through the LIVE wiring.
+  // `blocked-reason.test.ts` pins the pure composition (committedOffHandId +
+  // combatCtaState); the cap only bites through PlayTab's `slotFullFor` closure
+  // (private useCallback), so ONLY a render can prove the real path. The
+  // `weapon-mastery-nick` scenario dual-wields a Nick-mastered Dagger (off-hand
+  // rides the uncapped FREE slot) + a non-Nick Shortsword (off-hand costs a
+  // Bonus) — two off-hand rows in two different slots the budget alone can't cap.
+  it("RA-13 — committing one off-hand marks the sibling 'Used' via the real slotFullFor cap, not the slot budget", async () => {
+    useCharacterStore.setState({
+      character: buildDevScenario("weapon-mastery-nick"),
+      loading: false,
+      error: null,
+    });
+    renderPage();
+
+    // A Light main-hand swing claims the Action slot (Rogue L3, no Extra Attack)
+    // and opens the off-hand gate — BOTH off-hand rows appear, both live.
+    fireEvent.click(screen.getByLabelText("Attack: Dagger"));
+    await waitFor(() => {
+      expect(screen.getByLabelText("Attack: Dagger (off-hand)")).toBeEnabled(); // Nick → free
+      expect(screen.getByLabelText("Attack: Shortsword (off-hand)")).toBeEnabled(); // non-Nick → bonus
+    });
+
+    // Commit the Nick (free-slot) off-hand — the turn's one extra attack.
+    fireEvent.click(screen.getByLabelText("Attack: Dagger (off-hand)"));
+
+    await waitFor(() => {
+      // The committed off-hand reads "Used" as the committed OCCUPANT (its own
+      // token spent) — not the sibling cap.
+      const committed = ctaButton("Dagger (off-hand)");
+      expect(committed).toBeDisabled();
+      expect(committed.getAttribute("aria-label")).toBe("Used: Dagger (off-hand)");
+    });
+
+    // The OTHER off-hand is now capped: spent + disabled, reading "Used" — the
+    // once-per-turn cap firing (`!==` claimant match). Flipping the comparison to
+    // `===` would leave it a live "Attack: …" here.
+    const sibling = ctaButton("Shortsword (off-hand)");
+    expect(sibling).toBeDisabled();
+    expect(sibling.getAttribute("aria-label")).toBe("Used: Shortsword (off-hand)");
+
+    // …yet its Bonus slot is STILL open: a non-off-hand Bonus action (Cunning
+    // Action) stays live. So the sibling's disable is the off-hand cap, never the
+    // economy budget — and dropping the `offhand` guard (which would over-block
+    // EVERY non-claimant card the moment an off-hand commits, this one included)
+    // is caught right here.
+    expect(ctaButton("Cunning Action")).toBeEnabled();
   });
 
   it("D8 — the Actions group renders in sorted order (wiring witness: cantrips before leveled spells)", () => {

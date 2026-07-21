@@ -228,3 +228,23 @@ export function combatCtaState(args: {
     dimmed: !spent && !args.depleted && args.conditionBlocked,
   };
 }
+
+/**
+ * RA-13 — the TWF once-per-turn off-hand cap. The Light property grants exactly
+ * ONE extra off-hand attack per turn; **Nick** only changes that attack's ECONOMY
+ * (it rides the Attack action, joining the uncapped `free` slot, instead of the
+ * Bonus Action). So the slot budget alone can no longer cap a mixed pair — a
+ * `free` Nick off-hand + a `bonus` non-Nick off-hand sit in different slots and
+ * would both be committable. The cap is enforced directly here: all `offhand`
+ * rows are ONE mutually-exclusive per-turn resource — the FIRST off-hand row
+ * committed (in either the free OR the bonus slot) claims the turn's extra attack,
+ * and every OTHER off-hand row is then marked spent ("Used") via `slotFull`.
+ * Returns that committed off-hand's id (or `null` while none is committed); undo
+ * clears the commit and restores the others by construction.
+ */
+export function committedOffHandId(
+  actions: ReadonlyArray<{ id: string; offhand?: boolean }>,
+  committedIds: ReadonlySet<string>
+): string | null {
+  return actions.find((a) => a.offhand && committedIds.has(a.id))?.id ?? null;
+}

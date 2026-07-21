@@ -253,6 +253,9 @@ function localizeSummary(
   delete rest.properties;
   delete rest.weaponCategory;
   delete rest.weaponMastery;
+  // RA-13 — the resolved mastery numbers ride `weaponFacts` (the chip labels),
+  // not the display summary.
+  delete rest.masteryDetail;
   delete rest.damageBreakdown;
   delete rest.attackBreakdown;
   // The on-hit RIDERS carry a `source` NAME ref (a LocText) → they have no place
@@ -347,6 +350,8 @@ export function localizeAction(action: RawResolvedAction, locale: Locale): Comba
             category: summary.weaponCategory,
             mastery: summary.weaponMastery,
             extraMasteries: summary.extraMasteries,
+            // RA-13 — the resolved Topple DC / Graze number for the chip labels.
+            masteryDetail: summary.masteryDetail,
             // The per-source damage breakdown ("+3 STR · +2 Rage") rides the
             // unified facts VM so the shared `WeaponFacts` component attaches the
             // `BreakdownTip` to its own damage label — ONE seam for both

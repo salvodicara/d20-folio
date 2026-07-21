@@ -77,6 +77,38 @@ describe("buildWeaponFacts — chips + range (EN/IT)", () => {
     expect(vm.range).toBe("1,5 m / 6/18 m");
   });
 
+  // RA-13 — number-bearing masteries print their engine-resolved value on the
+  // chip label, localized ("DC" → "CD"); other masteries stay plain.
+  it("RA-13 — Topple/Graze chip labels carry the resolved numbers (EN + IT)", () => {
+    const en = buildWeaponFacts(
+      {
+        ...input,
+        mastery: "Topple",
+        extraMasteries: ["Graze"],
+        masteryDetail: { toppleDc: 14, grazeDamage: 3 },
+      },
+      "en"
+    );
+    expect(en.chips.filter((c) => c.kind === "mastery").map((c) => c.label)).toEqual([
+      "Topple · DC 14",
+      "Graze · 3",
+    ]);
+    const it_ = buildWeaponFacts(
+      { ...input, mastery: "Topple", masteryDetail: { toppleDc: 14 } },
+      "it"
+    );
+    expect(it_.chips.find((c) => c.id === "topple")?.label).toBe("Rovesciamento · CD 14");
+    // Graze floors at 0 for a negative attack mod (damage is never negative).
+    const floored = buildWeaponFacts(
+      { ...input, mastery: "Graze", masteryDetail: { grazeDamage: 0 } },
+      "en"
+    );
+    expect(floored.chips.find((c) => c.id === "graze")?.label).toBe("Graze · 0");
+    // No detail → plain label (defensive: an unresolved row degrades gracefully).
+    const plain = buildWeaponFacts({ ...input, mastery: "Topple" }, "en");
+    expect(plain.chips.find((c) => c.id === "topple")?.label).toBe("Topple");
+  });
+
   it("no mastery input → no mastery chip (gating by construction); extras dedup", () => {
     const none = buildWeaponFacts({ ...input, mastery: null }, "en");
     expect(none.chips.some((c) => c.kind === "mastery")).toBe(false);
@@ -122,6 +154,27 @@ describe("weapon facts — combat and inventory surfaces are EQUIVALENT", () => 
       });
     }
   );
+
+  // RA-13 — the resolved Topple DC rides the ONE `buildWeaponFacts` seam, so the
+  // combat card and the inventory card print the SAME number-bearing chip label
+  // for the same mastered weapon (golden rule 6 — agreement by construction).
+  it("RA-13 — the resolved Topple chip label is IDENTICAL across both surfaces", () => {
+    const doc = mock();
+    doc.character.weapons.push({ srdId: "quarterstaff", quantity: 1 });
+    const entry = doc.character.classes[0];
+    if (!entry) throw new Error("mock has no classes[] entry");
+    entry.weaponMasteries = ["quarterstaff"];
+    const inventory = buildInventoryViewModel(doc, "en").weapons.find(
+      (w) => w.id === "quarterstaff"
+    );
+    const combat = localizeActions(doc, "en").find((a) => a.id === "weapon-quarterstaff");
+    const invLabel = inventory?.facts.chips.find((c) => c.id === "topple")?.label;
+    const combatLabel = combat?.weaponFacts?.chips.find((c) => c.id === "topple")?.label;
+    expect(invLabel).toMatch(/^Topple · DC \d+$/);
+    expect(combatLabel).toBe(invLabel);
+    // The whole VM agrees too (the number lives inside the shared chip).
+    expect(combat?.weaponFacts).toEqual(inventory?.facts);
+  });
 
   it("combat emits NO mastery without the pick (gated in the engine)", () => {
     const doc = mock();

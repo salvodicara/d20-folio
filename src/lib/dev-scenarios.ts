@@ -673,6 +673,55 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "WEAPON-CARDS: the unified WeaponFacts block on Combat + Inventory — mastered Longsword shows the Sap mastery chip on BOTH surfaces, the unmastered Dagger shows none, property chips carry GlossaryTips, range/damage/to-hit rows identical.",
   },
+  // RA-13 WEAPON-MASTERY NUMBERS — Fighter L5, STR 16 (+3), PB 3, proficient with
+  //  both weapons. The mastered Quarterstaff prints "Topple · DC 14" (8 + STR 3 +
+  //  PB 3) and the mastered Glaive "Graze · 3" (= STR mod) on BOTH the Combat
+  //  card and the Inventory chip — the ONE buildWeaponFacts seam, identical by
+  //  construction (golden rule 6). ("DC"/"CD" is a presenter constant, no i18n
+  //  keys.) The Nick economy has its own scenario (`weapon-mastery-nick`), where
+  //  the off-hand gate isn't masked by Extra Attack's swing ledger.
+  "weapon-mastery-numbers": {
+    name: "Dax, Mastery Adept",
+    raceId: "human",
+    classId: "fighter",
+    subclassId: "champion",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+    weapons: [
+      { srdId: "quarterstaff", quantity: 1 },
+      { srdId: "glaive", quantity: 1 },
+    ],
+    weaponMasteries: ["quarterstaff", "glaive"],
+    exercises:
+      "RA-13 mastery numbers: the mastered Quarterstaff shows 'Topple · DC 14' (8 + STR 3 + PB 3) and the Glaive 'Graze · 3' (= STR mod) on the Combat card AND the Inventory chip (parity, golden rule 6). Vex/Sap/Slow/Push weapons keep plain reminder chips.",
+  },
+  // RA-13 NICK ECONOMY + TWF once-per-turn CAP — a Rogue dual-wields a
+  //  Nick-mastered Dagger AND a non-Nick Shortsword (both Light). A Rogue has NO
+  //  Extra Attack, so a single main-hand swing claims the Action slot as its own
+  //  `selected.action` occupant and the off-hand gate opens. Nick moves the
+  //  Dagger's off-hand attack from the Bonus Action INTO the Attack action (its
+  //  row is emitted `type: "free"` → the FREE economy group, Bonus slot stays
+  //  free), while the Shortsword off-hand stays a `bonus`. The Light property
+  //  still grants only ONE extra off-hand attack per turn, so committing EITHER
+  //  off-hand marks the OTHER "Used" (mutual exclusion across free+bonus — the
+  //  cap the uncapped free slot can't enforce alone); undo restores both.
+  "weapon-mastery-nick": {
+    name: "Nyx, Twin Fangs",
+    raceId: "human",
+    classId: "rogue",
+    subclassId: "thief",
+    level: 3,
+    background: "criminal",
+    abilityScores: { STR: 10, DEX: 16, CON: 12, INT: 12, WIS: 13, CHA: 14 },
+    weapons: [
+      { srdId: "dagger", quantity: 2 },
+      { srdId: "shortsword", quantity: 1 },
+    ],
+    weaponMasteries: ["dagger"],
+    exercises:
+      "RA-13 Nick economy + TWF cap: a Nick-mastered Dagger + a non-Nick Shortsword (both Light). Commit a Light main-hand attack → BOTH off-hand rows appear (Dagger off-hand in the FREE group — Nick rides the Attack action; Shortsword off-hand as a Bonus). Commit the Dagger free off-hand → its card reads 'Used', the Bonus slot stays available, AND the Shortsword off-hand now reads 'Used' too (only ONE off-hand attack per turn). Undo restores both.",
+  },
   champion: {
     name: "Brakka, Champion",
     raceId: "orc",

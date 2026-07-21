@@ -104,6 +104,7 @@ import {
   combatVerdictOutcome,
   blockedReasonFor,
   combatCtaState,
+  committedOffHandId,
 } from "./combat-card-helpers";
 
 type FilterType = "all" | "action" | "bonus" | "reaction" | "free";
@@ -401,17 +402,41 @@ export function PlayTab() {
     [attackBudget, warMagicMax, attacksLeft, t]
   );
 
+  // RA-13 — the TWF once-per-turn off-hand cap. The Light property grants ONE
+  // extra off-hand attack per turn; Nick only moves it into the (uncapped) free
+  // economy, so a mixed free+bonus off-hand pair can't be capped by the slot
+  // budget alone. All `offhand` rows are ONE mutually-exclusive resource: the
+  // first committed (in either slot) claims the id below, and `slotFullFor`
+  // marks every OTHER off-hand row spent ("Used"). Undo clears it → all restore.
+  const offHandCommittedId = useMemo(
+    () =>
+      committedOffHandId(
+        allActions,
+        new Set([...selected.free, ...selected.bonus].map((s) => s.id))
+      ),
+    [allActions, selected.free, selected.bonus]
+  );
+
   // CTA grammar — is the card's economy slot at budget? Feeds `combatCtaState`
   // (spent ⇒ disabled "Used" CTA, the reaction contract generalized). The free
-  // slot is uncapped, so free actions never spend out.
+  // slot is uncapped, so free actions never spend out — EXCEPT an off-hand row
+  // once another off-hand has already spent the turn's one extra attack.
   const slotFullFor = useCallback(
-    (action: ResolvedAction): boolean =>
-      action.type === "action"
+    (action: ResolvedAction): boolean => {
+      if (
+        action.offhand &&
+        offHandCommittedId != null &&
+        offHandCommittedId !== action.id
+      ) {
+        return true;
+      }
+      return action.type === "action"
         ? actionSlotFull
         : action.type === "bonus"
           ? bonusSlotFull
-          : false,
-    [actionSlotFull, bonusSlotFull]
+          : false;
+    },
+    [actionSlotFull, bonusSlotFull, offHandCommittedId]
   );
 
   // CTA grammar — did THIS attack-capable card ride a swing of the (Extra-Attack)

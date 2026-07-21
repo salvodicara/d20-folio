@@ -174,6 +174,59 @@ describe("resolveActions — dual-wield", () => {
     });
   });
 
+  // RA-13 — SRD "Mastery Properties — Nick": the Light property's extra attack
+  // is made as part of the ATTACK action instead of as a Bonus Action (once per
+  // turn). A Nick-mastered off-hand row therefore joins the FREE economy group;
+  // WITHOUT the mastery pick it stays a Bonus Action — the baseline dual-wield
+  // test above ("a pair of daggers") already pins `type === "bonus"`.
+  it("RA-13 — a Nick-mastered off-hand row is FREE (part of the Attack action)", () => {
+    const char = makeChar({ weapons: [{ srdId: "dagger", quantity: 2 }] });
+    const entry = char.character.classes[0];
+    if (!entry) throw new Error("no class entry");
+    entry.weaponMasteries = ["dagger"];
+    const offHand = localizeActions(char, "en").filter((a) => a.id.includes("-offhand"));
+    expect(offHand).toHaveLength(1);
+    expect(offHand[0]?.type).toBe("free");
+    // The Nick chip (with its glossary teach) still rides the row.
+    expect(
+      offHand[0]?.weaponFacts?.chips.some((c) => c.kind === "mastery" && c.id === "nick")
+    ).toBe(true);
+  });
+
+  // RA-13 — Topple's save DC (8 + attack mod + PB) and Graze's on-miss damage
+  // (= the attack ability modifier) resolve onto the mastery chips — the app
+  // has the numbers, so the player never computes them (SRD "Mastery
+  // Properties — Topple / Graze").
+  it("RA-13 — Topple/Graze chips carry the live resolved numbers", () => {
+    const char = makeChar({
+      weapons: [
+        { srdId: "quarterstaff", quantity: 1 },
+        { srdId: "glaive", quantity: 1 },
+      ],
+    });
+    const entry = char.character.classes[0];
+    if (!entry) throw new Error("no class entry");
+    entry.weaponMasteries = ["quarterstaff", "glaive"];
+    const actions = localizeActions(char, "en");
+    // Fighter L5: STR 16 (+3), PB 3 → Topple DC 8+3+3 = 14; Graze damage = 3.
+    const staff = actions.find((a) => a.id === "weapon-quarterstaff");
+    expect(staff?.weaponFacts?.chips.find((c) => c.id === "topple")?.label).toBe(
+      "Topple · DC 14"
+    );
+    const glaive = actions.find((a) => a.id === "weapon-glaive");
+    expect(glaive?.weaponFacts?.chips.find((c) => c.id === "graze")?.label).toBe(
+      "Graze · 3"
+    );
+    // The raw numbers are a facts-block concern — stripped from the display summary.
+    expect(staff?.summary.masteryDetail).toBeUndefined();
+    // An unmastered weapon resolves NO detail (the chip itself is gated already).
+    const bare = makeChar({ weapons: [{ srdId: "quarterstaff", quantity: 1 }] });
+    const bareStaff = localizeActions(bare, "en").find(
+      (a) => a.id === "weapon-quarterstaff"
+    );
+    expect(bareStaff?.weaponFacts?.chips.some((c) => c.kind === "mastery")).toBe(false);
+  });
+
   it("off-hand damage includes ability modifier when Two-Weapon Fighting style is active", () => {
     const char = makeChar({
       weapons: [

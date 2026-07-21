@@ -219,15 +219,28 @@ appears on a weapon row.
       Regression: the RA-12 blocks in `smart-tracker.test.ts` + `character-store.test.ts` +
       `cockpit-economy-in-play.test.tsx`, and the `hiddenDc` codec round-trip in
       `character-codec.test.ts`.
-- [ ] **RA-13 — Weapon Mastery: properties are glossary chips only — Nick's economy, Topple's DC,
+- [x] **RA-13 — Weapon Mastery: properties are glossary chips only — Nick's economy, Topple's DC,
       Graze's number are left to memory.** _Weapon mastery · INTERACTION (defects B/C) · S2 ·
-      every-turn for martials._ SRD "Mastery Properties". The matrix row is honestly `partial`; the
-      residual: **Nick** never moves the off-hand extra attack from Bonus Action into the Attack
-      action; **Topple** shows no save DC though the engine computes `8 + mod + PB` everywhere else;
-      **Graze** shows no on-miss damage number (= the attack ability mod); Vex/Sap/Slow/Push stay
-      fine as reminder chips (they need the un-modeled enemy). Fix: Nick = economy flag on the
-      off-hand row (**T2**); Topple DC + Graze number = resolved chips through the existing
-      rider/DC channels (**T3**); the chip grammar pass is **FABLE** if contested.
+      every-turn for martials._ SRD "Mastery Properties". **SHIPPED wave 2 (2026-07-21):**
+      **Nick** — a Nick-mastered OFF-HAND row rides the ATTACK action, not the Bonus Action: the
+      row joins the FREE economy group (still UI-gated behind a committed Light attack) so the
+      Bonus slot stays free. Nick changes the extra attack's ECONOMY, not its COUNT — the Light
+      property still grants only ONE off-hand attack per turn, and the free slot is uncapped, so
+      the once-per-turn cap is enforced directly: all `offhand` rows are ONE mutually-exclusive
+      per-turn resource (PlayTab `committedOffHandId` → the committed-card "Used" grammar), so
+      committing any one off-hand marks every other off-hand row "Used" (undo restores). Zero
+      standing text, per the Extra-Attack grammar — placement + the chip's glossary tip teach it.
+      **Topple** — the chip prints the live save DC (`masteryDetail.toppleDc` = 8 + attack mod +
+      PB): "Topple · DC 14". **Graze** — the chip prints the on-miss damage (= the attack ability
+      mod, floored at 0): "Graze · 3". The numbers resolve in the engine (`summary.masteryDetail`,
+      locale-free) through the ONE `masteryNumbers` helper and flow through the ONE
+      `buildWeaponFacts` seam, so the combat card and the inventory card agree by construction
+      (incl. the off-hand row and `extraMasteries` — Battering Roots' Topple carries the DC too).
+      The "DC"/"CD" word is composed at the presenter edge (the `OFFHAND_SUFFIX` pattern), so RA-13
+      adds NO i18n keys. Vex/Sap/Slow/Push stay reminder chips (they need the un-modeled enemy).
+      Regression: the RA-13 blocks in `smart-tracker.test.ts` + `weapon-facts.test.tsx` (Nick
+      free-economy, Topple/Graze resolved chips, cross-surface parity) + the off-hand-cap block in
+      `blocked-reason.test.ts` (`committedOffHandId` — one off-hand attack per turn across free+bonus).
 - [ ] **RA-14 — Ammunition is never decremented; Loading is never capped.** _Attack procedure ·
       INTERACTION (defect B) · S2 · every-turn for archers._ SRD "Properties — Ammunition/Loading".
       Code: arrows are inventory `quantity` rows; firing debits nothing; Loading has no

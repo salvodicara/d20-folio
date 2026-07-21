@@ -74,6 +74,7 @@ import {
   isMonkMeleeWeapon,
   featureClassRow,
   freeCastItemChargeMax,
+  masteryNumbers,
 } from "@/lib/smart-tracker";
 import { breakdownTotal } from "@/lib/value-breakdown";
 import {
@@ -534,6 +535,14 @@ function buildWeaponVM(
     locale
   );
 
+  // The weapon's OWNED mastery — surfaced ONLY when the character mastered THIS
+  // weapon (the chip is gated by construction). Resolved ONCE and reused for both
+  // the mastery chip and its resolved numbers, so the two can't drift.
+  const ownedMastery =
+    !isCustom && srdWeapon?.mastery && masteredIds.has(ref.srdId)
+      ? srdWeapon.mastery
+      : null;
+
   const facts = buildWeaponFacts(
     {
       damage: hasDamageOverride
@@ -550,10 +559,13 @@ function buildWeaponVM(
       }),
       properties: rawProperties,
       category: srdWeapon?.weaponCategory,
-      mastery:
-        !isCustom && srdWeapon?.mastery && masteredIds.has(ref.srdId)
-          ? srdWeapon.mastery
-          : null,
+      mastery: ownedMastery,
+      // RA-13 — the resolved Topple DC / Graze number, through the SAME
+      // `masteryNumbers` seam (and the SAME stat + PB) the combat row uses, so
+      // the two surfaces' chips are identical by construction (golden rule 6).
+      masteryDetail: ownedMastery
+        ? masteryNumbers([ownedMastery], mod, effectivePB)
+        : undefined,
       breakdown: damageBreakdown,
       attackBreakdown,
     },
