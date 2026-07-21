@@ -61,6 +61,18 @@ just wt-list
   the data↔UI seam (below) so merges stay cheap.
 - **`.env.local`** is copied into each worktree by `wt-new` so `pnpm dev` works; it is git-ignored
   and never committed.
+- **The `content-pack` symlink is created automatically — composed-by-default.** When the
+  maintainer's private pack is available (the main checkout carries a `content-pack` symlink into the
+  sibling `../d20-folio-content` checkout), `wt-new` replicates that same relative link into the new
+  worktree, so its pre-push gate runs in **COMPOSED (pack-present) mode** and pack-side breakage — a
+  public API change that breaks a pack test — is caught before merge. When no pack sibling exists
+  (external contributors), the link is skipped silently and the worktree gates in **SRD-only mode**,
+  which is the correct and complete build for a public tree (`docs/CONTRIBUTING.md` → "The two build
+  modes"). `wt-new` echoes which mode it set up. Caveat: every worktree's `content-pack` points at the
+  **one** sibling pack working tree, so concurrent **edits** to pack files across worktrees can race
+  (rare — only when a public API change needs a pack-test update); gating (which only **reads** the
+  pack) is always safe. The belt-and-suspenders check in `.githooks/pre-push` warns loudly if a
+  worktree gates SRD-only while the pack actually exists.
 - **Committed tooling comes with every worktree.** Tracked files include the committed skills
   (`.claude/skills/` — e.g. the official
   [pbakaus/impeccable](https://github.com/pbakaus/impeccable) design skill, which reads root

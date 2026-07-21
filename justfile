@@ -201,6 +201,20 @@ wt-new slug kind="feat":
     echo "→ creating worktree $dest on branch $branch (off origin/main)…"
     git -C "$main_root" worktree add -b "$branch" "$dest" origin/main
     if [ -f "$main_root/.env.local" ]; then cp "$main_root/.env.local" "$dest/.env.local"; echo "→ copied .env.local (dev preview)"; fi
+    # Content-pack symlink → COMPOSED-mode gate (docs/CONTRIBUTING.md → "The two build modes").
+    # The maintainer's private pack lives in a sibling checkout, symlinked into the main checkout as
+    # `content-pack` (a relative `../d20-folio-content/content-pack`). Replicate that SAME target into
+    # the new worktree — sibling dirs, so it resolves identically — so its pre-push gate runs COMPOSED
+    # (pack tests included), closing the gap where a pack-absent worktree silently gated SRD-only and
+    # let a public API change break the pack. No pack sibling (external contributors) → skipped
+    # silently → SRD-only, unchanged. Guarded on the target resolving, so it never links a dangle.
+    pack_link="$(readlink "$main_root/content-pack" 2>/dev/null || true)"
+    if [ -n "$pack_link" ] && [ -e "$main_root/content-pack" ]; then
+        ln -s "$pack_link" "$dest/content-pack"
+        echo "→ linked content-pack ($pack_link) → COMPOSED mode (pack tests gate here)"
+    else
+        echo "→ no content pack → SRD-only mode (external-contributor gate)"
+    fi
     echo "→ installing deps + git hooks…"
     ( cd "$dest" && pnpm install --silent && git config core.hooksPath .githooks )
     echo ""

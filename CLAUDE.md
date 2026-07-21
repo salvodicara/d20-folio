@@ -132,8 +132,9 @@ content-pack/                        the PRIVATE content pack (docs/ARCHITECTURE
                                      via the `@pack` alias when present (VITE_CONTENT_PACK≠0), else the
                                      app builds SRD-only. NOT in this repo: a gitignored SYMLINK to the
                                      sibling checkout of the private repo salvodicara/d20-folio-content
-                                     (`ln -s ../d20-folio-content/content-pack content-pack`) — recreate
-                                     it in every task worktree; pack tests reach public-root helpers via
+                                     (`ln -s ../d20-folio-content/content-pack content-pack`) — `just
+                                     wt-new` auto-links it into every task worktree when the pack sibling
+                                     exists (composed-by-default), else SRD-only; pack tests reach public-root helpers via
                                      the `@tests/*`/`@scripts/*` aliases (docs/CONTRIBUTING.md → "The
                                      two build modes")
 .githooks/{pre-commit,pre-push}      strict local CI gate

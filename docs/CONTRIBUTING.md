@@ -188,8 +188,15 @@ checkout of the private pack repo (`salvodicara/d20-folio-content`):
 ln -s ../d20-folio-content/content-pack content-pack
 ```
 
-Recreate the same symlink inside every task worktree (`just wt-new` does not
-copy it) so the pack-mode gate runs composed there. Because the pack's files
+**Task worktrees are composed automatically.** `just wt-new` replicates that
+same relative symlink into each new worktree whenever the pack sibling exists,
+so the pack-mode gate runs composed there **by default** — closing the gap where
+a pack-absent worktree would silently gate SRD-only and let a public API change
+break the pack undetected. When no pack sibling exists (external contributors),
+`wt-new` skips the link and the worktree gates SRD-only, unchanged (that is the
+correct, complete build for a public tree). As a backstop, `.githooks/pre-push`
+prints a loud WARNING if a worktree gates SRD-only while the pack actually
+exists on disk. Because the pack's files
 REALLY live outside the repo root, pack tests import public-root helpers only
 through the root-anchored `@tests/*` / `@scripts/*` aliases (never physical
 `../../../` escapes), the vitest lanes resolve with `preserveSymlinks`, and the

@@ -40,6 +40,27 @@ set -euo pipefail
 echo "==> Pre-push: fast-but-safe gate (typecheck ∥ lint ∥ unit+coverage, then build · budget)..."
 echo ""
 
+# ── Composed-mode advisory (belt-and-suspenders) ──────────────────────────────
+# If the maintainer's content pack EXISTS (the MAIN checkout resolves a
+# `content-pack`) but THIS worktree hasn't linked it, the gate below runs
+# SRD-ONLY and won't catch pack-side breakage — e.g. a public compendium-API
+# change that breaks a pack test. `just wt-new` links it automatically now; this
+# is the net for a hand-made or pre-fix worktree. NOT a hard fail: external
+# contributors legitimately have no pack and a deliberate SRD-only run is valid.
+# It keys off the pack ACTUALLY existing in the main checkout, so it can never
+# false-positive for a contributor who has no pack at all.
+if [ ! -e content-pack ]; then
+  _cp_common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+  if [ -n "$_cp_common" ] && [ -e "$(dirname "$_cp_common")/content-pack" ]; then
+    echo "⚠️  WARNING: the content pack exists ($(dirname "$_cp_common")/content-pack) but is NOT"
+    echo "    linked into this worktree — this gate runs SRD-ONLY, so pack-side breakage"
+    echo "    (a public API change that breaks a pack test) WON'T be caught here."
+    echo "    Link it, then re-push:  ln -s ../d20-folio-content/content-pack content-pack"
+    echo "    (Worktrees from 'just wt-new' link it automatically.)"
+    echo ""
+  fi
+fi
+
 # ── Firestore rules tests (emulator) — change-scoped ──────────────────────────
 # Detect whether THIS push changes the rules surface; only then boot the emulator
 # (ordinary pushes stay fast). git feeds pre-push the ref list on stdin as

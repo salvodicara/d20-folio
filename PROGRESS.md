@@ -341,7 +341,8 @@ snapshot was cut and `salvodicara/d20-folio` published with fresh history ("feat
 release"); the split-repo world is live — the public repo is the canonical dev home (justfile,
 hooks, worktree flow) and the private `salvodicara/d20-folio-content` repo carries
 `content-pack/` + archives, composed locally via a gitignored sibling-checkout symlink
-(`content-pack -> ../d20-folio-content/content-pack`, recreated per worktree — docs/CONTRIBUTING.md
+(`content-pack -> ../d20-folio-content/content-pack`, auto-linked into each worktree by `just wt-new`
+when the pack sibling exists — composed-by-default — docs/CONTRIBUTING.md
 → "The two build modes"; pack tests reach public-root helpers via the root-anchored `@tests/*` /
 `@scripts/*` aliases, the vitest lanes resolve with `preserveSymlinks`, and the dev server allows
 the pack's real directory — docs/ARCHITECTURE.md → "The content-pack seam"). The spent snapshot
