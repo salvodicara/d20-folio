@@ -35,12 +35,10 @@ import {
   PopoverClose,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { TRACKER_PIP_MAX } from "@/lib/tracker-display";
 
 /** Accent colour key → the `data-color` the CSS keys off. */
 export type TrackerColor = "verdigris" | "amethyst" | "lapis" | "vermilion";
-
-/** Subitizing threshold: ≤5 uses pips, >5 uses a pool bar. */
-export const TRACKER_PIP_MAX = 5;
 
 export interface TrackerProps {
   /** Display name (bilingual copy injected by caller). */

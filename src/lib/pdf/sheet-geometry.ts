@@ -277,8 +277,6 @@ export const P3 = {
     w: 559,
     top: 752,
     r: 10,
-    /** Header-band height (matches `panelHeader`). */
-    bandH: 15,
     /** Column-caption baseline, measured DOWN from the panel top. */
     captionDrop: 24,
     /** First tracker-row baseline, measured DOWN from the panel top. */

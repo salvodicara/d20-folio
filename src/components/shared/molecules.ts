@@ -22,9 +22,4 @@ export {
   type VerdictOutcome,
 } from "./UniversalCard";
 export { StatCard, type StatCardProps } from "./StatCard";
-export {
-  Tracker,
-  TRACKER_PIP_MAX,
-  type TrackerProps,
-  type TrackerColor,
-} from "./Tracker";
+export { Tracker, type TrackerProps, type TrackerColor } from "./Tracker";

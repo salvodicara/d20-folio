@@ -20,8 +20,10 @@ import { buildScenario, DEV_SCENARIOS } from "@/lib/dev-scenarios";
 import {
   buildCharacterPdfViewModel,
   type CharacterPdfViewModel,
+  type PdfTrackerVM,
 } from "@/lib/pdf/character-pdf-view";
 import { renderCharacterPdf } from "@/lib/pdf/character-pdf";
+import { P3 } from "@/lib/pdf/sheet-geometry";
 
 const t = i18n.getFixedT("en");
 function spec(key: keyof typeof DEV_SCENARIOS) {
@@ -96,6 +98,39 @@ describe("character-pdf — resource ledger", () => {
     expect(vm.trackers.length).toBeGreaterThan(0);
     const { runs } = await render(vm);
     for (const tr of vm.trackers) expect(runs).toContain(tr.label);
+  });
+
+  it("paginates a long ledger across pages without clipping any row", async () => {
+    // One past a single ledger page's capacity ⇒ a second ledger page. Every row
+    // — including the first + last of the OVERFLOW page — must still be drawn.
+    const many = P3.resources.rowsPerPage + 1;
+    const trackers: PdfTrackerVM[] = Array.from({ length: many }, (_, i) => ({
+      label: `Pool ${i + 1}`,
+      total: 3,
+      used: 1,
+      recovery: "Long Rest",
+      die: "",
+      unit: "",
+      isPool: false,
+    }));
+    const vm: CharacterPdfViewModel = { ...vmFor("orc-barb-15"), trackers };
+    const { runs, pages } = await render(vm);
+    // 2 sheet pages + 2 ledger pages (the (rowsPerPage + 1)th row spills over)
+    expect(pages).toBe(4);
+    expect(runs).toContain("Pool 1"); // first row of the first ledger page
+    expect(runs).toContain(`Pool ${many}`); // last row, on the 2nd ledger page — not clipped
+  });
+
+  it("numbers the footer with the true dynamic page total (not a hardcoded / 2)", async () => {
+    const vm = vmFor("orc-barb-15"); // a 3-page export (2 sheet + 1 ledger)
+    const { runs } = await render(vm);
+    // the footer reads "<footer>  ·  n / total" with the REAL total — a regression
+    // to the old hardcoded "/ 2" would fail both of these.
+    expect(runs).toContain(`${vm.footer}  ·  1 / 3`);
+    expect(runs).toContain(`${vm.footer}  ·  3 / 3`);
+    // a trackerless character stays 2 pages — the total tracks reality
+    const { runs: two } = await render({ ...vm, trackers: [] });
+    expect(two).toContain(`${vm.footer}  ·  2 / 2`);
   });
 });
 

@@ -29,6 +29,7 @@ import fontkit from "@pdf-lib/fontkit";
 import type { CharacterPdfViewModel, PdfTrackerVM } from "./character-pdf-view";
 import { SHEET_FONT_BYTES } from "./fonts";
 import { winAnsi } from "./pdf-text";
+import { TRACKER_PIP_MAX } from "@/lib/tracker-display";
 import {
   PAGE,
   FRAME,
@@ -1215,9 +1216,10 @@ function drawTrackerRow(
   const ux = g.cols.uses;
   if (tr.total <= 0) {
     text(page, "—", ux, y, fonts.sans, 8, MUTED);
-  } else if (tr.total <= 5 && !tr.isPool) {
+  } else if (tr.total <= TRACKER_PIP_MAX && !tr.isPool) {
     // filled = a use still AVAILABLE, hollow = spent — matching the on-screen
-    // Tracker molecule so the print snapshot reads the same as the cockpit.
+    // Tracker molecule so the print snapshot reads the same as the cockpit
+    // (the pip/count threshold is the ONE shared TRACKER_PIP_MAX — golden rule 6).
     for (let i = 0; i < tr.total; i++)
       bubble(page, ux + 4 + i * 10, y + 2.6, i < available);
     text(
