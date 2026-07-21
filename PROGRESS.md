@@ -219,6 +219,19 @@ NAME commit-on-blur). Regressions: `sessions-section.test.tsx` (seed-on-edit + C
 `session-edit-no-jump.spec.ts` e2e (the editor is content-sized with no internal scroll; the region
 footprint barely changes read→edit — both fail on the old fixed box). DESIGN.md §12.
 
+**Add-item picker — scroll-preserve + AC i18n (rule 27, 2026-07-21).**
+
+- **Scroll-position reset regression fixed.** The Add-item equipment picker's results list snapped
+  back to the top whenever the character store ticked in the background (the ~2s auto-save
+  write-back, a session/HP tick): `useCompendiumPicker` keyed `useScrollMemory` on the `filtered`
+  result ARRAY, whose reference is re-created on every store write because the memo closes over
+  `ctx` (which holds the whole character), so a background write produced a fresh `filtered` even
+  though the visible rows were byte-identical. The reset key is now the query+facet IDENTITY
+  (`resultSetKey`, a stable string primitive) — scroll resets on a real result-set change and
+  survives store churn. Regressions: `add-item-scroll-preserve.spec.ts` (real Chromium, the
+  faithful repro jsdom cannot measure) + the `resultSetKey` reset-key-stability cases in
+  `compendium-deeplink.test.ts`.
+
 ## Open decisions (owner)
 
 - **AI assistant — DROPPED (owner, 2026-07-06).** The long-carried "Phase-3 multi-provider AI

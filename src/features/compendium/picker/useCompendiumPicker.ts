@@ -32,6 +32,28 @@ export function countActiveFacets(
     .length;
 }
 
+/**
+ * The RESULT-SET identity — a stable primitive that changes when (and only when)
+ * the user narrows the pool: the trimmed query plus each facet's value, serialized
+ * in spec order (stable key order). The scroll-memory reset key is derived from
+ * THIS, never from the `filtered` ARRAY: `filtered` gets a fresh reference on every
+ * character-store write (the ~2s auto-save write-back, a session tick) because the
+ * memo closes over `ctx`, which holds the whole character — so keying the reset on
+ * the array snapped a mid-scroll list back to the top on unrelated store churn even
+ * though the visible rows were byte-identical. Keying it on the query+facet identity
+ * resets scroll on a real result-set change and leaves it alone on store churn.
+ */
+export function resultSetKey(
+  query: string,
+  filters: readonly { id: string }[],
+  filterState: Record<string, unknown>
+): string {
+  return JSON.stringify([
+    query.trim(),
+    filters.map((g) => [g.id, filterState[g.id]] as const),
+  ]);
+}
+
 export interface CompendiumPickerApi<T> {
   ctx: PickerCtx;
   query: string;
@@ -157,11 +179,9 @@ export function useCompendiumPicker<T>(
     [existingIds, spec]
   );
 
-  // COMPENDIUM-NAV — the list's scroll depth survives the list↔detail swap and
-  // resets when the result set changes (`filtered` is a new array exactly when
-  // the query / a facet / the locale changes).
+  // COMPENDIUM-NAV — resets on a real query/facet change, NOT on store churn; see resultSetKey.
   const { attach: attachListScroll, save: saveListScroll } = useScrollMemory(
-    filtered,
+    resultSetKey(query, spec.filters, filterState),
     ".pick-row" // row-anchored: exact across content-visibility re-estimation
   );
 
