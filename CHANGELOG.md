@@ -1,6 +1,32 @@
 # Changelog
 
-All notable changes to d20 Folio are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and the project adheres to [Semantic Versioning](https://semver.org/).
+## 0.22.0
+
+A 2024-rules correctness and Italian-authenticity release: three more play procedures now run themselves (Hide, Weapon Mastery, ammunition), every Italian name is re-sourced to the official SRD 5.2.1, the PDF export regained its resource ledger, and a wave of overlay, search, and combat fixes landed.
+
+### Added
+
+- **The Hide action plays itself (2024 rules).** The card teaches the real rule — a DC 15 Dexterity (Stealth) check — folds in your live Stealth bonus as a roll-entry, applies **Invisible** on a success, and remembers your total as the DC for a creature to find you (shown on the Invisible chip until it ends). The whole outcome is one undoable step.
+- **Weapon Mastery does its own arithmetic.** The Topple chip prints your live save DC ("Topple · DC 14") and the Graze chip your on-miss damage on both the combat and inventory weapon cards, and a Nick-mastered off-hand attack now correctly rides the Attack action instead of costing your Bonus Action.
+- **Ranged weapons track their ammunition.** Bows, crossbows, slings, and blowguns show their live remaining count on the attack card and debit one per shot (undo restores it) — entirely opt-in, read straight from your inventory, so untracked play is unchanged. Adds the missing SRD ammunition (Sling Bullets, Blowgun Needles, Firearm Bullets), EN + IT, and resolves each weapon's ammo from declared data so a firearm never debits a sling's bullets.
+- **The PDF character-sheet export now draws your resources.** A faithful Resources ledger — every pool (Rage, Bardic Inspiration, Channel Divinity, Ki, Sorcery Points, magic-item charges …) with its remaining count, die badge, and recovery cadence — matching the on-screen cockpit exactly.
+- **The admin bug inbox mirrors the open GitHub issues** — reconciling on each load, cascade-purging every report whose issue is closed, with an expand-in-place private detail view (the user's description, reporter, sanitized debug context, and screenshot).
+
+### Changed
+
+- **Italian names re-sourced to the official IT SRD 5.2.1.** 288 names were corrected to their canonical 2024 form and made cross-reference-consistent, so every spell, feat, item, and condition reads the SAME Italian name wherever it is referenced (collisions resolved — e.g. Conjure = _Evoca_ vs Summon = _Richiama_; Geas _Imposizione → Costrizione_). Character data is unaffected — sheets store stable ids, not display names — and a new consistency guard fails the build on future drift.
+- **Search is smarter across every picker and the ⌘K palette.** Name matches now rank above description-only matches, and multi-word queries match on word tokens, so "pozione guarigione" finds "Pozione di Guarigione" regardless of the interstitial word.
+- **The in-combat "Saves & Checks" panel was removed.** It duplicated the Stats rail byte-for-byte; the left rail is now the single home for saves, skills, and senses on every screen.
+- **Remediated every Dependabot advisory** across the app and the Cloud Functions package with minimal, behavior-preserving version pins — both audits now report zero known vulnerabilities.
+
+### Fixed
+
+- **Two-Weapon Fighting with Extra Attack** now reveals the off-hand attack for dual-wielders — a Fighter, Ranger, or Barbarian attacking with a Light weapon used to never see their off-hand swing appear.
+- **The mobile "Ask the Folio" palette tap** now always opens its target (compendium entry, character, campaign, section) — a Back-sentinel timing race used to silently undo the navigation on mobile.
+- **Overlay stability.** A self-healing watchdog keeps a missed popstate from deadlocking the command palette and hardware Back, and the portrait lightbox now shares the one ref-counted scroll-lock instead of fighting it (no more stranded scroll or frozen page).
+- **The armor stat line in the add-item picker is now localized** — Italian players saw "AC 11 + DEX"; it now reads "CA 11 + DES".
+- **The equipment picker keeps its scroll position** through background auto-saves instead of snapping back to the top.
+- **Campaign → Sessions:** the summary read↔edit swap no longer resizes or jumps the box, and tracker display is pinned to parity at the shared presenter.
 
 ## 0.21.0
 

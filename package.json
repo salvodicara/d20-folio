@@ -1,7 +1,7 @@
 {
   "name": "d20-folio",
   "private": true,
-  "version": "0.21.0",
+  "version": "0.22.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/salvodicara/d20-folio.git"
