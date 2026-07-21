@@ -204,6 +204,21 @@ falls to the ErrorBoundary instead of looping (`chunk-recovery.ts`). Regressions
 `roster-boot-resilience.test.tsx`, `boot-resilience-utils.test.ts`, the `campaign-io` server-confirm +
 timeout-propagation cases. Detail: `docs/ARCHITECTURE.md` → "Boot data-resilience".
 
+**Session-summary edit-in-place — the read↔edit "resize jump" (2026-07-21, rule 27).** The owner
+reported the Campaign → Sessions summary swap felt "traumatic": the read view rendered markdown up to
+the `NoteClamp --reading` cap, then hard-swapped to a FIXED `rows=4` (min-height 88px) textarea that
+bore no relation to the content — a big instant geometry jump, compounded by an `autoFocus` scroll-yank
+and an action row that changed shape (one ghost button → two default-size buttons). **Fix:** the editor
+is now CONTENT-SIZED (`field-sizing: content`, `.sess-notes-edit`) seeded off the read content and
+capped at the SAME reading bound, so read and edit share ONE footprint (no fixed rows, no drag handle);
+focus is placed with `preventScroll`; and empty / read / edit are unified into one structure (a body
+region over a right-aligned `.sess-notes-actions` row whose height is identical whether it holds one
+button — Edit / Add — or two — Cancel / Save). The commit stays an explicit Save/Cancel (a recap is
+authored prose — the safe choice against blur-loss; only short always-complete tokens like the session
+NAME commit-on-blur). Regressions: `sessions-section.test.tsx` (seed-on-edit + Cancel-discards) and the
+`session-edit-no-jump.spec.ts` e2e (the editor is content-sized with no internal scroll; the region
+footprint barely changes read→edit — both fail on the old fixed box). DESIGN.md §12.
+
 ## Open decisions (owner)
 
 - **AI assistant — DROPPED (owner, 2026-07-06).** The long-carried "Phase-3 multi-provider AI

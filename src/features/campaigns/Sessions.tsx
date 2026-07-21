@@ -12,6 +12,17 @@
  * A new session opens straight into edit mode so you can write it down on the spot.
  * The accordion reuses the app's chevron + grid-rows reveal vocabulary.
  *
+ * All three summary states — empty / read / edit — share ONE stable footprint
+ * (`.sess-notes` body + right-aligned `.sess-notes-actions` row). The editor is
+ * CONTENT-SIZED (`field-sizing: content`, `.sess-notes-edit`) and capped at the
+ * SAME `NoteClamp --reading` bound as the rendered read view, so the read↔edit
+ * swap never resizes the box (the owner's "traumatic" jump). A recap is authored
+ * prose, so the commit is an explicit Save/Cancel (not the name field's commit-on-
+ * blur) — the safe choice against blur-loss; the action row keeps the same height
+ * whether it holds one button (Edit / Add) or two (Cancel / Save), so the affordance
+ * never resizes the surface either. Focus is placed WITHOUT scrolling (`preventScroll`)
+ * so entering edit never yanks the accordion.
+ *
  * The LATEST session is the FIXED at-a-glance row (always visible) + "New session";
  * the OLDER sessions are the section's collapsible DETAIL ({@link SectionPanel}).
  * Both the detail and a row's own body ride the SAME CSS `grid-template-rows` reveal
@@ -19,7 +30,7 @@
  * opening a row never makes two stacked height animators fight (bug B).
  */
 
-import { useEffect, useState, type MouseEvent, type ReactElement } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import { CalendarPlus, ChevronDown, PencilLine, ScrollText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -69,6 +80,20 @@ export function Sessions({ campaignId }: { campaignId: string }) {
   // Bounded list (CAMPAIGN-NOTES-UX): the latest sessions at a glance, the
   // archive behind "View all". A new session prepends, so it is always visible.
   const [showAll, setShowAll] = useState(false);
+  // Only ONE row edits at a time, so a single ref points at the mounted editor.
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+
+  // Focus the editor when a row enters edit mode — WITHOUT scrolling (the old
+  // `autoFocus` yanked the accordion into view). Caret to the end so an existing
+  // recap is appended to, never select-all-then-typed-over.
+  useEffect(() => {
+    if (!editingId) return;
+    const el = editorRef.current;
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    const end = el.value.length;
+    el.setSelectionRange(end, end);
+  }, [editingId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -212,54 +237,60 @@ export function Sessions({ campaignId }: { campaignId: string }) {
         </div>
         <div className="sess-bodywrap">
           <div className="sess-body">
-            {editing ? (
-              <div className="flex flex-col gap-2 pt-2">
-                <Textarea
-                  rows={4}
-                  autoFocus
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder={t("campaignHub.sessionNotesPlaceholder")}
-                  aria-label={t("campaignHub.sessionNotes")}
-                />
-                <div className="flex justify-end gap-2">
-                  <Button variant="ghost" onClick={() => setEditingId(null)}>
-                    {t("common.cancel")}
-                  </Button>
-                  <Button variant="primary" onClick={() => saveNotes(s.id)}>
-                    {t("common.save")}
-                  </Button>
-                </div>
-              </div>
-            ) : s.notes.trim() ? (
-              <div className="flex flex-col gap-2 pt-2">
-                {/* Bounded preview (CAMPAIGN-NOTES-UX): expanding the row is already
-                    intent-to-read, so the generous `reading` cap lets a typical recap
-                    show whole — only a truly long one clamps behind "Show more". */}
-                <NoteClamp variant="reading">
-                  <BlockMarkdown
-                    text={s.notes}
-                    className="sess-prose max-w-[--measure] text-sm text-text-secondary"
+            {/* Empty / read / edit share ONE footprint: a body region + a right-
+                aligned action row whose height never changes (one button or two). */}
+            <div className="sess-notes">
+              {editing ? (
+                <>
+                  <Textarea
+                    ref={editorRef}
+                    rows={3}
+                    className="sess-notes-edit"
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    placeholder={t("campaignHub.sessionNotesPlaceholder")}
+                    aria-label={t("campaignHub.sessionNotes")}
                   />
-                </NoteClamp>
-                <div className="flex justify-end">
-                  <Button variant="ghost" size="sm" onClick={() => startEdit(s)}>
-                    <Icon as={PencilLine} size="sm" decorative />
-                    {t("campaignHub.sessionEditSummary")}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between gap-3 pt-2">
-                <span className="text-sm text-text-muted">
-                  {t("campaignHub.sessionNoSummary")}
-                </span>
-                <Button variant="secondary" size="sm" onClick={() => startEdit(s)}>
-                  <Icon as={PencilLine} size="sm" decorative />
-                  {t("campaignHub.sessionAddSummary")}
-                </Button>
-              </div>
-            )}
+                  <div className="sess-notes-actions">
+                    <Button variant="ghost" size="sm" onClick={() => setEditingId(null)}>
+                      {t("common.cancel")}
+                    </Button>
+                    <Button variant="primary" size="sm" onClick={() => saveNotes(s.id)}>
+                      {t("common.save")}
+                    </Button>
+                  </div>
+                </>
+              ) : s.notes.trim() ? (
+                <>
+                  {/* Bounded preview (CAMPAIGN-NOTES-UX): expanding the row is already
+                      intent-to-read, so the generous `reading` cap lets a typical recap
+                      show whole — only a truly long one clamps behind "Show more". The
+                      editor shares this cap, so the swap to raw text keeps the box size. */}
+                  <NoteClamp variant="reading">
+                    <BlockMarkdown
+                      text={s.notes}
+                      className="sess-prose max-w-[--measure] text-sm text-text-secondary"
+                    />
+                  </NoteClamp>
+                  <div className="sess-notes-actions">
+                    <Button variant="ghost" size="sm" onClick={() => startEdit(s)}>
+                      <Icon as={PencilLine} size="sm" decorative />
+                      {t("campaignHub.sessionEditSummary")}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="sess-notes-empty">{t("campaignHub.sessionNoSummary")}</p>
+                  <div className="sess-notes-actions">
+                    <Button variant="secondary" size="sm" onClick={() => startEdit(s)}>
+                      <Icon as={PencilLine} size="sm" decorative />
+                      {t("campaignHub.sessionAddSummary")}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </li>

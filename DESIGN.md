@@ -2058,6 +2058,17 @@ editable **on intent** — never wrapped in standing edit boxes.
   everywhere; see the Product Constitution.)
 - **Editing happens IN PLACE.** Never force users to a sub-page to edit a visible field. Use
   `InlineEditable` / `OverrideControl` everywhere a value is shown.
+- **Prose editors are CONTENT-SIZED, not fixed-row boxes** (the session-summary `.sess-notes-edit`
+  recipe; D28). A `<textarea>` for authored prose (a session recap) uses `field-sizing: content`
+  capped at the SAME reading bound as its rendered read view (`NoteClamp --reading` →
+  `min(420px, 55vh)`), off a ~2-line floor and with `resize: none` — so the read↔edit swap keeps ONE
+  footprint and the box never resizes/jumps (the owner's "traumatic" report; past the cap it scrolls
+  natively while authoring). Focus is placed with `preventScroll` (no scroll-yank). The three states —
+  empty / read / edit — share one structure: a body region over a right-aligned `.sess-notes-actions`
+  row whose height is identical whether it holds one button or two, so the affordance never resizes the
+  surface. Prose commits explicitly (Save / Cancel — safe against blur-loss); only short
+  always-complete tokens (the session NAME) commit-on-blur via `InlineEditable`. Guard:
+  `tests/e2e/session-edit-no-jump.spec.ts`.
 - A page-level edit toggle gates campaign-hub editing (cleaner separation of concerns for multi-actor
   Phase 2) rather than the character-scoped global sheet mode.
 

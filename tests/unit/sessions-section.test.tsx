@@ -91,6 +91,45 @@ describe("Sessions", () => {
     });
   });
 
+  it("edit-in-place — seeds the editor with the existing summary and persists an edit on Save", async () => {
+    listMock.mockResolvedValue([
+      { ...session("s1", "Session 1"), notes: "The party crossed the bridge." },
+    ]);
+    render(<Sessions campaignId="c1" />);
+    await screen.findByText("Session 1");
+    fireEvent.click(screen.getByRole("button", { name: /show session details/i }));
+    // Read view first; the editor mounts only on "Edit summary".
+    expect(screen.queryByLabelText(/session summary/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /edit summary/i }));
+    // The content-sized editor is SEEDED with the current notes (no blank re-type).
+    const notes = await screen.findByLabelText<HTMLTextAreaElement>(/session summary/i);
+    expect(notes.value).toBe("The party crossed the bridge.");
+    fireEvent.change(notes, {
+      target: { value: "The party crossed the bridge and met a scout." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^save$/i }));
+    expect(updateMock).toHaveBeenCalledWith("c1", "s1", {
+      notes: "The party crossed the bridge and met a scout.",
+    });
+  });
+
+  it("edit-in-place — Cancel discards the draft and writes nothing", async () => {
+    listMock.mockResolvedValue([
+      { ...session("s1", "Session 1"), notes: "Original recap." },
+    ]);
+    render(<Sessions campaignId="c1" />);
+    await screen.findByText("Session 1");
+    fireEvent.click(screen.getByRole("button", { name: /show session details/i }));
+    fireEvent.click(screen.getByRole("button", { name: /edit summary/i }));
+    const notes = await screen.findByLabelText(/session summary/i);
+    fireEvent.change(notes, { target: { value: "throwaway edit" } });
+    fireEvent.click(screen.getByRole("button", { name: /^cancel$/i }));
+    // Back to the read view, nothing persisted, the original text intact.
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText(/session summary/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Original recap.")).toBeInTheDocument();
+  });
+
   it("CAMPAIGN-NOTES-UX — bounds the list to the latest 5 sessions behind View all", async () => {
     // Newest first (the io contract): Sessions 7…1. At a glance only the latest
     // 5 show; the archive sits behind "View all (7)" and folds back.

@@ -12238,6 +12238,55 @@ h6.bm-heading {
   padding-bottom: var(--sp-3);
 }
 
+/* ── Session summary (D28 edit-in-place) — empty / read / edit share ONE
+   footprint: a body region (rendered markdown · content-sized editor · empty
+   placeholder) over a right-aligned action row whose height is identical whether
+   it holds one button (Edit / Add) or two (Cancel / Save). Switching state never
+   resizes the surface (the owner's "traumatic" jump). ── */
+.sess-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-top: var(--sp-2);
+}
+.sess-notes-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+.sess-notes-empty {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+/* The editor is CONTENT-SIZED (never the fixed 88px / rows=4 box) and capped at
+   the SAME reading bound as the rendered read view (NoteClamp `--reading` →
+   min(420px, 55vh)), so read↔edit share one footprint and the box never jumps.
+   `field-sizing: content` grows it with the text off a ~2-line floor (seeding to
+   the read content's height); past the cap it scrolls natively — a textarea's own
+   authoring overflow, not the D27 reading anti-pattern. No drag handle: the height
+   is content-owned, not hand-dragged, so there is no geometry to yank. A gentle
+   fade-in marks "now editing" without animating layout (the `.sess-bodywrap`
+   grid-rows reveal stays the ONE height animator per the file header); the global
+   `[data-motion="reduced"]` gate (index.css) collapses it for reduced motion. */
+textarea.input.sess-notes-edit {
+  min-height: 3.4em;
+  max-height: min(420px, 55vh);
+  field-sizing: content;
+  resize: none;
+  animation: sess-notes-in var(--m-fast) var(--ease-settle) both;
+}
+@keyframes sess-notes-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ── SectionPanel detail reveal — the ONE height animator for a hub section's
    collapsible detail (the ledger / session list / older chapters / note board).
    The single `grid-template-rows: 0fr → 1fr` recipe (UniversalCard vocabulary),
