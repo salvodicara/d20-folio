@@ -10,8 +10,12 @@
 
 ## Current state
 
-Live at **v0.19.0** (https://d20-folio.web.app), with **6 real users** playing on it since
-2026-06-08. **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
+**Released on `main` at v0.21.0** (v0.22.0 staged in `.changeset/`); the last owner-fired
+**production deploy is v0.19.0** (https://d20-folio.web.app, 2026-07-11) — `main` runs ahead of live
+because deploys are owner-gated (golden rule 22). **6 real users** have been playing since
+2026-06-08. Since v0.19.0: the repo went **open-source + split-repo** (2026-07-17), the **full-BG3
+identity pivot** landed code-complete (asset integration pending), and the **DDB-parity feature
+epic** was ratified and queued (bestiary-first; the competitive map is `docs/POSITIONING.md`). **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
 **id-storage + GR7 i18n-leak-eradication campaign** is **CLOSED** (v0.13.0): every SRD-derived value
 is a stable, mostly-branded id; every user-visible string lives in `src/i18n/**` (a new language = a
@@ -43,8 +47,9 @@ the **"· active" self-labelling** of while-active effect chips and the GR7 **pr
 (`extractTrigger` / `extractSpellTrigger` / `extractDamageDice` retired in favour of structured tokens).
 The **DM toolkit's** headline surface (the in-hub party-overview dashboard + encounter/initiative
 tracker) is **shipped and live**; the forward frontier (detailed under _Next — the forward plan_) is
-the tracking-doc reconciliation audit (rule 16, the on-ramp), the new-primitive design tier
-(marked-target model et al.), and the P4 polish tail (guided tour, compendium polish).
+the tracking-doc reconciliation audit (rule 16, the on-ramp), the ratified **DDB-parity feature
+epic** (bestiary-first — `docs/POSITIONING.md`), and the P4 polish tail (guided tour, compendium
+polish).
 
 **Session undo/redo stack — shipped in v0.19.0, DEPLOYED live (2026-07-11):** the 5-second undo toast grew a durable
 home — a per-character, session-memory, LIFO **undo stack** (`src/stores/undoStore.ts`, depth 20) with
@@ -395,6 +400,9 @@ The pivot's work packages:
   full-surface sweeps), not folded.
 
 ## Ratified epic — The DDB-parity frontier (owner-ratified 2026-07-17)
+
+> The standing competitive map this epic serves — the ahead/behind frame, the deliberate non-goals,
+> and the moat-vs-opening — is `docs/POSITIONING.md`.
 
 **The owner's charter, captured on ratification (golden rule 4).** A full competitive audit vs
 D&D Beyond (mid-2026 verified state: Project Sigil dead, 2D Maps free-for-all, DDB's 2026 roadmap

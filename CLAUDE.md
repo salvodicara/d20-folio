@@ -12,20 +12,23 @@ a complete pre-loaded 2024 SRD database, cloud sync, and party/campaign features
 Treasury · SharedNotes · Sessions · DM Tools · encounter/initiative tracking — built and live). The
 deterministic rules engine is the product's intelligence — there is no AI/LLM assistant surface.
 
-**Current state:** live at **v0.19.0** (deployed 2026-07-11; 6 real users). The 100%-automation
+**Current state:** **released on `main` at v0.21.0** (v0.22.0 staged in `.changeset/`); the last
+owner-fired **deploy to production is v0.19.0** (2026-07-11; 6 real users) — `main` runs ahead of
+live because deploys are owner-gated (golden rule 22). The repo is **open-source + split-repo since
+2026-07-17** (public SRD-only `salvodicara/d20-folio` + the private `content-pack`); the **full-BG3
+identity pivot is code-complete**, with only owner-generated art asset integration remaining (the
+"ASSET-INTEGRATION HANDOFF" in `PROGRESS.md`). The 100%-automation
 push, the encounter/combat single-source re-architecture, the campaign-hub redesign, admin
 god-mode, the initiative single-source re-architecture, the sheet's management-chrome system (the
 Binder's Fob / Signet), and the combat-CTA/reversal grammar are shipped and deployed; the
 mechanical-automation long-tail (seams S1–S11) is now effectively CLOSED. The forward frontier is
 (1) the 2024 core-rules SYSTEM-audit fix waves (RA-01…RA-35 — `docs/AUTOMATION_BACKLOG.md`), (2) a
-tracking-doc reconciliation audit (the rule-16 on-ramp), (3) the design-heavy new-primitive tier
-(the marked-target model flagship, et al.), and (4) parked backups/observability/legal (the light
+tracking-doc reconciliation audit (the rule-16 on-ramp), (3) the ratified DDB-parity feature epic (bestiary-first — `docs/POSITIONING.md`), and (4) parked backups/observability/legal (the light
 theme is at FULL parity: the depth-parity
 rebuild shipped 2026-07-09, the owner-ratified "Daylight Sibling Plates" art direction shipped
 2026-07-10, and the owner-ratified "Ember Penumbra" lit-magic grammar shipped 2026-07-11 — per-theme
 scene art, the P8 panel material wired, the custom-art veil, the glow-below gilt grammar, no open
-light-theme work). Roadmap + open decisions: `PROGRESS.md`; the open
-frontier map: `docs/AUTOMATION_BACKLOG.md`.
+light-theme work). Roadmap + open decisions: `PROGRESS.md`; competitive positioning vs D&D Beyond: `docs/POSITIONING.md`; the open frontier map: `docs/AUTOMATION_BACKLOG.md`.
 
 ## Canonical doc index
 
@@ -54,6 +57,7 @@ the canonical set.
 | `docs/RELEASE.md`              | The changeset → release flow.                                                                                                                                                                                                                                                |
 | `docs/WORKTREES.md`            | **The work standard** — one worktree + branch-off-`main` per task; NO PRs — agents converge, then merge to `main` (`just wt-new/wt-rm/wt-list`).                                                                                                                             |
 | `docs/BUG_REPORTING.md`        | Cloud-Functions runbook — bug-report → GitHub-issue, new-user email, and the SAFE-01 billing kill-switch (setup · IAM · restore path).                                                                                                                                       |
+| `docs/POSITIONING.md`          | **Competitive north star** — where d20 Folio stands vs D&D Beyond (the ahead/behind map), the deliberate non-goals, the moat-vs-opening, and the SRD-only monetization boundary. The "why/where"; `PROGRESS.md`'s DDB-parity epic is the "what/when".                        |
 
 **The contract:**
 
