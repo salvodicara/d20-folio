@@ -18,7 +18,7 @@ import type { Locale } from "@/lib/locale";
 import type { SrdFeatData, FeatCategory } from "@/data/types";
 import { defineFilter, type CompendiumPickerSpec, type TFn } from "../types";
 import { CmpSeal } from "../CmpSeal";
-import { descriptionSearch } from "./shared";
+import { descriptionSearch, nameCorpus } from "./shared";
 
 /** Resolve a localized SRD string for a feat field (top-level catalogue key). */
 const featText = (f: SrdFeatData, field: string, locale: Locale) =>
@@ -49,12 +49,11 @@ export const featSpec: CompendiumPickerSpec<SrdFeatData> = {
   // NON-active locale's SRD shard is lazy-loaded per locale (SLICE 8) and may not
   // be resident, so resolving it here would throw — match the active locale, not a
   // hardcoded "it".
-  searchText: (f, { locale }) => [
-    localizeSrd("feat", f.id, "name", locale),
-    localizeSrd("feat", f.id, "name", "en"),
-    f.id,
+  nameText: (f, { locale }) => nameCorpus("feat", f.id, featText(f, "name", locale)),
+  searchText: (f, ctx) => [
+    ...featSpec.nameText(f, ctx),
     // Item f — search by what the feat DOES (active locale + EN), both resident.
-    ...descriptionSearch("feat", f.id, locale),
+    ...descriptionSearch("feat", f.id, ctx.locale),
   ],
 
   filters: [

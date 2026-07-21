@@ -18,7 +18,7 @@ import type { Locale } from "@/lib/locale";
 import type { WeaponMastery } from "@/data/types";
 import type { CompendiumPickerSpec } from "../types";
 import { CmpSeal } from "../CmpSeal";
-import { descriptionSearch } from "./shared";
+import { descriptionSearch, nameCorpus } from "./shared";
 
 /** One browsable weapon-mastery property — identified by its catalogue id. */
 interface MasteryEntry {
@@ -58,11 +58,11 @@ export const weaponMasterySpec: CompendiumPickerSpec<MasteryEntry> = {
   getName: (e, { locale }) => mText(e, "name", locale),
   // Active locale + EN names (both always loaded) + the id + the description text
   // (item f corpus): a player finds "Topple" by searching "prone" in either lang.
-  searchText: (e, { locale }) => [
-    localizeSrd("weapon-mastery", e.id, "name", locale),
-    localizeSrd("weapon-mastery", e.id, "name", "en"),
-    e.id,
-    ...descriptionSearch("weapon-mastery", e.id, locale),
+  nameText: (e, { locale }) =>
+    nameCorpus("weapon-mastery", e.id, mText(e, "name", locale)),
+  searchText: (e, ctx) => [
+    ...weaponMasterySpec.nameText(e, ctx),
+    ...descriptionSearch("weapon-mastery", e.id, ctx.locale),
   ],
   searchPlaceholder: (t) => t("weaponMastery.search"),
 

@@ -23,7 +23,7 @@ import type { SrdMagicItemData, MagicItemRarity, MagicItemType } from "@/data/ty
 import type { SrdEquipmentRef } from "@/types/character";
 import { defineFilter, type CompendiumPickerSpec } from "../types";
 import { CmpSeal } from "../CmpSeal";
-import { descriptionSearch } from "./shared";
+import { descriptionSearch, nameCorpus } from "./shared";
 
 // The rarity + type facet lists come from the canonical runtime tuples in
 // `@/data/types` (golden rule 6), kept exhaustive over the union by construction.
@@ -69,12 +69,11 @@ export const magicItemSpec: CompendiumPickerSpec<SrdMagicItemData> = {
   data: SRD_MAGIC_ITEMS,
   getId: (i) => i.id,
   getName: (i, { locale }) => miText(i, "name", locale),
-  searchText: (i, { locale }) => [
-    miText(i, "name", locale),
-    localizeSrd("magic-item", i.id, "name", "en"),
-    i.id,
+  nameText: (i, { locale }) => nameCorpus("magic-item", i.id, miText(i, "name", locale)),
+  searchText: (i, ctx) => [
+    ...magicItemSpec.nameText(i, ctx),
     // Item f — search by what the item DOES (active locale + EN), both resident.
-    ...descriptionSearch("magic-item", i.id, locale),
+    ...descriptionSearch("magic-item", i.id, ctx.locale),
   ],
   searchPlaceholder: (t) => t("magicItems.searchPlaceholder"),
   closeOnAdd: true,

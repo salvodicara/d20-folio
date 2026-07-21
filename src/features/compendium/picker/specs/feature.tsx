@@ -26,7 +26,7 @@ import { defineFilter, type CompendiumPickerSpec, type PickerCtx } from "../type
 /** Resolve a localized SRD string for a class-feature field (top-level key). */
 const featureText = (f: SrdClassFeatureData, field: string, locale: Locale) =>
   localizeSrd("class-feature", f.id, field, locale);
-import { ALL_CLASSES, classLabel, descriptionSearch } from "./shared";
+import { ALL_CLASSES, classLabel, descriptionSearch, nameCorpus } from "./shared";
 import { CmpSeal } from "../CmpSeal";
 
 function charClassOf(ctx: PickerCtx): string {
@@ -59,15 +59,16 @@ export const featureSpec: CompendiumPickerSpec<SrdClassFeatureData> = {
   // The NON-active locale's SRD shard is lazy-loaded per locale (SLICE 8) and may
   // not be resident, so resolving it here would throw. (Subclass names come from the
   // static srd-names BiText map — not a lazy shard — so both locales are safe there.)
-  searchText: (f, { locale }) => [
-    localizeSrd("class-feature", f.id, "name", locale),
-    localizeSrd("class-feature", f.id, "name", "en"),
-    f.id,
+  nameText: (f, { locale }) => [
+    ...nameCorpus("class-feature", f.id, featureText(f, "name", locale)),
     // …so a feature is findable by its (localized) subclass too, not just the slug.
     f.subclass ? localizeSubclassName(f.subclass, "en") : undefined,
     f.subclass ? localizeSubclassName(f.subclass, "it") : undefined,
+  ],
+  searchText: (f, ctx) => [
+    ...featureSpec.nameText(f, ctx),
     // Item f — search by what the feature DOES (active locale + EN), both resident.
-    ...descriptionSearch("class-feature", f.id, locale),
+    ...descriptionSearch("class-feature", f.id, ctx.locale),
   ],
 
   filters: [

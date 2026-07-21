@@ -168,7 +168,20 @@ export interface CompendiumPickerSpec<T> {
   data: readonly T[];
   getId: (entry: T) => string;
   getName: (entry: T, ctx: PickerCtx) => string;
-  /** Bilingual search candidates (localized name, EN name, id, …). */
+  /**
+   * The NAME search corpus — localized name + always-resident EN name + id (+ any
+   * name-adjacent candidate, e.g. a feature's subclass). This is the TIER-1 corpus
+   * the picker ranks ABOVE description matches (a name hit outranks a body-text
+   * hit): the picker feeds it to `rankedSearch` as `nameOf`. Always a SUBSET of
+   * {@link searchText}.
+   */
+  nameText: (entry: T, ctx: PickerCtx) => Array<string | null | undefined>;
+  /**
+   * The FULL bilingual search corpus — the {@link nameText} candidates PLUS the
+   * entity's description prose (so a player finds an item by what it DOES, not only
+   * its name). The combined haystack: the command palette's gloss tier and
+   * `rankedSearch`'s tier-2 `descOf`. Always ⊇ {@link nameText}.
+   */
   searchText: (entry: T, ctx: PickerCtx) => Array<string | null | undefined>;
   filters: FilterGroup<T>[];
   row: (entry: T, ctx: PickerCtx) => PickerRowView;

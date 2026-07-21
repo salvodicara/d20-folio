@@ -72,3 +72,17 @@ export function descriptionSearch(
   }
   return out;
 }
+
+/**
+ * The NAME search corpus for a compendium entity: its localized display name, the
+ * always-resident EN name (bilingual — an IT player finds "Dash" by "Scatto" and an
+ * EN player finds "Scatto" by "Dash"), and the stable id (so a deep-linked/id query
+ * is a NAME hit, not a body hit). This is the TIER-1 corpus the picker ranks above
+ * description matches. Spread any extra name-adjacent candidate (e.g. a feature's
+ * subclass) AFTER it. Pass the already-resolved `localized` name so each spec keeps
+ * its own accessor (never resolving the lazy non-active shard here — same resident-
+ * only contract as {@link descriptionSearch}).
+ */
+export function nameCorpus(kind: SrdKind, id: string, localized: string): string[] {
+  return [localized, localizeSrd(kind, id, "name", "en"), id];
+}

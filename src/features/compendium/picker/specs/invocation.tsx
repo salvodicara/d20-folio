@@ -26,7 +26,7 @@ import type { CharacterDoc } from "@/types/character";
 import type { TFn } from "../types";
 import type { CompendiumPickerSpec } from "../types";
 import { CmpSeal } from "../CmpSeal";
-import { descriptionSearch } from "./shared";
+import { descriptionSearch, nameCorpus } from "./shared";
 
 /** The invocation id whose familiar buffs we surface (Pact of the Chain). */
 const CHAIN_MASTER_ID = "investment-of-the-chain-master";
@@ -119,12 +119,11 @@ export const invocationSpec: CompendiumPickerSpec<SrdEldritchInvocation> = {
   getId: (i) => i.id,
   getName: (i, { locale }) => invText(i, "name", locale),
   // Active locale + EN (both always loaded); never the lazy non-active shard.
-  searchText: (i, { locale }) => [
-    localizeSrd("invocation", i.id, "name", locale),
-    localizeSrd("invocation", i.id, "name", "en"),
-    i.id,
+  nameText: (i, { locale }) => nameCorpus("invocation", i.id, invText(i, "name", locale)),
+  searchText: (i, ctx) => [
+    ...invocationSpec.nameText(i, ctx),
     // Item f — search by what the invocation DOES (active locale + EN), both resident.
-    ...descriptionSearch("invocation", i.id, locale),
+    ...descriptionSearch("invocation", i.id, ctx.locale),
   ],
   searchPlaceholder: (t) => t("levelUp.searchInvocations"),
 

@@ -30,7 +30,7 @@ import {
   type PickerCtx,
   type PickerDetailView,
 } from "../types";
-import { CASTER_CLASSES, classLabel, descriptionSearch } from "./shared";
+import { CASTER_CLASSES, classLabel, descriptionSearch, nameCorpus } from "./shared";
 
 /** Resolve a localized SRD string for a spell field (top-level catalogue key). */
 const spellText = (s: SrdSpellData, field: string, locale: Locale) =>
@@ -74,12 +74,11 @@ export const spellSpec: CompendiumPickerSpec<SrdSpellData> = {
   data: spells,
   getId: (s) => s.id,
   getName: (s, { locale }) => spellText(s, "name", locale),
-  searchText: (s, { locale }) => [
-    spellText(s, "name", locale),
-    localizeSrd("spell", s.id, "name", "en"),
-    s.id,
+  nameText: (s, { locale }) => nameCorpus("spell", s.id, spellText(s, "name", locale)),
+  searchText: (s, ctx) => [
+    ...spellSpec.nameText(s, ctx),
     // Item f — search by what the spell DOES (active locale + EN), both resident.
-    ...descriptionSearch("spell", s.id, locale),
+    ...descriptionSearch("spell", s.id, ctx.locale),
   ],
   searchPlaceholder: (t) => t("spells.searchPlaceholder"),
 

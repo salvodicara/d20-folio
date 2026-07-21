@@ -15,7 +15,7 @@ import type { Locale } from "@/lib/locale";
 import type { SrdMetamagicOption } from "@/data/metamagic";
 import type { CompendiumPickerSpec } from "../types";
 import { CmpSeal } from "../CmpSeal";
-import { descriptionSearch } from "./shared";
+import { descriptionSearch, nameCorpus } from "./shared";
 
 /** Resolve a localized SRD string for a metamagic field. */
 const mmText = (m: SrdMetamagicOption, field: string, locale: Locale) =>
@@ -32,12 +32,11 @@ export const metamagicSpec: CompendiumPickerSpec<SrdMetamagicOption> = {
   getId: (m) => m.id,
   getName: (m, { locale }) => mmText(m, "name", locale),
   // Active locale + EN (both always loaded); never the lazy non-active shard.
-  searchText: (m, { locale }) => [
-    localizeSrd("metamagic", m.id, "name", locale),
-    localizeSrd("metamagic", m.id, "name", "en"),
-    m.id,
+  nameText: (m, { locale }) => nameCorpus("metamagic", m.id, mmText(m, "name", locale)),
+  searchText: (m, ctx) => [
+    ...metamagicSpec.nameText(m, ctx),
     // Item f — search by what the metamagic DOES (active locale + EN), both resident.
-    ...descriptionSearch("metamagic", m.id, locale),
+    ...descriptionSearch("metamagic", m.id, ctx.locale),
   ],
   searchPlaceholder: (t) => t("levelUp.searchMetamagic"),
 

@@ -2313,7 +2313,12 @@ Before writing new CSS or a new component, check what existing primitives alread
 accent-insensitive + **token-based** via `matchesSearch` (pass both the localized label and `name.en`)
 — the query is split into whitespace tokens and every token must appear somewhere in the joined
 candidate corpus, so word order and interstitial words ("di"/"of") never break a match ("pozione
-guarigione" finds "Pozione di Guarigione"); never roll your own search. Pickers reuse `OptionGrid` +
+guarigione" finds "Pozione di Guarigione"); never roll your own search. **Ranking is name-priority:**
+the compendium / add-item picker (`useCompendiumPicker`) and the wizard pickers rank results through
+`rankedSearch` — an entry whose NAME matches (localized name / EN name / id, exposed by each spec's
+`nameText`) sorts ABOVE one that matches only in its DESCRIPTION, stable within each tier, with the
+`DESC_QUERY_MIN` gate suppressing description hits for 1–2-char queries; an empty query keeps the
+natural data order. Pickers reuse `OptionGrid` +
 picker parts (`PickerSearch`, `FilterChip`, `PickerRow`). One
 mock, all edge cases: `src/lib/mock.ts → MOCK_CHARACTER` — extend it, never add a second mock.
 

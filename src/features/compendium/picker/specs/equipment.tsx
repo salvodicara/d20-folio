@@ -21,7 +21,7 @@ import type { SrdEquipmentData, EquipmentCategory } from "@/data/types";
 import type { SrdEquipmentRef, SrdWeaponRef } from "@/types/character";
 import { defineFilter, type CompendiumPickerSpec } from "../types";
 import { CmpSeal } from "../CmpSeal";
-import { descriptionSearch } from "./shared";
+import { descriptionSearch, nameCorpus } from "./shared";
 
 const CATEGORIES: { value: EquipmentCategory; key: string }[] = [
   { value: "weapon", key: "equipment.weapons" },
@@ -60,13 +60,12 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
   data: SRD_EQUIPMENT,
   getId: (i) => i.id,
   getName: (i, { locale }) => itemText(i, "name", locale),
-  searchText: (i, { locale }) => [
-    itemText(i, "name", locale),
-    localizeSrd("equipment", i.id, "name", "en"),
-    i.id,
+  nameText: (i, { locale }) => nameCorpus("equipment", i.id, itemText(i, "name", locale)),
+  searchText: (i, ctx) => [
+    ...equipmentSpec.nameText(i, ctx),
     // Item f — search by description (active locale + EN); many equipment items
     // have no description field, so the helper's hasSrd guard skips those.
-    ...descriptionSearch("equipment", i.id, locale),
+    ...descriptionSearch("equipment", i.id, ctx.locale),
   ],
   searchPlaceholder: (t) => t("equipment.searchPlaceholder"),
 

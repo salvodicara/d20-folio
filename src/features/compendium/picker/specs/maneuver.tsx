@@ -16,7 +16,7 @@ import type { Locale } from "@/lib/locale";
 import type { SrdManeuver } from "@/data/maneuvers";
 import { defineFilter, type CompendiumPickerSpec } from "../types";
 import { CmpSeal } from "../CmpSeal";
-import { descriptionSearch } from "./shared";
+import { descriptionSearch, nameCorpus } from "./shared";
 
 type Slot = SrdManeuver["slot"];
 const SLOTS: readonly Slot[] = [...MANEUVER_SLOTS];
@@ -44,12 +44,11 @@ export const maneuverSpec: CompendiumPickerSpec<SrdManeuver> = {
   getId: (m) => m.id,
   getName: (m, { locale }) => mvText(m, "name", locale),
   // Active locale + EN (both always loaded); never the lazy non-active shard.
-  searchText: (m, { locale }) => [
-    localizeSrd("maneuver", m.id, "name", locale),
-    localizeSrd("maneuver", m.id, "name", "en"),
-    m.id,
+  nameText: (m, { locale }) => nameCorpus("maneuver", m.id, mvText(m, "name", locale)),
+  searchText: (m, ctx) => [
+    ...maneuverSpec.nameText(m, ctx),
     // Item f — search by what the maneuver DOES (active locale + EN), both resident.
-    ...descriptionSearch("maneuver", m.id, locale),
+    ...descriptionSearch("maneuver", m.id, ctx.locale),
   ],
   searchPlaceholder: (t) => t("maneuvers.search"),
 

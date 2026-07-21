@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import { useLocale } from "@/hooks/useLocale";
 import { useScrollMemory } from "@/hooks/useScrollMemory";
 import { useCharacterStore } from "@/stores/characterStore";
-import { matchesSearch } from "@/lib/search";
+import { rankedSearch } from "@/lib/search";
 import type { CompendiumPickerSpec, PickerCtx } from "./types";
 
 export type PickerMode = "add" | "browse";
@@ -164,9 +164,27 @@ export function useCompendiumPicker<T>(
       const v = filterState[g.id];
       result = result.filter((e) => g.predicate(e, v, ctx, filterState));
     }
-    const q = query.trim();
-    if (q) result = result.filter((e) => matchesSearch(q, ...spec.searchText(e, ctx)));
-    return result;
+    // NAME-PRIORITY ranking (fb4 — the SAME `rankedSearch` primitive the wizard
+    // pickers use): an entry whose NAME matches outranks one that matches only in
+    // its DESCRIPTION, so "pozione guarigione" surfaces "Pozione di Guarigione"
+    // FIRST, not third under items that merely mention it in their body text. An
+    // empty query returns the faceted pool untouched (natural/data order); order is
+    // stable WITHIN each tier. `descOf` is the FULL corpus (name + description) so
+    // for queries ≥ DESC_QUERY_MIN chars the ranked SET equals the old flat filter —
+    // tier 2 only ever sees non-name hits, so this REORDERS without dropping any
+    // (matching the command palette's own name/gloss partition); shorter queries are
+    // name-only (rankedSearch's noise gate), matching the wizard pickers.
+    // Join a spec's candidate array into ONE haystack (Array.join renders null/
+    // undefined as ""; interstitial whitespace is irrelevant to the tokenizer).
+    const corpus = (cands: Array<string | null | undefined>) => cands.join(" ");
+    return [
+      ...rankedSearch(
+        query.trim(),
+        result,
+        (e) => corpus(spec.nameText(e, ctx)),
+        (e) => corpus(spec.searchText(e, ctx))
+      ),
+    ];
   }, [spec, filterState, query, ctx]);
 
   const existingIds = useMemo(() => {

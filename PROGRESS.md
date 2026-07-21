@@ -110,6 +110,17 @@ every picker). Order-independent, interstitial-word-tolerant, still partial-toke
 accent-insensitive / bilingual; `rankedSearch`'s two-tier name-over-description ranking and the
 `DESC_QUERY_MIN` gate are unchanged. Contract: `DESIGN.md` §15.6.
 
+**Compendium picker name-priority ranking (rule 27 stability fix, 2026-07-21):** the shared compendium /
+add-item picker (`useCompendiumPicker`) previously FLAT-filtered with `matchesSearch`, so an entry
+matching only in its DESCRIPTION sorted level with a NAME match — typing "pozione guarigione" surfaced
+"Pozione di Guarigione" only THIRD (below "Calderone della Rinascita" & co., which merely mention it in
+body text). It now reuses the SAME `rankedSearch` primitive the wizard pickers use: each spec exposes a
+`nameText` (localized name / EN name / id + subclass) alongside its combined `searchText`, and the
+picker feeds `nameOf = nameText`, `descOf = searchText` (combined) — so a NAME hit ranks above a
+description-only hit, the match SET is preserved exactly (tier 2 only ever sees non-name hits, mirroring
+the command palette's own name/gloss partition), and an empty query keeps natural data order. One fix
+covers BOTH the Compendium page and the add-item Equipment/Magic-item tabs. Contract: `DESIGN.md` §15.6.
+
 **v0.18.0 released + DEPLOYED live (2026-07-07):** the release bundled the **Polymorph Phase 2 Beast
 catalogue** (the full CR 0–8 fill — 91 forms, +73 new, EN+IT), the **Fable dark-theme chrome refresh**
 (the glowing-grimoire login splash, the war-table campaign backdrop, and the engraved
