@@ -722,6 +722,33 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "RA-13 Nick economy + TWF cap: a Nick-mastered Dagger + a non-Nick Shortsword (both Light). Commit a Light main-hand attack → BOTH off-hand rows appear (Dagger off-hand in the FREE group — Nick rides the Attack action; Shortsword off-hand as a Bonus). Commit the Dagger free off-hand → its card reads 'Used', the Bonus slot stays available, AND the Shortsword off-hand now reads 'Used' too (only ONE off-hand attack per turn). Undo restores both.",
   },
+  // TWF + EXTRA ATTACK — the off-hand reveal for the MOST COMMON dual-wield case:
+  //  a Fighter L5 (Extra Attack → attackBudget 2) dual-wields a Nick-mastered
+  //  Dagger + a non-Nick Shortsword (both Light). Unlike the Rogue
+  //  `weapon-mastery-nick` (no Extra Attack, where the lone main swing claims the
+  //  Action slot as its own `selected.action` occupant), an Extra-Attack martial's
+  //  main Light swing rides the Attack-action SWING ledger (`attackSwingIds`) and
+  //  leaves only the anonymous "attack-group" entry in `selected.action`. The
+  //  off-hand reveal gate must therefore recognize a committed Light MAIN-HAND
+  //  attack through `attackSwingIds` too — reading `selected.action` alone hid the
+  //  off-hand for every Extra-Attack dual-wielder. Once revealed, the Nick free
+  //  economy + the once-per-turn cap hold exactly as the Rogue case.
+  "twf-extra-attack": {
+    name: "Sable, Twin Blades",
+    raceId: "human",
+    classId: "fighter",
+    subclassId: "champion",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 10, DEX: 16, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+    weapons: [
+      { srdId: "dagger", quantity: 2 },
+      { srdId: "shortsword", quantity: 1 },
+    ],
+    weaponMasteries: ["dagger"],
+    exercises:
+      "TWF + Extra Attack: a Fighter L5 (attackBudget 2) dual-wields a Nick-mastered Dagger + a non-Nick Shortsword (both Light). Commit a Light main-hand SWING (rides the Attack-action ledger, not the Action slot) → BOTH off-hand rows appear (the bug: they used to stay hidden because the reveal gate read only `selected.action`). Commit the Dagger free off-hand → 'Used', the Bonus slot stays free (Second Wind live), the Shortsword off-hand reads 'Used' (once-per-turn cap); undo retracts.",
+  },
   // RA-14 TRACKED AMMUNITION — a Fighter L5 (Extra Attack → attackBudget 2)
   //  carrying three ranged weapons with matching (or empty) ammo rows. The
   //  Shortbow shows "Arrows · 18" and debits one per attack (undo credits it

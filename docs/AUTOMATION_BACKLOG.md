@@ -241,6 +241,14 @@ appears on a weapon row.
       Regression: the RA-13 blocks in `smart-tracker.test.ts` + `weapon-facts.test.tsx` (Nick
       free-economy, Topple/Graze resolved chips, cross-surface parity) + the off-hand-cap block in
       `blocked-reason.test.ts` (`committedOffHandId` — one off-hand attack per turn across free+bonus).
+      **Follow-up (2026-07-21):** the TWF off-hand REVEAL gate (`PlayTab.lightAttackCommitted`)
+      previously read only `selected.action`, so an Extra-Attack martial (Fighter/Ranger/Barbarian
+      dual-wielding two Light weapons) — whose main Light swing rides the Attack-action ledger
+      (`attackSwingIds`), leaving only the anonymous `attack-group` entry in `selected.action` —
+      never surfaced the off-hand (and thus never reached the Nick free-attack either). The gate now
+      also recognizes a committed Light MAIN-HAND swing in `attackSwingIds`, so Two-Weapon Fighting
+      works for the common Extra-Attack case; pinned by the two `twf-extra-attack` render tests in
+      `combat-action-derivations.test.tsx`.
 - [x] **RA-14 — Ammunition is never decremented; Loading is never capped.** _Attack procedure ·
       INTERACTION (defect B) · S2 · every-turn for archers._ SRD "Properties — Ammunition/Loading".
       Code: arrows were inventory `quantity` rows; firing debited nothing; Loading had no

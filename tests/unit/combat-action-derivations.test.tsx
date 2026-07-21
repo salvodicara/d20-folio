@@ -28,7 +28,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 // PlayTab now mounts the shared InitVital (TB4) → `combat-state-io` → Firebase; mock the
 // firebase module so this unit stays CI-pure (the env keys are unset in CI).
@@ -226,6 +226,91 @@ describe("PlayTab action derivations", () => {
     // EVERY non-claimant card the moment an off-hand commits, this one included)
     // is caught right here.
     expect(ctaButton("Cunning Action")).toBeEnabled();
+  });
+
+  // The off-hand reveal for an EXTRA-ATTACK martial — the most common dual-wield
+  // case, and the bug this fix closes. A Fighter L5 (attackBudget 2) commits its
+  // main Light swing through the Attack-action SWING ledger (`attackSwingIds`),
+  // NOT `selected.action` (which holds only the anonymous "attack-group" entry).
+  // The reveal gate reading `selected.action` alone never opened, so Two-Weapon
+  // Fighting was silently broken for every Fighter/Ranger/Barbarian dual-wielder.
+  it("RA-13 — an Extra-Attack martial's committed Light main swing reveals the off-hand (attackSwingIds path)", async () => {
+    useCharacterStore.setState({
+      character: buildDevScenario("twf-extra-attack"),
+      loading: false,
+      error: null,
+    });
+    renderPage();
+
+    // Extra Attack resolves to 2 (Fighter 5) → the main swing rides the swing
+    // ledger instead of claiming the Action slot as its own occupant.
+    await waitFor(() => expect(useCombatStore.getState().attackBudget).toBe(2));
+
+    // Before any attack the off-hand rows are hidden (the RAW gate).
+    expect(screen.queryByLabelText("Attack: Dagger (off-hand)")).toBeNull();
+    expect(screen.queryByLabelText("Attack: Shortsword (off-hand)")).toBeNull();
+
+    // Commit ONE Light main-hand swing (rides `attackSwingIds`, not `selected.action`)…
+    fireEvent.click(screen.getByLabelText("Attack: Dagger"));
+    await waitFor(() => expect(useCombatStore.getState().attacksUsed).toBe(1));
+    // …the anonymous group entry is the only `selected.action` occupant — the
+    // committed weapon's own id lives in the swing ledger.
+    expect(useCombatStore.getState().selected.action.map((s) => s.id)).toEqual([
+      "attack-group",
+    ]);
+    expect(useCombatStore.getState().attackSwingIds).toEqual(["weapon-dagger"]);
+
+    // …and BOTH off-hand rows now appear: the gate recognizes the committed Light
+    // main attack through the swing ledger, not just `selected.action`.
+    await waitFor(() => {
+      expect(screen.getByLabelText("Attack: Dagger (off-hand)")).toBeEnabled(); // Nick → free
+      expect(screen.getByLabelText("Attack: Shortsword (off-hand)")).toBeEnabled(); // non-Nick → bonus
+    });
+
+    // Undo the enabling main swing → the ledger empties → the off-hand rows
+    // retract (the reveal gate reads the swing ledger reactively).
+    act(() => useCombatStore.getState().undoAttackSwing());
+    await waitFor(() => {
+      expect(useCombatStore.getState().attackSwingIds).toEqual([]);
+      expect(screen.queryByLabelText("Attack: Dagger (off-hand)")).toBeNull();
+      expect(screen.queryByLabelText("Attack: Shortsword (off-hand)")).toBeNull();
+    });
+  });
+
+  // The Nick free-economy + once-per-turn cap must hold through the Extra-Attack
+  // swing path exactly as they do for the no-Extra-Attack Rogue (the RA-13 test
+  // above) — the fix only widened the reveal gate, it must not change the cap.
+  it("RA-13 — the Nick free economy + off-hand cap survive the Extra-Attack path (commit off-hand → Used, Bonus stays free, sibling capped)", async () => {
+    useCharacterStore.setState({
+      character: buildDevScenario("twf-extra-attack"),
+      loading: false,
+      error: null,
+    });
+    renderPage();
+    await waitFor(() => expect(useCombatStore.getState().attackBudget).toBe(2));
+
+    // Open the gate with a Light main swing, then commit the Nick (free) off-hand.
+    fireEvent.click(screen.getByLabelText("Attack: Dagger"));
+    await waitFor(() =>
+      expect(screen.getByLabelText("Attack: Dagger (off-hand)")).toBeEnabled()
+    );
+    fireEvent.click(screen.getByLabelText("Attack: Dagger (off-hand)"));
+
+    await waitFor(() => {
+      // The committed off-hand is its slot's spent occupant → "Used".
+      const committed = ctaButton("Dagger (off-hand)");
+      expect(committed).toBeDisabled();
+      expect(committed.getAttribute("aria-label")).toBe("Used: Dagger (off-hand)");
+    });
+
+    // The sibling off-hand is capped by the once-per-turn rule (spent + "Used")…
+    const sibling = ctaButton("Shortsword (off-hand)");
+    expect(sibling).toBeDisabled();
+    expect(sibling.getAttribute("aria-label")).toBe("Used: Shortsword (off-hand)");
+
+    // …yet the Bonus slot is STILL open: a non-off-hand Bonus action (Second Wind)
+    // stays live — so the sibling's disable is the off-hand cap, not the budget.
+    expect(ctaButton("Second Wind")).toBeEnabled();
   });
 
   it("D8 — the Actions group renders in sorted order (wiring witness: cantrips before leveled spells)", () => {

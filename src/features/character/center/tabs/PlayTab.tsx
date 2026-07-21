@@ -296,16 +296,30 @@ export function PlayTab() {
   // available AFTER you take the Attack action with a Light weapon. Separation of
   // concerns — the engine TAGS the off-hand rows (`offhand`) and the Light main
   // attacks (`lightWeapon`); the UI ENFORCES the turn-state prerequisite here by
-  // surfacing the off-hand rows only while a Light-weapon attack fills the Action
-  // slot. Undo that attack and the off-hand options retract again.
+  // surfacing the off-hand rows only while a committed Light main-hand attack
+  // exists this turn. Undo that attack and the off-hand options retract again.
+  //
+  // A committed Light MAIN-HAND attack surfaces through TWO ledgers depending on
+  // whether the character has Extra Attack:
+  //   · budget 1 — the lone attack claims the Action slot as its own
+  //     `selected.action` occupant (the id IS the weapon card's).
+  //   · Extra Attack (budget > 1) — the swing rides the Attack action and is
+  //     recorded by weapon-card id in `attackSwingIds`; `selected.action` holds
+  //     only the anonymous "attack-group" entry, so it never matches a weapon id.
+  // Reading `selected.action` alone hid the off-hand for EVERY Extra-Attack
+  // dual-wielder (the common case). Recognize a committed Light main attack in
+  // EITHER ledger — filtered to a `lightWeapon` main-hand card, so only a
+  // committed Light swing opens the gate (an uncommitted or non-Light one does not).
   const lightAttackCommitted = useMemo(() => {
+    const isLightMain = (id: string) =>
+      allActions.some((a) => a.id === id && a.lightWeapon);
     // B6 — a slot holds a LIST; the off-hand opens once ANY committed action is a
-    // Light-weapon attack.
-    if (selected.action.length === 0) return false;
-    return selected.action.some((sel) =>
-      allActions.some((a) => a.id === sel.id && a.lightWeapon)
+    // Light-weapon attack (Action-slot occupant OR Extra-Attack swing).
+    return (
+      selected.action.some((sel) => isLightMain(sel.id)) ||
+      attackSwingIds.some(isLightMain)
     );
-  }, [selected.action, allActions]);
+  }, [selected.action, attackSwingIds, allActions]);
 
   const visibleActions = useMemo(
     () => (lightAttackCommitted ? allActions : allActions.filter((a) => !a.offhand)),
