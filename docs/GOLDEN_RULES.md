@@ -191,7 +191,11 @@ renumber it into the 1–4 sequence. -->
     hard to reach, BUILD the seam (scenario injector, screenshot harness); if a test blocks you,
     enhance it. jsdom cannot see CSS motion — verify animation/transition work frame-by-frame in a
     real browser. Every visual change ships curated screenshots SENT to the owner's phone
-    (SendUserFile — file paths in a report are NOT delivery) plus exact look-here steps framed as
+    (SendUserFile — file paths in a report are NOT delivery), each CROPPED/zoomed to the region the
+    change actually affects and delivered as a BEFORE/AFTER pair wherever a prior state exists — so the
+    diff reads at a glance, never a whole-page shot that makes the owner hunt for it; a full-page shot
+    is right ONLY when the change IS the whole page (a new layout, a theme, a full redesign)
+    (owner, 2026-07-21) — plus exact look-here steps framed as
     "tell me if you like it", never "verify it works". Escalate only taste (fork a). TUI sketches,
     ≥2 genuinely different alternatives, and per-alternative mobile behaviour are for ESCALATED
     taste forks or owner-requested proposals only — routine UI work is decided by the agent
@@ -280,7 +284,8 @@ renumber it into the 19–20 sequence. -->
 25. **Owner previews every visual change — snapshots proactively pushed, not a merge gate.** ANY
     change carrying a visual/UX surface — a bug fix, a new feature, a redesign, a single token
     tweak — is captured as before/after snapshots (real Chromium, the rule-15 matrix: both themes,
-    EN + IT, desktop + mobile wherever they differ) and PROACTIVELY PUSHED to the owner's phone
+    EN + IT, desktop + mobile wherever they differ, each CROPPED to the region the change affects —
+    rule 15) and PROACTIVELY PUSHED to the owner's phone
     (SendUserFile) so the owner previews and monitors every UI/UX change continuously, before ever
     being asked to test it manually. This holds whether or not the owner is away, so no visual
     change lands unseen. It adds NO new merge gate: `main` still integrates freely (rule 11) and the

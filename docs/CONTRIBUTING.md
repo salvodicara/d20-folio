@@ -420,7 +420,8 @@ parallel production mock; production never loads them.
 > `tests/e2e/` (`_*-shots.spec.ts`, `_*-probe.spec.ts`) is a **capture/measurement harness, not a
 > test**: it is `test.skip`-gated on its own output-dir / mode env var (`SHOT_DIR`, `PERF=1`, …), so it
 > is SKIPPED in every lane — it asserts nothing the gate reads and adds zero coverage. A harness built
-> to preview ONE shipped mission (owner rule-25 shots for a specific fix) is a **worktree-local tool**:
+> to preview ONE shipped mission (owner rule-25 shots for a specific fix — cropped to the changed
+> region, before/after where a prior state exists, per golden rule 15) is a **worktree-local tool**:
 > `git rm` it before merge, exactly like a spent one-off migration script (golden rule 10 — git history
 > is the archive; a mission-specific capture must not accumulate on `main`). The repo keeps only the
 > **standing, general, non-mission-bound** harnesses — today exactly four: `_polish-shots` (the
