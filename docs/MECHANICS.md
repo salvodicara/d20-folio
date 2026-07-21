@@ -357,6 +357,19 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   - **Reversal.** Every applied consequence rides ONE undo entry; the reverse seam is
     `characterStore.restoreHpSnapshot` (HP + temp + dying track + conditions in one log-free,
     persisting write).
+- **The Hide-check outcome seam (RA-12, 2026-07-21).** The 2024 Hide action rides a structured
+  `summary.skillCheck` (`{ dc: 15, skill: "stealth" }`, ids only) on the `base-hide` card; the
+  card's roll-entry takes the player's REAL d20 face (golden rule 21), folds the live Stealth
+  bonus from the one shared skills derivation (`deriveSavesAndChecks`), and on a success
+  `characterStore.applyHiddenState(total)` gains the Invisible condition + records
+  `session.hiddenDc` — the SRD "your check total is the DC to find you" — in one undoable unit.
+  The find-DC renders as a suffix on the rail's Invisible chip; `removeCondition("invisible")`
+  clears it (undo restores both). A failed check mutates nothing (a plain notice). `hiddenDc`
+  rides the parent doc while `invisible` lives in the `combat/state` subdoc (D9), so the
+  trio-hydration seam `combat-state.applyCombatToSession` normalizes the pair: when the hydrated
+  conditions no longer include `invisible` (e.g. a DM cleared it via a subdoc-only path) the
+  orphaned find-DC is dropped — never at parse/sanitize time, where the trio is stripped from
+  the parent doc.
 
 ---
 

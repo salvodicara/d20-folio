@@ -464,4 +464,59 @@ describe("economy in the Play tab", () => {
     expect(after.session.conditions).toEqual(conditionsBefore);
     expect(after.session.logEntries).toEqual(logBefore);
   });
+
+  // ── RA-12 — the Hide card's roll-entry (SRD "Hide [Action]": DC 15 Dexterity
+  // (Stealth); success = Invisible + the check total is the find-DC). The player
+  // enters the d20 FACE; the app folds the live Stealth bonus (from the ONE
+  // shared skills derivation), judges the DC, and applies — undoably. ──────────
+  it("RA-12 — the Hide roll-entry applies Invisible + the find-DC on a success (undoable); a miss applies nothing", async () => {
+    const { deriveSavesAndChecks } = await import("@/lib/views/saves-checks-view");
+    useToastStore.setState({ toasts: [], timers: {} });
+    const { container } = renderCockpit();
+    const panel = container.querySelector(
+      '[role="tabpanel"]:not([inert])'
+    ) as HTMLElement;
+
+    const doc = useCharacterStore.getState().character;
+    if (!doc) throw new Error("character not loaded");
+    const stealth = deriveSavesAndChecks(doc.character, {
+      exhaustion: doc.session.exhaustion,
+      activeFeatures: doc.session.activeFeatures,
+      conditions: doc.session.conditions,
+      grantBundleChoices: doc.session.grantBundleChoices,
+    }).skills.find((r) => r.id === "stealth");
+    if (!stealth) throw new Error("stealth row not derived");
+    // The test needs a face-1 miss to be possible (bonus < 14 on the mock).
+    expect(stealth.bonus).toBeLessThan(14);
+
+    // Expand the Hide base action card → the roll-entry + end-conditions hint show.
+    fireEvent.click(within(panel).getByText("Hide"));
+    const field = within(panel).getByLabelText(/your d20 roll/i);
+
+    // A MISS (face 1): nothing applied — a plain notice, no undo entry.
+    fireEvent.change(field, { target: { value: "1" } });
+    fireEvent.click(within(panel).getByRole("button", { name: /^apply$/i }));
+    expect(useCharacterStore.getState().character?.session.conditions).not.toContain(
+      "invisible"
+    );
+    expect(useToastStore.getState().toasts.at(-1)?.onUndo).toBeUndefined();
+
+    // A HIT (face 20): Invisible + the remembered find-DC (20 + Stealth bonus)…
+    fireEvent.change(field, { target: { value: "20" } });
+    fireEvent.click(within(panel).getByRole("button", { name: /^apply$/i }));
+    const total = 20 + stealth.bonus;
+    const session = useCharacterStore.getState().character?.session;
+    expect(session?.conditions).toContain("invisible");
+    expect(session?.hiddenDc).toBe(total);
+    // …the rail's Invisible chip carries the find-DC suffix…
+    const chips = Array.from(container.querySelectorAll(".co-chip"));
+    expect(chips.some((c) => c.textContent.includes(`DC ${total}`))).toBe(true);
+    // …and the whole outcome is ONE undo entry (the reversal contract).
+    const toast = useToastStore.getState().toasts.at(-1);
+    expect(typeof toast?.onUndo).toBe("function");
+    act(() => toast?.onUndo?.());
+    const restored = useCharacterStore.getState().character?.session;
+    expect(restored?.conditions).not.toContain("invisible");
+    expect(restored?.hiddenDc).toBeUndefined();
+  });
 });

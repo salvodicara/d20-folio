@@ -49,6 +49,8 @@ import { slotUsageKey } from "@/lib/cast-options";
 import { resolveSpellCastOptions } from "@/lib/views/spell-cast-sources";
 import { resolveConditionEffects, netRollState } from "@/lib/condition-effects";
 import { deriveAdvantageChips } from "@/lib/views/sheet-view";
+import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
+import { useToastStore } from "@/stores/toastStore";
 import {
   UniversalCard,
   UniversalCardFacts,
@@ -305,6 +307,28 @@ export function PlayTab() {
   const visibleActions = useMemo(
     () => (lightAttackCommitted ? allActions : allActions.filter((a) => !a.offhand)),
     [allActions, lightAttackCommitted]
+  );
+
+  // RA-12 — the live skill bonus for a card's flat-DC check (the Hide action's
+  // Dexterity (Stealth) vs DC 15), composed from the ONE shared skills
+  // derivation (`deriveSavesAndChecks`, the same rows the Skills panel and the
+  // LeftHud render) so the roll-entry and the sheet can never disagree
+  // (golden rule 6). Override-aware by construction (`row.bonus`).
+  const skillRows = useMemo(
+    () =>
+      character
+        ? deriveSavesAndChecks(character.character, {
+            exhaustion: character.session.exhaustion,
+            activeFeatures: character.session.activeFeatures,
+            conditions: character.session.conditions,
+            grantBundleChoices: character.session.grantBundleChoices,
+          }).skills
+        : [],
+    [character]
+  );
+  const skillCheckBonusFor = useCallback(
+    (skillId: string) => skillRows.find((r) => r.id === skillId)?.bonus ?? 0,
+    [skillRows]
   );
 
   // Inline-modifier state — the engine-derived advantage / disadvantage on the
@@ -824,6 +848,7 @@ export function PlayTab() {
                 onSpendRider={spendRider}
                 depletedTrackers={depletedTrackers}
                 cunningStrike={cunningStrike}
+                skillCheckBonusFor={skillCheckBonusFor}
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
                 onCommit={() => handleSelect(action)}
@@ -960,6 +985,7 @@ export function PlayTab() {
                 onSpendRider={spendRider}
                 depletedTrackers={depletedTrackers}
                 cunningStrike={cunningStrike}
+                skillCheckBonusFor={skillCheckBonusFor}
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
                 onCommit={() => handleSelect(action)}
@@ -1196,6 +1222,7 @@ function CombatActionCard({
   onSpendRider,
   depletedTrackers,
   cunningStrike,
+  skillCheckBonusFor,
   open,
   onOpenChange,
   onCommit,
@@ -1225,6 +1252,10 @@ function CombatActionCard({
   depletedTrackers: ReadonlySet<string>;
   /** S6 — the Cunning Strike catalogue + apply handler (weapon attack rows only). */
   cunningStrike: CunningStrikeBundle;
+  /** RA-12 — live skill bonus for a flat-DC check roll-entry (the Hide card's
+   *  Stealth), from the ONE shared skills derivation. Optional: cards rendered
+   *  through groups that never carry `summary.skillCheck` omit it. */
+  skillCheckBonusFor?: (skillId: string) => number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCommit: () => void;
@@ -1363,6 +1394,33 @@ function CombatActionCard({
     );
   }
 
+  // RA-12 — apply an entered Hide check d20 (SRD "Hide [Action]": DC 15
+  // Dexterity (Stealth); success = the Invisible condition, your total = the DC
+  // to find you). The player rolls the d20 IN REAL LIFE and enters the face
+  // (golden rule 21); the app folds the live Stealth bonus, judges the DC, and
+  // applies the consequence in one undoable unit (`applyHiddenState`). A failed
+  // check changes nothing — a plain notice, no undo entry. Override-first: the
+  // Invisible chip stays hand-editable on the rail like any condition.
+  function applyHideCheck(face: number) {
+    const sc = effectiveSummary.skillCheck;
+    if (!sc) return;
+    const total = face + (skillCheckBonusFor?.(sc.skill) ?? 0);
+    if (total < sc.dc) {
+      useToastStore.getState().showToast({
+        message: t("combat.hideFailToast", { total, dc: sc.dc }),
+        duration: 4000,
+      });
+      return;
+    }
+    const undo = useCharacterStore.getState().applyHiddenState(total);
+    if (!undo) return;
+    registerUndoableResult(
+      { message: t("combat.hideSuccessToast", { total }) },
+      undo,
+      () => applyHideCheck(face)
+    );
+  }
+
   return (
     <UniversalCard
       mode="combat-CTA"
@@ -1474,6 +1532,22 @@ function CombatActionCard({
               onApply={applyEnteredTempHp}
             />
           )}
+          {/* RA-12 — the Hide check roll-entry (d20 + live Stealth bonus vs the
+              flat DC 15): the outcome APPLIES (Invisible + the remembered
+              find-DC), never just informs. The end-conditions hint teaches when
+              the hidden state breaks (progressive disclosure — expanded only). */}
+          {effectiveSummary.skillCheck && (
+            <>
+              <HideCheckEntry
+                dc={effectiveSummary.skillCheck.dc}
+                bonus={skillCheckBonusFor?.(effectiveSummary.skillCheck.skill) ?? 0}
+                onApply={applyHideCheck}
+              />
+              <p className="mt-1 px-1 text-[0.7rem] italic text-text-secondary">
+                {t("combat.hideEndsHint")}
+              </p>
+            </>
+          )}
           {/* A non-weapon action row (a weapon-attack cantrip) surfaces its
               riders through the SAME shared strip — weapon rows render it inside
               `WeaponFacts` from `weaponFacts.riders` (no double-render). */}
@@ -1576,6 +1650,56 @@ function TempHpRollEntry({
         {bonus > 0
           ? t("combat.tempHpRollApply", { bonus })
           : t("combat.tempHpRollApplyFlat")}
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * RA-12 — the Hide check roll-entry: enter the d20 FACE the player rolled in
+ * real life (golden rule 21 — the app never rolls); the label carries the live
+ * formula ("d20 + your Stealth vs DC 15") and Apply hands the face to the
+ * outcome seam (`applyHideCheck`), which folds the bonus, judges the DC, and
+ * applies Invisible + the find-DC on a success. Reuses the `.heal-roll-entry`
+ * register (the ONE roll-entry recipe — DyingBanner's d20, Second Wind's heal).
+ */
+function HideCheckEntry({
+  dc,
+  bonus,
+  onApply,
+}: {
+  dc: number;
+  bonus: number;
+  onApply: (face: number) => void;
+}) {
+  const { t } = useTranslation();
+  const [face, setFace] = useState(10);
+  return (
+    <div className="heal-roll-entry">
+      <span className="heal-roll-label">
+        {t("combat.hideRollLabel", { bonus: formatModifier(bonus), dc })}
+      </span>
+      <NumberStepper
+        value={face}
+        onChange={setFace}
+        min={1}
+        max={20}
+        digits={2}
+        compact
+        ariaLabel={t("combat.hideRollField")}
+        decrementLabel={t("combat.healRollDec")}
+        incrementLabel={t("combat.healRollInc")}
+      />
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          onApply(face);
+          setFace(10);
+        }}
+      >
+        {t("combat.apply")}
       </Button>
     </div>
   );

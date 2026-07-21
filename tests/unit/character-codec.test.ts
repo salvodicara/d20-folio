@@ -565,6 +565,27 @@ describe("codec — state restoration", () => {
     if (!res.success) return;
     expect(res.doc.session.effectTimers).toBeUndefined();
   });
+
+  it("RA-12 — round-trips hiddenDc (the Hide action's find-DC); absent stays absent", () => {
+    const doc: CharacterDoc = {
+      ...MOCK_CHARACTER,
+      session: {
+        ...MOCK_CHARACTER.session,
+        conditions: ["invisible"],
+        hiddenDc: 17,
+      },
+    };
+    const res = parseCharacter(serializeCharacter(doc));
+    expect(res.success).toBe(true);
+    if (!res.success) return;
+    expect(res.doc.session.hiddenDc).toBe(17);
+    // Byte-identical round-trip.
+    const x = canonical(doc);
+    expect(serializeCharacter(lift(parseCharacter(x)))).toBe(x);
+    // Additive-only: a doc without the field keeps not having it.
+    const bare = parseCharacter(serializeCharacter(MOCK_CHARACTER));
+    if (bare.success) expect(bare.doc.session.hiddenDc).toBeUndefined();
+  });
 });
 
 describe("codec — override-safety", () => {

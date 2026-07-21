@@ -787,7 +787,7 @@ export function ResourceRail() {
             </button>
           </div>
         )}
-        <ConditionStrip conditions={conditions} />
+        <ConditionStrip conditions={conditions} hiddenDc={session.hiddenDc} />
         <ExhaustionTrack value={exhaustion} />
       </RailSection>
 
@@ -1353,11 +1353,19 @@ function AddDefensePicker({
  * encounter card share ONE condition widget (golden rule 10). `locale` is read
  * inside the shared editor via `useLocale`, so this wrapper only forwards the ids.
  */
-function ConditionStrip({ conditions }: { conditions: string[] }) {
+function ConditionStrip({
+  conditions,
+  hiddenDc,
+}: {
+  conditions: string[];
+  /** RA-12 — the Hide action's find-DC, suffixed onto the Invisible chip. */
+  hiddenDc?: number;
+}) {
   const { t } = useTranslation();
   return (
     <ConditionEditor
       conditions={conditions}
+      hiddenDc={hiddenDc}
       emptyLabel={t("character.noConditions")}
       onToggle={(id) => {
         const store = useCharacterStore.getState();

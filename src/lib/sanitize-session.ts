@@ -158,5 +158,8 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     // vulnerabilities/condition immunities gained in play). Enumerated so it
     // round-trips a reload instead of being dropped by this rebuild (#81).
     sessionDefenses: session.sessionDefenses,
+    // RA-12 — the Hide action's find-DC (the successful Stealth check total).
+    // Enumerated so a hidden character's find-DC survives a reload.
+    hiddenDc: session.hiddenDc,
   };
 }

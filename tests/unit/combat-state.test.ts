@@ -195,6 +195,30 @@ describe("combat-state — applyCombatToSession (the ONE trio-hydration merge)",
     expect(merged.notes).toBe("keep me");
     expect(merged.hitDice).toBe(s.hitDice);
   });
+
+  // RA-12 — the Hide find-DC (`hiddenDc`) rides the parent doc, but `invisible`
+  // lives in the combat/state subdoc (D9). When Invisible is cleared via a
+  // subdoc-only path (a DM's setCombatCondition) the parent's hiddenDc is
+  // orphaned; this hydration seam is where the cross-doc pair is normalized.
+  it("RA-12 — drops an orphaned hiddenDc when the hydrated conditions lack invisible", () => {
+    const merged = applyCombatToSession(
+      session({ conditions: ["invisible"], hiddenDc: 17 }), // stale parent state
+      { ...baseCombat, conditions: ["poisoned"] }, // subdoc: invisible was removed
+      30
+    );
+    expect(merged.conditions).toEqual(["poisoned"]);
+    expect(merged.hiddenDc).toBeUndefined();
+  });
+
+  it("RA-12 — preserves hiddenDc while the hydrated conditions still include invisible", () => {
+    const merged = applyCombatToSession(
+      session({ conditions: ["invisible"], hiddenDc: 21 }),
+      { ...baseCombat, conditions: ["invisible"] },
+      30
+    );
+    expect(merged.conditions).toEqual(["invisible"]);
+    expect(merged.hiddenDc).toBe(21);
+  });
 });
 
 const baseCombat: CombatState = {

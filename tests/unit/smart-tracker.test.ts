@@ -365,6 +365,18 @@ describe("resolveActions — base actions", () => {
     expect(grapple?.summary.saveDC).toBe(16); // 8 + 3 PB + 5 STR mod
   });
 
+  // RA-12 — SRD 5.2.1 "Hide [Action]": a flat DC 15 Dexterity (Stealth) check;
+  // success = the Invisible condition. The card carries the structured check
+  // (ids only) so the UI renders a roll-entry whose outcome APPLIES.
+  it("RA-12 — Hide carries the DC 15 Stealth check; other base actions don't", () => {
+    const actions = localizeActions(makeChar(), "en");
+    const hide = actions.find((a) => a.id === "base-hide");
+    expect(hide?.summary.skillCheck).toEqual({ dc: 15, skill: "stealth" });
+    // The corrected 2024 effect line teaches the rule (no bare "Stealth check").
+    expect(hide?.summary.effect).toBe("DC 15 Stealth check → Invisible");
+    expect(actions.find((a) => a.id === "base-dash")?.summary.skillCheck).toBeUndefined();
+  });
+
   it("includes Opportunity Attack as a reaction", () => {
     const char = makeChar();
     const actions = localizeActions(char, "en");

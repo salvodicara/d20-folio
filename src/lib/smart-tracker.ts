@@ -409,6 +409,17 @@ export interface ActionSummary {
    */
   checkBonus?: { dice: string; refundOnFail: boolean };
   /**
+   * RA-12 — a flat-DC SKILL CHECK this action resolves through (the 2024 Hide
+   * action: DC 15 Dexterity (Stealth); success = the Invisible condition +
+   * the check total becomes the DC to find you). Ids only (golden rule 7):
+   * `skill` is the stable skill id; the render edge localizes the skill name
+   * and composes the character's live bonus from the ONE shared skills
+   * derivation (`deriveSavesAndChecks`), so the roll-entry and the Skills
+   * panel can never disagree (golden rule 6). Locale-free — passes through
+   * localization untouched. Omitted for actions with no flat-DC check.
+   */
+  skillCheck?: { dc: number; skill: string };
+  /**
    * G19 — conditions this action can NEUTRALIZE by expending pool HP (Paladin Lay
    * On Hands: 5 HP ends Poisoned; +Restoring Touch's six conditions at Paladin
    * 14). Locale-FREE: `condition` is a stable {@link ConditionId} the presenter
@@ -1062,10 +1073,17 @@ export const BASE_ACTIONS: ReadonlyArray<{
     },
   },
   {
+    // RA-12 — the 2024 Hide action: a DC 15 Dexterity (Stealth) check; on a
+    // success you have the Invisible condition (the concrete roll-entry +
+    // condition apply are stamped per-character in the resolver via
+    // `skillCheck`), not a bare freeform "Stealth check".
     id: "base-hide",
     name: { en: "Hide", it: "Nascondersi" },
     type: "action",
-    effect: { en: "Stealth check", it: "Prova Furtività" },
+    effect: {
+      en: "DC 15 Stealth check → Invisible",
+      it: "Prova Furtività CD 15 → Invisibile",
+    },
   },
   {
     id: "base-ready",
@@ -5756,6 +5774,10 @@ function resolveTemporaryHpActions(
         effect: litText(ba.effect),
         ...(ba.trigger ? { trigger: litText(ba.trigger) } : {}),
         ...(isUnarmedStrikeOption ? { saveDC: unarmedStrikeDc, saveAbility: "STR" } : {}),
+        // RA-12 — the Hide action resolves through a flat DC 15 Dexterity
+        // (Stealth) check (SRD 5.2.1 "Hide [Action]"); the card renders a
+        // roll-entry whose success applies the Invisible condition.
+        ...(ba.id === "base-hide" ? { skillCheck: { dc: 15, skill: "stealth" } } : {}),
       },
       costsSlot: false,
       pinned: pinnedSet.has(ba.id),

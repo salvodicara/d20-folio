@@ -1006,6 +1006,59 @@ describe("characterStore — rest mechanics", () => {
       useCharacterStore.getState().addCondition("stunned");
       expect(useToastStore.getState().toasts.length).toBe(0);
     });
+
+    // RA-12 — SRD 5.2.1 "Hide [Action]": a successful DC 15 Stealth check makes
+    // you Invisible and your check TOTAL is the DC to find you. One undoable unit.
+    it("RA-12 — applyHiddenState gains Invisible + remembers the find-DC; undo restores", () => {
+      const char = mockCharacter();
+      useCharacterStore.getState().setCharacter(char);
+
+      const undo = useCharacterStore.getState().applyHiddenState(17);
+      const session = useCharacterStore.getState().character?.session;
+      expect(session?.conditions).toContain("invisible");
+      expect(session?.hiddenDc).toBe(17);
+
+      expect(typeof undo).toBe("function");
+      undo?.();
+      const after = useCharacterStore.getState().character?.session;
+      expect(after?.conditions).not.toContain("invisible");
+      expect(after?.hiddenDc).toBeUndefined();
+    });
+
+    it("RA-12 — re-hiding while already Invisible only moves the find-DC", () => {
+      const char = mockCharacter();
+      char.session.conditions = ["invisible"];
+      char.session.hiddenDc = 15;
+      useCharacterStore.getState().setCharacter(char);
+
+      const undo = useCharacterStore.getState().applyHiddenState(21);
+      const session = useCharacterStore.getState().character?.session;
+      expect(session?.conditions).toEqual(["invisible"]);
+      expect(session?.hiddenDc).toBe(21);
+      undo?.();
+      expect(useCharacterStore.getState().character?.session.hiddenDc).toBe(15);
+      expect(useCharacterStore.getState().character?.session.conditions).toEqual([
+        "invisible",
+      ]);
+    });
+
+    it("RA-12 — removing Invisible clears the find-DC (and undo restores it)", async () => {
+      const { useToastStore } = await import("@/stores/toastStore");
+      useToastStore.setState({ toasts: [], timers: {} });
+      const char = mockCharacter();
+      char.session.conditions = ["invisible"];
+      char.session.hiddenDc = 18;
+      useCharacterStore.getState().setCharacter(char);
+
+      useCharacterStore.getState().removeCondition("invisible");
+      expect(useCharacterStore.getState().character?.session.hiddenDc).toBeUndefined();
+
+      const latest = useToastStore.getState().toasts.at(-1);
+      latest?.onUndo?.();
+      const restored = useCharacterStore.getState().character?.session;
+      expect(restored?.conditions).toContain("invisible");
+      expect(restored?.hiddenDc).toBe(18);
+    });
   });
 
   // PLAY-NO-EDIT — session defenses mirror the conditions register: add/remove

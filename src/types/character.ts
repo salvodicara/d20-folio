@@ -777,6 +777,16 @@ export interface SessionState {
   concentration: StoredConcentration;
   initiative: string;
   conditions: string[];
+  /**
+   * RA-12 — the DC to FIND the character while hidden: the successful DC-15
+   * Dexterity (Stealth) check TOTAL from the Hide action (SRD 5.2.1 "Hide
+   * [Action]": "make it out or the check's total is the DC for a creature to
+   * find you with a Wisdom (Perception) check"). Set by the Hide roll-entry on
+   * a success; cleared when the Invisible condition is removed. Displayed only
+   * while `conditions` includes `invisible` (a stale value is inert). Absent
+   * when not hidden — additive-only, serialization unchanged.
+   */
+  hiddenDc?: number;
   deathSucc: number;
   deathFail: number;
   inspiration: boolean;

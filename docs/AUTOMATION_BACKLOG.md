@@ -205,12 +205,20 @@ appears on a weapon row.
       revive via the ONE heal-off-0 seam), each entry undoable. The banner label is the verdict
       register (Dying → Stable → Dead); pips stay directly tappable (override-first). Pinned in
       `hp-controls-death-saves.test.tsx` + `dying-banner.test.tsx`.
-- [ ] **RA-12 — Hide action: no DC 15, no Invisible-condition link.** _Stealth · INTERACTION
+- [x] **RA-12 — Hide action: no DC 15, no Invisible-condition link.** _Stealth · INTERACTION
       (defect B) · S2 · every-session._ SRD "Hide [Action]": DC 15 Dexterity (Stealth); success =
       the Invisible condition; your check total is the finder's DC; ends on attack/V-spell/louder
-      noise/found. Code: `base-hide` card says "Stealth check", nothing else. Fix: Hide commit →
-      roll-entry vs DC 15 → one-tap applies `invisible` + remembers the check total as the find-DC
-      note; the end-conditions surface on the lit chip. **T2.**
+      noise/found. Code: `base-hide` card said "Stealth check", nothing else. **SHIPPED wave 2
+      (2026-07-21):** `base-hide` carries the structured `summary.skillCheck` (DC 15 · `stealth`,
+      ids only); the card renders a d20 roll-entry whose bonus comes from the ONE shared skills
+      derivation (`deriveSavesAndChecks` — override-aware by construction). A success applies the
+      Invisible condition AND remembers the check total as `session.hiddenDc` (the SRD find-DC),
+      shown as a " · DC N" suffix on the rail's Invisible chip and cleared (undoably) when
+      Invisible is removed; a failed check is a plain notice. One undoable unit
+      (`characterStore.applyHiddenState`); the end-conditions hint rides the expanded card.
+      Regression: the RA-12 blocks in `smart-tracker.test.ts` + `character-store.test.ts` +
+      `cockpit-economy-in-play.test.tsx`, and the `hiddenDc` codec round-trip in
+      `character-codec.test.ts`.
 - [ ] **RA-13 — Weapon Mastery: properties are glossary chips only — Nick's economy, Topple's DC,
       Graze's number are left to memory.** _Weapon mastery · INTERACTION (defects B/C) · S2 ·
       every-turn for martials._ SRD "Mastery Properties". The matrix row is honestly `partial`; the

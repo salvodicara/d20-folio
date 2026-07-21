@@ -150,7 +150,20 @@ export function applyCombatToSession(
         deathSucc: 0,
         deathFail: 0,
       };
-  return { ...session, ...trio };
+  const merged: SessionState = { ...session, ...trio };
+  // RA-12 — the Hide action's find-DC (`hiddenDc`) rides the PARENT doc, but its
+  // owning `invisible` condition lives in the combat/state subdoc (D9). This is
+  // the ONE seam where both the hydrated trio-conditions and the session's
+  // `hiddenDc` are known, so it is the ONLY correct place to normalize the
+  // cross-doc pair: if `invisible` was cleared via a subdoc-only path (a DM's
+  // `setCombatCondition`/`reduceCondition`, which never touches the parent doc)
+  // the find-DC is orphaned — drop it so no phantom " · DC N" resurfaces when
+  // Invisible is later re-added by a non-Hide path. NEVER normalize at
+  // parse/sanitize time: there the trio is stripped from the parent doc
+  // (conditions is `[]`, `invisible` is hydrated from the subdoc afterwards), so
+  // a legitimately-hidden character would wrongly lose its DC.
+  if (!merged.conditions.includes("invisible")) merged.hiddenDc = undefined;
+  return merged;
 }
 
 /** The full-HP default for an ABSENT subdoc (a genuinely fresh/undamaged character):

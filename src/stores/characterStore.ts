@@ -239,6 +239,17 @@ interface CharacterState {
   addCondition: (condition: string) => void;
   removeCondition: (condition: string) => void;
   /**
+   * RA-12 — apply a SUCCESSFUL Hide check's outcome in one undoable unit (SRD
+   * 5.2.1 "Hide [Action]"): gain the Invisible condition and remember the check
+   * TOTAL as `session.hiddenDc` (the DC for a creature to find you). Logs the
+   * one `condition-gain` story beat. Returns the reverse applier (prior
+   * conditions + prior find-DC + the log line restored) for the caller to
+   * register on the session undo stack, or `null` when nothing changed
+   * (readonly / no character). Override-first: the Invisible chip stays
+   * hand-removable like any condition (`removeCondition` clears the find-DC).
+   */
+  applyHiddenState: (findDc: number) => (() => void) | null;
+  /**
    * Restore the HP-mutation snapshot an undo captured — current/temp HP, the
    * dying track, and the conditions list — EXACTLY, in one set + one durable
    * combat-state write. Log-free by design (an undo must not mint story beats)
@@ -1094,12 +1105,59 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     persistCombat(get);
   },
 
+  applyHiddenState: (findDc) => {
+    if (get().readonly) return null;
+    const { character } = get();
+    if (!character) return null;
+    const prevConditions = character.session.conditions;
+    const prevHiddenDc = character.session.hiddenDc;
+    const alreadyInvisible = prevConditions.includes("invisible");
+    set({
+      character: {
+        ...character,
+        session: {
+          ...character.session,
+          conditions: alreadyInvisible
+            ? prevConditions
+            : [...prevConditions, "invisible"],
+          hiddenDc: findDc,
+        },
+      },
+    });
+    // One story beat for the gained condition (skipped when re-hiding while
+    // already Invisible — only the find-DC moved, no new state).
+    const gainLogId = alreadyInvisible
+      ? null
+      : get().logEvent({ kind: "condition-gain", conditionId: "invisible" });
+    persistCombat(get);
+    return () => {
+      const cur = get().character;
+      if (!cur) return;
+      set({
+        character: {
+          ...cur,
+          session: {
+            ...cur.session,
+            conditions: prevConditions,
+            hiddenDc: prevHiddenDc,
+          },
+        },
+      });
+      if (gainLogId != null) get().removeLogEntry(gainLogId);
+      persistCombat(get);
+    };
+  },
+
   removeCondition: (condition) => {
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
     if (!character.session.conditions.includes(condition)) return;
     const prevConditions = character.session.conditions;
+    // RA-12 — dropping Invisible ends the hidden state: the remembered find-DC
+    // goes with it (and comes back on undo).
+    const prevHiddenDc = character.session.hiddenDc;
+    const clearsHiddenDc = condition === "invisible" && prevHiddenDc !== undefined;
     // Immediate-commit WITH 5s undo, now routed onto the session undo stack — removing
     // a condition is destructive (a mis-tap wipes a high-stakes state with no recovery).
     // The store emits the condition ID only; the view resolves its localized name
@@ -1114,6 +1172,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
             session: {
               ...character.session,
               conditions: prevConditions.filter((c) => c !== condition),
+              ...(clearsHiddenDc ? { hiddenDc: undefined } : {}),
             },
           },
         });
@@ -1132,7 +1191,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           set({
             character: {
               ...cur,
-              session: { ...cur.session, conditions: prevConditions },
+              session: {
+                ...cur.session,
+                conditions: prevConditions,
+                ...(clearsHiddenDc ? { hiddenDc: prevHiddenDc } : {}),
+              },
             },
           });
           get().removeLogEntry(lossLogId);

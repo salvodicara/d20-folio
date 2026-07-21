@@ -953,6 +953,8 @@ function sessionToState(s: SessionState): Record<string, unknown> {
   if (s.concentration !== "") state.concentration = s.concentration;
   if (s.initiative !== "") state.initiative = s.initiative;
   if (s.conditions.length > 0) state.conditions = s.conditions;
+  // RA-12 — the Hide action's find-DC (meaningful only alongside `invisible`).
+  if (typeof s.hiddenDc === "number") state.hiddenDc = s.hiddenDc;
   if (s.deathSucc !== 0) state.deathSucc = s.deathSucc;
   if (s.deathFail !== 0) state.deathFail = s.deathFail;
   if (s.inspiration) state.inspiration = true;
@@ -1017,6 +1019,8 @@ function stateToSession(state: Record<string, unknown>): Partial<SessionState> {
   s.conditions = Array.isArray(state.conditions)
     ? state.conditions.filter((c): c is string => typeof c === "string")
     : [];
+  // RA-12 — the Hide action's find-DC.
+  if (typeof state.hiddenDc === "number") s.hiddenDc = state.hiddenDc;
   s.deathSucc = numOr(state.deathSucc, 0);
   s.deathFail = numOr(state.deathFail, 0);
   s.inspiration = state.inspiration === true;

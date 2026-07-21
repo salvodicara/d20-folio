@@ -31,6 +31,7 @@ export function ConditionEditor({
   conditions,
   onToggle,
   emptyLabel,
+  hiddenDc,
 }: {
   conditions: string[];
   onToggle: (conditionId: string) => void;
@@ -39,6 +40,11 @@ export function ConditionEditor({
    *  the add affordance; the denser encounter / monster surfaces omit even the
    *  announcement. */
   emptyLabel?: string;
+  /** RA-12 — the Hide action's remembered find-DC (`session.hiddenDc`): shown as a
+   *  quiet " · DC N" suffix on the Invisible chip so the check total the SRD makes
+   *  the DC to find you never evaporates with its toast. Cockpit-only (the
+   *  encounter/monster bindings omit it). */
+  hiddenDc?: number;
 }) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
@@ -60,6 +66,11 @@ export function ConditionEditor({
           style={{ ["--co" as string]: chip.color, ["--co-ink" as string]: chip.ink }}
         >
           {chip.label}
+          {/* RA-12 — the find-DC rides the Invisible chip (SRD "Hide": your check
+              total is the DC to find you); reuses the one `stats.dc` label. */}
+          {chip.id === "invisible" && hiddenDc != null
+            ? ` · ${t("stats.dc")} ${hiddenDc}`
+            : ""}
           <button
             type="button"
             className="co-x"
