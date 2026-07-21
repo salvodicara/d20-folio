@@ -58,8 +58,8 @@ const spec: ScenarioSpec = {
   equipment: [{ srdId: "arrows", quantity: 18 }],
 };
 
-function mount(): void {
-  const doc = buildScenario(spec);
+function mount(scenario: ScenarioSpec = spec): void {
+  const doc = buildScenario(scenario);
   doc.session.logEntries = [];
   useCharacterStore.setState({ character: doc, loading: false, error: null });
   render(
@@ -77,14 +77,15 @@ function currentDoc(): CharacterDoc {
   return doc;
 }
 
-/** Total arrows in the inventory (summed, ammunition semantics). */
-function arrowsQty(): number {
+/** Total stock of one SRD gear id in the inventory (summed, ammo semantics). */
+function equipQty(srdId: string): number {
   return currentDoc().character.equipment.reduce(
     (sum, ref) =>
-      !("custom" in ref) && ref.srdId === "arrows" ? sum + (ref.quantity ?? 1) : sum,
+      !("custom" in ref) && ref.srdId === srdId ? sum + (ref.quantity ?? 1) : sum,
     0
   );
 }
+const arrowsQty = (): number => equipQty("arrows");
 
 /** The live resolved weapon action, as PlayTab hands it to `handleSelect`. */
 function weaponAction(id: string): ResolvedAction {
@@ -163,5 +164,41 @@ describe("RA-14 — commitAction debits tracked ammunition", () => {
 
     // The quiver is untouched — only the fired ranged weapon debits.
     expect(arrowsQty()).toBe(18);
+  });
+});
+
+describe("RA-14 — a firearm debits its OWN bullets, never the sling's", () => {
+  // The declared-ammunition fix, end to end: a Musket and a Sling both print
+  // "; Bullet", so the old prose-parse fired a musket off the sling-bullets
+  // stock. With BOTH stocks carried, committing the musket must debit
+  // firearm-bullets (10 → 9) and leave sling-bullets (20) untouched.
+  const firearmSpec: ScenarioSpec = {
+    name: "Gunslinger",
+    raceId: "human",
+    classId: "fighter",
+    level: 1,
+    background: "soldier",
+    abilityScores: S,
+    weapons: [{ srdId: "musket", quantity: 1 }],
+    equipment: [
+      { srdId: "firearm-bullets", quantity: 10 },
+      { srdId: "sling-bullets", quantity: 20 },
+    ],
+  };
+
+  it("stamps + debits firearm-bullets, leaving the sling stock whole", async () => {
+    mount(firearmSpec);
+    expect(weaponAction("weapon-musket").summary.ammo).toEqual({
+      itemId: "firearm-bullets",
+      remaining: 10,
+    });
+    expect(equipQty("firearm-bullets")).toBe(10);
+    expect(equipQty("sling-bullets")).toBe(20);
+
+    await commit(weaponAction("weapon-musket"));
+
+    expect(equipQty("firearm-bullets")).toBe(9);
+    // The unrelated sling stock is never touched (the pre-fix bug).
+    expect(equipQty("sling-bullets")).toBe(20);
   });
 });

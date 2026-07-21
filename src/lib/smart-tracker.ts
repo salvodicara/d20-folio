@@ -1053,35 +1053,6 @@ export function resolveMeleeReachBonus(
 }
 
 /**
- * RA-14 — the SRD gear row each printed ammunition token maps to. The token is
- * the type name inside the weapon's "Ammunition (Range N/M; <Type>)" property —
- * a structured fact printed on the weapon, parsed exactly like the thrown/range
- * meta (never localized prose).
- */
-const AMMO_ITEM_BY_TOKEN: Record<string, string> = {
-  arrow: "arrows",
-  bolt: "crossbow-bolts",
-  bullet: "sling-bullets",
-  needle: "blowgun-needles",
-};
-
-/**
- * RA-14 — map a weapon's Ammunition property to the SRD gear row it fires
- * ("Ammunition (Range 80/320; Arrow)" → `"arrows"`). Null for weapons without
- * the property (or an unknown/custom token — degrade to untracked).
- */
-export function ammoItemIdForProperties(
-  properties: ReadonlyArray<string>
-): string | null {
-  for (const p of properties) {
-    const m = /^Ammunition\s*\([^;]*;\s*([A-Za-z ]+)\)$/i.exec(p);
-    const token = m?.[1]?.trim().toLowerCase();
-    if (token) return AMMO_ITEM_BY_TOKEN[token] ?? null;
-  }
-  return null;
-}
-
-/**
  * RA-14 — the character's total stock of one SRD gear item, summed over every
  * matching inventory row. Returns null when NO row exists (untracked — distinct
  * from a tracked-but-empty 0, which keeps the count + advisory visible).
@@ -5473,13 +5444,17 @@ function resolveWeaponActions(
       pb
     );
 
-    // RA-14 — TRACKED ammunition: when this ranged weapon's Ammunition property
-    // names an ammo type AND the character carries a matching inventory row, the
-    // row surfaces the live remaining count (and the commit seam debits one per
-    // attack). No matching row = nothing stamped — no debit, no nag
-    // (override-first: tracking ammo is the player's choice). Loading is a
-    // plain property flag for the once-per-action advisory.
-    const ammoItemId = isRangedWeapon ? ammoItemIdForProperties(properties) : null;
+    // RA-14 — TRACKED ammunition: a ranged weapon DECLARES the gear id it fires
+    // (`ammunitionId` on the SRD weapon — never parsed from the property prose,
+    // which is ambiguous: the Sling and the firearms both print "; Bullet").
+    // When the character carries a matching inventory row, the row surfaces the
+    // live remaining count (and the commit seam debits one per attack). No
+    // matching row = nothing stamped — no debit, no nag (override-first:
+    // tracking ammo is the player's choice). Loading is a plain property flag
+    // for the once-per-action advisory.
+    // `isRangedWeapon` implies a resolved SRD weapon (aliased-condition narrowing
+    // — `isRangedWeapon` is true only when `srdWeapon?.weaponType === "ranged"`).
+    const ammoItemId = isRangedWeapon ? (srdWeapon.ammunitionId ?? null) : null;
     const ammoRemaining =
       ammoItemId != null ? equipmentQuantityOf(charData.equipment, ammoItemId) : null;
     const isLoadingWeapon = properties.some((p) => /^loading\b/i.test(p));

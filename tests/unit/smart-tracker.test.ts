@@ -4,11 +4,9 @@ import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { foldLegacyClass } from "./_helpers";
 import { localizeActions } from "@/lib/views/combat-action-view";
-import {
-  resolveActions,
-  ammoItemIdForProperties,
-  equipmentQuantityOf,
-} from "@/lib/smart-tracker";
+import { resolveActions, equipmentQuantityOf } from "@/lib/smart-tracker";
+import { SRD_WEAPONS } from "@/data/weapons";
+import { getEquipment } from "@/data/equipment";
 import { buildDevScenario, buildScenario } from "@/lib/dev-scenarios";
 import { consumableActionSlot } from "@/lib/srd-resolve";
 import { combatVerdict } from "@/features/character/center/tabs/combat-card-helpers";
@@ -373,30 +371,56 @@ describe("resolveActions — dual-wield", () => {
 
 // ─── RA-14 — Tracked ammunition + Loading advisory ───────────────────────────
 
-describe("RA-14 — ammoItemIdForProperties", () => {
-  // The four SRD Ammunition type tokens map to their gear rows (ids only —
-  // parsed from the structured "Ammunition (Range N/M; <Type>)" property).
-  it("maps each SRD ammunition token to its gear id", () => {
-    expect(ammoItemIdForProperties(["Ammunition (Range 80/320; Arrow)"])).toBe("arrows");
-    expect(ammoItemIdForProperties(["Ammunition (Range 80/320; Bolt)"])).toBe(
-      "crossbow-bolts"
-    );
-    expect(ammoItemIdForProperties(["Ammunition (Range 30/120; Bullet)"])).toBe(
-      "sling-bullets"
-    );
-    expect(ammoItemIdForProperties(["Ammunition (Range 25/100; Needle)"])).toBe(
-      "blowgun-needles"
-    );
+describe("RA-14 — declared weapon ammunition (data integrity)", () => {
+  const hasAmmoProp = (w: (typeof SRD_WEAPONS)[number]): boolean =>
+    (w.properties ?? []).some((p) => /^Ammunition\b/i.test(p));
+
+  it("every Ammunition-property weapon declares a valid ammunitionId gear id", () => {
+    // The rule-6 single-source guarantee: the declared ammo id must point at a
+    // real gear row. This is what makes prose-parsing unnecessary — the fact is
+    // data, and this guard proves the data is complete + well-formed.
+    const ammoWeapons = SRD_WEAPONS.filter(hasAmmoProp);
+    // PIN the exact set size — the `hasAmmoProp` regex is this guard's ORACLE for
+    // which weapons MUST declare an ammo id, so a property reformat that stopped
+    // matching (or a new Ammunition weapon) would silently shrink/grow the guarded
+    // set and slip past a bare `> 0`. The SRD 2024 has exactly 9 Ammunition
+    // weapons (3 bows/sling-family, 3 crossbows, blowgun, musket, pistol); bump
+    // this number in the same commit that adds one.
+    expect(ammoWeapons.length).toBe(9);
+    for (const w of ammoWeapons) {
+      const ammoId = w.ammunitionId;
+      expect(ammoId, `${w.id} must declare ammunitionId`).toBeTruthy();
+      if (!ammoId) continue; // narrows for the lookup below
+      const gear = getEquipment(ammoId);
+      expect(gear, `${w.id} → ${ammoId} must be a real gear item`).toBeDefined();
+      expect(gear?.category).toBe("gear");
+    }
   });
 
-  it("returns null for a melee weapon (no Ammunition property)", () => {
-    expect(ammoItemIdForProperties(["Finesse", "Light"])).toBeNull();
-    expect(ammoItemIdForProperties([])).toBeNull();
+  it("no weapon WITHOUT the Ammunition property declares an ammunitionId", () => {
+    for (const w of SRD_WEAPONS.filter((w) => !hasAmmoProp(w))) {
+      expect(w.ammunitionId, `${w.id} must not declare ammunitionId`).toBeUndefined();
+    }
   });
 
-  it("returns null for an unknown/unmodeled ammunition token", () => {
-    // A token we don't stock a gear row for degrades to untracked, not a throw.
-    expect(ammoItemIdForProperties(["Ammunition (Range 20/60; Dart)"])).toBeNull();
+  it("resolves each ranged weapon to its DECLARED gear row (an id, never a parsed token)", () => {
+    // The disambiguation the old prose-parse could not do: the Sling and the two
+    // firearms all print "; Bullet", yet each names a DIFFERENT ammo stock.
+    const expected: Record<string, string> = {
+      shortbow: "arrows",
+      longbow: "arrows",
+      "light-crossbow": "crossbow-bolts",
+      "hand-crossbow": "crossbow-bolts",
+      "heavy-crossbow": "crossbow-bolts",
+      sling: "sling-bullets",
+      blowgun: "blowgun-needles",
+      musket: "firearm-bullets",
+      pistol: "firearm-bullets",
+    };
+    for (const [id, ammoId] of Object.entries(expected)) {
+      const weapon = SRD_WEAPONS.find((w) => w.id === id);
+      expect(weapon?.ammunitionId, id).toBe(ammoId);
+    }
   });
 });
 
@@ -484,6 +508,34 @@ describe("RA-14 — resolveWeaponActions stamps ammo + loading", () => {
     const sword = localizeActions(char, "en").find((a) => a.id === "weapon-longsword");
     expect(sword?.summary.ammo).toBeUndefined();
     expect(sword?.summary.loading).toBeUndefined();
+  });
+
+  it("stamps the DECLARED firearm ammo for a musket — never the sling's bullets", () => {
+    // Root-cause regression: the Musket and the Sling both PRINT "; Bullet", so
+    // the old prose-parse resolved a firearm to sling-bullets. Carrying a musket
+    // + BOTH ammo stocks, the DECLARED id must pick firearm-bullets and the
+    // sling stock must stay untouched (its count differs, so a swap is visible).
+    const char = makeChar({
+      weapons: [{ srdId: "musket", quantity: 1 }],
+      equipment: [
+        { srdId: "firearm-bullets", quantity: 10 },
+        { srdId: "sling-bullets", quantity: 20 },
+      ],
+    });
+    const musket = localizeActions(char, "en").find((a) => a.id === "weapon-musket");
+    expect(musket?.summary.ammo).toEqual({ itemId: "firearm-bullets", remaining: 10 });
+  });
+
+  it("stamps NO ammo for a firearm carrying only the sling's bullets (never the sling)", () => {
+    // A musket with sling-bullets but no firearm-bullets carried: the declared id
+    // is firearm-bullets, which has no inventory row → untracked. The unrelated
+    // sling stock is never debited (the pre-fix bug).
+    const char = makeChar({
+      weapons: [{ srdId: "musket", quantity: 1 }],
+      equipment: [{ srdId: "sling-bullets", quantity: 20 }],
+    });
+    const musket = localizeActions(char, "en").find((a) => a.id === "weapon-musket");
+    expect(musket?.summary.ammo).toBeUndefined();
   });
 });
 

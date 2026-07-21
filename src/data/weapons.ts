@@ -157,6 +157,7 @@ export const SRD_WEAPONS: SrdEquipmentData[] = [
     mastery: "Slow",
     weaponCategory: "simple",
     weaponType: "ranged",
+    ammunitionId: "crossbow-bolts",
     source: "SRD",
   },
   {
@@ -169,6 +170,7 @@ export const SRD_WEAPONS: SrdEquipmentData[] = [
     mastery: "Vex",
     weaponCategory: "simple",
     weaponType: "ranged",
+    ammunitionId: "arrows",
     source: "SRD",
   },
   {
@@ -181,6 +183,7 @@ export const SRD_WEAPONS: SrdEquipmentData[] = [
     mastery: "Slow",
     weaponCategory: "simple",
     weaponType: "ranged",
+    ammunitionId: "sling-bullets",
     source: "SRD",
   },
 
@@ -417,6 +420,7 @@ export const SRD_WEAPONS: SrdEquipmentData[] = [
     mastery: "Vex",
     weaponCategory: "martial",
     weaponType: "ranged",
+    ammunitionId: "blowgun-needles",
     source: "SRD",
   },
   {
@@ -429,6 +433,7 @@ export const SRD_WEAPONS: SrdEquipmentData[] = [
     mastery: "Vex",
     weaponCategory: "martial",
     weaponType: "ranged",
+    ammunitionId: "crossbow-bolts",
     source: "SRD",
   },
   {
@@ -441,6 +446,7 @@ export const SRD_WEAPONS: SrdEquipmentData[] = [
     mastery: "Push",
     weaponCategory: "martial",
     weaponType: "ranged",
+    ammunitionId: "crossbow-bolts",
     source: "SRD",
   },
   {
@@ -453,6 +459,7 @@ export const SRD_WEAPONS: SrdEquipmentData[] = [
     mastery: "Slow",
     weaponCategory: "martial",
     weaponType: "ranged",
+    ammunitionId: "arrows",
     source: "SRD",
   },
   {
@@ -465,6 +472,7 @@ export const SRD_WEAPONS: SrdEquipmentData[] = [
     mastery: "Slow",
     weaponCategory: "martial",
     weaponType: "ranged",
+    ammunitionId: "firearm-bullets",
     source: "SRD",
   },
   {
@@ -477,6 +485,7 @@ export const SRD_WEAPONS: SrdEquipmentData[] = [
     mastery: "Vex",
     weaponCategory: "martial",
     weaponType: "ranged",
+    ammunitionId: "firearm-bullets",
     source: "SRD",
   },
 ];

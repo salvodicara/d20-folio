@@ -198,6 +198,10 @@
     "description": "Contiene: Zaino, Sacco a Pelo, 2 fiasche di Olio, 10 giorni di Razioni, Corda, Acciarino, 10 Torce e Otre.",
     "name": "Dotazione da Esploratore"
   },
+  "firearm-bullets": {
+    "description": "Munizioni per armi da fuoco. Vendute in fasci da 10.",
+    "name": "Proiettili da Arma da Fuoco"
+  },
   "flail": {
     "name": "Flagello"
   },

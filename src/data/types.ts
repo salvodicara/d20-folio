@@ -2108,6 +2108,18 @@ export interface SrdEquipmentData {
   weaponCategory?: WeaponCategory;
   /** Weapon type (weapon-specific) */
   weaponType?: WeaponType;
+  /**
+   * The gear id of the ammunition this weapon consumes — DECLARED, present iff
+   * the weapon has the Ammunition property (a Longbow → `"arrows"`, a Musket →
+   * `"firearm-bullets"`). The combat resolver reads this directly to stamp the
+   * tracked-ammo row and to debit the right stock per attack; it is NEVER parsed
+   * out of the `properties` prose (golden rules 2/5/7 — declare the fact, don't
+   * regex English; the sling and the firearms both print "; Bullet", so the
+   * printed token cannot disambiguate them). A data-integrity test guards that
+   * every Ammunition-property weapon declares a valid gear id and no other
+   * weapon carries one.
+   */
+  ammunitionId?: string;
   /** Armor class calculation (armor-specific) */
   ac?: {
     base: number;

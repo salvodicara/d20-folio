@@ -259,16 +259,22 @@ appears on a weapon row.
       tracked-but-empty 0). Committing the attack debits ONE unit
       (`characterStore.adjustEquipmentQuantity`, clamped at 0, KEEPS the row visible), credited back
       exactly on undo (the inverse op — a weapon attack carries no `costEquipment`, so this is the
-      only restore path). The weapon's `Ammunition (Range N/M; <Type>)` type token maps to its gear
-      row via `ammoItemIdForProperties` (Arrow→arrows, Bolt→crossbow-bolts, Bullet→sling-bullets,
-      Needle→blowgun-needles; unknown → untracked). Two new SRD ammo rows shipped (sling-bullets,
-      blowgun-needles). An empty quiver DIMS the CTA with a soft advisory ("Out of Arrows") but keeps
-      it TAPPABLE (the player may carry untracked ammo — override-first, never a hard block); a
-      Loading weapon shows a once-per-action advisory on a 2nd Extra-Attack swing. The `ammo`/`loading`
-      summary fields are locale-free — they flow through the presenter's `...rest` spread untouched
-      (no presenter edit). Regression: `smart-tracker.test.ts` (parser/quantity/stamp gating),
-      `character-store.test.ts` (`adjustEquipmentQuantity` debit-to-0-keeps-row/clamp/round-trip),
-      `ammo-debit.test.tsx` (commit debits by 1, undo restores, untracked = no mutation), and
+      only restore path). Each weapon DECLARES the gear id it fires (`ammunitionId` on the SRD weapon
+      data — Longbow/Shortbow→arrows, the crossbows→crossbow-bolts, Sling→sling-bullets,
+      Blowgun→blowgun-needles, Musket/Pistol→firearm-bullets) and the resolver reads it DIRECTLY;
+      the id is NEVER parsed from the `Ammunition (Range N/M; <Type>)` prose (ambiguous — the Sling
+      and both firearms all print "; Bullet", so a firearm would wrongly debit the sling stock). A
+      data-integrity test guards that every Ammunition-property weapon declares a valid gear id and
+      no other weapon carries one (the rule-6 single-source guarantee). Three SRD ammo rows shipped
+      (sling-bullets, blowgun-needles, firearm-bullets). An empty quiver DIMS the CTA with a soft
+      advisory ("Out of Arrows") but keeps it TAPPABLE (the player may carry untracked ammo —
+      override-first, never a hard block); a Loading weapon shows a once-per-action advisory on a 2nd
+      Extra-Attack swing. The `ammo`/`loading` summary fields are locale-free — they flow through the
+      presenter's `...rest` spread untouched (no presenter edit). Regression: `smart-tracker.test.ts`
+      (declared-ammo data-integrity guard, per-weapon id resolution, quantity/stamp gating, firearm
+      vs sling disambiguation), `character-store.test.ts` (`adjustEquipmentQuantity`
+      debit-to-0-keeps-row/clamp/round-trip), `ammo-debit.test.tsx` (commit debits by 1, undo
+      restores, untracked = no mutation, a musket debits firearm-bullets not sling-bullets), and
       `ammo-advisory.test.tsx` (ammo row + soft out-of-ammo/Loading advisories, CTA stays tappable).
 - [ ] **RA-15 — The concentration-save prompt hides concentration-save Advantage (War Caster /
       Eldritch Mind).** _Concentration · INTERACTION (defect B) · S2 · every-hit while

@@ -704,6 +704,17 @@ export const SRD_GEAR: SrdEquipmentData[] = [
     source: "SRD",
     isConsumable: true,
   },
+  {
+    // RA-14 — the Musket/Pistol's ammunition (SRD 5.2.1 Ammunition table, p. 96:
+    // "Bullets, Firearm — 10 — Pouch — 2 lb. — 3 GP").
+    id: "firearm-bullets",
+    category: "gear",
+    cost: { amount: 3, unit: "gp" },
+    weight: 2,
+    bundleSize: 10,
+    source: "SRD",
+    isConsumable: true,
+  },
 
   // ============================================================
   // Background-pack adventuring gear — D&D 2024 PHB
