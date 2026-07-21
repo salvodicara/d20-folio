@@ -290,6 +290,24 @@ footprint barely changes read→edit — both fail on the old fixed box). DESIGN
 | 3 — Chronicle           | Markdown chronicle + version history, Treasury, SharedNotes, Sessions       | ✅ Shipped (v0.15.x) — Chronicle (markdown + version history), Treasury, SharedNotes, Sessions all live. (The AI assistant / AI session recaps once scoped here were **DROPPED** — owner 2026-07-06; see _Open decisions_.) |
 | 4 — Polish & Completion | PDF export, command palette, compendium, a11y, perf, onboarding             | 🔄 PDF export (faithful from-scratch recreation of the official 2024 sheet layout — both pages, EN/IT, copyright-clean), glossary tooltips, perf budget, Cmd+K palette shipped. Guided tour + compendium polish open        |
 
+## Shipped — Dependabot security remediation (2026-07-21)
+
+Cleared every open Dependabot alert (22 root + the Cloud-Functions set) with the minimal, safest
+change — no new dependency, no behavior change (golden rules 1, 22, 23; rule 27 clean board). Root
+(pnpm) pinned `vite` to the `~8.0.16` patched line (deliberately staying on the 8.0.x line: `^8.0.16`
+resolves to 8.1.x, whose tightened `import.meta.glob` types break the pack build's `content-pack`
+lint) and added scoped `overrides` in `pnpm-workspace.yaml` — each keyed by the vulnerable
+`<fixver` range — for `websocket-driver`, `form-data`, `protobufjs`, `undici`, `@babel/core`, `uuid`,
+`js-yaml`, and `brace-expansion`. The standalone `functions/` package (npm) bumped `nodemailer` to
+`^9.0.1` (the only patched line; SMTP `createTransport`/`sendMail` API unchanged) and added the same
+style of scoped npm `overrides` for `form-data`, `protobufjs`, `uuid`, `brace-expansion`, and
+`body-parser`. Every override is an exact same-major patched pin (only the vulnerable copy moves)
+EXCEPT `uuid` (root 9.0.1→11.1.1, functions 8.3.2→11.1.1) — a necessary cross-major bump because
+advisory GHSA-w5hq-g745-h8pq (uuid `<11.1.1`) has no same-major fix (11.1.1 is the only patched
+release); API-safe since consumers only call `uuid.vX()` and the gate is green. `pnpm audit` and
+`npm audit` both report zero known vulnerabilities; `just ci` + `just ci-srd-only` + the functions
+lint/build/test lane all green.
+
 ## Shipped — the content-pack licensing partition (2026-07-17)
 
 The data-split seam that precedes open-sourcing: `src/data` + `src/i18n/*/srd` now carry ONLY

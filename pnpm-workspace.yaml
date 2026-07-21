@@ -1,3 +1,21 @@
 allowBuilds:
   "@firebase/util": true
   protobufjs: true
+
+# Security overrides — force transitive dependencies flagged by Dependabot up to
+# their patched release, scoped by the "<fixver" key so only the vulnerable
+# instance is touched (an already-patched or higher-major copy is left alone) and
+# pinned to the patched version within the SAME major so no consumer is
+# cross-major re-resolved. Remove an entry once every dependent's own range floats
+# past the patched version on its own.
+overrides:
+  "websocket-driver@<0.7.5": "0.7.5"
+  "form-data@<2.5.6": "2.5.6"
+  "protobufjs@<7.6.5": "7.6.5"
+  "undici@<7.28.0": "7.28.0"
+  "@babel/core@<7.29.1": "7.29.7"
+  "uuid@<11.1.1": "11.1.1"
+  "js-yaml@<3.15.0": "3.15.0"
+  "js-yaml@>=4.0.0 <4.3.0": "4.3.0"
+  "brace-expansion@<2.1.2": "2.1.2"
+  "brace-expansion@>=3.0.0 <5.0.7": "5.0.7"
