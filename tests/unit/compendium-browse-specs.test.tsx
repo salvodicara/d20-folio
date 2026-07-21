@@ -15,6 +15,7 @@
 import { describe, it, expect } from "vitest";
 import { isValidElement } from "react";
 import { render } from "@testing-library/react";
+import i18n from "@/i18n";
 import {
   maneuverSpec,
   metamagicSpec,
@@ -23,12 +24,14 @@ import {
   spellSpec,
   magicItemSpec,
   featureSpec,
+  equipmentSpec,
   COMPENDIUM_SPECS,
   type AnyCompendiumSpec,
   type PickerCtx,
 } from "@/features/compendium/picker";
 import { classFeatures } from "@/data/classes";
 import { spells } from "@/data/spells";
+import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { parseMagicItemCharges, parseMagicItemAcBonus } from "@/lib/magic-item-utils";
 import { SRD_METAMAGIC } from "@/data/metamagic";
@@ -377,5 +380,65 @@ describe("magicItemSpec discovery facets + typed-document meta", () => {
     if (!plain) return;
     const detail = magicItemSpec.detail(plain, c, { added: false });
     expect(detail.meta).toBeUndefined();
+  });
+});
+
+// ── The armor AC stat line is fully localized (row meta + detail value) ──────────
+//    Regression: the row meta hardcoded "AC …" / "+ DEX" and the detail value
+//    hardcoded "+ DEX" / "(max N)" in English, so an IT player reading the Add-item
+//    Equipment tab saw "AC 11 + DEX" instead of "CA 11 + DES". Every token now
+//    routes through t() — the REAL i18next (loaded EN+IT by setup.fast.ts) so the
+//    assertions see the actual localized strings, never a key/stub. ───────────────
+describe("equipmentSpec — armor AC stat line localizes (row meta + detail)", () => {
+  const realCtx = (locale: "en" | "it"): PickerCtx => ({
+    t: i18n.getFixedT(locale),
+    locale,
+    character: null,
+    mode: "browse",
+  });
+
+  // Light armor: base 11, + DEX, NO max (e.g. leather/padded — the task example).
+  const lightDex = SRD_EQUIPMENT.find(
+    (i) => i.ac?.dexBonus === true && i.ac.maxDex == null
+  );
+  // Medium armor: + DEX capped at a max (e.g. hide/chain-shirt, max 2).
+  const mediumDex = SRD_EQUIPMENT.find(
+    (i) => i.ac?.dexBonus === true && i.ac.maxDex != null
+  );
+  if (!lightDex || !mediumDex) {
+    throw new Error("SRD equipment missing the dex-bonus armor fixtures");
+  }
+
+  /** The rendered text of a spec row's `meta` slot (a React fragment). */
+  const rowMetaText = (item: typeof lightDex, locale: "en" | "it") => {
+    const { meta } = equipmentSpec.row(item, realCtx(locale));
+    const { container } = render(<div>{meta}</div>);
+    return container.textContent;
+  };
+
+  /** The armor-class row's VALUE from a spec detail's meta grid. */
+  const acDetailValue = (item: typeof lightDex, locale: "en" | "it") => {
+    const detail = equipmentSpec.detail(item, realCtx(locale), { added: false });
+    const acLabel = i18n.getFixedT(locale)("character.armorClassShort");
+    return detail.meta?.find((m) => m.label === acLabel)?.value ?? "";
+  };
+
+  it("row meta reads 'AC 11 + DEX' in EN and 'CA 11 + DES' in IT", () => {
+    expect(rowMetaText(lightDex, "en")).toContain("AC 11 + DEX");
+    expect(rowMetaText(lightDex, "it")).toContain("CA 11 + DES");
+    // The English abbreviation must NOT leak into the IT row.
+    expect(rowMetaText(lightDex, "it")).not.toContain("DEX");
+    expect(rowMetaText(lightDex, "it")).not.toContain("AC ");
+  });
+
+  it("detail AC value localizes '+ DEX' (no max) — 'DES' under IT", () => {
+    expect(acDetailValue(lightDex, "en")).toBe(`${lightDex.ac?.base} + DEX`);
+    expect(acDetailValue(lightDex, "it")).toBe(`${lightDex.ac?.base} + DES`);
+  });
+
+  it("detail AC value localizes '+ DEX (max N)' — 'DES (max N)' under IT", () => {
+    const n = mediumDex.ac?.maxDex;
+    expect(acDetailValue(mediumDex, "en")).toBe(`${mediumDex.ac?.base} + DEX (max ${n})`);
+    expect(acDetailValue(mediumDex, "it")).toBe(`${mediumDex.ac?.base} + DES (max ${n})`);
   });
 });

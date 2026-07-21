@@ -138,7 +138,9 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
         {item.damage
           ? ` · ${item.damage.die} ${t(`srd.damage_${item.damage.type.toLowerCase()}`)}`
           : ""}
-        {item.ac ? ` · AC ${item.ac.base}${item.ac.dexBonus ? " + DEX" : ""}` : ""}
+        {item.ac
+          ? ` · ${t("equipment.ac")} ${item.ac.base}${item.ac.dexBonus ? ` + ${t("abilities.DEX_short")}` : ""}`
+          : ""}
       </>
     ),
   }),
@@ -160,7 +162,15 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
     if (item.ac)
       meta.push({
         label: t("character.armorClassShort"),
-        value: `${item.ac.base}${item.ac.dexBonus ? ` + DEX${item.ac.maxDex != null ? ` (max ${item.ac.maxDex})` : ""}` : ""}`,
+        value: `${item.ac.base}${
+          item.ac.dexBonus
+            ? ` + ${t("abilities.DEX_short")}${
+                item.ac.maxDex != null
+                  ? ` (${t("equipment.acMaxDex", { n: item.ac.maxDex })})`
+                  : ""
+              }`
+            : ""
+        }`,
       });
     if (item.stealthDisadvantage)
       meta.push({ label: t("equipment.stealth"), value: t("equipment.disadvantage") });

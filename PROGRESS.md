@@ -231,6 +231,11 @@ footprint barely changes read→edit — both fail on the old fixed box). DESIGN
   survives store churn. Regressions: `add-item-scroll-preserve.spec.ts` (real Chromium, the
   faithful repro jsdom cannot measure) + the `resultSetKey` reset-key-stability cases in
   `compendium-deeplink.test.ts`.
+- **Equipment AC stat line fully localized.** The picker row + detail hardcoded English "AC" / "DEX"
+  / "(max N)" in the armor stat line ("AC 11 + DEX"), so an IT player saw English tokens; every
+  token now routes through `t()` (`equipment.ac` · `abilities.DEX_short` · `equipment.acMaxDex`) —
+  an IT player reads "CA 11 + DES" / "CA 13 + DES (max 2)". Regression: the armor-AC row+detail
+  cases in `compendium-browse-specs.test.tsx` (real i18next, EN + IT).
 
 ## Open decisions (owner)
 
