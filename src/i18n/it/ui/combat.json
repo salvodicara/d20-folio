@@ -216,8 +216,6 @@
     "blockedReasonStunned": "Stordito",
     "blockedReasonNoUses": "Nessun uso rimasto",
     "blockedReasonNoConcentration": "Non puoi concentrarti",
-    "savesChecksTitle": "Tiri salvezza e prove",
-    "savesChecksHint": "I tuoi modificatori · tira tu il dado",
     "limitersLabel": "Cosa ti limita in questo turno",
     "limiterBlockedEconomy": "Non puoi usare {{slots}} ({{cause}})",
     "limiterAttackDisadvantage": "Svantaggio ai tiri per colpire ({{cause}})",

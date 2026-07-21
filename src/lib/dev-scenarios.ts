@@ -139,7 +139,7 @@ export interface ScenarioSpec {
   /**
    * Active session CONDITIONS to start with (SRD condition ids, e.g.
    * `["stunned"]`) — seeds `session.conditions`. For the condition-projection
-   * surfaces: the Saves & Checks panel's crimson auto-fail mark (Stunned /
+   * surfaces: the Stats rail's (LeftHud) crimson save auto-fail mark (Stunned /
    * Paralyzed auto-fail STR + DEX saves) and the turn-limiters banner's
    * blocked-economy line (the Incapacitated family forbids Action/Bonus/Reaction).
    * Empty by default. Unknown ids simply have no gate and are skipped.
@@ -423,12 +423,13 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
       "heal-bonus (Disciple of Life): a healing spell's verdict gains +2 + spell level. S11b: Divine Spark heal-or-damage (1d8+WIS, both chips) + Sear Undead (WIS-many d8 Radiant).",
   },
   "bg3-projection": {
-    // The BG3 can/cannot projection — the Play-tab condition surfaces. A Cleric 5
-    // (WIS 18) STUNNED: the Saves & Checks panel shows the crimson AUTO-FAIL mark on
-    // the STR + DEX saves (Stunned auto-fails both), and the turn-limiters banner
-    // shows the blocked-economy line "You can't take Action, Bonus, Reaction
-    // (Stunned)". The proficient WIS/CHA saves + skill proficiencies give the panel
-    // its on-demand BreakdownTip triggers. Visit `/characters/scn-bg3-projection`.
+    // The BG3 can/cannot projection — the condition surfaces. A Cleric 5
+    // (WIS 18) STUNNED: the Stats rail (LeftHud) shows the crimson AUTO-FAIL mark on
+    // the STR + DEX save medallions (Stunned auto-fails both), and the Play tab's
+    // turn-limiters banner shows the blocked-economy line "You can't take Action,
+    // Bonus, Reaction (Stunned)". The proficient WIS/CHA saves + skill proficiencies
+    // give the rail its on-demand BreakdownTip triggers. Visit
+    // `/characters/scn-bg3-projection`.
     name: "Auria, Stunned Cleric",
     raceId: "human",
     classId: "cleric",
@@ -445,7 +446,7 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     ],
     conditions: ["stunned"],
     exercises:
-      "condition projection: Stunned surfaces the Saves & Checks panel's crimson auto-fail mark on STR + DEX saves AND the turn-limiters blocked-economy line (You can't take Action, Bonus, Reaction (Stunned)); proficient saves/skills carry the BreakdownTip.",
+      "condition projection: Stunned surfaces the Stats rail's (LeftHud) crimson auto-fail mark on STR + DEX saves AND the turn-limiters blocked-economy line (You can't take Action, Bonus, Reaction (Stunned)); proficient saves/skills carry the BreakdownTip.",
   },
   "s13-speed": {
     // S13 — the effective walking Speed reaching the UI. A low-STR (8) Wizard

@@ -132,8 +132,8 @@ const EXPOSURE: Record<string, Exposure> = {
   "hp-per-level": { via: "hp-per-level", consumer: "src/lib/level-up.ts" },
   "save-bonus": {
     // B8 — the all-saves `saveBonusAbilities`/`saveBonusFlat` layers reach the
-    // medallion through the shared `flatSaveBonus` helper, now consumed by the
-    // shared `deriveSavesAndChecks` builder (the LeftHud + Play-panel de-dup);
+    // medallion through the shared `flatSaveBonus` helper, consumed by the
+    // `deriveSavesAndChecks` builder (the Stats rail's save/skill/passive math);
     // the helper itself reads `saveBonusAbilities` in compute.ts.
     via: "flatSaveBonus",
     consumer: "src/lib/views/saves-checks-view.ts",
@@ -167,8 +167,8 @@ const EXPOSURE: Record<string, Exposure> = {
     consumer: "src/lib/smart-tracker.ts",
   },
 
-  // ── Proficiencies → the shared saves/checks builder (Left HUD dots + the
-  //    in-combat Saves & Checks Play panel both consume it; override-aware) ──
+  // ── Proficiencies → the shared saves/checks builder (the Left HUD dots
+  //    consume it; override-aware) ──
   "save-proficiency": {
     via: "mergeSaveProficiencies",
     consumer: "src/lib/views/saves-checks-view.ts",

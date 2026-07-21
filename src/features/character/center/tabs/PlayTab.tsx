@@ -36,7 +36,6 @@ import { NumberStepper } from "@/components/ui/input";
 import { weaponSealIcon, magicItemSealIcon } from "@/components/shared/item-icons";
 import { getMagicItem } from "@/data/magic-items";
 import { ThisTurnTracker } from "../ThisTurnTracker";
-import { SavesChecksPanel } from "./SavesChecksPanel";
 import { InCombatStatus } from "@/features/campaigns/in-combat-chip";
 import { CombatAlgorithm } from "./CombatAlgorithm";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -977,13 +976,6 @@ export function PlayTab() {
           {t("combat.noActions")}
         </div>
       )}
-
-      {/* Saves & Checks — on-demand, collapsed-by-default read-out of the six
-          saves + the skill list + the three passives (workstream B). The rail
-          holds the same numbers, but on a phone it's behind the "Stats"
-          disclosure above this tab — this keeps them one tap away mid-combat.
-          Modifiers + breakdowns only; NO dice/roll/DC affordance (golden rule 21). */}
-      <SavesChecksPanel />
 
       {/* Action Log (low priority, below cards) */}
       <div className="mt-6">

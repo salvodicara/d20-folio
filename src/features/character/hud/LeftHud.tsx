@@ -88,9 +88,9 @@ export function LeftHud() {
 
   // Full aggregate → ability-score floors + senses/speeds (grants), threading the
   // chosen grant-bundle so a picked lineage's senses/floors apply. The save /
-  // skill / passive ROW math lives in the SHARED `deriveSavesAndChecks` builder
-  // (golden rule 6 — the in-combat Saves & Checks panel consumes the SAME numbers;
-  // a parity test pins this rail's output against it).
+  // skill / passive ROW math lives in the SHARED, locale-free `deriveSavesAndChecks`
+  // builder (golden rule 6 — the ONE home of that math; this rail is its sole
+  // consumer, so its display can never drift from the engine).
   const fullAggregate = useMemo(
     () =>
       charData

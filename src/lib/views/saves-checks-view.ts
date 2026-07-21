@@ -1,18 +1,15 @@
 /**
  * saves-checks-view — the SINGLE, LOCALE-FREE home of the save / skill / passive
- * ROW math (workstream B, "In-combat save/check helper").
+ * ROW math.
  *
  * The six saving throws, the 18 skill checks, and the three passive scores are
- * derived here ONCE from the character + its session state, and BOTH surfaces
- * that show them consume this builder:
- *   • the identity-side cockpit rail (`LeftHud` — the medallions + edit-mode
- *     override rows + the Senses passives), and
- *   • the in-combat "Saves & Checks" panel on the Play surface (`SavesChecksPanel`).
+ * derived here ONCE from the character + its session state, and consumed by the
+ * identity-side cockpit rail (`LeftHud` — the medallions + edit-mode override
+ * rows + the Senses passives), the SOLE surface that shows them.
  *
- * Keeping the D&D math in ONE view builder (not inline in two components) is the
- * REUSE mandate (golden rule 6): a phone player reading "what's my DEX save?"
- * mid-combat sees the EXACT number the rail shows, by construction — a parity
- * test pins `deriveSavesAndChecks` against LeftHud's rendered output.
+ * Keeping the D&D math in ONE view builder (not inline in the component) is the
+ * REUSE mandate (golden rule 6): the rail reads every save / skill / passive
+ * number from this builder, so its display can never drift from the engine.
  *
  * Presenter seam (R2): engine/view-boundary. Every number is engine-computed via
  * `compute.ts`; every breakdown is a raw {@link RawBreakdownPart} list (i18n-free)
@@ -49,9 +46,9 @@ import { resolveConditionEffects } from "@/lib/condition-effects";
 
 /**
  * The narrow slice of session state the derivation reads — a structural subset
- * that the full `SessionState` satisfies, so callers pass either the whole
- * session (the Play panel) or a memo-narrowed object (the rail's render
- * isolation, §7.2 — it must NOT re-render on an HP/round change).
+ * that the full `SessionState` satisfies, so the rail passes a memo-narrowed
+ * object (its render isolation, §7.2 — it must NOT re-render on an HP/round
+ * change).
  */
 export interface SavesChecksSession {
   exhaustion: number;

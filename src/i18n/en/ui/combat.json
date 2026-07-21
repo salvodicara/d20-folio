@@ -216,8 +216,6 @@
     "blockedReasonStunned": "Stunned",
     "blockedReasonNoUses": "No uses left",
     "blockedReasonNoConcentration": "Can't concentrate",
-    "savesChecksTitle": "Saves & Checks",
-    "savesChecksHint": "Your modifiers · roll your own die",
     "limitersLabel": "What's limiting you this turn",
     "limiterBlockedEconomy": "You can't take {{slots}} ({{cause}})",
     "limiterAttackDisadvantage": "Disadvantage on attacks ({{cause}})",

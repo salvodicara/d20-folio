@@ -28,9 +28,9 @@ test.describe("Abilities Page", () => {
   });
 
   // Scope to the StatCard label (`.sc-label`) rather than a page-wide text match:
-  // the collapsed (hidden-by-default) Saves & Checks panel in the center column
-  // precedes the Left HUD medallions in DOM order and repeats the same ability
-  // abbreviations, so a bare `getByText(...).first()` resolves its hidden node.
+  // the ability abbreviations also appear in other viewport-hidden chrome (the
+  // sticky stat ribbon / HP rail), so a bare `getByText(...).first()` could resolve
+  // a hidden node — the class scope pins the assertion to the visible medallion.
   test("displays all six ability scores", async ({ page }) => {
     await expect(page.locator(".sc-label", { hasText: "STR" }).first()).toBeVisible();
     await expect(page.locator(".sc-label", { hasText: "DEX" }).first()).toBeVisible();
@@ -59,10 +59,9 @@ test.describe("Abilities Page", () => {
     await expect(page.locator(".sc-gem", { hasText: "8" }).first()).toBeVisible(); // STR
   });
 
-  // These skill-name spans carry no distinctive class, and the collapsed Saves &
-  // Checks panel (center column, DOM-before the Left HUD) also lists every skill
-  // name in its hidden `<details>` body — filter to the visible node so the
-  // assertion can't resolve that hidden copy.
+  // These skill-name spans carry no distinctive class, and the mobile "Stats"
+  // disclosure keeps a hidden copy of the skill list in the DOM — filter to the
+  // visible node so the assertion can't resolve that hidden copy.
   test("displays skills list", async ({ page }) => {
     // Should show skills
     await expect(
@@ -92,8 +91,8 @@ test.describe("Abilities Page", () => {
   });
 
   test("shows skill modifiers with proficiency/expertise", async ({ page }) => {
-    // Deception: expertise = CHA(+5) + PB(+4)*2 = +13. Same hidden-panel-first
-    // hazard as above — filter to the visible node.
+    // Deception: expertise = CHA(+5) + PB(+4)*2 = +13. Same hidden-copy hazard as
+    // above (the mobile "Stats" disclosure) — filter to the visible node.
     await expect(page.getByText("+13").filter({ visible: true }).first()).toBeVisible();
   });
 

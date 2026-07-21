@@ -1471,9 +1471,8 @@ emits **ids + raw numbers + i18n keys/args** and **never imports i18n** (pinned 
 `architecture-direction.guard` zero-import count; `pure-modules-guard` pins `lib/views/**`
 React/store/Firebase-free). Present modules: `sheet-view.ts` (LeftHud/ResourceRail/Bio merge +
 senses/speeds/immunities/advantage chips), `saves-checks-view.ts` (`deriveSavesAndChecks` — the ONE
-locale-free home of the six saves + 18 skills + three passives row math, shared by the cockpit rail
-`LeftHud` AND the in-combat "Saves & Checks" Play panel; a parity test pins the rail's rendered output
-=== the builder), `combat-action-view.ts` (log-icon type, action sort, upcast text + the
+locale-free home of the six saves + 18 skills + three passives row math, consumed by the cockpit rail
+`LeftHud`, its sole surface), `combat-action-view.ts` (log-icon type, action sort, upcast text + the
 `composeTurnLimiters` "what's limiting you" summary), `weapon-facts-view.ts` (the **unified weapon facts VM** — `buildWeaponFacts` produces ONE
 `WeaponFactsVM` rendered by the SAME shared `WeaponFacts` component on BOTH the Combat and Inventory
 tabs, so the two weapon cards are identical by construction; a mastery chip appears only for an OWNED

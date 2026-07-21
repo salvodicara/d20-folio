@@ -1098,14 +1098,14 @@ The workstreams below are COARSE headlines — the detailed per-seam frontier li
       "You can't take Action, Bonus, Reaction (Stunned)", 2026-07-06). `breaksConcentration` stays OUT (owned by
       the concentration banner — DRY); depleted pools / already-spent economy stay out (on the coins/cards —
       golden rule 19).
-- [x] **In-combat save / check helper — SHIPPED (2026-07-06).** A compact, collapsed-by-default "Saves & Checks"
-      panel on the Play surface (`SavesChecksPanel`) — the six save modifiers + the skill list + the three passives,
-      each with the on-demand `BreakdownTip` disclosure and the crimson auto-fail mark, so a phone player can read
-      "what's my DEX save?" mid-combat without leaving the action board (the rail holds the same numbers but is
-      behind the "Stats" disclosure above this tab). The row math was LIFTED out of `LeftHud` into the shared,
-      locale-free `deriveSavesAndChecks` builder (`lib/views/saves-checks-view.ts`) that BOTH surfaces consume
-      (golden rule 6; a parity test pins the rail's rendered output === the builder). HONEST (golden rule 21):
-      modifiers + breakdowns only — NO roll button, NO d20, NO DC field, NO target; the player rolls their own die.
+- [x] **In-combat save / check helper — REMOVED (2026-07-21, owner-ratified).** The Play-surface "Saves & Checks"
+      panel (`SavesChecksPanel`) was retired: it duplicated the Stats rail's (`LeftHud`) saves + full skill list +
+      passive senses byte-for-byte (same `deriveSavesAndChecks` builder, same numbers), and the owner decided the
+      left rail stays the single home for saves/skills/senses on all screens. The shared, locale-free
+      `deriveSavesAndChecks` builder (`lib/views/saves-checks-view.ts`) STAYS — `LeftHud` is now its sole consumer
+      (golden rule 6, the one home of that math). Originally shipped 2026-07-06 (the row math was first lifted out of
+      `LeftHud` into the shared builder so both surfaces could consume it); the parity test it guarded is gone with
+      the duplication.
 - [x] Multi-action count awareness (Action Surge / Haste) — the B6 per-turn extra-action budget.
 - [x] **Reaction-awareness list — SATISFIED** by the shipped PlayTab Reactions section (the availability chip +
       reaction coin already show what reactions you have + whether the economy is spent). No duplicate surface was
