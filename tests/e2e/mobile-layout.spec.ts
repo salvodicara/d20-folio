@@ -166,7 +166,7 @@ for (const surface of SURFACES) {
 /**
  * No-Truncation worst-string stress (IT) — drives the four card/row surfaces to
  * the LONGEST real Italian SRD names (IT runs ~25–45% longer than EN; worst is
- * the 49-char "Turibolo del Controllo degli Elementali dell'Aria") and asserts
+ * the 51-char "Incensiere del Controllo degli Elementali dell'Aria") and asserts
  * the protected name selectors render unclipped at 390px. The compendium routes
  * use `?q=` so the worst row is top-of-list (also defeating the codex list's
  * content-visibility skip); the cockpit tabs carry their long entries in
@@ -175,13 +175,13 @@ for (const surface of SURFACES) {
 const WORST_NAME_SURFACES: { slug: string; route: string; anchor: RegExp }[] = [
   {
     slug: "compendium-magic-item-longest",
-    route: "/compendium?type=magic-item&q=turibolo",
-    anchor: /Turibolo del Controllo degli Elementali dell'Aria/,
+    route: "/compendium?type=magic-item&q=incensiere",
+    anchor: /Incensiere del Controllo degli Elementali dell'Aria/,
   },
   {
     slug: "compendium-equipment-longest",
-    route: "/compendium?type=equipment&q=dotazione da esploratore",
-    anchor: /Dotazione da Esploratore di Dungeon/,
+    route: "/compendium?type=equipment&q=custodia",
+    anchor: /Custodia per mappe o pergamene/,
   },
   {
     slug: "cockpit-spells-longest",
@@ -191,7 +191,7 @@ const WORST_NAME_SURFACES: { slug: string; route: string; anchor: RegExp }[] = [
   {
     slug: "cockpit-inventory-longest",
     route: "/characters/mock-1?tab=inventory",
-    anchor: /Dotazione da Esploratore di Dungeon/,
+    anchor: /Dotazione da Avventuriero/,
   },
 ];
 

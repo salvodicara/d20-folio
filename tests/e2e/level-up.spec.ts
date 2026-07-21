@@ -180,7 +180,7 @@ test.describe("Level-Up Flow (wizard F)", () => {
 
 /**
  * fb3 regression pins (owner 2026-06-11, third report) — driven at the owner's
- * REAL reproduction: his window width (~1130px CSS), the Artigiano/Crafter
+ * REAL reproduction: his window width (~1130px CSS), the Fabbricante/Crafter
  * tool asks inside the chosen feat's throne, Italian locale.
  */
 test.describe("fb3: asks-column ledger + chrome rhythm + mobile nav", () => {
@@ -194,10 +194,10 @@ test.describe("fb3: asks-column ledger + chrome rhythm + mobile nav", () => {
     await expect(page.getByText(HERO_FIRST).first()).toBeVisible({ timeout: 20000 });
     await nextBtn(page).click(); // hp → boon
     await page.locator(".wiz-fork-tab").nth(2).click(); // feat mode
-    const row = page.locator(".wiz-row").filter({ hasText: "Artigiano" }).first();
+    const row = page.locator(".wiz-row").filter({ hasText: "Fabbricante" }).first();
     await row.scrollIntoViewIfNeeded();
     await row.click();
-    await page.getByRole("button", { name: /Scegli Artigiano/ }).click();
+    await page.getByRole("button", { name: /Scegli Fabbricante/ }).click();
     await expect(page.locator(".wiz-entry[data-chosen]")).toBeVisible();
     // Wait for the asks track to settle.
     const asksList = page.locator(".wiz-spread-asks .wiz-asks .wiz-list").first();
@@ -235,7 +235,7 @@ test.describe("fb3: asks-column ledger + chrome rhythm + mobile nav", () => {
     await expect(page.getByText(HERO_FIRST).first()).toBeVisible({ timeout: 20000 });
     await nextBtn(page).click(); // hp → boon
     await page.locator(".wiz-fork-tab").nth(2).click(); // feat mode
-    const row = page.locator(".wiz-row").filter({ hasText: "Artigiano" }).first();
+    const row = page.locator(".wiz-row").filter({ hasText: "Fabbricante" }).first();
     await row.scrollIntoViewIfNeeded();
     await row.click();
     await page.waitForTimeout(450); // the unfold settles
@@ -244,7 +244,7 @@ test.describe("fb3: asks-column ledger + chrome rhythm + mobile nav", () => {
     expect(reading).not.toBeNull();
 
     // Commit — the asks track opens INSIDE the measured height lock.
-    await page.getByRole("button", { name: /Scegli Artigiano/ }).click();
+    await page.getByRole("button", { name: /Scegli Fabbricante/ }).click();
     await expect(page.locator(".wiz-entry[data-chosen]")).toBeVisible();
     await page.waitForTimeout(450); // the track morph settles
     const chosenBox = await entry.boundingBox();
