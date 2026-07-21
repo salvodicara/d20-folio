@@ -21,7 +21,7 @@ identity pivot is code-complete**, with only owner-generated art asset integrati
 push, the encounter/combat single-source re-architecture, the campaign-hub redesign, admin
 god-mode, the initiative single-source re-architecture, the sheet's management-chrome system (the
 Binder's Fob / Signet), and the combat-CTA/reversal grammar are shipped and deployed; the
-mechanical-automation long-tail (seams S1–S11) is now effectively CLOSED. The forward frontier is
+mechanical-automation long-tail (seams S1–S13) is now effectively CLOSED. The forward frontier is
 (1) the 2024 core-rules SYSTEM-audit fix waves (RA-01…RA-35 — `docs/AUTOMATION_BACKLOG.md`), (2) a
 tracking-doc reconciliation audit (the rule-16 on-ramp), (3) the ratified DDB-parity feature epic (bestiary-first — `docs/POSITIONING.md`), and (4) parked backups/observability/legal (the light
 theme is at FULL parity: the depth-parity
@@ -51,7 +51,7 @@ the canonical set.
 | `docs/ARCHITECTURE.md`         | **How the system works** — the layered model (data→engine→views→UI), i18n-completeness locks, multiclass model. Start here if new to the code.                                                                                                                               |
 | `docs/CHARACTER_SCHEMA.md`     | The v3 portable character codec — the ONLY supported import/export format (`{ schema: 3, build, state, meta? }`).                                                                                                                                                            |
 | `docs/MECHANICS.md`            | The declarative-grant taxonomy (every mechanic the engine models).                                                                                                                                                                                                           |
-| `docs/AUTOMATION_BACKLOG.md`   | The open automation frontier — the minimum-interaction doctrine, defect-class taxonomy (A–E), the ranked 2024 core-rules SYSTEM-audit ledger (RA-01…RA-35), and the closing seams S1–S10 (companion to the coverage matrix; pack-entity items live in `content-pack/docs/`). |
+| `docs/AUTOMATION_BACKLOG.md`   | The open automation frontier — the minimum-interaction doctrine, defect-class taxonomy (A–E), the ranked 2024 core-rules SYSTEM-audit ledger (RA-01…RA-35), and the closing seams S1–S13 (companion to the coverage matrix; pack-entity items live in `content-pack/docs/`). |
 | `docs/AUTOMATION_COVERAGE.md`  | The per-entity coverage **matrix** (automated/partial/narrative/override) — companion to the backlog; what's auto-computed vs the gap frontier (pack-entity rows live in `content-pack/docs/`).                                                                              |
 | `docs/CONTRIBUTING.md`         | Local dev + contribution flow.                                                                                                                                                                                                                                               |
 | `docs/RELEASE.md`              | The changeset → release flow.                                                                                                                                                                                                                                                |

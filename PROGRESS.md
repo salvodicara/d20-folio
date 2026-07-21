@@ -25,7 +25,7 @@ release. The headline **campaign features** — Party, Chronicle, Treasury, Shar
 **shipped**. The **BG3 on-rails combat** campaign landed its **major wave on 2026-06-22** (on-hit
 rider chips, the A2 duration/cadence engine, condition-consequence projection, form-swap attack rows,
 and the effective-max-HP / set-score / darkvision / Epic-Boon correctness batch — git
-`fe522b60`…`f68226dd`); the S1–S11 play/data seams + the cadence-mechanics wiring (2 of 4 wired) have
+`fe522b60`…`f68226dd`); the S1–S13 play/data seams + the cadence-mechanics wiring (2 of 4 wired) have
 since shipped (S11 — the save-based action primitive — closed Dragonborn Breath Weapon, Cleric Divine
 Spark/Radiance, Lupin Howl; **S11b** — the exotic Channel-Divinity sub-shapes (+WIS/+Cleric-level
 additives, Divine Spark heal-or-damage, Sear Undead ability-count dice) — shipped 2026-06-25; **S13** —
@@ -138,7 +138,7 @@ Reckless Attack backlog true-up (its downside consumer already shipped June 2026
 snapshot-verify safety net with explicit no-backward-compat / always-optimal modeling (amended golden
 rules 10, 22, the four forks); (2) tracking docs must be a **truthful live mirror** — verify-first,
 reconcile drift (amended golden rule 16 — this very sync operationalizes it). **Finding:** the
-mechanical-automation long-tail (seams **S1–S11**) is now effectively **CLOSED** — several
+mechanical-automation long-tail (seams **S1–S13**) is now effectively **CLOSED** — several
 survey/backlog "open" items turned out already shipped in June (the doc drift that motivated the
 rule-16 amendment; a reconciliation audit is queued as the next on-ramp).
 
@@ -698,7 +698,7 @@ documented in `docs/MECHANICS.md` + `DESIGN.md`.
    leaves matrix drift. **Still due:** the feats / species / backgrounds / magic-items / spells sections
    (not part of this per-class pass) remain at the 2026-06-25 baseline (the coverage-banner caveat now
    scopes to them).
-2. **The new-primitive tier (design-heavy).** The mechanical-automation long-tail (seams S1–S11) is
+2. **The new-primitive tier (design-heavy).** The mechanical-automation long-tail (seams S1–S13) is
    effectively CLOSED; what remains is a set of NEW engine primitives, each a design fork unblocked by
    the owner's optimal / no-tradeoffs directive. **SHIPPED 2026-07-07:** (a) the
    `SrdActionDef.tempHpRoll` roll-entry idiom ported to the spell-cast path (**False Life** 2d4+4, with

@@ -369,9 +369,9 @@ appears on a weapon row.
 
 ---
 
-## The closing seams (S1–S10) — open frontier, as tick-boxes
+## The closing seams (S1–S13) — effectively CLOSED, tracked as tick-boxes
 
-Ten cross-cutting seams convert the bulk of the interaction-cost findings; most are CONSUMERS for
+These cross-cutting seams convert the bulk of the interaction-cost findings; most are CONSUMERS for
 things the engine ALREADY computes. Each tick-box names the consumer / render-site that closes it.
 The seams map onto the active campaign workstreams: **A = combat mechanics (engine→render)**,
 **B = BG3 can/cannot projection UX**.
