@@ -13,7 +13,7 @@ import { FilterChip } from "@/components/sheet/picker-parts";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { highlightRulesText } from "@/components/shared/highlightRulesText";
 import { srdKey } from "@/i18n/srd-key";
-import { localizeTrackerRecovery } from "@/lib/views/tracker-view";
+import { localizeTrackerRecovery, localizeTrackerTotal } from "@/lib/views/tracker-view";
 import type { Locale } from "@/lib/locale";
 import type { SrdFeatData, FeatCategory } from "@/data/types";
 import { defineFilter, type CompendiumPickerSpec, type TFn } from "../types";
@@ -129,7 +129,10 @@ export const featSpec: CompendiumPickerSpec<SrdFeatData> = {
           </div>
           {tracker && (
             <div className="text-[0.72rem] text-text-primary">
-              {t("custom.totalUses")}: {tracker.total}
+              {/* A feat scales on TOTAL character level (no class scope); browse
+                  renders its total as localized prose through the ONE shared
+                  presenter, never the raw scaling token. */}
+              {t("custom.totalUses")}: {localizeTrackerTotal(tracker.total, t)}
               {recovery && ` · ${t("custom.recovery")}: ${recovery}`}
             </div>
           )}

@@ -46,6 +46,7 @@ import { resolveFeatureRiders, type ResolvedTracker } from "@/lib/smart-tracker"
 import {
   localizeTrackers,
   localizeTrackerRecovery,
+  trackerRecoveryBadgeBucket,
   copyTargetVMs,
 } from "@/lib/views/tracker-view";
 import { chipText } from "@/lib/views/combat-action-view";
@@ -172,12 +173,12 @@ function trackerRecovery(recovery: Recovery | undefined): {
   code: "SR" | "LR" | undefined;
   color: TrackerColor;
 } {
-  switch (recovery) {
-    case "short-rest":
-    case "short-or-long-rest":
+  // The SR/LR bucket comes from the ONE shared classifier the rail reads too
+  // (golden rule 6) — `dawn` folds to Long Rest identically on both surfaces.
+  switch (trackerRecoveryBadgeBucket(recovery)) {
+    case "short":
       return { code: "SR", color: "verdigris" };
-    case "long-rest":
-    case "dawn":
+    case "long":
       return { code: "LR", color: "lapis" };
     default:
       return { code: undefined, color: "amethyst" };

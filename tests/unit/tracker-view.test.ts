@@ -11,8 +11,10 @@
  * fighter scenario (features + weapons) and a Fiend Warlock (caster).
  */
 import { describe, it, expect } from "vitest";
+import i18n from "@/i18n";
 import { litText } from "@/lib/loc-text";
 import { concentrationValue } from "@/lib/concentration";
+import type { Locale } from "@/lib/locale";
 import {
   actionHigherLevels,
   activatableToggles,
@@ -24,8 +26,10 @@ import {
   conditionOptions,
   grantSourceLabel,
   localizeTrackerRecovery,
+  localizeTrackerTotal,
   resolveAuraDice,
   rollFloorVMs,
+  trackerRecoveryBadgeBucket,
 } from "@/lib/views/tracker-view";
 import type { AuraClause } from "@/lib/grants";
 import { customConcentrationValue } from "@/lib/concentration";
@@ -90,6 +94,69 @@ describe("tracker-view — localizeTrackerRecovery", () => {
   it("returns null (honest blank) for per-turn and undefined", () => {
     expect(localizeTrackerRecovery("per-turn", t)).toBeNull();
     expect(localizeTrackerRecovery(undefined, t)).toBeNull();
+  });
+});
+
+describe("tracker-view — trackerRecoveryBadgeBucket (the SR/LR badge single source)", () => {
+  // The ONE classifier the rail's `trk-rec` chip AND the Features-tab `Tracker`
+  // molecule both read (golden rule 6). `dawn` folding to the Long-Rest bucket is
+  // the anti-divergence pin: before the fix the rail mapped `dawn` to NO badge
+  // while the Features tab mapped it to LR — they disagreed about the same fact.
+  it.each([
+    ["short-rest", "short"],
+    ["short-or-long-rest", "short"],
+    ["long-rest", "long"],
+    ["dawn", "long"],
+  ] as const)("%s → %s bucket (both surfaces agree by construction)", (rec, bucket) => {
+    expect(trackerRecoveryBadgeBucket(rec)).toBe(bucket);
+  });
+
+  it("carries NO rest badge for per-turn / manual / undefined (honest blank)", () => {
+    expect(trackerRecoveryBadgeBucket("per-turn")).toBeNull();
+    expect(trackerRecoveryBadgeBucket("manual")).toBeNull();
+    expect(trackerRecoveryBadgeBucket(undefined)).toBeNull();
+  });
+});
+
+describe("tracker-view — localizeTrackerTotal (browse formula presenter)", () => {
+  // The real i18next translator (EN + IT eagerly loaded by setup.fast.ts), so the
+  // asserted strings are the REAL localized prose — a raw token would show.
+  const tFor = (locale: Locale) => i18n.getFixedT(locale);
+  // A class feature's owning-class label, localized (the `"level"` term is
+  // class-scoped: Paladin Lay on Hands' "level*5" reads "5 × Paladin level").
+  const paladin = (locale: Locale) => i18n.getFixedT(locale)("srd.class_paladin");
+
+  // Every scaling SHAPE the tracker data actually uses (enumerated over src/data:
+  // fixed numbers, "PB", ability mods, "level", "level*5"), plus the un-presentable
+  // arithmetic fallback — each in BOTH locales.
+  it.each([
+    // [formula, classLabel?, EN, IT]
+    ["5", undefined, "5", "5"], // a fixed number stays a number
+    ["3", undefined, "3", "3"],
+    ["PB", undefined, "proficiency bonus", "bonus di competenza"],
+    ["WIS", undefined, "WIS modifier", "modificatore SAG"],
+    ["CHA", undefined, "CHA modifier", "modificatore CAR"],
+    ["level", "class", "Paladin level", "livello da Paladino"], // class-scoped
+    ["level", undefined, "your level", "il tuo livello"], // feat: total level
+    ["level*5", "class", "5 × Paladin level", "5 × livello da Paladino"],
+    ["PB*2", undefined, "2 × proficiency bonus", "2 × bonus di competenza"],
+    // Un-presentable without a character → the formula's INTENT, never the token.
+    ["1+level", undefined, "scales with level", "varia col livello"],
+    ["ceil(level/2)", undefined, "scales with level", "varia col livello"],
+  ] as const)("%s (class=%s) → EN %s / IT %s", (formula, cls, en, it) => {
+    const enLabel = cls === "class" ? paladin("en") : undefined;
+    const itLabel = cls === "class" ? paladin("it") : undefined;
+    expect(localizeTrackerTotal(formula, tFor("en"), enLabel)).toBe(en);
+    expect(localizeTrackerTotal(formula, tFor("it"), itLabel)).toBe(it);
+  });
+
+  it("never leaks a raw token — the IT prose differs from EN for every scaling shape", () => {
+    for (const formula of ["PB", "WIS", "level", "level*5", "1+level"]) {
+      const en = localizeTrackerTotal(formula, tFor("en"), "Paladin");
+      const localized = localizeTrackerTotal(formula, tFor("it"), "Paladino");
+      expect(localized).not.toBe(en);
+      expect(localized).not.toContain(formula); // the raw token is gone
+    }
   });
 });
 

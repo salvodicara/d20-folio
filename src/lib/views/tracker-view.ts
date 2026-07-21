@@ -42,7 +42,7 @@ import type {
   ResourceConversionEntry,
   RollFloorClause,
 } from "@/lib/grants";
-import type { AbilityCode } from "@/data/types";
+import { ALL_ABILITY_CODES, type AbilityCode } from "@/data/types";
 import { abilityModifier } from "@/lib/ability";
 import { localeDistance, pickDiceByLevel } from "@/lib/utils";
 import { SRD_CONDITIONS } from "@/data/conditions";
@@ -140,6 +140,101 @@ export function localizeTrackerRecovery(
     default:
       return null;
   }
+}
+
+/** The rest-recovery BADGE bucket a tracker's cadence folds into. */
+export type RecoveryBadgeBucket = "short" | "long";
+
+/**
+ * Classify a tracker recovery TOKEN into its SR / LR badge bucket — the ONE
+ * source both badge surfaces read so they can never disagree (golden rule 6).
+ * The rail's tight `trk-rec` chip (`ResourceRail`) AND the Features-tab
+ * `Tracker` molecule's `tr-recovery` chip route through THIS classifier, so a
+ * `dawn` pool (a magic item's daily charges) shows the SAME Long-Rest badge on
+ * both: `dawn` folds to the Long-Rest bucket (a Long Rest resets dawn pools —
+ * the app's play model, the sibling of {@link localizeTrackerRecovery}'s
+ * dawn→Long-Rest fold). `per-turn` / `manual` / `undefined` carry NO rest badge
+ * (an honest blank). The PDF keeps `dawn` fidelity separately (character-pdf-view).
+ */
+export function trackerRecoveryBadgeBucket(
+  recovery: Recovery | undefined
+): RecoveryBadgeBucket | null {
+  switch (recovery) {
+    case "short-rest":
+    case "short-or-long-rest":
+      return "short";
+    case "long-rest":
+    case "dawn":
+      return "long";
+    default:
+      return null;
+  }
+}
+
+/**
+ * Present a tracker `total` SCALING-FORMULA as localized prose for the BROWSE
+ * surfaces (the compendium mechanics grid), where there is no character to
+ * resolve the formula against. The ONE place a raw formula token
+ * ("level*5", "PB", "CHA") becomes user-facing words (golden rules 6 + 7): both
+ * the feature and feat compendium specs route through it, so a raw token can
+ * never reach a browse surface again ("USI TOTALI: level*5" → "5 × livello da
+ * Paladino").
+ *
+ * A fixed number stays a number ("5" → "5"). The scaling shapes the tracker data
+ * actually uses (the `resolveTrackerTotal` grammar; enumerated over `src/data`)
+ * map to prose:
+ *   - "PB"            → "proficiency bonus"
+ *   - an ability code → "<ABBR> modifier"        (STR/DEX/CON/INT/WIS/CHA)
+ *   - "level"         → "<Class> level" (class feature) / "your level" (feat)
+ *   - "TERM*N"        → "N × <term prose>"        ("level*5" → "5 × Paladin level")
+ * Any richer arithmetic (addition / subtraction / division / floor / ceil / max)
+ * is genuinely un-presentable without a character, so it collapses to the
+ * formula's INTENT ("scales with level") — never the raw token.
+ *
+ * `classLabel` is the already-localized owning-class name for a class feature
+ * (its `"level"` term is class-scoped, "Paladin level"); omit it for a feat /
+ * race trait, whose `"level"` scales on total character level ("your level").
+ */
+export function localizeTrackerTotal(
+  formula: string,
+  t: Translate,
+  classLabel?: string
+): string {
+  const term = presentTrackerTerm(formula, t, classLabel);
+  if (term != null) return term;
+
+  // "TERM*N" — the only multiplicative shape the tracker grammar emits — reads
+  // "N × <term>" via a bare separator (locale-invariant punctuation, like the
+  // pervasive " · " joins), so no byte-equal template key is needed.
+  const mul = formula.match(/^(\w+)\*(\d+)$/);
+  if (mul) {
+    const base = presentTrackerTerm(mul[1] ?? "", t, classLabel);
+    if (base != null) return `${Number(mul[2])} × ${base}`;
+  }
+
+  // Richer arithmetic has no character to bind — show the intent, never a token.
+  return t("features.formulaScales");
+}
+
+/** One bare term → localized prose, or null when it is not a recognized term. */
+function presentTrackerTerm(
+  term: string,
+  t: Translate,
+  classLabel?: string
+): string | null {
+  if (/^\d+$/.test(term)) return term; // a fixed number stays a number
+  if (term === "PB") return t("features.formulaProficiencyBonus");
+  if ((ALL_ABILITY_CODES as readonly string[]).includes(term)) {
+    return t("features.formulaAbilityModifier", {
+      ability: t(`abilities.${term}_short`),
+    });
+  }
+  if (term === "level") {
+    return classLabel
+      ? t("features.formulaClassLevel", { class: classLabel })
+      : t("features.formulaLevel");
+  }
+  return null;
 }
 
 // ─── Action cards ───────────────────────────────────────────────────────────

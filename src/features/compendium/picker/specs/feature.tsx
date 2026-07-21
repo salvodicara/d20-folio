@@ -20,7 +20,7 @@ import type { Locale } from "@/lib/locale";
 import type { SrdClassFeatureData } from "@/data/types";
 import type { SrdFeatureRef } from "@/types/character";
 import { localizeSubclassName } from "@/lib/views/srd-i18n";
-import { localizeTrackerRecovery } from "@/lib/views/tracker-view";
+import { localizeTrackerRecovery, localizeTrackerTotal } from "@/lib/views/tracker-view";
 import { defineFilter, type CompendiumPickerSpec, type PickerCtx } from "../types";
 
 /** Resolve a localized SRD string for a class-feature field (top-level key). */
@@ -205,7 +205,18 @@ export const featureSpec: CompendiumPickerSpec<SrdClassFeatureData> = {
           {tracker && (
             <div className="mb-2 grid grid-cols-2 gap-2">
               {[
-                { label: t("custom.totalUses"), value: tracker.total },
+                {
+                  label: t("custom.totalUses"),
+                  // Browse has no character to resolve the formula against, so a
+                  // scaling total renders as localized prose ("5 × Paladin level")
+                  // through the ONE shared presenter — never the raw "level*5"
+                  // token. A class feature scopes its "level" term to its class.
+                  value: localizeTrackerTotal(
+                    tracker.total,
+                    t,
+                    classLabel(feature.class, t)
+                  ),
+                },
                 ...(recovery ? [{ label: t("custom.recovery"), value: recovery }] : []),
                 ...(tracker.die ? [{ label: t("custom.die"), value: tracker.die }] : []),
                 ...(tracker.isPool

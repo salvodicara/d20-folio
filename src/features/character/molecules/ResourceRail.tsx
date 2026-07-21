@@ -60,6 +60,7 @@ import {
   potionTimerVMs,
   resolveAuraDice,
   rollFloorVMs,
+  trackerRecoveryBadgeBucket,
   type AuraVM,
 } from "@/lib/views/tracker-view";
 import { patchCharacter } from "../patch-character";
@@ -1592,12 +1593,10 @@ function RailTracker({
       { turnScoped: false }
     );
   }
-  const recovery =
-    tracker.recovery === "long-rest"
-      ? "long"
-      : tracker.recovery === "short-rest" || tracker.recovery === "short-or-long-rest"
-        ? "short"
-        : null;
+  // The SR/LR badge bucket comes from the ONE shared classifier the Features tab
+  // reads too (golden rule 6) — so a `dawn` pool (a magic item's daily charges)
+  // shows the SAME Long-Rest badge here as on the Features tab, never a blank.
+  const recovery = trackerRecoveryBadgeBucket(tracker.recovery);
   // D4 — localize the recovery badge: EN SR/LR, IT RB/RL (Riposo Breve / Riposo Lungo).
   const recoveryLabel =
     recovery === "long"
