@@ -256,3 +256,47 @@ export const P2 = {
     valueY: 56,
   },
 } as const;
+
+// ════════════════════ PAGE 3+ — resources / trackers ledger ════════════════════
+//
+// The official sheet tracks class resources (Rage, Bardic Inspiration, Channel
+// Divinity, Ki, Sorcery Points, magic-item charges) alongside the spell slots.
+// Pages 1–2 are pixel-packed, so the resource ledger gets its own panel on an
+// appended page: a header band + one row per tracker (name + die badge ·
+// pips-or-count · recovery cadence). The panel is inset from the page frame and
+// its HEIGHT is sized to the rows on the page (a tidy top-anchored table, not a
+// page-filling empty box), so the anchors below are baselines measured DOWN from
+// the panel's top edge — the renderer sits the top at `top` and computes the box
+// height from the row count. A long ledger paginates onto further pages (never
+// clips).
+
+export const P3 = {
+  resources: {
+    /** Panel left edge, width, top edge, corner — inset clear of the page frame. */
+    x: 22,
+    w: 559,
+    top: 752,
+    r: 10,
+    /** Header-band height (matches `panelHeader`). */
+    bandH: 15,
+    /** Column-caption baseline, measured DOWN from the panel top. */
+    captionDrop: 24,
+    /** First tracker-row baseline, measured DOWN from the panel top. */
+    firstRowDrop: 42,
+    rowStep: 22,
+    /** Gap from the last row's rule to the box bottom. */
+    bottomPad: 12,
+    cols: {
+      /** Tracker name column x (bold name + trailing die badge). */
+      name: 37,
+      /** Uses column x — pips (≤5, non-pool) or the "remaining / total" count. */
+      uses: 300,
+      /** Recovery-cadence column x (Short Rest / Long Rest / Dawn / Manual). */
+      recovery: 470,
+    },
+    /** Right edge available to a name before it must clip. */
+    nameRight: 292,
+    /** Tracker rows one page holds before the ledger paginates. */
+    rowsPerPage: 30,
+  },
+} as const;

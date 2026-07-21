@@ -21,7 +21,7 @@
  */
 
 import type { CharacterDoc } from "@/types/character";
-import type { AbilityCode } from "@/data/types";
+import type { AbilityCode, Recovery } from "@/data/types";
 import { totalLevel, primaryClassId, getClasses } from "@/lib/classes";
 import {
   ALL_ABILITIES,
@@ -128,9 +128,19 @@ export interface PdfActionVM {
 
 export interface PdfTrackerVM {
   label: string;
+  /** Resolved total uses / pool size (from the class table at the current level). */
   total: number;
+  /** Uses already spent this rest (session) — `total - used` = remaining. */
+  used: number;
+  /** Localized recovery cadence ("Short Rest" / "Long Rest" / "Dawn" / "Manual");
+   *  "" for a `per-turn` pool (auto-resets each turn — no rest word applies). */
   recovery: string;
+  /** Die badge ("d8") when the tracker rolls a die, else "". */
+  die: string;
+  /** Localized pool unit ("HP" / "points") when a pool, else "". */
   unit: string;
+  /** Pool-style (HP-like) resource — drawn as a numeric count, never pips. */
+  isPool: boolean;
 }
 
 export interface PdfFeatureVM {
@@ -245,6 +255,10 @@ export interface PdfSheetLabels {
   speciesTraits: string;
   feats: string;
   equipmentTraining: string;
+  // resources panel (page 3+)
+  resources: string;
+  colUses: string;
+  colRecovery: string;
   armorTraining: string;
   armorLight: string;
   armorMedium: string;
@@ -620,12 +634,11 @@ export function buildCharacterPdfViewModel(
   const trackers: PdfTrackerVM[] = localizeTrackers(doc, locale).map((tr) => ({
     label: tr.label,
     total: tr.total,
+    used: tr.used,
     recovery: recoveryLabel(tr.recovery, t),
-    unit: tr.die
-      ? tr.die
-      : tr.unit
-        ? localizeTrackerUnit(tr.unit, t)
-        : t("character.usesWord"),
+    die: tr.die ?? "",
+    unit: tr.unit ? localizeTrackerUnit(tr.unit, t) : "",
+    isPool: tr.isPool ?? false,
   }));
 
   // ── features (class / subclass / race / feats) ──
@@ -772,6 +785,9 @@ export function buildCharacterPdfViewModel(
     speciesTraits: t("pdf.sheet.speciesTraits"),
     feats: t("features.feats"),
     equipmentTraining: t("pdf.sheet.equipmentTraining"),
+    resources: t("character.hud.resources"),
+    colUses: t("features.usesRemaining"),
+    colRecovery: t("custom.recovery"),
     armorTraining: t("pdf.sheet.armorTraining"),
     armorLight: t("pdf.sheet.armorLight"),
     armorMedium: t("custom.armorMedium"),
@@ -855,8 +871,13 @@ export function buildCharacterPdfViewModel(
   };
 }
 
-/** Localize a tracker recovery timing via the existing custom-feature keys. */
-function recoveryLabel(recovery: string, t: Translate): string {
+/**
+ * Localize a tracker recovery timing for the print sheet via the existing
+ * custom-feature keys. `dawn` keeps its own word (print fidelity — a daily
+ * item-charge pool), and `per-turn` returns an HONEST BLANK (it auto-resets each
+ * turn, so no rest word applies); everything else folds to Short/Long/Manual.
+ */
+function recoveryLabel(recovery: Recovery, t: Translate): string {
   switch (recovery) {
     case "long-rest":
       return t("custom.recoveryLong");
@@ -865,7 +886,9 @@ function recoveryLabel(recovery: string, t: Translate): string {
       return t("custom.recoveryShort");
     case "dawn":
       return t("pdf.recoveryDawn");
-    default:
+    case "per-turn":
+      return "";
+    case "manual":
       return t("custom.recoveryManual");
   }
 }

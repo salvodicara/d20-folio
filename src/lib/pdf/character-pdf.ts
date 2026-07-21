@@ -26,7 +26,7 @@ import {
   type RGB,
 } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
-import type { CharacterPdfViewModel } from "./character-pdf-view";
+import type { CharacterPdfViewModel, PdfTrackerVM } from "./character-pdf-view";
 import { SHEET_FONT_BYTES } from "./fonts";
 import { winAnsi } from "./pdf-text";
 import {
@@ -35,6 +35,7 @@ import {
   FRAME_OUTER,
   P1,
   P2,
+  P3,
   type RRect,
   type Anchor,
 } from "./sheet-geometry";
@@ -351,7 +352,12 @@ export async function renderCharacterPdf(
     }
   }
 
+  // Every page is collected so the footer can print the true "n / total" once the
+  // resource ledger's page count is known (a many-tracker character paginates).
+  const pages: PDFPage[] = [];
+
   const page1 = doc.addPage([PAGE.w, PAGE.h]);
+  pages.push(page1);
   drawFrame(page1);
   drawHeader(page1, fonts, vm);
   drawStatBar(page1, fonts, vm);
@@ -364,6 +370,7 @@ export async function renderCharacterPdf(
   drawEquipmentTraining(page1, fonts, vm);
 
   const page2 = doc.addPage([PAGE.w, PAGE.h]);
+  pages.push(page2);
   drawFrame(page2);
   drawSpellcasting(page2, fonts, vm);
   drawSpellSlots(page2, fonts, vm);
@@ -374,8 +381,9 @@ export async function renderCharacterPdf(
   drawEquipmentPanel(page2, fonts, vm);
   drawCoins(page2, fonts, vm);
 
-  drawFooter(page1, fonts, vm, 1, 2);
-  drawFooter(page2, fonts, vm, 2, 2);
+  drawResources(doc, pages, fonts, vm);
+
+  pages.forEach((page, i) => drawFooter(page, fonts, vm, i + 1, pages.length));
 
   return doc.save();
 }
@@ -1169,6 +1177,104 @@ function drawCoins(page: PDFPage, fonts: Fonts, vm: CharacterPdfViewModel): void
     );
     textCenter(page, String(amount), cell.x + cell.w / 2, c.valueY, fonts.sans, 8);
     text(page, code.toUpperCase(), cell.labelX, c.labelY, fonts.sansBold, 6, MUTED);
+  }
+}
+
+// ═══════════════════════════════ page 3+ ═══════════════════════════════
+// The resource ledger — one full-width panel listing every consumable pool
+// (class resources + magic-item charges) the character carries, matching where
+// the official sheet tracks class resources beside the spell slots. Drawn ONLY
+// when the character has trackers (an empty character adds no page); a very long
+// list paginates onto further identical pages rather than clipping.
+
+/** One tracker row: name (+ die badge) · pips-or-count · recovery cadence. */
+function drawTrackerRow(
+  page: PDFPage,
+  fonts: Fonts,
+  g: typeof P3.resources,
+  tr: PdfTrackerVM,
+  y: number
+): void {
+  // name (bold) + optional die badge trailing it (small-caps muted)
+  const nameStr = clip(fonts.sansBold, tr.label, 9, g.nameRight - g.cols.name - 26);
+  text(page, nameStr, g.cols.name, y, fonts.sansBold, 9);
+  if (tr.die)
+    text(
+      page,
+      tr.die,
+      g.cols.name + width(fonts.sansBold, nameStr, 9) + 5,
+      y + 0.5,
+      fonts.sc,
+      7,
+      MUTED
+    );
+
+  // uses — pips for a small discrete pool (≤5, non-pool), else the numeric count.
+  // A passive tracker (total ≤ 0) has no pool to draw, so it shows an em dash.
+  const available = Math.max(0, tr.total - tr.used);
+  const ux = g.cols.uses;
+  if (tr.total <= 0) {
+    text(page, "—", ux, y, fonts.sans, 8, MUTED);
+  } else if (tr.total <= 5 && !tr.isPool) {
+    // filled = a use still AVAILABLE, hollow = spent — matching the on-screen
+    // Tracker molecule so the print snapshot reads the same as the cockpit.
+    for (let i = 0; i < tr.total; i++)
+      bubble(page, ux + 4 + i * 10, y + 2.6, i < available);
+    text(
+      page,
+      `${available} / ${tr.total}`,
+      ux + 4 + tr.total * 10 + 6,
+      y,
+      fonts.sans,
+      7.5,
+      MUTED
+    );
+  } else {
+    const unit = tr.unit ? ` ${tr.unit}` : "";
+    text(page, `${available} / ${tr.total}${unit}`, ux, y, fonts.sansBold, 8.5);
+  }
+
+  // recovery cadence chip (honest blank for a per-turn pool — vm.recovery is "")
+  if (tr.recovery) caption(page, fonts, tr.recovery, g.cols.recovery, y, 7);
+}
+
+/**
+ * The resource ledger — appends a page per `rowsPerPage` chunk of trackers,
+ * pushing each onto `pages` so the footer numbers them. No trackers ⇒ no page.
+ * The panel box is sized to the rows on the page (a tidy top-anchored table, not
+ * a page-filling empty box); baselines are measured DOWN from the panel top.
+ */
+function drawResources(
+  doc: PDFDocument,
+  pages: PDFPage[],
+  fonts: Fonts,
+  vm: CharacterPdfViewModel
+): void {
+  if (vm.trackers.length === 0) return;
+  const g = P3.resources;
+  const railL = g.x + 12;
+  const railR = g.x + g.w - 12;
+  for (let start = 0; start < vm.trackers.length; start += g.rowsPerPage) {
+    const chunk = vm.trackers.slice(start, start + g.rowsPerPage);
+    const page = doc.addPage([PAGE.w, PAGE.h]);
+    pages.push(page);
+    drawFrame(page);
+    // panel box, height sized to the rows on this page (top-anchored at g.top)
+    const boxH = g.firstRowDrop + (chunk.length - 1) * g.rowStep + g.bottomPad;
+    const box: RRect = { x: g.x, y: g.top - boxH, w: g.w, h: boxH, r: g.r };
+    roundRect(page, box, { fill: PANEL, border: BORDER, borderWidth: 0.9 });
+    panelHeader(page, fonts, box, vm.labels.resources);
+    // column captions + a rule under them (the weapons/spell-table caption idiom)
+    const capY = g.top - g.captionDrop;
+    caption(page, fonts, vm.labels.colName, g.cols.name, capY, 6.5);
+    caption(page, fonts, vm.labels.colUses, g.cols.uses, capY, 6.5);
+    caption(page, fonts, vm.labels.colRecovery, g.cols.recovery, capY, 6.5);
+    hairline(page, railL, railR, capY - 5);
+    chunk.forEach((tr, i) => {
+      const y = g.top - g.firstRowDrop - i * g.rowStep;
+      drawTrackerRow(page, fonts, g, tr, y);
+      hairline(page, railL, railR, y - 8);
+    });
   }
 }
 
