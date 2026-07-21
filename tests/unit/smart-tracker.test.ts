@@ -4,7 +4,11 @@ import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { foldLegacyClass } from "./_helpers";
 import { localizeActions } from "@/lib/views/combat-action-view";
-import { resolveActions } from "@/lib/smart-tracker";
+import {
+  resolveActions,
+  ammoItemIdForProperties,
+  equipmentQuantityOf,
+} from "@/lib/smart-tracker";
 import { buildDevScenario, buildScenario } from "@/lib/dev-scenarios";
 import { consumableActionSlot } from "@/lib/srd-resolve";
 import { combatVerdict } from "@/features/character/center/tabs/combat-card-helpers";
@@ -365,6 +369,122 @@ describe("resolveActions — dual-wield", () => {
   // W9 — the Dueling fighting style's one-handed-melee rider scoping exercises
   // PACK content (Dueling is non-SRD): content-pack/tests/unit/
   // smart-tracker.pack.test.ts.
+});
+
+// ─── RA-14 — Tracked ammunition + Loading advisory ───────────────────────────
+
+describe("RA-14 — ammoItemIdForProperties", () => {
+  // The four SRD Ammunition type tokens map to their gear rows (ids only —
+  // parsed from the structured "Ammunition (Range N/M; <Type>)" property).
+  it("maps each SRD ammunition token to its gear id", () => {
+    expect(ammoItemIdForProperties(["Ammunition (Range 80/320; Arrow)"])).toBe("arrows");
+    expect(ammoItemIdForProperties(["Ammunition (Range 80/320; Bolt)"])).toBe(
+      "crossbow-bolts"
+    );
+    expect(ammoItemIdForProperties(["Ammunition (Range 30/120; Bullet)"])).toBe(
+      "sling-bullets"
+    );
+    expect(ammoItemIdForProperties(["Ammunition (Range 25/100; Needle)"])).toBe(
+      "blowgun-needles"
+    );
+  });
+
+  it("returns null for a melee weapon (no Ammunition property)", () => {
+    expect(ammoItemIdForProperties(["Finesse", "Light"])).toBeNull();
+    expect(ammoItemIdForProperties([])).toBeNull();
+  });
+
+  it("returns null for an unknown/unmodeled ammunition token", () => {
+    // A token we don't stock a gear row for degrades to untracked, not a throw.
+    expect(ammoItemIdForProperties(["Ammunition (Range 20/60; Dart)"])).toBeNull();
+  });
+});
+
+describe("RA-14 — equipmentQuantityOf", () => {
+  it("returns null when NO matching row exists (untracked)", () => {
+    expect(
+      equipmentQuantityOf([{ srdId: "longsword", quantity: 1 }], "arrows")
+    ).toBeNull();
+    expect(equipmentQuantityOf([], "arrows")).toBeNull();
+  });
+
+  it("returns 0 for a tracked-but-empty row (distinct from untracked)", () => {
+    expect(equipmentQuantityOf([{ srdId: "arrows", quantity: 0 }], "arrows")).toBe(0);
+  });
+
+  it("sums the quantity across every matching row (a bare row counts as 1)", () => {
+    expect(
+      equipmentQuantityOf(
+        [
+          { srdId: "arrows", quantity: 10 },
+          { srdId: "arrows", quantity: 8 },
+          { srdId: "arrows" }, // no quantity → counts as 1
+          { srdId: "longsword", quantity: 1 },
+        ],
+        "arrows"
+      )
+    ).toBe(19);
+  });
+
+  it("ignores custom (homebrew) rows — only SRD rows are tracked", () => {
+    expect(
+      equipmentQuantityOf(
+        [{ custom: true, name: "Special Arrows", quantity: 99 }],
+        "arrows"
+      )
+    ).toBeNull();
+  });
+});
+
+describe("RA-14 — resolveWeaponActions stamps ammo + loading", () => {
+  it("stamps ammo (id + live count) for a ranged weapon with a matching inventory row", () => {
+    const char = makeChar({
+      weapons: [{ srdId: "shortbow", quantity: 1 }],
+      equipment: [{ srdId: "arrows", quantity: 18 }],
+    });
+    const bow = localizeActions(char, "en").find((a) => a.id === "weapon-shortbow");
+    expect(bow?.summary.ammo).toEqual({ itemId: "arrows", remaining: 18 });
+    // A plain bow is NOT a Loading weapon.
+    expect(bow?.summary.loading).toBeUndefined();
+  });
+
+  it("stamps NO ammo when the ranged weapon has no matching inventory row (override-first)", () => {
+    // A longbow with no arrow row carried: tracking ammo is the player's choice.
+    const char = makeChar({ weapons: [{ srdId: "longbow", quantity: 1 }] });
+    const bow = localizeActions(char, "en").find((a) => a.id === "weapon-longbow");
+    expect(bow?.summary.ammo).toBeUndefined();
+  });
+
+  it("keeps a tracked-but-empty quiver visible (remaining 0), never dropping the field", () => {
+    const char = makeChar({
+      weapons: [{ srdId: "shortbow", quantity: 1 }],
+      equipment: [{ srdId: "arrows", quantity: 0 }],
+    });
+    const bow = localizeActions(char, "en").find((a) => a.id === "weapon-shortbow");
+    expect(bow?.summary.ammo).toEqual({ itemId: "arrows", remaining: 0 });
+  });
+
+  it("stamps loading:true for a Loading weapon (and its ammo when carried)", () => {
+    const char = makeChar({
+      weapons: [{ srdId: "light-crossbow", quantity: 1 }],
+      equipment: [{ srdId: "crossbow-bolts", quantity: 20 }],
+    });
+    const xbow = localizeActions(char, "en").find(
+      (a) => a.id === "weapon-light-crossbow"
+    );
+    expect(xbow?.summary.loading).toBe(true);
+    expect(xbow?.summary.ammo).toEqual({ itemId: "crossbow-bolts", remaining: 20 });
+  });
+
+  it("stamps neither ammo nor loading for a melee weapon", () => {
+    const char = makeChar({
+      weapons: [{ srdId: "longsword", quantity: 1 }],
+      equipment: [{ srdId: "arrows", quantity: 18 }],
+    });
+    const sword = localizeActions(char, "en").find((a) => a.id === "weapon-longsword");
+    expect(sword?.summary.ammo).toBeUndefined();
+    expect(sword?.summary.loading).toBeUndefined();
+  });
 });
 
 // ─── Universal Base Combat Actions ───────────────────────────────────────────

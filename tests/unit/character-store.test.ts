@@ -1284,6 +1284,92 @@ describe("useEquipmentItem", () => {
   });
 });
 
+// ─── RA-14 — adjustEquipmentQuantity (ammunition semantics) ───────────────────
+
+describe("adjustEquipmentQuantity", () => {
+  beforeEach(() => {
+    useCharacterStore.setState({ character: null, readonly: false });
+  });
+
+  function charWithEquipment(items: Array<{ srdId: string; quantity: number }>) {
+    const base = mockCharacter();
+    return {
+      ...base,
+      character: {
+        ...base.character,
+        equipment: items.map(({ srdId, quantity }) => ({ srdId, quantity })),
+      },
+    };
+  }
+
+  const qtyOf = (srdId: string) => {
+    const eq = useCharacterStore.getState().character?.character.equipment;
+    const row = eq?.find((r) => !("custom" in r) && r.srdId === srdId) as
+      | { quantity?: number }
+      | undefined;
+    return row?.quantity;
+  };
+
+  it("debits by 1 and KEEPS the row at 0 (unlike useEquipmentItem's drop-at-0)", () => {
+    useCharacterStore.setState({
+      character: charWithEquipment([{ srdId: "arrows", quantity: 1 }]),
+    });
+    const changed = useCharacterStore.getState().adjustEquipmentQuantity("arrows", -1);
+    expect(changed).toBe(true);
+    const eq = useCharacterStore.getState().character?.character.equipment;
+    // The row is NOT filtered out — an empty quiver stays visible.
+    expect(eq).toHaveLength(1);
+    expect(qtyOf("arrows")).toBe(0);
+  });
+
+  it("clamps at 0 (never negative) and reports no stock to debit", () => {
+    useCharacterStore.setState({
+      character: charWithEquipment([{ srdId: "arrows", quantity: 0 }]),
+    });
+    const changed = useCharacterStore.getState().adjustEquipmentQuantity("arrows", -1);
+    // No stock to debit → false, and the quantity stays 0 (clamped).
+    expect(changed).toBe(false);
+    expect(qtyOf("arrows")).toBe(0);
+  });
+
+  it("credits a matching row (even at 0) and round-trips a debit", () => {
+    useCharacterStore.setState({
+      character: charWithEquipment([{ srdId: "arrows", quantity: 5 }]),
+    });
+    const store = useCharacterStore.getState;
+    expect(store().adjustEquipmentQuantity("arrows", -1)).toBe(true);
+    expect(qtyOf("arrows")).toBe(4);
+    expect(store().adjustEquipmentQuantity("arrows", 1)).toBe(true);
+    expect(qtyOf("arrows")).toBe(5);
+  });
+
+  it("returns false when no matching row exists", () => {
+    useCharacterStore.setState({
+      character: charWithEquipment([{ srdId: "longsword", quantity: 1 }]),
+    });
+    expect(useCharacterStore.getState().adjustEquipmentQuantity("arrows", -1)).toBe(
+      false
+    );
+  });
+
+  it("returns false when readonly (a shared/read-only sheet is never mutated)", () => {
+    useCharacterStore.setState({
+      character: charWithEquipment([{ srdId: "arrows", quantity: 5 }]),
+      readonly: true,
+    });
+    expect(useCharacterStore.getState().adjustEquipmentQuantity("arrows", -1)).toBe(
+      false
+    );
+    expect(qtyOf("arrows")).toBe(5);
+  });
+
+  it("is a no-op (false) when character is null", () => {
+    expect(useCharacterStore.getState().adjustEquipmentQuantity("arrows", -1)).toBe(
+      false
+    );
+  });
+});
+
 describe("characterStore — entity delete (immutable splice + undo pattern)", () => {
   beforeEach(() => {
     useCharacterStore.getState().setCharacter(null);

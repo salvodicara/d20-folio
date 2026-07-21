@@ -235,6 +235,15 @@ interface CharacterState {
   restoreTracker: (trackerId: string, amount?: number) => void;
   /** Decrement a tracked equipment item by 1; removes the entry entirely when quantity hits 0. */
   useEquipmentItem: (equipmentKey: string) => void;
+  /**
+   * RA-14 — adjust an SRD equipment row's quantity by `delta`, clamped at 0 and
+   * KEEPING the row at 0 (ammunition semantics: an empty quiver stays visible —
+   * distinct from `useEquipmentItem`'s drop-at-0 consumables). Returns whether a
+   * row changed (false = no matching row / no stock to debit / readonly), so the
+   * attack-commit seam can debit-if-tracked and register the exact inverse on
+   * undo. Inverse-op by design — never a snapshot that could stomp later edits.
+   */
+  adjustEquipmentQuantity: (srdId: string, delta: number) => boolean;
   setConcentration: (spell: StoredConcentration) => void;
   addCondition: (condition: string) => void;
   removeCondition: (condition: string) => void;
@@ -951,6 +960,34 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         character: { ...character.character, equipment: newEquipment },
       },
     });
+  },
+
+  adjustEquipmentQuantity: (srdId, delta) => {
+    if (get().readonly) return false;
+    const { character } = get();
+    if (!character) return false;
+    // Debit targets the first row with stock; credit targets the first matching
+    // row. The row is KEPT at 0 (unlike `useEquipmentItem`'s drop-at-0
+    // consumables): an empty quiver stays visible in the inventory — "you're
+    // out" is information, and refilling it is a quantity edit, not a re-add.
+    const idx = character.character.equipment.findIndex(
+      (ref) =>
+        !("custom" in ref) &&
+        ref.srdId === srdId &&
+        (delta > 0 || (ref.quantity ?? 1) > 0)
+    );
+    if (idx === -1) return false;
+    const equipment = [...character.character.equipment];
+    const ref = equipment[idx];
+    if (!ref || "custom" in ref) return false;
+    equipment[idx] = { ...ref, quantity: Math.max(0, (ref.quantity ?? 1) + delta) };
+    set({
+      character: {
+        ...character,
+        character: { ...character.character, equipment },
+      },
+    });
+    return true;
   },
 
   setConcentration: (spell) => {

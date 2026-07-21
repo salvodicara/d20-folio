@@ -684,6 +684,26 @@ export const SRD_GEAR: SrdEquipmentData[] = [
     source: "SRD",
     isConsumable: true,
   },
+  {
+    // RA-14 — the Sling's ammunition (SRD: "Bullets, Sling (20) — 4 CP — 1.5 lb").
+    id: "sling-bullets",
+    category: "gear",
+    cost: { amount: 4, unit: "cp" },
+    weight: 1.5,
+    bundleSize: 20,
+    source: "SRD",
+    isConsumable: true,
+  },
+  {
+    // RA-14 — the Blowgun's ammunition (SRD: "Needles, Blowgun (50) — 1 GP — 1 lb").
+    id: "blowgun-needles",
+    category: "gear",
+    cost: { amount: 1, unit: "gp" },
+    weight: 1,
+    bundleSize: 50,
+    source: "SRD",
+    isConsumable: true,
+  },
 
   // ============================================================
   // Background-pack adventuring gear — D&D 2024 PHB

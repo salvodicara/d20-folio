@@ -64,6 +64,10 @@
   "blowgun": {
     "name": "Blowgun"
   },
+  "blowgun-needles": {
+    "description": "Ammunition for blowguns. Sold in bundles of 50.",
+    "name": "Blowgun Needles"
+  },
   "book": {
     "description": "A Book might contain poetry, historical accounts, scientific theories, or information on almost any subject. A Warlock's Book holds occult lore.",
     "name": "Book"
@@ -520,6 +524,10 @@
   },
   "sling": {
     "name": "Sling"
+  },
+  "sling-bullets": {
+    "description": "Ammunition for slings. Sold in bundles of 20.",
+    "name": "Sling Bullets"
   },
   "smiths-tools": {
     "description": "Smith's Tools are used to forge and repair metal items.",

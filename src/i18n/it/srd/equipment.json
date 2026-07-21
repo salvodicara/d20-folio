@@ -64,6 +64,10 @@
   "blowgun": {
     "name": "Cerbottana"
   },
+  "blowgun-needles": {
+    "description": "Munizioni per cerbottane. Vendute in fasci da 50.",
+    "name": "Aghi da Cerbottana"
+  },
   "book": {
     "description": "Un Libro può contenere poesie, resoconti storici, teorie scientifiche o informazioni su quasi ogni argomento. Il Libro di un Warlock raccoglie sapere occulto.",
     "name": "Libro"
@@ -520,6 +524,10 @@
   },
   "sling": {
     "name": "Fionda"
+  },
+  "sling-bullets": {
+    "description": "Munizioni per fionde. Vendute in fasci da 20.",
+    "name": "Proiettili da Fionda"
   },
   "smiths-tools": {
     "description": "Gli Strumenti da Fabbro servono a forgiare e riparare oggetti in metallo.",

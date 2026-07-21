@@ -241,12 +241,27 @@ appears on a weapon row.
       Regression: the RA-13 blocks in `smart-tracker.test.ts` + `weapon-facts.test.tsx` (Nick
       free-economy, Topple/Graze resolved chips, cross-surface parity) + the off-hand-cap block in
       `blocked-reason.test.ts` (`committedOffHandId` — one off-hand attack per turn across free+bonus).
-- [ ] **RA-14 — Ammunition is never decremented; Loading is never capped.** _Attack procedure ·
+- [x] **RA-14 — Ammunition is never decremented; Loading is never capped.** _Attack procedure ·
       INTERACTION (defect B) · S2 · every-turn for archers._ SRD "Properties — Ammunition/Loading".
-      Code: arrows are inventory `quantity` rows; firing debits nothing; Loading has no
-      one-shot-per-turn hint. Fix: ranged-attack commit auto-debits the matching ammunition item
-      (undoable, override-first — no ammo row = no debit, never a block); Loading surfaces an
-      advisory once-per-turn note on the card. **T2.**
+      Code: arrows were inventory `quantity` rows; firing debited nothing; Loading had no
+      one-shot-per-turn hint. **SHIPPED wave 2 (2026-07-21):** a ranged weapon with the Ammunition
+      property surfaces its live remaining count as one more `WeaponFacts` row ("Arrows · 18"),
+      reading straight from the inventory (rule 6) — but ONLY when the player actually carries a
+      matching tracked row (`equipmentQuantityOf` returns null for an untracked item, distinct from a
+      tracked-but-empty 0). Committing the attack debits ONE unit
+      (`characterStore.adjustEquipmentQuantity`, clamped at 0, KEEPS the row visible), credited back
+      exactly on undo (the inverse op — a weapon attack carries no `costEquipment`, so this is the
+      only restore path). The weapon's `Ammunition (Range N/M; <Type>)` type token maps to its gear
+      row via `ammoItemIdForProperties` (Arrow→arrows, Bolt→crossbow-bolts, Bullet→sling-bullets,
+      Needle→blowgun-needles; unknown → untracked). Two new SRD ammo rows shipped (sling-bullets,
+      blowgun-needles). An empty quiver DIMS the CTA with a soft advisory ("Out of Arrows") but keeps
+      it TAPPABLE (the player may carry untracked ammo — override-first, never a hard block); a
+      Loading weapon shows a once-per-action advisory on a 2nd Extra-Attack swing. The `ammo`/`loading`
+      summary fields are locale-free — they flow through the presenter's `...rest` spread untouched
+      (no presenter edit). Regression: `smart-tracker.test.ts` (parser/quantity/stamp gating),
+      `character-store.test.ts` (`adjustEquipmentQuantity` debit-to-0-keeps-row/clamp/round-trip),
+      `ammo-debit.test.tsx` (commit debits by 1, undo restores, untracked = no mutation), and
+      `ammo-advisory.test.tsx` (ammo row + soft out-of-ammo/Loading advisories, CTA stays tappable).
 - [ ] **RA-15 — The concentration-save prompt hides concentration-save Advantage (War Caster /
       Eldritch Mind).** _Concentration · INTERACTION (defect B) · S2 · every-hit while
       concentrating for the grant's owner._ SRD 5.2.1 Eldritch Mind: "Advantage on Constitution

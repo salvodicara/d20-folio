@@ -28,6 +28,8 @@
 import { useState, useMemo, useCallback, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
+import { Layers } from "lucide-react";
+import { localizeSrd } from "@/i18n/resolver";
 import { CollapsibleSearch } from "@/components/shared/CollapsibleSearch";
 import { HealRollEntry } from "@/components/shared/HealRollEntry";
 import { SectionHeader } from "@/components/shared/SectionHeader";
@@ -658,13 +660,39 @@ export function PlayTab() {
   // depleted reason is self-naming. `null` → freely usable. A SPENT economy
   // token is NOT a reason line — spent-ness reads on the CTA itself (the
   // disabled "Used" state, the CTA grammar).
+  // RA-14 — weapon-row ADVISORIES, dimmed-but-tappable (adjudicable, never a
+  // hard block — override-first): an empty TRACKED quiver, and Loading's
+  // one-shot-per-action cap once this weapon already fired a swing while swings
+  // remain in the open Attack action (the only moment a second shot could
+  // illegally happen). Untracked ammo / attackBudget 1 stay inert.
+  const weaponAdvisoryFor = useCallback(
+    (action: ResolvedAction): string | null => {
+      if (action.source !== "weapon") return null;
+      const ammo = action.summary.ammo;
+      if (ammo && ammo.remaining === 0) {
+        return t("combat.outOfAmmoReason", {
+          item: localizeSrd("equipment", ammo.itemId, "name", locale),
+        });
+      }
+      if (
+        action.summary.loading &&
+        attacksLeft != null &&
+        attackSwingIds.includes(action.id)
+      ) {
+        return t("combat.loadingOneShotReason");
+      }
+      return null;
+    },
+    [t, locale, attacksLeft, attackSwingIds]
+  );
+
   const blockedReasonFor_ = useCallback(
     (action: ResolvedAction, depleted: boolean): string | null => {
       // The card's TRUE economy kind is `action.type` (action/bonus/reaction/free)
       // — `getEconomySlot` folds reactions into "free", so it can't be used for
       // the condition gate. A "free" action is never condition-blocked or spent.
       if (action.type === "free") {
-        return depleted ? t("combat.blockedReasonNoUses") : null;
+        return depleted ? t("combat.blockedReasonNoUses") : weaponAdvisoryFor(action);
       }
       const slot: GatedSlot = action.type;
       const reason = blockedReasonFor({
@@ -672,7 +700,9 @@ export function PlayTab() {
         blockedSlots: conditionEffects.blockedSlots,
         depleted,
       });
-      if (!reason) return null;
+      // RA-14 — with no harder reason, a weapon row may still carry an
+      // ammunition/Loading advisory line.
+      if (!reason) return weaponAdvisoryFor(action);
       switch (reason.kind) {
         case "depleted":
           return t("combat.blockedReasonNoUses");
@@ -685,7 +715,7 @@ export function PlayTab() {
         }
       }
     },
-    [conditionEffects, conditions, t, locale]
+    [conditionEffects, conditions, t, locale, weaponAdvisoryFor]
   );
 
   // Chromatic slot pips beside the CTA for a slot-costing spell: { level, total,
@@ -1512,6 +1542,26 @@ function CombatActionCard({
         // `WeaponFacts` from `weaponFacts.riders` (no double-render).
         <WeaponFacts
           facts={action.weaponFacts}
+          // RA-14 — the live TRACKED-ammunition count as one more fact row
+          // ("Arrows · 18"), present only when the player carries the matching
+          // ammo item (the engine stamps nothing otherwise). Debited by the
+          // attack commit; reads straight from the inventory (rule 6).
+          extraFacts={
+            effectiveSummary.ammo
+              ? [
+                  {
+                    label: localizeSrd(
+                      "equipment",
+                      effectiveSummary.ammo.itemId,
+                      "name",
+                      locale
+                    ),
+                    value: String(effectiveSummary.ammo.remaining),
+                    icon: Layers,
+                  },
+                ]
+              : undefined
+          }
           footExtra={<PinAction pinned={pinned} label={pinLabel} onPin={onPin} />}
           onSpendRider={(rider) => onSpendRider(action, rider)}
           depletedTrackers={depletedTrackers}

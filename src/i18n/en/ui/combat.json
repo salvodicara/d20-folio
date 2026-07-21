@@ -68,6 +68,8 @@
     "hideSuccessToast": "Hidden: Invisible. Finding you is DC {{total}}",
     "hideFailToast": "Not hidden: {{total}} vs DC {{dc}}",
     "hideEndsHint": "Hiding ends after you attack, cast a spell with a Verbal component, or make a loud noise, or when a foe finds you (Search vs your check total).",
+    "outOfAmmoReason": "Out of {{item}}",
+    "loadingOneShotReason": "Loading: one shot per action",
     "castWithout": "no {{components}}",
     "temp": "Temp",
     "clearTemp": "Clear Temp HP ({{amount}})",

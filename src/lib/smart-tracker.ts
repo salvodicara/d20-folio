@@ -431,6 +431,23 @@ export interface ActionSummary {
    */
   masteryDetail?: { toppleDc?: number; grazeDamage?: number };
   /**
+   * RA-14 — the TRACKED ammunition this ranged weapon fires: the SRD gear row's
+   * stable id (arrows / crossbow-bolts / sling-bullets / blowgun-needles) + the
+   * live remaining count summed over the character's matching inventory rows.
+   * Present ONLY when the weapon has the Ammunition property AND a matching
+   * inventory row exists — a player who doesn't track ammo sees nothing and is
+   * never debited or nagged (override-first). The commit seam debits one unit
+   * per attack (undoable); at 0 the card dims with an advisory, never a block.
+   */
+  ammo?: { itemId: string; remaining: number };
+  /**
+   * RA-14 — the weapon has the Loading property (SRD: one shot per action /
+   * Bonus Action / Reaction used to fire, regardless of extra attacks). The
+   * card surfaces the once-per-action advisory when a second Extra-Attack
+   * swing with this weapon would break it (dimmed, tappable — adjudicable).
+   */
+  loading?: true;
+  /**
    * G19 — conditions this action can NEUTRALIZE by expending pool HP (Paladin Lay
    * On Hands: 5 HP ends Poisoned; +Restoring Touch's six conditions at Paladin
    * 14). Locale-FREE: `condition` is a stable {@link ConditionId} the presenter
@@ -1033,6 +1050,54 @@ export function resolveMeleeReachBonus(
     }
   }
   return { reachBonusFt, masteries };
+}
+
+/**
+ * RA-14 — the SRD gear row each printed ammunition token maps to. The token is
+ * the type name inside the weapon's "Ammunition (Range N/M; <Type>)" property —
+ * a structured fact printed on the weapon, parsed exactly like the thrown/range
+ * meta (never localized prose).
+ */
+const AMMO_ITEM_BY_TOKEN: Record<string, string> = {
+  arrow: "arrows",
+  bolt: "crossbow-bolts",
+  bullet: "sling-bullets",
+  needle: "blowgun-needles",
+};
+
+/**
+ * RA-14 — map a weapon's Ammunition property to the SRD gear row it fires
+ * ("Ammunition (Range 80/320; Arrow)" → `"arrows"`). Null for weapons without
+ * the property (or an unknown/custom token — degrade to untracked).
+ */
+export function ammoItemIdForProperties(
+  properties: ReadonlyArray<string>
+): string | null {
+  for (const p of properties) {
+    const m = /^Ammunition\s*\([^;]*;\s*([A-Za-z ]+)\)$/i.exec(p);
+    const token = m?.[1]?.trim().toLowerCase();
+    if (token) return AMMO_ITEM_BY_TOKEN[token] ?? null;
+  }
+  return null;
+}
+
+/**
+ * RA-14 — the character's total stock of one SRD gear item, summed over every
+ * matching inventory row. Returns null when NO row exists (untracked — distinct
+ * from a tracked-but-empty 0, which keeps the count + advisory visible).
+ */
+export function equipmentQuantityOf(
+  equipment: CharacterDoc["character"]["equipment"],
+  srdId: string
+): number | null {
+  let found = false;
+  let total = 0;
+  for (const ref of equipment) {
+    if ("custom" in ref || ref.srdId !== srdId) continue;
+    found = true;
+    total += ref.quantity ?? 1;
+  }
+  return found ? total : null;
 }
 
 // ============================================================
@@ -5408,6 +5473,17 @@ function resolveWeaponActions(
       pb
     );
 
+    // RA-14 — TRACKED ammunition: when this ranged weapon's Ammunition property
+    // names an ammo type AND the character carries a matching inventory row, the
+    // row surfaces the live remaining count (and the commit seam debits one per
+    // attack). No matching row = nothing stamped — no debit, no nag
+    // (override-first: tracking ammo is the player's choice). Loading is a
+    // plain property flag for the once-per-action advisory.
+    const ammoItemId = isRangedWeapon ? ammoItemIdForProperties(properties) : null;
+    const ammoRemaining =
+      ammoItemId != null ? equipmentQuantityOf(charData.equipment, ammoItemId) : null;
+    const isLoadingWeapon = properties.some((p) => /^loading\b/i.test(p));
+
     const summary: RawActionSummary = {
       attackBonus: weaponAtkBonus,
       damage: damageFormula,
@@ -5442,6 +5518,11 @@ function resolveWeaponActions(
       ...(ownedMastery ? { weaponMastery: ownedMastery } : {}),
       // RA-13 — the resolved Topple DC / Graze number for the mastery chips.
       ...(Object.keys(masteryDetail).length > 0 ? { masteryDetail } : {}),
+      // RA-14 — tracked ammo (id + live count) + the Loading advisory flag.
+      ...(ammoItemId != null && ammoRemaining != null
+        ? { ammo: { itemId: ammoItemId, remaining: ammoRemaining } }
+        : {}),
+      ...(isLoadingWeapon ? { loading: true as const } : {}),
     };
 
     actions.push({

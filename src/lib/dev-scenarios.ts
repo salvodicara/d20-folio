@@ -722,6 +722,34 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "RA-13 Nick economy + TWF cap: a Nick-mastered Dagger + a non-Nick Shortsword (both Light). Commit a Light main-hand attack → BOTH off-hand rows appear (Dagger off-hand in the FREE group — Nick rides the Attack action; Shortsword off-hand as a Bonus). Commit the Dagger free off-hand → its card reads 'Used', the Bonus slot stays available, AND the Shortsword off-hand now reads 'Used' too (only ONE off-hand attack per turn). Undo restores both.",
   },
+  // RA-14 TRACKED AMMUNITION — a Fighter L5 (Extra Attack → attackBudget 2)
+  //  carrying three ranged weapons with matching (or empty) ammo rows. The
+  //  Shortbow shows "Arrows · 18" and debits one per attack (undo credits it
+  //  back). The Sling's "Sling Bullets · 0" row dims its CTA with the soft
+  //  "Out of Sling Bullets" advisory that STILL taps (override-first — the player
+  //  may carry untracked ammo). The Light Crossbow is a Loading weapon: after one
+  //  swing of the open Attack action, its 2nd pip carries the "Loading: one shot
+  //  per action" advisory (dimmed, tappable). Visit `/characters/scn-ra-14-ammo`.
+  "ra-14-ammo": {
+    name: "Aria, Fletcher",
+    raceId: "human",
+    classId: "fighter",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 12, DEX: 16, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+    weapons: [
+      { srdId: "shortbow", quantity: 1 },
+      { srdId: "light-crossbow", quantity: 1 },
+      { srdId: "sling", quantity: 1 },
+    ],
+    equipment: [
+      { srdId: "arrows", quantity: 18 },
+      { srdId: "crossbow-bolts", quantity: 20 },
+      { srdId: "sling-bullets", quantity: 0 },
+    ],
+    exercises:
+      "RA-14 tracked ammo: the Shortbow card shows 'Arrows · 18' and debits one per attack (undo restores). The Sling shows 'Sling Bullets · 0' and dims its CTA with 'Out of Sling Bullets' — but STILL taps (override-first). The Light Crossbow (Loading) shows 'Loading: one shot per action' on its 2nd Attack-action swing. A weapon with no matching ammo row shows no count and never debits.",
+  },
   champion: {
     name: "Brakka, Champion",
     raceId: "orc",

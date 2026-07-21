@@ -452,6 +452,15 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const restorePotionTimer = action.costEquipment
       ? cs.consumePotionBuff(action.costEquipment)
       : null;
+    // RA-14 — a ranged attack with TRACKED ammunition debits one unit (SRD
+    // "Ammunition": each attack expends one piece). The engine stamps
+    // `summary.ammo` only when a matching inventory row exists, and the store
+    // debits only while stock remains — no row / empty quiver = nothing spent,
+    // never a block (override-first). Undo credits the exact unit back.
+    const ammoItemId =
+      action.source === "weapon" ? action.summary.ammo?.itemId : undefined;
+    const ammoDebited =
+      ammoItemId != null ? cs.adjustEquipmentQuantity(ammoItemId, -1) : false;
     // RA-09 — the Dash action grants extra movement equal to your Speed: extend
     // the turn's movement budget by one Speed (undoable, per-turn — resets at the
     // turn boundary). Future speed riders (Tactical Shift, Cunning-Strike speed)
@@ -526,6 +535,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       }
       // S9 — revert the armed potion countdown (restores the exact prior timers).
       restorePotionTimer?.();
+      // RA-14 — credit the fired ammunition unit back (exact inverse op).
+      if (ammoDebited && ammoItemId != null) {
+        c2.adjustEquipmentQuantity(ammoItemId, 1);
+      }
       // RA-09 — undo the Dash's movement-budget extension.
       restoreDash?.();
       // Clear the state THIS commit lit (never a hand-set one); compute the hand-lit
