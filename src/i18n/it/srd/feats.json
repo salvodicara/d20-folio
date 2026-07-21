@@ -1,7 +1,7 @@
 {
   "ability-score-improvement": {
     "description": "Aumenti un punteggio di caratteristica a tua scelta di 2, oppure puoi aumentare due punteggi di caratteristica a tua scelta di 1. Non puoi aumentare un punteggio di caratteristica oltre 20 usando questo talento.",
-    "name": "Miglioramento dei Punteggi di Caratteristica",
+    "name": "Aumento dei Punteggi di Caratteristica",
     "prerequisite": "Livello 4+"
   },
   "alert": {
@@ -10,12 +10,12 @@
   },
   "archery": {
     "description": "Ottieni un bonus di +2 ai tiri per colpire che effettui con armi a Distanza.",
-    "name": "Tiro con Arco",
+    "name": "Tiro",
     "prerequisite": "Livello 1+, Gruppo Guerriero o Sacerdote"
   },
   "boon-of-combat-prowess": {
     "description": "Ottieni i seguenti benefici:\n\n**Aumento di Caratteristica.** Aumenti un punteggio di caratteristica a tua scelta di 1, fino a un massimo di 30.\n\n**Mira Impareggiabile.** Quando manchi con un tiro per colpire, puoi colpire invece. Una volta usato questo beneficio, non puoi usarlo di nuovo fino all'inizio del tuo prossimo turno.",
-    "name": "Dono della Prodezza in Combattimento",
+    "name": "Dono delle Abilità di Combattimento",
     "prerequisite": "Livello 19+"
   },
   "boon-of-dimensional-travel": {
@@ -77,7 +77,7 @@
   },
   "savage-attacker": {
     "description": "Ti sei addestrato per infliggere colpi particolarmente devastanti. Una volta per turno quando colpisci un bersaglio con un'arma, puoi tirare i dadi danno dell'arma due volte e usare uno dei due risultati contro il bersaglio.",
-    "name": "Attaccante Selvaggio"
+    "name": "Aggressore Selvaggio"
   },
   "skilled": {
     "description": "Ottieni competenza in una qualsiasi combinazione di tre abilità o strumenti a tua scelta.\n\n**Ripetibile.** Puoi prendere questo talento più di una volta.",

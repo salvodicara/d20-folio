@@ -53,7 +53,7 @@ describe("Frenzy is the 2024 dynamic damage rider (no 2014 attack/exhaustion)", 
       /exhaustion/i
     );
     expect(srd("class-feature", feature?.id ?? "", "description", "it")).toMatch(
-      /Attacco Spericolato/i
+      /Attacco Irruento/i
     );
     expect(srd("class-feature", feature?.id ?? "", "description", "it")).not.toMatch(
       /affaticamento/i

@@ -106,6 +106,20 @@ roster, so a DM transfer/removal converges on the next request). **DEPLOY STEP:*
 2026-07-10 backfill already stamped live docs; the sweep clears the dead ACL residue). Contract:
 `docs/ARCHITECTURE.md` ("Combat-mutable state" → Security + the initiative-SSOT bullet).
 
+**Italian names re-sourced + cross-reference-consistent (2026-07-21):** every entity's canonical
+Italian `name` was audited against the official **IT SRD 5.2.1** (the 2024 ruleset, parsed from the
+CC-BY PDF via `pypdf`) and **288 names corrected to their official form** across both repos (spells,
+magic items, equipment, class features, beasts, invocations, metamagic, feats, backgrounds,
+languages, proficiencies, weapon properties) — e.g. Geas _Imposizione→Costrizione_, Acid Splash
+_Spruzzo Acido→Fiotto Acido_, and dozens of items that still carried raw English. **All name
+collisions resolved** (Conjure=_Evoca X_ vs Summon=_Richiama X_, Bolt=_Quadrello_, Portent=_Auspicio_)
+and **every prose cross-reference aligned** to the one canonical lexeme (inflection preserved). A new
+**IT-name-consistency guard** (`tests/unit/it-name-consistency.guard.test.ts` + composed pack
+companion) fails the build on future collisions / untranslated regressions / retired-lexeme drift;
+the authority + core glossary live in `docs/IT_NAME_REGISTRY.md`, and the D2 cascade
+(`docs/GOLDEN_RULES.md`) now cites the now-available IT SRD 5.2.1 + the BG3 tier. No character-data
+migration (sheets store stable ids, not display strings).
+
 **Search matcher tokenized (rule 27 stability fix, 2026-07-21):** the ONE shared `matchesSearch`
 (`src/lib/search.ts`) no longer does a whole-query `includes()` — it splits the normalized query into
 whitespace tokens and matches iff EVERY token is a substring of the joined candidate corpus. Fixes

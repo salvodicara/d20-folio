@@ -3,13 +3,13 @@
     "name": "Pantera"
   },
   "ape": {
-    "name": "Scimmia"
+    "name": "Gorilla"
   },
   "brown-bear": {
     "name": "Orso bruno"
   },
   "dire-wolf": {
-    "name": "Lupo terribile"
+    "name": "Lupo feroce"
   },
   "giant-spider": {
     "name": "Ragno gigante"
@@ -36,7 +36,7 @@
     "name": "Orso polare"
   },
   "giant-constrictor-snake": {
-    "name": "Serpente costrittore gigante"
+    "name": "Serpente stritolatore gigante"
   },
   "giant-boar": {
     "name": "Cinghiale gigante"
@@ -48,7 +48,7 @@
     "name": "Mammut"
   },
   "giant-ape": {
-    "name": "Scimmia gigante"
+    "name": "Gorilla gigante"
   },
   "tyrannosaurus-rex": {
     "name": "Tirannosauro"
@@ -60,7 +60,7 @@
     "name": "Archelon"
   },
   "axe-beak": {
-    "name": "Becco d'ascia"
+    "name": "Beccoaguzzo"
   },
   "baboon": {
     "name": "Babbuino"
@@ -75,7 +75,7 @@
     "name": "Orso nero"
   },
   "blood-hawk": {
-    "name": "Falco insanguinato"
+    "name": "Falco di sangue"
   },
   "boar": {
     "name": "Cinghiale"
@@ -87,7 +87,7 @@
     "name": "Gatto"
   },
   "constrictor-snake": {
-    "name": "Serpente costrittore"
+    "name": "Serpente stritolatore"
   },
   "crab": {
     "name": "Granchio"
@@ -96,7 +96,7 @@
     "name": "Coccodrillo"
   },
   "deer": {
-    "name": "Cervo"
+    "name": "Daino"
   },
   "draft-horse": {
     "name": "Cavallo da tiro"
@@ -138,7 +138,7 @@
     "name": "Rana gigante"
   },
   "giant-goat": {
-    "name": "Caprone gigante"
+    "name": "Capra gigante"
   },
   "giant-hyena": {
     "name": "Iena gigante"
@@ -150,7 +150,7 @@
     "name": "Gufo gigante"
   },
   "giant-rat": {
-    "name": "Ratto gigante"
+    "name": "Topo gigante"
   },
   "giant-scorpion": {
     "name": "Scorpione gigante"
@@ -168,7 +168,7 @@
     "name": "Vespa gigante"
   },
   "giant-weasel": {
-    "name": "Donnola gigante"
+    "name": "Faina gigante"
   },
   "giant-wolf-spider": {
     "name": "Ragno lupo gigante"
@@ -192,7 +192,7 @@
     "name": "Sciacallo"
   },
   "killer-whale": {
-    "name": "Orca"
+    "name": "Orca assassina"
   },
   "lion": {
     "name": "Leone"
@@ -207,7 +207,7 @@
     "name": "Mulo"
   },
   "octopus": {
-    "name": "Polpo"
+    "name": "Piovra"
   },
   "owl": {
     "name": "Gufo"
@@ -225,19 +225,19 @@
     "name": "Pteranodonte"
   },
   "rat": {
-    "name": "Ratto"
+    "name": "Topo"
   },
   "raven": {
     "name": "Corvo"
   },
   "reef-shark": {
-    "name": "Squalo di scogliera"
+    "name": "Squalo tropicale"
   },
   "rhinoceros": {
     "name": "Rinoceronte"
   },
   "riding-horse": {
-    "name": "Cavallo da corsa"
+    "name": "Cavallo da galoppo"
   },
   "scorpion": {
     "name": "Scorpione"

@@ -194,9 +194,9 @@ describe("displayLanguages / displayToolProficiencies — single-source display 
 
   it("merges and localizes languages (IT) — granted tongue is translated, not leaked in EN", () => {
     const agg = aggregateWith({ languages: new Set(["Thieves' Cant"]) });
-    // common→Comune, elvish→Elfico, Thieves' Cant (granted) → Gergo dei Ladri
+    // common→Comune, elvish→Elfico, Thieves' Cant (granted) → Gergo Ladresco
     expect(displayLanguages(["common", "elvish"], [], agg, "it")).toBe(
-      "Comune, Elfico, Gergo dei Ladri"
+      "Comune, Elfico, Gergo Ladresco"
     );
   });
 

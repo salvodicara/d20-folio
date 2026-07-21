@@ -341,11 +341,22 @@ renumber it into the 19–20 sequence. -->
   strip `undefined` before any write (`stripUndefined`); CI-pure lib modules stay free of Firebase
   imports (`pure-modules-guard`).
 - **D2 — Sources of truth + the IT cascade.** EN 2024 mechanics: `http://dnd2024.wikidot.com/`
-  (retrieval workflow: `content-pack/docs/SOURCING.md`). IT terms, in priority order: (1) the official
-  **IT SRD 5.2.1** PDF (read via `pypdf` + grep); (2) other authoritative IT sources (Asmodee
-  Italia, Wizards IT, errata); (3) reputable community sources (cross-check ≥2); (4) only then
-  AI-translate anchored on SRD terminology + a `// AI-translated` comment. Never trust the IT
-  fandom wiki (2014 edition).
+  (retrieval workflow: `content-pack/docs/SOURCING.md`). IT names/terms, in strict priority order:
+  (1) the official **IT SRD 5.2.1** PDF — the 2024 ruleset, released 2025-12-08 under CC-BY-4.0
+  (`https://media.dndbeyond.com/compendium-images/srd/5.2/IT_SRD_CC_v5.2.1.pdf`; read via `pypdf` +
+  grep) — TIER-1 for any SRD entity; (2) other authoritative IT sources (Asmodee Italia 5e books,
+  Wizards IT, errata); (3) the **Baldur's Gate 3** IT localization (a high-quality, internally
+  consistent IT rendering of 5e-adjacent terms) — the tie-breaker for non-SRD/pack content; (4)
+  reputable community sources (cross-check ≥2); (5) only then AI-translate anchored on SRD
+  terminology + a `// AI-translated` comment. Never trust the IT fandom wiki (2014 edition).
+  **Consistency is paramount** (the _whole point_ of the cascade): every entity has exactly ONE
+  canonical Italian lexeme — its `name` field in `src/i18n/it/srd/` (+ the pack) — and every
+  cross-reference in prose uses that SAME lexeme. Grammatical inflection is fine (_Affascinato_ →
+  _Affascinata_ agreeing with _creatura_); a genuinely different translation is drift and a bug
+  (never _Passo Brumoso_ where the canonical is _Passo Velato_). The **IT-name-consistency guard**
+  (`tests/unit/it-name-consistency.guard.test.ts`) fails the build on cross-reference lexeme drift,
+  distinct-entity name collisions, and retired-variant regressions. The authoritative EN→IT lexicon
+  - provenance ledger lives at `docs/IT_NAME_REGISTRY.md`.
 - **D3 — Locale-aware units.** Store speed as a plain number string (`"30"`); display via
   `formatSpeed` (EN `30 ft`, IT 1,5 m per 5 ft); weight 1 lb = 0,5 kg (`formatWeight`,
   `localeDistance` — `src/lib/utils.ts`).

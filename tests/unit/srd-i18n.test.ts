@@ -157,7 +157,7 @@ describe("localizeWeaponProperty", () => {
       "Munizioni (Gittata 24/96 m; Freccia)"
     );
     expect(localizeWeaponProperty("Ammunition (Range 30/120; Bolt)", "it")).toBe(
-      "Munizioni (Gittata 9/36 m; Dardo)"
+      "Munizioni (Gittata 9/36 m; Quadrello)"
     );
   });
 

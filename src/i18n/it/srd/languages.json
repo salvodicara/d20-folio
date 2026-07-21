@@ -1,6 +1,6 @@
 {
   "common": { "name": "Comune" },
-  "common-sign-language": { "name": "Linguaggio dei Segni Comune" },
+  "common-sign-language": { "name": "Lingua dei Segni Comune" },
   "draconic": { "name": "Draconico" },
   "dwarvish": { "name": "Nanico" },
   "elvish": { "name": "Elfico" },
@@ -11,11 +11,11 @@
   "orc": { "name": "Orchesco" },
   "abyssal": { "name": "Abissale" },
   "celestial": { "name": "Celestiale" },
-  "deep-speech": { "name": "Idioma Profondo" },
+  "deep-speech": { "name": "Gergo delle Profondità" },
   "druidic": { "name": "Druidico" },
   "infernal": { "name": "Infernale" },
   "primordial": { "name": "Primordiale" },
   "sylvan": { "name": "Silvano" },
-  "thieves-cant": { "name": "Gergo dei Ladri" },
+  "thieves-cant": { "name": "Gergo Ladresco" },
   "undercommon": { "name": "Sottocomune" }
 }

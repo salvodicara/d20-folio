@@ -5,7 +5,7 @@
     "prerequisite": "Warlock di livello 2+, un Trucchetto da Warlock che infligge danni"
   },
   "armor-of-shadows": {
-    "description": "Puoi lanciare Armatura del Mago su te stesso senza spendere uno slot incantesimo.",
+    "description": "Puoi lanciare Armatura Magica su te stesso senza spendere uno slot incantesimo.",
     "name": "Armatura di Ombre"
   },
   "ascendant-step": {
@@ -20,19 +20,19 @@
   },
   "devouring-blade": {
     "description": "L'Attacco Extra della tua invocazione Lama Assetata conferisce due attacchi extra anziché uno.",
-    "name": "Lama Divorante",
+    "name": "Lama Divoratrice",
     "prerequisite": "Warlock di livello 12+, Supplica Lama Assetata"
   },
   "eldritch-mind": {
     "description": "Hai Vantaggio sui tiri salvezza su Costituzione che effettui per mantenere la Concentrazione.",
-    "name": "Mente Mistica"
+    "name": "Mente Occulta"
   },
   "eldritch-mind.grants.0": {
     "description": "Tiri salvezza su Costituzione per mantenere la Concentrazione"
   },
   "eldritch-smite": {
     "description": "Una volta per turno, quando colpisci una creatura con la tua arma del patto, puoi spendere uno slot incantesimo di Magia del Patto per infliggere 1d8 danni da Forza aggiuntivi al bersaglio, più altri 1d8 per ogni livello dello slot incantesimo, e puoi imporre al bersaglio la condizione Prono se è di taglia Enorme o inferiore.",
-    "name": "Colpo Mistico",
+    "name": "Punizione Occulta",
     "prerequisite": "Warlock di livello 5+, Supplica Patto della Lama"
   },
   "eldritch-smite.grants.eldritch-smite": {
@@ -40,7 +40,7 @@
   },
   "eldritch-spear": {
     "description": "Scegli uno dei tuoi trucchetti da Warlock conosciuti che infligge danni e ha una gittata di 3 metri o più. Quando lanci quell’incantesimo, la sua gittata aumenta di un numero di metri pari a 9 volte il tuo livello da Warlock.\nRipetibile. Puoi ottenere questa invocazione più di una volta. Ogni volta che lo fai, scegli un trucchetto idoneo diverso.",
-    "name": "Lancia Esoterica",
+    "name": "Lancia Occulta",
     "prerequisite": "Warlock di livello 2+, un Trucchetto da Warlock che infligge danni"
   },
   "fiendish-vigor": {
@@ -58,7 +58,7 @@
   },
   "gift-of-the-depths": {
     "description": "Puoi respirare sott'acqua e ottieni una Velocità di Nuoto pari alla tua Velocità.\nPuoi anche lanciare Respirare sott'Acqua una volta senza spendere uno slot incantesimo. Recuperi la capacità di lanciarlo in questo modo quando completi un Riposo Lungo.",
-    "name": "Dono delle Profondità",
+    "name": "Dono degli Abissi",
     "prerequisite": "Warlock di livello 5+"
   },
   "gift-of-the-protectors": {
@@ -73,12 +73,12 @@
   },
   "lessons-of-the-first-ones": {
     "description": "Hai ricevuto conoscenza da un'antica entità del multiverso, che ti permette di ottenere un talento di Origine a tua scelta.\nRipetibile. Puoi ottenere questa invocazione più di una volta. Ogni volta che lo fai, scegli un talento di Origine diverso.",
-    "name": "Insegnamenti dei Primigeni",
+    "name": "Conoscenze degli Antichi",
     "prerequisite": "Warlock di livello 2+"
   },
   "lifedrinker": {
     "description": "Una volta per turno, quando colpisci una creatura con la tua arma del patto, puoi infliggere 1d6 danni aggiuntivi da Necrotici, Psichici o Radianti (a tua scelta) alla creatura, e puoi spendere uno dei tuoi Dadi Vita per tirarlo e recuperare un numero di Punti Ferita pari al risultato più il tuo modificatore di Costituzione (minimo 1 Punto Ferita).",
-    "name": "Bevitrice di Vita",
+    "name": "Succhiavita",
     "prerequisite": "Warlock di livello 9+, Supplica Patto della Lama"
   },
   "lifedrinker.grants.lifedrinker": {
@@ -86,17 +86,17 @@
   },
   "mask-of-many-faces": {
     "description": "Puoi lanciare Camuffare se Stesso senza spendere uno slot incantesimo.",
-    "name": "Maschera dai Mille Volti",
+    "name": "Maschera dei Molti Volti",
     "prerequisite": "Warlock di livello 2+"
   },
   "master-of-myriad-forms": {
     "description": "Puoi lanciare Alterare se Stesso senza spendere uno slot incantesimo.",
-    "name": "Signore delle Mille Forme",
+    "name": "Maestro di Mille Forme",
     "prerequisite": "Warlock di livello 5+"
   },
   "misty-visions": {
     "description": "Puoi lanciare Immagine Silenziosa senza spendere uno slot incantesimo.",
-    "name": "Visioni Nebbiose",
+    "name": "Visioni Velate",
     "prerequisite": "Warlock di livello 2+"
   },
   "one-with-shadows": {
@@ -106,7 +106,7 @@
   },
   "otherworldly-leap": {
     "description": "Puoi lanciare Saltare su te stesso senza spendere uno slot incantesimo.",
-    "name": "Salto Ultraterreno",
+    "name": "Balzo Ultraterreno",
     "prerequisite": "Warlock di livello 2+"
   },
   "pact-of-the-blade": {
@@ -136,7 +136,7 @@
   },
   "visions-of-distant-realms": {
     "description": "Puoi lanciare Occhio Arcano senza spendere uno slot incantesimo.",
-    "name": "Visioni di Reami Distanti",
+    "name": "Visione dei Reami Lontani",
     "prerequisite": "Warlock di livello 9+"
   },
   "whispers-of-the-grave": {
@@ -146,7 +146,7 @@
   },
   "witch-sight": {
     "description": "Hai Vista Pura con un raggio di 9 metri.",
-    "name": "Vista della Strega",
+    "name": "Vista Stregata",
     "prerequisite": "Warlock di livello 15+"
   }
 }

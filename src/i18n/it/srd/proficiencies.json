@@ -1,9 +1,9 @@
 {
   "simple-weapons": { "name": "Armi semplici" },
-  "martial-weapons": { "name": "Armi marziali" },
-  "martial-weapons-finesse-or-light": { "name": "Armi marziali (Accurata o Leggere)" },
-  "martial-weapons-light": { "name": "Armi marziali (Leggere)" },
-  "martial-ranged-weapons": { "name": "Armi marziali a distanza" },
+  "martial-weapons": { "name": "Armi da guerra" },
+  "martial-weapons-finesse-or-light": { "name": "Armi da guerra (Accurata o Leggere)" },
+  "martial-weapons-light": { "name": "Armi da guerra (Leggere)" },
+  "martial-ranged-weapons": { "name": "Armi a distanza da guerra" },
   "clubs": { "name": "Randelli" },
   "daggers": { "name": "Pugnali" },
   "darts": { "name": "Dardi" },

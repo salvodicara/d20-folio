@@ -5,12 +5,12 @@
   "loading": { "name": "Ricarica" },
   "reach": { "name": "Portata" },
   "two-handed": { "name": "Due Mani" },
-  "two-handed-unless-mounted": { "name": "Due Mani (se non in sella)" },
+  "two-handed-unless-mounted": { "name": "Due Mani (eccetto in sella)" },
   "versatile": { "name": "Versatile ({{die}})" },
   "thrown": { "name": "Da Lancio (Gittata {{range}})" },
   "ammunition": { "name": "Munizioni (Gittata {{range}}; {{type}})" },
   "arrow": { "name": "Freccia" },
-  "bolt": { "name": "Dardo" },
+  "bolt": { "name": "Quadrello" },
   "bullet": { "name": "Proiettile" },
   "needle": { "name": "Ago" }
 }

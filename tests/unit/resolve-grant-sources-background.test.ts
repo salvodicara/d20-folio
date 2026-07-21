@@ -252,7 +252,7 @@ describe("background grants data integrity", () => {
   it("findBackground resolves id, EN name, and IT name; rejects junk", () => {
     expect(findBackground("sage")?.id).toBe("sage");
     expect(findBackground("Sage")?.id).toBe("sage");
-    expect(findBackground("Saggio")?.id).toBe("sage");
+    expect(findBackground("Sapiente")?.id).toBe("sage");
     expect(findBackground("  ")).toBeUndefined();
     expect(findBackground("nonsense")).toBeUndefined();
   });

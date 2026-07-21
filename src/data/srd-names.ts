@@ -178,7 +178,7 @@ export const CLASS_NAMES: ReadonlyArray<BiText> = [
 const PUBLIC_SUBCLASS_NAMES: ReadonlyArray<NamedEntry> = [
   {
     id: "berserker",
-    name: { en: "Path of the Berserker", it: "Sentiero del Berserker" },
+    name: { en: "Path of the Berserker", it: "Cammino del Berserker" },
   },
   {
     id: "college-of-lore",
@@ -239,7 +239,7 @@ export const RACE_NAMES: ReadonlyArray<NamedEntry> = mergePack(
 const PUBLIC_BACKGROUND_NAMES: ReadonlyArray<NamedEntry> = [
   { id: "acolyte", name: { en: "Acolyte", it: "Accolito" } },
   { id: "criminal", name: { en: "Criminal", it: "Criminale" } },
-  { id: "sage", name: { en: "Sage", it: "Saggio" } },
+  { id: "sage", name: { en: "Sage", it: "Sapiente" } },
   { id: "soldier", name: { en: "Soldier", it: "Soldato" } },
 ];
 

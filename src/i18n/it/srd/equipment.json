@@ -36,7 +36,7 @@
   },
   "ball-bearings": {
     "description": "Come azione Utilizzare, puoi spargere le Biglie per coprire un'area piana di 3 metri quadrati entro 3 metri da te. Una creatura che entra in quest'area per la prima volta nel suo turno deve superare un tiro salvezza su Destrezza con CD 10 o ottenere la condizione Prono.",
-    "name": "Biglie"
+    "name": "Sfere Metalliche"
   },
   "basket": {
     "name": "Cesto",
@@ -46,12 +46,12 @@
     "name": "Ascia da Battaglia"
   },
   "bedroll": {
-    "description": "Un Sacco a Pelo è sufficiente per una creatura Piccola o Media. Mentre sei in un Sacco a Pelo, superi automaticamente i tiri salvezza contro il freddo estremo.",
-    "name": "Sacco a Pelo"
+    "description": "Un Giaciglio è sufficiente per una creatura Piccola o Media. Mentre sei in un Giaciglio, superi automaticamente i tiri salvezza contro il freddo estremo.",
+    "name": "Giaciglio"
   },
   "bell": {
     "description": "Quando suonato come azione Utilizzare, un Campanello produce un suono udibile fino a 18 metri di distanza.",
-    "name": "Campanello"
+    "name": "Campana"
   },
   "blanket": {
     "description": "Mentre sei avvolto in una coperta, hai Vantaggio sui tiri salvezza contro il freddo estremo.",
@@ -73,7 +73,7 @@
     "name": "Libro"
   },
   "breastplate": {
-    "name": "Corazza"
+    "name": "Corazza di Piastre"
   },
   "brewers-supplies": {
     "description": "Le Scorte da Birraio servono a fermentare bevande e purificare l'acqua.",
@@ -84,7 +84,7 @@
     "description": "Un secchio ha una capacità di 14 litri."
   },
   "burglars-pack": {
-    "description": "Contiene: Zaino, Biglie, Campanello, 10 Candele, Piede di Porco, Lanterna Schermabile, 7 fiasche di Olio, 5 giorni di Razioni, Corda, Acciarino e Otre.",
+    "description": "Contiene: Zaino, Sfere Metalliche, Campanello, 10 Candele, Piede di Porco, Lanterna Schermabile, 7 fiasche di Olio, 5 giorni di Razioni, Corda, Acciarino e Otre.",
     "name": "Dotazione da Scassinatore"
   },
   "calligraphers-supplies": {
@@ -119,15 +119,15 @@
   },
   "climbers-kit": {
     "description": "Include punte per stivali, guanti, chiodi da roccia e un'imbracatura. Come azione Utilizzare, puoi ancorarti; non puoi cadere per più di 7,5 metri dal punto di ancoraggio.",
-    "name": "Kit da Scalatore"
+    "name": "Attrezzi da Scalatore"
   },
   "clothes-fine": {
-    "description": "Gli Abiti Raffinati sono fatti di tessuti costosi. Alcuni eventi e luoghi ammettono solo persone che indossano questi abiti.",
-    "name": "Abiti Raffinati"
+    "description": "Gli Abiti Eleganti sono fatti di tessuti costosi. Alcuni eventi e luoghi ammettono solo persone che indossano questi abiti.",
+    "name": "Abiti Eleganti"
   },
   "clothes-travelers": {
-    "description": "Gli Abiti da Viaggio sono indumenti resistenti progettati per viaggiare in vari ambienti.",
-    "name": "Abiti da Viaggio"
+    "description": "Gli Abiti da Viaggiatore sono indumenti resistenti progettati per viaggiare in vari ambienti.",
+    "name": "Abiti da Viaggiatore"
   },
   "club": {
     "name": "Randello"
@@ -167,7 +167,7 @@
     "name": "Dadi"
   },
   "diplomats-pack": {
-    "description": "Contiene: Baule, Abiti Raffinati, Inchiostro, 5 Penne, Lampada, 2 Custodie per Mappe, 4 fiasche di Olio, 5 fogli di Carta, 5 fogli di Pergamena, Profumo e Acciarino.",
+    "description": "Contiene: Baule, Abiti Eleganti, Inchiostro, 5 Penne, Lampada, 2 Custodie per Mappe, 4 fiasche di Olio, 5 fogli di Carta, 5 fogli di Pergamena, Profumo e Acciarino.",
     "name": "Dotazione da Diplomatico"
   },
   "disguise-kit": {
@@ -188,14 +188,14 @@
   },
   "dungeoneers-pack": {
     "description": "Contiene: Zaino, Triboli, Piede di Porco, 2 fiasche di Olio, 10 giorni di Razioni, Corda, Acciarino, 10 Torce e Otre.",
-    "name": "Dotazione da Esploratore di Dungeon"
+    "name": "Dotazione da Avventuriero"
   },
   "entertainers-pack": {
-    "description": "Contiene: Zaino, Sacco a Pelo, Campanello, Lanterna Direzionale, 3 Costumi, Specchio, 8 fiasche di Olio, 9 giorni di Razioni, Acciarino e Otre.",
+    "description": "Contiene: Zaino, Giaciglio, Campanello, Lanterna a Lente Sporgente, 3 Costumi, Specchio, 8 fiasche di Olio, 9 giorni di Razioni, Acciarino e Otre.",
     "name": "Dotazione da Intrattenitore"
   },
   "explorers-pack": {
-    "description": "Contiene: Zaino, Sacco a Pelo, 2 fiasche di Olio, 10 giorni di Razioni, Corda, Acciarino, 10 Torce e Otre.",
+    "description": "Contiene: Zaino, Giaciglio, 2 fiasche di Olio, 10 giorni di Razioni, Corda, Acciarino, 10 Torce e Otre.",
     "name": "Dotazione da Esploratore"
   },
   "firearm-bullets": {
@@ -203,7 +203,7 @@
     "name": "Proiettili da Arma da Fuoco"
   },
   "flail": {
-    "name": "Flagello"
+    "name": "Mazzafrusto"
   },
   "flute": {
     "description": "Il Flauto è uno strumento a fiato. La competenza ti permette di aggiungere il Bonus di Competenza alle prove per suonarlo.",
@@ -214,7 +214,7 @@
     "name": "Arnesi da Falsario"
   },
   "gaming-set": {
-    "name": "Set da Gioco"
+    "name": "Gioco"
   },
   "glaive": {
     "name": "Falcione"
@@ -235,7 +235,7 @@
     "name": "Ascia Bipenne"
   },
   "greatclub": {
-    "name": "Mazza Chiodata"
+    "name": "Randello Pesante"
   },
   "greatsword": {
     "name": "Spadone"
@@ -250,11 +250,11 @@
     "name": "Balestra a Mano"
   },
   "handaxe": {
-    "name": "Accetta"
+    "name": "Ascia"
   },
   "healers-kit": {
     "description": "Ha dieci usi. Come azione Utilizzare, puoi spendere un uso per stabilizzare una creatura Priva di Sensi a 0 Punti Ferita senza bisogno di una prova di Saggezza (Medicina).",
-    "name": "Kit del Guaritore"
+    "name": "Borsa del Guaritore"
   },
   "heavy-crossbow": {
     "name": "Balestra Pesante"
@@ -280,7 +280,7 @@
   },
   "hunting-trap": {
     "description": "Come azione Utilizzare, piazza la trappola. Una creatura che ci cammina sopra deve superare un tiro salvezza su Destrezza con CD 13 o subire 1d4 danni Perforanti e avere la Velocità ridotta a 0. Sfuggire richiede una prova di Forza (Atletica) con CD 13.",
-    "name": "Trappola da Caccia"
+    "name": "Tagliola"
   },
   "ink": {
     "description": "L'Inchiostro viene in una bottiglia da 30 ml, sufficiente per scrivere circa 500 pagine.",
@@ -318,7 +318,7 @@
   },
   "lantern-bullseye": {
     "description": "Brucia Olio per emettere Luce Intensa in un Cono di 18 metri e Luce Fioca per ulteriori 18 metri.",
-    "name": "Lanterna Direzionale"
+    "name": "Lanterna a Lente Sporgente"
   },
   "lantern-hooded": {
     "description": "Brucia Olio per emettere Luce Intensa in un raggio di 9 metri e Luce Fioca per ulteriori 9 metri. Come Azione Bonus, abbassa il cappuccio per ridurre a Luce Fioca in un raggio di 1,5 metri, o rialzalo.",
@@ -339,7 +339,7 @@
   },
   "lock": {
     "description": "Un Lucchetto viene con una chiave. Senza la chiave, una creatura può scassinarlo con gli Arnesi da Scasso (prova di Destrezza Rapidità di Mano con CD 15).",
-    "name": "Lucchetto"
+    "name": "Serratura"
   },
   "longbow": {
     "name": "Arco Lungo"
@@ -382,7 +382,7 @@
     "name": "Specchio"
   },
   "morningstar": {
-    "name": "Stella del Mattino"
+    "name": "Mazza Chiodata"
   },
   "musical-instrument": {
     "description": "Un liuto, un flauto, un tamburo o un altro strumento. Un bardo può usarlo come focus per gli incantesimi.",
@@ -433,7 +433,7 @@
     "name": "Pistola"
   },
   "plate-armor": {
-    "name": "Armatura Completa"
+    "name": "Armatura a Piastre"
   },
   "playing-card-set": {
     "description": "Le Carte da Gioco sono un set da gioco. La competenza ti permette di aggiungere il tuo Bonus di Competenza alle prove di caratteristica per giocare a un gioco che le utilizza.",
@@ -482,18 +482,18 @@
     "name": "Razioni"
   },
   "ring-mail": {
-    "name": "Armatura ad Anelli"
+    "name": "Corazza ad Anelli"
   },
   "robe": {
     "description": "Un'ampia veste esterna fluente, spesso indossata dagli incantatori.",
-    "name": "Veste"
+    "name": "Tunica"
   },
   "rope": {
     "description": "15 metri di corda. Come azione Utilizzare, fai un nodo (CD 10 Destrezza Rapidità di Mano). Può essere spezzata (CD 20 Forza Atletica). Può legare creature Afferrate, Incapacitate o Trattenute (CD 15 Destrezza Acrobazia per fuggire).",
     "name": "Corda"
   },
   "scale-mail": {
-    "name": "Armatura a Scaglie"
+    "name": "Corazza a Scaglie"
   },
   "scholars-pack": {
     "description": "Contiene: Zaino, Libro, Inchiostro, Penna, Lampada, 10 fiasche di Olio, 10 fogli di Pergamena e Acciarino.",
@@ -545,7 +545,7 @@
     "name": "Libro degli Incantesimi"
   },
   "splint-armor": {
-    "name": "Armatura a Strisce"
+    "name": "Corazza a Strisce"
   },
   "string": {
     "name": "Spago",
@@ -564,7 +564,7 @@
   },
   "tinderbox": {
     "description": "Contiene selce, acciaio e esca. Accendere una Candela, Lampada, Lanterna o Torcia richiede un'Azione Bonus. Accendere qualsiasi altro fuoco richiede 1 minuto.",
-    "name": "Acciarino"
+    "name": "Acciarino e Pietra Focaia"
   },
   "tinkers-tools": {
     "description": "Un set di attrezzi per costruire e riparare piccoli oggetti e meccanismi.",
