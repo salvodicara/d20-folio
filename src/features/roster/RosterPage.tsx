@@ -37,6 +37,7 @@ import { FREE_TIER_LIMITS } from "@/lib/limits";
 import { useCharacters } from "@/hooks/useCharacters";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useRealmBackdrop } from "@/hooks/useRealmBackdrop";
 import { CharacterCard } from "./CharacterCard";
 import { ImportJsonButton } from "./ImportJsonButton";
 import { useLoadExample } from "./use-roster-actions";
@@ -52,6 +53,9 @@ const ROSTER_FILTER_THRESHOLD = 6;
 export function RosterPage() {
   const { t } = useTranslation();
   useDocumentTitle(t("nav.characters"));
+  // The realm's own scene plate — the Hall of Heroes (per-theme pair, DESIGN.md
+  // §13) — replaces the app-wide study backdrop while the roster is mounted.
+  useRealmBackdrop("var(--asset-roster-scene)");
   const navigate = useNavigate();
   const { characters, loading, error, hpReady } = useCharacters();
   const isAdmin = useIsAdmin();

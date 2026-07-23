@@ -116,6 +116,20 @@ describe("RosterPage", () => {
     expect(sub?.textContent).toMatch(/9/);
   });
 
+  it("mounts the realm's own backdrop (--app-bg-art → the Hall of Heroes plate) and clears it on unmount", () => {
+    useCharactersMock.mockReturnValue({
+      characters: [makeDoc()],
+      loading: false,
+      error: null,
+    });
+    const { unmount } = renderRoster();
+    expect(document.documentElement.style.getPropertyValue("--app-bg-art")).toBe(
+      "var(--asset-roster-scene)"
+    );
+    unmount();
+    expect(document.documentElement.style.getPropertyValue("--app-bg-art")).toBe("");
+  });
+
   it("seats the crest watermark in its header — the frontispiece on a standard-field masthead (DESIGN.md §13)", () => {
     // The roster is a framed masthead on the standard app field, so it carries the
     // engraved brand crest as its frontispiece watermark (the art-backed campaign
