@@ -114,7 +114,14 @@ const EAGER_CEILING_KB = 773; // baseline 727.1 → ~+6% (near budget — see AR
 // catalogue chunks now carry the SRD's own verbatim prose where the pack's
 // shorter paraphrases used to sit — the bytes ARE the licensing fix — compounded
 // by the dual-SRD legal-attribution text merged on main. Measured 7270.8.
-const PRECACHE_CEILING_KIB = 7276; // baseline 7270.8 (2026-07-17 SRD repatriation + legal attribution) + ~5 KiB deterministic headroom — never exact-fit
+// 2026-07-24: raised 7276 → 8033 (+757 KiB) for the Batch-4 realm scenes (P15–P23 of
+// the owner-ratified full-BG3 push): the login-light / campaign-hall drop-in swaps at
+// full richness, plus SIX brand-new per-realm plates — compendium (Grand Library),
+// roster (Hall of Heroes), and creation+level-up (Ritual of Making), each a designed
+// dark/light pair. The painterly plates carry real image entropy — the bytes ARE the
+// feature; cost was minimized first (WebP q75 + sharp_yuv, visually transparent at
+// 1:1, verified per-plate at grading). Measured 8027.2.
+const PRECACHE_CEILING_KIB = 8033; // baseline 8027.2 (2026-07-24 Batch-4 realm scenes) + ~5 KiB deterministic headroom — never exact-fit
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

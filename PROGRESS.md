@@ -517,54 +517,43 @@ v0.20.0 tail) and the identity push itself (this mission). State:
   `home-hero.webp` / `home-hero-light.webp` / `login.webp` (same tokens, no wiring change). Encoded
   WebP q75 + sharp_yuv (visually transparent at 1:1): 80 / 113 / 78 KiB vs the v1s' 26 / 42 / 106;
   the PWA precache ceiling re-baselined 7151 → 7247 KiB (the richer painterly edges ARE the bytes).
-  PROMPT_15–25 remain with the owner.
 
-- **ASSET-INTEGRATION HANDOFF — the ONLY remaining pivot work (for a future session).** Everything
-  non-asset is closed; the sole task left is integrating PROMPT_15–25 as the owner delivers them
-  into `~/Documents/images_d20folio`. This is a checklist, not an essay — the pipeline is proven by
-  PROMPT_12–14. Prompt doc (Accept/Reject bars per prompt): `~/Documents/d20-folio-bg3-asset-prompts.md`.
-  - **State:** 12–14 ✅ integrated · 15–25 ⬜ still with the owner (generates over days). Each pair
-    ships INDEPENDENTLY — a delivered dark plate goes live even if its light twin lands days later
-    (the current plate covers the gap).
-  - **Class (a) — 15–17 = DROP-IN swaps onto existing per-theme tokens (mirror exactly how 12–14
-    landed: replace the file, no wiring change).** PROMPT_15 → light `--asset-login` →
-    `public/assets/backgrounds/login-light.webp`; PROMPT_16 → dark `--asset-campaign-backdrop` →
-    `campaign-backdrop.webp`; PROMPT_17 → light `--asset-campaign-backdrop` →
-    `campaign-backdrop-light.webp` (dark tokens live in `src/index.css` `:root`; the light re-points
-    in its `[data-theme="light"]` block, ~line 793).
-  - **Class (b) — 18–23 = NEW per-realm scene wiring (deliberately NOT pre-built — build it when the
-    art lands).** Three realms, each a dark/light pair: 18/19 compendium (Grand Library), 20/21
-    roster (Hall of Heroes), 22/23 creation+level-up (Ritual of Making — optional tier, only if 22
-    keeps). Building each entails: (1) add a per-theme backdrop token to `src/index.css` mirroring
-    `--asset-campaign-backdrop` — dark URL in `:root`, light re-point in the `[data-theme="light"]`
-    block (suggested: `--asset-compendium-scene` / `--asset-roster-scene` / `--asset-creation-scene`;
-    files `public/assets/backgrounds/{compendium,roster,creation}-scene{,-light}.webp`); (2) mount it
-    on the realm surface by overriding `--app-bg-art` on `:root` while mounted, EXACTLY the
-    CampaignHubPage pattern (`CampaignHubPage.tsx` ~line 98 — `setProperty` on `--app-bg-art` at
-    mount, `removeProperty` at unmount; reuses the one `body::after` backdrop layer, no new layer) —
-    for the compendium page, the roster page, and the creation/level-up wizard; (3) hold the
-    calm-centre discipline (the realm's cards/codex sit over the plate's dead-calm centre third —
-    the prompt doc's Accept bar); (4) both themes designed, never adapted.
-  - **Class (c) — 24–25 = ornament alpha masks, A/B'd against the in-code two-tone goldwork.** These
-    are candidates to top the SHIPPED F2 dimensional two-tone reliquary corners (`--frame-ornate`)
-    and the engraved header flourish. **Decision rule: the generated mask must BEAT the in-code SVG
-    at BOTH 1x and 4x crops, or it is REJECTED** — the in-code goldwork is the incumbent and already
-    carries the wow at small size (wave-2 discreet refinement). Rough-but-close is fine: edges are
-    retouchable, composition is not.
-  - **Acceptance protocol (every delivery):** grade into the theme colour band → verify the
-    calm-centre rule with real UI composited over it → judge against the prompt doc's per-prompt
-    Accept/Reject notes → retouch stray AI artifacts (as PROMPT_13's corner AI-signature squiggle
-    was clone-stamped out before grading) → encode.
-  - **Budget discipline:** WebP **q75 + sharp_yuv** (visually transparent at 1:1). The
-    **never-exact-fit ceiling policy** holds — after each delivery re-baseline `PRECACHE_CEILING_KIB`
-    in `tests/unit/bundle-budget.guard.test.ts` (currently **7276 KiB**, baseline 7270.8 + ~5 KiB
-    deterministic headroom) AND its inline baseline comment, in the same commit; leave headroom,
-    never fit exactly.
-  - **Verification bar (per integration):** the rule-15 screenshot matrix (both themes × EN+IT ×
-    desktop+mobile wherever they differ, real Chromium), the a11y battery (axe serious/critical = 0),
-    the on-art ink-contrast batteries (`verdict-ink-contrast` / on-backdrop AA), and a PROACTIVE
-    owner push of before/after snapshots per golden rule 25 (the preview always precedes the manual
-    test).
+- **ASSET-INTEGRATION — COMPLETE (2026-07-24): PROMPT_12–25 ALL RESOLVED.** The Batch-4 pipeline
+  closed end-to-end; nothing remains with the owner. The ledger:
+  - **15–17 drop-ins (2026-07-23):** shipped as in-place swaps on the existing per-theme tokens —
+    P15 → light `--asset-login` (`login-light.webp`), P16/P17 → the `--asset-campaign-backdrop`
+    pair. Required retouches applied at grading: P16+P17's blue table runner recolored to warm
+    bronze via the same B-channel clamp on BOTH twins (twin-matched by construction), P17's
+    top-right AI-signature squiggle removed (feathered median patch).
+  - **18–23 realm scenes (2026-07-23):** the three NEW realms wired via the shared
+    `src/hooks/useRealmBackdrop.ts` seam (mount points `--app-bg-art` at the realm's per-theme
+    token, unmount restores the study; `DESIGN.md` §13) — compendium Grand Library pair
+    (`--asset-compendium-scene`, `CompendiumPage`), roster Hall of Heroes pair
+    (`--asset-roster-scene`, `RosterPage`), creation+level-up Ritual of Making pair
+    (`--asset-creation-scene`, mounted ONCE in the shared `WizardFrame`). Calm-centre law verified
+    with real UI composited at every matrix dim; per-plate retouches (P18/P20 signature patches,
+    P19 unlit-candle + centre soft-focus) applied at grading.
+  - **24–25 ornament masks: REJECTED per the standing decision rule.** A/B'd against the in-code
+    two-tone reliquary corners + engraved header flourish at 1x AND 4x across
+    {masthead·gilt panel·modal} × {dark·light} — the generated masks did not beat the incumbent
+    SVG goldwork at both scales, so the in-code vocabulary stands (no code change; the
+    side-by-side evidence rode the owner preview push).
+  - **In-situ optional-op ledger (every dossier-optional grade decided with real UI, none needed):**
+    P15 left-third honey lift · P16 filigree soften + parchment dim · P18 lapis desaturation ·
+    P19 centre contrast-compression · P20 sconce-bloom darken · P21 centre calm-down blur ·
+    P22/P23 all three (calm-margin widening, blue taming, honey pull-down) — all SKIPPED; the
+    composited UI holds the calm-centre discipline on every current crop. The recipes remain in
+    the batch dossiers should a future layout shift the panel zones. Batch note for future
+    prompts: this generator repeats top-right signature squiggles on LIGHT plates — carry the
+    "no signature" emphasis in light-plate prompts.
+  - **Budget:** all plates WebP q75 + sharp_yuv (visually transparent at 1:1, verified per-plate);
+    `PRECACHE_CEILING_KIB` re-baselined 7276 → **8033 KiB** (measured 8027.2 + ~5 KiB deterministic
+    headroom, never exact-fit) with the ratchet history updated in
+    `tests/unit/bundle-budget.guard.test.ts` + `docs/ARCHITECTURE.md`.
+  - **Verification (2026-07-24):** full gate green (typecheck · lint 0 warnings · 10474 unit tests ·
+    build), a11y battery green (axe serious/critical = 0), the on-art ink battery green over all
+    new plates, and the rule-25 before/after preview matrix (all changed surfaces × dark+light ×
+    desktop, mobile where it differs) pushed proactively to the owner.
 - **Wave-1 review fix — F1 SHIPPED (2026-07-16):** the corner gem was seated ~6px from the corner
   (SVG center 26,26) and sheared by `--radius-xl` (8px) on `overflow:hidden` hosts / overhung the
   curve on the cockpit band; moved the whole corner unit inboard (gem center 26→40 SVG units, arms/
@@ -605,13 +594,12 @@ v0.20.0 tail) and the identity push itself (this mission). State:
   `interactive-kindle.guard.test.ts`; grammar row in `DESIGN.md` §9. Focus layer verified healthy
   (keyboard-walked: gold double ring + wash on the gilt CTA); axe sweep 97 passed, zero
   serious/critical.
-- **Open:** the pivot's ONLY remaining work is **asset integration (PROMPT_15–25)** — the precise
-  checklist is the "ASSET-INTEGRATION HANDOFF" bullet above (grade + wire owner deliveries, the
-  per-realm backdrop token seam for 18–23, the 24–25 ornament A/B). Everything non-asset is closed.
-  Two OPTIONAL future-polish items ride downstream of the assets, neither a loose end nor a
-  regression (rule 27 board is clean): sweeping the reliquary register deeper where earned
-  (compendium tome chrome, login sign-in column, wizard hero altars — enhancement, not a defect),
-  and re-shooting the README screenshots once the art push settles.
+- **Open: NOTHING — the full-BG3 identity pivot is COMPLETE (2026-07-24).** PROMPT_12–25 are all
+  resolved (see the ASSET-INTEGRATION ledger above); every plate is integrated, verified, and
+  budgeted. Two OPTIONAL future-polish items remain, neither a loose end nor a regression (rule 27
+  board is clean): sweeping the reliquary register deeper where earned (compendium tome chrome,
+  login sign-in column, wizard hero altars — enhancement, not a defect), and re-shooting the
+  README screenshots now that the art push has settled.
 
 **Status: SHIPPED (dark flagship) — released in v0.18.0 (2026-07-07).** The owner-ratified evolution
 of the frozen "Illuminated Folio" into its **candlelit struck-gold** form is merged to `main` and live:
