@@ -175,21 +175,23 @@
      wasted; the cockpit is full-bleed and opts out by not using .page-shell. */
   --page-max: 76rem; /* ~1216px */
   /* Owner-generated atmospheric SCENE PLATES (DESIGN.md §13) — PER-THEME art,
-     same world ("Daylight Sibling Plates", owner-ratified): each of the three
-     scene plates ships a candlelit night original (dark) and a daylight twin of
+     same world ("Daylight Sibling Plates", owner-ratified): each scene plate
+     ships a candlelit night original (dark) and a daylight twin of
      the SAME room (light), so switching theme reads as the same place at a
      different hour. The tokens default to the DARK plates here; the light theme
-     block re-points all three to their daylight siblings — and because CSS only
+     block re-points them all to their daylight siblings — and because CSS only
      fetches the value a rule actually applies, each theme downloads ONLY its
      own plates. Were a file ever missing the layer paints
      nothing and the gilt-gradient fallback baked into each consuming recipe
      shows instead.
        --asset-home-hero          the app-wide backdrop (arcane study)
        --asset-login              the sign-in splash (glowing grimoire altar)
-       --asset-campaign-backdrop  the campaign default (war-table hall) */
+       --asset-campaign-backdrop  the campaign default (war-table hall)
+       --asset-compendium-scene   the compendium realm (the Grand Library) */
   --asset-home-hero: url("/assets/backgrounds/home-hero.webp");
   --asset-login: url("/assets/backgrounds/login.webp");
   --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop.webp");
+  --asset-compendium-scene: url("/assets/backgrounds/compendium-scene.webp");
 
   /* Compendium "ancient tome" parchment (DESIGN.md #5). A real aged-scroll WebP
      (OWN-23 — owner-supplied, cropped off its table + watermark) IS the surface now:
@@ -788,12 +790,13 @@
   /* Daylight sibling plates (DESIGN.md §13 — owner-generated batch 3): light no
      longer borrows the dark candlelit plates — each scene token re-points to the
      SAME room painted at morning (P9 daylight study / P11 dawn grimoire / P10
-     daylight war table), pre-graded into the honey/amber band the deep-parchment
-     field hosts. Per-theme loading falls out of the cascade: a light user's
-     browser only ever fetches these three. */
+     daylight war table / P19 sunlit Grand Library), pre-graded into the
+     honey/amber band the deep-parchment field hosts. Per-theme loading falls out
+     of the cascade: a light user's browser only ever fetches these plates. */
   --asset-home-hero: url("/assets/backgrounds/home-hero-light.webp");
   --asset-login: url("/assets/backgrounds/login-light.webp");
   --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop-light.webp");
+  --asset-compendium-scene: url("/assets/backgrounds/compendium-scene-light.webp");
 
   /* OWN-36 — the atmospheric backdrop sits at the SAME prominence as the dark
      theme (0.55) so the background art is as visible + amazing in light as in

@@ -42,10 +42,14 @@ import { useOverflowFade } from "@/hooks/useOverflowFade";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useLocale } from "@/hooks/useLocale";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useRealmBackdrop } from "@/hooks/useRealmBackdrop";
 import type { PickerCtx } from "./picker";
 
 export function CompendiumPage() {
   const { t } = useTranslation();
+  // The realm's own scene plate — the Grand Library (per-theme pair, DESIGN.md
+  // §13) — replaces the app-wide study backdrop while the codex is open.
+  useRealmBackdrop("var(--asset-compendium-scene)");
   // The active content type lives in the URL (`?type=spell|maneuver|…`) so a
   // compendium view is deep-linkable, bookmarkable, and back-button friendly —
   // matching the cockpit's `?tab=` pattern. An unknown / missing type falls back

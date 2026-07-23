@@ -160,6 +160,15 @@ describe("CompendiumPage chrome — facet disclosure + the two-leaf spread", () 
     window.matchMedia = originalMatchMedia;
   });
 
+  it("mounts the realm's own backdrop (--app-bg-art → the Grand Library plate) and clears it on unmount", () => {
+    const { unmount } = renderPage(INDEX_URL);
+    expect(document.documentElement.style.getPropertyValue("--app-bg-art")).toBe(
+      "var(--asset-compendium-scene)"
+    );
+    unmount();
+    expect(document.documentElement.style.getPropertyValue("--app-bg-art")).toBe("");
+  });
+
   it("facets start COLLAPSED behind the Filters disclosure; the toggle unfolds them", () => {
     const { container } = renderPage(INDEX_URL);
     const toggle = container.querySelector<HTMLButtonElement>(".cmp-facet-toggle");
