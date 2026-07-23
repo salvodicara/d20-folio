@@ -10,7 +10,7 @@
  *
  * See docs/ARCHITECTURE.md → "The content-pack seam".
  */
-import type { SrdCatalogue, SrdKind } from "@/i18n/srd-en";
+import type { LazySrdKind, SrdCatalogue, SrdKind } from "@/i18n/srd-en";
 import type { Locale } from "@/lib/locale";
 
 /**
@@ -44,3 +44,13 @@ export type PackFixtureLoaders = Readonly<Record<string, () => Promise<string>>>
 
 /** Lazy per-locale loader for the pack's non-EN SRD catalogue shards. */
 export type PackSrdLoader = (locale: Locale) => Promise<SrdCataloguePatch>;
+
+/**
+ * Lazy per-(locale, kind) loader for the pack's LAZY srd shards (monsters). EN is
+ * INCLUDED — the pack's monster EN is lazy too (the pack corpus must never ride
+ * the eager `packSrdEn`). `undefined` = the pack ships no shard for that pair.
+ */
+export type PackLazySrdLoader = (
+  locale: Locale,
+  kind: LazySrdKind
+) => Promise<SrdCatalogue | undefined>;

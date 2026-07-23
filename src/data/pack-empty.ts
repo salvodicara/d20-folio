@@ -26,6 +26,7 @@ import type { NamedEntry } from "@/data/srd-names";
 import type { ScenarioSpec } from "@/lib/dev-scenarios";
 import type {
   PackFixtureLoaders,
+  PackLazySrdLoader,
   PackSrdLoader,
   PackSrdOverlay,
   PackUiOverlay,
@@ -56,6 +57,9 @@ export const packSrdEn: SrdCataloguePatch = {};
 
 /** Lazy non-EN SRD catalogue additions for pack entries. */
 export const loadPackSrdCatalogues: PackSrdLoader = () => Promise.resolve({});
+
+/** Lazy per-(locale, kind) additions for the pack's LAZY srd shards (monsters). */
+export const loadPackLazySrd: PackLazySrdLoader = () => Promise.resolve(undefined);
 
 /** Field-level i18n restores over public entries (identity when no pack). */
 export const srdOverlay: PackSrdOverlay = {};

@@ -437,6 +437,7 @@ const KINDS = [
   "weapon-properties",
   "equipment",
   "beasts",
+  "monsters",
   "languages",
   "proficiencies",
   "classes",

@@ -19,6 +19,11 @@
  * as a missing key (throws in dev/test, sentinel in prod) — but post-bootstrap the
  * active locale is always loaded, so this never fires at runtime.
  *
+ * The LAZY SRD-kind tier (e.g. `monster`) rides this seam unchanged: an un-ensured
+ * lazy kind resolves through `?.[kind]?.` to the SAME missing path — so any
+ * monster-string site not gated behind `ensureSrdKind` fails CI loudly (lock 1,
+ * extended to the lazy tier).
+ *
  * Contract (lock 1):
  *  - PURE: no React, no Zustand, no Firebase, no i18next. Only static data in.
  *  - In dev/test a missing `kind`/`key`/`field` THROWS with the exact missing
@@ -66,7 +71,7 @@ export function localizeSrd(
   locale: Locale
 ): string {
   const cats = srdCatalogues(locale);
-  const entry = cats?.[kind][key];
+  const entry = cats?.[kind]?.[key];
   if (entry === undefined) return missing(kind, key, field, locale);
   const value = entry[field];
   if (value === undefined) return missing(kind, key, field, locale);
@@ -84,7 +89,7 @@ export function localizeSrdList(
   locale: Locale
 ): string[] {
   const cats = srdCatalogues(locale);
-  const value = cats?.[kind][key]?.[field];
+  const value = cats?.[kind]?.[key]?.[field];
   if (value === undefined) {
     const m = missing(kind, key, field, locale);
     return [m];
@@ -104,7 +109,7 @@ export function hasSrd(
   field: string,
   locale: Locale
 ): boolean {
-  return srdCatalogues(locale)?.[kind][key]?.[field] !== undefined;
+  return srdCatalogues(locale)?.[kind]?.[key]?.[field] !== undefined;
 }
 
 /**

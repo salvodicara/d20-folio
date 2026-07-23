@@ -553,7 +553,7 @@ missing-key crash (the `combat.otherReactionName` IT-session white-screen). Pinn
 
 **SRD content strings.** Every SRD content string (name, description, range, duration, material,
 trigger, …) lives ONLY in the per-language, id-keyed JSON catalogues `src/i18n/{en,it}/srd/<kind>.json`
-(17 kinds). **`src/data/**`is ids + mechanics ONLY** — the`BiText`/effect fields are stripped from the
+(18 EAGER kinds + 1 LAZY display-only kind — the lazy tier below). **`src/data/**`is ids + mechanics ONLY** — the`BiText`/effect fields are stripped from the
 data + SRD types; the catalogues are the single source of SRD text. A stripped entity is addressed by
 its stable `id`(race traits / sub-entities / named grants carry an explicit`id = slug(name.en)`), and
 resolves through one pure function `localizeSrd(kind, key, field, locale)` (`src/i18n/resolver.ts`) —
@@ -562,6 +562,18 @@ entity id, with dotted segments for nested fields.`localizeCustom`is the typed b
 user-authored content (it keeps its own single-locale text, never touches the resolver). The two
 whitelisted inline-string bypasses are`background-equipment.ts`(creation-consumed`flavour`snapshots)
 and`srd-names.ts` (the lightweight name index the eager persistence layer reads).
+
+**The lazy SRD-kind tier.** `SrdKind` splits into `EagerSrdKind` (the 18 kinds whose EN catalogue the
+Grant engine parses as FACTS — statically bundled, always loaded) and `LazySrdKind` (`monster`), a
+DISPLAY-ONLY tier with ZERO engine consumers. Because nothing in `lib/`/`stores/` ever reads a monster
+fact synchronously, the "EN srd always loads" rule does not apply: even EN monster loads on demand, so
+the bilingual bestiary corpus never joins the eager closure. `ensureSrdKind(kind)` (`src/i18n/index.ts`)
+idempotently loads a lazy kind for every currently-loaded locale and marks it RESIDENT; `ensureLocale`
+then carries every resident lazy kind into any locale loaded LATER (a language switch after the bestiary
+was opened lands with the corpus already resolvable — the "load before flip" guarantee, extended). The
+one seam every lazy-kind consumer awaits is the compendium specs barrel's top-level `await ensureSrdKind`.
+Lock 1 covers the tier unchanged: an un-ensured lazy kind resolves through `?.[kind]?.` to the SAME
+throwing missing path, so any monster-string site not behind the ensure seam fails CI loudly.
 
 **Tools are named ONCE — the equipment catalogue (#107).** A tool is BOTH a proficiency (the rail/Bio
 chips) and an equipment item (the bag), so its name reads from ONE place. `src/lib/tools.ts`

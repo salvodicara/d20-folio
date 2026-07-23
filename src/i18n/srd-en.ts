@@ -85,8 +85,12 @@ import type { Locale } from "@/lib/locale";
 import { mergeCatalogue } from "@/lib/pack-merge";
 import { packSrdEn, srdOverlay } from "@pack";
 
-/** Every SRD content kind that carries translatable strings. */
-export type SrdKind =
+/**
+ * Every SRD content kind whose EN catalogue is STATICALLY bundled — the engine
+ * FACTS source (always loaded) AND eager display. The Grant engine parses a few
+ * canonical EN facts out of these, so they can never be lazy.
+ */
+export type EagerSrdKind =
   | "spell"
   | "feat"
   | "race"
@@ -106,14 +110,30 @@ export type SrdKind =
   | "weapon-property"
   | "beasts";
 
+/**
+ * Kinds with ZERO engine consumers — DISPLAY-only reference data loaded on demand
+ * per locale (the lazy SRD-kind tier, docs/ARCHITECTURE.md). Because nothing in
+ * `lib/`/`stores/` reads them synchronously, the "EN srd always loads" facts rule
+ * does not apply: EVEN EN loads lazily (via {@link ensureSrdKind}), so the corpus
+ * never joins the eager closure.
+ */
+export type LazySrdKind = "monster";
+
+/** Every SRD content kind that carries translatable strings (eager ∪ lazy). */
+export type SrdKind = EagerSrdKind | LazySrdKind;
+
 /** A leaf catalogue value: either a single string or (condition effects) a list. */
 export type SrdLeaf = string | string[];
 export type SrdCatalogue = Record<string, Record<string, SrdLeaf>>;
-/** A full per-locale catalogue set (one `SrdCatalogue` per kind). */
-export type SrdCatalogueSet = Record<SrdKind, SrdCatalogue>;
+/**
+ * A per-locale catalogue set: every EAGER kind is present, LAZY kinds are present
+ * only once {@link ensureSrdKind} has loaded them for the locale.
+ */
+export type SrdCatalogueSet = Record<EagerSrdKind, SrdCatalogue> &
+  Partial<Record<LazySrdKind, SrdCatalogue>>;
 
-/** The SRD catalogue kinds, in a stable order — drives lazy loaders + parity. */
-export const SRD_KINDS: readonly SrdKind[] = [
+/** The EAGER SRD catalogue kinds, in a stable order — drives lazy loaders + parity. */
+export const SRD_KINDS: readonly EagerSrdKind[] = [
   "spell",
   "feat",
   "race",
@@ -133,6 +153,14 @@ export const SRD_KINDS: readonly SrdKind[] = [
   "weapon-property",
   "beasts",
 ];
+
+/** The LAZY SRD catalogue kinds (loaded on demand, display-only). */
+export const LAZY_SRD_KINDS: readonly LazySrdKind[] = ["monster"];
+
+/** Is `kind` a lazy (on-demand, display-only) SRD kind? */
+function isLazySrdKind(kind: SrdKind): kind is LazySrdKind {
+  return (LAZY_SRD_KINDS as readonly string[]).includes(kind);
+}
 
 // EN is statically bundled — it is the canonical FACTS source (always loaded).
 // Each kind composes public SRD + the content pack's EN additions + the pack's
@@ -197,14 +225,68 @@ export function srdCatalogues(locale: Locale): SrdCatalogueSet | undefined {
   return REGISTRY[locale];
 }
 
+/** Every locale whose catalogue set is registered (EN always). */
+export function loadedSrdLocales(): Locale[] {
+  return Object.keys(REGISTRY) as Locale[];
+}
+
+// ── The lazy SRD-kind tier (docs/ARCHITECTURE.md) ──────────────────────────────
+// A lazy kind (e.g. `monster`) carries no engine facts, so it is NOT bundled with
+// EN. `ensureSrdKind` loads it per-locale on demand and marks it RESIDENT so that
+// `ensureLocale` carries it into any locale loaded later (a language switch after
+// the bestiary was opened lands with the corpus already resolvable).
+
+/** Lazy kinds requested at least once this session (loaded for every registered
+ *  locale; `ensureLocale` re-loads them for newly-arriving locales). */
+const RESIDENT_LAZY = new Set<LazySrdKind>();
+
+/** The lazy kinds that have been requested at least once. */
+export function residentLazySrdKinds(): readonly LazySrdKind[] {
+  return [...RESIDENT_LAZY];
+}
+
+/** Mark a lazy kind resident (idempotent). Called BEFORE any await so a
+ *  concurrent `ensureLocale` sees it (race-proof). */
+export function markLazySrdKindResident(kind: LazySrdKind): void {
+  RESIDENT_LAZY.add(kind);
+}
+
+/** Is `(locale, kind)` loaded? An EAGER kind is present whenever the locale set
+ *  is registered; a LAZY kind only once it has been registered for the locale. */
+export function hasSrdKind(locale: Locale, kind: SrdKind): boolean {
+  const set = REGISTRY[locale];
+  if (set === undefined) return false;
+  return isLazySrdKind(kind) ? set[kind] !== undefined : true;
+}
+
+/** Register one lazy kind's catalogue into an ALREADY-registered locale set (EN
+ *  included — EN monster loads lazily too). Idempotent (re-registering replaces). */
+export function registerLazySrdKind(
+  locale: Locale,
+  kind: LazySrdKind,
+  cat: SrdCatalogue
+): void {
+  const set = REGISTRY[locale];
+  if (set === undefined) {
+    throw new Error(
+      `[i18n] cannot register lazy kind "${kind}" into unloaded locale "${locale}"`
+    );
+  }
+  set[kind] = cat;
+}
+
 /**
  * The canonical English value of `(kind, key, field)`, or `undefined` when the
  * catalogue has no such entry/field. Locale-independent — always English. Used by
  * the engine to parse FACTS out of the canonical SRD wording (damage dice,
  * durations, triggers). For DISPLAY, use `localizeSrd` (UI/views only).
+ *
+ * A LAZY kind is never in `EN` (it resolves only via `ensureSrdKind`), so
+ * `EN[kind]` may be absent — the engine never reads lazy kinds (they carry no
+ * facts), and this returns `undefined` for one, exactly like a missing key.
  */
 export function srdEn(kind: SrdKind, key: string, field: string): string | undefined {
-  const value = EN[kind][key]?.[field];
+  const value = EN[kind]?.[key]?.[field];
   if (value === undefined) return undefined;
   return Array.isArray(value) ? value.join("\n") : value;
 }
@@ -226,7 +308,7 @@ export function srdAllLocaleValues(kind: SrdKind, key: string, field: string): s
   // REGISTRY only ever holds DEFINED sets (we never store `undefined`), so
   // `Object.values` yields `SrdCatalogueSet[]`.
   for (const cat of Object.values(REGISTRY)) {
-    const value = cat[kind][key]?.[field];
+    const value = cat[kind]?.[key]?.[field];
     if (value === undefined) continue;
     out.push(Array.isArray(value) ? value.join("\n") : value);
   }

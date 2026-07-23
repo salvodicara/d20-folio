@@ -29,8 +29,17 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { asLocale, type Locale } from "@/lib/locale";
-import { registerSrdCatalogues, hasSrdLocale } from "./srd-en";
-import { loadUiResources, loadSrdCatalogues } from "./loaders";
+import {
+  registerSrdCatalogues,
+  hasSrdLocale,
+  hasSrdKind,
+  loadedSrdLocales,
+  markLazySrdKindResident,
+  registerLazySrdKind,
+  residentLazySrdKinds,
+  type LazySrdKind,
+} from "./srd-en";
+import { loadUiResources, loadSrdCatalogues, loadLazySrdKind } from "./loaders";
 
 const isProd = import.meta.env.PROD;
 
@@ -38,6 +47,8 @@ const isProd = import.meta.env.PROD;
 const uiLoaded = new Set<Locale>();
 /** In-flight `ensureLocale` promises, deduped so a double-call shares one load. */
 const inflight = new Map<Locale, Promise<void>>();
+/** In-flight `ensureSrdKind` promises, deduped per kind (the ensureLocale pattern). */
+const inflightKind = new Map<LazySrdKind, Promise<void>>();
 
 /**
  * Idempotently load a locale's catalogues (ui shards + non-EN srd) and register
@@ -56,6 +67,18 @@ export function ensureLocale(locale: Locale): Promise<void> {
         ? Promise.resolve()
         : loadSrdCatalogues(locale).then((cats) => registerSrdCatalogues(locale, cats)),
     ]);
+    // Carry every RESIDENT lazy kind (the lazy SRD-kind tier) into this
+    // newly-arriving locale so a language switch AFTER the bestiary was opened
+    // lands with the corpus already resolvable — the "load before flip"
+    // guarantee, extended to the lazy tier (srd-en.ts). Runs after the srd set is
+    // registered so `registerLazySrdKind` has a locale set to attach to.
+    await Promise.all(
+      residentLazySrdKinds()
+        .filter((kind) => !hasSrdKind(locale, kind))
+        .map(async (kind) =>
+          registerLazySrdKind(locale, kind, await loadLazySrdKind(locale, kind))
+        )
+    );
     if (!uiLoaded.has(locale)) {
       // `deep: true` keeps any already-present keys; we own the whole bundle so a
       // plain add is fine — but deep+overwrite is safest if re-bootstrapped.
@@ -65,6 +88,29 @@ export function ensureLocale(locale: Locale): Promise<void> {
   })();
   inflight.set(locale, task);
   void task.finally(() => inflight.delete(locale));
+  return task;
+}
+
+/**
+ * Idempotently load a LAZY SRD kind (e.g. `monster`) for EVERY currently-loaded
+ * locale and mark it resident, so (a) later `ensureLocale` calls carry it to
+ * newly-arriving locales and (b) an already-switched IT session resolves it
+ * immediately. In-flight calls dedupe per kind (the `ensureLocale` pattern). The
+ * one seam every lazy-kind consumer awaits (the compendium specs barrel's TLA).
+ */
+export function ensureSrdKind(kind: LazySrdKind): Promise<void> {
+  markLazySrdKindResident(kind); // BEFORE any await (race-proof vs ensureLocale)
+  const existing = inflightKind.get(kind);
+  if (existing) return existing;
+  const task = Promise.all(
+    loadedSrdLocales()
+      .filter((locale) => !hasSrdKind(locale, kind))
+      .map(async (locale) =>
+        registerLazySrdKind(locale, kind, await loadLazySrdKind(locale, kind))
+      )
+  ).then(() => undefined);
+  inflightKind.set(kind, task);
+  void task.finally(() => inflightKind.delete(kind));
   return task;
 }
 

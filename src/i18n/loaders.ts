@@ -20,9 +20,10 @@
  */
 import type { Locale } from "@/lib/locale";
 import { mergeCatalogue } from "@/lib/pack-merge";
-import { loadPackSrdCatalogues, srdOverlay, uiOverlay } from "@pack";
+import { loadPackLazySrd, loadPackSrdCatalogues, srdOverlay, uiOverlay } from "@pack";
 import {
   SRD_KINDS,
+  type LazySrdKind,
   type SrdCatalogue,
   type SrdCatalogueSet,
   type SrdKind,
@@ -72,6 +73,7 @@ export const SRD_FILE: Record<SrdKind, string> = {
   proficiency: "proficiencies",
   "weapon-property": "weapon-properties",
   beasts: "beasts",
+  monster: "monsters",
 };
 
 /**
@@ -120,4 +122,23 @@ export async function loadSrdCatalogues(locale: Locale): Promise<SrdCatalogueSet
     })
   );
   return Object.fromEntries(entries) as SrdCatalogueSet;
+}
+
+/**
+ * Load + compose ONE lazy SRD kind's shard for ONE locale — the lazy-tier twin of
+ * {@link loadSrdCatalogues}. Composes the public shard (SRD_GLOB already matches
+ * `./en/srd/*.json`, so EN monster loads lazily HERE, never eagerly in srd-en) +
+ * the pack's lazy shard (`loadPackLazySrd`) + the pack's overlay patches, via the
+ * strict `mergeCatalogue`. Registered by `ensureSrdKind` (src/i18n/index.ts).
+ */
+export async function loadLazySrdKind(
+  locale: Locale,
+  kind: LazySrdKind
+): Promise<SrdCatalogue> {
+  const path = `./${locale}/srd/${SRD_FILE[kind]}.json`;
+  const loader = SRD_GLOB[path];
+  if (!loader) throw new Error(`[i18n] missing lazy srd catalogue ${path}`);
+  const base = (await loader()).default as unknown as SrdCatalogue;
+  const additions = await loadPackLazySrd(locale, kind);
+  return mergeCatalogue(kind, base, additions, srdOverlay[locale]?.[kind]);
 }
