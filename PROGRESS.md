@@ -10,12 +10,13 @@
 
 ## Current state
 
-**Released on `main` at v0.21.0** (v0.22.0 staged in `.changeset/`); the last owner-fired
-**production deploy is v0.19.0** (https://d20-folio.web.app, 2026-07-11) — `main` runs ahead of live
-because deploys are owner-gated (golden rule 22). **6 real users** have been playing since
-2026-06-08. Since v0.19.0: the repo went **open-source + split-repo** (2026-07-17), the **full-BG3
-identity pivot** landed code-complete (asset integration pending), and the **DDB-parity feature
-epic** was ratified and queued (bestiary-first; the competitive map is `docs/POSITIONING.md`). **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
+**Released on `main` at v0.22.0** — the same version **deployed to production**
+(https://d20-folio.web.app, owner-confirmed live 2026-07-23), so `main` and live are currently **in
+step**. Deploys stay owner-gated (golden rule 22), so `main` may run ahead of live at any time.
+**6 real users** have been playing since 2026-06-08. The repo went **open-source + split-repo**
+(2026-07-17), the **full-BG3 identity pivot** landed code-complete (asset integration pending), and
+the **DDB-parity feature epic** was ratified and queued (bestiary-first; the competitive map is
+`docs/POSITIONING.md`). **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
 **id-storage + GR7 i18n-leak-eradication campaign** is **CLOSED** (v0.13.0): every SRD-derived value
 is a stable, mostly-branded id; every user-visible string lives in `src/i18n/**` (a new language = a
@@ -287,8 +288,10 @@ footprint barely changes read→edit — both fail on the old fixed box). DESIGN
   SAFE-01). The whole one-time setup is now `just safe-arm` (idempotent: APIs · `budget-kill`
   topic · £1 budget wired to it · the detach IAM grant · deploy `onBudgetAlert`), with
   `just safe-status` (ARMED/NOT ARMED/FIRED) and `just safe-restore` (post-fire recovery,
-  defuse-before-re-attach). Owner-run (touches billing + IAM); the switch goes live once the owner
-  runs `safe-arm`. The detach grant is least-privilege project-scoped `roles/billing.projectManager`
+  defuse-before-re-attach). Owner-run (touches billing + IAM); the switch is **ARMED and verified** —
+  `just safe-status` returns "✓ ARMED — every piece is in place" (verified 2026-07-23; `onBudgetAlert`
+  live, no detach events), so the 2026-08-22 trial-credit expiry is now covered by the armed
+  kill-switch. The detach grant is least-privilege project-scoped `roles/billing.projectManager`
   (detach-only, cannot re-link) — not the billing-account-wide `billing.admin` the first draft named.
 
 ## Phase status

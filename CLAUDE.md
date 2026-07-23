@@ -12,10 +12,11 @@ a complete pre-loaded 2024 SRD database, cloud sync, and party/campaign features
 Treasury · SharedNotes · Sessions · DM Tools · encounter/initiative tracking — built and live). The
 deterministic rules engine is the product's intelligence — there is no AI/LLM assistant surface.
 
-**Current state:** **released on `main` at v0.21.0** (v0.22.0 staged in `.changeset/`); the last
-owner-fired **deploy to production is v0.19.0** (2026-07-11; 6 real users) — `main` runs ahead of
-live because deploys are owner-gated (golden rule 22). The repo is **open-source + split-repo since
-2026-07-17** (public SRD-only `salvodicara/d20-folio` + the private `content-pack`); the **full-BG3
+**Current state:** **released on `main` at v0.22.0** — the same version **deployed to production**
+(owner-confirmed live 2026-07-23; 6 real users), so `main` and live are currently in step; deploys
+stay owner-gated (golden rule 22), so `main` may run ahead of live at any time. The repo is
+**open-source + split-repo since 2026-07-17** (public SRD-only `salvodicara/d20-folio` + the private
+`content-pack`); the **full-BG3
 identity pivot is code-complete**, with only owner-generated art asset integration remaining (the
 "ASSET-INTEGRATION HANDOFF" in `PROGRESS.md`). The 100%-automation
 push, the encounter/combat single-source re-architecture, the campaign-hub redesign, admin
