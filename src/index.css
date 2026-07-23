@@ -188,12 +188,14 @@
        --asset-login              the sign-in splash (glowing grimoire altar)
        --asset-campaign-backdrop  the campaign default (war-table hall)
        --asset-compendium-scene   the compendium realm (the Grand Library)
-       --asset-roster-scene       the roster realm (the Hall of Heroes) */
+       --asset-roster-scene       the roster realm (the Hall of Heroes)
+       --asset-creation-scene     the wizards' realm (the Ritual of Making) */
   --asset-home-hero: url("/assets/backgrounds/home-hero.webp");
   --asset-login: url("/assets/backgrounds/login.webp");
   --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop.webp");
   --asset-compendium-scene: url("/assets/backgrounds/compendium-scene.webp");
   --asset-roster-scene: url("/assets/backgrounds/roster-scene.webp");
+  --asset-creation-scene: url("/assets/backgrounds/creation-scene.webp");
 
   /* Compendium "ancient tome" parchment (DESIGN.md #5). A real aged-scroll WebP
      (OWN-23 — owner-supplied, cropped off its table + watermark) IS the surface now:
@@ -792,15 +794,16 @@
   /* Daylight sibling plates (DESIGN.md §13 — owner-generated batch 3): light no
      longer borrows the dark candlelit plates — each scene token re-points to the
      SAME room painted at morning (P9 daylight study / P11 dawn grimoire / P10
-     daylight war table / P19 sunlit Grand Library / P21 morning Hall of Heroes),
-     pre-graded into the honey/amber band the deep-parchment field hosts.
-     Per-theme loading falls out of the cascade: a light user's browser only ever
-     fetches these plates. */
+     daylight war table / P19 sunlit Grand Library / P21 morning Hall of Heroes /
+     P23 morning scriptorium), pre-graded into the honey/amber band the
+     deep-parchment field hosts. Per-theme loading falls out of the cascade: a
+     light user's browser only ever fetches these plates. */
   --asset-home-hero: url("/assets/backgrounds/home-hero-light.webp");
   --asset-login: url("/assets/backgrounds/login-light.webp");
   --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop-light.webp");
   --asset-compendium-scene: url("/assets/backgrounds/compendium-scene-light.webp");
   --asset-roster-scene: url("/assets/backgrounds/roster-scene-light.webp");
+  --asset-creation-scene: url("/assets/backgrounds/creation-scene-light.webp");
 
   /* OWN-36 — the atmospheric backdrop sits at the SAME prominence as the dark
      theme (0.55) so the background art is as visible + amazing in light as in

@@ -1,5 +1,6 @@
 /**
- * The Create ceremony — WizardNav's commit-moment gold bloom.
+ * The Create ceremony — WizardNav's commit-moment gold bloom — plus the frame's
+ * realm backdrop.
  *
  * The final commit control (creation "Create Character" / level-up confirm) is the
  * ONE next-button that carries `commit`; both wizards pass the same flag. This pins
@@ -9,7 +10,7 @@
  */
 import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent } from "@testing-library/react";
-import { WizardNav } from "@/features/wizard/chrome";
+import { WizardFrame, WizardNav } from "@/features/wizard/chrome";
 
 function nextButton(commit: boolean): HTMLElement {
   const { container } = render(
@@ -42,5 +43,18 @@ describe("WizardNav commit ceremony", () => {
     expect(next.classList.contains("blooming")).toBe(false);
     fireEvent.click(next);
     expect(next.classList.contains("blooming")).toBe(true);
+  });
+});
+
+describe("WizardFrame realm backdrop", () => {
+  it("mounts the wizards' realm scene (--app-bg-art → the Ritual of Making plate) and clears it on unmount", () => {
+    // The frame is the ONE chrome both wizards (creation + level-up) share, so
+    // the realm mounts here once and covers both surfaces (DESIGN.md §13).
+    const { unmount } = render(<WizardFrame>step</WizardFrame>);
+    expect(document.documentElement.style.getPropertyValue("--app-bg-art")).toBe(
+      "var(--asset-creation-scene)"
+    );
+    unmount();
+    expect(document.documentElement.style.getPropertyValue("--app-bg-art")).toBe("");
   });
 });

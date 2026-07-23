@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight, BookOpen, Check, Zap } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
+import { useRealmBackdrop } from "@/hooks/useRealmBackdrop";
 import { cn } from "@/lib/utils";
 
 // ─── Step model ───────────────────────────────────────────────────────────────
@@ -45,6 +46,11 @@ export function WizardFrame({
   /** The footer navigation row. */
   nav?: ReactNode;
 }) {
+  // The wizards' own realm scene — the Ritual of Making (per-theme pair,
+  // DESIGN.md §13) — replaces the app-wide study backdrop while EITHER wizard
+  // (creation / level-up) is mounted: the frame is their one shared chrome, so
+  // mounting the realm here covers both.
+  useRealmBackdrop("var(--asset-creation-scene)");
   return (
     <div className="wiz on-art-scope">
       {paths}
