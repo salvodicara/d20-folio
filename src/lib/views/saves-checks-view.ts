@@ -29,6 +29,7 @@ import {
   savingThrowBonus,
   skillBonus,
   passiveScore,
+  passiveAdvantageStep,
   buildSaveBreakdown,
   buildSkillBreakdown,
   buildPassiveBreakdown,
@@ -300,13 +301,15 @@ export function deriveSavesAndChecks(
   const passives: SaveCheckPassiveRow[] = PASSIVES.map((p) => {
     const proficiency: ProficiencyTier = displayedSkills[p.id] ?? null;
     const checkBonus = checkBonusFor(p.id, p.ability);
+    const advantageStep = passiveAdvantageStep(fullAggregate, p.id);
     const computed = passiveScore(
       effectiveScores[p.ability],
       level,
       proficiency,
       exhaustion,
       pbOverride,
-      checkBonus
+      checkBonus,
+      advantageStep
     );
     const overrideField = charData[p.field];
     const override = overrideField ?? null;
@@ -325,7 +328,8 @@ export function deriveSavesAndChecks(
         proficiency,
         exhaustion,
         pbOverride,
-        checkBonus
+        checkBonus,
+        advantageStep
       ),
     };
   });

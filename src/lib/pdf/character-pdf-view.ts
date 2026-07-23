@@ -31,6 +31,7 @@ import {
   savingThrowBonus,
   skillBonus,
   passiveScore,
+  passiveAdvantageStep,
   effectiveAbilityScores,
   resolveAbilityCheckBonus,
   computeInitiative,
@@ -495,7 +496,7 @@ export function buildCharacterPdfViewModel(
 
   // ── passives (override-first, RAW: 10 + the same check modifier) ──
   const passiveOf = (
-    skillId: string,
+    skillId: "perception" | "insight" | "investigation",
     ability: AbilityCode,
     override: number | null | undefined
   ): number =>
@@ -506,7 +507,8 @@ export function buildCharacterPdfViewModel(
       displayedSkills[skillId] ?? null,
       exhaustion,
       charData.proficiencyBonusOverride,
-      checkBonusFor(skillId, ability)
+      checkBonusFor(skillId, ability),
+      passiveAdvantageStep(fullAggregate, skillId)
     );
   const passives: PdfPassiveVM[] = [
     {

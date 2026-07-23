@@ -120,7 +120,7 @@ export function buildVerdict(vm: SpellCardVM, t: TFunction): string {
       ? (chipText(data.healDice, `${data.healDice} ${healWord}`) ?? "")
       : (chipText(healWord) ?? "");
   }
-  if (data.effectTag === "advantage") return chipText(t("spells.advantageVerdict")) ?? "";
+  if (data.effectTag === "advantage") return chipText(t("common.advantage")) ?? "";
   if (vm.effectWord) {
     // An over-budget condition word falls back to the generic save token.
     return chipText(vm.effectWord) ?? chipText(t("spells.saveBadge")) ?? "";

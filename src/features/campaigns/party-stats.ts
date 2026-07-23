@@ -25,6 +25,7 @@ import {
   effectiveProficiencyBonus,
   flatSaveBonus,
   passiveScore,
+  passiveAdvantageStep,
   resolveAbilityCheckBonus,
   savingThrowBonus,
 } from "@/lib/compute";
@@ -159,7 +160,8 @@ export function derivePartyMemberStats(doc: CharacterDoc): PartyMemberStats {
       displayedSkills[skill] ?? null,
       exhaustion,
       pbOverride,
-      checkBonusFor(skill, ability)
+      checkBonusFor(skill, ability),
+      passiveAdvantageStep(aggregate, skill)
     );
 
   const walkingSpeedFt =

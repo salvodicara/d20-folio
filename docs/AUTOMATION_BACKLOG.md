@@ -292,11 +292,25 @@ appears on a weapon row.
       (the pure helper — all four net cases), `toast-intent.test.ts` (routes to the advantage
       template), `character-store.test.ts` (Eldritch Mind warlock → flag true; plain concentrator →
       false). **T3.**
-- [ ] **RA-16 — Passive Perception ignores the 2024 ±5 advantage/disadvantage step.** _Checks ·
+- [x] **RA-16 — Passive Perception ignores the 2024 ±5 advantage/disadvantage step.** _Checks ·
       CORRECTNESS/C · S2 · every-session._ SRD "Passive Perception": advantage on the check = +5,
       disadvantage = −5. Code: `passiveScore` = 10 + skill bonus, no adv input; the aggregate already
       knows `advantage-on {check}` clauses. Fix: fold the netted ±5 into the three passives
-      (override-first as today). **T3.**
+      (override-first as today). **SHIPPED (2026-07-23):** a new pure `passiveAdvantageStep`
+      helper nets ±5 by EXACT `vs` check-id match (`rollType: "check"` AND `vs === passiveId`),
+      cancelling to 0 when both sides are present (RAW). It threads through the ONE `passiveScore` /
+      `buildPassiveBreakdown` seam (a 7th/8th optional `advantageStep` param, default 0 — every
+      existing caller behavior-preserving) into all three passive consumers: the cockpit LeftHud
+      (`saves-checks-view`), the party dashboard (`party-stats`), and the PDF (`character-pdf-view`).
+      The breakdown gains a `common.advantage`/`common.disadvantage` part so the tip sum still
+      equals the headline (guard). Override-first preserved — the ±5 enters `computed`, a manual
+      override still wins. Deliberately NOT folded (documented in MECHANICS.md as follow-ups):
+      situational `vs: "perception-sight"` and ability-scoped `vs: "wisdom-checks"`/`"intelligence-checks"`
+      clauses. Zero live-user impact (no fixture equips a perception-advantage item). Regression:
+      `compute.test.ts` (the pure helper across all net/scope cases + the breakdown part),
+      `value-breakdown.guard.test.ts` (sum==headline with the step, all 6 fixtures + mock),
+      `passive-advantage-step.test.ts` (Sentinel Shield end-to-end: +5 on Perception only, initiative
+      doesn't leak, override-first). **T3.**
 - [ ] **RA-17 — Heavy-property disadvantage (STR/DEX < 13) never derived.** _Attack procedure ·
       INTERACTION (defect C) · S2 · rare (low-score edge)._ SRD "Properties — Heavy". Code: Heavy
       gates GWM scope only; no `< 13` check. Fix: a disadvantage note on the weapon row from

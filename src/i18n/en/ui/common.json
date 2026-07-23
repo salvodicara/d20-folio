@@ -11,6 +11,8 @@
     "done": "Done",
     "back": "Back",
     "next": "Next",
+    "advantage": "Advantage",
+    "disadvantage": "Disadvantage",
     "loading": "Loading...",
     "error": "An error occurred",
     "retry": "Retry",

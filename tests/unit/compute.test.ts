@@ -9,6 +9,8 @@ import {
   savingThrowBonus,
   skillBonus,
   passiveScore,
+  passiveAdvantageStep,
+  buildPassiveBreakdown,
   pointBuyCost,
   totalPointBuyCost,
   hitDieAverage,
@@ -39,7 +41,8 @@ import {
 } from "@/lib/compute";
 import { getClassTable } from "@/data/classes";
 import { breakdownTotal } from "@/lib/value-breakdown";
-import type { AcFormula } from "@/lib/grants";
+import { litText } from "@/lib/loc-text";
+import type { AcFormula, AdvantageClause } from "@/lib/grants";
 import type { SrdEquipmentData } from "@/data/types";
 import type { SrdEquipmentRef, CustomEquipment } from "@/types/character";
 
@@ -250,6 +253,115 @@ describe("passiveScore", () => {
   it("adds the grant-derived check bonus", () => {
     // WIS 14 (mod +2), level 3 (PB=2), proficient, +1 check bonus → 15
     expect(passiveScore(14, 3, "proficient", 0, null, 1)).toBe(15);
+  });
+
+  // RA-16 — the SRD 2024 ±5 advantage/disadvantage step folds into the passive.
+  it("folds the ±5 advantage/disadvantage step (RA-16)", () => {
+    // WIS 14 (mod +2), level 3 (PB=2), proficient → 14; +5 advantage → 19
+    expect(passiveScore(14, 3, "proficient", 0, null, 0, 5)).toBe(19);
+    // −5 disadvantage → 9
+    expect(passiveScore(14, 3, "proficient", 0, null, 0, -5)).toBe(9);
+    // The new param defaults to 0 — behavior-preserving for every existing caller.
+    expect(passiveScore(14, 3, "proficient")).toBe(14);
+  });
+});
+
+describe("passiveAdvantageStep — RA-16", () => {
+  const clause = (
+    rollType: AdvantageClause["rollType"],
+    vs: string
+  ): AdvantageClause => ({
+    sourceId: "x",
+    rollType,
+    vs,
+    description: litText({ en: "a", it: "a" }),
+  });
+
+  it("Advantage on the matching check → +5", () => {
+    expect(
+      passiveAdvantageStep(
+        { advantages: [clause("check", "perception")], disadvantages: [] },
+        "perception"
+      )
+    ).toBe(5);
+  });
+
+  it("Disadvantage on the matching check → −5", () => {
+    expect(
+      passiveAdvantageStep(
+        { advantages: [], disadvantages: [clause("check", "perception")] },
+        "perception"
+      )
+    ).toBe(-5);
+  });
+
+  it("both advantage and disadvantage cancel → 0 (RAW)", () => {
+    expect(
+      passiveAdvantageStep(
+        {
+          advantages: [clause("check", "perception")],
+          disadvantages: [clause("check", "perception")],
+        },
+        "perception"
+      )
+    ).toBe(0);
+  });
+
+  it("no clauses → 0", () => {
+    expect(
+      passiveAdvantageStep({ advantages: [], disadvantages: [] }, "perception")
+    ).toBe(0);
+  });
+
+  it("a check-advantage on 'initiative' does not leak into perception (Sentinel Shield)", () => {
+    expect(
+      passiveAdvantageStep(
+        { advantages: [clause("check", "initiative")], disadvantages: [] },
+        "perception"
+      )
+    ).toBe(0);
+  });
+
+  it("a situational 'perception-sight' clause is not folded (scope decision)", () => {
+    expect(
+      passiveAdvantageStep(
+        { advantages: [clause("check", "perception-sight")], disadvantages: [] },
+        "perception"
+      )
+    ).toBe(0);
+  });
+
+  it("a perception advantage does not move a different passive (per-passive scope)", () => {
+    expect(
+      passiveAdvantageStep(
+        { advantages: [clause("check", "perception")], disadvantages: [] },
+        "insight"
+      )
+    ).toBe(0);
+  });
+});
+
+describe("buildPassiveBreakdown — RA-16 step part", () => {
+  it("adds an Advantage part that keeps the sum equal to the headline", () => {
+    const parts = buildPassiveBreakdown("WIS", 14, 3, "proficient", 0, null, 0, 5);
+    expect(parts).toContainEqual({ label: { term: "common.advantage" }, value: 5 });
+    expect(breakdownTotal(parts)).toBe(passiveScore(14, 3, "proficient", 0, null, 0, 5));
+  });
+
+  it("adds a Disadvantage part for a −5 step", () => {
+    const parts = buildPassiveBreakdown("WIS", 14, 3, "proficient", 0, null, 0, -5);
+    expect(parts).toContainEqual({
+      label: { term: "common.disadvantage" },
+      value: -5,
+    });
+    expect(breakdownTotal(parts)).toBe(passiveScore(14, 3, "proficient", 0, null, 0, -5));
+  });
+
+  it("adds no step part when the step is 0", () => {
+    const parts = buildPassiveBreakdown("WIS", 14, 3, "proficient", 0, null, 0, 0);
+    const terms = parts.flatMap((p) => ("term" in p.label ? [p.label.term] : []));
+    expect(terms).not.toContain("common.advantage");
+    expect(terms).not.toContain("common.disadvantage");
   });
 });
 

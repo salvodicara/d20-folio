@@ -11,6 +11,8 @@
     "done": "Fatto",
     "back": "Indietro",
     "next": "Avanti",
+    "advantage": "Vantaggio",
+    "disadvantage": "Svantaggio",
     "loading": "Caricamento...",
     "error": "Si è verificato un errore",
     "retry": "Riprova",

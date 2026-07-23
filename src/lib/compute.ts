@@ -1505,7 +1505,7 @@ export function resolveWeaponAttackCantrip(
 
 /**
  * Calculate passive perception (or other passive check).
- * Formula: 10 + skill bonus
+ * Formula: 10 + skill bonus (+ the RA-16 ±5 advantage/disadvantage step).
  */
 export function passiveScore(
   abilityScore: number,
@@ -1518,11 +1518,26 @@ export function passiveScore(
    * `skillBonus`'s `checkBonus`) — a passive is 10 + the same check modifier,
    * so the bonus threads through identically (AX exposure audit).
    */
-  checkBonus = 0
+  checkBonus = 0,
+  /**
+   * RA-16 — the SRD 2024 "Passive Perception" ±5 step: +5 when the character has
+   * Advantage on the underlying check, −5 with Disadvantage, 0 otherwise (net —
+   * see `passiveAdvantageStep`). The caller nets it from the aggregate.
+   */
+  advantageStep = 0
 ): number {
   return (
     10 +
-    skillBonus(abilityScore, level, proficiency, null, exhaustion, pbOverride, checkBonus)
+    skillBonus(
+      abilityScore,
+      level,
+      proficiency,
+      null,
+      exhaustion,
+      pbOverride,
+      checkBonus
+    ) +
+    advantageStep
   );
 }
 
@@ -1541,7 +1556,9 @@ export function buildPassiveBreakdown(
   proficiency: ProficiencyTier,
   exhaustion = 0,
   pbOverride?: number | null,
-  checkBonus = 0
+  checkBonus = 0,
+  /** RA-16 — the ±5 advantage/disadvantage step (see `passiveScore`). */
+  advantageStep = 0
 ): RawBreakdownPart[] {
   // The proficiency row uses the SAME per-tier contribution as `skillBonus`
   // (one helper — golden rule 6), so a passive can never disagree with the
@@ -1556,9 +1573,33 @@ export function buildPassiveBreakdown(
   ];
   if (profPart !== 0) parts.push(termPart("character.proficiencyBonus", profPart));
   if (checkBonus !== 0) parts.push(termPart("breakdown.featureBonus", checkBonus));
+  if (advantageStep > 0) parts.push(termPart("common.advantage", advantageStep));
+  else if (advantageStep < 0) parts.push(termPart("common.disadvantage", advantageStep));
   const exPenalty = exhaustionPenalty(exhaustion);
   if (exPenalty !== 0) parts.push(termPart("character.exhaustion", exPenalty));
   return parts;
+}
+
+/**
+ * RA-16 — the SRD 2024 "Passive Perception" ±5 step for one passive skill.
+ * Reads the already active-filtered aggregate and nets by EXACT `vs` check-id
+ * match: +5 when the character has Advantage on that check, −5 with Disadvantage,
+ * 0 when both (RAW cancellation) or neither. Only `rollType: "check"` clauses
+ * whose `vs` is exactly the passive id (`"perception"` / `"insight"` /
+ * `"investigation"`) count — a situational `vs: "perception-sight"` or an
+ * ability-scoped `vs: "wisdom-checks"` clause is deliberately NOT folded (a
+ * conditional advantage does not universally move a passive; those stay
+ * follow-ups). Mirrors `hasInitiativeAdvantage`'s exact-token match.
+ */
+export function passiveAdvantageStep(
+  aggregate: Pick<AggregatedGrants, "advantages" | "disadvantages">,
+  passiveId: "perception" | "insight" | "investigation"
+): number {
+  const applies = (c: { rollType: string; vs: string }): boolean =>
+    c.rollType === "check" && c.vs === passiveId;
+  const hasAdv = aggregate.advantages.some(applies);
+  const hasDis = aggregate.disadvantages.some(applies);
+  return (hasAdv ? 5 : 0) - (hasDis ? 5 : 0);
 }
 
 /**

@@ -172,7 +172,7 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
         }`,
       });
     if (item.stealthDisadvantage)
-      meta.push({ label: t("equipment.stealth"), value: t("equipment.disadvantage") });
+      meta.push({ label: t("equipment.stealth"), value: t("common.disadvantage") });
     if (item.strengthReq != null)
       meta.push({ label: t("equipment.strRequired"), value: `${item.strengthReq}` });
 

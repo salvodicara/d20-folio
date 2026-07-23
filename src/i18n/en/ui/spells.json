@@ -51,7 +51,6 @@
     "saveOf": "{{ability}} save",
     "saveBadge": "Save",
     "utility": "Utility",
-    "advantageVerdict": "Advantage",
     "healVerdict": "Heal",
     "multiInstance": "{{count}} × {{dice}}",
     "recurrence_on-enter-or-end-turn": "On enter or end of turn",

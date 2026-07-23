@@ -51,7 +51,6 @@
     "saveOf": "TS {{ability}}",
     "saveBadge": "TS",
     "utility": "Utilità",
-    "advantageVerdict": "Vantaggio",
     "healVerdict": "Cura",
     "multiInstance": "{{count}} × {{dice}}",
     "recurrence_on-enter-or-end-turn": "All'ingresso o a fine turno",
