@@ -7,7 +7,10 @@ import {
   resolveConditionEffects,
   CONDITION_GATES,
   netRollState,
+  hasConcentrationSaveAdvantage,
 } from "@/lib/condition-effects";
+import { litText } from "@/lib/loc-text";
+import type { AdvantageClause } from "@/lib/grants";
 import enConditions from "@/i18n/en/srd/conditions.json";
 import itConditions from "@/i18n/it/srd/conditions.json";
 
@@ -21,6 +24,48 @@ describe("netRollState — RAW advantage/disadvantage cancellation", () => {
   });
   it("neither → none", () => {
     expect(netRollState(false, false)).toBe("none");
+  });
+});
+
+describe("hasConcentrationSaveAdvantage — RA-15", () => {
+  const clause = (vs: string): AdvantageClause => ({
+    sourceId: "x",
+    rollType: "save",
+    vs,
+    description: litText({ en: "", it: "" }),
+  });
+
+  it("Advantage on the concentration CON save (War Caster / Eldritch Mind) → true", () => {
+    expect(
+      hasConcentrationSaveAdvantage({
+        advantages: [clause("concentration-con-save")],
+        disadvantages: [],
+      })
+    ).toBe(true);
+  });
+
+  it("an unrelated check advantage does not count → false", () => {
+    expect(
+      hasConcentrationSaveAdvantage({
+        advantages: [clause("danger-sense")],
+        disadvantages: [],
+      })
+    ).toBe(false);
+  });
+
+  it("a same-vs disadvantage nets the advantage back to a straight roll → false", () => {
+    expect(
+      hasConcentrationSaveAdvantage({
+        advantages: [clause("concentration-con-save")],
+        disadvantages: [clause("concentration-con-save")],
+      })
+    ).toBe(false);
+  });
+
+  it("no clauses → false", () => {
+    expect(hasConcentrationSaveAdvantage({ advantages: [], disadvantages: [] })).toBe(
+      false
+    );
   });
 });
 

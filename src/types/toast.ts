@@ -28,6 +28,11 @@ export type ToastIntent =
        * formats the sign (AX exposure audit).
        */
       saveBonus: number;
+      /**
+       * RA-15 — the character has NET Advantage on this CON save to maintain
+       * Concentration (War Caster / Eldritch Mind). The view adds one word.
+       */
+      advantage: boolean;
     }
   | { kind: "concentration-replaced"; previous: string; next: string }
   | { kind: "stopped-concentrating"; spell: string }

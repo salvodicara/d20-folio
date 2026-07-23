@@ -19,7 +19,7 @@
 import type { AbilityCode, BiText, ConditionId, SrdEquipmentData } from "@/data/types";
 import type { CustomEquipment, SrdEquipmentRef } from "@/types/character";
 import type { ProficiencyToken } from "@/types/ids";
-import type { AdvantageClause } from "@/lib/grants";
+import type { AdvantageClause, AggregatedGrants } from "@/lib/grants";
 import { isArmorProficient } from "@/lib/compute";
 import { litText } from "@/lib/loc-text";
 
@@ -347,4 +347,23 @@ export function netRollState(
   if (hasAdvantage) return "advantage";
   if (hasDisadvantage) return "disadvantage";
   return "none";
+}
+
+/**
+ * RA-15 — does the character have NET Advantage on the Constitution save to
+ * MAINTAIN Concentration (War Caster / Eldritch Mind)? Reads the already
+ * active-filtered aggregate (a `while-active` clause only reaches these lists
+ * when its toggle is on), matches the stable `vs` token `concentration-con-save`
+ * on both sides, and nets a same-`vs` disadvantage via `netRollState` — the same
+ * RAW cancellation applied to attack rolls. No dice; the toast shows one word.
+ */
+export function hasConcentrationSaveAdvantage(
+  aggregate: Pick<AggregatedGrants, "advantages" | "disadvantages">
+): boolean {
+  const present = (list: ReadonlyArray<AdvantageClause>): boolean =>
+    list.some((c) => c.vs === "concentration-con-save");
+  return (
+    netRollState(present(aggregate.advantages), present(aggregate.disadvantages)) ===
+    "advantage"
+  );
 }

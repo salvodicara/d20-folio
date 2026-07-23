@@ -31,12 +31,40 @@ describe("localizeToastIntent", () => {
 
   it("resolves the spell id for concentration-save (+ dc + the formatted save)", () => {
     expect(
-      localize({ kind: "concentration-save", spell: "hex", dc: 12, saveBonus: 7 })
+      localize({
+        kind: "concentration-save",
+        spell: "hex",
+        dc: 12,
+        saveBonus: 7,
+        advantage: false,
+      })
     ).toBe('combat.concentrationSaveToast {"spell":"⟨hex⟩","dc":12,"save":"+7"}');
     // Negative saves keep their sign (no "+-2").
     expect(
-      localize({ kind: "concentration-save", spell: "hex", dc: 12, saveBonus: -2 })
+      localize({
+        kind: "concentration-save",
+        spell: "hex",
+        dc: 12,
+        saveBonus: -2,
+        advantage: false,
+      })
     ).toBe('combat.concentrationSaveToast {"spell":"⟨hex⟩","dc":12,"save":"-2"}');
+  });
+
+  // RA-15 — a War Caster / Eldritch Mind concentrator routes to the Advantage
+  // template (still carrying spell/dc/save).
+  it("routes concentration-save to the Advantage template when advantage is set", () => {
+    expect(
+      localize({
+        kind: "concentration-save",
+        spell: "hex",
+        dc: 12,
+        saveBonus: 7,
+        advantage: true,
+      })
+    ).toBe(
+      'combat.concentrationSaveAdvantageToast {"spell":"⟨hex⟩","dc":12,"save":"+7"}'
+    );
   });
 
   it("resolves BOTH previous + next spell ids for concentration-replaced", () => {

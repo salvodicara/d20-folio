@@ -52,7 +52,10 @@ import {
   effectiveMaxHp,
 } from "@/lib/aggregate-character";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
-import { conditionBreaksConcentration } from "@/lib/condition-effects";
+import {
+  conditionBreaksConcentration,
+  hasConcentrationSaveAdvantage,
+} from "@/lib/condition-effects";
 import { evaluateGrants } from "@/lib/grants";
 import { slotUsageKey } from "@/lib/cast-options";
 import {
@@ -731,7 +734,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         );
         const saveBonus = conSave + resolveConcentrationSaveBonus(agg, effectiveScores);
         useToastStore.getState().showToast({
-          intent: { kind: "concentration-save", spell: concentrating, dc, saveBonus },
+          intent: {
+            kind: "concentration-save",
+            spell: concentrating,
+            dc,
+            saveBonus,
+            advantage: hasConcentrationSaveAdvantage(agg),
+          },
           duration: 5000,
         });
       }

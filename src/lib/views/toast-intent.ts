@@ -92,7 +92,10 @@ export function localizeToastIntent(
     case "concentration-dropped":
       return t(key, { spell: resolveSpellName(intent.spell) });
     case "concentration-save":
-      return t(key, {
+      // RA-15 — two keys, one per grammatical unit (IT grammar differs, and no
+      // translatable text may live in TS): the advantage template appends the
+      // Advantage/Vantaggio word; `key` stays the no-advantage default.
+      return t(intent.advantage ? "combat.concentrationSaveAdvantageToast" : key, {
         spell: resolveSpellName(intent.spell),
         dc: intent.dc,
         save: intent.saveBonus >= 0 ? `+${intent.saveBonus}` : String(intent.saveBonus),

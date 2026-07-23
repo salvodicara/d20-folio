@@ -498,6 +498,37 @@ describe("characterStore — rest mechanics", () => {
       });
     });
 
+    it("RA-15 — the concentration-save toast flags Advantage for an Eldritch Mind warlock", async () => {
+      // The Eldritch Mind invocation grants Advantage on the CON save to maintain
+      // Concentration; the aggregate carries the `advantage-on` clause, so the
+      // store folds a NET-Advantage flag onto the intent (War Caster is its pack
+      // twin). Pins the whole seam: invocation pick → aggregate → toast intent.
+      const { useToastStore } = await import("@/stores/toastStore");
+      const warlock = mockCharacter();
+      warlock.character.classes = [
+        { classId: "warlock", level: 5, invocationChoices: ["eldritch-mind"] },
+      ];
+      warlock.session.hp.current = 44;
+      warlock.session.concentration = conc("hex");
+      useCharacterStore.getState().setCharacter(warlock);
+      useCharacterStore.getState().applyDamage(10);
+      expect(useToastStore.getState().toasts.at(-1)?.intent).toMatchObject({
+        kind: "concentration-save",
+        advantage: true,
+      });
+
+      // A plain concentrator without the grant → no Advantage flag.
+      const plain = mockCharacter();
+      plain.session.hp.current = 44;
+      plain.session.concentration = conc("bless");
+      useCharacterStore.getState().setCharacter(plain);
+      useCharacterStore.getState().applyDamage(10);
+      expect(useToastStore.getState().toasts.at(-1)?.intent).toMatchObject({
+        kind: "concentration-save",
+        advantage: false,
+      });
+    });
+
     it("computes Concentration DC from TOTAL damage even when temp absorbs some (regression)", async () => {
       // Bug fix regression: previously the HpBar applied temp-absorption
       // *before* calling setHP, so the concentration-save DC was computed

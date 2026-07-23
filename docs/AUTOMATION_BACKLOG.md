@@ -276,14 +276,22 @@ appears on a weapon row.
       debit-to-0-keeps-row/clamp/round-trip), `ammo-debit.test.tsx` (commit debits by 1, undo
       restores, untracked = no mutation, a musket debits firearm-bullets not sling-bullets), and
       `ammo-advisory.test.tsx` (ammo row + soft out-of-ammo/Loading advisories, CTA stays tappable).
-- [ ] **RA-15 — The concentration-save prompt hides concentration-save Advantage (War Caster /
+- [x] **RA-15 — The concentration-save prompt hides concentration-save Advantage (War Caster /
       Eldritch Mind).** _Concentration · INTERACTION (defect B) · S2 · every-hit while
       concentrating for the grant's owner._ SRD 5.2.1 Eldritch Mind: "Advantage on Constitution
       saving throws that you make to maintain Concentration" (War Caster is the modeled PHB-feat
       twin). Code: the grant exists (an `advantage-on` clause with
       `vs: "concentration-con-save"`) but the `concentration-save` toast intent carries only the
       DC + a flat save bonus. Fix: thread the netted advantage flag into the intent + one word on
-      the toast. **T3.**
+      the toast. **SHIPPED (2026-07-23):** the netted concentration-save Advantage (War Caster /
+      Eldritch Mind) now rides the `concentration-save` toast intent via `hasConcentrationSaveAdvantage`
+      (reads the already active-filtered aggregate, matches `vs: "concentration-con-save"` on both
+      sides, nets a same-`vs` disadvantage through `netRollState`), and the presenter appends
+      "Advantage"/"Vantaggio" through the `concentrationSaveAdvantageToast` key (one key per
+      grammatical unit — no translatable text in TS). Regression: `condition-effects.test.ts`
+      (the pure helper — all four net cases), `toast-intent.test.ts` (routes to the advantage
+      template), `character-store.test.ts` (Eldritch Mind warlock → flag true; plain concentrator →
+      false). **T3.**
 - [ ] **RA-16 — Passive Perception ignores the 2024 ±5 advantage/disadvantage step.** _Checks ·
       CORRECTNESS/C · S2 · every-session._ SRD "Passive Perception": advantage on the check = +5,
       disadvantage = −5. Code: `passiveScore` = 10 + skill bonus, no adv input; the aggregate already

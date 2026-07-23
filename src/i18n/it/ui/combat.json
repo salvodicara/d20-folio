@@ -77,6 +77,7 @@
     "deathWardToast": "Interdizione alla Morte: scendi a 1 PF invece di 0 e l'incantesimo termina.",
     "hpHealToast": "+{{val}} PF ({{prev}}→{{next}})",
     "concentrationSaveToast": "Concentrazione su \"{{spell}}\": TS COS CD {{dc}} (il tuo TS {{save}})",
+    "concentrationSaveAdvantageToast": "Concentrazione su \"{{spell}}\": TS COS CD {{dc}} (il tuo TS {{save}}, Vantaggio)",
     "concentrationDroppedToast": "Concentrazione su \"{{spell}}\" terminata (PF a 0).",
     "concentrationReplacedToast": "Concentrazione sostituita: \"{{previous}}\" → \"{{next}}\"",
     "tempHpToast": "PF Temp → {{val}}",
