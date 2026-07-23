@@ -176,6 +176,15 @@ export function WeaponFacts({
   return (
     <>
       <UniversalCardFacts facts={rows} />
+      {/* RA-17 — the Heavy-property attack-roll Disadvantage advisory (relevant
+          effective STR/DEX < 13). A quiet self-side caution, rendered BEFORE the
+          on-hit content because it modifies the attack roll itself (no resource,
+          no dice — golden rule 21). Absent when the score reaches 13. */}
+      {facts.heavyDisadvantage && (
+        <div className="rider-strip">
+          <p className="rider-note">{t("equipment.heavyDisadvantageHint")}</p>
+        </div>
+      )}
       {/* The on-hit RIDER strip — the SAME tokens on both weapon surfaces. The
           combat card passes `onSpendRider` (consumable tokens become tappable);
           the inventory card omits it, so the strip is read-only there. */}

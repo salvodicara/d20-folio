@@ -29,6 +29,7 @@
     "attunementHint": "Oggetti magici a cui sei sintonizzato, sul tuo limite di sintonia (3 di default; gli Artefici si sintonizzano con di più).",
     "encumbranceHint": "Peso trasportato rispetto alla tua capacità di carico (Forza × 15 lb). Esclude gli oggetti personalizzati.",
     "stealthDisadvantage": "Svant. Furtività",
+    "heavyDisadvantageHint": "Quest'arma Pesante ti dà Svantaggio ai tiri per colpire perché la tua Forza o Destrezza è inferiore a 13.",
     "unproficient": "Non Competente",
     "unproficientArmorHint": "La tua classe non è competente con questa armatura: Svantaggio a ogni prova di caratteristica, tiro salvezza e tiro per colpire basati su Forza o Destrezza mentre la indossi, e non puoi lanciare incantesimi.",
     "attuned": "Sintonizzato",

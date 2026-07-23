@@ -29,6 +29,7 @@
     "attunementHint": "Magic items you're attuned to, out of your attunement limit (3 by default; Artificers attune to more).",
     "encumbranceHint": "Carried weight out of your carrying capacity (Strength × 15 lb). Excludes custom items.",
     "stealthDisadvantage": "Stealth Disadv.",
+    "heavyDisadvantageHint": "This Heavy weapon gives you Disadvantage on attack rolls because your Strength or Dexterity is below 13.",
     "unproficient": "Untrained",
     "unproficientArmorHint": "Your class isn't proficient with this armor: Disadvantage on every Strength + Dexterity ability check, saving throw, and attack roll while wearing it, and you can't cast spells.",
     "attuned": "Attuned",

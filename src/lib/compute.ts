@@ -611,6 +611,24 @@ export function isHeavyArmorEquipped(
 }
 
 /**
+ * RA-17 — SRD "Properties — Heavy": a Heavy weapon imposes Disadvantage on
+ * attack rolls when the wielder's relevant EFFECTIVE score is below 13 —
+ * Strength for a Melee weapon, Dexterity for a Ranged one. Pure read-out; a
+ * non-Heavy weapon (or a relevant score >= 13) returns false. The caller passes
+ * the already-computed `isHeavy` / `isRanged` flags and the EFFECTIVE scores
+ * (set-score item floors already folded in), so a Gauntlets-of-Ogre-Power STR 19
+ * suppresses the note despite a low base score.
+ */
+export function heavyWeaponDisadvantage(
+  isHeavy: boolean,
+  isRanged: boolean,
+  scores: Record<AbilityCode, number>
+): boolean {
+  if (!isHeavy) return false;
+  return isRanged ? scores.DEX < 13 : scores.STR < 13;
+}
+
+/**
  * Calculate proficiency bonus from character level.
  * Levels 1-4: +2, 5-8: +3, 9-12: +4, 13-16: +5, 17-20: +6
  *

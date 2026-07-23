@@ -256,6 +256,9 @@ function localizeSummary(
   // RA-13 — the resolved mastery numbers ride `weaponFacts` (the chip labels),
   // not the display summary.
   delete rest.masteryDetail;
+  // RA-17 — the Heavy-property Disadvantage advisory rides `weaponFacts`, not the
+  // display summary.
+  delete rest.heavyDisadvantage;
   delete rest.damageBreakdown;
   delete rest.attackBreakdown;
   // The on-hit RIDERS carry a `source` NAME ref (a LocText) → they have no place
@@ -352,6 +355,8 @@ export function localizeAction(action: RawResolvedAction, locale: Locale): Comba
             extraMasteries: summary.extraMasteries,
             // RA-13 — the resolved Topple DC / Graze number for the chip labels.
             masteryDetail: summary.masteryDetail,
+            // RA-17 — the Heavy-property attack-roll Disadvantage advisory.
+            heavyDisadvantage: summary.heavyDisadvantage ?? false,
             // The per-source damage breakdown ("+3 STR · +2 Rage") rides the
             // unified facts VM so the shared `WeaponFacts` component attaches the
             // `BreakdownTip` to its own damage label — ONE seam for both

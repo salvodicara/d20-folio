@@ -63,6 +63,7 @@ import {
   carryingCapacity,
   effectiveAbilityScores,
   effectiveWeaponDie,
+  heavyWeaponDisadvantage,
 } from "@/lib/compute";
 import { evaluateGrants, type AggregatedGrants } from "@/lib/grants";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
@@ -450,6 +451,14 @@ function buildWeaponVM(
   // raging, issue #27): the SAME resolver the combat attack row uses, so the
   // inventory figure and the Play card can never disagree (golden rule 6).
   const isHeavyWeapon = rawProperties.some((p) => /\bheavy\b/i.test(p));
+  // RA-17 — the Heavy-property attack-roll Disadvantage advisory (relevant
+  // EFFECTIVE score < 13: STR for Melee, DEX for Ranged) — the SAME derivation
+  // the combat row uses, so both weapon surfaces agree (golden rule 6).
+  const heavyDisadvantage = heavyWeaponDisadvantage(
+    isHeavyWeapon,
+    isRangedWeapon,
+    effectiveScores
+  );
   const featureBonuses = resolveWeaponDamageBonuses(ctx.weaponDamageBonuses, doc, {
     attackStat: stat,
     isRanged: isRangedWeapon,
@@ -568,6 +577,8 @@ function buildWeaponVM(
         : undefined,
       breakdown: damageBreakdown,
       attackBreakdown,
+      // RA-17 — the Heavy-property attack-roll Disadvantage advisory.
+      heavyDisadvantage,
     },
     locale
   );

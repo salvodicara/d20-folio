@@ -73,6 +73,7 @@ function weaponVM(): WeaponRowVM {
       attackBreakdown: null,
       riders: [],
       onHitNote: null,
+      heavyDisadvantage: false,
     },
     isProficient: true,
     notes: "",

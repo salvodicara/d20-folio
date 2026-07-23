@@ -311,10 +311,21 @@ appears on a weapon row.
       `value-breakdown.guard.test.ts` (sum==headline with the step, all 6 fixtures + mock),
       `passive-advantage-step.test.ts` (Sentinel Shield end-to-end: +5 on Perception only, initiative
       doesn't leak, override-first). **T3.**
-- [ ] **RA-17 — Heavy-property disadvantage (STR/DEX < 13) never derived.** _Attack procedure ·
+- [x] **RA-17 — Heavy-property disadvantage (STR/DEX < 13) never derived.** _Attack procedure ·
       INTERACTION (defect C) · S2 · rare (low-score edge)._ SRD "Properties — Heavy". Code: Heavy
       gates GWM scope only; no `< 13` check. Fix: a disadvantage note on the weapon row from
-      effective scores. **T3.**
+      effective scores. **SHIPPED (2026-07-23):** a new pure `heavyWeaponDisadvantage(isHeavy,
+isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECTIVE score < 13:
+      STR for Melee, DEX for Ranged) and threads a `heavyDisadvantage` flag through the ONE shared
+      `buildWeaponFacts` seam (`WeaponFactsVM`), so the combat action card and the inventory
+      WeaponCard render an identical quiet advisory note by construction (golden rule 6). Reads the
+      EFFECTIVE scores (set-score item floors folded in), so a Gauntlets-of-Ogre-Power STR 19
+      suppresses it; strict `< 13` boundary; no Grant kind (intrinsic to the property, like
+      `isHeavyArmorEquipped`). Zero stored/derived-value change (render-time flag) — the only Heavy
+      fixture (santaera greatsword, effective STR 19) correctly shows no note. Regression:
+      `compute.test.ts` (the pure helper — every branch incl. the STR 13 boundary + melee/ranged
+      independence), `weapon-facts.test.tsx` (greatsword flags on both surfaces, longbow reads DEX
+      not STR, non-Heavy defaults off, the component note renders EN + IT). **T3.**
 
 ### Band 3 — completeness (S3)
 

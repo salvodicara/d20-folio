@@ -11,6 +11,7 @@ import {
   passiveScore,
   passiveAdvantageStep,
   buildPassiveBreakdown,
+  heavyWeaponDisadvantage,
   pointBuyCost,
   totalPointBuyCost,
   hitDieAverage,
@@ -362,6 +363,43 @@ describe("buildPassiveBreakdown — RA-16 step part", () => {
     const terms = parts.flatMap((p) => ("term" in p.label ? [p.label.term] : []));
     expect(terms).not.toContain("common.advantage");
     expect(terms).not.toContain("common.disadvantage");
+  });
+});
+
+describe("heavyWeaponDisadvantage — RA-17", () => {
+  // A full six-ability record; only STR (melee) / DEX (ranged) are read.
+  const scores = (str: number, dex: number) => ({
+    STR: str,
+    DEX: dex,
+    CON: 10,
+    INT: 10,
+    WIS: 10,
+    CHA: 10,
+  });
+
+  it("Heavy MELEE weapon: Disadvantage iff STR < 13", () => {
+    expect(heavyWeaponDisadvantage(true, false, scores(8, 20))).toBe(true);
+    expect(heavyWeaponDisadvantage(true, false, scores(12, 20))).toBe(true);
+    // Boundary — "less than 13": STR 13 clears it.
+    expect(heavyWeaponDisadvantage(true, false, scores(13, 20))).toBe(false);
+    expect(heavyWeaponDisadvantage(true, false, scores(14, 20))).toBe(false);
+  });
+
+  it("Heavy RANGED weapon: Disadvantage iff DEX < 13", () => {
+    expect(heavyWeaponDisadvantage(true, true, scores(20, 12))).toBe(true);
+    expect(heavyWeaponDisadvantage(true, true, scores(20, 13))).toBe(false);
+  });
+
+  it("reads the RELEVANT ability only (melee=STR, ranged=DEX)", () => {
+    // Ranged ignores a low STR.
+    expect(heavyWeaponDisadvantage(true, true, scores(8, 16))).toBe(false);
+    // Melee ignores a low DEX.
+    expect(heavyWeaponDisadvantage(true, false, scores(16, 8))).toBe(false);
+  });
+
+  it("a non-Heavy weapon never triggers, whatever the scores", () => {
+    expect(heavyWeaponDisadvantage(false, false, scores(8, 8))).toBe(false);
+    expect(heavyWeaponDisadvantage(false, true, scores(8, 8))).toBe(false);
   });
 });
 

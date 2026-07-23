@@ -93,6 +93,13 @@ export interface WeaponFactsVM {
    * surface (it's a combat-summary concept); the inventory card omits it.
    */
   onHitNote: string | null;
+  /**
+   * RA-17 — true iff this Heavy weapon imposes attack-roll Disadvantage for this
+   * wielder (the relevant EFFECTIVE score < 13: STR for Melee, DEX for Ranged).
+   * The `WeaponFacts` component renders one quiet advisory note; false → no note.
+   * Always present, identical on both surfaces (combat card + inventory card).
+   */
+  heavyDisadvantage: boolean;
 }
 
 /** The structured inputs both presenters already have. */
@@ -137,6 +144,9 @@ export interface WeaponFactsInput {
   /** A pre-localized on-hit reminder sentence (Armorer Guardian Disadvantage;
    *  unarmed-strike unburdened-d8 gloss). Absent/empty → no note line. Combat only. */
   onHitNote?: string | null;
+  /** RA-17 — the Heavy-property attack-roll Disadvantage is active for this
+   *  wielder (relevant effective score < 13). Absent → false (no note). */
+  heavyDisadvantage?: boolean;
 }
 
 /**
@@ -273,5 +283,6 @@ export function buildWeaponFacts(input: WeaponFactsInput, locale: Locale): Weapo
         : null,
     riders: input.riders ?? [],
     onHitNote: input.onHitNote && input.onHitNote.length > 0 ? input.onHitNote : null,
+    heavyDisadvantage: input.heavyDisadvantage ?? false,
   };
 }

@@ -176,6 +176,47 @@ describe("weapon facts — combat and inventory surfaces are EQUIVALENT", () => 
     expect(combat?.weaponFacts).toEqual(inventory?.facts);
   });
 
+  // RA-17 — the Heavy-property attack-roll Disadvantage advisory rides the ONE
+  // `buildWeaponFacts` seam, so it agrees on both weapon surfaces by construction
+  // (golden rule 6). The mock (Lyra Voss) is STR 8 / DEX 16.
+  it("RA-17 — a Heavy MELEE weapon flags Disadvantage on both surfaces when STR < 13", () => {
+    const doc = mock();
+    doc.character.weapons.push({ srdId: "greatsword", quantity: 1 });
+    const inventory = buildInventoryViewModel(doc, "en").weapons.find(
+      (w) => w.id === "greatsword"
+    );
+    const combat = localizeActions(doc, "en").find((a) => a.id === "weapon-greatsword");
+    expect(inventory?.facts.heavyDisadvantage).toBe(true);
+    expect(combat?.weaponFacts?.heavyDisadvantage).toBe(true);
+    // The whole VM agrees across surfaces.
+    expect(combat?.weaponFacts).toEqual(inventory?.facts);
+  });
+
+  it("RA-17 — a Heavy RANGED weapon reads DEX (not STR): DEX 16 clears the advisory", () => {
+    // Lyra is STR 8 / DEX 16 — a Longbow (Heavy, Ranged) must NOT flag, proving
+    // the ranged branch keys off DEX, not the low STR.
+    const doc = mock();
+    doc.character.weapons.push({ srdId: "longbow", quantity: 1 });
+    const inventory = buildInventoryViewModel(doc, "en").weapons.find(
+      (w) => w.id === "longbow"
+    );
+    const combat = localizeActions(doc, "en").find((a) => a.id === "weapon-longbow");
+    expect(inventory?.facts.heavyDisadvantage).toBe(false);
+    expect(combat?.weaponFacts?.heavyDisadvantage).toBe(false);
+    expect(combat?.weaponFacts).toEqual(inventory?.facts);
+  });
+
+  it("RA-17 — a non-Heavy weapon never flags the advisory (defaults off)", () => {
+    const doc = mock();
+    doc.character.weapons.push({ srdId: "longsword", quantity: 1 });
+    const inventory = buildInventoryViewModel(doc, "en").weapons.find(
+      (w) => w.id === "longsword"
+    );
+    const combat = localizeActions(doc, "en").find((a) => a.id === "weapon-longsword");
+    expect(inventory?.facts.heavyDisadvantage).toBe(false);
+    expect(combat?.weaponFacts?.heavyDisadvantage).toBe(false);
+  });
+
   it("combat emits NO mastery without the pick (gated in the engine)", () => {
     const doc = mock();
     doc.character.weapons.push({ srdId: "longsword", quantity: 1 });
@@ -272,6 +313,7 @@ const COMPONENT_VM: WeaponFactsVM = {
   ],
   riders: [],
   onHitNote: null,
+  heavyDisadvantage: false,
 };
 
 describe("WeaponFacts component — rows + glossed chips", () => {
@@ -309,6 +351,23 @@ describe("WeaponFacts component — rows + glossed chips", () => {
     rerender(<WeaponFacts facts={{ ...COMPONENT_VM, onHitNote: null }} />);
     expect(screen.queryByText(note)).toBeNull();
     expect(screen.queryByText("On a hit")).toBeNull();
+  });
+
+  it("RA-17 — renders the Heavy-property Disadvantage advisory, omits it when false (EN + IT)", async () => {
+    const flagged: WeaponFactsVM = { ...COMPONENT_VM, heavyDisadvantage: true };
+    const { rerender } = render(<WeaponFacts facts={flagged} />);
+    expect(
+      screen.getByText(
+        "This Heavy weapon gives you Disadvantage on attack rolls because your Strength or Dexterity is below 13."
+      )
+    ).toBeInTheDocument();
+    // false → the advisory is absent.
+    rerender(<WeaponFacts facts={{ ...COMPONENT_VM, heavyDisadvantage: false }} />);
+    expect(screen.queryByText(/Disadvantage on attack rolls/)).toBeNull();
+    // IT — the bilingual string renders under the Italian locale (afterEach resets).
+    await i18n.changeLanguage("it");
+    rerender(<WeaponFacts facts={flagged} />);
+    expect(screen.getByText(/Svantaggio ai tiri per colpire/)).toBeInTheDocument();
   });
 
   it("the damage-breakdown popover opens and its formula lines opt out of translation", () => {

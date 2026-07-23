@@ -114,6 +114,7 @@ import {
   attacksPerAction,
   maxTableExtraAttacks,
   isHeavyArmorEquipped,
+  heavyWeaponDisadvantage,
 } from "@/lib/compute";
 import { srdEn, type SrdKind } from "@/i18n/srd-en";
 import { srdKey } from "@/i18n/srd-key";
@@ -948,6 +949,12 @@ export interface RawActionSummary extends Omit<
    * mandate 2026-06-12). Feature-granted EXTRAS ride {@link extraMasteries}.
    */
   weaponMastery?: string;
+  /**
+   * RA-17 — the Heavy-property attack-roll Disadvantage is ACTIVE for this weapon
+   * (Heavy + the relevant EFFECTIVE score < 13: STR for Melee, DEX for Ranged).
+   * The presenter folds it onto `weaponFacts`; omitted when not applicable.
+   */
+  heavyDisadvantage?: boolean;
   /**
    * STRUCTURED heal amount for a feature/trait action chip, EVALUATED against
    * the owning character (Second Wind on a Fighter 5: `{ dice: "1d10",
@@ -5271,6 +5278,15 @@ function resolveWeaponActions(
         : []
       : (srdWeapon?.properties ?? []);
     const isHeavyWeapon = properties.some((p) => /\bheavy\b/i.test(p));
+    // RA-17 — a Heavy weapon imposes Disadvantage on attack rolls when the
+    // relevant EFFECTIVE score is < 13 (STR for Melee, DEX for Ranged). Read off
+    // `ctx.abilityScores` (effective — set-score item floors folded in), surfaced
+    // as a quiet per-weapon advisory note.
+    const heavyDisadvantage = heavyWeaponDisadvantage(
+      isHeavyWeapon,
+      isRangedWeapon,
+      ctx.abilityScores
+    );
     // Flat damage bonuses on weapon attacks (`weapon-damage-bonus` — Barbarian
     // Rage Damage while raging, issue #27; GWM Heavy Weapon Mastery's +PB on a
     // Heavy-weapon hit, "heavy" scope). Scope-matched against THIS attack
@@ -5493,6 +5509,8 @@ function resolveWeaponActions(
       ...(ownedMastery ? { weaponMastery: ownedMastery } : {}),
       // RA-13 — the resolved Topple DC / Graze number for the mastery chips.
       ...(Object.keys(masteryDetail).length > 0 ? { masteryDetail } : {}),
+      // RA-17 — the Heavy-property attack-roll Disadvantage advisory flag.
+      ...(heavyDisadvantage ? { heavyDisadvantage: true as const } : {}),
       // RA-14 — tracked ammo (id + live count) + the Loading advisory flag.
       ...(ammoItemId != null && ammoRemaining != null
         ? { ammo: { itemId: ammoItemId, remaining: ammoRemaining } }
