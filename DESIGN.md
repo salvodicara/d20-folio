@@ -2207,8 +2207,7 @@ per-theme PAIR (no custom art, no crop) uses the tiny shared hook `src/hooks/use
 mount points `--app-bg-art` at the realm's token — always a css-var REFERENCE (e.g.
 `"var(--asset-compendium-scene)"`), never a URL, so the theme cascade keeps resolving the right
 sibling plate and each theme still downloads only its own file — and unmount clears it back to the
-app-wide study; an optional second argument biases the `cover` focal via `--app-bg-art-position`
-when a plate's calm zone needs seating under the realm's content column. Current realm scenes: the
+app-wide study. Current realm scenes: the
 **compendium** (`CompendiumPage` → `--asset-compendium-scene`, the Grand Library pair above — the
 codex spread sits over the plate's calm centre aisle in both themes, desktop and mobile), the
 **roster** (`RosterPage` → `--asset-roster-scene`, the Hall of Heroes pair — the character cards +

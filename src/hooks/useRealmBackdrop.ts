@@ -9,10 +9,6 @@
  * the per-theme cascade keeps resolving the right sibling plate (dark/light) and
  * each theme still downloads only its own file.
  *
- * `position` optionally biases the cover-crop focal via `--app-bg-art-position`
- * (the painter's default is `center top`) — for plates whose calm zone needs
- * seating under the realm's content column, especially on narrow viewports.
- *
  * The campaign hub does NOT use this hook: its `useCampaignBackdrop` also
  * handles DM custom banners + crop focal/zoom + the light-theme custom-art veil.
  */
@@ -20,14 +16,12 @@
 import { useEffect } from "react";
 
 /** Point `--app-bg-art` at `art` while mounted; restore the default on unmount. */
-export function useRealmBackdrop(art: string, position?: string): void {
+export function useRealmBackdrop(art: string): void {
   useEffect(() => {
     const root = document.documentElement.style;
     root.setProperty("--app-bg-art", art);
-    if (position) root.setProperty("--app-bg-art-position", position);
     return () => {
       root.removeProperty("--app-bg-art");
-      root.removeProperty("--app-bg-art-position");
     };
-  }, [art, position]);
+  }, [art]);
 }
