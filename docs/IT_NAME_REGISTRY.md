@@ -101,3 +101,10 @@ their official Italian form** (spells, magic items, equipment, class features, b
 metamagic, feats, backgrounds, languages, proficiencies, weapon properties), **all name collisions
 resolved** (Conjure→*Evoca* / Summon→*Richiama*, Bolt→*Quadrello*, Portent→*Auspicio*, …), and
 **every prose cross-reference aligned** to the canonical lexeme.
+
+The bilingual **bestiary monster catalogue** (2026-07-24) sources every monster name + statblock
+prose from the official IT SRD 5.2.1 (tier 1 — extraction, never a fresh translation); IT prose
+reuses the closed-set glossary lexemes (damage nouns capitalized as defined terms, the condition
+lexemes verbatim). Monsters join the guard's kind list (`monsters`), so a monster name colliding with
+any other entity's Italian name (e.g. the reason the _Mage_ NPC — official IT _Mago_, which the
+_Wizard_ class already owns — is deferred, not renamed) fails the build.

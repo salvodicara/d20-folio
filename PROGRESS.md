@@ -457,6 +457,14 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   comment posted on #32). Unlocks four surfaces: the encounter picker (replacing the type-by-hand
   AddMonsterForm), the 2024-DMG XP-budget difficulty calculator (DDB's standalone tool is stuck on
   2014 math — we can be more correct), the compendium Monsters section, and companions.
+  - **In flight (2026-07-24):** the data foundation shipped — the lazy `SrdKind` display tier
+    (`ensureSrdKind`, so the bilingual corpus never joins the eager startup closure), the
+    `MonsterStatBlock` model + CR-driven derivation helpers (`src/lib/monster.ts`), the composed
+    `src/data/monsters/` aggregate behind the `srd-monsters` lazy chunk, and a 10-monster PILOT
+    (skeleton · zombie · goblin-warrior · priest · swarm-of-rats · ghost · young/adult red dragon ·
+    brown-bear · rat) with its EN+IT catalogue + the corpus-integrity guard. Also closed the M1
+    idle-prefetch leak (the compendium left `prefetchLikelyRoutes`). NEXT: the compendium Monsters
+    section + statblock plaque, then the beast-projection re-derivation seam, then the 8 data waves.
 - **Companions/Extras:** a persistent companion-statblock surface on the sheet (Find Familiar,
   Primal Companion, Drakewarden, Artificer Steel Defender/Homunculus) — closes a
   rules-completeness hole; reuses the bestiary statblock renderer.
