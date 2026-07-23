@@ -93,13 +93,17 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   `src/lib/pack-merge.ts` (an id collision or an overlay patch aimed at a missing entry THROWS at
   module init): `data/spells.ts`, `feats.ts`, `races.ts`, `backgrounds.ts`,
   `background-equipment.ts`, `magic-items/index.ts`, `maneuvers.ts`, `beasts/index.ts`,
+  `monsters/index.ts` (the lazy bestiary corpus — `packMonsters` appends via `mergePack`),
   `classes.ts` (pack classes append; pack subclasses extend their public class table),
   `srd-names.ts` (the eager name index — the pack side is `content-pack/data/names.ts`,
   literal names only, so the roster chunk never drags the pack corpora). Consumers only ever read
   the aggregates — never a `@pack` deep path — so the seam stays single.
 - **i18n** — pack EN srd shards are statically bundled and merged in `src/i18n/srd-en.ts` (the EN
   facts rule is unchanged); non-EN pack shards lazy-load through the pack's own
-  `content-pack/i18n/loader.ts` and merge inside `loadSrdCatalogues`. The pack's `overlay.ts`
+  `content-pack/i18n/loader.ts` and merge inside `loadSrdCatalogues`. The LAZY srd shards
+  (the bestiary corpus) load per-(locale, kind) through `loadPackLazySrd` (the pack twin of
+  `loadLazySrdKind`, EN included) and merge inside `ensureSrdKind`, never on the eager `packSrdEn`.
+  The pack's `overlay.ts`
   patches PUBLIC entries per locale so the composed build shows the PHB wording (the 18 creator
   names the public catalogue carries under their SRD 5.2.1 names, the full Elven Lineage /
   Pact of the Chain prose, chrome labels via `uiOverlay` in `loadUiResources`). The six

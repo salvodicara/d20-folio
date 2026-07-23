@@ -11,14 +11,15 @@
  */
 export const importCockpit = () => import("@/features/character/CharacterCockpit");
 export const importCampaigns = () => import("@/features/campaigns/CampaignsListPage");
-export const importCompendium = () => import("@/features/compendium/CompendiumPage");
 
 /** Warm the likely-next route chunks during idle (called once after first paint). */
 export function prefetchLikelyRoutes(): void {
   const run = () => {
     void importCockpit();
     void importCampaigns();
-    void importCompendium();
+    // The codex browse route is deliberately NOT idle-prefetched — it stays a lazy
+    // route loaded on navigation, so its heavy (now bilingual, reference-corpus)
+    // chunk graph never downloads ~2 s after every app start (M1).
   };
   // requestIdleCallback isn't in Safari < 17; fall back to a short timeout so the
   // prefetch never blocks the main thread during the initial render/paint.

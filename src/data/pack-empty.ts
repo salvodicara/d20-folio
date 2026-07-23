@@ -12,6 +12,7 @@ import type {
   BackgroundEquipmentOption,
   BeastStatBlock,
   BiText,
+  MonsterStatBlock,
   SrdBackgroundData,
   SrdClassFeatureData,
   SrdClassTable,
@@ -43,6 +44,7 @@ export const packBackgroundEquipment: Readonly<
 export const packMagicItems: SrdMagicItemData[] = [];
 export const packManeuvers: SrdManeuver[] = [];
 export const packBeasts: BeastStatBlock[] = [];
+export const packMonsters: MonsterStatBlock[] = [];
 export const packClassTables: SrdClassTable[] = [];
 export const packClassFeatures: SrdClassFeatureData[] = [];
 export const packSubclasses: Readonly<Record<string, readonly SrdSubclassInfo[]>> = {};

@@ -310,6 +310,7 @@ export default defineConfig({
               return "srd-classes";
             if (/[\\/]data[\\/](feats|maneuvers)\.ts$/.test(id))
               return "srd-class-options";
+            if (/[\\/]data[\\/]monsters(\.ts|[\\/])/.test(id)) return "srd-monsters";
             return "srd-content";
           }
           // SRD database — DOMAIN-SPLIT (was one ~1.9 MB / 450 KB-gzip monolith).
@@ -333,6 +334,10 @@ export default defineConfig({
             if (/[\\/]data[\\/]classes[\\/]/.test(id)) return "srd-classes"; // class tables + features
             if (/[\\/]data[\\/](feats|invocations|maneuvers|metamagic)\.ts$/.test(id))
               return "srd-class-options"; // feats + class-option pools
+            // The bestiary corpus — reachable ONLY through the lazy compendium specs
+            // barrel (+ the future encounter picker). It must never fall into the
+            // eagerly-reachable srd-content chunk; the bundle-budget ratchet is the guard.
+            if (/[\\/]src[\\/]data[\\/]monsters[\\/]/.test(id)) return "srd-monsters";
             // Heavy cockpit/compendium-only content: spells + magic-items +
             // equipment/weapons/armor/gear + the index files. The roster never
             // imports any of this, so it never pays for it.

@@ -1668,6 +1668,327 @@ export interface BeastStatBlock {
 }
 
 // ============================================================
+// Monster stat blocks (the SRD 5.2.1 bestiary — first-class entity)
+// ============================================================
+
+/** 2024 creature types (SRD 5.2.1) — the statblock's identity-line noun. */
+export type CreatureType =
+  | "aberration"
+  | "beast"
+  | "celestial"
+  | "construct"
+  | "dragon"
+  | "elemental"
+  | "fey"
+  | "fiend"
+  | "giant"
+  | "humanoid"
+  | "monstrosity"
+  | "ooze"
+  | "plant"
+  | "undead";
+
+/** Runtime list — source of truth for the `srd.creatureType_<id>` i18n keys,
+ *  exhaustive by construction (like {@link ALL_DAMAGE_TYPES}). */
+export const ALL_CREATURE_TYPES = [
+  "aberration",
+  "beast",
+  "celestial",
+  "construct",
+  "dragon",
+  "elemental",
+  "fey",
+  "fiend",
+  "giant",
+  "humanoid",
+  "monstrosity",
+  "ooze",
+  "plant",
+  "undead",
+] as const satisfies ExhaustiveTuple<
+  CreatureType,
+  [
+    "aberration",
+    "beast",
+    "celestial",
+    "construct",
+    "dragon",
+    "elemental",
+    "fey",
+    "fiend",
+    "giant",
+    "humanoid",
+    "monstrosity",
+    "ooze",
+    "plant",
+    "undead",
+  ]
+>;
+
+/**
+ * Alignment as a stable id (2024 prints a single alignment, no "typically").
+ * Localized via `srd.alignment_<id>` chrome keys.
+ */
+export type AlignmentId =
+  | "lawful-good"
+  | "neutral-good"
+  | "chaotic-good"
+  | "lawful-neutral"
+  | "neutral"
+  | "chaotic-neutral"
+  | "lawful-evil"
+  | "neutral-evil"
+  | "chaotic-evil"
+  | "unaligned"
+  | "any";
+
+/** Runtime list — source of truth for the `srd.alignment_<id>` i18n keys. */
+export const ALL_ALIGNMENTS = [
+  "lawful-good",
+  "neutral-good",
+  "chaotic-good",
+  "lawful-neutral",
+  "neutral",
+  "chaotic-neutral",
+  "lawful-evil",
+  "neutral-evil",
+  "chaotic-evil",
+  "unaligned",
+  "any",
+] as const satisfies ExhaustiveTuple<
+  AlignmentId,
+  [
+    "lawful-good",
+    "neutral-good",
+    "chaotic-good",
+    "lawful-neutral",
+    "neutral",
+    "chaotic-neutral",
+    "lawful-evil",
+    "neutral-evil",
+    "chaotic-evil",
+    "unaligned",
+    "any",
+  ]
+>;
+
+/**
+ * One damage clause of a monster action — a FACT for machine consumers (the
+ * beast projection, the future encounter tools). The printed average is NOT
+ * stored: it is `Math.floor(diceMean(dice))` by 2024 print convention, and the
+ * corpus guard pins the dice against the entry's localized text (D-3).
+ * `dice` is compact ("1d6+2", "2d10"), or a bare integer string ("1") for the
+ * flat-damage CR-0 prints — the exact BeastAttack.damageDice grammar.
+ */
+export interface MonsterDamage {
+  dice: string;
+  damageType: DamageType;
+}
+
+/** Shared spine of every named statblock entry (trait/action/bonus/reaction/legendary). */
+export interface MonsterEntryBase {
+  /** Stable id (`slug(name.en)`) — the catalogue-key segment; name + text live in
+   *  the `monster` catalogue at `<monsterId>.<section>.<id>.{name,text}`. */
+  id: string;
+  /** "Recharge X–6": the minimum die face that recharges it (6 = "Recharge 6"). */
+  recharge?: 2 | 3 | 4 | 5 | 6;
+  /** "(N/Day)" and rest-recharge limits. */
+  uses?: { count: number; per: "day" | "short-or-long-rest" | "long-rest" };
+}
+
+/** A prose-only entry (Multiattack, auras, most traits, legendary moves). */
+export interface MonsterNarrativeEntry extends MonsterEntryBase {
+  kind: "narrative";
+}
+
+/** A 2024 attack-roll entry: "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6+2) …". */
+export interface MonsterAttackEntry extends MonsterEntryBase {
+  kind: "attack";
+  attack: "melee" | "ranged" | "melee-or-ranged";
+  /** To-hit bonus AS PRINTED (self-contained, like BeastAttack.toHit). */
+  toHit: number;
+  /** Melee reach in feet (present for melee + melee-or-ranged). */
+  reachFt?: number;
+  /** Ranged near/far in feet (far omitted for single-range prints). */
+  rangeFt?: { near: number; far?: number };
+  /**
+   * Damage clauses in printed order — [0] is the PRIMARY "Hit:" clause, the
+   * rest are "plus N (dice) X damage" riders. Conditional/save/miss clauses in
+   * the sentence stay prose-only (D-3/D-10).
+   */
+  damage: ReadonlyArray<MonsterDamage>;
+}
+
+/** A save-based entry: "Dexterity Saving Throw: DC 13, … Failure: … Success: …". */
+export interface MonsterSaveEntry extends MonsterEntryBase {
+  kind: "save";
+  save: AbilityCode;
+  dc: number;
+  /** Failure damage clauses (omit for effect-only saves). */
+  damage?: ReadonlyArray<MonsterDamage>;
+  /** The printed "Success:" outcome for the damage: half, none, or a special
+   *  prose outcome (text carries it). */
+  onSuccess: "half" | "none" | "special";
+}
+
+/**
+ * The 2024 Spellcasting entry — spell references resolve against the spell DB.
+ * A "(level N version)" upcast qualifier on a listed spell stays PROSE-ONLY (the
+ * entry text carries it, D-3); a future cast-consumer would need a structured
+ * slot-level field beside the spell id — deliberate YAGNI today (m3).
+ */
+export interface MonsterSpellcastingEntry extends MonsterEntryBase {
+  kind: "spellcasting";
+  ability: AbilityCode;
+  /** Spell save DC as printed (present whenever the block prints one). */
+  dc?: number;
+  /** Spell attack bonus, only when printed ("+5 to hit with spell attacks"). */
+  toHit?: number;
+  /** At-will spell ids (SRD spell ids — `getSpellById` must resolve each). */
+  atWill?: ReadonlyArray<string>;
+  /** Per-day tiers in printed order: "1/Day Each:" → { count: 1, spellIds }. */
+  perDay?: ReadonlyArray<{ count: number; spellIds: ReadonlyArray<string> }>;
+}
+
+export type MonsterEntry =
+  | MonsterNarrativeEntry
+  | MonsterAttackEntry
+  | MonsterSaveEntry
+  | MonsterSpellcastingEntry;
+
+/** A skill row: bonus derives (mod + PB, ×2 PB with expertise); `bonus` is stored
+ *  ONLY when the printed value deviates (guard-enforced, D-4). `skill` is an
+ *  `ALL_SKILLS` id (src/lib/skills.ts). */
+export interface MonsterSkill {
+  skill: string;
+  expertise?: true;
+  bonus?: number;
+}
+
+/** The Languages line. `ids` reference `srd/languages.json`; special shapes are
+ *  closed tokens localized via `monster.lang_<token>` chrome keys. */
+export interface MonsterLanguages {
+  ids?: ReadonlyArray<string>;
+  /** "understands <ids> but can't speak". */
+  understandsOnly?: true;
+  telepathyFt?: number;
+  /** "plus any N languages" (NPC-style prints). */
+  plusAnyCount?: number;
+  /** Irregular closed prints: "the languages it knew in life". */
+  special?: "knew-in-life";
+}
+/* The "none" line (—) = the whole `languages` field omitted. */
+
+/** A defense set carrying a 2024 qualifier print. Used ONLY when the SRD text
+ *  qualifies the set; unqualified sets use the flat arrays below. */
+export interface QualifiedDefense {
+  kind: "resistance" | "immunity" | "vulnerability";
+  damageTypes: ReadonlyArray<DamageType>;
+  qualifier: "nonmagical" | "nonmagical-nonsilvered" | "nonmagical-nonadamantine";
+}
+
+/**
+ * A condition-immunity line entry (m1). Almost always the bare ConditionId; the
+ * qualified prints — "Charmed (with Mind Blank)" on the archmage-class entries —
+ * carry a CLOSED note token, localized via `monster.condNote_<token>` and
+ * rendered as a text affix beside the condition chip (§E.2). Grow the union
+ * only when the SRD prints a new qualifier.
+ */
+export type MonsterConditionImmunity =
+  | ConditionId
+  | { id: ConditionId; note: "with-mind-blank" };
+
+/**
+ * A 2024 (SRD 5.2.1) monster statblock — the bestiary's first-class entity.
+ * IDs + numbers ONLY (§7 data guard): every display string (name, entry names,
+ * entry prose) lives in the LAZY `monster` catalogue
+ * `src/i18n/{en,it}/srd/monsters.json`, keyed by the ids here (docs/ARCHITECTURE.md
+ * → "SRD content strings" + the lazy-kind tier).
+ *
+ * DERIVED-NOT-STORED (guard-enforced): XP + PB (from `cr` via xpForCr/pbForCr),
+ * saves (mod + PB × proficiency), skill bonuses, passive Perception, initiative
+ * (DEX mod), printed dice averages. Each has a narrow deviation override; an
+ * override equal to its derived value fails the corpus guard.
+ */
+export interface MonsterStatBlock {
+  /** Stable id (`slug(name.en)`) — the catalogue key ("goblin-warrior"). */
+  id: string;
+  /** Challenge Rating — fraction-capable: 0, 0.125, 0.25, 0.5, 1…30. */
+  cr: number;
+  /** Printed size(s) — almost always one; the NPC prints ("Medium or Small
+   *  Humanoid") carry both, printed order. */
+  sizes: ReadonlyArray<CreatureSize>;
+  type: CreatureType;
+  /** Parenthesized type tags as slug ids ("goblinoid", "shapechanger", "demon",
+   *  "devil", "angel", "titan"); localized via `srd.creatureTag_<id>`. */
+  typeTags?: ReadonlyArray<string>;
+  /** "Medium Swarm of Tiny Beasts" → sizes:["Medium"], type:"beast", swarmOf:"Tiny". */
+  swarmOf?: CreatureSize;
+  alignment: AlignmentId;
+
+  ac: number;
+  /** Initiative bonus, stored ONLY when the print deviates from the DEX mod
+   *  (legendary bumps); `monsterInitiative()` derives the rest. The printed
+   *  parenthetical score is always 10 + bonus. */
+  initiative?: number;
+  hp: { average: number; formula: string }; // formula compact: "9d8+18"
+  /** Movement in feet; reuses the Beast/Companion record shape + hover. */
+  speeds: Readonly<Partial<Record<"walk" | "climb" | "fly" | "swim" | "burrow", number>>>;
+  /** "Fly 60 ft. (hover)". */
+  hover?: true;
+
+  abilityScores: Readonly<Record<AbilityCode, number>>;
+  /** Save proficiencies — save = mod + PB for these; `saveOverrides` catches a
+   *  deviating print (must differ from the derived value). */
+  saveProficiencies?: ReadonlyArray<AbilityCode>;
+  saveOverrides?: Readonly<Partial<Record<AbilityCode, number>>>;
+  skills?: ReadonlyArray<MonsterSkill>;
+
+  damageVulnerabilities?: ReadonlyArray<DamageType>;
+  damageResistances?: ReadonlyArray<DamageType>;
+  damageImmunities?: ReadonlyArray<DamageType>;
+  conditionImmunities?: ReadonlyArray<MonsterConditionImmunity>;
+  qualifiedDefenses?: ReadonlyArray<QualifiedDefense>;
+
+  senses?: {
+    darkvisionFt?: number;
+    blindsightFt?: number;
+    tremorsenseFt?: number;
+    truesightFt?: number;
+    /** "blindsight 60 ft. (blind beyond this radius)". */
+    blindBeyond?: true;
+  };
+  /** Passive Perception derives (10 + Perception bonus); stored ONLY on a
+   *  deviating print. */
+  passivePerceptionOverride?: number;
+
+  languages?: MonsterLanguages;
+  /** The 2024 Gear line — equipment/weapon/armor catalogue ids (+ counts). */
+  gear?: ReadonlyArray<{ id: string; qty?: number }>;
+  /** XP stored ONLY when the print deviates from xpForCr(cr) (the CR-0
+   *  harmless "XP 0" prints store `xp: 0`). */
+  xp?: number;
+  /**
+   * The lair XP print — "XP 11,500, or 13,000 in lair" (M2; 27 corpus entries:
+   * all adult/ancient dragons, aboleth, kraken, lich, mummy-lord, the sphinxes,
+   * vampire). Stored AS PRINTED: the SRD states no derivation rule for it (the
+   * apparent CR+1 pattern is an observation, not text — D-4 applies only to
+   * stated rules). Pairs with `legendary.usesInLair`.
+   */
+  xpInLair?: number;
+
+  traits?: ReadonlyArray<MonsterEntry>;
+  actions: ReadonlyArray<MonsterEntry>; // may be [] (a genuine no-action print)
+  bonusActions?: ReadonlyArray<MonsterEntry>;
+  reactions?: ReadonlyArray<MonsterEntry>;
+  /** "Legendary Action Uses: 3 (4 in Lair)." */
+  legendary?: { uses: number; usesInLair?: number };
+  legendaryActions?: ReadonlyArray<MonsterEntry>;
+
+  source: SrdSource; // always "SRD" in the public repo (partition guard)
+}
+
+// ============================================================
 // SRD Class Tables (Level Progression)
 // ============================================================
 

@@ -29,6 +29,19 @@ export function formatModifier(mod: number): string {
 }
 
 /**
+ * Format a (possibly-fractional) Challenge Rating for display: 0.125 → "1/8",
+ * 0.25 → "1/4", 0.5 → "1/2", every other value verbatim. The ONE CR formatter —
+ * shared by the Beast form picker, the monster spec, statblock card, and (later)
+ * the encounter picker (golden rule 6).
+ */
+export function formatCr(cr: number): string {
+  if (cr === 0.125) return "1/8";
+  if (cr === 0.25) return "1/4";
+  if (cr === 0.5) return "1/2";
+  return String(cr);
+}
+
+/**
  * Append a signed flat modifier to a dice string for display ("1d6" + STR mod).
  * A positive modifier appends `+N`, a negative one `-N`, and a `+0` (or
  * `undefined`, i.e. no modifier) leaves the die bare — never a trailing `+0`.

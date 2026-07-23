@@ -29,7 +29,7 @@ import { SearchField } from "@/components/shared/SearchField";
 import { matchesSearch } from "@/lib/search";
 import { localizeSrd } from "@/i18n/resolver";
 import { srdEn } from "@/i18n/srd-en";
-import { formatModifier, localeDistance } from "@/lib/utils";
+import { formatCr, formatModifier, localeDistance } from "@/lib/utils";
 import { abilityModifier } from "@/lib/ability";
 import type { Locale } from "@/lib/locale";
 import type { AbilityCode, BeastStatBlock } from "@/data/types";
@@ -42,13 +42,6 @@ const ABILITY_ORDER: ReadonlyArray<AbilityCode> = [
   "WIS",
   "CHA",
 ];
-
-/** Format a (possibly-fractional) Challenge Rating: 0.25 → "1/4", 0.5 → "1/2". */
-function formatCr(cr: number): string {
-  if (cr === 0.25) return "1/4";
-  if (cr === 0.5) return "1/2";
-  return String(cr);
-}
 
 export interface BeastFormPickerProps {
   open: boolean;

@@ -7,7 +7,7 @@ import {
 } from "react-router";
 import { lazy } from "react";
 import { AppShell } from "./AppShell";
-import { importCockpit, importCampaigns, importCompendium } from "./route-prefetch";
+import { importCockpit, importCampaigns } from "./route-prefetch";
 import { AuthGuard } from "@/components/shared/AuthGuard";
 import { RouteErrorBoundary } from "@/components/shared/RouteErrorBoundary";
 import { LoginPage } from "./routes/login";
@@ -68,7 +68,9 @@ const JoinCampaignRoute = lazy(() =>
   }))
 );
 const CompendiumPage = lazy(() =>
-  importCompendium().then((m) => ({ default: m.CompendiumPage }))
+  import("@/features/compendium/CompendiumPage").then((m) => ({
+    default: m.CompendiumPage,
+  }))
 );
 const SettingsPage = lazy(() =>
   import("@/features/account/SettingsPage").then((m) => ({ default: m.SettingsPage }))
