@@ -673,6 +673,64 @@
     inset 0 1px 0 rgba(245, 230, 180, 0.14), inset 0 -1px 0 rgba(0, 0, 0, 0.5),
     0 10px 0 rgba(0, 0, 0, 0.42), 0 30px 70px rgba(0, 0, 0, 0.75);
 
+  /* § 05b THE PLATE GRAMMAR — the panel/card MATERIAL (BG3 fidelity, owner
+     2026-07-24: "davvero migliorare i bordi delle schede … come Baldur's Gate 3").
+     DESIGN.md §4 "The plate grammar". Studied from the owner's own BG3 spellbook
+     crop (`crop-panel-edge-mid`: OUTSIDE the frame is a near-black groove, then a
+     warm lit line, then the material) plus the trade/creation/level-up plates.
+     A BG3 panel is five layers: cast → MOAT → directional EDGE → body
+     (SHEEN + vignette + grain) → ornament. The app already shipped the cast, the
+     body's vignette/grain, and the corner ornament; these four tokens supply the
+     three that were missing, and they compose ON TOP of the `--elev-*` stack
+     (which owns the cast + the vertical inset pair) rather than replacing it.
+
+     ONE light, high and slightly left, never moving: the left run catches it, the
+     right run takes the shade — so the 1px border stops reading as a drawn
+     outline and starts reading as a rolled forged lip. The moat is TWO parts: the
+     hard 1px groove the plate sits in, plus a soft symmetric SEAT halo that bleeds
+     the plate's own darkness a few px into the scene behind it (BG3's plates do
+     this over their 3D backdrops; ours sit on painted art and need it more, not
+     less). Decorative shadow only — it darkens the ground AROUND the plate, so
+     every ink contrast on the plate is unchanged or better. `--plate-edge` is the
+     QUIET tier (ordinary cards + panels); `--plate-edge-hero` is the EARNED tier
+     (Constitution §4.16 — the framed masthead, the gilt hero band, dialogs), a
+     brighter metal in a deeper groove. The tiers differ ONLY in light, never in
+     geometry — exactly BG3's active-vs-sibling grammar (an active panel wears a
+     richer frame; siblings keep the same shape, quieter). */
+  /* THE PLATE RULE — the frame LINE itself. BG3's panel runs are warm brass
+     hairlines, clearly lighter than the plate they bind; ours was `--border-medium`
+     (#352c1f), so dark on dark that the frame all but vanished and every plate
+     read as a region cut out of the page rather than an object laid on it. A
+     brass step up from `--border-strong`, tinted toward the gilt. */
+  --plate-rule: color-mix(in oklab, var(--accent-primary) 20%, var(--border-strong));
+  --plate-edge:
+    inset 1px 1px 0 rgba(226, 186, 96, 0.3), inset -1px -1px 0 rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(0, 0, 0, 0.62), 0 0 16px 3px rgba(0, 0, 0, 0.4);
+  --plate-edge-hero:
+    inset 1px 1px 0 rgba(240, 215, 145, 0.5), inset -1px -1px 0 rgba(0, 0, 0, 0.68),
+    0 0 0 1px rgba(0, 0, 0, 0.75), 0 0 22px 5px rgba(0, 0, 0, 0.45);
+  /* The CONVEX specular — a wide soft pool of light near the top edge, the thing
+     that makes a large plate read domed instead of flat (the cartouche tradition's
+     "slightly convex surface"). DARK SHIPS NONE, and that is a measured LIMIT, not
+     an oversight: the dark flagship's plates are TRANSLUCENT over painted-darkness
+     art (`--panel-alpha` 0.9), and `--text-muted` on the brightest composite —
+     surface-2 over the brightest glyph-scale backdrop region — already sits at
+     4.70:1 against the 4.5 AA floor. A 1.5% cream sheen drops it to 4.53, a 3%
+     sheen to 4.36 (FAIL). An added highlight that is invisible at 1.5% and illegal
+     at 3% has no honest value, so dark's convexity stays where it already is: the
+     surface-2 → surface-1 gradient (light at the crown) plus the smoke vignette
+     (shade at the hem). Light DOES ship it (its ivory is flat and its ink has
+     ~14:1 headroom) — the daylight sibling, designed not adapted.
+     Guard: `plate-grammar.guard.test.ts`. A BACKGROUND layer, painted FIRST in the
+     stack so it sits over the body's grain/tint. */
+  --plate-sheen: none;
+  /* The BASIN — content sits in a shallow tray below the rim. One soft inset ring
+     that darkens inward from all four edges. `.folio-panel` already carries the
+     smoke vignette (its painted equivalent), so this is for the flat card
+     recipes that never had one. */
+  --plate-basin:
+    inset 0 0 5px -1px rgba(0, 0, 0, 0.6), inset 0 0 26px -6px rgba(0, 0, 0, 0.42);
+
   /* Grounded-glow stroke twin (BG3 identity epic, 2026-07-02): BG3 grounds every
      glow with a deep muted STROKE of the same hue, so light never floats free of
      an edge. This is the gold twin (a deep gold-umber between gold-700 and the
@@ -1186,6 +1244,36 @@
   --elev-modal:
     inset 0 1px 0 rgba(255, 253, 247, 1), inset 0 -1px 0 rgba(46, 30, 6, 0.24),
     0 8px 18px rgba(46, 30, 6, 0.3), 0 44px 92px rgba(46, 30, 6, 0.5);
+
+  /* § 05b THE PLATE GRAMMAR — the DAYLIGHT sibling (designed, never adapted).
+     Same light model (one source, high and slightly left), same two tiers, same
+     geometry — different physics. The lit run is a true struck near-white
+     (`--emboss-sheen` family) because ivory can only brighten toward white; the
+     shaded run is warm UMBER, never black (black on cream reads as grime on
+     vellum, the standing light-craft ruling). The moat is the umber DEFINITION
+     ring the light theme already uses to detach floating chrome from the
+     parchment field (`--elev-floating`) — on the candlelit backdrop a plate needs
+     that ring or its edge dissolves into the art. The sheen lifts the plate's
+     crown toward near-white so the ivory reads domed; the basin pools morning
+     shade inward instead of shadow. */
+  /* Daylight sibling of the plate rule: the ivory theme's edge is already a warm
+     tan (`--border-medium` #b8a878), so it needs deepening rather than warming —
+     a touch of the deep-umber accent so the frame reads INKED on the vellum,
+     the daylight equivalent of dark's brass. */
+  --plate-rule: color-mix(in oklab, var(--accent-primary) 16%, var(--border-medium));
+  --plate-edge:
+    inset 1px 1px 0 rgba(255, 253, 247, 0.9), inset -1px -1px 0 rgba(46, 30, 6, 0.2),
+    0 0 0 1px rgba(46, 30, 6, 0.16), 0 0 16px 3px rgba(46, 30, 6, 0.14);
+  --plate-edge-hero:
+    inset 1px 1px 0 rgba(255, 253, 247, 1), inset -1px -1px 0 rgba(46, 30, 6, 0.3),
+    0 0 0 1px rgba(46, 30, 6, 0.26), 0 0 22px 5px rgba(46, 30, 6, 0.18);
+  --plate-sheen: radial-gradient(
+    128% 66% at 50% -6%,
+    rgba(255, 253, 247, 0.5),
+    transparent 68%
+  );
+  --plate-basin:
+    inset 0 0 5px -1px rgba(74, 58, 36, 0.26), inset 0 0 26px -8px rgba(74, 58, 36, 0.2);
 
   /* The lit-ornament halo (selected tiles · active tabs · the section diamond ·
      the codex open-page row) rides the same ember grammar as `--gilt-glow`: a tight

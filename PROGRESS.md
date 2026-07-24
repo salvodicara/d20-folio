@@ -833,12 +833,37 @@ v0.20.0 tail) and the identity push itself (this mission). State:
   luminous chevron-over-plumb centre (glow raised per the verdict), the floating under-dot
   dropped, surface-2 occlusion kept. Guard rewritten to pin the A anatomy + the root-cause
   mechanism (`ornament-vocabulary.guard.test.ts`); `DESIGN.md` §5 rewritten to match.
-- **Open: NOTHING — the full-BG3 identity pivot (incl. the atmosphere push and the
-  corner-knot pick) is COMPLETE (2026-07-24):** PROMPT_12–25 are all resolved (see the
-  ASSET-INTEGRATION ledger above); every plate is integrated, verified, and budgeted. Two
-  OPTIONAL future-polish items remain, neither a loose end nor a regression (rule 27 board is
-  clean): sweeping the reliquary register deeper where earned (compendium tome chrome, login
-  sign-in column, wizard hero altars — enhancement, not a defect), and re-shooting the README
+- **Wave 3 — THE PLATE GRAMMAR (the panel MATERIAL): SHIPPED (2026-07-24).** The owner, having
+  accepted the style-A corners, asked the next question: _"non puoi fare di meglio? … davvero
+  migliorare i bordi delle schede e farli diventare più fighi come Baldur's Gate 3 senza rompere
+  niente? … O abbiamo raggiunto davvero il limite?"_ Research (the owner's spellbook crop + 12 new
+  bg3.wiki UI plates, all viewed; construction confirmed as Noesis/XAML 9-sliced bitmaps) found the
+  gap was NOT the corners: a BG3 panel is cast → **moat** → **directional edge** → body → ornament,
+  and the app shipped the cast, the body, and the ornament with an **undesigned edge** between them
+  — one flat 1px `--border-medium` hairline of a single colour on all four runs, with nothing
+  outside it. Shipped as five per-theme primitives consumed at the shared recipes only
+  (`DESIGN.md` §4 "The plate grammar"): `--plate-rule` (the frame line, now warm brass instead of
+  near-invisible), `--plate-edge` / `--plate-edge-hero` (the moat + the lit-top-left / shaded-
+  bottom-right bevel, at the two tiers), `--plate-sheen` (the convex crown), `--plate-basin` (the
+  content tray). The two-tier ladder IS the state grammar — quiet plates vs the earned hero
+  registers, differing only in light, never in geometry (BG3's active-vs-sibling read), with the
+  roster card promoting to the hero edge on hover/focus. The style-A knot's -13.3px registration is
+  untouched (the material rides the host's own border box, under the goldwork) and re-verified at
+  all four corners. Guards: `plate-grammar.guard.test.ts` — the per-selector ladder PLUS a
+  structural assertion that no rule may set `box-shadow` on a plate selector without composing a
+  `--plate-*` token back in (box-shadow is a REPLACED property: five states — light
+  `.combat-current` / `.ch-card:hover` / `.info-card` / `.page-head.framed` and
+  `.ch-card[data-selected]` — had silently shed their material, all now fixed and pinned).
+  **The honest answer to "have we reached the limit?" — three of the four remaining BG3 traits are
+  CHOICES already made, one is a real limit** (painted 9-slice frames), and dark's missing specular
+  crown is a second, measured one. All four non-goals, with their reasoning and numbers, are written
+  up ONCE in `DESIGN.md` §4 "The plate grammar" — read them there, not here.
+- **Open: NOTHING — the full-BG3 identity pivot (incl. the atmosphere push, the
+  corner-knot pick, and the plate-material grammar) is COMPLETE (2026-07-24):** PROMPT_12–25 are
+  all resolved (see the ASSET-INTEGRATION ledger above); every plate is integrated, verified, and
+  budgeted. Two OPTIONAL future-polish items remain, neither a loose end nor a regression (rule 27
+  board is clean): sweeping the reliquary register deeper where earned (compendium tome chrome,
+  login sign-in column, wizard hero altars — enhancement, not a defect), and re-shooting the README
   screenshots now that the art push has settled.
 
 **Status: SHIPPED (dark flagship) — released in v0.18.0 (2026-07-07).** The owner-ratified evolution

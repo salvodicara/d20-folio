@@ -2407,10 +2407,13 @@ button.pr-dot.lg::before {
   position: relative;
   width: 100%;
   max-width: 32rem;
-  background: var(--bg-surface-2);
+  /* HERO tier of the plate grammar (index.css §05b): a dialog is the app's most
+     earned register, so it wears the brightest metal in the deepest moat AND the
+     convex sheen — the plate the user is being asked to act on. */
+  background: var(--plate-sheen), var(--bg-surface-2);
   border: 1px solid var(--border-accent);
   border-radius: 0;
-  box-shadow: var(--elev-modal);
+  box-shadow: var(--elev-modal), var(--plate-edge-hero);
 }
 .modal.sm {
   max-width: 24rem;
@@ -7103,7 +7106,11 @@ button.trk-pip:active {
       transparent
     )
   );
-  box-shadow: var(--elev-raised);
+  /* HERO tier of the plate grammar (index.css §05b): the masthead is an earned
+     register (Constitution §4.16), so its gilt edge takes the brighter metal in
+     the deeper moat — the same geometry the quiet plates wear, richer light.
+     The corner knot rides the SAME 1px border stroke, unchanged. */
+  box-shadow: var(--elev-raised), var(--plate-edge-hero);
 }
 @media (max-width: 640px) {
   .page-head.framed {
@@ -8085,15 +8092,22 @@ button.create-need:focus-visible .create-need-chev {
   gap: var(--sp-4);
 }
 
+/* THE PLATE GRAMMAR (index.css §05b) — the roster tile was the flattest surface
+   in the app (a 2-stop gradient behind a uniform 1px line). It now carries the
+   full quiet-tier material: the convex sheen crown, the lit/shaded edge lip in
+   its moat, and the basin that drops the content below the rim. Hover promotes
+   the edge to the HERO metal — the BG3 active-vs-sibling read, applied to the
+   card the pointer is on (state, not decoration). */
 .ch-card {
   position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  border: 1px solid var(--border-medium);
+  background:
+    var(--plate-sheen), linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
+  border: 1px solid var(--plate-rule);
   border-radius: var(--radius-xl);
-  box-shadow: var(--elev-raised);
+  box-shadow: var(--elev-raised), var(--plate-edge), var(--plate-basin);
   overflow: hidden;
   transition:
     transform var(--m-fast) var(--ease-settle),
@@ -8104,7 +8118,7 @@ button.create-need:focus-visible .create-need-chev {
 .ch-card:hover {
   transform: translateY(-2px);
   border-color: var(--border-accent);
-  box-shadow: var(--elev-floating);
+  box-shadow: var(--elev-floating), var(--plate-edge-hero), var(--plate-basin);
 }
 /* Pressed feedback on tap — matches the sibling .rest-card press vocabulary
    (tapping a roster card to open the sheet was the only nav tile with no
@@ -8119,7 +8133,12 @@ button.create-need:focus-visible .create-need-chev {
 .ch-card:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: var(--elev-floating), var(--illumination);
+  /* `--plate-basin` is carried at the SAME list position as on hover/rest, so the
+     basin does not vanish on keyboard focus AND the box-shadow transition stays
+     interpolable: mismatched inset-ness at a list position forces CSS to animate
+     the whole shadow discretely, which made focus snap instead of settle. */
+  box-shadow:
+    var(--elev-floating), var(--plate-edge-hero), var(--plate-basin), var(--illumination);
 }
 .ch-card.retired {
   opacity: 0.62;
@@ -8127,7 +8146,7 @@ button.create-need:focus-visible .create-need-chev {
 .ch-card.retired:hover {
   opacity: 0.82;
   transform: none;
-  box-shadow: var(--elev-raised);
+  box-shadow: var(--elev-raised), var(--plate-edge), var(--plate-basin);
 }
 /* (H8) Carry the class domain pigment to the card itself (same ramp as the
    portrait well) so it can crown the tile with a faint accent. Additive — the
@@ -8463,8 +8482,15 @@ button.create-need:focus-visible .create-need-chev {
    carries the bulk actions (Delete now; the list is data-driven for more later). */
 .ch-card[data-selected] {
   border-color: var(--border-accent);
+  /* Later than `.ch-card:hover` at EQUAL specificity, so this rule wins whenever a
+     card is selected and replaces the whole box-shadow — the plate material has to
+     be re-composed or a selected card loses its edge and basin (a state change must
+     never cost a surface its substance). Quiet tier: selection is a mode, not the
+     hero promotion hover/focus earn. */
   box-shadow:
     var(--elev-floating),
+    var(--plate-edge),
+    var(--plate-basin),
     inset 0 0 0 1px color-mix(in oklab, var(--accent-primary) 55%, transparent);
 }
 /* Brighten the domain-pigment crown on a selected card so the whole tile reads "on". */
@@ -9575,7 +9601,10 @@ button.create-need:focus-visible .create-need-chev {
     0 0;
   background-repeat: no-repeat, no-repeat;
   background-blend-mode: soft-light, normal;
-  box-shadow: var(--elev-raised);
+  /* HERO tier of the plate grammar (index.css §05b) — the codex leaf is an
+     earned reading register, so its gilt edge takes the brighter metal in the
+     deeper moat, seating the bound sheet on the field. */
+  box-shadow: var(--elev-raised), var(--plate-edge-hero);
   overflow: hidden;
 }
 /* A hairline inner gilt rule — the inked margin of the page, set in from the edge,
@@ -9589,7 +9618,7 @@ button.create-need:focus-visible .create-need-chev {
   pointer-events: none;
 }
 [data-theme="light"] .tome-leaf-surface {
-  box-shadow: var(--elev-raised), var(--gilt-glow);
+  box-shadow: var(--elev-raised), var(--plate-edge-hero), var(--gilt-glow);
 }
 /* OWN-23 / BG3-identity materials (DESIGN.md §13) — DARK theme reads the leaf as an
    ancient scroll by candlelight: the surface is the DEDICATED dark-vellum plate
@@ -9615,6 +9644,7 @@ button.create-need:focus-visible .create-need-chev {
   background-blend-mode: normal, normal;
   box-shadow:
     var(--elev-raised),
+    var(--plate-edge-hero),
     inset 0 0 70px 24px color-mix(in oklab, #000 62%, var(--gold-leaf-900));
 }
 
@@ -13538,17 +13568,23 @@ button.tr-pip:active {
 .info-card {
   /* Embossed parchment tile: a faint top-lit gradient (surface catching light at
      the top → settling to base) over a defined brass edge + the resting drop, so
-     the card reads as a struck tome panel rather than a flat fill. */
-  background: linear-gradient(
-    180deg,
-    var(--bg-surface-2),
-    color-mix(in oklab, var(--bg-surface-2) 82%, var(--bg-surface-1))
-  );
-  border: 1px solid var(--border-medium);
+     the card reads as a struck tome panel rather than a flat fill.
+     THE PLATE GRAMMAR (index.css §05b) adds what a flat gradient tile never had:
+     the convex `--plate-sheen` crown, the lit/shaded `--plate-edge` lip in its
+     moat, and the `--plate-basin` tray that seats the content below the rim.
+     Quiet tier — an info card is a sibling plate, never the active one. */
+  background:
+    var(--plate-sheen),
+    linear-gradient(
+      180deg,
+      var(--bg-surface-2),
+      color-mix(in oklab, var(--bg-surface-2) 82%, var(--bg-surface-1))
+    );
+  border: 1px solid var(--plate-rule);
   border-radius: var(--radius-lg);
   padding: var(--sp-3) var(--sp-4);
   margin-bottom: var(--sp-4);
-  box-shadow: var(--elev-resting);
+  box-shadow: var(--elev-resting), var(--plate-edge), var(--plate-basin);
 }
 .info-card.flush {
   padding: 0 var(--sp-3);
@@ -13590,10 +13626,13 @@ button.tr-pip:active {
   gap: 10px;
   min-width: 0;
   padding: 14px;
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  border: 1px solid var(--border-medium);
+  /* Quiet tier of the plate grammar (index.css §05b) — the party tile shares the
+     roster card's material vocabulary, so it takes the same sheen/edge/basin. */
+  background:
+    var(--plate-sheen), linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
+  border: 1px solid var(--plate-rule);
   border-radius: var(--radius-lg);
-  box-shadow: var(--elev-resting);
+  box-shadow: var(--elev-resting), var(--plate-edge), var(--plate-basin);
   overflow: hidden;
 }
 .party-card[data-role="dm"] {
@@ -13606,20 +13645,31 @@ button.tr-pip:active {
    no animation (a pulse would read AI-generated; less is more). */
 .combat-current {
   border-color: color-mix(in oklab, var(--accent-primary) 55%, var(--border-medium));
+  /* The plate grammar's LITERAL active plate (index.css §05b): whoever's turn it
+     is IS the active panel, so it wears the HERO edge — the same promotion a
+     roster card takes under the pointer. It is also a correctness fix: this rule
+     REPLACES the host's whole box-shadow, so without composing the plate edge
+     back in, a card would silently shed its material the moment it became the
+     current combatant (a state change must never cost a surface its substance). */
   box-shadow:
     0 0 0 2px var(--accent-primary),
     0 0 0 5px color-mix(in oklab, var(--accent-glow) 20%, transparent),
     0 6px 18px -6px color-mix(in oklab, var(--accent-primary) 45%, transparent),
-    var(--elev-raised);
+    var(--elev-raised),
+    var(--plate-edge-hero);
 }
 [data-theme="light"] .combat-current {
   /* Light needs a deeper ring for AA contrast on the pale card (impeccable §2.4). */
   border-color: color-mix(in oklab, var(--accent-primary) 70%, #140d04);
+  /* The light TWIN of the rule above replaces the whole box-shadow again, so it
+     re-composes the hero edge for exactly the same reason — otherwise the active
+     combatant shed its plate in light only. */
   box-shadow:
     0 0 0 2px color-mix(in oklab, var(--accent-primary) 82%, #140d04),
     0 0 0 5px color-mix(in oklab, var(--accent-primary) 26%, transparent),
     0 6px 16px -6px color-mix(in oklab, var(--accent-primary) 38%, transparent),
-    var(--elev-raised);
+    var(--elev-raised),
+    var(--plate-edge-hero);
 }
 /* A 2px gold crown-line on the DM tile (a graphic cue, never a flat fill). */
 .party-card[data-role="dm"]::before {
@@ -14077,11 +14127,16 @@ button.party-avatar-btn:focus-visible {
    that doubled the dark gold highlight, which — on a gilt-framed rounded panel —
    pooled into a visible "gold corner" arc at the top corners in dark mode only
    (absent in light, hence inconsistent). One sheen reads clean in both themes. ── */
+/* THE PLATE GRAMMAR (index.css §05b) — the panel's own 1px border is lit from
+   the top-left and shaded on the right (`--plate-edge`), and the whole plate
+   sits in a dark moat, so the edge reads as a rolled forged lip on an object
+   rather than a drawn outline around a region. Quiet tier: an ordinary panel is
+   a sibling, not the active plate (BG3's active-vs-sibling grammar). */
 .folio-panel {
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  border: 1px solid var(--border-medium);
+  border: 1px solid var(--plate-rule);
   border-radius: var(--radius-xl);
-  box-shadow: var(--elev-resting);
+  box-shadow: var(--elev-resting), var(--plate-edge);
 }
 /* BG3-identity material (DESIGN.md §13) — DARK theme lays the seam-blended
    panel-leather grain UNDER a translucent copy of the surface gradient: the
@@ -14112,10 +14167,14 @@ button.party-avatar-btn:focus-visible {
   z-index: -1;
   border-radius: calc(var(--radius-xl) - 1px);
   opacity: var(--panel-alpha);
-  /* Smoke vignette (full-BG3 push): the panel darkens toward its lower edges the
-     way BG3's plates recede into candle-shadow — a top-lit material, not a flat
-     sheet. Darkening only (the composite-floor guard pins the BRIGHTEST stop,
-     which is unchanged) and light text at the edges only GAINS contrast. */
+  /* The smoke vignette darkens toward the lower edges the way BG3's plates recede
+     into candle-shadow. NO convex specular is layered here: dark's `--plate-sheen`
+     is `none` (index.css §05b, pinned by `plate-grammar.guard.test.ts`), so the
+     token would paint nothing — dark's convexity is carried by the surface-2 →
+     surface-1 gradient plus this vignette. Re-deriving the brightest composite in
+     `verdict-ink-contrast.test.ts` (which today models the panel ceiling as
+     `--bg-surface-2` and has NO sheen term) is a precondition for ever giving dark
+     one. */
   background:
     radial-gradient(130% 115% at 50% -8%, transparent 58%, rgba(0, 0, 0, 0.32) 100%),
     linear-gradient(
@@ -14166,6 +14225,7 @@ button.party-avatar-btn:focus-visible {
      plate reads sunlit-from-above, DESIGNED not adapted (a black vignette would
      read as grime on vellum). Faint by intent: the ivory must stay bright. */
   background:
+    var(--plate-sheen),
     radial-gradient(130% 115% at 50% -8%, transparent 62%, rgba(74, 58, 36, 0.1) 100%),
     linear-gradient(
       180deg,
@@ -14177,9 +14237,10 @@ button.party-avatar-btn:focus-visible {
   background-size:
     auto,
     auto,
+    auto,
     512px 512px,
     auto;
-  background-repeat: no-repeat, no-repeat, repeat, no-repeat;
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat, no-repeat;
   /* The light --elev-resting inset pair (struck-metal top sheen + umber bottom
      edge), re-carried here because the pseudo paints over the element's own
      inset shadows. */
@@ -14208,6 +14269,12 @@ button.party-avatar-btn:focus-visible {
   position: relative;
   border-color: color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium));
 }
+/* HERO tier of the plate grammar (index.css §05b) — the gilt hero band is an
+   earned register, so it out-lights the quiet `.folio-panel` edge it composes
+   with. Same geometry, richer metal: BG3's active plate against its siblings. */
+.folio-panel.gilt-frame {
+  box-shadow: var(--elev-resting), var(--plate-edge-hero);
+}
 /* The ornamented gilt band goes SQUARE (the one-line law, owner 2026-07-24) so
    the corner ornament seats on a true crossing of the band's own border; the
    dark material pseudo follows (it re-carries the panel fill at radius-xl-1). */
@@ -14220,7 +14287,7 @@ button.party-avatar-btn:focus-visible {
    edge so the most prominent gilded surface reads candlelit + magical, not flat
    cream. Decorative shadow only (text lives on opaque content), so AA is untouched. */
 [data-theme="light"] .folio-panel.gilt-frame {
-  box-shadow: var(--elev-resting), var(--gilt-glow);
+  box-shadow: var(--elev-resting), var(--plate-edge-hero), var(--gilt-glow);
 }
 
 /* ── Corner goldwork (the full-BG3 identity push, owner-ratified 2026-07-16;
@@ -14775,12 +14842,18 @@ button.party-avatar-btn:focus-visible {
    The warmth now lives in the surface ramp itself (the [data-theme=light] surfaces
    are gilt cream, not plain white — see the § 01 LIGHT block), so the panel/card
    gradients read as gold-on-gold vellum without per-recipe tints. The framed
-   panels just take a gold-touched edge so the gild reads as a gilded frame. */
+   panels just take a gold-touched edge so the gild reads as a gilded frame.
+   NOTE (plate grammar): this OUT-SPECIFIES the `border: 1px solid
+   var(--plate-rule)` binding, so in LIGHT the panel wears this gilt edge rather
+   than the token — deliberate (the panel and the info card want different gilt
+   shares, and `--plate-rule` is an INHERITED custom property, so re-declaring it
+   per recipe would leak into nested plates). `plate-grammar.guard.test.ts` pins
+   both halves. `.info-card`'s light edge is set ONCE, in the OWN-15 light block
+   further down (`[data-theme="light"] .info-card`, alongside its plate
+   box-shadow) — an earlier duplicate here was DEAD (identical selector, overridden
+   by that later rule) and was removed. */
 [data-theme="light"] .folio-panel {
   border-color: color-mix(in oklab, var(--border-medium) 68%, var(--accent-primary));
-}
-[data-theme="light"] .info-card {
-  border-color: color-mix(in oklab, var(--border-medium) 76%, var(--accent-primary));
 }
 
 /* ── Mobile bottom-nav (C2) — the phone realm switcher. A fixed carved brass bar
@@ -17892,7 +17965,11 @@ button.econ-tok-filter:active .econ-disc {
     linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
 }
 [data-theme="light"] .ch-card:hover {
-  box-shadow: var(--elev-floating), var(--gilt-glow-sm);
+  /* Out-specifies the shared `.ch-card:hover`, so the quiet→hero promotion has to
+     be re-composed here or light silently loses BOTH the edge and the basin on
+     hover (the documented ladder would then be dark-only). */
+  box-shadow:
+    var(--elev-floating), var(--plate-edge-hero), var(--plate-basin), var(--gilt-glow-sm);
 }
 [data-theme="light"] .statcard-face {
   background:
@@ -17936,9 +18013,12 @@ button.econ-tok-filter:active .econ-disc {
     var(--bg-surface-2)
   );
   border-color: color-mix(in oklab, var(--accent-primary) 46%, var(--border-medium));
+  /* Replaces the shared `.page-head.framed` box-shadow, so the HERO plate edge is
+     re-composed — the masthead is an earned register in both themes. */
   box-shadow:
     var(--gilt-glow),
     var(--elev-raised),
+    var(--plate-edge-hero),
     inset 0 1px 0 var(--emboss-sheen);
 }
 
@@ -18212,8 +18292,13 @@ button.econ-tok-filter:active .econ-disc {
 }
 [data-theme="light"] .info-card {
   border-color: color-mix(in oklab, var(--border-medium) 60%, var(--accent-primary));
+  /* Replaces the shared `.info-card` box-shadow, so the QUIET plate material is
+     re-composed here — without it light info cards shipped with no edge lip and
+     no basin at all, permanently (never a state, just absent). */
   box-shadow:
     var(--elev-resting),
+    var(--plate-edge),
+    var(--plate-basin),
     0 0 0 1px color-mix(in oklab, var(--accent-primary) 14%, transparent);
 }
 [data-theme="light"] .sw[aria-checked="true"],
