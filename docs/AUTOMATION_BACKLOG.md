@@ -1662,7 +1662,8 @@ the `lib/views` seam — not here.
 ## Shipped — provenance in git / CHANGELOG
 
 > Everything that closed the original automation campaign is shipped and lives in git history +
-> `CHANGELOG.md` — it is NOT re-listed here (this doc is the OPEN frontier only). For the record:
+> `CHANGELOG.md` — it is NOT re-listed here (this doc is the doctrine + the closed RA audit record,
+> not a per-item shipped log). For the record:
 >
 > - **The full architectural lever set** (advantage/disadvantage chips, equipment→grant pipeline,
 >   class/subclass-feature choice-grant pickers, fixed prof consumers, immunity render block,
