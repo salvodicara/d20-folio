@@ -36,58 +36,67 @@ const ITALIC = /font-style\s*:\s*(italic|oblique)/;
 /** Selector families whose base rule sets `--font-title` (Cinzel). */
 const CINZEL_FAMILY = /\.(brand-word|page-title|modal-title)/;
 
-describe("Cinzel never italicises (no synthetic oblique on --font-title)", () => {
-  it("no rule block sets --font-title together with an italic font-style", () => {
-    for (const file of CSS_FILES) {
-      const offenders = ruleBlocks(readSrc(file)).filter(
-        (b) => b.decls.includes("var(--font-title)") && ITALIC.test(b.decls)
-      );
-      expect(
-        offenders.map((b) => b.selector),
-        `${file}: Cinzel has no italic face — drop the font-style`
-      ).toEqual([]);
-    }
-  });
-
-  it("no Cinzel-family selector (.brand-word* / .page-title / .modal-title) declares italic", () => {
-    for (const file of CSS_FILES) {
-      const offenders = ruleBlocks(readSrc(file)).filter(
-        (b) => CINZEL_FAMILY.test(b.selector) && ITALIC.test(b.decls)
-      );
-      expect(
-        offenders.map((b) => b.selector),
-        `${file}: these selectors inherit Cinzel — italic would synthesize an oblique`
-      ).toEqual([]);
-    }
-  });
-
-  it("no TSX pairs the font-title utility with the italic utility, nor var(--font-title) with an italic fontStyle", () => {
-    const offenders = srcFiles({ exts: [".tsx"] }).filter((f) => {
-      const src = readSrc(f);
-      // className="… font-title … italic …" (either order) on one element.
-      const classPair = [...src.matchAll(/className=["'`]([^"'`]*)["'`]/g)].some((m) => {
-        const tokens = (m[1] ?? "").split(/\s+/);
-        return tokens.includes("font-title") && tokens.includes("italic");
-      });
-      // Inline style objects: fontFamily var(--font-title) + fontStyle italic.
-      const stylePair = [...src.matchAll(/style=\{\{([^}]*)\}\}/g)].some((m) => {
-        const body = m[1] ?? "";
-        return (
-          body.includes("var(--font-title)") &&
-          /fontStyle\s*:\s*["'](italic|oblique)/.test(body)
+// Explicit 10s suite budget: the static sweeps here read every src/ file from
+// disk, and the file has twice exceeded the 5s default under a loaded parallel
+// full-gate run while green in isolation.
+describe(
+  "Cinzel never italicises (no synthetic oblique on --font-title)",
+  { timeout: 10_000 },
+  () => {
+    it("no rule block sets --font-title together with an italic font-style", () => {
+      for (const file of CSS_FILES) {
+        const offenders = ruleBlocks(readSrc(file)).filter(
+          (b) => b.decls.includes("var(--font-title)") && ITALIC.test(b.decls)
         );
-      });
-      return classPair || stylePair;
+        expect(
+          offenders.map((b) => b.selector),
+          `${file}: Cinzel has no italic face — drop the font-style`
+        ).toEqual([]);
+      }
     });
-    expect(
-      offenders.map((f) => f.replace(SRC, "src")),
-      "Cinzel (--font-title) has no italic face — remove the italic"
-    ).toEqual([]);
-  });
 
-  it("PageHeader renders the Cinzel title bare — never wrapped in <em>", () => {
-    expect(readSrc(resolve(SRC, "components/shared/PageHeader.tsx"))).not.toContain(
-      "<em>"
-    );
-  });
-});
+    it("no Cinzel-family selector (.brand-word* / .page-title / .modal-title) declares italic", () => {
+      for (const file of CSS_FILES) {
+        const offenders = ruleBlocks(readSrc(file)).filter(
+          (b) => CINZEL_FAMILY.test(b.selector) && ITALIC.test(b.decls)
+        );
+        expect(
+          offenders.map((b) => b.selector),
+          `${file}: these selectors inherit Cinzel — italic would synthesize an oblique`
+        ).toEqual([]);
+      }
+    });
+
+    it("no TSX pairs the font-title utility with the italic utility, nor var(--font-title) with an italic fontStyle", () => {
+      const offenders = srcFiles({ exts: [".tsx"] }).filter((f) => {
+        const src = readSrc(f);
+        // className="… font-title … italic …" (either order) on one element.
+        const classPair = [...src.matchAll(/className=["'`]([^"'`]*)["'`]/g)].some(
+          (m) => {
+            const tokens = (m[1] ?? "").split(/\s+/);
+            return tokens.includes("font-title") && tokens.includes("italic");
+          }
+        );
+        // Inline style objects: fontFamily var(--font-title) + fontStyle italic.
+        const stylePair = [...src.matchAll(/style=\{\{([^}]*)\}\}/g)].some((m) => {
+          const body = m[1] ?? "";
+          return (
+            body.includes("var(--font-title)") &&
+            /fontStyle\s*:\s*["'](italic|oblique)/.test(body)
+          );
+        });
+        return classPair || stylePair;
+      });
+      expect(
+        offenders.map((f) => f.replace(SRC, "src")),
+        "Cinzel (--font-title) has no italic face — remove the italic"
+      ).toEqual([]);
+    });
+
+    it("PageHeader renders the Cinzel title bare — never wrapped in <em>", () => {
+      expect(readSrc(resolve(SRC, "components/shared/PageHeader.tsx"))).not.toContain(
+        "<em>"
+      );
+    });
+  }
+);

@@ -116,6 +116,9 @@ describe("CreationWizard — create-success navigation", () => {
     expect(createdChar.character.languageIds).toEqual(["common", "draconic", "dwarvish"]);
   });
 
+  // Explicit 15s budget: the heaviest interaction case in the file (a full
+  // Quick-mode wizard render + ~10 driven picks) has twice exceeded the 5s
+  // default under a loaded parallel full-gate run while green in isolation.
   it("a Monk's tool-proficiency pick yields BOTH the proficiency AND the chosen tool item", async () => {
     renderWizard();
     // Quick mode shows every step in one form. Switch to Monk (role=option
@@ -172,7 +175,7 @@ describe("CreationWizard — create-success navigation", () => {
     const agg = evaluateGrants(resolveAllGrantSources(created.character));
     expect([...agg.toolProficiencies]).toContain("Smith's Tools");
     expect([...agg.toolProficiencies]).toContain("Dice Set");
-  });
+  }, 15_000);
 
   it("explains EVERY unmet requirement when Create is disabled — not just the name (N-A)", () => {
     renderWizard();
