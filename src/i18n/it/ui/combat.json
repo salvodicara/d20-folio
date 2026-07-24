@@ -67,7 +67,7 @@
     "hideRollField": "Il tuo tiro di d20",
     "hideSuccessToast": "Nascosto: Invisibile. Trovarti richiede CD {{total}}",
     "hideFailToast": "Non nascosto: {{total}} contro CD {{dc}}",
-    "hideEndsHint": "Nascondersi termina dopo un attacco, il lancio di un incantesimo con componente Verbale o un rumore forte, o quando un nemico ti trova (Cercare contro il totale della tua prova).",
+    "hideEndsHint": "Nascondersi termina dopo un attacco, il lancio di un incantesimo con componente Verbale o un rumore forte, o quando un nemico ti trova (Ricerca contro il totale della tua prova).",
     "readySpellNote": "Scegli ora un innesco e la risposta che eseguirai con la tua Reazione quando si verifica. Per preparare un incantesimo (con tempo di lancio di un'azione), lancialo ora dalla sua carta: lo slot viene speso e lo mantieni con Concentrazione finché non lo rilasci con la tua Reazione.",
     "outOfAmmoReason": "Munizioni esaurite: {{item}}",
     "loadingOneShotReason": "Ricarica: un colpo per azione",

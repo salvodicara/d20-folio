@@ -359,11 +359,13 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       `base-influence`/`base-magic`/`base-study`/`base-utilize` added as inline `lit` entries (the
       sanctioned bilingual form for engine-authored base actions); `base-search` corrected to the
       2024 Wisdom skills (Insight/Medicine/Perception/Survival) with Investigation moved to the new
-      `base-study` card. IT names from the official IT SRD (Magia/Esaminare/Utilizzare cross-checked
-      against in-repo prose; Influenzare per the SRD action verb pattern). Each new verdict chip is
-      name-restating, so all four join `BASE_ACTIONS_NO_CHIP`. Regression: the RA-20 block in
-      `smart-tracker.test.ts` + the auto-covering dynamic-key-coverage, subtitle-budget, and
-      chip-budget guards.
+      `base-study` card. IT names are the NOUN forms from the official IT SRD 5.2.1 "Azioni" table /
+      glossary — Influenza / Magia / Studio / Utilizzo, plus Ricerca (Search, also corrected from the
+      pre-existing "Cercare", and its `hideEndsHint` cross-reference realigned). Each new verdict chip
+      is name-restating, so all four join `BASE_ACTIONS_NO_CHIP`. Regression: the RA-20 block in
+      `smart-tracker.test.ts` + the auto-covering app-side `i18n-dynamic-key-coverage`,
+      `action-subtitle-budget`, and `i18n-dedup` guards; the `BASE_ACTIONS_NO_CHIP` suppression is
+      enforced in COMPOSED mode by the pack-side `chip-budget.guard.test.ts`.
 - [x] **RA-21 — Exhaustion 6 = death is display-only.** _Conditions · GAP · S3 · rare._ SRD
       "Exhaustion": you die at level 6. Code: clamp + glossary text; no dead-state surfacing. Fix:
       level 6 surfaces the same dead verdict the death-save track uses. **T3.** **SHIPPED

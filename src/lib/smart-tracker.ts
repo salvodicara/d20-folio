@@ -1144,7 +1144,7 @@ export const BASE_ACTIONS: ReadonlyArray<{
     // Intimidation/Performance/Persuasion, or Animal Handling) to sway a
     // creature's attitude. The DM sets the ability + DC (override-first).
     id: "base-influence",
-    name: { en: "Influence", it: "Influenzare" },
+    name: { en: "Influence", it: "Influenza" },
     type: "action",
     effect: {
       en: "Cha/Wis check to sway a creature's attitude",
@@ -1174,7 +1174,7 @@ export const BASE_ACTIONS: ReadonlyArray<{
     // it moved to `base-study`. Which skill applies is the DM's call — no
     // structured DC (override-first, no dice).
     id: "base-search",
-    name: { en: "Search", it: "Cercare" },
+    name: { en: "Search", it: "Ricerca" },
     type: "action",
     effect: {
       en: "Wis check: Insight/Medicine/Perception/Survival",
@@ -1185,7 +1185,7 @@ export const BASE_ACTIONS: ReadonlyArray<{
     // RA-20 — 2024 Study action: an Intelligence check (Arcana/History/
     // Investigation/Nature/Religion) to recall or work out lore.
     id: "base-study",
-    name: { en: "Study", it: "Esaminare" },
+    name: { en: "Study", it: "Studio" },
     type: "action",
     effect: {
       en: "Int check: Arcana/History/Investigation/Nature/Religion",
@@ -1196,7 +1196,7 @@ export const BASE_ACTIONS: ReadonlyArray<{
     // RA-20 — 2024 Utilize action: use a nonmagical object that needs an action
     // (pull a lever, pour a flask).
     id: "base-utilize",
-    name: { en: "Utilize", it: "Utilizzare" },
+    name: { en: "Utilize", it: "Utilizzo" },
     type: "action",
     effect: {
       en: "Use a nonmagical object needing an action",

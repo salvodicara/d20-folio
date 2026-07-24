@@ -628,11 +628,14 @@ describe("resolveActions — base actions", () => {
   });
 
   it("RA-20 — the four new actions localize to the official IT SRD names", () => {
+    // The official IT SRD 5.2.1 "Azioni" table uses the NOUN forms:
+    // Influenza / Magia / Studio / Utilizzo (and Ricerca for Search).
     const it = localizeActions(makeChar(), "it");
-    expect(it.find((a) => a.id === "base-influence")?.name).toBe("Influenzare");
+    expect(it.find((a) => a.id === "base-influence")?.name).toBe("Influenza");
     expect(it.find((a) => a.id === "base-magic")?.name).toBe("Magia");
-    expect(it.find((a) => a.id === "base-study")?.name).toBe("Esaminare");
-    expect(it.find((a) => a.id === "base-utilize")?.name).toBe("Utilizzare");
+    expect(it.find((a) => a.id === "base-study")?.name).toBe("Studio");
+    expect(it.find((a) => a.id === "base-utilize")?.name).toBe("Utilizzo");
+    expect(it.find((a) => a.id === "base-search")?.name).toBe("Ricerca");
     expect(it.find((a) => a.id === "base-search")?.summary.effect).toBe(
       "Prova Sag: Intuizione/Medicina/Percezione/Sopravvivenza"
     );
