@@ -2,15 +2,19 @@
  * GR7 lock — every `advantage-on` / `disadvantage-on` grant's `vs` field across
  * `src/data/**` is a STABLE ID-SLUG, never an English display string.
  *
- * Why this exists: the `vs` field is metadata only — it is read by NO consumer
- * for display (the rail renders the clause's localized `description`, gated by
- * `rollType`/`mode`, never by `vs`; `hasInitiativeAdvantage` gates on `rollType`).
- * So an English literal in `vs` (e.g. `"Death Saving Throws"`, `"Charmed"`) is a
- * GR7 language LEAK by construction — a display-shaped string living in code —
- * even though it never reaches the screen today. This guard makes that
- * impossible: any future English `vs` literal fails CI here. The localized label
- * that DOES render lives in the SRD i18n catalogue (the grant's `description`),
- * resolved at the presenter boundary — never from `vs`.
+ * Why this exists: `vs` is a MACHINE token, never display text — nothing renders
+ * it (the rail renders the clause's localized `description`), while engine
+ * consumers match it EXACTLY: `passiveAdvantageStep` (`compute.ts`) folds the ±5
+ * passive step only for `vs === "perception" | "insight" | "investigation"`, and
+ * `condition-effects.ts` detects the concentration-save advantage by
+ * `vs === "concentration-con-save"`. So an English literal in `vs` (e.g.
+ * `"Death Saving Throws"`, `"Charmed"`) is a GR7 language LEAK by construction —
+ * a display-shaped string living in code — and a drifted spelling silently
+ * unhooks an engine consumer. This guard makes both impossible: any future
+ * English `vs` literal fails CI here. The localized label that DOES render lives
+ * in the SRD i18n catalogue (the grant's `description`), resolved at the
+ * presenter boundary — never from `vs`. The authoring obligation that pairs with
+ * it (ONE `vs` slug = ONE scope) is stated in `docs/MECHANICS.md`.
  *
  * Pure string crawl over the memoized `src/**` snapshot (golden rule 13) — no
  * data import, no engine, no locale.
@@ -59,9 +63,14 @@ const I18N_ROOTS = [
  * carries the polarity as its label, so such a description renders as a stutter —
  * "Adv. Advantage on Initiative rolls." — beside sibling rows in the terse
  * roll-naming register ("Adv. Initiative rolls"). Post-sweep defect G.
+ *
+ * The optional `<Label>: ` prefix is what a bare `^` anchor could not see: Robe
+ * of Eyes shipped "All-Around Vision: Advantage on Wisdom (Perception) checks…",
+ * which stutters on the rail exactly the same way yet slipped straight past the
+ * anchored form. A label prefix never licenses the polarity behind it.
  */
 const POLARITY_OPENER =
-  /^(Advantage|Disadvantage) on |^(Vantaggio|Svantaggio) (ai|agli|alle|nei|nelle) /;
+  /^(?:[^:]{1,40}: )?(?:(?:Advantage|Disadvantage) on |(?:Vantaggio|Svantaggio) (?:ai|agli|alle|nei|nelle) )/;
 
 /** Walk `<root>/{en,it}/srd/*.json` collecting every `*.grants.*` description. */
 function grantDescriptions(): Array<{ file: string; key: string; text: string }> {
