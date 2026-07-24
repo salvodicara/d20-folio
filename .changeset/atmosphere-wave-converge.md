@@ -2,9 +2,9 @@
 "d20-folio": patch
 ---
 
-fix(identity): converge the atmosphere wave — first-paint ghost skip, duration guard, light footer ink, lens-blade wording
+fix(identity): converge the atmosphere wave — first-paint ghost skip, duration guard, lens-blade wording
 
-Four review findings on the backdrop-crossfade + Starbound-frame wave, applied together:
+Three review findings on the backdrop-crossfade + Starbound-frame wave, applied together:
 
 - **First-paint double-entrance.** Cold-loading directly onto a realm route ran the backdrop
   crossfade ghost AND the painter's one-shot `app-bg-fade` entry animation at once — a doubled
@@ -17,12 +17,6 @@ Four review findings on the backdrop-crossfade + Starbound-frame wave, applied t
   removal fallback assuming CSS ≤ `END_MS`). A unit test now reads the `.bg-ghost` duration out of
   the CSS verbatim and pins it equal to `FADE_MS` and below `END_MS`, so the two can't silently
   drift.
-- **Light-over-art footer legibility.** The gold-leaf "d20 Folio" wordmark sat honey-on-honey
-  against the daylight plates at the raised 0.75 presence (~3:1, the weakest text moment). Light gilt
-  that cannot glow reads as engraved deep ink, so the light footer brand takes the deep bronze
-  `--accent-primary-deep` register — the same engraved-bronze-on-ivory ink the light hero corners use
-  — crisp and distinct from the cream fine print, pinned by the light-theme legibility guard. Dark is
-  untouched.
 - **Ornament-vocabulary wording.** `DESIGN.md` §5's no-organic-foliage law was self-contradicted by
   the seat divider's "slender leaf blades"; the SVG is a geometric vesica/lens, so the element is
   renamed "lens blades" (and the matching folio.css comment) so the law stands unqualified.
