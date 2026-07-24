@@ -1914,14 +1914,15 @@ export interface QualifiedDefenseNote {
 
 /**
  * A condition-immunity line entry (m1). Almost always the bare ConditionId; the
- * qualified prints — "Charmed (with Mind Blank)" on the archmage-class entries —
- * carry a CLOSED note token, localized via `monster.condNote_<token>` and
- * rendered as a text affix beside the condition chip (§E.2). Grow the union
- * only when the SRD prints a new qualifier.
+ * qualified prints — "Charmed (with Mind Blank)" on the archmage-class entries,
+ * "Charmed (except from its vampire master)" on the vampire familiar — carry a
+ * CLOSED note token, localized via `monster.condNote_<token>` and rendered as a
+ * text affix beside the condition chip (§E.2). Grow the union only when the SRD
+ * prints a new qualifier.
  */
 export type MonsterConditionImmunity =
   | ConditionId
-  | { id: ConditionId; note: "with-mind-blank" };
+  | { id: ConditionId; note: "with-mind-blank" | "except-vampire-master" };
 
 /**
  * A 2024 (SRD 5.2.1) monster statblock — the bestiary's first-class entity.

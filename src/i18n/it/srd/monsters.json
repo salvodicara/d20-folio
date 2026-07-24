@@ -5329,6 +5329,890 @@
     "name": "Morsi",
     "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 8 (1d4 + 4) danni Perforanti, o 6 (1d8 + 4) danni Perforanti se la colonia è sanguinante, più 10 (3d6) danni da Veleno."
   },
+  "tarrasque": {
+    "name": "Tarrasque"
+  },
+  "tarrasque.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(6/giorno) Se il tarrasque fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "tarrasque.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il tarrasque dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "tarrasque.traits.reflective-carapace": {
+    "name": "Carapace riflettente",
+    "text": "Se il tarrasque è bersagliato da un incantesimo dardo incantato o un incantesimo che richiede un tiro per colpire a distanza, tira 1d6. Con un risultato di 1–5, il tarrasque non subisce alcun effetto. Con un risultato di 6, il tarrasque non subisce alcun effetto e riflette l'incantesimo contro l'incantatore, rendendolo il suo bersaglio."
+  },
+  "tarrasque.traits.siege-monster": {
+    "name": "Mostro da assedio",
+    "text": "Il tarrasque infligge danni doppi a oggetti e strutture."
+  },
+  "tarrasque.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il tarrasque effettua un attacco Morso e altri tre attacchi, usando Artiglio o Coda in qualsiasi combinazione."
+  },
+  "tarrasque.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +19, portata 4,5 m. Colpito: 36 (4d12 + 10) danni Perforanti, e il bersaglio è Afferrato (CD 20 per sfuggire). Finché la presa perdura, il bersaglio è Trattenuto e non può teletrasportarsi."
+  },
+  "tarrasque.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +19, portata 4,5 m. Colpito: 28 (4d8 + 10) danni Taglienti."
+  },
+  "tarrasque.actions.tail": {
+    "name": "Coda",
+    "text": "Tiro per colpire in mischia: +19, portata 9 m. Colpito: 23 (3d8 + 10) danni Contundenti. Se il bersaglio è una creatura di taglia Enorme o inferiore, cade a terra Prono."
+  },
+  "tarrasque.actions.thunderous-bellow": {
+    "name": "Ruggito tonante",
+    "text": "Tiro salvezza su Costituzione: CD 27, ogni creatura e oggetto che non sia indossato o trasportato in un cono di 45 metri. Fallimento: 78 (12d12) danni da Tuono, e il bersaglio è Assordato e Spaventato fino al termine del proprio turno successivo. Successo: danni dimezzati."
+  },
+  "tarrasque.bonusActions.swallow": {
+    "name": "Inghiottire",
+    "text": "Tiro salvezza su Forza: CD 27, una creatura di taglia Grande o inferiore afferrata dal tarrasque (può inghiottire fino a sei creature per volta). Fallimento: il bersaglio viene inghiottito e non è più Afferrato. Una creatura inghiottita è Accecata e Trattenuta e non può teletrasportarsi, ha copertura totale contro attacchi e altri effetti al di fuori del tarrasque e subisce 56 (16d6) danni da Acido all'inizio di ogni turno del tarrasque. Se il tarrasque subisce 60 o più danni in un singolo turno da una creatura al suo interno, deve superare un tiro salvezza su Costituzione con CD 20 alla fine di quel turno, altrimenti rigurgita tutte le creature inghiottite, ognuna delle quali cade a terra Prona in uno spazio entro 3 metri dal tarrasque. Se il tarrasque muore, qualsiasi creatura inghiottita non è più Trattenuta e può fuggire dal cadavere usando 6 metri di movimento, uscendo Prona."
+  },
+  "tarrasque.legendaryActions.onslaught": {
+    "name": "Assalto brutale",
+    "text": "Il tarrasque si muove fino a metà della sua velocità ed effettua un attacco Artiglio e un attacco Coda."
+  },
+  "tarrasque.legendaryActions.world-shaking-movement": {
+    "name": "Movimento sismico",
+    "text": "Il tarrasque si muove fino alla sua velocità massima. Alla fine di questo movimento, crea un'onda d'urto istantanea in un'emanazione di 18 metri di cui il tarrasque è il punto di origine. Le creature in quell'area perdono la concentrazione e, se sono di taglia Media o inferiore, cadono a terra Prone. Il tarrasque non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "tiger": {
+    "name": "Tigre"
+  },
+  "tiger.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Taglienti. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra Prono."
+  },
+  "tiger.bonusActions.nimble-escape": {
+    "name": "Fuga agile",
+    "text": "La tigre effettua l'azione di Disimpegno o Nascondersi."
+  },
+  "tough": {
+    "name": "Bruto"
+  },
+  "tough.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il bruto dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno dei suoi alleati si trova entro 1,5 metri dalla creatura e non è Incapacitato."
+  },
+  "tough.actions.mace": {
+    "name": "Mazza",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Contundenti."
+  },
+  "tough.actions.heavy-crossbow": {
+    "name": "Balestra pesante",
+    "text": "Tiro per colpire a distanza: +3, gittata 30/120 m. Colpito: 6 (1d10 + 1) danni Perforanti."
+  },
+  "tough-boss": {
+    "name": "Capo dei bruti"
+  },
+  "tough-boss.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il bruto dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno dei suoi alleati si trova entro 1,5 metri dalla creatura e non è Incapacitato."
+  },
+  "tough-boss.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il bruto effettua due attacchi, usando Martello da guerra o Balestra pesante in qualsiasi combinazione."
+  },
+  "tough-boss.actions.warhammer": {
+    "name": "Martello da guerra",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 12 (2d8 + 3) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore, il bruto lo spinge fino a 3 metri lontano da sé."
+  },
+  "tough-boss.actions.heavy-crossbow": {
+    "name": "Balestra pesante",
+    "text": "Tiro per colpire a distanza: +4, gittata 30/120 m. Colpito: 13 (2d10 + 2) danni Perforanti."
+  },
+  "treant": {
+    "name": "Treant"
+  },
+  "treant.traits.siege-monster": {
+    "name": "Mostro da assedio",
+    "text": "Il treant infligge danni doppi a oggetti e strutture."
+  },
+  "treant.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il treant effettua due attacchi Schianto."
+  },
+  "treant.actions.slam": {
+    "name": "Schianto",
+    "text": "Tiro per colpire in mischia: +10, portata 1,5 m. Colpito: 16 (3d6 + 6) danni Contundenti."
+  },
+  "treant.actions.hail-of-bark": {
+    "name": "Proiettili di corteccia",
+    "text": "Tiro per colpire a distanza: +10, gittata 54 m. Colpito: 28 (4d10 + 6) danni Perforanti."
+  },
+  "treant.actions.animate-trees": {
+    "name": "Animare alberi",
+    "text": "(1/giorno) Il treant anima magicamente fino a due alberi nel suo campo visivo in un raggio di 18 metri. Gli alberi usano la scheda delle statistiche del treant, fatta eccezione per i punteggi di Intelligenza e Carisma pari a 1; inoltre, non possono parlare e non possiedono quest'azione. L'albero svolge il suo turno subito dopo il treant, condivide lo stesso punteggio di iniziativa e gli obbedisce. Un albero resta animato per 1 giorno o fino alla morte, finché non muore il treant o finché non si trova a più di 36 metri da esso. Dopodiché, qualora possibile, l'albero mette radici."
+  },
+  "triceratops": {
+    "name": "Triceratopo"
+  },
+  "triceratops.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il triceratopo effettua due attacchi Trafiggere."
+  },
+  "triceratops.actions.gore": {
+    "name": "Trafiggere",
+    "text": "Tiro per colpire in mischia: +9, portata 1,5 m. Colpito: 19 (2d12 + 6) danni Perforanti. Se il bersaglio è una creatura di taglia Enorme o inferiore e il triceratopo si è mosso di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio subisce 9 (2d8) danni Perforanti extra e cade a terra Prono."
+  },
+  "troll": {
+    "name": "Troll"
+  },
+  "troll.traits.loathsome-limbs": {
+    "name": "Arti abominevoli",
+    "text": "Se il troll termina qualsiasi turno sanguinante e subisce più di 15 danni Taglienti durante tale turno, uno dei suoi arti viene reciso, cade nello spazio del troll e diventa un arto di troll. L'arto svolge il suo turno subito dopo quello del troll. Il troll ha 1 livello di indebolimento per ogni arto mancante e fa ricrescere gli arti la prossima volta che recupera punti ferita."
+  },
+  "troll.traits.regeneration": {
+    "name": "Rigenerazione",
+    "text": "Il troll recupera 15 punti ferita all'inizio di ogni suo turno. Se il troll subisce danni da Acido o Fuoco, questo tratto non funziona all'inizio del suo turno successivo. Il troll muore solo se inizia il turno con 0 punti ferita e non si rigenera."
+  },
+  "troll.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il troll effettua tre attacchi Squarcio."
+  },
+  "troll.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 11 (2d6 + 4) danni Taglienti."
+  },
+  "troll.bonusActions.charge": {
+    "name": "Carica",
+    "text": "Il troll si muove fino a metà della sua velocità in linea retta verso un nemico che è in grado di vedere."
+  },
+  "troll-limb": {
+    "name": "Arto di troll"
+  },
+  "troll-limb.traits.regeneration": {
+    "name": "Rigenerazione",
+    "text": "L'arto recupera 5 punti ferita all'inizio di ogni suo turno. Se l'arto subisce danni da Acido o Fuoco, questo tratto non funziona all'inizio del suo turno successivo. L'arto muore solo se inizia il suo turno con 0 punti ferita e non si rigenera."
+  },
+  "troll-limb.traits.troll-spawn": {
+    "name": "Generare troll",
+    "text": "Stranamente, l'arto possiede gli stessi sensi di un troll integro. Se non viene distrutto entro 24 ore, tira 1d12. Con un risultato di 12, l'arto diventa un troll, altrimenti avvizzisce e si decompone."
+  },
+  "troll-limb.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 9 (2d4 + 4) danni Taglienti."
+  },
+  "tyrannosaurus-rex": {
+    "name": "Tirannosauro"
+  },
+  "tyrannosaurus-rex.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il tirannosauro effettua un attacco Morso e un attacco Coda."
+  },
+  "tyrannosaurus-rex.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +10, portata 3 m. Colpito: 33 (4d12 + 7) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 17 per sfuggire). Mentre è Afferrato, il bersaglio è Trattenuto e non può essere bersagliato dalla Coda del tirannosauro."
+  },
+  "tyrannosaurus-rex.actions.tail": {
+    "name": "Coda",
+    "text": "Tiro per colpire in mischia: +10, portata 4,5 m. Colpito: 25 (4d8 + 7) danni Contundenti. Se il bersaglio è una creatura di taglia Enorme o inferiore, cade a terra Prono."
+  },
+  "unicorn": {
+    "name": "Unicorno"
+  },
+  "unicorn.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno) Se l'unicorno fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "unicorn.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "L'unicorno dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "unicorn.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'unicorno effettua un attacco Zoccoli e un attacco Corno radioso."
+  },
+  "unicorn.actions.hooves": {
+    "name": "Zoccoli",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 11 (2d6 + 4) danni Contundenti."
+  },
+  "unicorn.actions.radiant-horn": {
+    "name": "Corno radioso",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 9 (1d10 + 4) danni Radiosi."
+  },
+  "unicorn.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "L'unicorno lancia uno dei seguenti incantesimi senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 14): A volontà: Artificio druidico, individuazione del bene e del male. 1/giorno ciascuno: Calmare emozioni, dissolvi il bene e il male, intralciare, parola del ritiro, passare senza tracce."
+  },
+  "unicorn.bonusActions.unicorns-blessing": {
+    "name": "Benedizione dell'unicorno",
+    "text": "L'unicorno tocca un'altra creatura col suo corno e lancia cura ferite o ristorare inferiore su di essa, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "unicorn.legendaryActions.charging-horn": {
+    "name": "Incornata in carica",
+    "text": "L'unicorno si muove fino a metà della sua velocità senza provocare attacchi di opportunità, ed effettua un attacco Corno radioso."
+  },
+  "unicorn.legendaryActions.shimmering-shield": {
+    "name": "Scudo luccicante",
+    "text": "L'unicorno prende di mira se stesso o una creatura che è in grado di vedere entro 18 metri da sé. Il bersaglio ottiene 10 (3d6) punti ferita temporanei, e la sua CA aumenta di 2 fino al termine del turno successivo dell'unicorno. L'unicorno non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "vampire": {
+    "name": "Vampiro"
+  },
+  "vampire.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana) Se il vampiro fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "vampire.traits.misty-escape": {
+    "name": "Fuga nebbiosa",
+    "text": "Se il vampiro scende a 0 punti ferita al di fuori del suo luogo di riposo, usa Mutaforma per trasformarsi in nebbia (nessuna azione richiesta). Se non può usare Mutaforma, viene distrutto. Finché ha 0 punti ferita in forma nebbiosa, non può tornare alla forma di vampiro e deve raggiungere il suo luogo di riposo entro 2 ore, altrimenti viene distrutto. Una volta raggiunto il luogo di riposo, torna alla forma di vampiro ed è Paralizzato finché non recupera un qualsiasi numero di punti ferita; recupera 1 punto ferita una volta trascorsa 1 ora in questo stato."
+  },
+  "vampire.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "Il vampiro può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "vampire.traits.vampire-weakness": {
+    "name": "Debolezze dei vampiri",
+    "text": "Il vampiro ha le seguenti debolezze: Acqua corrente. Il vampiro subisce 20 danni da Acido se termina il suo turno nell'acqua corrente. Luce del sole. Il vampiro subisce 20 danni Radiosi quando inizia il suo turno alla luce del sole. Finché è esposto alla luce del sole, subisce svantaggio a tiri per colpire e prove di caratteristica. Paletto nel cuore. Se un'arma che infligge danni Perforanti gli viene conficcata nel cuore mentre è Incapacitato nel suo luogo di riposo, il vampiro è Paralizzato finché non viene rimossa l'arma. Proibizione. Il vampiro non può entrare in casa di qualcuno se non viene invitato da chi vi risiede."
+  },
+  "vampire.actions.multiattack": {
+    "name": "Multiattacco (solo in forma di vampiro)",
+    "text": "Il vampiro effettua due attacchi Colpo tombale e usa Morso."
+  },
+  "vampire.actions.grave-strike": {
+    "name": "Colpo tombale (solo in forma di vampiro)",
+    "text": "Tiro per colpire in mischia: +9, portata 1,5 m. Colpito: 8 (1d8 + 4) danni Contundenti più 7 (2d6) danni Necrotici. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 14 per sfuggire) da una delle due mani."
+  },
+  "vampire.actions.bite": {
+    "name": "Morso (solo in forma di pipistrello o vampiro)",
+    "text": "Tiro salvezza su Costituzione: CD 17, una creatura entro 1,5 metri che sia consenziente, Afferrata, Incapacitata o Trattenuta. Fallimento: 6 (1d4 + 4) danni Perforanti più 13 (3d8) danni Necrotici. I punti ferita massimi del bersaglio sono ridotti di un ammontare pari ai danni Necrotici subiti, e il vampiro recupera punti ferita pari a quell'ammontare. Un umanoide ridotto a 0 punti ferita da questi danni e poi sepolto, risorge al tramonto seguente in forma di progenie vampirica controllata dal vampiro."
+  },
+  "vampire.bonusActions.charm": {
+    "name": "Fascino",
+    "text": "Il vampiro lancia charme su persone, senza bisogno di componenti e utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 17), con una durata di 24 ore. Il bersaglio Affascinato si presta di suo spontanea volontà a Morso del vampiro; i danni subiti non pongono fine all'incantesimo. Al termine dell'incantesimo, il bersaglio non sa di essere stato Affascinato dal vampiro."
+  },
+  "vampire.bonusActions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "Se il vampiro non è alla luce del sole o in acqua corrente, si trasforma in un pipistrello di taglia Minuscola (velocità 1,5 metri, volo 9 metri) o una nube di nebbia di taglia Media (velocità 1,5 metri, volo 6 metri [fluttuare]), oppure torna alla forma di vampiro. Qualsiasi cosa indossi, si trasforma insieme a lui. Finché è in forma di pipistrello, il vampiro non può parlare. Le sue statistiche di gioco, a eccezione della taglia e della velocità, non cambiano. Finché è in forma di nebbia, il vampiro non può effettuare alcuna azione, né parlare o manipolare oggetti. Non ha peso e può entrare nello spazio di un nemico e fermarvisi. Inoltre, se l'aria può passare attraverso uno spazio, anche la nebbia può farlo, ma non può attraversare l'acqua. È resistente a tutti i danni, eccetto quelli subiti dalla luce del sole."
+  },
+  "vampire.legendaryActions.beguile": {
+    "name": "Incantare",
+    "text": "Il vampiro lancia comando senza bisogno di componenti, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 17). Il vampiro non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "vampire.legendaryActions.deathless-strike": {
+    "name": "Colpo immortale",
+    "text": "Il vampiro si muove fino a metà della sua velocità, ed effettua un attacco Colpo tombale."
+  },
+  "vampire-familiar": {
+    "name": "Famiglio del vampiro"
+  },
+  "vampire-familiar.traits.vampiric-connection": {
+    "name": "Connessione vampirica",
+    "text": "Finché il famiglio e il suo padrone vampiro si trovano sullo stesso piano di esistenza, il vampiro può comunicare con il famiglio telepaticamente ed è in grado di percepire attraverso i sensi del famiglio."
+  },
+  "vampire-familiar.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il famiglio effettua due attacchi Pugnale ombroso."
+  },
+  "vampire-familiar.actions.umbral-dagger": {
+    "name": "Pugnale ombroso",
+    "text": "Tiro per colpire in mischia o a distanza: +5, portata 1,5 m o gittata 6/18 m. Colpito: 5 (1d4 + 3) danni Perforanti più 7 (3d4) danni Necrotici. Se il bersaglio viene ridotto a 0 punti ferita da questo attacco, diventa stabile ma è Avvelenato per 1 ora. Finché è Avvelenato, il bersaglio è anche Paralizzato."
+  },
+  "vampire-familiar.bonusActions.deathless-agility": {
+    "name": "Agilità immortale",
+    "text": "Il famiglio effettua l'azione di Disimpegno o Scatto."
+  },
+  "vampire-spawn": {
+    "name": "Progenie vampirica"
+  },
+  "vampire-spawn.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "Il vampiro può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "vampire-spawn.traits.vampire-weakness": {
+    "name": "Debolezze dei vampiri",
+    "text": "Il vampiro ha le seguenti debolezze:"
+  },
+  "vampire-spawn.traits.forbiddance": {
+    "name": "Proibizione",
+    "text": "Il vampiro non può entrare in casa di qualcuno se non viene invitato da chi vi risiede."
+  },
+  "vampire-spawn.traits.running-water": {
+    "name": "Acqua corrente",
+    "text": "Il vampiro subisce 20 danni da Acido se termina il suo turno nell'acqua corrente."
+  },
+  "vampire-spawn.traits.stake-to-the-heart": {
+    "name": "Paletto nel cuore",
+    "text": "Il vampiro viene distrutto se un'arma che infligge danni Perforanti gli viene conficcata nel cuore mentre è Incapacitato."
+  },
+  "vampire-spawn.traits.sunlight": {
+    "name": "Luce del sole",
+    "text": "Il vampiro subisce 20 danni Radiosi quando inizia il suo turno alla luce del sole. Finché è esposto alla luce del sole, subisce svantaggio a tiri per colpire e prove di caratteristica."
+  },
+  "vampire-spawn.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il vampiro effettua due attacchi Artiglio e usa Morso."
+  },
+  "vampire-spawn.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 8 (2d4 + 3) danni Taglienti. Se il bersaglio è una creatura di taglia Media o inferiore, è Afferrato (CD 13 per sfuggire) da uno dei due artigli."
+  },
+  "vampire-spawn.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro salvezza su Costituzione: CD 14, una creatura entro 1,5 metri che sia consenziente, Afferrata, Incapacitata o Trattenuta. Fallimento: 5 (1d4 + 3) danni Perforanti più 10 (3d6) danni Necrotici. I punti ferita massimi del bersaglio sono ridotti di un ammontare pari ai danni Necrotici subiti, e il vampiro recupera punti ferita pari a quell'ammontare."
+  },
+  "vampire-spawn.bonusActions.deathless-agility": {
+    "name": "Agilità immortale",
+    "text": "Il vampiro effettua l'azione di Disimpegno o Scatto."
+  },
+  "venomous-snake": {
+    "name": "Serpente velenoso"
+  },
+  "venomous-snake.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni Perforanti più 3 (1d6) danni da Veleno."
+  },
+  "violet-fungus": {
+    "name": "Fungo viola"
+  },
+  "violet-fungus.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il fungo effettua due attacchi Tocco marcescente."
+  },
+  "violet-fungus.actions.rotting-touch": {
+    "name": "Tocco marcescente",
+    "text": "Tiro per colpire in mischia: +2, portata 3 m. Colpito: 4 (1d8) danni Necrotici."
+  },
+  "vrock": {
+    "name": "Vrock"
+  },
+  "vrock.traits.demonic-restoration": {
+    "name": "Ristoro demoniaco",
+    "text": "Se il vrock muore al di fuori dell'Abisso, il suo corpo si dissolve diventando icore ed esso ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nell'Abisso."
+  },
+  "vrock.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il vrock dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "vrock.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il vrock effettua due attacchi Sbrandellare."
+  },
+  "vrock.actions.shred": {
+    "name": "Sbrandellare",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Perforanti più 10 (3d6) danni da Veleno."
+  },
+  "vrock.actions.spores": {
+    "name": "Spore",
+    "text": "Tiro salvezza su Costituzione: CD 15, tutte le creature in un'emanazione di 6 metri di cui il vrock è il punto di origine. Fallimento: il bersaglio è Avvelenato e ripete il tiro salvezza alla fine del suo turno successivo e, se lo supera, l'effetto svanisce. Finché è Avvelenato, il bersaglio subisce 5 (1d10) danni da Veleno all'inizio di ogni suo turno. L'effetto termina anticipatamente svuotandogli addosso un'ampolla di acqua santa."
+  },
+  "vrock.actions.stunning-screech": {
+    "name": "Stridio stordente",
+    "text": "Tiro salvezza su Costituzione: CD 15, tutte le creature in un'emanazione di 6 metri di cui il vrock è il punto di origine (i demoni superano automaticamente il tiro). Fallimento: 10 (3d6) danni da Tuono, e il bersaglio è Stordito fino al termine del turno successivo del vrock."
+  },
+  "vulture": {
+    "name": "Avvoltoio"
+  },
+  "vulture.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "L'avvoltoio dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno dei suoi alleati si trova entro 1,5 metri dalla creatura e non è Incapacitato."
+  },
+  "vulture.actions.beak": {
+    "name": "Becco",
+    "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 2 (1d4) danni Perforanti."
+  },
+  "warhorse": {
+    "name": "Cavallo da guerra"
+  },
+  "warhorse.actions.hooves": {
+    "name": "Zoccoli",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 9 (2d4 + 4) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore e il cavallo si è mosso di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio subisce 5 (2d4) danni Contundenti extra e cade a terra Prono."
+  },
+  "warhorse-skeleton": {
+    "name": "Scheletro di cavallo da guerra"
+  },
+  "warhorse-skeleton.actions.hooves": {
+    "name": "Zoccoli",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 7 (1d6 + 4) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore e lo scheletro si è mosso di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio cade a terra Prono."
+  },
+  "warrior-infantry": {
+    "name": "Guerriero di fanteria"
+  },
+  "warrior-infantry.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il guerriero dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno dei suoi alleati si trova entro 1,5 metri dalla creatura e non è Incapacitato."
+  },
+  "warrior-infantry.actions.spear": {
+    "name": "Lancia",
+    "text": "Tiro per colpire in mischia o a distanza: +3, portata 1,5 m o gittata 6/18 m. Colpito: 4 (1d6 + 1) danni Perforanti."
+  },
+  "warrior-veteran": {
+    "name": "Guerriero veterano"
+  },
+  "warrior-veteran.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il guerriero effettua due attacchi Spadone o Balestra pesante."
+  },
+  "warrior-veteran.actions.greatsword": {
+    "name": "Spadone",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Taglienti."
+  },
+  "warrior-veteran.actions.heavy-crossbow": {
+    "name": "Balestra pesante",
+    "text": "Tiro per colpire a distanza: +3, gittata 30/120 m. Colpito: 12 (2d10 + 1) danni Perforanti."
+  },
+  "warrior-veteran.reactions.parry": {
+    "name": "Parata",
+    "text": "Attivazione: il guerriero viene colpito da un tiro per colpire in mischia mentre tiene in mano un'arma. Esito: il guerriero aggiunge 2 alla sua CA contro quell'attacco, aumentando le probabilità che il colpo non vada a segno."
+  },
+  "water-elemental": {
+    "name": "Elementale dell'acqua"
+  },
+  "water-elemental.traits.freeze": {
+    "name": "Congelamento",
+    "text": "Se l'elementale subisce danni da Freddo, la sua velocità è ridotta di 6 metri fino al termine del suo turno successivo."
+  },
+  "water-elemental.traits.water-form": {
+    "name": "Forma d'acqua",
+    "text": "L'elementale può entrare nello spazio di un nemico e fermarvisi. Può muoversi attraverso uno spazio stretto fino a 2,5 centimetri senza consumare movimento extra per farlo."
+  },
+  "water-elemental.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'elementale effettua due attacchi Schianto."
+  },
+  "water-elemental.actions.slam": {
+    "name": "Schianto",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 13 (2d8 + 4) danni Contundenti. Se il bersaglio è una creatura di taglia Media o inferiore, cade a terra Prono."
+  },
+  "water-elemental.actions.whelm": {
+    "name": "Sommergere",
+    "text": "Tiro salvezza su Forza: CD 15, ogni creatura nello spazio dell'elementale. Fallimento: 22 (4d8 + 4) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 14 per sfuggire). Finché la presa perdura, il bersaglio è Trattenuto e soffoca (a meno che non sia in grado di respirare sott'acqua) e subisce 9 (2d8) danni Contundenti all'inizio di ogni turno dell'elementale. Tramite Sommergere, l'elementale può afferrare una creatura di taglia Grande o un massimo di due creature di taglia Media o inferiore contemporaneamente. Con un'azione, una creatura entro 1,5 metri dall'elementale può tirare una creatura fuori da esso superando una prova di Forza (Atletica) con CD 14. Successo: danni dimezzati."
+  },
+  "weasel": {
+    "name": "Faina"
+  },
+  "weasel.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 1 danno Perforante."
+  },
+  "werebear": {
+    "name": "Orso mannaro"
+  },
+  "werebear.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'orso mannaro effettua due attacchi, usando Ascia o Squarcio in qualsiasi combinazione. Può sostituire un attacco con un attacco Morso."
+  },
+  "werebear.actions.bite": {
+    "name": "Morso (solo in forma di orso o ibrida)",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 17 (2d12 + 4) danni Perforanti. Se il bersaglio è un umanoide, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 14. Fallimento: il bersaglio è maledetto. Se il bersaglio scende a 0 punti ferita, diventa un orso mannaro sotto il controllo del GM e ha 10 punti ferita. Successo: il bersaglio è immune alla maledizione dell'orso mannaro per 24 ore."
+  },
+  "werebear.actions.handaxe": {
+    "name": "Ascia (solo in forma umanoide o ibrida)",
+    "text": "Tiro per colpire in mischia o a distanza: +7, portata 1,5 m o gittata 6/18 m. Colpito: 14 (3d6 + 4) danni Taglienti."
+  },
+  "werebear.actions.rend": {
+    "name": "Squarcio (solo in forma di orso o ibrida)",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 13 (2d8 + 4) danni Taglienti."
+  },
+  "werebear.bonusActions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "L'orso mannaro si trasforma in un ibrido umanoide-orso di taglia Grande o in un orso di taglia Grande, altrimenti torna alla sua forma originale di umanoide. Le sue statistiche di gioco, a eccezione della taglia, restano le stesse in ogni forma. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "wereboar": {
+    "name": "Cinghiale mannaro"
+  },
+  "wereboar.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il cinghiale mannaro effettua due attacchi, usando Giavellotto o Zanne in qualsiasi combinazione. Può sostituire un attacco con un attacco Trafiggere."
+  },
+  "wereboar.actions.gore": {
+    "name": "Trafiggere (solo in forma di cinghiale o ibrida)",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 12 (2d8 + 3) danni Perforanti. Se il bersaglio è un umanoide, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 12. Fallimento: il bersaglio è maledetto. Se il bersaglio scende a 0 punti ferita, diventa un cinghiale mannaro sotto il controllo del GM e ha 10 punti ferita. Successo: il bersaglio è immune alla maledizione del cinghiale mannaro per 24 ore."
+  },
+  "wereboar.actions.javelin": {
+    "name": "Giavellotto (solo in forma umanoide o ibrida)",
+    "text": "Tiro per colpire in mischia o a distanza: +5, portata 1,5 m o gittata 9/36 m. Colpito: 13 (3d6 + 3) danni Perforanti."
+  },
+  "wereboar.actions.tusk": {
+    "name": "Zanne (solo in forma di cinghiale o ibrida)",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Perforanti. Se il bersaglio è una creatura di taglia Media o inferiore e il cinghiale mannaro si è mosso di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio subisce 7 (2d6) danni Perforanti extra e cade a terra Prono."
+  },
+  "wereboar.bonusActions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "Il cinghiale mannaro si trasforma in un ibrido umanoide-cinghiale di taglia Media o in un cinghiale di taglia Piccola, altrimenti torna alla sua forma originale di umanoide. Le sue statistiche di gioco, a eccezione della taglia, restano le stesse in ogni forma. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "wererat": {
+    "name": "Topo mannaro"
+  },
+  "wererat.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il topo mannaro effettua due attacchi, usando Graffio o Balestra a mano in qualsiasi combinazione. Può sostituire un attacco con un attacco Morso."
+  },
+  "wererat.actions.bite": {
+    "name": "Morso (solo in forma di topo o ibrida)",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 8 (2d4 + 3) danni Perforanti. Se il bersaglio è un umanoide, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 11. Fallimento: il bersaglio è maledetto. Se il bersaglio scende a 0 punti ferita, diventa un topo mannaro sotto il controllo del GM e ha 10 punti ferita. Successo: il bersaglio è immune alla maledizione del topo mannaro per 24 ore."
+  },
+  "wererat.actions.scratch": {
+    "name": "Graffio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 6 (1d6 + 3) danni Taglienti."
+  },
+  "wererat.actions.hand-crossbow": {
+    "name": "Balestra a mano (solo in forma umanoide o ibrida)",
+    "text": "Tiro per colpire a distanza: +5, gittata 9/36 m. Colpito: 6 (1d6 + 3) danni Perforanti."
+  },
+  "wererat.bonusActions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "Il topo mannaro si trasforma in un ibrido umanoide-topo di taglia Media o in un topo di taglia Piccola, altrimenti torna alla sua forma originale di umanoide. Le sue statistiche di gioco, a eccezione della taglia, restano le stesse in ogni forma. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "weretiger": {
+    "name": "Tigre mannara"
+  },
+  "weretiger.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La tigre mannara effettua due attacchi, usando Graffio o Arco lungo in qualsiasi combinazione. Può sostituire un attacco con un attacco Morso."
+  },
+  "weretiger.actions.bite": {
+    "name": "Morso (solo in forma di tigre o ibrida)",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 12 (2d8 + 3) danni Perforanti. Se il bersaglio è un umanoide, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 13. Fallimento: il bersaglio è maledetto. Se il bersaglio scende a 0 punti ferita, diventa una tigre mannara sotto il controllo del GM e ha 10 punti ferita. Successo: il bersaglio è immune alla maledizione della tigre mannara per 24 ore."
+  },
+  "weretiger.actions.scratch": {
+    "name": "Graffio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Taglienti."
+  },
+  "weretiger.actions.longbow": {
+    "name": "Arco lungo (solo in forma umanoide o ibrida)",
+    "text": "Tiro per colpire a distanza: +4, gittata 45/180 m. Colpito: 11 (2d8 + 2) danni Perforanti."
+  },
+  "weretiger.bonusActions.prowl": {
+    "name": "Movimento predatorio (solo in forma di tigre o ibrida)",
+    "text": "La tigre mannara si muove fino alla sua velocità massima senza provocare attacchi di opportunità. Alla fine di questo movimento, può effettuare l'azione di Nascondersi."
+  },
+  "weretiger.bonusActions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "La tigre mannara si trasforma in un ibrido umanoide-tigre di taglia Grande o in una tigre di taglia Grande, altrimenti torna alla sua forma originale di umanoide. Le sue statistiche di gioco, a eccezione della taglia, restano le stesse in ogni forma. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "werewolf": {
+    "name": "Lupo mannaro"
+  },
+  "werewolf.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il lupo mannaro dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno dei suoi alleati si trova entro 1,5 metri dalla creatura e non è Incapacitato."
+  },
+  "werewolf.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il lupo mannaro effettua due attacchi, usando Graffio o Arco lungo in qualsiasi combinazione. Può sostituire un attacco con un attacco Morso."
+  },
+  "werewolf.actions.bite": {
+    "name": "Morso (solo in forma di lupo o ibrida)",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 12 (2d8 + 3) danni Perforanti. Se il bersaglio è un umanoide, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 12. Fallimento: il bersaglio è maledetto. Se il bersaglio scende a 0 punti ferita, diventa un lupo mannaro sotto il controllo del GM e ha 10 punti ferita. Successo: il bersaglio è immune alla maledizione del lupo mannaro per 24 ore."
+  },
+  "werewolf.actions.scratch": {
+    "name": "Graffio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Taglienti."
+  },
+  "werewolf.actions.longbow": {
+    "name": "Arco lungo (solo in forma umanoide o ibrida)",
+    "text": "Tiro per colpire a distanza: +4, gittata 45/180 m. Colpito: 11 (2d8 + 2) danni Perforanti."
+  },
+  "werewolf.bonusActions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "Il lupo mannaro si trasforma in un ibrido umanoide-lupo di taglia Grande o in un lupo di taglia Media, altrimenti torna alla sua forma originale di umanoide. Le sue statistiche di gioco, a eccezione della taglia, restano le stesse in ogni forma. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "white-dragon-wyrmling": {
+    "name": "Drago bianco cucciolo"
+  },
+  "white-dragon-wyrmling.traits.ice-walk": {
+    "name": "Camminare sul ghiaccio",
+    "text": "Il drago può muoversi sulle superfici di ghiaccio e scalarle senza bisogno di effettuare una prova di caratteristica. Inoltre, un terreno difficile costituito da ghiaccio o neve non gli costa alcun movimento aggiuntivo."
+  },
+  "white-dragon-wyrmling.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua due attacchi Squarcio."
+  },
+  "white-dragon-wyrmling.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 6 (1d8 + 2) danni Taglienti più 2 (1d4) danni da Freddo."
+  },
+  "white-dragon-wyrmling.actions.cold-breath": {
+    "name": "Soffio di freddo",
+    "text": "Tiro salvezza su Costituzione: CD 12, tutte le creature in un cono di 4,5 metri. Fallimento: 22 (5d8) danni da Freddo. Successo: danni dimezzati."
+  },
+  "wight": {
+    "name": "Wight"
+  },
+  "wight.traits.sunlight-sensitivity": {
+    "name": "Sensibilità al sole",
+    "text": "Finché è esposto alla luce del sole, il wight subisce svantaggio alle prove di caratteristica e ai tiri per colpire."
+  },
+  "wight.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il wight effettua due attacchi, usando Spada necrotica o Arco necrotico in qualsiasi combinazione. Può sostituire un attacco con un utilizzo di Risucchio di vita."
+  },
+  "wight.actions.necrotic-sword": {
+    "name": "Spada necrotica",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 6 (1d8 + 2) danni Taglienti più 4 (1d8) danni Necrotici."
+  },
+  "wight.actions.necrotic-bow": {
+    "name": "Arco necrotico",
+    "text": "Tiro per colpire a distanza: +4, gittata 45/180 m. Colpito: 6 (1d8 + 2) danni Perforanti più 4 (1d8) danni Necrotici."
+  },
+  "wight.actions.life-drain": {
+    "name": "Risucchio di vita",
+    "text": "Tiro salvezza su Costituzione: CD 13, una creatura entro 1,5 metri. Fallimento: 6 (1d8 + 2) danni Necrotici, e i punti ferita massimi del bersaglio sono ridotti di un ammontare pari ai danni subiti. Un umanoide ucciso da questo attacco si anima 24 ore dopo come zombi sotto il controllo del wight, a meno che l'umanoide non sia riportato in vita o il suo corpo non venga distrutto. Il wight non può controllare più di dodici zombi simultaneamente."
+  },
+  "will-o-wisp": {
+    "name": "Fuoco fatuo"
+  },
+  "will-o-wisp.traits.ephemeral": {
+    "name": "Effimero",
+    "text": "Il fuoco fatuo non può indossare o trasportare niente."
+  },
+  "will-o-wisp.traits.illumination": {
+    "name": "Illuminazione",
+    "text": "Il fuoco fatuo emana luce intensa in un raggio di 6 metri e luce fioca per altri 6 metri."
+  },
+  "will-o-wisp.traits.incorporeal-movement": {
+    "name": "Movimento incorporeo",
+    "text": "Il fuoco fatuo può muoversi attraverso altre creature e oggetti come se fossero terreno difficile. Se termina il suo turno all'interno di un oggetto, subisce 5 (1d10) danni da Forza."
+  },
+  "will-o-wisp.actions.shock": {
+    "name": "Folgore",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 11 (2d8 + 2) danni da Fulmine."
+  },
+  "will-o-wisp.bonusActions.consume-life": {
+    "name": "Assorbire vita",
+    "text": "Tiro salvezza su Costituzione: CD 10, una creatura vivente che il fuoco fatuo è in grado di vedere entro 1,5 metri con 0 punti ferita. Fallimento: il bersaglio muore, e il fuoco fatuo recupera 10 (3d6) punti ferita."
+  },
+  "will-o-wisp.bonusActions.vanish": {
+    "name": "Svanire",
+    "text": "Il fuoco fatuo e la luce che emana sono Invisibili finché la sua concentrazione non termina su tale effetto; l'effetto cessa immediatamente dopo che il fuoco fatuo effettua un tiro per colpire o usa Assorbire vita."
+  },
+  "winter-wolf": {
+    "name": "Lupo invernale"
+  },
+  "winter-wolf.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il lupo dispone di vantaggio al tiro per colpire contro una creatura se almeno uno degli alleati dell'animale si trova entro 1,5 metri dalla creatura e non è incapacitato."
+  },
+  "winter-wolf.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 11 (2d6 + 4) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra Prono."
+  },
+  "winter-wolf.actions.cold-breath": {
+    "name": "Soffio di freddo",
+    "text": "Tiro salvezza su Costituzione: CD 12, tutte le creature in un cono di 4,5 metri. Fallimento: 18 (4d8) danni da Freddo. Successo: danni dimezzati."
+  },
+  "wolf": {
+    "name": "Lupo"
+  },
+  "wolf.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il lupo dispone di vantaggio ai tiri per colpire contro una creatura se almeno uno degli alleati dell'animale si trova entro 1,5 metri dalla creatura e non è incapacitato."
+  },
+  "wolf.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Perforanti. Se il bersaglio è una creatura di taglia Media o inferiore, cade a terra Prono."
+  },
+  "worg": {
+    "name": "Worg"
+  },
+  "worg.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Perforanti, e il tiro per colpire successivo effettuato contro il bersaglio prima dell'inizio del turno successivo del worg dispone di vantaggio."
+  },
+  "wraith": {
+    "name": "Wraith"
+  },
+  "wraith.traits.incorporeal-movement": {
+    "name": "Movimento incorporeo",
+    "text": "Il wraith può muoversi attraverso altre creature e oggetti come se fossero terreno difficile. Se termina il suo turno all'interno di un oggetto, subisce 5 (1d10) danni da Forza."
+  },
+  "wraith.traits.sunlight-sensitivity": {
+    "name": "Sensibilità al sole",
+    "text": "Finché è esposto alla luce del sole, il wraith subisce svantaggio alle prove di caratteristica e ai tiri per colpire."
+  },
+  "wraith.actions.life-drain": {
+    "name": "Risucchio di vita",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 21 (4d8 + 3) danni Necrotici. Se il bersaglio è una creatura, i suoi punti ferita massimi sono ridotti di una quantità pari ai danni subiti."
+  },
+  "wraith.actions.create-specter": {
+    "name": "Creare spettro",
+    "text": "Il wraith bersaglia il cadavere di un umanoide situato entro 3 metri da sé che non abbia perso la vita da più di 1 minuto. Lo spirito del bersaglio si anima come spettro nello spazio del suo cadavere o nello spazio libero più vicino. Lo spettro è sotto il controllo del wraith. Il wraith non può controllare più di sette spettri simultaneamente."
+  },
+  "wyvern": {
+    "name": "Viverna"
+  },
+  "wyvern.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La viverna effettua un attacco Morso e un attacco Pungiglione."
+  },
+  "wyvern.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 13 (2d8 + 4) danni Perforanti."
+  },
+  "wyvern.actions.sting": {
+    "name": "Pungiglione",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 11 (2d6 + 4) danni Perforanti più 24 (7d6) danni da Veleno, e il bersaglio è Avvelenato fino all'inizio del turno successivo della viverna."
+  },
+  "xorn": {
+    "name": "Xorn"
+  },
+  "xorn.traits.earth-glide": {
+    "name": "Scivolare nella terra",
+    "text": "Lo xorn può scavare attraverso la terra e la pietra non magiche e non lavorate, senza disturbare il materiale attraverso cui si muove."
+  },
+  "xorn.traits.treasure-sense": {
+    "name": "Percezione dei tesori",
+    "text": "Lo xorn può individuare la posizione di pietre e metalli preziosi entro 18 metri da sé."
+  },
+  "xorn.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Lo xorn effettua un attacco Morso e tre attacchi Artiglio."
+  },
+  "xorn.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 17 (4d6 + 3) danni Perforanti."
+  },
+  "xorn.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 8 (1d10 + 3) danni Taglienti."
+  },
+  "xorn.bonusActions.charge": {
+    "name": "Carica",
+    "text": "Lo xorn si muove fino al massimo della sua velocità o velocità di scavo in linea retta verso un nemico che è in grado di percepire."
+  },
+  "young-black-dragon": {
+    "name": "Drago nero giovane"
+  },
+  "young-black-dragon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "young-black-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio."
+  },
+  "young-black-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 9 (2d4 + 4) danni Taglienti più 3 (1d6) danni da Acido."
+  },
+  "young-black-dragon.actions.acid-breath": {
+    "name": "Soffio di acido",
+    "text": "Tiro salvezza su Destrezza: CD 14, tutte le creature in una linea lunga 9 metri e larga 1,5 metri. Fallimento: 49 (14d6) danni da Acido. Successo: danni dimezzati."
+  },
+  "young-blue-dragon": {
+    "name": "Drago blu giovane"
+  },
+  "young-blue-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio."
+  },
+  "young-blue-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +9, portata 3 m. Colpito: 12 (2d6 + 5) danni Taglienti più 5 (1d10) danni da Fulmine."
+  },
+  "young-blue-dragon.actions.lightning-breath": {
+    "name": "Soffio di fulmini",
+    "text": "Tiro salvezza su Destrezza: CD 16, tutte le creature in una linea lunga 18 metri e larga 1,5 metri. Fallimento: 55 (10d10) danni da Fulmine. Successo: danni dimezzati."
+  },
+  "young-brass-dragon": {
+    "name": "Drago d'ottone giovane"
+  },
+  "young-brass-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire due attacchi con un utilizzo di Soffio di sonno."
+  },
+  "young-brass-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 15 (2d10 + 4) danni Taglienti."
+  },
+  "young-brass-dragon.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 14, tutte le creature in una linea lunga 12 metri e larga 1,5 metri. Fallimento: 38 (11d6) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "young-brass-dragon.actions.sleep-breath": {
+    "name": "Soffio di sonno",
+    "text": "Tiro salvezza su Costituzione: CD 14, tutte le creature in un cono di 9 metri. Fallimento: il bersaglio è Incapacitato fino al termine del proprio turno successivo, a quel punto ripete il tiro salvezza. Secondo fallimento: il bersaglio cade Privo di Sensi per 1 minuto. Questo effetto termina se il bersaglio subisce danni o se una creatura entro 1,5 metri da esso esegue un'azione per svegliarlo."
+  },
+  "young-bronze-dragon": {
+    "name": "Drago di bronzo giovane"
+  },
+  "young-bronze-dragon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "young-bronze-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di Soffio repulsivo."
+  },
+  "young-bronze-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +8, portata 3 m. Colpito: 16 (2d10 + 5) danni Taglienti."
+  },
+  "young-bronze-dragon.actions.lightning-breath": {
+    "name": "Soffio di fulmini",
+    "text": "Tiro salvezza su Destrezza: CD 15, tutte le creature in una linea lunga 18 metri e larga 1,5 metri. Fallimento: 49 (9d10) danni da Fulmine. Successo: danni dimezzati."
+  },
+  "young-bronze-dragon.actions.repulsion-breath": {
+    "name": "Soffio repulsivo",
+    "text": "Tiro salvezza su Forza: CD 15, tutte le creature in un cono di 9 metri. Fallimento: il bersaglio viene spinto fino a un massimo di 12 metri di distanza dal drago e cade a terra Prono."
+  },
+  "young-copper-dragon": {
+    "name": "Drago di rame giovane"
+  },
+  "young-copper-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di Soffio rallentante."
+  },
+  "young-copper-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 15 (2d10 + 4) danni Taglienti."
+  },
+  "young-copper-dragon.actions.acid-breath": {
+    "name": "Soffio di acido",
+    "text": "Tiro salvezza su Destrezza: CD 14, tutte le creature in una linea lunga 12 metri e larga 1,5 metri. Fallimento: 40 (9d8) danni da Acido. Successo: danni dimezzati."
+  },
+  "young-copper-dragon.actions.slowing-breath": {
+    "name": "Soffio rallentante",
+    "text": "Tiro salvezza su Costituzione: CD 14, tutte le creature in un cono di 9 metri. Fallimento: il bersaglio non può effettuare reazioni, la sua velocità è dimezzata e nel suo turno può effettuare un'azione o un'azione bonus, non entrambe. L'effetto dura fino al termine del proprio turno successivo."
+  },
+  "young-gold-dragon": {
+    "name": "Drago d'oro giovane"
+  },
+  "young-gold-dragon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "young-gold-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di Soffio indebolente."
+  },
+  "young-gold-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +10, portata 3 m. Colpito: 17 (2d10 + 6) danni Taglienti."
+  },
+  "young-gold-dragon.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 17, tutte le creature in un cono di 9 metri. Fallimento: 55 (10d10) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "young-gold-dragon.actions.weakening-breath": {
+    "name": "Soffio indebolente",
+    "text": "Tiro salvezza su Forza: CD 17, ogni creatura che al momento non è sotto l'effetto di questo soffio in un cono di 9 metri. Fallimento: il bersaglio subisce svantaggio alle prove con d20 basate sulla Forza e sottrae 3 (1d6) ai tiri per i danni. La creatura ripete il tiro salvezza alla fine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente."
+  },
+  "young-green-dragon": {
+    "name": "Drago verde giovane"
+  },
+  "young-green-dragon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "young-green-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio."
+  },
+  "young-green-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 11 (2d6 + 4) danni Taglienti più 7 (2d6) danni da Veleno."
+  },
+  "young-green-dragon.actions.poison-breath": {
+    "name": "Soffio di veleno",
+    "text": "Tiro salvezza su Costituzione: CD 14, tutte le creature in un cono di 9 metri. Fallimento: 42 (12d6) danni da Veleno. Successo: danni dimezzati."
+  },
   "young-red-dragon": {
     "name": "Drago rosso giovane"
   },
@@ -5343,6 +6227,44 @@
   "young-red-dragon.actions.fire-breath": {
     "name": "Soffio di fuoco",
     "text": "Tiro salvezza su Destrezza: CD 17, tutte le creature in un cono di 9 metri. Fallimento: 56 (16d6) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "young-silver-dragon": {
+    "name": "Drago d'argento giovane"
+  },
+  "young-silver-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di Soffio paralizzante."
+  },
+  "young-silver-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +10, portata 3 m. Colpito: 15 (2d8 + 6) danni Taglienti."
+  },
+  "young-silver-dragon.actions.cold-breath": {
+    "name": "Soffio di freddo",
+    "text": "Tiro salvezza su Costituzione: CD 17, tutte le creature in un cono di 9 metri. Fallimento: 49 (11d8) danni da Freddo. Successo: danni dimezzati."
+  },
+  "young-silver-dragon.actions.paralyzing-breath": {
+    "name": "Soffio paralizzante",
+    "text": "Tiro salvezza su Costituzione: CD 17, tutte le creature in un cono di 9 metri. Primo fallimento: il bersaglio è Incapacitato fino al termine del proprio turno successivo. A quel punto, ripete il tiro salvezza. Secondo fallimento: il bersaglio è Paralizzato e ripete il tiro salvezza alla fine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente."
+  },
+  "young-white-dragon": {
+    "name": "Drago bianco giovane"
+  },
+  "young-white-dragon.traits.ice-walk": {
+    "name": "Camminare sul ghiaccio",
+    "text": "Il drago può muoversi sulle superfici di ghiaccio e scalarle senza bisogno di effettuare una prova di caratteristica. Inoltre, un terreno difficile costituito da ghiaccio o neve non gli costa alcun movimento aggiuntivo."
+  },
+  "young-white-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio."
+  },
+  "young-white-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 9 (2d4 + 4) danni Taglienti più 2 (1d4) danni da Freddo."
+  },
+  "young-white-dragon.actions.cold-breath": {
+    "name": "Soffio di freddo",
+    "text": "Tiro salvezza su Costituzione: CD 15, tutte le creature in un cono di 9 metri. Fallimento: 40 (9d8) danni da Freddo. Successo: danni dimezzati."
   },
   "zombie": {
     "name": "Zombi"

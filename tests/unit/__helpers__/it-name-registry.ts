@@ -98,10 +98,18 @@ export const KEEP_ENGLISH_SRD: readonly string[] = [
   "Roc",
   "Sahuagin",
   "Solar",
+  "Tarrasque",
   "Tiefling",
+  "Treant",
+  "Troll",
   "Tsunami",
   "Versatile ({{die}})",
+  "Vrock",
   "Warlock",
+  "Wight",
+  "Worg",
+  "Wraith",
+  "Xorn",
 ];
 /**
  * Sanctioned distinct-entity name collisions — the NARROW allowlist consumed by `findCollisions`.

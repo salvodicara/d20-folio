@@ -207,7 +207,8 @@ describe.each(cases)("%s", (id, m) => {
     for (const ci of m.conditionImmunities ?? []) {
       const cid = typeof ci === "string" ? ci : ci.id;
       expect(hasSrd("condition", cid, "name", "en"), `condition "${cid}"`).toBe(true);
-      if (typeof ci !== "string") expect(ci.note).toBe("with-mind-blank");
+      if (typeof ci !== "string")
+        expect(["with-mind-blank", "except-vampire-master"]).toContain(ci.note);
     }
     for (const q of m.qualifiedDefenses ?? []) {
       expect(["resistance", "immunity", "vulnerability"]).toContain(q.kind);

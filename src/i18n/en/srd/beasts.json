@@ -317,9 +317,6 @@
   "trait.pack-tactics": {
     "name": "Pack Tactics"
   },
-  "trait.charge": {
-    "name": "Charge"
-  },
   "trait.spider-climb": {
     "name": "Spider Climb"
   },
@@ -337,9 +334,6 @@
   },
   "trait.water-breathing": {
     "name": "Water Breathing"
-  },
-  "trait.trampling-charge": {
-    "name": "Trampling Charge"
   },
   "trait.agile": {
     "name": "Agile"
@@ -364,9 +358,6 @@
   },
   "trait.mimicry": {
     "name": "Mimicry"
-  },
-  "trait.nimble-escape": {
-    "name": "Nimble Escape"
   },
   "trait.running-leap": {
     "name": "Running Leap"

@@ -1208,7 +1208,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
         reachFt: 5,
       },
     ],
-    traits: ["trait.charge"],
   },
   // Brown Bear (2024 SRD 5.2.1). AC 11, HP 22, CR 1.
   {
@@ -1421,7 +1420,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
     senses: { darkvisionFt: 60 },
-    traits: ["trait.nimble-escape"],
   },
   // Allosaurus (2024 SRD 5.2.1). AC 13, HP 51, CR 2.
   {
@@ -1802,7 +1800,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
         reachFt: 5,
       },
     ],
-    traits: ["trait.trampling-charge"],
   },
   // Mammoth (2024 SRD 5.2.1). AC 13, HP 126, CR 6.
   {
@@ -1862,9 +1859,9 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       {
         nameKey: "attack.tail",
         toHit: 10,
-        damageDice: "3d8+7",
+        damageDice: "4d8+7",
         damageType: "bludgeoning",
-        reachFt: 10,
+        reachFt: 15,
       },
     ],
   },

@@ -540,9 +540,9 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     generator (`git rm`'d at the final wave) that regenerates `beasts.ts` + the `beasts.json`
     key deltas from the corpus, wave by wave; the pilot's `brown-bear` is re-derived to its
     2024 statblock (22 HP, Bite +5 1d8+3 / Claw +5 1d4+3, no traits — a live-user Polymorph
-    correctness fix), `rat` already matched. **Data waves 1–7/8 — `a–b` + `c–d` + `e–g` + `h–k` +
-    `l–m` + `n–p` + `q–s` — are IN**
-    (274 monsters: `a–b` = 59 Aboleth…Bulette; `c–d` = 32 Camel…Dust Mephit; `e–g` = 64
+    correctness fix), `rat` already matched. **Data waves 1–8/8 (ALL) — `a–b` + `c–d` + `e–g` +
+    `h–k` + `l–m` + `n–p` + `q–s` + `t–z` — are IN**
+    (320 monsters: `a–b` = 59 Aboleth…Bulette; `c–d` = 32 Camel…Dust Mephit; `e–g` = 64
     Eagle…Guardian Naga — the elementals (earth/fire) + fire/frost giants, the two genies
     (efreeti) + the erinyes/glabrezu Fiends, the ettercap/ettin/gargoyle/gibbering-mouther/grick
     monstrosities, the flesh golem + gorgon, the green hag + guardian naga, the ghoul/ghast undead,
@@ -606,7 +606,27 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     Mimicry unifies the shared `trait.mimicry` IT lexeme to its catalogue name (_Imitare_), matching
     green-hag. `sahuagin` joins the monster-tongue language catalogue (catalogue-only). The roper's
     grapple-only Tentacle (the sole no-damage attack-roll print in the 330-corpus) is modeled
-    narrative, keeping the "attack ⇒ has damage" invariant intact. NEXT: the last data wave (`t–z`).
+    narrative, keeping the "attack ⇒ has damage" invariant intact. `t–z` = 46 Tarrasque…Young White
+    Dragon — the apex **Tarrasque** (CR 30, `titan`), the legendary **Vampire** (CR 13, `xpInLair`
+    11,500) + vampire-spawn/-familiar, the **Unicorn** (legendary), the five lycanthropes
+    (werebear · wereboar · wererat · weretiger · werewolf), the vrock/water-elemental fiends-and-
+    elementals, the treant + troll + wight + wraith + will-o-wisp + xorn, the nine **young dragons**
+    (black · blue · brass · bronze · copper · gold · green · silver · white) + white-dragon-wyrmling,
+    the tough/tough-boss/warrior-infantry/warrior-veteran NPCs, and the t–z beast bench (tiger ·
+    triceratops · tyrannosaurus-rex · warhorse · weasel · venomous-snake · vulture · wolf). Its beast
+    intersection re-derives four live-user Polymorph corrections — **Tiger**
+    (stale `nimble-escape` trait dropped; 2024 is a single `Rend` 2d6+3, no traits), **Warhorse**
+    (`charge` trait dropped; single `Hooves` 2d4+4), **Triceratops** (`trampling-charge` trait dropped;
+    single `Gore` 2d12+6), and **Tyrannosaurus Rex** (Tail 3d8+7→4d8+7, reach 10→15 ft.) — while
+    `weasel` · `venomous-snake` · `vulture` · `wolf` already matched their projection; the t-rex CR-8
+    offer-cap pin is unaffected (the tail values aren't pinned), so no `polymorph.test.ts` literal
+    moved. `worg` joins the monster-tongue language catalogue (the Blink Dog/gnoll/otyugh/sahuagin
+    precedent — catalogue-only, not the player picker). The vampire-familiar's "Charmed (except from
+    its vampire master)" adds the closed `except-vampire-master` condition-immunity note token (the
+    archmage `with-mind-blank` precedent). KEEP_ENGLISH_SRD gains the eight proper nouns the official
+    IT SRD keeps in English (IT byte-equals EN): Tarrasque, Treant, Troll, Vrock, Wight, Worg, Wraith,
+    Xorn. This wave completes the public corpus (330/330); the completeness assertion, the
+    sync-script retirement, and the final doc flips land in a separate follow-up commit.
 - **Companions/Extras:** a persistent companion-statblock surface on the sheet (Find Familiar,
   Primal Companion, Drakewarden, Artificer Steel Defender/Homunculus) — closes a
   rules-completeness hole; reuses the bestiary statblock renderer.

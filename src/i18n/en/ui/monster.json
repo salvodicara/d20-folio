@@ -34,6 +34,7 @@
     "qualifier_nonmagical-nonsilvered": "from nonmagical attacks that aren't silvered",
     "qualifier_nonmagical-nonadamantine": "from nonmagical attacks that aren't adamantine",
     "condNote_with-mind-blank": "with Mind Blank",
+    "condNote_except-vampire-master": "except from its vampire master",
     "defenseNote_draconic-origin": "Damage type chosen for the Draconic Origin trait",
     "defenseNote_bless-weapon": "Piercing damage from weapons wielded by creatures under the effect of a Bless spell",
     "searchPlaceholder": "Search monsters…"
