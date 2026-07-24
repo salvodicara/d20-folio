@@ -68,6 +68,7 @@
     "hideSuccessToast": "Hidden: Invisible. Finding you is DC {{total}}",
     "hideFailToast": "Not hidden: {{total}} vs DC {{dc}}",
     "hideEndsHint": "Hiding ends after you attack, cast a spell with a Verbal component, or make a loud noise, or when a foe finds you (Search vs your check total).",
+    "readySpellNote": "Choose a trigger now and the response you'll take with your Reaction when it occurs. To ready a spell (casting time of one action), cast it now from its card: the slot is spent, and you hold it with Concentration until you release it with your Reaction.",
     "outOfAmmoReason": "Out of {{item}}",
     "loadingOneShotReason": "Loading: one shot per action",
     "castWithout": "no {{components}}",

@@ -5980,6 +5980,13 @@ function resolveTemporaryHpActions(
         // roll-entry whose success applies the Invisible condition.
         ...(ba.id === "base-hide" ? { skillCheck: { dc: 15, skill: "stealth" } } : {}),
       },
+      // RA-18 — the Ready card teaches the readied-spell rule (SRD "Ready
+      // [Action]"): a readied spell is cast NOW (the slot is spent) and held
+      // with Concentration until you release it with your Reaction. The route
+      // into the real cast is the spell's OWN card on this board (which already
+      // spends the slot + engages Concentration on a concentration spell); this
+      // note only bridges the two — no held-spell state is modeled.
+      ...(ba.id === "base-ready" ? { description: uiText("combat.readySpellNote") } : {}),
       costsSlot: false,
       pinned: pinnedSet.has(ba.id),
       defaultPinned: false,

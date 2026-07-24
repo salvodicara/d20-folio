@@ -638,6 +638,26 @@ describe("resolveActions — base actions", () => {
     );
   });
 
+  // RA-18 — the Ready card teaches the readied-spell rule (SRD "Ready [Action]":
+  // a readied spell is cast now + held with Concentration, released with the
+  // Reaction). The teaching note rides the `description` channel; no other base
+  // action carries one.
+  it("RA-18 — Ready carries the readied-spell note; other base actions don't", () => {
+    const raw = resolveActions(makeChar());
+    // Engine stamp (locale-free): the ref is present on Ready, absent elsewhere.
+    expect(raw.find((a) => a.id === "base-ready")?.description).toEqual({
+      ui: "combat.readySpellNote",
+    });
+    expect(raw.find((a) => a.id === "base-dash")?.description).toBeUndefined();
+    // Renders through the real key in both locales (catches a ref↔key typo).
+    const en = localizeActions(makeChar(), "en").find((a) => a.id === "base-ready");
+    expect(en?.description).toContain("Concentration");
+    expect(en?.description).toContain("Reaction");
+    const itNote = localizeActions(makeChar(), "it").find((a) => a.id === "base-ready");
+    expect(itNote?.description).toContain("Concentrazione");
+    expect(itNote?.description).toContain("Reazione");
+  });
+
   it("includes Opportunity Attack as a reaction", () => {
     const char = makeChar();
     const actions = localizeActions(char, "en");

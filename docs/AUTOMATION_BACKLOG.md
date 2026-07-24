@@ -330,10 +330,15 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
 
 ### Band 3 — completeness (S3)
 
-- [ ] **RA-18 — Ready action is a bare text card.** _Action economy · GAP · S3 · every-session._
+- [x] **RA-18 — Ready action is a bare text card.** _Action economy · GAP · S3 · every-session._
       SRD "Ready [Action]": trigger + reaction; a readied SPELL is cast now (slot spent) + held with
       Concentration. Fix: minimal — the card notes the spell rule; readying a spell routes a real
-      cast that engages concentration. **T2.**
+      cast that engages concentration. **T2.** **SHIPPED (2026-07-24):** the Ready card now carries a
+      `combat.readySpellNote` (on the engine `description` channel, rendered in the card accordion)
+      teaching the readied-spell rule; the "route a real cast" clause was already delivered — casting
+      a readied spell goes through the spell's own card on the same board (which spends the slot and
+      engages Concentration on a concentration spell), so no held-spell state machine was built.
+      Regression: the RA-18 block in `smart-tracker.test.ts`.
 - [ ] **RA-19 — Prone economics (stand = half Speed, crawl) absent from the movement meter.**
       _Movement · INTERACTION (defect C) · S3 · every-combat with knockdowns._ SRD "Prone —
       Restricted Movement". Fix: while `prone` is set, a one-tap "Stand (−⌊Speed/2⌋ ft)" on the meter
