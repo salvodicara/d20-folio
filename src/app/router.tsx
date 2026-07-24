@@ -8,6 +8,7 @@ import {
 import { lazy } from "react";
 import { AppShell } from "./AppShell";
 import { importCockpit, importCampaigns } from "./route-prefetch";
+import { ensureSrdKind } from "@/i18n";
 import { AuthGuard } from "@/components/shared/AuthGuard";
 import { RouteErrorBoundary } from "@/components/shared/RouteErrorBoundary";
 import { LoginPage } from "./routes/login";
@@ -68,9 +69,16 @@ const JoinCampaignRoute = lazy(() =>
   }))
 );
 const CompendiumPage = lazy(() =>
-  import("@/features/compendium/CompendiumPage").then((m) => ({
-    default: m.CompendiumPage,
-  }))
+  // D-2 load-before-render gate: resolve the lazy `monster` catalogue for every
+  // loaded locale IN PARALLEL with the route chunk, so the codex's Monsters wing
+  // never renders a raw name key. Kept here (not as a specs-barrel top-level await,
+  // which would make that barrel async and fragment the eager closure — see
+  // picker/specs/index.ts). `ensureSrdKind` marks the kind resident, so a later
+  // language switch carries the corpus across without re-gating.
+  Promise.all([
+    import("@/features/compendium/CompendiumPage"),
+    ensureSrdKind("monster"),
+  ]).then(([m]) => ({ default: m.CompendiumPage }))
 );
 const SettingsPage = lazy(() =>
   import("@/features/account/SettingsPage").then((m) => ({ default: m.SettingsPage }))

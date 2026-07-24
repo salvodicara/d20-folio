@@ -87,6 +87,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { useAuthStore } from "@/stores/authStore";
 import { signOut } from "@/lib/auth";
 import { localizeClassName } from "@/lib/views/srd-i18n";
+import { ensureSrdKind } from "@/i18n";
 import { primaryClassId, totalLevel } from "@/lib/classes";
 // COMPENDIUM_SPECS pull the whole SRD. The palette is always-mounted (⌘K), so a
 // STATIC import would weigh the SRD onto the initial bundle (#59/#78). It's instead
@@ -253,7 +254,14 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   >(null);
   useEffect(() => {
     let alive = true;
-    void import("@/features/compendium/picker/specs").then((m) => {
+    // Load the specs registry AND (D-2) resolve the lazy `monster` catalogue before
+    // exposing the specs, so palette monster hits never show a raw name key. The gate
+    // lives here (not as a specs-barrel top-level await, which would make that barrel
+    // async and fragment the eager closure — see picker/specs/index.ts).
+    void Promise.all([
+      import("@/features/compendium/picker/specs"),
+      ensureSrdKind("monster"),
+    ]).then(([m]) => {
       if (alive) setCompendiumSpecs(m.COMPENDIUM_SPECS);
     });
     return () => {

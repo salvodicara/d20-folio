@@ -126,15 +126,20 @@ const EAGER_CEILING_KB = 773; // baseline 727.1 → ~+6% (near budget — see AR
 // accumulated JS chunk growth carried in from main, not new atmosphere-branch asset
 // weight. Measured 8033.79 KiB (276 entries); +5 KiB deterministic headroom (never
 // exact-fit).
-// 2026-07-24: raised 8039 → 8046 (+7 KiB) for the RA-wave W2 rules content
-// (RA-18/19/20/21/32/34 + the Hex/Hunter's Mark toggle-label fix): ~28 new bilingual
-// i18n strings (the four new BASE_ACTIONS names + verdict/effect copy, the Ready /
-// Prone-Stand / crit / grappled-scope notes, the Hex+Hunter's Mark toggle labels)
-// plus the four new BASE_ACTIONS engine entries. Existing JS/JSON chunks grew
-// (cockpit-engine carries the action data, the spells chunk the buff-toggle labels);
-// NO new precache entries (still 276) and NO new images/fonts. Measured 8040.32 KiB;
-// +~6 KiB deterministic headroom (never exact-fit).
-const PRECACHE_CEILING_KIB = 8046; // baseline 8040.32 (2026-07-24 W2 rules content) + ~6 KiB deterministic headroom — never exact-fit
+// 2026-07-24 (bestiary): raised 8039 → 8300 (+245 KiB corpus, +7 KiB W2 rules content from main) for the lazy monster corpus —
+// the bestiary's MonsterStatBlock data chunks (`srd-monsters` + composed `monsters`)
+// plus the EN/IT `monsters` i18n catalogue shards. All are LAZY (fetched only when the
+// codex Monsters wing / palette opens) but precached to honour the offline-first
+// promise. This is NOT an eager regression: the eager closure is UNCHANGED at ~771.4 KB
+// gz / 14 chunks — the transient +13 KB eager fragmentation (a specs-barrel top-level
+// `await` had turned the barrel async and stopped Rolldown inlining ~60 shared shell
+// modules into the entry chunk) was fixed in this same commit, restoring main's chunk
+// shape. Measured 8273.55 KiB (282 entries) on the COMPOSED lane — the larger of the
+// two; the SRD-only lane measures smaller and passes under the same shared ceiling.
+// +~10 KiB deterministic headroom (never exact-fit).
+// 2026-07-24 (rebase): combined with the W2 rules-content raise from main (8039 → 8046)
+// — re-measured on the combined tree; never exact-fit.
+const PRECACHE_CEILING_KIB = 8300;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

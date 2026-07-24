@@ -18,11 +18,19 @@
 
 import { describe, it, expect, vi, afterEach } from "vitest";
 // COMPENDIUM_SPECS lives on the specs barrel (D-2): the picker index re-exports the
-// concrete specs from their own modules, not the side-effectful barrel.
+// concrete specs from their own modules, not the barrel (which statically imports
+// the monster corpus).
 import { COMPENDIUM_SPECS } from "@/features/compendium/picker/specs";
 import { type PickerCtx } from "@/features/compendium/picker";
 import { matchesSearch } from "@/lib/search";
 import * as srdEn from "@/i18n/srd-en";
+import { ensureSrdKind } from "@/i18n";
+
+// The `monster` spec reads the LAZY monster catalogue — load it (for every
+// registered locale) before the sweep, exactly as the compendium route factory /
+// palette effect do at runtime (the load-before-render gate; it is no longer a
+// specs-barrel top-level await — that TLA fragmented the eager bundle).
+await ensureSrdKind("monster");
 
 // A translator stub that echoes the key (or its defaultValue) so a spec resolves a
 // label without booting i18next — we only care that the SRD resolver doesn't throw.

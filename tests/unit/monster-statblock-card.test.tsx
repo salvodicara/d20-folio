@@ -15,7 +15,8 @@ import { getMonster } from "@/data/monsters";
 import { MonsterStatBlockCard } from "@/components/shared/MonsterStatBlockCard";
 
 // The monster catalogue is a LAZY SRD kind — load it (for every registered locale)
-// before rendering, exactly as the compendium specs barrel does at runtime.
+// before rendering, exactly as the compendium route factory / palette effect do at
+// runtime (the load-before-render gate).
 await ensureSrdKind("monster");
 
 describe("MonsterStatBlockCard", () => {

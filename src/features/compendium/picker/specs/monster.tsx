@@ -4,12 +4,13 @@
  * the picker simply reads. Facets by CR band · size · creature type; the detail
  * leaf mounts the shared {@link MonsterStatBlockCard}.
  *
- * PURE spec module — no side effects, no TLA here (D-2): the load-before-render
- * gate (`await ensureSrdKind("monster")`) lives in the barrel (`specs/index.ts`),
- * the only module that registers this spec into a consumer-visible registry, so
- * the lazy `monster` catalogue is resident for every read below. `picker/index.ts`
- * re-exports the concrete specs from their own modules (not the barrel), so the
- * cockpit add-modals never evaluate this graph — the bestiary corpus stays lazy.
+ * PURE spec module — no side effects, no TLA (D-2): the load-before-render gate
+ * (`await ensureSrdKind("monster")`) lives at the two runtime consumers of the
+ * specs registry — the compendium route factory (`router.tsx`) and the palette's
+ * specs `import()` effect (`CommandPalette.tsx`) — so the lazy `monster` catalogue
+ * is resident for every read below. `picker/index.ts` re-exports the concrete specs
+ * from their own modules (not the barrel), so the cockpit add-modals never evaluate
+ * this graph — the bestiary corpus stays lazy.
  */
 
 import { Skull } from "lucide-react";
@@ -94,7 +95,7 @@ export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
   getId: (m) => m.id,
   getName: (m, { locale }) => monName(m, locale),
   // Bilingual NAME corpus (active locale + always-resident EN + id). EN monster is
-  // resident post the barrel's `ensureSrdKind` TLA, so `nameCorpus` holds.
+  // resident post the consumers' `ensureSrdKind("monster")` gate, so `nameCorpus` holds.
   nameText: (m, { locale }) => nameCorpus("monster", m.id, monName(m, locale)),
   searchText: (m, ctx) => [
     ...monsterSpec.nameText(m, ctx),

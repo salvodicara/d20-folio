@@ -6,7 +6,6 @@
  * accessors. Add a content type = add a spec here.
  */
 
-import { ensureSrdKind } from "@/i18n";
 import type { CompendiumPickerSpec } from "../types";
 import { spellSpec } from "./spell";
 import { featureSpec } from "./feature";
@@ -19,15 +18,20 @@ import { invocationSpec } from "./invocation";
 import { weaponMasterySpec } from "./weapon-mastery";
 import { monsterSpec } from "./monster";
 
-// D-2: the load-before-render seam. The barrel is only ever imported dynamically
-// (CompendiumPage's `React.lazy` route chunk + the palette's `import()`), so this
-// top-level `await` gates every registry consumer — the compendium route, the
-// palette index, deep links — with the lazy `monster` catalogue resident for
-// every currently-loaded locale, WITHOUT a single call-site change. The concrete
-// specs stay pure + side-effect-free (`monster.tsx` included); `picker/index.ts`
-// re-exports each from its own module (NOT from here), so the cockpit add-modals
-// never evaluate this graph and the bestiary corpus stays out of their chunk.
-await ensureSrdKind("monster");
+// D-2: the load-before-render gate for the lazy `monster` catalogue lives at the
+// TWO runtime consumers of this registry — the compendium route factory
+// (`router.tsx`, awaited before the page renders) and the palette's specs
+// `import()` effect (`CommandPalette.tsx`) — each `await ensureSrdKind("monster")`
+// before it reads a monster name. It deliberately does NOT sit here as a module
+// top-level `await`: a TLA turns this barrel into an async module, and Rolldown
+// then refuses to inline the eager app-shell's ~60 shared modules into the entry
+// chunk, fragmenting the eager closure ~14→76 chunks and blowing the P3 budget
+// (fix(build), 2026-07-24 — see bundle-budget.guard.test.ts). Marking the kind
+// resident on the first ensure carries it across later locale switches, so one
+// call per consumer suffices. The concrete specs stay pure + side-effect-free
+// (`monster.tsx` included); `picker/index.ts` re-exports each from its own module
+// (NOT this barrel, which statically imports the corpus via `monsterSpec`), so the
+// cockpit add-modals never evaluate this graph and the bestiary corpus stays lazy.
 
 export {
   spellSpec,

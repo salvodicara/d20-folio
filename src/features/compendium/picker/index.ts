@@ -21,10 +21,11 @@ export type {
 } from "./types";
 // D-2: the concrete specs re-export from their OWN modules, NOT the barrel
 // (`./specs`) — the cockpit add-modals import them through this index, and the
-// barrel carries the `await ensureSrdKind("monster")` side effect that would drag
-// the lazy bestiary corpus into their chunk graph. The barrel's aggregate
-// (`COMPENDIUM_SPECS` / `AnyCompendiumSpec`) is reachable ONLY from
-// `CompendiumPage` + the palette `import()` + tests, which import `./specs` direct.
+// barrel statically imports `monsterSpec` → the `@/data/monsters` corpus, so
+// re-exporting the barrel here would drag that lazy corpus into their chunk graph
+// (the eager-partition tripwire pins this). The barrel's aggregate
+// (`COMPENDIUM_SPECS` / `AnyCompendiumSpec`) is reachable ONLY from `CompendiumPage`
+// + the palette `import()` + tests, which import the barrel directly.
 export { spellSpec } from "./specs/spell";
 export { featureSpec } from "./specs/feature";
 export { featSpec } from "./specs/feat";

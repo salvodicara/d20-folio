@@ -11,11 +11,13 @@
  *    Polymorph projection is REGENERATED from the corpus, never runtime-coupled to
  *    it, so the eager graph can never grow.
  *  - `picker/index.ts` must never re-export `from "./specs"` (D-2): the barrel
- *    carries the `await ensureSrdKind("monster")` side effect, and the cockpit
+ *    statically imports `monsterSpec` → the `@/data/monsters` corpus, and the cockpit
  *    add-modals import the concrete specs through this index — a barrel re-export
  *    would drag the lazy bestiary corpus into their chunk. The concrete specs
  *    re-export from their own modules; the barrel aggregate is reached only from
- *    the lazy compendium route + the palette `import()`.
+ *    the lazy compendium route + the palette `import()`, each of which awaits
+ *    `ensureSrdKind("monster")` before it renders (the load-before-render gate that
+ *    used to be a barrel TLA — moved out because a TLA fragmented the eager closure).
  */
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
