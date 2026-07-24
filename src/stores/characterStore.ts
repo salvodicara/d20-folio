@@ -251,6 +251,14 @@ interface CharacterState {
   addCondition: (condition: string) => void;
   removeCondition: (condition: string) => void;
   /**
+   * RA-19 — drop a condition WITHOUT its own toast, returning the EXACT reverse
+   * applier (or `null` when nothing was removed / read-only), so a composite
+   * caller (the movement-meter Stand action) bundles the clear with its other
+   * effect under ONE undo. The shared mutation core `removeCondition` delegates
+   * to (which wraps it in the standard `condition-removed` undo toast).
+   */
+  removeConditionSilent: (condition: string) => (() => void) | null;
+  /**
    * RA-12 — apply a SUCCESSFUL Hide check's outcome in one undoable unit (SRD
    * 5.2.1 "Hide [Action]"): gain the Invisible condition and remember the check
    * TOTAL as `session.hiddenDc` (the DC for a creature to find you). Logs the
@@ -1194,61 +1202,65 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     };
   },
 
-  removeCondition: (condition) => {
-    if (get().readonly) return;
+  removeConditionSilent: (condition) => {
+    if (get().readonly) return null;
     const { character } = get();
-    if (!character) return;
-    if (!character.session.conditions.includes(condition)) return;
+    if (!character) return null;
+    if (!character.session.conditions.includes(condition)) return null;
     const prevConditions = character.session.conditions;
     // RA-12 — dropping Invisible ends the hidden state: the remembered find-DC
     // goes with it (and comes back on undo).
     const prevHiddenDc = character.session.hiddenDc;
     const clearsHiddenDc = condition === "invisible" && prevHiddenDc !== undefined;
-    // Immediate-commit WITH 5s undo, now routed onto the session undo stack — removing
-    // a condition is destructive (a mis-tap wipes a high-stakes state with no recovery).
-    // The store emits the condition ID only; the view resolves its localized name
-    // (toasts-as-data, §3.2). The removal runs INSIDE `execute` so redo re-applies it;
-    // the reverse restores the FULL prior condition list + the log entry.
+    set({
+      character: {
+        ...character,
+        session: {
+          ...character.session,
+          conditions: prevConditions.filter((c) => c !== condition),
+          ...(clearsHiddenDc ? { hiddenDc: undefined } : {}),
+        },
+      },
+    });
+    // Events-as-data: a lost condition is a story beat. Capture the id so the
+    // reverse removes EXACTLY this line (a mis-tapped removal restores both the
+    // condition AND the log).
+    const lossLogId = get().logEvent({
+      kind: "condition-loss",
+      conditionId: condition,
+    });
+    // Persist the whole resulting combat state (offline-safe).
+    persistCombat(get);
+    return () => {
+      const cur = get().character;
+      if (!cur) return;
+      set({
+        character: {
+          ...cur,
+          session: {
+            ...cur.session,
+            conditions: prevConditions,
+            ...(clearsHiddenDc ? { hiddenDc: prevHiddenDc } : {}),
+          },
+        },
+      });
+      get().removeLogEntry(lossLogId);
+      // Re-persist the restored trio so the subdoc converges with the undo.
+      persistCombat(get);
+    };
+  },
+
+  removeCondition: (condition) => {
+    // Immediate-commit WITH 5s undo, routed onto the session undo stack — removing
+    // a condition is destructive (a mis-tap wipes a high-stakes state with no
+    // recovery). The store emits the condition ID only; the view resolves its
+    // localized name (toasts-as-data, §3.2). The drop runs INSIDE `execute`
+    // (`removeConditionSilent`) so redo re-applies it; when nothing is removed
+    // (absent / read-only) the silent core returns null → registerUndoableToast
+    // bails with no toast, exactly like the old presence + readonly guards.
     registerUndoableToast(
       { intent: { kind: "condition-removed", conditionId: condition } },
-      () => {
-        set({
-          character: {
-            ...character,
-            session: {
-              ...character.session,
-              conditions: prevConditions.filter((c) => c !== condition),
-              ...(clearsHiddenDc ? { hiddenDc: undefined } : {}),
-            },
-          },
-        });
-        // Events-as-data: a lost condition is a story beat. Capture the id so the
-        // reverse removes EXACTLY this line (a mis-tapped removal restores both the
-        // condition AND the log).
-        const lossLogId = get().logEvent({
-          kind: "condition-loss",
-          conditionId: condition,
-        });
-        // Persist the whole resulting combat state (offline-safe).
-        persistCombat(get);
-        return () => {
-          const cur = get().character;
-          if (!cur) return;
-          set({
-            character: {
-              ...cur,
-              session: {
-                ...cur.session,
-                conditions: prevConditions,
-                ...(clearsHiddenDc ? { hiddenDc: prevHiddenDc } : {}),
-              },
-            },
-          });
-          get().removeLogEntry(lossLogId);
-          // Re-persist the restored trio so the subdoc converges with the undo.
-          persistCombat(get);
-        };
-      },
+      () => get().removeConditionSilent(condition),
       { turnScoped: false }
     );
   },

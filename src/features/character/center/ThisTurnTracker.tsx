@@ -48,6 +48,7 @@ import {
 } from "@/lib/smart-tracker";
 import { getEquipment } from "@/data/equipment";
 import { resolveConditionEffects } from "@/lib/condition-effects";
+import { localeDistance } from "@/lib/utils";
 import { composeTurnLimiters } from "@/lib/views/combat-action-view";
 import {
   registerUndoableResult,
@@ -427,6 +428,34 @@ export function ThisTurnTracker({
   // so the speed-0 state is an informational note, never a hard lock.
   const conditions = character.session.conditions;
   const conditionEffects = resolveConditionEffects(conditions);
+  // RA-19 — SRD Prone "Restricted Movement": standing up costs half your Speed
+  // (the BASE walking Speed — Dash extends movement, not Speed — so NOT
+  // `moveBudgetFt`). While Prone, the meter offers a one-tap Stand that clears
+  // the condition AND debits the half-Speed cost under ONE undo (mirrors RA-12
+  // Hide). Crawl stays narrative (the 5-ft meter has no movement-mode concept).
+  const isProne = conditions.includes("prone");
+  const standCostFt = Math.floor(speedFt / 2);
+  function standUp() {
+    // Drop Prone SILENTLY (returns its exact reverse) so the condition clear and
+    // the movement debit ride ONE undo entry, not two separate toasts.
+    const dropProne = useCharacterStore.getState().removeConditionSilent("prone");
+    if (!dropProne) return; // not prone / read-only — nothing to do
+    const combat = useCombatStore.getState();
+    // DELTA debit (un-clamped upper): the MovementSlider snap-clamps the display,
+    // and a delta refund on undo stays exact across a later turn's movement.
+    combat.setMovementUsed(combat.movementUsedFt + standCostFt);
+    registerUndoableResult(
+      {
+        message: t("combat.stoodUpToast", { cost: localeDistance(standCostFt, locale) }),
+      },
+      () => {
+        dropProne(); // re-adds Prone + strips the condition-loss log line
+        const c = useCombatStore.getState();
+        c.setMovementUsed(Math.max(0, c.movementUsedFt - standCostFt));
+      },
+      () => standUp()
+    );
+  }
   // The FIRST active condition that breaks concentration — names the cause on the
   // concentration banner note. (Speed-0's cause is NOT named on the movement
   // slider: it is carried solely by the "what's limiting you this turn" banner —
@@ -650,6 +679,21 @@ export function ThisTurnTracker({
           </button>
         )}
       </div>
+
+      {/* RA-19 — while Prone, a one-tap Stand on the turn meter clears the
+          condition and debits half the base Speed (undoable). Reuses the
+          `conc-banner` recipe (golden rule 3 — no new CSS); the P10 glass case
+          already hides `.conc-banner-drop` on a read-only sheet. Crawl stays a
+          narrative note (the meter has no movement-mode concept). */}
+      {isProne && (
+        <div className="conc-banner" role="status">
+          <span className="conc-banner-mark" aria-hidden />
+          <span className="conc-banner-text">{t("combat.proneStandNote")}</span>
+          <button type="button" className="conc-banner-drop" onClick={standUp}>
+            {t("combat.standAction", { cost: localeDistance(standCostFt, locale) })}
+          </button>
+        </div>
+      )}
 
       {/* Start-of-turn regen note — shown only while its condition holds
           (Bloodied + alive), right where the turn starts. */}

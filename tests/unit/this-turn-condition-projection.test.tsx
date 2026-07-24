@@ -25,6 +25,7 @@ import { ThisTurnTracker } from "@/features/character/center/ThisTurnTracker";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
+import { useToastStore } from "@/stores/toastStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import {
@@ -208,6 +209,50 @@ describe("ThisTurnTracker — 'what's limiting you this turn' summary (B3)", () 
     load();
     mount("none");
     expect(document.querySelector(".turn-limiters")).toBeNull();
+  });
+
+  // RA-19 — SRD Prone "Restricted Movement": while Prone the turn meter offers a
+  // one-tap Stand that clears the condition AND debits half the base Speed under
+  // ONE undo (mock Speed 30 → ⌊30/2⌋ = 15 ft). Crawl stays a narrative note.
+  it("RA-19 — Prone surfaces a one-tap Stand that clears the condition and debits half Speed, undoably", () => {
+    useToastStore.setState({ toasts: [], timers: {} });
+    load((d) => {
+      d.session.conditions = ["prone"];
+    });
+    mountView();
+
+    // The banner note + the Stand button (with the half-Speed cost) render.
+    expect(screen.getByText(/crawling costs extra movement/i)).toBeTruthy();
+    const stand = screen.getByRole("button", { name: /Stand up.*15 ft/i });
+
+    // One tap clears Prone AND debits 15 ft.
+    fireEvent.click(stand);
+    expect(useCharacterStore.getState().character?.session.conditions).not.toContain(
+      "prone"
+    );
+    expect(useCombatStore.getState().movementUsedFt).toBe(15);
+    // The banner (and its button) are gone once Prone is cleared.
+    expect(screen.queryByRole("button", { name: /Stand up/i })).toBeNull();
+
+    // The composite undo reverts BOTH legs under one entry.
+    useToastStore.getState().toasts.at(-1)?.onUndo?.();
+    expect(useCharacterStore.getState().character?.session.conditions).toContain("prone");
+    expect(useCombatStore.getState().movementUsedFt).toBe(0);
+  });
+
+  it("RA-19 — the Stand undo refunds EXACTLY the half-Speed delta (movement spent after standing is preserved)", () => {
+    useToastStore.setState({ toasts: [], timers: {} });
+    load((d) => {
+      d.session.conditions = ["prone"];
+    });
+    mountView();
+    fireEvent.click(screen.getByRole("button", { name: /Stand up.*15 ft/i }));
+    expect(useCombatStore.getState().movementUsedFt).toBe(15);
+    // Move a further 10 ft after standing, then undo the Stand.
+    useCombatStore.getState().setMovementUsed(25);
+    useToastStore.getState().toasts.at(-1)?.onUndo?.();
+    // Delta refund: 25 − 15 = 10 (the post-stand movement is preserved).
+    expect(useCombatStore.getState().movementUsedFt).toBe(10);
   });
 });
 

@@ -1090,6 +1090,53 @@ describe("characterStore — rest mechanics", () => {
       expect(restored?.conditions).toContain("invisible");
       expect(restored?.hiddenDc).toBe(18);
     });
+
+    // RA-19 — the silent drop core: mutate + log + return the exact reverse, with
+    // NO toast (that is the property distinguishing it from `removeCondition`, so
+    // a composite caller bundles the clear with its other effect under one undo).
+    it("RA-19 — removeConditionSilent drops the condition + logs it, fires NO toast, and its reverse restores both", async () => {
+      const { useToastStore } = await import("@/stores/toastStore");
+      useToastStore.setState({ toasts: [], timers: {} });
+      const char = mockCharacter();
+      char.session.conditions = ["prone", "poisoned"];
+      char.session.logEntries = [];
+      useCharacterStore.getState().setCharacter(char);
+
+      const reverse = useCharacterStore.getState().removeConditionSilent("prone");
+      // Forward: prone dropped, order preserved, a condition-loss line logged.
+      expect(typeof reverse).toBe("function");
+      expect(useCharacterStore.getState().character?.session.conditions).toEqual([
+        "poisoned",
+      ]);
+      const lastEvent = useCharacterStore
+        .getState()
+        .character?.session.logEntries.at(-1)?.event;
+      expect(lastEvent).toEqual({ kind: "condition-loss", conditionId: "prone" });
+      // The distinguishing property: NO toast (removeCondition would fire one).
+      expect(useToastStore.getState().toasts.length).toBe(0);
+
+      // Reverse restores the full prior list + strips the condition-loss line.
+      reverse?.();
+      expect(useCharacterStore.getState().character?.session.conditions).toEqual([
+        "prone",
+        "poisoned",
+      ]);
+      expect(
+        useCharacterStore
+          .getState()
+          .character?.session.logEntries.some((e) => e.event.kind === "condition-loss")
+      ).toBe(false);
+    });
+
+    it("RA-19 — removeConditionSilent returns null and mutates nothing when the condition is absent", () => {
+      const char = mockCharacter();
+      char.session.conditions = ["poisoned"];
+      useCharacterStore.getState().setCharacter(char);
+      expect(useCharacterStore.getState().removeConditionSilent("prone")).toBeNull();
+      expect(useCharacterStore.getState().character?.session.conditions).toEqual([
+        "poisoned",
+      ]);
+    });
   });
 
   // PLAY-NO-EDIT — session defenses mirror the conditions register: add/remove

@@ -339,10 +339,17 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       a readied spell goes through the spell's own card on the same board (which spends the slot and
       engages Concentration on a concentration spell), so no held-spell state machine was built.
       Regression: the RA-18 block in `smart-tracker.test.ts`.
-- [ ] **RA-19 — Prone economics (stand = half Speed, crawl) absent from the movement meter.**
+- [x] **RA-19 — Prone economics (stand = half Speed, crawl) absent from the movement meter.**
       _Movement · INTERACTION (defect C) · S3 · every-combat with knockdowns._ SRD "Prone —
       Restricted Movement". Fix: while `prone` is set, a one-tap "Stand (−⌊Speed/2⌋ ft)" on the meter
-      clears the condition + debits movement. **T3.**
+      clears the condition + debits movement. **T3.** **SHIPPED (2026-07-24):** while `prone` is set,
+      a one-tap "Stand up (−⌊Speed/2⌋ ft)" `.conc-banner` on the turn meter clears the condition via
+      the new `characterStore.removeConditionSilent` (the shared drop core `removeCondition` now
+      delegates to) and debits half the BASE Speed through `setMovementUsed`, composed under ONE
+      `registerUndoableResult` (turnScoped:false, delta-refund) — mirrors RA-12 Hide; reuses the
+      `conc-banner` recipe (no new CSS). Crawl stays a narrative banner note (the 5-ft meter has no
+      movement-mode concept). Regression: `character-store.test.ts` (removeConditionSilent) +
+      `this-turn-condition-projection.test.tsx` (render + composite/delta undo).
 - [x] **RA-20 — The 2024 generic action list is incomplete.** _Action economy · GAP · S3._
       `BASE_ACTIONS` lacks **Influence, Magic, Study, Utilize** (the `base-grapple`/`base-shove` cards
       stay — RA-04 corrected them to the 2024 Unarmed Strike options in place rather than retiring
