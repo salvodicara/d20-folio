@@ -156,7 +156,9 @@ read those rather than duplicating them here.
   every entry `source: "SRD"` (guard-enforced); ALL other content lives in the private
   `content-pack/`, composed in via the `@pack` alias (docs/ARCHITECTURE.md → "The content-pack
   seam"). Both build modes stay green: `just ci` (pack) and `just ci-srd-only` (the public
-  snapshot's composition).
+  snapshot's composition). The partition is a licensing boundary, never a scope boundary — every
+  change is designed against the FULL game and pack-side twins update in the same motion
+  (`docs/GOLDEN_RULES.md` D11).
 - **Source of truth = `http://dnd2024.wikidot.com/`** — the standard public 2024-rules reference
   5e tools verify against. Model the **facts** (which spells a subclass grants and at what level,
   numeric values, level tables) as declarative data; don't paste long verbatim prose — write

@@ -380,6 +380,15 @@ renumber it into the 19–20 sequence. -->
 - **D10 — React purity.** No `Date.now()`/`Math.random()` in render, no `.current` reads during
   render, no synchronous `setState` in effects. (The React Compiler itself is deliberately NOT
   enabled — `docs/CONTRIBUTING.md`.)
+- **D11 — The split is licensing, not scope.** The public/pack partition is a LICENSING
+  boundary only, never a scope boundary: every change is conceived and validated against the
+  FULL D&D 2024 game — the wiki corpus, the private pack's content, the BG3-informed IT lexicon,
+  the whole D2 cascade — and the SRD-only public build is just the license-clean projection of
+  that whole. When a change touches anything the content pack mirrors, extends, or depends on
+  (types, evaluator branches, i18n keys/lexicon, guards, data seams, docs), the pack-side twin is
+  updated IN THE SAME MOTION — same unit of work, both build modes green (`just ci` +
+  `just ci-srd-only`) — never deferred as a follow-up. A change that ships public-side while
+  silently leaving the pack stale is a bug (owner, 2026-07-24).
 
 ## How to add a rule
 
