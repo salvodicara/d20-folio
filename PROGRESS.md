@@ -47,10 +47,12 @@ self-side defensive downside, `grants.ts:1802`), **speed-floor** (Boots of Strid
 the **"· active" self-labelling** of while-active effect chips and the GR7 **prose-parser deletions**
 (`extractTrigger` / `extractSpellTrigger` / `extractDamageDice` retired in favour of structured tokens).
 The **DM toolkit's** headline surface (the in-hub party-overview dashboard + encounter/initiative
-tracker) is **shipped and live**; the forward frontier (detailed under _Next — the forward plan_) is
-the tracking-doc reconciliation audit (rule 16, the on-ramp), the ratified **DDB-parity feature
-epic** (bestiary-first — `docs/POSITIONING.md`), and the P4 polish tail (guided tour, compendium
-polish).
+tracker) is **shipped and live**. The **2024 core-rules SYSTEM audit (RA-01…RA-35)** is now
+**fully CLOSED** (`docs/AUTOMATION_BACKLOG.md` is a dated audit record; see _Shipped — the 2024
+core-rules audit close-out_), and the tracking-doc reconciliation truth-sweep landed with it. The
+forward frontier (detailed under _Next — the forward plan_) is the ratified **DDB-parity feature
+epic** (bestiary-first — `docs/POSITIONING.md`), the react-router advisory triage, and the P4 polish
+tail (guided tour, compendium polish).
 
 **Session undo/redo stack — shipped in v0.19.0, DEPLOYED live (2026-07-11):** the 5-second undo toast grew a durable
 home — a per-character, session-memory, LIFO **undo stack** (`src/stores/undoStore.ts`, depth 20) with
@@ -306,6 +308,29 @@ footprint barely changes read→edit — both fail on the old fixed box). DESIGN
 | 2 — Social & Campaigns  | Multi-char, campaigns, party view, sharing, snapshots                       | ✅ Shipped + live (v0.15.x) — Party, campaigns, open team sheets, the in-hub party overview + encounter/initiative tracker (single-source combat state), DM invite management, shared-notes reveal lens, admin god-mode                                                                                                                                                                                    |
 | 3 — Chronicle           | Markdown chronicle + version history, Treasury, SharedNotes, Sessions       | ✅ Shipped (v0.15.x) — Chronicle (markdown + version history), Treasury, SharedNotes, Sessions all live. (The AI assistant / AI session recaps once scoped here were **DROPPED** — owner 2026-07-06; see _Open decisions_.)                                                                                                                                                                                |
 | 4 — Polish & Completion | PDF export, command palette, compendium, a11y, perf, onboarding             | 🔄 PDF export (faithful from-scratch recreation of the official 2024 sheet layout — the two-page sheet plus an appended **resource ledger** page listing every consumable pool (class resources + magic-item charges: name · pips-or-count · recovery cadence, paginating when long), EN/IT, copyright-clean), glossary tooltips, perf budget, Cmd+K palette shipped. Guided tour + compendium polish open |
+
+## Shipped — the 2024 core-rules audit close-out (2026-07-24)
+
+The flagship **2024 core-rules SYSTEM audit** (RA-01…RA-35, `docs/AUTOMATION_BACKLOG.md`) is
+**fully CLOSED** — that ledger is now a dated audit record, not a work queue. RA-01…RA-14 shipped in
+the earlier damage-and-dying / weapon-mastery / ammunition waves (2026-07-12…21); the final push
+closed **RA-15…RA-35** across waves **W1–W7** (War-Caster concentration-save advantage, passive ±5
+step, Heavy disadvantage, Ready/Prone/generic-action completeness, Exhaustion-6 death, retroactive
+CON→HP, material-component + ritual notes, the four-state initiative override for Surprise, jump /
+push-drag-lift surfacing, the 2024 languages creation step, travel-pace + mounted/underwater
+reference tables, the scoped-Grappled + crit-rule + slot-count-override fixes). Two are **residual
+by design** (reviewer-adjudicated, docs-only): **RA-31** — the self-side Cover AC toggle DECLINED
+(no enforceable lifetime, DM double-count, the settled Dodge precedent; the `COVER_REFERENCE` table
+is the shipped treatment); **RA-35** — Musician's Encouraging Song grants no caster self-inspiration
+(ally-targeted under every reading; the universal insp-toggle already covers the caster). The
+**W9 reference-disclosure follow-up** made the Combat tab's playbook + rules-reference blocks
+on-demand (its own entry below). The **Hex / Hunter's Mark** marked-target rider (display-only "vs
+marked/cursed target", never auto-summed) landed in the same campaign. The **D11 pack-side handoff
+was executed** the moment the pack was workable — the 17-spell material-cost fill + the IT-lexicon
+sweeps + the RA-35 status-quo residual lock in `content-pack/`. Housekeeping: **`fast-uri` patched**
+(the Dependabot advisory, entry below). The tracking-doc reconciliation truth-sweep (this wave)
+verified the three tracking docs against the merged code; the forward frontier is now the DDB-parity
+bestiary epic, the react-router advisory triage, and parked backups/observability/legal.
 
 ## Shipped — Combat-tab reference disclosure (2026-07-24)
 
@@ -808,7 +833,9 @@ verified against SRD 5.2.1 + the live code, ranked severity × frequency, each w
 citation, code seam, and fix tier: **`docs/AUTOMATION_BACKLOG.md` → "The 2024 core-rules SYSTEM
 audit"**. Fixes ship in later waves (correctness = Tier-2/3 autonomous; interaction-quality = Fable
 design rounds with rule-25 previews). Two tracking-doc overclaims found and reconciled in the same
-commit (S5 breaksConcentration auto-drop; the exhaustion level-6 death note).
+commit (S5 breaksConcentration auto-drop; the exhaustion level-6 death note). **UPDATE (2026-07-24):
+all 35 findings are now CLOSED** (RA-31 + RA-35 residual by design) — the ledger is a dated audit
+record; the campaign summary is _Shipped — the 2024 core-rules audit close-out_.
 
 **Wave 1 (Fable design round) SHIPPED 2026-07-12 — the damage-and-dying flow (RA-03 + RA-05 +
 RA-10 + RA-11 closed together as one coherent flow):** the pure damage-intake engine
