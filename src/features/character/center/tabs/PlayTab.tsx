@@ -1082,7 +1082,7 @@ export function PlayTab() {
           "the combat helper"), folded in from the standalone Algorithm page. */}
       <CombatAlgorithm />
 
-      {/* Rules reference — the SRD situational-combat + travel facts a player
+      {/* Rules Reference — the SRD situational-combat + travel facts a player
           looks up at the table (Cover · Mounted · Underwater · Travel Pace). */}
       <SituationalRules />
     </div>

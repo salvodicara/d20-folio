@@ -294,12 +294,12 @@
     "damageMathReduced": "riduzione −{{n}}",
     "damageTotalPreview": "Totale: {{raw}} → {{net}}",
     "rulesReference": {
-      "title": "Regole di riferimento",
+      "title": "Regole di Riferimento",
       "hint": "Regole situazionali di combattimento e viaggio, a colpo d'occhio",
       "cover": "Copertura",
-      "mounted": "Combattimento in sella",
-      "underwater": "Combattimento subacqueo",
-      "travel": "Andatura di viaggio",
+      "mounted": "Combattimento in Sella",
+      "underwater": "Combattimento Subacqueo",
+      "travel": "Andatura di Viaggio",
       "perMinute": "{{dist}} al minuto",
       "perHour": "{{dist}} all'ora",
       "perDay": "{{dist}} al giorno"

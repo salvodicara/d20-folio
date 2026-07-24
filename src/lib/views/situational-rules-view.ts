@@ -1,6 +1,6 @@
 /**
  * Presenter (rule 5 — `lib/views` is the ONLY layer that localizes) for the
- * Play-tab "Rules reference" panel. Folds the pure inline-BiText reference tables
+ * Play-tab "Rules Reference" panel. Folds the pure inline-BiText reference tables
  * (Cover = M8, Mounted/Underwater = RA-30, Travel Pace = RA-29) into a
  * locale-resolved view-model of plain strings, so `SituationalRules` renders
  * without ever touching BiText.

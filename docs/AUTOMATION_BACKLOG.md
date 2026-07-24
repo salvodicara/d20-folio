@@ -477,7 +477,7 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       Perception, slow = may move stealthily), no per-character mechanic and no Grant. Display-only:
       like `cover.ts` it carries inline bilingual `BiText` behind a documented
       `no-srd-strings-in-data` whitelist bypass (same rationale). RENDERED on-demand in the Play
-      tab's "Rules reference" panel (`SituationalRules`, collapsed by default — blooms on a header
+      tab's "Rules Reference" panel (`SituationalRules`, collapsed by default — blooms on a header
       click since W9) — distances localize via `localeDistance` (feet) +
       the new `localeMiles` (overland). Pinned by `tests/unit/travel-pace.test.ts` + the surface's
       render test `tests/unit/situational-rules.test.tsx`.
@@ -490,7 +490,7 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       ranged auto-miss beyond range + Disadvantage within, Fire Resistance) as inline-`BiText`
       reference data — the `cover.ts` recipe, whitelisted in `no-srd-strings-in-data.guard`. The
       2024 SRD facts (Piercing-not-the-2014-weapon-list; all ranged Disadvantaged) are pinned by
-      `tests/unit/combat-variants.test.ts`. RENDERED on-demand in the Play tab's "Rules reference"
+      `tests/unit/combat-variants.test.ts`. RENDERED on-demand in the Play tab's "Rules Reference"
       panel (`SituationalRules`, collapsed by default since W9) alongside the Cover + Travel-pace
       tables (the shared surface built this
       wave; render test `tests/unit/situational-rules.test.tsx`). This also retrofits the previously

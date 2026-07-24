@@ -1,5 +1,5 @@
 /**
- * SituationalRules — a read-only "Rules reference" panel at the foot of the Play
+ * SituationalRules — a read-only "Rules Reference" panel at the foot of the Play
  * tab: the SRD situational-combat and exploration facts a player looks up at the
  * table (Cover, Mounted Combat, Underwater Combat, Travel Pace). Pure reference —
  * no per-character mechanic, no Grant, no dice. It renders a pre-localized

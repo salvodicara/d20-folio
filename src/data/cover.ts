@@ -2,7 +2,7 @@
  * M8 — Cover quick-reference (D&D 2024 PHB).
  *
  * Cover doesn't have a per-character mechanic, so this is a pure reference.
- * It renders in the Play tab's "Rules reference" panel (`SituationalRules`),
+ * It renders in the Play tab's "Rules Reference" panel (`SituationalRules`),
  * alongside the mounted/underwater and travel-pace tables. The values are
  * authoritative and shouldn't drift — see the unit test in
  * `tests/unit/cover.test.ts`.

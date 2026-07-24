@@ -3,7 +3,7 @@
  *
  * Travel pace has no per-character mechanic (nothing to compute, no Grant), so
  * this is a pure reference table — exactly like cover.ts / COVER_REFERENCE. It
- * renders in the Play tab's "Rules reference" panel (`SituationalRules`). Values
+ * renders in the Play tab's "Rules Reference" panel (`SituationalRules`). Values
  * are authoritative and shouldn't drift — see tests/unit/travel-pace.test.ts.
  *
  * Distances are the canonical SRD numbers (feet per minute, miles per hour,
