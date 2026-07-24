@@ -1879,8 +1879,10 @@ export interface MonsterLanguages {
   telepathyFt?: number;
   /** "plus any N languages" (NPC-style prints). */
   plusAnyCount?: number;
-  /** Irregular closed prints: "the languages it knew in life". */
-  special?: "knew-in-life";
+  /** Irregular closed prints: "the languages it knew in life" (`knew-in-life`)
+   *  and "Languages All" — knows every language (`all`; couatl, deva, and the
+   *  other high-Celestial/planar prints). Rendered via `monster.lang_<token>`. */
+  special?: "knew-in-life" | "all";
 }
 /* The "none" line (—) = the whole `languages` field omitted. */
 

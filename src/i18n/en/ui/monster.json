@@ -14,6 +14,7 @@
     "langPlusAny_one": "{{langs}} plus any 1 language",
     "langPlusAny_other": "{{langs}} plus any {{count}} languages",
     "langKnewInLife": "the languages it knew in life",
+    "langAll": "All",
     "blindBeyond": "(blind beyond this radius)",
     "darkvisionMagical": "(unimpeded by magical Darkness)",
     "gear": "Gear",

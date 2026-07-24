@@ -98,6 +98,8 @@ function languagesLine(m: MonsterStatBlock, t: TFn, locale: Locale): string {
   const parts: string[] = [];
   if (L.special === "knew-in-life") {
     parts.push(t("monster.langKnewInLife"));
+  } else if (L.special === "all") {
+    parts.push(t("monster.langAll"));
   } else {
     let langs = (L.ids ?? [])
       .map((id) => localizeSrd("language", id, "name", locale))

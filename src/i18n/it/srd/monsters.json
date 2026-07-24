@@ -1434,6 +1434,578 @@
     "name": "Balzo",
     "text": "Il bulette salta fino a un massimo di 9 metri usando 3 metri di movimento."
   },
+  "camel": {
+    "name": "Cammello"
+  },
+  "camel.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni Contundenti."
+  },
+  "cat": {
+    "name": "Gatto"
+  },
+  "cat.traits.jumper": {
+    "name": "Saltatore",
+    "text": "La distanza dei salti del gatto è determinata dalla sua Destrezza piuttosto che dalla Forza."
+  },
+  "cat.actions.scratch": {
+    "name": "Graffio",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 1 danno Tagliente."
+  },
+  "centaur-trooper": {
+    "name": "Centauro combattente"
+  },
+  "centaur-trooper.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il centauro effettua due attacchi, utilizzando Picca o Arco lungo in qualsiasi combinazione."
+  },
+  "centaur-trooper.actions.pike": {
+    "name": "Picca",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 9 (1d10 + 4) danni Perforanti."
+  },
+  "centaur-trooper.actions.longbow": {
+    "name": "Arco lungo",
+    "text": "Tiro per colpire a distanza: +4, gittata 45/180 m. Colpito: 6 (1d8 + 2) danni Perforanti."
+  },
+  "centaur-trooper.bonusActions.trampling-charge": {
+    "name": "Carica travolgente",
+    "text": "Il centauro si muove fino alla sua velocità massima senza provocare attacchi di opportunità e può attraversare gli spazi di qualsiasi creatura di taglia Media o inferiore. Ogni creatura il cui spazio viene invaso dal centauro viene bersagliata una volta dal seguente effetto. Tiro salvezza su Forza: CD 14. Fallimento: 7 (1d6 + 4) danni Contundenti, e il bersaglio è prono."
+  },
+  "chain-devil": {
+    "name": "Diavolo delle catene"
+  },
+  "chain-devil.traits.diabolical-restoration": {
+    "name": "Ristoro diabolico",
+    "text": "Se il diavolo muore al di fuori dei Nove Inferi, il suo corpo si dissolve in fumo sulfureo e ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nei Nove Inferi."
+  },
+  "chain-devil.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il diavolo dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "chain-devil.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il diavolo effettua due attacchi Catena e utilizza Evoca catena infernale."
+  },
+  "chain-devil.actions.chain": {
+    "name": "Catena",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 11 (2d6 + 4) danni Taglienti. Se il bersaglio è una creatura di taglia Grande o inferiore, è afferrato (CD 14 per sfuggire) da una delle due catene, e resta trattenuto finché la presa perdura."
+  },
+  "chain-devil.actions.conjure-infernal-chain": {
+    "name": "Evoca catena infernale",
+    "text": "Il diavolo evoca una catena di fuoco per legare una creatura. Tiro salvezza su Destrezza: CD 15, una creatura che il diavolo è in grado di vedere entro 18 metri. Fallimento: 9 (2d4 + 4) danni da Fuoco, e il bersaglio è trattenuto fino alla fine del turno successivo del diavolo; a quel punto la catena scompare. Se il bersaglio è di taglia Grande o inferiore, il diavolo lo trascina in linea retta verso di sé fino a un massimo di 9 metri. Successo: La catena svanisce."
+  },
+  "chain-devil.reactions.unnerving-gaze": {
+    "name": "Sguardo snervante",
+    "text": "Attivazione: una creatura che il diavolo è in grado di vedere inizia il suo turno entro 9 metri da quest'ultimo e può vedere il diavolo. Esito: Tiro salvezza su Saggezza: CD 15, la creatura che ha provocato la reazione. Fallimento: il bersaglio è spaventato fino al termine del proprio turno successivo. Successo: il bersaglio è immune allo Sguardo snervante di questo diavolo per 24 ore."
+  },
+  "chimera": {
+    "name": "Chimera"
+  },
+  "chimera.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La chimera effettua un attacco Sfondamento, un attacco Morso e un attacco Artiglio. Può sostituire l'attacco Artiglio con un utilizzo di Soffio di fuoco, se disponibile."
+  },
+  "chimera.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 11 (2d6 + 4) danni Perforanti, o 18 (4d6 + 4) danni Perforanti se la chimera dispone di vantaggio al tiro per colpire."
+  },
+  "chimera.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 7 (1d6 + 4) danni Taglienti."
+  },
+  "chimera.actions.ram": {
+    "name": "Sfondamento",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 10 (1d12 + 4) danni Contundenti. Se il bersaglio è una creatura di taglia Media o inferiore, cade a terra prono."
+  },
+  "chimera.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 15, tutte le creature in un cono di 4,5 metri. Fallimento: 31 (7d8) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "chuul": {
+    "name": "Chuul"
+  },
+  "chuul.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il chuul può respirare in aria e in acqua."
+  },
+  "chuul.traits.sense-magic": {
+    "name": "Percezione della magia",
+    "text": "Il chuul percepisce la magia entro 36 metri da sé. Sotto ogni altro aspetto, questo tratto funziona come l'incantesimo individuazione del magico, ma di per sé non è magico."
+  },
+  "chuul.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il chuul effettua due attacchi Tenaglia e utilizza Tentacoli paralizzanti."
+  },
+  "chuul.actions.pincer": {
+    "name": "Tenaglia",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 9 (1d10 + 4) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore, è afferrato (CD 14 per sfuggire) da una delle due tenaglie."
+  },
+  "chuul.actions.paralyzing-tentacles": {
+    "name": "Tentacoli paralizzanti",
+    "text": "Tiro salvezza su Costituzione: CD 13, una creatura afferrata dal chuul. Fallimento: il bersaglio è avvelenato e ripete il tiro salvezza alla fine del suo turno successivo e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente. Finché è avvelenato, il bersaglio è paralizzato."
+  },
+  "clay-golem": {
+    "name": "Golem di argilla"
+  },
+  "clay-golem.traits.acid-absorption": {
+    "name": "Assorbimento dell'acido",
+    "text": "Ogni volta che il golem riceve danni da Acido, non subisce danni, recuperando un numero di punti ferita pari ai danni da Acido a lui inflitti."
+  },
+  "clay-golem.traits.berserk": {
+    "name": "Berserk",
+    "text": "Ogni volta che il golem inizia il suo turno sanguinante, tira 1d6. Se esce 6, il golem entra in uno stato di berserk. A ogni suo turno, finché è in stato di berserk, il golem attacca la creatura più vicina che è in grado di vedere. Se nessuna creatura è abbastanza vicina per essere attaccata, il golem si scaglia contro un oggetto. Una volta che il golem entra in stato di berserk, rimane in questo stato finché non viene distrutto o non è più sanguinante."
+  },
+  "clay-golem.traits.immutable-form": {
+    "name": "Forma immutabile",
+    "text": "Il golem non può mutare forma."
+  },
+  "clay-golem.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il golem dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "clay-golem.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il golem effettua due attacchi Schianto, o effettua tre attacchi Schianto se ha usato Fretta nello stesso turno."
+  },
+  "clay-golem.actions.slam": {
+    "name": "Schianto",
+    "text": "Tiro per colpire in mischia: +9, portata 1,5 m. Colpito: 10 (1d10 + 5) danni Contundenti più 6 (1d12) danni da Acido, e i punti ferita massimi del bersaglio sono ridotti di un ammontare pari ai danni da Acido subiti."
+  },
+  "clay-golem.bonusActions.hasten": {
+    "name": "Fretta",
+    "text": "Il golem effettua le azioni di Disimpegno e Scatto."
+  },
+  "cloaker": {
+    "name": "Manto assassino"
+  },
+  "cloaker.traits.light-sensitivity": {
+    "name": "Sensibilità alla luce",
+    "text": "Finché è esposto alla luce intensa, il manto assassino subisce svantaggio ai tiri per colpire."
+  },
+  "cloaker.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il manto assassino effettua un attacco Avvinghiare e due attacchi Coda."
+  },
+  "cloaker.actions.attach": {
+    "name": "Avvinghiare",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 13 (3d6 + 3) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore, il manto si avvinghia ad essa. Finché resta avvinghiato al bersaglio, quest'ultimo è accecato, e il manto non può effettuare attacchi Avvinghiare contro altri bersagli. Inoltre, il manto assassino dimezza i danni subiti (arrotondati per difetto) e il bersaglio subisce lo stesso ammontare di danni. Il manto assassino può staccarsi da solo usando 1,5 metri di movimento. Il bersaglio o una creatura entro 1,5 metri da esso può effettuare un'azione per staccarsi il manto di dosso, superando una prova di Forza (Atletica) con CD 14."
+  },
+  "cloaker.actions.tail": {
+    "name": "Coda",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 8 (1d10 + 3) danni Taglienti."
+  },
+  "cloaker.bonusActions.moan": {
+    "name": "Gemito",
+    "text": "Tiro salvezza su Saggezza: CD 13, tutte le creature in un'emanazione di 18 metri di cui il manto assassino è il punto di origine. Fallimento: il bersaglio è spaventato fino al termine del turno successivo del manto assassino. Successo: il bersaglio è immune al Gemito di questo manto assassino per le 24 ore successive."
+  },
+  "cloaker.bonusActions.phantasms": {
+    "name": "Allucinazioni",
+    "text": "Il manto assassino lancia l'incantesimo immagine speculare senza bisogno di componenti, utilizzando Saggezza come caratteristica da incantatore. L'incantesimo termina in anticipo se il manto assassino inizia o termina il proprio turno mentre è esposto alla luce intensa."
+  },
+  "cloud-giant": {
+    "name": "Gigante delle nuvole"
+  },
+  "cloud-giant.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il gigante effettua due attacchi, utilizzando Mazza tonante o Nuvola di tuoni in qualsiasi combinazione. Può sostituire un attacco con un utilizzo di Incantesimi per lanciare nube di nebbia."
+  },
+  "cloud-giant.actions.thunderous-mace": {
+    "name": "Mazza tonante",
+    "text": "Tiro per colpire in mischia: +12, portata 3 m. Colpito: 21 (3d8 + 8) danni Contundenti più 7 (2d6) danni da Tuono."
+  },
+  "cloud-giant.actions.thundercloud": {
+    "name": "Nuvola di tuoni",
+    "text": "Tiro per colpire a distanza: +12, gittata 72 m. Colpito: 18 (3d6 + 8) danni da Tuono, e il bersaglio è incapacitato fino al termine del proprio turno successivo."
+  },
+  "cloud-giant.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il gigante lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 15): 1/giorno ciascuno: Controllare tempo atmosferico, forma gassosa, telecinesi. A volontà: Individuazione del magico, luce, nube di nebbia."
+  },
+  "cloud-giant.bonusActions.misty-step": {
+    "name": "Passo velato",
+    "text": "Il gigante lancia l'incantesimo passo velato, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "cockatrice": {
+    "name": "Coccatrice"
+  },
+  "cockatrice.actions.petrifying-bite": {
+    "name": "Morso pietrificante",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 3 (1d4 + 1) danni Perforanti. Se il bersaglio è una creatura, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 11. Primo fallimento: il bersaglio è trattenuto. Ripete il tiro salvezza alla fine del proprio turno successivo se è ancora trattenuto e, se lo supera, l'effetto svanisce. Secondo fallimento: il bersaglio è pietrificato invece che trattenuto per 24 ore."
+  },
+  "commoner": {
+    "name": "Popolano"
+  },
+  "commoner.traits.training": {
+    "name": "Addestramento",
+    "text": "Il popolano ha competenza in un'abilità a scelta del GM e dispone di vantaggio ogni volta che effettua una prova di caratteristica utilizzando quell'abilità."
+  },
+  "commoner.actions.club": {
+    "name": "Randello",
+    "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 2 (1d4) danni Contundenti."
+  },
+  "constrictor-snake": {
+    "name": "Serpente stritolatore"
+  },
+  "constrictor-snake.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 6 (1d8 + 2) danni Perforanti."
+  },
+  "constrictor-snake.actions.constrict": {
+    "name": "Stritolare",
+    "text": "Tiro salvezza su Forza: CD 12, una creatura di taglia Media o inferiore che il serpente è in grado di vedere entro 1,5 metri. Fallimento: 7 (3d4) danni Contundenti e il bersaglio viene afferrato (CD 12 per sfuggire)."
+  },
+  "copper-dragon-wyrmling": {
+    "name": "Drago di rame cucciolo"
+  },
+  "copper-dragon-wyrmling.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 7 (1d10 + 2) danni Taglienti."
+  },
+  "copper-dragon-wyrmling.actions.acid-breath": {
+    "name": "Soffio di acido",
+    "text": "Tiro salvezza su Destrezza: CD 11, tutte le creature in una linea lunga 6 metri e larga 1,5 metri. Fallimento: 18 (4d8) danni da Acido. Successo: danni dimezzati."
+  },
+  "copper-dragon-wyrmling.actions.slowing-breath": {
+    "name": "Soffio rallentante",
+    "text": "Tiro salvezza su Costituzione: CD 11, tutte le creature in un cono di 4,5 metri. Fallimento: il bersaglio non può effettuare reazioni, la sua velocità è dimezzata e nel suo turno può effettuare un'azione o un'azione bonus, non entrambe. L'effetto dura fino al termine del proprio turno successivo."
+  },
+  "couatl": {
+    "name": "Couatl"
+  },
+  "couatl.traits.shielded-mind": {
+    "name": "Mente schermata",
+    "text": "I pensieri del couatl non possono essere letti in alcun modo e le altre creature possono comunicare telepaticamente con lui solo se lo permette."
+  },
+  "couatl.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 11 (1d12 + 5) danni Perforanti, e il bersaglio è Avvelenato fino al termine del turno successivo del couatl."
+  },
+  "couatl.actions.constrict": {
+    "name": "Stritolare",
+    "text": "Tiro salvezza su Forza: CD 15, una creatura di taglia Media o inferiore che il couatl è in grado di vedere entro 1,5 metri. Fallimento: 8 (1d6 + 5) danni Contundenti. Il bersaglio è Afferrato (CD 13 per sfuggire) ed è Trattenuto finché la presa perdura."
+  },
+  "couatl.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il couatl lancia uno dei seguenti incantesimi, senza bisogno di componenti, utilizzando Saggezza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 15): 1/giorno ciascuno: Creare cibo e acqua, ristorare superiore, scrutare, sogno, sonno. A volontà: Individuazione dei pensieri, individuazione del bene e del male, individuazione del magico, trasformazione (solo in forma di bestia o umanoide, senza punti ferita temporanei ottenuti dall'incantesimo, e senza concentrazione o punti ferita temporanei per mantenere l'incantesimo)."
+  },
+  "couatl.bonusActions.divine-aid": {
+    "name": "Aiuto divino",
+    "text": "Il couatl lancia benedizione, ristorare inferiore o santuario senza bisogno di componenti, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "crab": {
+    "name": "Granchio"
+  },
+  "crab.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il granchio può respirare in aria e in acqua."
+  },
+  "crab.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 1 danno Contundente."
+  },
+  "crocodile": {
+    "name": "Coccodrillo"
+  },
+  "crocodile.traits.hold-breath": {
+    "name": "Apnea",
+    "text": "Il coccodrillo può trattenere il respiro per 1 ora."
+  },
+  "crocodile.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 6 (1d8 + 2) danni Perforanti. Se il bersaglio è una creatura di taglia Media o inferiore, è Afferrato (CD 12 per sfuggire). Mentre è afferrato, il bersaglio è anche Trattenuto."
+  },
+  "cultist": {
+    "name": "Cultista"
+  },
+  "cultist.actions.ritual-sickle": {
+    "name": "Falcetto rituale",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 3 (1d4 + 1) danni Taglienti più 1 danno Necrotico."
+  },
+  "cultist-fanatic": {
+    "name": "Cultista fanatico"
+  },
+  "cultist-fanatic.actions.pact-blade": {
+    "name": "Lama del patto",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 6 (1d8 + 2) danni Taglienti più 7 (2d6) danni Necrotici."
+  },
+  "cultist-fanatic.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il cultista lancia uno dei seguenti incantesimi, utilizzando Saggezza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 12, +4 al tiro per colpire degli attacchi con incantesimo): A volontà: Luce, taumaturgia. 2/giorno: Comando. 1/giorno: Blocca persone."
+  },
+  "cultist-fanatic.bonusActions.spiritual-weapon": {
+    "name": "Arma spirituale",
+    "text": "Il cultista lancia l'incantesimo arma spirituale, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "darkmantle": {
+    "name": "Mantoscuro"
+  },
+  "darkmantle.actions.crush": {
+    "name": "Schiacciare",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m Colpito: 6 (1d6 + 3) danni contundenti, e il mantoscuro si avvinghia al bersaglio. Se il bersaglio è una creatura di taglia Media o inferiore e il mantoscuro dispone di vantaggio al tiro per colpire, copre il bersaglio, il quale è accecato e soffoca mentre il mostro è avvinghiato a lui in questo modo. Finché è avvinghiato a un bersaglio, il mantoscuro può attaccare solamente il bersaglio, ma dispone di vantaggio ai suoi tiri per colpire. Inoltre, il mantoscuro si muove insieme al bersaglio, la sua velocità diventa 0 e non può beneficiare di alcun bonus alla velocità. Una creatura può effettuare un'azione per staccarsi il mantoscuro di dosso, riuscendoci con una prova di Forza (Atletica) con CD 13 superata. Nel suo turno, il mantoscuro può staccarsi spontaneamente dal bersaglio usando 1,5 metri di movimento."
+  },
+  "darkmantle.actions.darkness-aura": {
+    "name": "Aura di oscurità",
+    "text": "(1/giorno) L'oscurità magica riempie un'emanazione di 4,5 metri di cui il mantoscuro è il punto di origine. Questo effetto dura finché il mantoscuro mantiene la concentrazione su di esso, fino a 10 minuti. La scurovisione non può penetrare in quest'area e nessuna luce può illuminarla."
+  },
+  "death-dog": {
+    "name": "Cane della morte"
+  },
+  "death-dog.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il cane della morte effettua due attacchi Morso."
+  },
+  "death-dog.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni perforanti. Se il bersaglio è una creatura, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 12. Primo fallimento: il bersaglio è avvelenato. Finché lo resta, i punti ferita massimi del bersaglio non tornano alla normalità al termine di un riposo lungo. La creatura ripete il tiro salvezza ogni 24 ore trascorse e, se lo supera, l'effetto svanisce. Fallimenti successivi: i punti ferita massimi del bersaglio avvelenato sono ridotti di 5 (1d10)."
+  },
+  "deer": {
+    "name": "Daino"
+  },
+  "deer.traits.agile": {
+    "name": "Agile",
+    "text": "Il daino non provoca attacchi di opportunità quando esce dalla portata di un nemico."
+  },
+  "deer.actions.ram": {
+    "name": "Sfondamento",
+    "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 2 (1d4) danni contundenti."
+  },
+  "deva": {
+    "name": "Deva"
+  },
+  "deva.traits.exalted-restoration": {
+    "name": "Ristoro glorioso",
+    "text": "Se il deva muore al di fuori di Monte Celestia, il suo corpo scompare ed esso ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte a Monte Celestia."
+  },
+  "deva.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il deva dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "deva.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il deva effettua due attacchi Mazza divina."
+  },
+  "deva.actions.holy-mace": {
+    "name": "Mazza divina",
+    "text": "Tiro per colpire in mischia: +8, portata 1,5 m. Colpito: 7 (1d6 + 4) danni contundenti più 18 (4d8) danni radiosi."
+  },
+  "deva.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il deva lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 17): 1/giorno ciascuno: Comunione, rianimare morti. A volontà: Individuazione del bene e del male, trasformazione (solo in forma di bestia o umanoide, senza punti ferita temporanei ottenuti dall'incantesimo, e senza concentrazione o punti ferita temporanei per mantenere l'incantesimo)."
+  },
+  "deva.bonusActions.divine-aid": {
+    "name": "Aiuto divino",
+    "text": "Il deva lancia cura ferite, rimuovi maledizione o ristorare inferiore, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "dire-wolf": {
+    "name": "Lupo feroce"
+  },
+  "dire-wolf.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il lupo dispone di vantaggio al tiro per colpire contro una creatura se almeno uno degli alleati dell'animale si trova entro 1,5 metri dalla creatura e non è incapacitato."
+  },
+  "dire-wolf.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m Colpito: 8 (1d10 + 3) danni perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra prono."
+  },
+  "djinni": {
+    "name": "Djinni"
+  },
+  "djinni.traits.elemental-restoration": {
+    "name": "Ristoro elementale",
+    "text": "Se il djinni muore al di fuori del Piano Elementale dell'Aria, il suo corpo si dissolve nell'aria ed esso ne acquisisce uno nuovo dopo 1d4 giorni, tornando in vita con tutti i suoi punti ferita da qualche parte sul Piano Elementale dell'Aria."
+  },
+  "djinni.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il djinni dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "djinni.traits.wishes": {
+    "name": "Desideri",
+    "text": "Il djinni ha una probabilità del 30% di conoscere l'incantesimo desiderio. Se il djinni lo conosce, può lanciarlo solo per conto di una creatura diversa da un genio che comunica un desiderio in un modo che il djinni è in grado di comprendere. Se il djinni lancia l'incantesimo per conto della creatura, non subisce alcuna conseguenza derivante dal lancio dell'incantesimo. Una volta che il djinni l'ha lanciato tre volte, non può farlo di nuovo per 365 giorni."
+  },
+  "djinni.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il djinni effettua tre attacchi, usando Lama burrascosa o Lampo burrascoso in qualsiasi combinazione."
+  },
+  "djinni.actions.storm-blade": {
+    "name": "Lama burrascosa",
+    "text": "Tiro per colpire in mischia: +9, portata 1,5 m. Colpito: 12 (2d6 + 5) danni taglienti più 7 (2d6) danni da fulmine."
+  },
+  "djinni.actions.storm-bolt": {
+    "name": "Lampo burrascoso",
+    "text": "Tiro per colpire a distanza: +9, gittata 36 metri. Colpito: 13 (3d8) danni da tuono. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra prono."
+  },
+  "djinni.actions.create-whirlwind": {
+    "name": "Creare vortice",
+    "text": "Il djinni evoca un vortice in un punto che è in grado di vedere entro 36 metri. Il vortice riempie un cilindro del raggio di 6 metri e alto 18 metri, centrato su quel punto, e perdura fino al termine della concentrazione del djinni su di esso. Il djinni può spostare il vortice fino a 6 metri all'inizio di ogni suo turno. Ogni volta che il vortice entra nello spazio di una creatura o una creatura entro nello spazio del vortice, la creatura è soggetta al seguente effetto. Tiro salvezza su Forza: CD 17 (una creatura effettua questo tiro salvezza solo una volta per turno, e il djinni non subisce alcun effetto). Fallimento: Finché si trova nel vortice, il bersaglio è trattenuto e si sposta insieme al vortice. All'inizio di ogni suo turno, il bersaglio trattenuto subisce 21 (6d6) danni da tuono. Alla fine di ogni suo turno, il bersaglio ripete il tiro salvezza e, se lo supera, l'effetto svanisce."
+  },
+  "djinni.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il djinni lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 17): 1/giorno ciascuno: creazione, forma gassosa, immagine maggiore, invisibilità, spostamento planare. 2/giorno ciascuno: Camminare nel vento, creare cibo e acqua (è in grado di creare vino invece di acqua), linguaggi. A volontà: individuazione del bene e del male, individuazione del magico."
+  },
+  "doppelganger": {
+    "name": "Doppelganger"
+  },
+  "doppelganger.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il doppelganger effettua due attacchi Schianto e usa Sembianze inquietanti."
+  },
+  "doppelganger.actions.slam": {
+    "name": "Schianto",
+    "text": "Tiro per colpire in mischia: +6 (con vantaggio durante il primo round di ogni combattimento), portata 1,5 m. Colpito: 11 (2d6 + 4) danni Contundenti."
+  },
+  "doppelganger.actions.read-thoughts": {
+    "name": "Lettura del pensiero",
+    "text": "Il doppelganger lancia individuazione dei pensieri senza bisogno di componenti, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 12)."
+  },
+  "doppelganger.actions.unsettling-visage": {
+    "name": "Sembianze inquietanti",
+    "text": "Tiro salvezza su Saggezza: CD 12, tutte le creature in grado di vedere il doppelganger e che si trovano in un'emanazione di 4,5 metri di cui il doppelganger è il punto di origine. Fallimento: il bersaglio è spaventato, ripete il tiro salvezza alla fine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente."
+  },
+  "doppelganger.bonusActions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "Il doppelganger si trasforma in un umanoide di taglia Media o Piccola, oppure ritorna alla sua vera forma. Le sue statistiche di gioco, a eccezione della taglia, restano le stesse in ogni forma. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "draft-horse": {
+    "name": "Cavallo da tiro"
+  },
+  "draft-horse.actions.hooves": {
+    "name": "Zoccoli",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 6 (1d4 + 4) danni Contundenti."
+  },
+  "dragon-turtle": {
+    "name": "Testuggine dragona"
+  },
+  "dragon-turtle.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "dragon-turtle.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La testuggine dragona effettua tre attacchi Morso. Può sostituire un attacco con un attacco Coda."
+  },
+  "dragon-turtle.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +13, portata 4,5 m. Colpito: 23 (3d10 + 7) danni Perforanti più 7 (2d6) danni da Fuoco. Trovarsi sott'acqua non conferisce alcuna resistenza contro questi danni da Fuoco."
+  },
+  "dragon-turtle.actions.tail": {
+    "name": "Coda",
+    "text": "Tiro per colpire in mischia: +13, portata 4,5 m. Colpito: 18 (2d10 + 7) danni Contundenti. Se il bersaglio è una creatura di taglia Enorme o inferiore, cade a terra prono."
+  },
+  "dragon-turtle.actions.steam-breath": {
+    "name": "Soffio di vapore",
+    "text": "Tiro salvezza su Costituzione: CD 19, tutte le creature in un cono di 18 metri. Fallimento: 56 (16d6) danni da Fuoco. Successo: danni dimezzati. Fallimento o successo: trovarsi sott'acqua non conferisce alcuna resistenza contro questi danni da Fuoco."
+  },
+  "dretch": {
+    "name": "Dretch"
+  },
+  "dretch.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 4 (1d6 + 1) danni Taglienti."
+  },
+  "dretch.actions.fetid-cloud": {
+    "name": "Nube fetida",
+    "text": "Tiro salvezza su Costituzione: CD 11, tutte le creature in un'emanazione di 3 metri di cui il dretch è il punto di origine. Fallimento: il bersaglio è avvelenato fino al termine del proprio turno successivo. Finché è avvelenata, la creatura può effettuare nel suo turno un'azione o un'azione bonus, ma non entrambe, e non può effettuare reazioni."
+  },
+  "drider": {
+    "name": "Drider"
+  },
+  "drider.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "Il drider può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "drider.traits.sunlight-sensitivity": {
+    "name": "Sensibilità al sole",
+    "text": "Finché è esposto alla luce del sole, il drider subisce svantaggio alle prove di caratteristica e ai tiri per colpire."
+  },
+  "drider.traits.web-walker": {
+    "name": "Andatura sulla ragnatela",
+    "text": "Il drider ignora le restrizioni di movimento causate dalle ragnatele e conosce l'ubicazione esatta di ogni altra creatura a contatto con la stessa ragnatela."
+  },
+  "drider.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drider effettua tre attacchi, usando Zampa anteriore o Esplosione di veleno in qualsiasi combinazione."
+  },
+  "drider.actions.foreleg": {
+    "name": "Zampa anteriore",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 13 (2d8 + 4) danni Perforanti."
+  },
+  "drider.actions.poison-burst": {
+    "name": "Esplosione di veleno",
+    "text": "Tiro per colpire a distanza: +6, gittata 36 m. Colpito: 13 (3d6 + 3) danni da Veleno."
+  },
+  "drider.bonusActions.magic-of-the-spider-queen": {
+    "name": "Magia della Regina Ragno",
+    "text": "Il drider lancia luminescenza, oscurità o ragnatela, senza bisogno di componenti materiali e utilizzando Saggezza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 14)."
+  },
+  "druid": {
+    "name": "Druido"
+  },
+  "druid.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il druido effettua due attacchi, usando Bastone di rampicanti o Bagliore verdeggiante in qualsiasi combinazione."
+  },
+  "druid.actions.vine-staff": {
+    "name": "Bastone di rampicanti",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Contundenti più 2 (1d4) danni da Veleno."
+  },
+  "druid.actions.verdant-wisp": {
+    "name": "Bagliore verdeggiante",
+    "text": "Tiro per colpire a distanza: +5, gittata 27 m. Colpito: 10 (3d6) danni Radiosi."
+  },
+  "druid.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il druido lancia uno dei seguenti incantesimi, utilizzando Saggezza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 13): 1/giorno ciascuno: animale messaggero, bagliore lunare, passo veloce. 2/giorno ciascuno: intralciare, onda tonante. A volontà: artificio druidico, parlare con gli animali."
+  },
+  "dryad": {
+    "name": "Driade"
+  },
+  "dryad.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "La driade dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "dryad.traits.speak-with-beasts-and-plants": {
+    "name": "Parlare con bestie e vegetali",
+    "text": "La driade può comunicare con le bestie e i vegetali come se condividesse con loro una lingua."
+  },
+  "dryad.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La driade effettua un attacco Sferzata di rampicante o Esplosione di spine, e può usare Incantesimi per lanciare charme sui mostri."
+  },
+  "dryad.actions.vine-lash": {
+    "name": "Sferzata di rampicante",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 8 (1d8 + 4) danni Taglienti."
+  },
+  "dryad.actions.thorn-burst": {
+    "name": "Esplosione di spine",
+    "text": "Tiro per colpire a distanza: +6, gittata 18 m. Colpito: 7 (1d6 + 4) danni Perforanti."
+  },
+  "dryad.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "La driade lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 14): A volontà: Amicizia con gli animali, artificio druidico, charme sui mostri (dura 24 ore; termina in anticipo se la driade lancia nuovamente l'incantesimo). 1/giorno ciascuno: Intralciare, passare senza tracce."
+  },
+  "dryad.bonusActions.tree-stride": {
+    "name": "Passo arboreo",
+    "text": "Se si trova entro 1,5 metri da un albero di taglia Grande o superiore, la driade si teletrasporta in uno spazio libero entro 1,5 metri da un secondo albero di taglia Grande o superiore che si trova entro 18 metri dall'altro albero."
+  },
+  "dust-mephit": {
+    "name": "Mephit della polvere"
+  },
+  "dust-mephit.traits.death-burst": {
+    "name": "Esplosione mortale",
+    "text": "Il mephit esplode quando muore. Tiro salvezza su Destrezza: CD 10, tutte le creature in un'emanazione di 1,5 metri di cui il mephit è il punto di origine. Fallimento: 5 (2d4) danni Contundenti. Successo: danni dimezzati."
+  },
+  "dust-mephit.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni Taglienti."
+  },
+  "dust-mephit.actions.blinding-breath": {
+    "name": "Soffio accecante",
+    "text": "Tiro salvezza su Destrezza: CD 10, tutte le creature in un cono di 4,5 metri. Fallimento: il bersaglio è Accecato fino al termine del turno successivo del mephit."
+  },
+  "dust-mephit.actions.sleep": {
+    "name": "Sonno",
+    "text": "Il mephit lancia sonno senza bisogno di componenti, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 10)."
+  },
   "ghost": {
     "name": "Fantasma"
   },

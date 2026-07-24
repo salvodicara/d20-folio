@@ -297,7 +297,7 @@
     "name": "Roccia"
   },
   "attack.ram": {
-    "name": "Cozzata"
+    "name": "Sfondamento"
   },
   "attack.hooves": {
     "name": "Zoccoli"
@@ -329,9 +329,6 @@
   "trait.keen-sight": {
     "name": "Vista acuta"
   },
-  "trait.keen-hearing-and-smell": {
-    "name": "Udito e olfatto acuti"
-  },
   "trait.keen-sight-and-smell": {
     "name": "Vista e olfatto acuti"
   },
@@ -360,7 +357,7 @@
     "name": "Salto da fermo"
   },
   "trait.hold-breath": {
-    "name": "Trattenere il respiro"
+    "name": "Apnea"
   },
   "trait.water-breathing": {
     "name": "Respirare in acqua"

@@ -1246,25 +1246,26 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     ],
     senses: { darkvisionFt: 60 },
   },
-  // Dire Wolf (2024 SRD 5.2.1). AC 14, HP 37, CR 1.
+  // Dire Wolf (2024 SRD 5.2.1). AC 14, HP 22, CR 1.
   {
     id: "dire-wolf",
     cr: 1,
     size: "Large",
     ac: 14,
-    hp: 37,
+    hp: 22,
     speeds: { walk: 50 },
     abilityScores: { STR: 17, DEX: 15, CON: 15, INT: 3, WIS: 12, CHA: 7 },
     attacks: [
       {
         nameKey: "attack.bite",
         toHit: 5,
-        damageDice: "2d6+3",
+        damageDice: "1d10+3",
         damageType: "piercing",
         reachFt: 5,
       },
     ],
-    traits: ["trait.pack-tactics", "trait.keen-hearing-and-smell"],
+    senses: { darkvisionFt: 60 },
+    traits: ["trait.pack-tactics"],
   },
   // Giant Eagle (2024 SRD 5.2.1). AC 13, HP 26, CR 1.
   {

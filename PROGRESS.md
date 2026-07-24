@@ -475,12 +475,15 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     generator (`git rm`'d at the final wave) that regenerates `beasts.ts` + the `beasts.json`
     key deltas from the corpus, wave by wave; the pilot's `brown-bear` is re-derived to its
     2024 statblock (22 HP, Bite +5 1d8+3 / Claw +5 1d4+3, no traits — a live-user Polymorph
-    correctness fix), `rat` already matched. **Data wave 1/8 — `a–b` — is IN** (59 monsters,
-    Aboleth…Bulette: the adult/ancient/wyrmling chromatic+metallic dragons, elementals,
-    dinosaurs, devils+balor, oozes, animated objects, NPC humanoids, and the b-beasts), its 11
-    beast intersections re-derived (Ape → Fist 1d4+3 / Rock 2d6+3, Allosaurus gains Claws and
-    drops Pounce; the shared IT lexemes unified — Gore→Trafiggere, Rock→Roccia, Rend→Squarcio,
-    Pack Tactics→Tattiche del branco). NEXT: the 7 remaining data waves (`c–d`…`t–z`).
+    correctness fix), `rat` already matched. **Data waves 1–2/8 — `a–b` + `c–d` — are IN**
+    (91 monsters: `a–b` = 59 Aboleth…Bulette; `c–d` = 32 Camel…Dust Mephit — the chain/chimera
+    monstrosities, the golems + cloaker, the cloud giant, couatl + deva angels, the djinni genie,
+    the doppelganger/drider/dryad, the NPC humanoids (commoner · cultist(-fanatic) · druid), and
+    the c–d beasts), their beast intersections re-derived: `a–b` re-derived Ape and Allosaurus,
+    `c–d` re-derives **Dire Wolf** to its 2024 statblock (22 HP, Bite +5 1d10+3, Pack Tactics
+    only, gains Darkvision — a live-user Polymorph correctness fix) and unifies the shared IT
+    lexemes to the official IT SRD terms (Ram → "Sfondamento", Hold Breath → "Apnea"). NEXT: the
+    6 remaining data waves (`e–g`…`t–z`).
 - **Companions/Extras:** a persistent companion-statblock surface on the sheet (Find Familiar,
   Primal Companion, Drakewarden, Artificer Steel Defender/Homunculus) — closes a
   rules-completeness hole; reuses the bestiary statblock renderer.
