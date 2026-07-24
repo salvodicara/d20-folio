@@ -62,19 +62,10 @@ the owner hand-writes an artifact is a bug.
    deletes more than it adds is peak ponytail. The `ponytail` skill applies IMPLICITLY to every
    code change in this repo; don't wait to be told.
 2. **Root cause, declare the least.** Never patch a symptom or a single caller — fix the shared
-   seam every caller routes through, and ship the regression test (rule 13). **The repo boundary is
-   not a scope boundary** (owner, 2026-07-24): reason every change against the FULL D&D 2024 game —
-   the wikidot source, the BG3 reference, and the pack's non-SRD content — never only the SRD subset
-   the public repo ships; the SRD-only public build is a LICENSING partition, never a reasoning
-   partition. When a change's blast radius reaches the private content-pack (data, i18n, tests,
-   docs), the pack-side update ships as part of the SAME unit of work — every consumer across the
-   licensing seam is fixed together, never deferred to a follow-up. (When the pack is concurrently
-   owned by another worktree and frozen read-only, that pack-side work becomes a TRACKED, EXPLICIT
-   handoff executed the moment the pack is workable — the same logical unit, never a silent
-   deferral.) A missing derived value means the engine failed: fix it at the seam (a `Grant` kind +
-   evaluator branch + consumer), NEVER hand-declare a derived value or regex over prose. Declare the
-   least; infer the rest. Never default a value the type or domain guarantees non-null (`?? 0` /
-   `?? ""` / `?? []`
+   seam every caller routes through, and ship the regression test (rule 13). A missing derived
+   value means the engine failed: fix it at the seam (a `Grant` kind + evaluator branch +
+   consumer), NEVER hand-declare a derived value or regex over prose. Declare the least; infer the
+   rest. Never default a value the type or domain guarantees non-null (`?? 0` / `?? ""` / `?? []`
    or any equivalent fallback) to satisfy the compiler or move faster — an unjustified fallback
    silently converts a bug into wrong data; prove the invariant instead (thread a required prop
    from where it holds, or assert at the boundary where the guarantee enters).
@@ -396,8 +387,11 @@ renumber it into the 19–20 sequence. -->
   that whole. When a change touches anything the content pack mirrors, extends, or depends on
   (types, evaluator branches, i18n keys/lexicon, guards, data seams, docs), the pack-side twin is
   updated IN THE SAME MOTION — same unit of work, both build modes green (`just ci` +
-  `just ci-srd-only`) — never deferred as a follow-up. A change that ships public-side while
-  silently leaving the pack stale is a bug (owner, 2026-07-24).
+  `just ci-srd-only`) — never deferred as a follow-up. The one carve-out is concurrency: when the
+  pack is currently owned by another worktree (frozen read-only), the pack-side twin becomes a
+  TRACKED, EXPLICIT handoff executed the moment the pack is workable — still the same logical unit of
+  work, never a silent deferral. A change that ships public-side while silently leaving the pack
+  stale is a bug (owner, 2026-07-24).
 
 ## How to add a rule
 

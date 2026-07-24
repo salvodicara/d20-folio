@@ -536,13 +536,15 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       so there are no ally targets to grant; and the caster's own Heroic Inspiration is already a
       universal one-tap socket (the `insp-toggle` on `ResourceRail`). RAW gives the caster nothing,
       so no self-grant was added — a Musician-specific self-grant would be both redundant and
-      RAW-wrong. The feat description is already 2024-faithful in EN + IT. **Pack-side follow-up
-      (deferred, pack frozen read-only this wave):** sharpen the bundled crafter/musician/harper
-      coverage row in `content-pack/docs/AUTOMATION_COVERAGE.md` (melody clause → "Encouraging Song =
-      Heroic Inspiration to allies, residual by design") and add the status-quo guard to
-      `content-pack/tests/unit/wave2-correctness.test.ts` (assert `getFeat("musician")` grants only
-      the 3-instrument tool choice and no heroic-inspiration grant), so the residual can't later
-      drift into the RAW-wrong caster self-grant.
+      RAW-wrong. The feat description is already 2024-faithful in EN + IT. **Pack-side twin —
+      TRACKED HANDOFF under D11's concurrency carve-out** (the pack was frozen read-only by a
+      concurrent worktree this wave, so the twin rides an explicit handoff run the moment the pack is
+      workable, still the same logical unit — never a silent deferral): sharpen the bundled
+      crafter/musician/harper coverage row in `content-pack/docs/AUTOMATION_COVERAGE.md` (melody
+      clause → "Encouraging Song = Heroic Inspiration to allies, residual by design") and add the
+      status-quo guard to `content-pack/tests/unit/wave2-correctness.test.ts` (assert
+      `getFeat("musician")` grants only the 3-instrument tool choice and no heroic-inspiration
+      grant), so the residual can't later drift into the RAW-wrong caster self-grant.
 
 > **Triaged non-findings re-confirmed by this audit** (already-settled residuals, MECHANICS.md
 > "Non-automatable residuals" — do not re-open): attacker-side condition effects, battlefield
