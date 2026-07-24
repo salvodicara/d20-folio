@@ -17,7 +17,7 @@
  * theme-aware metal tokens. Honest blanks throughout; bilingual EN + IT.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Backpack } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -39,6 +39,7 @@ import { InfoCard } from "@/components/shared/InfoCard";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { CurrencyTokens } from "@/components/shared/CurrencyTokens";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Icon } from "@/components/ui/icon";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
 import { WeaponCard, type ItemFieldValue } from "./inventory/WeaponCard";
@@ -50,6 +51,59 @@ type CurrencyKey = "gp" | "sp" | "cp" | "pp" | "ep";
 // i18n'd at render (EN gp/sp/cp/pp/ep → IT SRD 5.2.1 mo/ma/mr/mp/me) by
 // `CurrencyTokens`.
 const CURRENCY_KEYS: readonly CurrencyKey[] = ["pp", "gp", "sp", "cp", "ep"];
+
+/**
+ * A toolbar status chip whose EXPLANATION is on-demand — the carved `.toolbar-chip`
+ * pill made a real trigger for the app's one info-popover recipe (the
+ * `GlossaryTip`/`ActionRiders` family: `Popover` + `.glossary-pop`, click/tap so
+ * it works on every device).
+ *
+ * It replaces a native `title=`, which Chromium paints outside the page and touch
+ * has no gesture for at all — so on a phone the push/drag/lift number (RA-27) and
+ * the attunement rule were simply UNREACHABLE. Every sibling number on the sheet
+ * discloses through this recipe; these now do too.
+ */
+function ChipHint({
+  rubric,
+  hint,
+  danger,
+  children,
+}: {
+  /** The popover heading — an EXISTING canonical label key, never a new string. */
+  rubric: string;
+  /** The plain-language explanation body. */
+  hint: string;
+  /** Over-limit (capacity exceeded / attunement over cap) — the crimson chip. */
+  danger?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="toolbar-chip"
+          // NOT `data-state`: Radix's popover trigger owns that attribute on this
+          // element (open/closed), so the over-limit flag rides its own.
+          data-over={danger ? "" : undefined}
+          aria-label={rubric}
+        >
+          {children}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        rubric={rubric}
+        side="bottom"
+        align="end"
+        collisionPadding={12}
+        className="glossary-pop"
+        aria-label={rubric}
+      >
+        {hint}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function InventoryTab() {
   const { t } = useTranslation();
@@ -368,30 +422,30 @@ export function InventoryTab() {
         />
         <div className="toolbar-end">
           {attunement.show && (
-            <span
-              className="toolbar-chip"
-              data-state={attunement.bonded > attunement.cap ? "danger" : undefined}
-              title={t("equipment.attunementHint")}
+            <ChipHint
+              rubric={t("equipment.attuned")}
+              hint={t("equipment.attunementHint")}
+              danger={attunement.bonded > attunement.cap}
             >
               {t("equipment.attunementCount", {
                 bonded: attunement.bonded,
                 cap: attunement.cap,
               })}
-            </span>
+            </ChipHint>
           )}
           {/* Honest blank: nothing carried → no chip (formatWeight renders 0 as
               empty, which read as a broken "/ 120 lb"). */}
           {encumbrance && encumbrance.carried > 0 && (
-            <span
-              className="toolbar-chip"
-              data-state={encumbrance.over ? "danger" : undefined}
-              title={t("equipment.encumbranceHint", {
+            <ChipHint
+              rubric={t("abilities.carryingCapacity")}
+              hint={t("equipment.encumbranceHint", {
                 pushDragLift: formatWeight(encumbrance.pushDragLift, locale),
               })}
+              danger={encumbrance.over}
             >
               {formatWeight(encumbrance.carried, locale)} /{" "}
               {formatWeight(encumbrance.capacity, locale)}
-            </span>
+            </ChipHint>
           )}
           {/* PLAY-NO-EDIT (Constitution §2.8) — loot lands DURING a session, so
               adding an item never requires edit mode. Edit mode keeps curation

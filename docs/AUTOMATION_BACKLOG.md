@@ -1562,6 +1562,21 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       `src/i18n/it/ui/*.json` as well as the SRD catalogues, with _Sfinimento_ on the retired list.
       Regression: both new cases in `it-name-consistency.guard.test.ts`, fail-before/pass-after.
 
+- [x] **PS-C (RA-27 unreachable on touch) — the carrying-capacity chip hid its push/drag/lift line in
+      a native `title=`.** FIXED 2026-07-24. Chromium paints a native tooltip outside the page and
+      touch has no gesture for it, so the RA-27 number shipped invisible on a phone. Both Inventory
+      toolbar chips (carrying capacity + attunement) now use the app's ONE info-popover recipe
+      (`Popover` + `.glossary-pop`, the GlossaryTip/BreakdownTip family): a `button.toolbar-chip`
+      trigger, tap-to-open on every device, rubric from the existing canonical labels
+      (`abilities.carryingCapacity` / `equipment.attuned`), same content EN lb / IT kg. The
+      over-limit flag moved from `data-state="danger"` to `data-over` (Radix owns `data-state` on a
+      trigger). Rule recorded in `DESIGN.md` (Glossary terms). Regression:
+      `inventory-capacity-hint.test.tsx` (no chip carries a `title`; tapping the capacity chip
+      discloses the push/drag/lift figure in the branded popover). STILL ON `title=` and reported,
+      not fixed here: the rail tracker-name hover description (`.trk-name`, a row that already owns
+      spend interactions), the header initiative advantage/disadvantage marks (their text is already
+      exposed to AT via the icon `label`), and the read-only DM/admin view status chips.
+
 ---
 
 ## Correctness + exposure batch (workstream D)

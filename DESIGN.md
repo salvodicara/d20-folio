@@ -1079,6 +1079,14 @@ campaign hub if it adopts tabbed IA — never re-roll a second tab look.
   whose term carries a real rule (Finesse, Thrown, Versatile, Sap, Vex, …) wraps in a GlossaryTip —
   detail-on-demand inside an already-disclosed detail surface, so collapsed rows stay quiet. The
   chip keeps its per-weapon numbers ("Da Lancio (Gittata 6/18 m)"); the rubric strips them.
+- **Never a native `title=` for a value's explanation** (2026-07-24). Chromium paints the native
+  tooltip outside the page and touch has no gesture for it at all, so an explanation parked there is
+  unreachable on the owner's phone — it is not progressive disclosure, it is a hidden string. Any
+  number/chip whose meaning must be discoverable uses this popover family instead: `GlossaryTip`
+  (a term), `BreakdownTip` (a composed value), or the same `Popover` + `.glossary-pop` pair inline
+  (the Inventory toolbar chips — carrying capacity + attunement — are the reference: a
+  `button.toolbar-chip` trigger with `data-over` carrying the over-limit state, since Radix owns
+  `data-state` on a trigger).
 
 ### Health + resource bars
 

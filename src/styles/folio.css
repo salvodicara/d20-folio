@@ -2021,7 +2021,31 @@ textarea.input::-webkit-resizer {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.toolbar-chip[data-state="danger"] {
+/* The chip as an INFO TRIGGER: same carved pill, now a real tap target for its
+   on-demand explanation popover (a native `title=` is invisible on touch, so the
+   number it explains was unreachable on a phone). Typography inherits from the
+   rule above; only the affordance is added. */
+button.toolbar-chip {
+  cursor: pointer;
+  appearance: none;
+  font-family: inherit;
+  transition:
+    border-color var(--m-fast) var(--ease-standard),
+    color var(--m-fast) var(--ease-standard);
+}
+button.toolbar-chip:hover,
+button.toolbar-chip[data-state="open"] {
+  border-color: color-mix(in oklab, var(--accent-primary) 45%, var(--border-medium));
+  color: var(--text-primary);
+}
+button.toolbar-chip:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+/* Over-limit (carrying capacity exceeded, attunement over the cap). A dedicated
+   `data-over` flag, NOT `data-state`: the chip is a Radix popover trigger, which
+   owns `data-state` (open/closed) on the element it renders. */
+.toolbar-chip[data-over] {
   border-color: color-mix(in oklab, var(--semantic-danger) 55%, var(--border-medium));
   background: color-mix(in oklab, var(--semantic-danger) 14%, var(--input-fill));
   color: var(--semantic-danger);
