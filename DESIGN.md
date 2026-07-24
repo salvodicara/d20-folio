@@ -1538,7 +1538,7 @@ The pieces and their ONE home (`src/styles/folio.css`; the metal tokens in `src/
   same reason.
 - **The ceremonial seat ornament (same rework — the p25 divider).** Dialog heads seat BG3's exact
   under-title divider: a small struck four-point star in its hairline diamond frame, flanked by
-  slender leaf blades and diamond nodes, seated ON the head's fading rule. The per-theme
+  slender lens blades and diamond nodes, seated ON the head's fading rule. The per-theme
   `--seat-orn` SVG (`src/index.css`, drawn 1:1 at 168×17 — no border-image scaling, so hairlines
   land on real pixels) mounts on `.modal-head::after`, straddling the 1px seat rule; its backing
   diamond is baked in the theme's `--bg-surface-2` so the rule passes BEHIND the star (the p25

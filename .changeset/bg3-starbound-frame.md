@@ -13,7 +13,7 @@ star in a hairline diamond frame on the border vertex, launches a twin inner rai
 dot-triplet, and bridges the rails with a concave gothic bracket; the twin rule continues through
 the border-image edge slices as taper wedges, so it dissolves toward a long run's middle and
 closes into a full double-ruled frame on dialogs. Dialog heads additionally seat the ceremonial
-divider from the second plate — a small struck star in its diamond frame, flanked by leaf blades
+divider from the second plate — a small struck star in its diamond frame, flanked by lens blades
 and diamond nodes, occluding the fading seat rule behind it. Both ornaments keep the two-tone
 strike (dark raised gold, light letterpressed bronze), stay decor-only, and never share air with
 content ink; the ornament guard is rewritten to pin the new anatomy, including a drift guard on

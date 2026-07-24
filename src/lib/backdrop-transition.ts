@@ -27,9 +27,15 @@
  * ghost at all.
  */
 
-const FADE_MS = 480;
+/**
+ * The ghost's opacity-fade duration. This is a CROSS-BOUNDARY fact: the actual
+ * transition lives in CSS (`.bg-ghost { transition: opacity 480ms … }`,
+ * src/index.css) — this constant only mirrors it so the removal fallback can
+ * outlast the CSS fade. The two are pinned equal by backdrop-transition.test.ts.
+ */
+export const FADE_MS = 480;
 /** Removal fallback — the fade duration plus a scheduling cushion. */
-const END_MS = FADE_MS + 140;
+export const END_MS = FADE_MS + 140;
 
 interface PainterSnapshot {
   backgroundImage: string;
@@ -44,6 +50,14 @@ interface PainterSnapshot {
 let pending: PainterSnapshot | null = null;
 let ghost: HTMLDivElement | null = null;
 let endTimer: number | undefined;
+/**
+ * Has the seam ever committed a scene? The FIRST commit is cold-load's initial
+ * backdrop set (a realm route mounting on a fresh page) — there the painter's
+ * own one-shot `app-bg-fade` entry animation is already running, so a crossfade
+ * ghost would DOUBLE the entrance. The first commit therefore spawns no ghost;
+ * every subsequent route-to-route change dissolves scene-into-scene.
+ */
+let committed = false;
 
 function readPainter(): PainterSnapshot {
   const cs = getComputedStyle(document.body, "::after");
@@ -83,6 +97,14 @@ function flush(): void {
   }
   // Nothing was painted before (art disabled) — nothing to dissolve.
   if (snap.backgroundImage === "none" || snap.backgroundImage === "") return;
+
+  // First-ever backdrop commit (cold load landing directly on a realm route):
+  // the painter's own `app-bg-fade` entry animation is still running, so a ghost
+  // here would double the entrance. Skip the crossfade for the first commit only.
+  if (!committed) {
+    committed = true;
+    return;
+  }
 
   ghost = document.createElement("div");
   ghost.className = "bg-ghost";

@@ -2396,7 +2396,7 @@ button.pr-dot.lg::before {
   );
 }
 /* The ceremonial seat ornament (the STARBOUND rework's p25 divider, DESIGN.md §5):
-   a small struck four-point star in its diamond frame, leaf blades + nodes at its
+   a small struck four-point star in its diamond frame, lens blades + nodes at its
    flanks, seated ON the head's fading rule — BG3's under-title divider. The
    per-theme `--seat-orn` SVG (index.css) straddles the 1px seat (17px tall,
    centered on the border line); its baked surface-2 backing occludes the rule
@@ -17516,9 +17516,18 @@ button.econ-tok-filter:active .econ-disc {
     transparent
   );
 }
+/* The "d20 Folio" wordmark in light theme (atmosphere wave, owner 2026-07-23).
+   The bright honey `--gold-leaf-300` sat honey-on-honey against the daylight
+   plates at the raised 0.75 presence — the weakest text moment in the app (~3:1).
+   Light gilt that cannot glow reads as ENGRAVED DEEP INK, not bright gold (the
+   whole light-theme gilt grammar), so the brand takes the deep bronze register —
+   the SAME `--accent-primary-deep` engraved-on-ivory ink the light hero corners
+   use. Dark ink self-backs on the honey band (no halo needed; the dark
+   `--on-art-halo` only muddied it), and it stays a distinct engraved mark against
+   the cream fine print beside it. Light-only; the dark bright-gilt wordmark is
+   untouched. */
 [data-theme="light"] .site-footer-brand {
-  color: var(--gold-leaf-300);
-  text-shadow: var(--on-art-halo);
+  color: var(--accent-primary-deep);
 }
 .site-footer-colophon {
   margin: 0;
