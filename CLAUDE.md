@@ -24,8 +24,10 @@ god-mode, the initiative single-source re-architecture, the sheet's management-c
 Binder's Fob / Signet), and the combat-CTA/reversal grammar are shipped and deployed; the
 mechanical-automation long-tail (seams S1–S13) and the 2024 core-rules SYSTEM-audit (RA-01…RA-35 —
 `docs/AUTOMATION_BACKLOG.md`, now a CLOSED audit record) are DONE, and the tracking-doc reconciliation
-audit (the rule-16 on-ramp) closed with this wave. The forward frontier is (1) the ratified DDB-parity
-feature epic in flight (bestiary-first — `docs/POSITIONING.md`), (2) the react-router advisory triage,
+audit (the rule-16 on-ramp) closed with this wave. The forward frontier is (1) the ACTIVE DDB-parity
+feature epic — its bestiary flagship SHIPPED (330 SRD monsters EN+IT + the compendium Monsters
+section, 2026-07-24), the live head now the encounter picker (bestiary-first — `docs/POSITIONING.md`),
+(2) the react-router advisory triage,
 and (3) parked backups/observability/legal (the light
 theme is at FULL parity: the depth-parity
 rebuild shipped 2026-07-09, the owner-ratified "Daylight Sibling Plates" art direction shipped

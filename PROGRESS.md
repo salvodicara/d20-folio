@@ -15,8 +15,8 @@
 step**. Deploys stay owner-gated (golden rule 22), so `main` may run ahead of live at any time.
 **6 real users** have been playing since 2026-06-08. The repo went **open-source + split-repo**
 (2026-07-17), the **full-BG3 identity pivot** landed code-complete (asset integration pending), and
-the **DDB-parity feature epic** was ratified and queued (bestiary-first; the competitive map is
-`docs/POSITIONING.md`). **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
+the **DDB-parity feature epic** is now **ACTIVE** (OPENED 2026-07-23) with its **bestiary flagship
+SHIPPED** (2026-07-24; bestiary-first; the competitive map is `docs/POSITIONING.md`). **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
 **id-storage + GR7 i18n-leak-eradication campaign** is **CLOSED** (v0.13.0): every SRD-derived value
 is a stable, mostly-branded id; every user-visible string lives in `src/i18n/**` (a new language = a
@@ -50,9 +50,12 @@ The **DM toolkit's** headline surface (the in-hub party-overview dashboard + enc
 tracker) is **shipped and live**. The **2024 core-rules SYSTEM audit (RA-01…RA-35)** is now
 **fully CLOSED** (`docs/AUTOMATION_BACKLOG.md` is a dated audit record; see _Shipped — the 2024
 core-rules audit close-out_), and the tracking-doc reconciliation truth-sweep landed with it. The
-forward frontier (detailed under _Next — the forward plan_) is the ratified **DDB-parity feature
-epic** (bestiary-first — `docs/POSITIONING.md`), the react-router advisory triage, and the P4 polish
-tail (guided tour, compendium polish).
+forward frontier (detailed under _Next — the forward plan_) is the **ACTIVE DDB-parity feature
+epic** — its **bestiary flagship SHIPPED** (2026-07-24: 330 SRD monsters EN+IT + the compendium
+Monsters section; see _Shipped — the SRD bestiary campaign_), the live head now the **encounter
+picker** + the 2024-DMG difficulty calculator, with the **pack-side MM corpus** advancing along the
+same manifest (`docs/POSITIONING.md`) — the react-router advisory triage, and the P4 polish tail
+(guided tour, compendium polish).
 
 **Session undo/redo stack — shipped in v0.19.0, DEPLOYED live (2026-07-11):** the 5-second undo toast grew a durable
 home — a per-character, session-memory, LIFO **undo stack** (`src/stores/undoStore.ts`, depth 20) with
@@ -309,6 +312,27 @@ footprint barely changes read→edit — both fail on the old fixed box). DESIGN
 | 3 — Chronicle           | Markdown chronicle + version history, Treasury, SharedNotes, Sessions       | ✅ Shipped (v0.15.x) — Chronicle (markdown + version history), Treasury, SharedNotes, Sessions all live. (The AI assistant / AI session recaps once scoped here were **DROPPED** — owner 2026-07-06; see _Open decisions_.)                                                                                                                                                                                |
 | 4 — Polish & Completion | PDF export, command palette, compendium, a11y, perf, onboarding             | 🔄 PDF export (faithful from-scratch recreation of the official 2024 sheet layout — the two-page sheet plus an appended **resource ledger** page listing every consumable pool (class resources + magic-item charges: name · pips-or-count · recovery cadence, paginating when long), EN/IT, copyright-clean), glossary tooltips, perf budget, Cmd+K palette shipped. Guided tour + compendium polish open |
 
+## Shipped — the SRD bestiary campaign (2026-07-24)
+
+The **DDB-parity epic's flagship** (the first attack-order step) shipped: the FULL SRD 5.2.1
+bestiary — **330 monsters, bilingual (EN + IT)**, sourced from the official EN + IT SRD 5.2.1 PDFs
+(NOT wikidot, which hosts no bestiary) across **8 verified data waves** (`a–b`…`t–z`), each with its
+corpus-integrity + IT-name-consistency guards. It surfaces as the **compendium Monsters section**
+(browse-only `monsterSpec` — gilt CR verdict + CR-band/size/type facets + resident-locale prose
+search, last on the codex ribbon) rendering the shared **statblock plaque** (`MonsterStatBlockCard`,
+full 2024 reading order, both themes, axe-clean), all behind a **lazy `SrdKind` display tier**
+(`ensureSrdKind` + the `srd-monsters` chunk — the bilingual corpus never joins the eager startup
+closure, and the cockpit modals never drag it). Derived stats (saves · skills · passive Perception ·
+XP · proficiency bonus · initiative) come from **CR-driven helpers** (`src/lib/monster.ts`), and the
+corpus guard pins all 330 initiative bonuses to their print. The **2024 beast catalogue was
+re-derived** to 2024 RAW through the ONE shared projection `MonsterStatBlock → BeastStatBlock`
+(`scripts/beast-projection.ts`, owned forever by the completeness projection guard), correcting the
+drifted live-user Polymorph forms and sweeping the **RAW Monstrosity reclassifications** down to the
+final **84 Beast forms** (six 2024-non-Beast animals dropped from Polymorph offers). The pack-side
+D11 twin rides the same manifest (its own entity lives in the pack docs). Granular per-wave history: `CHANGELOG.md` +
+git; the open half of the flagship (encounter picker + the 2024-DMG difficulty calculator) is the
+epic's live head (see _Active epic — The DDB-parity frontier_).
+
 ## Shipped — the 2024 core-rules audit close-out (2026-07-24)
 
 The flagship **2024 core-rules SYSTEM audit** (RA-01…RA-35, `docs/AUTOMATION_BACKLOG.md`) is
@@ -499,10 +523,12 @@ The pivot's work packages:
   convention"); `_identity-shots` and `_polish-shots` stay SEPARATE by design (theme-surface vs
   full-surface sweeps), not folded.
 
-## Ratified epic — The DDB-parity frontier (owner-ratified 2026-07-17)
+## Active epic — The DDB-parity frontier (owner-ratified 2026-07-17, OPENED 2026-07-23)
 
 > The standing competitive map this epic serves — the ahead/behind frame, the deliberate non-goals,
-> and the moat-vs-opening — is `docs/POSITIONING.md`.
+> and the moat-vs-opening — is `docs/POSITIONING.md`. **The epic is now ACTIVE** — the bestiary
+> campaign flagship SHIPPED (see _Shipped — the SRD bestiary campaign_ below); the next attack-order
+> step is the encounter picker + the 2024-DMG difficulty calculator.
 
 **The owner's charter, captured on ratification (golden rule 4).** A full competitive audit vs
 D&D Beyond (mid-2026 verified state: Project Sigil dead, 2D Maps free-for-all, DDB's 2026 roadmap
@@ -516,125 +542,19 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
 
 - **Maps/VTT: constitution §2.9 STANDS** — no battle map, ever. The one permanent DDB gap, owned
   as "bring your own VTT".
-- **Bestiary (flagship):** the FULL wikidot monster corpus, split-aware from day one — the ~330
+- **Bestiary (flagship):** the FULL wikidot monster corpus [sourcing amendment 2026-07-23: wikidot
+  hosts no bestiary — the SRD half was sourced from the official **EN + IT SRD 5.2.1 PDFs**, not
+  wikidot; the MM-et-al pack half follows its own manifest], split-aware from day one — the ~330
   SRD 5.2.1 creatures in-repo, MM-2025-et-al statblocks pack-side, i18n along the same manifest,
   and the existing 91 `src/data/beasts/` Polymorph forms classified by that manifest (coordination
   comment posted on #32). Unlocks four surfaces: the encounter picker (replacing the type-by-hand
   AddMonsterForm), the 2024-DMG XP-budget difficulty calculator (DDB's standalone tool is stuck on
   2014 math — we can be more correct), the compendium Monsters section, and companions.
-  - **In flight (2026-07-24):** the data foundation shipped — the lazy `SrdKind` display tier
-    (`ensureSrdKind`, so the bilingual corpus never joins the eager startup closure), the
-    `MonsterStatBlock` model + CR-driven derivation helpers (`src/lib/monster.ts`), the composed
-    `src/data/monsters/` aggregate behind the `srd-monsters` lazy chunk, and a 10-monster PILOT
-    (skeleton · zombie · goblin-warrior · priest · swarm-of-rats · ghost · young/adult red dragon ·
-    brown-bear · rat) with its EN+IT catalogue + the corpus-integrity guard. Also closed the M1
-    idle-prefetch leak (the compendium left `prefetchLikelyRoutes`). **The compendium Monsters
-    section is now LIVE** — the browse-only `monsterSpec` (gilt CR verdict + CR-band/size/type
-    facets + resident-locale prose search) appended last on the codex ribbon, the shared
-    `MonsterStatBlockCard` on the `.beast-ref`/`.mon-*` plaque (full 2024 reading order, both
-    themes, axe-clean), the D-2 barrel `ensureSrdKind` gate + the `picker/index.ts` re-point (the
-    cockpit modals never drag the corpus), and its e2e/a11y/i18n-sweep surfaces. **The
-    beast-projection seam is now IN PLACE** (C1, §D) — `scripts/beast-projection.ts` is the
-    ONE shared derivation `MonsterStatBlock → BeastStatBlock`, and the completeness projection
-    guard owns it forever, deriving `beasts.ts` + the `beasts.json` key deltas from the corpus;
-    the pilot's `brown-bear` is re-derived to its
-    2024 statblock (22 HP, Bite +5 1d8+3 / Claw +5 1d4+3, no traits — a live-user Polymorph
-    correctness fix), `rat` already matched. **Data waves 1–8/8 (ALL) — `a–b` + `c–d` + `e–g` +
-    `h–k` + `l–m` + `n–p` + `q–s` + `t–z` — are IN**
-    (320 monsters: `a–b` = 59 Aboleth…Bulette; `c–d` = 32 Camel…Dust Mephit; `e–g` = 64
-    Eagle…Guardian Naga — the elementals (earth/fire) + fire/frost giants, the two genies
-    (efreeti) + the erinyes/glabrezu Fiends, the ettercap/ettin/gargoyle/gibbering-mouther/grick
-    monstrosities, the flesh golem + gorgon, the green hag + guardian naga, the ghoul/ghast undead,
-    the gnoll/goblin(-boss/-minion)/gladiator/guard(-captain)/grimlock NPCs, the gold+green dragon
-    wyrmlings, the griffon, and the deep bench of e–g beasts (eagle · elephant · elk · frog · the
-    18 giant-\* animals · goat); `h–k` = 26 Half-Dragon…Kraken — the half-dragon, the harpy + hydra
-    monstrosities, the hell-hound + hezrou/horned-devil/ice-devil/imp/incubus fiends, the hill
-    giant, the ice mephit + invisible stalker, the homunculus + iron golem constructs, the
-    hippogriff, the hobgoblin(-captain/-warrior)/knight/kobold-warrior NPCs, the legendary
-    **Kraken** (CR 23, `xpInLair`), and the h–k beast bench (hawk · hippopotamus · hunter-shark ·
-    hyena · jackal · killer-whale)), their beast intersections re-derived: `e–g` projects 55 corpus
-    beasts and delivers the four drifted-value corrections — **Giant Ape** 157→168 HP, **Giant
-    Boar** AC 12→13, **Giant Octopus** 52→45 HP, **Giant Vulture** 22→25 HP — plus every g-beast's
-    2024 attack/trait re-derivation (live-user Polymorph correctness). The `giant-spider` CON 12
-    (+1) that the polymorph CON-delta pin reads is unchanged by the 2024 print, so the pin holds;
-    `giant-vulture` adds the shared `attack.gouge` beast key. All 6 `h–k` beasts already matched
-    their 2024 projection, so no beast value moved and no `polymorph.test.ts` literal changed this
-    wave. `gnoll` joins the monster-tongue language catalogue (the Blink Dog precedent —
-    catalogue-only, not the player picker). `l–m` = 21 Lamia…Mummy Lord — the lamia + medusa +
-    manticore + merrow + mimic + minotaur-of-baphomet monstrosities, the lemure/marilith fiends,
-    the legendary **Lich** and **Mummy Lord** undead (both with `xpInLair` prints) + mummy +
-    minotaur-skeleton, the magma-mephit/magmin/merfolk-skirmisher elementals, the **Mage** NPC and
-    the l–m beast bench (lion · lizard · mammoth · mastiff · mule). Its beast intersection re-derives
-    two live-user Polymorph corrections: **Lion** drops its stale `roar` trait (2024 models Roar as a
-    Wisdom-save action, not a passive), and **Mammoth** collapses to its 2024 single-Gore statblock
-    (Speed 40→50, Gore 4d8+7→2d10+7, the old Stomp attack + Trampling Charge trait gone); `lizard` ·
-    `mastiff` · `mule` already matched, so no `polymorph.test.ts` literal moved (the pinned
-    `mammoth`-exclusion still holds — CR 6 stays above the offer cap). The **Mage** statblock's
-    official IT name `Mago` byte-collides with the Wizard class's canonical `Mago` (distinct EN
-    entities — Italian has no Wizard/Mage lexical split), which the pilot had DROPPED for lack of an
-    allowlist. This wave reintroduces Mage behind a narrow `ALLOWED_COLLISIONS` sanction in the
-    IT-name guard (the exact `classes:wizard` ↔ `monsters:mage` pair only — both tier-1 IT SRD 5.2.1
-    prints; `docs/IT_NAME_REGISTRY.md`). `n–p` = 27 Nalfeshnee…Purple Worm — the nalfeshnee/oni
-    (with the pit-fiend + planetar celestial/fiend heavyweights, both CR 12–13) and night-hag/oni
-    monstrosity-and-fiend bench, the ochre-jelly ooze, the owlbear/otyugh/phase-spider/purple-worm
-    monstrosities, the ogre + ogre-zombie giants, the pegasus/pseudodragon celestials-and-dragons,
-    the noble/pirate(-captain)/priest-acolyte NPCs, and the n–p beast bench (octopus · owl · panther ·
-    piranha · plesiosaurus · polar-bear · pony · pteranodon). Its beast intersection re-derives the
-    drifted **Panther** (AC 12→13, DEX 15→16, the stale Bite+Claw pair collapsed to the single 2024
-    `Rend` 1d6+3, the `keen-smell`+`pounce` traits dropped, darkvision 60 added) and **Polar Bear**
-    (DEX 10→14, Swim 30→40, Bite+Claw→single `Rend` 1d8+5, `keen-smell` dropped, darkvision 60 added)
-    — both live-user Polymorph corrections — plus **Octopus** (Ink Cloud is a 2024 reaction, not a
-    trait, so `trait.ink-cloud` is pruned); `owl` · `piranha` · `plesiosaurus` · `pony` · `pteranodon`
-    already matched their projection. The `polar-bear` CON 16 (+3) the polymorph CON-delta pin reads
-    is unchanged by the 2024 print, so the pin holds and no `polymorph.test.ts` literal moved.
-    `otyugh` joins the monster-tongue language catalogue (the Blink Dog/gnoll precedent —
-    catalogue-only, not the player picker). `q–s` = 45 Quasit…Swarm of Venomous Snakes — the
-    **Rakshasa** + **Solar** (CR 21) heavyweights, the three **Sphinxes** (of Lore/Valor with
-    `xpInLair`, of Wonder), the stone/storm giants + stone golem, the quasit/salamander/succubus
-    fiends-and-elementals, the sea-hag + spirit-naga + shambling-mound, the roc/remorhaz/roper/rust-
-    monster monstrosities, the sahuagin-warrior/satyr/scout/spy/sprite NPCs-and-fey, the shadow +
-    specter + shrieker-fungus + shield-guardian, the red/silver dragon wyrmlings, and the seven
-    **swarms** (bats · crawling-claws · insects · piranhas · ravens · rats · venomous-snakes). Its
-    beast intersection re-derives four corrections: **Saber-Toothed Tiger** (the LAST drifted beast —
-    AC 12→13, DEX 14→17, the stale Bite+Claw pair collapsed to the single 2024 `Rend` 2d6+4 with
-    Running Leap + Nimble Escape, darkvision 60 added), **Scorpion** + **Spider** (their stale
-    poison-die stings/bites become the 2024 flat `1` Piercing), and **Seahorse** (Bubble Dash is a
-    2024 action, not a passive trait, so `trait.bubble-dash` is pruned) — closing the original
-    8-beast drift audit; `reef-shark` already matched its projection. The seahorse zero-attacks
-    premise re-verifies, so the `polymorph.test.ts` seahorse pin holds unchanged. The `raven`'s
-    Mimicry unifies the shared `trait.mimicry` IT lexeme to its catalogue name (_Imitare_), matching
-    green-hag. `sahuagin` joins the monster-tongue language catalogue (catalogue-only). The roper's
-    grapple-only Tentacle (the sole no-damage attack-roll print in the 330-corpus) is modeled
-    narrative, keeping the "attack ⇒ has damage" invariant intact. `t–z` = 46 Tarrasque…Young White
-    Dragon — the apex **Tarrasque** (CR 30, `titan`), the legendary **Vampire** (CR 13, `xpInLair`
-    11,500) + vampire-spawn/-familiar, the **Unicorn** (legendary), the five lycanthropes
-    (werebear · wereboar · wererat · weretiger · werewolf), the vrock/water-elemental fiends-and-
-    elementals, the treant + troll + wight + wraith + will-o-wisp + xorn, the nine **young dragons**
-    (black · blue · brass · bronze · copper · gold · green · silver · white) + white-dragon-wyrmling,
-    the tough/tough-boss/warrior-infantry/warrior-veteran NPCs, and the t–z beast bench (tiger ·
-    triceratops · tyrannosaurus-rex · warhorse · weasel · venomous-snake · vulture · wolf). Its beast
-    intersection re-derives four live-user Polymorph corrections — **Tiger**
-    (stale `nimble-escape` trait dropped; 2024 is a single `Rend` 2d6+3, no traits), **Warhorse**
-    (`charge` trait dropped; single `Hooves` 2d4+4), **Triceratops** (`trampling-charge` trait dropped;
-    single `Gore` 2d12+6), and **Tyrannosaurus Rex** (Tail 3d8+7→4d8+7, reach 10→15 ft.) — while
-    `weasel` · `venomous-snake` · `vulture` · `wolf` already matched their projection; the t-rex CR-8
-    offer-cap pin is unaffected (the tail values aren't pinned), so no `polymorph.test.ts` literal
-    moved. `worg` joins the monster-tongue language catalogue (the Blink Dog/gnoll/otyugh/sahuagin
-    precedent — catalogue-only, not the player picker). The vampire-familiar's "Charmed (except from
-    its vampire master)" adds the closed `except-vampire-master` condition-immunity note token (the
-    archmage `with-mind-blank` precedent). KEEP_ENGLISH_SRD gains the eight proper nouns the official
-    IT SRD keeps in English (IT byte-equals EN): Tarrasque, Treant, Troll, Vrock, Wight, Worg, Wraith,
-    Xorn. This wave completes the public corpus (330/330). **Completeness closure (landed):**
-    the projection guard now asserts EVERY beast resolves to a Beast-typed monster twin (no
-    intersection semantics — a beast with no twin, or a non-Beast twin, fails loud), the public
-    Beast count is pinned (84), and the corpus guard pins all 330 SRD initiative bonuses to their
-    print (id→bonus fixture — catches redundant AND silently-omitted overrides). The **RAW
-    Monstrosity sweep** removed the six Polymorph-catalogue animals 2024 reclassified as non-Beast
-    (flying-snake · axe-beak · giant-vulture → Monstrosity; giant-eagle · giant-elk · giant-owl →
-    Celestial): Polymorph grants Beast forms only, so they stop being offered (a live session
-    already in a removed form keeps its transient state; `resolveBeastFormAttacks` already degrades
-    to `[]` on an unknown `beastId`). `scripts/beast-projection.ts` is the sole projection
-    derivation — the completeness guard owns it forever.
+  - **SHIPPED 2026-07-24 (the campaign flagship):** the SRD half is complete — 330 monsters
+    (EN+IT), the compendium Monsters section + statblock plaque, the lazy `SrdKind` display
+    tier, and the 2024-re-derived beast catalogue behind the shared projection guard. Full
+    account: _Shipped — the SRD bestiary campaign_ below; granular per-wave history lives in
+    `CHANGELOG.md` + git (this forward-plan doc keeps only the pointer).
 - **Companions/Extras:** a persistent companion-statblock surface on the sheet (Find Familiar,
   Primal Companion, Drakewarden, Artificer Steel Defender/Homunculus) — closes a
   rules-completeness hole; reuses the bestiary statblock renderer.
@@ -662,7 +582,11 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
 - **Sequencing:** interleaved as the next NEW-FEATURE epic — the RA correctness waves keep rule-27
   priority, the BG3 identity missions continue untouched, and the bestiary campaign opens first,
   coordinating with #32. Attack order: bestiary → encounter picker → difficulty calc → companions
-  → homebrew library → quickbuild → share links → compendium completeness → XP.
+  → homebrew library → quickbuild → share links → compendium completeness → XP. [amendment
+  2026-07-23: the #32 open-sourcing split COMPLETED 2026-07-17 — before this epic opened — so the
+  split-aware authoring the charter references is already the live world (public SRD repo + private
+  pack); the old #32 issue was deleted with the split, so THIS charter is the surviving coordination
+  record. `bestiary` is now DONE (2026-07-24); the live attack-order head is `encounter picker`.]
 
 ## Shipped epic — BG3-Grade Identity Evolution Epic
 
@@ -967,9 +891,11 @@ documented in `docs/MECHANICS.md` + `DESIGN.md`.
    three-duplicate reminder) — all display-only, no rolls. **Death Strike SHIPPED 2026-07-09** — a new
    `round1-damage-double` grant kind surfaces a round-1-gated "DC N CON save or double damage" reminder in
    the turn tracker (never auto-doubles). **The new-primitive tier is now CLOSED.**
-   **Two fast-follows on the shipped marked-target model (tasks #26/#27):** the
-   COLLAPSED mobile weapon-row chip must gain a "vs marked target" marker before the next bundle-deploy
-   (rule 26 design + rule 25 preview). **Task #27 SHIPPED (2026-07-09):** the rider now extends to
+   **Two fast-follows on the shipped marked-target model (tasks #26/#27) — BOTH SHIPPED.**
+   **Task #26 SHIPPED (reconciled 2026-07-24):** the COLLAPSED mobile weapon-row chip carries its
+   "vs marked target" marker — the crosshair `RiderMarkGlyph`, rendered on the collapsed chip when
+   `chip.vsMarkedTarget` and labelled on the cluster aria/title (`src/components/shared/ActionRiders.tsx`).
+   **Task #27 SHIPPED (2026-07-09):** the rider now extends to
    spell-attack rows (Eldritch Blast + Hex) via `resolveSpellAttackMarkedRiders`, keyed off the
    `vsMarkedTarget` flag. Source list: `docs/AUTOMATION_BACKLOG.md` → S10-DEFERRED.
 3. **SHIPPED — Phase 2, the light theme rebuilt to depth parity (light-parity, 2026-07-09).** The
@@ -1042,7 +968,8 @@ documented in `docs/MECHANICS.md` + `DESIGN.md`.
    the WI-5 PI-denylist guard), the SRD prose re-sourcing (WI-2), and the docs-partition +
    sensitive-value sweep (WI-6) have since landed.
 
-**Owner directives (2026-07-10)** — captured, in flight or queued:
+**Owner directives (2026-07-10)** — captured; shipped, queued, or standing (the four
+formerly-IN-FLIGHT items 2–5 all SHIPPED, reconciled 2026-07-24):
 
 1. SHIPPED (2026-07-10) — realm-switch "refresh" jump: root-caused by frame forensics under
    owner-like conditions (scrolled realms + real navigation, not the fixture-fresh probes). TWO
@@ -1081,14 +1008,19 @@ documented in `docs/MECHANICS.md` + `DESIGN.md`.
    strips in the session evidence; guards: `campaign-hub.test.tsx` (compose-once gate),
    `folio-loader.test.tsx` (settling marker + footer rule), `app-shell-suspense.test.tsx` (sticky
    mount), `chronicle-section.test.tsx` (the section stays a pure store reader).
-2. IN FLIGHT — clear-site-data resilience: two live users lost character visibility after clearing
-   Chrome site data (recovered via another browser); boot/persistence/SW/auth-race diagnosis + root
-   fixes.
-3. IN FLIGHT — live-data migrations run with the owner key (solo-round, attachedCampaignId) + a
-   legacy-field hygiene sweep of live docs.
-4. IN FLIGHT — mobile encounter topbar must never drop the brand wordmark.
-5. IN FLIGHT — Bloodied IT term: "Dimezzato" reads as a mechanical status; official-SRD-first
-   re-translation.
+2. SHIPPED (reconciled 2026-07-24) — clear-site-data resilience: the "Clear site data" boot
+   data-resilience root fix landed in v0.19.0 (deployed 2026-07-11) — an online cache-empty roster
+   result is never authoritative (`src/lib/chunk-recovery.ts` + `tests/unit/roster-boot-resilience.test.tsx`;
+   full account under _Boot data-resilience — the "Clear site data" incident_ above).
+3. SHIPPED (reconciled 2026-07-24) — the live-data migrations ran with the owner key and were
+   verified against production 2026-07-10: solo-round (10 docs) + attachedCampaignId (9 attachments),
+   both re-run idempotent, the spent one-off scripts `git rm`'d (rule 10; see the _Deferred
+   cleanliness_ + backfill notes above).
+4. SHIPPED (reconciled 2026-07-24) — the mobile encounter topbar keeps the brand wordmark, pinned by
+   `tests/e2e/topbar-brand-invariant.spec.ts`.
+5. SHIPPED (reconciled 2026-07-24) — the Bloodied IT term was re-translated official-SRD-first to
+   **"Sanguinante"** (`src/i18n/it/ui/character.json`; the old "Dimezzato" is gone), carried
+   corpus-wide by the 2026-07-21 IT re-sourcing.
 6. SHIPPED — Legal & Attribution set as THE COLOPHON SPREAD (Fable Tier-1, 2026-07-10, after
    three owner verdicts against a swimming prose column: "still wastes a lot of space. Do it
    properly and SOTA!"): a full-width engraved attribution plaque on the centred ceremonial

@@ -1,7 +1,7 @@
 # Competitive positioning — where d20 Folio stands vs D&D Beyond
 
 > **The one-page north star.** The lane the product occupies, the moat we cannot cross, and the
-> opening we are built for. This is the **why / where**; `PROGRESS.md`'s _"Ratified epic — The
+> opening we are built for. This is the **why / where**; `PROGRESS.md`'s _"Active epic — The
 > DDB-parity frontier"_ is the **what / when**.
 >
 > Verified **2026-07-21**. Re-verify the _Landscape_ and _Where we're behind_ sections whenever
@@ -35,7 +35,7 @@ _toward_ "rules as data," the architecture this app already has.**
   inline with one-tap resource debit, never left to memory.
 - **Multiclass correctness DDB gets subtly wrong** — owning-class tracker scaling, separate
   Pact-Magic vs normal slot pools, half-casters rounding up, per-spell DC keyed to the owning class.
-- **Full form-swap** (Wild Shape / Polymorph, 91 beast forms) — the beast's own CON drives the
+- **Full form-swap** (Wild Shape / Polymorph, 84 beast forms) — the beast's own CON drives the
   concentration save. DDB does not model transformation stat-blocks on the sheet.
 - **Damage-intake + dying automation** — RAW resistance/vulnerability/immunity order, 0 HP applies
   Unconscious + auto death-save failures + massive-damage instant death, roll-entry death saves.
@@ -46,12 +46,17 @@ _toward_ "rules as data," the architecture this app already has.**
 
 ## Where we're BEHIND — all on the DM / content side
 
-This entire list **is the ratified epic** (`PROGRESS.md` → _"Ratified epic — The DDB-parity
+This entire list **is the active epic** (`PROGRESS.md` → _"Active epic — The DDB-parity
 frontier"_), sequenced **bestiary-first**:
 
-- **No monster bestiary / encounter picker** — the epic flagship. Unlocks the encounter picker, a
-  **2024-DMG XP-budget difficulty calculator** (DDB's standalone tool is stuck on 2014 math — we can
-  be _more correct_, not just level), the compendium Monsters section, and companions.
+- **Bestiary SHIPPED (2026-07-24); encounter picker + difficulty calc still open** — the epic
+  flagship, half delivered. The **bestiary half is DONE**: the full **330-creature SRD 5.2.1
+  bestiary** (bilingual) + the **compendium Monsters section** (statblock plaque, CR/size/type
+  facets) ship in-repo, and the beast catalogue is re-derived to 2024 (84 Polymorph forms). The
+  **open half** is the DM-side tooling that consumes it: the **encounter picker** (replacing the
+  type-by-hand AddMonsterForm) and the **2024-DMG XP-budget difficulty calculator** (DDB's
+  standalone tool is stuck on 2014 math — we can be _more correct_, not just level). The pack-side
+  MM statblock corpus advances along the same manifest.
 - **No homebrew authoring** — the planned ladder (account library → campaign sharing → monster
   editor → species/feats/subclasses) ends at **homebrew classes**, declared the _horizon flagship_
   because it is D&D Beyond's #1 refused community ask, and our grants seam can actually do it well.
