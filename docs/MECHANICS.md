@@ -446,8 +446,9 @@ The structural reasons the declarative-grant model is intentionally not the righ
   benefits when you activate") aren't passive aggregations or session-long toggles → descriptive prose.
 - **Targeted buffs on someone else.** Effects cast ON another creature (Cleric Blessing of the
   Trickster — advantage on another's Stealth) are out of scope for a single-character sheet → prose.
-- **Battlefield geometry / encounter state.** Aura allies/enemies, cover, line-of-sight, and
-  situational mid-combat advantage ("vs a Frightened target", "while you can't see the target") depend
+- **Battlefield geometry / encounter state.** Aura allies/enemies, cover, mounted/underwater combat,
+  line-of-sight, and situational mid-combat advantage ("vs a Frightened target", "while you can't see
+  the target") depend
   on transient geometry the passive aggregator (a property of the _character_, not the _encounter_) does
   not own. Auras are modeled INFORMATIONALLY (`aura` kind surfaces radius + effect, rolls/tracks
   nothing); only PERMANENT advantage clauses are modeled (`advantage-on`).

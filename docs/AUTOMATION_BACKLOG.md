@@ -462,9 +462,18 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       `no-srd-strings-in-data` whitelist bypass (same rationale), consumed only by its
       authoritative-values guard until a shared rules-reference render surface exists (the deferred
       home it shares with `COVER_REFERENCE` and RA-30). Regression: `tests/unit/travel-pace.test.ts`.
-- [ ] **RA-30 — Mounted & underwater combat have no reference surface.** _Combat variants · GAP ·
+- [x] **RA-30 — Mounted & underwater combat have no reference surface.** _Combat variants · GAP ·
       S3 · rare._ SRD "Mounted Combat"/"Underwater Combat". Same treatment as the shipped
       `COVER_REFERENCE`: pure reference data. **T3.**
+      **SHIPPED W6 (2026-07-24):** `src/data/combat-variants.ts` exports `MOUNTED_COMBAT_REFERENCE`
+      (5 lines: eligible mount, mount/dismount = ½ Speed round-down, controlled vs independent, DC 10
+      DEX falling-off) + `UNDERWATER_COMBAT_REFERENCE` (3 lines: melee Disadvantage unless Piercing,
+      ranged auto-miss beyond range + Disadvantage within, Fire Resistance) as inline-`BiText`
+      reference data — the `cover.ts` recipe, whitelisted in `no-srd-strings-in-data.guard`. The
+      2024 SRD facts (Piercing-not-the-2014-weapon-list; all ranged Disadvantaged) are pinned by
+      `tests/unit/combat-variants.test.ts`. Surfacing (a UI card) stays out of scope, exactly as
+      `COVER_REFERENCE` remains reference-only until RA-31 — it shares the same deferred
+      rules-reference render surface as `COVER_REFERENCE` and RA-29.
 - [ ] **RA-31 — Cover is reference-only; a self-side +2/+5 AC toggle is a defensible upgrade.**
       _Cover · INTERACTION · S3 (deliberate residual today; MECHANICS.md "battlefield geometry")._
       SRD "Cover": the bonus applies to the TARGET's AC/DEX saves — self-side, so it CAN ride the

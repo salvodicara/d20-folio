@@ -20,6 +20,10 @@
  *     "Exploration"), NOT an id-keyed SRD entity rendered through the catalogue
  *     seam (no per-character mechanic; only a static reference). Documented
  *     bypass — same rationale as `cover.ts`.
+ *   - `combat-variants.ts` — the Mounted/Underwater Combat quick-reference
+ *     tables (SRD combat variants), NOT id-keyed SRD entities rendered through
+ *     the catalogue seam (no per-character mechanic; only a static reference).
+ *     Documented bypass — same rationale as `cover.ts`.
  *
  * NOTE: `background-equipment.ts` was REMOVED from this whitelist (2026-06-13)
  * when its `flavour(en,it)` inline-BiText escape hatch was deleted — every former
@@ -36,7 +40,13 @@ import { SRC_ROOT, srcFiles, readSrc } from "./__helpers__/src-files";
 const DATA_DIR = resolve(SRC_ROOT, "data");
 
 // Files allowed to keep inline strings (documented bypasses).
-const WHITELIST = new Set(["srd-names.ts", "types.ts", "cover.ts", "travel-pace.ts"]);
+const WHITELIST = new Set([
+  "srd-names.ts",
+  "types.ts",
+  "cover.ts",
+  "travel-pace.ts",
+  "combat-variants.ts",
+]);
 
 /** A natural-language string: multi-word (a space between word chars), not a slug/id/enum. */
 function isNaturalLanguage(s: string): boolean {
