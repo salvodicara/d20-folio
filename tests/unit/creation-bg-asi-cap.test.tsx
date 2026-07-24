@@ -113,6 +113,9 @@ describe("CreationWizard — a background ASI never saves a score past 20 (B19)"
       fireEvent.click(await screen.findByRole("button", { name: /Dice Set/ }));
       fireEvent.click(screen.getByRole("button", { name: /Acrobatics/ }));
       fireEvent.click(screen.getByRole("button", { name: /Animal Handling/ }));
+      // RA-28 — the origin +2 languages are a create requirement.
+      fireEvent.click(screen.getByRole("button", { name: /Draconic/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Dwarvish/ }));
 
       fireEvent.click(screen.getByRole("button", { name: /create character/i }));
       await waitFor(() => expect(createMock).toHaveBeenCalledTimes(1));

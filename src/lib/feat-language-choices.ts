@@ -61,6 +61,17 @@ export const SRD_LANGUAGE_IDS: ReadonlyArray<string> = [
   "undercommon",
 ];
 
+/**
+ * The 2024 STANDARD-languages table as STABLE IDS — the first 10 of the roster
+ * (Common … Orc, the "── Standard ──" block). This is the pool the creation
+ * origin pick draws from ("Common plus two languages of your choice from the
+ * standard languages table"); the Rare + secret tongues are NOT standard and stay
+ * out of the guided pick (the Bio editor still offers the full roster). Derived by
+ * slice (DRY — the roster's own doc-comment guarantees Standard-10-then-Rare); the
+ * 10-membership is pinned by a unit test.
+ */
+export const STANDARD_LANGUAGE_IDS: ReadonlyArray<string> = SRD_LANGUAGE_IDS.slice(0, 10);
+
 /** The set form of {@link SRD_LANGUAGE_IDS} — the membership test (a known id?). */
 export const LANGUAGE_IDS: ReadonlySet<string> = new Set(SRD_LANGUAGE_IDS);
 

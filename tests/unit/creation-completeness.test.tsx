@@ -93,8 +93,49 @@ describe("CreationWizard — B01 completeness gate", () => {
       fireEvent.click(screen.getByRole("button", { name: /Acrobatics/ }));
       fireEvent.click(screen.getByRole("button", { name: /Animal Handling/ }));
 
+      // RA-28 — the origin +2 languages also gate Create; pick two so the skills
+      // requirement is the isolated variable under test.
+      fireEvent.click(screen.getByRole("button", { name: /Draconic/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Dwarvish/ }));
+
       // The requirement clears and Create unlocks.
       expect(screen.queryByText(/choose your class skills/i)).not.toBeInTheDocument();
+      expect(createButton()).not.toBeDisabled();
+    },
+    SUITE_TIMEOUT
+  );
+
+  it(
+    "a character cannot be created until its two origin languages are chosen (RA-28)",
+    async () => {
+      await renderPage();
+      // Same lineage-free / sub-choice-free setup as the class-skills test.
+      fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
+        target: { value: "Borin" },
+      });
+      fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
+        target: { value: "dwarf" },
+      });
+      fireEvent.change(screen.getByRole("combobox", { name: /background/i }), {
+        target: { value: "soldier" },
+      });
+      fireEvent.click(await screen.findByRole("button", { name: /Dice Set/ }));
+      fireEvent.click(screen.getByRole("button", { name: /^STR10/ }));
+      fireEvent.click(screen.getByRole("button", { name: /^DEX10/ }));
+      // Finish the class skills so LANGUAGES is the isolated variable.
+      fireEvent.click(screen.getByRole("button", { name: /Acrobatics/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Animal Handling/ }));
+
+      // No languages picked → Create BLOCKED and the explainer names it.
+      expect(createButton()).toBeDisabled();
+      expect(screen.getByText(/choose your two languages/i)).toBeInTheDocument();
+
+      // Pick the two origin languages from the standard table.
+      fireEvent.click(screen.getByRole("button", { name: /Draconic/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Dwarvish/ }));
+
+      // The requirement clears and Create unlocks.
+      expect(screen.queryByText(/choose your two languages/i)).not.toBeInTheDocument();
       expect(createButton()).not.toBeDisabled();
     },
     SUITE_TIMEOUT

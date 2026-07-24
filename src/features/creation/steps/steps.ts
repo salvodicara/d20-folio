@@ -41,6 +41,7 @@ export type GuidedStep =
   | "class"
   | "race"
   | "background"
+  | "languages"
   | "skills"
   | "spells"
   | "equipment"
@@ -52,6 +53,7 @@ export const GUIDED_STEPS: GuidedStep[] = [
   "class",
   "race",
   "background",
+  "languages",
   "skills",
   "spells",
   "equipment",
@@ -64,6 +66,7 @@ export const GUIDED_STEP_KEYS: Record<GuidedStep, string> = {
   class: "create.stepClass",
   race: "create.stepRace",
   background: "create.stepBackground",
+  languages: "create.stepLanguages",
   skills: "create.stepSkills",
   spells: "create.stepSpells",
   equipment: "create.stepEquipment",

@@ -435,11 +435,23 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       in the capacity chip's tooltip, locale-formatted via `formatWeight` (EN lb / IT kg). Reads the
       EFFECTIVE STR (rule 6). Regression: `inventory-encumbrance.test.ts` (VM value + the
       `{{pushDragLift}}` placeholder present in both locales). **T3.**
-- [ ] **RA-28 — Creation grants Common only; the 2024 "+2 languages" pick is never offered.**
+- [x] **RA-28 — Creation grants Common only; the 2024 "+2 languages" pick is never offered.**
       _Creation · GAP · S3 · once per character._ SRD "Creating a Character — languages" (Common + 2
-      from the standard table). Code: `CreationWizard` seeds `["common"]`; free editing exists in
-      BioTab but no guided pick. Fix: a 2-pick language step via the existing `choice-language`
-      picker. **T2.**
+      from the standard table). The `CreationWizard` seeded `["common"]` and left the two picks to
+      hand-editing the Bio tab. **SHIPPED (2026-07-24):** a dedicated guided **Languages** step (after
+      Background) + a matching Quick-Start section, both reusing the existing `LanguageChoicePicker`
+      fed by ONE hand-built 2-pick `choice-language` slot over `STANDARD_LANGUAGE_IDS` minus Common
+      (`SRD_LANGUAGE_IDS.slice(0, 10)` — the standard table; Common excluded because
+      `applyLanguagePicks` dedupes against the seed, so a Common pick would silently yield only 1 new
+      tongue). Mirrors the background-ASI sibling: its own rail step, TITLES/hint, `stepNextDisabled`
+      gate, a single-source `createRequirements` entry (Create stays blocked until both are picked),
+      and a review-recap row. The picks apply additively at `finalCharacter` via `applyLanguagePicks`
+      as stable ids (`["common", …]`), so a tongue reads its canonical name on every surface; the Bio
+      free editor stays the override for any other language (Rare/secret). No schema change
+      (`languageIds` shape unchanged, additive VALUE only) → the 6 team fixtures are unaffected.
+      Regression: `feat-language-choices.test.ts` (the standard-table roster) + `creation-completeness`
+      (the RA-28 gate) + `creation-navigate` (additive `["common","draconic","dwarvish"]` landing) +
+      the create-driving cases realigned to pick two languages. **T2.**
 - [ ] **RA-29 — Travel pace absent.** _Exploration · GAP · S3 · out-of-combat._ SRD "Travel Pace"
       table. Fix: a reference block (fast/normal/slow per hour/day) — display-only. **T3.**
 - [ ] **RA-30 — Mounted & underwater combat have no reference surface.** _Combat variants · GAP ·

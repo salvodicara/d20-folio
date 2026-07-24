@@ -8,6 +8,7 @@
 import { describe, expect, it } from "vitest";
 import {
   SRD_LANGUAGE_IDS,
+  STANDARD_LANGUAGE_IDS,
   isLanguageId,
   pendingLanguageSlotsForFeat,
   isLanguagePicksComplete,
@@ -30,6 +31,21 @@ describe("SRD_LANGUAGE_IDS roster", () => {
     // The roster carries NO display names — they're resolved by id in the presenter.
     expect(isLanguageId("gnomish")).toBe(true);
     expect(isLanguageId("gnomico")).toBe(false); // a localized LABEL is NOT an id
+  });
+});
+
+describe("STANDARD_LANGUAGE_IDS roster (RA-28)", () => {
+  it("is the 10-entry standard-languages table, all in the SRD roster", () => {
+    expect(STANDARD_LANGUAGE_IDS).toHaveLength(10);
+    expect(STANDARD_LANGUAGE_IDS).toContain("common");
+    expect(STANDARD_LANGUAGE_IDS).toContain("draconic");
+    expect(STANDARD_LANGUAGE_IDS.every((id) => SRD_LANGUAGE_IDS.includes(id))).toBe(true);
+  });
+
+  it("excludes the Rare + secret tongues", () => {
+    expect(STANDARD_LANGUAGE_IDS).not.toContain("abyssal");
+    expect(STANDARD_LANGUAGE_IDS).not.toContain("undercommon");
+    expect(STANDARD_LANGUAGE_IDS).not.toContain("druidic");
   });
 });
 

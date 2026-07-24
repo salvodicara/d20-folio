@@ -158,6 +158,11 @@ export function featName(featId: string, locale: Locale): string {
   return localizeSrd("feat", featId, "name", locale);
 }
 
+/** The localized language name (kind `"language"`) — for the origin-language recap. */
+export function languageName(id: string, locale: Locale): string {
+  return localizeSrd("language", id, "name", locale);
+}
+
 /**
  * The localized names of a race's first N traits — resolved from the i18n
  * catalogue by each trait's STABLE id-derived `raceTraitCatKey` (no `name.en`

@@ -94,7 +94,15 @@ import {
   type ChoicePicks,
 } from "@/lib/feature-choices";
 import { isSpellChoicesComplete } from "@/lib/feat-spell-choices";
+import {
+  STANDARD_LANGUAGE_IDS,
+  isLanguagePicksComplete,
+  applyLanguagePicks,
+  type LanguageChoiceSlot,
+  type LanguageChoicePicks,
+} from "@/lib/feat-language-choices";
 import { FeatureChoicesSection } from "@/components/sheet/FeatureChoicesSection";
+import { LanguageChoicePicker } from "@/components/sheet/LanguageChoicePicker";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { FeatSpellChoicesPicker } from "@/components/sheet/FeatSpellChoicesPicker";
 import type { AbilityCode, BackgroundEquipmentOption } from "@/data/types";
@@ -111,6 +119,7 @@ import {
   raceName as presRaceName,
   backgroundName as presBgName,
   featName,
+  languageName,
   classTip,
   localizeSize,
 } from "@/lib/views/creation-view";
@@ -193,6 +202,24 @@ function mergeStartingEquipment(
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+/**
+ * RA-28 — the 2024 origin-language pick ("Common plus two languages of your
+ * choice from the standard languages table"). ONE hand-built `choice-language`
+ * slot fed to the guided/quick `LanguageChoicePicker`; the seed already grants
+ * Common, so Common is EXCLUDED from the pool — `applyLanguagePicks` dedupes
+ * against the `["common"]` seed, so offering Common would let a "2 of 2" slot
+ * silently yield only 1 new language. Module-level so the slot reference is
+ * stable across renders.
+ */
+const ORIGIN_LANGUAGE_SLOT_ID = "origin";
+const ORIGIN_LANGUAGE_SLOTS: readonly LanguageChoiceSlot[] = [
+  {
+    slotId: ORIGIN_LANGUAGE_SLOT_ID,
+    amount: 2,
+    options: STANDARD_LANGUAGE_IDS.filter((id) => id !== "common"),
+  },
+];
+
 export function CreationWizard() {
   const { t } = useTranslation();
   useDocumentTitle(t("create.title"));
@@ -236,6 +263,8 @@ export function CreationWizard() {
   const [bgAsiChoices, setBgAsiChoices] = useState<Partial<Record<AbilityCode, number>>>(
     {}
   );
+  // RA-28 — the origin +2 language picks (Common is seeded separately).
+  const [languagePicks, setLanguagePicks] = useState<LanguageChoicePicks>({});
   const [humanFeat, setHumanFeat] = useState("");
   // Creation-time lineage choice (Elven / Gnomish lineage); bundleKey → optionId.
   const [lineageChoices, setLineageChoices] = useState<Record<string, string>>({});
@@ -276,7 +305,8 @@ export function CreationWizard() {
     selectedCantrips.length > 0 ||
     selectedSpells.length > 0 ||
     Object.keys(lineageChoices).length > 0 ||
-    Object.keys(bgAsiChoices).length > 0;
+    Object.keys(bgAsiChoices).length > 0 ||
+    (languagePicks[ORIGIN_LANGUAGE_SLOT_ID] ?? []).length > 0;
   const finishingRef = useRef(false);
   const blocker = useBlocker(
     useCallback(
@@ -415,6 +445,9 @@ export function CreationWizard() {
     }
     return entries.length === 3 && entries.every(([, v]) => v === 1);
   }, [bgAsiMode, bgAsiChoices]);
+
+  // RA-28 — both origin languages must be chosen before Create unlocks.
+  const languagesComplete = isLanguagePicksComplete(ORIGIN_LANGUAGE_SLOTS, languagePicks);
 
   // Skill proficiency computation.
   const bgSkillIds = useMemo<string[]>(
@@ -759,8 +792,9 @@ export function CreationWizard() {
         // slot was deleted from the type — golden rule 10.)
         initiativeBonusOverride: null,
         // Languages are STABLE IDS (golden rule 7): the auto Origin "Common" lands
-        // as the id; the `choice-language` picks append their ids via
-        // `applyLanguagePicks` at `finalCharacter`. Never a localized display string.
+        // as the id here; the RA-28 origin +2 picks (the guided/quick Languages step)
+        // append their ids via `applyLanguagePicks` at `finalCharacter`. Never a
+        // localized display string.
         languageIds: ["common"],
         customLanguages: [],
         // Tool proficiencies are DERIVED, never baked as a locale string (golden
@@ -908,10 +942,9 @@ export function CreationWizard() {
       // Apply ALL origin-feat choices (Human Versatile + bg feat) in one pass via
       // the unified choice engine. Jack-of-All-Trades is DERIVED from the feature
       // at render (#57) — never baked into stored `skills`.
-      const finalCharacter = applyChoicePicks(
-        characterData,
-        creationChoiceSlots,
-        activeCreationChoicePicks
+      const finalCharacter = applyLanguagePicks(
+        applyChoicePicks(characterData, creationChoiceSlots, activeCreationChoicePicks),
+        languagePicks
       );
       const docId = await createCharacter(user.uid, {
         portraitUrl: null,
@@ -959,6 +992,7 @@ export function CreationWizard() {
     creationChoiceSlots,
     activeCreationChoicePicks,
     lineageChoices,
+    languagePicks,
     navigate,
     t,
   ]);
@@ -1029,6 +1063,16 @@ export function CreationWizard() {
         : !restSpellChoicesComplete
           ? "spells"
           : "review",
+    },
+    {
+      // RA-28 — the 2024 origin languages (Common + 2 of your choice) are part of
+      // a complete character; the guided Languages step already gates this, and
+      // quick mode / orb free-jumps honor the same bar so Create can never mint a
+      // Common-only character.
+      key: "languages",
+      met: languagesComplete,
+      label: t("create.needLanguages"),
+      step: "languages",
     },
     {
       // B01 — a complete character has its CLASS skill proficiencies chosen.
@@ -1157,6 +1201,7 @@ export function CreationWizard() {
         }}
       />,
     ],
+    languages: [t("create.titleLanguages"), t("create.hintLanguages")],
     skills: [t("create.titleSkills"), t("create.hintSkills")],
     spells: [
       t("create.titleSpells"),
@@ -1199,6 +1244,7 @@ export function CreationWizard() {
     class: !classTable || (showSubclass && !selectedSubclass),
     race: !lineageComplete || (isHuman && (!humanFeat || !humanFeatChoicesComplete)),
     background: false,
+    languages: !languagesComplete,
     skills: !skillsComplete,
     spells: showSpellStep && !(cantripsComplete && spellsComplete),
     equipment: false,
@@ -1336,6 +1382,13 @@ export function CreationWizard() {
         label: t(GUIDED_STEP_KEYS.background),
         value: [bgDisplay, featLabelForBackground(selectedBackground, locale)]
           .filter(Boolean)
+          .join(dot),
+      },
+      {
+        step: "languages",
+        label: t(GUIDED_STEP_KEYS.languages),
+        value: (languagePicks[ORIGIN_LANGUAGE_SLOT_ID] ?? [])
+          .map((id) => languageName(id, locale))
           .join(dot),
       },
       {
@@ -1584,6 +1637,15 @@ export function CreationWizard() {
 
             {/* Alignment */}
             <FormField label={t("lore.alignment")}>{alignmentSelect}</FormField>
+
+            {/* RA-28 — origin languages (Common + 2 of your choice, SRD standard table). */}
+            <FormField label={t("create.stepLanguages")}>
+              <LanguageChoicePicker
+                slots={ORIGIN_LANGUAGE_SLOTS}
+                picks={languagePicks}
+                onChange={setLanguagePicks}
+              />
+            </FormField>
 
             {/* Skills */}
             {classSkillCount > 0 && (
@@ -1852,6 +1914,16 @@ export function CreationWizard() {
                   <FormField label={t("lore.alignment")}>{alignmentSelect}</FormField>
                 </div>
               </>
+            )}
+
+            {guidedStep === "languages" && (
+              <div className="mx-auto w-full max-w-[640px]">
+                <LanguageChoicePicker
+                  slots={ORIGIN_LANGUAGE_SLOTS}
+                  picks={languagePicks}
+                  onChange={setLanguagePicks}
+                />
+              </div>
             )}
 
             {guidedStep === "skills" && (

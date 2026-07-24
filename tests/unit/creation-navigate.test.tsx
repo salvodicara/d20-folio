@@ -78,6 +78,10 @@ describe("CreationWizard — create-success navigation", () => {
     // Intimidation come from Soldier, so they're excluded from the class pool).
     fireEvent.click(screen.getByRole("button", { name: /Acrobatics/ }));
     fireEvent.click(screen.getByRole("button", { name: /Animal Handling/ }));
+    // RA-28 — the origin +2 languages are a create requirement (Common + 2 of
+    // your choice from the standard table).
+    fireEvent.click(screen.getByRole("button", { name: /Draconic/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Dwarvish/ }));
     fireEvent.click(screen.getByRole("button", { name: /create character/i }));
 
     await waitFor(() => expect(createMock).toHaveBeenCalledTimes(1));
@@ -104,6 +108,12 @@ describe("CreationWizard — create-success navigation", () => {
     // Armor is worn by default so AC is right immediately.
     const chainMail = created.character.equipment.find((e) => e.srdId === "chain-mail");
     expect(chainMail?.equipped).toBe(true);
+
+    // RA-28 — the origin +2 picks land ADDITIVELY on the Common seed as stable ids.
+    const createdChar = createMock.mock.calls[0]?.[1] as {
+      character: { languageIds: string[] };
+    };
+    expect(createdChar.character.languageIds).toEqual(["common", "draconic", "dwarvish"]);
   });
 
   it("a Monk's tool-proficiency pick yields BOTH the proficiency AND the chosen tool item", async () => {
@@ -132,6 +142,9 @@ describe("CreationWizard — create-success navigation", () => {
     // B01 — the two Monk class skills are a create requirement.
     fireEvent.click(screen.getByRole("button", { name: /Acrobatics/ }));
     fireEvent.click(screen.getByRole("button", { name: /History/ }));
+    // RA-28 — pick the two origin languages so Create is enabled.
+    fireEvent.click(screen.getByRole("button", { name: /Draconic/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Dwarvish/ }));
     fireEvent.click(screen.getByRole("button", { name: /create character/i }));
 
     await waitFor(() => expect(createMock).toHaveBeenCalledTimes(1));
