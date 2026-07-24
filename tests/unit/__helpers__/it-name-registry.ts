@@ -91,7 +91,13 @@ export const KEEP_ENGLISH_SRD: readonly string[] = [
   "Piranha",
   "Planetar",
   "Pony",
+  "Quasit",
+  "Rakshasa",
   "Ranger",
+  "Remorhaz",
+  "Roc",
+  "Sahuagin",
+  "Solar",
   "Tiefling",
   "Tsunami",
   "Versatile ({{die}})",
@@ -117,6 +123,15 @@ export const ALLOWED_COLLISIONS: readonly AllowedCollision[] = [
       "Both names are tier-1 official IT SRD 5.2.1 prints. Italian lacks the EN Wizard/Mage " +
       "lexical distinction: the Wizard class and the Mage NPC statblock are distinct entities that " +
       "legitimately share the single Italian lexeme 'Mago'. Exact-pair, sanctioned collision.",
+  },
+  {
+    itName: "Spettro",
+    members: ["monsters:specter", "subclasses:phantom"],
+    justification:
+      "Both names are tier-1 official Italian prints (the Specter monster in the SRD 5.2.1, the " +
+      "Rogue Phantom subclass in the content pack). Italian renders both the EN Specter and Phantom " +
+      "as the single lexeme 'Spettro' — distinct entities, one Italian word. Exact-pair, sanctioned " +
+      "collision (composed-seam only; the public SRD lane carries just the Specter).",
   },
 ];
 

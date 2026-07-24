@@ -16,6 +16,7 @@
     "langPlusAny_other": "{{langs}} più {{count}} lingue a scelta",
     "langKnewInLife": "le lingue che conosceva in vita",
     "langAll": "tutte",
+    "langUnderstandsAll": "capisce i comandi impartiti in qualsiasi lingua ma non è in grado di parlare",
     "blindBeyond": "(cieco oltre questo raggio)",
     "darkvisionMagical": "(non ostacolata dall'oscurità magica)",
     "gear": "Equipaggiamento",
@@ -33,6 +34,7 @@
     "qualifier_nonmagical-nonadamantine": "da attacchi non magici non adamantini",
     "condNote_with-mind-blank": "con Vuoto Mentale",
     "defenseNote_draconic-origin": "il tipo di danno scelto per il tratto Origine draconica",
+    "defenseNote_bless-weapon": "danni Perforanti inflitti da armi brandite da creature sotto l'effetto dell'incantesimo benedizione",
     "searchPlaceholder": "Cerca mostri…"
   }
 }

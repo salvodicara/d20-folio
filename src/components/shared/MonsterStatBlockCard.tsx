@@ -99,7 +99,9 @@ function languagesLine(m: MonsterStatBlock, t: TFn, locale: Locale): string {
   if (L.special === "knew-in-life") {
     parts.push(t("monster.langKnewInLife"));
   } else if (L.special === "all") {
-    parts.push(t("monster.langAll"));
+    // "understands (any/all) language(s) but can't speak" — the Shield Guardian
+    // print: knows every language but is mute (special "all" + understandsOnly).
+    parts.push(t(L.understandsOnly ? "monster.langUnderstandsAll" : "monster.langAll"));
   } else {
     let langs = (L.ids ?? [])
       .map((id) => localizeSrd("language", id, "name", locale))

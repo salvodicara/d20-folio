@@ -314,14 +314,8 @@
   "attack.sting": {
     "name": "Sting"
   },
-  "trait.keen-smell": {
-    "name": "Keen Smell"
-  },
   "trait.pack-tactics": {
     "name": "Pack Tactics"
-  },
-  "trait.pounce": {
-    "name": "Pounce"
   },
   "trait.charge": {
     "name": "Charge"
@@ -355,9 +349,6 @@
   },
   "trait.bloodied-fury": {
     "name": "Bloodied Fury"
-  },
-  "trait.bubble-dash": {
-    "name": "Bubble Dash"
   },
   "trait.compression": {
     "name": "Compression"

@@ -4453,6 +4453,56 @@
     "name": "Swallow",
     "text": "Strength Saving Throw: DC 19, one Large or smaller creature Grappled by the worm (it can have up to three creatures swallowed at a time). Failure: The target is swallowed by the worm, and the Grappled condition ends. A swallowed creature has the Blinded and Restrained conditions, has Total Cover against attacks and other effects outside the worm, and takes 17 (5d6) Acid damage at the start of each of the worm's turns. If the worm takes 30 damage or more on a single turn from a creature inside it, the worm must succeed on a DC 21 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 5 feet of the worm and has the Prone condition. If the worm dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 20 feet of movement, exiting Prone."
   },
+  "quasit": {
+    "name": "Quasit"
+  },
+  "quasit.traits.magic-resistance": {
+    "name": "Magic Resistance",
+    "text": "The quasit has Advantage on saving throws against spells and other magical effects."
+  },
+  "quasit.actions.rend": {
+    "name": "Rend",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Slashing damage, and the target has the Poisoned condition until the start of the quasit's next turn."
+  },
+  "quasit.actions.invisibility": {
+    "name": "Invisibility",
+    "text": "The quasit casts Invisibility on itself, requiring no spell components and using Charisma as the spellcasting ability."
+  },
+  "quasit.actions.scare": {
+    "name": "Scare",
+    "text": "Wisdom Saving Throw: DC 10, one creature within 20 feet. Failure: The target has the Frightened condition. At the end of each of its turns, the target repeats the save, ending the effect on itself on a success. After 1 minute, it succeeds automatically."
+  },
+  "quasit.actions.shape-shift": {
+    "name": "Shape-Shift",
+    "text": "The quasit shape-shifts to resemble a bat (Speed 10 ft., Fly 40 ft.), a centipede (40 ft., Climb 40 ft.), or a toad (40 ft., Swim 40 ft.), or it returns to its true form. Its game statistics are the same in each form, except for its Speed. Any equipment it is wearing or carrying isn't transformed."
+  },
+  "rakshasa": {
+    "name": "Rakshasa"
+  },
+  "rakshasa.traits.greater-magic-resistance": {
+    "name": "Greater Magic Resistance",
+    "text": "The rakshasa automatically succeeds on saving throws against spells and other magical effects, and the attack rolls of spells automatically miss it. Without the rakshasa's permission, no spell can observe the rakshasa remotely or detect its thoughts, creature type, or alignment."
+  },
+  "rakshasa.traits.fiendish-restoration": {
+    "name": "Fiendish Restoration",
+    "text": "If the rakshasa dies outside the Nine Hells, its body turns to ichor, and it gains a new body instantly, reviving with all its Hit Points somewhere in the Nine Hells."
+  },
+  "rakshasa.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The rakshasa makes three Cursed Touch attacks."
+  },
+  "rakshasa.actions.cursed-touch": {
+    "name": "Cursed Touch",
+    "text": "Melee Attack Roll: +10, reach 5 ft. Hit: 12 (2d6 + 5) Slashing damage plus 19 (3d12) Necrotic damage. If the target is a creature, it is cursed. While cursed, the target gains no benefit from finishing a Short or Long Rest."
+  },
+  "rakshasa.actions.baleful-command": {
+    "name": "Baleful Command",
+    "text": "Wisdom Saving Throw: DC 18, each enemy in a 30-foot Emanation originating from the rakshasa. Failure: 28 (8d6) Psychic damage, and the target has the Frightened and Incapacitated conditions until the start of the rakshasa's next turn."
+  },
+  "rakshasa.actions.spellcasting": {
+    "name": "Spellcasting",
+    "text": "The rakshasa casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Detect Thoughts, Disguise Self, Mage Hand, Minor Illusion. 1/Day Each: Fly, Invisibility, Major Image, Plane Shift."
+  },
   "rat": {
     "name": "Rat"
   },
@@ -4463,6 +4513,376 @@
   "rat.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage."
+  },
+  "raven": {
+    "name": "Raven"
+  },
+  "raven.traits.mimicry": {
+    "name": "Mimicry",
+    "text": "The raven can mimic simple sounds it has heard, such as a whisper or chitter. A hearer can discern the sounds are imitations with a successful DC 10 Wisdom (Insight) check."
+  },
+  "raven.actions.beak": {
+    "name": "Beak",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage."
+  },
+  "red-dragon-wyrmling": {
+    "name": "Red Dragon Wyrmling"
+  },
+  "red-dragon-wyrmling.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The dragon makes two Rend attacks."
+  },
+  "red-dragon-wyrmling.actions.rend": {
+    "name": "Rend",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (1d10 + 4) Slashing damage plus 3 (1d6) Fire damage."
+  },
+  "red-dragon-wyrmling.actions.fire-breath": {
+    "name": "Fire Breath",
+    "text": "Dexterity Saving Throw: DC 13, each creature in a 15-foot Cone. Failure: 24 (7d6) Fire damage. Success: Half damage."
+  },
+  "reef-shark": {
+    "name": "Reef Shark"
+  },
+  "reef-shark.traits.pack-tactics": {
+    "name": "Pack Tactics",
+    "text": "The shark has Advantage on an attack roll against a creature if at least one of the shark's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
+  },
+  "reef-shark.traits.water-breathing": {
+    "name": "Water Breathing",
+    "text": "The shark can breathe only underwater."
+  },
+  "reef-shark.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + 2) Piercing damage."
+  },
+  "remorhaz": {
+    "name": "Remorhaz"
+  },
+  "remorhaz.traits.heat-aura": {
+    "name": "Heat Aura",
+    "text": "At the end of each of the remorhaz's turns, each creature in a 5-foot Emanation originating from the remorhaz takes 16 (3d10) Fire damage."
+  },
+  "remorhaz.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +11, reach 10 ft. Hit: 18 (2d10 + 7) Piercing damage plus 14 (4d6) Fire damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 17), and it has the Restrained condition until the grapple ends."
+  },
+  "remorhaz.bonusActions.swallow": {
+    "name": "Swallow",
+    "text": "Strength Saving Throw: DC 19, one Large or smaller creature Grappled by the remorhaz (it can have up to two creatures swallowed at a time). Failure: The target is swallowed by the remorhaz, and the Grappled condition ends. A swallowed creature has the Blinded and Restrained conditions, it has Total Cover against attacks and other effects outside the remorhaz, and it takes 10 (3d6) Acid damage plus 10 (3d6) Fire damage at the start of each of the remorhaz's turns. If the remorhaz takes 30 damage or more on a single turn from a creature inside it, the remorhaz must succeed on a DC 15 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 5 feet of the remorhaz and has the Prone condition. If the remorhaz dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse by using 15 feet of movement, exiting Prone."
+  },
+  "rhinoceros": {
+    "name": "Rhinoceros"
+  },
+  "rhinoceros.actions.gore": {
+    "name": "Gore",
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Piercing damage. If the target is a Large or smaller creature and the rhinoceros moved 20+ feet straight toward it immediately before the hit, the target takes an extra 9 (2d8) Piercing damage and has the Prone condition."
+  },
+  "riding-horse": {
+    "name": "Riding Horse"
+  },
+  "riding-horse.actions.hooves": {
+    "name": "Hooves",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Bludgeoning damage."
+  },
+  "roc": {
+    "name": "Roc"
+  },
+  "roc.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The roc makes two Beak attacks. It can replace one attack with a Talons attack."
+  },
+  "roc.actions.beak": {
+    "name": "Beak",
+    "text": "Melee Attack Roll: +13, reach 10 ft. Hit: 28 (3d12 + 9) Piercing damage."
+  },
+  "roc.actions.talons": {
+    "name": "Talons",
+    "text": "Melee Attack Roll: +13, reach 5 ft. Hit: 23 (4d6 + 9) Slashing damage. If the target is a Huge or smaller creature, it has the Grappled condition (escape DC 19) from both talons, and it has the Restrained condition until the grapple ends."
+  },
+  "roc.bonusActions.swoop": {
+    "name": "Swoop",
+    "text": "If the roc has a creature Grappled, the roc flies up to half its Fly Speed without provoking Opportunity Attacks and drops that creature."
+  },
+  "roper": {
+    "name": "Roper"
+  },
+  "roper.traits.spider-climb": {
+    "name": "Spider Climb",
+    "text": "The roper can climb difficult surfaces, including along ceilings, without needing to make an ability check."
+  },
+  "roper.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The roper makes two Tentacle attacks, uses Reel, and makes two Bite attacks."
+  },
+  "roper.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 17 (3d8 + 4) Piercing damage."
+  },
+  "roper.actions.tentacle": {
+    "name": "Tentacle",
+    "text": "Melee Attack Roll: +7, reach 60 ft. Hit: The target has the Grappled condition (escape DC 14) from one of six tentacles, and the target has the Poisoned condition until the grapple ends. The tentacle can be damaged, freeing a creature it has Grappled when destroyed (AC 20, HP 10, Immunity to Poison and Psychic damage). Damaging the tentacle deals no damage to the roper, and a destroyed tentacle regrows at the start of the roper's next turn."
+  },
+  "roper.actions.reel": {
+    "name": "Reel",
+    "text": "The roper pulls each creature Grappled by it up to 30 feet straight toward it."
+  },
+  "rust-monster": {
+    "name": "Rust Monster"
+  },
+  "rust-monster.traits.iron-scent": {
+    "name": "Iron Scent",
+    "text": "The rust monster can pinpoint the location of ferrous metal within 30 feet of itself."
+  },
+  "rust-monster.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The rust monster makes one Bite attack and uses Antennae twice."
+  },
+  "rust-monster.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 5 (1d8 + 1) Piercing damage."
+  },
+  "rust-monster.actions.antennae": {
+    "name": "Antennae",
+    "text": "The rust monster targets one nonmagical metal object—armor or a weapon—worn or carried by a creature within 5 feet of itself. Dexterity Saving Throw: DC 11, the creature with the object. Failure: The object takes a −1 penalty to the AC it offers (armor) or to its attack rolls (weapon). Armor is destroyed if the penalty reduces its AC to 10, and a weapon is destroyed if its penalty reaches −5. The penalty can be removed by casting the Mending spell on the armor or weapon."
+  },
+  "rust-monster.actions.destroy-metal": {
+    "name": "Destroy Metal",
+    "text": "The rust monster touches a nonmagical metal object within 5 feet of itself that isn't being worn or carried. The touch destroys a 1-foot Cube of the object."
+  },
+  "rust-monster.reactions.reflexive-antennae": {
+    "name": "Reflexive Antennae",
+    "text": "Trigger: An attack roll hits the rust monster. Response: The rust monster uses Antennae."
+  },
+  "saber-toothed-tiger": {
+    "name": "Saber-Toothed Tiger"
+  },
+  "saber-toothed-tiger.traits.running-leap": {
+    "name": "Running Leap",
+    "text": "With a 10-foot running start, the tiger can Long Jump up to 25 feet."
+  },
+  "saber-toothed-tiger.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The tiger makes two Rend attacks."
+  },
+  "saber-toothed-tiger.actions.rend": {
+    "name": "Rend",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 11 (2d6 + 4) Slashing damage."
+  },
+  "saber-toothed-tiger.bonusActions.nimble-escape": {
+    "name": "Nimble Escape",
+    "text": "The tiger takes the Disengage or Hide action."
+  },
+  "sahuagin-warrior": {
+    "name": "Sahuagin Warrior"
+  },
+  "sahuagin-warrior.traits.blood-frenzy": {
+    "name": "Blood Frenzy",
+    "text": "The sahuagin has Advantage on attack rolls against any creature that doesn't have all its Hit Points."
+  },
+  "sahuagin-warrior.traits.limited-amphibiousness": {
+    "name": "Limited Amphibiousness",
+    "text": "The sahuagin can breathe air and water, but it must be submerged at least once every 4 hours to avoid suffocating outside water."
+  },
+  "sahuagin-warrior.traits.shark-telepathy": {
+    "name": "Shark Telepathy",
+    "text": "The sahuagin can magically control sharks within 120 feet of itself, using a special telepathy."
+  },
+  "sahuagin-warrior.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The sahuagin makes two Claw attacks."
+  },
+  "sahuagin-warrior.actions.claw": {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 4 (1d6 + 1) Slashing damage."
+  },
+  "sahuagin-warrior.bonusActions.aquatic-charge": {
+    "name": "Aquatic Charge",
+    "text": "The sahuagin swims up to its Swim Speed straight toward an enemy it can see."
+  },
+  "salamander": {
+    "name": "Salamander"
+  },
+  "salamander.traits.fire-aura": {
+    "name": "Fire Aura",
+    "text": "At the end of each of the salamander's turns, each creature of the salamander's choice in a 5-foot Emanation originating from the salamander takes 7 (2d6) Fire damage."
+  },
+  "salamander.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The salamander makes two Flame Spear attacks. It can replace one attack with a use of Constrict."
+  },
+  "salamander.actions.flame-spear": {
+    "name": "Flame Spear",
+    "text": "Melee or Ranged Attack Roll: +7, reach 5 ft. or range 20/60 ft. Hit: 13 (2d8 + 4) Piercing damage plus 7 (2d6) Fire damage. Hit or Miss: The spear magically returns to the salamander's hand immediately after a ranged attack."
+  },
+  "salamander.actions.constrict": {
+    "name": "Constrict",
+    "text": "Strength Saving Throw: DC 15, one Large or smaller creature the salamander can see within 10 feet. Failure: 11 (2d6 + 4) Bludgeoning damage plus 7 (2d6) Fire damage. The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
+  },
+  "satyr": {
+    "name": "Satyr"
+  },
+  "satyr.traits.magic-resistance": {
+    "name": "Magic Resistance",
+    "text": "The satyr has Advantage on saving throws against spells and other magical effects."
+  },
+  "satyr.actions.hooves": {
+    "name": "Hooves",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Bludgeoning damage. If the target is a Medium or smaller creature, the satyr pushes the target up to 10 feet straight away from itself."
+  },
+  "satyr.actions.mockery": {
+    "name": "Mockery",
+    "text": "Wisdom Saving Throw: DC 12, one creature the satyr can see within 90 feet. Failure: 5 (1d6 + 2) Psychic damage."
+  },
+  "scorpion": {
+    "name": "Scorpion"
+  },
+  "scorpion.actions.sting": {
+    "name": "Sting",
+    "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage plus 3 (1d6) Poison damage."
+  },
+  "scout": {
+    "name": "Scout"
+  },
+  "scout.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The scout makes two attacks, using Shortsword and Longbow in any combination."
+  },
+  "scout.actions.shortsword": {
+    "name": "Shortsword",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage."
+  },
+  "scout.actions.longbow": {
+    "name": "Longbow",
+    "text": "Ranged Attack Roll: +4, range 150/600 ft. Hit: 6 (1d8 + 2) Piercing damage."
+  },
+  "sea-hag": {
+    "name": "Sea Hag"
+  },
+  "sea-hag.traits.amphibious": {
+    "name": "Amphibious",
+    "text": "The hag can breathe air and water."
+  },
+  "sea-hag.traits.coven-magic": {
+    "name": "Coven Magic",
+    "text": "While within 30 feet of at least two hag allies, the hag can cast one of the following spells, requiring no Material components, using the spell's normal casting time, and using Intelligence as the spellcasting ability (spell save DC 11): Augury, Find Familiar, Identify, Locate Object, Scrying, or Unseen Servant. The hag must finish a Long Rest before using this trait to cast that spell again."
+  },
+  "sea-hag.traits.vile-appearance": {
+    "name": "Vile Appearance",
+    "text": "Wisdom Saving Throw: DC 11, any Beast or Humanoid that starts its turn within 30 feet of the hag and can see the hag's true form. Failure: The target has the Frightened condition until the start of its next turn. Success: The target is immune to this hag's Vile Appearance for 24 hours."
+  },
+  "sea-hag.actions.claw": {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage."
+  },
+  "sea-hag.actions.death-glare": {
+    "name": "Death Glare",
+    "text": "Wisdom Saving Throw: DC 11, one Frightened creature the hag can see within 30 feet. Failure: If the target has 20 Hit Points or fewer, it drops to 0 Hit Points. Otherwise, the target takes 13 (3d8) Psychic damage."
+  },
+  "sea-hag.actions.illusory-appearance": {
+    "name": "Illusory Appearance",
+    "text": "The hag casts Disguise Self, using Constitution as the spellcasting ability (spell save DC 13). The spell's duration is 24 hours."
+  },
+  "seahorse": {
+    "name": "Seahorse"
+  },
+  "seahorse.traits.water-breathing": {
+    "name": "Water Breathing",
+    "text": "The seahorse can breathe only underwater."
+  },
+  "seahorse.actions.bubble-dash": {
+    "name": "Bubble Dash",
+    "text": "While underwater, the seahorse moves up to its Swim Speed without provoking Opportunity Attacks."
+  },
+  "shadow": {
+    "name": "Shadow"
+  },
+  "shadow.traits.amorphous": {
+    "name": "Amorphous",
+    "text": "The shadow can move through a space as narrow as 1 inch without expending extra movement to do so."
+  },
+  "shadow.traits.sunlight-weakness": {
+    "name": "Sunlight Weakness",
+    "text": "While in sunlight, the shadow has Disadvantage on D20 Tests."
+  },
+  "shadow.actions.draining-swipe": {
+    "name": "Draining Swipe",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Necrotic damage, and the target’s Strength score decreases by 1d4. The target dies if this reduces that score to 0. If a Humanoid is slain by this attack, a Shadow rises from the corpse 1d4 hours later."
+  },
+  "shadow.bonusActions.shadow-stealth": {
+    "name": "Shadow Stealth",
+    "text": "While in Dim Light or Darkness, the shadow takes the Hide action."
+  },
+  "shambling-mound": {
+    "name": "Shambling Mound"
+  },
+  "shambling-mound.traits.lightning-absorption": {
+    "name": "Lightning Absorption",
+    "text": "Whenever the shambling mound is subjected to Lightning damage, it regains a number of Hit Points equal to the Lightning damage dealt."
+  },
+  "shambling-mound.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The shambling mound makes three Charged Tendril attacks. It can replace one attack with a use of Engulf."
+  },
+  "shambling-mound.actions.charged-tendril": {
+    "name": "Charged Tendril",
+    "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 7 (1d6 + 4) Bludgeoning damage plus 5 (2d4) Lightning damage. If the target is a Medium or smaller creature, the shambling mound pulls the target 5 feet straight toward itself."
+  },
+  "shambling-mound.actions.engulf": {
+    "name": "Engulf",
+    "text": "Strength Saving Throw: DC 15, one Medium or smaller creature within 5 feet. Failure: The target is pulled into the shambling mound’s space and has the Grappled condition (escape DC 14). Until the grapple ends, the target has the Blinded and Restrained conditions, and it takes 10 (3d6) Lightning damage at the start of each of its turns. When the shambling mound moves, the Grappled target moves with it, costing it no extra movement. The shambling mound can have only one creature Grappled by this action at a time."
+  },
+  "shield-guardian": {
+    "name": "Shield Guardian"
+  },
+  "shield-guardian.traits.bound": {
+    "name": "Bound",
+    "text": "The guardian is magically bound to an amulet. While the guardian and its amulet are on the same plane of existence, the amulet’s wearer can telepathically call the guardian to travel to it, and the guardian knows the distance and direction to the amulet. If the guardian is within 60 feet of the amulet’s wearer, half of any damage the wearer takes (round up) is transferred to the guardian."
+  },
+  "shield-guardian.traits.regeneration": {
+    "name": "Regeneration",
+    "text": "The guardian regains 10 Hit Points at the start of each of its turns if it has at least 1 Hit Point."
+  },
+  "shield-guardian.traits.spell-storing": {
+    "name": "Spell Storing",
+    "text": "A spellcaster who wears the guardian’s amulet can cause the guardian to store one spell of level 4 or lower. To do so, the wearer must cast the spell on the guardian while within 5 feet of it. The spell has no effect but is stored within the guardian. Any previously stored spell is lost when a new spell is stored. The guardian can cast the spell stored with any parameters set by the original caster, requiring no spell components and using the caster’s spellcasting ability. The stored spell is then lost."
+  },
+  "shield-guardian.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The guardian makes two Fist attacks."
+  },
+  "shield-guardian.actions.fist": {
+    "name": "Fist",
+    "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 11 (2d6 + 4) Bludgeoning damage plus 7 (2d6) Force damage."
+  },
+  "shield-guardian.reactions.protection": {
+    "name": "Protection",
+    "text": "Trigger: An attack roll hits the wearer of the guardian’s amulet while the wearer is within 5 feet of the guardian. Response: The wearer gains a +5 bonus to AC, including against the triggering attack and possibly causing it to miss, until the start of the guardian’s next turn."
+  },
+  "shrieker-fungus": {
+    "name": "Shrieker Fungus"
+  },
+  "shrieker-fungus.reactions.shriek": {
+    "name": "Shriek",
+    "text": "Trigger: A creature or a source of Bright Light moves within 30 feet of the shrieker. Response: The shrieker emits a shriek audible within 300 feet of itself for 1 minute or until the shrieker dies."
+  },
+  "silver-dragon-wyrmling": {
+    "name": "Silver Dragon Wyrmling"
+  },
+  "silver-dragon-wyrmling.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The dragon makes two Rend attacks."
+  },
+  "silver-dragon-wyrmling.actions.rend": {
+    "name": "Rend",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (1d10 + 4) Piercing damage."
+  },
+  "silver-dragon-wyrmling.actions.cold-breath": {
+    "name": "Cold Breath",
+    "text": "Constitution Saving Throw: DC 13, each creature in a 15-foot Cone. Failure: 18 (4d8) Cold damage. Success: Half damage."
+  },
+  "silver-dragon-wyrmling.actions.paralyzing-breath": {
+    "name": "Paralyzing Breath",
+    "text": "Constitution Saving Throw: DC 13, each creature in a 15-foot Cone. First Failure: The target has the Incapacitated condition until the end of its next turn, when it repeats the save. Second Failure: The target has the Paralyzed condition, and it repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically."
   },
   "skeleton": {
     "name": "Skeleton"
@@ -4475,6 +4895,403 @@
     "name": "Shortbow",
     "text": "Ranged Attack Roll: +5, range 80/320 ft. Hit: 6 (1d6 + 3) Piercing damage."
   },
+  "solar": {
+    "name": "Solar"
+  },
+  "solar.traits.divine-awareness": {
+    "name": "Divine Awareness",
+    "text": "The solar knows if it hears a lie."
+  },
+  "solar.traits.exalted-restoration": {
+    "name": "Exalted Restoration",
+    "text": "If the solar dies outside Mount Celestia, its body disappears, and it gains a new body instantly, reviving with all its Hit Points somewhere in Mount Celestia."
+  },
+  "solar.traits.legendary-resistance": {
+    "name": "Legendary Resistance",
+    "text": "(4/Day) If the solar fails a saving throw, it can choose to succeed instead."
+  },
+  "solar.traits.magic-resistance": {
+    "name": "Magic Resistance",
+    "text": "The solar has Advantage on saving throws against spells and other magical effects."
+  },
+  "solar.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The solar makes two Flying Sword attacks. It can replace one attack with a use of Slaying Bow."
+  },
+  "solar.actions.flying-sword": {
+    "name": "Flying Sword",
+    "text": "Melee or Ranged Attack Roll: +15, reach 10 ft. or range 120 ft. Hit: 22 (4d6 + 8) Slashing damage plus 36 (8d8) Radiant damage. Hit or Miss: The sword magically returns to the solar's hand or hovers within 5 feet of the solar immediately after a ranged attack."
+  },
+  "solar.actions.slaying-bow": {
+    "name": "Slaying Bow",
+    "text": "Dexterity Saving Throw: DC 21, one creature the solar can see within 600 feet. Failure: If the creature has 100 Hit Points or fewer, it dies. It otherwise takes 24 (4d8 + 6) Piercing damage plus 36 (8d8) Radiant damage."
+  },
+  "solar.actions.spellcasting": {
+    "name": "Spellcasting",
+    "text": "The solar casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 25): At Will: Detect Evil and Good. 1/Day Each: Commune, Control Weather, Dispel Evil and Good, Resurrection."
+  },
+  "solar.bonusActions.divine-aid": {
+    "name": "Divine Aid",
+    "text": "The solar casts Cure Wounds (level 2 version), Lesser Restoration, or Remove Curse, using the same spellcasting ability as Spellcasting."
+  },
+  "solar.legendaryActions.blinding-gaze": {
+    "name": "Blinding Gaze",
+    "text": "Constitution Saving Throw: DC 25, one creature the solar can see within 120 feet. Failure: The target has the Blinded condition for 1 minute. Failure or Success: The solar can't take this action again until the start of its next turn."
+  },
+  "solar.legendaryActions.radiant-teleport": {
+    "name": "Radiant Teleport",
+    "text": "The solar teleports up to 60 feet to an unoccupied space it can see. Dexterity Saving Throw: DC 25, each creature in a 10-foot Emanation originating from the solar at its destination space. Failure: 11 (2d10) Radiant damage. Success: Half damage."
+  },
+  "specter": {
+    "name": "Specter"
+  },
+  "specter.traits.incorporeal-movement": {
+    "name": "Incorporeal Movement",
+    "text": "The specter can move through other creatures and objects as if they were Difficult Terrain. It takes 5 (1d10) Force damage if it ends its turn inside an object."
+  },
+  "specter.traits.sunlight-sensitivity": {
+    "name": "Sunlight Sensitivity",
+    "text": "While in sunlight, the specter has Disadvantage on ability checks and attack rolls."
+  },
+  "specter.actions.life-drain": {
+    "name": "Life Drain",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d6) Necrotic damage. If the target is a creature, its Hit Point maximum decreases by an amount equal to the damage taken."
+  },
+  "sphinx-of-lore": {
+    "name": "Sphinx of Lore"
+  },
+  "sphinx-of-lore.traits.inscrutable": {
+    "name": "Inscrutable",
+    "text": "No magic can observe the sphinx remotely or detect its thoughts without its permission. Wisdom (Insight) checks made to ascertain its intentions or sincerity are made with Disadvantage."
+  },
+  "sphinx-of-lore.traits.legendary-resistance": {
+    "name": "Legendary Resistance",
+    "text": "(3/Day, or 4/Day in Lair) If the sphinx fails a saving throw, it can choose to succeed instead."
+  },
+  "sphinx-of-lore.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The sphinx makes three Claw attacks."
+  },
+  "sphinx-of-lore.actions.claw": {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +8, reach 5 ft. Hit: 14 (3d6 + 4) Slashing damage."
+  },
+  "sphinx-of-lore.actions.mind-rending-roar": {
+    "name": "Mind-Rending Roar",
+    "text": "Wisdom Saving Throw: DC 16, each enemy in a 300-foot Emanation originating from the sphinx. Failure: 35 (10d6) Psychic damage, and the target has the Incapacitated condition until the start of the sphinx's next turn."
+  },
+  "sphinx-of-lore.actions.spellcasting": {
+    "name": "Spellcasting",
+    "text": "The sphinx casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Identify, Mage Hand, Minor Illusion, Prestidigitation. 1/Day Each: Dispel Magic, Legend Lore, Locate Object, Plane Shift, Remove Curse, Tongues."
+  },
+  "sphinx-of-lore.legendaryActions.arcane-prowl": {
+    "name": "Arcane Prowl",
+    "text": "The sphinx can teleport up to 30 feet to an unoccupied space it can see, and it makes one Claw attack."
+  },
+  "sphinx-of-lore.legendaryActions.weight-of-years": {
+    "name": "Weight of Years",
+    "text": "Constitution Saving Throw: DC 16, one creature the sphinx can see within 120 feet. Failure: The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. Failure or Success: The sphinx can't take this action again until the start of its next turn."
+  },
+  "sphinx-of-valor": {
+    "name": "Sphinx of Valor"
+  },
+  "sphinx-of-valor.traits.inscrutable": {
+    "name": "Inscrutable",
+    "text": "No magic can observe the sphinx remotely or detect its thoughts without its permission. Wisdom (Insight) checks made to ascertain its intentions or sincerity are made with Disadvantage."
+  },
+  "sphinx-of-valor.traits.legendary-resistance": {
+    "name": "Legendary Resistance",
+    "text": "(3/Day, or 4/Day in Lair) If the sphinx fails a saving throw, it can choose to succeed instead."
+  },
+  "sphinx-of-valor.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The sphinx makes two Claw attacks and uses Roar."
+  },
+  "sphinx-of-valor.actions.claw": {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +12, reach 5 ft. Hit: 20 (4d6 + 6) Slashing damage."
+  },
+  "sphinx-of-valor.actions.roar": {
+    "name": "Roar",
+    "text": "The sphinx emits a magical roar. Whenever it roars, the roar has a different effect, as detailed below (the sequence resets when it takes a Long Rest): First Roar. Wisdom Saving Throw: DC 20, each enemy in a 500-foot Emanation originating from the sphinx. Failure: The target has the Frightened condition for 1 minute. Second Roar. Wisdom Saving Throw: DC 20, each enemy in a 500-foot Emanation originating from the sphinx. Failure: The target has the Paralyzed condition, and it repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically. Third Roar. Constitution Saving Throw: DC 20, each enemy in a 500-foot Emanation originating from the sphinx. Failure: 44 (8d10) Thunder damage, and the target has the Prone condition. Success: Half damage only."
+  },
+  "sphinx-of-valor.actions.spellcasting": {
+    "name": "Spellcasting",
+    "text": "The sphinx casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 20): At Will: Detect Evil and Good, Thaumaturgy. 1/Day Each: Detect Magic, Dispel Magic, Greater Restoration, Heroes' Feast, Zone of Truth."
+  },
+  "sphinx-of-valor.legendaryActions.arcane-prowl": {
+    "name": "Arcane Prowl",
+    "text": "The sphinx can teleport up to 30 feet to an unoccupied space it can see, and it makes one Claw attack."
+  },
+  "sphinx-of-valor.legendaryActions.weight-of-years": {
+    "name": "Weight of Years",
+    "text": "Constitution Saving Throw: DC 16, one creature the sphinx can see within 120 feet. Failure: The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. Failure or Success: The sphinx can't take this action again until the start of its next turn."
+  },
+  "sphinx-of-wonder": {
+    "name": "Sphinx of Wonder"
+  },
+  "sphinx-of-wonder.traits.magic-resistance": {
+    "name": "Magic Resistance",
+    "text": "The sphinx has Advantage on saving throws against spells and other magical effects."
+  },
+  "sphinx-of-wonder.actions.rend": {
+    "name": "Rend",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Slashing damage plus 7 (2d6) Radiant damage."
+  },
+  "sphinx-of-wonder.reactions.burst-of-ingenuity": {
+    "name": "Burst of Ingenuity",
+    "text": "Trigger: The sphinx or another creature within 30 feet makes an ability check or a saving throw. Response: The sphinx adds 2 to the roll."
+  },
+  "spider": {
+    "name": "Spider"
+  },
+  "spider.traits.spider-climb": {
+    "name": "Spider Climb",
+    "text": "The spider can climb difficult surfaces, including along ceilings, without needing to make an ability check."
+  },
+  "spider.traits.web-walker": {
+    "name": "Web Walker",
+    "text": "The spider ignores movement restrictions caused by webs, and the spider knows the location of any other creature in contact with the same web."
+  },
+  "spider.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage plus 2 (1d4) Poison damage."
+  },
+  "spirit-naga": {
+    "name": "Spirit Naga"
+  },
+  "spirit-naga.traits.fiendish-restoration": {
+    "name": "Fiendish Restoration",
+    "text": "If it dies, the naga returns to life in 1d6 days and regains all its Hit Points. Only a Wish spell can prevent this trait from functioning."
+  },
+  "spirit-naga.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The naga makes three attacks, using Bite or Necrotic Ray in any combination."
+  },
+  "spirit-naga.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 7 (1d6 + 4) Piercing damage plus 14 (4d6) Poison damage."
+  },
+  "spirit-naga.actions.necrotic-ray": {
+    "name": "Necrotic Ray",
+    "text": "Ranged Attack Roll: +6, range 60 ft. Hit: 21 (6d6) Necrotic damage."
+  },
+  "spirit-naga.actions.spellcasting": {
+    "name": "Spellcasting",
+    "text": "The naga casts one of the following spells, requiring no Somatic or Material components and using Intelligence as the spellcasting ability (spell save DC 14): At Will: Detect Magic, Mage Hand, Minor Illusion, Water Breathing. 2/Day Each: Detect Thoughts, Dimension Door, Hold Person (level 3 version), Lightning Bolt (level 4 version)."
+  },
+  "sprite": {
+    "name": "Sprite"
+  },
+  "sprite.actions.needle-sword": {
+    "name": "Needle Sword",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 6 (1d4 + 4) Piercing damage."
+  },
+  "sprite.actions.enchanting-bow": {
+    "name": "Enchanting Bow",
+    "text": "Ranged Attack Roll: +6, range 40/160 ft. Hit: 1 Piercing damage, and the target has the Charmed condition until the start of the sprite's next turn."
+  },
+  "sprite.actions.heart-sight": {
+    "name": "Heart Sight",
+    "text": "Charisma Saving Throw: DC 10, one creature within 5 feet the sprite can see (Celestials, Fiends, and Undead automatically fail the save). Failure: The sprite knows the target's emotions and alignment."
+  },
+  "sprite.actions.invisibility": {
+    "name": "Invisibility",
+    "text": "The sprite casts Invisibility on itself, requiring no spell components and using Charisma as the spellcasting ability."
+  },
+  "spy": {
+    "name": "Spy"
+  },
+  "spy.actions.shortsword": {
+    "name": "Shortsword",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage plus 7 (2d6) Poison damage."
+  },
+  "spy.actions.hand-crossbow": {
+    "name": "Hand Crossbow",
+    "text": "Ranged Attack Roll: +4, range 30/120 ft. Hit: 5 (1d6 + 2) Piercing damage plus 7 (2d6) Poison damage."
+  },
+  "spy.bonusActions.cunning-action": {
+    "name": "Cunning Action",
+    "text": "The spy takes the Dash, Disengage, or Hide action."
+  },
+  "steam-mephit": {
+    "name": "Steam Mephit"
+  },
+  "steam-mephit.traits.blurred-form": {
+    "name": "Blurred Form",
+    "text": "Attack rolls against the mephit are made with Disadvantage unless the mephit has the Incapacitated condition."
+  },
+  "steam-mephit.traits.death-burst": {
+    "name": "Death Burst",
+    "text": "The mephit explodes when it dies. Dexterity Saving Throw: DC 10, each creature in a 5-foot Emanation originating from the mephit. Failure: 5 (2d4) Fire damage. Success: Half damage."
+  },
+  "steam-mephit.actions.claw": {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 2 (1d4) Slashing damage plus 2 (1d4) Fire damage."
+  },
+  "steam-mephit.actions.steam-breath": {
+    "name": "Steam Breath",
+    "text": "Constitution Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: 5 (2d4) Fire damage, and the target's Speed decreases by 10 feet until the end of the mephit's next turn. Success: Half damage only. Failure or Success: Being underwater doesn't grant Resistance to this Fire damage."
+  },
+  "stirge": {
+    "name": "Stirge"
+  },
+  "stirge.actions.proboscis": {
+    "name": "Proboscis",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Piercing damage, and the stirge attaches to the target. While attached, the stirge can't make Proboscis attacks, and the target takes 5 (2d4) Necrotic damage at the start of each of the stirge's turns. The stirge can detach itself by spending 5 feet of its movement. The target or a creature within 5 feet of it can detach the stirge as an action."
+  },
+  "stone-giant": {
+    "name": "Stone Giant"
+  },
+  "stone-giant.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The giant makes two attacks, using Stone Club or Boulder in any combination."
+  },
+  "stone-giant.actions.stone-club": {
+    "name": "Stone Club",
+    "text": "Melee Attack Roll: +9, reach 15 ft. Hit: 22 (3d10 + 6) Bludgeoning damage."
+  },
+  "stone-giant.actions.boulder": {
+    "name": "Boulder",
+    "text": "Ranged Attack Roll: +9, range 60/240 ft. Hit: 15 (2d8 + 6) Bludgeoning damage. If the target is a Large or smaller creature, it has the Prone condition."
+  },
+  "stone-giant.reactions.deflect-missile": {
+    "name": "Deflect Missile",
+    "text": "Trigger: The giant is hit by a ranged attack roll and takes Bludgeoning, Piercing, or Slashing damage from it. Response: The giant reduces the damage it takes from the attack by 11 (1d10 + 6), and if that damage is reduced to 0, the giant can redirect some of the attack's force. Dexterity Saving Throw: DC 17, one creature the giant can see within 60 feet. Failure: 11 (1d10 + 6) Force damage."
+  },
+  "stone-golem": {
+    "name": "Stone Golem"
+  },
+  "stone-golem.traits.immutable-form": {
+    "name": "Immutable Form",
+    "text": "The golem can't shape-shift."
+  },
+  "stone-golem.traits.magic-resistance": {
+    "name": "Magic Resistance",
+    "text": "The golem has Advantage on saving throws against spells and other magical effects."
+  },
+  "stone-golem.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The golem makes two attacks, using Slam or Force Bolt in any combination."
+  },
+  "stone-golem.actions.slam": {
+    "name": "Slam",
+    "text": "Melee Attack Roll: +10, reach 5 ft. Hit: 15 (2d8 + 6) Bludgeoning damage plus 9 (2d8) Force damage."
+  },
+  "stone-golem.actions.force-bolt": {
+    "name": "Force Bolt",
+    "text": "Ranged Attack Roll: +9, range 120 ft. Hit: 22 (4d10) Force damage."
+  },
+  "stone-golem.bonusActions.slow": {
+    "name": "Slow",
+    "text": "The golem casts the Slow spell, requiring no spell components and using Constitution as the spellcasting ability (spell save DC 17)."
+  },
+  "storm-giant": {
+    "name": "Storm Giant"
+  },
+  "storm-giant.traits.amphibious": {
+    "name": "Amphibious",
+    "text": "The giant can breathe air and water."
+  },
+  "storm-giant.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The giant makes two attacks, using Storm Sword or Thunderbolt in any combination."
+  },
+  "storm-giant.actions.storm-sword": {
+    "name": "Storm Sword",
+    "text": "Melee Attack Roll: +14, reach 10 ft. Hit: 23 (4d6 + 9) Slashing damage plus 13 (3d8) Lightning damage."
+  },
+  "storm-giant.actions.thunderbolt": {
+    "name": "Thunderbolt",
+    "text": "Ranged Attack Roll: +14, range 500 ft. Hit: 22 (2d12 + 9) Lightning damage, and the target has the Blinded and Deafened conditions until the start of the giant's next turn."
+  },
+  "storm-giant.actions.lightning-storm": {
+    "name": "Lightning Storm",
+    "text": "Dexterity Saving Throw: DC 18, each creature in a 10-foot-radius, 40-foot-high Cylinder originating from a point the giant can see within 500 feet. Failure: 55 (10d10) Lightning damage. Success: Half damage."
+  },
+  "storm-giant.actions.spellcasting": {
+    "name": "Spellcasting",
+    "text": "The giant casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Light. 1/Day: Control Weather."
+  },
+  "succubus": {
+    "name": "Succubus"
+  },
+  "succubus.traits.incubus-form": {
+    "name": "Incubus Form",
+    "text": "When the succubus finishes a Long Rest, it can shape-shift into an Incubus, using that stat block instead of this one."
+  },
+  "succubus.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The succubus makes one Fiendish Touch attack and uses Charm or Draining Kiss."
+  },
+  "succubus.actions.fiendish-touch": {
+    "name": "Fiendish Touch",
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 16 (2d10 + 5) Psychic damage."
+  },
+  "succubus.actions.charm": {
+    "name": "Charm",
+    "text": "The succubus casts Dominate Person (level 8 version), requiring no spell components and using Charisma as the spellcasting ability (spell save DC 15)."
+  },
+  "succubus.actions.draining-kiss": {
+    "name": "Draining Kiss",
+    "text": "Constitution Saving Throw: DC 15, one creature Charmed by the succubus within 5 feet. Failure: 13 (3d8) Psychic damage. Success: Half damage. Failure or Success: The target's Hit Point maximum decreases by an amount equal to the damage taken."
+  },
+  "succubus.bonusActions.shape-shift": {
+    "name": "Shape-Shift",
+    "text": "The succubus shape-shifts into a Medium or Small Humanoid, or it returns to its true form. Its game statistics are the same in each form, except its Fly Speed is available only in its true form. Any equipment it is wearing or carrying isn't transformed."
+  },
+  "swarm-of-bats": {
+    "name": "Swarm of Bats"
+  },
+  "swarm-of-bats.traits.swarm": {
+    "name": "Swarm",
+    "text": "The swarm can occupy another creature's space and vice versa, and the swarm can move through any opening large enough for a Tiny bat. The swarm can't regain Hit Points or gain Temporary Hit Points."
+  },
+  "swarm-of-bats.actions.bites": {
+    "name": "Bites",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (2d4) Piercing damage, or 2 (1d4) Piercing damage if the swarm is Bloodied."
+  },
+  "swarm-of-crawling-claws": {
+    "name": "Swarm of Crawling Claws"
+  },
+  "swarm-of-crawling-claws.traits.swarm": {
+    "name": "Swarm",
+    "text": "The swarm can occupy another creature's space and vice versa, and the swarm can move through any opening large enough for a Tiny creature. The swarm can't regain Hit Points or gain Temporary Hit Points."
+  },
+  "swarm-of-crawling-claws.actions.swarm-of-grasping-hands": {
+    "name": "Swarm of Grasping Hands",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 20 (4d8 + 2) Necrotic damage, or 11 (2d8 + 2) Necrotic damage if the swarm is Bloodied. If the target is a Medium or smaller creature, it has the Prone condition."
+  },
+  "swarm-of-insects": {
+    "name": "Swarm of Insects"
+  },
+  "swarm-of-insects.traits.spider-climb": {
+    "name": "Spider Climb",
+    "text": "If the swarm has a Climb Speed, the swarm can climb difficult surfaces, including along ceilings, without needing to make an ability check."
+  },
+  "swarm-of-insects.traits.swarm": {
+    "name": "Swarm",
+    "text": "The swarm can occupy another creature's space and vice versa, and the swarm can move through any opening large enough for a Tiny insect. The swarm can't regain Hit Points or gain Temporary Hit Points."
+  },
+  "swarm-of-insects.actions.bites": {
+    "name": "Bites",
+    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 6 (2d4 + 1) Poison damage, or 3 (1d4 + 1) Poison damage if the swarm is Bloodied."
+  },
+  "swarm-of-piranhas": {
+    "name": "Swarm of Piranhas"
+  },
+  "swarm-of-piranhas.traits.swarm": {
+    "name": "Swarm",
+    "text": "The swarm can occupy another creature's space and vice versa, and the swarm can move through any opening large enough for a Tiny piranha. The swarm can't regain Hit Points or gain Temporary Hit Points."
+  },
+  "swarm-of-piranhas.traits.water-breathing": {
+    "name": "Water Breathing",
+    "text": "The swarm can breathe only underwater."
+  },
+  "swarm-of-piranhas.actions.bites": {
+    "name": "Bites",
+    "text": "Melee Attack Roll: +5 (with Advantage if the target doesn't have all its Hit Points), reach 5 ft. Hit: 8 (2d4 + 3) Piercing damage, or 5 (1d4 + 3) Piercing damage if the swarm is Bloodied."
+  },
   "swarm-of-rats": {
     "name": "Swarm of Rats"
   },
@@ -4485,6 +5302,32 @@
   "swarm-of-rats.actions.bites": {
     "name": "Bites",
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 5 (2d4) Piercing damage, or 2 (1d4) Piercing damage if the swarm is Bloodied."
+  },
+  "swarm-of-ravens": {
+    "name": "Swarm of Ravens"
+  },
+  "swarm-of-ravens.traits.swarm": {
+    "name": "Swarm",
+    "text": "The swarm can occupy another creature's space and vice versa, and the swarm can move through any opening large enough for a Tiny raven. The swarm can't regain Hit Points or gain Temporary Hit Points."
+  },
+  "swarm-of-ravens.actions.beaks": {
+    "name": "Beaks",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage, or 2 (1d4) Piercing damage if the swarm is Bloodied."
+  },
+  "swarm-of-ravens.actions.cacophony": {
+    "name": "Cacophony",
+    "text": "Wisdom Saving Throw: DC 10, one creature in the swarm's space. Failure: The target has the Deafened condition until the start of the swarm's next turn. While Deafened, the target also has Disadvantage on ability checks and attack rolls."
+  },
+  "swarm-of-venomous-snakes": {
+    "name": "Swarm of Venomous Snakes"
+  },
+  "swarm-of-venomous-snakes.traits.swarm": {
+    "name": "Swarm",
+    "text": "The swarm can occupy another creature's space and vice versa, and the swarm can move through any opening large enough for a Tiny snake. The swarm can't regain Hit Points or gain Temporary Hit Points."
+  },
+  "swarm-of-venomous-snakes.actions.bites": {
+    "name": "Bites",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d8 + 4) Piercing damage—or 6 (1d4 + 4) Piercing damage if the swarm is Bloodied—plus 10 (3d6) Poison damage."
   },
   "young-red-dragon": {
     "name": "Young Red Dragon"

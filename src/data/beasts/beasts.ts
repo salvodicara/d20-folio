@@ -419,8 +419,8 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       {
         nameKey: "attack.sting",
         toHit: 2,
-        damageDice: "1d6+1",
-        damageType: "poison",
+        damageDice: "1",
+        damageType: "piercing",
         reachFt: 5,
       },
     ],
@@ -436,7 +436,7 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     speeds: { walk: 5, swim: 20 },
     abilityScores: { STR: 1, DEX: 12, CON: 8, INT: 1, WIS: 10, CHA: 2 },
     attacks: [],
-    traits: ["trait.water-breathing", "trait.bubble-dash"],
+    traits: ["trait.water-breathing"],
   },
   // Spider (2024 SRD 5.2.1). AC 12, HP 1, CR 0.
   {
@@ -451,8 +451,8 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       {
         nameKey: "attack.bite",
         toHit: 4,
-        damageDice: "1d4+1",
-        damageType: "poison",
+        damageDice: "1",
+        damageType: "piercing",
         reachFt: 5,
       },
     ],
@@ -1589,32 +1589,26 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
   },
-  // Saber-Toothed Tiger (2024 SRD 5.2.1). AC 12, HP 52, CR 2.
+  // Saber-Toothed Tiger (2024 SRD 5.2.1). AC 13, HP 52, CR 2.
   {
     id: "saber-toothed-tiger",
     cr: 2,
     size: "Large",
-    ac: 12,
+    ac: 13,
     hp: 52,
     speeds: { walk: 40 },
-    abilityScores: { STR: 18, DEX: 14, CON: 15, INT: 3, WIS: 12, CHA: 8 },
+    abilityScores: { STR: 18, DEX: 17, CON: 15, INT: 3, WIS: 12, CHA: 8 },
     attacks: [
       {
-        nameKey: "attack.bite",
+        nameKey: "attack.rend",
         toHit: 6,
-        damageDice: "1d10+5",
-        damageType: "piercing",
-        reachFt: 5,
-      },
-      {
-        nameKey: "attack.claw",
-        toHit: 6,
-        damageDice: "2d6+5",
+        damageDice: "2d6+4",
         damageType: "slashing",
         reachFt: 5,
       },
     ],
-    traits: ["trait.keen-smell", "trait.pounce"],
+    senses: { darkvisionFt: 60 },
+    traits: ["trait.running-leap"],
   },
   // Ankylosaurus (2024 SRD 5.2.1). AC 15, HP 68, CR 3.
   {

@@ -24,5 +24,6 @@
   "undercommon": { "name": "Sottocomune" },
   "blink-dog": { "name": "Cane intermittente" },
   "gnoll": { "name": "Gnoll" },
-  "otyugh": { "name": "Otyugh" }
+  "otyugh": { "name": "Otyugh" },
+  "sahuagin": { "name": "Sahuagin" }
 }

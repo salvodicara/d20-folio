@@ -540,9 +540,9 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     generator (`git rm`'d at the final wave) that regenerates `beasts.ts` + the `beasts.json`
     key deltas from the corpus, wave by wave; the pilot's `brown-bear` is re-derived to its
     2024 statblock (22 HP, Bite +5 1d8+3 / Claw +5 1d4+3, no traits — a live-user Polymorph
-    correctness fix), `rat` already matched. **Data waves 1–6/8 — `a–b` + `c–d` + `e–g` + `h–k` +
-    `l–m` + `n–p` — are IN**
-    (202 monsters: `a–b` = 59 Aboleth…Bulette; `c–d` = 32 Camel…Dust Mephit; `e–g` = 64
+    correctness fix), `rat` already matched. **Data waves 1–7/8 — `a–b` + `c–d` + `e–g` + `h–k` +
+    `l–m` + `n–p` + `q–s` — are IN**
+    (274 monsters: `a–b` = 59 Aboleth…Bulette; `c–d` = 32 Camel…Dust Mephit; `e–g` = 64
     Eagle…Guardian Naga — the elementals (earth/fire) + fire/frost giants, the two genies
     (efreeti) + the erinyes/glabrezu Fiends, the ettercap/ettin/gargoyle/gibbering-mouther/grick
     monstrosities, the flesh golem + gorgon, the green hag + guardian naga, the ghoul/ghast undead,
@@ -589,7 +589,24 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     already matched their projection. The `polar-bear` CON 16 (+3) the polymorph CON-delta pin reads
     is unchanged by the 2024 print, so the pin holds and no `polymorph.test.ts` literal moved.
     `otyugh` joins the monster-tongue language catalogue (the Blink Dog/gnoll precedent —
-    catalogue-only, not the player picker). NEXT: the 2 remaining data waves (`q–s`…`t–z`).
+    catalogue-only, not the player picker). `q–s` = 45 Quasit…Swarm of Venomous Snakes — the
+    **Rakshasa** + **Solar** (CR 21) heavyweights, the three **Sphinxes** (of Lore/Valor with
+    `xpInLair`, of Wonder), the stone/storm giants + stone golem, the quasit/salamander/succubus
+    fiends-and-elementals, the sea-hag + spirit-naga + shambling-mound, the roc/remorhaz/roper/rust-
+    monster monstrosities, the sahuagin-warrior/satyr/scout/spy/sprite NPCs-and-fey, the shadow +
+    specter + shrieker-fungus + shield-guardian, the red/silver dragon wyrmlings, and the seven
+    **swarms** (bats · crawling-claws · insects · piranhas · ravens · rats · venomous-snakes). Its
+    beast intersection re-derives four corrections: **Saber-Toothed Tiger** (the LAST drifted beast —
+    AC 12→13, DEX 14→17, the stale Bite+Claw pair collapsed to the single 2024 `Rend` 2d6+4 with
+    Running Leap + Nimble Escape, darkvision 60 added), **Scorpion** + **Spider** (their stale
+    poison-die stings/bites become the 2024 flat `1` Piercing), and **Seahorse** (Bubble Dash is a
+    2024 action, not a passive trait, so `trait.bubble-dash` is pruned) — closing the original
+    8-beast drift audit; `reef-shark` already matched its projection. The seahorse zero-attacks
+    premise re-verifies, so the `polymorph.test.ts` seahorse pin holds unchanged. The `raven`'s
+    Mimicry unifies the shared `trait.mimicry` IT lexeme to its catalogue name (_Imitare_), matching
+    green-hag. `sahuagin` joins the monster-tongue language catalogue (catalogue-only). The roper's
+    grapple-only Tentacle (the sole no-damage attack-roll print in the 330-corpus) is modeled
+    narrative, keeping the "attack ⇒ has damage" invariant intact. NEXT: the last data wave (`t–z`).
 - **Companions/Extras:** a persistent companion-statblock surface on the sheet (Find Familiar,
   Primal Companion, Drakewarden, Artificer Steel Defender/Homunculus) — closes a
   rules-completeness hole; reuses the bestiary statblock renderer.

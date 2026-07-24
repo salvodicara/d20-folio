@@ -1901,12 +1901,15 @@ export interface QualifiedDefense {
 
 /** A defense line whose "type" is a localized prose NOTE, not a closed-set
  *  `DamageType` — the SRD half-dragon's "Resistances Damage type chosen for the
- *  Draconic Origin trait", where the resisted element is GM-variable. `noteKey`
- *  is a closed token resolved verbatim via `monster.defenseNote_<noteKey>` (like
+ *  Draconic Origin trait", where the resisted element is GM-variable, or the
+ *  Rakshasa's conditional "Vulnerabilities Piercing damage from weapons wielded
+ *  by creatures under the effect of a Bless spell" (a closed-set `DamageType`
+ *  gated by a spell condition the flat array can't express). `noteKey` is a
+ *  closed token resolved verbatim via `monster.defenseNote_<noteKey>` (like
  *  `qualifier_`/`condNote_`); grow the set only when the SRD prints another. */
 export interface QualifiedDefenseNote {
   kind: "resistance" | "immunity" | "vulnerability";
-  noteKey: "draconic-origin";
+  noteKey: "draconic-origin" | "bless-weapon";
 }
 
 /**

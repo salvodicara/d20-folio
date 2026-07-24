@@ -205,8 +205,10 @@ describe.each(cases)("%s", (id, m) => {
     for (const q of m.qualifiedDefenses ?? []) {
       expect(["resistance", "immunity", "vulnerability"]).toContain(q.kind);
       if ("noteKey" in q) {
-        // GM-variable prose note: a closed token (rendered via monster.defenseNote_*).
-        expect(q.noteKey).toBe("draconic-origin");
+        // GM-variable / conditional prose note: a closed token (rendered via
+        // monster.defenseNote_*): the half-dragon's Draconic Origin element or
+        // the Rakshasa's Bless-weapon piercing vulnerability.
+        expect(["draconic-origin", "bless-weapon"]).toContain(q.noteKey);
       } else {
         expect(q.damageTypes.length).toBeGreaterThan(0);
         for (const dt of q.damageTypes) expect(DAMAGE.has(dt)).toBe(true);

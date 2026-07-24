@@ -4453,6 +4453,56 @@
     "name": "Inghiottire",
     "text": "Tiro salvezza su Forza: CD 19, una creatura di taglia Grande o inferiore Afferrata dal verme (può inghiottire fino a tre creature alla volta). Fallimento: il bersaglio viene inghiottito dal verme, e non è più Afferrato. Una creatura inghiottita è Accecata e Trattenuta, beneficia di copertura totale contro gli attacchi e altri effetti al di fuori del verme, e subisce 17 (5d6) danni da Acido all'inizio di ogni turno del verme. Se il verme subisce 30 o più danni in un singolo turno da una creatura al suo interno, deve superare un tiro salvezza su Costituzione con CD 21 alla fine di quel turno, altrimenti rigurgita tutte le creature inghiottite, ognuna delle quali cade a terra Prona in uno spazio entro 1,5 metri dal verme. Se il verme muore, qualsiasi creatura inghiottita non è più Trattenuta e può fuggire dal cadavere usando 6 metri di movimento, uscendo Prona."
   },
+  "quasit": {
+    "name": "Quasit"
+  },
+  "quasit.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il quasit dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "quasit.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 5 (1d4 + 3) danni Taglienti, e il bersaglio è Avvelenato fino all'inizio del turno successivo del quasit."
+  },
+  "quasit.actions.invisibility": {
+    "name": "Invisibilità",
+    "text": "Il quasit può lanciare invisibilità su di sé senza bisogno di componenti per incantesimi e utilizzando il Carisma come caratteristica da incantatore."
+  },
+  "quasit.actions.scare": {
+    "name": "Spaventare",
+    "text": "Tiro salvezza su Saggezza: CD 10, una creatura entro 6 metri. Fallimento: il bersaglio è Spaventato. Alla fine di ogni suo turno, il bersaglio ripete il tiro salvezza e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente."
+  },
+  "quasit.actions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "Il quasit può assumere la forma bestiale di un pipistrello (velocità 3 m, volo 12 m), un millepiedi (12 m, scalata 12 m) o un rospo (12 m, scalata 12 m), o tornare alla sua vera forma. Le sue statistiche di gioco restano le stesse in ogni forma, a eccezione della velocità. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "rakshasa": {
+    "name": "Rakshasa"
+  },
+  "rakshasa.traits.greater-magic-resistance": {
+    "name": "Resistenza maggiore alla magia",
+    "text": "Il rakshasa supera automaticamente i tiri salvezza contro incantesimi e altri effetti magici, e i tiri per colpire degli incantesimi lo mancano automaticamente. Senza il consenso del rakshasa, nessun incantesimo può osservare il rakshasa a distanza o individuarne i pensieri, il tipo di creatura o l'allineamento."
+  },
+  "rakshasa.traits.fiendish-restoration": {
+    "name": "Ristoro immondo",
+    "text": "Se il rakshasa muore al di fuori dei Nove Inferi, il suo corpo si dissolve diventando icore e ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nei Nove Inferi."
+  },
+  "rakshasa.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il rakshasa effettua tre attacchi Tocco maledetto."
+  },
+  "rakshasa.actions.cursed-touch": {
+    "name": "Tocco maledetto",
+    "text": "Tiro per colpire in mischia: +10, portata 1,5 m. Colpito: 12 (2d6 + 5) danni Taglienti più 19 (3d12) danni Necrotici. Se il bersaglio è una creatura, viene maledetto. Finché è maledetto, il bersaglio non ottiene alcun beneficio dal riposo breve o lungo."
+  },
+  "rakshasa.actions.baleful-command": {
+    "name": "Ordine funesto",
+    "text": "Tiro salvezza su Saggezza: CD 18, tutti i nemici in un'emanazione di 9 metri di cui il rakshasa è il punto di origine. Fallimento: 28 (8d6) danni Psichici, e il bersaglio è Spaventato e Incapacitato fino all'inizio del turno successivo del rakshasa."
+  },
+  "rakshasa.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il rakshasa lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali e utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 18): 1/giorno ciascuno: Immagine maggiore, invisibilità, spostamento planare, volare. A volontà: Camuffare se stesso, illusione minore, individuazione dei pensieri, individuazione del magico, mano magica."
+  },
   "rat": {
     "name": "Topo"
   },
@@ -4463,6 +4513,376 @@
   "rat.actions.bite": {
     "name": "Morso",
     "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 1 danno Perforante."
+  },
+  "raven": {
+    "name": "Corvo"
+  },
+  "raven.traits.mimicry": {
+    "name": "Imitare",
+    "text": "Il corvo può imitare dei suoni semplici che ha sentito, come sussurri o cinguettii. Chi li ascolta può capire che si tratta di imitazioni superando una prova di Saggezza (Intuizione) con CD 10."
+  },
+  "raven.actions.beak": {
+    "name": "Becco",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 1 danno Perforante."
+  },
+  "red-dragon-wyrmling": {
+    "name": "Drago rosso cucciolo"
+  },
+  "red-dragon-wyrmling.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua due attacchi Squarcio."
+  },
+  "red-dragon-wyrmling.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 9 (1d10 + 4) danni Taglienti più 3 (1d6) danni da Fuoco."
+  },
+  "red-dragon-wyrmling.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 13, tutte le creature in un cono di 4,5 metri. Fallimento: 24 (7d6) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "reef-shark": {
+    "name": "Squalo tropicale"
+  },
+  "reef-shark.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Lo squalo dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno dei suoi alleati si trova entro 1,5 metri dalla creatura e non è Incapacitato."
+  },
+  "reef-shark.traits.water-breathing": {
+    "name": "Respirare sott'acqua",
+    "text": "Lo squalo può respirare soltanto sott'acqua."
+  },
+  "reef-shark.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 7 (2d4 + 2) danni Perforanti."
+  },
+  "remorhaz": {
+    "name": "Remorhaz"
+  },
+  "remorhaz.traits.heat-aura": {
+    "name": "Aura di calore",
+    "text": "Al termine di ogni turno del remorhaz, tutte le creature in un'emanazione di 1,5 metri di cui il remorhaz è il punto di origine subiscono 16 (3d10) danni da Fuoco."
+  },
+  "remorhaz.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +11, portata 3 m. Colpito: 18 (2d10 + 7) danni Perforanti più 14 (4d6) danni da Fuoco. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 17 per sfuggire), ed è Trattenuto finché la presa perdura."
+  },
+  "remorhaz.bonusActions.swallow": {
+    "name": "Inghiottire",
+    "text": "Tiro salvezza su Forza: CD 19, una creatura di taglia Grande o inferiore Afferrata dal remorhaz (può inghiottire fino a due creature per volta). Fallimento: il bersaglio viene inghiottito dal remorhaz, e non è più Afferrato. Una creatura inghiottita è Accecata e Trattenuta, beneficia di copertura totale contro attacchi e altri effetti al di fuori del remorhaz, e subisce 10 (3d6) danni da Acido più 10 (3d6) danni da Fuoco all'inizio di ogni turno del remorhaz. Se il remorhaz subisce 30 o più danni in un singolo turno da una creatura al suo interno, deve superare un tiro salvezza su Costituzione con CD 15 alla fine di quel turno, altrimenti rigurgita tutte le creature inghiottite, ognuna delle quali cade a terra Prona in uno spazio entro 1,5 metri dal remorhaz. Se il remorhaz muore, qualsiasi creatura inghiottita non è più Trattenuta e può fuggire dal cadavere usando 4,5 metri di movimento, uscendo Prona."
+  },
+  "rhinoceros": {
+    "name": "Rinoceronte"
+  },
+  "rhinoceros.actions.gore": {
+    "name": "Trafiggere",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 14 (2d8 + 5) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore e il rinoceronte si è mosso di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio subisce 9 (2d8) danni Perforanti extra e cade a terra Prono."
+  },
+  "riding-horse": {
+    "name": "Cavallo da galoppo"
+  },
+  "riding-horse.actions.hooves": {
+    "name": "Zoccoli",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Contundenti."
+  },
+  "roc": {
+    "name": "Roc"
+  },
+  "roc.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il roc effettua due attacchi Becco. Può sostituire un attacco con un attacco Speroni."
+  },
+  "roc.actions.beak": {
+    "name": "Becco",
+    "text": "Tiro per colpire in mischia: +13, portata 3 m. Colpito: 28 (3d12 + 9) danni Perforanti."
+  },
+  "roc.actions.talons": {
+    "name": "Speroni",
+    "text": "Tiro per colpire in mischia: +13, portata 1,5 m. Colpito: 23 (4d6 + 9) danni Taglienti. Se il bersaglio è una creatura di taglia Enorme o inferiore, è Afferrato (CD 19 per sfuggire) da entrambi gli speroni, ed è Trattenuto finché la presa perdura."
+  },
+  "roc.bonusActions.swoop": {
+    "name": "In picchiata",
+    "text": "Se il roc ha afferrato una creatura, vola fino a metà della sua velocità di volo senza provocare attacchi di opportunità e lascia cadere la creatura."
+  },
+  "roper": {
+    "name": "Fustigatore"
+  },
+  "roper.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "Il fustigatore può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "roper.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il fustigatore effettua due attacchi Tentacolo, usa Riavvolgere ed effettua due attacchi Morso."
+  },
+  "roper.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 17 (3d8 + 4) danni Perforanti."
+  },
+  "roper.actions.tentacle": {
+    "name": "Tentacolo",
+    "text": "Tiro per colpire in mischia: +7, portata 18 m. Colpito: il bersaglio è Afferrato (CD 14 per sfuggire) da uno dei sei tentacoli, ed è Avvelenato finché la presa perdura. Il tentacolo può essere danneggiato e, quando viene distrutto, libera la creatura che aveva afferrato (CA 20, PF 10, immunità ai danni Psichici e da Veleno). I danni inflitti al tentacolo non danneggiano in alcun modo il fustigatore, e il tentacolo distrutto ricresce all'inizio del turno successivo del fustigatore."
+  },
+  "roper.actions.reel": {
+    "name": "Riavvolgere",
+    "text": "Il fustigatore tira in linea retta verso di sé ogni creatura che ha afferrato per un massimo di 9 metri."
+  },
+  "rust-monster": {
+    "name": "Rugginofago"
+  },
+  "rust-monster.traits.iron-scent": {
+    "name": "Fiutare il ferro",
+    "text": "Il rugginofago può individuare la precisa ubicazione di qualsiasi metallo ferroso situato entro 9 metri da esso."
+  },
+  "rust-monster.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il rugginofago effettua un attacco Morso e usa Antenne due volte."
+  },
+  "rust-monster.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 5 (1d8 + 1) danni Perforanti."
+  },
+  "rust-monster.actions.antennae": {
+    "name": "Antenne",
+    "text": "Il rugginofago prende di mira un oggetto in metallo non magico (armatura o arma) indossato o trasportato da una creatura entro 1,5 metri da sé. Tiro salvezza su Destrezza: CD 11, la creatura che possiede l'oggetto. Fallimento: l'oggetto subisce una penalità di −1 alla CA che fornisce (armatura) o ai suoi tiri per colpire (arma). L'armatura viene distrutta se la penalità riduce la sua CA a 10; l'arma viene distrutta se la sua penalità arriva a −5. La penalità può essere rimossa lanciando l'incantesimo riparare sull'armatura o sull'arma."
+  },
+  "rust-monster.actions.destroy-metal": {
+    "name": "Distruggere metallo",
+    "text": "Il rugginofago tocca un oggetto in metallo non magico entro 1,5 metri da sé che non è indossato o trasportato. Il tocco distrugge una porzione di oggetto pari a un cubo con spigolo di 30 centimetri."
+  },
+  "rust-monster.reactions.reflexive-antennae": {
+    "name": "Antenne riflesse",
+    "text": "Attivazione: un tiro per colpire colpisce il rugginofago. Esito: il rugginofago usa Antenne."
+  },
+  "saber-toothed-tiger": {
+    "name": "Tigre dai denti a sciabola"
+  },
+  "saber-toothed-tiger.traits.running-leap": {
+    "name": "Balzo in corsa",
+    "text": "Dopo una rincorsa di 3 metri, la tigre può effettuare un salto in lungo di un massimo di 7,5 metri."
+  },
+  "saber-toothed-tiger.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La tigre effettua due attacchi Squarcio."
+  },
+  "saber-toothed-tiger.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 11 (2d6 + 4) danni Taglienti."
+  },
+  "saber-toothed-tiger.bonusActions.nimble-escape": {
+    "name": "Fuga agile",
+    "text": "La tigre effettua l'azione di Disimpegno o Nascondersi."
+  },
+  "sahuagin-warrior": {
+    "name": "Sahuagin guerriero"
+  },
+  "sahuagin-warrior.traits.blood-frenzy": {
+    "name": "Frenesia di sangue",
+    "text": "Il sahuagin dispone di vantaggio ai tiri per colpire contro ogni creatura che non possieda tutti i propri punti ferita."
+  },
+  "sahuagin-warrior.traits.limited-amphibiousness": {
+    "name": "Anfibio limitato",
+    "text": "Il sahuagin può respirare in aria e in acqua, ma deve immergersi in acqua almeno una volta ogni 4 ore per evitare di soffocare."
+  },
+  "sahuagin-warrior.traits.shark-telepathy": {
+    "name": "Telepatia con gli squali",
+    "text": "Il sahuagin può comandare magicamente ogni squalo entro 36 metri da sé, usando una forma di telepatia speciale."
+  },
+  "sahuagin-warrior.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il sahuagin effettua due attacchi Artiglio."
+  },
+  "sahuagin-warrior.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m Colpito: 4 (1d6 + 1) danni Taglienti."
+  },
+  "sahuagin-warrior.bonusActions.aquatic-charge": {
+    "name": "Carica acquatica",
+    "text": "Il sahuagin nuota fino al massimo della sua velocità di nuoto in linea retta verso un nemico che è in grado di vedere."
+  },
+  "salamander": {
+    "name": "Salamandra"
+  },
+  "salamander.traits.fire-aura": {
+    "name": "Aura di fuoco",
+    "text": "Alla fine di ogni turno della salamandra, ciascuna creatura a sua scelta in un'emanazione di 1,5 metri di cui la salamandra è il punto di origine subisce 7 (2d6) danni da Fuoco."
+  },
+  "salamander.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La salamandra effettua due attacchi Lancia di fuoco. Può sostituire un attacco con un utilizzo di Stritolare."
+  },
+  "salamander.actions.flame-spear": {
+    "name": "Lancia di fuoco",
+    "text": "Tiro per colpire in mischia o a distanza: +7, portata 1,5 m o gittata 6/18 m. Colpito: 13 (2d8 + 4) danni Perforanti più 7 (2d6) danni da Fuoco. Colpito o mancato: la lancia torna magicamente tra le mani della salamandra subito dopo un attacco a distanza."
+  },
+  "salamander.actions.constrict": {
+    "name": "Stritolare",
+    "text": "Tiro salvezza su Forza: CD 15, una creatura di taglia Grande o inferiore che la salamandra è in grado di vedere entro 3 metri. Fallimento: 11 (2d6 + 4) danni Contundenti più 7 (2d6) danni da Fuoco. Il bersaglio è Afferrato (CD 14 per sfuggire) ed è Trattenuto finché la presa perdura."
+  },
+  "satyr": {
+    "name": "Satiro"
+  },
+  "satyr.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il satiro dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "satyr.actions.hooves": {
+    "name": "Zoccoli",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 5 (1d4 + 3) danni Contundenti. Se il bersaglio è una creatura di taglia Media o inferiore, il satiro lo spinge fino a 3 metri lontano da sé."
+  },
+  "satyr.actions.mockery": {
+    "name": "Derisione",
+    "text": "Tiro salvezza su Saggezza: CD 12, una creatura che il satiro è in grado di vedere entro 27 metri. Fallimento: 5 (1d6 + 2) danni Psichici."
+  },
+  "scorpion": {
+    "name": "Scorpione"
+  },
+  "scorpion.actions.sting": {
+    "name": "Pungiglione",
+    "text": "Tiro per colpire in mischia: +2, portata 1,5 m Colpito: 1 danno Perforante più 3 (1d6) danni da Veleno."
+  },
+  "scout": {
+    "name": "Esploratore"
+  },
+  "scout.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'esploratore effettua due attacchi, usando Spada corta e Arco lungo in qualsiasi combinazione."
+  },
+  "scout.actions.shortsword": {
+    "name": "Spada corta",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m Colpito: 5 (1d6 + 2) danni Perforanti."
+  },
+  "scout.actions.longbow": {
+    "name": "Arco lungo",
+    "text": "Tiro per colpire a distanza: +4, gittata 45/180 m. Colpito: 6 (1d8 + 2) danni Perforanti."
+  },
+  "sea-hag": {
+    "name": "Megera marina"
+  },
+  "sea-hag.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "La megera può respirare in aria e in acqua."
+  },
+  "sea-hag.traits.coven-magic": {
+    "name": "Magia della congrega",
+    "text": "Finché si trova entro 9 metri da almeno due megere alleate, la megera può lanciare uno dei seguenti incantesimi senza bisogno di componenti materiali, utilizzando il normale tempo di lancio dell'incantesimo e Intelligenza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 11): identificare, localizza oggetto, presagio, scrutare, servitore inosservato o trova famiglio. La megera deve terminare un riposo lungo prima di utilizzare questo tratto per lanciare di nuovo l'incantesimo."
+  },
+  "sea-hag.traits.vile-appearance": {
+    "name": "Aspetto orripilante",
+    "text": "Tiro salvezza su Saggezza: CD 11, qualsiasi bestia o umanoide inizi il proprio turno nel campo visivo della megera, entro un raggio di 9 metri da lei e può vederne la vera forma. Fallimento: il bersaglio è Spaventato fino all'inizio del proprio turno successivo. Successo: il bersaglio è immune all'Aspetto orripilante di questa megera per 24 ore."
+  },
+  "sea-hag.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m Colpito: 10 (2d6 + 3) danni Taglienti."
+  },
+  "sea-hag.actions.death-glare": {
+    "name": "Sguardo mortale",
+    "text": "Tiro salvezza su Saggezza: CD 11, una creatura Spaventata che la megera è in grado di vedere entro 9 metri. Fallimento: se il bersaglio ha 20 punti ferita o meno, scende a 0 punti ferita. Altrimenti, il bersaglio subisce 13 (3d8) danni Psichici."
+  },
+  "sea-hag.actions.illusory-appearance": {
+    "name": "Aspetto illusorio",
+    "text": "La megera lancia camuffare se stesso, utilizzando Costituzione come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 13). L'incantesimo dura 24 ore."
+  },
+  "seahorse": {
+    "name": "Cavalluccio marino"
+  },
+  "seahorse.traits.water-breathing": {
+    "name": "Respirare sott'acqua",
+    "text": "Il cavalluccio marino può respirare solo sott'acqua."
+  },
+  "seahorse.actions.bubble-dash": {
+    "name": "Scatto acquatico",
+    "text": "Finché è sott'acqua, il cavalluccio marino può muoversi fino alla sua velocità di nuoto massima senza provocare attacchi di opportunità."
+  },
+  "shadow": {
+    "name": "Ombra"
+  },
+  "shadow.traits.amorphous": {
+    "name": "Amorfo",
+    "text": "L'ombra può muoversi attraverso uno spazio stretto fino a 2,5 centimetri senza consumare movimento extra per farlo."
+  },
+  "shadow.traits.sunlight-weakness": {
+    "name": "Debolezza al sole",
+    "text": "Finché è esposta alla luce del sole, l'ombra subisce svantaggio alle prove con d20."
+  },
+  "shadow.actions.draining-swipe": {
+    "name": "Colpo prosciugante",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Necrotici, e il punteggio di Forza del bersaglio diminuisce di 1d4. Se tale punteggio arriva a 0, il bersaglio muore. Se un umanoide viene ucciso da questo attacco, sorgerà un'ombra dal suo cadavere dopo 1d4 ore."
+  },
+  "shadow.bonusActions.shadow-stealth": {
+    "name": "Furtività d'ombra",
+    "text": "Finché si trova in condizioni di luce fioca o oscurità, l'ombra effettua l'azione di Nascondersi."
+  },
+  "shambling-mound": {
+    "name": "Cumulo strisciante"
+  },
+  "shambling-mound.traits.lightning-absorption": {
+    "name": "Assorbimento del fulmine",
+    "text": "Ogni volta che il cumulo strisciante subisce danni da Fulmine, recupera un numero di punti ferita pari ai danni da Fulmine inflitti."
+  },
+  "shambling-mound.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il cumulo strisciante effettua tre attacchi Radice elettrificata. Può sostituire un attacco con un utilizzo di Avviluppare."
+  },
+  "shambling-mound.actions.charged-tendril": {
+    "name": "Radice elettrificata",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 7 (1d6 + 4) danni Contundenti più 5 (2d4) danni da Fulmine. Se il bersaglio è una creatura di taglia Media o inferiore, il cumulo strisciante lo tira in linea retta verso di sé per 1,5 metri."
+  },
+  "shambling-mound.actions.engulf": {
+    "name": "Avviluppare",
+    "text": "Tiro salvezza su Forza: CD 15, una creatura di taglia Media o inferiore entro 1,5 metri. Fallimento: il bersaglio viene attirato nello spazio del cumulo strisciante ed è Afferrato (CD 14 per sfuggire). Finché la presa perdura il bersaglio è Accecato e Trattenuto, e subisce 10 (3d6) danni da Fulmine all'inizio di ogni suo turno. Quando il cumulo strisciante si muove, il bersaglio afferrato si muove con esso senza fargli consumare movimento extra. Il cumulo strisciante può afferrare una sola creatura per volta con questa azione."
+  },
+  "shield-guardian": {
+    "name": "Guardiano protettore"
+  },
+  "shield-guardian.traits.bound": {
+    "name": "Vincolato",
+    "text": "Il guardiano protettore è vincolato magicamente a un amuleto. Finché il guardiano e il suo amuleto si trovano sullo stesso piano di esistenza, il portatore dell'amuleto può chiamare telepaticamente il guardiano affinché viaggi fino a lui. Il guardiano conosce la distanza e la direzione in cui si trova l'oggetto. Se il guardiano si trova entro 18 metri dal portatore dell'amuleto, la metà dei danni (arrotondati per eccesso) che il portatore subisce viene trasferita al guardiano."
+  },
+  "shield-guardian.traits.regeneration": {
+    "name": "Rigenerazione",
+    "text": "Il guardiano protettore recupera 10 punti ferita all'inizio di ogni suo turno, se ha almeno 1 punto ferita."
+  },
+  "shield-guardian.traits.spell-storing": {
+    "name": "Incantesimo custodito",
+    "text": "Un incantatore che indossa l'amuleto del guardiano protettore può fare in modo che il guardiano custodisca un incantesimo di 4º livello o inferiore. Per farlo, il portatore deve lanciare l'incantesimo sul guardiano finché si trova entro 1,5 metri da esso. L'incantesimo non ha effetto, ma è custodito all'interno del guardiano. Quando gli viene affidato un nuovo incantesimo, quello custodito in precedenza viene sovrascritto. Il guardiano protettore può lanciare l'incantesimo custodito con qualsiasi parametro deciso dall'incantatore originale, senza bisogno di componenti e utilizzando la caratteristica da incantatore di quest'ultimo. Così facendo, l'incantesimo custodito va perduto."
+  },
+  "shield-guardian.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il guardiano effettua due attacchi Pugno."
+  },
+  "shield-guardian.actions.fist": {
+    "name": "Pugno",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 11 (2d6 + 4) danni Contundenti più 7 (2d6) danni da Forza."
+  },
+  "shield-guardian.reactions.protection": {
+    "name": "Protezione",
+    "text": "Attivazione: un tiro per colpire va a segno sul portatore dell'amuleto del guardiano protettore finché egli si trova entro 1,5 metri dal costrutto. Esito: il portatore dell'amuleto ottiene un bonus di +5 alla CA anche contro il tiro che ha provocato la reazione, aumentando le probabilità che il colpo non vada a segno, fino all'inizio del turno successivo del guardiano protettore."
+  },
+  "shrieker-fungus": {
+    "name": "Boleto stridente"
+  },
+  "shrieker-fungus.reactions.shriek": {
+    "name": "Stridio",
+    "text": "Attivazione: una creatura o una fonte di luce intensa si muove entro 9 metri dal boleto stridente. Esito: il boleto stridente emette uno stridio udibile fino a 90 metri da sé per 1 minuto o finché il boleto non muore."
+  },
+  "silver-dragon-wyrmling": {
+    "name": "Drago d'argento cucciolo"
+  },
+  "silver-dragon-wyrmling.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua due attacchi Squarcio."
+  },
+  "silver-dragon-wyrmling.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 9 (1d10 + 4) danni Perforanti."
+  },
+  "silver-dragon-wyrmling.actions.cold-breath": {
+    "name": "Soffio di freddo",
+    "text": "Tiro salvezza su Costituzione: CD 13, tutte le creature in un cono di 4,5 metri. Fallimento: 18 (4d8) danni da Freddo. Successo: danni dimezzati."
+  },
+  "silver-dragon-wyrmling.actions.paralyzing-breath": {
+    "name": "Soffio paralizzante",
+    "text": "Tiro salvezza su Costituzione: CD 13, tutte le creature in un cono di 4,5 metri. Primo fallimento: il bersaglio è Incapacitato fino al termine del proprio turno successivo. A quel punto, ripete il tiro salvezza. Secondo fallimento: il bersaglio è Paralizzato e ripete il tiro salvezza alla fine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente."
   },
   "skeleton": {
     "name": "Scheletro"
@@ -4475,6 +4895,403 @@
     "name": "Arco corto",
     "text": "Tiro per colpire a distanza: +5, gittata 24/96 m. Colpito: 6 (1d6 + 3) danni Perforanti."
   },
+  "solar": {
+    "name": "Solar"
+  },
+  "solar.traits.divine-awareness": {
+    "name": "Consapevolezza divina",
+    "text": "Il solar sa riconoscere le menzogne."
+  },
+  "solar.traits.exalted-restoration": {
+    "name": "Ristoro glorioso",
+    "text": "Se il solar muore al di fuori di Monte Celestia, il suo corpo scompare e ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte a Monte Celestia."
+  },
+  "solar.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno). Se il solar fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "solar.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il solar dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "solar.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il solar effettua due attacchi Spada volante. Può sostituire un attacco con un utilizzo di Arco assassino."
+  },
+  "solar.actions.flying-sword": {
+    "name": "Spada volante",
+    "text": "Tiro per colpire in mischia o a distanza: +15, portata 3 m o gittata 36 m. Colpito: 22 (4d6 + 8) danni Taglienti più 36 (8d8) danni Radiosi. Colpito o mancato: la spada torna magicamente nella mano del solar o fluttua entro 1,5 metri dal solar subito dopo un attacco a distanza."
+  },
+  "solar.actions.slaying-bow": {
+    "name": "Arco assassino",
+    "text": "Tiro salvezza su Destrezza: CD 21, una creatura che il solar è in grado di vedere entro 180 metri. Fallimento: se la creatura possiede 100 punti ferita o meno, muore. Altrimenti, subisce 24 (4d8 + 6) danni Perforanti più 36 (8d8) danni Radiosi."
+  },
+  "solar.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il solar lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 25): A volontà: Individuazione del bene e del male. 1/giorno ciascuno: Comunione, controllare tempo atmosferico, dissolvi il bene e il male, resurrezione."
+  },
+  "solar.bonusActions.divine-aid": {
+    "name": "Aiuto divino",
+    "text": "Il solar lancia cura ferite (di 2º livello), rimuovi maledizione o ristorare inferiore, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "solar.legendaryActions.blinding-gaze": {
+    "name": "Sguardo accecante",
+    "text": "Tiro salvezza su Costituzione: CD 25, una creatura che il solar è in grado di vedere entro 36 metri. Fallimento: il bersaglio è Accecato per 1 minuto. Fallimento o successo: il solar non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "solar.legendaryActions.radiant-teleport": {
+    "name": "Teletrasporto radioso",
+    "text": "Il solar si teletrasporta fino a un massimo di 18 metri in uno spazio libero che è in grado di vedere. Tiro salvezza su Destrezza: CD 25, tutte le creature in un'emanazione di 3 metri di cui il solar è il punto di origine nel suo spazio di destinazione. Fallimento: 11 (2d10) danni Radiosi. Successo: danni dimezzati."
+  },
+  "specter": {
+    "name": "Spettro"
+  },
+  "specter.traits.incorporeal-movement": {
+    "name": "Movimento incorporeo",
+    "text": "Lo spettro può muoversi attraverso altre creature e oggetti come se fossero terreno difficile. Se termina il suo turno all'interno di un oggetto, subisce 5 (1d10) danni da Forza."
+  },
+  "specter.traits.sunlight-sensitivity": {
+    "name": "Sensibilità al sole",
+    "text": "Finché è esposto alla luce del sole, lo spettro subisce svantaggio alle prove di caratteristica e ai tiri per colpire."
+  },
+  "specter.actions.life-drain": {
+    "name": "Risucchio di vita",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 7 (2d6) danni Necrotici. Se il bersaglio è una creatura, i suoi punti ferita massimi sono ridotti di una quantità pari ai danni subiti."
+  },
+  "sphinx-of-lore": {
+    "name": "Sfinge della conoscenza"
+  },
+  "sphinx-of-lore.traits.inscrutable": {
+    "name": "Imperscrutabile",
+    "text": "Nessuna magia può consentire di osservare la sfinge da lontano o individuarne i pensieri senza il suo permesso. Le prove di Saggezza (Intuizione) effettuate per accertare le sue intenzioni o la sua sincerità subiscono svantaggio."
+  },
+  "sphinx-of-lore.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana). Se la sfinge fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "sphinx-of-lore.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La sfinge effettua tre attacchi Artiglio."
+  },
+  "sphinx-of-lore.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +8, portata 1,5 m. Colpito: 14 (3d6 + 4) danni Taglienti."
+  },
+  "sphinx-of-lore.actions.mind-rending-roar": {
+    "name": "Ruggito spezza-mente",
+    "text": "Tiro salvezza su Saggezza: CD 16, tutti i nemici in un'emanazione di 90 metri di cui la sfinge è il punto di origine. Fallimento: 35 (10d6) danni Psichici, e il bersaglio è Incapacitato fino all'inizio del turno successivo della sfinge."
+  },
+  "sphinx-of-lore.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "La sfinge lancia uno dei seguenti incantesimi senza bisogno di componenti materiali, utilizzando Intelligenza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 16): A volontà: Identificare, illusione minore, individuazione del magico, mano magica, prestidigitazione. 1/giorno ciascuno: Conoscenza delle leggende, dissolvi magie, linguaggi, localizza oggetto, rimuovi maledizione, spostamento planare."
+  },
+  "sphinx-of-lore.legendaryActions.arcane-prowl": {
+    "name": "Agguato arcano",
+    "text": "La sfinge può teletrasportarsi fino a 9 metri in uno spazio libero che è in grado di vedere, effettuando un attacco Artiglio."
+  },
+  "sphinx-of-lore.legendaryActions.weight-of-years": {
+    "name": "Peso degli anni",
+    "text": "Tiro salvezza su Costituzione: CD 16, una creatura che la sfinge è in grado di vedere entro 36 metri. Fallimento: il bersaglio ottiene 1 livello di indebolimento. Finché il bersaglio ha uno o più livelli di indebolimento, apparirà più vecchio di 3d10 anni. Fallimento o successo: la sfinge non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "sphinx-of-valor": {
+    "name": "Sfinge del valore"
+  },
+  "sphinx-of-valor.traits.inscrutable": {
+    "name": "Imperscrutabile",
+    "text": "Nessuna magia può consentire di osservare la sfinge da lontano o individuarne i pensieri senza il suo permesso. Le prove di Saggezza (Intuizione) effettuate per accertare le sue intenzioni o la sua sincerità subiscono svantaggio."
+  },
+  "sphinx-of-valor.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana). Se la sfinge fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "sphinx-of-valor.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La sfinge effettua due attacchi Artiglio e utilizza Ruggito."
+  },
+  "sphinx-of-valor.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +12, portata 1,5 m. Colpito: 20 (4d6 + 6) danni Taglienti."
+  },
+  "sphinx-of-valor.actions.roar": {
+    "name": "Ruggito",
+    "text": "La sfinge emette un ruggito magico. Ogni suo ruggito sortisce un effetto diverso come descritto sotto (la sequenza si ripristina dopo aver completato un riposo lungo): Primo ruggito. Tiro salvezza su Saggezza: CD 20, tutti i nemici in un'emanazione di 150 metri di cui la sfinge è il punto di origine. Fallimento: il bersaglio è Spaventato per 1 minuto. Secondo ruggito. Tiro salvezza su Saggezza: CD 20, tutti i nemici in un'emanazione di 150 metri di cui la sfinge è il punto di origine. Fallimento: il bersaglio è Paralizzato e ripete il tiro salvezza alla fine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente. Terzo ruggito. Tiro salvezza su Costituzione: CD 20, tutti i nemici in un'emanazione di 150 metri di cui la sfinge è il punto di origine. Fallimento: 44 (8d10) danni da Tuono, e il bersaglio cade a terra Prono. Successo: danni dimezzati."
+  },
+  "sphinx-of-valor.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "La sfinge lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Saggezza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 20): A volontà: Individuazione del bene e del male, taumaturgia. 1/giorno ciascuno: Banchetto degli eroi, dissolvi magie, individuazione del magico, ristorare superiore, zona di verità."
+  },
+  "sphinx-of-valor.legendaryActions.arcane-prowl": {
+    "name": "Agguato arcano",
+    "text": "La sfinge può teletrasportarsi fino a 9 metri in uno spazio libero che è in grado di vedere, effettuando un attacco Artiglio."
+  },
+  "sphinx-of-valor.legendaryActions.weight-of-years": {
+    "name": "Peso degli anni",
+    "text": "Tiro salvezza su Costituzione: CD 16, una creatura che la sfinge è in grado di vedere entro 36 metri. Fallimento: il bersaglio ottiene 1 livello di indebolimento. Finché il bersaglio ha uno o più livelli di indebolimento, apparirà più vecchio di 3d10 anni. Fallimento o successo: la sfinge non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "sphinx-of-wonder": {
+    "name": "Sfinge della meraviglia"
+  },
+  "sphinx-of-wonder.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "La sfinge dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "sphinx-of-wonder.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 5 (1d4 + 3) danni Taglienti più 7 (2d6) danni Radiosi."
+  },
+  "sphinx-of-wonder.reactions.burst-of-ingenuity": {
+    "name": "Impeto di ingegno",
+    "text": "Attivazione: la sfinge o un'altra creatura entro 9 metri effettua una prova di caratteristica o un tiro salvezza. Esito: la sfinge aggiunge 2 al risultato del tiro."
+  },
+  "spider": {
+    "name": "Ragno"
+  },
+  "spider.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "Il ragno può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "spider.traits.web-walker": {
+    "name": "Andatura sulla ragnatela",
+    "text": "Il ragno ignora le restrizioni di movimento causate dalle ragnatele e conosce l'ubicazione di qualsiasi altra creatura a contatto con la medesima ragnatela."
+  },
+  "spider.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 1 danno Perforante più 2 (1d4) danni da Veleno."
+  },
+  "spirit-naga": {
+    "name": "Naga spirituale"
+  },
+  "spirit-naga.traits.fiendish-restoration": {
+    "name": "Ristoro immondo",
+    "text": "Se la naga muore, torna in vita dopo 1d6 giorni e recupera tutti i suoi punti ferita. Solo un incantesimo desiderio può impedire a questo tratto di funzionare."
+  },
+  "spirit-naga.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La naga effettua tre attacchi, usando Morso o Raggio necrotico in qualsiasi combinazione."
+  },
+  "spirit-naga.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 7 (1d6 + 4) danni Perforanti più 14 (4d6) danni da Veleno."
+  },
+  "spirit-naga.actions.necrotic-ray": {
+    "name": "Raggio necrotico",
+    "text": "Tiro per colpire a distanza: +6, gittata 18 m. Colpito: 21 (6d6) danni Necrotici."
+  },
+  "spirit-naga.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "La naga lancia uno dei seguenti incantesimi, senza bisogno di componenti somatiche o materiali, utilizzando Intelligenza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 14): A volontà: illusione minore, individuazione del magico, mano magica, respirare sott'acqua. 2/giorno ciascuno: blocca persone (di 3º livello), individuazione dei pensieri, fulmine (di 4º livello), porta dimensionale."
+  },
+  "sprite": {
+    "name": "Spiritello"
+  },
+  "sprite.actions.needle-sword": {
+    "name": "Ago da battaglia",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 6 (1d4 + 4) danni Perforanti."
+  },
+  "sprite.actions.enchanting-bow": {
+    "name": "Arco ammaliante",
+    "text": "Tiro per colpire a distanza: +6, portata 12/48 m. Colpito: 1 danno Perforante e il bersaglio è Affascinato fino all'inizio del turno successivo dello spiritello."
+  },
+  "sprite.actions.heart-sight": {
+    "name": "Vista del cuore",
+    "text": "Tiro salvezza su Carisma: CD 10, una creatura entro 1,5 metri che lo spiritello è in grado di vedere (celestiali, immondi e non morti falliscono in automatico la prova). Fallimento: lo spiritello conosce le emozioni e l'allineamento del bersaglio."
+  },
+  "sprite.actions.invisibility": {
+    "name": "Invisibilità",
+    "text": "Lo spiritello può lanciare invisibilità su di sé senza bisogno di componenti per incantesimi e utilizzando il Carisma come caratteristica da incantatore."
+  },
+  "spy": {
+    "name": "Spia"
+  },
+  "spy.actions.shortsword": {
+    "name": "Spada corta",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Perforanti più 7 (2d6) danni da Veleno."
+  },
+  "spy.actions.hand-crossbow": {
+    "name": "Balestra a mano",
+    "text": "Tiro per colpire a distanza: +4, gittata 9/36 m. Colpito: 5 (1d6 + 2) danni Perforanti più 7 (2d6) danni da Veleno."
+  },
+  "spy.bonusActions.cunning-action": {
+    "name": "Azione scaltra",
+    "text": "La spia effettua l'azione di Disimpegno, Nascondersi o Scatto."
+  },
+  "steam-mephit": {
+    "name": "Mephit del vapore"
+  },
+  "steam-mephit.traits.blurred-form": {
+    "name": "Forma sfocata",
+    "text": "I tiri per colpire contro il mephit sono effettuati con svantaggio, a meno che il mephit non sia Incapacitato."
+  },
+  "steam-mephit.traits.death-burst": {
+    "name": "Esplosione mortale",
+    "text": "Il mephit esplode quando muore. Tiro salvezza su Destrezza: CD 10, tutte le creature in un'emanazione di 1,5 metri di cui il mephit è il punto di origine. Fallimento: 5 (2d4) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "steam-mephit.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 2 (1d4) danni Taglienti più 2 (1d4) danni da Fuoco."
+  },
+  "steam-mephit.actions.steam-breath": {
+    "name": "Soffio di vapore",
+    "text": "Tiro salvezza su Costituzione: CD 10, tutte le creature in un cono di 4,5 metri. Fallimento: 5 (2d4) danni da Fuoco, e la velocità del bersaglio è ridotta di 3 metri fino al termine del turno successivo del mephit. Successo: danni dimezzati. Fallimento o successo: trovarsi sott'acqua non conferisce alcuna resistenza contro questi danni da Fuoco."
+  },
+  "stirge": {
+    "name": "Uccello stigeo"
+  },
+  "stirge.actions.proboscis": {
+    "name": "Proboscide",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 6 (1d6 + 3) danni Perforanti, e l'uccello stigeo si avvinghia al bersaglio. Finché l'uccello stigeo è attaccato in questo modo non può effettuare attacchi Proboscide, e il bersaglio subisce 5 (2d4) danni Necrotici all'inizio di ogni turno dell'uccello stigeo. L'uccello stigeo può staccarsi da solo utilizzando 1,5 metri del suo movimento. Il bersaglio o una creatura entro 1,5 metri da esso può staccare l'uccello stigeo con un'azione."
+  },
+  "stone-giant": {
+    "name": "Gigante delle pietre"
+  },
+  "stone-giant.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il gigante effettua due attacchi, usando Randello di pietra o Macigno in qualsiasi combinazione."
+  },
+  "stone-giant.actions.stone-club": {
+    "name": "Randello di pietra",
+    "text": "Tiro per colpire in mischia: +9, portata 4,5 m. Colpito: 22 (3d10 + 6) danni Contundenti."
+  },
+  "stone-giant.actions.boulder": {
+    "name": "Macigno",
+    "text": "Tiro per colpire a distanza: +9, gittata 18/72 m. Colpito: 15 (2d8 + 6) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra Prono."
+  },
+  "stone-giant.reactions.deflect-missile": {
+    "name": "Deviare proiettili",
+    "text": "Attivazione: il gigante viene colpito da un tiro per colpire a distanza che gli infligge danni Contundenti, Perforanti o Taglienti. Esito: il gigante riduce i danni subiti dall'attacco di 11 (1d10 + 6) e, se li riduce a 0, può deflettere una parte della forza di quell'attacco. Tiro salvezza su Destrezza: CD 17, una creatura che il gigante è in grado di vedere entro 18 metri. Fallimento: 11 (1d10 + 6) danni da Forza."
+  },
+  "stone-golem": {
+    "name": "Golem di pietra"
+  },
+  "stone-golem.traits.immutable-form": {
+    "name": "Forma immutabile",
+    "text": "Il golem non può mutare forma."
+  },
+  "stone-golem.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il golem dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "stone-golem.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il golem effettua due attacchi, usando Schianto o Dardo vigoroso in qualsiasi combinazione."
+  },
+  "stone-golem.actions.slam": {
+    "name": "Schianto",
+    "text": "Tiro per colpire in mischia: +10, portata 1,5 m. Colpito: 15 (2d8 + 6) danni Contundenti più 9 (2d8) danni da Forza."
+  },
+  "stone-golem.actions.force-bolt": {
+    "name": "Dardo vigoroso",
+    "text": "Tiro per colpire a distanza: +9, gittata 36 m. Colpito: 22 (4d10) danni da Forza."
+  },
+  "stone-golem.bonusActions.slow": {
+    "name": "Lentezza",
+    "text": "Il golem lancia l'incantesimo lentezza, senza bisogno di componenti e utilizzando Costituzione come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 17)."
+  },
+  "storm-giant": {
+    "name": "Gigante delle tempeste"
+  },
+  "storm-giant.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il gigante può respirare in aria e in acqua."
+  },
+  "storm-giant.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il gigante effettua due attacchi, usando Spada tempestosa o Saetta in qualsiasi combinazione."
+  },
+  "storm-giant.actions.storm-sword": {
+    "name": "Spada tempestosa",
+    "text": "Tiro per colpire in mischia: +14, portata 3 m. Colpito: 23 (4d6 + 9) danni Taglienti più 13 (3d8) danni da Fulmine."
+  },
+  "storm-giant.actions.thunderbolt": {
+    "name": "Saetta",
+    "text": "Tiro per colpire a distanza: +14, gittata 150 m. Colpito: 22 (2d12 + 9) danni da Fulmine, e il bersaglio è Accecato e Assordato fino all'inizio del turno successivo del gigante."
+  },
+  "storm-giant.actions.lightning-storm": {
+    "name": "Tempesta di fulmini",
+    "text": "Tiro salvezza su Destrezza: CD 18, ogni creatura in un cilindro di 3 metri di raggio e 12 metri d'altezza in un punto che il gigante è in grado di vedere entro 150 metri. Fallimento: 55 (10d10) danni da Fulmine. Successo: danni dimezzati."
+  },
+  "storm-giant.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il gigante lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Saggezza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 18): 1/giorno: Controllare tempo atmosferico. A volontà: Individuazione del magico, luce."
+  },
+  "succubus": {
+    "name": "Succube"
+  },
+  "succubus.traits.incubus-form": {
+    "name": "Forma incubo",
+    "text": "Quando la succube termina un riposo lungo, può trasformarsi in un incubo, utilizzando la relativa scheda delle statistiche al posto di questa."
+  },
+  "succubus.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La succube effettua un attacco Tocco immondo e utilizza Fascino o Bacio prosciugante."
+  },
+  "succubus.actions.fiendish-touch": {
+    "name": "Tocco immondo",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 16 (2d10 + 5) danni Psichici."
+  },
+  "succubus.actions.charm": {
+    "name": "Fascino",
+    "text": "La succube lancia dominare persone (di 8º livello), senza bisogno di componenti e utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 15)."
+  },
+  "succubus.actions.draining-kiss": {
+    "name": "Bacio prosciugante",
+    "text": "Tiro salvezza su Costituzione: CD 15, una creatura Affascinata dalla succube entro 1,5 metri. Fallimento: 13 (3d8) danni Psichici. Successo: danni dimezzati. Fallimento o successo: i punti ferita massimi del bersaglio sono ridotti di un ammontare pari ai danni subiti."
+  },
+  "succubus.bonusActions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "La succube si trasforma in un umanoide di taglia Media o Piccola, oppure ritorna alla sua vera forma. Le sue statistiche di gioco sono le stesse in ogni forma, a eccezione della velocità di volo disponibile solo nella sua vera forma. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "swarm-of-bats": {
+    "name": "Sciame di pipistrelli"
+  },
+  "swarm-of-bats.traits.swarm": {
+    "name": "Sciame",
+    "text": "Lo sciame può occupare lo spazio di un'altra creatura e viceversa, e può muoversi attraverso qualsiasi apertura sufficientemente larga da far passare un pipistrello di taglia Minuscola. L'orda non può recuperare punti ferita o ottenere punti ferita temporanei."
+  },
+  "swarm-of-bats.actions.bites": {
+    "name": "Morsi",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (2d4) danni Perforanti, o 2 (1d4) danni Perforanti se lo sciame è sanguinante."
+  },
+  "swarm-of-crawling-claws": {
+    "name": "Orda di artigli striscianti"
+  },
+  "swarm-of-crawling-claws.traits.swarm": {
+    "name": "Sciame",
+    "text": "L'orda può occupare lo spazio di un'altra creatura e viceversa, e può muoversi attraverso qualsiasi apertura sufficientemente larga da far passare una creatura di taglia Minuscola. L'orda non può recuperare punti ferita o ottenere punti ferita temporanei."
+  },
+  "swarm-of-crawling-claws.actions.swarm-of-grasping-hands": {
+    "name": "Orda di mani afferranti",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 20 (4d8 + 2) danni Necrotici, o 11 (2d8 + 2) danni Necrotici se l'orda è sanguinante. Se il bersaglio è una creatura di taglia Media o inferiore, cade a terra Prono."
+  },
+  "swarm-of-insects": {
+    "name": "Sciame di insetti"
+  },
+  "swarm-of-insects.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "Se lo sciame ha una velocità di scalata, può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "swarm-of-insects.traits.swarm": {
+    "name": "Sciame",
+    "text": "Lo sciame può occupare lo spazio di un'altra creatura e viceversa, e può muoversi attraverso qualsiasi apertura sufficientemente larga da far passare un insetto Minuscolo. L'orda non può recuperare punti ferita o ottenere punti ferita temporanei."
+  },
+  "swarm-of-insects.actions.bites": {
+    "name": "Morsi",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 6 (2d4 + 1) danni da Veleno, o 3 (1d4 + 1) danni da Veleno se lo sciame è sanguinante."
+  },
+  "swarm-of-piranhas": {
+    "name": "Banco di piranha"
+  },
+  "swarm-of-piranhas.traits.swarm": {
+    "name": "Sciame",
+    "text": "Il banco di pesci può occupare lo spazio di un'altra creatura e viceversa, e può muoversi attraverso qualsiasi apertura abbastanza grande per un piranha di taglia Minuscola. L'orda non può recuperare punti ferita o ottenere punti ferita temporanei."
+  },
+  "swarm-of-piranhas.traits.water-breathing": {
+    "name": "Respirare sott'acqua",
+    "text": "Il banco può respirare soltanto sott'acqua."
+  },
+  "swarm-of-piranhas.actions.bites": {
+    "name": "Morsi",
+    "text": "Tiro per colpire in mischia: +5 (con vantaggio se il bersaglio non ha tutti i punti ferita), portata 1,5 m. Colpito: 8 (2d4 + 3) danni Perforanti, o 5 (1d4 + 3) danni Perforanti se il banco è sanguinante."
+  },
   "swarm-of-rats": {
     "name": "Colonia di topi"
   },
@@ -4485,6 +5302,32 @@
   "swarm-of-rats.actions.bites": {
     "name": "Morsi",
     "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 5 (2d4) danni Perforanti, o 2 (1d4) danni Perforanti se lo sciame è sanguinante."
+  },
+  "swarm-of-ravens": {
+    "name": "Stormo di corvi"
+  },
+  "swarm-of-ravens.traits.swarm": {
+    "name": "Sciame",
+    "text": "Lo stormo può occupare lo spazio di un'altra creatura e viceversa, e può muoversi attraverso qualsiasi apertura abbastanza grande per un corvo Minuscolo. L'orda non può recuperare punti ferita o ottenere punti ferita temporanei."
+  },
+  "swarm-of-ravens.actions.beaks": {
+    "name": "Becchi",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Perforanti, o 2 (1d4) danni Perforanti se lo stormo è sanguinante."
+  },
+  "swarm-of-ravens.actions.cacophony": {
+    "name": "Cacofonia",
+    "text": "Tiro salvezza su Saggezza: CD 10, una creatura nello spazio dello stormo. Fallimento: il bersaglio è Assordato fino all'inizio del turno successivo dello stormo. Quando è Assordato, il bersaglio subisce svantaggio alle prove di caratteristica e ai tiri per colpire."
+  },
+  "swarm-of-venomous-snakes": {
+    "name": "Colonia di serpenti velenosi"
+  },
+  "swarm-of-venomous-snakes.traits.swarm": {
+    "name": "Sciame",
+    "text": "La colonia può occupare lo spazio di un'altra creatura e viceversa, e può muoversi attraverso qualsiasi apertura sufficientemente larga da far passare un serpente Minuscolo. L'orda non può recuperare punti ferita o ottenere punti ferita temporanei."
+  },
+  "swarm-of-venomous-snakes.actions.bites": {
+    "name": "Morsi",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 8 (1d4 + 4) danni Perforanti, o 6 (1d8 + 4) danni Perforanti se la colonia è sanguinante, più 10 (3d6) danni da Veleno."
   },
   "young-red-dragon": {
     "name": "Drago rosso giovane"

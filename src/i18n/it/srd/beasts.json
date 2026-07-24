@@ -314,14 +314,8 @@
   "attack.sting": {
     "name": "Pungiglione"
   },
-  "trait.keen-smell": {
-    "name": "Olfatto acuto"
-  },
   "trait.pack-tactics": {
     "name": "Tattiche del branco"
-  },
-  "trait.pounce": {
-    "name": "Balzo"
   },
   "trait.charge": {
     "name": "Carica"
@@ -356,9 +350,6 @@
   "trait.bloodied-fury": {
     "name": "Furia sanguinante"
   },
-  "trait.bubble-dash": {
-    "name": "Scatto acquatico"
-  },
   "trait.compression": {
     "name": "Compressione"
   },
@@ -372,7 +363,7 @@
     "name": "Saltatore"
   },
   "trait.mimicry": {
-    "name": "Imitazione"
+    "name": "Imitare"
   },
   "trait.nimble-escape": {
     "name": "Fuga agile"

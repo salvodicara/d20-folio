@@ -178,7 +178,15 @@ const EAGER_CEILING_KB = 776; // baseline 727.1 → ~+6% (near budget — see AR
 // the `srd-monsters`/`monsters` lazy chunks). Measured 8691.76 KiB (285 entries) on the
 // COMPOSED lane — the larger of the two; the SRD-only lane is smaller under the same
 // shared ceiling. +~10 KiB deterministic headroom (never exact-fit).
-const PRECACHE_CEILING_KIB = 8702;
+// 2026-07-24 (bestiary q-s wave): raised 8702 → 8819 (+117 KiB) for the q-s tranche's
+// 45 statblocks (Quasit…Swarm of Venomous Snakes — the wave's spellcasters (rakshasa · sea-hag
+// · spirit-naga), the three sphinxes + solar + storm/stone giants, and the seven swarms) — the
+// EN/IT `monsters` catalogue shards grew by the wave's bilingual trait/action prose (still LAZY,
+// precached for offline-first, NOT an eager regression: the eager closure is unchanged at
+// ~771.4 KB gz, the corpus rides the `srd-monsters`/`monsters` lazy chunks). Measured 8808.76 KiB
+// (285 entries) on the COMPOSED lane — the larger of the two; the SRD-only lane is smaller under
+// the same shared ceiling. +~10 KiB deterministic headroom (never exact-fit).
+const PRECACHE_CEILING_KIB = 8819;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
