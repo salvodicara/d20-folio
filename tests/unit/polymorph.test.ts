@@ -187,8 +187,10 @@ describe("assume/drop the self-swap (store)", () => {
     const rows = resolveActions(doc);
     const bite = rows.find((r) => r.id === "beast-attack-brown-bear-0");
     expect(bite, "Beast bite row rendered").toBeDefined();
-    expect(bite?.summary.attackBonus).toBe(6);
-    expect(bite?.summary.damage).toBe("1d8+4");
+    // The 2024 SRD Brown Bear (re-derived from the monster corpus, §D): Bite +5,
+    // 1d8+3 (the 2014-era block was +6 / 1d8+4).
+    expect(bite?.summary.attackBonus).toBe(5);
+    expect(bite?.summary.damage).toBe("1d8+3");
     expect(bite?.summary.damageType).toBe("piercing");
     expect(loc(bite?.name, "en")).toBe("Bite");
     // A creature not polymorphed shows NO beast rows.

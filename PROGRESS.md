@@ -468,8 +468,14 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     facets + resident-locale prose search) appended last on the codex ribbon, the shared
     `MonsterStatBlockCard` on the `.beast-ref`/`.mon-*` plaque (full 2024 reading order, both
     themes, axe-clean), the D-2 barrel `ensureSrdKind` gate + the `picker/index.ts` re-point (the
-    cockpit modals never drag the corpus), and its e2e/a11y/i18n-sweep surfaces. NEXT: the
-    beast-projection re-derivation seam, then the 8 data waves.
+    cockpit modals never drag the corpus), and its e2e/a11y/i18n-sweep surfaces. **The
+    beast-projection seam is now IN PLACE** (C1, §D) — `scripts/beast-projection.ts` is the
+    ONE shared derivation `MonsterStatBlock → BeastStatBlock` (the intersection projection
+    guard owns it forever), fed by the campaign-scoped `scripts/sync-beast-projection.ts`
+    generator (`git rm`'d at the final wave) that regenerates `beasts.ts` + the `beasts.json`
+    key deltas from the corpus, wave by wave; the pilot's `brown-bear` is re-derived to its
+    2024 statblock (22 HP, Bite +5 1d8+3 / Claw +5 1d4+3, no traits — a live-user Polymorph
+    correctness fix), `rat` already matched. NEXT: the 8 data waves.
 - **Companions/Extras:** a persistent companion-statblock surface on the sheet (Find Familiar,
   Primal Companion, Drakewarden, Artificer Steel Defender/Homunculus) — closes a
   rules-completeness hole; reuses the bestiary statblock renderer.

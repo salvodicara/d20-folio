@@ -98,6 +98,16 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   `srd-names.ts` (the eager name index — the pack side is `content-pack/data/names.ts`,
   literal names only, so the roster chunk never drags the pack corpora). Consumers only ever read
   the aggregates — never a `@pack` deep path — so the seam stays single.
+- **The Polymorph Beast catalogue is a GENERATED projection of the monster corpus** (D-5): the
+  eager `src/data/beasts/beasts.ts` is not hand-authored — `scripts/beast-projection.ts`
+  (`beastProjectionFromMonster`, the ONE shared derivation) maps each `MonsterStatBlock` to its
+  `BeastStatBlock`, and `scripts/sync-beast-projection.ts` (campaign-scoped, `git rm`'d once the
+  corpus is complete) regenerates `beasts.ts` + the `beasts.json` EN/IT key deltas wave by wave.
+  The intersection guard (`tests/unit/beast-monster-projection.guard.test.ts`) asserts every beast
+  whose monster is authored DEEP-EQUALS its projection, so the two can never drift (golden rule 6,
+  by CI). Runtime `beasts.ts` imports NOTHING from `data/monsters` (the eager Polymorph graph never
+  grows), and top-level beast ids stay stable — a persisted `session.polymorphForm.beastId` is
+  byte-safe across a re-derivation, even as attack/trait sub-ids and numbers change.
 - **i18n** — pack EN srd shards are statically bundled and merged in `src/i18n/srd-en.ts` (the EN
   facts rule is unchanged); non-EN pack shards lazy-load through the pack's own
   `content-pack/i18n/loader.ts` and merge inside `loadSrdCatalogues`. The LAZY srd shards
