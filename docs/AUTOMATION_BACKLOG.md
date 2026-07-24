@@ -476,12 +476,36 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       (`SituationalRules`) alongside the Cover + Travel-pace tables (the shared surface built this
       wave; render test `tests/unit/situational-rules.test.tsx`). This also retrofits the previously
       data-only `COVER_REFERENCE` into that same panel — closing the "display-only, i.e. VISIBLE"
-      ledger promise for all three. (RA-31's contested self-side AC toggle stays a separate item.)
-- [ ] **RA-31 — Cover is reference-only; a self-side +2/+5 AC toggle is a defensible upgrade.**
+      ledger promise for all three. (RA-31's contested self-side AC toggle is the separate item
+      below — resolved RESIDUAL.)
+- [x] **RA-31 — Cover is reference-only; a self-side +2/+5 AC toggle is a defensible upgrade.**
       _Cover · INTERACTION · S3 (deliberate residual today; MECHANICS.md "battlefield geometry")._
       SRD "Cover": the bonus applies to the TARGET's AC/DEX saves — self-side, so it CAN ride the
       sheet without modeling enemies (a rail toggle like the buff chips). Contested design →
-      **FABLE** (rule 26) or stays a triaged residual.
+      **FABLE** (rule 26) or stays a triaged residual. **RESOLVED wave 7 (2026-07-24): RESIDUAL —
+      the toggle is DECLINED (impeccable adjudication, rule 26; docs-only).** The decisive reasons:
+      (1) **No enforceable lifetime.** Every sibling AC chip's state has a rules-defined lifetime
+      the engine tracks — concentration-cleared (`activeKeysForConcentration`), round-timed
+      (`effectTimers` auto-drop), or End-Turn-prompted (`maintained`). Cover ends on a geometry
+      change the app cannot see (the very definition of the battlefield-geometry residual): a
+      sticky chip leaves a silently-stale AC for whole turns (the app would TEACH a wrong number —
+      the inverse of "trust it over paper"), and a turn-scoped clear is categorically backwards
+      because cover's relevance window is OTHER creatures' turns (attacks/DEX saves against you) —
+      an end-of-your-turn clear deletes the bonus precisely before it applies. (2) **Double-count
+      with the table's real adjudicator.** Cover is the DM's per-attack ruling on geometry the DM
+      tracks (VTT or theater-of-mind); a sheet-baked +2/+5 gets counted twice when the DM applies
+      it to the attack roll, and poisons the §2.9 DM glance-pane — the pane would present a
+      positional snapshot as the character's AC fact. (3) **The app's settled sibling precedent.**
+      Dodge — equally universal, self-side, transient, enemy-turn-relevant — is deliberately a
+      reference action card (`base-dodge`), never a state toggle; DDB models neither. (4) **The
+      "native chip recipe" claim fails on contact:** cover has no granting source (it would need
+      the first-ever synthetic universal grant source in `resolveAllGrantSources`) and
+      half/three-quarters would need the rail's first-ever mutual-exclusion pair (the while-active
+      seam is independent multi-toggle — both lit = an impossible +7). The REAL gap the FOR case
+      identified is knowledge (players forget cover exists at the table) — and that treatment is
+      already SHIPPED: the `COVER_REFERENCE` table renders in the Play tab's "Rules reference"
+      panel (`SituationalRules`, W6), exactly where a player checks the rule mid-session. Recorded
+      in `docs/MECHANICS.md` → "Battlefield geometry / encounter state" as already-settled. **T3.**
 - [x] **RA-32 — Grappled shows blanket attack Disadvantage; RAW scopes it to targets OTHER than
       the grappler.** _Conditions · CORRECTNESS (advisory over-reach) · S3._ SRD "Grappled —
       Attacks Affected". The gate's clause is deliberately coarse (documented inline); fix = the
@@ -548,9 +572,10 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
 
 > **Triaged non-findings re-confirmed by this audit** (already-settled residuals, MECHANICS.md
 > "Non-automatable residuals" — do not re-open): attacker-side condition effects, battlefield
-> geometry/line-of-sight/ranged-in-melee, per-target scoping (Hunter's-Mark-style), enemy modeling,
-> auto-rolled anything (golden rule 21). The 2024 rules the app models were otherwise verified
-> correct — see the SOLID list at the top of this section.
+> geometry/line-of-sight/ranged-in-melee (including the self-side Cover AC/DEX-save toggle —
+> RA-31, adjudicated RESIDUAL 2026-07-24 via impeccable, rule 26), per-target scoping
+> (Hunter's-Mark-style), enemy modeling, auto-rolled anything (golden rule 21). The 2024 rules the
+> app models were otherwise verified correct — see the SOLID list at the top of this section.
 
 ---
 

@@ -451,6 +451,14 @@ The structural reasons the declarative-grant model is intentionally not the righ
   the target") depend on transient geometry the passive aggregator (a property of the _character_, not
   the _encounter_) does not own. Auras are modeled INFORMATIONALLY (`aura` kind surfaces radius +
   effect, rolls/tracks nothing); only PERMANENT advantage clauses are modeled (`advantage-on`).
+  Cover's SELF-side half (+2/+5 to the target's own AC/DEX saves) was explicitly adjudicated and
+  DECLINED as a sheet toggle (RA-31, impeccable per rule 26, 2026-07-24): it has no rules-defined
+  lifetime the engine can enforce — it ends on a geometry change the app cannot see, so every chip
+  cadence either teaches a stale AC (sticky) or clears the bonus exactly before its enemy-turn
+  relevance window (turn-scoped) — and cover is the DM's per-attack ruling, so a sheet-baked bonus
+  double-counts. Cover stays reference-only, like Dodge (`base-dodge`), its settled
+  universal-defensive sibling: the `COVER_REFERENCE` table renders in the Play tab's "Rules
+  reference" panel (`SituationalRules`).
 - **Item charge / duration / sentience timing.** The mechanical effect of a while-active item is
   modeled (Boots of Speed → `speed-multiplier`), but the time-box itself (the timer / per-use charge
   accounting) stays manual until a charge/duration-aware activation layer exists. A sentient item's own
