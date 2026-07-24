@@ -168,6 +168,21 @@ describe("CommandPalette — universal search (N-E)", () => {
     expect(texts.filter((t) => /recovery|discoveries/i.test(t))).toEqual([]);
   });
 
+  // The other half of the same rule: demoted is not dropped. When a query has NO
+  // prefix / word / suffix / gloss hit anywhere, the mid-word band IS the answer —
+  // "ecover" can only ever land inside "R*ecover*y", and an empty list would be a
+  // worse lie than the row.
+  it('falls back to mid-word hits when nothing better matched ("ecover")', async () => {
+    renderPalette();
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "ecover" } });
+    const rows = await screen.findAllByRole(
+      "option",
+      { name: /recovery/i },
+      { timeout: 5000 }
+    );
+    expect(rows.length).toBeGreaterThan(0);
+  });
+
   it('still finds a compound name by its tail ("sword" → Greatsword)', async () => {
     renderPalette();
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "greatsword" } });

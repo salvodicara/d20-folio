@@ -1595,7 +1595,15 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       preserved by the `suffix` tier ("axe" → Handaxe, "sword" → Greatsword). `matchesSearch` itself
       is untouched, so every other search surface behaves exactly as before. Regressions:
       `search.test.ts` (the ladder + agreement with the filter) and `command-palette.test.tsx`
-      ("cover" surfaces no _Recovery_ row; "sword"/"greatsword" still resolve), fail-before/pass-after.
+      ("cover" surfaces no _Recovery_ row; "sword"/"greatsword" still resolve), fail-before/pass-after
+      — plus a forward lock on the LAST-RESORT path ("ecover" matches nothing but the inside of
+      _R**ecover**y_, and still returns those rows: demoted is not dropped).
+      **Known consequence, by design — do NOT "fix" it:** the infix band is all-or-nothing, so a
+      compound can vanish MID-TYPING. Typing "swor" drops Greatsword (at that length it is only an
+      infix hit) because the prefix/word bands still have rows to show; at "sword" the suffix tier
+      catches it and it returns. Self-correcting within one keystroke, and the alternative — mixing
+      unreadable mid-word hits into a list that already has real answers — is the defect this entry
+      exists to remove.
 
 - [x] **PS-G (rail double-listing) — the Advantages rail listed one advantage twice, in two
       registers.** FIXED 2026-07-24. A Champion carrying a Sentinel Shield showed FOUR rows: the
