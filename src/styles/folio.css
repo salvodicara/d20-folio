@@ -16121,6 +16121,17 @@ button.econ-tok-filter:active .econ-disc {
 .lvl-seal.mon-seal-sm {
   font-size: 11px;
 }
+/* THEME-INVARIANT gilt CR seal — pins the `.lvl-seal` hue pair to FIXED gilt
+   tokens (a fixed light-gold gem + the fixed near-black `--gilt-ink` numeral) so
+   the compendium CR seal is the SAME gold jewelry with a crisp engraved numeral
+   in BOTH themes (owner-directed 2026-07-24). The per-theme `--accent-primary`/
+   `--text-inverse` pair re-resolved to a dark umber gem in light — bronze-on-
+   bronze. Neither token varies by `[data-theme]`, so the seal can't drift. Scoped
+   to THIS seal only — the spell/other `.lvl-seal` per-hue consumers are untouched. */
+.lvl-seal.cr-seal {
+  --sl: var(--gold-leaf-500);
+  --sl-ink: var(--gilt-ink);
+}
 
 /* Active-form banner — shown above the spell list while polymorphed. Reuses the
    concentration-banner register (the form IS concentration-sustained): a gilt

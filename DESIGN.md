@@ -1474,7 +1474,14 @@ that earns it.
   of the register ladder — a reference document, not a decision surface, so **no altar/cartouche**.
   Token-driven only: both themes re-theme with no light override (the `.beast-ref` precedent). Every
   printed number derives (`src/lib/monster.ts`), never stored; the display strings resolve through
-  the lazy `monster` catalogue + the closed-set chrome seams.
+  the lazy `monster` catalogue + the closed-set chrome seams. The compendium row's **CR seal** is the
+  ONE deliberate exception to the re-theme rule: it is **theme-INVARIANT gilt jewelry** — the
+  `.lvl-seal.cr-seal` modifier pins the gem + numeral to fixed gilt tokens (a light-gold
+  `--gold-leaf-500` gem + the near-black `--gilt-ink` engraving, identical in both themes), so the CR
+  reads as the same struck gold coin everywhere (owner-directed 2026-07-24: the per-theme
+  `--accent-primary`/`--text-inverse` pair went bronze-on-bronze in light). `--gilt-ink` is the
+  theme-independent engraving ink for gilt jewelry; the ink-contrast battery pins the pair ≥ 4.5:1 on
+  the gem's dark end and locks it byte-identical across themes.
 
 ### The ornament vocabulary (BG3 identity T5)
 

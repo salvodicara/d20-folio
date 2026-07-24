@@ -237,6 +237,13 @@
   --gold-leaf-500: #b8923d;
   --gold-leaf-700: #7a5f24;
   --gold-leaf-900: #3d2f12;
+  /* Engraving ink for theme-INVARIANT gilt jewelry (the compendium CR seal): a
+     fixed warm near-black struck into a fixed light-gold gem in BOTH themes, so
+     the seal reads as one piece of gold jewelry regardless of theme. Theme-
+     independent by design — never re-resolve it per `[data-theme]` (owner-directed
+     2026-07-24: the per-theme accent pair went bronze-on-bronze in light). Clears
+     AA on the gem's dark end (verdict-ink-contrast guard). */
+  --gilt-ink: #1a1610;
 
   --lapis-50: #d8e3f4;
   --lapis-100: #a8bce0;

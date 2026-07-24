@@ -185,22 +185,15 @@ export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
   row: (m, { t, locale }) => {
     const crText = formatCr(m.cr);
     return {
-      // The CR seal — one gilt gem, reused larger on the EntryView masthead
-      // (`.cmp-entry-seal`); the folio seal contract. Longer strings (fractions)
-      // step the digit down so "1/8" stays inside the socket.
+      // The CR seal — one THEME-INVARIANT gilt gem (the `.cr-seal` modifier pins
+      // the `.lvl-seal` hue pair to fixed gilt tokens: a light-gold gem + the
+      // near-black `--gilt-ink` numeral, identical in both themes — owner-directed,
+      // so the seal never re-resolves to a dark bronze gem in light). Reused larger
+      // on the EntryView masthead (`.cmp-entry-seal`); the folio seal contract.
+      // Longer strings (fractions) step the digit down so "1/8" stays inside.
       leading: (
         <span
-          className={cn("lvl-seal", crText.length >= 3 && "mon-seal-sm")}
-          style={{
-            ["--sl" as string]: "var(--accent-primary)",
-            // The gilt gem body is a LIGHT gold in dark / a dark umber in light
-            // (`mix(--sl, white/black)`), so the numeral takes the seal's own
-            // theme-inverse ink — near-black on the light-gold gem, cream on the
-            // dark-umber gem — never the gold `--accent-text` (which washed out
-            // gold-on-gold in dark). This is the `.lvl-seal` default ink; the
-            // digit clears AA on the gem's dark end in both themes (guard below).
-            ["--sl-ink" as string]: "var(--text-inverse)",
-          }}
+          className={cn("lvl-seal", "cr-seal", crText.length >= 3 && "mon-seal-sm")}
           aria-hidden
         >
           {crText}

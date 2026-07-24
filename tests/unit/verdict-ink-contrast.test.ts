@@ -422,33 +422,6 @@ describe("spell-level seal digit ink clears WCAG-AA on the seal body", () => {
   }
 });
 
-describe("monster CR-seal digit ink clears WCAG-AA on the gilt gem body", () => {
-  // The compendium Monsters row (+ the EntryView masthead) strike the CR on a
-  // `.lvl-seal` gem tinted by the folio gilt (`--sl: var(--accent-primary)`) with
-  // the seal's OWN theme-inverse ink (`--sl-ink: var(--text-inverse)` — near-black
-  // on the light-gold gem in dark, cream on the dark-umber gem in light). The gilt
-  // `--accent-text` washed the numeral gold-on-gold in dark (~1.4:1); this replays
-  // the spell-seal worst case (the digit sits over the gem's dark end,
-  // mix(--sl 88% black)) so it can never regress.
-  for (const theme of ["dark", "light"] as const) {
-    const block = themeBlock(theme);
-    it(`${theme}: CR-seal ink ≥ ${AA}:1 on the gilt gem's dark end`, () => {
-      // Dark's `--accent-primary` aliases `var(--gold-leaf-500)` (resolve the ramp);
-      // light overrides it with a literal.
-      const gem =
-        theme === "dark"
-          ? readVar(css, "--gold-leaf-500")
-          : readVar(block, "--accent-primary");
-      const ink = readVar(block, "--text-inverse");
-      const darkEnd = mix(gem, "#000000", 88);
-      expect(
-        contrast(ink, darkEnd),
-        `CR-seal ink ${ink} on gem dark end ${darkEnd}`
-      ).toBeGreaterThanOrEqual(AA);
-    });
-  }
-});
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Combat top-bar pip — the "carved dark socket" control class.
 //
@@ -529,4 +502,40 @@ describe("combat top-bar dest-chip ink clears WCAG-AA on the carved socket", () 
       ).toBeGreaterThanOrEqual(AA);
     });
   }
+});
+
+describe("monster CR seal is theme-invariant gilt jewelry (owner-directed 2026-07-24)", () => {
+  // The compendium CR seal (list rows + the EntryView masthead's larger strike)
+  // pins the `.lvl-seal` hue pair to FIXED gilt tokens via the `.lvl-seal.cr-seal`
+  // modifier, so it renders as the SAME light-gold gem with a near-black engraved
+  // numeral in BOTH themes. Read the ACTUAL declaration out of folio.css and
+  // resolve the real pair per theme — the prior guard modeled a hand-picked pair
+  // that passed while the owner saw bronze-on-bronze in light (a vacuous check).
+  const seal = ruleBody(folioCss, ".lvl-seal.cr-seal");
+  const gemValue = decl(seal, "--sl");
+  const inkValue = decl(seal, "--sl-ink");
+
+  for (const theme of ["dark", "light"] as const) {
+    it(`${theme}: CR-seal numeral ≥ ${AA}:1 on the gilt gem's dark end`, () => {
+      const block = themeBlock(theme);
+      const gem = resolveColor(gemValue, block);
+      const ink = resolveColor(inkValue, block);
+      // The digit sits over the gem's dark end (radial darkens off-centre,
+      // mix(--sl 88% black)) — the spell-seal worst case.
+      const darkEnd = mix(gem, "#000000", 88);
+      expect(
+        contrast(ink, darkEnd),
+        `CR-seal ink ${ink} on gem dark end ${darkEnd} (${theme})`
+      ).toBeGreaterThanOrEqual(AA);
+    });
+  }
+
+  it("the gem + ink pair is byte-identical across themes (invariance lock)", () => {
+    const pair = (theme: "dark" | "light") => {
+      const block = themeBlock(theme);
+      return `${resolveColor(gemValue, block)}/${resolveColor(inkValue, block)}`;
+    };
+    // Same resolved gilt jewelry in both themes — no `[data-theme]` re-resolution.
+    expect(pair("dark")).toBe(pair("light"));
+  });
 });
