@@ -2808,16 +2808,16 @@
     "label": "Premonizione attiva"
   },
   "haste.grants.0.grants.2": {
-    "description": "Vantaggio ai tiri salvezza su Destrezza (Velocità)"
+    "description": "Tiri salvezza su Destrezza (Velocità)"
   },
   "foresight.grants.0.grants.0": {
-    "description": "Vantaggio alle prove di caratteristica (Premonizione)"
+    "description": "Prove di caratteristica (Premonizione)"
   },
   "foresight.grants.0.grants.1": {
-    "description": "Vantaggio ai tiri salvezza (Premonizione)"
+    "description": "Tiri salvezza (Premonizione)"
   },
   "foresight.grants.0.grants.2": {
-    "description": "Vantaggio ai tiri per colpire (Premonizione)"
+    "description": "Tiri per colpire (Premonizione)"
   },
   "fire-shield.grants.0.grants.0": {
     "label": "Tipo di scudo"

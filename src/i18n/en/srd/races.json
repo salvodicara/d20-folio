@@ -229,7 +229,7 @@
     "label": "Large Form"
   },
   "goliath.traits.large-form.grants.0.grants.1": {
-    "description": "Advantage on Strength checks while in Large Form"
+    "description": "Strength checks while in Large Form"
   },
   "goliath.traits.large-form.mechanics.actions.0": {
     "description": "Change size to Large for 10 min (available from level 5)",

@@ -2808,16 +2808,16 @@
     "label": "Foresight active"
   },
   "haste.grants.0.grants.2": {
-    "description": "Advantage on Dexterity saving throws (Haste)"
+    "description": "Dexterity saving throws (Haste)"
   },
   "foresight.grants.0.grants.0": {
-    "description": "Advantage on ability checks (Foresight)"
+    "description": "Ability checks (Foresight)"
   },
   "foresight.grants.0.grants.1": {
-    "description": "Advantage on saving throws (Foresight)"
+    "description": "Saving throws (Foresight)"
   },
   "foresight.grants.0.grants.2": {
-    "description": "Advantage on attack rolls (Foresight)"
+    "description": "Attack rolls (Foresight)"
   },
   "fire-shield.grants.0.grants.0": {
     "label": "Shield type"

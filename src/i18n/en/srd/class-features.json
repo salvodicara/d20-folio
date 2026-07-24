@@ -56,7 +56,7 @@
     "name": "Feral Instinct"
   },
   "barbarian-feral-instinct.grants.0": {
-    "description": "Advantage on Initiative rolls"
+    "description": "Initiative rolls"
   },
   "barbarian-greater-brutal-strike": {
     "description": "Your Brutal Strike damage increases to 2d10, and you can apply two different effects when you use it.",

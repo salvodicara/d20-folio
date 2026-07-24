@@ -229,7 +229,7 @@
     "label": "Forma Grande"
   },
   "goliath.traits.large-form.grants.0.grants.1": {
-    "description": "Vantaggio alle prove di Forza mentre sei in Forma Grande"
+    "description": "Prove di Forza mentre sei in Forma Grande"
   },
   "goliath.traits.large-form.mechanics.actions.0": {
     "description": "Cambia taglia a Grande per 10 min (disponibile dal 5° livello)",

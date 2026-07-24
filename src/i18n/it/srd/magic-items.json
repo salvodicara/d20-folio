@@ -128,7 +128,7 @@
     "name": "Cintura Nanica"
   },
   "belt-of-dwarvenkind.grants.4": {
-    "description": "Vantaggio ai tiri salvezza per evitare o terminare la condizione Avvelenato."
+    "description": "Tiri salvezza per evitare o terminare la condizione Avvelenato"
   },
   "belt-of-giant-strength": {
     "description": "Imposta il tuo punteggio di Forza in base al tipo: Collina (21), Gelo/Pietra (23), Fuoco (25), Nube (27), Tempesta (29). Nessun effetto se la Forza è già uguale o superiore.",
@@ -161,7 +161,7 @@
     "name": "Stivali Elfici"
   },
   "boots-of-elvenkind.grants.0": {
-    "description": "Vantaggio alle prove di Destrezza (Furtività) che dipendono dal muoversi silenziosamente."
+    "description": "Prove di Destrezza (Furtività) che dipendono dal muoversi silenziosamente"
   },
   "boots-of-levitation": {
     "description": "Come Azione, lancia Levitazione su te stesso a volontà (nessuna componente necessaria).",
@@ -239,7 +239,7 @@
     "name": "Mantello Elfico"
   },
   "cloak-of-elvenkind.grants.0": {
-    "description": "Vantaggio alle prove di Destrezza (Furtività) (con il cappuccio alzato)."
+    "description": "Prove di Destrezza (Furtività) (con il cappuccio alzato)"
   },
   "cloak-of-invisibility": {
     "description": "Questo mantello ha 3 cariche e recupera 1d3 cariche spese ogni giorno all'alba. Mentre indossi il mantello, puoi compiere un'azione Magia per tirarti il cappuccio sulla testa e spendere 1 carica per ottenere la condizione Invisibile per 1 ora. L'effetto termina in anticipo se abbassi il cappuccio (non è richiesta alcuna azione) o smetti di indossare il cappuccio.",
@@ -310,7 +310,7 @@
     "name": "Corazza di Scaglie di Drago"
   },
   "dragon-scale-mail.grants.1": {
-    "description": "Vantaggio ai tiri salvezza contro i soffi dei Draghi."
+    "description": "Tiri salvezza contro i soffi dei Draghi"
   },
   "dragon-scale-mail.grants.2": {
     "label": "Tipo di Drago"
@@ -408,7 +408,7 @@
     "name": "Lenti dell'Aquila"
   },
   "eyes-of-the-eagle.grants.0": {
-    "description": "Vantaggio alle prove di Saggezza (Percezione) che dipendono dalla vista."
+    "description": "Prove di Saggezza (Percezione) che dipendono dalla vista"
   },
   "figurine-of-wondrous-power": {
     "description": "Guida del Maestro Oggetto Meraviglioso, Rarità Varia Una Statuina del Potere Meraviglioso è una statuetta abbastanza piccola da stare in una tasca. Se compi un'azione Magia per gettare la figurina in un punto del terreno entro 18 metri da te, la figurina diventa una creatura vivente specificata nella descrizione della figurina più avanti. Se lo spazio in cui apparirebbe la creatura è occupato da altre creature o oggetti, o se non c'è abbastanza spazio per la creatura, la figurina non diventa una creatura. La creatura è Amichevole verso di te e i tuoi alleati. Comprende le tue lingue, obbedisce ai tuoi comandi e agisce immediatamente dopo di te nel tuo ordine di Iniziativa. Se non impartisci comandi, la creatura si difende ma non compie altre azioni. La creatura esiste per una durata specifica a ciascuna figurina. Al termine della durata, la creatura torna alla sua forma di figurina. Torna a essere figurina in anticipo se la sua forma di creatura scende a 0 Punti Ferita o se compi un'azione Magia mentre tocchi la creatura per farla tornare alla forma di figurina. Quando la creatura torna a essere figurina, la sua proprietà non può essere usata di nuovo finché non è trascorsa una certa quantità di tempo, come specificato nella descrizione della figurina. Grifone di Bronzo (Raro) Questa statuetta di bronzo è di un grifone rampante. Può diventare un Grifone per un massimo di 6 ore. Una volta usata, non può essere usata di nuovo finché non sono trascorsi 5 giorni.",
@@ -549,7 +549,7 @@
     "name": "Mantello della Resistenza agli Incantesimi"
   },
   "mantle-of-spell-resistance.grants.0": {
-    "description": "Vantaggio ai tiri salvezza contro incantesimi."
+    "description": "Tiri salvezza contro incantesimi"
   },
   "manual-of-bodily-health": {
     "description": "Questo libro contiene consigli su salute e alimentazione, e le sue parole sono cariche di magia. Se trascorri 48 ore in un periodo di 6 giorni o meno studiando il contenuto del libro e mettendone in pratica le linee guida, la tua Costituzione aumenta di 2, fino a un massimo di 30. Il manuale perde quindi la sua magia ma la riacquista dopo un secolo.",
@@ -584,7 +584,7 @@
     "name": "Collana dell'Adattamento"
   },
   "necklace-of-adaptation.grants.0": {
-    "description": "Vantaggio ai tiri salvezza per evitare o terminare la condizione Avvelenato."
+    "description": "Tiri salvezza per evitare o terminare la condizione Avvelenato"
   },
   "necklace-of-fireballs": {
     "description": "Ha 1d6+3 perle. Come Azione, stacca e lancia una perla fino a 18 metri — detona come Palla di Fuoco (DES CD 15, 8d6 fuoco). Puoi lanciare più perle insieme per danni aumentati.",
@@ -623,7 +623,7 @@
     "name": "Talismano della Salute"
   },
   "periapt-of-health.grants.0": {
-    "description": "Vantaggio ai tiri salvezza per evitare o terminare la condizione Avvelenato."
+    "description": "Tiri salvezza per evitare o terminare la condizione Avvelenato"
   },
   "periapt-of-proof-against-poison": {
     "description": "Questa delicata catena d'argento ha un pendente di gemma nera sfaccettata. Mentre lo indossi, sei immune alla condizione Avvelenato e ai danni da Veleno.",
@@ -795,7 +795,7 @@
     "name": "Anello di Riflettere Incantesimi"
   },
   "ring-of-spell-turning.grants.0": {
-    "description": "Vantaggio ai tiri salvezza contro incantesimi."
+    "description": "Tiri salvezza contro incantesimi"
   },
   "ring-of-swimming": {
     "description": "Hai una Velocità di Nuoto di 12 metri mentre indossi questo anello.",
@@ -846,7 +846,7 @@
     "name": "Tunica dell'Arcimago"
   },
   "robe-of-the-archmagi.grants.1": {
-    "description": "Vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+    "description": "Tiri salvezza contro incantesimi e altri effetti magici"
   },
   "robe-of-useful-items": {
     "description": "Questa veste è ricoperta di toppe di stoffa di varie forme e colori. Mentre indossi la veste, puoi compiere un'azione Magia per staccare una delle toppe, facendola diventare l'oggetto o la creatura che rappresenta. Una volta rimossa l'ultima toppa, la veste diventa un indumento comune. La veste ha due di ciascuna delle seguenti toppe: Lanterna Cieca (piena e accesa) Pugnale Specchio Asta Corda (avvolta) Sacco Inoltre, la veste ha 4d4 altre toppe. Il DM sceglie le toppe o le determina casualmente tirando sulla tabella seguente. 1d100 Toppa 01-08 Sacco da 100 MO 09-15 Cofanetto d'argento (30 centimetri di lunghezza, 15 centimetri di larghezza e profondità) del valore di 500 MO 16-22 Porta di ferro (fino a 3 metri di larghezza e 3 metri di altezza, sbarrata su un lato a tua scelta), che puoi collocare in un'apertura che puoi raggiungere; si conforma per adattarsi all'apertura, fissandosi e incernierandosi da sé 23-30 10 gemme del valore di 100 MO ciascuna 31-44 Scala di legno (lunga circa 7 metri) 45-51 Cavallo da galoppo con una Sella da Cavalcatura 52-59 Fossa aperta (un Cubo di 3 metri), che puoi collocare sul terreno entro 3 metri da te 60-68 4 Pozioni di Guarigione 69-75 Barca a Remi (lunga circa 3,5 metri) 76-83 Pergamena d'Incantesimo contenente un incantesimo di livello 1, 2 o 3 (a tua scelta) 84-90 2 Mastini 91-96 Finestra (60 centimetri per 120 centimetri, fino a 60 centimetri di profondità), che puoi collocare su una superficie verticale che puoi raggiungere 97-00 Ariete Portatile",
@@ -861,10 +861,10 @@
     "name": "Verga dell'Allerta"
   },
   "rod-of-alertness.grants.0": {
-    "description": "Vantaggio alle prove di Saggezza (Percezione)."
+    "description": "Prove di Saggezza (Percezione)"
   },
   "rod-of-alertness.grants.1": {
-    "description": "Vantaggio ai tiri di Iniziativa."
+    "description": "Tiri di Iniziativa"
   },
   "rod-of-lordly-might": {
     "description": "Questa verga ha una testa flangiata, e funziona come una Mazza magica che concede un bonus di +3 ai tiri per colpire e ai tiri per i danni effettuati con essa. La verga ha proprietà associate a sei diversi pulsanti disposti in fila lungo l'asta. Ha anche altre tre proprietà, dettagliate più avanti. Pulsanti. Puoi premere uno dei seguenti pulsanti come un'Azione Bonus; l'effetto di un pulsante dura finché non premi un pulsante diverso o finché non premi di nuovo lo stesso pulsante, il che fa tornare la verga alla sua forma normale: Pulsante 1. Una lama fiammeggiante spunta dall'estremità opposta alla testa flangiata della verga. Le fiamme emanano Luce Intensa entro un raggio di 12 metri e Luce Fioca per altri 12 metri, e la lama funziona come una Spada Lunga o una Spada Corta magica (a tua scelta) che infligge 2d6 danni da Fuoco aggiuntivi quando colpisce. Pulsante 2. La testa flangiata della verga si ripiega e spuntano due lame a forma di mezzaluna, trasformando la verga in un'Ascia da Battaglia magica che concede un bonus di +3 ai tiri per colpire e ai tiri per i danni effettuati con essa. Pulsante 3. La testa flangiata della verga si ripiega, una punta di lancia spunta dalla cima della verga, e l'impugnatura della verga si allunga in un'asta di 1,8 metri, trasformando la verga in una Lancia magica che concede un bonus di +3 ai tiri per colpire e ai tiri per i danni effettuati con essa. Pulsante 4. La verga si trasforma in un'asta da arrampicata lunga fino a 15 metri (specifichi tu la lunghezza), anche se i pulsanti della verga rimangono alla tua portata. In superfici dure come il granito, una punta in fondo e tre ganci in cima ancorano l'asta.",
@@ -895,7 +895,7 @@
     "name": "Scarabeo della Protezione"
   },
   "scarab-of-protection.grants.1": {
-    "description": "Vantaggio ai tiri salvezza contro gli incantesimi."
+    "description": "Tiri salvezza contro gli incantesimi"
   },
   "scimitar-of-speed": {
     "description": "Ottieni un bonus di +2 ai tiri per colpire e ai tiri per i danni effettuati con quest'arma magica. Inoltre, puoi effettuare un attacco con essa come un'Azione Bonus in ciascuno dei tuoi turni.",
@@ -910,10 +910,10 @@
     "name": "Scudo Sentinella"
   },
   "sentinel-shield.grants.0": {
-    "description": "Vantaggio ai tiri di Iniziativa."
+    "description": "Tiri di Iniziativa"
   },
   "sentinel-shield.grants.1": {
-    "description": "Vantaggio alle prove di Saggezza (Percezione)."
+    "description": "Prove di Saggezza (Percezione)"
   },
   "shield-of-missile-attraction": {
     "description": "Mentre impugni questo Scudo, hai Resistenza ai danni da attacchi effettuati con armi a Distanza. Maledizione. Questo Scudo è maledetto. Sintonizzarsi con esso ti maledice finché non sei bersaglio di un incantesimo Rimuovere Maledizione o di una magia simile. Rimuovere lo Scudo non termina la maledizione su di te. Ogni volta che un attacco con un'arma a Distanza prende di mira una creatura entro 3 metri da te, la maledizione fa diventare te il bersaglio.",
@@ -952,7 +952,7 @@
     "name": "Scudo Anti-Incantesimi"
   },
   "spellguard-shield.grants.0": {
-    "description": "Vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+    "description": "Tiri salvezza contro incantesimi e altri effetti magici"
   },
   "sphere-of-annihilation": {
     "description": "Questa sfera nera dal diametro di circa 60 centimetri è un foro nel multiverso, sospesa nello spazio e stabilizzata da un campo magico che la circonda. La sfera oblitera tutta la materia che attraversa e tutta la materia che la attraversa. Gli Artefatti sono l'eccezione. A meno che un Artefatto non sia suscettibile ai danni da una Sfera Annientatrice, esso attraversa la sfera illeso. Qualsiasi altra cosa che tocchi la sfera ma non sia interamente inghiottita e obliterata da essa subisce 8d10 danni da Forza. Controllare la Sfera. Una Sfera Annientatrice è immobile finché qualcuno non ne prende il controllo. Se ti trovi entro 18 metri da una sfera, puoi compiere un'azione Magia per effettuare una prova di Intelligenza (Arcano) con CD 25. Se la prova riesce, controlli la sfera fino all'inizio del tuo turno successivo, e se era sotto il controllo di un'altra creatura, quella creatura perde il controllo della sfera. Se la prova fallisce, la sfera si muove di 3 metri verso di te in linea retta. Mentre controlli la sfera, puoi compiere un'Azione Bonus per farla muovere in una direzione a tua scelta, fino a un numero di metri pari a 1,5 volte il tuo modificatore di Intelligenza (minimo 1,5 metri). Qualsiasi creatura nello spazio in cui la sfera entra deve riuscire in un tiro salvezza su Destrezza con CD 19 o esserne toccata, subendo 8d10 danni da Forza. Una creatura ridotta a 0 Punti Ferita da questi danni viene obliterata, lasciandosi dietro i suoi averi ma nessun altro resto fisico. Interazioni della Sfera.",
@@ -1156,7 +1156,7 @@
     "name": "Arma dell'Avvertimento"
   },
   "weapon-of-warning.grants.0": {
-    "description": "Vantaggio ai tiri di Iniziativa."
+    "description": "Tiri di Iniziativa"
   },
   "weapon-plus-1": {
     "description": "Ottieni un bonus di +1 ai tiri per colpire e ai danni effettuati con quest'arma magica.",
@@ -1206,10 +1206,10 @@
     "label": "Consapevolezza (Iniziativa + Percezione)"
   },
   "ioun-stone.grants.0.options.awareness.grants.0": {
-    "description": "Vantaggio ai tiri di Iniziativa."
+    "description": "Tiri di Iniziativa"
   },
   "ioun-stone.grants.0.options.awareness.grants.1": {
-    "description": "Vantaggio alle prove di Saggezza (Percezione)."
+    "description": "Prove di Saggezza (Percezione)"
   },
   "ioun-stone.grants.0.options.protection": {
     "label": "Protezione (+1 CA)"
@@ -1247,7 +1247,7 @@
     "name": "Mantello del Pipistrello"
   },
   "cloak-of-the-bat.grants.0": {
-    "description": "Vantaggio alle prove di Destrezza (Furtività) mentre indossato."
+    "description": "Prove di Destrezza (Furtività) mentre indossato"
   },
   "cloak-of-the-bat.grants.1": {
     "label": "Mantello del Pipistrello (in volo)"

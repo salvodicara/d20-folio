@@ -1590,6 +1590,24 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       `search.test.ts` (the ladder + agreement with the filter) and `command-palette.test.tsx`
       ("cover" surfaces no _Recovery_ row; "sword"/"greatsword" still resolve), fail-before/pass-after.
 
+- [x] **PS-G (rail double-listing) — the Advantages rail listed one advantage twice, in two
+      registers.** FIXED 2026-07-24. A Champion carrying a Sentinel Shield showed FOUR rows: the
+      engine pair (`Adv. Initiative rolls` / `Adv. Strength (Athletics) checks`) AND the item pair
+      restating the label (`Adv. Advantage on Initiative rolls.` / `Adv. Advantage on Wisdom
+(Perception) checks.`), with Initiative appearing twice. Both halves were real structured
+      `advantage-on` grants — the defect was the RENDER + the authoring register, not missing data.
+      Two fixes at the seams: (1) `deriveAdvantageChips` DEDUPES by the fact stated — mode +
+      rollType + `vs` + its `whileActive`/`round1` gating — so two sources granting the same
+      advantage are one line (golden rule 6; the gating is in the key so a while-active clause never
+      absorbs a permanent one); (2) the 40 catalogue grant descriptions that opened with their own
+      polarity ("Advantage on Initiative rolls." / "Vantaggio ai tiri di Iniziativa.") were
+      normalized to the terse roll-naming register the class/species grants already use ("Initiative
+      rolls" / "Tiri di Iniziativa") across EN + IT, public + pack. Locked by a new authoring guard
+      in `advantage-vs-slug.guard.test.ts` (no grant description may open with
+      Advantage/Disadvantage/Vantaggio/Svantaggio, both roots, both locales). Regression:
+      `advantage-rail.test.ts` (Champion + Sentinel Shield → each fact once, no restated label in
+      either locale), fail-before/pass-after.
+
 ---
 
 ## Correctness + exposure batch (workstream D)

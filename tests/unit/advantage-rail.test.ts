@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import { classFeatureIndex } from "@/data/classes";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { deriveAdvantageChips } from "@/lib/views/sheet-view";
-import { incomingAttackAdvantageVMs } from "@/lib/views/tracker-view";
+import { advantageChipVMs, incomingAttackAdvantageVMs } from "@/lib/views/tracker-view";
 import { buildScenario, type ScenarioSpec } from "@/lib/dev-scenarios";
 import { loc } from "../_harness/loc";
 
@@ -23,6 +23,20 @@ const BARBARIAN_7: ScenarioSpec = {
   level: 7,
   background: "soldier",
   abilityScores: { STR: 18, DEX: 14, CON: 16, INT: 8, WIS: 12, CHA: 10 },
+};
+
+// A Champion 7 (Remarkable Athlete → Advantage on Initiative + Strength (Athletics))
+// wearing a Sentinel Shield, whose grants ALSO give Advantage on Initiative +
+// Wisdom (Perception): the exact double-listing the rail used to show.
+const CHAMPION_7_SENTINEL: ScenarioSpec = {
+  name: "Roderic, Champion",
+  raceId: "human",
+  classId: "fighter",
+  subclassId: "champion",
+  level: 7,
+  background: "soldier",
+  abilityScores: { STR: 18, DEX: 14, CON: 16, INT: 10, WIS: 12, CHA: 10 },
+  equipment: [{ srdId: "sentinel-shield", equipped: true }],
 };
 
 // A Halfling (Brave — Advantage vs Frightened lives on the RACE, not features[]).
@@ -110,6 +124,35 @@ describe("the rail surfaces durable non-attack advantages", () => {
     // Real IT — never an English leak.
     expect(vmIt.description).not.toMatch(/attacks against you/i);
     expect(vmIt.description.length).toBeGreaterThan(0);
+  });
+
+  // REGRESSION (post-sweep G) — a Champion carrying a Sentinel Shield showed FOUR
+  // rail rows: the engine pair (Adv. Initiative rolls / Adv. Strength (Athletics)
+  // checks) AND the item pair in a second register (Adv. Advantage on Initiative
+  // rolls. / Adv. Advantage on Wisdom (Perception) checks.) — Initiative twice, and
+  // the item rows restating the label the row already carries.
+  it("states each distinct advantage ONCE, in one register (Champion + Sentinel Shield)", () => {
+    const doc = buildScenario(CHAMPION_7_SENTINEL);
+    const aggregate = aggregateCharacterGrants(doc.character, doc.session);
+    // The engine still aggregates both sources' clauses — nothing is lost upstream.
+    const initiativeClauses = aggregate.advantages.filter((c) => c.vs === "initiative");
+    expect(initiativeClauses.length).toBeGreaterThan(1);
+
+    // …but the rail's chip list states the FACT once (mode + rollType + vs).
+    const chips = deriveAdvantageChips(aggregate).filter((c) => c.rollType !== "attack");
+    const keys = chips.map((c) => `${c.mode}|${c.rollType}|${c.vs}`);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(keys.filter((k) => k.endsWith("|initiative"))).toHaveLength(1);
+
+    // …and every row reads in the terse roll-naming register: the row's own
+    // "Adv." label is never restated inside the description (EN + IT).
+    for (const locale of ["en", "it"] as const) {
+      for (const vm of advantageChipVMs(chips, locale)) {
+        expect(vm.description).not.toMatch(
+          /^(Advantage on|Disadvantage on|Vantaggio (ai|agli|alle)|Svantaggio (ai|agli|alle))\b/i
+        );
+      }
+    }
   });
 
   it("does NOT double-count a species advantage (race traits live outside features[])", () => {

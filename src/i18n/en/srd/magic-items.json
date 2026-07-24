@@ -128,7 +128,7 @@
     "name": "Belt of Dwarvenkind"
   },
   "belt-of-dwarvenkind.grants.4": {
-    "description": "Advantage on saving throws to avoid or end the Poisoned condition."
+    "description": "Saving throws to avoid or end the Poisoned condition"
   },
   "belt-of-giant-strength": {
     "description": "Sets your Strength score to a value based on the belt type: Hill (21), Frost/Stone (23), Fire (25), Cloud (27), Storm (29). No effect if your Strength is already equal or higher.",
@@ -161,7 +161,7 @@
     "name": "Boots of Elvenkind"
   },
   "boots-of-elvenkind.grants.0": {
-    "description": "Advantage on Dexterity (Stealth) checks that rely on moving silently."
+    "description": "Dexterity (Stealth) checks that rely on moving silently"
   },
   "boots-of-levitation": {
     "description": "As an Action, cast Levitate on yourself at will (no components needed).",
@@ -239,7 +239,7 @@
     "name": "Cloak of Elvenkind"
   },
   "cloak-of-elvenkind.grants.0": {
-    "description": "Advantage on Dexterity (Stealth) checks (hood up)."
+    "description": "Dexterity (Stealth) checks (hood up)"
   },
   "cloak-of-invisibility": {
     "description": "This cloak has 3 charges and regains 1d3 expended charges daily at dawn. While wearing the cloak, you can take a Magic action to pull its hood over your head and expend 1 charge to give yourself the Invisible condition for 1 hour. The effect ends early if you pull the hood down (no action required) or cease wearing the hood.",
@@ -310,7 +310,7 @@
     "name": "Dragon Scale Mail"
   },
   "dragon-scale-mail.grants.1": {
-    "description": "Advantage on saving throws against the breath weapons of Dragons."
+    "description": "Saving throws against the breath weapons of Dragons"
   },
   "dragon-scale-mail.grants.2": {
     "label": "Dragon Type"
@@ -408,7 +408,7 @@
     "name": "Eyes of the Eagle"
   },
   "eyes-of-the-eagle.grants.0": {
-    "description": "Advantage on Wisdom (Perception) checks that rely on sight."
+    "description": "Wisdom (Perception) checks that rely on sight"
   },
   "figurine-of-wondrous-power": {
     "description": "Master's Guide Wondrous Item, Rarity Varies A Figurine of Wondrous Power is a statuette small enough to fit in a pocket. If you take a Magic action to throw the figurine to a point on the ground within 60 feet of yourself, the figurine becomes a living creature specified in the figurine’s description below. If the space where the creature would appear is occupied by other creatures or objects, or if there isn’t enough space for the creature, the figurine doesn’t become a creature. The creature is Friendly to you and your allies. It understands your languages, obeys your commands, and takes its turn immediately after you on your Initiative count. If you issue no commands, the creature defends itself but takes no other actions. The creature exists for a duration specific to each figurine. At the end of the duration, the creature reverts to its figurine form. It reverts to a figurine early if its creature form drops to 0 Hit Points or if you take a Magic action while touching the creature to make it revert to figurine form. When the creature becomes a figurine again, its property can’t be used again until a certain amount of time has passed, as specified in the figurine’s description. Bronze Griffon (Rare) This bronze statuette is of a griffon rampant. It can become a Griffon for up to 6 hours. Once it has been used, it can’t be used again until 5 days have passed.",
@@ -549,7 +549,7 @@
     "name": "Mantle of Spell Resistance"
   },
   "mantle-of-spell-resistance.grants.0": {
-    "description": "Advantage on saving throws against spells."
+    "description": "Saving throws against spells"
   },
   "manual-of-bodily-health": {
     "description": "This book contains health and nutrition tips, and its words are charged with magic. If you spend 48 hours over a period of 6 days or fewer studying the book’s contents and practicing its guidelines, your Constitution increases by 2, to a maximum of 30. The manual then loses its magic but regains it in a century.",
@@ -584,7 +584,7 @@
     "name": "Necklace of Adaptation"
   },
   "necklace-of-adaptation.grants.0": {
-    "description": "Advantage on saving throws to avoid or end the Poisoned condition."
+    "description": "Saving throws to avoid or end the Poisoned condition"
   },
   "necklace-of-fireballs": {
     "description": "Has 1d6+3 beads. As an Action, detach and throw a bead up to 60 feet — it detonates as a Fireball (DEX DC 15, 8d6 fire). You can throw multiple beads at once for increased damage.",
@@ -623,7 +623,7 @@
     "name": "Periapt of Health"
   },
   "periapt-of-health.grants.0": {
-    "description": "Advantage on saving throws to avoid or end the Poisoned condition."
+    "description": "Saving throws to avoid or end the Poisoned condition"
   },
   "periapt-of-proof-against-poison": {
     "description": "This delicate silver chain has a brilliant-cut black gem pendant. While you wear it, you have Immunity to the Poisoned condition and Poison damage.",
@@ -795,7 +795,7 @@
     "name": "Ring of Spell Turning"
   },
   "ring-of-spell-turning.grants.0": {
-    "description": "Advantage on saving throws against spells."
+    "description": "Saving throws against spells"
   },
   "ring-of-swimming": {
     "description": "You have a Swim Speed of 40 feet while wearing this ring.",
@@ -846,7 +846,7 @@
     "name": "Robe of the Archmagi"
   },
   "robe-of-the-archmagi.grants.1": {
-    "description": "Advantage on saving throws against spells and other magical effects."
+    "description": "Saving throws against spells and other magical effects"
   },
   "robe-of-useful-items": {
     "description": "This robe has cloth patches of various shapes and colors covering it. While wearing the robe, you can take a Magic action to detach one of the patches, causing it to become the object or creature it represents. Once the last patch is removed, the robe becomes an ordinary garment. The robe has two of each of the following patches: Bullseye Lantern (filled and lit) Dagger Mirror Pole Rope (coiled) Sack In addition, the robe has 4d4 other patches. The DM chooses the patches or determines them randomly by rolling on the following table. 1d100 Patch 01-08 Bag of 100 GP 09-15 Silver coffer (1 foot long, 6 inches wide and deep) worth 500 GP 16-22 Iron door (up to 10 feet wide and 10 feet high, barred on one side of your choice), which you can place in an opening you can reach; it conforms to fit the opening, attaching and hinging itself 23-30 10 gems worth 100 GP each 31-44 Wooden ladder (24 feet long) 45-51 Riding Horse with a Riding Saddle 52-59 Open pit (a 10-foot Cube), which you can place on the ground within 10 feet of yourself 60-68 4 Potions of Healing 69-75 Rowboat (12 feet long) 76-83 Spell Scroll containing one spell of level 1, 2, or 3 (your choice) 84-90 2 Mastiffs 91-96 Window (2 feet by 4 feet, up to 2 feet deep), which you can place on a vertical surface you can reach 97-00 Portable Ram",
@@ -861,10 +861,10 @@
     "name": "Rod of Alertness"
   },
   "rod-of-alertness.grants.0": {
-    "description": "Advantage on Wisdom (Perception) checks."
+    "description": "Wisdom (Perception) checks"
   },
   "rod-of-alertness.grants.1": {
-    "description": "Advantage on Initiative rolls."
+    "description": "Initiative rolls"
   },
   "rod-of-lordly-might": {
     "description": "This rod has a flanged head, and it functions as a magic Mace that grants a +3 bonus to attack rolls and damage rolls made with it. The rod has properties associated with six different buttons that are set in a row along the haft. It has three other properties as well, detailed below. Buttons. You can press one of the following buttons as a Bonus Action; a button’s effect lasts until you push a different button or until you push the same button again, which causes the rod to revert to its normal form: Button 1. A fiery blade sprouts from the end opposite the rod’s flanged head. The flames shed Bright Light in a 40-foot radius and Dim Light for an additional 40 feet, and the blade functions as a magic Longsword or Shortsword (your choice) that deals an extra 2d6 Fire damage on a hit. Button 2. The rod’s flanged head folds down and two crescent-shaped blades spring out, transforming the rod into a magic Battleaxe that grants a +3 bonus to attack rolls and damage rolls made with it. Button 3. The rod’s flanged head folds down, a spear point springs from the rod’s tip, and the rod’s handle lengthens into a 6-foot haft, transforming the rod into a magic Spear that grants a +3 bonus to attack rolls and damage rolls made with it. Button 4. The rod transforms into a climbing pole up to 50 feet long (you specify the length), though the rod’s buttons remain within your reach. In surfaces as hard as granite, a spike at the bottom and three hooks at the top anchor the pole.",
@@ -895,7 +895,7 @@
     "name": "Scarab of Protection"
   },
   "scarab-of-protection.grants.1": {
-    "description": "Advantage on saving throws against spells."
+    "description": "Saving throws against spells"
   },
   "scimitar-of-speed": {
     "description": "You gain a +2 bonus to attack rolls and damage rolls made with this magic weapon. In addition, you can make one attack with it as a Bonus Action on each of your turns.",
@@ -910,10 +910,10 @@
     "name": "Sentinel Shield"
   },
   "sentinel-shield.grants.0": {
-    "description": "Advantage on Initiative rolls."
+    "description": "Initiative rolls"
   },
   "sentinel-shield.grants.1": {
-    "description": "Advantage on Wisdom (Perception) checks."
+    "description": "Wisdom (Perception) checks"
   },
   "shield-of-missile-attraction": {
     "description": "While holding this Shield, you have Resistance to damage from attacks made with Ranged weapons. Curse. This Shield is cursed. Attuning to it curses you until you are targeted by a Remove Curse spell or similar magic. Removing the Shield fails to end the curse on you. Whenever an attack with a Ranged weapon targets a creature within 10 feet of you, the curse causes you to become the target instead.",
@@ -952,7 +952,7 @@
     "name": "Spellguard Shield"
   },
   "spellguard-shield.grants.0": {
-    "description": "Advantage on saving throws against spells and other magical effects."
+    "description": "Saving throws against spells and other magical effects"
   },
   "sphere-of-annihilation": {
     "description": "This 2-foot-diameter black sphere is a hole in the multiverse, hovering in space and stabilized by a magical field surrounding it. The sphere obliterates all matter it passes through and all matter that passes through it. Artifacts are the exception. Unless an Artifact is susceptible to damage from a Sphere of Annihilation , it passes through the sphere unscathed. Anything else that touches the sphere but isn’t wholly engulfed and obliterated by it takes 8d10 Force damage. Controlling the Sphere. A Sphere of Annihilation is stationary until someone takes control of it. If you are within 60 feet of a sphere, you can take a Magic action to make a DC 25 Intelligence (Arcana) check. On a successful check, you control the sphere until the start of your next turn, and if it was under another creature’s control, that creature loses control of the sphere. On a failed check, the sphere moves 10 feet toward you in a straight line. While in control of the sphere, you can take a Bonus Action to cause it to move in one direction of your choice, up to a number of feet equal to 5 times your Intelligence modifier (minimum 5 feet). Any creature whose space the sphere enters must succeed on a DC 19 Dexterity saving throw or be touched by it, taking 8d10 Force damage. A creature reduced to 0 Hit Points by this damage is obliterated, leaving its possessions behind but no other physical remains. Sphere Interactions.",
@@ -1156,7 +1156,7 @@
     "name": "Weapon of Warning"
   },
   "weapon-of-warning.grants.0": {
-    "description": "Advantage on Initiative rolls."
+    "description": "Initiative rolls"
   },
   "weapon-plus-1": {
     "description": "You gain a +1 bonus to attack and damage rolls made with this magic weapon.",
@@ -1206,10 +1206,10 @@
     "label": "Awareness (Initiative + Perception)"
   },
   "ioun-stone.grants.0.options.awareness.grants.0": {
-    "description": "Advantage on Initiative rolls."
+    "description": "Initiative rolls"
   },
   "ioun-stone.grants.0.options.awareness.grants.1": {
-    "description": "Advantage on Wisdom (Perception) checks."
+    "description": "Wisdom (Perception) checks"
   },
   "ioun-stone.grants.0.options.protection": {
     "label": "Protection (+1 AC)"
@@ -1247,7 +1247,7 @@
     "name": "Cloak of the Bat"
   },
   "cloak-of-the-bat.grants.0": {
-    "description": "Advantage on Dexterity (Stealth) checks while worn."
+    "description": "Dexterity (Stealth) checks while worn"
   },
   "cloak-of-the-bat.grants.1": {
     "label": "Cloak of the Bat (gliding)"
