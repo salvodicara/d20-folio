@@ -69,7 +69,7 @@ function entrySuffix(entry: MonsterEntry, t: TFn): string {
   return "";
 }
 
-/** Feet formatted per locale, in the app's `it-IT`/`en-US` thousands grouping. */
+/** XP formatted per locale, in the app's `it-IT`/`en-US` thousands grouping. */
 function fmtXp(n: number, locale: Locale): string {
   return n.toLocaleString(locale === "it" ? "it-IT" : "en-US");
 }

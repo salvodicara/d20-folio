@@ -38,6 +38,7 @@ import { SRD_MONSTERS_L_M } from "../src/data/monsters/l-m.ts";
 import { SRD_MONSTERS_N_P } from "../src/data/monsters/n-p.ts";
 import { SRD_MONSTERS_Q_S } from "../src/data/monsters/q-s.ts";
 import { SRD_MONSTERS_T_Z } from "../src/data/monsters/t-z.ts";
+import { formatCr } from "../src/lib/utils.ts";
 import type { BeastStatBlock, MonsterStatBlock } from "../src/data/types.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -161,23 +162,6 @@ for (const key of referenced) {
 }
 
 // ── 3. Emit beasts.ts ──────────────────────────────────────────────────────────
-const formatCr = (cr: number): string =>
-  cr === 0.125 ? "1/8" : cr === 0.25 ? "1/4" : cr === 0.5 ? "1/2" : String(cr);
-
-const serialize = (v: unknown): string => {
-  if (typeof v === "number" || typeof v === "boolean") return String(v);
-  if (typeof v === "string") return JSON.stringify(v);
-  if (Array.isArray(v)) return `[${v.map(serialize).join(",")}]`;
-  if (v && typeof v === "object") {
-    const body = Object.entries(v as Record<string, unknown>)
-      .filter(([, val]) => val !== undefined)
-      .map(([k, val]) => `${JSON.stringify(k)}:${serialize(val)}`)
-      .join(",");
-    return `{${body}}`;
-  }
-  throw new Error(`[sync] cannot serialize ${String(v)}`);
-};
-
 const header = `/**
  * The Beast stat-block catalogue — Polymorph / True Polymorph forms.
  *
@@ -202,7 +186,7 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
 const body = beasts
   .map((b) => {
     const name = enBeasts[b.id]?.name ?? b.id;
-    return `  // ${name} (2024 SRD 5.2.1). AC ${b.ac}, HP ${b.hp}, CR ${formatCr(b.cr)}.\n  ${serialize(b)},`;
+    return `  // ${name} (2024 SRD 5.2.1). AC ${b.ac}, HP ${b.hp}, CR ${formatCr(b.cr)}.\n  ${JSON.stringify(b)},`;
   })
   .join("\n");
 

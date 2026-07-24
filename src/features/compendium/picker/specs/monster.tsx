@@ -41,9 +41,6 @@ const CR_BANDS: ReadonlyArray<{ id: string; range: [number, number]; label: stri
   { id: "17-up", range: [17, 30], label: "17+" },
 ];
 
-const SIZES: readonly CreatureSize[] = [...CREATURE_SIZE_ORDER];
-const TYPES: readonly CreatureType[] = [...ALL_CREATURE_TYPES];
-
 /** Resolve a monster's localized display name (top-level catalogue key). */
 const monName = (m: MonsterStatBlock, locale: Locale) =>
   localizeSrd("monster", m.id, "name", locale);
@@ -145,7 +142,7 @@ export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
             active={value === null}
             onClick={() => setValue(null)}
           />
-          {SIZES.map((size) => (
+          {CREATURE_SIZE_ORDER.map((size) => (
             <FilterChip
               key={size}
               label={t(`srd.size_${size.toLowerCase()}`)}
@@ -168,7 +165,7 @@ export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
             active={value === null}
             onClick={() => setValue(null)}
           />
-          {TYPES.map((type) => (
+          {ALL_CREATURE_TYPES.map((type) => (
             <FilterChip
               key={type}
               label={t(`srd.creatureType_${type}`)}

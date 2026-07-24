@@ -585,7 +585,10 @@ the bilingual bestiary corpus never joins the eager closure. `ensureSrdKind(kind
 idempotently loads a lazy kind for every currently-loaded locale and marks it RESIDENT; `ensureLocale`
 then carries every resident lazy kind into any locale loaded LATER (a language switch after the bestiary
 was opened lands with the corpus already resolvable — the "load before flip" guarantee, extended). The
-one seam every lazy-kind consumer awaits is the compendium specs barrel's top-level `await ensureSrdKind`.
+gate every lazy-kind consumer awaits lives at the two registry consumers — the `CompendiumPage` lazy
+factory (`router.tsx`, `Promise.all([import(…), ensureSrdKind("monster")])`) and the `CommandPalette`
+specs-import effect — DELIBERATELY not a specs-barrel top-level await, which would make that barrel an
+async module and fragment Rolldown's eager chunk graph (the exact regression `fix(build)` b363626 removed).
 Lock 1 covers the tier unchanged: an un-ensured lazy kind resolves through `?.[kind]?.` to the SAME
 throwing missing path, so any monster-string site not behind the ensure seam fails CI loudly.
 
