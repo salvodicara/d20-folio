@@ -1435,6 +1435,22 @@ canonical recipes, never re-rolled:
   EVERY desk card rides this one chrome — Chronicle, Sessions, Shared-notes, Treasury, **Access**
   (the compressed invite + lock), and **DM Tools** — via the optional `className` prop (the full-width
   bands pass `lg:col-span-2`); no parallel section component exists.
+- **On-demand reference section → `SectionHeader disclosure` (HEADER is the toggle)** (owner-ratified
+  2026-07-24): DISTINCT from the hub's fixed-panel model above. For a section whose WHOLE body is
+  optional reference — the Play (Combat) tab's two foot blocks, the **combat playbook**
+  (`CombatAlgorithm`) and the **SRD rules reference** (`SituationalRules`), wrapped in the shared
+  `ReferenceSection` — the section reads as JUST its quiet folio header row when collapsed, and clicking
+  the header **blooms the whole body in place** (the whole flowchart / the whole 2×2 topic grid — no
+  per-topic sub-accordions). `SectionHeader`'s opt-in `disclosure` prop makes the entire `.sec-head` row
+  the click target (a stretched-overlay `.sec-toggle::before`, the UniversalCard whole-row idiom) with a
+  gilt `--accent-text` chevron that rotates 180° on open; `aria-expanded`/`aria-controls` wire the
+  `.section-detail-wrap` reveal (the SAME `grid-template-rows: 0fr → 1fr` recipe, reduced-motion
+  instant). Collapsed by default (a missing key = closed — no first-run special casing); the open/closed
+  choice is **remembered per user** in `uiStore.playRefSections` (persisted, survives tab switches +
+  reloads) and the ⌘K palette can drive the same slice to open a section on demand. Why the header (not
+  the hub's bottom chevron): these sections have NO always-visible fixed panel to sit above — the header
+  IS all that shows when closed, so the header is the natural affordance. The hub's "toggle NOT on the
+  header" ruling still governs `SectionPanel`, whose header sits over a permanent fixed panel.
 - **Campaign-hub MANAGE band → read-frequency dashboard** (`CampaignHubPage.tsx`, `.campaign-hub-grid`):
   below the always-open full-width PLAY band (the Party), the MANAGE sections sit in a two-column grid
   (`grid-cols-1 lg:grid-cols-2`, `gap-x-6 gap-y-12`, `items-start`) read top-to-bottom in vertical

@@ -5,11 +5,16 @@
  * were authored for; it pins that all four topics render, both locales resolve,
  * and travel-pace distances localize through the D3 helpers (feet + miles).
  */
-import { describe, it, expect, afterEach } from "vitest";
-import { render } from "@testing-library/react";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import i18n from "@/i18n";
 import { SituationalRules } from "@/features/character/center/tabs/SituationalRules";
+import { useUIStore } from "@/stores/uiStore";
 
+beforeEach(() => {
+  // Both foot blocks default collapsed (a missing key = closed).
+  useUIStore.setState({ playRefSections: {} });
+});
 afterEach(async () => {
   await i18n.changeLanguage("en");
 });
@@ -42,5 +47,24 @@ describe("SituationalRules — Play-tab rules-reference surface", () => {
     // 400 ft → 120 m, 30 mi → 48 km via the D3 helpers.
     expect(text).toContain("120 m al minuto");
     expect(text).toContain("48 km al giorno");
+  });
+
+  it("is collapsed by default — the header toggle reads unexpanded", async () => {
+    await i18n.changeLanguage("en");
+    const { container } = render(<SituationalRules />);
+    const toggle = screen.getByRole("button", { name: /show rules reference/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(container.querySelector(".section-detail-wrap")).not.toHaveAttribute(
+      "data-open"
+    );
+  });
+
+  it("blooms the whole body in place when the header is clicked", async () => {
+    await i18n.changeLanguage("en");
+    const { container } = render(<SituationalRules />);
+    fireEvent.click(screen.getByRole("button", { name: /show rules reference/i }));
+    const toggle = screen.getByRole("button", { name: /hide rules reference/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(container.querySelector(".section-detail-wrap")).toHaveAttribute("data-open");
   });
 });

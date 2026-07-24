@@ -194,6 +194,55 @@ svg.icon[stroke],
 [data-theme="light"] .sec-rule {
   --rule-c: color-mix(in oklab, var(--accent-text) 45%, transparent);
 }
+/* ── Header-as-disclosure (owner-ratified 2026-07-24) — the opt-in SectionHeader
+   toggle for on-demand reference sections (the Play tab's collapsed-by-default
+   combat playbook + rules reference). The WHOLE rubric row is the click target
+   (the `.sec-toggle::before` overlay, mirroring the UniversalCard whole-row idiom);
+   a gilt chevron in the trailing slot rotates 180° when the body blooms. Inherits
+   the rubric's `--accent-text` gold, so it reads on BOTH themes. ── */
+.sec-head.is-toggle {
+  position: relative;
+  cursor: pointer;
+}
+.sec-toggle {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--accent-text);
+  cursor: pointer;
+}
+/* Stretch the hit area over the WHOLE header row (`.sec-head.is-toggle` is the
+   positioned ancestor) so clicking anywhere on the rubric blooms the body. */
+.sec-toggle::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.sec-toggle-chevron {
+  position: relative;
+  transition: transform var(--m-normal) var(--ease-standard);
+}
+.sec-toggle-chevron.is-open {
+  transform: rotate(180deg);
+}
+.sec-head.is-toggle:hover .sec-toggle {
+  color: var(--accent-primary-bright);
+}
+/* The compact focus ring rides the small knob, not the page-wide row overlay. */
+.sec-toggle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+[data-motion="reduced"] .sec-toggle-chevron {
+  transition: none;
+}
 /* Economy-typed section headers (Reactions · Base Actions) — colour them by
    action type so they scan like the ActionGroup headers, NOT the generic gold
    rubric (owner: "why is Reazioni gold not red? Azioni Base should be green").
@@ -12358,6 +12407,9 @@ textarea.input.sess-notes-edit {
 }
 .section-detail-wrap[data-open] {
   grid-template-rows: 1fr;
+}
+[data-motion="reduced"] .section-detail-wrap {
+  transition: none;
 }
 .section-detail {
   min-height: 0;

@@ -14,7 +14,6 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { SectionHeader } from "@/components/shared/SectionHeader";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { useLocale } from "@/hooks/useLocale";
 import { localeDistance, localeMiles } from "@/lib/utils";
@@ -22,6 +21,11 @@ import {
   buildSituationalRulesView,
   type RuleLineVM,
 } from "@/lib/views/situational-rules-view";
+import { ReferenceSection } from "../ReferenceSection";
+import { PLAY_REF_ANCHOR, type PlayRefSection } from "../play-reference";
+
+/** This block is the persisted "rules" reference section (collapsed by default). */
+const SECTION: PlayRefSection = "rules";
 
 /** One reference topic (a heading + its name→summary rows). */
 function TopicCard({ title, rows }: { title: string; rows: readonly RuleLineVM[] }) {
@@ -46,13 +50,12 @@ export function SituationalRules() {
   const view = buildSituationalRulesView(locale);
 
   return (
-    <section className="mt-6" aria-labelledby="rules-ref-head">
-      <SectionHeader
-        as="h3"
-        id="rules-ref-head"
-        title={t("combat.rulesReference.title")}
-      />
-      <p className="mt-1 text-xs text-text-tertiary">{t("combat.rulesReference.hint")}</p>
+    <ReferenceSection
+      id={SECTION}
+      anchorId={PLAY_REF_ANCHOR[SECTION]}
+      title={t("combat.rulesReference.title")}
+    >
+      <p className="text-xs text-text-tertiary">{t("combat.rulesReference.hint")}</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <TopicCard title={t("combat.rulesReference.cover")} rows={view.cover} />
         <TopicCard title={t("combat.rulesReference.mounted")} rows={view.mounted} />
@@ -84,6 +87,6 @@ export function SituationalRules() {
           </dl>
         </InfoCard>
       </div>
-    </section>
+    </ReferenceSection>
   );
 }

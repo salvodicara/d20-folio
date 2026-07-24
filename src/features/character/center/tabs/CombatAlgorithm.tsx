@@ -53,7 +53,12 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { cn } from "@/lib/utils";
 import { parseInline } from "@/components/shared/parseInline";
+import { ReferenceSection } from "../ReferenceSection";
+import { PLAY_REF_ANCHOR, type PlayRefSection } from "../play-reference";
 import type { CombatAlgorithmStep } from "@/types/character";
+
+/** This block is the persisted "playbook" reference section (collapsed by default). */
+const SECTION: PlayRefSection = "playbook";
 
 // The folio icon registry + resolver + picker now live in the shared
 // `@/components/shared/icon-picker` module (reused by the custom-feature form, #78).
@@ -235,39 +240,29 @@ export function CombatAlgorithm() {
 
   if (steps.length === 0 && !isEdit) {
     return (
-      <div className="mt-8">
-        <SectionHeader title={t("algorithm.title")} />
+      <ReferenceSection
+        id={SECTION}
+        anchorId={PLAY_REF_ANCHOR[SECTION]}
+        title={t("algorithm.title")}
+      >
         <InfoCard className="algo-empty">
           <span className="ai-glyph" aria-hidden>
             <Icon as={ListChecks} size="lg" decorative />
           </span>
           <p>{t("algorithm.empty")}</p>
         </InfoCard>
-      </div>
+      </ReferenceSection>
     );
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  return (
-    <div className="mt-8">
-      <SectionHeader
-        title={t("algorithm.title")}
-        meta={
-          isEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setImportOpen(true)}
-              aria-label={t("algorithm.importJSON")}
-            >
-              <Icon as={Upload} size="sm" decorative />
-              {t("algorithm.importJSON")}
-            </Button>
-          )
-        }
-      />
-
+  // The shared playbook body — the intro gloss + the numbered flowchart spine
+  // (which branches on edit mode for the per-step / add-step affordances). The
+  // JSON-import modal rides here too but only ever opens in edit mode (its sole
+  // trigger is the edit header below), so play mode never mounts it.
+  const flow = (
+    <>
       {/* JSON Import Modal — mounted per open so the box re-seeds from the LIVE
           steps every time: the CURRENT algorithm as editable JSON when one
           exists, the worked example only when empty (owner directive). */}
@@ -444,7 +439,43 @@ export function CombatAlgorithm() {
           </li>
         )}
       </ol>
-    </div>
+    </>
+  );
+
+  // Edit mode — the editor stays fully expanded (a collapsed editor makes no
+  // sense); the JSON-import action docks in the header meta.
+  if (isEdit) {
+    return (
+      <div className="mt-8">
+        <SectionHeader
+          title={t("algorithm.title")}
+          meta={
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setImportOpen(true)}
+              aria-label={t("algorithm.importJSON")}
+            >
+              <Icon as={Upload} size="sm" decorative />
+              {t("algorithm.importJSON")}
+            </Button>
+          }
+        />
+        {flow}
+      </div>
+    );
+  }
+
+  // Play mode — an on-demand reference section: collapsed to just its header by
+  // default, blooming the whole flowchart on click (persisted per user).
+  return (
+    <ReferenceSection
+      id={SECTION}
+      anchorId={PLAY_REF_ANCHOR[SECTION]}
+      title={t("algorithm.title")}
+    >
+      {flow}
+    </ReferenceSection>
   );
 }
 

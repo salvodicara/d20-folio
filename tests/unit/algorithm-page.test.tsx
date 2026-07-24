@@ -91,6 +91,40 @@ describe("CombatAlgorithm", () => {
     expect(screen.queryByRole("button", { name: "Move up" })).not.toBeInTheDocument();
   });
 
+  it("is collapsed by default in play mode — the header toggle reads unexpanded", () => {
+    useUIStore.setState({ sheetMode: "play", playRefSections: {} });
+    load();
+    const { container } = renderPage();
+    const toggle = screen.getByRole("button", { name: /show combat algorithm/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(container.querySelector(".section-detail-wrap")).not.toHaveAttribute(
+      "data-open"
+    );
+  });
+
+  it("blooms the whole flowchart in place when the play-mode header is clicked", () => {
+    useUIStore.setState({ sheetMode: "play", playRefSections: {} });
+    load();
+    const { container } = renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /show combat algorithm/i }));
+    expect(
+      screen.getByRole("button", { name: /hide combat algorithm/i })
+    ).toHaveAttribute("aria-expanded", "true");
+    expect(container.querySelector(".section-detail-wrap")).toHaveAttribute("data-open");
+  });
+
+  it("does not collapse in edit mode — the editor stays fully expanded", () => {
+    useUIStore.setState({ sheetMode: "edit", playRefSections: {} });
+    load();
+    renderPage();
+    // Edit mode is the build-time editor, not on-demand reference — no toggle.
+    expect(
+      screen.queryByRole("button", { name: /show combat algorithm/i })
+    ).not.toBeInTheDocument();
+    // The editor body is directly present (a step title rides an Input, expanded).
+    expect(screen.getByDisplayValue("Battlefield Control")).toBeInTheDocument();
+  });
+
   it("surfaces the Import-from-JSON action only in edit mode", () => {
     load();
     useUIStore.setState({ sheetMode: "edit" });

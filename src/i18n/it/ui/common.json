@@ -67,6 +67,8 @@
     "quantity": "Quantità",
     "showMore": "Mostra tutto",
     "showLess": "Mostra meno",
+    "showSection": "Mostra {{section}}",
+    "hideSection": "Nascondi {{section}}",
     "deleted": "{{name}} eliminato",
     "notesPlaceholder": "Aggiungi note personali...",
     "descriptionPlaceholder": "Aggiungi una descrizione...",

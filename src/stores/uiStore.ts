@@ -21,6 +21,14 @@ interface UIState {
    * the palette footer chip all open the ONE sheet through a single seam.
    */
   shortcutsOpen: boolean;
+  /**
+   * Open/closed state of the on-demand Play-tab reference sections (the combat
+   * playbook + the SRD rules reference), keyed by their stable id
+   * (`play-reference.ts` → PLAY_REF_SECTIONS). PERSISTED per user (survives tab
+   * switches + reloads); a missing key = CLOSED, so both foot blocks default
+   * collapsed to just their header (no first-run special casing).
+   */
+  playRefSections: Record<string, boolean>;
   setTheme: (theme: Theme) => void;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
@@ -28,6 +36,8 @@ interface UIState {
   toggleSheetMode: () => void;
   setReportOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
+  /** Set one Play-tab reference section's open/closed state (persisted). */
+  setPlayRefOpen: (id: string, open: boolean) => void;
 }
 
 function applyTheme(theme: Theme): void {
@@ -46,6 +56,7 @@ export const useUIStore = create<UIState>()(
       sheetMode: "play",
       reportOpen: false,
       shortcutsOpen: false,
+      playRefSections: {},
       setTheme: (theme) => {
         applyTheme(theme);
         set({ theme });
@@ -57,12 +68,15 @@ export const useUIStore = create<UIState>()(
         set((s) => ({ sheetMode: s.sheetMode === "play" ? "edit" : "play" })),
       setReportOpen: (open) => set({ reportOpen: open }),
       setShortcutsOpen: (open) => set({ shortcutsOpen: open }),
+      setPlayRefOpen: (id, open) =>
+        set((s) => ({ playRefSections: { ...s.playRefSections, [id]: open } })),
     }),
     {
       name: "d20-folio-ui",
       partialize: (state) => ({
         theme: state.theme,
         sheetMode: state.sheetMode,
+        playRefSections: state.playRefSections,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

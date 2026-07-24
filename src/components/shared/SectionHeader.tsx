@@ -6,10 +6,18 @@
  * that want just the rubric use it directly, so the ~8-line `.sec-head` markup
  * stops being re-declared in every tab/modal (it was hand-rolled in ~15 places plus
  * two private `SectionHeader` copies in LevelUpModal + BioTab). Purely presentational
- * and STATIC — a header is a rubric, never a control. The campaign hub's disclosure
- * (the {@link "@/features/campaigns/SectionPanel"} detail toggle) lives on a worded
- * footer button INSIDE the panel, never on this header (B5/D4 — owner: the toggle on
- * the header "is NOT intuitive").
+ * by default — a header is a rubric. The campaign hub's disclosure (the
+ * {@link "@/features/campaigns/SectionPanel"} detail toggle) keeps its chevron on a
+ * button docked at the card's BOTTOM edge, NOT on this header, because it always
+ * shows a fixed panel and only folds the BULKY detail (B5/D4).
+ *
+ * The one OPT-IN control mode is `disclosure`: for a section whose WHOLE body is
+ * on-demand reference (the Play tab's collapsed-by-default combat playbook + rules
+ * reference), the header rubric IS the disclosure trigger — the whole row toggles
+ * (a stretched-overlay `.sec-toggle` mirroring the UniversalCard whole-row idiom)
+ * with a rotating chevron + `aria-expanded`/`aria-controls`. When collapsed the
+ * section reads as just this quiet header row; clicking blooms the body in place.
+ * (Owner-ratified 2026-07-24 — distinct from the hub's fixed-panel model above.)
  *
  * A NUMERIC section count rides the `count` prop instead: it renders as a struck gilt
  * MEDALLION docked BESIDE the title (between the title and the fading rule), the
@@ -26,7 +34,26 @@
  */
 
 import type { HTMLAttributes, ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+
+/**
+ * Opt-in header-as-disclosure config (see the module doc). When present the whole
+ * `.sec-head` row becomes the accordion toggle: a stretched-overlay button with a
+ * rotating chevron. Mutually exclusive with `count`/`meta` in practice (the toggle
+ * takes the trailing slot).
+ */
+export interface SectionDisclosure {
+  /** Whether the disclosed body is currently open. */
+  open: boolean;
+  /** Toggle the body open/closed. */
+  onToggle: () => void;
+  /** DOM id of the body region this header controls (`aria-controls`). */
+  controlsId: string;
+  /** Bilingual accessible name for the toggle, reflecting the current state. */
+  label: string;
+}
 
 export interface SectionHeaderProps extends Omit<
   HTMLAttributes<HTMLDivElement>,
@@ -47,6 +74,8 @@ export interface SectionHeaderProps extends Omit<
   as?: "h2" | "h3" | "h4";
   /** Placed on the heading element (so a `<section aria-labelledby>` can target it). */
   id?: string;
+  /** Opt-in header-as-disclosure — makes the whole rubric row an accordion toggle. */
+  disclosure?: SectionDisclosure;
 }
 
 export function SectionHeader({
@@ -58,6 +87,7 @@ export function SectionHeader({
   as: Heading = "h3",
   className,
   id,
+  disclosure,
   ...rest
 }: SectionHeaderProps) {
   return (
@@ -66,6 +96,7 @@ export function SectionHeader({
         "sec-head",
         tight && "tight",
         count != null && "has-count",
+        disclosure && "is-toggle",
         className
       )}
       {...rest}
@@ -78,6 +109,27 @@ export function SectionHeader({
       {count != null ? <span className="sec-count">{count}</span> : null}
       <span className="sec-rule" aria-hidden />
       {meta ? <span className="sec-meta">{meta}</span> : null}
+      {disclosure ? (
+        // The whole header row is the toggle: this button's `::before` stretches
+        // over the `.sec-head` (position: relative) so clicking the rubric blooms
+        // the body — the UniversalCard whole-row idiom. The heading stays a real
+        // heading sibling (document outline + `aria-labelledby` target intact).
+        <button
+          type="button"
+          className="sec-toggle"
+          aria-expanded={disclosure.open}
+          aria-controls={disclosure.controlsId}
+          aria-label={disclosure.label}
+          onClick={disclosure.onToggle}
+        >
+          <Icon
+            as={ChevronDown}
+            size="sm"
+            decorative
+            className={cn("sec-toggle-chevron", disclosure.open && "is-open")}
+          />
+        </button>
+      ) : null}
     </div>
   );
 }
