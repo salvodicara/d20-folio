@@ -10,6 +10,7 @@
     "hover": "librarsi",
     "initiative": "Iniziativa",
     "telepathy": "Telepatia {{dist}}",
+    "telepathyOneWay": "(non consente alla creatura interlocutrice di rispondere telepaticamente)",
     "langUnderstands": "capisce {{langs}} ma non può parlare",
     "langPlusAny_one": "{{langs}} più 1 lingua a scelta",
     "langPlusAny_other": "{{langs}} più {{count}} lingue a scelta",

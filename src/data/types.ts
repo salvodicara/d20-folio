@@ -1877,6 +1877,11 @@ export interface MonsterLanguages {
    *  renders as a separate "understands … but can't speak" clause. */
   understandsOnlyIds?: ReadonlyArray<string>;
   telepathyFt?: number;
+  /** Telepathy "(doesn't allow the receiving creature to respond
+   *  telepathically)" — the recurring one-way-telepathy print qualifier;
+   *  renders as a text affix beside the telepathy distance (§A.4 closed-set
+   *  qualifier, D-10). Only valid alongside `telepathyFt`. */
+  telepathyOneWay?: true;
   /** "plus any N languages" (NPC-style prints). */
   plusAnyCount?: number;
   /** Irregular closed prints: "the languages it knew in life" (`knew-in-life`)

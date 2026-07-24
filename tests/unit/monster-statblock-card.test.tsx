@@ -61,4 +61,16 @@ describe("MonsterStatBlockCard", () => {
     );
     expect(line.textContent).not.toMatch(/Resistances\s*,/);
   });
+
+  it("renders the one-way-telepathy affix beside the distance (otyugh)", () => {
+    const otyugh = getMonster("otyugh");
+    if (!otyugh) throw new Error("pilot monster 'otyugh' missing");
+    const { container } = render(<MonsterStatBlockCard monster={otyugh} locale="en" />);
+    const line = Array.from(container.querySelectorAll(".mon-line")).find((el) =>
+      el.textContent.includes("Telepathy")
+    );
+    if (!line) throw new Error("languages line did not render");
+    expect(line.textContent).toContain("Telepathy 120 ft");
+    expect(line.textContent).toContain("(recipients can't respond telepathically)");
+  });
 });

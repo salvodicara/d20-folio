@@ -374,7 +374,7 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 16, DEX: 11, CON: 19, INT: 6, WIS: 13, CHA: 6 },
     saveProficiencies: ["CON"],
     senses: { darkvisionFt: 120 },
-    languages: { ids: ["otyugh"], telepathyFt: 120 },
+    languages: { ids: ["otyugh"], telepathyFt: 120, telepathyOneWay: true },
     actions: [
       { id: "multiattack", kind: "narrative" },
       {

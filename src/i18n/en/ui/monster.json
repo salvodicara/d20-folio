@@ -10,6 +10,7 @@
     "hover": "hover",
     "initiative": "Initiative",
     "telepathy": "Telepathy {{dist}}",
+    "telepathyOneWay": "(recipients can't respond telepathically)",
     "langUnderstands": "understands {{langs}} but can't speak",
     "langPlusAny_one": "{{langs}} plus any 1 language",
     "langPlusAny_other": "{{langs}} plus any {{count}} languages",

@@ -116,7 +116,9 @@ function languagesLine(m: MonsterStatBlock, t: TFn, locale: Locale): string {
     if (uo) parts.push(t("monster.langUnderstands", { langs: uo }));
   }
   if (L.telepathyFt != null) {
-    parts.push(t("monster.telepathy", { dist: localeDistance(L.telepathyFt, locale) }));
+    let tp = t("monster.telepathy", { dist: localeDistance(L.telepathyFt, locale) });
+    if (L.telepathyOneWay) tp += ` ${t("monster.telepathyOneWay")}`;
+    parts.push(tp);
   }
   return parts.join(", ");
 }

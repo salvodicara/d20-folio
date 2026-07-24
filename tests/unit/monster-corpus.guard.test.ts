@@ -187,6 +187,13 @@ describe.each(cases)("%s", (id, m) => {
     ]) {
       expect(hasSrd("language", langId, "name", "en"), `language "${langId}"`).toBe(true);
     }
+    // The one-way-telepathy affix is only meaningful beside a telepathy distance.
+    if (m.languages?.telepathyOneWay) {
+      expect(
+        m.languages.telepathyFt,
+        `${m.id} telepathyOneWay without telepathyFt`
+      ).not.toBe(undefined);
+    }
     for (const g of m.gear ?? []) {
       expect(hasSrd("equipment", g.id, "name", "en"), `gear "${g.id}"`).toBe(true);
     }
