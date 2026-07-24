@@ -2368,6 +2368,7 @@ button.pr-dot.lg::before {
   max-width: 46rem;
 }
 .modal-head {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: var(--sp-3);
@@ -2393,6 +2394,22 @@ button.pr-dot.lg::before {
     color-mix(in oklab, var(--accent-glow) 9%, var(--bg-surface-3)),
     var(--bg-surface-2)
   );
+}
+/* The ceremonial seat ornament (the STARBOUND rework's p25 divider, DESIGN.md §5):
+   a small struck four-point star in its diamond frame, leaf blades + nodes at its
+   flanks, seated ON the head's fading rule — BG3's under-title divider. The
+   per-theme `--seat-orn` SVG (index.css) straddles the 1px seat (17px tall,
+   centered on the border line); its baked surface-2 backing occludes the rule
+   behind the star, so no notch math. Decor only: no pointer events, no layout. */
+.modal-head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -9px;
+  height: 17px;
+  pointer-events: none;
+  background: var(--seat-orn) center / 168px 17px no-repeat;
 }
 .modal-rubric {
   font-family: var(--font-numeric);

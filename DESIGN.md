@@ -1472,13 +1472,15 @@ gems, tapered hairlines — never organic foliage; everything is vector (SVG dat
 theme-tintable, crisp at 1x and 2x. The grammar's placement rules:
 
 - **Ornament marks the START of a rubric, a rail-head, slot/charge pips — and, since the
-  full-BG3 push (owner-ratified 2026-07-16), the CORNERS of the earned hero frames.** A faceted
-  diamond leads a section head, caps a rail, or sits in a socket; straight runs, divider centres,
-  and scrollbar ends stay QUIET. A border is a plain hairline; a divider fades to nothing at its
-  tips. Panel corners stay quiet EXCEPT on the three reliquary registers (below) — resting cards
-  and ordinary panels never take corner goldwork. (The old free-floating corner diamonds, selection
-  crests, divider-centre nodes, and scrollbar ends stay removed — the reliquary corners are a
-  designed frame treatment on earned surfaces, not a return of scatter ornament.)
+  full-BG3 push (owner-ratified 2026-07-16), it BINDS the earned hero frames.** A faceted
+  diamond leads a section head, caps a rail, or sits in a socket; scrollbar ends stay QUIET and
+  ordinary borders are plain hairlines. On the three reliquary registers (below) the ornament
+  rides ON the frame lines themselves — corner stars, the twin rule, the ceremonial seat star —
+  never floating in the panel's content air; resting cards and ordinary panels never take frame
+  goldwork. A section divider still fades to nothing at its tips and stays nodeless; the ONE
+  centre-node divider is the ceremonial seat ornament on dialog heads (the p25 register — an
+  earned ceremony seat, not a return of scatter ornament). (The old free-floating corner
+  diamonds, selection crests, and scrollbar finials stay removed.)
 - **Ornament marks STATE.** Selection is the `--frame-selected` silver-over-bronze gradient frame
   (BG3's silvery-over-bronze adapted to the gold-leaf ramp via the per-theme
   `--metal-silver`/`--metal-bronze` pair) on the wizard hero altar + the chosen plaque, and the
@@ -1487,51 +1489,62 @@ theme-tintable, crisp at 1x and 2x. The grammar's placement rules:
 
 The pieces and their ONE home (`src/styles/folio.css`; the metal tokens in `src/index.css`):
 
-- **Reliquary corners (the Gilded Reliquary grammar — the full-BG3 push, owner-ratified
-  2026-07-16; two-tone strike + discreet-weight refinement wave 2, 2026-07-17).** The worked-gold
-  corner caps on the app's HERO frames: a small faceted corner gem seated on the border corner and
-  ONE short tapered hairline arm along each edge ending in a diamond finial — BG3's mitred-corner
-  menu framing struck in the lapidary vocabulary, at BG3's actual quietness. **The discreet-weight
-  rule (owner, 2026-07-17 — "should be a bit more discreet … is it normal they oppress the
-  text?"):** the ornament must NEVER compete with content ink — the corner unit stays a small
-  jewel (gem ≈ 7px, arm reach ≈ 33px at the desktop 48px render), and the old second "echo"
-  hairline + mid-arm diamond are DELETED (they reached within ~14px of the title's cap height —
-  frame and content ink must never share air). The two-tone strike carries the wow at the small
-  size: a small jewel that reads as worked metal beats a large flat one. EXACTLY three earned
-  registers wear it (Constitution §4.16):
-  the framed realm masthead (`.page-head.framed::before`), the gilt-framed hero band
-  (`.folio-panel.gilt-frame::after` — cockpit identity), and dialogs (`.modal::after`).
-  Mechanism: ONE per-theme 500×500 SVG (`--frame-ornate`, `src/index.css`) rendered through
-  `border-image: var(--frame-ornate) 40% / 48px / calc(48px * 0.2 + 0.5px)` on an overlay
-  pseudo — corner slices carry the ornament, edge slices are EMPTY so the element's own 1px
-  border remains the quiet run, and `border-image` proportionally shrinks corners on small boxes
-  (phone mastheads, `sm` modals). **The fitting rule (owner, 2026-07-17 — "rilegatura"):** the
-  goldwork sits ON the frame like a bookbinding corner fitting, never floating inside the panel.
-  The SVG's arm/gem centerline lies at 20% of the corner tile, so the border-image OUTSET of
-  `20% × 48px + 0.5px` seats the arms exactly on the host's 1px border stroke and the gem's
-  center on the stroke's corner vertex — the diamond caps the corner where the two arms merge;
-  the host's `--radius-xl` (8px) rounding tucks under the gem. Outset ink is paint-only overflow
+- **The Starbound Frame (the reliquary grammar reworked — owner-mandated 2026-07-23; supersedes
+  the wave-2 minimal corner unit).** The owner judged the shrunk gem-and-whisker corners "not
+  very nice" and LIKED the style of his generated ornament plates (PROMPT_24/25 — compound
+  hairline linework: a four-point star in a rotated-square frame, twin parallel rails, tapered
+  rails, dot punctuation); the raster mounting of those plates lost on physics (1254px hairlines
+  land sub-pixel at the 48px seat and average to gray), so the plates' anatomy is HAND-AUTHORED
+  as vectors drawn for the real seat scale. Per corner: a **four-point star** (≈13px) seated in a
+  **hairline diamond frame** (≈18px) ON the border vertex; a **second inner hairline** (the twin
+  rule, ~3px inside the border) launching under the star frame and running the edge; a
+  **dot-triplet** punctuating the launch; and a **concave gothic bracket** bridging the two inner
+  rails inside the corner (its cusp stays ~14px diagonal — clear of the modal eyebrow at ~22px,
+  honouring the wave-2 discreet-weight ruling: ornament ink never shares air with content ink;
+  everything rides ON the frame lines). The twin rule continues through the border-image EDGE
+  slices as **taper wedges** — straight lines stretch losslessly where arrowheads would distort —
+  so the rule leaves each corner and dissolves toward the run's middle: the p24 tapered-rail read
+  on a long masthead, a complete double-ruled frame on a dialog. EXACTLY three earned registers
+  wear it (Constitution §4.16): the framed realm masthead (`.page-head.framed::before`), the
+  gilt-framed hero band (`.folio-panel.gilt-frame::after` — cockpit identity), and dialogs
+  (`.modal::after`). Mechanism: ONE per-theme 500×500 SVG (`--frame-ornate`, `src/index.css`)
+  rendered through `border-image: var(--frame-ornate) 40% / 48px / calc(48px * 0.2 + 0.5px)` on
+  an overlay pseudo; `border-image` proportionally shrinks corners on small boxes (phone
+  mastheads, `sm` modals). **The fitting rule (owner, 2026-07-17 — "rilegatura", kept):** the
+  goldwork sits ON the frame like a bookbinding fitting — the SVG's rail/star centerline lies at
+  20% of the corner tile, so the border-image OUTSET of `20% × 48px + 0.5px` seats the rails
+  exactly on the host's 1px border stroke and the star's center on the stroke's corner vertex;
+  the host's `--radius-xl` (8px) rounding tucks under the star. Outset ink is paint-only overflow
   (no scrollbars), but it CAN be clipped by the host's own child-paint clipping — hero hosts
   therefore carry no `overflow: hidden` (`.modal` scroll-clips on `.modal-body`; the masthead
   crest self-clips via `mask-size` on an `inset: 0` element; the full-bleed `.modal-head`
   gradient band rounds its own top corners to the card radius so no child paint overruns the
   corner arc).
-  **The metal is DIMENSIONAL, not line-art (the two-tone strike):** every member carries a
-  light/shade pair, built the same way the panel embossing works. Dark = raised struck gold —
-  the gold-300 body sits on a near-black under-shadow seat offset below-right (+1.5,+2 SVG units
-  ≈ half a screen px) with a faint gold-200 top-edge glint above-left; the corner gem is truly
-  faceted (gold-200 lit top facet / gold-500 shaded lower facet / gold-700 core). Light INVERTS
-  to the letterpress logic (like `--engrave-title`): members are pressed INTO the vellum — a
-  warm-cream understroke below-right (the groove's lit far wall) + a faint umber upper shadow
-  wall under the bronze-700 body; the gem is an intaglio pair (gold-900 shaded top wall / lit
-  bronze lower wall / near-black pit core). Construction rule (guard-pinned in
-  `ornament-vocabulary.guard.test.ts`): the geometry is mirrored to the four corners UNFILLED
-  first and toned AFTER (offset tone layers over the whole four-corner closure), and the gem
-  facet group is placed per-corner unflipped via `use x/y` — toning inside the mirrored unit
-  would flip the bevel light upside-down on the bottom corners. Decor only:
-  `pointer-events: none`, no layout, no animation. ⚠️ The SVG data-URIs carry explicit
-  `width`/`height` attributes — an SVG with no intrinsic size defaults to 300×150 and
-  border-image slices sample phantom regions; the slice is a PERCENTAGE for the same reason.
+  **The metal is DIMENSIONAL, not line-art (the two-tone strike, kept from wave 2):** every
+  member carries a light/shade pair, built the same way the panel embossing works. Dark = raised
+  struck gold — the gold-300 body sits on a near-black under-shadow seat offset below-right
+  (+1.5,+2 SVG units) with a faint gold-200 top-edge glint above-left; the star is truly faceted
+  (gold-200 lit top kite / warm mid flanks / shaded foot / gold-700 core). Light INVERTS to the
+  letterpress logic (like `--engrave-title`): members are pressed INTO the vellum — a warm-cream
+  understroke below-right (the groove's lit far wall) + a faint umber upper shadow wall under the
+  bronze-700 body; the star is an intaglio facet set (gold-900 shaded top kite / lit bronze foot /
+  near-black core). Construction rule (guard-pinned in `ornament-vocabulary.guard.test.ts`): the
+  geometry is mirrored to the four corners UNFILLED first and toned AFTER (offset tone layers
+  over the whole four-corner closure), and the star facet group is placed per-corner unflipped
+  via `use x/y` — toning inside the mirrored unit would flip the bevel light upside-down on the
+  bottom corners. Decor only: `pointer-events: none`, no layout, no animation. ⚠️ The SVG
+  data-URIs carry explicit `width`/`height` attributes — an SVG with no intrinsic size defaults
+  to 300×150 and border-image slices sample phantom regions; the slice is a PERCENTAGE for the
+  same reason.
+- **The ceremonial seat ornament (same rework — the p25 divider).** Dialog heads seat BG3's exact
+  under-title divider: a small struck four-point star in its hairline diamond frame, flanked by
+  slender leaf blades and diamond nodes, seated ON the head's fading rule. The per-theme
+  `--seat-orn` SVG (`src/index.css`, drawn 1:1 at 168×17 — no border-image scaling, so hairlines
+  land on real pixels) mounts on `.modal-head::after`, straddling the 1px seat rule; its backing
+  diamond is baked in the theme's `--bg-surface-2` so the rule passes BEHIND the star (the p25
+  occlusion) with zero notch math — both faces of the seat are surface-2, so the backing is
+  invisible by construction (the bake is drift-guarded against the token). Same mirror-then-tone
+  two-tone strike at sub-pixel offsets; dark strikes gold, light letterpresses bronze.
 - **Engraved ceremonial titling** (same push) — the Cinzel register reads STRUCK into the plate
   via the per-theme `--engrave-title` text-shadow (`src/index.css`): dark = a tight shade seat +
   faint warm gold underglow; light = a letterpress bright understroke + umber lift. Applied to
@@ -1540,7 +1553,8 @@ The pieces and their ONE home (`src/styles/folio.css`; the metal tokens in `src/
   win where a title sits loose on the backdrop.
 - **The modal-head seat rule** (same push) — `.modal-head`'s bottom border is the `.sec-rule`
   idiom instead of a wall-to-wall line: a gilt-touched hairline that fades at both tips
-  (a to-right gradient through `border-image … 1` on the 1px bottom border).
+  (a to-right gradient through `border-image … 1` on the 1px bottom border). Since the Starbound
+  rework it carries the ceremonial seat ornament at its centre (the p25 divider above).
 - **Panel smoke / morning shade** (same push) — the `.folio-panel` material pseudo carries an
   edge vignette as its top background layer: dark pools candle-smoke black toward the lower edges
   (top-lit, recedes into shadow); light pools a whisper of warm umber (sunlit-from-above vellum,
@@ -1739,11 +1753,12 @@ would flag that are **intended**. Filing them as defects violates the identity g
 12. **The geometric ornament vocabulary** — the leading section-rubric diamond over its nodeless
     tip-fading `.sec-rule` divider, the diamond-marker family (rail-head node, slot/charge gem
     pips, scene-break, footer node), the silver-over-bronze `--frame-selected` selection frame,
-    the jewelry-thin scrollbars, and — since the full-BG3 push (owner-ratified 2026-07-16) — the
-    **reliquary corner goldwork** on the three earned hero frames (framed masthead, gilt hero
-    band, dialogs), the **engraved ceremonial titling**, the tapered modal-head seat rule, and the
-    panel smoke/morning-shade vignettes (§5, "The ornament vocabulary"). Ornament marks STATE,
-    leads a rubric / rail-head / slot pip, and caps an EARNED hero frame's corners; "strip the
+    the jewelry-thin scrollbars, and — since the full-BG3 push (owner-ratified 2026-07-16),
+    reworked as the **Starbound Frame** (owner-mandated 2026-07-23) — the star-and-twin-rule
+    goldwork binding the three earned hero frames (framed masthead, gilt hero band, dialogs),
+    the **ceremonial seat ornament** on dialog heads, the **engraved ceremonial titling**, and
+    the panel smoke/morning-shade vignettes (§5, "The ornament vocabulary"). Ornament marks
+    STATE, leads a rubric / rail-head / slot pip, and binds an EARNED hero frame; "strip the
     flourishes" is rejected.
 13. **The settling motion grammar** — entrances / presses / expansions ease INTO place on
     `--ease-settle` with no overshoot (BG3's "settles, never travels", §9); overshoot survives only

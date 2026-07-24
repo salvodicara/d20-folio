@@ -401,29 +401,46 @@
      struck-gold tier, folio.css): a white haze over the deep dark gold. */
   --glint-ink: rgba(255, 255, 255, 0.32);
 
-  /* § Reliquary goldwork (the full-BG3 identity push, owner-ratified 2026-07-16 —
-     DESIGN.md §5 "The ornament vocabulary"). The worked-gold CORNER ornament that
-     caps the app's hero frames (framed masthead, gilt-framed hero band, dialogs):
-     one per-theme SVG — a small faceted corner gem + ONE short tapered hairline
-     arm per edge ending in a diamond finial (the discreet-weight rule, owner
-     2026-07-17: the old echo hairline + mid-arm diamond are DELETED — ornament
-     ink never shares air with content ink) — consumed via `border-image` on an
-     overlay pseudo (the
-     `.page-head.framed::before` / `.gilt-frame::after` / `.modal::after` recipe,
-     folio.css), OUTSET so the arms lie on the host's border stroke and the gem
-     caps the corner vertex like a bookbinding fitting (owner, 2026-07-17). Data-URI because CSS custom properties cannot reach inside an
-     SVG url: each theme bakes its own metal. TWO-TONE STRIKE (wave 2, F2): the
-     metal is dimensional, not line-art — the arm/finial GEOMETRY (unfilled defs:
-     a=arm set, h=+diagonal mirror+gem silhouette, q/f=the four corners) is
-     mirrored FIRST and toned AFTER, so the light stays top-left on every corner
-     (toning inside the mirrored unit would flip the bevel upside-down on the
-     bottom corners). Dark = raised struck gold: a near-black under-shadow seat
-     (+1.5,+2) below-right + a faint gold-200 top-edge glint (-1,-1.5) under the
-     gold-300 body; the gem is truly faceted (gold-200 lit top facet / gold-500
-     shaded lower / gold-700 core), placed per-corner UNFLIPPED via use x/y.
-     Edges stay EMPTY: goldwork marks the corner, the 1px border remains the
-     quiet run. */
-  --frame-ornate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500'><defs><g id='a'><path d='M58 37.2 132 39 132 41 58 42.8Z' opacity='.92'/><path d='M138 35 143 40 138 45 133 40Z' opacity='.8'/></g><g id='h'><use href='%23a'/><use href='%23a' transform='matrix(0 1 1 0 0 0)'/><path d='M40 25 55 40 40 55 25 40Z'/></g><g id='q'><use href='%23h'/><use href='%23h' transform='matrix(-1 0 0 1 500 0)'/></g><g id='f'><use href='%23q'/><use href='%23q' transform='matrix(1 0 0 -1 0 500)'/></g><g id='g'><path d='M40 25 55 40 25 40Z' fill='%23f0d791'/><path d='M25 40 55 40 40 55Z' fill='%23b8923d'/><path d='M40 33 47 40 40 47 33 40Z' fill='%237a5f24'/></g></defs><use href='%23f' fill='%23000' opacity='.5' transform='translate(1.5 2)'/><use href='%23f' fill='%23f0d791' opacity='.32' transform='translate(-1 -1.5)'/><use href='%23f' fill='%23d4ac4d'/><use href='%23g'/><use href='%23g' x='420'/><use href='%23g' y='420'/><use href='%23g' x='420' y='420'/></svg>");
+  /* § Reliquary goldwork (the full-BG3 identity push, owner-ratified 2026-07-16;
+     the STARBOUND FRAME rework, owner-mandated 2026-07-23 — DESIGN.md §5 "The
+     ornament vocabulary"). The worked-gold frame that binds the app's hero
+     surfaces (framed masthead, gilt-framed hero band, dialogs), redrawn from the
+     owner's engraved ornament plates (PROMPT_24/25 — the style the owner LIKED;
+     the raster mounting lost on physics, so the anatomy is hand-authored vector
+     at seat scale). Per corner: a four-point star seated in a hairline diamond
+     frame ON the border vertex; a SECOND inner hairline (the twin rule, ~3px
+     inside the border) launching under the star frame and running the edge; a
+     dot-triplet punctuating the launch; and a concave gothic bracket bridging
+     the two inner rails inside the corner. The twin rule continues through the
+     border-image EDGE slices as taper wedges — straight lines stretch losslessly,
+     so the rule leaves each corner and dissolves toward the run's middle (the
+     p24 tapered-rail read; ornament ink still never shares air with content ink —
+     everything rides ON the frame lines). Consumed via `border-image` on an
+     overlay pseudo (the `.page-head.framed::before` / `.gilt-frame::after` /
+     `.modal::after` recipe, folio.css), OUTSET so the rails lie on the host's
+     border stroke and the star caps the corner vertex like a bookbinding fitting
+     (owner, 2026-07-17). Data-URI because CSS custom properties cannot reach
+     inside an SVG url: each theme bakes its own metal. TWO-TONE STRIKE (wave 2,
+     F2, kept): the metal is dimensional, not line-art — the GEOMETRY (unfilled
+     defs: a=rail+wedge+dots axis unit, h=+diagonal mirror+frame+star+bracket,
+     q/f=the four corners) is mirrored FIRST and toned AFTER, so the light stays
+     top-left on every corner (toning inside the mirrored unit would flip the
+     bevel upside-down on the bottom corners). Dark = raised struck gold: a
+     near-black under-shadow seat (+1.5,+2) below-right + a faint gold-200
+     top-edge glint (-1,-1.5) under the gold-300 body; the star is truly faceted
+     (gold-200 lit top kite / warm mid flanks / gold-700 shaded foot / deep core),
+     placed per-corner UNFLIPPED via use x/y. */
+  --frame-ornate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500'><defs><g id='a'><path d='M62 50H200V53H62Z'/><path d='M200 50 252 51.5 200 53Z'/><circle cx='98' cy='46' r='3.5'/><circle cx='108' cy='46' r='3.5'/><circle cx='118' cy='46' r='3.5'/></g><g id='h'><use href='%23a'/><use href='%23a' transform='matrix(0 1 1 0 0 0)'/><path fill-rule='evenodd' d='M40 3 77 40 40 77 3 40ZM40 8 72 40 40 72 8 40Z'/><path d='M40 12 44.2 35.8 68 40 44.2 44.2 40 68 35.8 44.2 12 40 35.8 35.8Z'/><path d='M50 90Q60 60 90 50L90 53.5Q63 63 53.5 90Z'/></g><g id='q'><use href='%23h'/><use href='%23h' transform='matrix(-1 0 0 1 500 0)'/></g><g id='f'><use href='%23q'/><use href='%23q' transform='matrix(1 0 0 -1 0 500)'/></g><g id='g'><path d='M40 12 44.2 35.8 40 40 35.8 35.8Z' fill='%23f0d791'/><path d='M12 40 35.8 35.8 40 40 35.8 44.2Z' fill='%23e2c06b'/><path d='M68 40 44.2 35.8 40 40 44.2 44.2Z' fill='%23b8923d'/><path d='M40 68 35.8 44.2 40 40 44.2 44.2Z' fill='%238a6b2a'/><path d='M40 33 47 40 40 47 33 40Z' fill='%237a5f24'/></g></defs><use href='%23f' fill='%23000' opacity='.5' transform='translate(1.5 2)'/><use href='%23f' fill='%23f0d791' opacity='.32' transform='translate(-1 -1.5)'/><use href='%23f' fill='%23d4ac4d'/><use href='%23g'/><use href='%23g' x='420'/><use href='%23g' y='420'/><use href='%23g' x='420' y='420'/></svg>");
+  /* The ceremonial seat ornament (the p25 divider, same rework): a small
+     four-point star in its hairline diamond frame, flanked by slender leaf
+     blades and diamond nodes, seated ON a centered hairline rule — BG3's exact
+     under-title divider. Drawn 1:1 at 168×17 px (no border-image scaling), the
+     star's backing diamond baked in the theme's surface-2 so the host's seat
+     rule passes BEHIND the star (p25's occlusion) with zero notch math.
+     Consumed by `.modal-head::after` (folio.css). Same mirror-then-tone strike:
+     the closure (id='s') is toned by the shade/glint/body trio; the star facets
+     (id='t') are placed unflipped. */
+  --seat-orn: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='168' height='17'><defs><g id='u'><path d='M75 8.5Q62 5.6 40 8.5Q62 11.4 75 8.5Z'/><path d='M33 5.7 35.8 8.5 33 11.3 30.2 8.5Z'/></g><g id='s'><use href='%23u'/><use href='%23u' transform='matrix(-1 0 0 1 168 0)'/><path fill-rule='evenodd' d='M84 .5 92 8.5 84 16.5 76 8.5ZM84 2.5 90 8.5 84 14.5 78 8.5Z'/><path d='M84 2 85.7 6.8 90.5 8.5 85.7 10.2 84 15 82.3 10.2 77.5 8.5 82.3 6.8Z'/></g><g id='t'><path d='M84 2 85.7 6.8 84 8.5 82.3 6.8Z' fill='%23f0d791'/><path d='M77.5 8.5 82.3 6.8 84 8.5 82.3 10.2Z' fill='%23e2c06b'/><path d='M90.5 8.5 85.7 6.8 84 8.5 85.7 10.2Z' fill='%23b8923d'/><path d='M84 15 82.3 10.2 84 8.5 85.7 10.2Z' fill='%238a6b2a'/></g></defs><path d='M84 0 92.5 8.5 84 17 75.5 8.5Z' fill='%231d1810'/><use href='%23s' fill='%23000' opacity='.5' transform='translate(.5 .8)'/><use href='%23s' fill='%23f0d791' opacity='.32' transform='translate(-.4 -.6)'/><use href='%23s' fill='%23d4ac4d'/><use href='%23t'/></svg>");
   /* Engraved ceremonial titling (same push): the struck-plate ink for the
      Cinzel register — a tight dark seat below the glyphs + a faint warm gold
      underglow, so page/modal titles read struck into the plate instead of flat
@@ -891,18 +908,21 @@
      on the already-bright gold-leaf band, not haze. */
   --glint-ink: rgba(255, 253, 244, 0.5);
 
-  /* § Reliquary goldwork, light strike (see the dark note): the corner ornament
-     is engraved burnished bronze on the ivory bands — the SAME register as the
-     masthead crest's light ink (`--accent-primary-deep`), never a pale gold that
-     would wash out on cream. Slightly higher run opacity than dark (dark ink on
-     light ground needs less luminance but more presence). TWO-TONE, INVERTED to
-     the letterpress logic (like light's --engrave-title): the members are
-     pressed INTO the vellum, so the pair flips — a warm-cream understroke
-     (+1.5,+2) below-right (light catching the groove's far wall) + a faint
-     umber upper shadow wall (-1,-1.5) under the bronze-700 body; the gem is an
-     INTAGLIO facet pair (gold-900 shaded top wall / lit #99793f lower wall /
-     near-black pit core), placed per-corner unflipped. */
-  --frame-ornate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500'><defs><g id='a'><path d='M58 37.2 132 39 132 41 58 42.8Z' opacity='.95'/><path d='M138 35 143 40 138 45 133 40Z' opacity='.85'/></g><g id='h'><use href='%23a'/><use href='%23a' transform='matrix(0 1 1 0 0 0)'/><path d='M40 25 55 40 40 55 25 40Z'/></g><g id='q'><use href='%23h'/><use href='%23h' transform='matrix(-1 0 0 1 500 0)'/></g><g id='f'><use href='%23q'/><use href='%23q' transform='matrix(1 0 0 -1 0 500)'/></g><g id='g'><path d='M40 25 55 40 25 40Z' fill='%233d2f12'/><path d='M25 40 55 40 40 55Z' fill='%2399793f'/><path d='M40 33 47 40 40 47 33 40Z' fill='%23241a08'/></g></defs><use href='%23f' fill='%23fff8e2' opacity='.6' transform='translate(1.5 2)'/><use href='%23f' fill='%233d2f12' opacity='.32' transform='translate(-1 -1.5)'/><use href='%23f' fill='%237a5f24'/><use href='%23g'/><use href='%23g' x='420'/><use href='%23g' y='420'/><use href='%23g' x='420' y='420'/></svg>");
+  /* § Reliquary goldwork, light strike (see the dark note — the STARBOUND FRAME
+     rework carries the same anatomy): the frame is engraved burnished bronze on
+     the ivory bands — the SAME register as the masthead crest's light ink
+     (`--accent-primary-deep`), never a pale gold that would wash out on cream.
+     TWO-TONE, INVERTED to the letterpress logic (like light's --engrave-title):
+     the members are pressed INTO the vellum, so the pair flips — a warm-cream
+     understroke (+1.5,+2) below-right (light catching the groove's far wall) +
+     a faint umber upper shadow wall (-1,-1.5) under the bronze-700 body; the
+     star is an INTAGLIO facet set (gold-900 shaded top kite / lit bronze foot /
+     near-black core), placed per-corner unflipped. */
+  --frame-ornate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500'><defs><g id='a'><path d='M62 50H200V53H62Z'/><path d='M200 50 252 51.5 200 53Z'/><circle cx='98' cy='46' r='3.5'/><circle cx='108' cy='46' r='3.5'/><circle cx='118' cy='46' r='3.5'/></g><g id='h'><use href='%23a'/><use href='%23a' transform='matrix(0 1 1 0 0 0)'/><path fill-rule='evenodd' d='M40 3 77 40 40 77 3 40ZM40 8 72 40 40 72 8 40Z'/><path d='M40 12 44.2 35.8 68 40 44.2 44.2 40 68 35.8 44.2 12 40 35.8 35.8Z'/><path d='M50 90Q60 60 90 50L90 53.5Q63 63 53.5 90Z'/></g><g id='q'><use href='%23h'/><use href='%23h' transform='matrix(-1 0 0 1 500 0)'/></g><g id='f'><use href='%23q'/><use href='%23q' transform='matrix(1 0 0 -1 0 500)'/></g><g id='g'><path d='M40 12 44.2 35.8 40 40 35.8 35.8Z' fill='%233d2f12'/><path d='M12 40 35.8 35.8 40 40 35.8 44.2Z' fill='%235c4519'/><path d='M68 40 44.2 35.8 40 40 44.2 44.2Z' fill='%238a6b35'/><path d='M40 68 35.8 44.2 40 40 44.2 44.2Z' fill='%2399793f'/><path d='M40 33 47 40 40 47 33 40Z' fill='%23241a08'/></g></defs><use href='%23f' fill='%23fff8e2' opacity='.6' transform='translate(1.5 2)'/><use href='%23f' fill='%233d2f12' opacity='.32' transform='translate(-1 -1.5)'/><use href='%23f' fill='%237a5f24'/><use href='%23g'/><use href='%23g' x='420'/><use href='%23g' y='420'/><use href='%23g' x='420' y='420'/></svg>");
+  /* The ceremonial seat ornament, light strike (see the dark note): the same
+     p25 divider pressed into the vellum — backing diamond baked in light's
+     surface-2 ivory, letterpress understroke/umber pair, intaglio star. */
+  --seat-orn: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='168' height='17'><defs><g id='u'><path d='M75 8.5Q62 5.6 40 8.5Q62 11.4 75 8.5Z'/><path d='M33 5.7 35.8 8.5 33 11.3 30.2 8.5Z'/></g><g id='s'><use href='%23u'/><use href='%23u' transform='matrix(-1 0 0 1 168 0)'/><path fill-rule='evenodd' d='M84 .5 92 8.5 84 16.5 76 8.5ZM84 2.5 90 8.5 84 14.5 78 8.5Z'/><path d='M84 2 85.7 6.8 90.5 8.5 85.7 10.2 84 15 82.3 10.2 77.5 8.5 82.3 6.8Z'/></g><g id='t'><path d='M84 2 85.7 6.8 84 8.5 82.3 6.8Z' fill='%233d2f12'/><path d='M77.5 8.5 82.3 6.8 84 8.5 82.3 10.2Z' fill='%235c4519'/><path d='M90.5 8.5 85.7 6.8 84 8.5 85.7 10.2Z' fill='%238a6b35'/><path d='M84 15 82.3 10.2 84 8.5 85.7 10.2Z' fill='%2399793f'/></g></defs><path d='M84 0 92.5 8.5 84 17 75.5 8.5Z' fill='%23fdf6df'/><use href='%23s' fill='%23fff8e2' opacity='.6' transform='translate(.5 .8)'/><use href='%23s' fill='%233d2f12' opacity='.32' transform='translate(-.4 -.6)'/><use href='%23s' fill='%237a5f24'/><use href='%23t'/></svg>");
   /* Engraved ceremonial titling, light strike: letterpress into vellum — a
      bright warm understroke below the dark glyphs + a whisper of umber lift. */
   --engrave-title: 0 1px 0 rgba(255, 252, 240, 0.85), 0 2px 3px rgba(74, 56, 12, 0.16);

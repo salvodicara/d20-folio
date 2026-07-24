@@ -9,15 +9,21 @@ const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8
 
 /**
  * The ornament vocabulary (BG3 identity T5 — DESIGN.md §5 "The ornament
- * vocabulary"). Pins the surviving grammar's load-bearing facts so a refactor
- * can't silently drop or re-add a piece:
+ * vocabulary"; the STARBOUND FRAME rework, owner-mandated 2026-07-23). Pins the
+ * grammar's load-bearing facts so a refactor can't silently drop or re-add a
+ * piece:
+ *   - the hero frames are bound by the per-theme Starbound `--frame-ornate`
+ *     SVG: a four-point star in a hairline diamond frame per corner, a twin
+ *     inner rail continuing through the edge slices as taper wedges, mirrored
+ *     UNFILLED first and toned AFTER (the two-tone strike);
+ *   - dialog heads seat the per-theme `--seat-orn` p25 divider, whose backing
+ *     diamond bakes the theme's own `--bg-surface-2` (drift-guarded);
  *   - selection is marked by the silver-over-bronze `--frame-selected` gradient
  *     (both themes), NOT by decorative diamonds;
- *   - the ONE divider fades at both tips and is NODELESS — the section rubric's
- *     leading `.sec-diamond` is the divider's marker;
+ *   - SECTION dividers stay tip-fading and NODELESS — the ceremonial seat is
+ *     the one centre-node divider, on dialog heads only;
  *   - the decorative diamonds trimmed in the ornament simplification stay gone
- *     (frame-corner pieces, selection/commit crest nodes, divider-centre node,
- *     scrollbar finials);
+ *     (selection/commit crest nodes, scrollbar finials);
  *   - the jewelry-thin scrollbar keeps its Firefox fence (Chromium ≥121 lets an
  *     unfenced `scrollbar-width` disable every ::-webkit-scrollbar rule).
  */
@@ -33,20 +39,38 @@ describe("ornament vocabulary (T5)", () => {
     );
   });
 
-  it("strikes the reliquary hero frame + engraved titling in BOTH themes", () => {
-    // The Gilded Reliquary chrome is per-theme (dark strikes gilt, light strikes
-    // burnished bronze), so each token MUST be defined twice — once in :root, once
-    // in the [data-theme="light"] scope. `css-token-defined.guard` only proves a
-    // token is defined SOMEWHERE, so a dropped light copy would slip past it and
-    // silently paint the light theme with no frame / flat title. This pins the pair.
+  it("strikes the Starbound frame + engraved titling in BOTH themes", () => {
+    // The frame chrome is per-theme (dark strikes gilt, light letterpresses
+    // bronze), so each token MUST be defined twice — once in :root, once in the
+    // [data-theme="light"] scope. `css-token-defined.guard` only proves a token
+    // is defined SOMEWHERE, so a dropped light copy would slip past it and
+    // silently paint the light theme with no frame / flat title.
     expect(indexCss.match(/--frame-ornate:/g)?.length).toBe(2);
+    expect(indexCss.match(/--seat-orn:/g)?.length).toBe(2);
     expect(indexCss.match(/--engrave-title:/g)?.length).toBe(2);
-    // The wave-2 TWO-TONE strike (F2): each theme's SVG tones the goldwork AFTER
-    // the four-corner mirroring — the unfilled geometry closure (id='f') is struck
-    // by ≥2 offset tone layers (shade/understroke + top glint), so the bevel light
-    // stays top-left on every corner (toning inside the mirrored unit would flip
-    // it upside-down on the bottom corners) — and the gem is a true facet group
-    // (id='g') placed per-corner UNFLIPPED via use x/y. 2 per theme = 4 total.
+    // The Starbound corner anatomy (both themes carry the same geometry):
+    // the hairline diamond frame around the star…
+    expect(
+      indexCss.match(
+        /fill-rule='evenodd' d='M40 3 77 40 40 77 3 40ZM40 8 72 40 40 72 8 40Z'/g
+      )?.length
+    ).toBe(2);
+    // …the four-point star silhouette…
+    expect(
+      indexCss.match(
+        /M40 12 44\.2 35\.8 68 40 44\.2 44\.2 40 68 35\.8 44\.2 12 40 35\.8 35\.8Z/g
+      )?.length
+    ).toBe(2);
+    // …and the twin rule's edge-slice taper wedge (straight lines stretch
+    // losslessly through border-image edges; arrowheads would distort).
+    expect(indexCss.match(/M200 50 252 51\.5 200 53Z/g)?.length).toBe(2);
+    // TWO-TONE strike: each theme's SVG tones the goldwork AFTER the
+    // four-corner mirroring — the unfilled geometry closure (id='f') is struck
+    // by ≥2 offset tone layers (shade/understroke + top glint), so the bevel
+    // light stays top-left on every corner (toning inside the mirrored unit
+    // would flip it upside-down on the bottom corners) — and the star is a true
+    // facet group (id='g') placed per-corner UNFLIPPED via use x/y. 2 per
+    // theme = 4 total.
     expect(
       indexCss.match(
         /use href='%23f' fill='%23[0-9a-f]+' opacity='[^']+' transform='translate\(/g
@@ -59,11 +83,42 @@ describe("ornament vocabulary (T5)", () => {
     expect(folioCss).toMatch(/text-shadow:\s*var\(--engrave-title\)/);
   });
 
+  it("seats the ceremonial seat ornament on dialog heads, surface-baked per theme", () => {
+    // The p25 divider straddles the modal head's 1px seat rule (17px tall,
+    // centered on the border line) — decorative only.
+    expect(folioCss).toMatch(
+      /\.modal-head::after\s*\{[^}]*background:\s*var\(--seat-orn\) center \/ 168px 17px no-repeat/
+    );
+    // Its backing diamond is baked in the theme's OWN --bg-surface-2, so the
+    // seat rule passes BEHIND the star invisibly (both faces of the seat are
+    // surface-2). Drift guard: the baked hex must equal the theme token.
+    const themes = [...indexCss.matchAll(/--seat-orn:\s*url\("([^"]+)"\)/g)].map(
+      (m) => m[1]
+    );
+    expect(themes).toHaveLength(2);
+    const surface2 = [...indexCss.matchAll(/--bg-surface-2:\s*(#[0-9a-fA-F]{6})/g)].map(
+      (m) => m[1]?.slice(1).toLowerCase()
+    );
+    expect(surface2).toHaveLength(2);
+    themes.forEach((uri, i) => {
+      expect(uri, `seat-orn theme ${i} bakes its surface-2 backing`).toContain(
+        `fill='%23${surface2[i]}'`
+      );
+      // Same mirror-then-tone strike as the corners: the closure (id='s') is
+      // struck by 2 offset tone layers per theme.
+      expect(
+        uri.match(
+          /use href='%23s' fill='%23[0-9a-f]+' opacity='[^']+' transform='translate\(/g
+        )?.length
+      ).toBe(2);
+    });
+  });
+
   it("seats the goldwork ON the frame like a bookbinding fitting (owner, 2026-07-17)", () => {
-    // The SVG's arm/gem centerline lies at 20% of the corner tile; the
-    // border-image OUTSET of `20% of the 48px tile + 0.5px` puts the arms on the
-    // host's 1px border stroke and the gem's center on the corner vertex — the
-    // regression this pins is the ornament drifting back INSIDE the panel.
+    // The SVG's rail/star centerline lies at 20% of the corner tile; the
+    // border-image OUTSET of `20% of the 48px tile + 0.5px` puts the rails on
+    // the host's 1px border stroke and the star's center on the corner vertex —
+    // the regression this pins is the ornament drifting back INSIDE the panel.
     expect(folioCss).toMatch(
       /border-image:\s*var\(--frame-ornate\) 40% \/ 48px \/ calc\(48px \* 0\.2 \+ 0\.5px\)/
     );
@@ -103,7 +158,7 @@ describe("ornament vocabulary (T5)", () => {
     );
   });
 
-  it("keeps the ONE divider anatomy: both tips fade, NODELESS (leading .sec-diamond marks it)", () => {
+  it("keeps the SECTION divider anatomy: both tips fade, NODELESS (leading .sec-diamond marks it)", () => {
     const rule = folioCss.slice(
       folioCss.indexOf(".sec-rule {"),
       folioCss.indexOf('[data-theme="light"] .sec-rule')
@@ -112,7 +167,8 @@ describe("ornament vocabulary (T5)", () => {
     expect(rule).toMatch(
       /transparent,\s*var\(--rule-c\) 14%,\s*var\(--rule-c\) 86%,\s*transparent/
     );
-    // No centre node on the rule anymore.
+    // No centre node on SECTION rules — the ceremonial seat ornament is the one
+    // centre-node divider, and it lives on dialog heads only.
     expect(folioCss).not.toMatch(/\.sec-rule::after/);
     // The section rubric's leading diamond is the divider's marker.
     expect(folioCss).toMatch(/\.sec-diamond\s*\{/);
