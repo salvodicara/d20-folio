@@ -65,7 +65,13 @@ the owner hand-writes an artifact is a bug.
    seam every caller routes through, and ship the regression test (rule 13). A missing derived
    value means the engine failed: fix it at the seam (a `Grant` kind + evaluator branch +
    consumer), NEVER hand-declare a derived value or regex over prose. Declare the least; infer the
-   rest. Never default a value the type or domain guarantees non-null (`?? 0` / `?? ""` / `?? []`
+   rest. **The repo boundary is not a scope boundary** (owner, 2026-07-24): reason every change
+   against the FULL D&D 2024 game — the wikidot source, the BG3 reference, and the pack's non-SRD
+   content — never only the SRD subset the public repo ships; the SRD-only public build is a
+   LICENSING partition, never a reasoning partition. When a change's blast radius reaches the private
+   content-pack (data, i18n, tests, docs), the pack-side update ships as part of the SAME unit of
+   work — every consumer across the licensing seam is fixed together, never deferred to a follow-up.
+   Never default a value the type or domain guarantees non-null (`?? 0` / `?? ""` / `?? []`
    or any equivalent fallback) to satisfy the compiler or move faster — an unjustified fallback
    silently converts a bug into wrong data; prove the invariant instead (thread a required prop
    from where it holds, or assert at the boundary where the guarantee enters).
