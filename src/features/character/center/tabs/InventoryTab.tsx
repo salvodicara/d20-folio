@@ -385,7 +385,9 @@ export function InventoryTab() {
             <span
               className="toolbar-chip"
               data-state={encumbrance.over ? "danger" : undefined}
-              title={t("equipment.encumbranceHint")}
+              title={t("equipment.encumbranceHint", {
+                pushDragLift: formatWeight(encumbrance.pushDragLift, locale),
+              })}
             >
               {formatWeight(encumbrance.carried, locale)} /{" "}
               {formatWeight(encumbrance.capacity, locale)}

@@ -250,6 +250,8 @@ export interface AttunementVM {
 export interface EncumbranceVM {
   carried: number;
   capacity: number;
+  /** Push/drag/lift ceiling = STR × 30 lb (twice `capacity`); shown in the capacity tooltip (2024 PHB). */
+  pushDragLift: number;
   over: boolean;
 }
 
@@ -838,10 +840,11 @@ export function buildInventoryViewModel(
   const carried =
     weapons.reduce((s, w) => s + w.weight * w.quantity, 0) +
     items.reduce((s, i) => s + i.weight * i.quantity, 0);
-  const capacity = carryingCapacity(effectiveScores.STR).carry;
+  const { carry: capacity, pushDragLift } = carryingCapacity(effectiveScores.STR);
   const encumbrance: EncumbranceVM = {
     carried,
     capacity,
+    pushDragLift,
     over: carried > capacity,
   };
 

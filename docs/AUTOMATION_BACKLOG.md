@@ -379,9 +379,13 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       STR (a set-STR item raises it), the same single source the encumbrance capacity uses (rule 6);
       read-only because no SRD grant modifies jump. Regression: `left-hud.test.tsx` (EN 8/2 ft, IT
       2,4/0,6 m). **T3.**
-- [ ] **RA-27 — Push/drag/lift (STR×30) computed but never shown.** _Encumbrance · GAP · S3._
-      `carryingCapacity().pushDragLift` unused; the carry comparison ships. One line on the
-      inventory encumbrance VM. **T3.**
+- [x] **RA-27 — Push/drag/lift (STR×30) computed but never shown.** _Encumbrance · GAP · S3._
+      `carryingCapacity().pushDragLift` unused; the carry comparison ships. **SHIPPED (2026-07-24):**
+      the push/drag/lift ceiling (STR × 30) now rides the inventory `EncumbranceVM` (`pushDragLift`,
+      twice `capacity`, reusing the single `carryingCapacity` call whose dead half it was) and prints
+      in the capacity chip's tooltip, locale-formatted via `formatWeight` (EN lb / IT kg). Reads the
+      EFFECTIVE STR (rule 6). Regression: `inventory-encumbrance.test.ts` (VM value + the
+      `{{pushDragLift}}` placeholder present in both locales). **T3.**
 - [ ] **RA-28 — Creation grants Common only; the 2024 "+2 languages" pick is never offered.**
       _Creation · GAP · S3 · once per character._ SRD "Creating a Character — languages" (Common + 2
       from the standard table). Code: `CreationWizard` seeds `["common"]`; free editing exists in

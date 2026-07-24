@@ -27,7 +27,7 @@
     "unequip": "Unequip",
     "attunementCount": "Attuned {{bonded}} / {{cap}}",
     "attunementHint": "Magic items you're attuned to, out of your attunement limit (3 by default; Artificers attune to more).",
-    "encumbranceHint": "Carried weight out of your carrying capacity (Strength × 15 lb). Excludes custom items.",
+    "encumbranceHint": "Carried weight out of your carrying capacity (Strength × 15 lb). You can push, drag, or lift up to {{pushDragLift}}. Excludes custom items.",
     "stealthDisadvantage": "Stealth Disadv.",
     "heavyDisadvantageHint": "This Heavy weapon gives you Disadvantage on attack rolls because your Strength or Dexterity is below 13.",
     "unproficient": "Untrained",

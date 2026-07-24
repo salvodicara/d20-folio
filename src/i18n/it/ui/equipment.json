@@ -27,7 +27,7 @@
     "unequip": "Rimuovi",
     "attunementCount": "Sintonizzati {{bonded}} / {{cap}}",
     "attunementHint": "Oggetti magici a cui sei sintonizzato, sul tuo limite di sintonia (3 di default; gli Artefici si sintonizzano con di più).",
-    "encumbranceHint": "Peso trasportato rispetto alla tua capacità di carico (Forza × 15 lb). Esclude gli oggetti personalizzati.",
+    "encumbranceHint": "Peso trasportato rispetto alla tua capacità di carico (Forza × 15 lb). Puoi spingere, trascinare o sollevare fino a {{pushDragLift}}. Esclude gli oggetti personalizzati.",
     "stealthDisadvantage": "Svant. Furtività",
     "heavyDisadvantageHint": "Quest'arma Pesante ti dà Svantaggio ai tiri per colpire perché la tua Forza o Destrezza è inferiore a 13.",
     "unproficient": "Non Competente",
