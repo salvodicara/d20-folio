@@ -41,7 +41,10 @@ appears on a weapon row.
 
 ## The 2024 core-rules SYSTEM audit — the ranked defect ledger (RA, 2026-07-11)
 
-> **This ledger is the CURRENT open frontier.** A full system-level audit of the D&D 2024 core play
+> **This ledger is a CLOSED audit record (all 35 findings resolved; campaign closed 2026-07-24).**
+> Every RA entry is ticked — shipped, or a residual resolved by design (RA-31 self-side Cover toggle,
+> RA-35 Musician self-grant). Kept for provenance, not as a work queue: the forward frontier now lives
+> in `PROGRESS.md`. A full system-level audit of the D&D 2024 core play
 > procedures (SRD 5.2.1 — the rules of PLAY, not per-entry SRD content; the per-entry
 > content-fidelity sweep is a separate later phase) judged every core-rules area on four axes:
 > **A modeled? · B correct vs the 2024 text? · C ideal interaction (the minimum-interaction
@@ -417,8 +420,22 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       supersedes. Regression: `spells-page.test.tsx` (Detect Magic prepared → the chip renders; a
       non-ritual spell has none). **T3.**
 - [x] **RA-25 — Surprise (Disadvantage on initiative) unmodeled.** _Combat start · GAP · S3 ·
-      rare._ SRD "Surprise". The initiative advantage tri-state has no disadvantage leg. Fix: extend
-      the tri-state to adv/auto/off/dis. **T3.**
+      rare._ SRD "Surprise". The initiative advantage tri-state had no disadvantage leg. Fix: extend
+      the tri-state to adv/auto/off/dis. **T3.** **SHIPPED (2026-07-24):** the initiative override was
+      widened from a boolean to the four-state `InitiativeAdvantageOverride` union
+      (`"advantage" | "disadvantage" | "off" | null`) on the `initiativeAdvantageOverride` codec slot,
+      with a ONE-WAY legacy-boolean decode at the read boundary
+      (`normalizeInitiativeAdvantageOverride`: `true`→`"advantage"`, `false`→`"off"`, string legs
+      pass through, else dropped — never written back, rule 10). The net roll state resolves through
+      the new pure `initiativeRollState` reader in `compute.ts` (the three explicit override legs win
+      outright; `null` defers to the grants, netting an initiative-`advantage-on` against an
+      initiative-`disadvantage-on` by RAW cancellation), so Surprise rides the `"disadvantage"` leg —
+      not a modeled grant, pinned by hand (the sheet can't see it). The CombatHeader Init-vital corner
+      toggle cycles the four states in edit mode (auto→advantage→disadvantage→off→auto) and, in play
+      mode, renders a quiet gold boon mark or a danger-hued (`data-adv="dis"`) penalty mark only when
+      relevant. Override-first throughout. Regression: `compute.test.ts` (the pure netter across every
+      override/grant leg + cancellation), `combat-header.test.tsx` (the cycle + the play-mode marks),
+      `character-codec.test.ts` (the four-state round-trip + legacy-boolean decode).
 - [x] **RA-26 — Jump distances are computed but dead.** _Movement · GAP · S3._ `compute.jumpDistance`
       (long = STR score ft, high = 3 + STR mod — RAW-correct) has zero callers. **SHIPPED
       (2026-07-24):** `jumpDistance(effectiveScores.STR)` now renders as two read-only rows (Long
@@ -561,9 +578,12 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       caster (`content-pack/i18n/en/srd/feats.json`, "…give Heroic Inspiration to allies who hear the
       song. The number of allies… equals your Proficiency Bonus"). The engine models ONE character,
       so there are no ally targets to grant; and the caster's own Heroic Inspiration is already a
-      universal one-tap socket (the `insp-toggle` on `ResourceRail`). RAW gives the caster nothing,
-      so no self-grant was added — a Musician-specific self-grant would be both redundant and
-      RAW-wrong. The feat description is already 2024-faithful in EN + IT. **Pack-side twin —
+      universal one-tap socket (the `insp-toggle` on `ResourceRail`). Whether the RAW even lets the
+      caster include themselves is CONTESTED (the ally-vs-self debate over "allies who hear the song"),
+      but the residual holds under EVERY reading: if the caster is excluded there is nothing to model,
+      and if they are included the universal insp-toggle socket already covers them — so a
+      Musician-specific self-grant would be redundant either way, and none was added. The feat
+      description is already 2024-faithful in EN + IT. **Pack-side twin —
       TRACKED HANDOFF under D11's concurrency carve-out** (the pack was frozen read-only by a
       concurrent worktree this wave, so the twin rides an explicit handoff run the moment the pack is
       workable, still the same logical unit — never a silent deferral): sharpen the bundled
