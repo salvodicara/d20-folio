@@ -338,12 +338,20 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       _Movement · INTERACTION (defect C) · S3 · every-combat with knockdowns._ SRD "Prone —
       Restricted Movement". Fix: while `prone` is set, a one-tap "Stand (−⌊Speed/2⌋ ft)" on the meter
       clears the condition + debits movement. **T3.**
-- [ ] **RA-20 — The 2024 generic action list is incomplete.** _Action economy · GAP · S3._
+- [x] **RA-20 — The 2024 generic action list is incomplete.** _Action economy · GAP · S3._
       `BASE_ACTIONS` lacks **Influence, Magic, Study, Utilize** (the `base-grapple`/`base-shove` cards
       stay — RA-04 corrected them to the 2024 Unarmed Strike options in place rather than retiring
       them, since no universal Unarmed Strike row exists to fold into); Search names
       Perception/Investigation only (SRD table adds Insight/Medicine/Survival).
-      Fix: data-complete the list with 2024 one-liners. **T3.**
+      Fix: data-complete the list with 2024 one-liners. **T3.** **SHIPPED (2026-07-24):**
+      `base-influence`/`base-magic`/`base-study`/`base-utilize` added as inline `lit` entries (the
+      sanctioned bilingual form for engine-authored base actions); `base-search` corrected to the
+      2024 Wisdom skills (Insight/Medicine/Perception/Survival) with Investigation moved to the new
+      `base-study` card. IT names from the official IT SRD (Magia/Esaminare/Utilizzare cross-checked
+      against in-repo prose; Influenzare per the SRD action verb pattern). Each new verdict chip is
+      name-restating, so all four join `BASE_ACTIONS_NO_CHIP`. Regression: the RA-20 block in
+      `smart-tracker.test.ts` + the auto-covering dynamic-key-coverage, subtitle-budget, and
+      chip-budget guards.
 - [ ] **RA-21 — Exhaustion 6 = death is display-only.** _Conditions · GAP · S3 · rare._ SRD
       "Exhaustion": you die at level 6. Code: clamp + glossary text; no dead-state surfacing. Fix:
       level 6 surfaces the same dead verdict the death-save track uses. **T3.**

@@ -602,6 +602,42 @@ describe("resolveActions — base actions", () => {
     expect(actions.find((a) => a.id === "base-dash")?.summary.skillCheck).toBeUndefined();
   });
 
+  // RA-20 — the 2024 generic action list is data-complete: Influence, Magic,
+  // Study, and Utilize join the base actions, and Search is corrected to the
+  // 2024 Wisdom skills (Investigation is an Intelligence skill of Study).
+  it("RA-20 — includes Influence, Magic, Study, Utilize", () => {
+    const ids = localizeActions(makeChar(), "en").map((a) => a.id);
+    expect(ids).toContain("base-influence");
+    expect(ids).toContain("base-magic");
+    expect(ids).toContain("base-study");
+    expect(ids).toContain("base-utilize");
+  });
+
+  it("RA-20 — Search uses the 2024 Wisdom skills; Investigation moves to Study", () => {
+    const en = localizeActions(makeChar(), "en");
+    const search = en.find((a) => a.id === "base-search");
+    expect(search?.summary.effect).toBe(
+      "Wis check: Insight/Medicine/Perception/Survival"
+    );
+    expect(search?.summary.effect ?? "").not.toMatch(/Investigation/);
+    const study = en.find((a) => a.id === "base-study");
+    expect(study?.summary.effect).toBe(
+      "Int check: Arcana/History/Investigation/Nature/Religion"
+    );
+    expect(study?.summary.effect ?? "").toMatch(/Investigation/);
+  });
+
+  it("RA-20 — the four new actions localize to the official IT SRD names", () => {
+    const it = localizeActions(makeChar(), "it");
+    expect(it.find((a) => a.id === "base-influence")?.name).toBe("Influenzare");
+    expect(it.find((a) => a.id === "base-magic")?.name).toBe("Magia");
+    expect(it.find((a) => a.id === "base-study")?.name).toBe("Esaminare");
+    expect(it.find((a) => a.id === "base-utilize")?.name).toBe("Utilizzare");
+    expect(it.find((a) => a.id === "base-search")?.summary.effect).toBe(
+      "Prova Sag: Intuizione/Medicina/Percezione/Sopravvivenza"
+    );
+  });
+
   it("includes Opportunity Attack as a reaction", () => {
     const char = makeChar();
     const actions = localizeActions(char, "en");

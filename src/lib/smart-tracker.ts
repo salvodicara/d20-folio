@@ -1140,18 +1140,67 @@ export const BASE_ACTIONS: ReadonlyArray<{
     },
   },
   {
+    // RA-20 — 2024 Influence action: a Charisma or Wisdom check (Deception/
+    // Intimidation/Performance/Persuasion, or Animal Handling) to sway a
+    // creature's attitude. The DM sets the ability + DC (override-first).
+    id: "base-influence",
+    name: { en: "Influence", it: "Influenzare" },
+    type: "action",
+    effect: {
+      en: "Cha/Wis check to sway a creature's attitude",
+      it: "Prova Car/Sag per influenzare l'atteggiamento",
+    },
+  },
+  {
+    // RA-20 — 2024 Magic action: cast a spell, or use a magic item or a special
+    // ability that requires the Magic action.
+    id: "base-magic",
+    name: { en: "Magic", it: "Magia" },
+    type: "action",
+    effect: {
+      en: "Cast a spell or use a magic item or feature",
+      it: "Lancia un incantesimo o usa oggetto/capacità magica",
+    },
+  },
+  {
     id: "base-ready",
     name: { en: "Ready", it: "Prepararsi" },
     type: "action",
     effect: { en: "Set trigger → reaction", it: "Imposta innesco → reazione" },
   },
   {
+    // RA-20 — 2024 Search is a Wisdom action (Insight/Medicine/Perception/
+    // Survival); Investigation is an Intelligence skill of the Study action, so
+    // it moved to `base-study`. Which skill applies is the DM's call — no
+    // structured DC (override-first, no dice).
     id: "base-search",
     name: { en: "Search", it: "Cercare" },
     type: "action",
     effect: {
-      en: "Perception or Investigation check",
-      it: "Prova Percezione o Investigazione",
+      en: "Wis check: Insight/Medicine/Perception/Survival",
+      it: "Prova Sag: Intuizione/Medicina/Percezione/Sopravvivenza",
+    },
+  },
+  {
+    // RA-20 — 2024 Study action: an Intelligence check (Arcana/History/
+    // Investigation/Nature/Religion) to recall or work out lore.
+    id: "base-study",
+    name: { en: "Study", it: "Esaminare" },
+    type: "action",
+    effect: {
+      en: "Int check: Arcana/History/Investigation/Nature/Religion",
+      it: "Prova Int: Arcano/Storia/Indagare/Natura/Religione",
+    },
+  },
+  {
+    // RA-20 — 2024 Utilize action: use a nonmagical object that needs an action
+    // (pull a lever, pour a flask).
+    id: "base-utilize",
+    name: { en: "Utilize", it: "Utilizzare" },
+    type: "action",
+    effect: {
+      en: "Use a nonmagical object needing an action",
+      it: "Usa un oggetto non magico che richiede un'azione",
     },
   },
   {

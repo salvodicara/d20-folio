@@ -34,8 +34,12 @@ export const BASE_ACTIONS_NO_CHIP: ReadonlySet<string> = new Set([
   "base-dodge", // "Defend" / "Difesa" — synonym of "Dodge" / "Schivata"
   "base-help", // "Aid" / "Aiuto" — synonym / same word in IT
   "base-hide", // "Hide" / "Nascondi" — same root as "Hide" / "Nascondersi"
+  "base-influence", // "Influence" / "Influenza" — same root as "Influence" / "Influenzare" (RA-20)
+  "base-magic", // "Spell" / "Incantesimo" — restates "Magic" / "Magia" (RA-20)
   "base-ready", // "Ready" / "Pronto" — same root as "Ready" / "Prepararsi"
   "base-search", // "Seek" / "Cerca" — synonym of "Search" / "Cercare"
+  "base-study", // "Study" / "Esamina" — same root as "Study" / "Esaminare" (RA-20)
+  "base-utilize", // "Utilize" / "Utilizza" — same root as "Utilize" / "Utilizzare" (RA-20)
   "base-grapple", // "Grapple" / "Afferra" — same root as "Grapple" / "Afferrare"
   "base-shove", // "Shove" / "Spingi" — same root as "Shove" / "Spingere"
   "base-opportunity-attack", // "Strike" / "Colpisci" — synonym; section = reactions
