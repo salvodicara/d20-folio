@@ -2395,21 +2395,22 @@ button.pr-dot.lg::before {
     var(--bg-surface-2)
   );
 }
-/* The ceremonial seat ornament (the STARBOUND rework's p25 divider, DESIGN.md §5):
-   a small struck four-point star in its diamond frame, lens blades + nodes at its
-   flanks, seated ON the head's fading rule — BG3's under-title divider. The
-   per-theme `--seat-orn` SVG (index.css) straddles the 1px seat (17px tall,
-   centered on the border line); its baked surface-2 backing occludes the rule
-   behind the star, so no notch math. Decor only: no pointer events, no layout. */
+/* The ceremonial seat ornament (the COMPASS-WEB redo's winged-fleur divider,
+   DESIGN.md §5): BG3's level-up under-title divider — outward-tapering rails
+   with open scroll hooks, a luminous descending V-fleur at centre hanging
+   BELOW the rule in a soft baked glow. The per-theme `--seat-orn` SVG
+   (index.css) straddles the 1px seat (24px tall, the SVG's rule line at y=12
+   on the border); its baked surface-2 backing occludes the rule behind the
+   fleur, so no notch math. Decor only: no pointer events, no layout. */
 .modal-head::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -9px;
-  height: 17px;
+  bottom: -12px;
+  height: 24px;
   pointer-events: none;
-  background: var(--seat-orn) center / 168px 17px no-repeat;
+  background: var(--seat-orn) center / 260px 24px no-repeat;
 }
 .modal-rubric {
   font-family: var(--font-numeric);
@@ -14154,27 +14155,30 @@ button.party-avatar-btn:focus-visible {
   box-shadow: var(--elev-resting), var(--gilt-glow);
 }
 
-/* ── Reliquary corners (the full-BG3 identity push, owner-ratified 2026-07-16) —
-   the worked goldwork that caps the app's HERO frames: the framed realm masthead,
-   the gilt-framed hero band (cockpit identity), and dialogs. EARNED registers only
+/* ── Reliquary corners (the full-BG3 identity push, owner-ratified 2026-07-16;
+   the COMPASS-WEB FRAME redo, owner-mandated 2026-07-24) — the worked goldwork
+   that caps the app's HERO frames: the framed realm masthead, the gilt-framed
+   hero band (cockpit identity), and dialogs. EARNED registers only
    (Constitution §4.16 — each carries the surface's identity or a decision in
    progress); resting cards and quiet panels stay unornamented. Mechanism: the
-   per-theme `--frame-ornate` SVG (index.css) rendered through `border-image` on
-   an overlay pseudo — corners carry the ornament, edge slices are EMPTY so the
+   per-theme `--frame-ornate` SVG (index.css — crossed vertex blades, faceted
+   rivet, floating crescent, whisper compass web, faint inner rail) rendered
+   through `border-image` on an overlay pseudo — corners carry the ornament,
+   edge slices carry only the inner rail's taper-wedge dissolve, so the
    element's own 1px border remains the quiet run (the ornament-vocabulary rule
-   "goldwork marks, runs stay quiet" holds at the corner scale). The goldwork SITS
-   ON the frame like a bookbinding corner fitting (owner, 2026-07-17): the SVG's
-   arm/gem centerline lies at 20% of the corner tile, so a border-image OUTSET of
-   `20% of 48px + 0.5px` seats the arms exactly on the host's 1px border stroke
-   and the corner gem's center on the stroke's corner vertex — the diamond caps
-   the corner where the two arms merge, never floating inside the panel. Outset
-   ink is paint-only overflow (no scrollbars), so hero hosts must NOT clip child
-   paint (`.modal` / `.has-crest` carry no overflow: hidden for this reason).
-   The pseudo is decor only: pointer-events none, no layout, no animation;
-   border-image proportionally shrinks the corners on small boxes (phone
-   mastheads, sm modals) so goldwork never collides. z-index 0 keeps it above
-   each host's material pseudo (`::before` at z -1); the goldwork rides the
-   frame line itself, clear of the hosts' padded (≥16px) content. */
+   "goldwork marks, runs stay quiet" holds at the corner scale). The goldwork
+   SITS ON the frame like a bookbinding corner fitting (owner, 2026-07-17): the
+   SVG's rail centerline lies at 20% of the corner tile, so a border-image
+   OUTSET of `20% of 64px + 0.5px` seats the blades exactly on the host's 1px
+   border stroke and the rivet's center on the stroke's corner vertex — the
+   blade tips and crescent overshoot the corner OUTWARD, never floating inside
+   the panel. Outset ink is paint-only overflow (no scrollbars), so hero hosts
+   must NOT clip child paint (`.modal` / `.has-crest` carry no overflow: hidden
+   for this reason). The pseudo is decor only: pointer-events none, no layout,
+   no animation; border-image proportionally shrinks the corners on small boxes
+   (phone mastheads, sm modals) so goldwork never collides. z-index 0 keeps it
+   above each host's material pseudo (`::before` at z -1); the goldwork rides
+   the frame line itself, clear of the hosts' padded (≥16px) content. */
 .page-head.framed::before,
 .folio-panel.gilt-frame::after,
 .modal::after {
@@ -14183,13 +14187,14 @@ button.party-avatar-btn:focus-visible {
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  border: 48px solid transparent;
-  /* 40% slice of the 500×500 SVG = the 200-unit corner tiles (percentage, and the
-     SVG carries explicit width/height: an SVG without intrinsic size defaults to
-     300×150 and numeric slices sample phantom regions). Outset: 48px × 0.2 puts
-     the tile's 20% centerline on the pseudo's edge (the host padding box); +0.5px
-     more centers it on the host's 1px border stroke. */
-  border-image: var(--frame-ornate) 40% / 48px / calc(48px * 0.2 + 0.5px);
+  border: 64px solid transparent;
+  /* 20% slice of the 320×320 SVG = the 64-unit corner tiles drawn 1:1 px
+     (percentage, and the SVG carries explicit width/height: an SVG without
+     intrinsic size defaults to 300×150 and numeric slices sample phantom
+     regions). Outset: 64px × 0.2 puts the tile's 20% centerline on the pseudo's
+     edge (the host padding box); +0.5px more centers it on the host's 1px
+     border stroke. */
+  border-image: var(--frame-ornate) 20% / 64px / calc(64px * 0.2 + 0.5px);
 }
 
 /* Engraved ceremonial titling (same push): the Cinzel register reads STRUCK into

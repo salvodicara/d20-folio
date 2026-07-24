@@ -670,6 +670,21 @@ v0.20.0 tail) and the identity push itself (this mission). State:
      lands beneath; unmount+mount writes coalesce on a microtask so the ghost always shows the
      pre-navigation scene; reduced motion keeps the hard cut. Verified frame-by-frame in real
      Chromium; orchestration unit-pinned. `DESIGN.md` §9 (motion table) + §13.
+- **The ORNAMENTS-V2 redo — owner-mandated 2026-07-24, SHIPPED 2026-07-24.** The owner judged
+  the Starbound corners/separators "an improvement but we're not there yet" and mandated the
+  proper method verbatim: _"run extensive researches on the web on what those ornaments should
+  look like. Download the best images … Understand the pattern properly. Once you did, create
+  the svgs based on that pattern."_ Executed literally: a 20+-item research corpus (BG3
+  level-up/spellbook/character-sheet chrome at full res + ornamental-penmanship ray-fan plates,
+  medieval penwork borders, strapwork cartouches, gothic tracery — scratchpad
+  `bg3-reference/PATTERN-ANALYSIS.md`), a written pattern analysis, THEN original vectors: the
+  **Compass-Web Frame** (crossed vertex blades + faceted rivet + floating crescent + whisper
+  compass web + inner-rail taper dissolve, drawn 1:1 at a 64px seat) and the **winged-fleur
+  seat divider** (outward-tapering rails, scroll hooks, luminous descending V-fleur, 260×24).
+  A second same-day ruling: light-theme ornament ink goes **GOLD** (deep antique-gold
+  letterpress, #94741f), superseding the engraved-bronze treatment for these elements. Guard
+  rewritten to the new anatomy; `DESIGN.md` §5 rewritten; verified 1x+4x × {masthead · cockpit
+  band · modal · seat} × {dark · light} × {desktop · mobile} in real Chromium.
 - **Open: NOTHING — the full-BG3 identity pivot (incl. the atmosphere push) is COMPLETE
   (2026-07-24).** PROMPT_12–25 are all resolved (see the ASSET-INTEGRATION ledger above); every
   plate is integrated, verified, and budgeted. Two OPTIONAL future-polish items remain, neither a

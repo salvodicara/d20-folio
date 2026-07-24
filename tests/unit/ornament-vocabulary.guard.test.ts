@@ -9,15 +9,23 @@ const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8
 
 /**
  * The ornament vocabulary (BG3 identity T5 — DESIGN.md §5 "The ornament
- * vocabulary"; the STARBOUND FRAME rework, owner-mandated 2026-07-23). Pins the
+ * vocabulary"; the COMPASS-WEB FRAME redo, owner-mandated 2026-07-24). Pins the
  * grammar's load-bearing facts so a refactor can't silently drop or re-add a
  * piece:
- *   - the hero frames are bound by the per-theme Starbound `--frame-ornate`
- *     SVG: a four-point star in a hairline diamond frame per corner, a twin
- *     inner rail continuing through the edge slices as taper wedges, mirrored
- *     UNFILLED first and toned AFTER (the two-tone strike);
- *   - dialog heads seat the per-theme `--seat-orn` p25 divider, whose backing
- *     diamond bakes the theme's own `--bg-surface-2` (drift-guarded);
+ *   - the hero frames are bound by the per-theme Compass-Web `--frame-ornate`
+ *     SVG: crossed calligraphic blades overshooting the vertex, a faceted
+ *     rivet diamond on the crossing, a slim floating crescent outside the
+ *     corner, a whisper compass web (quarter-arc pair + fading ray fan) and a
+ *     faint inner rail dissolving through the edge slices as a taper wedge;
+ *   - the STRUCK members (blades/crescent/dart/rivet) are mirrored UNFILLED
+ *     first and toned AFTER (the two-tone strike); the WEB rides a separate
+ *     single-fill whisper closure with per-member opacities (the weight
+ *     ladder: vertex mass → arc hairline → ray whisper);
+ *   - dialog heads seat the per-theme `--seat-orn` winged-fleur divider
+ *     (outward-tapering rails, scroll hooks, a luminous descending V-fleur),
+ *     whose backing diamond bakes the theme's own `--bg-surface-2`
+ *     (drift-guarded);
+ *   - the LIGHT theme's ornament ink is GOLD, not bronze (owner, 2026-07-24);
  *   - selection is marked by the silver-over-bronze `--frame-selected` gradient
  *     (both themes), NOT by decorative diamonds;
  *   - SECTION dividers stay tip-fading and NODELESS — the ceremonial seat is
@@ -39,63 +47,83 @@ describe("ornament vocabulary (T5)", () => {
     );
   });
 
-  it("strikes the Starbound frame + engraved titling in BOTH themes", () => {
+  it("strikes the Compass-Web frame + engraved titling in BOTH themes", () => {
     // The frame chrome is per-theme (dark strikes gilt, light letterpresses
-    // bronze), so each token MUST be defined twice — once in :root, once in the
+    // GOLD), so each token MUST be defined twice — once in :root, once in the
     // [data-theme="light"] scope. `css-token-defined.guard` only proves a token
     // is defined SOMEWHERE, so a dropped light copy would slip past it and
     // silently paint the light theme with no frame / flat title.
     expect(indexCss.match(/--frame-ornate:/g)?.length).toBe(2);
     expect(indexCss.match(/--seat-orn:/g)?.length).toBe(2);
     expect(indexCss.match(/--engrave-title:/g)?.length).toBe(2);
-    // The Starbound corner anatomy (both themes carry the same geometry):
-    // the hairline diamond frame around the star…
+    // The Compass-Web corner anatomy (both themes carry the same geometry):
+    // the calligraphic blade swelling along the rail toward the vertex…
+    expect(indexCss.match(/M48 12\.3Q28 11\.85 17\.5 11\.95/g)?.length).toBe(2);
+    // …the slim floating crescent just outside the corner on the diagonal…
     expect(
-      indexCss.match(
-        /fill-rule='evenodd' d='M40 3 77 40 40 77 3 40ZM40 8 72 40 40 72 8 40Z'/g
-      )?.length
+      indexCss.match(/M4\.4 8\.5A3 3 0 1 1 8\.5 4\.4A3\.95 3\.95 0 0 0 4\.4 8\.5Z/g)
+        ?.length
     ).toBe(2);
-    // …the four-point star silhouette…
+    // …the rivet diamond seating the blade crossing on the vertex…
     expect(
-      indexCss.match(
-        /M40 12 44\.2 35\.8 68 40 44\.2 44\.2 40 68 35\.8 44\.2 12 40 35\.8 35\.8Z/g
-      )?.length
+      indexCss.match(/M12\.8 9\.7L15\.9 12\.8L12\.8 15\.9L9\.7 12\.8Z/g)?.length
     ).toBe(2);
-    // …and the twin rule's edge-slice taper wedge (straight lines stretch
-    // losslessly through border-image edges; arrowheads would distort).
-    expect(indexCss.match(/M200 50 252 51\.5 200 53Z/g)?.length).toBe(2);
-    // TWO-TONE strike: each theme's SVG tones the goldwork AFTER the
-    // four-corner mirroring — the unfilled geometry closure (id='f') is struck
-    // by ≥2 offset tone layers (shade/understroke + top glint), so the bevel
-    // light stays top-left on every corner (toning inside the mirrored unit
-    // would flip it upside-down on the bottom corners) — and the star is a true
-    // facet group (id='g') placed per-corner UNFLIPPED via use x/y. 2 per
-    // theme = 4 total.
+    // …and the inner rail's edge-slice taper wedge (straight lines stretch
+    // losslessly through border-image edges; curves would distort).
+    expect(indexCss.match(/L156 17\.3/g)?.length).toBe(2);
+    // THE WEIGHT LADDER: the struck mass closure (id='m4') is toned by ≥2
+    // offset tone layers (shade + glint) per theme so the bevel light stays
+    // top-left on every corner (toning inside the mirrored unit would flip it
+    // upside-down on the bottom corners) — 2 per theme = 4 total…
     expect(
       indexCss.match(
-        /use href='%23f' fill='%23[0-9a-f]+' opacity='[^']+' transform='translate\(/g
+        /use href='%23m4' fill='%23[0-9a-f]+' opacity='[^']+' transform='translate\(/g
       )?.length
     ).toBe(4);
-    expect(indexCss.match(/use href='%23g' x='420' y='420'/g)?.length).toBe(2);
+    // …while the compass WEB rides a separate single-fill whisper closure
+    // (id='w4', per-member opacities — no strike): the quarter-arc pair at
+    // .55/.35 and the four rays at .34, per theme.
+    expect(indexCss.match(/use href='%23w4' fill='%23[0-9a-f]+'\/>/g)?.length).toBe(2);
+    expect(indexCss.match(/opacity='\.55' d='M39\.06 15\.56A26\.4/g)?.length).toBe(2);
+    expect(indexCss.match(/opacity='\.34'/g)?.length).toBe(8);
+    // The rivet facet group is 4-fold symmetric and placed per-corner
+    // UNFLIPPED via use x/y (translate placement only works for vertex-centered
+    // members).
+    expect(indexCss.match(/use href='%23g' x='294\.4' y='294\.4'/g)?.length).toBe(2);
     // ...and both are actually wired (border-image on the hero overlay + the
     // engraved title text-shadow), so a defined-but-unused token can't fake it.
     expect(folioCss).toMatch(/border-image:\s*var\(--frame-ornate\)/);
     expect(folioCss).toMatch(/text-shadow:\s*var\(--engrave-title\)/);
   });
 
-  it("seats the ceremonial seat ornament on dialog heads, surface-baked per theme", () => {
-    // The p25 divider straddles the modal head's 1px seat rule (17px tall,
-    // centered on the border line) — decorative only.
+  it("keeps the light theme's ornament ink GOLD, never bronze (owner, 2026-07-24)", () => {
+    // The light `--frame-ornate` body is the deep antique-gold #94741f — a
+    // true-gold hue letterpressed into the vellum. The superseded bronze-700
+    // (#7a5f24) body must not return to either ornament token's light strike.
+    const lightBlock = indexCss.slice(indexCss.indexOf('[data-theme="light"]'));
+    const lightFrame = lightBlock.match(/--frame-ornate: url\("([^"]+)"\)/)?.[1];
+    const lightSeat = lightBlock.match(/--seat-orn: url\("([^"]+)"\)/)?.[1];
+    expect(lightFrame).toBeDefined();
+    expect(lightSeat).toBeDefined();
+    expect(lightFrame).toContain("fill='%2394741f'");
+    expect(lightSeat).toContain("fill='%2394741f'");
+    expect(lightFrame).not.toContain("fill='%237a5f24'");
+    expect(lightSeat).not.toContain("fill='%237a5f24'");
+  });
+
+  it("seats the winged-fleur divider on dialog heads, surface-baked per theme", () => {
+    // The divider straddles the modal head's 1px seat rule (24px tall, the
+    // SVG's rule line at y=12 on the border) — decorative only.
     expect(folioCss).toMatch(
-      /\.modal-head::after\s*\{[^}]*background:\s*var\(--seat-orn\) center \/ 168px 17px no-repeat/
+      /\.modal-head::after\s*\{[^}]*background:\s*var\(--seat-orn\) center \/ 260px 24px no-repeat/
     );
-    // Its backing diamond is baked in the theme's OWN --bg-surface-2, so the
-    // seat rule passes BEHIND the star invisibly (both faces of the seat are
-    // surface-2). Drift guard: the baked hex must equal the theme token.
     const themes = [...indexCss.matchAll(/--seat-orn:\s*url\("([^"]+)"\)/g)]
       .map((m) => m[1])
       .filter((u): u is string => u !== undefined);
     expect(themes).toHaveLength(2);
+    // The theme's OWN --bg-surface-2 bakes the fleur's backing diamond, so the
+    // seat rule passes BEHIND the fleur invisibly (both faces of the seat are
+    // surface-2). Drift guard: the baked hex must equal the theme token.
     const surface2 = [...indexCss.matchAll(/--bg-surface-2:\s*(#[0-9a-fA-F]{6})/g)]
       .map((m) => m[1])
       .filter((h): h is string => h !== undefined)
@@ -105,6 +133,12 @@ describe("ornament vocabulary (T5)", () => {
       expect(uri, `seat-orn theme ${i} bakes its surface-2 backing`).toContain(
         `fill='%23${surface2[i]}'`
       );
+      // The fleur anatomy: nested chevron wings over the descending plumb
+      // point (which hangs BELOW the rule), seated in a baked radial glow.
+      expect(uri).toContain("M123 7.6L130 10.7L137 7.6");
+      expect(uri).toContain("M130 13L132.2 16.4L130 22.4L127.8 16.4Z");
+      expect(uri).toContain("radialGradient");
+      expect(uri).toContain("circle cx='130' cy='14' r='11' fill='url(%23gl)'");
       // Same mirror-then-tone strike as the corners: the closure (id='s') is
       // struck by 2 offset tone layers per theme.
       expect(
@@ -116,12 +150,12 @@ describe("ornament vocabulary (T5)", () => {
   });
 
   it("seats the goldwork ON the frame like a bookbinding fitting (owner, 2026-07-17)", () => {
-    // The SVG's rail/star centerline lies at 20% of the corner tile; the
-    // border-image OUTSET of `20% of the 48px tile + 0.5px` puts the rails on
-    // the host's 1px border stroke and the star's center on the corner vertex —
+    // The SVG's rail centerline lies at 20% of the 64px corner tile; the
+    // border-image OUTSET of `20% of 64px + 0.5px` puts the blades on the
+    // host's 1px border stroke and the rivet's center on the corner vertex —
     // the regression this pins is the ornament drifting back INSIDE the panel.
     expect(folioCss).toMatch(
-      /border-image:\s*var\(--frame-ornate\) 40% \/ 48px \/ calc\(48px \* 0\.2 \+ 0\.5px\)/
+      /border-image:\s*var\(--frame-ornate\) 20% \/ 64px \/ calc\(64px \* 0\.2 \+ 0\.5px\)/
     );
     // Outset ink is clipped by a host's child-paint clipping, so the hero hosts
     // must NOT overflow-hide: `.modal` scroll-clips on `.modal-body`, and the
