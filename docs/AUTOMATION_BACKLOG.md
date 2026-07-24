@@ -1556,11 +1556,15 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
 - [x] **PS-B (IT lexicon collision) — Exhaustion rendered as two different Italian words on ONE
       screen.** FIXED 2026-07-24. The rail rubric read the canonical _Indebolimento_ (the official IT
       SRD 5.2.1 lexeme, `src/i18n/it/srd/conditions.json`) while the combat turn-limiter banner read
-      _Sfinimento_ — chrome drift the SRD-only guard could not see. Fixed the string and CLOSED the
-      class: the IT-name guard now (a) pins all 15 condition `name.it` values to the closed-set
-      glossary (`docs/IT_NAME_REGISTRY.md`) and (b) runs the retired-lexeme scan over
-      `src/i18n/it/ui/*.json` as well as the SRD catalogues, with _Sfinimento_ on the retired list.
-      Regression: both new cases in `it-name-consistency.guard.test.ts`, fail-before/pass-after.
+      _Sfinimento_ — chrome drift the SRD-only guard could not see. The string itself was corrected
+      with PS-A (the same sentence was being rewritten there); this entry CLOSED the class: the
+      IT-name guard now (a) pins all 15 condition `name.it` values to the closed-set glossary
+      (`docs/IT_NAME_REGISTRY.md`) and (b) runs the retired-lexeme scan over `src/i18n/it/ui/*.json`
+      as well as the SRD catalogues, with _Sfinimento_ on the retired list. The two new cases in
+      `it-name-consistency.guard.test.ts` are ONE regression + ONE forward lock: the `ui`-shard
+      retired-lexeme scan fails on the merge-base (it is what catches _Sfinimento_), while the
+      condition-glossary pin passed there already — `it/srd/conditions.json` was never wrong — and
+      exists to keep it that way.
 
 - [x] **PS-C (RA-27 unreachable on touch) — the carrying-capacity chip hid its push/drag/lift line in
       a native `title=`.** FIXED 2026-07-24. Chromium paints a native tooltip outside the page and
@@ -1583,6 +1587,26 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       the icon `label`). Regression: `inventory-capacity-hint.test.tsx` (no chip carries a `title`;
       the capacity chip is reached BY ITS READING and discloses the push/drag/lift figure in the
       branded popover).
+
+- [x] **PS-D (dead space) — the bloomed Rules-Reference grid stretched its short cards.** FIXED
+      2026-07-24. In the 2×2 topic grid the cards inherited the grid's default `stretch` alignment,
+      so the short Cover card was blown up to the TALLEST card's height and left a large empty hole
+      in the top-left cell (both themes). One alignment keyword — `items-start` on the grid in
+      `SituationalRules.tsx` — sizes each card to its own content; no masonry, no bespoke component
+      (golden rule 1). Regression: `situational-rules.test.tsx` (the grid is content-aligned, never
+      stretched), fail-before/pass-after.
+
+- [x] **PS-E (two casing conventions on one screen) — "Rules reference" beside "Combat
+      Algorithm".** FIXED 2026-07-24. The two Play-foot disclosure headers disagreed — sentence case
+      next to Title Case — and IT mirrored the mismatch ("Regole di riferimento" / "Algoritmo di
+      Combattimento"). The folio's section headers are Title Case everywhere else (Action Log, Base
+      Actions, Potions & Gear, Long Rest), so the rules-reference title and its four topic-card
+      headings follow suit in EN + IT, with the prose references in `data/`, `DESIGN.md`-adjacent
+      docs and the coverage matrix realigned in the same commit. Regression:
+      `situational-rules.test.tsx` — a Title-Case check over the SIX header strings per locale (the
+      panel title, the algorithm title, and the four topic headings), fail-before/pass-after. Scope
+      note (the commit message overstated it): the check pins those six strings, so it catches a
+      REGRESSION on them — a newly ADDED header is only covered once it joins the list.
 
 - [x] **PS-F (⌘K relevance) — mid-word substring hits polluted the palette.** FIXED 2026-07-24.
       Typing "cover" returned the right Reference hit plus FIVE compendium rows matching the
@@ -1643,6 +1667,19 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       (Heal / Save / Utility) — Title Case in EN + IT. (h3) the Fast travel pace printed its
       penalty with an ASCII hyphen ("-5") instead of the app's true minus. Regressions in
       `dying-banner.test.tsx`, `spell-card-verdict.test.ts`, `travel-pace.test.ts`.
+
+- [ ] **PS-I (sweep findings NOT fixed here) — the deliberate carry-forward.** The sweep's
+      remaining three, left open on purpose so the wave stayed one coherent unit: 1. **The creation-review ledger misaligns in IT.** In "Le tue scelte" the long
+      `EQUIPAGGIAMENTO` rubric pushes its value out of the column the other six rows share, so
+      the IT ledger reads ragged where EN is flush (IT only, both themes — sweep shot `17b`).
+      Fix belongs at the row grid (a rubric column sized to the LONGEST rubric), not per row. 2. **The ⌘K gloss band shows no match REASON.** After PS-F the band is capped and
+      word-quality-only, but a gloss row still lands with nothing visible to explain it ("cover"
+      → _Light_, _Sacred Flame_, _Thorn Whip_ — the match lives in prose the row does not show).
+      Either show the matched fragment or drop the band; deciding that is a design call, not a
+      bug fix. 3. **The spell-card meta line's `conc.` reads lowercase** beside its Title-Case siblings
+      ("Divination · Self · conc."). Reviewed with PS-H's casing fixes and CLOSED AS A KEEP: it
+      is an abbreviation, not a header — the one lowercase token on the line is deliberate, and
+      PS-H's h2 fixed the genuine slip (the verdict chip) beside it.
 
 ---
 

@@ -356,6 +356,21 @@ sweeps + the RA-35 status-quo residual lock in `content-pack/`. Housekeeping: **
 verified the three tracking docs against the merged code; the forward frontier is now the DDB-parity
 bestiary epic, the react-router advisory triage, and parked backups/observability/legal.
 
+## Shipped — post-sweep defect wave (2026-07-24)
+
+A fresh Chromium sweep of the shipped sheet found **eleven** defects; **eight** are fixed and
+ledgered as **PS-A…PS-H** in `docs/AUTOMATION_BACKLOG.md` → _Post-sweep defects_ (each with its
+root-cause seam + a fail-before regression): the turn-limiter banner teaching a constant −2 at every
+Exhaustion level (PS-A), two Italian words for Exhaustion on one screen (PS-B), the RA-27
+push/drag/lift number hidden in a native `title=` and unreachable on touch (PS-C), the
+Rules-Reference grid stretching its short cards (PS-D), two casing conventions on one screen (PS-E),
+⌘K ranking a substring buried inside another word as high as a real name (PS-F), the Advantages rail
+listing one advantage twice in two registers (PS-G), and three minor sheet slips including a death
+that raised no banner (PS-H). The three deliberately left are recorded as **PS-I** in the same
+ledger: the IT creation-review ledger's column misalignment, the ⌘K gloss band's missing match
+reason, and the spell-card `conc.` abbreviation (closed as a keep). UNDEPLOYED on `main` (golden
+rule 22).
+
 ## Shipped — Combat-tab reference disclosure (2026-07-24)
 
 The Combat tab's two foot blocks — the combat playbook (`CombatAlgorithm`) and the SRD rules
