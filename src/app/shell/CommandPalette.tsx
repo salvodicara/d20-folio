@@ -78,7 +78,7 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogBody, SearchInput, Icon } from "@/components/ui";
 import { Kbd } from "@/components/ui/kbd";
-import { matchesSearch } from "@/lib/search";
+import { matchesSearch, matchQuality, MATCH_QUALITY_RANK } from "@/lib/search";
 import { retireTopOverlayThen } from "@/lib/overlay-history";
 import { getPaletteRecents, recordPaletteRecent } from "./palette-recents";
 import { useCoarsePointer, isCoarsePointer } from "@/hooks/useCoarsePointer";
@@ -138,6 +138,14 @@ interface Hit {
  * for most). Recents take precedence; these fill the rest up to the cap.
  */
 const CURATED_QUICK = ["act:new-char", "act:new-camp", "act:report"];
+
+/**
+ * How many COMPENDIUM rows may be earned by the entry's TEXT alone (no visible
+ * match in the row's name). A gloss hit is a hint — "cover" surfacing Sacred
+ * Flame, whose rule mentions Cover — so it supplements the name results without
+ * ever becoming the whole group.
+ */
+const GLOSS_HIT_CAP = 3;
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const { t } = useTranslation();
@@ -621,16 +629,37 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
 
   const compendiumHits: Hit[] = useMemo(() => {
     if (!q) return [];
-    // NAME matches outrank gloss-only matches ("fire" puts Fire Bolt above the
-    // spells that merely mention fire in their text) — the stable partition keeps
-    // each band in data order, so the ranking is deterministic.
-    const nameHits: typeof index = [];
-    const glossHits: typeof index = [];
+    // Ranked in QUALITY bands, each kept in data order so the result is
+    // deterministic (a stable partition, never a comparator on floats):
+    //
+    //   1. name prefix — "fire"  → "Fire Bolt"
+    //   2. name word   — "bolt"  → "Fire Bolt"
+    //   3. name suffix — "sword" → "Greatsword", "axe" → "Handaxe" (D&D compounds)
+    //   4. gloss       — the entry's TEXT, word-quality only, CAPPED: a hint band,
+    //                    never the answer (it is what puts "Fire Bolt" above the
+    //                    spells that merely mention fire).
+    //
+    // INFIX matches — a token buried INSIDE a word, touching neither edge — are a
+    // LAST RESORT, shown only when nothing better matched at all: "cover" used to
+    // put five *Re**cover**y* entries and "Dis**cover**ies" at the top, hits no
+    // reader can see in the row (post-sweep F). They never mix into the bands above.
+    const bands: (typeof index)[] = [[], [], [], []];
+    const infix: typeof index = [];
     for (const e of index) {
-      if (matchesSearch(q, e.name)) nameHits.push(e);
-      else if (matchesSearch(q, ...e.cands)) glossHits.push(e);
+      const name = matchQuality(q, e.name);
+      if (name === "prefix") bands[0]?.push(e);
+      else if (name === "word") bands[1]?.push(e);
+      else if (name === "suffix") bands[2]?.push(e);
+      else if (
+        bands[3] != null &&
+        bands[3].length < GLOSS_HIT_CAP &&
+        MATCH_QUALITY_RANK[matchQuality(q, ...e.cands)] >= MATCH_QUALITY_RANK.word
+      )
+        bands[3].push(e);
+      else if (name === "infix") infix.push(e);
     }
-    return [...nameHits, ...glossHits].slice(0, 8).map((e, i) => ({
+    const ranked = bands.flat();
+    return (ranked.length > 0 ? ranked : infix).slice(0, 8).map((e, i) => ({
       key: `cmp:${e.typeId}:${e.id}:${i}`,
       // OWN-25e — deep-link straight to the entry's DETAIL page (`?sel=`), not the
       // filtered list, so "Ask the Folio" → a spell/item opens it ready to read.

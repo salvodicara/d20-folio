@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   matchesSearch,
+  matchQuality,
+  MATCH_QUALITY_RANK,
   normalizeSearch,
   proseCorpus,
   rankedSearch,
@@ -190,5 +192,55 @@ describe("rankedSearch — the two-tier wizard-picker filter (owner fb4)", () =>
 
   it("DESC_QUERY_MIN is the documented 3-char gate", () => {
     expect(DESC_QUERY_MIN).toBe(3);
+  });
+});
+
+// REGRESSION (post-sweep F) — the ⌘K palette ranked on plain substring matching, so
+// typing "cover" put five *Recovery* entries (plus "Magical Discoveries") above
+// everything: matches buried INSIDE a word, which no reader can see in the row. The
+// quality ladder separates the compound-name case ("axe" → "Handaxe") from that noise.
+describe("matchQuality — the relevance ladder", () => {
+  it("ranks prefix > word > suffix > infix", () => {
+    expect(matchQuality("cover", "Cover")).toBe("prefix");
+    expect(matchQuality("fire", "Fire Bolt")).toBe("prefix");
+    expect(matchQuality("bolt", "Fire Bolt")).toBe("word");
+    expect(matchQuality("axe", "Handaxe")).toBe("suffix");
+    expect(matchQuality("sword", "Greatsword")).toBe("suffix");
+    expect(matchQuality("cover", "Arcane Recovery")).toBe("infix");
+    expect(matchQuality("cover", "Magical Discoveries")).toBe("infix");
+    expect(matchQuality("xyz", "Arcane Recovery")).toBe("none");
+  });
+
+  it("the ranks order as documented", () => {
+    const r = MATCH_QUALITY_RANK;
+    expect(r.prefix).toBeGreaterThan(r.word);
+    expect(r.word).toBeGreaterThan(r.suffix);
+    expect(r.suffix).toBeGreaterThan(r.infix);
+    expect(r.infix).toBeGreaterThan(r.none);
+  });
+
+  it("takes the WEAKEST tier across tokens and the BEST occurrence per token", () => {
+    // "bolt" is a word in "Lightning Bolt"; "light" opens it → the pair is a word match.
+    expect(matchQuality("light bolt", "Lightning Bolt")).toBe("word");
+    // One buried token drags the whole match down to infix.
+    expect(matchQuality("fire cover", "Fire Recovery")).toBe("infix");
+    // The same token can appear twice — the best occurrence wins.
+    expect(matchQuality("cover", "Recovery Cover")).toBe("word");
+  });
+
+  it("agrees with matchesSearch on WHETHER it matched (one filter, one ranker)", () => {
+    for (const [q, cand] of [
+      ["cover", "Arcane Recovery"],
+      ["axe", "Handaxe"],
+      ["zzz", "Handaxe"],
+      ["", "Handaxe"],
+    ] as const) {
+      expect(matchQuality(q, cand) !== "none").toBe(matchesSearch(q, cand));
+    }
+  });
+
+  it("is accent- and case-insensitive like the filter", () => {
+    expect(matchQuality("FURTIVITA", "Furtività")).toBe("prefix");
+    expect(matchQuality("guarigione", "Pozione di Guarigione")).toBe("word");
   });
 });

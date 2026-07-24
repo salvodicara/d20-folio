@@ -1577,6 +1577,19 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       spend interactions), the header initiative advantage/disadvantage marks (their text is already
       exposed to AT via the icon `label`), and the read-only DM/admin view status chips.
 
+- [x] **PS-F (⌘K relevance) — mid-word substring hits polluted the palette.** FIXED 2026-07-24.
+      Typing "cover" returned the right Reference hit plus FIVE compendium rows matching the
+      substring buried inside "re*cover*y" (Arcane / Natural / Group / Boon of Recovery, Magical
+      Discoveries) and three gloss-only rows with no visible match at all — the palette ranked on
+      plain `matchesSearch`, which cannot tell a compound name from noise. Added ONE pure ranker to
+      the shared `lib/search`: `matchQuality` → `prefix > word > suffix > infix` (same normalization + tokenization as `matchesSearch`, so filter and rank never disagree). The palette's compendium
+      band now sorts prefix → word → suffix → gloss (gloss capped at 3, word-quality only), and INFIX
+      matches are a LAST RESORT shown only when nothing better matched. Compound findability is
+      preserved by the `suffix` tier ("axe" → Handaxe, "sword" → Greatsword). `matchesSearch` itself
+      is untouched, so every other search surface behaves exactly as before. Regressions:
+      `search.test.ts` (the ladder + agreement with the filter) and `command-palette.test.tsx`
+      ("cover" surfaces no _Recovery_ row; "sword"/"greatsword" still resolve), fail-before/pass-after.
+
 ---
 
 ## Correctness + exposure batch (workstream D)

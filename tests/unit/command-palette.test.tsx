@@ -155,6 +155,31 @@ describe("CommandPalette — universal search (N-E)", () => {
     if (glossIdx >= 0) expect(nameIdx).toBeLessThan(glossIdx);
   });
 
+  // REGRESSION (post-sweep F) — searching "cover" returned the right Reference hit
+  // plus FIVE compendium rows matching the substring buried inside "re*cover*y"
+  // (Arcane Recovery, Natural Recovery, …). A match no reader can see in the row is
+  // noise: infix hits are now a last resort, never mixed into the ranked bands.
+  it('never surfaces a mid-word substring hit ahead of real matches ("cover")', async () => {
+    renderPalette("/characters/lyra-1");
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "cover" } });
+    // Let the lazily-imported compendium specs resolve before reading the list.
+    await screen.findByRole("option", { name: "Cover" }, { timeout: 5000 });
+    const texts = screen.getAllByRole("option").map((o) => o.textContent);
+    expect(texts.filter((t) => /recovery|discoveries/i.test(t))).toEqual([]);
+  });
+
+  it('still finds a compound name by its tail ("sword" → Greatsword)', async () => {
+    renderPalette();
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "greatsword" } });
+    expect(
+      await screen.findByRole("option", { name: /^greatsword/i }, { timeout: 5000 })
+    ).toBeInTheDocument();
+    // …and the shared tail still matches the compound, ranked below the "Sword …" names.
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "sword" } });
+    const texts = screen.getAllByRole("option").map((o) => o.textContent);
+    expect(texts.some((t) => /sword of/i.test(t))).toBe(true);
+  });
+
   it("deep-links a compendium hit to the entry's DETAIL page (?sel=)", async () => {
     renderPalette();
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "fireball" } });
@@ -471,7 +496,7 @@ describe("CommandPalette — Play-tab reference (W9)", () => {
   it("finds a topic by an Italian keyword (bilingual terms)", () => {
     renderPalette("/characters/lyra-1");
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "cavalcatura" } });
-    expect(screen.getByRole("option", { name: "Mounted combat" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Mounted Combat" })).toBeInTheDocument();
   });
 
   it("hides the reference entries off a character sheet (no Play tab there)", () => {
