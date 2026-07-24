@@ -307,6 +307,24 @@ footprint barely changes read→edit — both fail on the old fixed box). DESIGN
 | 3 — Chronicle           | Markdown chronicle + version history, Treasury, SharedNotes, Sessions       | ✅ Shipped (v0.15.x) — Chronicle (markdown + version history), Treasury, SharedNotes, Sessions all live. (The AI assistant / AI session recaps once scoped here were **DROPPED** — owner 2026-07-06; see _Open decisions_.)                                                                                                                                                                                |
 | 4 — Polish & Completion | PDF export, command palette, compendium, a11y, perf, onboarding             | 🔄 PDF export (faithful from-scratch recreation of the official 2024 sheet layout — the two-page sheet plus an appended **resource ledger** page listing every consumable pool (class resources + magic-item charges: name · pips-or-count · recovery cadence, paginating when long), EN/IT, copyright-clean), glossary tooltips, perf budget, Cmd+K palette shipped. Guided tour + compendium polish open |
 
+## Shipped — Dependabot security remediation (2026-07-24)
+
+Cleared the two open Dependabot alerts, both the same advisory (GHSA-v2hh-gcrm-f6hx, high — `fast-uri`
+host confusion via a failed IDN canonicalization on a literal backslash authority delimiter),
+transitive through `ajv` in both trees. Root (pnpm) and the standalone `functions/` package (npm)
+each got a scoped `<fixver` override in their existing overrides block — `"fast-uri@<3.1.4": "3.1.4"`
+— patch-only, no parent re-resolution; `ajv` itself did not move (root stays on `6.15.0`/`8.20.0`,
+functions on `8.20.0`). Note: the true patched line is `3.1.4`, not the `3.1.3` first named at
+triage — the GitHub advisory's `patched_versions` is `>=3.1.4` (`3.1.3` is still inside the
+vulnerable range `>=3.0.0 <=3.1.3`), confirmed by both `pnpm audit` and `npm audit`'s own advisory
+data, so the override targets `3.1.4`. Root exposure was dev-only (`fast-uri` reaches the tree only
+via `vite-plugin-pwa` → `workbox-build` → `ajv`, a build-time dependency); the `functions/` exposure
+is low — `fast-uri` is a JSON-schema `$ref`/format-validation helper inside `ajv`, reached only
+through `firebase-admin`'s own schema validation, never fed attacker-controlled URIs directly. `npm
+audit` in `functions/` reports zero known vulnerabilities; `pnpm audit` at root reports zero
+`fast-uri` findings (4 unrelated `react-router` moderate/high advisories remain, out of scope for
+this remediation — a separate, newer alert set). `just ci` green.
+
 ## Shipped — Dependabot security remediation (2026-07-21)
 
 Cleared every open Dependabot alert (22 root + the Cloud-Functions set) with the minimal, safest
