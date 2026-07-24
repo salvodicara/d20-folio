@@ -92,13 +92,14 @@ describe("ornament vocabulary (T5)", () => {
     // Its backing diamond is baked in the theme's OWN --bg-surface-2, so the
     // seat rule passes BEHIND the star invisibly (both faces of the seat are
     // surface-2). Drift guard: the baked hex must equal the theme token.
-    const themes = [...indexCss.matchAll(/--seat-orn:\s*url\("([^"]+)"\)/g)].map(
-      (m) => m[1]
-    );
+    const themes = [...indexCss.matchAll(/--seat-orn:\s*url\("([^"]+)"\)/g)]
+      .map((m) => m[1])
+      .filter((u): u is string => u !== undefined);
     expect(themes).toHaveLength(2);
-    const surface2 = [...indexCss.matchAll(/--bg-surface-2:\s*(#[0-9a-fA-F]{6})/g)].map(
-      (m) => m[1]?.slice(1).toLowerCase()
-    );
+    const surface2 = [...indexCss.matchAll(/--bg-surface-2:\s*(#[0-9a-fA-F]{6})/g)]
+      .map((m) => m[1])
+      .filter((h): h is string => h !== undefined)
+      .map((h) => h.slice(1).toLowerCase());
     expect(surface2).toHaveLength(2);
     themes.forEach((uri, i) => {
       expect(uri, `seat-orn theme ${i} bakes its surface-2 backing`).toContain(

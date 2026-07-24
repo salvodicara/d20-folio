@@ -34,6 +34,7 @@ import { InlineEditable } from "@/components/shared/InlineEditable";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ErrorBoundary, SectionErrorFallback } from "@/components/shared/ErrorBoundary";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
+import { transitionBackdrop } from "@/lib/backdrop-transition";
 import { cropToBackgroundPosition, cropZoomFactor } from "@/lib/portrait-crop";
 import type { PortraitCrop } from "@/types/character";
 import { PERSONAL_CAMPAIGN_ID } from "@/app/_data/personal-campaign";
@@ -94,29 +95,38 @@ function useCampaignBackdrop(
   useEffect(() => {
     const html = document.documentElement;
     const root = html.style;
-    root.setProperty(
-      "--app-bg-art",
-      bannerUrl ? `url("${bannerUrl}")` : CAMPAIGN_BACKDROP
-    );
-    // Custom art is ANY image — the light theme veils it (`data-app-bg-custom`,
-    // the index.css glaze) so an arbitrary upload sits harmoniously under the
-    // light chrome; the bundled per-theme plates render native (no veil).
-    if (bannerUrl) html.setAttribute("data-app-bg-custom", "");
-    // Only a custom banner carries a crop; the default asset stays centred + unscaled.
-    const position = bannerUrl ? cropToBackgroundPosition(bannerCrop) : null;
-    if (position) {
-      root.setProperty("--app-bg-art-position", position);
-      // The focal is also the zoom pivot, so scaling keeps "where they cropped" centred.
-      root.setProperty("--app-bg-art-scale", String(cropZoomFactor(bannerCrop)));
-    } else {
-      root.removeProperty("--app-bg-art-position");
-      root.removeProperty("--app-bg-art-scale");
-    }
+    // Every swap rides the backdrop crossfade (scene dissolves into scene —
+    // reduced motion keeps the hard cut). The attribute + focal/zoom mutations
+    // ride the SAME transition as the art: the ghost snapshots the painter's
+    // computed state (image, focal, veil, presence) before any of it changes.
+    transitionBackdrop(() => {
+      root.setProperty(
+        "--app-bg-art",
+        bannerUrl ? `url("${bannerUrl}")` : CAMPAIGN_BACKDROP
+      );
+      // Custom art is ANY image — both themes carve its presence back to 0.55
+      // and the light theme veils it (`data-app-bg-custom`, the index.css
+      // glaze) so an arbitrary upload sits harmoniously under the chrome; the
+      // bundled per-theme plates render native (no veil, full presence).
+      if (bannerUrl) html.setAttribute("data-app-bg-custom", "");
+      // Only a custom banner carries a crop; the default asset stays centred + unscaled.
+      const position = bannerUrl ? cropToBackgroundPosition(bannerCrop) : null;
+      if (position) {
+        root.setProperty("--app-bg-art-position", position);
+        // The focal is also the zoom pivot, so scaling keeps "where they cropped" centred.
+        root.setProperty("--app-bg-art-scale", String(cropZoomFactor(bannerCrop)));
+      } else {
+        root.removeProperty("--app-bg-art-position");
+        root.removeProperty("--app-bg-art-scale");
+      }
+    });
     return () => {
-      root.removeProperty("--app-bg-art");
-      root.removeProperty("--app-bg-art-position");
-      root.removeProperty("--app-bg-art-scale");
-      html.removeAttribute("data-app-bg-custom");
+      transitionBackdrop(() => {
+        root.removeProperty("--app-bg-art");
+        root.removeProperty("--app-bg-art-position");
+        root.removeProperty("--app-bg-art-scale");
+        html.removeAttribute("data-app-bg-custom");
+      });
     };
   }, [bannerUrl, bannerCrop]);
 }

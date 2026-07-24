@@ -1556,6 +1556,26 @@ body::after {
   }
 }
 
+/* The backdrop crossfade (the atmosphere mandate — src/lib/backdrop-transition.ts).
+   During a route's backdrop swap a GHOST div paints the OLD scene (computed
+   state copied inline: image, focal, zoom, veil filter, mask) and fades out on
+   the standard ease, dissolving scene-into-scene; `data-bg-swap` drops the
+   painter one z-plane so the NEW scene sits under the fading ghost (tree order
+   keeps it above the ::before vellum grain at the same plane). Opacity-only,
+   spawned only under data-motion="auto" (the module short-circuits reduced). */
+.bg-ghost {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-size: cover;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  transition: opacity 480ms var(--ease-standard, ease-out);
+}
+[data-bg-swap] body::after {
+  z-index: -2;
+}
+
 ::selection {
   background: color-mix(in oklab, var(--accent-primary) 30%, transparent);
   color: var(--text-primary);

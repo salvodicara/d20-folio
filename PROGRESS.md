@@ -617,6 +617,14 @@ v0.20.0 tail) and the identity push itself (this mission). State:
      **dark 0.9 / light 0.75** for the bundled plates (their designed calm centres earn it;
      composite floor holds ≥ 4.7:1, on-art battery 47/47 green), while custom DM uploads carve
      back to the proven 0.55 taming via `[data-app-bg-custom]`. `DESIGN.md` §13.
+  3. **The backdrop crossfade** (orchestrator-delegated "do what you deem best" — judged worth
+     shipping once presence rose: at 0.9 a route's hard cut reads as a viewport flash): every
+     swap on the one backdrop seam (`useRealmBackdrop` + the hub's `useCampaignBackdrop`) rides
+     `transitionBackdrop` (`src/lib/backdrop-transition.ts`) — the old scene's computed painter
+     state ghosts at the painter's z-plane and fades 480ms `--ease-standard` while the new plate
+     lands beneath; unmount+mount writes coalesce on a microtask so the ghost always shows the
+     pre-navigation scene; reduced motion keeps the hard cut. Verified frame-by-frame in real
+     Chromium; orchestration unit-pinned. `DESIGN.md` §9 (motion table) + §13.
 - **Open: NOTHING — the full-BG3 identity pivot (incl. the atmosphere push) is COMPLETE
   (2026-07-24).** PROMPT_12–25 are all resolved (see the ASSET-INTEGRATION ledger above); every
   plate is integrated, verified, and budgeted. Two OPTIONAL future-polish items remain, neither a
