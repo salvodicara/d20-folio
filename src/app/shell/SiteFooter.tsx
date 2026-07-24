@@ -21,9 +21,7 @@ export function SiteFooter() {
   return (
     <footer className="site-footer" role="contentinfo">
       <div className="site-footer-inner">
-        <span className="site-footer-rule" aria-hidden>
-          <span className="site-footer-diamond" />
-        </span>
+        <span className="site-footer-rule" aria-hidden></span>
         <p className="site-footer-colophon">
           <span className="site-footer-brand">d20 Folio</span>
           <span className="site-footer-sep" aria-hidden>

@@ -540,6 +540,44 @@ The pivot's work packages:
   convention"); `_identity-shots` and `_polish-shots` stay SEPARATE by design (theme-surface vs
   full-surface sweeps), not folded.
 
+## Active epic — The chrome reset (owner-ratified 2026-07-24)
+
+**The owner's verdict, verbatim:** the accreted chrome is _"a lasagna — layers, not a design"_. The
+ruling: **ONE design vision, copy BG3 as faithfully as possible, re-question everything, nothing
+less than perfection, no patches on top.** A holistic audit measured what the app actually paints
+(216 distinct chrome signatures, 273 framed boxes on one cockpit page, 8 radii in simultaneous use,
+18 rotated-diamond ornaments, four coexisting divider grammars, and eight confirmed layer
+collisions — including the double separator on the delete-character dialog the owner named) against
+the reference measured in pixels. The target system, its 73-row reconciliation ledger and its
+phase plan are recorded in `DESIGN.md` (§4 "The plate material", §5 "The ornament vocabulary").
+
+**The three laws** the whole reset is derived from:
+
+1. **A frame means _container_ or _interactive_. Nothing else is framed.** Static information
+   inside a container is separated by whitespace and typography. Maximum framed nesting: 2.
+2. **An ornament REPLACES the line.** It is never drawn over it, beside it, or near it.
+3. **State changes light and colour only. Geometry is frozen.**
+
+The phases (each one worktree, one merge, green on both build modes):
+
+| Phase | Scope                                                                                                                                                                                                                                                                                              | Status   |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 0     | Reset the base — the four unpushed plate-grammar commits do not survive as landed (their diagnosis is adopted; their implementation layered a second bevel ON the elevation stack instead of replacing it, which is what produced the 10-term card shadow, the doubled cast and the doubled basin) | **DONE** |
+| 1     | **DELETION** — every DELETE row in the ledger, nothing added, nothing redesigned                                                                                                                                                                                                                   | **DONE** |
+| 2     | The material primitives — PLATE (one specular dome) · EDGE (moat → lip → groove → rim → lip) · HAIRLINE · INK, replacing `--elev-*` on every plate                                                                                                                                                 | **DONE** |
+| 3     | Radius + geometry unification — 6 radii → 2 (10px plates, 0 chips); the square-corner ruling reversed (the reference's corners are rounded ~10–12px ALWAYS, including the ornamented ones)                                                                                                         | **DONE** |
+| 4     | **UNFRAMING** (L1) — cockpit 273 → ≤ 60 framed boxes, compendium 1313 → ≤ 200, nesting 3 → 2                                                                                                                                                                                                       | open     |
+| 5     | The state grammar (L3) — one ladder across buttons, tabs, rows, cards, plaques                                                                                                                                                                                                                     | open     |
+| 6     | The MARK — the corner terminal redrawn as the glint fan alone, seated inside the radius, plus the run cartouche; mounted on exactly one surface per route. The only ADDITIVE phase; owner preview                                                                                                  | open     |
+| 7     | Light sibling re-derived against the finished dark system + guards + budget                                                                                                                                                                                                                        | open     |
+
+**Phase 1 removed ~95 painted layers and added one** (the hairline): the double separator, the
+compendium leaf's double gilt frame, the third parchment-texture copy, the ornament on dialogs, all
+18 rotated diamonds, the count medallion, the class-pigment crown, the engraved titling, the crest
+watermark on every masthead, and every light-emission system in the chrome — the focus wash and
+bloom, `--gilt-glow*`, `--illumination`, `--glint-ink`'s hover sweep, `--emboss-sheen`'s cream lip
+and the commit bloom. Four divider grammars collapsed into one `--hairline`.
+
 ## Active epic — The DDB-parity frontier (owner-ratified 2026-07-17, OPENED 2026-07-23)
 
 > The standing competitive map this epic serves — the ahead/behind frame, the deliberate non-goals,

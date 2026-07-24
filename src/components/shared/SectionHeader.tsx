@@ -101,7 +101,6 @@ export function SectionHeader({
       )}
       {...rest}
     >
-      <span className="sec-diamond" aria-hidden />
       <Heading className={cn("sec-title", icon && "flex items-center gap-1.5")} id={id}>
         {icon}
         {title}

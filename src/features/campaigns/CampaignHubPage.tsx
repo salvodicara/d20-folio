@@ -237,10 +237,7 @@ function CampaignHub({ campaignId }: { campaignId: string }) {
           `PageHeader` the campaigns LIST opens on, so every campaign surface reads
           as one family. The title is the DM's inline-editable name (members see it
           read-only); the hint carries the at-a-glance member count + DM status; the
-          action slot holds the set/change-art affordance. NO `crest`: this masthead
-          is art-backed (the campaign's own art is the backdrop), so its art is the
-          frontispiece — the crest rides only the framed mastheads on the standard
-          app field (DESIGN.md §13). */}
+          action slot holds the set/change-art affordance. */}
       <PageHeader
         as="h1"
         title={

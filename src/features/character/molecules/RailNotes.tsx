@@ -68,7 +68,6 @@ export function RailNotes() {
         // Toggle relative to the current (possibly derived) open state.
         onClick={() => setManualOpen(!open)}
       >
-        <span className="rh-diamond" aria-hidden />
         <StickyNote className="h-3.5 w-3.5 text-text-secondary" aria-hidden />
         <span className="rail-notes-rubric">{t("notes.combatRubric")}</span>
         <span className="rh-rule" aria-hidden />

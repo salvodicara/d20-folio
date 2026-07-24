@@ -138,9 +138,11 @@ svg.icon[stroke],
 }
 
 /* ─────────────────────────── SECTION DIVIDERS (Divider A) ─────────────────────────── */
+/* A section rubric is TYPE AND SPACE: a title, the one hairline, an optional
+   count and meta. No marker, no node, no accent bar. */
 .sec-head {
   display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: auto 1fr auto;
   gap: var(--sp-3);
   align-items: center;
   margin: var(--sp-6) 0 var(--sp-3);
@@ -151,21 +153,6 @@ svg.icon[stroke],
 .sec-head:first-child {
   margin-top: 0;
 }
-.sec-diamond {
-  width: 8px;
-  height: 8px;
-  transform: rotate(45deg);
-  background: var(--accent-primary-bright);
-  box-shadow: 0 0 8px color-mix(in oklab, var(--accent-glow) 55%, transparent);
-}
-/* Section headers default to the deep gilt (card-safe: deep gold reads on the
-   ivory cards AND on the lighter field). On the candlelit BACKDROP — inside an
-   `.on-art-scope`, or `.sec-meta` which is always loose — they switch to bright
-   gilt + the dark outline so they read over the busy art (rules further below). */
-[data-theme="light"] .sec-diamond {
-  background: var(--accent-text);
-  box-shadow: none;
-}
 .sec-title {
   font-family: var(--font-display);
   font-weight: 700;
@@ -175,24 +162,12 @@ svg.icon[stroke],
   margin: 0;
   white-space: nowrap;
 }
-/* THE one divider rule (DESIGN.md §5 "The ornament vocabulary"): a hairline that
-   FADES AT BOTH TIPS and stays nodeless — the section rubric's leading
-   `.sec-diamond` is the divider's marker; the run and its tips are quiet.
-   Parameterized by `--rule-c` — the light theme and the econ-typed headers only
-   re-tint it. */
+/* The section rubric's run of the ONE divider (P3, `--hairline`): tips fading,
+   nodeless. `--hairline-ink` is the single parameter the econ-typed headers
+   re-tint; the light sibling re-tints it at the root. */
 .sec-rule {
-  --rule-c: color-mix(in oklab, var(--accent-primary) 40%, transparent);
   height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    var(--rule-c) 14%,
-    var(--rule-c) 86%,
-    transparent
-  );
-}
-[data-theme="light"] .sec-rule {
-  --rule-c: color-mix(in oklab, var(--accent-text) 45%, transparent);
+  background: var(--hairline);
 }
 /* ── Header-as-disclosure (owner-ratified 2026-07-24) — the opt-in SectionHeader
    toggle for on-demand reference sections (the Play tab's collapsed-by-default
@@ -247,8 +222,7 @@ svg.icon[stroke],
    action type so they scan like the ActionGroup headers, NOT the generic gold
    rubric (owner: "why is Reazioni gold not red? Azioni Base should be green").
    Title uses the theme-correct AA hue (`--at-*`: bright on dark, deep on cream);
-   the diamond + rule use the BRIGHT palette hue + a coloured glow so the marker
-   reads flashy in both themes. */
+   the hairline re-tints to the same family. */
 .sec-head[data-econ="reaction"] {
   --sec-c: var(--at-reaction);
   --sec-bright: var(--at-reaction-vivid);
@@ -258,87 +232,34 @@ svg.icon[stroke],
   --sec-bright: var(--at-action-vivid);
 }
 .sec-head[data-econ] .sec-title {
-  /* These econ headers (Reactions / Base Actions) sit on the CREAM cockpit column
-     (a card), NOT the backdrop — so the title text stays the deep AA hue (`--sec-c`);
-     the diamond carries the vivid scan-colour. No glow (it's on a light card). */
   color: var(--sec-c);
 }
-.sec-head[data-econ] .sec-diamond {
-  background: var(--sec-bright);
-  box-shadow: 0 0 9px color-mix(in oklab, var(--sec-bright) 60%, transparent);
-}
 .sec-head[data-econ] .sec-rule {
-  --rule-c: color-mix(in oklab, var(--sec-bright) 55%, transparent);
+  --hairline-ink: color-mix(in oklab, var(--sec-bright) 45%, transparent);
 }
-/* ── Count medallion (the "illuminated premium" section COUNT) — a struck gilt coin
-   docked BESIDE the title (column 3, between the title and the fading rule), NOT a
-   bare number floating in a thin far-right box (which read weak on parchment). It is
-   a deliberately-designed, SELF-CONTAINED OBJECT in BOTH themes: an ENGRAVED inner
-   ring (`::before`), a full-colour gold border, a top emboss + gold glow. Used ONLY
-   for NUMERIC section counts; string totals ("145 gp") keep the far-right `.sec-meta`.
-   The header gains the `.has-count` 4-column grid so the rule still fans out to the
-   panel edge after the coin. The numerals take `--accent-text` (gold-leaf-300 on dark,
-   deep gold-leaf-900 on light).
-
-   DARK (below): a translucent gilt radial tint over the near-black field — the dark
-   page shows through and the BRIGHT gold numeral reads, so the coin needs no opaque
-   base (a self-contained dark-on-dark never happens). LIGHT is struck as a genuinely
-   OPAQUE gilt DISC (the `[data-theme="light"]` rule below) so the DEEP gold numeral
-   self-backs and never depends on what's behind it — the campaign-hub section counts
-   render ON the candlelit backdrop, where the old translucent fill let the dark art
-   bleed through and the deep-gold numeral read BROWN. Same struck-coin material as the
-   disclosure knob (`.section-disclosure-knob`); ONE light recipe strikes both. ── */
+/* The section COUNT — plain numerals in the rubric row (L1: a read-only number
+   is not an object; it is type). Docked between the title and the hairline, in
+   the numeric face at the muted ink every other subordinate readout uses. The
+   header takes the 4-column `.has-count` grid so the hairline still fans out to
+   the container edge after the number. String totals ("145 gp") keep the
+   far-right `.sec-meta`. */
 .sec-head.has-count {
-  grid-template-columns: auto auto auto 1fr;
+  grid-template-columns: auto auto 1fr auto;
 }
 .sec-count {
-  position: relative;
   justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 var(--sp-2);
-  border-radius: var(--radius-pill);
   font-family: var(--font-numeric);
   font-weight: 700;
   font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
-  color: var(--accent-text);
-  background: radial-gradient(
-    circle at 50% 28%,
-    color-mix(in oklab, var(--accent-primary-bright) 30%, transparent),
-    color-mix(in oklab, var(--accent-primary-bright) 16%, transparent)
-  );
-  border: 1px solid color-mix(in oklab, var(--accent-primary-bright) 60%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--gold-leaf-50) 34%, transparent),
-    0 0 10px color-mix(in oklab, var(--accent-primary-bright) 36%, transparent);
+  color: var(--text-muted);
 }
-/* The engraved inner ring — the struck-coin detail. */
-.sec-count::before {
-  content: "";
-  position: absolute;
-  inset: 2px;
-  border-radius: inherit;
-  border: 1px solid color-mix(in oklab, var(--accent-primary-bright) 28%, transparent);
-  pointer-events: none;
-}
-/* LIGHT — strike the gilt coins as genuinely OPAQUE discs so they are SELF-CONTAINED
-   (DESIGN §10 register ladder: a premium gilt register is earned + must not depend on
-   its background). The dark theme's translucent fill let the candlelit BACKDROP bleed
-   through, so the deep-gold numeral read BROWN/illegible wherever a coin sat on the art
-   (the campaign-hub section counts, owner-reported). Paint an OPAQUE struck-gold base
-   (`--gold-leaf-300`) that carries the ink regardless of what's behind it, a bright top
-   sheen that reads as struck metal, a deep gold-700 rim for the edge on cream, and the
-   `--accent-glow` halo (`--gilt-glow-sm`, DESIGN §10.3) so the coin kindles on cream.
-   The numeral/glyph stays the deep `--accent-text` (gold-900) — deep-gold ENGRAVING on
-   bright gilt (≥6:1), the intended struck-coin look, NEVER background-dependent. ONE
-   rule strikes the count medallion AND the disclosure knob (the same coin material).
-   Guarded against regressing to a translucent fill by the gilt-coin disc probe in
-   tests/e2e/on-art-ink.spec.ts + light-theme-backdrop-legibility.guard.test.ts (#7). */
-[data-theme="light"] :is(.sec-count, .section-disclosure-knob) {
+/* The disclosure KNOB stays a struck gilt disc: it is INTERACTIVE, and it is the
+   one thing in the rubric row a pointer can act on. Struck OPAQUE in light so it
+   is self-contained on the candlelit backdrop (a translucent fill let the art
+   bleed through and the deep-gold glyph read brown). */
+[data-theme="light"] .section-disclosure-knob {
   background-color: var(--gold-leaf-300);
   background-image: radial-gradient(
     circle at 50% 26%,
@@ -346,9 +267,7 @@ svg.icon[stroke],
     transparent 72%
   );
   border-color: color-mix(in oklab, var(--gold-leaf-700) 55%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, white 45%, transparent),
-    var(--gilt-glow-sm);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, white 45%, transparent);
 }
 /* `.on-art` — text that sits directly on the candlelit backdrop (not on a card).
    In light theme the dark field-ink vanished on the prominent 0.55 art; this paints
@@ -612,43 +531,6 @@ svg.icon[stroke],
   background: color-mix(in oklab, #1a1206 60%, transparent);
   border-color: color-mix(in oklab, var(--gold-leaf-300) 58%, transparent);
   text-shadow: 0 1px 1px rgba(20, 13, 3, 0.5);
-}
-/* The section diamond is a graphic — bright gilt ONLY when loose on the backdrop;
-   a diamond inside a card keeps its default gold (same exclusion as the text). */
-[data-theme="light"]
-  .on-art-scope
-  .sec-diamond:not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .badge,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *
-  ) {
-  background: var(--text-on-backdrop-title);
-  box-shadow: 0 0 8px color-mix(in oklab, var(--text-on-backdrop-title) 55%, transparent);
 }
 /* Error/required ink loose on the backdrop (the wizard's required-field "*" and
    inline error lines): the deep light-theme --semantic-danger ink vanishes on the
@@ -932,14 +814,17 @@ svg.icon[stroke],
   min-width: 0;
 }
 /* Mobile: long edit hints (e.g. the Abilities edit-mode "tap a pip to cycle, the
-   bonus to override" microcopy) live in the 4th `auto` column of `.sec-head`.
-   With `white-space: nowrap` they set a min-content width WIDER than a 390px
-   viewport, stretching the whole page (and every dotted-leader row) into
-   horizontal overflow. Below 720px we drop the meta onto its own wrapping row so
-   the hint can never force page width — diamond · title · fading rule keep their
+   bonus to override" microcopy) live in the trailing `auto` column of
+   `.sec-head`. With `white-space: nowrap` they set a min-content width WIDER
+   than a 390px viewport, stretching the whole page (and every dotted-leader row)
+   into horizontal overflow. Below 720px we drop the meta onto its own wrapping
+   row so the hint can never force page width — title · hairline keep their
    one-line rhythm, the hint flows beneath, right-aligned. */
 @media (max-width: 720px) {
   .sec-head {
+    grid-template-columns: auto 1fr;
+  }
+  .sec-head.has-count {
     grid-template-columns: auto auto 1fr;
   }
   .sec-meta {
@@ -1374,52 +1259,6 @@ svg.icon[stroke],
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.32);
 }
 
-/* ── The gilt glint (wave 2 of the full-BG3 push) — "metal catches the light".
-   On hover the STRUCK-GOLD tier (primary/brass CTAs + the End Turn climax —
-   the earned metal surfaces only, never the quiet tiers) plays ONE quiet
-   specular sweep across the face: a narrow diagonal sheen band on an overlay
-   pseudo, driven purely by transform (GPU-only, no layout). §9 grammar: motion
-   conveys ILLUMINATE; the sweep eases on --ease-standard and plays once per
-   hover — the transition lives ONLY on the hover state, so un-hovering resets
-   the band instantly (both endpoints are transparent → the reset is invisible)
-   and the next hover replays it. Gated on [data-motion="auto"]: under reduced
-   motion the band simply never moves (it rests off-canvas, fully transparent).
-   The ::before pseudo is free on this tier (.btn.loading uses ::after);
-   overflow:hidden clips the band to the CTA's radius — box-shadows (the brass
-   lip, the ember pool) are NOT clipped by overflow, so the elevation voice is
-   untouched. The host's `position: relative; overflow: hidden` seat lives in
-   each BASE recipe (.btn.primary/.brass above, .endturn at its own block) — a
-   shared grouped rule here was CASCADE-DEAD for .endturn, whose base opens
-   `all: unset` LATER in source at equal specificity. The per-theme sheen ink
-   is `--glint-ink` (src/index.css, beside the other ornament metals): dark, a
-   white haze on deep gold; light, stronger warm-white so it reads as sun on
-   the already-bright brass — one gradient, so the strikes can never drift. */
-.btn.primary::before,
-.btn.brass::before,
-.endturn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    115deg,
-    transparent 40%,
-    var(--glint-ink) 50%,
-    transparent 60%
-  );
-  transform: translateX(-130%);
-}
-[data-motion="auto"] .btn.primary:hover:not(:disabled):not(.loading)::before,
-[data-motion="auto"] .btn.brass:hover:not(:disabled):not(.loading)::before,
-[data-motion="auto"] .endturn:hover:not(:disabled)::before {
-  transform: translateX(130%);
-  /* --ease-standard, NOT --ease-settle: settle's fast start raced the band
-     across the face in ~150ms (a blink, verified frame-by-frame in Chromium);
-     the gentle-both-ends standard curve at 900ms gives the deliberate BG3
-     pass — the sheen spends the middle ~third of the duration crossing the
-     visible face. */
-  transition: transform 900ms var(--ease-standard);
-}
 /* secondary — embossed stone. Shares the primary's REST/HOVER/ACTIVE idiom
    (Elevation-C) at a quieter tier so the two never read as different design
    languages: calm carved tile at rest, brighten + lift one notch on hover (NOT a
@@ -1531,8 +1370,7 @@ svg.icon[stroke],
   outline-offset: 2px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 2px 0 var(--vermilion-700),
-    var(--illumination);
+    0 2px 0 var(--vermilion-700);
 }
 /* ghost */
 .btn.ghost {
@@ -2419,15 +2257,10 @@ button.pr-dot.lg::before {
   padding: var(--sp-4);
 }
 .modal {
-  /* relative seats the corner-ornament overlay (`.modal::after`, the ornament
-     vocabulary below) — dialogs are an earned hero register. The modal must NOT
-     clip child paint: that would cut the corner goldwork, which straddles the
-     frame line (border-image outset). Scroll clipping lives on `.modal-body`
-     (its own overflow-y). SQUARE corners — the ONE-LINE law (owner, 2026-07-24
-     "must ALIGN to the borders"): the corner ornament seats on a true square
-     crossing of the host's own 1px border, exactly like BG3's active spellbook
-     panel; a rounded arc curving under the knot read as a second,
-     non-registering line. */
+  /* A dialog is a plate on the EARNED tier and carries NO ornament: the one
+     ornamented surface on a screen is the surface the user is acting in, and a
+     dialog already commands the screen. `relative` seats the head's hairline;
+     scroll clipping lives on `.modal-body` (its own overflow-y). */
   position: relative;
   width: 100%;
   max-width: 32rem;
@@ -2442,76 +2275,38 @@ button.pr-dot.lg::before {
 .modal.lg {
   max-width: 46rem;
 }
+/* A head is NOT a separate plate: it is the top of the dialog's one material,
+   ended by the one divider in the system — the HAIRLINE. Inset from the padding
+   edge, tips fading, nodeless. Nothing is drawn over it. */
 .modal-head {
   position: relative;
   display: flex;
   align-items: flex-start;
   gap: var(--sp-3);
-  padding: var(--sp-4) var(--sp-5) var(--sp-3);
-  /* The head's gradient is the modal's one full-bleed child paint; the card is
-     square-cornered (the one-line law above), so the band is too. */
-  border-radius: 0;
-  /* The head's seat rule is the `.sec-rule` idiom (full-BG3 push): a gilt-touched
-     hairline that FADES AT BOTH TIPS instead of a wall-to-wall border — the
-     border-image bottom slice of a to-right gradient paints exactly that. */
-  border-bottom: 1px solid transparent;
-  border-image: linear-gradient(
-      to right,
-      transparent,
-      color-mix(in oklab, var(--accent-primary) 45%, var(--border-soft)) 16%,
-      color-mix(in oklab, var(--accent-primary) 45%, var(--border-soft)) 84%,
-      transparent
-    )
-    1;
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-glow) 9%, var(--bg-surface-3)),
-    var(--bg-surface-2)
-  );
+  padding: var(--sp-5) var(--sp-5) var(--sp-4);
 }
-/* The ceremonial seat ornament (the winged divider, DESIGN.md §5) — BG3's
-   level-up under-title divider translated into the style-A corner language
-   (owner pick, 2026-07-24): rails tapering outward into hairpoints that end
-   in a tiny OPEN under-curl, inner ends stepping up in open-eye S-hook
-   returns (the corner volute's language, small), and the luminous centre —
-   a nested chevron pair over a descending faceted plumb hanging BELOW the
-   rule in a baked radial glow (raised per the "more wow" verdict). Nothing
-   floats: every stroke is attached to the rule end to end. The per-theme
-   `--seat-orn` SVG (index.css) straddles the 1px seat (24px tall, the SVG's
-   rule line at y=12 on the border); its baked surface-2 backing occludes the
-   rule behind the fleur, so no notch math — the backing diamond hugs the
-   fleur and blurs its edge in-SVG so no hard plate rim shows against the
-   glow. Decor only: no pointer events, no layout. */
 .modal-head::after {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -12px;
-  height: 24px;
+  left: var(--sp-5);
+  right: var(--sp-5);
+  bottom: 0;
+  height: 1px;
   pointer-events: none;
-  background: var(--seat-orn) center / 260px 24px no-repeat;
+  background: var(--hairline);
 }
+/* The rubric is an eyebrow, not a value: body-muted micro-caps, no accent hue
+   (gold means value or state, never a label) and no marker. */
 .modal-rubric {
   font-family: var(--font-numeric);
   font-size: var(--text-micro);
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--accent-text);
+  color: var(--text-muted);
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 5px;
-}
-.modal-rubric::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  transform: rotate(45deg);
-  background: var(--accent-primary-bright);
-}
-[data-theme="light"] .modal-rubric::before {
-  background: var(--accent-text);
 }
 .modal-title {
   font-family: var(--font-title);
@@ -2582,21 +2377,11 @@ button.pr-dot.lg::before {
   font-size: var(--text-micro);
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--accent-text);
+  color: var(--text-muted);
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 5px;
-}
-.pop-rubric::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  transform: rotate(45deg);
-  background: var(--accent-primary-bright);
-}
-[data-theme="light"] .pop-rubric::before {
-  background: var(--accent-text);
 }
 .pop-body {
   padding: var(--sp-3) var(--sp-4);
@@ -2795,9 +2580,7 @@ button.pr-dot.lg::before {
    restores the struck top edge; the full gold border + gilt-wash fill are
    unchanged (they read on cream). */
 [data-theme="light"] .toast {
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen),
-    var(--elev-floating);
+  box-shadow: var(--elev-floating);
 }
 .toast[data-type="success"] {
   border-color: color-mix(in oklab, var(--semantic-success) 45%, var(--border-accent));
@@ -2942,9 +2725,7 @@ button.pr-dot.lg::before {
    top-accent already read on vellum (deep gold-700→500 on cream, ~5–9:1), so
    they're unchanged. Dark keeps its gold-50 sheen via the shared rule above. */
 [data-theme="light"] .accent-alert {
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen),
-    var(--elev-resting);
+  box-shadow: var(--elev-resting);
 }
 
 /* Loading skeletons were removed (owner 2026-06-07) in favour of the app-shell
@@ -3025,7 +2806,6 @@ button.pr-dot.lg::before {
 .sw:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: var(--illumination);
 }
 .sw[aria-disabled="true"],
 .sw[disabled],
@@ -3102,7 +2882,6 @@ button.pr-dot.lg::before {
 .rb:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: var(--illumination);
 }
 .cb[aria-disabled="true"],
 .cb[data-disabled],
@@ -3181,7 +2960,6 @@ button.pr-dot.lg::before {
 .seg button:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
-  box-shadow: var(--illumination);
 }
 /* S2: hover on an UNSELECTED segment — a faint gilt fill + ink lift gives the
    pointer the missing feedback (the base recipe only defined default / focus /
@@ -3230,8 +3008,7 @@ button.pr-dot.lg::before {
   color: var(--text-inverse);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 1px 3px rgba(0, 0, 0, 0.45),
-    var(--gilt-glow-sm);
+    0 1px 3px rgba(0, 0, 0, 0.45);
 }
 /* OWN-36 / WV5 — in light, light's `--accent-primary` is a deep brown, so the active
    segment read gold→brown. Make it a struck GOLD-LEAF tile like the cockpit active tab:
@@ -3246,9 +3023,7 @@ button.pr-dot.lg::before {
     var(--gold-leaf-500) 100%
   );
   color: var(--accent-text);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 250, 0.85),
-    var(--gilt-glow-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 250, 0.85);
 }
 /* ── SELECT (carved input shell + chevron) — every dropdown ── */
 .select {
@@ -3377,24 +3152,6 @@ button.pr-dot.lg::before {
 .es.sm .runic-glyph .icon {
   width: 28px;
   height: 28px;
-}
-.runic-gem {
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  transform: rotate(45deg);
-  background: var(--es-c);
-  box-shadow: 0 0 6px color-mix(in oklab, var(--es-c) 60%, transparent);
-}
-.runic-gem.top {
-  top: -2px;
-  left: 50%;
-  margin-left: -3.5px;
-}
-.runic-gem.bot {
-  bottom: -2px;
-  left: 50%;
-  margin-left: -3.5px;
 }
 /* LIGHT — strike the medallion as a real carved SOCKET (light-craft audit: on the
    bright field the dark-socket disc + dotted ring nearly vanished — the glyph +
@@ -4456,21 +4213,6 @@ button.pr-dot.lg::before {
   gap: 6px;
   margin-bottom: var(--sp-2);
 }
-.rail-head .rh-diamond {
-  /* 7px + faint gold glow so the Illuminated-Folio diamond motif survives at
-     rail scale (was 6px gold-on-near-black — barely perceptible) and reads as
-     the same language as the content section dividers, just subordinate. */
-  width: 7px;
-  height: 7px;
-  transform: rotate(45deg);
-  background: var(--accent-primary-bright);
-  box-shadow: 0 0 6px color-mix(in oklab, var(--accent-glow) 55%, transparent);
-  flex-shrink: 0;
-}
-[data-theme="light"] .rail-head .rh-diamond {
-  background: var(--accent-text);
-  box-shadow: 0 0 5px color-mix(in oklab, var(--accent-text) 35%, transparent);
-}
 .rail-head h5 {
   font-family: var(--font-numeric);
   font-size: var(--text-micro);
@@ -4697,7 +4439,6 @@ textarea.input.rail-notes-area {
 .hdr-hp-toggle:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: var(--illumination);
 }
 .hdr-hp-nums {
   display: flex;
@@ -5033,9 +4774,8 @@ textarea.input.rail-notes-area {
   gap: 3px;
 }
 .sc-pip {
-  width: 10px;
-  height: 10px;
-  transform: rotate(45deg);
+  width: 9px;
+  height: 9px;
   border-radius: 1px;
   background: radial-gradient(
     circle at 35% 30%,
@@ -5077,7 +4817,7 @@ button.sc-pip::before {
   inset: -6px;
 }
 button.sc-pip:active {
-  transform: rotate(45deg) scale(0.82);
+  transform: scale(0.82);
 }
 button.sc-pip:disabled {
   cursor: default;
@@ -6086,7 +5826,6 @@ button.trk-pip:active {
   outline-offset: 2px;
   border-color: var(--accent-primary);
   color: var(--text-primary);
-  box-shadow: var(--illumination);
 }
 .topbar-ask:focus-visible .topbar-ask-icon {
   color: var(--accent-text);
@@ -6165,7 +5904,6 @@ button.trk-pip:active {
 .acct-trigger:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: var(--illumination);
 }
 /* The account-ring ANCHOR (D2) — lit when the current surface is Settings / Admin,
    the SAME gold "you are here" grammar as the hub tabs. Desktop (the named
@@ -7135,49 +6873,6 @@ button.trk-pip:active {
   }
 }
 
-/* ── Brand crest watermark (DESIGN.md §13, Fable batch-1 P6) ─────────────────
-   The engraved d20-in-wreath emblem, styled to sit behind a framed PageHeader
-   band as a frontispiece watermark: the same quiet register as an embossed
-   crest on a bound folio's title page. Seated on the standard-field framed
-   mastheads (DESIGN.md §13); the art-backed campaign hub omits it, since its
-   own art is the frontispiece. The asset is an alpha mask (`--asset-crest`),
-   painted through CSS `mask-image` with the theme's accent as ink, so it is
-   gold-engraved in dark and antique-bronze in light with ONE file.
-   Whisper-faint by design (it must read as material, never as content); the
-   crest element spans the band (`inset: 0`) and sizes the emblem via mask-size,
-   so the emblem's top/bottom bleed clips against the element's own bounds — the
-   band itself must NOT `overflow: hidden` (that would clip the reliquary corner
-   goldwork riding the frame line). `isolation` + `z-index: -1` keep it under
-   the title/hint/action ink while staying above the band's own gradient. Decor
-   only: hidden from AT, no pointer events. */
-.page-head.framed.has-crest {
-  isolation: isolate;
-}
-.page-head-crest {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: var(--accent-primary);
-  -webkit-mask-image: var(--asset-crest);
-  mask-image: var(--asset-crest);
-  /* The emblem's designed width; height follows the asset's 349:384 ratio. */
-  -webkit-mask-size: 236px auto;
-  mask-size: 236px auto;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  opacity: 0.11;
-  pointer-events: none;
-}
-/* Light ember — the crest reads SCORCHED into the vellum band: struck in the warm
-   burnt-umber ember tone (grammar "Ember Penumbra") rather than a faint antique-gold
-   ghost, so the emblem carries real presence — still a watermark behind the title. */
-[data-theme="light"] .page-head-crest {
-  background: rgb(var(--ember-umber));
-  opacity: 0.5;
-}
-
 /* The masthead is deliberately STATIC on navigation (owner, 2026-07-10): no
    mount animation on the band or its content. Realm switches must read as
    rock-solid — the frame, crest, and ink land in exactly the same place every
@@ -7373,7 +7068,6 @@ button.trk-pip:active {
 .opt-cell:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: var(--illumination);
 }
 .opt-cell[aria-pressed="true"] {
   border-color: color-mix(in oklab, var(--accent-primary) 70%, white);
@@ -7405,7 +7099,7 @@ button.trk-pip:active {
   /* D45 — the picked tile GLOWS gold (BG3-style), so the selection lifts off the grid
      as a lit gilt-leaf tile (consistent with the seals · active tab · segmented gilt).
      Light-only — dark's pick already pops against the near-black grid. */
-  box-shadow: var(--elev-raised), var(--gilt-glow-sm);
+  box-shadow: var(--elev-raised);
 }
 .opt-cell:disabled {
   opacity: 0.35;
@@ -7582,9 +7276,7 @@ button.trk-pip:active {
     color-mix(in oklab, var(--accent-glow) 22%, var(--bg-surface-2)),
     color-mix(in oklab, var(--accent-glow) 10%, var(--bg-surface-1))
   );
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.18)),
-    var(--elev-resting);
+  box-shadow: var(--elev-resting);
 }
 /* "Replace a Spell" — the selected (to-be-removed) card paints in the vermilion REMOVE
    voice instead of gold, so it's unmistakable the spell is being dropped. */
@@ -7738,9 +7430,7 @@ button.trk-pip:active {
     color-mix(in oklab, var(--accent-glow) 22%, var(--bg-surface-2)),
     color-mix(in oklab, var(--accent-glow) 10%, var(--bg-surface-1))
   );
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.18)),
-    var(--elev-resting);
+  box-shadow: var(--elev-resting);
 }
 .opt-cell-wrap[data-selected] .opt-cell-label {
   color: var(--accent-text);
@@ -7792,9 +7482,7 @@ button.trk-pip:active {
     color-mix(in oklab, var(--accent-primary-bright) 70%, white) 0%,
     var(--accent-primary) 72%
   );
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.4)),
-    var(--elev-resting);
+  box-shadow: var(--elev-resting);
   transition:
     filter var(--m-fast) var(--ease-settle),
     box-shadow var(--m-fast) var(--ease-settle);
@@ -7962,9 +7650,7 @@ button.create-need:focus-visible .create-need-chev {
   border-radius: 50%;
   background: var(--portrait-well);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 22%, var(--border-soft));
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.16)),
-    var(--elev-recessed);
+  box-shadow: var(--elev-recessed);
 }
 .save-dot {
   width: 7px;
@@ -8143,7 +7829,7 @@ button.create-need:focus-visible .create-need-chev {
 .ch-card:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: var(--elev-floating), var(--illumination);
+  box-shadow: var(--elev-floating);
 }
 .ch-card.retired {
   opacity: 0.62;
@@ -8176,20 +7862,6 @@ button.create-need:focus-visible .create-need-chev {
 .ch-card[data-class="bard"],
 .ch-card[data-class="paladin"] {
   --ch-pigment: var(--gold-leaf-500);
-}
-/* A 3px domain-pigment crown (a graphic cue, NOT a flat fill) so a wall of
-   same-class or class-less cards still reads as a varied gallery. Sits above the
-   transparent `.ch-open` hit-target (z 1) but never intercepts pointer events;
-   class-less cards fall back to the gold accent so they still read finished. */
-.ch-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: var(--ch-pigment, var(--border-accent));
-  opacity: 0.78;
-  z-index: 2;
-  pointer-events: none;
 }
 .ch-top {
   display: flex;
@@ -8284,7 +7956,6 @@ button.create-need:focus-visible .create-need-chev {
 .ch-open:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: -3px;
-  box-shadow: var(--illumination);
 }
 .ch-card > .ch-overflow,
 .ch-card .ch-menu,
@@ -8401,14 +8072,24 @@ button.create-need:focus-visible .create-need-chev {
 .ch-hp .hp-bar {
   height: 8px;
 }
+/* The card's foot is separated by the ONE divider — no wall-to-wall border, no
+   filled band. A second separator language inside a 284px tile is a lasagna. */
 .ch-foot {
+  position: relative;
   margin-top: auto;
   display: flex;
   align-items: center;
   gap: 6px;
   padding: var(--sp-3) var(--sp-4);
-  border-top: 1px solid var(--border-soft);
-  background: color-mix(in oklab, var(--bg-recessed) 30%, transparent);
+}
+.ch-foot::before {
+  content: "";
+  position: absolute;
+  left: var(--sp-4);
+  right: var(--sp-4);
+  top: 0;
+  height: 1px;
+  background: var(--hairline);
 }
 .ch-stat {
   display: inline-flex;
@@ -8763,27 +8444,14 @@ button.create-need:focus-visible .create-need-chev {
   margin: 3px 0;
 }
 /* The "you are here" marker shared by the account menu (Settings / Admin rows) AND
-   the palette's Section rows (D3) — ONE grammar so the two never drift: gilt ink +
-   a small leading gold diamond in the row's left gutter (no reflow — absolutely
-   placed, the icon/label keep their positions). Both themes (accent tokens). */
+   the palette's Section rows (D3) — ONE grammar so the two never drift. State is
+   LIGHT AND COLOUR: the row's label and icon take the accent ink. No node, no
+   glow, no geometry change. */
 .menu-item[aria-current="page"] {
-  position: relative;
   color: var(--accent-text);
 }
 .menu-item[aria-current="page"] .icon {
   color: var(--accent-text);
-}
-.menu-item[aria-current="page"]::before {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 50%;
-  width: 4px;
-  height: 4px;
-  margin-top: -2px;
-  transform: rotate(45deg);
-  background: var(--accent-primary);
-  box-shadow: 0 0 5px color-mix(in oklab, var(--accent-glow) 55%, transparent);
 }
 
 /* N-E — "Ask the Folio" universal palette: grouped results (Sections · Characters ·
@@ -8880,7 +8548,7 @@ button.create-need:focus-visible .create-need-chev {
 .inline-edit-btn:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
-  box-shadow: var(--elev-recessed), var(--illumination);
+  box-shadow: var(--elev-recessed);
 }
 .inline-edit-btn[data-overridden="true"] {
   /* Override is signalled by the gold BORDER alone — keep the plain recessed bg
@@ -9289,17 +8957,6 @@ button.create-need:focus-visible .create-need-chev {
   background: color-mix(in oklab, var(--cl-cost-c) 13%, transparent);
   border: 1px solid color-mix(in oklab, var(--cl-cost-c) 38%, transparent);
 }
-/* A diamond charge-pip (echoes the chromatic slot seal) so the pill reads as
-   "charges" without spending a second word in the cramped row. */
-.cl-cost::before {
-  content: "";
-  width: 5px;
-  height: 5px;
-  flex-shrink: 0;
-  border-radius: 1px;
-  transform: rotate(45deg);
-  background: currentColor;
-}
 /* Designed can't-afford row: the pool lacks the charges for THIS spell, so the
    button is disabled. Recessed into the page (name + cost stay legible), no hover
    lift, and the cost pill flips to the danger register so the reason the row is
@@ -9602,18 +9259,8 @@ button.create-need:focus-visible .create-need-chev {
   box-shadow: var(--elev-raised);
   overflow: hidden;
 }
-/* A hairline inner gilt rule — the inked margin of the page, set in from the edge,
-   so the leaf reads bound (BG3 codex margin) without a heavy second frame. */
-.tome-leaf-surface::after {
-  content: "";
-  position: absolute;
-  inset: 7px;
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 20%, transparent);
-  border-radius: calc(var(--radius-2xl) - 5px);
-  pointer-events: none;
-}
 [data-theme="light"] .tome-leaf-surface {
-  box-shadow: var(--elev-raised), var(--gilt-glow);
+  box-shadow: var(--elev-raised);
 }
 /* OWN-23 / BG3-identity materials (DESIGN.md §13) — DARK theme reads the leaf as an
    ancient scroll by candlelight: the surface is the DEDICATED dark-vellum plate
@@ -9643,33 +9290,12 @@ button.create-need:focus-visible .create-need-chev {
 }
 
 /* ── `.cmp-tome` — the compendium codex panel, composing `.tome-leaf-surface`
-   (above) for the shared parchment material. Its own bespoke piece is the
-   `::before` texture booster (a light-theme-only knob that reads the grain a
-   touch stronger than the base material — dark's authored plate needs no
-   second pass) and the z-index stack that keeps content above it. ── */
-/* The texture should read but never fight the text — a value knob per theme. */
-.cmp-tome::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: image-set(var(--tome-leaf) type("image/webp"));
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity: var(--parchment-strength);
-  mix-blend-mode: soft-light;
-  pointer-events: none;
-  z-index: 0;
-}
-.cmp-tome::after {
-  z-index: 1;
-}
+   (above) for the shared parchment material. The leaf's own grain IS the
+   material: there is no second texture pass. All that lives here is the stack
+   order that keeps content above the plate. ── */
 .cmp-tome > * {
   position: relative;
   z-index: 2;
-}
-[data-theme="dark"] .cmp-tome::before {
-  opacity: 0;
 }
 
 /* ── Type ribbon — the bound divider tabs across the head of the tome (Spells ·
@@ -9787,7 +9413,6 @@ button.create-need:focus-visible .create-need-chev {
     color-mix(in oklab, var(--accent-glow) 20%, var(--bg-surface-2)),
     var(--bg-surface-2)
   );
-  box-shadow: var(--illumination);
 }
 .cmp-tab[aria-selected="true"] .icon {
   color: var(--accent-text);
@@ -10362,7 +9987,7 @@ button.create-need:focus-visible .create-need-chev {
   box-shadow: var(--elev-raised);
 }
 [data-theme="light"] [data-variant="codex"] .pick-row:hover:not(:disabled) {
-  box-shadow: var(--elev-raised), var(--gilt-glow-sm);
+  box-shadow: var(--elev-raised);
 }
 /* OWN-19 — INSIDE the Compendium tome, the entry rows read as warm illuminated
    LEAVES of the codex rather than neutral cards floating on it: a faint gilt
@@ -10594,11 +10219,6 @@ button.create-need:focus-visible .create-need-chev {
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
-  background: radial-gradient(
-    ellipse at 14% 0%,
-    color-mix(in oklab, var(--accent-primary) 14%, transparent),
-    transparent 58%
-  );
 }
 .cmp-entry-head::after {
   content: "";
@@ -10607,12 +10227,7 @@ button.create-need:focus-visible .create-need-chev {
   right: var(--sp-4);
   bottom: 0;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklab, var(--accent-primary) 55%, var(--border-medium)),
-    color-mix(in oklab, var(--accent-primary) 30%, var(--border-medium)) 60%,
-    transparent
-  );
+  background: var(--hairline);
 }
 
 /* The entry's mark — the SAME leading seal its list row wears (`.lvl-seal` /
@@ -10801,46 +10416,11 @@ button.create-need:focus-visible .create-need-chev {
   align-items: center;
   text-align: center;
 }
-/* The chapter-head ornament: a centred gold-leaf diamond on a fading hairline —
-   the site-footer's colophon grammar, so the leaf opens in the same illuminated
-   system it signs off in.
-   ponytail: third diamond-on-fading-hairline sibling (`.site-footer-rule`/
-   `.site-footer-diamond`, `.bm-rule`) — a shared ornament class parameterized by
-   a `--thread-*` ink would fold all three; deferred because it rewrites two other
-   shipped surfaces' markup (an ornament-vocabulary pass of its own). */
+/* The chapter-head divider: the ONE hairline (P3), nodeless. */
 .colophon-hero-rule {
-  position: relative;
   width: min(240px, 60%);
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in oklab, var(--accent-primary) 38%, transparent),
-    transparent
-  );
-}
-.colophon-hero-rule::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  transform: translate(-50%, -50%) rotate(45deg);
-  background: var(--accent-primary-bright);
-  box-shadow: 0 0 8px color-mix(in oklab, var(--accent-glow) 55%, transparent);
-}
-[data-theme="light"] .colophon-hero-rule {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in oklab, var(--accent-text) 45%, transparent),
-    transparent
-  );
-}
-[data-theme="light"] .colophon-hero-rule::after {
-  background: var(--accent-text);
-  box-shadow: none;
+  background: var(--hairline);
 }
 /* The centred rubric — the `.sec-title` voice (display italic gold), one type
    step up for the ceremonial head. Cinzel stays reserved (Ceremonial-Title Rule). */
@@ -11729,9 +11309,7 @@ button.uc-chevron::before {
 }
 .uc.is-active .uc-head {
   background: color-mix(in oklab, var(--accent-primary) 9%, transparent);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in oklab, var(--accent-primary) 40%, transparent),
-    var(--illumination);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent-primary) 40%, transparent);
 }
 /* The gold-tint active blend lowers contrast — bump the mono gloss to
    --text-secondary so the active card's sub-line clears WCAG-AA (8.5:1). */
@@ -12119,15 +11697,14 @@ h6.bm-heading {
 .bm-ul > li {
   position: relative;
 }
-/* A struck gilt diamond bullet, matching the .sec-diamond vocabulary. */
+/* A plain square bullet — a marker, not an ornament. */
 .bm-ul > li::before {
   content: "";
   position: absolute;
-  left: -1.05em;
-  top: 0.55em;
-  width: 5px;
-  height: 5px;
-  transform: rotate(45deg);
+  left: -1em;
+  top: 0.62em;
+  width: 4px;
+  height: 4px;
   background: var(--accent-primary);
   opacity: 0.7;
 }
@@ -12161,27 +11738,6 @@ h6.bm-heading {
     transparent
   );
   position: relative;
-}
-.bm-rule::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  transform: translate(-50%, -50%) rotate(45deg);
-  /* Same vocabulary as `.sec-diamond`: bright gilt + candle glow on the dark art. */
-  background: var(--accent-primary-bright);
-  box-shadow:
-    0 0 0 4px var(--bg-surface-1),
-    0 0 10px 1px color-mix(in oklab, var(--accent-primary) 45%, transparent);
-}
-/* Light: match `.sec-diamond`'s clean deep-gilt, card-safe look. The candlelit
-   glow muddies into a grey halo on cream, so drop it — keep ONLY the surface-
-   coloured knockout ring that parts the hairline so the diamond reads crisp. */
-[data-theme="light"] .bm-rule::after {
-  background: var(--accent-text);
-  box-shadow: 0 0 0 4px var(--bg-surface-1);
 }
 
 /* ── Chronicle version history (D27) — the collapsible "restore a revision" list
@@ -12752,7 +12308,6 @@ textarea.input.sess-notes-edit {
 .uc-slotpips .sp {
   width: 9px;
   height: 9px;
-  transform: rotate(45deg);
   border-radius: 1px;
   background: radial-gradient(
     circle at 35% 30%,
@@ -12844,7 +12399,7 @@ textarea.input.sess-notes-edit {
 .uc-prep:focus-visible {
   color: var(--text-secondary);
   border-color: var(--border-strong);
-  box-shadow: var(--elev-recessed), var(--illumination);
+  box-shadow: var(--elev-recessed);
 }
 .uc-prep[data-prepared="true"] {
   color: var(--semantic-success);
@@ -12978,7 +12533,7 @@ textarea.input.sess-notes-edit {
 .statcard:focus-visible .statcard-face {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: var(--elev-raised), var(--illumination);
+  box-shadow: var(--elev-raised);
 }
 .sc-label {
   font-family: var(--font-numeric);
@@ -13190,14 +12745,6 @@ textarea.input.sess-notes-edit {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-.sc-base-head::before {
-  content: "";
-  width: 5px;
-  height: 5px;
-  flex-shrink: 0;
-  transform: rotate(45deg);
-  background: var(--accent-primary-bright);
 }
 .sc-base-math {
   display: block;
@@ -14212,15 +13759,14 @@ button.party-avatar-btn:focus-visible {
     inset 0 -1px 0 rgba(46, 30, 6, 0.22);
 }
 
-/* ═══════════════════ THE ORNAMENT VOCABULARY (BG3 identity T5) ═══════════════════
-   DESIGN.md §5 "The ornament vocabulary". The app's one ornament grammar, adapted
-   from BG3's menu language into the lapidary identity: everything GEOMETRIC —
-   faceted diamond nodes and gems, tapered hairlines — never organic foliage;
-   everything vector + tintable, crisp at 1x/2x. Ornament marks the START of a
-   section rubric (`.sec-diamond`), rail-heads (`.rh-diamond`), and slot/charge
-   pips; panel corners, divider centres, and scrollbar ends stay QUIET. The
-   selection metals (`--metal-silver`/`--metal-bronze`) drive the selected frame
-   (`--frame-selected`) that marks the wizard hero altar and the chosen plaque. */
+/* ═══════════════════════════ THE ORNAMENT VOCABULARY ═══════════════════════════
+   DESIGN.md §5. Ornament is EARNED, never decorative: ONE ornamented surface per
+   screen, and it is the surface the user is acting in. Section rubrics, rail
+   heads, list rows, chips and dividers carry NONE — a heading is type and space,
+   a divider is the one hairline. What ornament remains is the corner MARK on the
+   screen's single mark-bearing frame, and the selection metals
+   (`--metal-silver`/`--metal-bronze`) driving `--frame-selected` on the wizard
+   hero altar and the chosen plaque. */
 
 /* ── Gilt frame — the HERO-surface accent (cockpit identity band, modal heads,
    campaign hero). Tints the host panel's edge to gold leaf; it composes with
@@ -14244,36 +13790,23 @@ button.party-avatar-btn:focus-visible {
    edge so the most prominent gilded surface reads candlelit + magical, not flat
    cream. Decorative shadow only (text lives on opaque content), so AA is untouched. */
 [data-theme="light"] .folio-panel.gilt-frame {
-  box-shadow: var(--elev-resting), var(--gilt-glow);
+  box-shadow: var(--elev-resting);
 }
 
-/* ── Corner goldwork (the full-BG3 identity push, owner-ratified 2026-07-16;
-   settled 2026-07-24 on STYLE A — the owner's pick among three drawn variants:
-   "Do style A, but you must ALIGN. And make it more wow — without breaking
-   things") — the worked-gold knot that caps the app's HERO frames: the framed
-   realm masthead, the gilt-framed hero band (cockpit identity), and dialogs.
-   EARNED registers only (Constitution §4.16); resting cards and quiet panels
-   stay unornamented. THE KNOT (the faithful transcription of the owner's BG3
-   spellbook-reference corner, per-theme in `--frame-ornate`, index.css): the
-   rail swells crossing the vertex in a fine whisker overshoot, ONE wave-volute
-   comma-curl rising outward on the diagonal — crown breaking over, beak
-   curling back down over an open eye — a small weld diamond seating the
-   crossing, a two-tone-struck ray-glint fan radiating from the knot into the
-   panel, and a sickle leaf pair threaded ON each rail. THE ONE-LINE LAW: the
-   ornament contributes no run lines; the host's own 1px border is THE frame
-   line, the hosts go square (border-radius 0 on the three registers) so the
-   knot seats on a true crossing, and every ornament stroke is attached to
-   that line — nothing floats, ever. Leaf ink stays within 59px of the tile
-   edge so opposing corners keep ≥4px air on the shortest host (the ~98px
-   cockpit band). The pseudo is decor only: pointer-events none, no layout, no
-   animation; its ink is paint-only overflow (no scrollbars), so hero hosts
-   must NOT clip child paint (`.modal` / `.has-crest` carry no overflow:
-   hidden for this reason). z-index 0 keeps it above each host's material
-   pseudo (`::before` at z -1); the goldwork rides the frame line itself,
-   clear of the hosts' padded (≥16px) content. */
+/* ── Corner goldwork — the worked-gold knot that caps the app's two MARK-bearing
+   frames: the framed realm masthead, and the gilt-framed cockpit identity band
+   (which takes the screen's one mark on the route where no masthead renders).
+   ONE ornamented surface per screen, and it is the surface the user is acting
+   in; dialogs, resting cards and quiet panels carry none. THE ONE-LINE LAW: the
+   ornament contributes no run lines — the host's own border is THE frame line
+   and every ornament stroke is attached to it; nothing floats, ever. The pseudo
+   is decor only: pointer-events none, no layout, no animation; its ink is
+   paint-only overflow, so a mark-bearing host must NOT clip child paint.
+   z-index 0 keeps it above each host's material pseudo (`::before` at z -1);
+   the goldwork rides the frame line itself, clear of the hosts' padded (≥16px)
+   content. */
 .page-head.framed::before,
-.folio-panel.gilt-frame::after,
-.modal::after {
+.folio-panel.gilt-frame::after {
   content: "";
   position: absolute;
   /* The fitting rule (owner, 2026-07-17 — "rilegatura"): each 64px corner
@@ -14296,18 +13829,6 @@ button.party-avatar-btn:focus-visible {
      while the tile scales). Fixed-size corner backgrounds register 0px at
      every host size by construction. */
   background: var(--frame-ornate);
-}
-
-/* Engraved ceremonial titling (same push): the Cinzel register reads STRUCK into
-   the plate — the per-theme `--engrave-title` ink (dark: tight shade seat + faint
-   gold underglow; light: letterpress understroke). Ceremonial surfaces only: page
-   titles, modal titles, and the cockpit identity name (the h1 inside the gilt
-   hero band). No gradient text (§7 hard ban); the on-art light rules (higher
-   specificity) still win where a title sits loose on the backdrop. */
-.page-title,
-.modal-title,
-.folio-panel.gilt-frame h1 {
-  text-shadow: var(--engrave-title);
 }
 
 /* ── Campaign hub header art control (owner 2026-06-30) — the big 3:1 hero band
@@ -14454,9 +13975,7 @@ button.party-avatar-btn:focus-visible {
   );
   border: 1px solid color-mix(in oklab, var(--accent-primary) 48%, var(--border-medium));
   color: var(--accent-text);
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.18)),
-    var(--elev-resting);
+  box-shadow: var(--elev-resting);
 }
 /* OWN-36 — the ACTIVE tab in light is a struck GOLD-LEAF tile, not a brown-tinted
    fill. Light's `--accent-primary` is a deep brown (#4a380c, needed for text AA), so
@@ -14476,8 +13995,7 @@ button.party-avatar-btn:focus-visible {
   color: var(--accent-text);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 250, 0.85),
-    var(--elev-raised),
-    var(--gilt-glow-sm);
+    var(--elev-raised);
 }
 
 /* ── Seal — a struck gold medallion for the identity monogram. A theme-aware
@@ -14488,7 +14006,6 @@ button.party-avatar-btn:focus-visible {
   background: var(--portrait-well);
   border: 1px solid var(--border-accent);
   box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.16)),
     inset 0 -2px 5px color-mix(in oklab, black 22%, transparent),
     var(--elev-raised);
   overflow: hidden;
@@ -14497,10 +14014,8 @@ button.party-avatar-btn:focus-visible {
    reads as a lit gold jewel on the cream chrome (matching dark's gleam). */
 [data-theme="light"] .seal {
   box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.16)),
     inset 0 -2px 5px color-mix(in oklab, black 14%, transparent),
-    var(--elev-raised),
-    var(--gilt-glow-sm);
+    var(--elev-raised);
 }
 /* D21 — the hero seal as a portrait editor (edit mode): a CENTERED camera over a
    soft full-seal scrim marks it editable (owner: centered reads more intuitively
@@ -14599,9 +14114,7 @@ button.party-avatar-btn:focus-visible {
     color-mix(in oklab, var(--accent-glow) 26%, var(--bg-surface-2)),
     color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-1))
   );
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.18)),
-    0 0 10px color-mix(in oklab, var(--accent-glow) 30%, transparent);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--accent-glow) 30%, transparent);
 }
 /* LIGHT ember — the held boon can't bloom on ivory, so the chip saturates to a
    honey-gilt wash and radiates the burnt-umber penumbra below: the page toasts
@@ -14615,7 +14128,6 @@ button.party-avatar-btn:focus-visible {
     color-mix(in oklab, var(--gold-leaf-300) 30%, #f6ead0)
   );
   box-shadow:
-    inset 0 1px 0 var(--emboss-sheen),
     inset 0 -1px 0 rgba(var(--ember-umber), 0.3),
     0 1px 2px rgba(var(--ember-seat), 0.34),
     0 4px 12px rgba(var(--ember-umber), 0.5),
@@ -14824,9 +14336,7 @@ button.party-avatar-btn:focus-visible {
   padding-bottom: var(--safe-bottom);
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   border-top: 1px solid var(--border-medium);
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.1)),
-    0 -3px 14px color-mix(in oklab, black 22%, transparent);
+  box-shadow: 0 -3px 14px color-mix(in oklab, black 22%, transparent);
 }
 .m-nav-item {
   flex: 1;
@@ -14958,7 +14468,7 @@ button.party-avatar-btn:focus-visible {
 /* Light: the gilt edge GLOWS (the hub gilt-frame aura) — vellum can't halo, so
    the aura is the designed light answer to dark's ember. */
 [data-theme="light"] .turn {
-  box-shadow: var(--elev-raised), var(--gilt-glow-sm);
+  box-shadow: var(--elev-raised);
 }
 /* Light round socket: a warm gold well (designed tint, not the gray slate
    recess adapted onto vellum). */
@@ -15558,13 +15068,6 @@ button.econ-tok-filter:active .econ-disc {
 .agroup[data-slot="free"] .ag-head {
   --ac: var(--at-free);
   --ac-vivid: var(--at-free-vivid);
-}
-.ag-diamond {
-  width: 8px;
-  height: 8px;
-  transform: rotate(45deg);
-  background: var(--ac-vivid);
-  box-shadow: 0 0 9px color-mix(in oklab, var(--ac-vivid) 60%, transparent);
 }
 .ag-title {
   font-family: var(--font-display);
@@ -16517,7 +16020,7 @@ button.econ-tok-filter:active .econ-disc {
 .rest-card:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: var(--elev-raised), var(--illumination);
+  box-shadow: var(--elev-raised);
 }
 [data-motion="reduced"] .rest-card {
   transition: none;
@@ -16626,16 +16129,12 @@ button.econ-tok-filter:active .econ-disc {
   color: var(--accent-text);
   border-color: color-mix(in oklab, var(--accent-primary) 45%, var(--border-medium));
   background: color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-2));
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.18)),
-    var(--elev-resting);
+  box-shadow: var(--elev-resting);
   text-shadow: none;
 }
 .rest-card[data-kind="short"]:hover .rest-card-cta {
   background: color-mix(in oklab, var(--accent-glow) 18%, var(--bg-surface-2));
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.22)),
-    var(--elev-raised);
+  box-shadow: var(--elev-raised);
 }
 /* LIGHT — the long-rest primary must be the SAME struck bright-gilt band as every
    other light primary CTA (the verified .btn.primary light recipe): the shared
@@ -16947,9 +16446,7 @@ button.econ-tok-filter:active .econ-disc {
 .cur-tok-btn[data-selected="true"] {
   background: color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-2));
   border-color: color-mix(in oklab, var(--accent-primary) 55%, var(--border-medium));
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.18)),
-    var(--elev-resting);
+  box-shadow: var(--elev-resting);
 }
 .cur-tok-btn:focus-visible {
   outline: none;
@@ -17262,13 +16759,11 @@ button.econ-tok-filter:active .econ-disc {
   color: var(--accent-text);
   font-weight: 600;
 }
-/* non-branch bullet — a small lapidary diamond marker. */
+/* non-branch bullet — a plain square marker. */
 .algo-bullet-dot {
   flex-shrink: 0;
-  width: 6px;
-  height: 6px;
-  margin-top: 1px;
-  transform: rotate(45deg);
+  width: 5px;
+  height: 5px;
   background: var(--step-c);
   align-self: center;
 }
@@ -17473,26 +16968,11 @@ button.econ-tok-filter:active .econ-disc {
   --lvl-accent-bright: var(--verdigris-500);
 }
 
-/* Owner decision: ALL level-up header elements are gold across every step.
-   Diamond, rule, glyph, and title must be identical so the wizard reads as
-   ONE coherent surface. The per-step domain accent lives ONLY on the left
-   card border (.lvl-card) and the selection/active states (.lvl-pick.selected)
-   — that's enough wayfinding without fragmenting the headers into 5 pigments. */
-.lvl-step .sec-diamond {
-  background: var(--accent-primary-bright);
-  box-shadow: 0 0 8px color-mix(in oklab, var(--accent-glow) 40%, transparent);
-}
-[data-theme="light"] .lvl-step .sec-diamond {
-  background: var(--accent-text);
-  box-shadow: none;
-}
-.lvl-step .sec-rule {
-  background: linear-gradient(
-    to right,
-    color-mix(in oklab, var(--accent-primary) 45%, transparent),
-    transparent
-  );
-}
+/* Owner decision: ALL level-up header elements are gold across every step, so
+   the wizard reads as ONE coherent surface. The per-step domain accent lives
+   ONLY on the left card border (.lvl-card) and the selection/active states
+   (.lvl-pick.selected) — that's enough wayfinding without fragmenting the
+   headers into 5 pigments. */
 /* Header glyph is always gold (both inside and outside a .lvl-step). */
 .lvl-step-glyph {
   color: var(--accent-primary-bright);
@@ -17745,16 +17225,6 @@ button.econ-tok-filter:active .econ-disc {
     transparent
   );
 }
-.site-footer-diamond {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  transform: translate(-50%, -50%) rotate(45deg);
-  background: var(--accent-primary);
-  box-shadow: 0 0 6px color-mix(in oklab, var(--accent-glow) 50%, transparent);
-}
 /* The footer sits on the candlelit backdrop (NO box). The decorative glyph + the
    hairline rule are bright gilt gold; the "d20 Folio" wordmark is gold too — the
    deep gilt (gold-leaf-900) that clears the a11y gate against the field — both
@@ -17776,10 +17246,6 @@ button.econ-tok-filter:active .econ-disc {
 [data-theme="light"] :is(.site-footer-colophon, .site-footer-ver, .site-footer-link) {
   color: var(--text-on-backdrop);
   text-shadow: var(--on-art-halo);
-}
-[data-theme="light"] .site-footer-diamond {
-  background: var(--gold-leaf-300);
-  box-shadow: 0 0 7px color-mix(in oklab, var(--gold-leaf-300) 55%, transparent);
 }
 [data-theme="light"] .site-footer-rule {
   background: linear-gradient(
@@ -17895,16 +17361,10 @@ button.econ-tok-filter:active .econ-disc {
     0 1px 3px rgba(0, 0, 0, 0.42),
     0 0 10px color-mix(in oklab, var(--seg-accent) 32%, transparent);
 }
-[data-theme="light"] .sec-diamond {
-  background: var(--accent-primary-bright);
-  box-shadow: 0 0 6px color-mix(in oklab, var(--gold-leaf-500) 50%, transparent);
-}
-[data-theme="light"] .sec-rule {
-  background: linear-gradient(
-    to right,
-    color-mix(in oklab, var(--accent-primary-bright) 60%, transparent),
-    transparent
-  );
+/* The hairline's light strike: the on-art bands need a touch more presence than
+   the card-safe deep gilt. One parameter, re-tinted. */
+[data-theme="light"] .on-art-scope .sec-rule {
+  --hairline-ink: color-mix(in oklab, var(--accent-primary-bright) 55%, transparent);
 }
 
 /* — Surfaces LIFT: the existing top-lit `--surface-sheen` overlay rides over the
@@ -17916,7 +17376,7 @@ button.econ-tok-filter:active .econ-disc {
     linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
 }
 [data-theme="light"] .ch-card:hover {
-  box-shadow: var(--elev-floating), var(--gilt-glow-sm);
+  box-shadow: var(--elev-floating);
 }
 [data-theme="light"] .statcard-face {
   background:
@@ -17931,7 +17391,7 @@ button.econ-tok-filter:active .econ-disc {
       color-mix(in oklab, var(--accent-primary-bright) 16%, var(--bg-surface-2)),
       var(--bg-surface-1)
     );
-  box-shadow: var(--elev-raised), var(--gilt-glow-sm);
+  box-shadow: var(--elev-raised);
 }
 [data-theme="light"] .folio-panel.gilt-frame {
   background:
@@ -17960,28 +17420,7 @@ button.econ-tok-filter:active .econ-disc {
     var(--bg-surface-2)
   );
   border-color: color-mix(in oklab, var(--accent-primary) 46%, var(--border-medium));
-  box-shadow:
-    var(--gilt-glow),
-    var(--elev-raised),
-    inset 0 1px 0 var(--emboss-sheen);
-}
-
-/* Domain crown rules — struck gold-leaf edges, not dull brown lines. */
-[data-theme="light"] .ch-card::before {
-  height: 4px;
-  opacity: 1;
-  background: color-mix(
-    in oklab,
-    var(--ch-pigment, var(--border-accent)) 70%,
-    var(--accent-primary-deep)
-  );
-  box-shadow: 0 1px 2px
-    color-mix(in oklab, var(--ch-pigment, var(--accent-primary)) 40%, transparent);
-}
-[data-theme="light"] .cmp-card::before {
-  background: var(--gilt-gradient);
-  opacity: 1;
-  box-shadow: 0 1px 3px color-mix(in oklab, var(--accent-primary) 30%, transparent);
+  box-shadow: var(--elev-raised);
 }
 
 /* Portrait well — warm gold aura + carved top edge. */
@@ -17993,9 +17432,6 @@ button.econ-tok-filter:active .econ-disc {
       transparent 72%
     ),
     var(--portrait-well);
-  box-shadow:
-    var(--gilt-glow-sm),
-    inset 0 1px 0 var(--emboss-sheen);
 }
 
 /* Stat chips (roster + cockpit + campaign foot) — raised gilt-ivory; caster glows. */
@@ -18003,24 +17439,14 @@ button.econ-tok-filter:active .econ-disc {
 [data-theme="light"] .admin-stat {
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   border-color: var(--border-medium);
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen),
-    0 1px 1px color-mix(in oklab, var(--carve-shade) 30%, transparent);
+  box-shadow: 0 1px 1px color-mix(in oklab, var(--carve-shade) 30%, transparent);
 }
 [data-theme="light"] .ch-stat.caster {
   border-color: var(--accent-primary-deep);
-  box-shadow: var(--gilt-glow-sm);
-}
-[data-theme="light"] .ch-foot {
-  background: color-mix(in oklab, var(--bg-recessed) 55%, transparent);
-  border-top-color: color-mix(in oklab, var(--accent-primary) 28%, var(--border-medium));
-  box-shadow: inset 0 1px 0 var(--emboss-sheen);
 }
 [data-theme="light"] .ch-hp .hp-bar {
   border-color: var(--border-strong);
-  box-shadow:
-    inset 0 2px 5px color-mix(in oklab, var(--carve-shade) 38%, transparent),
-    inset 0 -1px 0 var(--emboss-sheen);
+  box-shadow: inset 0 2px 5px color-mix(in oklab, var(--carve-shade) 38%, transparent);
 }
 
 /* Combat action panel + ability badge + gilt section eyebrows. */
@@ -18046,14 +17472,11 @@ button.econ-tok-filter:active .econ-disc {
 [data-theme="light"] .cmp-facet-ledger {
   background: color-mix(in oklab, var(--bg-recessed) 78%, var(--bg-surface-1));
   border-color: color-mix(in oklab, var(--accent-primary) 30%, var(--border-medium));
-  box-shadow:
-    var(--elev-recessed),
-    inset 0 0 0 1px var(--emboss-sheen);
+  box-shadow: var(--elev-recessed);
 }
 [data-theme="light"] .cmp-tab {
   background: color-mix(in oklab, var(--bg-surface-2) 85%, var(--accent-primary));
   border-color: color-mix(in oklab, var(--accent-primary) 24%, var(--border-medium));
-  box-shadow: inset 0 1px 0 var(--emboss-sheen);
 }
 [data-theme="light"] .cmp-tab[aria-selected="true"] {
   background: linear-gradient(
@@ -18066,9 +17489,6 @@ button.econ-tok-filter:active .econ-disc {
     var(--accent-primary-bright) 70%,
     var(--border-strong)
   );
-  box-shadow:
-    var(--illumination),
-    inset 0 1px 0 var(--emboss-sheen);
 }
 [data-theme="light"] .cmp-ribbon-rule {
   height: 2px;
@@ -18091,7 +17511,6 @@ button.econ-tok-filter:active .econ-disc {
     var(--accent-primary-bright) 75%,
     var(--accent-primary)
   );
-  box-shadow: var(--gilt-glow-sm);
   color: var(--accent-text);
 }
 [data-theme="light"] .cmp-tome [data-variant="codex"] .pick-row {
@@ -18101,9 +17520,7 @@ button.econ-tok-filter:active .econ-disc {
     color-mix(in oklab, var(--accent-primary) 7%, var(--bg-surface-1))
   );
   border-color: color-mix(in oklab, var(--accent-primary) 34%, var(--border-soft));
-  box-shadow:
-    var(--elev-resting),
-    inset 0 1px 0 var(--emboss-sheen);
+  box-shadow: var(--elev-resting);
 }
 [data-theme="light"] .cmp-tome [data-variant="codex"] .pick-row:hover:not(:disabled) {
   background: linear-gradient(
@@ -18116,7 +17533,7 @@ button.econ-tok-filter:active .econ-disc {
     var(--accent-primary-bright) 55%,
     var(--border-medium)
   );
-  box-shadow: var(--elev-raised), var(--gilt-glow-sm);
+  box-shadow: var(--elev-raised);
 }
 
 /* COMPENDIUM-LUX — the OPEN entry's index row (the spread's seated selection):
@@ -18146,7 +17563,7 @@ button.econ-tok-filter:active .econ-disc {
     color-mix(in oklab, var(--accent-primary) 26%, var(--bg-surface-2)),
     color-mix(in oklab, var(--accent-primary) 12%, var(--bg-surface-2))
   );
-  box-shadow: var(--elev-resting), var(--illumination);
+  box-shadow: var(--elev-resting);
 }
 [data-variant="codex"] .pick-row[data-current] .pick-name {
   color: var(--text-special);
@@ -18162,7 +17579,6 @@ button.econ-tok-filter:active .econ-disc {
     var(--vd, var(--border-medium)) 85%,
     var(--border-strong)
   );
-  box-shadow: inset 0 1px 0 var(--emboss-sheen);
 }
 [data-theme="light"] .cmp-seal {
   border-color: color-mix(
@@ -18170,9 +17586,7 @@ button.econ-tok-filter:active .econ-disc {
     var(--seal, var(--accent-primary)) 60%,
     var(--border-strong)
   );
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen),
-    inset 0 -2px 3px color-mix(in oklab, var(--carve-shade) 50%, transparent);
+  box-shadow: inset 0 -2px 3px color-mix(in oklab, var(--carve-shade) 50%, transparent);
 }
 [data-theme="light"] .cmp-meta {
   background: linear-gradient(
@@ -18229,9 +17643,7 @@ button.econ-tok-filter:active .econ-disc {
 [data-theme="light"] .set-row .sr-icon {
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-recessed));
   border-color: color-mix(in oklab, var(--border-medium) 65%, var(--accent-primary));
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen),
-    0 1px 2px color-mix(in oklab, var(--carve-shade) 35%, transparent);
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--carve-shade) 35%, transparent);
   color: var(--accent-text);
 }
 [data-theme="light"] .info-card {
@@ -18357,7 +17769,7 @@ button.econ-tok-filter:active .econ-disc {
     color-mix(in oklab, var(--accent-primary-bright) 30%, var(--bg-surface-2)),
     color-mix(in oklab, var(--accent-primary-bright) 16%, var(--bg-surface-1))
   );
-  box-shadow: var(--elev-raised), var(--gilt-glow-sm);
+  box-shadow: var(--elev-raised);
 }
 .wiz-path-glyph {
   display: grid;
@@ -18867,7 +18279,7 @@ button.econ-tok-filter:active .econ-disc {
       )
       padding-box,
     var(--frame-selected) border-box;
-  box-shadow: var(--elev-raised), var(--gilt-glow);
+  box-shadow: var(--elev-raised);
 }
 .wiz-card-wax {
   position: absolute;
@@ -19056,11 +18468,11 @@ button.econ-tok-filter:active .econ-disc {
     var(--gold-leaf-400) 56%,
     var(--gold-leaf-700) 100%
   );
-  box-shadow: var(--elev-raised), var(--gilt-glow-sm);
+  box-shadow: var(--elev-raised);
 }
 [data-theme="light"] .wiz-pager-btn:hover:not(:disabled) .wiz-pager-seal.gold {
   border-color: var(--gold-leaf-500);
-  box-shadow: var(--elev-floating), var(--gilt-glow);
+  box-shadow: var(--elev-floating);
 }
 .wiz-pager-btn:focus-visible .wiz-pager-seal {
   outline: 2px solid var(--focus-ring);
@@ -19086,51 +18498,6 @@ button.econ-tok-filter:active .econ-disc {
   border-color: var(--border-medium);
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   box-shadow: var(--elev-resting);
-}
-
-/* ── The Create ceremony (owner-ratified, restrained). The COMMIT moment — the
-   creation wizard's final "Create Character" and the level-up wizard's final
-   confirm — is marked by ONE gold-leaf bloom on PRESS: the seal emits an
-   expanding, fading radial halo on --ease-settle (~400ms). No new colours, no
-   confetti; the bloom reuses --accent-glow. Reduced motion collapses the bloom's
-   duration to ~0ms (it still fires + clears the one-shot state). Both wizards
-   share this ONE recipe. ── */
-.wiz-pager-btn.commit .wiz-pager-seal.gold {
-  position: relative;
-}
-.wiz-pager-btn.commit .wiz-pager-seal.gold::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 52px;
-  height: 52px;
-  border-radius: 999px;
-  transform: translate(-50%, -50%) scale(0.55);
-  background: radial-gradient(
-    circle,
-    transparent 30%,
-    color-mix(in oklab, var(--accent-glow) 70%, transparent) 52%,
-    transparent 78%
-  );
-  opacity: 0;
-  pointer-events: none;
-}
-.wiz-pager-btn.commit.blooming .wiz-pager-seal.gold::after {
-  animation: pager-bloom 400ms var(--ease-settle);
-}
-@keyframes pager-bloom {
-  0% {
-    opacity: 0.75;
-    transform: translate(-50%, -50%) scale(0.55);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(2.3);
-  }
-}
-[data-motion="reduced"] .wiz-pager-btn.commit.blooming .wiz-pager-seal.gold::after {
-  animation-duration: 0.01ms;
 }
 
 .wiz-pager-cap {
@@ -20882,8 +20249,7 @@ body:has(.fob) .toast-region {
   color: var(--gold-leaf-900);
   box-shadow:
     0 1px 4px rgb(74 56 12 / 0.3),
-    inset 0 1px 0 rgb(255 255 255 / 0.6),
-    var(--gilt-glow-sm);
+    inset 0 1px 0 rgb(255 255 255 / 0.6);
 }
 /* ── The ACTIVATED ✎ — the same coin, lit with the editing pill's own amber
       material while `sheetMode === "edit"` (the FATTO answer: state reads as

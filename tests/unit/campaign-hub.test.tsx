@@ -143,17 +143,13 @@ describe("CampaignHubPage", () => {
   });
 
   it("renders the campaign + sections once a snapshot arrives", () => {
-    const { container } = renderHubAt("/campaigns/c1");
+    renderHubAt("/campaigns/c1");
     act(() => onDataRef.fn?.(makeCampaign({ id: "c1", name: "Gildenmoor" })));
     expect(
       screen.getByRole("heading", { name: "Gildenmoor", level: 1 })
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /party/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /treasury/i })).toBeInTheDocument();
-    // The hub masthead is art-backed (the campaign's own art is the backdrop), so it
-    // is the ONE framed masthead that omits the frontispiece crest (DESIGN.md §13).
-    expect(container.querySelector(".page-head-crest")).toBeNull();
-    expect(container.querySelector(".page-head.has-crest")).toBeNull();
   });
 
   it("detaches the listener on unmount, flushing the pending write FIRST", () => {

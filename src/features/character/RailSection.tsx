@@ -26,7 +26,6 @@ export function RailSection({
   return (
     <section>
       <div className="rail-head">
-        <span className="rh-diamond" aria-hidden />
         <h2 className="m-0 font-mono text-xs font-bold uppercase tracking-wider text-text-secondary">
           {rubric}
         </h2>

@@ -71,8 +71,6 @@ export function RunicEmptyState({
       <div className="runic">
         <span className="runic-ring" aria-hidden="true" />
         <span className="runic-ring inner" aria-hidden="true" />
-        <span className="runic-gem top" aria-hidden="true" />
-        <span className="runic-gem bot" aria-hidden="true" />
         <span className="runic-glyph">
           <Icon as={glyph} size="lg" decorative />
         </span>

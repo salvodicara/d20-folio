@@ -90,7 +90,7 @@ export function SettingsPage() {
 
   return (
     <main id="main" className="page-shell py-8">
-      <PageHeader as="h1" crest title={t("nav.settings")} hint={t("settings.hint")} />
+      <PageHeader as="h1" title={t("nav.settings")} hint={t("settings.hint")} />
 
       {/* The framed header spans the shared page-shell width (consistent with every
           other hub); the settings form itself sits in a centered, readable column

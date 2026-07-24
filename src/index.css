@@ -198,15 +198,13 @@
   --asset-creation-scene: url("/assets/backgrounds/creation-scene.webp");
 
   /* Compendium "ancient tome" parchment (DESIGN.md #5). A real aged-scroll WebP
-     (OWN-23 — owner-supplied, cropped off its table + watermark) IS the surface now:
-     the `.cmp-tome` recipe covers the tome with it. Light theme shows the warm vellum
-     full-strength (dark ink on parchment); dark theme tones it to an even candlelit
-     umber and reads the same photo as faint texture-only over a warm-dark base, so
-     light ink stays legible. One opacity knob (`--parchment-strength`) tunes the light
-     theme's texture booster; dark sets its own. (The old CSS `--parchment-grain`
-     fibre fallback was retired once the photo shipped — it muddied the image.) */
+     (OWN-23 — owner-supplied, cropped off its table + watermark) IS the surface:
+     the `.tome-leaf-surface` recipe covers the leaf with it in ONE pass. Light
+     theme shows the warm vellum full-strength (dark ink on parchment); dark
+     theme reads its own pre-graded candlelit-umber plate
+     (`--asset-vellum-dark`) through the same indirection, so light ink stays
+     legible. */
   --asset-parchment: url("/assets/textures/parchment.webp");
-  --parchment-strength: 0.5;
 
   /* BG3-identity panel/tome materials (DESIGN.md §13) — owner-generated,
      seam-blended tileable WebPs, one per theme. `panel-leather` is the near-black
@@ -397,13 +395,28 @@
   --cp-dest-bg: #191309;
   --cp-dest-ink: #c4b89e;
 
-  /* § 07 Focus — crisp ring color (dark: gold-300 ≈ 7-9:1; clears WCAG 1.4.11 3:1). */
+  /* § 07 Focus — crisp ring color (dark: gold-300 ≈ 7-9:1; clears WCAG 1.4.11 3:1).
+     The ring IS the whole focus grammar: no interior wash, no bloom. A halo is a
+     light-emission effect, and light on this chrome means a lit material, never a
+     state; the 2px ring alone clears WCAG 1.4.11. */
   --focus-ring: var(--gold-leaf-300);
-  /* Focus interior WASH (BG3 identity epic, 2026-07-02): BG3 focuses a control by
-     washing its INTERIOR with warm light (#fddda6 at 23–60% alpha), not by ring
-     alone. Additive warmth layered under the a11y ring (the shared :focus-visible
-     recipe) — never a replacement for it. */
-  --focus-wash: rgba(253, 221, 166, 0.25);
+
+  /* § HAIRLINE — the ONE divider in the system (P3).
+     Every separator in the application is this line: modal heads, card feet,
+     section rubrics, list groups, the compendium entry head, the colophon. It
+     fades at both tips, carries NO node, and is inset from its container's
+     padding edge — never wall-to-wall. A whisper: clearly subordinate to ink,
+     never a second frame. `--hairline-ink` is the one parameter (the light
+     sibling and the econ-typed section heads re-tint it); `--hairline` is the
+     painted gradient every consumer uses. */
+  --hairline-ink: color-mix(in oklab, var(--accent-primary) 30%, transparent);
+  --hairline: linear-gradient(
+    90deg,
+    transparent,
+    var(--hairline-ink) 10%,
+    var(--hairline-ink) 90%,
+    transparent
+  );
 
   /* § Ornament metals (BG3 identity T5 — DESIGN.md §5 "The ornament vocabulary").
      The SELECTED frame is silver-over-bronze (BG3's #c0b8b0 → #685644 → #c0b8b0,
@@ -412,9 +425,6 @@
      the chosen plaque. */
   --metal-silver: #c4baa9;
   --metal-bronze: #6e5a3c;
-  /* The gilt-glint sheen ink (wave 2 — the one-shot hover sweep on the
-     struck-gold tier, folio.css): a white haze over the deep dark gold. */
-  --glint-ink: rgba(255, 255, 255, 0.32);
 
   /* § Reliquary goldwork (the full-BG3 identity push, owner-ratified 2026-07-16;
      the STYLE-A corner knot, owner-picked 2026-07-24 — DESIGN.md §5 "The
@@ -454,27 +464,6 @@
       left bottom / 64px 64px no-repeat,
     url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(-1 0 0 -1 64 64)'/></g><g id='F'><use href='%23f' transform='matrix(-1 0 0 -1 64 64)'/></g></defs><use href='%23F' fill='%23000' opacity='.35' transform='translate(.6 .85)'/><use href='%23F' fill='%23f0d791' opacity='.45' transform='translate(-.35 -.5)'/><use href='%23F' fill='%23d4ac4d' opacity='.62'/><use href='%23K' fill='%23000' opacity='.5' transform='translate(1 1.4)'/><use href='%23K' fill='%23f0d791' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%23d4ac4d'/></svg>")
       right bottom / 64px 64px no-repeat;
-  /* The ceremonial seat ornament (the winged divider, style-A language): BG3's
-     level-up under-title divider drawn 1:1 at 260×24 px — two long rails
-     tapering to hairpoints OUTWARD, each outer tip ending in a tiny OPEN
-     under-curl, each inner end rising in a small OPEN-EYE S-HOOK return (the
-     corner volute, small), and a luminous descending V-FLEUR at centre (two
-     nested chevron wings over a faceted plumb point that hangs BELOW the rule,
-     seated in a soft baked glow). Nothing floats — every stroke is attached to
-     the rule end to end. The fleur's
-     backing diamond is baked in the theme's surface-2 so the host's seat rule
-     passes BEHIND it (p25's occlusion) with zero notch math. Consumed by
-     `.modal-head::after` (folio.css). Same mirror-then-tone strike: the closure
-     (id='s') is toned by the shade/glint/body trio; the plumb-point facets are
-     per-theme lit/shade halves. */
-  --seat-orn: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='24'><defs><radialGradient id='gl'><stop offset='0' stop-color='%23f0d791' stop-opacity='.38'/><stop offset='1' stop-color='%23f0d791' stop-opacity='0'/></radialGradient><filter id='pb'><feGaussianBlur stdDeviation='1.1'/></filter><g id='u'><path d='M104.5 11.28Q60 11.22 16 11.65Q10 11.8 6.8 12Q4.7 12.95 5.7 13.75Q6.9 14.25 7.8 13.45Q6.7 13.5 6.3 13Q6.1 12.55 7.4 12.28Q10 12.3 16 12.42Q60 12.78 104.5 12.68Z'/><path d='M102.6 12.55Q106.8 11.7 107.8 9.9Q108.4 8.4 107.2 7.4Q105.8 6.6 104.6 7.5Q105.7 7.7 106.2 8.7Q106.5 9.7 105.4 10.6Q104.2 11.4 102.2 11.7Z'/></g><g id='s'><use href='%23u'/><use href='%23u' transform='matrix(-1 0 0 1 260 0)'/><path d='M121.8 6.4L130 10.5L138.2 6.4L138.2 8.5L130 12.6L121.8 8.5Z'/><path d='M125.3 2.8L130 5.8L134.7 2.8L134.7 4.6L130 7.6L125.3 4.6Z'/><path d='M130 13.2L132.2 16.6L130 22.8L127.8 16.6Z'/></g></defs><circle cx='130' cy='13.5' r='13' fill='url(%23gl)'/><path d='M130 5L136.4 13.2L130 21L123.6 13.2Z' fill='%231d1810' filter='url(%23pb)'/><use href='%23s' fill='%23000' opacity='.5' transform='translate(.5 .8)'/><use href='%23s' fill='%23f0d791' opacity='.32' transform='translate(-.4 -.6)'/><use href='%23s' fill='%23d4ac4d'/><path d='M130 13.2L127.8 16.6L130 22.8Z' fill='%23f0d791'/><path d='M130 13.2L132.2 16.6L130 22.8Z' fill='%238a6b2a'/><path d='M125.3 2.8L130 5.8L134.7 2.8L134.7 4.6L130 7.6L125.3 4.6Z' fill='%23f0d791' opacity='.8'/></svg>");
-  /* Engraved ceremonial titling (same push): the struck-plate ink for the
-     Cinzel register — a tight dark seat below the glyphs + a faint warm gold
-     underglow, so page/modal titles read struck into the plate instead of flat
-     ink. NEVER gradient text (§7 hard ban holds). */
-  --engrave-title:
-    0 1px 0 rgba(0, 0, 0, 0.6), 0 2px 5px rgba(0, 0, 0, 0.4),
-    0 -1px 14px rgba(212, 172, 77, 0.14);
 
   --semantic-success: var(--verdigris-300);
   --semantic-danger: var(--vermilion-300);
@@ -678,12 +667,6 @@
      an edge. This is the gold twin (a deep gold-umber between gold-700 and the
      page); per-hue twins land in a later unit. */
   --glow-stroke-gold: #5e4a1e;
-
-  /* § 07 Focus — gold-leaf illumination (halo), grounded by a 1px --glow-stroke-gold
-     outer stroke (the BG3 stroke-twin pattern — the bloom sits ON an edge). */
-  --illumination:
-    0 0 0 1px var(--glow-stroke-gold), 0 0 24px rgba(184, 146, 61, 0.2),
-    0 0 1px rgba(212, 172, 77, 0.55);
 
   /* Vellum grain + atmosphere — a warm gold pool top-left, a cool lapis pool
      bottom-right, and a soft vignette that lets the page field recede at the edges
@@ -914,21 +897,6 @@
 
   /* § 07 Focus — light theme uses deep gold-900 (≈10:1 on vellum); gold-500 was only ~2.1:1, FAIL. */
   --focus-ring: var(--gold-leaf-900);
-  /* Focus interior wash, light sibling (see the dark note): dark's #fddda6 cream
-     is invisible on cream surfaces, so light washes with STRUCK GOLD (gold-300)
-     — a visible warm gilt tint under dark text (AA untouched at 35% alpha). */
-  --focus-wash: rgba(212, 172, 77, 0.35);
-
-  /* Struck-metal top sheen for carved/embossed surfaces (T8 #62 / C4). The dark
-     recipes hard-code an `inset 0 1px 0 color-mix(--gold-leaf-50 …)` highlight:
-     on near-black surfaces a cream-gold sheen lifts ΔL* ≈ +26 (reads carved), but
-     on light vellum that same mineral sits ~1 step BELOW the surface (ΔL* ≈ −1.5)
-     so the emboss inverts and disappears — the core of "light feels cheaper". A
-     warm near-white catching light is the only highlight that reads on vellum
-     (lifts ΔL* ≈ +5 on surface-1 / +2.5 on surface-2, near the light-surface
-     ceiling). Defined LIGHT-ONLY: dark consumers fall back to their own gold-50
-     literal via `var(--emboss-sheen, …)`, so dark output is byte-identical. */
-  --emboss-sheen: rgba(255, 253, 247, 0.9);
 
   /* § Ornament metals, light strike (see the dark note): the silvery tips must
      read as metal ON cream, so light's "silver" is a deep pewter and the bronze
@@ -936,9 +904,6 @@
      alternation, value-inverted for the vellum ground. */
   --metal-silver: #837a6a;
   --metal-bronze: #99793f;
-  /* Glint ink, light strike: stronger warm-white so the sweep reads as sun
-     on the already-bright gold-leaf band, not haze. */
-  --glint-ink: rgba(255, 253, 244, 0.5);
 
   /* § Reliquary goldwork, light strike (same style-A knot + four-corner-layer
      mechanism as the dark note above — same geometry, inverted tone): the frame
@@ -958,14 +923,6 @@
       left bottom / 64px 64px no-repeat,
     url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(-1 0 0 -1 64 64)'/></g><g id='F'><use href='%23f' transform='matrix(-1 0 0 -1 64 64)'/></g></defs><use href='%23F' fill='%23fff8e2' opacity='.5' transform='translate(.6 .85)'/><use href='%23F' fill='%233d2f12' opacity='.28' transform='translate(-.35 -.5)'/><use href='%23F' fill='%2394741f' opacity='.66'/><use href='%23K' fill='%23fff8e2' opacity='.6' transform='translate(1 1.4)'/><use href='%23K' fill='%233d2f12' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%2394741f'/></svg>")
       right bottom / 64px 64px no-repeat;
-  /* The ceremonial seat ornament, light strike (see the dark note): the same
-     winged-fleur divider pressed into the vellum in GOLD — backing diamond
-     baked in light's surface-2 ivory, letterpress understroke/umber pair,
-     intaglio plumb-point facets, amber glow. */
-  --seat-orn: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='24'><defs><radialGradient id='gl'><stop offset='0' stop-color='%23b8923d' stop-opacity='.3'/><stop offset='1' stop-color='%23b8923d' stop-opacity='0'/></radialGradient><filter id='pb'><feGaussianBlur stdDeviation='1.1'/></filter><g id='u'><path d='M104.5 11.28Q60 11.22 16 11.65Q10 11.8 6.8 12Q4.7 12.95 5.7 13.75Q6.9 14.25 7.8 13.45Q6.7 13.5 6.3 13Q6.1 12.55 7.4 12.28Q10 12.3 16 12.42Q60 12.78 104.5 12.68Z'/><path d='M102.6 12.55Q106.8 11.7 107.8 9.9Q108.4 8.4 107.2 7.4Q105.8 6.6 104.6 7.5Q105.7 7.7 106.2 8.7Q106.5 9.7 105.4 10.6Q104.2 11.4 102.2 11.7Z'/></g><g id='s'><use href='%23u'/><use href='%23u' transform='matrix(-1 0 0 1 260 0)'/><path d='M121.8 6.4L130 10.5L138.2 6.4L138.2 8.5L130 12.6L121.8 8.5Z'/><path d='M125.3 2.8L130 5.8L134.7 2.8L134.7 4.6L130 7.6L125.3 4.6Z'/><path d='M130 13.2L132.2 16.6L130 22.8L127.8 16.6Z'/></g></defs><circle cx='130' cy='13.5' r='13' fill='url(%23gl)'/><path d='M130 5L136.4 13.2L130 21L123.6 13.2Z' fill='%23fdf6df' filter='url(%23pb)'/><use href='%23s' fill='%23fff8e2' opacity='.6' transform='translate(.5 .8)'/><use href='%23s' fill='%233d2f12' opacity='.32' transform='translate(-.4 -.6)'/><use href='%23s' fill='%2394741f'/><path d='M130 13.2L127.8 16.6L130 22.8Z' fill='%23e2c06b'/><path d='M130 13.2L132.2 16.6L130 22.8Z' fill='%2354400f'/><path d='M125.3 2.8L130 5.8L134.7 2.8L134.7 4.6L130 7.6L125.3 4.6Z' fill='%23e2c06b' opacity='.8'/></svg>");
-  /* Engraved ceremonial titling, light strike: letterpress into vellum — a
-     bright warm understroke below the dark glyphs + a whisper of umber lift. */
-  --engrave-title: 0 1px 0 rgba(255, 252, 240, 0.85), 0 2px 3px rgba(74, 56, 12, 0.16);
 
   --semantic-success: var(--verdigris-700);
   --semantic-danger: var(--vermilion-700);
@@ -1187,16 +1144,6 @@
     inset 0 1px 0 rgba(255, 253, 247, 1), inset 0 -1px 0 rgba(46, 30, 6, 0.24),
     0 8px 18px rgba(46, 30, 6, 0.3), 0 44px 92px rgba(46, 30, 6, 0.5);
 
-  /* The lit-ornament halo (selected tiles · active tabs · the section diamond ·
-     the codex open-page row) rides the same ember grammar as `--gilt-glow`: a tight
-     struck-gold core (the ornament still catches gilt) over a warm burnt-umber pool
-     that toasts the ground BELOW it, so a selected surface reads as a hot object on
-     the parchment, not a bright smudge. The gold core stays for the fine diamonds/
-     rules where a downward-only pool would read as a stray drop-shadow. */
-  --illumination:
-    0 0 8px rgba(198, 156, 64, 0.42), 0 0 3px rgba(198, 156, 64, 0.3),
-    0 3px 10px rgba(var(--ember-umber), 0.4), 0 0 1.5px rgba(140, 104, 32, 0.9);
-
   /* D47 light gilt + surface gradients — light lacked the dark theme's gradients, so
      every surface read flat/creamy. These give light its own dimensional materials:
      a gold-leaf gradient (highlight → struck gold → deep) for gilded signature
@@ -1274,17 +1221,6 @@
      soft umber pool sits beneath. */
   --ember-edge: #6b5219;
   --ember-seat: 74, 44, 8;
-
-  /* The signature gilt AURA is now ember: every light consumer of `--gilt-glow`
-     (gilt-frame hero bands, raised brass tabs, portrait wells, caster tiles, the
-     d20 hero) toasts its ground below instead of ringing a symmetric bright halo. */
-  --gilt-glow:
-    0 0 0 1px color-mix(in oklab, var(--accent-glow) 40%, transparent),
-    0 4px 12px rgba(var(--ember-umber), 0.5), 0 9px 26px rgba(var(--ember-umber), 0.3);
-  /* A tighter sibling ember for smaller gilded atoms (seal, primary CTA, rest coin). */
-  --gilt-glow-sm:
-    0 0 0 1px color-mix(in oklab, var(--accent-glow) 36%, transparent),
-    0 2px 6px rgba(var(--ember-umber), 0.5), 0 5px 14px rgba(var(--ember-umber), 0.28);
 
   /* Home-hero scrim (light) — a warm vellum wash over the art (content zone left)
      fading into the page field, AA-preserving on the gilt-cream theme. */
@@ -1676,28 +1612,19 @@ button:disabled,
   cursor: not-allowed;
 }
 
-/* § 07 Focus — gold halo on every interactive element.
-   Uses the theme-aware --focus-ring (AA-safe in both themes; the old
-   --accent-primary-bright resolved to gold-500 in light = ~2.1:1, FAIL).
-   The illumination halo is suppressed on programmatically-focused
-   non-interactive containers ([tabindex='-1']) so roving-focus wrappers
-   (e.g. the roster list region) never paint a giant frame around the page. */
+/* § 07 Focus — the RING, and only the ring. A 2px `--focus-ring` at offset 2 on
+   every interactive element (AA-safe in both themes; the old
+   --accent-primary-bright resolved to gold-500 in light = ~2.1:1, FAIL). No
+   interior wash, no bloom: focus is state, and state on this chrome changes
+   light and colour — never emission. The ring alone clears WCAG 1.4.11.
+   Suppressed on programmatically-focused non-interactive containers
+   ([tabindex='-1']) so roving-focus wrappers (e.g. the roster list region)
+   never paint a giant frame around the page.
+   No border-radius here — the ring follows each element's own radius, and every
+   component-level :focus-visible owns its own. */
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  /* BG3 focus grammar: the crisp a11y ring PLUS a warm interior wash — the
-     oversized inset spread floods the element's interior with --focus-wash
-     (respecting its radius) under the content. Additive warmth only; component
-     recipes that own their focus box-shadow (.input, .btn.destructive, …)
-     keep their bespoke treatment. */
-  box-shadow:
-    inset 0 0 0 999px var(--focus-wash),
-    var(--illumination);
-  /* No border-radius here — the global rule forced --radius-md onto EVERY
-     focused element, rounding/clipping the gold halo on elements that aren't
-     meant to be rounded (table rows, inline links, full-bleed items). The halo
-     (box-shadow) already follows each element's own border-radius, and every
-     component-level :focus-visible owns its radius (.input, .statcard, etc.). */
 }
 :focus-visible[tabindex="-1"] {
   outline: none;
@@ -1735,7 +1662,7 @@ button:disabled,
   opacity: 1;
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: var(--illumination), var(--elev-raised);
+  box-shadow: var(--elev-raised);
 }
 
 /* numeric alignment helper used on every stat number — tabular for column

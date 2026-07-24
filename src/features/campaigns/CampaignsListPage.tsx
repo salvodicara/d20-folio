@@ -124,7 +124,6 @@ export function CampaignsListPage() {
     <main id="main" className="page-shell py-8">
       <PageHeader
         as="h1"
-        crest
         title={t("nav.campaigns")}
         hint={t("campaigns.hint")}
         // #22 dedup — the empty state owns the Create/Join CTAs, so the header

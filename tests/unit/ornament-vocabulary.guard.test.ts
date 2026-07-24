@@ -6,285 +6,181 @@ import { dirname, resolve } from "node:path";
 const here = dirname(fileURLToPath(import.meta.url));
 const indexCss = readFileSync(resolve(here, "../../src/index.css"), "utf8");
 const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8");
+/** folio.css with comments stripped — assertions must read DECLARATIONS, never prose. */
+const folio = folioCss.replace(/\/\*[\s\S]*?\*\//g, "");
+const index = indexCss.replace(/\/\*[\s\S]*?\*\//g, "");
 
 /**
- * The ornament vocabulary (BG3 identity T5 — DESIGN.md §5 "The ornament
- * vocabulary"; settled 2026-07-24 on the owner's STYLE-A pick: "Do style A,
- * but you must ALIGN. And make it more wow — without breaking things").
- * Pins the grammar's load-bearing facts so a refactor can't silently drop or
- * re-add a piece:
- *   - the hero frames are bound by the per-theme `--frame-ornate` token —
- *     FOUR fixed-size per-corner SVG background layers (tl/tr/bl/br, 64px
- *     tiles), NEVER border-image and NEVER a layout border on the pseudo:
- *     a border-based carrier would force a minimum pseudo box that overflows
- *     shorter hosts downward (over-constrained abspos), and border-image's
- *     proportional tile-shrink mis-seats the centerline on short hosts.
- *     Fixed-size corner layers register 0px at every host size by
- *     construction;
- *   - THE KNOT (style A, the faithful transcription of the owner's BG3
- *     spellbook-reference corner): rail swells crossing the vertex in a fine
- *     whisker overshoot, ONE wave-volute comma-curl rising outward on the
- *     diagonal over an OPEN eye, a small weld diamond seating the crossing,
- *     and a two-tone-struck five-ray glint fan — and NOTHING else. Each corner
- *     is ONE compact terminal that CONCLUDES cleanly: the swell tapers to a 1px
- *     hairline that dissolves into the host's own border stroke, and the edge
- *     between opposing terminals is bare border. NO mid-rail leaves — the
- *     edge stays clean, nothing scattered mid-host (owner, 2026-07-24,
- *     pinned dead below);
- *   - THE ONE-LINE LAW: the ornament contributes no run lines — the host's
- *     own 1px border is THE frame line and the three framed registers stay
- *     SQUARE so the knot seats on a true crossing; nothing floats, ever;
- *   - the STRUCK members are mirrored per-corner UNFILLED first and toned
- *     AFTER in screen space (the two-tone strike), so the bevel light stays
- *     top-left on all four corners;
- *   - dialog heads seat the per-theme `--seat-orn` winged divider in the
- *     SAME style-A language: rails tapering outward into open under-curls,
- *     inner open-eye S-hook returns, a luminous chevron pair over a
- *     descending faceted plumb (glow raised per the "more wow" verdict);
- *     its backing diamond bakes the theme's own `--bg-surface-2`
- *     (drift-guarded), hugs the fleur, and blurs its edge — nothing floats;
- *   - the LIGHT theme's ornament ink is GOLD, not bronze (owner, 2026-07-24);
- *   - selection is marked by the silver-over-bronze `--frame-selected`
- *     gradient (both themes), NOT by decorative diamonds;
- *   - SECTION dividers stay tip-fading and NODELESS — the ceremonial seat is
- *     the one centre-node divider, on dialog heads only;
- *   - the decorative diamonds trimmed in the ornament simplification stay
- *     gone (selection/commit crest nodes, scrollbar finials);
- *   - the jewelry-thin scrollbar keeps its Firefox fence (Chromium ≥121 lets
- *     an unfenced `scrollbar-width` disable every ::-webkit-scrollbar rule).
+ * THE ORNAMENT VOCABULARY (DESIGN.md §5). Ornament is EARNED, never decorative,
+ * and the vocabulary is deliberately tiny. This guard pins the load-bearing
+ * facts so a later wave cannot quietly grow a second one back:
+ *
+ *   L2 · AN ORNAMENT REPLACES THE LINE. It is never drawn over it, beside it,
+ *        or near it. Wherever a mark appears, the rule terminates, the mark
+ *        occupies the interval, the rule resumes. The reference has no surface
+ *        anywhere where a rule and an ornament are painted on top of each
+ *        other — and a head that drew both was the one defect the owner named.
+ *
+ *   ONE DIVIDER. `--hairline` is every separator in the application: modal
+ *        heads, card feet, section rubrics, list groups, the compendium entry
+ *        head, the colophon. Tips fading, NODELESS, inset from the padding
+ *        edge. There is no second divider grammar and no node on any of them.
+ *
+ *   THE ORNAMENT BUDGET. At most ONE mark-bearing surface per screen, and it
+ *        must be the surface the user is acting in. A dialog carries none (it
+ *        already commands the screen); a resting card, a sibling panel, a
+ *        section heading, a list row and a chip carry none, ever.
+ *
+ *   NO LIGHT EMISSION. Glows, blooms, sweeps and auras are not part of the
+ *        vocabulary: this chrome is a lit MATERIAL, and light on it means
+ *        depth, never state. Focus is the a11y ring alone.
+ *
+ *   FLAT TYPE. Titles carry no engraving, letterpress, underglow or gradient;
+ *        a section heading is type and space; gold means a value or a state,
+ *        never a label.
  */
-describe("ornament vocabulary (T5)", () => {
-  it("defines the selection metals + frame gradient in both themes", () => {
-    // Dark strike + light strike of the metal pair.
-    expect(indexCss.match(/--metal-silver:/g)?.length).toBe(2);
-    expect(indexCss.match(/--metal-bronze:/g)?.length).toBe(2);
-    // The silver→bronze→silver frame gradient derives from the metals, so ONE
-    // definition serves both themes.
-    expect(indexCss).toMatch(
-      /--frame-selected:\s*linear-gradient\(\s*180deg,\s*var\(--metal-silver\),\s*var\(--metal-bronze\) 50%,\s*var\(--metal-silver\)\s*\)/
+describe("the ornament vocabulary", () => {
+  it("keeps the ornament BUDGET: the mark-bearing frames, and nothing else", () => {
+    // The two frames that may carry the corner mark — the realm masthead, and
+    // the cockpit identity band (which takes the screen's one mark on the route
+    // where no masthead renders). The selector list IS the budget.
+    const host = folio.match(
+      /\.page-head\.framed::before,\s*\.folio-panel\.gilt-frame::after \{([^}]*)\}/
     );
-  });
-
-  it("strikes the style-A knot + engraved titling in BOTH themes", () => {
-    // The frame chrome is per-theme (dark strikes gilt, light letterpresses
-    // GOLD), so each token MUST be defined twice — once in :root, once in the
-    // [data-theme="light"] scope. `css-token-defined.guard` only proves a token
-    // is defined SOMEWHERE, so a dropped light copy would slip past it and
-    // silently paint the light theme with no frame / flat title.
-    expect(indexCss.match(/--frame-ornate:/g)?.length).toBe(2);
-    expect(indexCss.match(/--seat-orn:/g)?.length).toBe(2);
-    expect(indexCss.match(/--engrave-title:/g)?.length).toBe(2);
-    // The A anatomy, once per corner SVG × 4 corners × 2 themes = 8 each:
-    // the rail swell…
-    expect(indexCss.match(/M30 12\.3Q20 12\.18 14\.5 12\.22/g)?.length).toBe(8);
-    // …crossing the vertex in the fine whisker overshoot (tip ON the rail
-    // axis — attached, never floating)…
-    expect(indexCss.match(/Q11\.4 12\.25 9\.8 12\.74/g)?.length).toBe(8);
-    // …the ONE wave-volute comma-curl (tail welded to the knot, crown
-    // breaking over, beak curling back over the OPEN eye)…
     expect(
-      indexCss.match(/M11\.41 12\.18Q7\.53 10\.63 6\.21 7\.76Q5\.67 5\.2 7\.69 4\.04/g)
-        ?.length
-    ).toBe(8);
-    // …the small weld diamond seating the crossing…
-    expect(
-      indexCss.match(/M12\.8 10\.9L14\.7 12\.8L12\.8 14\.7L10\.9 12\.8Z/g)?.length
-    ).toBe(8);
-    // …and the five-ray glint fan as a real group of 5 path elements.
-    expect(indexCss.match(/<g id='f'>(?:<path d='[^']*'\/>){5}<\/g>/g)?.length).toBe(8);
-    // NO mid-rail leaves (owner, 2026-07-24): the rail `g#e` group is
-    // EXACTLY the single swell path — the terminal concludes into the border
-    // line with nothing scattered mid-edge (a re-add would restore the
-    // "scattered dirt" the owner rejected).
-    expect(indexCss.match(/<g id='e'><path d='M30 12\.3[^']*'\/><\/g>/g)?.length).toBe(8);
-    expect(indexCss).not.toContain("M42 12.8Q46.5 11.5 54 12.58");
-    expect(indexCss).not.toContain("M55.5 12.8Q57.5 12.12 59.2 12.6");
-    // Mirror-then-tone (the two-tone strike): each corner mirrors the
-    // UNFILLED geometry first (tl carries no mirror; tr/bl/br mirror their
-    // knot AND fan groups — 2 uses per corner × 2 themes = 4 each)…
-    expect(indexCss.match(/matrix\(-1 0 0 1 64 0\)/g)?.length).toBe(4);
-    expect(indexCss.match(/matrix\(1 0 0 -1 0 64\)/g)?.length).toBe(4);
-    expect(indexCss.match(/matrix\(-1 0 0 -1 64 64\)/g)?.length).toBe(4);
-    // …then tones in SCREEN space (knot shade offset below-right + fan shade,
-    // once per corner = 8 each), keeping the bevel light top-left everywhere.
-    expect(indexCss.match(/transform='translate\(1 1\.4\)'/g)?.length).toBe(8);
-    expect(indexCss.match(/transform='translate\(\.6 \.85\)'/g)?.length).toBe(8);
-    // The engraved title is wired (text-shadow), so a defined-but-unused
-    // token can't fake it.
-    expect(folioCss).toMatch(/text-shadow:\s*var\(--engrave-title\)/);
+      host,
+      "The corner-mark host rule must be exactly `.page-head.framed::before, " +
+        ".folio-panel.gilt-frame::after`. Adding a third selector spends the screen's " +
+        "one-ornament budget twice."
+    ).not.toBeNull();
+    expect(host?.[1]).toContain("background: var(--frame-ornate);");
+    // A DIALOG CARRIES NO ORNAMENT. It already commands the screen; the
+    // reference's own modals are plain plates with a title and a whisper.
+    expect(folio).not.toMatch(/\.modal::after\s*\{/);
+    expect(folio).not.toMatch(/\.modal::before\s*\{/);
+    // The mark rides the host's OWN border box — no layout border, no
+    // border-image (a border-based carrier over-constrains short hosts and
+    // border-image's proportional shrink mis-seats the centerline).
+    expect(host?.[1]).not.toContain("border:");
+    expect(host?.[1]).not.toContain("border-image");
+    expect(folio).not.toMatch(/border-image:\s*var\(--frame-ornate\)/);
   });
 
   it("keeps the light theme's ornament ink GOLD, never bronze (owner, 2026-07-24)", () => {
-    // The light `--frame-ornate` body is the deep antique-gold #94741f — a
-    // true-gold hue letterpressed into the vellum; #7a5f24 must not appear
-    // in either ornament token's light strike.
     const lightBlock = indexCss.slice(indexCss.indexOf('[data-theme="light"]'));
     const lightFrame = lightBlock.match(/--frame-ornate:\s*([^;]+);/)?.[1];
-    const lightSeat = lightBlock.match(/--seat-orn: url\("([^"]+)"\)/)?.[1];
     expect(lightFrame).toBeDefined();
-    expect(lightSeat).toBeDefined();
     expect(lightFrame).toContain("fill='%2394741f'");
-    expect(lightSeat).toContain("fill='%2394741f'");
     expect(lightFrame).not.toContain("fill='%237a5f24'");
-    expect(lightSeat).not.toContain("fill='%237a5f24'");
   });
 
-  it("seats the style-A winged divider on dialog heads, surface-baked per theme", () => {
-    // The divider straddles the modal head's 1px seat rule (24px tall, the
-    // SVG's rule line at y=12 on the border) — decorative only.
-    expect(folioCss).toMatch(
-      /\.modal-head::after\s*\{[^}]*background:\s*var\(--seat-orn\) center \/ 260px 24px no-repeat/
+  it("draws NO ornament over a line — no head figure, no divider node", () => {
+    // The reported defect: a dialog head that drew a full-width border-image
+    // rule AND a 260px winged-fleur SVG with its own rail, one pixel apart, at
+    // different lengths and weights. Both the ornament and the second rule are
+    // gone; the head ends in the one hairline.
+    expect(index).not.toMatch(/--seat-orn/);
+    expect(folio).not.toMatch(/--seat-orn/);
+    const head = folio.match(/\.modal-head::after \{([^}]*)\}/)?.[1] ?? "";
+    expect(head, "the modal head must end in the ONE hairline").toContain(
+      "background: var(--hairline);"
     );
-    const themes = [...indexCss.matchAll(/--seat-orn:\s*url\("([^"]+)"\)/g)]
-      .map((m) => m[1])
-      .filter((u): u is string => u !== undefined);
-    expect(themes).toHaveLength(2);
-    // The theme's OWN --bg-surface-2 bakes the fleur's backing diamond, so the
-    // seat rule passes BEHIND the fleur invisibly (both faces of the seat are
-    // surface-2). Drift guard: the baked hex must equal the theme token.
-    const surface2 = [...indexCss.matchAll(/--bg-surface-2:\s*(#[0-9a-fA-F]{6})/g)]
-      .map((m) => m[1])
-      .filter((h): h is string => h !== undefined)
-      .map((h) => h.slice(1).toLowerCase());
-    expect(surface2).toHaveLength(2);
-    themes.forEach((uri, i) => {
-      expect(uri, `seat-orn theme ${i} bakes its surface-2 backing`).toContain(
-        `fill='%23${surface2[i]}'`
-      );
-      // The A-language anatomy: the luminous centre (nested chevron pair over
-      // the descending faceted plumb, hanging BELOW the rule)…
-      expect(uri).toContain("M121.8 6.4L130 10.5L138.2 6.4");
-      expect(uri).toContain("M130 13.2L132.2 16.6L130 22.8L127.8 16.6Z");
-      // …the inner open-eye S-hook return (the corner volute language)…
-      expect(uri).toContain("M102.6 12.55Q106.8 11.7 107.8 9.9");
-      // …and the rail's outer hairpoint ending in a tiny OPEN under-curl.
-      expect(uri).toContain("Q4.7 12.95 5.7 13.75");
-      // Nothing floats, ever — no stray under-dot circle.
-      expect(uri).not.toContain("circle cx='108.6'");
-      // The baked radial glow seats the centre…
-      expect(uri).toContain("radialGradient");
-      expect(uri).toContain("circle cx='130' cy='13.5' r='13' fill='url(%23gl)'");
-      // …and the surface-2 backing diamond HUGS the fleur with an in-SVG
-      // blurred edge, so no hard plate rim ever shows against the glow.
-      expect(uri).toContain("M130 5L136.4 13.2L130 21L123.6 13.2Z");
-      expect(uri).toContain("filter='url(%23pb)'");
-      expect(uri).toContain("feGaussianBlur");
-      // Same mirror-then-tone strike as the corners: the closure (id='s') is
-      // struck by 2 offset tone layers per theme.
-      expect(
-        uri.match(
-          /use href='%23s' fill='%23[0-9a-f]+' opacity='[^']+' transform='translate\(/g
-        )?.length
-      ).toBe(2);
-    });
-    // The glow carries the "more wow" presence (owner, 2026-07-24): dark
-    // .38, light .3.
-    expect(themes[0]).toContain("stop-opacity='.38'");
-    expect(themes[1]).toContain("stop-opacity='.3'");
+    expect(folio).not.toMatch(/\.modal-head \{[^}]*border-image/);
+    expect(folio).not.toMatch(/\.modal-head \{[^}]*border-bottom/);
   });
 
-  it("registers the goldwork ON the frame corners at every host size (owner, 2026-07-24)", () => {
-    // The corner-goldwork pseudo rule: four FIXED-SIZE corner background
-    // layers on an inset paint box. The fitting rule: each 64px tile draws
-    // its rail centerline at 20% (12.8px), so `inset: -(0.2 × 64px + 0.5px)`
-    // seats it exactly on the host's 1px border stroke.
-    const ruleRaw = folioCss.match(
-      /\.page-head\.framed::before,\s*\.folio-panel\.gilt-frame::after,\s*\.modal::after\s*\{([^}]*)\}/
-    )?.[1];
-    expect(ruleRaw).toBeDefined();
-    // Comments narrate the banned mechanisms; assert on declarations only.
-    const rule = (ruleRaw ?? "").replace(/\/\*[^]*?\*\//g, "");
-    expect(rule).toContain("inset: calc(-1 * (0.2 * 64px + 0.5px));");
-    expect(rule).toContain("background: var(--frame-ornate);");
-    // THE ROOT-CAUSE PIN (the "translated downward" regression): the pseudo
-    // must carry NO layout border and NO border-image — a 64px transparent
-    // border forces a 128px minimum box that overflows every shorter host
-    // downward, and border-image's proportional tile-shrink mis-seats the
-    // centerline. `content: ""` is the only quoted property allowed here.
-    expect(rule).not.toContain("border:");
-    expect(rule).not.toContain("border-image");
-    expect(folioCss).not.toMatch(/border-image:\s*var\(--frame-ornate\)/);
-    // Each per-theme token carries exactly the four corner-anchored
-    // fixed-size layers.
-    for (const pos of ["left top", "right top", "left bottom", "right bottom"]) {
-      expect(
-        indexCss.match(new RegExp(`\\)\\s*${pos} / 64px 64px no-repeat`, "g"))?.length
-      ).toBe(2);
+  it("has exactly ONE divider recipe, and it is nodeless", () => {
+    // The one painted gradient, derived from the one ink parameter.
+    expect(index).toMatch(
+      /--hairline:\s*linear-gradient\(\s*90deg,\s*transparent,\s*var\(--hairline-ink\) 10%,\s*var\(--hairline-ink\) 90%,\s*transparent\s*\);/
+    );
+    // Every divider in the app consumes it rather than re-declaring a gradient.
+    for (const consumer of [
+      /\.sec-rule \{[^}]*background: var\(--hairline\);/,
+      /\.modal-head::after \{[^}]*background: var\(--hairline\);/,
+      /\.ch-foot::before \{[^}]*background: var\(--hairline\);/,
+      /\.cmp-entry-head::after \{[^}]*background: var\(--hairline\);/,
+      /\.colophon-hero-rule \{[^}]*background: var\(--hairline\);/,
+    ]) {
+      expect(consumer.test(folio), `MISSING hairline consumer: ${consumer}`).toBe(true);
     }
-    // THE ONE-LINE LAW's host half (owner, 2026-07-24 "must ALIGN to the
-    // borders"): the three framed registers are SQUARE so the knot seats on a
-    // true crossing of the host's own border — a rounded arc curving under the
-    // knot is the two-line regression this pins out. Each anchor slice is the
-    // same one used above (a renamed selector fails the indexOf checks there).
-    const modalRule = folioCss.slice(
-      folioCss.indexOf("\n.modal {"),
-      folioCss.indexOf(".modal.sm")
-    );
-    expect(modalRule).toContain("border-radius: 0;");
-    const framedRule = folioCss.slice(
-      folioCss.indexOf(".page-head.framed {"),
-      folioCss.indexOf(".page-head.framed.has-crest")
-    );
-    expect(framedRule).toContain("border-radius: 0;");
-    expect(folioCss).toMatch(
-      /\.folio-panel\.gilt-frame,\s*\[data-theme="dark"\] \.folio-panel\.gilt-frame::before\s*\{\s*border-radius: 0;\s*\}/
-    );
-    expect(folioCss).toMatch(/\.modal-head\s*\{[^}]*border-radius: 0;/);
-    // Corner ink is paint-only overflow, clipped by a host's child-paint
-    // clipping, so the hero hosts must NOT overflow-hide: `.modal`
-    // scroll-clips on `.modal-body`, and the masthead crest self-clips via
-    // mask-size on an `inset: 0` element. Each slice anchor must actually
-    // exist — a renamed selector would make indexOf return -1 and the slice a
-    // vacuously-passing tail fragment.
-    const modalStart = folioCss.indexOf("\n.modal {");
-    const modalEnd = folioCss.indexOf(".modal.sm");
-    expect(modalStart).toBeGreaterThan(-1);
-    expect(modalEnd).toBeGreaterThan(modalStart);
-    expect(folioCss.slice(modalStart, modalEnd)).not.toContain("overflow: hidden");
-    const crestHostStart = folioCss.indexOf(".page-head.framed.has-crest {");
-    const crestHostEnd = folioCss.indexOf(".page-head-crest");
-    expect(crestHostStart).toBeGreaterThan(-1);
-    expect(crestHostEnd).toBeGreaterThan(crestHostStart);
-    expect(folioCss.slice(crestHostStart, crestHostEnd)).not.toContain(
-      "overflow: hidden"
-    );
-    expect(folioCss).toMatch(/\.page-head-crest\s*\{[^}]*inset: 0/);
+    // NODELESS — no divider anywhere carries a centre mark.
+    expect(folio).not.toMatch(/\.sec-rule::(before|after)/);
+    expect(folio).not.toMatch(/\.bm-rule::after/);
+    expect(folio).not.toMatch(/\.colophon-hero-rule::after/);
+    expect(folio).not.toMatch(/\.site-footer-diamond/);
+  });
+
+  it("has ZERO rotated-diamond ornaments — a heading is type and space", () => {
+    // 18 rotated-45° lozenges shipped as rubric markers, rail heads, list
+    // bullets, divider nodes and menu markers. A heading is type and space; a
+    // bullet is a bullet; a marker is ink colour. The ONE surviving rotate(45deg)
+    // is the `<select>` caret — a chevron drawn from two borders, the standard
+    // form-control idiom, not a lapidary node.
+    const rotations = [...folio.matchAll(/transform:[^;]*rotate\(-?45deg\)/g)];
+    const selectors = rotations.map((m) => {
+      const before = folio.slice(0, m.index);
+      const head = before
+        .slice(before.lastIndexOf("}") + 1)
+        .trim()
+        .split("{")[0];
+      return head === undefined ? "" : head.trim();
+    });
+    expect(
+      selectors,
+      "Every rotate(45deg) in the chrome must be the <select> caret. A new one is a " +
+        "re-added lapidary diamond — a heading is type and space, a divider is nodeless."
+    ).toEqual([".select::after"]);
+    // The named lozenges stay deleted, markup and all.
+    for (const gone of [
+      "sec-diamond",
+      "rh-diamond",
+      "ag-diamond",
+      "runic-gem",
+      "site-footer-diamond",
+    ]) {
+      expect(folio.includes(gone), `\`.${gone}\` must stay deleted`).toBe(false);
+    }
+  });
+
+  it("emits NO light: no glow, no bloom, no sweep, no aura, no focus halo", () => {
+    for (const token of [
+      "--illumination",
+      "--gilt-glow",
+      "--gilt-glow-sm",
+      "--glint-ink",
+      "--focus-wash",
+      "--emboss-sheen",
+    ]) {
+      expect(index.includes(token), `${token} must stay deleted`).toBe(false);
+      expect(folio.includes(token), `${token} must stay deleted`).toBe(false);
+    }
+    // Focus is the ring, and only the ring.
+    const focus = index.match(/^:focus-visible \{([^}]*)\}/m)?.[1] ?? "";
+    expect(focus).toContain("outline: 2px solid var(--focus-ring);");
+    expect(focus).not.toContain("box-shadow");
+    // The commit bloom + its keyframes are gone.
+    expect(folio).not.toMatch(/pager-bloom/);
+  });
+
+  it("keeps type FLAT and un-watermarked — no engraving, no crest behind ink", () => {
+    expect(index).not.toMatch(/--engrave-title/);
+    expect(folio).not.toMatch(/--engrave-title/);
+    expect(folio).not.toMatch(/page-head-crest/);
+    // `--asset-crest` survives with ONE consumer: the compendium frontispiece,
+    // the single place a watermark is honest (a title page, with no live
+    // content over it).
+    expect(folio.match(/var\(--asset-crest\)/g)?.length).toBe(2); // -webkit-mask + mask
+    expect(folio).toMatch(/\.cmp-frontis-inner::before \{[^}]*var\(--asset-crest\)/);
   });
 
   it("marks selection with the frame gradient (altar + chosen plaque), not diamonds", () => {
-    // The chosen plaque + the altar wear the silver-over-bronze frame.
-    expect(folioCss).toMatch(/var\(--frame-selected\) border-box/);
-    // The trimmed decorative diamonds are GONE — no crest nodes, no masked
-    // corner pieces, no re-tint ink tokens.
-    expect(folioCss).not.toMatch(/--orn-corner/);
-    expect(folioCss).not.toMatch(/--orn-corners/);
-    expect(indexCss).not.toMatch(/--orn-ink/);
-    expect(folioCss).not.toMatch(
-      /\.wiz-hero:not\(\.empty\)::before|\.cmp-tab\[aria-selected="true"\]::before/
+    expect(indexCss.match(/--metal-silver:/g)?.length).toBe(2);
+    expect(indexCss.match(/--metal-bronze:/g)?.length).toBe(2);
+    expect(indexCss).toMatch(
+      /--frame-selected:\s*linear-gradient\(\s*180deg,\s*var\(--metal-silver\),\s*var\(--metal-bronze\) 50%,\s*var\(--metal-silver\)\s*\)/
     );
-    expect(folioCss).not.toMatch(
-      /\.wiz-pager-btn\.commit \.wiz-pager-seal\.gold::before/
-    );
-  });
-
-  it("keeps the SECTION divider anatomy: both tips fade, NODELESS (leading .sec-diamond marks it)", () => {
-    const rule = folioCss.slice(
-      folioCss.indexOf(".sec-rule {"),
-      folioCss.indexOf('[data-theme="light"] .sec-rule')
-    );
-    expect(rule).toContain("--rule-c:");
-    expect(rule).toMatch(
-      /transparent,\s*var\(--rule-c\) 14%,\s*var\(--rule-c\) 86%,\s*transparent/
-    );
-    // No centre node on SECTION rules — the ceremonial seat ornament is the one
-    // centre-node divider, and it lives on dialog heads only.
-    expect(folioCss).not.toMatch(/\.sec-rule::after/);
-    // The section rubric's leading diamond is the divider's marker.
-    expect(folioCss).toMatch(/\.sec-diamond\s*\{/);
-    // Variants only re-tint the parameter — never re-declare the gradient.
-    expect(folioCss).toMatch(
-      /\.sec-head\[data-econ\] \.sec-rule\s*\{\s*--rule-c:[^{}]*\}/
-    );
+    expect(folio).toMatch(/var\(--frame-selected\) border-box/);
   });
 
   it("keeps the jewelry-thin scrollbar: transparent track, ghost thumb, hidden buttons, Firefox fence", () => {

@@ -14,11 +14,12 @@
  *        through; it now reuses the OPAQUE `.info-card` surface (`.info-card.tip`).
  *   #6 — the 10-step guided rail ran wider than a narrow viewport and forced a
  *        PAGE-level horizontal scroll; the wizard-F orbs WRAP so they never do.
- *   #7 — the section count MEDALLION (`.sec-count`) + disclosure KNOB shipped a
- *        TRANSLUCENT gilt fill that let the candlelit backdrop bleed through, so the
- *        deep-gold numeral read BROWN on the campaign-hub art (recurring, owner
- *        2026-06-30). In light they must strike a genuinely OPAQUE struck disc
- *        (opaque `--gold-leaf` background-color base) so the ink self-backs.
+ *   #7 — the disclosure KNOB — the one INTERACTIVE object in a section rubric —
+ *        shipped a TRANSLUCENT gilt fill that let the candlelit backdrop bleed
+ *        through, so its deep-gold glyph read BROWN on the campaign-hub art
+ *        (recurring, owner 2026-06-30). In light it must strike a genuinely
+ *        OPAQUE struck disc (opaque `--gold-leaf` background-color base) so the
+ *        ink self-backs.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -80,19 +81,33 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
     ).toBe(true);
   });
 
-  it("#7 — light gilt coins (count medallion + disclosure knob) strike an OPAQUE disc", () => {
-    // The deep-gold numeral self-backs ONLY if the coin paints an opaque struck base;
-    // a translucent fill lets the candlelit backdrop bleed through (the brown medallion).
-    // Pin the MECHANISM: a `[data-theme=light]` rule grouping `.sec-count` +
-    // `.section-disclosure-knob` that sets an OPAQUE `--gold-leaf` background-color base.
+  it("#7 — the light disclosure knob strikes an OPAQUE gilt disc", () => {
+    // The deep-gold glyph self-backs ONLY if the knob paints an opaque struck base;
+    // a translucent fill lets the candlelit backdrop bleed through (the brown coin).
     const rule =
-      /\[data-theme="light"\]\s*:is\(\s*\.sec-count\s*,\s*\.section-disclosure-knob\s*\)\s*\{[^}]*background-color:\s*var\(--gold-leaf-/;
+      /\[data-theme="light"\]\s*\.section-disclosure-knob\s*\{[^}]*background-color:\s*var\(--gold-leaf-/;
     expect(
       rule.test(css),
-      "MISSING: `[data-theme=light] :is(.sec-count, .section-disclosure-knob) " +
-        "{ background-color: var(--gold-leaf-…) }`. Without an opaque struck disc the " +
-        "deep-gold count numeral reads BROWN on the candlelit campaign-hub backdrop."
+      "MISSING: `[data-theme=light] .section-disclosure-knob { background-color: " +
+        "var(--gold-leaf-…) }`. Without an opaque struck disc the deep-gold glyph reads " +
+        "BROWN on the candlelit campaign-hub backdrop."
     ).toBe(true);
+  });
+
+  it("#7b — a read-only section COUNT is type, never a framed medallion", () => {
+    // L1: a number you cannot act on is not an object. The count reads as plain
+    // numerals in the rubric row; the only framed thing in that row is the
+    // disclosure knob, which is interactive.
+    const rule = /\.sec-count \{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(rule, "`.sec-count` must exist").not.toBe("");
+    for (const banned of ["border:", "box-shadow:", "background:", "background-color:"]) {
+      expect(
+        rule.includes(banned),
+        `\`.sec-count\` must carry NO \`${banned}\` — a read-only count is type on the ` +
+          "parent plate, not a struck coin with its own frame, fill and glow."
+      ).toBe(false);
+    }
+    expect(css).not.toMatch(/\.sec-count::before/);
   });
 
   it("#8 — the settings row inks are CARD inks, never the on-backdrop flip (light-polish pass)", () => {
@@ -246,19 +261,21 @@ describe("light ember-penumbra grammar guards (owner-ratified 2026-07-11)", () =
     ).toBe(true);
   });
 
-  it("the shared gilt-aura tokens pool the ember below (not a symmetric bright halo)", () => {
-    // `--gilt-glow` / `--gilt-glow-sm` are the light-only aura tokens every lit surface
-    // (hero bands, portrait wells, caster tiles, seals) rides. Post-rollout they MUST
-    // carry the umber ember pool; a revert to the old accent-glow-only symmetric bloom
-    // would silently un-ember every one of those surfaces at once.
+  it("no surface wears an aura — the ember is a GROUND tone, never a halo", () => {
+    // `--gilt-glow` / `--gilt-glow-sm` were a third outer-drop system layered on
+    // top of the elevation stack, and a glow: light emission standing in for
+    // depth. The cast belongs to the plate's seat, and the ember survives only
+    // where it tones a ground. A re-add resurrects the doubled drop.
     for (const token of ["--gilt-glow", "--gilt-glow-sm"] as const) {
-      const rule = new RegExp(`${token}:[^;]*rgba\\(var\\(--ember-umber\\)`);
       expect(
-        rule.test(indexCss),
-        `MISSING: \`${token}\` must pool \`rgba(var(--ember-umber), …)\` below the control ` +
-          "— without it every light gilt surface reverts to the dim/symmetric pre-ember glow."
-      ).toBe(true);
+        indexCss.includes(token),
+        `\`${token}\` must stay deleted — a plate's separation comes from its own ` +
+          "seat (one moat + one cast), never from a second halo system."
+      ).toBe(false);
     }
+    // The ember TONE itself stays — it is what makes the light theme a different
+    // room rather than an inversion.
+    expect(indexCss).toMatch(/--ember-umber:/);
   });
 
   it("the held Heroic-Inspiration chip radiates the ember penumbra in light", () => {

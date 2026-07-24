@@ -131,20 +131,6 @@ describe("RosterPage", () => {
     expect(document.documentElement.style.getPropertyValue("--app-bg-art")).toBe("");
   });
 
-  it("seats the crest watermark in its header — the frontispiece on a standard-field masthead (DESIGN.md §13)", () => {
-    // The roster is a framed masthead on the standard app field, so it carries the
-    // engraved brand crest as its frontispiece watermark (the art-backed campaign
-    // hub is the one masthead that omits it). This pins the live opt-in.
-    useCharactersMock.mockReturnValue({
-      characters: [makeDoc()],
-      loading: false,
-      error: null,
-    });
-    const { container } = renderRoster();
-    expect(container.querySelector(".page-head-crest")).not.toBeNull();
-    expect(container.querySelector(".page-head.has-crest")).not.toBeNull();
-  });
-
   it("shows the runic empty state with a Create CTA when there are no characters", () => {
     useCharactersMock.mockReturnValue({ characters: [], loading: false, error: null });
     renderRoster();

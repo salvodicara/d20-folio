@@ -38,8 +38,8 @@
  * deliberately, not inheriting field ink.
  *
  * GILT-COIN DISC PROBE (2026-06-30, closes a FALSE NEGATIVE): the skip-on-
- * background-image rule above has a hole — a gilt "coin" (the section count
- * MEDALLION `.sec-count`, the disclosure KNOB) filled with a TRANSLUCENT gradient
+ * background-image rule above has a hole — a gilt "coin" (the disclosure KNOB)
+ * filled with a TRANSLUCENT gradient
  * (`color-mix(…, transparent)`) carries a background-image yet does NOT actually
  * back its ink, so the generic walk skipped it while the dark backdrop bled
  * through and the deep-gold numeral read BROWN (owner-reported, recurring). So a
@@ -85,12 +85,12 @@ const MIN_ON_ART_LUMINANCE = 0.45;
  */
 const MIN_DISC_ALPHA = 0.8;
 
-/** Gilt "coin" objects that may sit on the candlelit backdrop in light theme — they
+/** The gilt "coin" that may sit on the candlelit backdrop in light theme — it
  *  must be self-backed opaque discs, never reliant on what is painted behind them. */
-const GILT_COINS = ".sec-count, .section-disclosure-knob";
+const GILT_COINS = ".section-disclosure-knob";
 
-/** Two offender classes the one probe collects: dark loose ink on the art, and gilt
- *  coins whose translucent disc fails to carry their ink on the art. */
+/** Two offender classes the one probe collects: dark loose ink on the art, and a gilt
+ *  coin whose translucent disc fails to carry its ink on the art. */
 interface ProbeResult {
   ink: Offender[];
   coins: Offender[];

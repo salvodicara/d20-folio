@@ -123,10 +123,6 @@ export function RosterPage() {
           wordmark already lives in the topbar, so no page-level "d20 Folio" eyebrow. */}
       <PageHeader
         as="h1"
-        // The engraved brand crest rides behind the band as a whisper-faint
-        // frontispiece watermark (DESIGN.md §13): every framed masthead on the
-        // standard app field carries it, so the realms read as one bound folio.
-        crest
         title={t("roster.title")}
         hint={t("roster.hint")}
         // The header CTAs are "add a character" (Create/Import) — orthogonal to the
