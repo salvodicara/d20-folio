@@ -25,10 +25,13 @@ import {
   magicItemSpec,
   featureSpec,
   equipmentSpec,
-  COMPENDIUM_SPECS,
-  type AnyCompendiumSpec,
   type PickerCtx,
 } from "@/features/compendium/picker";
+// The registry aggregate lives on the specs barrel (D-2), not the picker index.
+import {
+  COMPENDIUM_SPECS,
+  type AnyCompendiumSpec,
+} from "@/features/compendium/picker/specs";
 import { classFeatures } from "@/data/classes";
 import { spells } from "@/data/spells";
 import { SRD_EQUIPMENT } from "@/data/equipment";

@@ -1,6 +1,7 @@
 {
   "compendium": {
     "hint": "Ogni specie, classe, incantesimo e oggetto: tutto ricercabile.",
+    "monsters": "Mostri",
     "filters": "Filtri",
     "type": "Tipo",
     "emptyTitle": "Nessuna voce su questa pagina",

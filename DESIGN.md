@@ -1464,6 +1464,18 @@ player is making or live state they must read — never spent on decoration (Con
 golden rule 19, docs/GOLDEN_RULES.md). Adding a premium register to a surface requires naming the information
 that earns it.
 
+- **Monster statblock → `MonsterStatBlockCard`** (`src/components/shared/MonsterStatBlockCard.tsx`,
+  `.mon-*` recipes): the bestiary's shared read surface (the compendium Monsters leaf + the future
+  encounter/companion uses). Regrows the polymorph reference card's carved-vellum plaque family
+  (`.beast-ref`) into the full 2024 reading order — defence line · a ruled SCORE·MOD·SAVE ability
+  `<table>` · merged ledger lines (skills, the one 2024 Immunities line = inked damage runs + shared
+  `.co-chip` condition chips, senses, languages, the CR·XP·PB line) · gilt-ruled Traits/Actions/…/
+  Legendary sections whose prose lights through `highlightRulesText`. Struck at the **InfoCard tier**
+  of the register ladder — a reference document, not a decision surface, so **no altar/cartouche**.
+  Token-driven only: both themes re-theme with no light override (the `.beast-ref` precedent). Every
+  printed number derives (`src/lib/monster.ts`), never stored; the display strings resolve through
+  the lazy `monster` catalogue + the closed-set chrome seams.
+
 ### The ornament vocabulary (BG3 identity T5)
 
 The app's one ornament grammar, adapted from BG3's menu language into the committed **lapidary**
@@ -2364,7 +2376,8 @@ a11y gate after any token change.
 
 Before writing new CSS or a new component, check what existing primitives already solve it (`OptionGrid`,
 `InlineEditable`, `NumberStepper`, `InfoCard`, `SectionHeader`, `Button`, `IconButton`, `Input`,
-`Textarea`, `ModalHead`) and whether a sibling surface already uses the pattern. Search is bilingual +
+`Textarea`, `ModalHead`, `MonsterStatBlockCard` — the whole 2024 monster statblock) and whether a
+sibling surface already uses the pattern. Search is bilingual +
 accent-insensitive + **token-based** via `matchesSearch` (pass both the localized label and `name.en`)
 — the query is split into whitespace tokens and every token must appear somewhere in the joined
 candidate corpus, so word order and interstitial words ("di"/"of") never break a match ("pozione

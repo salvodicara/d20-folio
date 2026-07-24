@@ -10,6 +10,12 @@
  *  - `data/beasts/beasts.ts` must not import from `data/monsters` (D-5): the eager
  *    Polymorph projection is REGENERATED from the corpus, never runtime-coupled to
  *    it, so the eager graph can never grow.
+ *  - `picker/index.ts` must never re-export `from "./specs"` (D-2): the barrel
+ *    carries the `await ensureSrdKind("monster")` side effect, and the cockpit
+ *    add-modals import the concrete specs through this index — a barrel re-export
+ *    would drag the lazy bestiary corpus into their chunk. The concrete specs
+ *    re-export from their own modules; the barrel aggregate is reached only from
+ *    the lazy compendium route + the palette `import()`.
  */
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
@@ -38,5 +44,14 @@ describe("eager-partition tripwires", () => {
 
   it("the eager beast catalogue does not import from data/monsters (D-5)", () => {
     expect(read("src/data/beasts/beasts.ts")).not.toContain("data/monsters");
+  });
+
+  it("the picker index never re-exports from the side-effectful specs barrel (D-2)", () => {
+    // The cockpit add-modals import the concrete specs through this index; a
+    // `from "./specs"` re-export would pull the barrel's monster-catalogue TLA
+    // (and thus the lazy corpus) into their chunk graph.
+    expect(read("src/features/compendium/picker/index.ts")).not.toMatch(
+      /from\s+["']\.\/specs["']/
+    );
   });
 });

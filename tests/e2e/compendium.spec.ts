@@ -418,4 +418,42 @@ test.describe("Compendium browse", () => {
     const scrollable = await list.evaluate((el) => el.scrollHeight - el.clientHeight);
     expect(scrollable).toBeGreaterThan(1000);
   });
+
+  test("browses the Monsters section, facets by CR band, and opens a statblock leaf", async ({
+    page,
+  }) => {
+    await page.goto("/compendium?type=monster");
+    // The lazy `monster` catalogue is registered by the specs-barrel TLA before the
+    // page renders, so the pilot corpus is listed once the searchbox is up.
+    await expect(page.getByRole("searchbox")).toBeVisible();
+    await expect(
+      page.locator(".pick-name", { hasText: /^Skeleton$/i }).first()
+    ).toBeVisible();
+    await expect(
+      page.locator(".pick-name", { hasText: /Adult Red Dragon/i }).first()
+    ).toBeVisible();
+
+    // The "17+" CR band leaves only the CR-17 dragon; the CR-1/4 skeleton drops out.
+    const filtersToggle = page.getByRole("button", { name: /^Filters$/i });
+    if (await filtersToggle.isVisible().catch(() => false)) await filtersToggle.click();
+    await page.getByRole("button", { name: "17+", exact: true }).click();
+    await expect(
+      page.locator(".pick-name", { hasText: /Adult Red Dragon/i }).first()
+    ).toBeVisible();
+    await expect(page.locator(".pick-name", { hasText: /^Skeleton$/i })).toHaveCount(0);
+
+    // Open a statblock leaf (deep link): the ability table + a named Action entry
+    // prove the shared MonsterStatBlockCard painted, not just the page chrome.
+    await page.goto("/compendium?type=monster&sel=skeleton");
+    await expect(page.locator(".cmp-entry")).toBeVisible();
+    await expect(page.locator(".mon-abilities")).toBeVisible();
+    await expect(
+      page.locator(".mon-entry", { hasText: /Shortsword/i }).first()
+    ).toBeVisible();
+
+    // Esc closes the leaf back to the browsable index (the URL never goes stale).
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("searchbox")).toBeVisible();
+    await expect(page).not.toHaveURL(/sel=/);
+  });
 });

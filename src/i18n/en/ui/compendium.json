@@ -1,6 +1,7 @@
 {
   "compendium": {
     "hint": "Every species, class, spell, and item, searchable.",
+    "monsters": "Monsters",
     "filters": "Filters",
     "type": "Type",
     "emptyTitle": "Nothing on this leaf",

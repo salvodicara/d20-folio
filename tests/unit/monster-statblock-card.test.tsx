@@ -1,0 +1,46 @@
+/**
+ * MonsterStatBlockCard render guards.
+ *
+ * The card is the bestiary's shared read surface; these pin the two rendering
+ * traps a pure view-model test (compendium-spec-srd-coverage) can't see because
+ * it never mounts the card:
+ *   1. A no-defenses beast must NOT leak a bare numeric "0" ledger row — the
+ *      `{ (a?.length || b.length) && <Line/> }` footgun (0 is a valid React child).
+ *   2. The 2024 merged Immunities line renders damage runs + condition CHIPS.
+ */
+import { describe, it, expect } from "vitest";
+import { render } from "@testing-library/react";
+import { ensureSrdKind } from "@/i18n";
+import { getMonster } from "@/data/monsters";
+import { MonsterStatBlockCard } from "@/components/shared/MonsterStatBlockCard";
+
+// The monster catalogue is a LAZY SRD kind — load it (for every registered locale)
+// before rendering, exactly as the compendium specs barrel does at runtime.
+await ensureSrdKind("monster");
+
+describe("MonsterStatBlockCard", () => {
+  it("a beast with no vuln/resist/immunities renders no stray '0' ledger node", () => {
+    const bear = getMonster("brown-bear");
+    if (!bear) throw new Error("pilot monster 'brown-bear' missing");
+    const { container } = render(<MonsterStatBlockCard monster={bear} locale="en" />);
+    const ref = container.querySelector(".mon-ref");
+    if (!ref) throw new Error("statblock plaque did not render");
+    // The defence guards used `?.length || …` (a number), and React renders 0 as
+    // text. Assert no direct "0" text child leaked between the ledger lines.
+    const strayZero = Array.from(ref.childNodes).some(
+      (n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim() === "0"
+    );
+    expect(strayZero, "a bare '0' leaked into the statblock ledger").toBe(false);
+    // Sanity: the statblock actually painted.
+    expect(container.querySelector(".mon-abilities")).toBeTruthy();
+  });
+
+  it("merges damage + condition immunities into one chipped line (swarm)", () => {
+    const swarm = getMonster("swarm-of-rats");
+    if (!swarm) throw new Error("pilot monster 'swarm-of-rats' missing");
+    const { container } = render(<MonsterStatBlockCard monster={swarm} locale="en" />);
+    // The swarm has condition immunities but no damage immunities — the merged
+    // Immunities line must still render its condition chips.
+    expect(container.querySelectorAll(".co-chip").length).toBeGreaterThan(0);
+  });
+});

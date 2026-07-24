@@ -17,7 +17,10 @@
  */
 
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { COMPENDIUM_SPECS, type PickerCtx } from "@/features/compendium/picker";
+// COMPENDIUM_SPECS lives on the specs barrel (D-2): the picker index re-exports the
+// concrete specs from their own modules, not the side-effectful barrel.
+import { COMPENDIUM_SPECS } from "@/features/compendium/picker/specs";
+import { type PickerCtx } from "@/features/compendium/picker";
 import { matchesSearch } from "@/lib/search";
 import * as srdEn from "@/i18n/srd-en";
 

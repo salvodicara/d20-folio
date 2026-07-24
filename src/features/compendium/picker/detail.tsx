@@ -27,7 +27,14 @@ export function CompendiumDetailBody({
 }) {
   return (
     // `overscroll-contain` — momentum stays inside the read column (no page chain).
-    <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+    // `tabIndex={0}` — a long, interaction-free body (e.g. a monster statblock) makes
+    // this a scrollable region with no focusable child; keyboard users need to focus
+    // it to arrow-scroll (WCAG scrollable-region-focusable). Harmless where the body
+    // already carries focusable content.
+    <div
+      tabIndex={0}
+      className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-accent"
+    >
       {view.eyebrow && (
         <div className="mb-3 flex flex-wrap items-center gap-2 text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">
           {view.eyebrow}

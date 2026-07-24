@@ -134,6 +134,10 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   // COMPENDIUM-LUX — the facet bar UNFOLDED (it starts collapsed behind the
   // Filters disclosure at every width, so the chips need their own swept state).
   { slug: "compendium-filters", route: "/compendium" },
+  // The bestiary — the Monsters section list + one full statblock leaf. Both enroll
+  // in a11y (axe serious/critical = 0 × both themes) + i18n-sweep automatically.
+  { slug: "compendium-monsters", route: "/compendium?type=monster" },
+  { slug: "compendium-monster-entry", route: "/compendium?type=monster&sel=skeleton" },
   { slug: "settings-page", route: "/settings" }, // settings page
   { slug: "legal-page", route: "/legal" }, // legal & attribution (linked from the footer)
   // 404 catch-all (C1). The probe path is an unknown route the `path="*"` route

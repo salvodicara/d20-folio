@@ -559,10 +559,16 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   "compendium-metamagic": { edit: false, ready: readyByH1 },
   "compendium-invocations": { edit: false, ready: readyByH1 },
   "compendium-weapon-mastery": { edit: false, ready: readyByH1 },
+  // The bestiary Monsters section list — same synchronous page, so the <h1>
+  // present ⇒ the corpus list painted.
+  "compendium-monsters": { edit: false, ready: readyByH1 },
   // COMPENDIUM-LUX — the deep-linked entry leaf. Anchor on the entry's own
   // masthead title (EN/IT proper noun) so the surface is proof the detail —
   // not just the page chrome — painted.
   "compendium-entry": { edit: false, ready: readyText(/fireball|palla di fuoco/i) },
+  // The deep-linked statblock leaf — anchor on the entry's own masthead noun so
+  // the surface proves the statblock painted (skeleton shipped in the pilot).
+  "compendium-monster-entry": { edit: false, ready: readyText(/skeleton|scheletro/i) },
   // COMPENDIUM-LUX — the facet bar unfolded: same synchronous page, then the
   // prepare opens the Filters disclosure and anchors on the expanded state.
   "compendium-filters": {

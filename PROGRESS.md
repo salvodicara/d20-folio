@@ -463,8 +463,13 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     `src/data/monsters/` aggregate behind the `srd-monsters` lazy chunk, and a 10-monster PILOT
     (skeleton · zombie · goblin-warrior · priest · swarm-of-rats · ghost · young/adult red dragon ·
     brown-bear · rat) with its EN+IT catalogue + the corpus-integrity guard. Also closed the M1
-    idle-prefetch leak (the compendium left `prefetchLikelyRoutes`). NEXT: the compendium Monsters
-    section + statblock plaque, then the beast-projection re-derivation seam, then the 8 data waves.
+    idle-prefetch leak (the compendium left `prefetchLikelyRoutes`). **The compendium Monsters
+    section is now LIVE** — the browse-only `monsterSpec` (gilt CR verdict + CR-band/size/type
+    facets + resident-locale prose search) appended last on the codex ribbon, the shared
+    `MonsterStatBlockCard` on the `.beast-ref`/`.mon-*` plaque (full 2024 reading order, both
+    themes, axe-clean), the D-2 barrel `ensureSrdKind` gate + the `picker/index.ts` re-point (the
+    cockpit modals never drag the corpus), and its e2e/a11y/i18n-sweep surfaces. NEXT: the
+    beast-projection re-derivation seam, then the 8 data waves.
 - **Companions/Extras:** a persistent companion-statblock surface on the sheet (Find Familiar,
   Primal Companion, Drakewarden, Artificer Steel Defender/Homunculus) — closes a
   rules-completeness hole; reuses the bestiary statblock renderer.

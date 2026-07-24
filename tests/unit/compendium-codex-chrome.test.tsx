@@ -17,12 +17,13 @@ import { MemoryRouter, Routes, Route } from "react-router";
 import { Award } from "lucide-react";
 import { CompendiumPage } from "@/features/compendium/CompendiumPage";
 import {
-  COMPENDIUM_SPECS,
   spellSpec,
   magicItemSpec,
   featSpec,
   type PickerCtx,
 } from "@/features/compendium/picker";
+// The registry aggregate lives on the specs barrel (D-2), not the picker index.
+import { COMPENDIUM_SPECS } from "@/features/compendium/picker/specs";
 import { CmpSeal } from "@/features/compendium/picker/CmpSeal";
 
 const t = ((key: string, opts?: { defaultValue?: string }) =>
