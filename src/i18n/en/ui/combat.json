@@ -96,8 +96,6 @@
     "atWill": "at will",
     "perLongRest": "/LR",
     "perShortRest": "/SR",
-    "ritualBadge": "RIT",
-    "ritualHint": "Ritual: cast in 10 extra minutes without expending a spell slot.",
     "castRitualToast": "Cast {{name}} as ritual (no slot)",
     "usedToast": "Used {{name}} ({{remaining}}/{{total}})",
     "usedItemToast": "Used {{name}} ({{remaining}} left)",

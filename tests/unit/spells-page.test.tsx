@@ -340,6 +340,23 @@ describe("SpellsTab", () => {
     expect(after).toBe(before); // no slot spent
   });
 
+  it("shows the '+10 min · no slot' ritual-cost note beside the ritual affordance (RA-24)", () => {
+    // Detect Magic is a level-1 ritual; prepared so the Bard can ritual-cast it →
+    // vm.canRitual true → the footer carries the Ritual button AND the cost tag.
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.spells = [
+      ...doc.character.spells,
+      { srdId: "detect-magic", prepared: true },
+    ];
+    load(doc);
+    renderPage();
+    // Fail-before: the chip does not exist → getByText throws.
+    expect(screen.getByText("+10 min · no slot")).toBeInTheDocument();
+    // A non-ritual prepared spell (Healing Word, already in the mock) has no note.
+    const plain = screen.getByText(/Healing Word/i).closest(".uc") as HTMLElement;
+    expect(within(plain).queryByText(/\+10 min/)).toBeNull();
+  });
+
   it("locks cantrips as always-prepared (prep toggle disabled)", () => {
     load();
     renderPage();

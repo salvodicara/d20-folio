@@ -28,6 +28,7 @@
     "cast": "Lancia",
     "castAtLevel": "Lancia · Liv {{level}}",
     "castRitual": "Rituale",
+    "ritualNote": "+10 min · nessuno slot",
     "crossClassWarning": "Questo incantesimo è tipicamente disponibile per {{classes}}, non per {{charClass}}. Aggiungere comunque?",
     "searchPlaceholder": "Cerca incantesimi...",
     "allLevels": "Tutti i Livelli",

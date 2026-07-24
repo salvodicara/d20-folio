@@ -28,6 +28,7 @@
     "cast": "Cast",
     "castAtLevel": "Cast · Lv {{level}}",
     "castRitual": "Ritual",
+    "ritualNote": "+10 min · no slot",
     "crossClassWarning": "This spell is typically available to {{classes}}, not {{charClass}}. Add anyway?",
     "searchPlaceholder": "Search spells...",
     "allLevels": "All Levels",

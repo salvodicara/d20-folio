@@ -365,8 +365,14 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       SRD "Material (M)". Code: `components.m` is a bare boolean. Fix: optional `{costGp, consumed}`
       on `SrdSpellData.components` + a cast-card chip; the data fill rides the later content sweep.
       **T2** schema + sweep.
-- [ ] **RA-24 — Ritual casts show no "+10 minutes" note.** _Spellcasting · GAP · S3._ SRD "Ritual".
-      One localized line on the ritual affordance. **T3.**
+- [x] **RA-24 — Ritual casts show no "+10 minutes" note.** _Spellcasting · GAP · S3._ SRD "Ritual".
+      One localized line on the ritual affordance. **SHIPPED wave 4 (2026-07-24):** the Spells-tab
+      card now carries a "+10 min · no slot" (`spells.ritualNote`, EN + IT) `uc-tag` chip gated on
+      `vm.canRitual`, so it appears exactly beside the Ritual cast button — the 10-minute / no-slot
+      trade-off is visible before you cast. Reused the existing footer `tags` recipe (no new CSS/
+      component); deleted the two orphan `combat.ritualBadge`/`combat.ritualHint` keys the note
+      supersedes. Regression: `spells-page.test.tsx` (Detect Magic prepared → the chip renders; a
+      non-ritual spell has none). **T3.**
 - [ ] **RA-25 — Surprise (Disadvantage on initiative) unmodeled.** _Combat start · GAP · S3 ·
       rare._ SRD "Surprise". The initiative advantage tri-state has no disadvantage leg. Fix: extend
       the tri-state to adv/auto/off/dis. **T3.**

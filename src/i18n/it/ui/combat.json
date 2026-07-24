@@ -96,8 +96,6 @@
     "atWill": "a volontà",
     "perLongRest": "/RL",
     "perShortRest": "/RB",
-    "ritualBadge": "RIT",
-    "ritualHint": "Rituale: lanciato in 10 minuti aggiuntivi senza spendere uno slot.",
     "castRitualToast": "Lanciato {{name}} come rituale (nessuno slot)",
     "usedToast": "Usato {{name}} ({{remaining}}/{{total}})",
     "usedItemToast": "Usato {{name}} ({{remaining}} rimasti)",

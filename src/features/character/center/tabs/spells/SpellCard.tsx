@@ -94,8 +94,12 @@ export const SpellCard = memo(function SpellCard({
   const verdictOutcome = spellVerdictOutcome(vm);
   const facts = buildFacts(vm, t);
 
-  // Detail tags (recurrence cadence / ability-override / MASTERY / SIGNATURE / Custom).
+  // Detail tags (ritual note / recurrence cadence / ability-override / MASTERY / SIGNATURE / Custom).
   const tags: string[] = [];
+  // RA-24 — the ritual-cast trade-off, paired with the Ritual affordance (SRD
+  // "Ritual": +10 minutes, spends no slot). Gated on `vm.canRitual` so the note
+  // shows exactly when the Ritual cast button does.
+  if (vm.canRitual) tags.push(t("spells.ritualNote"));
   // G24 — a self-side cadence note for a spell whose damage RE-APPLIES (Moonbeam /
   // Spirit Guardians per-turn area save, Flaming Sphere bonus-action move, Call
   // Lightning re-fire). The token localizes to a short "when it recurs" chip.
