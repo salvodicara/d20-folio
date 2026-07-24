@@ -26,6 +26,7 @@ import { raceFeatureEntries } from "@/data/races";
 import { SRD_INVOCATIONS } from "@/data/invocations";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { SRD_BACKGROUNDS } from "@/data/backgrounds";
+import { spells } from "@/data/spells";
 import {
   resolveGrantSourcesForManeuvers,
   resolveGrantSourcesForRace,
@@ -162,6 +163,26 @@ describe("R6+R3 7c — every grant LocText `srd` ref resolves in the catalogue",
 
           grants: bg.grants,
           ref: { kind: "background", key: bg.id },
+        },
+      ]);
+    }
+  });
+
+  // Spells carry grants too — every `while-active` buff spell (Hex, Hunter's
+  // Mark, Mage Armor, Blur, …) exposes an activatable toggle whose `label`
+  // resolves under `spell:<id>.grants.<seg>.label`. This sweep was the detector
+  // hole that let `hex.grants.0.label` ship missing: the guard covered every
+  // other grant-bearing source class but not spells, so a spell rendered as a
+  // toggle crashed the throwing resolver at render time (uncaught here).
+  it("spells: each spell's grants resolve in EN + IT", () => {
+    for (const spell of spells) {
+      if (!spell.grants?.length) continue;
+      checkAggregate([
+        {
+          id: spell.id,
+
+          grants: spell.grants,
+          ref: { kind: "spell", key: spell.id },
         },
       ]);
     }

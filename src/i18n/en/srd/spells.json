@@ -1284,6 +1284,9 @@
   "hex.components": {
     "material": "The petrified eye of a newt"
   },
+  "hex.grants.0": {
+    "label": "Hex active"
+  },
   "hold-monster": {
     "description": "Choose a creature that you can see within range. The target must succeed on a Wisdom saving throw or be Paralyzed for the duration. At the end of each of its turns, the target can make another Wisdom saving throw. On a success, the spell ends on the target.",
     "duration": "Concentration, up to 1 minute",
@@ -1319,6 +1322,9 @@
     "duration": "Concentration, up to 1 hour",
     "name": "Hunter's Mark",
     "range": "90 feet"
+  },
+  "hunters-mark.grants.0": {
+    "label": "Hunter's Mark active"
   },
   "hypnotic-pattern": {
     "description": "You create a twisting pattern of colors that weaves through the air inside a 30-foot Cube within range. Each creature in the area that sees the pattern must make a Wisdom saving throw. On a failed save, the creature becomes Charmed and Incapacitated for the duration. The effect ends for a creature if it takes any damage or if someone uses an action to shake the creature out of its stupor.",

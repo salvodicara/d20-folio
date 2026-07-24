@@ -1284,6 +1284,9 @@
   "hex.components": {
     "material": "L'occhio pietrificato di un tritone"
   },
+  "hex.grants.0": {
+    "label": "Sortilegio attivo"
+  },
   "hold-monster": {
     "description": "Scegli una creatura che puoi vedere entro gittata. Il bersaglio deve superare un tiro salvezza su Saggezza o essere Paralizzato per la durata. Alla fine di ciascuno dei suoi turni, il bersaglio può effettuare un altro tiro salvezza su Saggezza. In caso di successo, l'incantesimo termina sul bersaglio.",
     "duration": "Concentrazione, fino a 1 minuto",
@@ -1319,6 +1322,9 @@
     "duration": "Concentrazione, fino a 1 ora",
     "name": "Marchio del Cacciatore",
     "range": "27 metri"
+  },
+  "hunters-mark.grants.0": {
+    "label": "Marchio del Cacciatore attivo"
   },
   "hypnotic-pattern": {
     "description": "Crei un motivo vorticoso di colori che si intreccia nell'aria all'interno di un Cubo di 9 metri entro gittata. Ogni creatura nell'area che vede il motivo deve effettuare un tiro salvezza su Saggezza. Se fallisce, la creatura diventa Affascinata e Incapacitata per la durata. L'effetto termina per una creatura se subisce qualsiasi danno o se qualcuno usa un'azione per scuoterla dal suo torpore.",
