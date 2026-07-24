@@ -10,9 +10,14 @@
     /* The `@/` alias so an admin SCRIPT can import the app engine (pure converters /
        types) the SAME way the app does — no replicated shape (golden rules 6/10).
        Scripts are RUN via `node --import ./scripts/alias-loader.mjs`, which resolves the
-       alias at runtime; this maps it for the typecheck. */
+       alias at runtime; this maps it for the typecheck. `@pack` resolves to the
+       typed-empty stub (mirroring tsconfig.srd-only.json): a script that type-imports the
+       engine chain drags `@/i18n/srd-en` → `@pack` into the node program, and the stub's
+       lockstep export surface keeps scripts pack-agnostic (content-pack/scripts/**
+       typecheck identically either way). */
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@pack": ["./src/data/pack-empty.ts"]
     },
 
     /* Strict mode — kept in lockstep with tsconfig.app.json so the shared
