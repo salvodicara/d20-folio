@@ -13,7 +13,9 @@
  * revived by healing from 0 HP, which already resets their death saves
  * (`characterStore`), so the derived state clears automatically — no stored
  * `status` flag to keep in sync, nothing to forget on revive (golden rule 2 —
- * declare the least, infer the rest).
+ * declare the least, infer the rest). The same symmetry holds for the third
+ * cause, Exhaustion level 6: lowering Exhaustion below 6 clears the fallen state
+ * automatically, exactly like healing off 0 resets death saves.
  *
  * Pure module (types only) — safe for CI-pure unit tests; no Firebase, no UI.
  */
@@ -24,10 +26,17 @@ import type { CharacterDoc, SessionState } from "@/types/character";
 export const DEATH_FAIL_LIMIT = 3;
 /** Three successful death saves and the character stabilises. */
 export const DEATH_SUCCESS_LIMIT = 3;
+/** SRD "Exhaustion": a creature dies when its Exhaustion level reaches 6. */
+export const EXHAUSTION_DEATH_LEVEL = 6;
 
 /** Died in play — three failed death saves in the live session. */
 export function diedInPlay(session: Pick<SessionState, "deathFail">): boolean {
   return session.deathFail >= DEATH_FAIL_LIMIT;
+}
+
+/** Died of Exhaustion — level 6 in the live session (SRD "Exhaustion"). */
+export function diedOfExhaustion(session: Pick<SessionState, "exhaustion">): boolean {
+  return session.exhaustion >= EXHAUSTION_DEATH_LEVEL;
 }
 
 /** Stabilised in play — three successful death saves in the live session. */
@@ -37,12 +46,13 @@ export function stabilisedInPlay(session: Pick<SessionState, "deathSucc">): bool
 
 /**
  * A character is fallen if the roster lifecycle marks them dead (`status: "dead"`)
- * OR they died in play (three failed death saves). The roster card and the cockpit
- * both read this, so a death anywhere shows everywhere.
+ * OR they died in play — three failed death saves OR Exhaustion level 6 (SRD
+ * "Exhaustion"). The roster card and the cockpit both read this, so a death
+ * anywhere (from any cause) shows everywhere.
  */
 export function isCharacterDead(
   status: CharacterDoc["status"],
-  session: Pick<SessionState, "deathFail">
+  session: Pick<SessionState, "deathFail" | "exhaustion">
 ): boolean {
-  return status === "dead" || diedInPlay(session);
+  return status === "dead" || diedInPlay(session) || diedOfExhaustion(session);
 }

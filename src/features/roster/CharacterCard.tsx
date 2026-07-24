@@ -125,11 +125,12 @@ export function CharacterCard({
   const classSlug = primaryClassId(data);
   const classLabel = classSlug ? localizeClassName(classSlug, locale) : "";
 
-  // "Fallen" derives from BOTH the roster lifecycle (`status: "dead"`) AND an
-  // in-play death (three failed death saves), via the shared `isCharacterDead` so
-  // this tile can never disagree with the cockpit's death-save track (golden rule
-  // 6b). A character who died in play still carries `status: "active"`, so `isDead`
-  // — not `status` — is what drives the dimmed tile / hidden HP / skull below.
+  // "Fallen" derives from the roster lifecycle (`status: "dead"`) AND an in-play
+  // death — three failed death saves OR Exhaustion level 6 (RA-21) — via the
+  // shared `isCharacterDead` so this tile can never disagree with the cockpit's
+  // death-save track / Exhaustion strip (golden rule 6b). A character who died in
+  // play still carries `status: "active"`, so `isDead` — not `status` — is what
+  // drives the dimmed tile / hidden HP / skull below.
   const isDead = isCharacterDead(status, session);
   const isActive = status === "active" && !isDead;
 

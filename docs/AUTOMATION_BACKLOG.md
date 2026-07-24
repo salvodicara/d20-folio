@@ -364,9 +364,17 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       name-restating, so all four join `BASE_ACTIONS_NO_CHIP`. Regression: the RA-20 block in
       `smart-tracker.test.ts` + the auto-covering dynamic-key-coverage, subtitle-budget, and
       chip-budget guards.
-- [ ] **RA-21 — Exhaustion 6 = death is display-only.** _Conditions · GAP · S3 · rare._ SRD
+- [x] **RA-21 — Exhaustion 6 = death is display-only.** _Conditions · GAP · S3 · rare._ SRD
       "Exhaustion": you die at level 6. Code: clamp + glossary text; no dead-state surfacing. Fix:
-      level 6 surfaces the same dead verdict the death-save track uses. **T3.**
+      level 6 surfaces the same dead verdict the death-save track uses. **T3.** **SHIPPED
+      (2026-07-24):** level 6 folds into the ONE derived fallen predicate (`diedOfExhaustion` in
+      `character-status.ts`, joined into `isCharacterDead`); Exhaustion is seeded into the roster
+      projection (`cacheToRosterDoc` now reads `state.exhaustion` — the one parent-`state` field the
+      projection reads) so the Fallen tile fires in prod, matching the dev path (prod == dev); the
+      cockpit Exhaustion-death strip now reads the shared `character.deadLabel`, and the orphaned
+      `character.exhaustionDeath` key was deleted. Reversible with no stored flag — lowering
+      Exhaustion below 6 clears the fallen state. Regression: `character-status.test.ts` (the
+      predicate) + `roster.test.tsx` (the prod projection + the render tile).
 - [x] **RA-22 — A CON change outside level-up never retro-adjusts max HP.** _HP model ·
       INTERACTION (defect C) · S3 · rare._ 2024 CON rules (retroactive per-level HP). Code:
       `applyClassFeatureAbilityScores` adjusts on level-up CON RISES only; a direct sheet edit or a

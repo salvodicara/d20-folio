@@ -908,7 +908,10 @@ produced by `serializeCharacterEnvelope` (`src/lib/character-codec.ts`, the shar
     genuinely fresh/undamaged hero) — and `useCharacters` opens one live `subscribeCombatState` listener
     per own character (mirroring `usePartyCombatStates`) and folds each subdoc onto its tile via
     `applyCombatToRosterDoc`. So the roster reads the SAME canonical HP the cockpit / encounter / DM read,
-    updates live on every HP tap, and the fallen-hero skull derives from the subdoc death saves — aligned
+    updates live on every HP tap. The fallen-hero skull derives from `isCharacterDead` — three failed
+    death saves (from the subdoc) OR Exhaustion level 6 (RA-21). Exhaustion is the ONE fallen-hero input
+    that is NOT in the combat trio: it persists on the parent `state`, so `cacheToRosterDoc` ALSO seeds
+    `state.exhaustion` into the baseline (the only parent-`state` field the projection reads) — aligned
     by construction, no denormalized copy. The dev path (`rosterProjectionFromDoc`, no subdoc under
     bypass) reads the live session, the same combat source, so dev == prod.
 - **The name is a branded `NonEmptyString`, UNREPRESENTABLE empty** — see the dedicated invariant

@@ -71,6 +71,7 @@ vi.mock("@/lib/firebase", () => ({ db: {} }));
 import { RosterPage } from "@/features/roster/RosterPage";
 import { CharacterCard } from "@/features/roster/CharacterCard";
 import { rosterProjectionFromDoc, cacheToRosterDoc } from "@/lib/character-cache";
+import { isCharacterDead } from "@/lib/character-status";
 
 /** Project the canonical mock down to the roster's SRD-free {@link RosterCharacterDoc}
  *  shape — the EXACT type the real `useCharacters` subscription streams. */
@@ -361,6 +362,48 @@ describe("CharacterCard", () => {
     );
     expect(screen.getByRole("img", { name: /hit points/i })).toBeInTheDocument();
     expect(screen.queryByText(/fallen in battle/i)).not.toBeInTheDocument();
+  });
+
+  it("RA-21 — flags a character at Exhaustion 6 as fallen, even while status:active", () => {
+    // SRD "Exhaustion": level 6 is death. Exhaustion lives on the PARENT doc's
+    // `state` (not the combat trio), and folds into the shared `isCharacterDead`
+    // predicate — so the tile dims, hides HP, and shows the Fallen tag.
+    const { container } = renderCard(
+      makeDoc({ status: "active", session: { ...MOCK_CHARACTER.session, exhaustion: 6 } })
+    );
+    expect(screen.getByText(/fallen in battle/i)).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: /hit points/i })).not.toBeInTheDocument();
+    expect(container.querySelector(".ch-card.retired")).toBeTruthy();
+  });
+
+  it("RA-21 — a merely-exhausted hero (Exhaustion 5) keeps their HP bar and is not fallen", () => {
+    renderCard(
+      makeDoc({ status: "active", session: { ...MOCK_CHARACTER.session, exhaustion: 5 } })
+    );
+    expect(screen.getByRole("img", { name: /hit points/i })).toBeInTheDocument();
+    expect(screen.queryByText(/fallen in battle/i)).not.toBeInTheDocument();
+  });
+
+  it("RA-21 — cacheToRosterDoc surfaces Exhaustion-6 death from the parent state (prod == dev)", () => {
+    // The prod roster projection reads ONLY `data.cache`, so without piping
+    // `state.exhaustion` the tile would show Fallen in dev/tests but not in prod.
+    // This pins the plumbing: the projected session carries the Exhaustion level,
+    // and the shared predicate fires.
+    const partial = cacheToRosterDoc(
+      "ex6",
+      { cache: { name: "Ashfallen" }, state: { exhaustion: 6 } },
+      {
+        createdAt: new Date(0),
+        updatedAt: new Date(0),
+        portraitUrl: null,
+        portraitCrop: null,
+        shareId: null,
+        status: "active",
+      }
+    );
+    if (!partial) throw new Error("expected a roster doc for a valid cache");
+    expect(partial.session.exhaustion).toBe(6);
+    expect(isCharacterDead(partial.status, partial.session)).toBe(true);
   });
 
   it("tags the portrait with the class domain pigment via data-class", () => {

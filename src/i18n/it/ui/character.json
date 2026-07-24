@@ -38,7 +38,6 @@
     "addFeature": "Aggiungi Privilegio",
     "inspiration": "Ispirazione",
     "exhaustion": "Indebolimento",
-    "exhaustionDeath": "Morte",
     "exhaustionEffect": "−{{n}} d20",
     "exhaustionClear": "Azzera indebolimento",
     "exhaustionSet": "Imposta indebolimento a {{lvl}}",

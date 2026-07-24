@@ -38,7 +38,6 @@
     "addFeature": "Add Feature",
     "inspiration": "Inspiration",
     "exhaustion": "Exhaustion",
-    "exhaustionDeath": "Death",
     "exhaustionEffect": "−{{n}} d20",
     "exhaustionClear": "Clear exhaustion",
     "exhaustionSet": "Set exhaustion to {{lvl}}",

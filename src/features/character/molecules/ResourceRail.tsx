@@ -1834,9 +1834,12 @@ function ExhaustionTrack({ value }: { value: number }) {
         })}
       </div>
       {value >= 6 ? (
+        // RA-21 — Exhaustion 6 IS death (SRD "Exhaustion"): read the SHARED
+        // "Dead" verdict the death-save track uses, so every fallen cause reads
+        // the one word. `isCharacterDead` folds level 6 into the roster tile too.
         <div className="co-ex-eff co-ex-death">
           <Icon as={Skull} size="sm" decorative />
-          <span>{t("character.exhaustionDeath")}</span>
+          <span>{t("character.deadLabel")}</span>
         </div>
       ) : (
         value > 0 && (

@@ -213,7 +213,24 @@ export function cacheToRosterDoc(
   // genuinely fresh/undamaged hero). The live subdoc overlay (`applyCombatToRosterDoc`,
   // in `useCharacters`) then folds the real HP / conditions / death saves on top —
   // giving live updates on every HP tap.
-  const session = applyCombatToSession(sanitizeSession({}), null, cache.hpMax);
+  //
+  // RA-21 — Exhaustion is the ONE fallen-hero input that is NOT in the combat trio:
+  // it persists on the PARENT doc's `state` (`SessionState.exhaustion`). Seed it into
+  // the baseline so the fallen predicate (`isCharacterDead`) sees a level-6 Exhaustion
+  // death on the roster tile, matching the dev path (`rosterProjectionFromDoc`, which
+  // reads the full session). Without this, the prod projection would carry
+  // `exhaustion: 0` and the tile would show Fallen in dev/tests but not in prod.
+  const persistedState =
+    typeof data.state === "object" && data.state !== null
+      ? (data.state as Record<string, unknown>)
+      : {};
+  const exhaustion =
+    typeof persistedState.exhaustion === "number" ? persistedState.exhaustion : 0;
+  const session = applyCombatToSession(
+    sanitizeSession({ exhaustion }),
+    null,
+    cache.hpMax
+  );
   return { id, ...meta, character: cacheToRosterCharacter(cache), session };
 }
 
