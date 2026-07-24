@@ -56,7 +56,11 @@ export function SituationalRules() {
       title={t("combat.rulesReference.title")}
     >
       <p className="text-xs text-text-tertiary">{t("combat.rulesReference.hint")}</p>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      {/* `items-start`: each topic card is sized by its OWN content. Without it the
+          grid's default `stretch` blew the short Cover card up to the tallest
+          card's height, leaving a large empty hole in the top-left cell (both
+          themes). No masonry, no bespoke component — one alignment keyword. */}
+      <div className="mt-3 grid items-start gap-3 sm:grid-cols-2">
         <TopicCard title={t("combat.rulesReference.cover")} rows={view.cover} />
         <TopicCard title={t("combat.rulesReference.mounted")} rows={view.mounted} />
         <TopicCard title={t("combat.rulesReference.underwater")} rows={view.underwater} />

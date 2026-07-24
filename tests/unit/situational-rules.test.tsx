@@ -49,6 +49,17 @@ describe("SituationalRules — Play-tab rules-reference surface", () => {
     expect(text).toContain("48 km al giorno");
   });
 
+  // REGRESSION (post-sweep D) — the 2x2 topic grid stretched every card to the
+  // TALLEST card's height, so the short Cover card left a large empty hole in the
+  // top-left cell. The cards are content-sized (`items-start`), never stretched.
+  it("sizes each topic card to its own content (no stretched-cell dead space)", async () => {
+    await i18n.changeLanguage("en");
+    const { container } = render(<SituationalRules />);
+    const grid = container.querySelector(".section-detail .grid");
+    expect(grid).not.toBeNull();
+    expect(grid?.className).toContain("items-start");
+  });
+
   it("is collapsed by default — the header toggle reads unexpanded", async () => {
     await i18n.changeLanguage("en");
     const { container } = render(<SituationalRules />);
