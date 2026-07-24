@@ -35,7 +35,7 @@
     "name": "Cornamusa"
   },
   "ball-bearings": {
-    "description": "Come azione Utilizzare, puoi spargere le Biglie per coprire un'area piana di 3 metri quadrati entro 3 metri da te. Una creatura che entra in quest'area per la prima volta nel suo turno deve superare un tiro salvezza su Destrezza con CD 10 o ottenere la condizione Prono.",
+    "description": "Come azione Utilizzo, puoi spargere le Biglie per coprire un'area piana di 3 metri quadrati entro 3 metri da te. Una creatura che entra in quest'area per la prima volta nel suo turno deve superare un tiro salvezza su Destrezza con CD 10 o ottenere la condizione Prono.",
     "name": "Sfere Metalliche"
   },
   "basket": {
@@ -50,7 +50,7 @@
     "name": "Giaciglio"
   },
   "bell": {
-    "description": "Quando suonato come azione Utilizzare, un Campanello produce un suono udibile fino a 18 metri di distanza.",
+    "description": "Quando suonato come azione Utilizzo, un Campanello produce un suono udibile fino a 18 metri di distanza.",
     "name": "Campana"
   },
   "blanket": {
@@ -92,7 +92,7 @@
     "name": "Scorte da Calligrafo"
   },
   "caltrops": {
-    "description": "Come azione Utilizzare, puoi spargere i Triboli per coprire un'area di 1,5 metri quadrati entro 1,5 metri da te. Una creatura che entra in quest'area deve superare un tiro salvezza su Destrezza con CD 15 o subire 1 danno Perforante e avere la Velocità ridotta a 0 fino all'inizio del suo prossimo turno.",
+    "description": "Come azione Utilizzo, puoi spargere i Triboli per coprire un'area di 1,5 metri quadrati entro 1,5 metri da te. Una creatura che entra in quest'area deve superare un tiro salvezza su Destrezza con CD 15 o subire 1 danno Perforante e avere la Velocità ridotta a 0 fino all'inizio del suo prossimo turno.",
     "name": "Triboli"
   },
   "candle": {
@@ -108,7 +108,7 @@
     "name": "Strumenti da Cartografo"
   },
   "chain": {
-    "description": "Come azione Utilizzare, puoi avvolgere una Catena attorno a una creatura non consenziente entro 1,5 metri che ha la condizione Afferrato, Incapacitato o Trattenuto (prova di Forza Atletica CD 13). Sfuggire richiede CD 18 Destrezza (Acrobazia), spezzarla richiede CD 20 Forza (Atletica).",
+    "description": "Come azione Utilizzo, puoi avvolgere una Catena attorno a una creatura non consenziente entro 1,5 metri che ha la condizione Afferrato, Incapacitato o Trattenuto (prova di Forza Atletica CD 13). Sfuggire richiede CD 18 Destrezza (Acrobazia), spezzarla richiede CD 20 Forza (Atletica).",
     "name": "Catena"
   },
   "chain-mail": {
@@ -118,7 +118,7 @@
     "name": "Giaco di Maglia"
   },
   "climbers-kit": {
-    "description": "Include punte per stivali, guanti, chiodi da roccia e un'imbracatura. Come azione Utilizzare, puoi ancorarti; non puoi cadere per più di 7,5 metri dal punto di ancoraggio.",
+    "description": "Include punte per stivali, guanti, chiodi da roccia e un'imbracatura. Come azione Utilizzo, puoi ancorarti; non puoi cadere per più di 7,5 metri dal punto di ancoraggio.",
     "name": "Attrezzi da Scalatore"
   },
   "clothes-fine": {
@@ -228,7 +228,7 @@
     "name": "Strumenti da Soffiatore"
   },
   "grappling-hook": {
-    "description": "Come azione Utilizzare, puoi lanciare il Rampino verso una ringhiera, sporgenza o altro appiglio entro 15 metri (prova di Destrezza Acrobazia CD 13). Se hai legato una Corda al rampino, puoi poi arrampicarti.",
+    "description": "Come azione Utilizzo, puoi lanciare il Rampino verso una ringhiera, sporgenza o altro appiglio entro 15 metri (prova di Destrezza Acrobazia CD 13). Se hai legato una Corda al rampino, puoi poi arrampicarti.",
     "name": "Rampino"
   },
   "greataxe": {
@@ -253,7 +253,7 @@
     "name": "Ascia"
   },
   "healers-kit": {
-    "description": "Ha dieci usi. Come azione Utilizzare, puoi spendere un uso per stabilizzare una creatura Priva di Sensi a 0 Punti Ferita senza bisogno di una prova di Saggezza (Medicina).",
+    "description": "Ha dieci usi. Come azione Utilizzo, puoi spendere un uso per stabilizzare una creatura Priva di Sensi a 0 Punti Ferita senza bisogno di una prova di Saggezza (Medicina).",
     "name": "Borsa del Guaritore"
   },
   "heavy-crossbow": {
@@ -279,7 +279,7 @@
     "name": "Corno"
   },
   "hunting-trap": {
-    "description": "Come azione Utilizzare, piazza la trappola. Una creatura che ci cammina sopra deve superare un tiro salvezza su Destrezza con CD 13 o subire 1d4 danni Perforanti e avere la Velocità ridotta a 0. Sfuggire richiede una prova di Forza (Atletica) con CD 13.",
+    "description": "Come azione Utilizzo, piazza la trappola. Una creatura che ci cammina sopra deve superare un tiro salvezza su Destrezza con CD 13 o subire 1d4 danni Perforanti e avere la Velocità ridotta a 0. Sfuggire richiede una prova di Forza (Atletica) con CD 13.",
     "name": "Tagliola"
   },
   "ink": {
@@ -359,7 +359,7 @@
     "name": "Mazza"
   },
   "manacles": {
-    "description": "Come azione Utilizzare, vincola una creatura non consenziente che ha la condizione Afferrato, Incapacitato o Trattenuto (CD 13 Destrezza Rapidità di Mano). Sfuggire richiede CD 20 Destrezza (Rapidità di Mano); spezzarle richiede CD 25 Forza (Atletica).",
+    "description": "Come azione Utilizzo, vincola una creatura non consenziente che ha la condizione Afferrato, Incapacitato o Trattenuto (CD 13 Destrezza Rapidità di Mano). Sfuggire richiede CD 20 Destrezza (Rapidità di Mano); spezzarle richiede CD 25 Forza (Atletica).",
     "name": "Manette"
   },
   "map": {
@@ -489,7 +489,7 @@
     "name": "Tunica"
   },
   "rope": {
-    "description": "15 metri di corda. Come azione Utilizzare, fai un nodo (CD 10 Destrezza Rapidità di Mano). Può essere spezzata (CD 20 Forza Atletica). Può legare creature Afferrate, Incapacitate o Trattenute (CD 15 Destrezza Acrobazia per fuggire).",
+    "description": "15 metri di corda. Come azione Utilizzo, fai un nodo (CD 10 Destrezza Rapidità di Mano). Può essere spezzata (CD 20 Forza Atletica). Può legare creature Afferrate, Incapacitate o Trattenute (CD 15 Destrezza Acrobazia per fuggire).",
     "name": "Corda"
   },
   "scale-mail": {
