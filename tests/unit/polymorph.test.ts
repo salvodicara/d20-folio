@@ -225,7 +225,7 @@ describe("assume/drop the self-swap (store)", () => {
     setUp();
     const before = useCharacterStore.getState().character;
     if (!before) throw new Error("no doc");
-    const undo = useCharacterStore.getState().assumePolymorphForm("giant-elk");
+    const undo = useCharacterStore.getState().assumePolymorphForm("polar-bear");
     expect(undo).not.toBeNull();
     undo?.();
     const doc = useCharacterStore.getState().character;

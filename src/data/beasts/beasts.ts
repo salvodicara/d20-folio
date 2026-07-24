@@ -1,12 +1,14 @@
 /**
  * The Beast stat-block catalogue — Polymorph / True Polymorph forms.
  *
- * GENERATED FILE — DO NOT EDIT BY HAND. Regenerated from the SRD 5.2.1 monster
- * corpus by `node scripts/sync-beast-projection.ts` (the shared projection rule
- * lives in `scripts/beast-projection.ts`; the intersection projection guard pins
- * the two together — D-5, docs/ARCHITECTURE.md). Each beast whose monster is
- * authored is the 2024 projection of that statblock; the rest carry their prior
- * values until their data wave re-derives them.
+ * PROJECTED CATALOGUE — DO NOT EDIT BY HAND. Every entry is the 2024 projection
+ * of its monster twin via `beastProjectionFromMonster` (the ONE shared derivation
+ * in `scripts/beast-projection.ts`; D-5, docs/ARCHITECTURE.md). The COMPLETENESS
+ * projection guard (`tests/unit/beast-monster-projection.guard.test.ts`) pins EVERY
+ * beast to `beastProjectionFromMonster(getMonster(id))` — a beast that drifts,
+ * loses its twin, or gains a non-Beast twin fails the guard, which prints the exact
+ * expected value to copy back. Polymorph grants BEAST forms only, so a beast whose
+ * 2024 monster type is not "beast" is swept out (RAW Monstrosity/Celestial sweep).
  *
  * IDs + numbers ONLY (the §7 no-SRD-strings-in-data guard): every localized name
  * (the Beast, each attack, each trait) lives in `src/i18n/{en,it}/srd/beasts.json`
@@ -539,27 +541,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     ],
     senses: { darkvisionFt: 60 },
   },
-  // Flying Snake (2024 SRD 5.2.1). AC 14, HP 5, CR 1/8.
-  {
-    id: "flying-snake",
-    cr: 0.125,
-    size: "Tiny",
-    ac: 14,
-    hp: 5,
-    speeds: { walk: 30, fly: 60, swim: 30 },
-    abilityScores: { STR: 4, DEX: 15, CON: 11, INT: 2, WIS: 12, CHA: 5 },
-    attacks: [
-      {
-        nameKey: "attack.bite",
-        toHit: 4,
-        damageDice: "1",
-        damageType: "piercing",
-        reachFt: 5,
-      },
-    ],
-    senses: { blindsightFt: 10 },
-    traits: ["trait.flyby"],
-  },
   // Giant Crab (2024 SRD 5.2.1). AC 15, HP 13, CR 1/8.
   {
     id: "giant-crab",
@@ -700,25 +681,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
     senses: { blindsightFt: 10 },
-  },
-  // Axe Beak (2024 SRD 5.2.1). AC 11, HP 19, CR 1/4.
-  {
-    id: "axe-beak",
-    cr: 0.25,
-    size: "Large",
-    ac: 11,
-    hp: 19,
-    speeds: { walk: 50 },
-    abilityScores: { STR: 14, DEX: 12, CON: 12, INT: 2, WIS: 10, CHA: 5 },
-    attacks: [
-      {
-        nameKey: "attack.beak",
-        toHit: 4,
-        damageDice: "1d8+2",
-        damageType: "slashing",
-        reachFt: 5,
-      },
-    ],
   },
   // Boar (2024 SRD 5.2.1). AC 11, HP 13, CR 1/4.
   {
@@ -900,27 +862,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     ],
     senses: { darkvisionFt: 60 },
     traits: ["trait.spider-climb"],
-  },
-  // Giant Owl (2024 SRD 5.2.1). AC 12, HP 19, CR 1/4.
-  {
-    id: "giant-owl",
-    cr: 0.25,
-    size: "Large",
-    ac: 12,
-    hp: 19,
-    speeds: { walk: 5, fly: 60 },
-    abilityScores: { STR: 13, DEX: 15, CON: 12, INT: 10, WIS: 14, CHA: 10 },
-    attacks: [
-      {
-        nameKey: "attack.talons",
-        toHit: 4,
-        damageDice: "1d10+2",
-        damageType: "slashing",
-        reachFt: 5,
-      },
-    ],
-    senses: { darkvisionFt: 120 },
-    traits: ["trait.flyby"],
   },
   // Giant Venomous Snake (2024 SRD 5.2.1). AC 14, HP 11, CR 1/4.
   {
@@ -1257,25 +1198,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     senses: { darkvisionFt: 60 },
     traits: ["trait.pack-tactics"],
   },
-  // Giant Eagle (2024 SRD 5.2.1). AC 13, HP 26, CR 1.
-  {
-    id: "giant-eagle",
-    cr: 1,
-    size: "Large",
-    ac: 13,
-    hp: 26,
-    speeds: { walk: 10, fly: 80 },
-    abilityScores: { STR: 16, DEX: 17, CON: 13, INT: 8, WIS: 14, CHA: 10 },
-    attacks: [
-      {
-        nameKey: "attack.rend",
-        toHit: 5,
-        damageDice: "1d4+3",
-        damageType: "slashing",
-        reachFt: 5,
-      },
-    ],
-  },
   // Giant Hyena (2024 SRD 5.2.1). AC 12, HP 45, CR 1.
   {
     id: "giant-hyena",
@@ -1358,27 +1280,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     ],
     senses: { darkvisionFt: 60 },
     traits: ["trait.amphibious", "trait.standing-leap"],
-  },
-  // Giant Vulture (2024 SRD 5.2.1). AC 10, HP 25, CR 1.
-  {
-    id: "giant-vulture",
-    cr: 1,
-    size: "Large",
-    ac: 10,
-    hp: 25,
-    speeds: { walk: 10, fly: 60 },
-    abilityScores: { STR: 15, DEX: 10, CON: 16, INT: 6, WIS: 12, CHA: 7 },
-    attacks: [
-      {
-        nameKey: "attack.gouge",
-        toHit: 4,
-        damageDice: "2d6+2",
-        damageType: "piercing",
-        reachFt: 5,
-      },
-    ],
-    senses: { darkvisionFt: 60 },
-    traits: ["trait.pack-tactics"],
   },
   // Lion (2024 SRD 5.2.1). AC 12, HP 22, CR 1.
   {
@@ -1486,26 +1387,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
     senses: { blindsightFt: 10 },
-  },
-  // Giant Elk (2024 SRD 5.2.1). AC 14, HP 42, CR 2.
-  {
-    id: "giant-elk",
-    cr: 2,
-    size: "Huge",
-    ac: 14,
-    hp: 42,
-    speeds: { walk: 60 },
-    abilityScores: { STR: 19, DEX: 18, CON: 14, INT: 7, WIS: 14, CHA: 10 },
-    attacks: [
-      {
-        nameKey: "attack.ram",
-        toHit: 6,
-        damageDice: "2d6+4",
-        damageType: "bludgeoning",
-        reachFt: 10,
-      },
-    ],
-    senses: { darkvisionFt: 90 },
   },
   // Hunter Shark (2024 SRD 5.2.1). AC 12, HP 45, CR 2.
   {

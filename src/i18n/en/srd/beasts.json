@@ -14,12 +14,6 @@
   "giant-spider": {
     "name": "Giant Spider"
   },
-  "giant-eagle": {
-    "name": "Giant Eagle"
-  },
-  "giant-vulture": {
-    "name": "Giant Vulture"
-  },
   "giant-octopus": {
     "name": "Giant Octopus"
   },
@@ -28,9 +22,6 @@
   },
   "allosaurus": {
     "name": "Allosaurus"
-  },
-  "giant-elk": {
-    "name": "Giant Elk"
   },
   "polar-bear": {
     "name": "Polar Bear"
@@ -58,9 +49,6 @@
   },
   "archelon": {
     "name": "Archelon"
-  },
-  "axe-beak": {
-    "name": "Axe Beak"
   },
   "baboon": {
     "name": "Baboon"
@@ -110,9 +98,6 @@
   "elk": {
     "name": "Elk"
   },
-  "flying-snake": {
-    "name": "Flying Snake"
-  },
   "frog": {
     "name": "Frog"
   },
@@ -145,9 +130,6 @@
   },
   "giant-lizard": {
     "name": "Giant Lizard"
-  },
-  "giant-owl": {
-    "name": "Giant Owl"
   },
   "giant-rat": {
     "name": "Giant Rat"
@@ -361,8 +343,5 @@
   },
   "trait.running-leap": {
     "name": "Running Leap"
-  },
-  "attack.gouge": {
-    "name": "Gouge"
   }
 }

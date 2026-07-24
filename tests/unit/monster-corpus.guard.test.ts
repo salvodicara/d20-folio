@@ -16,7 +16,14 @@ import { MONSTERS, getMonster, filterMonsters } from "@/data/monsters";
 import { getSpellById } from "@/data/spells";
 import { abilityModifier } from "@/lib/ability";
 import { ALL_SKILLS } from "@/lib/skills";
-import { diceMean, monsterPassivePerception, pbForCr, xpForCr } from "@/lib/monster";
+import {
+  diceMean,
+  monsterInitiative,
+  monsterPassivePerception,
+  pbForCr,
+  xpForCr,
+} from "@/lib/monster";
+import INITIATIVE_PRINTS from "./__fixtures__/monster-initiative-prints.json";
 import {
   ALL_ALIGNMENTS,
   ALL_CREATURE_TYPES,
@@ -268,6 +275,40 @@ describe.each(cases)("%s", (id, m) => {
       }
     }
   });
+});
+
+/**
+ * Printed-initiative pins (§F.12, D-3) — the omitted-override lock. §F.7 catches a
+ * REDUNDANT initiative override (one that equals the DEX-derived default); this
+ * table catches its opposite — a SILENTLY-OMITTED override (a print that deviates
+ * from the DEX default but stores no `initiative`, so `monsterInitiative` returns
+ * the wrong number). Together they pin every SRD monster's initiative bonus to its
+ * SRD 5.2.1 print, corpus-wide, forever. The fixture is the id→printed-bonus map
+ * parsed from the SRD statblocks ("Initiative +N"); pack monsters (source ≠ "SRD")
+ * are not pinned here — the pack owns its own conformance.
+ */
+describe("printed initiative pins (§F.12, D-3)", () => {
+  const PRINTS = INITIATIVE_PRINTS as Record<string, number>;
+  const srdIds = new Set(MONSTERS.filter((m) => m.source === "SRD").map((m) => m.id));
+
+  it("pins the full SRD initiative table bidirectionally (no gap, no stale)", () => {
+    // Completeness in both directions: a new SRD monster with no pin — or a pin
+    // for an id that left the corpus — fails HERE, so the table can never rot.
+    expect(Object.keys(PRINTS)).toHaveLength(330);
+    const pinIds = new Set(Object.keys(PRINTS));
+    expect([...srdIds].filter((id) => !pinIds.has(id))).toEqual([]);
+    expect([...pinIds].filter((id) => !srdIds.has(id))).toEqual([]);
+  });
+
+  it.each(Object.entries(PRINTS))(
+    "%s initiative equals its printed bonus",
+    (id, printed) => {
+      const m = getMonster(id);
+      expect(m, `no monster "${id}"`).toBeDefined();
+      if (!m) throw new Error(`no monster ${id}`);
+      expect(monsterInitiative(m)).toBe(printed);
+    }
+  );
 });
 
 describe("filterMonsters", () => {

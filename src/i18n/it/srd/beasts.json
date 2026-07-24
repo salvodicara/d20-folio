@@ -14,12 +14,6 @@
   "giant-spider": {
     "name": "Ragno gigante"
   },
-  "giant-eagle": {
-    "name": "Aquila gigante"
-  },
-  "giant-vulture": {
-    "name": "Avvoltoio gigante"
-  },
   "giant-octopus": {
     "name": "Piovra gigante"
   },
@@ -28,9 +22,6 @@
   },
   "allosaurus": {
     "name": "Allosauro"
-  },
-  "giant-elk": {
-    "name": "Alce gigante"
   },
   "polar-bear": {
     "name": "Orso polare"
@@ -58,9 +49,6 @@
   },
   "archelon": {
     "name": "Archelon"
-  },
-  "axe-beak": {
-    "name": "Beccoaguzzo"
   },
   "baboon": {
     "name": "Babbuino"
@@ -110,9 +98,6 @@
   "elk": {
     "name": "Alce"
   },
-  "flying-snake": {
-    "name": "Serpente volante"
-  },
   "frog": {
     "name": "Rana"
   },
@@ -145,9 +130,6 @@
   },
   "giant-lizard": {
     "name": "Lucertola gigante"
-  },
-  "giant-owl": {
-    "name": "Gufo gigante"
   },
   "giant-rat": {
     "name": "Topo gigante"
@@ -361,8 +343,5 @@
   },
   "trait.running-leap": {
     "name": "Balzo in corsa"
-  },
-  "attack.gouge": {
-    "name": "Cavare"
   }
 }

@@ -1,18 +1,17 @@
 /**
  * The Polymorph projection rule (C1, §D.1) — the ONE shared derivation.
  *
- * The eager `src/data/beasts/beasts.ts` catalogue is a GENERATED 2024 projection
- * of the monster corpus (the authored source of truth). The sync script
- * (`sync-beast-projection.ts`, retired when spent) writes it; this derivation is
- * what the projection guard (`tests/unit/beast-monster-projection.guard.test.ts`)
- * asserts against — numbers, attack rows, and trait lists can never drift (golden
- * rule 6, discharged by CI construction). Runtime `beasts.ts` imports NOTHING from
- * `data/monsters`; this module never enters the client bundle.
+ * The eager `src/data/beasts/beasts.ts` catalogue is a 2024 projection of the
+ * monster corpus (the authored source of truth); this module is that projection —
+ * `beastProjectionFromMonster`. The COMPLETENESS projection guard
+ * (`tests/unit/beast-monster-projection.guard.test.ts`) owns it, asserting every
+ * beast DEEP-EQUALS `beastProjectionFromMonster` of its (Beast-typed) monster twin —
+ * numbers, attack rows, and trait lists can never drift (golden rule 6, discharged by
+ * CI construction). Runtime `beasts.ts` imports NOTHING from `data/monsters`; this
+ * module never enters the client bundle.
  *
  * PURE + node-safe: imports ONLY types from `../src/data/types` (relative, so it
- * runs under plain `node` type-stripping like `scripts/i18n/check-i18n.ts`),
- * imported by BOTH the projection guard test and the sync script — one derivation,
- * no drift pair. It PERMANENTLY outlives the sync script (the guard owns it forever).
+ * runs under plain `node` type-stripping like `scripts/i18n/check-i18n.ts`).
  */
 import type {
   BeastStatBlock,
