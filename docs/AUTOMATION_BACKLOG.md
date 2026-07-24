@@ -459,8 +459,9 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       400 ft·4 mi·30 mi, normal 300·3·24, slow 200·2·18, assuming an 8-hour day; fast = -5 passive
       Perception, slow = may move stealthily), no per-character mechanic and no Grant. Display-only:
       like `cover.ts` it carries inline bilingual `BiText` behind a documented
-      `no-srd-strings-in-data` whitelist bypass (same rationale). RENDERED in the Play tab's "Rules
-      reference" panel (`SituationalRules`) — distances localize via `localeDistance` (feet) +
+      `no-srd-strings-in-data` whitelist bypass (same rationale). RENDERED on-demand in the Play
+      tab's "Rules reference" panel (`SituationalRules`, collapsed by default — blooms on a header
+      click since W9) — distances localize via `localeDistance` (feet) +
       the new `localeMiles` (overland). Pinned by `tests/unit/travel-pace.test.ts` + the surface's
       render test `tests/unit/situational-rules.test.tsx`.
 - [x] **RA-30 — Mounted & underwater combat have no reference surface.** _Combat variants · GAP ·
@@ -472,8 +473,9 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       ranged auto-miss beyond range + Disadvantage within, Fire Resistance) as inline-`BiText`
       reference data — the `cover.ts` recipe, whitelisted in `no-srd-strings-in-data.guard`. The
       2024 SRD facts (Piercing-not-the-2014-weapon-list; all ranged Disadvantaged) are pinned by
-      `tests/unit/combat-variants.test.ts`. RENDERED in the Play tab's "Rules reference" panel
-      (`SituationalRules`) alongside the Cover + Travel-pace tables (the shared surface built this
+      `tests/unit/combat-variants.test.ts`. RENDERED on-demand in the Play tab's "Rules reference"
+      panel (`SituationalRules`, collapsed by default since W9) alongside the Cover + Travel-pace
+      tables (the shared surface built this
       wave; render test `tests/unit/situational-rules.test.tsx`). This also retrofits the previously
       data-only `COVER_REFERENCE` into that same panel — closing the "display-only, i.e. VISIBLE"
       ledger promise for all three. (RA-31's contested self-side AC toggle is the separate item
@@ -503,8 +505,9 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       half/three-quarters would need the rail's first-ever mutual-exclusion pair (the while-active
       seam is independent multi-toggle — both lit = an impossible +7). The REAL gap the FOR case
       identified is knowledge (players forget cover exists at the table) — and that treatment is
-      already SHIPPED: the `COVER_REFERENCE` table renders in the Play tab's "Rules reference"
-      panel (`SituationalRules`, W6), exactly where a player checks the rule mid-session. Recorded
+      already SHIPPED: the `COVER_REFERENCE` table renders on-demand in the Play tab's "Rules
+      reference" panel (`SituationalRules`, W6; collapsed by default since W9), exactly where a
+      player checks the rule mid-session. Recorded
       in `docs/MECHANICS.md` → "Battlefield geometry / encounter state" as already-settled. **T3.**
 - [x] **RA-32 — Grappled shows blanket attack Disadvantage; RAW scopes it to targets OTHER than
       the grappler.** _Conditions · CORRECTNESS (advisory over-reach) · S3._ SRD "Grappled —

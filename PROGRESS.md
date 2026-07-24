@@ -307,6 +307,24 @@ footprint barely changes read→edit — both fail on the old fixed box). DESIGN
 | 3 — Chronicle           | Markdown chronicle + version history, Treasury, SharedNotes, Sessions       | ✅ Shipped (v0.15.x) — Chronicle (markdown + version history), Treasury, SharedNotes, Sessions all live. (The AI assistant / AI session recaps once scoped here were **DROPPED** — owner 2026-07-06; see _Open decisions_.)                                                                                                                                                                                |
 | 4 — Polish & Completion | PDF export, command palette, compendium, a11y, perf, onboarding             | 🔄 PDF export (faithful from-scratch recreation of the official 2024 sheet layout — the two-page sheet plus an appended **resource ledger** page listing every consumable pool (class resources + magic-item charges: name · pips-or-count · recovery cadence, paginating when long), EN/IT, copyright-clean), glossary tooltips, perf budget, Cmd+K palette shipped. Guided tour + compendium polish open |
 
+## Shipped — Combat-tab reference disclosure (2026-07-24)
+
+The Combat tab's two foot blocks — the combat playbook (`CombatAlgorithm`) and the SRD rules
+reference (`SituationalRules`: Cover · Mounted · Underwater · Travel Pace) — are now **on-demand**:
+each renders collapsed to just its folio header and blooms its whole body in place on a header click
+(`SectionHeader`'s opt-in `disclosure` mode + the shared `ReferenceSection` wrapper, reusing the
+app's one `grid-template-rows: 0fr → 1fr` reveal). Per-section open/closed state persists per user
+(`uiStore.playRefSections`, survives tab switches + reloads; collapsed by default, no first-run
+special casing). Five ⌘K palette entries (Cover · Travel Pace · Mounted Combat · Underwater Combat ·
+Combat playbook — bilingual, reusing the section/topic i18n keys) jump to the Combat tab, open the
+target section, and scroll it into view via the `requestPlayRef` seam + the cockpit's
+`PlayRefDeepLink` consumer. Owner-ratified via grill-me. **Informed-override note (golden rule 21):**
+this makes the section HEADER the disclosure control, which the campaign hub's `SectionPanel`
+deliberately avoids ("toggle NOT on the header"); that earlier ruling still governs `SectionPanel`
+(it keeps an always-visible fixed panel), whereas these reference sections have no fixed panel — the
+header is all that shows when collapsed, so it is the natural affordance (the distinction is now
+recorded in `DESIGN.md`).
+
 ## Shipped — Dependabot security remediation (2026-07-24)
 
 Cleared the two open Dependabot alerts, both the same advisory (GHSA-v2hh-gcrm-f6hx, high — `fast-uri`

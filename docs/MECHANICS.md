@@ -457,8 +457,8 @@ The structural reasons the declarative-grant model is intentionally not the righ
   cadence either teaches a stale AC (sticky) or clears the bonus exactly before its enemy-turn
   relevance window (turn-scoped) — and cover is the DM's per-attack ruling, so a sheet-baked bonus
   double-counts. Cover stays reference-only, like Dodge (`base-dodge`), its settled
-  universal-defensive sibling: the `COVER_REFERENCE` table renders in the Play tab's "Rules
-  reference" panel (`SituationalRules`).
+  universal-defensive sibling: the `COVER_REFERENCE` table renders on-demand in the Play tab's
+  "Rules reference" panel (`SituationalRules`, collapsed by default — blooms on a header click).
 - **Item charge / duration / sentience timing.** The mechanical effect of a while-active item is
   modeled (Boots of Speed → `speed-multiplier`), but the time-box itself (the timer / per-use charge
   accounting) stays manual until a charge/duration-aware activation layer exists. A sentient item's own
