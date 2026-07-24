@@ -452,8 +452,16 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       Regression: `feat-language-choices.test.ts` (the standard-table roster) + `creation-completeness`
       (the RA-28 gate) + `creation-navigate` (additive `["common","draconic","dwarvish"]` landing) +
       the create-driving cases realigned to pick two languages. **T2.**
-- [ ] **RA-29 — Travel pace absent.** _Exploration · GAP · S3 · out-of-combat._ SRD "Travel Pace"
+- [x] **RA-29 — Travel pace absent.** _Exploration · GAP · S3 · out-of-combat._ SRD "Travel Pace"
       table. Fix: a reference block (fast/normal/slow per hour/day) — display-only. **T3.**
+      **SHIPPED W6 (2026-07-24):** a new `TRAVEL_PACE_REFERENCE` table (`src/data/travel-pace.ts`)
+      mirrors the shipped `COVER_REFERENCE` exactly — pure authoritative SRD reference data (fast
+      400 ft·4 mi·30 mi, normal 300·3·24, slow 200·2·18, assuming an 8-hour day; fast = -5 passive
+      Perception, slow = may move stealthily), no per-character mechanic and no Grant. Display-only:
+      like `cover.ts` it carries inline bilingual `BiText` behind a documented
+      `no-srd-strings-in-data` whitelist bypass (same rationale), consumed only by its
+      authoritative-values guard until a shared rules-reference render surface exists (the deferred
+      home it shares with `COVER_REFERENCE` and RA-30). Regression: `tests/unit/travel-pace.test.ts`.
 - [ ] **RA-30 — Mounted & underwater combat have no reference surface.** _Combat variants · GAP ·
       S3 · rare._ SRD "Mounted Combat"/"Underwater Combat". Same treatment as the shipped
       `COVER_REFERENCE`: pure reference data. **T3.**
