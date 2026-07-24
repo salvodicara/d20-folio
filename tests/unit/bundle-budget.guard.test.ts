@@ -121,7 +121,12 @@ const EAGER_CEILING_KB = 773; // baseline 727.1 → ~+6% (near budget — see AR
 // dark/light pair. The painterly plates carry real image entropy — the bytes ARE the
 // feature; cost was minimized first (WebP q75 + sharp_yuv, visually transparent at
 // 1:1, verified per-plate at grading). Measured 8027.2.
-const PRECACHE_CEILING_KIB = 8033; // baseline 8027.2 (2026-07-24 Batch-4 realm scenes) + ~5 KiB deterministic headroom — never exact-fit
+// 2026-07-24 (same-day, post-rebase): raised 8033 → 8039 (+6 KiB) after rebasing the
+// atmosphere branch onto origin/main's RA-wave SYSTEM-audit fixes (RA-01…RA-35) —
+// accumulated JS chunk growth carried in from main, not new atmosphere-branch asset
+// weight. Measured 8033.79 KiB (276 entries); +5 KiB deterministic headroom (never
+// exact-fit).
+const PRECACHE_CEILING_KIB = 8039; // baseline 8033.79 (2026-07-24 RA-wave chunk growth, post-rebase) + ~5 KiB deterministic headroom — never exact-fit
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
