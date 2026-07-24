@@ -2188,10 +2188,20 @@ lockups, or icons.)
 
 **Two owner knobs in `src/index.css`:**
 
-- `--app-bg-art-opacity` — backdrop prominence. Per the binding OWN-36 light mandate it is **`0.55`
-  in BOTH themes** (the atmospheric art is as visible in light as in dark). Each theme renders its
-  OWN sibling plate natively — the old light-theme `saturate/contrast` lift (a compensation for
-  borrowing the dark plate) is retired; light keeps only its lower-band mask dissolve into the field.
+- `--app-bg-art-opacity` — backdrop prominence. Per the atmosphere mandate (owner, 2026-07-23 —
+  "Really want the woooow effect … The images I provided you look amazing, let's not sacrifice
+  them") the bundled plates render at **dark `0.9` / light `0.75`** — near-full presence, the
+  confidence the login splash always had. The raise is EARNED by the plates' designed calm
+  near-black/honey centres (panels and text sit there; the painterly edges carry the wow): the
+  dark composite floor holds ≥ 4.7:1 at 0.9 (guard-computed from the real token), and light's
+  deep espresso inks on the ivory composite stay >10:1. The values are a perceptual pair, not a
+  numeric one (OWN-36's parity of perception): light plates on the bright parchment field read
+  stronger per unit opacity, so 0.75 is 0.9's daylight sibling (0.8 was judged in situ — the
+  war-table hub's loose rubrics started competing with the busy gold midground). **Custom DM
+  uploads carve back to `0.55`** via `[data-app-bg-custom]` in both themes — an arbitrary image
+  has no calm-centre discipline, so it keeps the proven taming (+ light's veil below). Each theme
+  renders its OWN sibling plate natively; light keeps only its lower-band mask dissolve into the
+  field.
 - `--app-bg-art: none` on `:root` — disables app-wide art entirely.
 
 **User-uploaded campaign art never breaks the light chrome (the custom-art veil).** A DM's banner is
@@ -2202,8 +2212,8 @@ two-part veil to `body::after` (index.css): a **parchment glaze** (a uniform tra
 world, plus a **gentle harmonizer filter** (`saturate(.82) contrast(.94)`) so oversaturated uploads
 sit back as atmosphere. Legibility never depends on the upload — loose on-backdrop text is the
 guarded `.on-art` register, and the glaze only narrows the art's dynamic range. The bundled plates
-render native (no veil); dark needs none (0.55 over the near-black field tames any upload) and is
-untouched.
+render native (no veil); dark needs no veil (custom uploads carve the presence back to 0.55 over
+the near-black field — the carve-out above — which tames any image) and is otherwise untouched.
 
 **Per-route backdrop override (the campaign hub).** The same `--app-bg-art` variable is the ONE
 backdrop seam — a route may swap it instead of building a second band. The **campaign hub**

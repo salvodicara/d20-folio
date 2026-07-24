@@ -322,10 +322,18 @@
      defines its own gentler value (morning-light translucency — see the light
      block). */
   --panel-alpha: 0.9;
-  /* The candlelit backdrop's presence in dark (was the body::after 0.55
-     fallback; now explicit — mirrors the light block's token — so the
-     composite-floor guard reads the real value). */
-  --app-bg-art-opacity: 0.55;
+  /* The candlelit backdrop's presence in dark. RAISED 0.55 → 0.9 (the
+     atmosphere mandate, owner 2026-07-23: "Really want the woooow effect …
+     The images I provided you look amazing, let's not sacrifice them"): the
+     owner plates are DESIGNED with calm near-black centres where panels and
+     text sit, so their painterly edges can carry near-full presence — the
+     login splash always rendered its plate native, and the app field now
+     matches that confidence. 0.9 mirrors --panel-alpha (the world at 0.9
+     through panels at 0.9); the composite floor holds ≥ 4.7:1 (guard reads
+     the real value). CUSTOM uploads are carved back to the proven 0.55
+     taming via [data-app-bg-custom] (see the body::after painter notes) —
+     an arbitrary DM image has no calm-centre discipline. */
+  --app-bg-art-opacity: 0.9;
 
   --text-primary: #f0e4cb;
   /* The SPECIAL emphasis tier (BG3 identity epic, 2026-07-02) — BG3's warm-cream
@@ -822,11 +830,16 @@
   --asset-roster-scene: url("/assets/backgrounds/roster-scene-light.webp");
   --asset-creation-scene: url("/assets/backgrounds/creation-scene-light.webp");
 
-  /* OWN-36 — the atmospheric backdrop sits at the SAME prominence as the dark
-     theme (0.55) so the background art is as visible + amazing in light as in
-     dark (owner mandate). The warm parchment field hosts it; content cards float
-     over it. */
-  --app-bg-art-opacity: 0.55;
+  /* OWN-36 (parity of PERCEPTION) + the atmosphere mandate (owner 2026-07-23):
+     the daylight plates carry the same wow as dark's candlelit ones. RAISED
+     0.55 → 0.75 alongside dark's 0.9 — light plates on the bright parchment
+     field read stronger per unit opacity than dark plates on near-black, so
+     0.75 is the perceptual sibling of dark's 0.9 (0.8 was judged in situ: the
+     war-table hub's loose Party rubric started competing with the busy gold
+     midground). Deep espresso inks on the ivory composite stay >10:1; the
+     lower-band mask dissolve is unchanged. CUSTOM uploads carve back to 0.55
+     via [data-app-bg-custom] (see the painter notes). */
+  --app-bg-art-opacity: 0.75;
 
   /* MORNING-LIGHT TRANSLUCENCY — the daylight sibling of dark's candlelit
      translucency (T3): the same page-level surfaces (the `.folio-panel`
@@ -1458,6 +1471,17 @@ body::after {
   transform: scale(var(--app-bg-art-scale, 1));
   pointer-events: none;
 }
+/* CUSTOM-upload presence carve-out (the atmosphere mandate, owner 2026-07-23):
+   the raised per-theme presence (dark 0.9 / light 0.75) is earned by the owner
+   plates' designed calm centres. A DM's custom banner is ANY image — no
+   calm-centre discipline — so while one is the backdrop (`data-app-bg-custom`
+   on <html>, set by useCampaignBackdrop) BOTH themes carve the presence back
+   to the proven 0.55 taming; light additionally keeps its glaze + harmonizer
+   veil below. Declared after both theme blocks so it wins the cascade tie. */
+[data-app-bg-custom] {
+  --app-bg-art-opacity: 0.55;
+}
+
 /* Daylight sibling plates — the light backdrop is now the theme's OWN daylight
    plate (P9 daylight study via the light `--asset-home-hero`), pre-graded into
    the honey band the deep-parchment field hosts, so the old colour-lift filter

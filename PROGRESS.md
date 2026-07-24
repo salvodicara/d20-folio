@@ -597,12 +597,32 @@ v0.20.0 tail) and the identity push itself (this mission). State:
   `interactive-kindle.guard.test.ts`; grammar row in `DESIGN.md` §9. Focus layer verified healthy
   (keyboard-walked: gold double ring + wash on the gilt CTA); axe sweep 97 passed, zero
   serious/critical.
-- **Open: NOTHING — the full-BG3 identity pivot is COMPLETE (2026-07-24).** PROMPT_12–25 are all
-  resolved (see the ASSET-INTEGRATION ledger above); every plate is integrated, verified, and
-  budgeted. Two OPTIONAL future-polish items remain, neither a loose end nor a regression (rule 27
-  board is clean): sweeping the reliquary register deeper where earned (compendium tome chrome,
-  login sign-in column, wizard hero altars — enhancement, not a defect), and re-shooting the
-  README screenshots now that the art push has settled.
+- **The ATMOSPHERE push — owner-mandated 2026-07-23, SHIPPED 2026-07-24.** The owner's verbatim
+  mission: _"In general I want to feel a lot the BG3 magical atmosphere in the app … Find a way to
+  give that atmosphere. This is crucial."_ — with two named surfaces (the corner ornaments +
+  separators he judged "not very nice" even after the wave-2 shrink, and the scene backdrops'
+  D&D-Beyond-grade "woooow" — _"The images I provided you look amazing, let's not sacrifice
+  them. For both themes."_). Three moves, each recipe-level:
+  1. **The Starbound Frame** (supersedes the wave-2 minimal corner unit — the two-rejection
+     escalation): the hero-frame goldwork and the dialog seat divider are redrawn from the
+     owner's PROMPT_24/25 engraved plates — the style he LIKED, whose raster mounting had lost
+     on physics — as hand-authored vectors at seat scale: a faceted four-point star in a
+     hairline diamond frame on each corner vertex, a twin inner rail with dot-triplet
+     punctuation continuing through the border-image edge slices as taper wedges, a concave
+     gothic bracket inside the corner, and the p25 ceremonial star-and-leaf divider seated on
+     dialog heads. Two-tone strike kept (dark raised gold / light letterpressed bronze); guard
+     rewritten to the new anatomy (`ornament-vocabulary.guard.test.ts`); `DESIGN.md` §5.
+  2. **Backdrop presence raised to the login's confidence** (the wow): the app-wide painter's
+     0.55 dimming — the odd one out next to the login splash's native plate — is raised to
+     **dark 0.9 / light 0.75** for the bundled plates (their designed calm centres earn it;
+     composite floor holds ≥ 4.7:1, on-art battery 47/47 green), while custom DM uploads carve
+     back to the proven 0.55 taming via `[data-app-bg-custom]`. `DESIGN.md` §13.
+- **Open: NOTHING — the full-BG3 identity pivot (incl. the atmosphere push) is COMPLETE
+  (2026-07-24).** PROMPT_12–25 are all resolved (see the ASSET-INTEGRATION ledger above); every
+  plate is integrated, verified, and budgeted. Two OPTIONAL future-polish items remain, neither a
+  loose end nor a regression (rule 27 board is clean): sweeping the reliquary register deeper
+  where earned (compendium tome chrome, login sign-in column, wizard hero altars — enhancement,
+  not a defect), and re-shooting the README screenshots now that the art push has settled.
 
 **Status: SHIPPED (dark flagship) — released in v0.18.0 (2026-07-07).** The owner-ratified evolution
 of the frozen "Illuminated Folio" into its **candlelit struck-gold** form is merged to `main` and live:
