@@ -192,7 +192,13 @@ export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
           className={cn("lvl-seal", crText.length >= 3 && "mon-seal-sm")}
           style={{
             ["--sl" as string]: "var(--accent-primary)",
-            ["--sl-ink" as string]: "var(--accent-text)",
+            // The gilt gem body is a LIGHT gold in dark / a dark umber in light
+            // (`mix(--sl, white/black)`), so the numeral takes the seal's own
+            // theme-inverse ink — near-black on the light-gold gem, cream on the
+            // dark-umber gem — never the gold `--accent-text` (which washed out
+            // gold-on-gold in dark). This is the `.lvl-seal` default ink; the
+            // digit clears AA on the gem's dark end in both themes (guard below).
+            ["--sl-ink" as string]: "var(--text-inverse)",
           }}
           aria-hidden
         >

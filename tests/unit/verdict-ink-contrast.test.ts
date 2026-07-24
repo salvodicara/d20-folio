@@ -422,6 +422,33 @@ describe("spell-level seal digit ink clears WCAG-AA on the seal body", () => {
   }
 });
 
+describe("monster CR-seal digit ink clears WCAG-AA on the gilt gem body", () => {
+  // The compendium Monsters row (+ the EntryView masthead) strike the CR on a
+  // `.lvl-seal` gem tinted by the folio gilt (`--sl: var(--accent-primary)`) with
+  // the seal's OWN theme-inverse ink (`--sl-ink: var(--text-inverse)` — near-black
+  // on the light-gold gem in dark, cream on the dark-umber gem in light). The gilt
+  // `--accent-text` washed the numeral gold-on-gold in dark (~1.4:1); this replays
+  // the spell-seal worst case (the digit sits over the gem's dark end,
+  // mix(--sl 88% black)) so it can never regress.
+  for (const theme of ["dark", "light"] as const) {
+    const block = themeBlock(theme);
+    it(`${theme}: CR-seal ink ≥ ${AA}:1 on the gilt gem's dark end`, () => {
+      // Dark's `--accent-primary` aliases `var(--gold-leaf-500)` (resolve the ramp);
+      // light overrides it with a literal.
+      const gem =
+        theme === "dark"
+          ? readVar(css, "--gold-leaf-500")
+          : readVar(block, "--accent-primary");
+      const ink = readVar(block, "--text-inverse");
+      const darkEnd = mix(gem, "#000000", 88);
+      expect(
+        contrast(ink, darkEnd),
+        `CR-seal ink ${ink} on gem dark end ${darkEnd}`
+      ).toBeGreaterThanOrEqual(AA);
+    });
+  }
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Combat top-bar pip — the "carved dark socket" control class.
 //
