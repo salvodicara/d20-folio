@@ -15,6 +15,7 @@
     "langPlusAny_other": "{{langs}} plus any {{count}} languages",
     "langKnewInLife": "the languages it knew in life",
     "blindBeyond": "(blind beyond this radius)",
+    "darkvisionMagical": "(unimpeded by magical Darkness)",
     "gear": "Gear",
     "legendaryActions": "Legendary Actions",
     "legendaryUses": "Legendary Action Uses: {{count}}",

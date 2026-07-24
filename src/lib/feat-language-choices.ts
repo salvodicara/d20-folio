@@ -22,7 +22,8 @@ import type { CharacterData } from "@/types/character";
 
 /**
  * The COMPLETE 2024 SRD 5.2 language roster as STABLE IDS — Standard (10) then
- * Rare (9), the full list from the 2024 ruleset. The single source of truth for
+ * Rare (13, incl. Primordial's four elemental dialects — SPEC D-11), the full
+ * list from the 2024 ruleset. The single source of truth for
  * BOTH the language pickers and display localization: every surface resolves a
  * held id → its bilingual name via the `language` SRD catalogue
  * (`localizeSrd("language", id, "name", locale)`) — so a held tongue never
@@ -56,6 +57,12 @@ export const SRD_LANGUAGE_IDS: ReadonlyArray<string> = [
   "druidic",
   "infernal",
   "primordial",
+  // Primordial's four elemental dialects — real 2024 languages (SPEC D-11),
+  // pickable like any Rare tongue; monsters reference them as "Primordial (Ignan)".
+  "aquan",
+  "auran",
+  "ignan",
+  "terran",
   "sylvan",
   "thieves-cant",
   "undercommon",

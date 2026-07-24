@@ -42,7 +42,13 @@ export const PUBLIC_SRD_I18N = resolve(
 
 /** Public SRD proper nouns Italian D&D keeps in English — an IT name equal to EN here is CORRECT. */
 export const KEEP_ENGLISH_SRD: readonly string[] = [
+  "Aboleth",
+  "Ankheg",
   "Archelon",
+  "Balor",
+  "Behir",
+  "Berserker",
+  "Bulette",
   "Clone",
   "Costume",
   "Dulcimer",

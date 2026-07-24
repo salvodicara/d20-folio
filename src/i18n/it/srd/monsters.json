@@ -1,4 +1,328 @@
 {
+  "aboleth": {
+    "name": "Aboleth"
+  },
+  "aboleth.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "L'aboleth può respirare in aria e in acqua."
+  },
+  "aboleth.traits.eldritch-restoration": {
+    "name": "Ristoro occulto",
+    "text": "Se viene annientato, l'aboleth ottiene un nuovo corpo dopo 5d10 giorni, tornando in vita con tutti i suoi punti ferita nel Reame Remoto o in un altro luogo a scelta del GM."
+  },
+  "aboleth.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana) Se l'aboleth fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "aboleth.traits.mucus-cloud": {
+    "name": "Nube di muco",
+    "text": "Finché si trova sott'acqua, l'aboleth è circondato da uno strato di muco. Tiro salvezza su Costituzione: CD 14, tutte le creature in un'emanazione di 1,5 metri di cui l'aboleth è il punto di origine, alla fine del turno dell'aboleth. Fallimento: il bersaglio è maledetto. Finché la maledizione perdura, la pelle del bersaglio diventa viscida, il bersaglio può respirare in aria e in acqua e non può recuperare punti ferita finché si trova sott'acqua. Finché la creatura maledetta si trova fuori da uno specchio d'acqua, subisce 6 (1d12) danni da Acido a intervalli di 10 minuti, a meno che la sua pelle non venga inumidita prima che siano trascorsi i 10 minuti."
+  },
+  "aboleth.traits.probing-telepathy": {
+    "name": "Sonda telepatica",
+    "text": "Se una creatura che l'aboleth è in grado di vedere comunica telepaticamente con l'aboleth, quest'ultimo apprende i più grandi desideri della creatura."
+  },
+  "aboleth.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'aboleth effettua due attacchi Tentacolo e usa Consuma ricordi o Domina mente, se disponibili."
+  },
+  "aboleth.actions.tentacle": {
+    "name": "Tentacolo",
+    "text": "Tiro per colpire in mischia: +9, portata 4,5 m. Colpito: 12 (2d6 + 5) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 14 per sfuggire) da uno dei quattro tentacoli."
+  },
+  "aboleth.actions.consume-memories": {
+    "name": "Consuma ricordi",
+    "text": "Tiro salvezza su Intelligenza: CD 16, una creatura entro 9 metri Affascinata o Afferrata dall'aboleth. Fallimento: 10 (3d6) danni Psichici. Successo: danni dimezzati. Fallimento o successo: l'aboleth acquisisce i ricordi del bersaglio se questo è un umanoide e viene ridotto a 0 punti ferita da questa azione."
+  },
+  "aboleth.actions.dominate-mind": {
+    "name": "Domina mente",
+    "text": "Tiro salvezza su Saggezza: CD 16, una creatura che l'aboleth è in grado di vedere entro 9 metri. Fallimento: la creatura è Affascinata finché l'aboleth muore o si sposta su un piano di esistenza diverso da quello del bersaglio. Finché è Affascinato, il bersaglio agisce come un alleato dell'aboleth ed è sotto il suo controllo finché si trova entro 18 metri da esso. Inoltre, l'aboleth e il bersaglio possono comunicare telepaticamente tra loro a qualsiasi distanza. Il bersaglio ripete il tiro salvezza ogni volta che subisce danni e ogni volta che trascorre 24 ore ad almeno 1,5 chilometri di distanza dall'aboleth e, se lo supera, l'effetto svanisce."
+  },
+  "aboleth.legendaryActions.lash": {
+    "name": "Sferzata",
+    "text": "L'aboleth effettua un attacco Tentacolo."
+  },
+  "aboleth.legendaryActions.psychic-drain": {
+    "name": "Risucchio psichico",
+    "text": "Se l'aboleth ha affascinato o afferrato almeno una creatura, utilizza Consuma ricordi e recupera 5 (1d10) punti ferita."
+  },
+  "adult-black-dragon": {
+    "name": "Drago nero adulto"
+  },
+  "adult-black-dragon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "adult-black-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "adult-black-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di Incantesimi per lanciare freccia acida (di 3º livello)."
+  },
+  "adult-black-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +11, portata 3 m. Colpito: 13 (2d6 + 6) danni Taglienti più 4 (1d8) danni da Acido."
+  },
+  "adult-black-dragon.actions.acid-breath": {
+    "name": "Soffio di acido",
+    "text": "Tiro salvezza su Destrezza: CD 18, tutte le creature in una linea lunga 18 metri e larga 1,5 metri. Fallimento: 54 (12d8) danni da Acido. Successo: danni dimezzati."
+  },
+  "adult-black-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 17, +9 al tiro per colpire degli attacchi con incantesimo): A volontà: Freccia acida (di 3º livello), individuazione del magico, paura. 1/giorno ciascuno: Parlare con i morti, sfera al vetriolo."
+  },
+  "adult-black-dragon.legendaryActions.cloud-of-insects": {
+    "name": "Nugolo di insetti",
+    "text": "Tiro salvezza su Destrezza: CD 17, una creatura che il drago è in grado di vedere entro 36 metri. Fallimento: 22 (4d10) danni da Veleno, e il bersaglio subisce svantaggio ai tiri salvezza per mantenere la concentrazione fino al termine del proprio turno successivo. Fallimento o successo: il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-black-dragon.legendaryActions.frightful-presence": {
+    "name": "Presenza terrificante",
+    "text": "Il drago usa Incantesimi per lanciare paura. Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-black-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità ed effettua un attacco Squarcio."
+  },
+  "adult-blue-dragon": {
+    "name": "Drago blu adulto"
+  },
+  "adult-blue-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "adult-blue-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di Incantesimi per lanciare frantumare."
+  },
+  "adult-blue-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +12, portata 3 m. Colpito: 16 (2d8 + 7) danni Taglienti più 5 (1d10) danni da Fulmine."
+  },
+  "adult-blue-dragon.actions.lightning-breath": {
+    "name": "Soffio di fulmini",
+    "text": "Tiro salvezza su Destrezza: CD 19, tutte le creature in una linea lunga 27 metri e larga 1,5 metri. Fallimento: 60 (11d10) danni da Fulmine. Successo: danni dimezzati."
+  },
+  "adult-blue-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 18): A volontà: Frantumare, individuazione del magico, invisibilità, mano magica. 1/giorno ciascuno: Inviare, scrutare."
+  },
+  "adult-blue-dragon.legendaryActions.cloaked-flight": {
+    "name": "Volo celato",
+    "text": "Il drago usa Incantesimi per lanciare invisibilità su se stesso, e può volare fino a metà della sua velocità di volo. Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-blue-dragon.legendaryActions.sonic-boom": {
+    "name": "Boato sonico",
+    "text": "Il drago usa Incantesimi per lanciare frantumare. Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-blue-dragon.legendaryActions.tail-swipe": {
+    "name": "Spazzata di coda",
+    "text": "Il drago effettua un attacco Squarcio."
+  },
+  "adult-brass-dragon": {
+    "name": "Drago d'ottone adulto"
+  },
+  "adult-brass-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "adult-brass-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di (A) Soffio di sonno o (B) Incantesimi per lanciare raggio rovente."
+  },
+  "adult-brass-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +11, portata 3 m. Colpito: 17 (2d10 + 6) danni Taglienti più 4 (1d8) danni da Fuoco."
+  },
+  "adult-brass-dragon.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 18, tutte le creature in una linea lunga 18 metri e larga 1,5 metri. Fallimento: 45 (10d8) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "adult-brass-dragon.actions.sleep-breath": {
+    "name": "Soffio di sonno",
+    "text": "Tiro salvezza su Costituzione: CD 18, tutte le creature in un cono di 18 metri. Fallimento: il bersaglio è Incapacitato fino al termine del proprio turno successivo, a quel punto ripete il tiro salvezza. Secondo fallimento: il bersaglio cade Privo di Sensi per 10 minuti. Questo effetto termina se il bersaglio subisce danni o se una creatura entro 1,5 metri da esso esegue un'azione per svegliarlo."
+  },
+  "adult-brass-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 16): A volontà: Illusione minore, individuazione del magico, parlare con gli animali, raggio rovente, trasformazione (solo in forma di bestia o umanoide, senza punti ferita temporanei ottenuti dall'incantesimo, e senza richiedere concentrazione o punti ferita temporanei per mantenere l'incantesimo). 1/giorno ciascuno: Controllare tempo atmosferico, individuazione dei pensieri."
+  },
+  "adult-brass-dragon.legendaryActions.blazing-light": {
+    "name": "Luce accecante",
+    "text": "Il drago usa Incantesimi per lanciare raggio rovente."
+  },
+  "adult-brass-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità, ed effettua un attacco Squarcio."
+  },
+  "adult-brass-dragon.legendaryActions.scorching-sands": {
+    "name": "Sabbie roventi",
+    "text": "Tiro salvezza su Destrezza: CD 16, una creatura che il drago è in grado di vedere entro 36 metri. Fallimento: 27 (6d8) danni da Fuoco, e la velocità del bersaglio è dimezzata fino al termine del proprio turno successivo. Fallimento o successo: il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-bronze-dragon": {
+    "name": "Drago di bronzo adulto"
+  },
+  "adult-bronze-dragon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "adult-bronze-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "adult-bronze-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di (A) Soffio repulsivo o (B) Incantesimi per lanciare dardo tracciante (di 2º livello)."
+  },
+  "adult-bronze-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +12, portata 3 m. Colpito: 16 (2d8 + 7) danni Taglienti più 5 (1d10) danni da Fulmine."
+  },
+  "adult-bronze-dragon.actions.lightning-breath": {
+    "name": "Soffio di fulmini",
+    "text": "Tiro salvezza su Destrezza: CD 19, tutte le creature in una linea lunga 27 metri e larga 1,5 metri. Fallimento: 55 (10d10) danni da Fulmine. Successo: danni dimezzati."
+  },
+  "adult-bronze-dragon.actions.repulsion-breath": {
+    "name": "Soffio repulsivo",
+    "text": "Tiro salvezza su Forza: CD 19, tutte le creature in un cono di 9 metri. Fallimento: il bersaglio viene spinto fino a un massimo di 18 metri di distanza dal drago e cade a terra Prono."
+  },
+  "adult-bronze-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 17, +10 al tiro per colpire degli attacchi con incantesimo): A volontà: Dardo tracciante (di 2º livello), individuazione del magico, parlare con gli animali, taumaturgia, trasformazione (solo in forma di bestia o umanoide, senza punti ferita temporanei ottenuti dall'incantesimo, e senza richiedere concentrazione o punti ferita temporanei per mantenere l'incantesimo). 1/giorno ciascuno: Individuazione dei pensieri, respirare sott'acqua."
+  },
+  "adult-bronze-dragon.legendaryActions.guiding-light": {
+    "name": "Luce guida",
+    "text": "Il drago usa Incantesimi per lanciare dardo tracciante (di 2º livello)."
+  },
+  "adult-bronze-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità, ed effettua un attacco Squarcio."
+  },
+  "adult-bronze-dragon.legendaryActions.thunderclap": {
+    "name": "Rombo di tuono",
+    "text": "Tiro salvezza su Costituzione: CD 17, tutte le creature in una sfera di 6 metri di raggio centrata su un punto che il drago è in grado di vedere entro 27 metri. Fallimento: 10 (3d6) danni da Tuono, e il bersaglio è Assordato fino al termine del proprio turno successivo."
+  },
+  "adult-copper-dragon": {
+    "name": "Drago di rame adulto"
+  },
+  "adult-copper-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "adult-copper-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di (A) Soffio rallentante o (B) Incantesimi per lanciare aculeo mentale (di 4º livello)."
+  },
+  "adult-copper-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +11, portata 3 m. Colpito: 17 (2d10 + 6) danni Taglienti più 4 (1d8) danni da Acido."
+  },
+  "adult-copper-dragon.actions.acid-breath": {
+    "name": "Soffio di acido",
+    "text": "Tiro salvezza su Destrezza: CD 18, tutte le creature in una linea lunga 18 metri e larga 1,5 metri. Fallimento: 54 (12d8) danni da Acido. Successo: danni dimezzati."
+  },
+  "adult-copper-dragon.actions.slowing-breath": {
+    "name": "Soffio rallentante",
+    "text": "Tiro salvezza su Costituzione: CD 18, tutte le creature in un cono di 18 metri. Fallimento: il bersaglio non può effettuare reazioni, la sua velocità è dimezzata e nel suo turno può effettuare un'azione o un'azione bonus, non entrambe. L'effetto dura fino al termine del proprio turno successivo."
+  },
+  "adult-copper-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 17): A volontà: Aculeo mentale (di 4º livello), illusione minore, individuazione del magico, trasformazione (solo in forma di bestia o umanoide, senza punti ferita temporanei ottenuti dall'incantesimo, e senza richiedere concentrazione o punti ferita temporanei per mantenere l'incantesimo). 1/giorno ciascuno: Immagine maggiore, ristorare superiore."
+  },
+  "adult-copper-dragon.legendaryActions.giggling-magic": {
+    "name": "Magia ridacchiante",
+    "text": "Tiro salvezza su Carisma: CD 17, una creatura che il drago è in grado di vedere entro 27 metri. Fallimento: 24 (7d6) danni Psichici. Fino al termine del proprio turno successivo, il bersaglio tira 1d6 ogni volta che effettua una prova di caratteristica o un tiro per colpire e sottrae il risultato dalla prova con d20. Fallimento o successo: il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-copper-dragon.legendaryActions.mind-jolt": {
+    "name": "Scossa mentale",
+    "text": "Il drago usa Incantesimi per lanciare aculeo mentale (di 4º livello). Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-copper-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità, ed effettua un attacco Squarcio."
+  },
+  "adult-gold-dragon": {
+    "name": "Drago d'oro adulto"
+  },
+  "adult-gold-dragon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "adult-gold-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "adult-gold-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di (A) Incantesimi per lanciare dardo tracciante (di 2º livello) o (B) Soffio indebolente."
+  },
+  "adult-gold-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +14, portata 3 m. Colpito: 17 (2d8 + 8) danni Taglienti più 4 (1d8) danni da Fuoco."
+  },
+  "adult-gold-dragon.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 21, tutte le creature in un cono di 18 metri. Fallimento: 66 (12d10) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "adult-gold-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 21, +13 al tiro per colpire degli attacchi con incantesimo): 1/giorno ciascuno: Colpo infuocato, zona di verità. A volontà: Dardo tracciante (di 2º livello), individuazione del magico, trasformazione (solo in forma di bestia o umanoide, senza punti ferita temporanei ottenuti dall'incantesimo, e senza richiedere concentrazione o punti ferita temporanei per mantenere l'incantesimo)."
+  },
+  "adult-gold-dragon.actions.weakening-breath": {
+    "name": "Soffio indebolente",
+    "text": "Tiro salvezza su Forza: CD 21, ogni creatura che al momento non è sotto l'effetto di questo soffio in un cono di 18 metri. Fallimento: il bersaglio subisce svantaggio alle prove con d20 basate sulla Forza e sottrae 3 (1d6) ai tiri per i danni. La creatura ripete il tiro salvezza alla fine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente."
+  },
+  "adult-gold-dragon.legendaryActions.banish": {
+    "name": "Ostracismo",
+    "text": "Tiro salvezza su Carisma: CD 21, una creatura che il drago è in grado di vedere entro 36 metri. Fallimento: 10 (3d6) danni da Forza, il bersaglio è Incapacitato e viene trasportato su un semipiano sicuro fino all'inizio del turno successivo del drago, durante cui riappare in uno spazio libero a scelta del drago entro 36 metri da quest'ultimo. Fallimento o successo: il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-gold-dragon.legendaryActions.guiding-light": {
+    "name": "Luce guida",
+    "text": "Il drago usa Incantesimi per lanciare dardo tracciante (di 2º livello)."
+  },
+  "adult-gold-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità, ed effettua un attacco Squarcio."
+  },
+  "adult-green-dragon": {
+    "name": "Drago verde adulto"
+  },
+  "adult-green-dragon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "adult-green-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "adult-green-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di Incantesimi per lanciare aculeo mentale (di 3º livello)."
+  },
+  "adult-green-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +11, portata 3 m. Colpito: 15 (2d8 + 6) danni Taglienti più 7 (2d6) danni da Veleno."
+  },
+  "adult-green-dragon.actions.poison-breath": {
+    "name": "Soffio di veleno",
+    "text": "Tiro salvezza su Costituzione: CD 18, tutte le creature in un cono di 18 metri. Fallimento: 56 (16d6) danni da Veleno. Successo: danni dimezzati."
+  },
+  "adult-green-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 17): 1/giorno: Costrizione. A volontà: Aculeo mentale (di 3º livello), individuazione del magico."
+  },
+  "adult-green-dragon.legendaryActions.mind-invasion": {
+    "name": "Invasione mentale",
+    "text": "Il drago usa Incantesimi per lanciare aculeo mentale (di 3º livello)."
+  },
+  "adult-green-dragon.legendaryActions.noxious-miasma": {
+    "name": "Miasma nocivo",
+    "text": "Tiro salvezza su Costituzione: CD 17, tutte le creature in una sfera di 6 metri di raggio centrata su un punto che il drago è in grado di vedere entro 27 metri. Fallimento: 7 (2d6) danni da Veleno, e il bersaglio subisce una penalità di −2 alla CA fino al termine del proprio turno successivo. Fallimento o successo: il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-green-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità, ed effettua un attacco Squarcio."
+  },
   "adult-red-dragon": {
     "name": "Drago rosso adulto"
   },
@@ -34,6 +358,1010 @@
     "name": "Balzo",
     "text": "Il drago si muove fino a metà della sua velocità ed effettua un attacco Squarcio."
   },
+  "adult-silver-dragon": {
+    "name": "Drago d'argento adulto"
+  },
+  "adult-silver-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "adult-silver-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di (A) Soffio paralizzante o (B) Incantesimi per lanciare coltello di ghiaccio."
+  },
+  "adult-silver-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +13, portata 3 m. Colpito: 17 (2d8 + 8) danni Taglienti più 4 (1d8) danni da Freddo."
+  },
+  "adult-silver-dragon.actions.cold-breath": {
+    "name": "Soffio di freddo",
+    "text": "Tiro salvezza su Costituzione: CD 20, tutte le creature in un cono di 18 metri. Fallimento: 54 (12d8) danni da Freddo. Successo: danni dimezzati."
+  },
+  "adult-silver-dragon.actions.paralyzing-breath": {
+    "name": "Soffio paralizzante",
+    "text": "Tiro salvezza su Costituzione: CD 20, tutte le creature in un cono di 18 metri. Primo fallimento: il bersaglio è Incapacitato fino al termine del proprio turno successivo. A quel punto, ripete il tiro salvezza. Secondo fallimento: il bersaglio è Paralizzato e ripete il tiro salvezza alla fine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente."
+  },
+  "adult-silver-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 19, +11 al tiro per colpire degli attacchi con incantesimo): 1/giorno ciascuno: Tempesta di ghiaccio (di 5º livello), zona di verità. A volontà: Blocca mostri, coltello di ghiaccio, individuazione del magico, trasformazione (solo in forma di bestia o umanoide, senza punti ferita temporanei ottenuti dall'incantesimo, e senza richiedere concentrazione o punti ferita temporanei per mantenere l'incantesimo)."
+  },
+  "adult-silver-dragon.legendaryActions.chill": {
+    "name": "Assideramento",
+    "text": "Il drago usa Incantesimi per lanciare blocca mostri. Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-silver-dragon.legendaryActions.cold-gale": {
+    "name": "Bufera",
+    "text": "Tiro salvezza su Destrezza: CD 19, tutte le creature in una linea lunga 18 metri e larga 3 metri. Fallimento: 14 (4d6) danni da Freddo, e il bersaglio viene spinto in linea retta fino a un massimo di 9 metri lontano dal drago. Successo: danni dimezzati. Fallimento o successo: il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-silver-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità, ed effettua un attacco Squarcio."
+  },
+  "adult-white-dragon": {
+    "name": "Drago bianco adulto"
+  },
+  "adult-white-dragon.traits.ice-walk": {
+    "name": "Camminare sul ghiaccio",
+    "text": "Il drago può muoversi sulle superfici di ghiaccio e scalarle senza bisogno di effettuare una prova di caratteristica. Inoltre, un terreno difficile costituito da ghiaccio o neve non gli costa alcun movimento aggiuntivo."
+  },
+  "adult-white-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "adult-white-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio."
+  },
+  "adult-white-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +11, portata 3 m. Colpito: 13 (2d6 + 6) danni Taglienti più 4 (1d8) danni da Freddo."
+  },
+  "adult-white-dragon.actions.cold-breath": {
+    "name": "Soffio di freddo",
+    "text": "Tiro salvezza su Costituzione: CD 19, tutte le creature in un cono di 18 metri. Fallimento: 54 (12d8) danni da Freddo. Successo: danni dimezzati."
+  },
+  "adult-white-dragon.legendaryActions.freezing-burst": {
+    "name": "Esplosione congelante",
+    "text": "Tiro salvezza su Costituzione: CD 14, tutte le creature in una sfera di 9 metri di raggio centrata su un punto che il drago è in grado di vedere entro 36 metri. Fallimento: 7 (2d6) danni da Freddo, e la velocità del bersaglio è pari a 0 fino al termine del turno successivo del bersaglio. Fallimento o successo: il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-white-dragon.legendaryActions.frightful-presence": {
+    "name": "Presenza terrificante",
+    "text": "Il drago lancia paura senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 14). Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "adult-white-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità ed effettua un attacco Squarcio."
+  },
+  "air-elemental": {
+    "name": "Elementale dell'aria"
+  },
+  "air-elemental.traits.air-form": {
+    "name": "Forma d'aria",
+    "text": "L'elementale può entrare nello spazio di una creatura e fermarvisi. Può muoversi attraverso uno spazio stretto fino a 2,5 centimetri senza consumare movimento extra per farlo."
+  },
+  "air-elemental.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'elementale effettua due attacchi Schianto tonante."
+  },
+  "air-elemental.actions.thunderous-slam": {
+    "name": "Schianto tonante",
+    "text": "Tiro per colpire in mischia: +8, portata 3 m. Colpito: 14 (2d8 + 5) danni da Tuono."
+  },
+  "air-elemental.actions.whirlwind": {
+    "name": "Vortice",
+    "text": "Tiro salvezza su Forza: CD 13, una creatura di taglia Media o inferiore nello spazio dell'elementale. Fallimento: 24 (4d10 + 2) danni da Tuono, il bersaglio viene spinto fino a un massimo di 6 metri di distanza dall'elementale e cade a terra Prono. Successo: danni dimezzati."
+  },
+  "allosaurus": {
+    "name": "Allosauro"
+  },
+  "allosaurus.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 15 (2d10 + 4) danni Perforanti."
+  },
+  "allosaurus.actions.claws": {
+    "name": "Artigli",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 8 (1d8 + 4) danni Taglienti. Se il bersaglio è una creatura di taglia Grande o inferiore e l'allosauro si è mosso di 9 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio cade a terra Prono e l'allosauro può effettuare un attacco Morso contro di esso."
+  },
+  "ancient-black-dragon": {
+    "name": "Drago nero antico"
+  },
+  "ancient-black-dragon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "ancient-black-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno o 5/giorno nella tana). Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "ancient-black-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di Incantesimi per lanciare freccia acida (di 4º livello)."
+  },
+  "ancient-black-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +15, portata 4,5 m. Colpito: 17 (2d8 + 8) danni Taglienti più 9 (2d8) danni da Acido."
+  },
+  "ancient-black-dragon.actions.acid-breath": {
+    "name": "Soffio di acido",
+    "text": "Tiro salvezza su Destrezza: CD 22, tutte le creature in una linea lunga 27 metri e larga 3 metri. Fallimento: 67 (15d8) danni da Acido. Successo: danni dimezzati."
+  },
+  "ancient-black-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 21, +13 al tiro per colpire degli attacchi con incantesimo): A volontà: Freccia acida (di 4º livello), individuazione del magico, paura. 1/giorno ciascuno: Creare non morti, parlare con i morti, sfera al vetriolo (di 5º livello)."
+  },
+  "ancient-black-dragon.legendaryActions.cloud-of-insects": {
+    "name": "Nugolo di insetti",
+    "text": "Tiro salvezza su Destrezza: CD 21, una creatura che il drago è in grado di vedere entro 36 metri. Fallimento: 33 (6d10) danni da Veleno, e il bersaglio subisce svantaggio ai tiri salvezza per mantenere la concentrazione fino al termine del proprio turno successivo. Fallimento o successo: il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-black-dragon.legendaryActions.frightful-presence": {
+    "name": "Presenza terrificante",
+    "text": "Il drago usa Incantesimi per lanciare paura. il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-black-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità ed effettua un attacco Squarcio."
+  },
+  "ancient-blue-dragon": {
+    "name": "Drago blu antico"
+  },
+  "ancient-blue-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno o 5/giorno nella tana). Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "ancient-blue-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di Incantesimi per lanciare frantumare (di 3º livello)."
+  },
+  "ancient-blue-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +16, portata 4,5 m. Colpito: 18 (2d8 + 9) danni Taglienti più 11 (2d10) danni da Fulmine."
+  },
+  "ancient-blue-dragon.actions.lightning-breath": {
+    "name": "Soffio di fulmini",
+    "text": "Tiro salvezza su Destrezza: CD 23, tutte le creature in una linea lunga 36 metri e larga 3 metri. Fallimento: 88 (16d10) danni da Fulmine. Successo: danni dimezzati."
+  },
+  "ancient-blue-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 22): A volontà: frantumare (di 3º livello), individuazione del magico, invisibilità, mano magica. 1/giorno ciascuno: Inviare, scrutare."
+  },
+  "ancient-blue-dragon.legendaryActions.cloaked-flight": {
+    "name": "Volo celato",
+    "text": "Il drago usa Incantesimi per lanciare invisibilità su se stesso, e può volare fino a metà della sua velocità di volo. il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-blue-dragon.legendaryActions.sonic-boom": {
+    "name": "Boato sonico",
+    "text": "Il drago usa Incantesimi per lanciare frantumare (di 3º livello). il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-blue-dragon.legendaryActions.tail-swipe": {
+    "name": "Spazzata di coda",
+    "text": "Il drago effettua un attacco Squarcio."
+  },
+  "ancient-brass-dragon": {
+    "name": "Drago d'ottone antico"
+  },
+  "ancient-brass-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno o 5/giorno nella tana). Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "ancient-brass-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di (A) Soffio di sonno o (B) Incantesimi per lanciare raggio rovente (di 3º livello)."
+  },
+  "ancient-brass-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +14, portata 4,5 m. Colpito: 19 (2d10 + 8) danni Taglienti più 7 (2d6) danni da Fuoco."
+  },
+  "ancient-brass-dragon.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 21, tutte le creature in una linea lunga 27 metri e larga 1,5 metri. Fallimento: 58 (13d8) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "ancient-brass-dragon.actions.sleep-breath": {
+    "name": "Soffio di sonno",
+    "text": "Tiro salvezza su Costituzione: CD 21, tutte le creature in un cono di 27 metri. Fallimento: il bersaglio è Incapacitato fino al termine del proprio turno successivo, a quel punto ripete il tiro salvezza. Secondo fallimento: il bersaglio cade Privo di Sensi per 10 minuti. Questo effetto termina se il bersaglio subisce danni o se una creatura entro 1,5 metri da esso esegue un'azione per svegliarlo."
+  },
+  "ancient-brass-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 20): A volontà: Illusione minore, individuazione del magico, parlare con gli animali, raggio rovente (di 3º livello), trasformazione (solo in forma di bestia o umanoide, senza punti ferita temporanei ottenuti dall'incantesimo, e senza richiedere concentrazione o punti ferita temporanei per mantenere l'incantesimo). 1/giorno ciascuno: Controllare tempo atmosferico, individuazione dei pensieri."
+  },
+  "ancient-brass-dragon.legendaryActions.blazing-light": {
+    "name": "Luce accecante",
+    "text": "Il drago usa Incantesimi per lanciare raggio rovente (di 3º livello)."
+  },
+  "ancient-brass-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità, ed effettua un attacco Squarcio."
+  },
+  "ancient-brass-dragon.legendaryActions.scorching-sands": {
+    "name": "Sabbie roventi",
+    "text": "Tiro salvezza su Destrezza: CD 20, una creatura che il drago è in grado di vedere entro 36 metri. Fallimento: 36 (8d8) danni da Fuoco, e la velocità del bersaglio è dimezzata fino al termine del proprio turno successivo. Fallimento o successo: il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-bronze-dragon": {
+    "name": "Drago di bronzo antico"
+  },
+  "ancient-bronze-dragon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "ancient-bronze-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno o 5/giorno nella tana). Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "ancient-bronze-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di (A) Soffio repulsivo o (B) Incantesimi per lanciare dardo tracciante (di 2º livello)."
+  },
+  "ancient-bronze-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +16, portata 4,5 m. Colpito: 18 (2d8 + 9) danni Taglienti più 9 (2d8) danni da Fulmine."
+  },
+  "ancient-bronze-dragon.actions.lightning-breath": {
+    "name": "Soffio di fulmini",
+    "text": "Tiro salvezza su Destrezza: CD 23, tutte le creature in una linea lunga 36 metri e larga 3 metri. Fallimento: 82 (15d10) danni da Fulmine. Successo: danni dimezzati."
+  },
+  "ancient-bronze-dragon.actions.repulsion-breath": {
+    "name": "Soffio repulsivo",
+    "text": "Tiro salvezza su Forza: CD 23, tutte le creature in un cono di 9 metri. Fallimento: il bersaglio viene spinto fino a un massimo di 18 metri di distanza dal drago e cade a terra Prono."
+  },
+  "ancient-bronze-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 22, +14 al tiro per colpire degli attacchi con incantesimo): A volontà: dardo tracciante (di 2º livello), individuazione del magico, parlare con gli animali, taumaturgia, trasformazione (solo in forma di bestia o umanoide, senza punti ferita temporanei ottenuti dall'incantesimo, e senza concentrazione o punti ferita temporanei per mantenere l'incantesimo). 1/giorno ciascuno: controllare acqua, individuazione dei pensieri, respirare sott'acqua, scrutare."
+  },
+  "ancient-bronze-dragon.legendaryActions.guiding-light": {
+    "name": "Luce guida",
+    "text": "Il drago usa Incantesimi per lanciare dardo tracciante (di 2º livello)."
+  },
+  "ancient-bronze-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità, ed effettua un attacco Squarcio."
+  },
+  "ancient-bronze-dragon.legendaryActions.thunderclap": {
+    "name": "Rombo di tuono",
+    "text": "Tiro salvezza su Costituzione: CD 22, tutte le creature in una sfera di 6 metri di raggio centrata su un punto che il drago è in grado di vedere entro 36 metri. Fallimento: 13 (3d8) danni da Tuono, e il bersaglio è Assordato fino al termine del proprio turno successivo."
+  },
+  "ancient-copper-dragon": {
+    "name": "Drago di rame antico"
+  },
+  "ancient-copper-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno o 5/giorno nella tana). Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "ancient-copper-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di (A) Soffio rallentante o (B) Incantesimi per lanciare aculeo mentale (di 5º livello)."
+  },
+  "ancient-copper-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +15, portata 4,5 m. Colpito: 19 (2d10 + 8) danni Taglienti più 9 (2d8) danni da Acido."
+  },
+  "ancient-copper-dragon.actions.acid-breath": {
+    "name": "Soffio di acido",
+    "text": "Tiro salvezza su Destrezza: CD 22, tutte le creature in una linea lunga 27 metri e larga 3 metri. Fallimento: 63 (14d8) danni da Acido. Successo: danni dimezzati."
+  },
+  "ancient-copper-dragon.actions.slowing-breath": {
+    "name": "Soffio rallentante",
+    "text": "Tiro salvezza su Costituzione: CD 22, tutte le creature in un cono di 27 metri. Fallimento: il bersaglio non può effettuare reazioni, la sua velocità è dimezzata e nel suo turno può effettuare un'azione o un'azione bonus, non entrambe. L'effetto dura fino al termine del proprio turno successivo."
+  },
+  "ancient-copper-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 21): A volontà: Aculeo mentale (di 5º livello), illusione minore, individuazione del magico, trasformazione (solo in forma di bestia o umanoide, senza punti ferita temporanei ottenuti dall'incantesimo, e senza richiedere concentrazione o punti ferita temporanei per mantenere l'incantesimo). 1/giorno ciascuno: Immagine maggiore, immagine proiettata, ristorare superiore."
+  },
+  "ancient-copper-dragon.legendaryActions.giggling-magic": {
+    "name": "Magia ridacchiante",
+    "text": "Tiro salvezza su Carisma: CD 21, una creatura che il drago è in grado di vedere entro 36 metri. Fallimento: 31 (9d6) danni Psichici. Fino al termine del proprio turno successivo, il bersaglio tira 1d8 ogni volta che effettua una prova di caratteristica o un tiro per colpire e sottrae il risultato dalla prova con d20. Fallimento o successo: il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-copper-dragon.legendaryActions.mind-jolt": {
+    "name": "Scossa mentale",
+    "text": "Il drago usa Incantesimi per lanciare aculeo mentale (di 5º livello). il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-copper-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità, ed effettua un attacco Squarcio."
+  },
+  "ancient-gold-dragon": {
+    "name": "Drago d'oro antico"
+  },
+  "ancient-gold-dragon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "ancient-gold-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno o 5/giorno nella tana). Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "ancient-gold-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di (A) Incantesimi per lanciare dardo tracciante (di 4º livello) o (B) Soffio indebolente."
+  },
+  "ancient-gold-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +17 al tiro per colpire, portata 4,5 m. Colpito: 19 (2d8 + 10) danni Taglienti più 9 (2d8) danni da Fuoco."
+  },
+  "ancient-gold-dragon.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 24, tutte le creature in un cono di 27 metri. Fallimento: 71 (13d10) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "ancient-gold-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 24, +16 al tiro per colpire degli attacchi con incantesimo): A volontà: Dardo tracciante (di 4º livello), individuazione del magico, trasformazione (solo in forma di bestia o umanoide, senza punti ferita temporanei ottenuti dall'incantesimo, e senza richiedere concentrazione o punti ferita temporanei per mantenere l'incantesimo). 1/giorno ciascuno: Colpo infuocato (versione di 6º livello), parola del ritiro, zona di verità."
+  },
+  "ancient-gold-dragon.actions.weakening-breath": {
+    "name": "Soffio indebolente",
+    "text": "Tiro salvezza su Forza: CD 24, ogni creatura che al momento non è sotto l'effetto di questo soffio in un cono di 27 metri. Fallimento: il bersaglio subisce svantaggio alle prove con d20 basate sulla Forza e sottrae 5 (1d10) ai tiri per i danni. La creatura ripete il tiro salvezza alla fine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente."
+  },
+  "ancient-gold-dragon.legendaryActions.banish": {
+    "name": "Ostracismo",
+    "text": "Tiro salvezza su Carisma: CD 24, una creatura che il drago è in grado di vedere entro 36 metri. Fallimento: 24 (7d6) danni da Forza, il bersaglio è Incapacitato e viene trasportato su un semipiano sicuro fino all'inizio del turno successivo del drago, durante cui riappare in uno spazio libero a scelta del drago entro 36 metri da quest'ultimo. Fallimento o successo: il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-gold-dragon.legendaryActions.guiding-light": {
+    "name": "Luce guida",
+    "text": "Il drago usa Incantesimi per lanciare dardo tracciante (di 4º livello)."
+  },
+  "ancient-gold-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità, ed effettua un attacco Squarcio."
+  },
+  "ancient-green-dragon": {
+    "name": "Drago verde antico"
+  },
+  "ancient-green-dragon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "ancient-green-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno o 5/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "ancient-green-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di Incantesimi per lanciare aculeo mentale (di 5º livello)."
+  },
+  "ancient-green-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +15, portata 4,5 m. Colpito: 17 (2d8 + 8) danni Taglienti più 10 (3d6) danni da Veleno."
+  },
+  "ancient-green-dragon.actions.poison-breath": {
+    "name": "Soffio di veleno",
+    "text": "Tiro salvezza su Costituzione: CD 22, tutte le creature in un cono di 27 metri. Fallimento: 77 (22d6) danni da Veleno. Successo: danni dimezzati."
+  },
+  "ancient-green-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 21): A volontà: Aculeo mentale (di 5º livello), individuazione del magico. 1/giorno ciascuno: costrizione, modificare memoria."
+  },
+  "ancient-green-dragon.legendaryActions.mind-invasion": {
+    "name": "Invasione mentale",
+    "text": "Il drago usa Incantesimi per lanciare aculeo mentale (di 5º livello)."
+  },
+  "ancient-green-dragon.legendaryActions.noxious-miasma": {
+    "name": "Miasma nocivo",
+    "text": "Tiro salvezza su Costituzione: CD 21, tutte le creature in una sfera di 9 metri di raggio centrata su un punto che il drago è in grado di vedere entro 27 metri. Fallimento: 17 (5d6) danni da Veleno, e il bersaglio subisce una penalità di −2 alla CA fino al termine del proprio turno successivo. Fallimento o successo: Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-green-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità, ed effettua un attacco Squarcio."
+  },
+  "ancient-red-dragon": {
+    "name": "Drago rosso antico"
+  },
+  "ancient-red-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno o 5/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "ancient-red-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di Incantesimi per lanciare raggio rovente (di 3º livello)."
+  },
+  "ancient-red-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +17, portata 4,5 m. Colpito: 19 (2d8 + 10) danni Taglienti più 10 (3d6) danni da Fuoco."
+  },
+  "ancient-red-dragon.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 24, tutte le creature in un cono di 27 metri. Fallimento: 91 (26d6) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "ancient-red-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 23, +15 al tiro per colpire degli attacchi con incantesimo): A volontà: Comando (di 2º livello), individuazione del magico, raggio rovente (di 3º livello). 1/giorno ciascuno: palla di fuoco (di 6º livello), scrutare."
+  },
+  "ancient-red-dragon.legendaryActions.commanding-presence": {
+    "name": "Presenza imponente",
+    "text": "Il drago usa Incantesimi per lanciare comando (di 2º livello). Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-red-dragon.legendaryActions.fiery-rays": {
+    "name": "Raggi fiammeggianti",
+    "text": "Il drago usa Incantesimi per lanciare raggio rovente (di 3º livello). Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-red-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità ed effettua un attacco Squarcio."
+  },
+  "ancient-silver-dragon": {
+    "name": "Drago d'argento antico"
+  },
+  "ancient-silver-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno o 5/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "ancient-silver-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio. Può sostituire un attacco con un utilizzo di (A) Soffio paralizzante o (B) Incantesimi per lanciare coltello di ghiaccio (di 2º livello)."
+  },
+  "ancient-silver-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +17, portata 4,5 m. Colpito: 19 (2d8 + 10) danni Taglienti più 9 (2d8) danni da Freddo."
+  },
+  "ancient-silver-dragon.actions.cold-breath": {
+    "name": "Soffio di freddo",
+    "text": "Tiro salvezza su Costituzione: CD 24, tutte le creature in un cono di 27 metri. Fallimento: 67 (15d8) danni da Freddo. Successo: danni dimezzati."
+  },
+  "ancient-silver-dragon.actions.paralyzing-breath": {
+    "name": "Soffio paralizzante",
+    "text": "Tiro salvezza su Costituzione: CD 24, tutte le creature in un cono di 27 metri. Primo fallimento: il bersaglio è Incapacitato fino al termine del proprio turno successivo. A quel punto, ripete il tiro salvezza. Secondo fallimento: il bersaglio è Paralizzato e ripete il tiro salvezza alla fine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente."
+  },
+  "ancient-silver-dragon.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il drago lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 23, +15 al tiro per colpire degli attacchi con incantesimo): A volontà: Blocca mostri, coltello di ghiaccio (di 2º livello), individuazione del magico, trasformazione (solo in forma di bestia o umanoide, senza punti ferita temporanei ottenuti dall'incantesimo, e senza richiedere concentrazione o punti ferita temporanei per mantenere l'incantesimo). 1/giorno ciascuno: controllare tempo atmosferico, teletrasporto, tempesta di ghiaccio (di 7º livello), zona di verità."
+  },
+  "ancient-silver-dragon.legendaryActions.chill": {
+    "name": "Assideramento",
+    "text": "Il drago usa Incantesimi per lanciare blocca mostri. Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-silver-dragon.legendaryActions.cold-gale": {
+    "name": "Bufera",
+    "text": "Tiro salvezza su Destrezza: CD 23, tutte le creature in una linea lunga 18 metri e larga 3 metri. Fallimento: 14 (4d6) danni da Freddo, e il bersaglio viene spinto in linea retta fino a un massimo di 9 metri lontano dal drago. Successo: danni dimezzati. Fallimento o successo: Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-silver-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità, ed effettua un attacco Squarcio."
+  },
+  "ancient-white-dragon": {
+    "name": "Drago bianco antico"
+  },
+  "ancient-white-dragon.traits.ice-walk": {
+    "name": "Camminare sul ghiaccio",
+    "text": "Il drago può muoversi sulle superfici di ghiaccio e scalarle senza bisogno di effettuare una prova di caratteristica. Inoltre, un terreno difficile costituito da ghiaccio o neve non gli costa alcun movimento aggiuntivo."
+  },
+  "ancient-white-dragon.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno o 5/giorno nella tana) Se il drago fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "ancient-white-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua tre attacchi Squarcio."
+  },
+  "ancient-white-dragon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +14, portata 4,5 m. Colpito: 17 (2d8 + 8) danni Taglienti più 7 (2d6) danni da Freddo."
+  },
+  "ancient-white-dragon.actions.cold-breath": {
+    "name": "Soffio di freddo",
+    "text": "Tiro salvezza su Costituzione: CD 22, tutte le creature in un cono di 27 metri. Fallimento: 63 (14d8) danni da Freddo. Successo: danni dimezzati."
+  },
+  "ancient-white-dragon.legendaryActions.freezing-burst": {
+    "name": "Esplosione congelante",
+    "text": "Tiro salvezza su Costituzione: CD 20, tutte le creature in una sfera di 9 metri di raggio centrata su un punto che il drago è in grado di vedere entro 36 metri. Fallimento: 14 (4d6) danni da Freddo, e la velocità del bersaglio è pari a 0 fino al termine del turno successivo del bersaglio. Fallimento o successo: Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-white-dragon.legendaryActions.frightful-presence": {
+    "name": "Presenza terrificante",
+    "text": "Il drago lancia paura senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 18). Il drago non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "ancient-white-dragon.legendaryActions.pounce": {
+    "name": "Balzo",
+    "text": "Il drago si muove fino a metà della sua velocità ed effettua un attacco Squarcio."
+  },
+  "animated-armor": {
+    "name": "Armatura animata"
+  },
+  "animated-armor.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'armatura effettua due attacchi Schianto."
+  },
+  "animated-armor.actions.slam": {
+    "name": "Schianto",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Contundenti."
+  },
+  "animated-flying-sword": {
+    "name": "Spada volante animata"
+  },
+  "animated-flying-sword.actions.slash": {
+    "name": "Fendente",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 6 (1d8 + 2) danni Taglienti."
+  },
+  "animated-rug-of-smothering": {
+    "name": "Tappeto soffocante animato"
+  },
+  "animated-rug-of-smothering.actions.smother": {
+    "name": "Soffocare",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Contundenti. Se il bersaglio è una creatura di taglia Media o inferiore, il tappeto lo afferra (CD 13 per sfuggire) invece di infliggere danni. Finché la presa perdura, il bersaglio è Accecato e Trattenuto, soffoca, e subisce 10 (2d6 + 3) danni Contundenti all'inizio di ogni suo turno. Il tappeto può soffocare solo una creatura alla volta. Finché afferra il bersaglio, il tappeto non può effettuare questa azione e dimezza i danni subiti (arrotondati per difetto); il bersaglio subisce la stessa quantità di danni."
+  },
+  "ankheg": {
+    "name": "Ankheg"
+  },
+  "ankheg.traits.tunneler": {
+    "name": "Scavatore di tunnel",
+    "text": "L'ankheg può scavare nella roccia a metà della sua velocità di scavo e lascia dietro di sé un tunnel del diametro di 3 metri."
+  },
+  "ankheg.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5 (con vantaggio se il bersaglio è afferrato dall'ankheg), portata 1,5 m. Colpito: 10 (2d6 + 3) danni Taglienti più 3 (1d6) danni da Acido. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 13 per sfuggire)."
+  },
+  "ankheg.actions.acid-spray": {
+    "name": "Spruzzo acido",
+    "text": "Tiro salvezza su Destrezza: CD 12, tutte le creature in una linea lunga 9 metri e larga 1,5 metri. Fallimento: 14 (4d6) danni da Acido. Successo: danni dimezzati."
+  },
+  "ankylosaurus": {
+    "name": "Anchilosauro"
+  },
+  "ankylosaurus.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'anchilosauro effettua due attacchi Coda."
+  },
+  "ankylosaurus.actions.tail": {
+    "name": "Coda",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 9 (1d10 + 4) danni Contundenti. Se il bersaglio è una creatura di taglia Enorme o inferiore, cade a terra Prono."
+  },
+  "ape": {
+    "name": "Gorilla"
+  },
+  "ape.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il gorilla effettua due attacchi Pugno."
+  },
+  "ape.actions.fist": {
+    "name": "Pugno",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 5 (1d4 + 3) danni Contundenti."
+  },
+  "ape.actions.rock": {
+    "name": "Roccia",
+    "text": "Tiro per colpire a distanza: +5, gittata 7,5/15 m. Colpito: 10 (2d6 + 3) danni Contundenti."
+  },
+  "archelon": {
+    "name": "Archelon"
+  },
+  "archelon.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "L'archelon può respirare in aria e in acqua."
+  },
+  "archelon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'archelon effettua due attacchi Morso."
+  },
+  "archelon.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 14 (3d6 + 4) danni Perforanti."
+  },
+  "archmage": {
+    "name": "Arcimago"
+  },
+  "archmage.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "L'arcimago dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "archmage.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'arcimago effettua quattro attacchi Esplosione arcana."
+  },
+  "archmage.actions.arcane-burst": {
+    "name": "Esplosione arcana",
+    "text": "Tiro per colpire in mischia o a distanza: +9, portata 1,5 m o gittata 45 m. Colpito: 27 (4d10 + 5) danni da Forza."
+  },
+  "archmage.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "L'arcimago lancia uno dei seguenti incantesimi, utilizzando Intelligenza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 17): A volontà: Armatura magica (inclusa nella CA), camuffare se stesso, individuazione dei pensieri, individuazione del magico, invisibilità, luce, mano magica, prestidigitazione. 2/giorno ciascuno: Fulmine (di 7º livello), volare. 1/giorno ciascuno: Cono di freddo (di 9º livello), scrutare, teletrasporto, vuoto mentale (lanciato prima del combattimento)."
+  },
+  "archmage.bonusActions.misty-step": {
+    "name": "Passo velato",
+    "text": "Il mago lancia passo velato, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "archmage.reactions.protective-magic": {
+    "name": "Magia di protezione",
+    "text": "L'arcimago lancia controincantesimo o scudo come risposta all'innesco dell'incantesimo, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "assassin": {
+    "name": "Assassino"
+  },
+  "assassin.traits.evasion": {
+    "name": "Elusione",
+    "text": "Se l'assassino è soggetto a un effetto che gli consente di effettuare un tiro salvezza su Destrezza per subire danni dimezzati, non subisce alcun danno in caso di successo, e ne subisce solo metà in caso di fallimento. Non può usare questo tratto se è Incapacitato."
+  },
+  "assassin.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'assassino effettua tre attacchi, usando Spada corta o Balestra leggera in qualsiasi combinazione."
+  },
+  "assassin.actions.shortsword": {
+    "name": "Spada corta",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 7 (1d6 + 4) danni Perforanti più 17 (5d6) danni da Veleno, e il bersaglio è Avvelenato fino all'inizio del turno successivo dell'assassino."
+  },
+  "assassin.actions.light-crossbow": {
+    "name": "Balestra leggera",
+    "text": "Tiro per colpire a distanza: +7, gittata 24/96 m. Colpito: 8 (1d8 + 4) danni Perforanti più 21 (6d6) danni da Veleno."
+  },
+  "assassin.bonusActions.cunning-action": {
+    "name": "Azione scaltra",
+    "text": "L'assassino effettua l'azione di Disimpegno, Nascondersi o Scatto."
+  },
+  "awakened-shrub": {
+    "name": "Cespuglio risvegliato"
+  },
+  "awakened-shrub.actions.rake": {
+    "name": "Graffiare",
+    "text": "Tiro per colpire in mischia: +1, portata 1,5 m. Colpito: 1 danno Tagliente."
+  },
+  "awakened-tree": {
+    "name": "Albero risvegliato"
+  },
+  "awakened-tree.actions.slam": {
+    "name": "Schianto",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 14 (3d6 + 4) danni Contundenti."
+  },
+  "axe-beak": {
+    "name": "Beccoaguzzo"
+  },
+  "axe-beak.actions.beak": {
+    "name": "Becco",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 6 (1d8 + 2) danni Taglienti."
+  },
+  "azer-sentinel": {
+    "name": "Azer sentinella"
+  },
+  "azer-sentinel.traits.fire-aura": {
+    "name": "Aura di fuoco",
+    "text": "Al termine di ogni turno dell'azer, tutte le creature a scelta dell'azer che si trovano in un'emanazione di 1,5 metri di cui l'azer è il punto di origine subiscono 5 (1d10) danni da Fuoco, a meno che l'azer non sia Incapacitato."
+  },
+  "azer-sentinel.traits.illumination": {
+    "name": "Illuminazione",
+    "text": "L'azer emana luce intensa in un raggio di 3 metri e luce fioca per altri 3 metri."
+  },
+  "azer-sentinel.actions.burning-hammer": {
+    "name": "Martello ardente",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 8 (1d10 + 3) danni Contundenti più 3 (1d6) danni da Fuoco."
+  },
+  "baboon": {
+    "name": "Babbuino"
+  },
+  "baboon.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il babbuino dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno dei suoi alleati si trova entro 1,5 metri dalla creatura e non è Incapacitato."
+  },
+  "baboon.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +1, portata 1,5 m. Colpito: 1 (1d4 - 1) danni Perforanti."
+  },
+  "badger": {
+    "name": "Tasso"
+  },
+  "badger.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 1 danno Perforante."
+  },
+  "balor": {
+    "name": "Balor"
+  },
+  "balor.traits.death-throes": {
+    "name": "Spasmi di morte",
+    "text": "Quando il balor muore, esplode. Tiro salvezza su Destrezza: CD 20, tutte le creature in un'emanazione di 9 metri di cui il balor è il punto di origine. Fallimento: 31 (9d6) danni da Fuoco più 31 (9d6) danni da Forza. Successo: danni dimezzati. Fallimento o successo: se il balor muore al di fuori dell'Abisso, acquisisce un corpo nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nell'Abisso."
+  },
+  "balor.traits.fire-aura": {
+    "name": "Aura di fuoco",
+    "text": "Al termine di ogni turno del balor, tutte le creature in un'emanazione di 1,5 metri di cui il balor è il punto di origine subiscono 13 (3d8) danni da Fuoco."
+  },
+  "balor.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno) Se il balor fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "balor.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il balor dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "balor.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il balor effettua un attacco Frusta fiammeggiante e un attacco Lama fulminante."
+  },
+  "balor.actions.flame-whip": {
+    "name": "Frusta fiammeggiante",
+    "text": "Tiro per colpire in mischia: +14, portata 9 m. Colpito: 18 (3d6 + 8) danni da Forza più 17 (5d6) danni da Fuoco. Se il bersaglio è una creatura di taglia Enorme o inferiore, il balor trascina il bersaglio in linea retta verso di sé fino a 7,5 metri, e il bersaglio cade a terra Prono."
+  },
+  "balor.actions.lightning-blade": {
+    "name": "Lama fulminante",
+    "text": "Tiro per colpire in mischia: +14, portata 3 m. Colpito: 21 (3d8 + 8) danni da Forza più 22 (4d10) danni da Fulmine, e il bersaglio non può effettuare reazioni fino all'inizio del turno successivo del balor."
+  },
+  "balor.bonusActions.teleport": {
+    "name": "Teletrasporto",
+    "text": "Il balor teletrasporta se stesso (o un demone consenziente entro 3 metri da sé) fino a 18 metri in uno spazio libero che il balor è in grado di vedere."
+  },
+  "bandit": {
+    "name": "Bandito"
+  },
+  "bandit.actions.scimitar": {
+    "name": "Scimitarra",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 4 (1d6 + 1) danni Taglienti."
+  },
+  "bandit.actions.light-crossbow": {
+    "name": "Balestra leggera",
+    "text": "Tiro per colpire a distanza: +3, gittata 24/96 m. Colpito: 5 (1d8 + 1) danni Perforanti."
+  },
+  "bandit-captain": {
+    "name": "Capo dei banditi"
+  },
+  "bandit-captain.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il bandito effettua due attacchi, usando Scimitarra e Pistola in qualsiasi combinazione."
+  },
+  "bandit-captain.actions.scimitar": {
+    "name": "Scimitarra",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 6 (1d6 + 3) danni Taglienti."
+  },
+  "bandit-captain.actions.pistol": {
+    "name": "Pistola",
+    "text": "Tiro per colpire a distanza: +5, gittata 9/27 m. Colpito: 8 (1d10 + 3) danni Perforanti."
+  },
+  "bandit-captain.reactions.parry": {
+    "name": "Parata",
+    "text": "Attivazione: il bandito viene colpito da un tiro per colpire in mischia mentre tiene in mano un'arma. Esito: il bandito aggiunge 2 alla sua CA contro quell'attacco, aumentando le probabilità che il colpo non vada a segno."
+  },
+  "barbed-devil": {
+    "name": "Diavolo uncinato"
+  },
+  "barbed-devil.traits.barbed-hide": {
+    "name": "Pelle uncinata",
+    "text": "All'inizio di ogni suo turno, il diavolo infligge 5 (1d10) danni Perforanti a tutte le creature che afferra o a qualsiasi creatura lo afferri."
+  },
+  "barbed-devil.traits.diabolical-restoration": {
+    "name": "Ristoro diabolico",
+    "text": "Se il diavolo muore al di fuori dei Nove Inferi, il suo corpo si dissolve in fumo sulfureo e ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nei Nove Inferi."
+  },
+  "barbed-devil.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il diavolo dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "barbed-devil.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il diavolo effettua un attacco Artigli e un attacco Coda, o effettua due attacchi Scagliare fiamma."
+  },
+  "barbed-devil.actions.claws": {
+    "name": "Artigli",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 13 per sfuggire) da entrambi gli artigli."
+  },
+  "barbed-devil.actions.tail": {
+    "name": "Coda",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 14 (2d10 + 3) danni Taglienti."
+  },
+  "barbed-devil.actions.hurl-flame": {
+    "name": "Scagliare fiamma",
+    "text": "Tiro per colpire a distanza: +5, gittata 45 m. Colpito: 17 (5d6) danni da Fuoco. Se il bersaglio è un oggetto infiammabile che non è indossato o trasportato, inizia a bruciare."
+  },
+  "basilisk": {
+    "name": "Basilisco"
+  },
+  "basilisk.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Perforanti più 7 (2d6) danni da Veleno."
+  },
+  "basilisk.bonusActions.petrifying-gaze": {
+    "name": "Sguardo pietrificante",
+    "text": "Tiro salvezza su Costituzione: CD 12, tutte le creature in un cono di 9 metri. Se il basilisco vede il suo riflesso nel cono, deve effettuare questo tiro salvezza. Primo fallimento: il bersaglio è Trattenuto. Ripete il tiro salvezza al termine del proprio turno successivo se è ancora Trattenuto e, se lo supera, l'effetto svanisce. Secondo fallimento: il bersaglio è Pietrificato invece che Trattenuto."
+  },
+  "bat": {
+    "name": "Pipistrello"
+  },
+  "bat.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 1 danno Perforante."
+  },
+  "bearded-devil": {
+    "name": "Diavolo barbuto"
+  },
+  "bearded-devil.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il diavolo dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "bearded-devil.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il diavolo effettua un attacco Barba e un attacco Falcione infernale."
+  },
+  "bearded-devil.actions.beard": {
+    "name": "Barba",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Perforanti, e il bersaglio è Avvelenato fino all'inizio del turno successivo del diavolo. Finché è Avvelenato, il bersaglio non può recuperare punti ferita."
+  },
+  "bearded-devil.actions.infernal-glaive": {
+    "name": "Falcione infernale",
+    "text": "Tiro per colpire in mischia: +5, portata 3 m. Colpito: 8 (1d10 + 3) danni Taglienti. Se il bersaglio è una creatura e non ha già una ferita infernale, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 12. Fallimento: Il bersaglio subisce una ferita infernale. Finché è ferito, il bersaglio perde 5 (1d10) punti ferita all'inizio di ogni suo turno. La ferita si rimargina dopo 1 minuto, dopo che un incantesimo ripristina i punti ferita del bersaglio, o dopo che il bersaglio o una creatura entro 1,5 metri effettua un'azione per tamponare la ferita superando una prova di Saggezza (Medicina) con CD 12."
+  },
+  "behir": {
+    "name": "Behir"
+  },
+  "behir.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il behir effettua un attacco Morso e usa Stritolare."
+  },
+  "behir.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +10, portata 3 m. Colpito: 19 (2d12 + 6) danni Perforanti più 11 (2d10) danni da Fulmine."
+  },
+  "behir.actions.constrict": {
+    "name": "Stritolare",
+    "text": "Tiro salvezza su Forza: CD 18, una creatura di taglia Grande o inferiore che il behir è in grado di vedere entro 1,5 metri. Fallimento: 28 (5d8 + 6) danni Contundenti. Il bersaglio è Afferrato (CD 16 per sfuggire) ed è Trattenuto finché la presa perdura."
+  },
+  "behir.actions.lightning-breath": {
+    "name": "Soffio di fulmini",
+    "text": "Tiro salvezza su Destrezza: CD 16, tutte le creature in una linea lunga 27 metri e larga 1,5 metri. Fallimento: 66 (12d10) danni da Fulmine. Successo: danni dimezzati."
+  },
+  "behir.bonusActions.swallow": {
+    "name": "Inghiottire",
+    "text": "Tiro salvezza su Destrezza: CD 18, una creatura di taglia Grande o inferiore Afferrata dal behir (il behir può inghiottire solo una creatura alla volta). Fallimento: Il behir inghiotte il bersaglio, che non è più Afferrato. Finché è inghiottita, la creatura è Accecata e Trattenuta, beneficia di copertura totale contro gli attacchi e altri effetti al di fuori del behir, e subisce 21 (6d6) danni da Acido all'inizio di ogni turno del behir. Se il behir subisce 30 o più danni in un singolo turno dalla creatura inghiottita, deve superare un tiro salvezza su Costituzione con CD 14 alla fine di quel turno, altrimenti rigurgita la creatura, che cade Prona in uno spazio entro 3 metri dal behir. Se il behir muore, la creatura inghiottita non è più Trattenuta e può fuggire dal cadavere usando 4,5 metri di movimento, uscendo Prona."
+  },
+  "berserker": {
+    "name": "Berserker"
+  },
+  "berserker.traits.bloodied-frenzy": {
+    "name": "Frenesia sanguinante",
+    "text": "Finché è sanguinante, il berserker dispone di vantaggio ai tiri per colpire e ai tiri salvezza."
+  },
+  "berserker.actions.greataxe": {
+    "name": "Ascia bipenne",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 9 (1d12 + 3) danni Taglienti."
+  },
+  "black-bear": {
+    "name": "Orso nero"
+  },
+  "black-bear.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'orso effettua due attacchi Squarcio."
+  },
+  "black-bear.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Taglienti."
+  },
+  "black-dragon-wyrmling": {
+    "name": "Drago nero cucciolo"
+  },
+  "black-dragon-wyrmling.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "black-dragon-wyrmling.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua due attacchi Squarcio."
+  },
+  "black-dragon-wyrmling.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Taglienti più 2 (1d4) danni da Acido."
+  },
+  "black-dragon-wyrmling.actions.acid-breath": {
+    "name": "Soffio di acido",
+    "text": "Tiro salvezza su Destrezza: CD 11, tutte le creature in una linea lunga 4,5 metri e larga 1,5 metri. Fallimento: 22 (5d8) danni da Acido. Successo: danni dimezzati."
+  },
+  "black-pudding": {
+    "name": "Protoplasma nero"
+  },
+  "black-pudding.traits.amorphous": {
+    "name": "Amorfo",
+    "text": "Il protoplasma può muoversi attraverso uno spazio stretto fino a 2,5 centimetri senza consumare movimento extra per farlo."
+  },
+  "black-pudding.traits.corrosive-form": {
+    "name": "Forma corrosiva",
+    "text": "Una creatura che colpisce un protoplasma con un tiro per colpire in mischia subisce 4 (1d8) danni da Acido. Le munizioni non magiche che colpiscono il protoplasma e infliggono danni sono distrutte. Qualsiasi arma non magica subisce una penalità cumulativa di -1 ai tiri per colpire subito dopo aver inflitto danni al protoplasma ed esservi entrata in contatto. Se la penalità arriva a -5, l'arma è distrutta. La penalità può essere rimossa lanciando l'incantesimo riparare sull'arma. In 1 minuto, il protoplasma può corrodere 60 centimetri di legno o metallo non magico."
+  },
+  "black-pudding.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "Il protoplasma può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "black-pudding.actions.dissolving-pseudopod": {
+    "name": "Pseudopode dissolvente",
+    "text": "Tiro per colpire in mischia: +5, portata 3 m. Colpito: 17 (4d6 + 3) danni da Acido. L'armatura non magica indossata dal bersaglio subisce una penalità di -1 alla CA che fornisce. Se la penalità riduce la sua CA a 10, l'armatura si distrugge. La penalità può essere rimossa lanciando l'incantesimo riparare sull'armatura."
+  },
+  "black-pudding.reactions.split": {
+    "name": "Scindersi",
+    "text": "Attivazione: finché il protoplasma è di taglia Grande o Media e ha 10 punti ferita o più, diventa sanguinante o è soggetto a danni da Fulmine o Taglienti. Esito: il protoplasma si scinde in due nuovi protoplasmi neri. Ogni nuovo protoplasma è inferiore di una taglia rispetto al protoplasma originale, e agisce di propria iniziativa. I punti ferita del protoplasma originale sono divisi equamente tra i due nuovi protoplasmi (arrotondati per difetto)."
+  },
+  "blink-dog": {
+    "name": "Cane intermittente"
+  },
+  "blink-dog.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 5 (1d4 + 3) danni Perforanti."
+  },
+  "blink-dog.bonusActions.teleport": {
+    "name": "Teletrasporto",
+    "text": "Il cane si teletrasporta fino a un massimo di 12 metri in uno spazio libero che è in grado di vedere."
+  },
+  "blood-hawk": {
+    "name": "Falco di sangue"
+  },
+  "blood-hawk.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il falco dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno dei suoi alleati si trova entro 1,5 metri dalla creatura e non è Incapacitato."
+  },
+  "blood-hawk.actions.beak": {
+    "name": "Becco",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni Perforanti, o 6 (1d8 + 2) danni Perforanti se il bersaglio è sanguinante."
+  },
+  "blue-dragon-wyrmling": {
+    "name": "Drago blu cucciolo"
+  },
+  "blue-dragon-wyrmling.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua due attacchi Squarcio."
+  },
+  "blue-dragon-wyrmling.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 8 (1d10 + 3) danni Taglienti più 3 (1d6) danni da Fulmine."
+  },
+  "blue-dragon-wyrmling.actions.lightning-breath": {
+    "name": "Soffio di fulmini",
+    "text": "Tiro salvezza su Destrezza: CD 12, tutte le creature in una linea lunga 9 metri e larga 1,5 metri. Fallimento: 21 (6d6) danni da Fulmine. Successo: danni dimezzati."
+  },
+  "boar": {
+    "name": "Cinghiale"
+  },
+  "boar.traits.bloodied-fury": {
+    "name": "Furia sanguinante",
+    "text": "Se il cinghiale è sanguinante, ha vantaggio ai tiri per colpire."
+  },
+  "boar.actions.gore": {
+    "name": "Trafiggere",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 4 (1d6 + 1) danni Perforanti. Se il bersaglio è una creatura di taglia Media o inferiore e il cinghiale si è mosso di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio subisce 3 (1d6) danni Perforanti extra e cade a terra Prono."
+  },
+  "bone-devil": {
+    "name": "Diavolo d'ossa"
+  },
+  "bone-devil.traits.diabolical-restoration": {
+    "name": "Ristoro diabolico",
+    "text": "Se il diavolo muore al di fuori dei Nove Inferi, il suo corpo si dissolve in fumo sulfureo e ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nei Nove Inferi."
+  },
+  "bone-devil.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il diavolo dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "bone-devil.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il diavolo effettua due attacchi Artiglio e un attacco Pungiglione infernale."
+  },
+  "bone-devil.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +8, portata 3 m. Colpito: 13 (2d8 + 4) danni Taglienti."
+  },
+  "bone-devil.actions.infernal-sting": {
+    "name": "Pungiglione infernale",
+    "text": "Tiro per colpire in mischia: +8, portata 3 m. Colpito: 15 (2d10 + 4) danni Perforanti più 18 (4d8) danni da Veleno, e il bersaglio è Avvelenato fino all'inizio del turno successivo del diavolo. Finché è Avvelenato, il bersaglio non può recuperare punti ferita."
+  },
+  "brass-dragon-wyrmling": {
+    "name": "Drago d'ottone cucciolo"
+  },
+  "brass-dragon-wyrmling.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 7 (1d10 + 2) danni Taglienti."
+  },
+  "brass-dragon-wyrmling.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 11, tutte le creature in una linea lunga 6 metri e larga 1,5 metri. Fallimento: 14 (4d6) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "brass-dragon-wyrmling.actions.sleep-breath": {
+    "name": "Soffio di sonno",
+    "text": "Tiro salvezza su Costituzione: CD 11, tutte le creature in un cono di 4,5 metri. Fallimento: il bersaglio è Incapacitato fino al termine del proprio turno successivo, a quel punto ripete il tiro salvezza. Secondo fallimento: il bersaglio cade Privo di Sensi per 1 minuto. Questo effetto termina se il bersaglio subisce danni o se una creatura entro 1,5 metri da esso esegue un'azione per svegliarlo."
+  },
+  "bronze-dragon-wyrmling": {
+    "name": "Drago di bronzo cucciolo"
+  },
+  "bronze-dragon-wyrmling.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "bronze-dragon-wyrmling.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua due attacchi Squarcio."
+  },
+  "bronze-dragon-wyrmling.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 8 (1d10 + 3) danni Taglienti."
+  },
+  "bronze-dragon-wyrmling.actions.lightning-breath": {
+    "name": "Soffio di fulmini",
+    "text": "Tiro salvezza su Destrezza: CD 12, tutte le creature in una linea lunga 12 metri e larga 1,5 metri. Fallimento: 16 (3d10) danni da Fulmine. Successo: danni dimezzati."
+  },
+  "bronze-dragon-wyrmling.actions.repulsion-breath": {
+    "name": "Soffio repulsivo",
+    "text": "Tiro salvezza su Forza: CD 12, tutte le creature in un cono di 9 metri. Fallimento: il bersaglio viene spinto fino a un massimo di 9 metri di distanza dal drago e cade a terra Prono."
+  },
   "brown-bear": {
     "name": "Orso bruno"
   },
@@ -48,6 +1376,63 @@
   "brown-bear.actions.claw": {
     "name": "Artiglio",
     "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 5 (1d4 + 3) danni Taglienti. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra Prono."
+  },
+  "bugbear-stalker": {
+    "name": "Bugbear cacciatore"
+  },
+  "bugbear-stalker.traits.abduct": {
+    "name": "Rapimento",
+    "text": "Il bugbear non ha bisogno di usare movimento extra per spostare una creatura che sta afferrando."
+  },
+  "bugbear-stalker.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il bugbear effettua due attacchi Giavellotto o Mazza chiodata."
+  },
+  "bugbear-stalker.actions.javelin": {
+    "name": "Giavellotto",
+    "text": "Tiro per colpire in mischia o a distanza: +5, portata 3 m o gittata 9/36 m. Colpito: 13 (3d6 + 3) danni Perforanti."
+  },
+  "bugbear-stalker.actions.morningstar": {
+    "name": "Mazza chiodata",
+    "text": "Tiro per colpire in mischia: +5 (con Vantaggio se il bersaglio è Afferrato dal bugbear), portata 3 m. Colpito: 12 (2d8 + 3) danni Perforanti."
+  },
+  "bugbear-stalker.bonusActions.quick-grapple": {
+    "name": "Presa rapida",
+    "text": "Tiro salvezza su Destrezza: CD 13, una creatura di taglia Media o inferiore che il bugbear è in grado di vedere entro 3 metri da sé. Fallimento: il bersaglio è Afferrato (CD 13 per sfuggire)."
+  },
+  "bugbear-warrior": {
+    "name": "Bugbear guerriero"
+  },
+  "bugbear-warrior.traits.abduct": {
+    "name": "Rapimento",
+    "text": "Il bugbear non ha bisogno di usare movimento extra per spostare una creatura che sta afferrando."
+  },
+  "bugbear-warrior.actions.grab": {
+    "name": "Presa",
+    "text": "Tiro per colpire in mischia: +4, portata 3 m. Colpito: 9 (2d6 + 2) danni Contundenti. Se il bersaglio è una creatura di taglia Media o inferiore, è Afferrato (CD 12 per sfuggire)."
+  },
+  "bugbear-warrior.actions.light-hammer": {
+    "name": "Martello leggero",
+    "text": "Tiro per colpire in mischia o a distanza: +4 (con Vantaggio se il bersaglio è Afferrato dal bugbear), portata 3 m o gittata 6/18 m. Colpito: 9 (3d4 + 2) danni Contundenti."
+  },
+  "bulette": {
+    "name": "Bulette"
+  },
+  "bulette.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il bulette effettua due attacchi Morso."
+  },
+  "bulette.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 17 (2d12 + 4) danni Perforanti."
+  },
+  "bulette.actions.deadly-leap": {
+    "name": "Balzo letale",
+    "text": "Il bulette usa 1,5 metri di movimento per saltare in uno spazio entro 4,5 metri che contiene una o più creature di taglia Grande o inferiore. Tiro salvezza su Destrezza: CD 15, tutte le creature nello spazio di destinazione del bulette. Fallimento: 19 (3d12) danni Contundenti, e il bersaglio è Prono. Successo: danni dimezzati, e il bersaglio viene spinto a 1,5 metri di distanza dal bulette."
+  },
+  "bulette.bonusActions.leap": {
+    "name": "Balzo",
+    "text": "Il bulette salta fino a un massimo di 9 metri usando 3 metri di movimento."
   },
   "ghost": {
     "name": "Fantasma"

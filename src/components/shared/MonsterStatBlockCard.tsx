@@ -107,6 +107,11 @@ function languagesLine(m: MonsterStatBlock, t: TFn, locale: Locale): string {
     }
     if (L.understandsOnly) langs = t("monster.langUnderstands", { langs });
     if (langs) parts.push(langs);
+    // The split print: spoken `ids` above, then a separate understands-only clause.
+    const uo = (L.understandsOnlyIds ?? [])
+      .map((id) => localizeSrd("language", id, "name", locale))
+      .join(", ");
+    if (uo) parts.push(t("monster.langUnderstands", { langs: uo }));
   }
   if (L.telepathyFt != null) {
     parts.push(t("monster.telepathy", { dist: localeDistance(L.telepathyFt, locale) }));
@@ -232,6 +237,9 @@ export function MonsterStatBlockCard({
       let part = `${t(`character.sense_${kind}`)} ${localeDistance(ft, locale)}`;
       if (kind === "blindsight" && m.senses.blindBeyond) {
         part += ` ${t("monster.blindBeyond")}`;
+      }
+      if (kind === "darkvision" && m.senses.unimpededByMagicalDarkness) {
+        part += ` ${t("monster.darkvisionMagical")}`;
       }
       senseParts.push(part);
     }

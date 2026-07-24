@@ -1065,14 +1065,14 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       {
         nameKey: "attack.fist",
         toHit: 5,
-        damageDice: "1d6+3",
+        damageDice: "1d4+3",
         damageType: "bludgeoning",
         reachFt: 5,
       },
       {
         nameKey: "attack.rock",
         toHit: 5,
-        damageDice: "1d6+2",
+        damageDice: "2d6+3",
         damageType: "bludgeoning",
         range: { nearFt: 25, farFt: 50 },
       },
@@ -1463,8 +1463,14 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
         damageType: "piercing",
         reachFt: 5,
       },
+      {
+        nameKey: "attack.claws",
+        toHit: 6,
+        damageDice: "1d8+4",
+        damageType: "slashing",
+        reachFt: 5,
+      },
     ],
-    traits: ["trait.pounce"],
   },
   // Giant Boar (2024 SRD 5.2.1). AC 12, HP 42, CR 2.
   {

@@ -288,13 +288,13 @@
     "name": "Serre"
   },
   "attack.gore": {
-    "name": "Incornata"
+    "name": "Trafiggere"
   },
   "attack.stomp": {
     "name": "Calpestio"
   },
   "attack.rock": {
-    "name": "Sasso"
+    "name": "Roccia"
   },
   "attack.ram": {
     "name": "Cozzata"
@@ -315,7 +315,7 @@
     "name": "Costrizione"
   },
   "attack.rend": {
-    "name": "Lacerazione"
+    "name": "Squarcio"
   },
   "attack.scratch": {
     "name": "Graffio"
@@ -336,7 +336,7 @@
     "name": "Vista e olfatto acuti"
   },
   "trait.pack-tactics": {
-    "name": "Tattiche di gruppo"
+    "name": "Tattiche del branco"
   },
   "trait.pounce": {
     "name": "Balzo"

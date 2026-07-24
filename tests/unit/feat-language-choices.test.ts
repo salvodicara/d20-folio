@@ -19,9 +19,12 @@ import type { Grant } from "@/lib/grants";
 import { MOCK_CHARACTER } from "@/lib/mock";
 
 describe("SRD_LANGUAGE_IDS roster", () => {
-  it("is the COMPLETE 19-entry 2024 standard+rare list of IDS (incl. the two secret languages)", () => {
-    expect(SRD_LANGUAGE_IDS).toHaveLength(19);
+  it("is the COMPLETE 23-entry 2024 standard+rare list of IDS (incl. the two secret languages + Primordial's four dialects)", () => {
+    expect(SRD_LANGUAGE_IDS).toHaveLength(23);
     expect(SRD_LANGUAGE_IDS).toContain("common");
+    // Primordial's four elemental dialects are real 2024 languages (SPEC D-11).
+    expect(SRD_LANGUAGE_IDS).toContain("ignan");
+    expect(SRD_LANGUAGE_IDS).toContain("aquan");
     expect(SRD_LANGUAGE_IDS).toContain("draconic");
     expect(SRD_LANGUAGE_IDS).toContain("undercommon");
     // The two secret class-languages are in the roster (so they localize) and —
@@ -71,7 +74,7 @@ describe("pendingLanguageSlotsForFeat", () => {
 describe("listAvailableForLanguageSlot", () => {
   it("offers the FULL roster of IDS when options are empty (override-first — secret tongues included)", () => {
     const all = listAvailableForLanguageSlot({ amount: 1, slotId: "s", options: [] });
-    expect(all).toHaveLength(19); // the COMPLETE roster, nothing excluded
+    expect(all).toHaveLength(23); // the COMPLETE roster, nothing excluded
     expect(all).toContain("druidic");
     expect(all).toContain("thieves-cant");
   });

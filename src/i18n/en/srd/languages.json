@@ -15,7 +15,12 @@
   "druidic": { "name": "Druidic" },
   "infernal": { "name": "Infernal" },
   "primordial": { "name": "Primordial" },
+  "aquan": { "name": "Primordial (Aquan)" },
+  "auran": { "name": "Primordial (Auran)" },
+  "ignan": { "name": "Primordial (Ignan)" },
+  "terran": { "name": "Primordial (Terran)" },
   "sylvan": { "name": "Sylvan" },
   "thieves-cant": { "name": "Thieves' Cant" },
-  "undercommon": { "name": "Undercommon" }
+  "undercommon": { "name": "Undercommon" },
+  "blink-dog": { "name": "Blink Dog" }
 }

@@ -161,7 +161,10 @@ describe.each(cases)("%s", (id, m) => {
 
   it("references only ids that resolve (§F.9) + valid condition immunities", () => {
     for (const s of m.skills ?? []) expect(SKILL_IDS.has(s.skill)).toBe(true);
-    for (const langId of m.languages?.ids ?? []) {
+    for (const langId of [
+      ...(m.languages?.ids ?? []),
+      ...(m.languages?.understandsOnlyIds ?? []),
+    ]) {
       expect(hasSrd("language", langId, "name", "en"), `language "${langId}"`).toBe(true);
     }
     for (const g of m.gear ?? []) {

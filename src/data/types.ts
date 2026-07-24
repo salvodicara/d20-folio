@@ -1869,8 +1869,13 @@ export interface MonsterSkill {
  *  closed tokens localized via `monster.lang_<token>` chrome keys. */
 export interface MonsterLanguages {
   ids?: ReadonlyArray<string>;
-  /** "understands <ids> but can't speak". */
+  /** "understands <ids> but can't speak" — applies to the whole `ids` list. */
   understandsOnly?: true;
+  /** The split print: the creature SPEAKS its own tongue(s) in `ids` but only
+   *  UNDERSTANDS these additional languages (e.g. Blink Dog: speaks "Blink Dog",
+   *  understands Elvish and Sylvan). Each id resolves in `srd/languages.json`;
+   *  renders as a separate "understands … but can't speak" clause. */
+  understandsOnlyIds?: ReadonlyArray<string>;
   telepathyFt?: number;
   /** "plus any N languages" (NPC-style prints). */
   plusAnyCount?: number;
@@ -1957,6 +1962,10 @@ export interface MonsterStatBlock {
     truesightFt?: number;
     /** "blindsight 60 ft. (blind beyond this radius)". */
     blindBeyond?: true;
+    /** Darkvision "(unimpeded by magical Darkness)" — the recurring 2024
+     *  fiend/undead print qualifier; renders as a text affix beside the
+     *  darkvision distance (§A.4 closed-set qualifier, D-10). */
+    unimpededByMagicalDarkness?: true;
   };
   /** Passive Perception derives (10 + Perception bonus); stored ONLY on a
    *  deviating print. */
