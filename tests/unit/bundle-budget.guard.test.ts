@@ -60,7 +60,7 @@ const ASSETS = resolve(DIST, "assets");
 // ── Measured P3 baseline (2026-06-11) + ~10% headroom ──────────────────────────
 // Baseline (gz): entry 53.7 KB · eager closure (28 chunks + css) 660.5 KB.
 // Precache after the font-subset trim: 5884.9 KiB.
-const ENTRY_CEILING_KB = 61; // baseline 53.7 → +14% (2026-07-10: +1 for the global keyboard-shortcut listener + the nav-anchor chrome; the SHORTCUTS registry itself stays in the lazy ShortcutsSheet chunk)
+const ENTRY_CEILING_KB = 62; // baseline 53.7 → +15% (2026-07-10: +1 for the global keyboard-shortcut listener + the nav-anchor chrome; the SHORTCUTS registry itself stays in the lazy ShortcutsSheet chunk. 2026-07-24: raised 61 → 62 (+1 KB) for the ⌘K reference palette entries — the always-mounted palette's referenceHits memo + its inline bilingual search-term arrays + the requestPlayRef uiStore seam, all EAGER SHELL code. NOT a data leak: verified the entry chunk carries only ids + i18n keys — NO reference DATA module (cover.ts / travel-pace.ts / combat-variants.ts) nor buildSituationalRulesView entered the entry (those stay in the lazy PlayTab closure); eager-closure chunk families unchanged vs main. Measured 61.32; +0.68 KB deterministic headroom (never exact-fit))
 // 2026-06-29: re-baselined 660.5 → 727.1 (the prior +10% headroom was fully absorbed by
 // accumulated shipping; the premium campaign-hub layout CSS crossed it). Tightened headroom to
 // ~+3% — the eager closure is NEAR budget; frontier #1 (make SRD resolution lazy) is the real lever.
