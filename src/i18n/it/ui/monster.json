@@ -31,6 +31,7 @@
     "qualifier_nonmagical-nonsilvered": "da attacchi non magici non argentati",
     "qualifier_nonmagical-nonadamantine": "da attacchi non magici non adamantini",
     "condNote_with-mind-blank": "con Vuoto Mentale",
+    "defenseNote_draconic-origin": "il tipo di danno scelto per il tratto Origine draconica",
     "searchPlaceholder": "Cerca mostri…"
   }
 }

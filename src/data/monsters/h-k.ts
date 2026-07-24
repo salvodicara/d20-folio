@@ -22,6 +22,9 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
     saveProficiencies: ["DEX", "WIS"],
     skills: [{ skill: "athletics" }, { skill: "perception" }, { skill: "stealth" }],
     senses: { blindsightFt: 10, darkvisionFt: 60 },
+    // Resistances line prints a prose note (element is GM-variable via Draconic
+    // Origin) rather than a closed-set DamageType — see QualifiedDefenseNote.
+    qualifiedDefenses: [{ kind: "resistance", noteKey: "draconic-origin" }],
     languages: { ids: ["common", "draconic"] },
     traits: [{ id: "draconic-origin", kind: "narrative" }],
     actions: [

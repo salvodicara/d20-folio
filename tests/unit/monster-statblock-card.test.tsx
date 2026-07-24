@@ -44,4 +44,21 @@ describe("MonsterStatBlockCard", () => {
     // Immunities line must still render its condition chips.
     expect(container.querySelectorAll(".co-chip").length).toBeGreaterThan(0);
   });
+
+  it("renders a GM-variable resistance note line verbatim, no leading comma (half-dragon)", () => {
+    const hd = getMonster("half-dragon");
+    if (!hd) throw new Error("pilot monster 'half-dragon' missing");
+    const { container } = render(<MonsterStatBlockCard monster={hd} locale="en" />);
+    // The half-dragon prints a Resistances LINE whose type is a prose note (no
+    // closed-set DamageType). It must render the sentence, without a stray comma
+    // (nothing precedes it — no flat damageResistances).
+    const line = Array.from(container.querySelectorAll(".mon-line")).find((el) =>
+      el.textContent.includes("Draconic Origin")
+    );
+    if (!line) throw new Error("resistance note line did not render");
+    expect(line.textContent).toContain(
+      "Damage type chosen for the Draconic Origin trait"
+    );
+    expect(line.textContent).not.toMatch(/Resistances\s*,/);
+  });
 });

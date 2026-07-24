@@ -31,6 +31,7 @@
     "qualifier_nonmagical-nonsilvered": "from nonmagical attacks that aren't silvered",
     "qualifier_nonmagical-nonadamantine": "from nonmagical attacks that aren't adamantine",
     "condNote_with-mind-blank": "with Mind Blank",
+    "defenseNote_draconic-origin": "Damage type chosen for the Draconic Origin trait",
     "searchPlaceholder": "Search monsters…"
   }
 }

@@ -274,12 +274,24 @@ export function MonsterStatBlockCard({
     </>
   ) : undefined;
 
-  const qualifierText = (kind: "resistance" | "immunity" | "vulnerability"): ReactNode =>
-    qualified(kind).map((q) => (
-      <Fragment key={q.qualifier}>
-        {", "}
-        {damageRun(q.damageTypes, t)}{" "}
-        <span className="mon-qualifier">({t(`monster.qualifier_${q.qualifier}`)})</span>
+  const qualifierText = (
+    kind: "resistance" | "immunity" | "vulnerability",
+    hasPrefix: boolean
+  ): ReactNode =>
+    qualified(kind).map((q, i) => (
+      <Fragment key={"noteKey" in q ? q.noteKey : q.qualifier}>
+        {(hasPrefix || i > 0) && ", "}
+        {"noteKey" in q ? (
+          // A GM-variable defense: the printed prose note, rendered verbatim.
+          t(`monster.defenseNote_${q.noteKey}`)
+        ) : (
+          <>
+            {damageRun(q.damageTypes, t)}{" "}
+            <span className="mon-qualifier">
+              ({t(`monster.qualifier_${q.qualifier}`)})
+            </span>
+          </>
+        )}
       </Fragment>
     ));
 
@@ -357,14 +369,14 @@ export function MonsterStatBlockCard({
       {Boolean(m.damageVulnerabilities?.length || qualified("vulnerability").length) && (
         <LedgerLine label={t("abilities.vulnerabilitiesLabel")}>
           {damageRun(m.damageVulnerabilities ?? [], t)}
-          {qualifierText("vulnerability")}
+          {qualifierText("vulnerability", Boolean(m.damageVulnerabilities?.length))}
         </LedgerLine>
       )}
 
       {Boolean(m.damageResistances?.length || qualified("resistance").length) && (
         <LedgerLine label={t("abilities.resistancesLabel")}>
           {damageRun(m.damageResistances ?? [], t)}
-          {qualifierText("resistance")}
+          {qualifierText("resistance", Boolean(m.damageResistances?.length))}
         </LedgerLine>
       )}
 
@@ -373,7 +385,7 @@ export function MonsterStatBlockCard({
       ) && (
         <LedgerLine label={t("abilities.immunitiesLabel")}>
           {damageRun(m.damageImmunities ?? [], t)}
-          {qualifierText("immunity")}
+          {qualifierText("immunity", Boolean(m.damageImmunities?.length))}
           {condChips.length > 0 && (
             <span className="mon-cond-chips">
               {condChips.map((chip, i) => {

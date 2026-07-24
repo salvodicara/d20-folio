@@ -195,6 +195,16 @@ describe.each(cases)("%s", (id, m) => {
       expect(hasSrd("condition", cid, "name", "en"), `condition "${cid}"`).toBe(true);
       if (typeof ci !== "string") expect(ci.note).toBe("with-mind-blank");
     }
+    for (const q of m.qualifiedDefenses ?? []) {
+      expect(["resistance", "immunity", "vulnerability"]).toContain(q.kind);
+      if ("noteKey" in q) {
+        // GM-variable prose note: a closed token (rendered via monster.defenseNote_*).
+        expect(q.noteKey).toBe("draconic-origin");
+      } else {
+        expect(q.damageTypes.length).toBeGreaterThan(0);
+        for (const dt of q.damageTypes) expect(DAMAGE.has(dt)).toBe(true);
+      }
+    }
   });
 
   it("pins the structured facts against the printed EN prose (§F.8, D-3)", () => {

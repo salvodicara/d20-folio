@@ -1894,6 +1894,16 @@ export interface QualifiedDefense {
   qualifier: "nonmagical" | "nonmagical-nonsilvered" | "nonmagical-nonadamantine";
 }
 
+/** A defense line whose "type" is a localized prose NOTE, not a closed-set
+ *  `DamageType` — the SRD half-dragon's "Resistances Damage type chosen for the
+ *  Draconic Origin trait", where the resisted element is GM-variable. `noteKey`
+ *  is a closed token resolved verbatim via `monster.defenseNote_<noteKey>` (like
+ *  `qualifier_`/`condNote_`); grow the set only when the SRD prints another. */
+export interface QualifiedDefenseNote {
+  kind: "resistance" | "immunity" | "vulnerability";
+  noteKey: "draconic-origin";
+}
+
 /**
  * A condition-immunity line entry (m1). Almost always the bare ConditionId; the
  * qualified prints — "Charmed (with Mind Blank)" on the archmage-class entries —
@@ -1955,7 +1965,7 @@ export interface MonsterStatBlock {
   damageResistances?: ReadonlyArray<DamageType>;
   damageImmunities?: ReadonlyArray<DamageType>;
   conditionImmunities?: ReadonlyArray<MonsterConditionImmunity>;
-  qualifiedDefenses?: ReadonlyArray<QualifiedDefense>;
+  qualifiedDefenses?: ReadonlyArray<QualifiedDefense | QualifiedDefenseNote>;
 
   senses?: {
     darkvisionFt?: number;
