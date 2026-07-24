@@ -16,6 +16,8 @@ import {
   findRetiredNames,
   findRetiredInProse,
   PUBLIC_SRD_I18N,
+  type AllowedCollision,
+  type Ent,
 } from "./__helpers__/it-name-registry";
 import { BASE_ACTIONS } from "@/lib/smart-tracker";
 
@@ -85,6 +87,62 @@ describe("IT name consistency (public SRD)", () => {
     );
     expect({ drift, unpinned }).toEqual({ drift: [], unpinned: [] });
   });
+  // Pins the NARROWNESS of ALLOWED_COLLISIONS (the l-m Mago pair et al.): an allowlist entry
+  // exempts EXACTLY its named pair sharing its IT name — any other member set re-flags. Uses
+  // synthetic entities so it stays independent of the live corpus (docs/IT_NAME_REGISTRY.md).
+  describe("ALLOWED_COLLISIONS exemption is exact-pair-narrow", () => {
+    const ent = (kind: string, id: string, en: string, it: string): Ent => ({
+      kind,
+      id,
+      en,
+      it,
+      itFields: [],
+    });
+    const allow: AllowedCollision[] = [
+      {
+        itName: "Sinnome",
+        members: ["classes:alpha", "monsters:beta"],
+        justification: "test",
+      },
+    ];
+
+    it("exempts the exact sanctioned pair (control)", () => {
+      const ents = [
+        ent("classes", "alpha", "Alpha", "Sinnome"),
+        ent("monsters", "beta", "Beta", "Sinnome"),
+      ];
+      expect(findCollisions(ents, allow)).toEqual([]);
+    });
+
+    it("re-flags a 3-member group whose first two members match the sanctioned pair", () => {
+      const ents = [
+        ent("classes", "alpha", "Alpha", "Sinnome"),
+        ent("monsters", "beta", "Beta", "Sinnome"),
+        ent("monsters", "gamma", "Gamma", "Sinnome"),
+      ];
+      const hits = findCollisions(ents, allow);
+      expect(hits).toHaveLength(1);
+      expect(hits[0]?.members).toEqual([
+        "classes:alpha (Alpha)",
+        "monsters:beta (Beta)",
+        "monsters:gamma (Gamma)",
+      ]);
+    });
+
+    it("flags a 2-member group with one non-matching member", () => {
+      const ents = [
+        ent("classes", "alpha", "Alpha", "Sinnome"),
+        ent("monsters", "delta", "Delta", "Sinnome"),
+      ];
+      const hits = findCollisions(ents, allow);
+      expect(hits).toHaveLength(1);
+      expect(hits[0]?.members).toEqual([
+        "classes:alpha (Alpha)",
+        "monsters:delta (Delta)",
+      ]);
+    });
+  });
+
   it("never cross-references a base action by a retired verb form (RA-W6/W8 prose sweep)", () => {
     const offenders: string[] = [];
     for (const file of readdirSync(IT_SRD_DIR).filter((f) => f.endsWith(".json"))) {

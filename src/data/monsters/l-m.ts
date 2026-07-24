@@ -73,7 +73,7 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     damageResistances: ["cold"],
     damageImmunities: ["fire", "poison"],
     conditionImmunities: ["charmed", "frightened", "poisoned"],
-    senses: { darkvisionFt: 120 },
+    senses: { darkvisionFt: 120, unimpededByMagicalDarkness: true },
     languages: { ids: ["infernal"], understandsOnly: true },
     traits: [{ id: "hellish-restoration", kind: "narrative" }],
     actions: [
@@ -478,6 +478,9 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
         toHit: 10,
         reachFt: 5,
         damage: [
+          // The official IT SRD 5.2.1 print carries a typo here (1d8+5, avg 9,
+          // vs the printed avg 10 and the EN 1d10+5); structured dice follow the
+          // EN print per D-3, so a future IT re-derivation must NOT "fix" this to 1d8+5.
           { dice: "1d10+5", damageType: "slashing" },
           { dice: "2d6", damageType: "necrotic" },
         ],
