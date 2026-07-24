@@ -29,6 +29,13 @@ interface UIState {
    * collapsed to just their header (no first-run special casing).
    */
   playRefSections: Record<string, boolean>;
+  /**
+   * A one-shot request (from the ⌘K palette) to reveal a Play-tab reference
+   * section: the section id to switch to the Combat tab, open, and scroll into
+   * view. TRANSIENT (not persisted) — the cockpit's deep-link consumer reads it,
+   * acts, and clears it. `null` when idle.
+   */
+  pendingPlayRef: string | null;
   setTheme: (theme: Theme) => void;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
@@ -38,6 +45,10 @@ interface UIState {
   setShortcutsOpen: (open: boolean) => void;
   /** Set one Play-tab reference section's open/closed state (persisted). */
   setPlayRefOpen: (id: string, open: boolean) => void;
+  /** Request the cockpit reveal a Play-tab reference section (the ⌘K seam). */
+  requestPlayRef: (section: string) => void;
+  /** Clear the pending reveal request (the consumer calls this once handled). */
+  clearPlayRef: () => void;
 }
 
 function applyTheme(theme: Theme): void {
@@ -57,6 +68,7 @@ export const useUIStore = create<UIState>()(
       reportOpen: false,
       shortcutsOpen: false,
       playRefSections: {},
+      pendingPlayRef: null,
       setTheme: (theme) => {
         applyTheme(theme);
         set({ theme });
@@ -70,6 +82,8 @@ export const useUIStore = create<UIState>()(
       setShortcutsOpen: (open) => set({ shortcutsOpen: open }),
       setPlayRefOpen: (id, open) =>
         set((s) => ({ playRefSections: { ...s.playRefSections, [id]: open } })),
+      requestPlayRef: (section) => set({ pendingPlayRef: section }),
+      clearPlayRef: () => set({ pendingPlayRef: null }),
     }),
     {
       name: "d20-folio-ui",

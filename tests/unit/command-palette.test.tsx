@@ -445,3 +445,39 @@ describe("CommandPalette — overlay-history sentinel on select-then-navigate (B
     expect(window.history.length - baseLength).toBe(1);
   });
 });
+
+describe("CommandPalette — Play-tab reference (W9)", () => {
+  beforeEach(() => {
+    useUIStore.setState({ pendingPlayRef: null, playRefSections: {} });
+  });
+
+  it("surfaces a rules-reference topic on a character sheet and requests the rules section", () => {
+    renderPalette("/characters/lyra-1");
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "cover" } });
+    // Grouped under a dedicated "Reference" heading, contextual to the open sheet.
+    expect(screen.getByText("Reference")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("option", { name: "Cover" }));
+    // A `run` hit — it drives the deep-link seam, not a navigation.
+    expect(useUIStore.getState().pendingPlayRef).toBe("rules");
+  });
+
+  it("routes the combat-playbook entry to the playbook section", () => {
+    renderPalette("/characters/lyra-1");
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "playbook" } });
+    fireEvent.click(screen.getByRole("option", { name: "Combat Algorithm" }));
+    expect(useUIStore.getState().pendingPlayRef).toBe("playbook");
+  });
+
+  it("finds a topic by an Italian keyword (bilingual terms)", () => {
+    renderPalette("/characters/lyra-1");
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "cavalcatura" } });
+    expect(screen.getByRole("option", { name: "Mounted combat" })).toBeInTheDocument();
+  });
+
+  it("hides the reference entries off a character sheet (no Play tab there)", () => {
+    renderPalette("/characters");
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "cover" } });
+    expect(screen.queryByText("Reference")).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Cover" })).not.toBeInTheDocument();
+  });
+});

@@ -46,6 +46,7 @@ import { CombatHeader } from "./center/CombatHeader";
 import { TabsProvider } from "./center/TabsProvider";
 import { TabStrip } from "./center/TabStrip";
 import { TabBody } from "./center/TabBody";
+import { PlayRefDeepLink } from "./center/PlayRefDeepLink";
 import { TurnEconomyProvider } from "./center/TurnEconomyProvider";
 import { LeftHud } from "./hud/LeftHud";
 import { RightHud } from "./hud/RightHud";
@@ -138,6 +139,7 @@ export function CockpitView() {
     () => (
       <TurnEconomyProvider>
         <TabsProvider>
+          <PlayRefDeepLink />
           <TabStrip />
           <TabBody />
         </TabsProvider>

@@ -73,6 +73,8 @@ import {
   Bug,
   Scale,
   Keyboard,
+  ListChecks,
+  BookMarked,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogBody, SearchInput, Icon } from "@/components/ui";
 import { Kbd } from "@/components/ui/kbd";
@@ -202,6 +204,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
   const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
+  const requestPlayRef = useUIStore((s) => s.requestPlayRef);
   const [query, setQuery] = useState("");
   const q = query.trim();
   const listboxId = useId();
@@ -494,6 +497,98 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       }));
   }, [campaigns, q]);
 
+  // ── Play-tab reference (the combat playbook + the SRD rules-reference topics) ──
+  // Contextual to an OPEN character sheet: these `run` the `requestPlayRef` seam,
+  // which the cockpit's PlayRefDeepLink consumes (switch to Combat → open the
+  // section → scroll it into view). Gated to the cockpit route, since that's the
+  // only surface where a Play tab (and the consumer) exists. Labels REUSE the
+  // section/topic i18n keys (no duplication); EN+IT keyword `terms` make each
+  // findable in either language. All four topics land on the ONE `rules` section.
+  const onCockpit =
+    /^\/characters\/[^/]+$/.test(location.pathname) &&
+    !location.pathname.endsWith("/new");
+  const referenceHits: Hit[] = useMemo(() => {
+    if (!q || !onCockpit) return [];
+    const defs: (Hit & { terms: string[] })[] = [
+      {
+        key: "ref:cover",
+        run: () => requestPlayRef("rules"),
+        label: t("combat.rulesReference.cover"),
+        icon: BookMarked,
+        terms: ["cover", "half cover", "three-quarters", "copertura", "riparo"],
+      },
+      {
+        key: "ref:travel",
+        run: () => requestPlayRef("rules"),
+        label: t("combat.rulesReference.travel"),
+        icon: BookMarked,
+        terms: [
+          "travel",
+          "pace",
+          "journey",
+          "overland",
+          "miles",
+          "viaggio",
+          "andatura",
+          "ritmo",
+          "spostamento",
+        ],
+      },
+      {
+        key: "ref:mounted",
+        run: () => requestPlayRef("rules"),
+        label: t("combat.rulesReference.mounted"),
+        icon: BookMarked,
+        terms: [
+          "mounted",
+          "mount",
+          "horse",
+          "riding",
+          "cavalcatura",
+          "sella",
+          "cavallo",
+          "monta",
+        ],
+      },
+      {
+        key: "ref:underwater",
+        run: () => requestPlayRef("rules"),
+        label: t("combat.rulesReference.underwater"),
+        icon: BookMarked,
+        terms: [
+          "underwater",
+          "water",
+          "swim",
+          "aquatic",
+          "subacqueo",
+          "acqua",
+          "nuoto",
+          "sott'acqua",
+        ],
+      },
+      {
+        key: "ref:playbook",
+        run: () => requestPlayRef("playbook"),
+        label: t("algorithm.title"),
+        icon: ListChecks,
+        terms: [
+          "combat",
+          "playbook",
+          "algorithm",
+          "turn",
+          "strategy",
+          "helper",
+          "combattimento",
+          "algoritmo",
+          "guida",
+          "turno",
+          "strategia",
+        ],
+      },
+    ];
+    return defs.filter((d) => matchesSearch(q, d.label, ...d.terms));
+  }, [q, onCockpit, requestPlayRef, t]);
+
   // ── Compendium (the whole SRD) ───────────────────────────────────────────────
   // Built once per locale (lazily — this body only mounts when the palette opens).
   const index = useMemo(() => {
@@ -577,6 +672,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       : [
           { heading: t("palette.groupSections"), hits: sections },
           { heading: t("palette.groupActions"), hits: actions },
+          { heading: t("palette.groupReference"), hits: referenceHits },
           { heading: t("palette.groupCharacters"), hits: characterHits },
           { heading: t("palette.groupCampaigns"), hits: campaignHits },
           { heading: t("palette.groupCompendium"), hits: compendiumHits },

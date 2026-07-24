@@ -13,7 +13,7 @@
  * never the cockpit root or the persistent Left/Right HUD.
  */
 
-import { useId, useState, type ReactNode } from "react";
+import { useCallback, useId, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { TabsContext, TAB_IDS } from "./useTabs";
@@ -37,18 +37,23 @@ export function TabsProvider({ children }: { children: ReactNode }) {
     return readonly ? "features" : "combat";
   });
 
-  /** Select a tab: update local state (render) + mirror to `?tab=` (deep-link). */
-  function selectTab(id: string): void {
-    setActiveTab(id);
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        next.set("tab", id);
-        return next;
-      },
-      { replace: true }
-    );
-  }
+  // Select a tab: update local state (render) + mirror to `?tab=` (deep-link).
+  // Memoized (stable identity) so a consumer effect (the ⌘K deep-link) can depend on
+  // it without re-firing on every provider re-render; both setters are stable.
+  const selectTab = useCallback(
+    (id: string): void => {
+      setActiveTab(id);
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set("tab", id);
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   const uid = useId();
 
