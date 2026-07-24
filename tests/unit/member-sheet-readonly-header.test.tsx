@@ -2,10 +2,10 @@
  * MemberSheetView — the DM read-only viewer's header row (owner 2026-06-12).
  *
  * Regression: the view used to stack TWO rows — a back-button row AND a
- * full-width "Read-only: you're viewing a party member's sheet" banner inside
- * the cockpit. It must render ONE compact row: the back button inline-left and
- * a slim read-only status chip (the reused `.toolbar-chip` recipe) inline-right,
- * with the full explanation on the chip's tooltip — never a second banner row.
+ * full-width read-only banner inside the cockpit. It must render ONE compact
+ * row: the back button inline-left and a slim read-only status chip (the reused
+ * `.toolbar-chip` recipe) inline-right — never a second banner row, and (since
+ * post-sweep C) never a native `title=` restating the chip's own label.
  */
 
 import { readFileSync } from "node:fs";
@@ -66,11 +66,15 @@ describe("MemberSheetView — one compact read-only header row", () => {
     renderMemberSheet();
 
     const back = screen.getByRole("button", { name: /back to campaign/i });
-    // The slim chip: visible label is the short pill text; the full sentence
-    // lives on the tooltip (progressive disclosure), reusing `.toolbar-chip`.
-    const chip = screen.getByTitle("Read-only: you're viewing a party member's sheet");
+    // The slim chip says it all itself — a short pill reusing `.toolbar-chip`,
+    // with NO native tooltip behind it (a `title=` here only restated the
+    // visible label, and touch has no gesture for one — post-sweep C).
+    const [chip] = screen
+      .getAllByRole("status")
+      .filter((el) => /read.only/i.test(el.textContent));
+    if (!chip) throw new Error("read-only chip missing");
     expect(chip).toHaveTextContent("Read-only");
-    expect(chip).toHaveAttribute("role", "status");
+    expect(chip.hasAttribute("title")).toBe(false);
     expect(chip.classList.contains("toolbar-chip")).toBe(true);
 
     // ONE compact row: both affordances share the same flex-row parent.
@@ -80,12 +84,9 @@ describe("MemberSheetView — one compact read-only header row", () => {
   it("does NOT render the old full-width banner inside the cockpit", () => {
     renderMemberSheet();
 
-    // The superseded banner carried the full sentence as VISIBLE text — it must
-    // be gone (the sentence survives only as the chip's tooltip), and the chip
-    // is the ONLY status region announcing the read-only state.
-    expect(
-      screen.queryByText("Read-only: you're viewing a party member's sheet")
-    ).not.toBeInTheDocument();
+    // The superseded banner carried a full sentence as VISIBLE text — it must be
+    // gone, and the chip is the ONLY status region announcing the read-only state.
+    expect(screen.queryByText(/you're viewing/i)).not.toBeInTheDocument();
     const readonlyStatuses = screen
       .getAllByRole("status")
       .filter((el) => /read.only/i.test(el.textContent));
