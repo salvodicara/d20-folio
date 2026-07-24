@@ -2396,16 +2396,19 @@ button.pr-dot.lg::before {
     var(--bg-surface-2)
   );
 }
-/* The ceremonial seat ornament (the winged-fleur divider, DESIGN.md §5):
-   BG3's level-up under-title divider — outward-tapering rails with open
-   scroll hooks, a descending V-fleur at centre hanging BELOW the rule in a
-   soft baked glow. The per-theme `--seat-orn` SVG (index.css) straddles the
-   1px seat (24px tall, the SVG's rule line at y=12 on the border); its baked
-   surface-2 backing occludes the rule behind the fleur, so no notch math —
-   the backing diamond hugs the fleur (~30% smaller than the fleur's box) and
-   blurs its edge in-SVG so no hard plate rim shows against the glow (the
-   review round's plate-defect fix). Decor only: no pointer events, no layout.
-   The fleur's final language follows the owner's corner-variant pick. */
+/* The ceremonial seat ornament (the winged divider, DESIGN.md §5) — BG3's
+   level-up under-title divider translated into the style-A corner language
+   (owner pick, 2026-07-24): rails tapering outward into hairpoints that end
+   in a tiny OPEN under-curl, inner ends stepping up in open-eye S-hook
+   returns (the corner volute's language, small), and the luminous centre —
+   a nested chevron pair over a descending faceted plumb hanging BELOW the
+   rule in a baked radial glow (raised per the "more wow" verdict). Nothing
+   floats: every stroke is attached to the rule end to end. The per-theme
+   `--seat-orn` SVG (index.css) straddles the 1px seat (24px tall, the SVG's
+   rule line at y=12 on the border); its baked surface-2 backing occludes the
+   rule behind the fleur, so no notch math — the backing diamond hugs the
+   fleur and blurs its edge in-SVG so no hard plate rim shows against the
+   glow. Decor only: no pointer events, no layout. */
 .modal-head::after {
   content: "";
   position: absolute;
@@ -14169,48 +14172,54 @@ button.party-avatar-btn:focus-visible {
 }
 
 /* ── Corner goldwork (the full-BG3 identity push, owner-ratified 2026-07-16;
-   REDUCED to the border-locked knot after the owner's 2026-07-24 rejection of
-   the Compass-Web — "smaller but beautiful, and it must ALIGN to the borders")
-   — the small worked-gold knot that caps the app's HERO frames: the framed
+   settled 2026-07-24 on STYLE A — the owner's pick among three drawn variants:
+   "Do style A, but you must ALIGN. And make it more wow — without breaking
+   things") — the worked-gold knot that caps the app's HERO frames: the framed
    realm masthead, the gilt-framed hero band (cockpit identity), and dialogs.
    EARNED registers only (Constitution §4.16); resting cards and quiet panels
-   stay unornamented. Mechanism: the per-theme `--frame-ornate` SVG (index.css
-   — the interim knot: two short calligraphic blades crossing the vertex with a
-   whisker overshoot, a faceted rivet diamond seating the crossing; the final
-   knot is an owner pick among three variants, rule 26) rendered through
-   `border-image` on an overlay pseudo — ONLY the corner tiles carry ink. THE
-   ONE-LINE LAW: the ornament contributes no run lines (the old inner-rail
-   wedge, whisper web, and floating crescent are dead — nothing floats, ever);
-   the host's own 1px border is THE frame line, the hosts go square
-   (border-radius 0 on the three registers) so the knot seats on a true
-   crossing, and every ornament stroke is attached to that line. The goldwork
-   SITS ON the frame like a bookbinding corner fitting (owner, 2026-07-17): the
-   SVG's rail centerline lies at 20% of the corner tile, so a border-image
-   OUTSET of `20% of 64px + 0.5px` seats the blades exactly on the host's 1px
-   border stroke and the rivet's center on the stroke's corner vertex. Outset
-   ink is paint-only overflow (no scrollbars), so hero hosts must NOT clip
-   child paint (`.modal` / `.has-crest` carry no overflow: hidden for this
-   reason). The pseudo is decor only: pointer-events none, no layout, no
-   animation; border-image proportionally shrinks the corners on small boxes
-   (phone mastheads, sm modals) so goldwork never collides. z-index 0 keeps it
-   above each host's material pseudo (`::before` at z -1); the goldwork rides
-   the frame line itself, clear of the hosts' padded (≥16px) content. */
+   stay unornamented. THE KNOT (the faithful transcription of the owner's BG3
+   spellbook-reference corner, per-theme in `--frame-ornate`, index.css): the
+   rail swells crossing the vertex in a fine whisker overshoot, ONE wave-volute
+   comma-curl rising outward on the diagonal — crown breaking over, beak
+   curling back down over an open eye — a small weld diamond seating the
+   crossing, a two-tone-struck ray-glint fan radiating from the knot into the
+   panel, and a sickle leaf pair threaded ON each rail. THE ONE-LINE LAW: the
+   ornament contributes no run lines; the host's own 1px border is THE frame
+   line, the hosts go square (border-radius 0 on the three registers) so the
+   knot seats on a true crossing, and every ornament stroke is attached to
+   that line — nothing floats, ever. Leaf ink stays within 59px of the tile
+   edge so opposing corners keep ≥4px air on the shortest host (the ~98px
+   cockpit band). The pseudo is decor only: pointer-events none, no layout, no
+   animation; its ink is paint-only overflow (no scrollbars), so hero hosts
+   must NOT clip child paint (`.modal` / `.has-crest` carry no overflow:
+   hidden for this reason). z-index 0 keeps it above each host's material
+   pseudo (`::before` at z -1); the goldwork rides the frame line itself,
+   clear of the hosts' padded (≥16px) content. */
 .page-head.framed::before,
 .folio-panel.gilt-frame::after,
 .modal::after {
   content: "";
   position: absolute;
-  inset: 0;
+  /* The fitting rule (owner, 2026-07-17 — "rilegatura"): each 64px corner
+     tile draws its rail centerline 20% (12.8px) in from the tile's outer
+     edge; insetting the paint box by -(0.2 × 64px + 0.5px) seats that
+     centerline exactly on the host's 1px border stroke and the weld diamond's
+     center on the stroke's corner vertex — at EVERY host size. */
+  inset: calc(-1 * (0.2 * 64px + 0.5px));
   pointer-events: none;
   z-index: 0;
-  border: 64px solid transparent;
-  /* 20% slice of the 320×320 SVG = the 64-unit corner tiles drawn 1:1 px
-     (percentage, and the SVG carries explicit width/height: an SVG without
-     intrinsic size defaults to 300×150 and numeric slices sample phantom
-     regions). Outset: 64px × 0.2 puts the tile's 20% centerline on the pseudo's
-     edge (the host padding box); +0.5px more centers it on the host's 1px
-     border stroke. */
-  border-image: var(--frame-ornate) 20% / 64px / calc(64px * 0.2 + 0.5px);
+  /* Four FIXED-SIZE per-corner layers (the per-theme `--frame-ornate` list:
+     tl/tr/bl/br, each `64px 64px no-repeat` in its corner) — NEVER
+     border-image, and NEVER a layout border on this pseudo. The old
+     `border: 64px solid transparent` + border-image carrier forced a 128px
+     minimum pseudo box, so any shorter host (masthead 104.5px, cockpit band
+     97.7px) kept `top` and dropped `bottom` (over-constrained abspos) and the
+     bottom corners hung 25–32px below the plate (the "everything is
+     translated downward" regression); border-image's proportional tile-shrink
+     on small boxes also mis-seats the centerline (the outset stays fixed
+     while the tile scales). Fixed-size corner backgrounds register 0px at
+     every host size by construction. */
+  background: var(--frame-ornate);
 }
 
 /* Engraved ceremonial titling (same push): the Cinzel register reads STRUCK into

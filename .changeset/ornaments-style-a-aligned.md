@@ -1,0 +1,5 @@
+---
+"d20-folio": patch
+---
+
+fix(identity): the style-A corner knot, ALIGNED — the owner's ornament pick, with the bottom-corner translation bug root-caused and fixed. The old ornament pseudo's `border: 64px solid transparent` border-image carrier forced a 128px minimum paint box, so hero frames shorter than that (the roster masthead, the cockpit band) hung their bottom corner knots 25–32px below the plate; the frame layer is now four fixed-size per-corner SVG background layers on an inset pseudo, registering 0±1px at all four corners at every host size by construction. Style A ships amplified on all three hero registers, both themes (gold in light): the reference-true wave-volute with a cleaner open eye, the two-tone-struck five-ray glint fan, the sickle leaf pair threaded on each rail, and the weld diamond — and the dialog seat divider is translated into the same language (open under-curl hairpoints, open-eye S-hook returns, a brighter luminous centre; the floating under-dot is gone).

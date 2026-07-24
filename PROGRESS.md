@@ -691,18 +691,30 @@ v0.20.0 tail) and the identity push itself (this mission). State:
   line, and the three framed hero registers went **square** (`border-radius: 0`) so the knot
   seats on a true crossing (DESIGN.md §5). The review round's defect fixes landed with it: the
   rivet mass diamond re-wrapped as a real `<path>` (it was bare text SVG dropped) and the
-  seat's occlusion plate shrunk + edge-blurred so no hard rim shows. **OPEN — owner pick
-  (rule 26):** the final knot among three drawn variants (A: faithful transcription of the
-  owner's spellbook-reference volute knot; B: the blade-and-rivet essence, wired as interim;
-  C: hairline + tiny finial) — labeled crops in the evidence scratchpad `ornaments-v2-push/
-variants/`; the seat fleur's final language follows the pick.
-- **Open: ONE decision — the corner-knot owner pick (rule 26, above).** Otherwise the full-BG3
-  identity pivot (incl. the atmosphere push) is COMPLETE (2026-07-24): PROMPT_12–25 are all
-  resolved (see the ASSET-INTEGRATION ledger above); every plate is integrated, verified, and
-  budgeted. Two OPTIONAL future-polish items remain, neither a loose end nor a regression
-  (rule 27 board is clean): sweeping the reliquary register deeper where earned (compendium
-  tome chrome, login sign-in column, wizard hero altars — enhancement, not a defect), and
-  re-shooting the README screenshots now that the art push has settled.
+  seat's occlusion plate shrunk + edge-blurred so no hard rim shows. **RESOLVED — the owner
+  picked STYLE A (2026-07-24, fifth round): "Do style A, but you must ALIGN. And make it more
+  wow — without breaking things."** Landed as one unit: (1) the ALIGN defect ROOT-CAUSED — the
+  ornament pseudo's `border: 64px solid transparent` border-image carrier forced a 128px
+  minimum box, so hosts shorter than that (masthead 104.5px, cockpit band 97.7px) dropped
+  `bottom` and hung their bottom corner knots 25–32px below the plate; FIXED at the geometry
+  seam by replacing border-image with four fixed-size per-corner SVG background layers on an
+  `inset: -13.3px` pseudo (registration 0±1px at all four corners at every host size by
+  construction — DOM- and pixel-verified in real Chromium, desktop + mobile, both themes);
+  (2) style A wired on all three registers, both themes (gold in light — the same-day gold
+  ruling): the amplified reference-true knot — rail swells + whisker overshoot, the wave-
+  volute comma-curl enlarged with a cleaner open eye, the five-ray glint fan two-tone struck,
+  the crisp sickle leaf PAIR threaded on each rail, the weld diamond; (3) the seat divider
+  translated into A's language: open under-curl hairpoints, open-eye S-hook returns, the
+  luminous chevron-over-plumb centre (glow raised per the verdict), the floating under-dot
+  dropped, surface-2 occlusion kept. Guard rewritten to pin the A anatomy + the root-cause
+  mechanism (`ornament-vocabulary.guard.test.ts`); `DESIGN.md` §5 rewritten to match.
+- **Open: NOTHING — the full-BG3 identity pivot (incl. the atmosphere push and the
+  corner-knot pick) is COMPLETE (2026-07-24):** PROMPT_12–25 are all resolved (see the
+  ASSET-INTEGRATION ledger above); every plate is integrated, verified, and budgeted. Two
+  OPTIONAL future-polish items remain, neither a loose end nor a regression (rule 27 board is
+  clean): sweeping the reliquary register deeper where earned (compendium tome chrome, login
+  sign-in column, wizard hero altars — enhancement, not a defect), and re-shooting the README
+  screenshots now that the art push has settled.
 
 **Status: SHIPPED (dark flagship) — released in v0.18.0 (2026-07-07).** The owner-ratified evolution
 of the frozen "Illuminated Folio" into its **candlelit struck-gold** form is merged to `main` and live:

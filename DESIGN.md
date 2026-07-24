@@ -1494,7 +1494,7 @@ theme-tintable, crisp at 1x and 2x. The grammar's placement rules:
   full-BG3 push (owner-ratified 2026-07-16), it BINDS the earned hero frames.** A faceted
   diamond leads a section head, caps a rail, or sits in a socket; scrollbar ends stay QUIET and
   ordinary borders are plain hairlines. On the three reliquary registers (below) the ornament
-  rides ON the frame lines themselves — corner stars, the twin rule, the ceremonial seat star —
+  rides ON the frame lines themselves — the corner knots and the ceremonial seat divider —
   never floating in the panel's content air; resting cards and ordinary panels never take frame
   goldwork. A section divider still fades to nothing at its tips and stays nodeless; the ONE
   centre-node divider is the ceremonial seat ornament on dialog heads (the p25 register — an
@@ -1508,73 +1508,79 @@ theme-tintable, crisp at 1x and 2x. The grammar's placement rules:
 
 The pieces and their ONE home (`src/styles/folio.css`; the metal tokens in `src/index.css`):
 
-- **The border-locked corner knot (the Compass-Web reduced — owner ruling 2026-07-24, the
-  fourth rejection of this surface: "less is more … smaller but beautiful, and above all it
-  must ALIGN to the borders … I want THAT kind of ornament [the BG3 menus']").** The owner's
-  own spellbook screenshot is the binding reference: BG3's active-panel corner is a SMALL knot
-  seated tight ON a single hairline — rail terminals crossing with a short overshoot into
-  curling wave-volute tips, a short ray-glint at the knot, a slender leaf threaded ON the rail
-  further out — every stroke attached to the border line, no interior webs, nothing detached.
-  **The one-line law (guard-pinned):** the ornament contributes NO run lines — the old inner
-  rail wedge, whisper compass web, and floating crescent are DEAD (nothing floats, ever); the
-  host's own 1px border is THE frame line; and the three framed registers go **SQUARE**
-  (`border-radius: 0`) so the knot seats on a true crossing of the host's own border — a
-  rounded arc curving under a squared knot reads as a second, non-registering line (the exact
-  "doesn't fit inside the borders" defect). **The interim knot (shipped)** is the Compass-Web's
-  essence: two short **calligraphic blades** swelling along the rails (~27px reach, outer ends
-  thinning to exactly the hairline's 1px weight so they dissolve into the line), crossing the
-  vertex in a fine **whisker overshoot** (~2.8px, tips on the rail axis), seated by the
-  **faceted rivet diamond** — and nothing else. The FINAL knot is an owner pick (rule 26) among
-  three drawn variants held in the ornament lab (A: a faithful transcription of the reference's
-  volute-knot anatomy; B: this interim blade-and-rivet essence; C: hairline + a tiny finial) —
-  crops in the evidence scratchpad, `variants/`. EXACTLY three earned registers wear it
-  (Constitution §4.16): the framed realm masthead (`.page-head.framed::before`), the gilt-framed
-  hero band (`.folio-panel.gilt-frame::after` — cockpit identity), and dialogs (`.modal::after`).
-  Mechanism: ONE per-theme 320×320 SVG drawn 1:1 px (`--frame-ornate`, `src/index.css` — the
-  64-unit corner tile renders at 64px, so hairlines land on real pixels) rendered through
-  `border-image: var(--frame-ornate) 20% / 64px / calc(64px * 0.2 + 0.5px)` on an overlay
-  pseudo; only the corner tiles carry ink (edge slices are empty); `border-image`
-  proportionally shrinks corners on small boxes (phone mastheads, `sm` modals). **The fitting
-  rule (owner, 2026-07-17 — "rilegatura", kept):** the goldwork sits ON the frame like a
-  bookbinding fitting — the SVG's rail centerline lies at 20% of the corner tile, so the
-  border-image OUTSET of `20% × 64px + 0.5px` seats the blades exactly on the host's 1px
-  border stroke and the rivet's center on the stroke's corner vertex. Outset ink is paint-only
-  overflow (no scrollbars), but it CAN be clipped by the host's own child-paint clipping —
-  hero hosts therefore carry no `overflow: hidden` (`.modal` scroll-clips on `.modal-body`;
-  the masthead crest self-clips via `mask-size` on an `inset: 0` element; the full-bleed
-  `.modal-head` gradient band is square like its card).
+- **The border-locked corner knot — STYLE A, the owner's pick (2026-07-24: "Do style A, but
+  you must ALIGN. And make it more wow — without breaking things"; closing the rejection arc
+  that began "less is more … smaller but beautiful, and above all it must ALIGN to the
+  borders").** The owner's own spellbook screenshot is the binding reference: BG3's
+  active-panel corner is a knot seated tight ON a single hairline. **The knot (shipped):**
+  the rail **swells** crossing the vertex in a fine **whisker overshoot** (tips on the rail
+  axis — attached), ONE **wave-volute** comma-curl rising outward on the diagonal — crown
+  breaking over, beak curling back down over a genuinely **open eye** — a small **weld
+  diamond** seating the crossing, a **five-ray glint fan** radiating from the knot into the
+  panel (two-tone struck: dark under-shadow + top-left glint over the body), and a crisp
+  **sickle leaf pair** threaded ON each rail (the reference's paired second leaf; leaf ink
+  ends ≤59px in-tile so opposing corners keep ≥4px air on the shortest host, the ~98px
+  cockpit band). **The one-line law (guard-pinned):** the ornament contributes NO run lines —
+  nothing floats, ever; the host's own 1px border is THE frame line; and the three framed
+  registers go **SQUARE** (`border-radius: 0`) so the knot seats on a true crossing of the
+  host's own border — a rounded arc curving under a squared knot reads as a second,
+  non-registering line (the exact "doesn't fit inside the borders" defect). EXACTLY three
+  earned registers wear it (Constitution §4.16): the framed realm masthead
+  (`.page-head.framed::before`), the gilt-framed hero band (`.folio-panel.gilt-frame::after` —
+  cockpit identity), and dialogs (`.modal::after`).
+  **Mechanism (the registration fix, 2026-07-24):** the per-theme `--frame-ornate` token is a
+  list of FOUR fixed-size per-corner SVG background layers (tl/tr/bl/br, each a 64×64 tile
+  drawn 1:1 px and anchored `left top` / `right top` / `left bottom` / `right bottom` at
+  `64px 64px no-repeat`) painted on an overlay pseudo inset
+  `calc(-1 * (0.2 * 64px + 0.5px))`. **The fitting rule (owner, 2026-07-17 — "rilegatura",
+  kept):** each tile draws its rail centerline at 20% (12.8px) of the tile, so the -13.3px
+  inset seats the swells exactly on the host's 1px border stroke and the weld diamond's
+  center on the stroke's corner vertex — at EVERY host size. NEVER border-image, and NEVER a
+  layout border on the pseudo (guard-pinned): the old `border: 64px solid transparent` +
+  border-image carrier forced a 128px minimum pseudo box, so hosts shorter than that
+  (masthead 104.5px, cockpit band 97.7px) kept `top`, dropped `bottom`, and hung their bottom
+  corners 25–32px below the plate — the owner's "everything is translated downward"
+  rejection; border-image's proportional tile-shrink on small boxes also mis-seats the
+  centerline (the outset stays fixed while the tile scales). Fixed-size corner layers
+  register 0±1px at all four corners at every host size by construction (verified by DOM +
+  pixel measurement in real Chromium). Corner ink is paint-only overflow (no scrollbars), but
+  it CAN be clipped by the host's own child-paint clipping — hero hosts therefore carry no
+  `overflow: hidden` (`.modal` scroll-clips on `.modal-body`; the masthead crest self-clips
+  via `mask-size` on an `inset: 0` element; the full-bleed `.modal-head` gradient band is
+  square like its card).
   **The metal is DIMENSIONAL, not line-art (the two-tone strike, kept):** every STRUCK member
   carries a light/shade pair, built the same way the panel embossing works. Dark = raised
   struck gold — the gold-300 body sits on a near-black under-shadow seat offset below-right
-  (+1,+1.4 px) with a faint gold-200 top-edge glint above-left; the rivet is truly faceted
-  (gold-200 lit kite / warm flanks / shaded foot / deep core). Light = **GOLD, not bronze**
-  (owner, 2026-07-24 — "they can be gold too in light theme"; supersedes the engraved-bronze
-  treatment): a deep antique-gold body (#94741f — true gold hue, dark enough to hold on cream)
-  INVERTED to the letterpress logic (like `--engrave-title`) — a warm-cream understroke
-  below-right (the groove's lit far wall) + a faint umber upper shadow wall; the rivet is an
-  intaglio facet set.
-  Construction rule (guard-pinned in `ornament-vocabulary.guard.test.ts`): the struck geometry
-  is mirrored to the four corners UNFILLED first and toned AFTER (offset tone layers over the
-  whole four-corner closure), and the rivet facet group (4-fold symmetric, vertex-centered) is
-  placed per-corner unflipped via `use x/y` — toning inside the mirrored unit would flip the
-  bevel light upside-down on the bottom corners. Decor only: `pointer-events: none`, no layout,
-  no animation. ⚠️ The SVG data-URIs carry explicit `width`/`height` attributes — an SVG with
-  no intrinsic size defaults to 300×150 and border-image slices sample phantom regions; the
-  slice is a PERCENTAGE for the same reason.
-- **The ceremonial seat ornament (the winged-fleur divider).** Dialog heads seat BG3's
-  level-up under-title divider: two long rails tapering to hairpoints OUTWARD, each inner
-  end rising in a small open scroll HOOK with an under-dot, and a descending **V-fleur**
-  at centre — two nested chevron wings over a faceted plumb point that hangs BELOW the rule,
-  seated in a soft baked radial glow. The per-theme `--seat-orn` SVG (`src/index.css`, drawn 1:1
-  at 260×24 — no border-image scaling, so hairlines land on real pixels) mounts on
+  (+1,+1.4 px) with a faint gold-200 top-edge glint above-left; the fan carries its own
+  softer strike (+0.6,+0.85 shadow / −0.35,−0.5 glint) so the rays read lit, not flat. Light
+  = **GOLD, not bronze** (owner, 2026-07-24 — "they can be gold too in light theme";
+  supersedes the engraved-bronze treatment): a deep antique-gold body (#94741f — true gold
+  hue, dark enough to hold on cream) INVERTED to the letterpress logic (like
+  `--engrave-title`) — a warm-cream understroke below-right (the groove's lit far wall) + a
+  faint umber upper shadow wall.
+  Construction rule (guard-pinned in `ornament-vocabulary.guard.test.ts`): each corner SVG
+  mirrors the UNFILLED master geometry first (tl unmirrored; tr/bl/br via one matrix each)
+  and tones AFTER with untransformed screen-space offsets — toning inside the mirrored unit
+  would flip the bevel light upside-down on the bottom corners. Decor only:
+  `pointer-events: none`, no layout, no animation. ⚠️ The SVG data-URIs carry explicit
+  `width`/`height` attributes (64×64), and the CSS pins `background-size: 64px 64px`, so
+  hairlines land on real pixels at 1:1.
+- **The ceremonial seat ornament (the winged divider — style-A language).** Dialog heads
+  seat BG3's level-up under-title divider translated into the corner knot's language: two
+  long rails tapering to hairpoints OUTWARD, each outer tip ending in a tiny **open
+  under-curl**, each inner end rising in a small **open-eye S-hook return** (the corner
+  volute, small), and the **luminous centre** — a nested chevron pair over a descending
+  faceted plumb point that hangs BELOW the rule, seated in a baked radial glow (raised per
+  the 2026-07-24 "more wow" verdict; the small chevron re-strikes in the lit tone). Nothing
+  floats: every stroke is attached to the rule end to end (the old floating under-dot is
+  dead). The per-theme `--seat-orn` SVG (`src/index.css`, drawn 1:1 at 260×24) mounts on
   `.modal-head::after`, straddling the 1px seat rule (the SVG's rule line at y=12 on the
   border); its backing diamond is baked in the theme's `--bg-surface-2` so the rule passes
-  BEHIND the fleur (the seat occlusion) with zero notch math (the bake is drift-guarded against
-  the token). The backing **hugs the fleur** (~30% smaller than the fleur's box) and blurs its
-  edge in-SVG (`feGaussianBlur`), so no hard plate rim ever shows against the glow — the review
-  round's plate-defect fix (guard-pinned). Same mirror-then-tone two-tone strike at sub-pixel
-  offsets; dark strikes gold, light letterpresses GOLD (the 2026-07-24 gold ruling — never
-  bronze). The fleur's final language follows the owner's corner-variant pick (rule 26).
+  BEHIND the fleur (the seat occlusion) with zero notch math (the bake is drift-guarded
+  against the token). The backing **hugs the fleur** and blurs its edge in-SVG
+  (`feGaussianBlur`), so no hard plate rim ever shows against the glow (guard-pinned). Same
+  mirror-then-tone two-tone strike at sub-pixel offsets; dark strikes gold, light
+  letterpresses GOLD (the 2026-07-24 gold ruling — never bronze).
 - **Engraved ceremonial titling** (same push) — the Cinzel register reads STRUCK into the plate
   via the per-theme `--engrave-title` text-shadow (`src/index.css`): dark = a tight shade seat +
   faint warm gold underglow; light = a letterpress bright understroke + umber lift. Applied to
