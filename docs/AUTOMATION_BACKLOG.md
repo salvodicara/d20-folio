@@ -370,9 +370,15 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
 - [ ] **RA-25 — Surprise (Disadvantage on initiative) unmodeled.** _Combat start · GAP · S3 ·
       rare._ SRD "Surprise". The initiative advantage tri-state has no disadvantage leg. Fix: extend
       the tri-state to adv/auto/off/dis. **T3.**
-- [ ] **RA-26 — Jump distances are computed but dead.** _Movement · GAP · S3._ `compute.jumpDistance`
-      (long = STR score ft, high = 3 + STR mod — RAW-correct) has zero callers. Fix: surface beside
-      Speed/Athletics. **T3.**
+- [x] **RA-26 — Jump distances are computed but dead.** _Movement · GAP · S3._ `compute.jumpDistance`
+      (long = STR score ft, high = 3 + STR mod — RAW-correct) has zero callers. **SHIPPED
+      (2026-07-24):** `jumpDistance(effectiveScores.STR)` now renders as two read-only rows (Long
+      Jump / High Jump) in the LeftHud movement/senses rail beside the derived speeds, formatted via
+      `localeDistance` (EN ft / IT metric, D3); reuses the pre-existing `abilities.longJump` /
+      `abilities.highJump` keys (both locales already present — zero new i18n). Reads the EFFECTIVE
+      STR (a set-STR item raises it), the same single source the encumbrance capacity uses (rule 6);
+      read-only because no SRD grant modifies jump. Regression: `left-hud.test.tsx` (EN 8/2 ft, IT
+      2,4/0,6 m). **T3.**
 - [ ] **RA-27 — Push/drag/lift (STR×30) computed but never shown.** _Encumbrance · GAP · S3._
       `carryingCapacity().pushDragLift` unused; the carry comparison ships. One line on the
       inventory encumbrance VM. **T3.**

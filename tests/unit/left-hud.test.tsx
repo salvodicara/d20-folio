@@ -93,6 +93,31 @@ describe("LeftHud", () => {
     expect(screen.getByText(/60 ft/i)).toBeInTheDocument();
   });
 
+  it("RA-26 — surfaces STR-derived jump distances (long = STR score ft, high = 3 + STR mod ft)", () => {
+    load(); // MOCK effective STR 8 → long 8 ft; high = max(0, 3 + (−1)) = 2 ft
+    render(<LeftHud />);
+    const longRow = screen.getByText("Long Jump").closest("div") as HTMLElement;
+    expect(within(longRow).getByText("8 ft")).toBeInTheDocument();
+    const highRow = screen.getByText("High Jump").closest("div") as HTMLElement;
+    expect(within(highRow).getByText("2 ft")).toBeInTheDocument();
+  });
+
+  it("RA-26 — renders jump distances in IT metric (D3)", async () => {
+    const i18n = (await import("@/i18n")).default;
+    await i18n.changeLanguage("it");
+    try {
+      load();
+      render(<LeftHud />);
+      // long 8 ft → 2,4 m; high 2 ft → 0,6 m (1.5 m per 5 ft, Italian comma).
+      const longRow = screen.getByText("Salto in Lungo").closest("div") as HTMLElement;
+      expect(within(longRow).getByText("2,4 m")).toBeInTheDocument();
+      const highRow = screen.getByText("Salto in Alto").closest("div") as HTMLElement;
+      expect(within(highRow).getByText("0,6 m")).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage("en");
+    }
+  });
+
   // ── B1: condition-consequence projection (auto-fail save mark) ────────────
   describe("auto-fail save mark (B1)", () => {
     it("shows no auto-fail mark when no condition gates saves", () => {

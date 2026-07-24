@@ -28,6 +28,7 @@ import {
   abilityModifier,
   effectiveProficiencyBonus,
   effectiveAbilityScores,
+  jumpDistance,
 } from "@/lib/compute";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
@@ -219,6 +220,12 @@ export function LeftHud() {
     ? (charData.speedOverride ?? effectiveWalkingSpeedFt(characterDoc, getEquipment))
     : 0;
   const { senses, speeds } = deriveSensesAndSpeeds(fullAggregate, walkingSpeedFt);
+  // RA-26 — jump distances (2024 PHB, running start): long = STR SCORE ft,
+  // high = 3 + STR MOD ft (min 0). Pure STR-derived — no SRD grant modifies it —
+  // so read-only movement facts beside the derived speeds. Reads the EFFECTIVE
+  // STR (a set-STR item raises it), the same single source the encumbrance
+  // capacity uses (rule 6).
+  const jump = jumpDistance(effectiveScores.STR);
   // #68 — passive scores are override-first: the computed value is the default, an
   // explicit override replaces it (reset returns to computed). Numbers + breakdown
   // come from the SHARED builder; the rail localizes the label + the tip lines.
@@ -558,6 +565,21 @@ export function LeftHud() {
               </div>
             );
           })}
+          {/* RA-26 — always-present jump distances (read-only; STR-derived, no
+              override, no SRD grant seam). Two rows echoing the derived-speed rows
+              above, formatted via localeDistance (EN ft / IT metric, D3). */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-text-secondary">{t("abilities.longJump")}</span>
+            <span className="font-mono tabular-nums text-text-primary">
+              {localeDistance(jump.long, locale)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-text-secondary">{t("abilities.highJump")}</span>
+            <span className="font-mono tabular-nums text-text-primary">
+              {localeDistance(jump.high, locale)}
+            </span>
+          </div>
         </div>
       </RailSection>
     </div>
