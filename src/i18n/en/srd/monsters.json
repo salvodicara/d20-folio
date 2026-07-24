@@ -5568,7 +5568,23 @@
   },
   "vampire.traits.vampire-weakness": {
     "name": "Vampire Weakness",
-    "text": "The vampire has these weaknesses: Forbiddance. The vampire can't enter a residence without an invitation from an occupant. Running Water. The vampire takes 20 Acid damage if it ends its turn in running water. Stake to the Heart. If a weapon that deals Piercing damage is driven into the vampire's heart while the vampire has the Incapacitated condition in its resting place, the vampire has the Paralyzed condition until the weapon is removed. Sunlight. The vampire takes 20 Radiant damage if it starts its turn in sunlight. While in sunlight, it has Disadvantage on attack rolls and ability checks."
+    "text": "The vampire has these weaknesses:"
+  },
+  "vampire.traits.forbiddance": {
+    "name": "Forbiddance",
+    "text": "The vampire can't enter a residence without an invitation from an occupant."
+  },
+  "vampire.traits.running-water": {
+    "name": "Running Water",
+    "text": "The vampire takes 20 Acid damage if it ends its turn in running water."
+  },
+  "vampire.traits.stake-to-the-heart": {
+    "name": "Stake to the Heart",
+    "text": "If a weapon that deals Piercing damage is driven into the vampire's heart while the vampire has the Incapacitated condition in its resting place, the vampire has the Paralyzed condition until the weapon is removed."
+  },
+  "vampire.traits.sunlight": {
+    "name": "Sunlight",
+    "text": "The vampire takes 20 Radiant damage if it starts its turn in sunlight. While in sunlight, it has Disadvantage on attack rolls and ability checks."
   },
   "vampire.actions.multiattack": {
     "name": "Multiattack (Vampire Form Only)",

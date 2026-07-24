@@ -7,8 +7,8 @@ full bilingual EN + IT statblock catalogue, completing the public 330-monster co
 **Tarrasque** (CR 30 `titan`), the legendary **Vampire** (CR 13, with its `xpInLair` 11,500 lair
 print) plus vampire-spawn and vampire-familiar, the legendary **Unicorn**, the five lycanthropes
 (werebear · wereboar · wererat · weretiger · werewolf), the vrock · water-elemental fiends-and-
-elementals, the treant · troll · wight · wraith · will-o-wisp · xorn, the nine **young dragons**
-(black · blue · brass · bronze · copper · gold · green · silver · white) plus the white dragon
+elementals, the treant · troll · wight · wraith · will-o-wisp · xorn, the ten **young dragons**
+(black · blue · brass · bronze · copper · gold · green · red · silver · white) plus the white dragon
 wyrmling, and the tough · tough-boss · warrior-infantry · warrior-veteran NPCs. Structured
 attack/save/spellcasting facts are pinned against the printed prose by the corpus guard.
 

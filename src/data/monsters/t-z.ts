@@ -424,6 +424,10 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       { id: "misty-escape", kind: "narrative" },
       { id: "spider-climb", kind: "narrative" },
       { id: "vampire-weakness", kind: "narrative" },
+      { id: "forbiddance", kind: "narrative" },
+      { id: "running-water", kind: "narrative" },
+      { id: "stake-to-the-heart", kind: "narrative" },
+      { id: "sunlight", kind: "narrative" },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },

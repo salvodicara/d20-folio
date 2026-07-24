@@ -5568,7 +5568,23 @@
   },
   "vampire.traits.vampire-weakness": {
     "name": "Debolezze dei vampiri",
-    "text": "Il vampiro ha le seguenti debolezze: Acqua corrente. Il vampiro subisce 20 danni da Acido se termina il suo turno nell'acqua corrente. Luce del sole. Il vampiro subisce 20 danni Radiosi quando inizia il suo turno alla luce del sole. Finché è esposto alla luce del sole, subisce svantaggio a tiri per colpire e prove di caratteristica. Paletto nel cuore. Se un'arma che infligge danni Perforanti gli viene conficcata nel cuore mentre è Incapacitato nel suo luogo di riposo, il vampiro è Paralizzato finché non viene rimossa l'arma. Proibizione. Il vampiro non può entrare in casa di qualcuno se non viene invitato da chi vi risiede."
+    "text": "Il vampiro ha le seguenti debolezze:"
+  },
+  "vampire.traits.forbiddance": {
+    "name": "Proibizione",
+    "text": "Il vampiro non può entrare in casa di qualcuno se non viene invitato da chi vi risiede."
+  },
+  "vampire.traits.running-water": {
+    "name": "Acqua corrente",
+    "text": "Il vampiro subisce 20 danni da Acido se termina il suo turno nell'acqua corrente."
+  },
+  "vampire.traits.stake-to-the-heart": {
+    "name": "Paletto nel cuore",
+    "text": "Se un'arma che infligge danni Perforanti gli viene conficcata nel cuore mentre è Incapacitato nel suo luogo di riposo, il vampiro è Paralizzato finché non viene rimossa l'arma."
+  },
+  "vampire.traits.sunlight": {
+    "name": "Luce del sole",
+    "text": "Il vampiro subisce 20 danni Radiosi quando inizia il suo turno alla luce del sole. Finché è esposto alla luce del sole, subisce svantaggio a tiri per colpire e prove di caratteristica."
   },
   "vampire.actions.multiattack": {
     "name": "Multiattacco (solo in forma di vampiro)",
