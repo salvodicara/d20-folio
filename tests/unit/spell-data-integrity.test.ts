@@ -120,6 +120,59 @@ describe("spell-data integrity", () => {
     }
   });
 
+  it("RA-23 — every gp-priced material component carries structured costGp/consumed (equivalence lock)", () => {
+    // Derive the expected facts INDEPENDENTLY from the shipped EN Components prose
+    // (the SRD source of truth) so this catches arithmetic/typo/omission, not just
+    // a re-pin: costGp = the first gp figure named, consumed = a "consume" clause.
+    const GP = /([\d,]+)\s*\+?\s*gp/i; // first gp figure
+    for (const s of spells) {
+      // SRD spells only — pack-spell priced-material rows are pinned in
+      // `content-pack/tests/unit/spell-data-integrity.pack.test.ts` (the same
+      // partition M08/M10/M01 use for pack content).
+      if (s.source !== "SRD") continue;
+      const prose = srd("spell", `${s.id}.components`, "material", "en");
+      const digits = GP.exec(prose)?.[1];
+      if (digits != null) {
+        const expected = Number(digits.replace(/,/g, ""));
+        expect(s.components.costGp, `${s.id} costGp`).toBe(expected);
+        expect(s.components.m, `${s.id} priced ⇒ m`).toBe(true);
+        expect(s.components.consumed ?? false, `${s.id} consumed`).toBe(
+          /consume/i.test(prose)
+        );
+      } else {
+        // No gp figure in prose ⇒ no structured cost (guards a stray costGp).
+        expect(s.components.costGp, `${s.id} unpriced`).toBeUndefined();
+      }
+    }
+  });
+
+  it("RA-23 — costGp/consumed are lean, well-formed, and paired", () => {
+    for (const s of spells) {
+      if (s.components.costGp != null) {
+        expect(
+          Number.isInteger(s.components.costGp) && s.components.costGp > 0,
+          s.id
+        ).toBe(true);
+      }
+      // consumed is only ever true or omitted (never an explicit false) …
+      expect([true, undefined], `${s.id} consumed value`).toContain(
+        s.components.consumed
+      );
+      // … and only where a cost is present.
+      if (s.components.consumed) {
+        expect(s.components.costGp, `${s.id} consumed⇒cost`).toBeDefined();
+      }
+    }
+    // Spot pins (the ledger's examples + a priced-but-not-consumed case).
+    expect(getSpellById("revivify")?.components).toMatchObject({
+      m: true,
+      costGp: 300,
+      consumed: true,
+    });
+    expect(getSpellById("chromatic-orb")?.components).toMatchObject({ costGp: 50 });
+    expect(getSpellById("chromatic-orb")?.components.consumed).toBeUndefined();
+  });
+
   // (M10 — the Dawn/Sickening Radiance "Exotic" provenance pins are pack
   // content; they live in `content-pack/tests/unit/spell-data-integrity.pack.test.ts`.)
 

@@ -360,11 +360,23 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       already handled rises. Regression: `character-infer.test.ts` (the pure helper — rise/decrease/
       no-mod-change/pin-preserved/floor/husk) + `left-hud.test.tsx` (CON 14→16 → 71, 14→12 → 53).
       **T2.**
-- [ ] **RA-23 — Costly/consumed material components are not modeled.** _Spellcasting · GAP · S3 ·
+- [x] **RA-23 — Costly/consumed material components are not modeled.** _Spellcasting · GAP · S3 ·
       every-session at mid levels (Revivify's consumed 300 GP diamond, Chromatic Orb's 50 GP…)._
       SRD "Material (M)". Code: `components.m` is a bare boolean. Fix: optional `{costGp, consumed}`
       on `SrdSpellData.components` + a cast-card chip; the data fill rides the later content sweep.
-      **T2** schema + sweep.
+      **SHIPPED wave 4 (2026-07-24):** additive optional `costGp?`/`consumed?` on
+      `SrdSpellData.components` (the primary priced component + whether the spell consumes it), FILLED
+      for all 53 gp-priced SRD spells (derived from each spell's shipped EN Components prose — the
+      source of truth), plus a `buildMaterialCostTag` helper that leads the Spells-tab card's tag
+      foot with a compact "M: 300 gp, consumed" chip (`spells.materialCost`/`materialCostConsumed`,
+      EN gp / IT mo, EN + IT) on the surface you cast from. Never prose-parsed at render; custom
+      spells never match. No character-schema/derived-value change → zero live-user impact.
+      Regression: `spell-data-integrity.test.ts` (an equivalence lock deriving expected
+      costGp/consumed from the EN prose across every SRD spell + a lean-data/pairing lock),
+      `spell-card-material-cost.test.ts` (the chip helper — priced/consumed, priced-only,
+      unpriced→null, custom→null). **PACK FOLLOW-UP:** 17 pack spells carry a priced material
+      (`content-pack/i18n/en/srd/spells.json`) and need the same fill + a pack-side equivalence lock —
+      out of scope here (frozen pack). **T2** schema + sweep.
 - [x] **RA-24 — Ritual casts show no "+10 minutes" note.** _Spellcasting · GAP · S3._ SRD "Ritual".
       One localized line on the ritual affordance. **SHIPPED wave 4 (2026-07-24):** the Spells-tab
       card now carries a "+10 min · no slot" (`spells.ritualNote`, EN + IT) `uc-tag` chip gated on

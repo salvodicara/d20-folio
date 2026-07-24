@@ -194,3 +194,17 @@ export function buildFacts(vm: SpellCardVM, t: TFunction): SpellFact[] {
   ];
   return rows.filter((f): f is SpellFact => f != null && f.value !== "");
 }
+
+/**
+ * RA-23 — the costly/consumed material-component chip ("M: 300 gp, consumed"), or
+ * null when the spell has no priced material component. Reads the STRUCTURED
+ * `components.costGp`/`consumed` (never the prose); custom spells (`vm.data ===
+ * null`) never match. The unit ("gp"/"mo") is baked into the localized string.
+ */
+export function buildMaterialCostTag(vm: SpellCardVM, t: TFunction): string | null {
+  const comp = vm.data?.components;
+  if (comp?.costGp == null) return null;
+  return t(comp.consumed ? "spells.materialCostConsumed" : "spells.materialCost", {
+    gp: comp.costGp,
+  });
+}

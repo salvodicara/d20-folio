@@ -36,6 +36,8 @@
     "noSpellsMatch": "Nessun incantesimo corrisponde alla ricerca.",
     "noSpellsFilter": "Nessun incantesimo corrisponde al filtro corrente.",
     "material": "Materiale",
+    "materialCost": "M: {{gp}} mo",
+    "materialCostConsumed": "M: {{gp}} mo, consumato",
     "saveType": "Salvezza",
     "damageType": "Danno",
     "spellDC": "CD Tiro Salvezza",

@@ -764,11 +764,20 @@ export interface SrdSpellData {
   reactionTrigger?: ReactionTrigger;
   /** Whether this spell can be cast as a ritual */
   ritual: boolean;
-  /** Spell components */
+  /**
+   * Spell components. `costGp`/`consumed` (RA-23) are the STRUCTURED cost facts
+   * for a Material (M) component with a GP price — the FIRST gp figure named in
+   * the SRD Components line (the primary priced component; the compendium prose
+   * carries the full breakdown) + whether the spell consumes it. Set together,
+   * only on `m: true` spells. Omitted when the material has no gp cost; never
+   * write `consumed: false` (lean data — absent means not consumed).
+   */
   components: {
     v: boolean;
     s: boolean;
     m: boolean;
+    costGp?: number;
+    consumed?: boolean;
   };
   /** Whether the spell requires concentration */
   concentration: boolean;

@@ -40,6 +40,7 @@ import {
   buildVerdict,
   buildGloss,
   buildFacts,
+  buildMaterialCostTag,
   spellVerdictOutcome,
   spellCardSlot,
 } from "./spell-card-helpers";
@@ -94,8 +95,13 @@ export const SpellCard = memo(function SpellCard({
   const verdictOutcome = spellVerdictOutcome(vm);
   const facts = buildFacts(vm, t);
 
-  // Detail tags (ritual note / recurrence cadence / ability-override / MASTERY / SIGNATURE / Custom).
+  // Detail tags (material cost / ritual note / recurrence cadence / ability-override /
+  // MASTERY / SIGNATURE / Custom).
   const tags: string[] = [];
+  // RA-23 — a priced Material (M) component ("M: 300 gp, consumed"), leading the
+  // tag row since it is a hard resource the cast spends. null for unpriced/custom.
+  const materialTag = buildMaterialCostTag(vm, t);
+  if (materialTag) tags.push(materialTag);
   // RA-24 — the ritual-cast trade-off, paired with the Ritual affordance (SRD
   // "Ritual": +10 minutes, spends no slot). Gated on `vm.canRitual` so the note
   // shows exactly when the Ritual cast button does.

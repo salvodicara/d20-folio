@@ -217,7 +217,16 @@ branch on a localized/prose string). Both consumers that drop the duration row f
 combat action summary in `smart-tracker`, the spell card in `spells-view`) read this boolean; the
 localized duration DISPLAY string still lives in `src/i18n/<locale>/srd/spells.json` and resolves only at
 the render boundary. Omitted (falsy) for any non-instantaneous spell — derived once from the canonical EN
-duration at edit time, never re-parsed in code. The S12b **`diceByLevel`** extension reaches the level-scaled `aura` `ranged-attack` /
+duration at edit time, never re-parsed in code. **Costly material component**
+(`components.costGp?` / `components.consumed?`, RA-23) — the STRUCTURED cost facts for a priced Material
+(M) component: `costGp` is the FIRST/primary gp figure named in the SRD Components line (the compendium
+prose keeps the full breakdown), `consumed` marks a spell that consumes it. Set together, only on
+`m: true` spells, filled for the 53 gp-priced SRD spells and derived once from the canonical EN
+Components prose at edit time (never re-parsed in code); omitted when the material has no gp cost, and
+`consumed` is written `true` or omitted, never `false` (lean data, like `instantaneous`). The
+`buildMaterialCostTag` edge helper formats a compact "M: 300 gp, consumed" chip
+(`spells.materialCost`/`materialCostConsumed`, EN gp / IT mo) that leads the Spells-tab card's tag foot
+— the surface you cast from; custom spells never match. The S12b **`diceByLevel`** extension reaches the level-scaled `aura` `ranged-attack` /
 `heal` effect (Circle-of-Stars Archer/Chalice 1d8 → 2d8 at Druid 10) and the `form-attack` `damageDie`
 (the Starry-Form Archer attack row) through the SAME shared "highest threshold ≤ level" helper
 `pickDiceByLevel` the `ActionAttack.diceByLevel` resolver uses — one rule, three consumers (aura presenter

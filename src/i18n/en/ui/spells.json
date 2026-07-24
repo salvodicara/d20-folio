@@ -36,6 +36,8 @@
     "noSpellsMatch": "No spells match your search.",
     "noSpellsFilter": "No spells match the current filter.",
     "material": "Material",
+    "materialCost": "M: {{gp}} gp",
+    "materialCostConsumed": "M: {{gp}} gp, consumed",
     "saveType": "Save",
     "damageType": "Damage",
     "spellDC": "Save DC",
