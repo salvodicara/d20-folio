@@ -1608,6 +1608,16 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       `advantage-rail.test.ts` (Champion + Sentinel Shield → each fact once, no restated label in
       either locale), fail-before/pass-after.
 
+- [x] **PS-H (three minor sheet defects).** FIXED 2026-07-24. (h1) `DyingBanner` bailed on
+      `current > 0`, so an Exhaustion-6 death — which kills at FULL HP — raised no banner at all;
+      it now fires for ANY verdict the one shared `isCharacterDead` predicate returns, names the
+      cause from the existing labels, and stays reversible (lowering Exhaustion clears it). The
+      0-HP TOOLS (roll entry, pips, quick heal, at-0 interrupts) stay bound to `current <= 0`.
+      (h2) the spell-card verdict chip read a lowercase "spell attack" beside Title-Case siblings
+      (Heal / Save / Utility) — Title Case in EN + IT. (h3) the Fast travel pace printed its
+      penalty with an ASCII hyphen ("-5") instead of the app's true minus. Regressions in
+      `dying-banner.test.tsx`, `spell-card-verdict.test.ts`, `travel-pace.test.ts`.
+
 ---
 
 ## Correctness + exposure batch (workstream D)

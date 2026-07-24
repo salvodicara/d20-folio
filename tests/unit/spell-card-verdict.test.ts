@@ -19,6 +19,8 @@ import {
 import type { SpellCardVM } from "@/lib/views/spells-view";
 import { getSpellById } from "@/data/spells";
 import type { TFunction } from "i18next";
+import enSpells from "@/i18n/en/ui/spells.json";
+import itSpells from "@/i18n/it/ui/spells.json";
 
 /** A minimal SRD card VM around a real spell's data (only the verdict path is exercised). */
 function vmFor(id: string): SpellCardVM {
@@ -143,5 +145,26 @@ describe("spell-card verdict reads the structured dice (S12)", () => {
     // Power Word Heal restores ALL HP — `effectTag: "heal"`, no `healDice`.
     expect(spellVerdictOutcome(vmFor("power-word-heal"))).toBe("heal");
     expect(buildVerdict(vmFor("power-word-heal"), t)).toBe("Heal");
+  });
+});
+
+// REGRESSION (post-sweep h2) — the spell-attack verdict shipped lowercase ("spell
+// attack" / "attacco incantesimo") while every sibling chip word is Title Case
+// (Heal, Save, Utility), and the same key labels a facts-grid row.
+describe("the verdict-chip vocabulary is Title Case in both locales", () => {
+  it.each([
+    ["en", enSpells.spells],
+    ["it", itSpells.spells],
+  ])("%s", (_locale, spells) => {
+    const words = [
+      spells.spellAttack,
+      spells.healVerdict,
+      spells.saveBadge,
+      spells.utility,
+    ];
+    // Every word of every chip label opens with a capital (no function words here).
+    expect(
+      words.filter((w) => w.split(/\s+/).some((part) => /^\p{Ll}/u.test(part)))
+    ).toEqual([]);
   });
 });

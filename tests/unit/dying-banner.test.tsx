@@ -119,4 +119,26 @@ describe("DyingBanner — RA-11 death-save roll entry + the verdict label", () =
     expect(screen.getByText(/^dead$/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/death-save d20/i)).not.toBeInTheDocument();
   });
+
+  // REGRESSION (post-sweep h1) — the banner bailed on `current > 0`, so the
+  // loudest death in the game (Exhaustion 6, which kills at FULL HP) raised no
+  // banner at all. It now fires for any verdict the shared `isCharacterDead`
+  // predicate returns, and stays reversible: lowering Exhaustion clears it.
+  it("EXHAUSTION 6: the fallen banner fires at full HP and names its cause", () => {
+    load({ exhaustion: 6 });
+    render(<DyingBanner />);
+    const strip = screen.getByRole("status");
+    expect(within(strip).getByText(/^dead$/i)).toBeInTheDocument();
+    expect(strip.textContent).toMatch(/Exhaustion 6/i);
+    // The 0-HP tools belong to the 0-HP track — none of them ride an exhaustion death.
+    expect(screen.queryByLabelText(/death-save d20/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/healing amount/i)).not.toBeInTheDocument();
+    expect(within(strip).queryByText(/death saves/i)).not.toBeInTheDocument();
+  });
+
+  it("EXHAUSTION 5 is not death — no banner while the hero is up", () => {
+    load({ exhaustion: 5 });
+    const { container } = render(<DyingBanner />);
+    expect(container.firstChild).toBeNull();
+  });
 });

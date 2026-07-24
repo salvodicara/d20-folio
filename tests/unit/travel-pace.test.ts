@@ -29,6 +29,18 @@ describe("TRAVEL_PACE_REFERENCE (RA-29)", () => {
     expect(p?.perDayMiles).toBe(18);
   });
 
+  // REGRESSION (post-sweep h3) — the Fast pace's penalty shipped with an ASCII
+  // hyphen ("-5") where every other number on the sheet uses the true minus sign.
+  it("writes its penalty with the app's true minus sign, both locales", () => {
+    const fast = TRAVEL_PACE_REFERENCE.find((x) => x.id === "fast");
+    expect(fast?.effect?.en).toContain("\u22125");
+    expect(fast?.effect?.it).toContain("\u22125");
+    for (const p of TRAVEL_PACE_REFERENCE) {
+      expect(p.effect?.en ?? "").not.toMatch(/-\d/);
+      expect(p.effect?.it ?? "").not.toMatch(/-\d/);
+    }
+  });
+
   it("every entry has a bilingual name; every effect (when present) is bilingual", () => {
     for (const p of TRAVEL_PACE_REFERENCE) {
       expect(p.name.en).toBeTruthy();

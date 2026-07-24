@@ -42,8 +42,8 @@ export const TRAVEL_PACE_REFERENCE: ReadonlyArray<TravelPace> = [
     perHourMiles: 4,
     perDayMiles: 30,
     effect: {
-      en: "-5 penalty to passive Perception.",
-      it: "-5 alla Percezione passiva.",
+      en: "−5 penalty to passive Perception.",
+      it: "−5 alla Percezione passiva.",
     },
   },
   {
