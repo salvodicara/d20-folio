@@ -1216,7 +1216,7 @@
     "range": "18 metri"
   },
   "haste": {
-    "description": "Scegli una creatura consenziente che puoi vedere entro gittata. Finché l'incantesimo non termina, la velocità del bersaglio è raddoppiata, ottiene un bonus di +2 alla CA, ha Vantaggio ai tiri salvezza su Destrezza e ottiene un'azione aggiuntiva in ciascuno dei suoi turni. Quell'azione può essere usata solo per effettuare l'azione Attaccare (solo un attacco con arma o Colpo Senz'armi), Scatto, Disimpegno, Nascondersi o Utilizzare. Quando l'incantesimo termina, il bersaglio non può muoversi o compiere azioni fino a dopo il suo turno successivo.",
+    "description": "Scegli una creatura consenziente che puoi vedere entro gittata. Finché l'incantesimo non termina, la velocità del bersaglio è raddoppiata, ottiene un bonus di +2 alla CA, ha Vantaggio ai tiri salvezza su Destrezza e ottiene un'azione aggiuntiva in ciascuno dei suoi turni. Quell'azione può essere usata solo per effettuare l'azione Attacco (solo un attacco con arma o Colpo Senz'armi), Scatto, Disimpegno, Nascondersi o Utilizzo. Quando l'incantesimo termina, il bersaglio non può muoversi o compiere azioni fino a dopo il suo turno successivo.",
     "duration": "Concentrazione, fino a 1 minuto",
     "name": "Velocità",
     "range": "9 metri"
