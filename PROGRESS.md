@@ -366,7 +366,11 @@ is low — `fast-uri` is a JSON-schema `$ref`/format-validation helper inside `a
 through `firebase-admin`'s own schema validation, never fed attacker-controlled URIs directly. `npm
 audit` in `functions/` reports zero known vulnerabilities; `pnpm audit` at root reports zero
 `fast-uri` findings (4 unrelated `react-router` moderate/high advisories remain, out of scope for
-this remediation — a separate, newer alert set). `just ci` green.
+this remediation — a separate, newer alert set). `just ci` green. **Update:** the 4 react-router
+advisories flagged out-of-scope above (GHSA-wrjc-x8rr-h8h6, GHSA-h8fp-f39c-q6mh,
+GHSA-337j-9hxr-rhxg, GHSA-chx6-hx7r-mcp5) are now cleared by the `react-router` 7.15.1→7.18.1 minor
+bump — triaged non-exploitable for this client-side Data-Mode SPA (no RSC/SSR/server surface; no
+attacker-controlled navigation sink), patched as hygiene.
 
 ## Shipped — Dependabot security remediation (2026-07-21)
 
