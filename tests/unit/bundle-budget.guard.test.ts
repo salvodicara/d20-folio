@@ -79,7 +79,11 @@ const ENTRY_CEILING_KB = 61; // baseline 53.7 → +14% (2026-07-10: +1 for the g
 // gzip compresses the split corpora slightly worse than the former monoliths) plus
 // the composed-build overlay (PHB name/prose restores) and the @pack merge seam.
 // Measured 769.7 post-partition; +3 KB deterministic headroom (never exact-fit).
-const EAGER_CEILING_KB = 773; // baseline 727.1 → ~+6% (near budget — see ARCHITECTURE P3 frontier #1)
+// 2026-07-24 (style-A ornament, rebase onto the bestiary waves): raised 773 → 776
+// (+3 KB) for the style-A per-corner ornament CSS (~+1 KB gz) atop the bestiary-held
+// 771.4 KB baseline; chunk shape unchanged at 14 chunks. Measured 773.2 KB; +3 KB
+// deterministic headroom (never exact-fit).
+const EAGER_CEILING_KB = 776; // baseline 727.1 → ~+6% (near budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
 // on demand from the PDF export flow) and correctly precached for offline-first.
@@ -152,8 +156,10 @@ const EAGER_CEILING_KB = 773; // baseline 727.1 → ~+6% (near budget — see AR
 // makes corner registration exact at every host size), growing the stylesheet ~7 KiB
 // RAW (precache counts raw bytes; the gz eager closure absorbed the highly-repetitive
 // per-corner text with NO eager-ceiling raise). No new precache entries, no new
-// images/fonts. Re-measured on the combined tree — see the ceiling line.
-const PRECACHE_CEILING_KIB = 8373;
+// images/fonts. Re-measured on the combined tree: 8380.92 KiB (285 entries) on the
+// COMPOSED lane — raised 8373 → 8391 (+18 KiB), ~10 KiB deterministic headroom above
+// the measured value (never exact-fit).
+const PRECACHE_CEILING_KIB = 8391;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

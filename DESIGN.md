@@ -1516,11 +1516,15 @@ The pieces and their ONE home (`src/styles/folio.css`; the metal tokens in `src/
   the rail **swells** crossing the vertex in a fine **whisker overshoot** (tips on the rail
   axis — attached), ONE **wave-volute** comma-curl rising outward on the diagonal — crown
   breaking over, beak curling back down over a genuinely **open eye** — a small **weld
-  diamond** seating the crossing, a **five-ray glint fan** radiating from the knot into the
-  panel (two-tone struck: dark under-shadow + top-left glint over the body), and a crisp
-  **sickle leaf pair** threaded ON each rail (the reference's paired second leaf; leaf ink
-  ends ≤59px in-tile so opposing corners keep ≥4px air on the shortest host, the ~98px
-  cockpit band). **The one-line law (guard-pinned):** the ornament contributes NO run lines —
+  diamond** seating the crossing, and a **five-ray glint fan** radiating from the knot into
+  the panel (two-tone struck: dark under-shadow + top-left glint over the body). Each corner is
+  ONE compact terminal gesture — knot + fan + the swelling rail — that **concludes cleanly**:
+  the swell tapers to a 1px hairline (≈x=30 in-tile) that dissolves into the host's own border
+  stroke, so the edge between opposing terminals is bare border and nothing else. **NO mid-rail
+  leaves** (owner, 2026-07-24 — the earlier sickle-leaf pair, sitting far from the knot, read as
+  scattered "broken lines / dirt" between the two corner ornaments on the short vertical edges,
+  orphan fragments disconnected from anything; the BG3 spellbook-reference knot carries none).
+  **The one-line law (guard-pinned):** the ornament contributes NO run lines —
   nothing floats, ever; the host's own 1px border is THE frame line; and the three framed
   registers go **SQUARE** (`border-radius: 0`) so the knot seats on a true crossing of the
   host's own border — a rounded arc curving under a squared knot reads as a second,

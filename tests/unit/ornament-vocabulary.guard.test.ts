@@ -16,20 +16,21 @@ const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8
  *   - the hero frames are bound by the per-theme `--frame-ornate` token —
  *     FOUR fixed-size per-corner SVG background layers (tl/tr/bl/br, 64px
  *     tiles), NEVER border-image and NEVER a layout border on the pseudo:
- *     the old `border: 64px solid transparent` carrier forced a 128px
- *     minimum pseudo box, so hosts shorter than that dropped `bottom`
- *     (over-constrained abspos) and the bottom corners hung 25–32px below
- *     the plate — the owner's "everything is translated downward" rejection;
- *     border-image's proportional tile-shrink also mis-seats the centerline
- *     on short hosts. Fixed-size corner layers register 0px at every host
- *     size by construction;
+ *     a border-based carrier would force a minimum pseudo box that overflows
+ *     shorter hosts downward (over-constrained abspos), and border-image's
+ *     proportional tile-shrink mis-seats the centerline on short hosts.
+ *     Fixed-size corner layers register 0px at every host size by
+ *     construction;
  *   - THE KNOT (style A, the faithful transcription of the owner's BG3
  *     spellbook-reference corner): rail swells crossing the vertex in a fine
  *     whisker overshoot, ONE wave-volute comma-curl rising outward on the
  *     diagonal over an OPEN eye, a small weld diamond seating the crossing,
- *     a two-tone-struck five-ray glint fan, and a sickle leaf pair threaded
- *     ON each rail (leaf ink within 59px of the tile edge so opposing
- *     corners keep air on the ~98px cockpit band) — and NOTHING else;
+ *     and a two-tone-struck five-ray glint fan — and NOTHING else. Each corner
+ *     is ONE compact terminal that CONCLUDES cleanly: the swell tapers to a 1px
+ *     hairline that dissolves into the host's own border stroke, and the edge
+ *     between opposing terminals is bare border. NO mid-rail leaves — the
+ *     edge stays clean, nothing scattered mid-host (owner, 2026-07-24,
+ *     pinned dead below);
  *   - THE ONE-LINE LAW: the ornament contributes no run lines — the host's
  *     own 1px border is THE frame line and the three framed registers stay
  *     SQUARE so the knot seats on a true crossing; nothing floats, ever;
@@ -41,8 +42,7 @@ const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8
  *     inner open-eye S-hook returns, a luminous chevron pair over a
  *     descending faceted plumb (glow raised per the "more wow" verdict);
  *     its backing diamond bakes the theme's own `--bg-surface-2`
- *     (drift-guarded), hugs the fleur, and blurs its edge; the gen9
- *     floating under-dot stays DEAD;
+ *     (drift-guarded), hugs the fleur, and blurs its edge — nothing floats;
  *   - the LIGHT theme's ornament ink is GOLD, not bronze (owner, 2026-07-24);
  *   - selection is marked by the silver-over-bronze `--frame-selected`
  *     gradient (both themes), NOT by decorative diamonds;
@@ -90,12 +90,15 @@ describe("ornament vocabulary (T5)", () => {
     expect(
       indexCss.match(/M12\.8 10\.9L14\.7 12\.8L12\.8 14\.7L10\.9 12\.8Z/g)?.length
     ).toBe(8);
-    // …the sickle leaf PAIR threaded ON each rail (the reference's paired
-    // second leaf; leaf ink ends ≤59.2px in-tile — the cockpit-band air cap)…
-    expect(indexCss.match(/M42 12\.8Q46\.5 11\.5 54 12\.58/g)?.length).toBe(8);
-    expect(indexCss.match(/M55\.5 12\.8Q57\.5 12\.12 59\.2 12\.6/g)?.length).toBe(8);
     // …and the five-ray glint fan as a real group of 5 path elements.
     expect(indexCss.match(/<g id='f'>(?:<path d='[^']*'\/>){5}<\/g>/g)?.length).toBe(8);
+    // NO mid-rail leaves (owner, 2026-07-24): the rail `g#e` group is
+    // EXACTLY the single swell path — the terminal concludes into the border
+    // line with nothing scattered mid-edge (a re-add would restore the
+    // "scattered dirt" the owner rejected).
+    expect(indexCss.match(/<g id='e'><path d='M30 12\.3[^']*'\/><\/g>/g)?.length).toBe(8);
+    expect(indexCss).not.toContain("M42 12.8Q46.5 11.5 54 12.58");
+    expect(indexCss).not.toContain("M55.5 12.8Q57.5 12.12 59.2 12.6");
     // Mirror-then-tone (the two-tone strike): each corner mirrors the
     // UNFILLED geometry first (tl carries no mirror; tr/bl/br mirror their
     // knot AND fan groups — 2 uses per corner × 2 themes = 4 each)…
@@ -113,8 +116,8 @@ describe("ornament vocabulary (T5)", () => {
 
   it("keeps the light theme's ornament ink GOLD, never bronze (owner, 2026-07-24)", () => {
     // The light `--frame-ornate` body is the deep antique-gold #94741f — a
-    // true-gold hue letterpressed into the vellum. The superseded bronze-700
-    // (#7a5f24) body must not return to either ornament token's light strike.
+    // true-gold hue letterpressed into the vellum; #7a5f24 must not appear
+    // in either ornament token's light strike.
     const lightBlock = indexCss.slice(indexCss.indexOf('[data-theme="light"]'));
     const lightFrame = lightBlock.match(/--frame-ornate:\s*([^;]+);/)?.[1];
     const lightSeat = lightBlock.match(/--seat-orn: url\("([^"]+)"\)/)?.[1];
@@ -156,7 +159,7 @@ describe("ornament vocabulary (T5)", () => {
       expect(uri).toContain("M102.6 12.55Q106.8 11.7 107.8 9.9");
       // …and the rail's outer hairpoint ending in a tiny OPEN under-curl.
       expect(uri).toContain("Q4.7 12.95 5.7 13.75");
-      // The gen9 floating under-dot stays dead (nothing floats, ever).
+      // Nothing floats, ever — no stray under-dot circle.
       expect(uri).not.toContain("circle cx='108.6'");
       // The baked radial glow seats the centre…
       expect(uri).toContain("radialGradient");
@@ -174,8 +177,8 @@ describe("ornament vocabulary (T5)", () => {
         )?.length
       ).toBe(2);
     });
-    // The glow carries the "more wow" presence (owner, 2026-07-24 — supersedes
-    // the earlier whisper weight): dark .38, light .3.
+    // The glow carries the "more wow" presence (owner, 2026-07-24): dark
+    // .38, light .3.
     expect(themes[0]).toContain("stop-opacity='.38'");
     expect(themes[1]).toContain("stop-opacity='.3'");
   });

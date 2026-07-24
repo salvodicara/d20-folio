@@ -1,0 +1,5 @@
+---
+"d20-folio": patch
+---
+
+fix(identity): drop the mid-rail leaves from the style-A corner knot so each terminal CONCLUDES cleanly (owner ruling — the scattered sickle leaves, sitting far from the knot, read as "broken lines / dirt" between the two corner ornaments on the short vertical edges of the masthead and cockpit band, orphan fragments disconnected from anything). Each corner is now ONE compact terminal gesture — the wave-volute knot, the two-tone-struck five-ray glint fan, and the swelling rail that tapers to a 1px hairline dissolving into the host's own border stroke — with nothing but bare border between opposing terminals, faithful to the BG3 spellbook-reference knot. Both themes, all three hero registers; corner registration and the seat divider are untouched. The stale index.css definition-site comments (still describing the removed Compass-Web anatomy and the border-image/OUTSET mechanism) are rewritten to the shipped style-A anatomy and the four-fixed-64px-layer mechanism, the seat note drops the dead under-dot, and the ornament-vocabulary guard re-pins the rail group as the single swell path with the leaf pair pinned dead.
