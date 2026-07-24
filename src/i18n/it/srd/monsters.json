@@ -882,7 +882,7 @@
   },
   "ankheg.actions.bite": {
     "name": "Morso",
-    "text": "Tiro per colpire in mischia: +5 (con vantaggio se il bersaglio è afferrato dall'ankheg), portata 1,5 m. Colpito: 10 (2d6 + 3) danni Taglienti più 3 (1d6) danni da Acido. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 13 per sfuggire)."
+    "text": "Tiro per colpire in mischia: +5 (con vantaggio se il bersaglio è Afferrato dall'ankheg), portata 1,5 m. Colpito: 10 (2d6 + 3) danni Taglienti più 3 (1d6) danni da Acido. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 13 per sfuggire)."
   },
   "ankheg.actions.acid-spray": {
     "name": "Spruzzo acido",
@@ -1469,7 +1469,7 @@
   },
   "centaur-trooper.bonusActions.trampling-charge": {
     "name": "Carica travolgente",
-    "text": "Il centauro si muove fino alla sua velocità massima senza provocare attacchi di opportunità e può attraversare gli spazi di qualsiasi creatura di taglia Media o inferiore. Ogni creatura il cui spazio viene invaso dal centauro viene bersagliata una volta dal seguente effetto. Tiro salvezza su Forza: CD 14. Fallimento: 7 (1d6 + 4) danni Contundenti, e il bersaglio è prono."
+    "text": "Il centauro si muove fino alla sua velocità massima senza provocare attacchi di opportunità e può attraversare gli spazi di qualsiasi creatura di taglia Media o inferiore. Ogni creatura il cui spazio viene invaso dal centauro viene bersagliata una volta dal seguente effetto. Tiro salvezza su Forza: CD 14. Fallimento: 7 (1d6 + 4) danni Contundenti, e il bersaglio è Prono."
   },
   "chain-devil": {
     "name": "Diavolo delle catene"
@@ -1488,15 +1488,15 @@
   },
   "chain-devil.actions.chain": {
     "name": "Catena",
-    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 11 (2d6 + 4) danni Taglienti. Se il bersaglio è una creatura di taglia Grande o inferiore, è afferrato (CD 14 per sfuggire) da una delle due catene, e resta trattenuto finché la presa perdura."
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 11 (2d6 + 4) danni Taglienti. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 14 per sfuggire) da una delle due catene, e resta Trattenuto finché la presa perdura."
   },
   "chain-devil.actions.conjure-infernal-chain": {
     "name": "Evoca catena infernale",
-    "text": "Il diavolo evoca una catena di fuoco per legare una creatura. Tiro salvezza su Destrezza: CD 15, una creatura che il diavolo è in grado di vedere entro 18 metri. Fallimento: 9 (2d4 + 4) danni da Fuoco, e il bersaglio è trattenuto fino alla fine del turno successivo del diavolo; a quel punto la catena scompare. Se il bersaglio è di taglia Grande o inferiore, il diavolo lo trascina in linea retta verso di sé fino a un massimo di 9 metri. Successo: La catena svanisce."
+    "text": "Il diavolo evoca una catena di fuoco per legare una creatura. Tiro salvezza su Destrezza: CD 15, una creatura che il diavolo è in grado di vedere entro 18 metri. Fallimento: 9 (2d4 + 4) danni da Fuoco, e il bersaglio è Trattenuto fino alla fine del turno successivo del diavolo; a quel punto la catena scompare. Se il bersaglio è di taglia Grande o inferiore, il diavolo lo trascina in linea retta verso di sé fino a un massimo di 9 metri. Successo: La catena svanisce."
   },
   "chain-devil.reactions.unnerving-gaze": {
     "name": "Sguardo snervante",
-    "text": "Attivazione: una creatura che il diavolo è in grado di vedere inizia il suo turno entro 9 metri da quest'ultimo e può vedere il diavolo. Esito: Tiro salvezza su Saggezza: CD 15, la creatura che ha provocato la reazione. Fallimento: il bersaglio è spaventato fino al termine del proprio turno successivo. Successo: il bersaglio è immune allo Sguardo snervante di questo diavolo per 24 ore."
+    "text": "Attivazione: una creatura che il diavolo è in grado di vedere inizia il suo turno entro 9 metri da quest'ultimo e può vedere il diavolo. Esito: Tiro salvezza su Saggezza: CD 15, la creatura che ha provocato la reazione. Fallimento: il bersaglio è Spaventato fino al termine del proprio turno successivo. Successo: il bersaglio è immune allo Sguardo snervante di questo diavolo per 24 ore."
   },
   "chimera": {
     "name": "Chimera"
@@ -1515,7 +1515,7 @@
   },
   "chimera.actions.ram": {
     "name": "Sfondamento",
-    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 10 (1d12 + 4) danni Contundenti. Se il bersaglio è una creatura di taglia Media o inferiore, cade a terra prono."
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 10 (1d12 + 4) danni Contundenti. Se il bersaglio è una creatura di taglia Media o inferiore, cade a terra Prono."
   },
   "chimera.actions.fire-breath": {
     "name": "Soffio di fuoco",
@@ -1538,11 +1538,11 @@
   },
   "chuul.actions.pincer": {
     "name": "Tenaglia",
-    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 9 (1d10 + 4) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore, è afferrato (CD 14 per sfuggire) da una delle due tenaglie."
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 9 (1d10 + 4) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 14 per sfuggire) da una delle due tenaglie."
   },
   "chuul.actions.paralyzing-tentacles": {
     "name": "Tentacoli paralizzanti",
-    "text": "Tiro salvezza su Costituzione: CD 13, una creatura afferrata dal chuul. Fallimento: il bersaglio è avvelenato e ripete il tiro salvezza alla fine del suo turno successivo e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente. Finché è avvelenato, il bersaglio è paralizzato."
+    "text": "Tiro salvezza su Costituzione: CD 13, una creatura Afferrata dal chuul. Fallimento: il bersaglio è Avvelenato e ripete il tiro salvezza alla fine del suo turno successivo e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente. Finché è Avvelenato, il bersaglio è Paralizzato."
   },
   "clay-golem": {
     "name": "Golem di argilla"
@@ -1588,7 +1588,7 @@
   },
   "cloaker.actions.attach": {
     "name": "Avvinghiare",
-    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 13 (3d6 + 3) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore, il manto si avvinghia ad essa. Finché resta avvinghiato al bersaglio, quest'ultimo è accecato, e il manto non può effettuare attacchi Avvinghiare contro altri bersagli. Inoltre, il manto assassino dimezza i danni subiti (arrotondati per difetto) e il bersaglio subisce lo stesso ammontare di danni. Il manto assassino può staccarsi da solo usando 1,5 metri di movimento. Il bersaglio o una creatura entro 1,5 metri da esso può effettuare un'azione per staccarsi il manto di dosso, superando una prova di Forza (Atletica) con CD 14."
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 13 (3d6 + 3) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore, il manto si avvinghia ad essa. Finché resta avvinghiato al bersaglio, quest'ultimo è Accecato, e il manto non può effettuare attacchi Avvinghiare contro altri bersagli. Inoltre, il manto assassino dimezza i danni subiti (arrotondati per difetto) e il bersaglio subisce lo stesso ammontare di danni. Il manto assassino può staccarsi da solo usando 1,5 metri di movimento. Il bersaglio o una creatura entro 1,5 metri da esso può effettuare un'azione per staccarsi il manto di dosso, superando una prova di Forza (Atletica) con CD 14."
   },
   "cloaker.actions.tail": {
     "name": "Coda",
@@ -1596,7 +1596,7 @@
   },
   "cloaker.bonusActions.moan": {
     "name": "Gemito",
-    "text": "Tiro salvezza su Saggezza: CD 13, tutte le creature in un'emanazione di 18 metri di cui il manto assassino è il punto di origine. Fallimento: il bersaglio è spaventato fino al termine del turno successivo del manto assassino. Successo: il bersaglio è immune al Gemito di questo manto assassino per le 24 ore successive."
+    "text": "Tiro salvezza su Saggezza: CD 13, tutte le creature in un'emanazione di 18 metri di cui il manto assassino è il punto di origine. Fallimento: il bersaglio è Spaventato fino al termine del turno successivo del manto assassino. Successo: il bersaglio è immune al Gemito di questo manto assassino per le 24 ore successive."
   },
   "cloaker.bonusActions.phantasms": {
     "name": "Allucinazioni",
@@ -1615,7 +1615,7 @@
   },
   "cloud-giant.actions.thundercloud": {
     "name": "Nuvola di tuoni",
-    "text": "Tiro per colpire a distanza: +12, gittata 72 m. Colpito: 18 (3d6 + 8) danni da Tuono, e il bersaglio è incapacitato fino al termine del proprio turno successivo."
+    "text": "Tiro per colpire a distanza: +12, gittata 72 m. Colpito: 18 (3d6 + 8) danni da Tuono, e il bersaglio è Incapacitato fino al termine del proprio turno successivo."
   },
   "cloud-giant.actions.spellcasting": {
     "name": "Incantesimi",
@@ -1630,7 +1630,7 @@
   },
   "cockatrice.actions.petrifying-bite": {
     "name": "Morso pietrificante",
-    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 3 (1d4 + 1) danni Perforanti. Se il bersaglio è una creatura, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 11. Primo fallimento: il bersaglio è trattenuto. Ripete il tiro salvezza alla fine del proprio turno successivo se è ancora trattenuto e, se lo supera, l'effetto svanisce. Secondo fallimento: il bersaglio è pietrificato invece che trattenuto per 24 ore."
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 3 (1d4 + 1) danni Perforanti. Se il bersaglio è una creatura, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 11. Primo fallimento: il bersaglio è Trattenuto. Ripete il tiro salvezza alla fine del proprio turno successivo se è ancora Trattenuto e, se lo supera, l'effetto svanisce. Secondo fallimento: il bersaglio è Pietrificato invece che Trattenuto per 24 ore."
   },
   "commoner": {
     "name": "Popolano"
@@ -1652,7 +1652,7 @@
   },
   "constrictor-snake.actions.constrict": {
     "name": "Stritolare",
-    "text": "Tiro salvezza su Forza: CD 12, una creatura di taglia Media o inferiore che il serpente è in grado di vedere entro 1,5 metri. Fallimento: 7 (3d4) danni Contundenti e il bersaglio viene afferrato (CD 12 per sfuggire)."
+    "text": "Tiro salvezza su Forza: CD 12, una creatura di taglia Media o inferiore che il serpente è in grado di vedere entro 1,5 metri. Fallimento: 7 (3d4) danni Contundenti e il bersaglio viene Afferrato (CD 12 per sfuggire)."
   },
   "copper-dragon-wyrmling": {
     "name": "Drago di rame cucciolo"
@@ -1712,7 +1712,7 @@
   },
   "crocodile.actions.bite": {
     "name": "Morso",
-    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 6 (1d8 + 2) danni Perforanti. Se il bersaglio è una creatura di taglia Media o inferiore, è Afferrato (CD 12 per sfuggire). Mentre è afferrato, il bersaglio è anche Trattenuto."
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 6 (1d8 + 2) danni Perforanti. Se il bersaglio è una creatura di taglia Media o inferiore, è Afferrato (CD 12 per sfuggire). Mentre è Afferrato, il bersaglio è anche Trattenuto."
   },
   "cultist": {
     "name": "Cultista"
@@ -1741,7 +1741,7 @@
   },
   "darkmantle.actions.crush": {
     "name": "Schiacciare",
-    "text": "Tiro per colpire in mischia: +5, portata 1,5 m Colpito: 6 (1d6 + 3) danni contundenti, e il mantoscuro si avvinghia al bersaglio. Se il bersaglio è una creatura di taglia Media o inferiore e il mantoscuro dispone di vantaggio al tiro per colpire, copre il bersaglio, il quale è accecato e soffoca mentre il mostro è avvinghiato a lui in questo modo. Finché è avvinghiato a un bersaglio, il mantoscuro può attaccare solamente il bersaglio, ma dispone di vantaggio ai suoi tiri per colpire. Inoltre, il mantoscuro si muove insieme al bersaglio, la sua velocità diventa 0 e non può beneficiare di alcun bonus alla velocità. Una creatura può effettuare un'azione per staccarsi il mantoscuro di dosso, riuscendoci con una prova di Forza (Atletica) con CD 13 superata. Nel suo turno, il mantoscuro può staccarsi spontaneamente dal bersaglio usando 1,5 metri di movimento."
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m Colpito: 6 (1d6 + 3) danni contundenti, e il mantoscuro si avvinghia al bersaglio. Se il bersaglio è una creatura di taglia Media o inferiore e il mantoscuro dispone di vantaggio al tiro per colpire, copre il bersaglio, il quale è Accecato e soffoca mentre il mostro è avvinghiato a lui in questo modo. Finché è avvinghiato a un bersaglio, il mantoscuro può attaccare solamente il bersaglio, ma dispone di vantaggio ai suoi tiri per colpire. Inoltre, il mantoscuro si muove insieme al bersaglio, la sua velocità diventa 0 e non può beneficiare di alcun bonus alla velocità. Una creatura può effettuare un'azione per staccarsi il mantoscuro di dosso, riuscendoci con una prova di Forza (Atletica) con CD 13 superata. Nel suo turno, il mantoscuro può staccarsi spontaneamente dal bersaglio usando 1,5 metri di movimento."
   },
   "darkmantle.actions.darkness-aura": {
     "name": "Aura di oscurità",
@@ -1756,7 +1756,7 @@
   },
   "death-dog.actions.bite": {
     "name": "Morso",
-    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni perforanti. Se il bersaglio è una creatura, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 12. Primo fallimento: il bersaglio è avvelenato. Finché lo resta, i punti ferita massimi del bersaglio non tornano alla normalità al termine di un riposo lungo. La creatura ripete il tiro salvezza ogni 24 ore trascorse e, se lo supera, l'effetto svanisce. Fallimenti successivi: i punti ferita massimi del bersaglio avvelenato sono ridotti di 5 (1d10)."
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni perforanti. Se il bersaglio è una creatura, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 12. Primo fallimento: il bersaglio è Avvelenato. Finché lo resta, i punti ferita massimi del bersaglio non tornano alla normalità al termine di un riposo lungo. La creatura ripete il tiro salvezza ogni 24 ore trascorse e, se lo supera, l'effetto svanisce. Fallimenti successivi: i punti ferita massimi del bersaglio Avvelenato sono ridotti di 5 (1d10)."
   },
   "deer": {
     "name": "Daino"
@@ -1801,11 +1801,11 @@
   },
   "dire-wolf.traits.pack-tactics": {
     "name": "Tattiche del branco",
-    "text": "Il lupo dispone di vantaggio al tiro per colpire contro una creatura se almeno uno degli alleati dell'animale si trova entro 1,5 metri dalla creatura e non è incapacitato."
+    "text": "Il lupo dispone di vantaggio al tiro per colpire contro una creatura se almeno uno degli alleati dell'animale si trova entro 1,5 metri dalla creatura e non è Incapacitato."
   },
   "dire-wolf.actions.bite": {
     "name": "Morso",
-    "text": "Tiro per colpire in mischia: +5, portata 1,5 m Colpito: 8 (1d10 + 3) danni perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra prono."
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m Colpito: 8 (1d10 + 3) danni perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra Prono."
   },
   "djinni": {
     "name": "Djinni"
@@ -1832,11 +1832,11 @@
   },
   "djinni.actions.storm-bolt": {
     "name": "Lampo burrascoso",
-    "text": "Tiro per colpire a distanza: +9, gittata 36 metri. Colpito: 13 (3d8) danni da tuono. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra prono."
+    "text": "Tiro per colpire a distanza: +9, gittata 36 metri. Colpito: 13 (3d8) danni da tuono. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra Prono."
   },
   "djinni.actions.create-whirlwind": {
     "name": "Creare vortice",
-    "text": "Il djinni evoca un vortice in un punto che è in grado di vedere entro 36 metri. Il vortice riempie un cilindro del raggio di 6 metri e alto 18 metri, centrato su quel punto, e perdura fino al termine della concentrazione del djinni su di esso. Il djinni può spostare il vortice fino a 6 metri all'inizio di ogni suo turno. Ogni volta che il vortice entra nello spazio di una creatura o una creatura entro nello spazio del vortice, la creatura è soggetta al seguente effetto. Tiro salvezza su Forza: CD 17 (una creatura effettua questo tiro salvezza solo una volta per turno, e il djinni non subisce alcun effetto). Fallimento: Finché si trova nel vortice, il bersaglio è trattenuto e si sposta insieme al vortice. All'inizio di ogni suo turno, il bersaglio trattenuto subisce 21 (6d6) danni da tuono. Alla fine di ogni suo turno, il bersaglio ripete il tiro salvezza e, se lo supera, l'effetto svanisce."
+    "text": "Il djinni evoca un vortice in un punto che è in grado di vedere entro 36 metri. Il vortice riempie un cilindro del raggio di 6 metri e alto 18 metri, centrato su quel punto, e perdura fino al termine della concentrazione del djinni su di esso. Il djinni può spostare il vortice fino a 6 metri all'inizio di ogni suo turno. Ogni volta che il vortice entra nello spazio di una creatura o una creatura entro nello spazio del vortice, la creatura è soggetta al seguente effetto. Tiro salvezza su Forza: CD 17 (una creatura effettua questo tiro salvezza solo una volta per turno, e il djinni non subisce alcun effetto). Fallimento: Finché si trova nel vortice, il bersaglio è Trattenuto e si sposta insieme al vortice. All'inizio di ogni suo turno, il bersaglio Trattenuto subisce 21 (6d6) danni da tuono. Alla fine di ogni suo turno, il bersaglio ripete il tiro salvezza e, se lo supera, l'effetto svanisce."
   },
   "djinni.actions.spellcasting": {
     "name": "Incantesimi",
@@ -1859,7 +1859,7 @@
   },
   "doppelganger.actions.unsettling-visage": {
     "name": "Sembianze inquietanti",
-    "text": "Tiro salvezza su Saggezza: CD 12, tutte le creature in grado di vedere il doppelganger e che si trovano in un'emanazione di 4,5 metri di cui il doppelganger è il punto di origine. Fallimento: il bersaglio è spaventato, ripete il tiro salvezza alla fine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente."
+    "text": "Tiro salvezza su Saggezza: CD 12, tutte le creature in grado di vedere il doppelganger e che si trovano in un'emanazione di 4,5 metri di cui il doppelganger è il punto di origine. Fallimento: il bersaglio è Spaventato, ripete il tiro salvezza alla fine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente."
   },
   "doppelganger.bonusActions.shape-shift": {
     "name": "Mutaforma",
@@ -1889,7 +1889,7 @@
   },
   "dragon-turtle.actions.tail": {
     "name": "Coda",
-    "text": "Tiro per colpire in mischia: +13, portata 4,5 m. Colpito: 18 (2d10 + 7) danni Contundenti. Se il bersaglio è una creatura di taglia Enorme o inferiore, cade a terra prono."
+    "text": "Tiro per colpire in mischia: +13, portata 4,5 m. Colpito: 18 (2d10 + 7) danni Contundenti. Se il bersaglio è una creatura di taglia Enorme o inferiore, cade a terra Prono."
   },
   "dragon-turtle.actions.steam-breath": {
     "name": "Soffio di vapore",
@@ -1904,7 +1904,7 @@
   },
   "dretch.actions.fetid-cloud": {
     "name": "Nube fetida",
-    "text": "Tiro salvezza su Costituzione: CD 11, tutte le creature in un'emanazione di 3 metri di cui il dretch è il punto di origine. Fallimento: il bersaglio è avvelenato fino al termine del proprio turno successivo. Finché è avvelenata, la creatura può effettuare nel suo turno un'azione o un'azione bonus, ma non entrambe, e non può effettuare reazioni."
+    "text": "Tiro salvezza su Costituzione: CD 11, tutte le creature in un'emanazione di 3 metri di cui il dretch è il punto di origine. Fallimento: il bersaglio è Avvelenato fino al termine del proprio turno successivo. Finché è Avvelenata, la creatura può effettuare nel suo turno un'azione o un'azione bonus, ma non entrambe, e non può effettuare reazioni."
   },
   "drider": {
     "name": "Drider"

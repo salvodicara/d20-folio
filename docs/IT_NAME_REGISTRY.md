@@ -64,6 +64,13 @@ _Richiama X_ — the verb keeps the two families distinct.)
 | -------- | ----------- | --------- | ------------- | ---------- | --------- | ------------- | ---------- | ----------- | ------------ | ---------- | ----- | ---------- | -------- | -------------- |
 | Accecato | Affascinato | Assordato | Indebolimento | Spaventato | Afferrato | Incapacitato  | Invisibile | Paralizzato | Pietrificato | Avvelenato | Prono | Trattenuto | Stordito | Privo di Sensi |
 
+Used as a **status descriptor** — the closed-set lexeme naming a creature's condition state (`è
+Afferrato`, `viene Afferrato`, `resta Trattenuto`, `cade a terra Prono`, `il bersaglio Avvelenato`,
+inflected for gender/number) — the form is **Title-Case**. Ordinary vocabulary that merely shares a
+root stays lowercase: the abstract nouns (`invisibilità`, `paralisi`) and the active verb of the
+monster's own action (`l'aboleth ha afferrato una creatura` — the compound past of _afferrare_, not
+a descriptor of the target's state).
+
 ### Weapon masteries
 
 | Cleave          | Graze             | Nick    | Push   | Sap      | Slow     | Topple        | Vex        |

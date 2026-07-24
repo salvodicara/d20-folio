@@ -46,6 +46,26 @@ const SECTIONS = [
 ] as const;
 const strip = (s: string): string => s.replace(/\s+/g, "");
 
+/**
+ * The `onSuccess` classification the printed EN prose MANDATES (ruling A):
+ *   • "half"    ⟺ an initial-save "Success: Half damage[ only]." sentence.
+ *   • "special" ⟺ an initial-save "Success: …" sentence that is anything OTHER
+ *                 than bare half damage (e.g. cloaker Moan immunity, or half
+ *                 damage that still carries a rider — bulette's residual push).
+ *   • "none"    ⟺ no initial-save "Success:" sentence at all.
+ * Recharge/cooldown footers ("Failure or Success: …") and staged
+ * "First/Second Failure" prose are NOT an initial Success sentence — the footer
+ * is stripped before the scan, and Failure prose never matches "Success:".
+ * This derives one value from the print and is asserted `=== entry.onSuccess`,
+ * pinning the ⟺ in both directions for every save entry in every future wave.
+ */
+function printedOnSuccess(text: string): "half" | "none" | "special" {
+  const withoutFooter = text.replace(/Failure or Success:[^.]*\.?/gi, "");
+  const match = withoutFooter.match(/Success:\s*([^.]*)/i);
+  if (match === null) return "none";
+  return /^Half damage( only)?$/i.test((match[1] ?? "").trim()) ? "half" : "special";
+}
+
 type KeyedEntry = { section: string; entry: MonsterEntry; key: string };
 function entriesOf(m: MonsterStatBlock): KeyedEntry[] {
   const out: KeyedEntry[] = [];
@@ -190,6 +210,16 @@ describe.each(cases)("%s", (id, m) => {
         const text = strip(srd("monster", key, "text", "en"));
         expect(text, `${key} DC`).toContain(`DC${entry.dc}`);
       }
+    }
+  });
+
+  it("pins onSuccess to the printed Success sentence (§F.11, ruling A, D-3)", () => {
+    for (const { entry, key } of entriesOf(m)) {
+      if (entry.kind !== "save") continue;
+      const text = srd("monster", key, "text", "en");
+      expect(printedOnSuccess(text), `${key} onSuccess vs EN print`).toBe(
+        entry.onSuccess
+      );
     }
   });
 
