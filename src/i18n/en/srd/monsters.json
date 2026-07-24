@@ -3036,6 +3036,492 @@
     "name": "Spellcasting",
     "text": "The naga casts one of the following spells, requiring no Somatic or Material components and using Wisdom as the spellcasting ability (spell save DC 16): At Will: Thaumaturgy. 1/Day Each: Clairvoyance, Cure Wounds (level 6 version), Flame Strike (level 6 version), Geas, True Seeing."
   },
+  "half-dragon": {
+    "name": "Half-Dragon"
+  },
+  "half-dragon.traits.draconic-origin": {
+    "name": "Draconic Origin",
+    "text": "The half-dragon is related to a type of dragon associated with one of the following damage types (GM's choice): Acid, Cold, Fire, Lightning, or Poison. This choice affects other aspects of the stat block."
+  },
+  "half-dragon.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The half-dragon makes two Claw attacks."
+  },
+  "half-dragon.actions.claw": {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 6 (1d4 + 4) Slashing damage plus 7 (2d6) damage of the type chosen for the Draconic Origin trait."
+  },
+  "half-dragon.actions.dragons-breath": {
+    "name": "Dragon's Breath",
+    "text": "Dexterity Saving Throw: DC 14, each creature in a 30-foot Cone. Failure: 28 (8d6) damage of the type chosen for the Draconic Origin trait. Success: Half damage."
+  },
+  "half-dragon.bonusActions.leap": {
+    "name": "Leap",
+    "text": "The half-dragon jumps up to 30 feet by spending 10 feet of movement."
+  },
+  "harpy": {
+    "name": "Harpy"
+  },
+  "harpy.actions.claw": {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 6 (2d4 + 1) Slashing damage."
+  },
+  "harpy.actions.luring-song": {
+    "name": "Luring Song",
+    "text": "The harpy sings a magical melody, which lasts until the harpy's Concentration ends on it. Wisdom Saving Throw: DC 11, each Humanoid and Giant in a 300-foot Emanation originating from the harpy when the song starts. Failure: The target has the Charmed condition until the song ends and repeats the save at the end of each of its turns. While Charmed, the target has the Incapacitated condition and ignores the Luring Song of other harpies. If the target is more than 5 feet from the harpy, the target moves on its turn toward the harpy by the most direct route, trying to get within 5 feet of the harpy. It doesn't avoid Opportunity Attacks; however, before moving into damaging terrain (such as lava or a pit) and whenever it takes damage from a source other than the harpy, the target repeats the save. Success: The target is immune to this harpy's Luring Song for 24 hours."
+  },
+  "hawk": {
+    "name": "Hawk"
+  },
+  "hawk.actions.talons": {
+    "name": "Talons",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 1 Slashing damage."
+  },
+  "hell-hound": {
+    "name": "Hell Hound"
+  },
+  "hell-hound.traits.pack-tactics": {
+    "name": "Pack Tactics",
+    "text": "The hound has Advantage on an attack roll against a creature if at least one of the hound's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
+  },
+  "hell-hound.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The hound makes two Bite attacks."
+  },
+  "hell-hound.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage plus 3 (1d6) Fire damage."
+  },
+  "hell-hound.actions.fire-breath": {
+    "name": "Fire Breath",
+    "text": "Dexterity Saving Throw: DC 12, each creature in a 15-foot Cone. Failure: 17 (5d6) Fire damage. Success: Half damage."
+  },
+  "hezrou": {
+    "name": "Hezrou"
+  },
+  "hezrou.traits.demonic-restoration": {
+    "name": "Demonic Restoration",
+    "text": "If the hezrou dies outside the Abyss, its body dissolves into ichor, and it gains a new body instantly, reviving with all its Hit Points somewhere in the Abyss."
+  },
+  "hezrou.traits.magic-resistance": {
+    "name": "Magic Resistance",
+    "text": "The hezrou has Advantage on saving throws against spells and other magical effects."
+  },
+  "hezrou.traits.stench": {
+    "name": "Stench",
+    "text": "Constitution Saving Throw: DC 16, any creature that starts its turn in a 10-foot Emanation originating from the hezrou. Failure: The target has the Poisoned condition until the start of its next turn."
+  },
+  "hezrou.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The hezrou makes three Rend attacks."
+  },
+  "hezrou.actions.rend": {
+    "name": "Rend",
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 6 (1d4 + 4) Slashing damage plus 9 (2d8) Poison damage."
+  },
+  "hezrou.bonusActions.leap": {
+    "name": "Leap",
+    "text": "The hezrou jumps up to 30 feet by spending 10 feet of movement."
+  },
+  "hill-giant": {
+    "name": "Hill Giant"
+  },
+  "hill-giant.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The giant makes two attacks, using Tree Club or Trash Lob in any combination."
+  },
+  "hill-giant.actions.tree-club": {
+    "name": "Tree Club",
+    "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 18 (3d8 + 5) Bludgeoning damage. If the target is a Large or smaller creature, it has the Prone condition."
+  },
+  "hill-giant.actions.trash-lob": {
+    "name": "Trash Lob",
+    "text": "Ranged Attack Roll: +8, range 60/240 ft. Hit: 16 (2d10 + 5) Bludgeoning damage, and the target has the Poisoned condition until the end of its next turn."
+  },
+  "hippogriff": {
+    "name": "Hippogriff"
+  },
+  "hippogriff.traits.flyby": {
+    "name": "Flyby",
+    "text": "The hippogriff doesn't provoke an Opportunity Attack when it flies out of an enemy's reach."
+  },
+  "hippogriff.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The hippogriff makes two Rend attacks."
+  },
+  "hippogriff.actions.rend": {
+    "name": "Rend",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Slashing damage."
+  },
+  "hippopotamus": {
+    "name": "Hippopotamus"
+  },
+  "hippopotamus.traits.hold-breath": {
+    "name": "Hold Breath",
+    "text": "The hippopotamus can hold its breath for 10 minutes."
+  },
+  "hippopotamus.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The hippopotamus makes two Bite attacks."
+  },
+  "hippopotamus.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 16 (2d10 + 5) Piercing damage."
+  },
+  "hobgoblin-captain": {
+    "name": "Hobgoblin Captain"
+  },
+  "hobgoblin-captain.traits.aura-of-authority": {
+    "name": "Aura of Authority",
+    "text": "While in a 10-foot Emanation originating from the hobgoblin, the hobgoblin and its allies have Advantage on attack rolls and saving throws, provided the hobgoblin doesn't have the Incapacitated condition."
+  },
+  "hobgoblin-captain.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The hobgoblin makes two attacks, using Greatsword or Longbow in any combination."
+  },
+  "hobgoblin-captain.actions.greatsword": {
+    "name": "Greatsword",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 9 (2d6 + 2) Slashing damage plus 3 (1d6) Poison damage."
+  },
+  "hobgoblin-captain.actions.longbow": {
+    "name": "Longbow",
+    "text": "Ranged Attack Roll: +4, range 150/600 ft. Hit: 6 (1d8 + 2) Piercing damage plus 5 (2d4) Poison damage."
+  },
+  "hobgoblin-warrior": {
+    "name": "Hobgoblin Warrior"
+  },
+  "hobgoblin-warrior.traits.pack-tactics": {
+    "name": "Pack Tactics",
+    "text": "The hobgoblin has Advantage on an attack roll against a creature if at least one of the hobgoblin's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
+  },
+  "hobgoblin-warrior.actions.longsword": {
+    "name": "Longsword",
+    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 12 (2d10 + 1) Slashing damage."
+  },
+  "hobgoblin-warrior.actions.longbow": {
+    "name": "Longbow",
+    "text": "Ranged Attack Roll: +3, range 150/600 ft. Hit: 5 (1d8 + 1) Piercing damage plus 7 (3d4) Poison damage."
+  },
+  "homunculus": {
+    "name": "Homunculus"
+  },
+  "homunculus.traits.telepathic-bond": {
+    "name": "Telepathic Bond",
+    "text": "While the homunculus is on the same plane of existence as its master, the two of them can communicate telepathically with each other."
+  },
+  "homunculus.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage, and the target is subjected to the following effect. Constitution Saving Throw: DC 12. Failure: The target has the Poisoned condition until the end of the homunculus's next turn. Failure by 5 or More: The target has the Poisoned condition for 1 minute. While Poisoned, the target has the Unconscious condition, which ends early if the target takes any damage."
+  },
+  "horned-devil": {
+    "name": "Horned Devil"
+  },
+  "horned-devil.traits.diabolical-restoration": {
+    "name": "Diabolical Restoration",
+    "text": "If the devil dies outside the Nine Hells, its body disappears in sulfurous smoke, and it gains a new body instantly, reviving with all its Hit Points somewhere in the Nine Hells."
+  },
+  "horned-devil.traits.magic-resistance": {
+    "name": "Magic Resistance",
+    "text": "The devil has Advantage on saving throws against spells and other magical effects."
+  },
+  "horned-devil.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The devil makes three attacks, using Searing Fork or Hurl Flame in any combination. It can replace one attack with a use of Infernal Tail."
+  },
+  "horned-devil.actions.searing-fork": {
+    "name": "Searing Fork",
+    "text": "Melee Attack Roll: +10, reach 10 ft. Hit: 15 (2d8 + 6) Piercing damage plus 9 (2d8) Fire damage."
+  },
+  "horned-devil.actions.hurl-flame": {
+    "name": "Hurl Flame",
+    "text": "Ranged Attack Roll: +8, range 150 ft. Hit: 26 (5d8 + 4) Fire damage. If the target is a flammable object that isn't being worn or carried, it starts burning."
+  },
+  "horned-devil.actions.infernal-tail": {
+    "name": "Infernal Tail",
+    "text": "Dexterity Saving Throw: DC 17, one creature the devil can see within 10 feet. Failure: 10 (1d8 + 6) Necrotic damage, and the target receives an infernal wound if it doesn't have one. While wounded, the target loses 10 (3d6) Hit Points at the start of each of its turns. The wound closes after 1 minute, after a spell restores Hit Points to the target, or after the target or a creature within 5 feet of it takes an action to stanch the wound, doing so by succeeding on a DC 17 Wisdom (Medicine) check."
+  },
+  "hunter-shark": {
+    "name": "Hunter Shark"
+  },
+  "hunter-shark.traits.water-breathing": {
+    "name": "Water Breathing",
+    "text": "The shark can breathe only underwater."
+  },
+  "hunter-shark.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +6 (with Advantage if the target doesn't have all its Hit Points), reach 5 ft. Hit: 14 (3d6 + 4) Piercing damage."
+  },
+  "hydra": {
+    "name": "Hydra"
+  },
+  "hydra.traits.hold-breath": {
+    "name": "Hold Breath",
+    "text": "The hydra can hold its breath for 1 hour."
+  },
+  "hydra.traits.multiple-heads": {
+    "name": "Multiple Heads",
+    "text": "The hydra has five heads. Whenever the hydra takes 25 damage or more on a single turn, one of its heads dies. The hydra dies if all its heads are dead. At the end of each of its turns when it has at least one living head, the hydra grows two heads for each of its heads that died since its last turn, unless it has taken Fire damage since its last turn. The hydra regains 20 Hit Points when it grows new heads."
+  },
+  "hydra.traits.reactive-heads": {
+    "name": "Reactive Heads",
+    "text": "For each head the hydra has beyond one, it gets an extra Reaction that can be used only for Opportunity Attacks."
+  },
+  "hydra.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The hydra makes as many Bite attacks as it has heads."
+  },
+  "hydra.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 10 (1d10 + 5) Piercing damage."
+  },
+  "hyena": {
+    "name": "Hyena"
+  },
+  "hyena.traits.pack-tactics": {
+    "name": "Pack Tactics",
+    "text": "The hyena has Advantage on an attack roll against a creature if at least one of the hyena's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
+  },
+  "hyena.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 3 (1d6) Piercing damage."
+  },
+  "ice-devil": {
+    "name": "Ice Devil"
+  },
+  "ice-devil.traits.diabolical-restoration": {
+    "name": "Diabolical Restoration",
+    "text": "If the devil dies outside the Nine Hells, its body disappears in sulfurous smoke, and it gains a new body instantly, reviving with all its Hit Points somewhere in the Nine Hells."
+  },
+  "ice-devil.traits.magic-resistance": {
+    "name": "Magic Resistance",
+    "text": "The devil has Advantage on saving throws against spells and other magical effects."
+  },
+  "ice-devil.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The devil makes three Ice Spear attacks. It can replace one attack with a Tail attack."
+  },
+  "ice-devil.actions.ice-spear": {
+    "name": "Ice Spear",
+    "text": "Melee or Ranged Attack Roll: +10, reach 5 ft. or range 30/120 ft. Hit: 14 (2d8 + 5) Piercing damage plus 10 (3d6) Cold damage. Until the end of its next turn, the target can't take a Bonus Action or Reaction, its Speed decreases by 10 feet, and it can move or take one action on its turn, not both. Hit or Miss: The spear magically returns to the devil's hand immediately after a ranged attack."
+  },
+  "ice-devil.actions.tail": {
+    "name": "Tail",
+    "text": "Melee Attack Roll: +10, reach 10 ft. Hit: 15 (3d6 + 5) Bludgeoning damage plus 18 (4d8) Cold damage."
+  },
+  "ice-devil.actions.ice-wall": {
+    "name": "Ice Wall",
+    "text": "The devil casts Wall of Ice (level 8 version), requiring no spell components and using Intelligence as the spellcasting ability (spell save DC 17)."
+  },
+  "ice-mephit": {
+    "name": "Ice Mephit"
+  },
+  "ice-mephit.traits.death-burst": {
+    "name": "Death Burst",
+    "text": "The mephit explodes when it dies. Constitution Saving Throw: DC 10, each creature in a 5-foot Emanation originating from the mephit. Failure: 5 (2d4) Cold damage. Success: Half damage."
+  },
+  "ice-mephit.actions.claw": {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 3 (1d4 + 1) Slashing damage plus 2 (1d4) Cold damage."
+  },
+  "ice-mephit.actions.fog-cloud": {
+    "name": "Fog Cloud",
+    "text": "The mephit casts Fog Cloud, requiring no spell components and using Charisma as the spellcasting ability."
+  },
+  "ice-mephit.actions.frost-breath": {
+    "name": "Frost Breath",
+    "text": "Constitution Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: 7 (3d4) Cold damage. Success: Half damage."
+  },
+  "imp": {
+    "name": "Imp"
+  },
+  "imp.traits.magic-resistance": {
+    "name": "Magic Resistance",
+    "text": "The imp has Advantage on saving throws against spells and other magical effects."
+  },
+  "imp.actions.sting": {
+    "name": "Sting",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Piercing damage plus 7 (2d6) Poison damage."
+  },
+  "imp.actions.invisibility": {
+    "name": "Invisibility",
+    "text": "The imp casts Invisibility on itself, requiring no spell components and using Charisma as the spellcasting ability."
+  },
+  "imp.actions.shape-shift": {
+    "name": "Shape-Shift",
+    "text": "The imp shape-shifts to resemble a rat (Speed 20 ft.), a raven (20 ft., Fly 60 ft.), or a spider (20 ft., Climb 20 ft.), or it returns to its true form. Its game statistics are the same in each form, except for its Speed. Any equipment it is wearing or carrying isn't transformed."
+  },
+  "incubus": {
+    "name": "Incubus"
+  },
+  "incubus.traits.succubus-form": {
+    "name": "Succubus Form",
+    "text": "When the incubus finishes a Long Rest, it can shape-shift into a Succubus, using that stat block instead of this one. Any equipment it is wearing or carrying isn't transformed."
+  },
+  "incubus.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The incubus makes two Restless Touch attacks."
+  },
+  "incubus.actions.restless-touch": {
+    "name": "Restless Touch",
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 15 (3d6 + 5) Psychic damage, and the target is cursed for 24 hours or until the incubus dies. Until the curse ends, the target gains no benefit from finishing Short Rests."
+  },
+  "incubus.actions.spellcasting": {
+    "name": "Spellcasting",
+    "text": "The incubus casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 15): At Will: Disguise Self, Etherealness. 1/Day Each: Dream, Hypnotic Pattern."
+  },
+  "incubus.bonusActions.nightmare": {
+    "name": "Nightmare",
+    "text": "Wisdom Saving Throw: DC 15, one creature the incubus can see within 60 feet. Failure: If the target has 20 Hit Points or fewer, it has the Unconscious condition for 1 hour, until it takes damage, or until a creature within 5 feet of it takes an action to wake it. Otherwise, the target takes 18 (4d8) Psychic damage."
+  },
+  "invisible-stalker": {
+    "name": "Invisible Stalker"
+  },
+  "invisible-stalker.traits.air-form": {
+    "name": "Air Form",
+    "text": "The stalker can enter an enemy's space and stop there. It can move through a space as narrow as 1 inch without expending extra movement to do so."
+  },
+  "invisible-stalker.traits.invisibility": {
+    "name": "Invisibility",
+    "text": "The stalker has the Invisible condition."
+  },
+  "invisible-stalker.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The stalker makes three Wind Swipe attacks. It can replace one attack with a use of Vortex."
+  },
+  "invisible-stalker.actions.wind-swipe": {
+    "name": "Wind Swipe",
+    "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 11 (2d6 + 4) Force damage."
+  },
+  "invisible-stalker.actions.vortex": {
+    "name": "Vortex",
+    "text": "Constitution Saving Throw: DC 14, one Large or smaller creature in the stalker's space. Failure: 7 (1d8 + 3) Thunder damage, and the target has the Grappled condition (escape DC 13). Until the grapple ends, the target can't cast spells with a Verbal component and takes 7 (2d6) Thunder damage at the start of each of the stalker's turns."
+  },
+  "iron-golem": {
+    "name": "Iron Golem"
+  },
+  "iron-golem.traits.fire-absorption": {
+    "name": "Fire Absorption",
+    "text": "Whenever the golem is subjected to Fire damage, it regains a number of Hit Points equal to the Fire damage dealt."
+  },
+  "iron-golem.traits.immutable-form": {
+    "name": "Immutable Form",
+    "text": "The golem can't shape-shift."
+  },
+  "iron-golem.traits.magic-resistance": {
+    "name": "Magic Resistance",
+    "text": "The golem has Advantage on saving throws against spells and other magical effects."
+  },
+  "iron-golem.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The golem makes two attacks, using Bladed Arm or Fiery Bolt in any combination."
+  },
+  "iron-golem.actions.bladed-arm": {
+    "name": "Bladed Arm",
+    "text": "Melee Attack Roll: +12, reach 10 ft. Hit: 20 (3d8 + 7) Slashing damage plus 10 (3d6) Fire damage."
+  },
+  "iron-golem.actions.fiery-bolt": {
+    "name": "Fiery Bolt",
+    "text": "Ranged Attack Roll: +10, range 120 ft. Hit: 36 (8d8) Fire damage."
+  },
+  "iron-golem.actions.poison-breath": {
+    "name": "Poison Breath",
+    "text": "Constitution Saving Throw: DC 18, each creature in a 60-foot Cone. Failure: 55 (10d10) Poison damage. Success: Half damage."
+  },
+  "jackal": {
+    "name": "Jackal"
+  },
+  "jackal.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +1, reach 5 ft. Hit: 1 (1d4 - 1) Piercing damage."
+  },
+  "killer-whale": {
+    "name": "Killer Whale"
+  },
+  "killer-whale.traits.hold-breath": {
+    "name": "Hold Breath",
+    "text": "The whale can hold its breath for 30 minutes."
+  },
+  "killer-whale.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 21 (5d6 + 4) Piercing damage."
+  },
+  "knight": {
+    "name": "Knight"
+  },
+  "knight.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The knight makes two attacks, using Greatsword or Heavy Crossbow in any combination."
+  },
+  "knight.actions.greatsword": {
+    "name": "Greatsword",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage plus 4 (1d8) Radiant damage."
+  },
+  "knight.actions.heavy-crossbow": {
+    "name": "Heavy Crossbow",
+    "text": "Ranged Attack Roll: +2, range 100/400 ft. Hit: 11 (2d10) Piercing damage plus 4 (1d8) Radiant damage."
+  },
+  "knight.reactions.parry": {
+    "name": "Parry",
+    "text": "Trigger: The knight is hit by a melee attack roll while holding a weapon. Response: The knight adds 2 to its AC against that attack, possibly causing it to miss."
+  },
+  "kobold-warrior": {
+    "name": "Kobold Warrior"
+  },
+  "kobold-warrior.traits.pack-tactics": {
+    "name": "Pack Tactics",
+    "text": "The kobold has Advantage on an attack roll against a creature if at least one of the kobold's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
+  },
+  "kobold-warrior.traits.sunlight-sensitivity": {
+    "name": "Sunlight Sensitivity",
+    "text": "While in sunlight, the kobold has Disadvantage on ability checks and attack rolls."
+  },
+  "kobold-warrior.actions.dagger": {
+    "name": "Dagger",
+    "text": "Melee or Ranged Attack Roll: +4, reach 5 ft. or range 20/60 ft. Hit: 4 (1d4 + 2) Piercing damage."
+  },
+  "kraken": {
+    "name": "Kraken"
+  },
+  "kraken.traits.amphibious": {
+    "name": "Amphibious",
+    "text": "The kraken can breathe air and water."
+  },
+  "kraken.traits.legendary-resistance": {
+    "name": "Legendary Resistance",
+    "text": "(4/Day, or 5/Day in Lair) If the kraken fails a saving throw, it can choose to succeed instead."
+  },
+  "kraken.traits.siege-monster": {
+    "name": "Siege Monster",
+    "text": "The kraken deals double damage to objects and structures."
+  },
+  "kraken.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The kraken makes two Tentacle attacks and uses Fling, Lightning Strike, or Swallow."
+  },
+  "kraken.actions.tentacle": {
+    "name": "Tentacle",
+    "text": "Melee Attack Roll: +17, reach 30 ft. Hit: 24 (4d6 + 10) Bludgeoning damage. The target has the Grappled condition (escape DC 20) from one of ten tentacles, and it has the Restrained condition until the grapple ends."
+  },
+  "kraken.actions.fling": {
+    "name": "Fling",
+    "text": "The kraken throws a Large or smaller creature Grappled by it to a space it can see within 60 feet of itself that isn't in the air. Dexterity Saving Throw: DC 25, the creature thrown and each creature in the destination space. Failure: 18 (4d8) Bludgeoning damage, and the target has the Prone condition. Success: Half damage only."
+  },
+  "kraken.actions.lightning-strike": {
+    "name": "Lightning Strike",
+    "text": "Dexterity Saving Throw: DC 23, one creature the kraken can see within 120 feet. Failure: 33 (6d10) Lightning damage. Success: Half damage."
+  },
+  "kraken.actions.swallow": {
+    "name": "Swallow",
+    "text": "Dexterity Saving Throw: DC 25, one creature Grappled by the kraken (it can have up to four creatures swallowed at a time). Failure: 23 (3d8 + 10) Piercing damage. If the target is Large or smaller, it is swallowed and no longer Grappled. A swallowed creature has the Restrained condition, has Total Cover against attacks and other effects outside the kraken, and takes 24 (7d6) Acid damage at the start of each of its turns. If the kraken takes 50 damage or more on a single turn from a creature inside it, the kraken must succeed on a DC 25 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 10 feet of the kraken with the Prone condition. If the kraken dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 15 feet of movement, exiting Prone."
+  },
+  "kraken.legendaryActions.storm-bolt": {
+    "name": "Storm Bolt",
+    "text": "The kraken uses Lightning Strike."
+  },
+  "kraken.legendaryActions.toxic-ink": {
+    "name": "Toxic Ink",
+    "text": "Constitution Saving Throw: DC 23, each creature in a 15-foot Emanation originating from the kraken while it is underwater. Failure: The target has the Blinded and Poisoned conditions until the end of the kraken's next turn. The kraken then moves up to its Speed. Failure or Success: The kraken can't take this action again until the start of its next turn."
+  },
   "priest": {
     "name": "Priest"
   },

@@ -3036,6 +3036,492 @@
     "name": "Incantesimi",
     "text": "La naga lancia uno dei seguenti incantesimi, senza bisogno di componenti somatiche o materiali, utilizzando Saggezza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 16): A volontà: taumaturgia. 1/giorno ciascuno: Chiaroveggenza, colpo infuocato (di 6º livello), costrizione, cura ferite (di 6º livello), visione del vero."
   },
+  "half-dragon": {
+    "name": "Mezzodrago"
+  },
+  "half-dragon.traits.draconic-origin": {
+    "name": "Origine draconica",
+    "text": "Il mezzodrago è legato al tipo di drago associato con uno dei seguenti tipi di danno (a scelta del GM): acido, freddo, fulmine, fuoco o veleno. Questa scelta influenza gli altri aspetti della scheda delle statistiche."
+  },
+  "half-dragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il mezzodrago effettua due attacchi Artiglio."
+  },
+  "half-dragon.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 6 (1d4 + 4) danni Taglienti più 7 (2d6) danni del tipo scelto per il tratto Origine draconica."
+  },
+  "half-dragon.actions.dragons-breath": {
+    "name": "Soffio del drago",
+    "text": "Tiro salvezza su Destrezza: CD 14, tutte le creature in un cono di 9 metri. Fallimento: 28 (8d6) danni del tipo scelto per il tratto Origine draconica. Successo: danni dimezzati."
+  },
+  "half-dragon.bonusActions.leap": {
+    "name": "Balzo",
+    "text": "Il mezzodrago salta fino a 9 metri usando 3 metri di movimento."
+  },
+  "harpy": {
+    "name": "Arpia"
+  },
+  "harpy.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 6 (2d4 + 1) danni Taglienti."
+  },
+  "harpy.actions.luring-song": {
+    "name": "Canto seducente",
+    "text": "L'arpia intona un canto melodioso, che dura finché non termina la sua concentrazione su di esso. Tiro salvezza su Saggezza: CD 11, ogni umanoide e gigante in un'emanazione di 90 metri di cui l'arpia è il punto d'origine quando comincia la canzone. Fallimento: il bersaglio è Affascinato finché la canzone non finisce e ripete il tiro salvezza al termine di ogni suo turno. Mentre è Affascinato, il bersaglio è Incapacitato e ignora il Canto seducente delle altre arpie. Se si trova a più di 1,5 metri di distanza dall'arpia, deve muoversi nel proprio turno verso di essa seguendo il percorso più diretto e cercando di giungere entro 1,5 metri. Il bersaglio non evita gli attacchi di opportunità, ma prima di muoversi su un terreno pericoloso (come per esempio un lago di lava o una fossa) e qualora subisca danni da una fonte diversa dall'arpia, ripete il tiro salvezza. Successo: il bersaglio è immune al Canto seducente di questa arpia per 24 ore."
+  },
+  "hawk": {
+    "name": "Falco"
+  },
+  "hawk.actions.talons": {
+    "name": "Speroni",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 1 danno Tagliente."
+  },
+  "hell-hound": {
+    "name": "Segugio infernale"
+  },
+  "hell-hound.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il segugio dispone di vantaggio nel tiro per colpire contro una creatura se almeno uno degli alleati del segugio si trova entro 1,5 metri dalla creatura e non è Incapacitato."
+  },
+  "hell-hound.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il segugio effettua due attacchi Morso."
+  },
+  "hell-hound.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Perforanti più 3 (1d6) danni da Fuoco."
+  },
+  "hell-hound.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 12, tutte le creature in un cono di 4,5 metri. Fallimento: 17 (5d6) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "hezrou": {
+    "name": "Hezrou"
+  },
+  "hezrou.traits.demonic-restoration": {
+    "name": "Ristoro demoniaco",
+    "text": "Se l'hezrou muore al di fuori dell'Abisso, il suo corpo si dissolve diventando icore ed esso ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nell'Abisso."
+  },
+  "hezrou.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "L'hezrou dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "hezrou.traits.stench": {
+    "name": "Fetore",
+    "text": "Tiro salvezza su Costituzione: CD 16, ogni creatura che inizi il suo turno in un'emanazione di 3 metri di cui l'hezrou è il punto di origine. Fallimento: il bersaglio è Avvelenato fino all'inizio del proprio turno successivo."
+  },
+  "hezrou.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'hezrou effettua tre attacchi Squarcio."
+  },
+  "hezrou.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 6 (1d4 + 4) danni Taglienti più 9 (2d8) danni da Veleno."
+  },
+  "hezrou.bonusActions.leap": {
+    "name": "Balzo",
+    "text": "L'hezrou salta fino a 9 metri usando 3 metri di movimento."
+  },
+  "hill-giant": {
+    "name": "Gigante delle colline"
+  },
+  "hill-giant.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il gigante effettua due attacchi, utilizzando Tronco d'albero o Lancio di rifiuti in qualsiasi combinazione."
+  },
+  "hill-giant.actions.tree-club": {
+    "name": "Tronco d'albero",
+    "text": "Tiro per colpire in mischia: +8, portata 3 m. Colpito: 18 (3d8 + 5) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra Prono."
+  },
+  "hill-giant.actions.trash-lob": {
+    "name": "Lancio di rifiuti",
+    "text": "Tiro per colpire a distanza: +8, gittata 18/72 m. Colpito: 16 (2d10 + 5) danni Contundenti, e il bersaglio è Avvelenato fino al termine del proprio turno successivo."
+  },
+  "hippogriff": {
+    "name": "Ippogrifo"
+  },
+  "hippogriff.traits.flyby": {
+    "name": "Volo sfuggente",
+    "text": "L'ippogrifo non provoca attacchi d'opportunità quando vola oltre la portata di un nemico."
+  },
+  "hippogriff.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'ippogrifo effettua due attacchi Squarcio."
+  },
+  "hippogriff.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Taglienti."
+  },
+  "hippopotamus": {
+    "name": "Ippopotamo"
+  },
+  "hippopotamus.traits.hold-breath": {
+    "name": "Apnea",
+    "text": "L'ippopotamo può trattenere il respiro per 10 minuti."
+  },
+  "hippopotamus.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'ippopotamo effettua due attacchi Morso."
+  },
+  "hippopotamus.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 16 (2d10 + 5) danni Perforanti."
+  },
+  "hobgoblin-captain": {
+    "name": "Hobgoblin capitano"
+  },
+  "hobgoblin-captain.traits.aura-of-authority": {
+    "name": "Presenza autoritaria",
+    "text": "Finché si trovano in un'emanazione di 3 metri di cui l'hobgoblin è il punto di origine, l'hobgoblin e i suoi alleati dispongono di vantaggio ai tiri per colpire e ai tiri salvezza, ammesso che l'hobgoblin non sia Incapacitato."
+  },
+  "hobgoblin-captain.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'hobgoblin effettua due attacchi, utilizzando Spadone o Arco lungo in qualsiasi combinazione."
+  },
+  "hobgoblin-captain.actions.greatsword": {
+    "name": "Spadone",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 9 (2d6 + 2) danni Taglienti più 3 (1d6) danni da Veleno."
+  },
+  "hobgoblin-captain.actions.longbow": {
+    "name": "Arco lungo",
+    "text": "Tiro per colpire a distanza: +4, gittata 45/180 m. Colpito: 6 (1d8 + 2) danni Perforanti più 5 (2d4) danni da Veleno."
+  },
+  "hobgoblin-warrior": {
+    "name": "Hobgoblin guerriero"
+  },
+  "hobgoblin-warrior.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "L'hobgoblin dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno dei suoi alleati si trova entro 1,5 metri dalla creatura e l'alleato non è Incapacitato."
+  },
+  "hobgoblin-warrior.actions.longsword": {
+    "name": "Spada lunga",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 12 (2d10 + 1) danni Taglienti."
+  },
+  "hobgoblin-warrior.actions.longbow": {
+    "name": "Arco lungo",
+    "text": "Tiro per colpire a distanza: +3, gittata 45/180 m. Colpito: 5 (1d8 + 1) danni Perforanti più 7 (3d4) danni da Veleno."
+  },
+  "homunculus": {
+    "name": "Omuncolo"
+  },
+  "homunculus.traits.telepathic-bond": {
+    "name": "Legame telepatico",
+    "text": "Finché l'omuncolo si trova sullo stesso piano di esistenza del suo padrone, i due possono comunicare telepaticamente tra loro."
+  },
+  "homunculus.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 1 danno Perforante, e il bersaglio subisce il seguente effetto. Tiro salvezza su Costituzione: CD 12. Fallimento: il bersaglio è Avvelenato fino al termine del turno successivo dell'omuncolo. Fallimento di 5 o più: il bersaglio è Avvelenato per 1 minuto. Finché è Avvelenato, è Privo di Sensi, ma la condizione termina prima se subisce dei danni."
+  },
+  "horned-devil": {
+    "name": "Diavolo cornuto"
+  },
+  "horned-devil.traits.diabolical-restoration": {
+    "name": "Ristoro diabolico",
+    "text": "Se il diavolo muore al di fuori dei Nove Inferi, il suo corpo si dissolve in fumo sulfureo e ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nei Nove Inferi."
+  },
+  "horned-devil.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il diavolo dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "horned-devil.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il diavolo effettua tre attacchi, utilizzando Forcone ardente o Scagliare fiamma in qualsiasi combinazione. Può sostituire un attacco con un utilizzo di Coda infernale."
+  },
+  "horned-devil.actions.searing-fork": {
+    "name": "Forcone ardente",
+    "text": "Tiro per colpire in mischia: +10, portata 3 m. Colpito: 15 (2d8 + 6) danni Perforanti più 9 (2d8) danni da Fuoco."
+  },
+  "horned-devil.actions.hurl-flame": {
+    "name": "Scagliare fiamma",
+    "text": "Tiro per colpire a distanza: +8, gittata 45 m. Colpito: 26 (5d8 + 4) danni da Fuoco. Se il bersaglio è un oggetto infiammabile che non è indossato o trasportato, inizia a bruciare."
+  },
+  "horned-devil.actions.infernal-tail": {
+    "name": "Coda infernale",
+    "text": "Tiro salvezza su Destrezza: CD 17, una creatura che il diavolo è in grado di vedere entro 3 metri. Fallimento: 10 (1d8 + 6) danni Necrotici, e il bersaglio subisce una ferita infernale se non ne ha già una. Finché è ferito, il bersaglio perde 10 (3d6) punti ferita all'inizio di ogni suo turno. La ferita si chiude dopo 1 minuto, dopo che un incantesimo ripristina i punti ferita del bersaglio, o dopo che il bersaglio o una creatura entro 1,5 metri effettua un'azione per tamponare la ferita superando una prova di Saggezza (Medicina) con CD 17."
+  },
+  "hunter-shark": {
+    "name": "Squalo cacciatore"
+  },
+  "hunter-shark.traits.water-breathing": {
+    "name": "Respirare sott'acqua",
+    "text": "Lo squalo può respirare soltanto sott'acqua."
+  },
+  "hunter-shark.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +6 (con vantaggio se il bersaglio non ha tutti i punti ferita), portata 1,5 m. Colpito: 14 (3d6 + 4) danni Perforanti."
+  },
+  "hydra": {
+    "name": "Idra"
+  },
+  "hydra.traits.hold-breath": {
+    "name": "Apnea",
+    "text": "L'idra può trattenere il respiro per 1 ora."
+  },
+  "hydra.traits.multiple-heads": {
+    "name": "Teste multiple",
+    "text": "L'idra possiede cinque teste. Ogni volta che subisce 25 o più danni in un singolo turno, una delle teste muore. Se tutte le teste muoiono, l'idra muore. Alla fine del suo turno e finché ha almeno una testa vivente, l'idra fa ricrescere due teste per ogni testa morta dal suo ultimo turno, a meno che nel corso di tale periodo non abbia subito danni da Fuoco. L'idra recupera 20 punti ferita quando fa ricrescere delle nuove teste."
+  },
+  "hydra.traits.reactive-heads": {
+    "name": "Teste reattive",
+    "text": "Per ogni testa che l'idra possiede oltre la prima, riceve una reazione extra che può essere usata soltanto per gli attacchi di opportunità."
+  },
+  "hydra.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'idra effettua un numero di attacchi Morso pari al numero di teste che possiede."
+  },
+  "hydra.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +8, portata 3 m. Colpito: 10 (1d10 + 5) danni Perforanti."
+  },
+  "hyena": {
+    "name": "Iena"
+  },
+  "hyena.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "La iena dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno dei suoi alleati si trova entro 1,5 metri dalla creatura e non è Incapacitato."
+  },
+  "hyena.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 3 (1d6) danni Perforanti."
+  },
+  "ice-devil": {
+    "name": "Diavolo del ghiaccio"
+  },
+  "ice-devil.traits.diabolical-restoration": {
+    "name": "Ristoro diabolico",
+    "text": "Se il diavolo muore al di fuori dei Nove Inferi, il suo corpo si dissolve in fumo sulfureo e ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nei Nove Inferi."
+  },
+  "ice-devil.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il diavolo dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "ice-devil.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il diavolo effettua tre attacchi Lancia di ghiaccio. Può sostituire un attacco con un attacco Coda."
+  },
+  "ice-devil.actions.ice-spear": {
+    "name": "Lancia di ghiaccio",
+    "text": "Tiro per colpire in mischia o a distanza: +10, portata 1,5 m o gittata 9/36 m. Colpito: 14 (2d8 + 5) danni Perforanti più 10 (3d6) danni da Freddo. Fino al termine del proprio turno successivo, il bersaglio non può effettuare un'azione bonus o una reazione, la sua velocità è ridotta di 3 metri e durante il suo turno può muoversi o effettuare un'azione, ma non entrambe le cose. Colpito o mancato: la lancia fa magicamente ritorno nella mano del diavolo subito dopo un attacco a distanza."
+  },
+  "ice-devil.actions.tail": {
+    "name": "Coda",
+    "text": "Tiro per colpire in mischia: +10, portata 3 m. Colpito: 15 (3d6 + 5) danni Contundenti più 18 (4d8) danni da Freddo."
+  },
+  "ice-devil.actions.ice-wall": {
+    "name": "Muro di ghiaccio",
+    "text": "Il diavolo lancia muro di ghiaccio (di 8º livello), senza bisogno di componenti e utilizzando Intelligenza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 17)."
+  },
+  "ice-mephit": {
+    "name": "Mephit del ghiaccio"
+  },
+  "ice-mephit.traits.death-burst": {
+    "name": "Esplosione mortale",
+    "text": "Il mephit esplode quando muore. Tiro salvezza su Costituzione: CD 10, tutte le creature in un'emanazione di 1,5 metri di cui il mephit è il punto di origine. Fallimento: 5 (2d4) danni da Freddo. Successo: danni dimezzati."
+  },
+  "ice-mephit.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 3 (1d4 + 1) danni Taglienti più 2 (1d4) danni da Freddo."
+  },
+  "ice-mephit.actions.fog-cloud": {
+    "name": "Nube di nebbia",
+    "text": "Il mephit lancia nube di nebbia senza bisogno di componenti, utilizzando Carisma come caratteristica da incantatore."
+  },
+  "ice-mephit.actions.frost-breath": {
+    "name": "Soffio di gelo",
+    "text": "Tiro salvezza su Costituzione: CD 10, tutte le creature in un cono di 4,5 metri. Fallimento: 7 (3d4) danni da Freddo. Successo: danni dimezzati."
+  },
+  "imp": {
+    "name": "Imp"
+  },
+  "imp.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "L'imp dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "imp.actions.sting": {
+    "name": "Pungiglione",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 6 (1d6 + 3) danni Perforanti più 7 (2d6) danni da Veleno."
+  },
+  "imp.actions.invisibility": {
+    "name": "Invisibilità",
+    "text": "L'imp può lanciare invisibilità su di sé senza bisogno di componenti per incantesimi e utilizzando il Carisma come caratteristica da incantatore."
+  },
+  "imp.actions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "L'imp può assumere la forma bestiale di un topo (velocità 6 m), un corvo (6 m, volo 18 m) o un ragno (6 m, scalata 6 m), o tornare alla sua vera forma. Le sue statistiche di gioco restano le stesse in ogni forma, a eccezione della velocità. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "incubus": {
+    "name": "Incubo"
+  },
+  "incubus.traits.succubus-form": {
+    "name": "Forma succube",
+    "text": "Quando l'incubo termina un riposo lungo, può trasformarsi in una succube, utilizzando la relativa scheda delle statistiche al posto di questa. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "incubus.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'incubo effettua due attacchi Tocco irrequieto."
+  },
+  "incubus.actions.restless-touch": {
+    "name": "Tocco irrequieto",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 15 (3d6 + 5) danni Psichici, e il bersaglio è maledetto per 24 ore o finché l'incubo non muore. Finché la maledizione perdura, il bersaglio non ottiene alcun beneficio dai riposi brevi."
+  },
+  "incubus.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "L'incubo lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 15): A volontà: Camuffare se stesso, forma eterea. 1/giorno ciascuno: Sogno, trama ipnotica."
+  },
+  "incubus.bonusActions.nightmare": {
+    "name": "Sogno spaventoso",
+    "text": "Tiro salvezza su Saggezza: CD 15, una creatura che l'incubo è in grado di vedere entro 18 metri. Fallimento: Se il bersaglio ha 20 punti ferita o meno, è privo di sensi per 1 ora, finché non subisce danni o un'altra creatura entro 1,5 metri da lui non usa un'azione per svegliarlo. Altrimenti, il bersaglio subisce 18 (4d8) danni Psichici."
+  },
+  "invisible-stalker": {
+    "name": "Cacciatore invisibile"
+  },
+  "invisible-stalker.traits.air-form": {
+    "name": "Forma d'aria",
+    "text": "Il cacciatore invisibile può entrare nello spazio di un nemico e fermarvisi. Può muoversi attraverso uno spazio stretto fino a 2,5 centimetri senza consumare movimento extra per farlo."
+  },
+  "invisible-stalker.traits.invisibility": {
+    "name": "Invisibilità",
+    "text": "Il cacciatore è Invisibile."
+  },
+  "invisible-stalker.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il cacciatore invisibile effettua tre attacchi Colpo di vento. Può sostituire un attacco con un utilizzo di Vortice."
+  },
+  "invisible-stalker.actions.wind-swipe": {
+    "name": "Colpo di vento",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 11 (2d6 + 4) danni da Forza."
+  },
+  "invisible-stalker.actions.vortex": {
+    "name": "Vortice",
+    "text": "Tiro salvezza su Costituzione: CD 14, una creatura di taglia Grande o inferiore nello spazio del cacciatore. Fallimento: 7 (1d8 + 3) danni da Tuono, e il bersaglio è Afferrato (CD 13 per sfuggire). Finché la presa perdura, il bersaglio non può lanciare incantesimi con una componente verbale, e subisce 7 (2d6) danni da Tuono all'inizio di ogni turno del cacciatore."
+  },
+  "iron-golem": {
+    "name": "Golem di ferro"
+  },
+  "iron-golem.traits.fire-absorption": {
+    "name": "Assorbimento del fuoco",
+    "text": "Ogni volta che il golem subisce danni da Fuoco, recupera un numero di punti ferita pari ai danni da Fuoco inflitti."
+  },
+  "iron-golem.traits.immutable-form": {
+    "name": "Forma immutabile",
+    "text": "Il golem non può mutare forma."
+  },
+  "iron-golem.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il golem dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "iron-golem.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il golem effettua due attacchi, usando Braccio affilato o Dardo di fuoco in qualsiasi combinazione."
+  },
+  "iron-golem.actions.bladed-arm": {
+    "name": "Braccio affilato",
+    "text": "Tiro per colpire in mischia: +12, portata 3 m. Colpito: 20 (3d8 + 7) danni Taglienti più 10 (3d6) danni da Fuoco."
+  },
+  "iron-golem.actions.fiery-bolt": {
+    "name": "Dardo di fuoco",
+    "text": "Tiro per colpire a distanza: +10, gittata 36 m. Colpito: 36 (8d8) danni da Fuoco."
+  },
+  "iron-golem.actions.poison-breath": {
+    "name": "Soffio di veleno",
+    "text": "Tiro salvezza su Costituzione: CD 18, tutte le creature in un cono di 18 metri. Fallimento: 55 (10d10) danni da Veleno. Successo: danni dimezzati."
+  },
+  "jackal": {
+    "name": "Sciacallo"
+  },
+  "jackal.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +1, portata 1,5 m. Colpito: 1 (1d4 - 1) danni Perforanti."
+  },
+  "killer-whale": {
+    "name": "Orca assassina"
+  },
+  "killer-whale.traits.hold-breath": {
+    "name": "Apnea",
+    "text": "L'orca può trattenere il respiro per 30 minuti."
+  },
+  "killer-whale.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 21 (5d6 + 4) danni Perforanti."
+  },
+  "knight": {
+    "name": "Cavaliere"
+  },
+  "knight.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il cavaliere effettua due attacchi, usando Spadone o Balestra pesante in qualsiasi combinazione."
+  },
+  "knight.actions.greatsword": {
+    "name": "Spadone",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Taglienti più 4 (1d8) danni Radiosi."
+  },
+  "knight.actions.heavy-crossbow": {
+    "name": "Balestra pesante",
+    "text": "Tiro per colpire a distanza: +2, gittata 30/120 m. Colpito: 11 (2d10) danni Perforanti più 4 (1d8) danni Radiosi."
+  },
+  "knight.reactions.parry": {
+    "name": "Parata",
+    "text": "Attivazione: il cavaliere viene colpito da un tiro per colpire in mischia mentre tiene in mano un'arma. Esito: il cavaliere aggiunge 2 alla sua CA contro quell'attacco, aumentando le probabilità che il colpo non vada a segno."
+  },
+  "kobold-warrior": {
+    "name": "Coboldo guerriero"
+  },
+  "kobold-warrior.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il coboldo dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno degli alleati del mostro si trova entro 1,5 metri dalla creatura e l'alleato non è Incapacitato."
+  },
+  "kobold-warrior.traits.sunlight-sensitivity": {
+    "name": "Sensibilità al sole",
+    "text": "Finché è esposto alla luce del sole, il coboldo subisce svantaggio alle prove di caratteristica e ai tiri per colpire."
+  },
+  "kobold-warrior.actions.dagger": {
+    "name": "Pugnale",
+    "text": "Tiro per colpire in mischia o a distanza: +4, portata 1,5 m o gittata 6/18 m. Colpito: 4 (1d4 + 2) danni Perforanti."
+  },
+  "kraken": {
+    "name": "Kraken"
+  },
+  "kraken.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il kraken può respirare in aria e in acqua."
+  },
+  "kraken.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno o 5/giorno nella tana) Se il kraken fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "kraken.traits.siege-monster": {
+    "name": "Mostro da assedio",
+    "text": "Il kraken infligge danni doppi a oggetti e strutture."
+  },
+  "kraken.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il kraken effettua due attacchi Tentacolo e usa Scagliare, Colpo del fulmine o Inghiottire."
+  },
+  "kraken.actions.tentacle": {
+    "name": "Tentacolo",
+    "text": "Tiro per colpire in mischia: +17, portata 9 m. Colpito: 24 (4d6 + 10) danni Contundenti. Il bersaglio è Afferrato (CD 20 per sfuggire) da uno dei dieci tentacoli, ed è Trattenuto finché la presa perdura."
+  },
+  "kraken.actions.fling": {
+    "name": "Scagliare",
+    "text": "Il kraken scaglia una creatura di taglia Grande che ha afferrato in uno spazio che è in grado di vedere entro 18 metri da sé e che non sia in aria. Tiro salvezza su Destrezza: CD 25, la creatura scagliata e tutte le creature nello spazio di destinazione. Fallimento: 18 (4d8) danni Contundenti, e il bersaglio cade a terra Prono. Successo: danni dimezzati."
+  },
+  "kraken.actions.lightning-strike": {
+    "name": "Colpo del fulmine",
+    "text": "Tiro salvezza su Destrezza: CD 23, una creatura che il kraken è in grado di vedere entro 36 metri. Fallimento: 33 (6d10) danni da Fulmine. Successo: danni dimezzati."
+  },
+  "kraken.actions.swallow": {
+    "name": "Inghiottire",
+    "text": "Tiro salvezza su Destrezza: CD 25, una creatura afferrata dal kraken (può inghiottire fino a quattro creature in una volta). Fallimento: 23 (3d8 + 10) danni Perforanti. Se il bersaglio è di taglia Grande o inferiore, viene inghiottito e non è più Afferrato. Una creatura inghiottita viene Trattenuta, beneficia di copertura totale contro attacchi e altri effetti al di fuori del kraken, e subisce 24 (7d6) danni da Acido all'inizio di ogni suo turno. Se il kraken subisce 50 danni o più in un singolo turno da una creatura al suo interno, deve superare un tiro salvezza su Costituzione con CD 25 alla fine di quel turno, altrimenti rigurgita tutte le creature inghiottite, che cadono Prone in uno spazio entro 3 metri da lui. Se il kraken muore, qualsiasi creatura inghiottita non è più Trattenuta e può fuggire dal cadavere usando 4,5 metri di movimento, uscendo Prona."
+  },
+  "kraken.legendaryActions.storm-bolt": {
+    "name": "Lampo burrascoso",
+    "text": "Il kraken usa Colpo del fulmine."
+  },
+  "kraken.legendaryActions.toxic-ink": {
+    "name": "Inchiostro nocivo",
+    "text": "Tiro salvezza su Costituzione: CD 23, tutte le creature in un'emanazione di 4,5 metri di cui il kraken è il punto di origine finché si trova sott'acqua. Fallimento: il bersaglio è Accecato e Avvelenato fino al termine del turno successivo del kraken. Dopodiché il kraken si muove fino alla sua velocità massima. Fallimento o successo: il kraken non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
   "priest": {
     "name": "Sacerdote"
   },

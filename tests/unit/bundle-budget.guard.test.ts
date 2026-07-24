@@ -157,7 +157,14 @@ const EAGER_CEILING_KB = 776; // baseline 727.1 → ~+6% (near budget — see AR
 // the `srd-monsters`/`monsters` lazy chunks). Measured 8498.07 KiB (285 entries) on the
 // COMPOSED lane — the larger of the two; the SRD-only lane is smaller under the same
 // shared ceiling. +~10 KiB deterministic headroom (never exact-fit).
-const PRECACHE_CEILING_KIB = 8517;
+// 2026-07-24 (bestiary h-k wave): raised 8517 → 8579 (+62 KiB) for the h-k tranche's
+// 26 statblocks (Half-Dragon…Kraken) — the EN/IT `monsters` catalogue shards grew by
+// the wave's bilingual trait/action prose (still LAZY, precached for offline-first, NOT
+// an eager regression: the eager closure is unchanged at ~771.4 KB gz, the corpus rides
+// the `srd-monsters`/`monsters` lazy chunks). Measured 8568.93 KiB (285 entries) on the
+// COMPOSED lane — the larger of the two; the SRD-only lane is smaller under the same
+// shared ceiling. +~10 KiB deterministic headroom (never exact-fit).
+const PRECACHE_CEILING_KIB = 8579;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
