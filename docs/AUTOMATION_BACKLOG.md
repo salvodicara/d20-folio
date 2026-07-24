@@ -522,10 +522,24 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       twice; the modifier is added once), reaching every attack card (weapon + spell + non-weapon)
       and every character, not just Champions. Regression: `glossary-tip.test.tsx` (the crit clause
       in EN + IT).
-- [ ] **RA-35 — Musician's Encouraging Song grants no Heroic Inspiration.** _Feats (content seed) ·
+- [x] **RA-35 — Musician's Encouraging Song grants no Heroic Inspiration.** _Feats (content seed) ·
       GAP · S3._ The feat models only the instrument picks (matrix row honestly notes "melody
       narrative"); the rest-time "give Heroic Inspiration to PB allies" half is ally-targeted
       (self-sheet can still one-tap SELF-grant). Seed for the content-fidelity sweep. **T3.**
+      **RESOLVED W6 (2026-07-24) — residual by design (no new machinery, no ally modeling):**
+      Encouraging Song gives Heroic Inspiration to up to PB _allies_ who hear the song, not the
+      caster (`content-pack/i18n/en/srd/feats.json`, "…give Heroic Inspiration to allies who hear the
+      song. The number of allies… equals your Proficiency Bonus"). The engine models ONE character,
+      so there are no ally targets to grant; and the caster's own Heroic Inspiration is already a
+      universal one-tap socket (the `insp-toggle` on `ResourceRail`). RAW gives the caster nothing,
+      so no self-grant was added — a Musician-specific self-grant would be both redundant and
+      RAW-wrong. The feat description is already 2024-faithful in EN + IT. **Pack-side follow-up
+      (deferred, pack frozen read-only this wave):** sharpen the bundled crafter/musician/harper
+      coverage row in `content-pack/docs/AUTOMATION_COVERAGE.md` (melody clause → "Encouraging Song =
+      Heroic Inspiration to allies, residual by design") and add the status-quo guard to
+      `content-pack/tests/unit/wave2-correctness.test.ts` (assert `getFeat("musician")` grants only
+      the 3-instrument tool choice and no heroic-inspiration grant), so the residual can't later
+      drift into the RAW-wrong caster self-grant.
 
 > **Triaged non-findings re-confirmed by this audit** (already-settled residuals, MECHANICS.md
 > "Non-automatable residuals" — do not re-open): attacker-side condition effects, battlefield
