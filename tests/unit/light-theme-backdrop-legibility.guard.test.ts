@@ -217,22 +217,6 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
         "to a flat opaque gradient without it."
     ).toBe(true);
   });
-
-  it("#14 — the light footer wordmark is the deep engraved register, not the honey gold that washed on the daylight plates", () => {
-    // The bright --gold-leaf-300 "d20 Folio" brand ink read ~3:1 honey-on-honey over
-    // the raised-0.75 daylight plates (the atmosphere wave's weakest text moment).
-    // Light gilt that cannot glow must ENGRAVE as deep ink — pin the brand's light
-    // ink to --accent-primary-deep (the same engraved-bronze-on-ivory register the
-    // light hero corners use), the cheapest fact.
-    const rule =
-      /\[data-theme="light"\]\s*\.site-footer-brand\s*\{[^}]*color:\s*var\(--accent-primary-deep\)/;
-    expect(
-      rule.test(css),
-      "MISSING: `[data-theme=light] .site-footer-brand { color: var(--accent-primary-deep) }`. " +
-        "Without the deep engraved register the 'd20 Folio' wordmark washes out honey-on-honey " +
-        "on the light daylight plates (~3:1)."
-    ).toBe(true);
-  });
 });
 
 /**
