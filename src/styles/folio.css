@@ -2346,19 +2346,21 @@ button.pr-dot.lg::before {
   padding: var(--sp-4);
 }
 .modal {
-  /* relative seats the reliquary corner overlay (`.modal::after`, the ornament
+  /* relative seats the corner-ornament overlay (`.modal::after`, the ornament
      vocabulary below) — dialogs are an earned hero register. The modal must NOT
      clip child paint: that would cut the corner goldwork, which straddles the
      frame line (border-image outset). Scroll clipping lives on `.modal-body`
-     (its own overflow-y). The one full-bleed child is `.modal-head` (gradient
-     band): it rounds its OWN top corners to the card radius below, so no child
-     paint ever overruns the rounded corner arc. */
+     (its own overflow-y). SQUARE corners — the ONE-LINE law (owner, 2026-07-24
+     "must ALIGN to the borders"): the corner ornament seats on a true square
+     crossing of the host's own 1px border, exactly like BG3's active spellbook
+     panel; a rounded arc curving under the knot read as a second,
+     non-registering line. */
   position: relative;
   width: 100%;
   max-width: 32rem;
   background: var(--bg-surface-2);
   border: 1px solid var(--border-accent);
-  border-radius: var(--radius-xl);
+  border-radius: 0;
   box-shadow: var(--elev-modal);
 }
 .modal.sm {
@@ -2373,10 +2375,9 @@ button.pr-dot.lg::before {
   align-items: flex-start;
   gap: var(--sp-3);
   padding: var(--sp-4) var(--sp-5) var(--sp-3);
-  /* The head's gradient is the modal's one full-bleed child paint: with the card
-     no longer overflow-clipping (the corner goldwork straddles the frame), the
-     band rounds its own top corners to sit inside the card's 1px border arc. */
-  border-radius: calc(var(--radius-xl) - 1px) calc(var(--radius-xl) - 1px) 0 0;
+  /* The head's gradient is the modal's one full-bleed child paint; the card is
+     square-cornered (the one-line law above), so the band is too. */
+  border-radius: 0;
   /* The head's seat rule is the `.sec-rule` idiom (full-BG3 push): a gilt-touched
      hairline that FADES AT BOTH TIPS instead of a wall-to-wall border — the
      border-image bottom slice of a to-right gradient paints exactly that. */
@@ -2395,13 +2396,16 @@ button.pr-dot.lg::before {
     var(--bg-surface-2)
   );
 }
-/* The ceremonial seat ornament (the COMPASS-WEB redo's winged-fleur divider,
-   DESIGN.md §5): BG3's level-up under-title divider — outward-tapering rails
-   with open scroll hooks, a luminous descending V-fleur at centre hanging
-   BELOW the rule in a soft baked glow. The per-theme `--seat-orn` SVG
-   (index.css) straddles the 1px seat (24px tall, the SVG's rule line at y=12
-   on the border); its baked surface-2 backing occludes the rule behind the
-   fleur, so no notch math. Decor only: no pointer events, no layout. */
+/* The ceremonial seat ornament (the winged-fleur divider, DESIGN.md §5):
+   BG3's level-up under-title divider — outward-tapering rails with open
+   scroll hooks, a descending V-fleur at centre hanging BELOW the rule in a
+   soft baked glow. The per-theme `--seat-orn` SVG (index.css) straddles the
+   1px seat (24px tall, the SVG's rule line at y=12 on the border); its baked
+   surface-2 backing occludes the rule behind the fleur, so no notch math —
+   the backing diamond hugs the fleur (~30% smaller than the fleur's box) and
+   blurs its edge in-SVG so no hard plate rim shows against the glow (the
+   review round's plate-defect fix). Decor only: no pointer events, no layout.
+   The fleur's final language follows the owner's corner-variant pick. */
 .modal-head::after {
   content: "";
   position: absolute;
@@ -7024,7 +7028,9 @@ button.trk-pip:active {
   padding: var(--sp-5) var(--sp-6);
   margin-bottom: var(--sp-6);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium));
-  border-radius: var(--radius-xl);
+  /* Square corners — the one-line law (owner, 2026-07-24): the corner ornament
+     seats on a true square crossing of this band's own 1px border. */
+  border-radius: 0;
   background: linear-gradient(
     135deg,
     color-mix(
@@ -14147,6 +14153,13 @@ button.party-avatar-btn:focus-visible {
   position: relative;
   border-color: color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium));
 }
+/* The ornamented gilt band goes SQUARE (the one-line law, owner 2026-07-24) so
+   the corner ornament seats on a true crossing of the band's own border; the
+   dark material pseudo follows (it re-carries the panel fill at radius-xl-1). */
+.folio-panel.gilt-frame,
+[data-theme="dark"] .folio-panel.gilt-frame::before {
+  border-radius: 0;
+}
 /* D47 full-pass — the gilt-framed hero bands (cockpit identity, every hub header,
    campaign hero, modal heads) GLOW in light theme: a soft gold aura around the gilt
    edge so the most prominent gilded surface reads candlelit + magical, not flat
@@ -14155,27 +14168,30 @@ button.party-avatar-btn:focus-visible {
   box-shadow: var(--elev-resting), var(--gilt-glow);
 }
 
-/* ── Reliquary corners (the full-BG3 identity push, owner-ratified 2026-07-16;
-   the COMPASS-WEB FRAME redo, owner-mandated 2026-07-24) — the worked goldwork
-   that caps the app's HERO frames: the framed realm masthead, the gilt-framed
-   hero band (cockpit identity), and dialogs. EARNED registers only
-   (Constitution §4.16 — each carries the surface's identity or a decision in
-   progress); resting cards and quiet panels stay unornamented. Mechanism: the
-   per-theme `--frame-ornate` SVG (index.css — crossed vertex blades, faceted
-   rivet, floating crescent, whisper compass web, faint inner rail) rendered
-   through `border-image` on an overlay pseudo — corners carry the ornament,
-   edge slices carry only the inner rail's taper-wedge dissolve, so the
-   element's own 1px border remains the quiet run (the ornament-vocabulary rule
-   "goldwork marks, runs stay quiet" holds at the corner scale). The goldwork
+/* ── Corner goldwork (the full-BG3 identity push, owner-ratified 2026-07-16;
+   REDUCED to the border-locked knot after the owner's 2026-07-24 rejection of
+   the Compass-Web — "smaller but beautiful, and it must ALIGN to the borders")
+   — the small worked-gold knot that caps the app's HERO frames: the framed
+   realm masthead, the gilt-framed hero band (cockpit identity), and dialogs.
+   EARNED registers only (Constitution §4.16); resting cards and quiet panels
+   stay unornamented. Mechanism: the per-theme `--frame-ornate` SVG (index.css
+   — the interim knot: two short calligraphic blades crossing the vertex with a
+   whisker overshoot, a faceted rivet diamond seating the crossing; the final
+   knot is an owner pick among three variants, rule 26) rendered through
+   `border-image` on an overlay pseudo — ONLY the corner tiles carry ink. THE
+   ONE-LINE LAW: the ornament contributes no run lines (the old inner-rail
+   wedge, whisper web, and floating crescent are dead — nothing floats, ever);
+   the host's own 1px border is THE frame line, the hosts go square
+   (border-radius 0 on the three registers) so the knot seats on a true
+   crossing, and every ornament stroke is attached to that line. The goldwork
    SITS ON the frame like a bookbinding corner fitting (owner, 2026-07-17): the
    SVG's rail centerline lies at 20% of the corner tile, so a border-image
    OUTSET of `20% of 64px + 0.5px` seats the blades exactly on the host's 1px
-   border stroke and the rivet's center on the stroke's corner vertex — the
-   blade tips and crescent overshoot the corner OUTWARD, never floating inside
-   the panel. Outset ink is paint-only overflow (no scrollbars), so hero hosts
-   must NOT clip child paint (`.modal` / `.has-crest` carry no overflow: hidden
-   for this reason). The pseudo is decor only: pointer-events none, no layout,
-   no animation; border-image proportionally shrinks the corners on small boxes
+   border stroke and the rivet's center on the stroke's corner vertex. Outset
+   ink is paint-only overflow (no scrollbars), so hero hosts must NOT clip
+   child paint (`.modal` / `.has-crest` carry no overflow: hidden for this
+   reason). The pseudo is decor only: pointer-events none, no layout, no
+   animation; border-image proportionally shrinks the corners on small boxes
    (phone mastheads, sm modals) so goldwork never collides. z-index 0 keeps it
    above each host's material pseudo (`::before` at z -1); the goldwork rides
    the frame line itself, clear of the hosts' padded (≥16px) content. */

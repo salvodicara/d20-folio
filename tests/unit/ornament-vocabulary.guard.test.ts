@@ -9,22 +9,28 @@ const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8
 
 /**
  * The ornament vocabulary (BG3 identity T5 — DESIGN.md §5 "The ornament
- * vocabulary"; the COMPASS-WEB FRAME redo, owner-mandated 2026-07-24). Pins the
- * grammar's load-bearing facts so a refactor can't silently drop or re-add a
- * piece:
- *   - the hero frames are bound by the per-theme Compass-Web `--frame-ornate`
- *     SVG: crossed calligraphic blades overshooting the vertex, a faceted
- *     rivet diamond on the crossing, a slim floating crescent outside the
- *     corner, a whisper compass web (quarter-arc pair + fading ray fan) and a
- *     faint inner rail dissolving through the edge slices as a taper wedge;
- *   - the STRUCK members (blades/crescent/dart/rivet) are mirrored UNFILLED
- *     first and toned AFTER (the two-tone strike); the WEB rides a separate
- *     single-fill whisper closure with per-member opacities (the weight
- *     ladder: vertex mass → arc hairline → ray whisper);
+ * vocabulary"; reduced to the border-locked knot after the owner's 2026-07-24
+ * rejection of the Compass-Web: "smaller but beautiful, and it must ALIGN to
+ * the borders"). Pins the grammar's load-bearing facts so a refactor can't
+ * silently drop or re-add a piece:
+ *   - the hero frames are bound by the per-theme `--frame-ornate` SVG — the
+ *     interim knot (owner pick pending among three variants, rule 26): two
+ *     short calligraphic blades crossing the vertex with a whisker overshoot,
+ *     a faceted rivet diamond seating the crossing — and NOTHING else;
+ *   - THE ONE-LINE LAW: the ornament contributes no run lines — the inner-rail
+ *     wedge, the whisper compass web, and the floating crescent are DEAD
+ *     (nothing floats, ever); the host's own 1px border is THE frame line and
+ *     the three framed registers go SQUARE so the knot seats on a true
+ *     crossing;
+ *   - the STRUCK members (blades/rivet) are mirrored UNFILLED first and toned
+ *     AFTER (the two-tone strike);
+ *   - the rivet mass diamond is a real `<path>` element (it once shipped as
+ *     bare text inside `<g id='m'>` and SVG silently dropped it — the corner
+ *     rendered flat at its focal point);
  *   - dialog heads seat the per-theme `--seat-orn` winged-fleur divider
- *     (outward-tapering rails, scroll hooks, a luminous descending V-fleur),
- *     whose backing diamond bakes the theme's own `--bg-surface-2`
- *     (drift-guarded);
+ *     (outward-tapering rails, scroll hooks, a descending V-fleur), whose
+ *     backing diamond bakes the theme's own `--bg-surface-2` (drift-guarded),
+ *     hugs the fleur, and blurs its edge so no hard plate rim shows;
  *   - the LIGHT theme's ornament ink is GOLD, not bronze (owner, 2026-07-24);
  *   - selection is marked by the silver-over-bronze `--frame-selected` gradient
  *     (both themes), NOT by decorative diamonds;
@@ -47,7 +53,7 @@ describe("ornament vocabulary (T5)", () => {
     );
   });
 
-  it("strikes the Compass-Web frame + engraved titling in BOTH themes", () => {
+  it("strikes the border-locked knot + engraved titling in BOTH themes", () => {
     // The frame chrome is per-theme (dark strikes gilt, light letterpresses
     // GOLD), so each token MUST be defined twice — once in :root, once in the
     // [data-theme="light"] scope. `css-token-defined.guard` only proves a token
@@ -56,36 +62,35 @@ describe("ornament vocabulary (T5)", () => {
     expect(indexCss.match(/--frame-ornate:/g)?.length).toBe(2);
     expect(indexCss.match(/--seat-orn:/g)?.length).toBe(2);
     expect(indexCss.match(/--engrave-title:/g)?.length).toBe(2);
-    // The Compass-Web corner anatomy (both themes carry the same geometry):
-    // the calligraphic blade swelling along the rail toward the vertex…
-    expect(indexCss.match(/M48 12\.3Q28 11\.85 17\.5 11\.95/g)?.length).toBe(2);
-    // …the slim floating crescent just outside the corner on the diagonal…
+    // The knot anatomy (both themes carry the same geometry): the short
+    // calligraphic blade swelling along the rail (~27px reach, its outer end
+    // at exactly the hairline's ±0.5 weight so it dissolves into the line)…
+    expect(indexCss.match(/M40 12\.3Q26 11\.85 17\.5 11\.9/g)?.length).toBe(2);
+    // …crossing the vertex in a fine whisker overshoot (~2.8px, tip ON the
+    // rail axis — attached, never floating)…
+    expect(indexCss.match(/Q11\.6 12\.08 10 12\.8/g)?.length).toBe(2);
+    // …and the rivet mass diamond seating the crossing as a REAL path element
+    // (it once shipped as bare text inside <g id='m'> and SVG dropped it — the
+    // wrapper is the load-bearing part of this pin).
     expect(
-      indexCss.match(/M4\.4 8\.5A3 3 0 1 1 8\.5 4\.4A3\.95 3\.95 0 0 0 4\.4 8\.5Z/g)
+      indexCss.match(/<path d='M12\.8 9\.7L15\.9 12\.8L12\.8 15\.9L9\.7 12\.8Z'\/>/g)
         ?.length
     ).toBe(2);
-    // …the rivet diamond seating the blade crossing on the vertex…
-    expect(
-      indexCss.match(/M12\.8 9\.7L15\.9 12\.8L12\.8 15\.9L9\.7 12\.8Z/g)?.length
-    ).toBe(2);
-    // …and the inner rail's edge-slice taper wedge (straight lines stretch
-    // losslessly through border-image edges; curves would distort).
-    expect(indexCss.match(/L156 17\.3/g)?.length).toBe(2);
-    // THE WEIGHT LADDER: the struck mass closure (id='m4') is toned by ≥2
-    // offset tone layers (shade + glint) per theme so the bevel light stays
-    // top-left on every corner (toning inside the mirrored unit would flip it
-    // upside-down on the bottom corners) — 2 per theme = 4 total…
+    // THE ONE-LINE LAW: the ornament contributes NO run lines and nothing
+    // detached — the edge-slice inner-rail wedge, the whisper web closure, and
+    // the floating crescent must stay dead.
+    expect(indexCss).not.toMatch(/L156 17\.3/);
+    expect(indexCss).not.toMatch(/href='%23w4'/);
+    expect(indexCss).not.toMatch(/A3\.95 3\.95/);
+    // The struck mass closure (id='m4') is toned by 2 offset tone layers
+    // (shade + glint) per theme so the bevel light stays top-left on every
+    // corner (toning inside the mirrored unit would flip it upside-down on the
+    // bottom corners) — 2 per theme = 4 total.
     expect(
       indexCss.match(
         /use href='%23m4' fill='%23[0-9a-f]+' opacity='[^']+' transform='translate\(/g
       )?.length
     ).toBe(4);
-    // …while the compass WEB rides a separate single-fill whisper closure
-    // (id='w4', per-member opacities — no strike): the quarter-arc pair at
-    // .55/.35 and the four rays at .34, per theme.
-    expect(indexCss.match(/use href='%23w4' fill='%23[0-9a-f]+'\/>/g)?.length).toBe(2);
-    expect(indexCss.match(/opacity='\.55' d='M39\.06 15\.56A26\.4/g)?.length).toBe(2);
-    expect(indexCss.match(/opacity='\.34'/g)?.length).toBe(8);
     // The rivet facet group is 4-fold symmetric and placed per-corner
     // UNFLIPPED via use x/y (translate placement only works for vertex-centered
     // members).
@@ -139,6 +144,13 @@ describe("ornament vocabulary (T5)", () => {
       expect(uri).toContain("M130 13L132.2 16.4L130 22.4L127.8 16.4Z");
       expect(uri).toContain("radialGradient");
       expect(uri).toContain("circle cx='130' cy='14' r='11' fill='url(%23gl)'");
+      // The plate-defect fix (review round, the one surviving seat change):
+      // the surface-2 backing diamond HUGS the fleur (~30% smaller than the
+      // fleur's box) and blurs its edge in-SVG, so no hard plate rim ever
+      // shows against the glow.
+      expect(uri).toContain("M130 6.4L135.7 13.2L130 20.2L124.3 13.2Z");
+      expect(uri).toContain("filter='url(%23pb)'");
+      expect(uri).toContain("feGaussianBlur");
       // Same mirror-then-tone strike as the corners: the closure (id='s') is
       // struck by 2 offset tone layers per theme.
       expect(
@@ -147,6 +159,10 @@ describe("ornament vocabulary (T5)", () => {
         )?.length
       ).toBe(2);
     });
+    // The glow kept its pre-review whisper weight (the presence lift was
+    // superseded by the owner's less-is-more ruling): dark .3, light .22.
+    expect(themes[0]).toContain("stop-opacity='.3'");
+    expect(themes[1]).toContain("stop-opacity='.22'");
   });
 
   it("seats the goldwork ON the frame like a bookbinding fitting (owner, 2026-07-17)", () => {
@@ -157,6 +173,25 @@ describe("ornament vocabulary (T5)", () => {
     expect(folioCss).toMatch(
       /border-image:\s*var\(--frame-ornate\) 20% \/ 64px \/ calc\(64px \* 0\.2 \+ 0\.5px\)/
     );
+    // THE ONE-LINE LAW's host half (owner, 2026-07-24 "must ALIGN to the
+    // borders"): the three framed registers are SQUARE so the knot seats on a
+    // true crossing of the host's own border — a rounded arc curving under the
+    // knot is the two-line regression this pins out. Each anchor slice is the
+    // same one used above (a renamed selector fails the indexOf checks there).
+    const modalRule = folioCss.slice(
+      folioCss.indexOf("\n.modal {"),
+      folioCss.indexOf(".modal.sm")
+    );
+    expect(modalRule).toContain("border-radius: 0;");
+    const framedRule = folioCss.slice(
+      folioCss.indexOf(".page-head.framed {"),
+      folioCss.indexOf(".page-head.framed.has-crest")
+    );
+    expect(framedRule).toContain("border-radius: 0;");
+    expect(folioCss).toMatch(
+      /\.folio-panel\.gilt-frame,\s*\[data-theme="dark"\] \.folio-panel\.gilt-frame::before\s*\{\s*border-radius: 0;\s*\}/
+    );
+    expect(folioCss).toMatch(/\.modal-head\s*\{[^}]*border-radius: 0;/);
     // Outset ink is clipped by a host's child-paint clipping, so the hero hosts
     // must NOT overflow-hide: `.modal` scroll-clips on `.modal-body`, and the
     // masthead crest self-clips via mask-size on an `inset: 0` element. Each

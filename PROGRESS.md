@@ -682,15 +682,27 @@ v0.20.0 tail) and the identity push itself (this mission). State:
   compass web + inner-rail taper dissolve, drawn 1:1 at a 64px seat) and the **winged-fleur
   seat divider** (outward-tapering rails, scroll hooks, luminous descending V-fleur, 260×24).
   A second same-day ruling: light-theme ornament ink goes **GOLD** (deep antique-gold
-  letterpress, #94741f), superseding the engraved-bronze treatment for these elements. Guard
-  rewritten to the new anatomy; `DESIGN.md` §5 rewritten; verified 1x+4x × {masthead · cockpit
-  band · modal · seat} × {dark · light} × {desktop · mobile} in real Chromium.
-- **Open: NOTHING — the full-BG3 identity pivot (incl. the atmosphere push) is COMPLETE
-  (2026-07-24).** PROMPT_12–25 are all resolved (see the ASSET-INTEGRATION ledger above); every
-  plate is integrated, verified, and budgeted. Two OPTIONAL future-polish items remain, neither a
-  loose end nor a regression (rule 27 board is clean): sweeping the reliquary register deeper
-  where earned (compendium tome chrome, login sign-in column, wizard hero altars — enhancement,
-  not a defect), and re-shooting the README screenshots now that the art push has settled.
+  letterpress, #94741f), superseding the engraved-bronze treatment for these elements.
+  **REJECTED as shipped — the owner's fourth rejection of this surface (same day):** "less is
+  more … smaller but beautiful, and above all it must ALIGN to the borders … I want THAT kind
+  of ornament [the BG3 menus']". The Compass-Web was REDUCED to the **border-locked corner
+  knot** under the **one-line law**: no ornament run lines (the inner-rail wedge, whisper web,
+  and floating crescent are dead — nothing floats), the host's own 1px border is THE frame
+  line, and the three framed hero registers went **square** (`border-radius: 0`) so the knot
+  seats on a true crossing (DESIGN.md §5). The review round's defect fixes landed with it: the
+  rivet mass diamond re-wrapped as a real `<path>` (it was bare text SVG dropped) and the
+  seat's occlusion plate shrunk + edge-blurred so no hard rim shows. **OPEN — owner pick
+  (rule 26):** the final knot among three drawn variants (A: faithful transcription of the
+  owner's spellbook-reference volute knot; B: the blade-and-rivet essence, wired as interim;
+  C: hairline + tiny finial) — labeled crops in the evidence scratchpad `ornaments-v2-push/
+variants/`; the seat fleur's final language follows the pick.
+- **Open: ONE decision — the corner-knot owner pick (rule 26, above).** Otherwise the full-BG3
+  identity pivot (incl. the atmosphere push) is COMPLETE (2026-07-24): PROMPT_12–25 are all
+  resolved (see the ASSET-INTEGRATION ledger above); every plate is integrated, verified, and
+  budgeted. Two OPTIONAL future-polish items remain, neither a loose end nor a regression
+  (rule 27 board is clean): sweeping the reliquary register deeper where earned (compendium
+  tome chrome, login sign-in column, wizard hero altars — enhancement, not a defect), and
+  re-shooting the README screenshots now that the art push has settled.
 
 **Status: SHIPPED (dark flagship) — released in v0.18.0 (2026-07-07).** The owner-ratified evolution
 of the frozen "Illuminated Folio" into its **candlelit struck-gold** form is merged to `main` and live:
