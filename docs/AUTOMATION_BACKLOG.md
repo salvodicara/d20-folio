@@ -448,11 +448,19 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       SRD "Cover": the bonus applies to the TARGET's AC/DEX saves — self-side, so it CAN ride the
       sheet without modeling enemies (a rail toggle like the buff chips). Contested design →
       **FABLE** (rule 26) or stays a triaged residual.
-- [ ] **RA-32 — Grappled shows blanket attack Disadvantage; RAW scopes it to targets OTHER than
+- [x] **RA-32 — Grappled shows blanket attack Disadvantage; RAW scopes it to targets OTHER than
       the grappler.** _Conditions · CORRECTNESS (advisory over-reach) · S3._ SRD "Grappled —
       Attacks Affected". The gate's clause is deliberately coarse (documented inline); fix = the
       chip's description says "vs targets other than the grappler" (the existing per-clause
-      `description` channel). **T3.**
+      `description` channel). **T3.** **SHIPPED (2026-07-24):** the ledger's clause-`description`
+      direction was a no-op (the clause `description` is unrendered for attack-rollType clauses), so
+      the fix scopes the ONE rendered surface — the "what's limiting you this turn" summary. The
+      `attackDisadvantage` limiter now carries a `scoped` flag set only for the stable `grappled` id
+      (the ONE attack-dis condition that isn't blanket), and the edge renders
+      `combat.limiterAttackDisadvantageScoped` ("against targets other than the grappler"); every
+      other attack-dis condition (Blinded/Frightened/Poisoned/Prone/Restrained) keeps the blanket
+      sentence. Regression: `combat-action-log-type.test.ts` (the flag) +
+      `this-turn-condition-projection.test.tsx` (the rendered sentence + the blanket contrast).
 - [x] **RA-33 — Spell-slot COUNTS have no manual override.** _Overrides · OVERRIDE-GAP · S3._ The
       one derived value found without an escape hatch: slots come only from `deriveSpellSlots` (+
       `scoped-extra-spell-slot` grants); homebrew slot tables can't be pinned. Fix: per-level

@@ -318,6 +318,30 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
     expect(kinds(ls)).toEqual(["speedZero", "exhaustion", "spellSlotLimit"]);
   });
 
+  // RA-32 — Grappled is the ONE attack-dis condition whose Disadvantage is
+  // RAW-scoped to targets OTHER than the grappler; it flags the attack limiter
+  // `scoped`, so the edge picks the scoped sentence. Blanket conditions do not.
+  it("Grappled + netted disadvantage → the attack limiter is flagged scoped; a blanket condition is not", () => {
+    const grap = composeTurnLimiters({
+      conditions: ["grappled"],
+      attackRollState: "disadvantage",
+      exhaustion: 0,
+      locale: "en",
+    });
+    const gAtk = grap.find((l) => l.kind === "attackDisadvantage");
+    expect(gAtk?.kind === "attackDisadvantage" && gAtk.scoped).toBe(true);
+    expect(gAtk?.kind === "attackDisadvantage" && gAtk.cause).toMatch(/Grappled/i);
+
+    const restr = composeTurnLimiters({
+      conditions: ["restrained"],
+      attackRollState: "disadvantage",
+      exhaustion: 0,
+      locale: "en",
+    });
+    const rAtk = restr.find((l) => l.kind === "attackDisadvantage");
+    expect(rAtk?.kind === "attackDisadvantage" && !!rAtk.scoped).toBe(false);
+  });
+
   it("resolves the cause to the localized condition name + stable ordered ability ids", () => {
     const ls = composeTurnLimiters({
       conditions: ["restrained", "paralyzed"],

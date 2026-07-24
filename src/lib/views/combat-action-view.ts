@@ -615,8 +615,11 @@ export type TurnLimiterVM =
    *  concentration banner (single source / DRY). */
   | { kind: "blockedEconomy"; slots: ReadonlyArray<GatedSlot>; cause: string }
   /** Disadvantage on attack rolls (Frightened/Poisoned/Prone/…) — the netted
-   *  attack state must actually be disadvantage (an advantage source cancels it). */
-  | { kind: "attackDisadvantage"; cause: string }
+   *  attack state must actually be disadvantage (an advantage source cancels it).
+   *  RA-32 — `scoped` marks the ONE RAW-scoped case: Grappled gives Disadvantage
+   *  only vs targets OTHER than the grappler; every other attack-dis condition
+   *  (Blinded/Frightened/Poisoned/Prone/Restrained) is blanket (`scoped` absent). */
+  | { kind: "attackDisadvantage"; cause: string; scoped?: boolean }
   /** Speed reduced to 0 (Grappled/Restrained/Paralyzed/…). */
   | { kind: "speedZero"; cause: string }
   /** Auto-fail STR/DEX saves (Paralyzed/Stunned/Unconscious/…). `abilities`
@@ -686,8 +689,21 @@ export function composeTurnLimiters(args: {
   // 1. Attack disadvantage — only when the NETTED state is disadvantage (an
   //    advantage source from a grant/condition cancels it; then no limiter).
   if (attackRollState === "disadvantage") {
-    const cause = causeFor((e) => e.disadvantages.some((d) => d.rollType === "attack"));
-    if (cause) limiters.push({ kind: "attackDisadvantage", cause });
+    // Capture the cause ID (not just its label) so Grappled — the ONE condition
+    // whose attack Disadvantage is RAW-scoped to targets OTHER than the grappler
+    // (SRD "Grappled") — flags the scoped sentence. Every other attack-dis
+    // condition (Blinded/Frightened/Poisoned/Prone/Restrained) is blanket.
+    // `grappled` is a stable ConditionId (ids-not-labels, golden rule 7).
+    const causeId = conditions.find((c) =>
+      resolveConditionEffects([c]).disadvantages.some((d) => d.rollType === "attack")
+    );
+    if (causeId) {
+      limiters.push({
+        kind: "attackDisadvantage",
+        cause: conditionLabel(causeId, locale),
+        ...(causeId === "grappled" ? { scoped: true } : {}),
+      });
+    }
   }
 
   // 2. Speed 0.

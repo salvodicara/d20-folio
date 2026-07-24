@@ -211,6 +211,27 @@ describe("ThisTurnTracker — 'what's limiting you this turn' summary (B3)", () 
     expect(document.querySelector(".turn-limiters")).toBeNull();
   });
 
+  // RA-32 — Grappled's attack Disadvantage is RAW-scoped to targets OTHER than
+  // the grappler; the turn-limiter summary must say so, instead of implying all
+  // attacks are at Disadvantage. Every OTHER attack-dis condition stays blanket.
+  it("RA-32 — Grappled netted to disadvantage → the attack limiter states the non-grappler scope", () => {
+    load((d) => {
+      d.session.conditions = ["grappled"];
+    });
+    mount("disadvantage");
+    const text = document.querySelector(".turn-limiters")?.textContent ?? "";
+    expect(text).toMatch(/other than the grappler/i);
+    expect(text).toMatch(/Grappled/i);
+  });
+
+  it("RA-32 — a blanket attack-dis condition (Frightened) keeps the unscoped sentence", () => {
+    load(); // the mock carries Frightened
+    mount("disadvantage");
+    const text = document.querySelector(".turn-limiters")?.textContent ?? "";
+    expect(text).toMatch(/Disadvantage on attacks.*Frightened/i);
+    expect(text).not.toMatch(/other than the grappler/i);
+  });
+
   // RA-19 — SRD Prone "Restricted Movement": while Prone the turn meter offers a
   // one-tap Stand that clears the condition AND debits half the base Speed under
   // ONE undo (mock Speed 30 → ⌊30/2⌋ = 15 ft). Crawl stays a narrative note.

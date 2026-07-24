@@ -233,6 +233,7 @@
     "limitersLabel": "What's limiting you this turn",
     "limiterBlockedEconomy": "You can't take {{slots}} ({{cause}})",
     "limiterAttackDisadvantage": "Disadvantage on attacks ({{cause}})",
+    "limiterAttackDisadvantageScoped": "Disadvantage on attacks against targets other than the grappler ({{cause}})",
     "limiterSpeedZero": "Speed 0 ({{cause}})",
     "limiterAutoFailSaves": "Auto-fail {{abilities}} saves ({{cause}})",
     "limiterExhaustion": "−2 to all d20 (Exhaustion {{level}})",

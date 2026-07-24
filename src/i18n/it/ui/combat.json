@@ -233,6 +233,7 @@
     "limitersLabel": "Cosa ti limita in questo turno",
     "limiterBlockedEconomy": "Non puoi usare {{slots}} ({{cause}})",
     "limiterAttackDisadvantage": "Svantaggio ai tiri per colpire ({{cause}})",
+    "limiterAttackDisadvantageScoped": "Svantaggio ai tiri per colpire contro bersagli diversi da chi ti afferra ({{cause}})",
     "limiterSpeedZero": "Velocità 0 ({{cause}})",
     "limiterAutoFailSaves": "Fallisci automaticamente i TS su {{abilities}} ({{cause}})",
     "limiterExhaustion": "−2 a tutti i d20 (Sfinimento {{level}})",

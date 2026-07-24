@@ -486,7 +486,14 @@ export function ThisTurnTracker({
           cause: l.cause,
         });
       case "attackDisadvantage":
-        return t("combat.limiterAttackDisadvantage", { cause: l.cause });
+        // RA-32 — Grappled's attack Disadvantage is RAW-scoped to targets OTHER
+        // than the grappler; every other attack-dis condition is blanket.
+        return t(
+          l.scoped
+            ? "combat.limiterAttackDisadvantageScoped"
+            : "combat.limiterAttackDisadvantage",
+          { cause: l.cause }
+        );
       case "speedZero":
         return t("combat.limiterSpeedZero", { cause: l.cause });
       case "autoFailSaves":

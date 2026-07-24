@@ -67,9 +67,15 @@ export const CONDITION_GATES: Readonly<Partial<Record<ConditionId, ConditionGate
     ],
   },
   // 2024 RAW adds an "Attacks Affected" bullet absent from the 2014 condition:
-  // Disadvantage on attack rolls against any target OTHER than the grappler
-  // (the target-exclusion caveat rides as narrative, same pattern as
-  // Frightened's line-of-sight caveat — no per-target roll-context primitive).
+  // Disadvantage on attack rolls against any target OTHER than the grappler.
+  // RA-32 — the target-exclusion caveat is now surfaced in the "what's limiting
+  // you" turn summary via the `scoped` flag on the attackDisadvantage limiter
+  // (`combat.limiterAttackDisadvantageScoped`), keyed off the stable `grappled`
+  // id in composeTurnLimiters — grappled is the ONE attack-dis condition that is
+  // not blanket. The clause `description` stays `ATTACKS`: it is unrendered for
+  // attack-rollType clauses (the attack limiter sentence carries the scope), so
+  // editing it here would be a no-op. Frightened's line-of-sight caveat is a
+  // DIFFERENT (visibility) scope and stays narrative for now.
   grappled: {
     speedZero: true,
     disadvantages: [{ rollType: "attack", vs: "grappled", description: ATTACKS }],
