@@ -43,9 +43,11 @@ import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { useLocale } from "@/hooks/useLocale";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { localeDistance } from "@/lib/utils";
+import { retroactiveConHpMax } from "@/lib/character-infer";
 import { RailSection } from "../RailSection";
 import { patchCharacter } from "../patch-character";
 import type { AbilityCode } from "@/data/types";
+import type { CharacterData } from "@/types/character";
 
 type SkillProficiency = "proficient" | "expertise" | "halfProficiency";
 
@@ -311,7 +313,9 @@ export function LeftHud() {
       {/* Ability-score editing — edit-mode only (#68). The medallions show the
           EFFECTIVE score (base + grant floors); this edits the BASE score directly
           in the cockpit (previously only the creation/level-up wizards could), and
-          every derived value (mods, saves, skills, AC, passives) recomputes live. */}
+          every derived value (mods, saves, skills, AC, passives) recomputes live; a
+          CON edit also retro-adjusts the stored max HP across every level (RA-22,
+          2024 RAW). */}
       {isEdit && (
         <RailSection rubric={t("character.abilityScores")}>
           <ul className="flex flex-col gap-1">
@@ -326,11 +330,18 @@ export function LeftHud() {
                   value={charData.abilityScores[code]}
                   min={1}
                   max={30}
-                  onChange={(v) =>
-                    patchCharacter({
+                  onChange={(v) => {
+                    const patch: Partial<CharacterData> = {
                       abilityScores: { ...charData.abilityScores, [code]: v },
-                    })
-                  }
+                    };
+                    // RA-22 — a CON change retro-adjusts max HP across every level
+                    // (2024 RAW), the same rebake the level-up ASI path does, so the
+                    // stored base never goes stale from a sheet edit (rises AND
+                    // decreases; a pinned/rolled max shifts by the delta, never reset).
+                    if (code === "CON")
+                      patch.hp = { max: retroactiveConHpMax(charData, v) };
+                    patchCharacter(patch);
+                  }}
                   ariaLabel={t(`abilities.${code}`)}
                 />
               </li>

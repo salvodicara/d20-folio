@@ -346,11 +346,19 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
 - [ ] **RA-21 — Exhaustion 6 = death is display-only.** _Conditions · GAP · S3 · rare._ SRD
       "Exhaustion": you die at level 6. Code: clamp + glossary text; no dead-state surfacing. Fix:
       level 6 surfaces the same dead verdict the death-save track uses. **T3.**
-- [ ] **RA-22 — A CON change outside level-up never retro-adjusts max HP.** _HP model ·
+- [x] **RA-22 — A CON change outside level-up never retro-adjusts max HP.** _HP model ·
       INTERACTION (defect C) · S3 · rare._ 2024 CON rules (retroactive per-level HP). Code:
       `applyClassFeatureAbilityScores` adjusts on level-up CON RISES only; a direct sheet edit or a
       decrease leaves stored `hp.max` stale (override-first softens this — the breakdown shows the
-      computed base). Fix: recompute the CON term of the breakdown on any effective-CON change.
+      computed base). **SHIPPED (2026-07-24):** the breakdown CON term already self-heals from base
+      CON — the real gap was the STORED `hp.max` (what `effectiveMaxHp` clamps/heals/displays
+      against). The LeftHud ability editor now rebakes it on a CON edit by the pure CON-term delta
+      (`retroactiveConHpMax`, reusing the ONE `inferHpMax` arithmetic, rule 6): symmetric across
+      rises AND decreases, 0 when the CON MODIFIER is unchanged (even→odd bump), and pin-preserving
+      (a rolled/hand-pinned max shifts by the delta, is never reset to the average). Fires ONLY on
+      an explicit user CON edit — loading a fixture never mutates `hp.max`. The level-up ASI path
+      already handled rises. Regression: `character-infer.test.ts` (the pure helper — rise/decrease/
+      no-mod-change/pin-preserved/floor/husk) + `left-hud.test.tsx` (CON 14→16 → 71, 14→12 → 53).
       **T2.**
 - [ ] **RA-23 — Costly/consumed material components are not modeled.** _Spellcasting · GAP · S3 ·
       every-session at mid levels (Revivify's consumed 300 GP diamond, Chromatic Orb's 50 GP…)._

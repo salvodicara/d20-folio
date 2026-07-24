@@ -3,14 +3,17 @@ import {
   ABILITY_BUDGET_DEFAULT,
   inferBgFeat,
   inferHitDie,
+  inferHpMax,
   inferSavingThrows,
   inferSpeed,
   inferSpellcasting,
   inferSpellSlots,
   resolveClassId,
+  retroactiveConHpMax,
   speciesGrantsVersatileFeat,
 } from "@/lib/character-infer";
 import { classTableIndex } from "@/data/classes";
+import type { AbilityCode } from "@/data/types";
 
 describe("character-infer — base Speed (species-fixed)", () => {
   it("most species are 30 ft (stored as a plain number string)", () => {
@@ -142,5 +145,64 @@ describe("character-infer — species Versatile feat (2024 Human)", () => {
   it("empty/unknown species is false", () => {
     expect(speciesGrantsVersatileFeat("")).toBe(false);
     expect(speciesGrantsVersatileFeat("Nonexistent")).toBe(false);
+  });
+});
+
+describe("character-infer — retroactive CON max-HP rebake (RA-22)", () => {
+  const scores = (con: number): Record<AbilityCode, number> => ({
+    STR: 10,
+    DEX: 10,
+    CON: con,
+    INT: 10,
+    WIS: 10,
+    CHA: 10,
+  });
+  // Mirrors MOCK (Bard 9, stored hp.max 62); inferHpMax(bard L9) = 66@CON14,
+  // 75@CON16, 57@CON12 — hand-verified against the per-level min-1 arithmetic.
+  const bard9 = (con: number, max = 62) => ({
+    classes: [{ classId: "bard", subclassId: "college-of-lore", level: 9 }],
+    abilityScores: scores(con),
+    hp: { max },
+  });
+
+  it("a CON rise (14→16, mod +2→+3) adds the CON-mod delta across every level", () => {
+    expect(retroactiveConHpMax(bard9(14), 16)).toBe(71); // +9 = +1 mod × 9 levels
+  });
+
+  it("a CON decrease (14→12, mod +2→+1) subtracts it — the RAW gap this closes", () => {
+    expect(retroactiveConHpMax(bard9(14), 12)).toBe(53); // −9
+  });
+
+  it("an even→odd bump with no mod change (14→15) leaves max HP untouched", () => {
+    expect(retroactiveConHpMax(bard9(14), 15)).toBe(62); // delta 0 — HP tracks the MODIFIER
+  });
+
+  it("preserves a deviation from the average (shifts a pinned/rolled max, never resets)", () => {
+    // Stored 62 already deviates from the computed 66 average; a rise shifts it by
+    // the delta to 71, NOT to the 75 average.
+    const bumped = retroactiveConHpMax(bard9(14), 16);
+    expect(bumped).toBe(71);
+    expect(bumped).not.toBe(
+      inferHpMax([{ classId: "bard", subclassId: "college-of-lore", level: 9 }], 16)
+    );
+  });
+
+  it("floors the stored max at 1 on a huge CON drop", () => {
+    expect(
+      retroactiveConHpMax({ ...bard9(20), hp: { max: 1 } }, 3)
+    ).toBeGreaterThanOrEqual(1);
+  });
+
+  it("leaves a husk (unknown primary class) unchanged — delta 0 both terms", () => {
+    expect(
+      retroactiveConHpMax(
+        {
+          classes: [{ classId: "not-a-class", level: 5 }],
+          abilityScores: scores(14),
+          hp: { max: 40 },
+        },
+        8
+      )
+    ).toBe(40);
   });
 });

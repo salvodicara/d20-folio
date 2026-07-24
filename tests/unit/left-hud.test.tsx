@@ -204,6 +204,36 @@ describe("LeftHud", () => {
         useCharacterStore.getState().character?.character.skillBonusOverrides?.stealth
       ).toBeUndefined();
     });
+
+    // RA-22 — a CON edit on the sheet retro-adjusts the STORED max HP across every
+    // level (2024 RAW), the same rebake the level-up ASI path does. `/^constitution$/i`
+    // targets the edit-mode ability editor (the medallion's aria is the long
+    // abilityScoreAria string, which won't match an exact-anchored name).
+    it("editing CON up retro-adjusts stored max HP (RA-22)", () => {
+      load(); // MOCK: Bard 9, CON 14, hp.max 62
+      useUIStore.setState({ sheetMode: "edit" });
+      render(<LeftHud />);
+      fireEvent.click(screen.getByRole("button", { name: /^constitution$/i }));
+      const input = screen.getByLabelText(/^constitution$/i);
+      fireEvent.change(input, { target: { value: "16" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+      const c = useCharacterStore.getState().character?.character;
+      expect(c?.abilityScores.CON).toBe(16);
+      expect(c?.hp.max).toBe(71); // was 62; FAILS before the fix (CON edit left hp.max stale)
+    });
+
+    it("editing CON down retro-adjusts stored max HP (RA-22, decrease direction)", () => {
+      load();
+      useUIStore.setState({ sheetMode: "edit" });
+      render(<LeftHud />);
+      fireEvent.click(screen.getByRole("button", { name: /^constitution$/i }));
+      const input = screen.getByLabelText(/^constitution$/i);
+      fireEvent.change(input, { target: { value: "12" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+      const c = useCharacterStore.getState().character?.character;
+      expect(c?.abilityScores.CON).toBe(12);
+      expect(c?.hp.max).toBe(53); // 62 − 9
+    });
   });
 });
 

@@ -134,6 +134,30 @@ export function inferHpMax(classes: readonly ClassEntry[], conScore: number): nu
 }
 
 /**
+ * The stored max HP a character should carry after its CON score changes OUTSIDE
+ * the level-up flow — a direct sheet edit / data-entry correction / story curse
+ * (RA-22). 2024 RAW ("Constitution"): if your CON MODIFIER changes, your Hit Point
+ * maximum changes as well, retroactively across EVERY level, in BOTH directions.
+ * The adjustment is the pure CON-term delta `inferHpMax(classes, nextCon) -
+ * inferHpMax(classes, prevCon)` — the SAME arithmetic the Bio level-reconcile
+ * applies (rule 6, one HP math) — so it (a) captures the RAW per-level min-1 floor
+ * and the multiclass breakdown exactly, (b) is 0 when the CON modifier is unchanged
+ * (an even→odd bump), and (c) PRESERVES the player's deviation from the average (a
+ * rolled / hand-pinned max shifts by the delta, is never reset). Floored at 1.
+ * Returns the stored max UNCHANGED for a husk whose primary class is unknown
+ * (`inferHpMax` is 0 for both terms → delta 0).
+ */
+export function retroactiveConHpMax(
+  character: Pick<CharacterData, "classes" | "abilityScores" | "hp">,
+  nextCon: number
+): number {
+  const delta =
+    inferHpMax(character.classes, nextCon) -
+    inferHpMax(character.classes, character.abilityScores.CON);
+  return Math.max(1, character.hp.max + delta);
+}
+
+/**
  * The spell-slot table a SINGLE-classed caster has at its level, in the
  * `CharacterData.spellSlots` shape. Derived straight from the class table's
  * per-level `spellSlots` array (index 0 = 1st-level slots). Returns `[]` for

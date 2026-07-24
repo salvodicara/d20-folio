@@ -1518,6 +1518,10 @@ feeding this register (AC, initiative, spell DC/attack, saves, passives, max HP,
 heal — list in `value-breakdown.ts`). A single-component value gets no tip (golden rule 19); an override
 suppresses it. **Max HP is the OVERRIDE-GATE special case** (#95): its stored max shows the tip ONLY when
 `storedMax === computeCharacterMaxHp(...)` (a hand-pinned/rolled max deviates, like `acOverride`).
+A direct sheet CON edit (LeftHud) rebakes the stored max by the same inferred CON-term delta
+(`retroactiveConHpMax`, reusing `inferHpMax`), so the override-gate invariant
+`storedMax === computeCharacterMaxHp` survives a CON change for a by-the-book character, and a
+deviation is shifted by the delta rather than reset (RA-22, 2024 RAW).
 **Every entity-naming part** labels via that entity's ONE canonical catalogue key (a `{ loc }` SRD ref,
 never a bespoke `breakdown.*` term), so the tip can't localize the entity differently from its own
 surfaces (rule 6). `tests/unit/value-breakdown.guard.test.ts` pins `sum(parts) === displayed total`
