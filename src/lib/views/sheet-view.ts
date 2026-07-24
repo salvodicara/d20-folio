@@ -661,7 +661,14 @@ export interface AdvantageChip {
   sourceId: string;
   mode: (typeof ADVANTAGE_MODES)[number];
   rollType: "save" | "check" | "attack" | "initiative";
-  /** Free-text roll descriptor (e.g. "initiative", "saves vs poison"). */
+  /**
+   * The clause's scope as a STABLE ID-SLUG (`"initiative"`, `"dex-save"`,
+   * `"perception-sight"`) — never display text, never free text: engine
+   * consumers match it EXACTLY (`passiveAdvantageStep`,
+   * `condition-effects`' concentration probe), so ONE slug means ONE scope
+   * everywhere (`docs/MECHANICS.md`). Guard-enforced by
+   * `advantage-vs-slug.guard.test.ts`.
+   */
   vs: string;
   /** Bilingual description straight off the grant. */
   description: AdvantageClause["description"];
@@ -687,12 +694,9 @@ export interface AdvantageChip {
  * conditions' self-side adv/dis (`resolveConditionEffects`) so a Poisoned or
  * Frightened character actually shows those chips alongside feature/race ones.
  *
- * DEDUPED by the FACT each clause states — mode + rollType + `vs` + its gating
- * (`whileActive` / `round1`) — keeping the first source. Two sources granting the
- * same advantage (a Champion's Remarkable Athlete AND a Sentinel Shield both give
- * Advantage on Initiative) are ONE line to the player, not the same sentence
- * twice (golden rule 6). The gating is part of the key, so a while-active clause
- * never absorbs a permanent one (or the row would read "· active" when it is not).
+ * Every clause the character HAS comes back here — collapsing two sources that
+ * state the same thing is the RENDER's job and needs the localized text, so it
+ * happens one layer up, in `advantageChipVMs` (`lib/views/tracker-view.ts`).
  */
 export function deriveAdvantageChips(
   aggregate: AggregatedGrants,
@@ -702,22 +706,8 @@ export function deriveAdvantageChips(
   }
 ): AdvantageChip[] {
   const chips: AdvantageChip[] = [];
-  // The facts already stated — `${mode}|${rollType}|${vs}|${gating}` (see above).
-  const seen = new Set<string>();
-  const isNew = (chip: AdvantageChip): boolean => {
-    const key = [
-      chip.mode,
-      chip.rollType,
-      chip.vs,
-      chip.whileActive === true ? "active" : "",
-      chip.round1 === true ? "round1" : "",
-    ].join("|");
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  };
   for (const c of [...aggregate.advantages, ...(extra?.advantages ?? [])]) {
-    push({
+    chips.push({
       sourceId: c.sourceId,
       mode: "advantage",
       rollType: c.rollType,
@@ -728,7 +718,7 @@ export function deriveAdvantageChips(
     });
   }
   for (const c of [...aggregate.disadvantages, ...(extra?.disadvantages ?? [])]) {
-    push({
+    chips.push({
       sourceId: c.sourceId,
       mode: "disadvantage",
       rollType: c.rollType,
@@ -738,9 +728,4 @@ export function deriveAdvantageChips(
     });
   }
   return chips;
-
-  /** Append a chip unless the SAME fact is already on the list. */
-  function push(chip: AdvantageChip): void {
-    if (isNew(chip)) chips.push(chip);
-  }
 }

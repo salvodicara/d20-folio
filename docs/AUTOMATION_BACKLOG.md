@@ -1597,10 +1597,12 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       `Adv. Advantage on Wisdom (Perception) checks.`), with Initiative appearing twice. Both
       halves were real structured `advantage-on` grants — the defect was the RENDER + the
       authoring register, not missing data.
-      Two fixes at the seams: (1) `deriveAdvantageChips` DEDUPES by the fact stated — mode +
-      rollType + `vs` + its `whileActive`/`round1` gating — so two sources granting the same
-      advantage are one line (golden rule 6; the gating is in the key so a while-active clause never
-      absorbs a permanent one); (2) the 41 catalogue grant descriptions that opened with their own
+      Two fixes at the seams: (1) `advantageChipVMs` DEDUPES by the ROW the player reads — polarity + `whileActive`/`round1` gating + the LOCALIZED text, trimmed — so two sources wording one
+      advantage identically are a single line (golden rule 6), while a source that qualifies its
+      advantage keeps its own row (Cloak of Elvenkind's "(hood up)" is never hidden behind Cloak of
+      the Bat's "while worn") and a while-active clause never absorbs a permanent one. The collapse
+      lives in the PRESENTER because it needs the localized string — `deriveAdvantageChips` returns
+      every clause the character has; (2) the 41 catalogue grant descriptions that opened with their own
       polarity ("Advantage on Initiative rolls." / "Vantaggio ai tiri di Iniziativa.") were
       normalized to the terse roll-naming register the class/species grants already use ("Initiative
       rolls" / "Tiri di Iniziativa") across EN + IT — 27 public + 14 pack, per locale. Locked by a
@@ -1613,8 +1615,9 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       with the widened matcher: Robe of Eyes was the only remaining advantage-grant offender (the
       two other polarity mentions — Hunter Defensive Tactics' Multiattack Defense clause and the
       pack's Cunning-Strike rider — state an EFFECT mid-sentence, not a rail row's own label, and
-      stay). Regression: `advantage-rail.test.ts` (Champion + Sentinel Shield → each fact once, no
-      restated label in either locale), fail-before/pass-after.
+      stay). Regressions: `advantage-rail.test.ts` — Champion + Sentinel Shield → each row once,
+      no restated label in either locale, AND the other direction (two attuned cloaks granting
+      `vs: "stealth"` with different qualifiers → BOTH rows stay) — fail-before/pass-after.
 
 - [x] **PS-H (three minor sheet defects).** FIXED 2026-07-24. (h1) `DyingBanner` bailed on
       `current > 0`, so an Exhaustion-6 death — which kills at FULL HP — raised no banner at all;

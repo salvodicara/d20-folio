@@ -350,12 +350,36 @@ export interface AdvantageChipVM extends Omit<AdvantageChip, "description"> {
  * Localize the bilingual `description` on each advantage / disadvantage chip so
  * the rail renders ready strings (order preserved — advantages then disadvantages
  * as `deriveAdvantageChips` already arranged them).
+ *
+ * DEDUPED by the ROW the player would read — polarity + gating + the localized
+ * text, trimmed — keeping the first source. Two sources stating the same thing in
+ * the same words (a Champion's Remarkable Athlete AND a Sentinel Shield both give
+ * "Initiative rolls") are ONE line, not the same sentence twice (golden rule 6).
+ * Keying on the rendered text rather than the `vs` slug is what lets a second
+ * source that QUALIFIES its advantage keep its own line (Cloak of Elvenkind's
+ * "…(hood up)" is never hidden behind Cloak of the Bat's "…while worn"), and the
+ * gating is in the key so a while-active clause never absorbs a permanent one (the
+ * row would read "· active" when it is not).
  */
 export function advantageChipVMs(
   chips: ReadonlyArray<AdvantageChip>,
   locale: Locale
 ): AdvantageChipVM[] {
-  return chips.map((c) => ({ ...c, description: localizeText(c.description, locale) }));
+  const seen = new Set<string>();
+  const rows: AdvantageChipVM[] = [];
+  for (const c of chips) {
+    const description = localizeText(c.description, locale);
+    const key = [
+      c.mode,
+      c.whileActive === true ? "active" : "",
+      c.round1 === true ? "round1" : "",
+      description.trim(),
+    ].join("|");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push({ ...c, description });
+  }
+  return rows;
 }
 
 /** A render-ready passive (roll-floor) note: the source id + its localized text. */

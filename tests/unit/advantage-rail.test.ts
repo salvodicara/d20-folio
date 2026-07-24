@@ -138,20 +138,47 @@ describe("the rail surfaces durable non-attack advantages", () => {
     const initiativeClauses = aggregate.advantages.filter((c) => c.vs === "initiative");
     expect(initiativeClauses.length).toBeGreaterThan(1);
 
-    // …but the rail's chip list states the FACT once (mode + rollType + vs).
+    // …but the rail states each ROW once: the two sources word the Initiative
+    // advantage identically, so the player reads one line (EN + IT).
     const chips = deriveAdvantageChips(aggregate).filter((c) => c.rollType !== "attack");
-    const keys = chips.map((c) => `${c.mode}|${c.rollType}|${c.vs}`);
-    expect(new Set(keys).size).toBe(keys.length);
-    expect(keys.filter((k) => k.endsWith("|initiative"))).toHaveLength(1);
-
-    // …and every row reads in the terse roll-naming register: the row's own
-    // "Adv." label is never restated inside the description (EN + IT).
     for (const locale of ["en", "it"] as const) {
-      for (const vm of advantageChipVMs(chips, locale)) {
-        expect(vm.description).not.toMatch(
+      const rows = advantageChipVMs(chips, locale);
+      const rendered = rows.map((r) => `${r.mode}|${r.description}`);
+      expect(new Set(rendered).size).toBe(rendered.length);
+      expect(rows.filter((r) => r.vs === "initiative")).toHaveLength(1);
+
+      // …and every row reads in the terse roll-naming register: the row's own
+      // "Adv." label is never restated inside the description.
+      for (const row of rows) {
+        expect(row.description).not.toMatch(
           /^(Advantage on|Disadvantage on|Vantaggio (ai|agli|alle)|Svantaggio (ai|agli|alle))\b/i
         );
       }
+    }
+  });
+
+  // The other direction of the same key: two sources granting the SAME `vs` with
+  // different qualifiers are two different facts to the player, so both rows stay
+  // — collapsing them would hide Elvenkind's "(hood up)" behind the Bat's
+  // "while worn".
+  it("keeps BOTH rows when two sources qualify the same advantage differently", () => {
+    const doc = buildScenario({
+      ...HALFLING_ROGUE,
+      equipment: [
+        { srdId: "cloak-of-elvenkind", equipped: true, attuned: true },
+        { srdId: "cloak-of-the-bat", equipped: true, attuned: true },
+      ],
+    });
+    const aggregate = aggregateCharacterGrants(doc.character, doc.session);
+    expect(aggregate.advantages.filter((c) => c.vs === "stealth")).toHaveLength(2);
+
+    const stealthChips = deriveAdvantageChips(aggregate).filter(
+      (c) => c.vs === "stealth"
+    );
+    for (const locale of ["en", "it"] as const) {
+      const rows = advantageChipVMs(stealthChips, locale);
+      expect(rows).toHaveLength(2);
+      expect(rows[0]?.description).not.toBe(rows[1]?.description);
     }
   });
 
