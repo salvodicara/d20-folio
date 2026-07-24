@@ -3933,6 +3933,431 @@
     "name": "Colpo necrotico",
     "text": "La mummia effettua un attacco Pugno di putrefazione o Incanalare energia negativa."
   },
+  "nalfeshnee": {
+    "name": "Nalfeshnee"
+  },
+  "nalfeshnee.traits.demonic-restoration": {
+    "name": "Ristoro demoniaco",
+    "text": "Se il nalfeshnee muore al di fuori dell'Abisso, il suo corpo si dissolve diventando icore e ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nell'Abisso."
+  },
+  "nalfeshnee.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il nalfeshnee dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "nalfeshnee.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il nalfeshnee effettua tre attacchi Squarcio."
+  },
+  "nalfeshnee.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +10, portata 3 m. Colpito: 16 (2d10 + 5) danni Taglienti più 11 (2d10) danni da Forza."
+  },
+  "nalfeshnee.actions.teleport": {
+    "name": "Teletrasporto",
+    "text": "Il nalfeshnee si teletrasporta fino a massimo di 36 metri in uno spazio libero che è in grado di vedere."
+  },
+  "nalfeshnee.bonusActions.horror-nimbus": {
+    "name": "Nube di orrore",
+    "text": "Tiro salvezza su Saggezza: CD 15, tutte le creature in un'emanazione di 4,5 metri di cui il nalfeshnee è il punto di origine. Fallimento: 28 (8d6) danni Psichici, e il bersaglio è Spaventato per 1 minuto, finché non subisce danni, o finché non termina il proprio turno con il nalfeshnee fuori dal proprio campo visivo. Successo: il bersaglio è immune a Nube di orrore di questo nalfeshnee per 24 ore."
+  },
+  "nalfeshnee.reactions.pursuit": {
+    "name": "Inseguimento",
+    "text": "Attivazione: un'altra creatura che il nalfeshnee è in grado di vedere termina il proprio movimento entro 36 metri dal nalfeshnee. Esito: il nalfeshnee usa Teletrasporto, ma lo spazio di destinazione deve trovarsi entro 3 metri dalla creatura che ha provocato la reazione."
+  },
+  "night-hag": {
+    "name": "Megera notturna"
+  },
+  "night-hag.traits.coven-magic": {
+    "name": "Magia della congrega",
+    "text": "Finché si trova entro 9 metri da almeno due megere alleate, la megera può lanciare uno dei seguenti incantesimi senza bisogno di componenti materiali, utilizzando il normale tempo di lancio dell'incantesimo e Intelligenza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 14): identificare, localizza oggetto, presagio, scrutare, servitore inosservato o trova famiglio. La megera deve terminare un riposo lungo prima di utilizzare questo tratto per lanciare di nuovo l'incantesimo."
+  },
+  "night-hag.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "La megera dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "night-hag.traits.soul-bag": {
+    "name": "Borsa dell'anima",
+    "text": "La megera ha una borsa dell'anima. Finché impugna o trasporta la borsa, può usarne l'azione Infestare incubi. La borsa ha CA 15, 20 PF e resistenza a tutti i danni, e si trasforma in polvere se ridotta a 0 punti ferita. Se la borsa viene distrutta, qualsiasi anima al suo interno viene liberata. La megera può creare una nuova borsa dopo 7 giorni."
+  },
+  "night-hag.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La megera effettua due attacchi Artiglio."
+  },
+  "night-hag.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 13 (2d8 + 4) danni Taglienti."
+  },
+  "night-hag.actions.nightmare-haunting": {
+    "name": "Infestare incubi",
+    "text": "(Richiede Borsa dell'anima) Finché si trova sul Piano Etereo, la megera lancia sogno, utilizzando la stessa caratteristica da incantatore di Incantesimi. Soltanto la megera può agire da messaggera dell'incantesimo, e il bersaglio deve essere una creatura che la megera è in grado di vedere sul Piano Materiale. L'incantesimo fallisce ed è sprecato se il bersaglio è sotto l'effetto dell'incantesimo protezione dal bene e dal male o se si trova nel raggio dell'incantesimo cerchio magico. Se il bersaglio subisce danni dall'incantesimo sogno, i punti ferita massimi del bersaglio sono ridotti di un ammontare pari ai danni subiti. Se l'incantesimo uccide il bersaglio, la sua anima resta intrappolata nella borsa dell'anima della megera, e il bersaglio non può essere resuscitato finché la sua anima non viene liberata."
+  },
+  "night-hag.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "La megera lancia uno dei seguenti incantesimi senza bisogno di componenti materiali, utilizzando Intelligenza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 14): 2/giorno ciascuno: Allucinazione mortale, spostamento planare (solo se stessa). A volontà: Dardo incantato (di 4º livello), forma eterea, individuazione del magico."
+  },
+  "night-hag.bonusActions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "La megera si trasforma in un umanoide di taglia Piccola o Media, oppure torna alla sua vera forma. A eccezione della taglia, le sue statistiche di gioco restano le stesse in ogni forma. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "nightmare": {
+    "name": "Cavallo degli incubi"
+  },
+  "nightmare.traits.confer-fire-resistance": {
+    "name": "Conferire resistenza al fuoco",
+    "text": "Il cavallo degli incubi può conferire resistenza ai danni da Fuoco a un cavaliere finché questi si trova sul cavallo."
+  },
+  "nightmare.traits.illumination": {
+    "name": "Illuminazione",
+    "text": "Il cavallo degli incubi emana luce intensa in un raggio di 3 metri e luce fioca per altri 3 metri."
+  },
+  "nightmare.actions.hooves": {
+    "name": "Zoccoli",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 13 (2d8 + 4) danni Contundenti più 10 (3d6) danni da Fuoco."
+  },
+  "nightmare.actions.ethereal-stride": {
+    "name": "Passo etereo",
+    "text": "Il cavallo degli incubi e un massimo di tre creature consenzienti situate entro 1,5 metri da esso si teletrasportano dal Piano Materiale al Piano Etereo o viceversa."
+  },
+  "noble": {
+    "name": "Nobile"
+  },
+  "noble.actions.rapier": {
+    "name": "Stocco",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 5 (1d8 + 1) danni Perforanti."
+  },
+  "noble.reactions.parry": {
+    "name": "Parata",
+    "text": "Attivazione: il nobile viene colpito da un tiro per colpire in mischia mentre tiene in mano un'arma. Esito: il nobile aggiunge 2 alla sua CA contro quell'attacco, aumentando le probabilità che il colpo non vada a segno."
+  },
+  "ochre-jelly": {
+    "name": "Ameba paglierina"
+  },
+  "ochre-jelly.traits.amorphous": {
+    "name": "Amorfo",
+    "text": "L'ameba può muoversi attraverso uno spazio stretto fino a 2,5 centimetri senza consumare movimento extra per farlo."
+  },
+  "ochre-jelly.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "L'ameba può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "ochre-jelly.actions.pseudopod": {
+    "name": "Pseudopode",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 12 (3d6 + 2) danni da Acido."
+  },
+  "ochre-jelly.reactions.split": {
+    "name": "Scindersi",
+    "text": "Attivazione: l'ameba, finché è di taglia Grande o Media e ha 10 punti ferita o più, diventa sanguinante o è soggetta a danni da Fulmine o Taglienti. Esito: l'ameba paglierina si scinde in due nuove amebe paglierine. Ogni nuova ameba è inferiore di una taglia rispetto all'ameba originale, e agisce di propria iniziativa. I punti ferita dell'ameba originale sono divisi equamente tra le due nuove amebe (arrotondati per difetto)."
+  },
+  "octopus": {
+    "name": "Piovra"
+  },
+  "octopus.traits.compression": {
+    "name": "Compressione",
+    "text": "La piovra può muoversi attraverso uno spazio stretto fino a 2,5 centimetri senza consumare movimento extra per farlo."
+  },
+  "octopus.traits.water-breathing": {
+    "name": "Respirare sott'acqua",
+    "text": "La piovra può respirare soltanto sott'acqua."
+  },
+  "octopus.actions.tentacles": {
+    "name": "Tentacoli",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 1 danno Contundente."
+  },
+  "octopus.reactions.ink-cloud": {
+    "name": "Nube di inchiostro",
+    "text": "Attivazione: una creatura termina il suo turno entro 1,5 metri dalla piovra sott'acqua. Esito: la piovra rilascia abbastanza inchiostro da riempire un cubo con spigolo di 1,5 metri intorno a sé e può muoversi fino alla sua velocità di nuoto massima. Il cubo è pesantemente oscurato per 1 minuto, o finché una corrente forte o un altro effetto simile non disperde l'inchiostro."
+  },
+  "ogre": {
+    "name": "Ogre"
+  },
+  "ogre.actions.greatclub": {
+    "name": "Randello pesante",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 13 (2d8 + 4) danni Contundenti."
+  },
+  "ogre.actions.javelin": {
+    "name": "Giavellotto",
+    "text": "Tiro per colpire in mischia o a distanza: +6, portata 1,5 m o gittata 9/36 m. Colpito: 11 (2d6 + 4) danni Perforanti."
+  },
+  "ogre-zombie": {
+    "name": "Zombi ogre"
+  },
+  "ogre-zombie.traits.undead-fortitude": {
+    "name": "Tempra dei non morti",
+    "text": "Se i danni riducono lo zombi a 0 punti ferita, esso effettua un tiro salvezza su Costituzione (CD pari a 5 più i danni subiti), a meno che non si tratti di danni Radiosi o di un colpo critico. In caso di successo, scende invece a 1 punto ferita."
+  },
+  "ogre-zombie.actions.slam": {
+    "name": "Schianto",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 13 (2d8 + 4) danni Contundenti."
+  },
+  "oni": {
+    "name": "Oni"
+  },
+  "oni.traits.regeneration": {
+    "name": "Rigenerazione",
+    "text": "L'oni recupera 10 punti ferita all'inizio di ogni suo turno, se ha almeno 1 punto ferita."
+  },
+  "oni.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'oni effettua due attacchi Artiglio o Raggio dell'incubo. Può sostituire un attacco con un utilizzo di Incantesimi."
+  },
+  "oni.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +7, portata 3 m. Colpito: 10 (1d12 + 4) danni Taglienti più 9 (2d8) danni Necrotici."
+  },
+  "oni.actions.nightmare-ray": {
+    "name": "Raggio dell'incubo",
+    "text": "Tiro per colpire a distanza: +5, gittata 18 m. Colpito: 9 (2d6 + 2) danni Psichici, e il bersaglio è Spaventato fino all'inizio del turno successivo dell'oni."
+  },
+  "oni.actions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "L'oni si trasforma in un umanoide di taglia Piccola o Media, o in un gigante di taglia Grande, oppure torna alla sua vera forma. A eccezione della taglia, le sue statistiche di gioco restano le stesse in ogni forma. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "oni.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "L'oni lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 13): 1/giorno ciascuno: Charme su persone (di 2º livello), forma gassosa, oscurità, sonno."
+  },
+  "oni.bonusActions.invisibility": {
+    "name": "Invisibilità",
+    "text": "L'oni lancia invisibilità su se stesso, senza bisogno di componenti e utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "otyugh": {
+    "name": "Otyugh"
+  },
+  "otyugh.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'otyugh effettua un attacco Morso e due attacchi Tentacolo."
+  },
+  "otyugh.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 12 (2d8 + 3) danni Perforanti, e il bersaglio è Avvelenato. Ogni volta che il bersaglio Avvelenato termina un riposo lungo, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 15. Fallimento: i punti ferita massimi del bersaglio sono ridotti di 5 (1d10), e la riduzione permane finché la condizione avvelenato del bersaglio non termina. Successo: la condizione avvelenato termina."
+  },
+  "otyugh.actions.tentacle": {
+    "name": "Tentacolo",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 12 (2d8 + 3) danni Perforanti. Se il bersaglio è una creatura di taglia Media o inferiore, è Afferrato (CD 13 per sfuggire) da uno dei due tentacoli."
+  },
+  "otyugh.actions.tentacle-slam": {
+    "name": "Schianto con tentacolo",
+    "text": "Tiro salvezza su Costituzione: CD 14, tutte le creature Afferrate dall'otyugh. Fallimento: 16 (3d8 + 3) danni Contundenti, e il bersaglio è Stordito fino all'inizio del turno successivo dell'otyugh. Successo: danni dimezzati."
+  },
+  "owl": {
+    "name": "Gufo"
+  },
+  "owl.traits.flyby": {
+    "name": "Volo sfuggente",
+    "text": "Il gufo non provoca attacchi di opportunità quando vola oltre la portata di un nemico."
+  },
+  "owl.actions.talons": {
+    "name": "Speroni",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 1 danno Tagliente."
+  },
+  "owlbear": {
+    "name": "Orsogufo"
+  },
+  "owlbear.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'orsogufo effettua due attacchi Squarcio."
+  },
+  "owlbear.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 14 (2d8 + 5) danni Taglienti."
+  },
+  "panther": {
+    "name": "Pantera"
+  },
+  "panther.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m Colpito: 6 (1d6 + 3) danni Taglienti."
+  },
+  "panther.bonusActions.nimble-escape": {
+    "name": "Fuga agile",
+    "text": "La pantera effettua l'azione di Disimpegno o Nascondersi."
+  },
+  "pegasus": {
+    "name": "Pegaso"
+  },
+  "pegasus.actions.hooves": {
+    "name": "Zoccoli",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 7 (1d6 + 4) danni Contundenti più 5 (2d4) danni Radiosi."
+  },
+  "phase-spider": {
+    "name": "Ragno-fase"
+  },
+  "phase-spider.traits.ethereal-sight": {
+    "name": "Vista eterea",
+    "text": "Il ragno è in grado di vedere per 18 metri sul Piano Etereo finché si trova sul Piano Materiale e viceversa."
+  },
+  "phase-spider.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "Il ragno può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "phase-spider.traits.web-walker": {
+    "name": "Andatura sulla ragnatela",
+    "text": "Il ragno ignora le restrizioni di movimento causate dalle ragnatele e conosce l'ubicazione di qualsiasi altra creatura a contatto con la medesima ragnatela."
+  },
+  "phase-spider.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il ragno effettua due attacchi Morso."
+  },
+  "phase-spider.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m Colpito: 8 (1d10 + 3) danni Perforanti più 9 (2d8) danni da Veleno. Se i danni riducono il bersaglio a 0 punti ferita, esso diventa stabile, ed è Avvelenato per 1 ora. Finché è Avvelenato, il bersaglio è anche Paralizzato."
+  },
+  "phase-spider.bonusActions.ethereal-jaunt": {
+    "name": "Transizione eterea",
+    "text": "Il ragno si teletrasporta dal Piano Materiale al Piano Etereo o viceversa."
+  },
+  "piranha": {
+    "name": "Piranha"
+  },
+  "piranha.traits.water-breathing": {
+    "name": "Respirare sott'acqua",
+    "text": "Il piranha può respirare soltanto sott'acqua."
+  },
+  "piranha.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5 (con vantaggio se il bersaglio non ha tutti i punti ferita), portata 1,5 m. Colpito: 1 danno Perforante."
+  },
+  "pirate": {
+    "name": "Pirata"
+  },
+  "pirate.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il pirata effettua due attacchi Pugnale. Può sostituire un attacco con un utilizzo di Baldanza irresistibile."
+  },
+  "pirate.actions.dagger": {
+    "name": "Pugnale",
+    "text": "Tiro per colpire in mischia o a distanza: +5, portata 1,5 m o gittata 6/18 m Colpito: 5 (1d4 + 3) danni Perforanti."
+  },
+  "pirate.actions.enthralling-panache": {
+    "name": "Baldanza irresistibile",
+    "text": "Tiro salvezza su Saggezza: CD 12, una creatura che il pirata è in grado di vedere entro 9 metri. Fallimento: il bersaglio è Affascinato fino all'inizio del turno successivo del pirata."
+  },
+  "pirate-captain": {
+    "name": "Capitano dei pirati"
+  },
+  "pirate-captain.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il pirata effettua tre attacchi, usando Stocco o Pistola in qualsiasi combinazione."
+  },
+  "pirate-captain.actions.rapier": {
+    "name": "Stocco",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 13 (2d8 + 4) danni Perforanti, e il pirata dispone di vantaggio al tiro per colpire successivo che effettua prima del termine del proprio turno corrente."
+  },
+  "pirate-captain.actions.pistol": {
+    "name": "Pistola",
+    "text": "Tiro per colpire a distanza: +7, gittata 9/27 m. Colpito: 15 (2d10 + 4) danni Perforanti."
+  },
+  "pirate-captain.bonusActions.captains-charm": {
+    "name": "Fascino del capitano",
+    "text": "Tiro salvezza su Saggezza: CD 14, una creatura che il pirata è in grado di vedere entro 9 metri. Fallimento: il bersaglio è Affascinato fino all'inizio del turno successivo del pirata."
+  },
+  "pirate-captain.reactions.riposte": {
+    "name": "Replica",
+    "text": "Attivazione: il pirata viene colpito da un tiro per colpire in mischia mentre tiene in mano un'arma. Esito: il pirata aggiunge 3 alla sua CA contro quell'attacco, aumentando le probabilità che il colpo non vada a segno. Se il colpo non va a segno, il pirata effettua un attacco Stocco contro la creatura che ha provocato la reazione se si trova entro gittata."
+  },
+  "pit-fiend": {
+    "name": "Diavolo della fossa"
+  },
+  "pit-fiend.traits.diabolical-restoration": {
+    "name": "Ristoro diabolico",
+    "text": "Se il diavolo della fossa muore al di fuori dei Nove Inferi, il suo corpo si dissolve in fumo sulfureo e ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nei Nove Inferi."
+  },
+  "pit-fiend.traits.fear-aura": {
+    "name": "Aura di paura",
+    "text": "Il diavolo della fossa irradia un'aura in un'emanazione di 6 metri fintanto che non è Incapacitato. Tiro salvezza su Saggezza: CD 21, qualsiasi nemico che inizi il suo turno all'interno dell'aura. Fallimento: il bersaglio è Spaventato fino all'inizio del proprio turno successivo. Successo: il bersaglio è immune all'aura di questo diavolo della fossa per 24 ore."
+  },
+  "pit-fiend.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno) Se il diavolo della fossa fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "pit-fiend.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il diavolo della fossa dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "pit-fiend.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il diavolo della fossa effettua un attacco Morso, due attacchi Artiglio diabolico e un attacco Mazza fiammeggiante."
+  },
+  "pit-fiend.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +14, portata 3 m. Colpito: 18 (3d6 + 8) danni Perforanti. Se il bersaglio è una creatura, deve effettuare il seguente tiro salvezza. Tiro salvezza su Costituzione: CD 21. Fallimento: il bersaglio è Avvelenato. Finché è Avvelenato, il bersaglio non può recuperare punti ferita e subisce 21 (6d6) danni da Veleno all'inizio di ogni suo turno; il bersaglio ripete il tiro salvezza al termine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, la prova viene superata automaticamente."
+  },
+  "pit-fiend.actions.devilish-claw": {
+    "name": "Artiglio diabolico",
+    "text": "Tiro per colpire in mischia: +14, portata 3 m. Colpito: 26 (4d8 + 8) danni Necrotici."
+  },
+  "pit-fiend.actions.fiery-mace": {
+    "name": "Mazza fiammeggiante",
+    "text": "Tiro per colpire in mischia: +14, portata 3 m. Colpito: 22 (4d6 + 8) danni da Forza più 21 (6d6) danni da Fuoco."
+  },
+  "pit-fiend.actions.hellfire-spellcasting": {
+    "name": "Incantesimi del fuoco infernale",
+    "text": "Il diavolo della fossa lancia palla di fuoco (di 5º livello) due volte, senza bisogno di componenti materiali e utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 21). Può sostituire un incantesimo palla di fuoco con blocca mostri (di 7º livello) o con muro di fuoco."
+  },
+  "planetar": {
+    "name": "Planetar"
+  },
+  "planetar.traits.divine-awareness": {
+    "name": "Consapevolezza divina",
+    "text": "Il planetar sa riconoscere le menzogne."
+  },
+  "planetar.traits.exalted-restoration": {
+    "name": "Ristoro glorioso",
+    "text": "Se il planetar muore al di fuori di Monte Celestia, il suo corpo scompare e ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte a Monte Celestia."
+  },
+  "planetar.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il planetar dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "planetar.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il planetar effettua tre attacchi Spada radiosa oppure usa Conflagrazione divina due volte."
+  },
+  "planetar.actions.radiant-sword": {
+    "name": "Spada radiosa",
+    "text": "Tiro per colpire in mischia: +12, portata 3 m. Colpito: 14 (2d6 + 7) danni Taglienti più 18 (4d8) danni Radiosi."
+  },
+  "planetar.actions.holy-burst": {
+    "name": "Conflagrazione divina",
+    "text": "Tiro salvezza su Destrezza: CD 20, tutti i nemici in una sfera di 6 metri di raggio centrata su un punto che il planetar è in grado di vedere entro 36 metri. Fallimento: 24 (7d6) danni Radiosi. Successo: danni dimezzati."
+  },
+  "planetar.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il planetar lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 20): A volontà: Individuazione del bene e del male. 1/giorno ciascuno: Comunione, controllare tempo atmosferico, dissolvi il bene e il male, rianimare morti."
+  },
+  "planetar.bonusActions.divine-aid": {
+    "name": "Aiuto divino",
+    "text": "Il planetar lancia cura ferite, invisibilità, rimuovi maledizione o ristorare inferiore, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "plesiosaurus": {
+    "name": "Plesiosauro"
+  },
+  "plesiosaurus.traits.hold-breath": {
+    "name": "Apnea",
+    "text": "Il plesiosauro può trattenere il respiro per 1 ora."
+  },
+  "plesiosaurus.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 11 (2d6 + 4) danni Perforanti."
+  },
+  "polar-bear": {
+    "name": "Orso polare"
+  },
+  "polar-bear.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'orso effettua due attacchi Squarcio."
+  },
+  "polar-bear.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 9 (1d8 + 5) danni Taglienti."
+  },
+  "pony": {
+    "name": "Pony"
+  },
+  "pony.actions.hooves": {
+    "name": "Zoccoli",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni Contundenti."
+  },
   "priest": {
     "name": "Sacerdote"
   },
@@ -3955,6 +4380,78 @@
   "priest.bonusActions.divine-aid": {
     "name": "Aiuto divino",
     "text": "Il sacerdote lancia benedizione, dissolvi magie, parola guaritrice o ristorare inferiore, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "priest-acolyte": {
+    "name": "Sacerdote accolito"
+  },
+  "priest-acolyte.actions.mace": {
+    "name": "Mazza",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Contundenti più 2 (1d4) danni Radiosi."
+  },
+  "priest-acolyte.actions.radiant-flame": {
+    "name": "Fiamma radiosa",
+    "text": "Tiro per colpire a distanza: +4, gittata 18 m. Colpito: 7 (2d6) danni Radiosi."
+  },
+  "priest-acolyte.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il sacerdote lancia uno dei seguenti incantesimi, utilizzando Saggezza come caratteristica da incantatore: A volontà: Luce, taumaturgia."
+  },
+  "priest-acolyte.bonusActions.divine-aid": {
+    "name": "Aiuto divino",
+    "text": "Il sacerdote lancia benedizione, parola guaritrice o santuario, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "pseudodragon": {
+    "name": "Pseudodrago"
+  },
+  "pseudodragon.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Lo pseudodrago dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "pseudodragon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Lo pseudodrago effettua due attacchi Morso."
+  },
+  "pseudodragon.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni Perforanti."
+  },
+  "pseudodragon.actions.sting": {
+    "name": "Pungiglione",
+    "text": "Tiro salvezza su Costituzione: CD 12, una creatura che lo pseudodrago è in grado di vedere entro 1,5 metri. Fallimento: 5 (2d4) danni da Veleno, e il bersaglio è Avvelenato per 1 ora. Fallimento di 5 o più: finché rimane Avvelenato, il bersaglio è Privo di Sensi. Il bersaglio si sveglia se subisce danni o se una creatura entro 1,5 metri da esso effettua un'azione per svegliarlo."
+  },
+  "pteranodon": {
+    "name": "Pteranodonte"
+  },
+  "pteranodon.traits.flyby": {
+    "name": "Volo sfuggente",
+    "text": "Lo pteranodonte non provoca attacchi di opportunità quando vola oltre la portata di un nemico."
+  },
+  "pteranodon.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 6 (1d8 + 2) danni Perforanti."
+  },
+  "purple-worm": {
+    "name": "Verme purpureo"
+  },
+  "purple-worm.traits.tunneler": {
+    "name": "Scavatore di tunnel",
+    "text": "Il verme può scavare attraverso la roccia solida a metà della sua velocità di scavo, formando un tunnel del diametro di 3 metri."
+  },
+  "purple-worm.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il verme effettua un attacco Morso e un attacco Pungiglione caudale."
+  },
+  "purple-worm.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +14, portata 3 m. Colpito: 22 (3d8 + 9) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 19 per sfuggire), ed è Trattenuto finché la presa perdura."
+  },
+  "purple-worm.actions.tail-stinger": {
+    "name": "Pungiglione caudale",
+    "text": "Tiro per colpire in mischia: +14, portata 3 m. Colpito: 16 (2d6 + 9) danni Perforanti più 35 (10d6) danni da Veleno."
+  },
+  "purple-worm.bonusActions.swallow": {
+    "name": "Inghiottire",
+    "text": "Tiro salvezza su Forza: CD 19, una creatura di taglia Grande o inferiore Afferrata dal verme (può inghiottire fino a tre creature alla volta). Fallimento: il bersaglio viene inghiottito dal verme, e non è più Afferrato. Una creatura inghiottita è Accecata e Trattenuta, beneficia di copertura totale contro gli attacchi e altri effetti al di fuori del verme, e subisce 17 (5d6) danni da Acido all'inizio di ogni turno del verme. Se il verme subisce 30 o più danni in un singolo turno da una creatura al suo interno, deve superare un tiro salvezza su Costituzione con CD 21 alla fine di quel turno, altrimenti rigurgita tutte le creature inghiottite, ognuna delle quali cade a terra Prona in uno spazio entro 1,5 metri dal verme. Se il verme muore, qualsiasi creatura inghiottita non è più Trattenuta e può fuggire dal cadavere usando 6 metri di movimento, uscendo Prona."
   },
   "rat": {
     "name": "Topo"

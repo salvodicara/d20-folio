@@ -540,8 +540,8 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     generator (`git rm`'d at the final wave) that regenerates `beasts.ts` + the `beasts.json`
     key deltas from the corpus, wave by wave; the pilot's `brown-bear` is re-derived to its
     2024 statblock (22 HP, Bite +5 1d8+3 / Claw +5 1d4+3, no traits — a live-user Polymorph
-    correctness fix), `rat` already matched. **Data waves 1–5/8 — `a–b` + `c–d` + `e–g` + `h–k` +
-    `l–m` — are IN**
+    correctness fix), `rat` already matched. **Data waves 1–6/8 — `a–b` + `c–d` + `e–g` + `h–k` +
+    `l–m` + `n–p` — are IN**
     (202 monsters: `a–b` = 59 Aboleth…Bulette; `c–d` = 32 Camel…Dust Mephit; `e–g` = 64
     Eagle…Guardian Naga — the elementals (earth/fire) + fire/frost giants, the two genies
     (efreeti) + the erinyes/glabrezu Fiends, the ettercap/ettin/gargoyle/gibbering-mouther/grick
@@ -575,7 +575,21 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     entities — Italian has no Wizard/Mage lexical split), which the pilot had DROPPED for lack of an
     allowlist. This wave reintroduces Mage behind a narrow `ALLOWED_COLLISIONS` sanction in the
     IT-name guard (the exact `classes:wizard` ↔ `monsters:mage` pair only — both tier-1 IT SRD 5.2.1
-    prints; `docs/IT_NAME_REGISTRY.md`). NEXT: the 3 remaining data waves (`n–p`…`t–z`).
+    prints; `docs/IT_NAME_REGISTRY.md`). `n–p` = 27 Nalfeshnee…Purple Worm — the nalfeshnee/oni
+    (with the pit-fiend + planetar celestial/fiend heavyweights, both CR 12–13) and night-hag/oni
+    monstrosity-and-fiend bench, the ochre-jelly ooze, the owlbear/otyugh/phase-spider/purple-worm
+    monstrosities, the ogre + ogre-zombie giants, the pegasus/pseudodragon celestials-and-dragons,
+    the noble/pirate(-captain)/priest-acolyte NPCs, and the n–p beast bench (octopus · owl · panther ·
+    piranha · plesiosaurus · polar-bear · pony · pteranodon). Its beast intersection re-derives the
+    drifted **Panther** (AC 12→13, DEX 15→16, the stale Bite+Claw pair collapsed to the single 2024
+    `Rend` 1d6+3, the `keen-smell`+`pounce` traits dropped, darkvision 60 added) and **Polar Bear**
+    (DEX 10→14, Swim 30→40, Bite+Claw→single `Rend` 1d8+5, `keen-smell` dropped, darkvision 60 added)
+    — both live-user Polymorph corrections — plus **Octopus** (Ink Cloud is a 2024 reaction, not a
+    trait, so `trait.ink-cloud` is pruned); `owl` · `piranha` · `plesiosaurus` · `pony` · `pteranodon`
+    already matched their projection. The `polar-bear` CON 16 (+3) the polymorph CON-delta pin reads
+    is unchanged by the 2024 print, so the pin holds and no `polymorph.test.ts` literal moved.
+    `otyugh` joins the monster-tongue language catalogue (the Blink Dog/gnoll precedent —
+    catalogue-only, not the player picker). NEXT: the 2 remaining data waves (`q–s`…`t–z`).
 - **Companions/Extras:** a persistent companion-statblock surface on the sheet (Find Familiar,
   Primal Companion, Drakewarden, Artificer Steel Defender/Homunculus) — closes a
   rules-completeness hole; reuses the bestiary statblock renderer.

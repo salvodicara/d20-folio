@@ -321,7 +321,7 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
     senses: { darkvisionFt: 30 },
-    traits: ["trait.compression", "trait.water-breathing", "trait.ink-cloud"],
+    traits: ["trait.compression", "trait.water-breathing"],
   },
   // Owl (2024 SRD 5.2.1). AC 11, HP 1, CR 0.
   {
@@ -963,32 +963,25 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     senses: { darkvisionFt: 60, blindsightFt: 10 },
     traits: ["trait.spider-climb"],
   },
-  // Panther (2024 SRD 5.2.1). AC 12, HP 13, CR 1/4.
+  // Panther (2024 SRD 5.2.1). AC 13, HP 13, CR 1/4.
   {
     id: "panther",
     cr: 0.25,
     size: "Medium",
-    ac: 12,
+    ac: 13,
     hp: 13,
     speeds: { walk: 50, climb: 40 },
-    abilityScores: { STR: 14, DEX: 15, CON: 10, INT: 3, WIS: 14, CHA: 7 },
+    abilityScores: { STR: 14, DEX: 16, CON: 10, INT: 3, WIS: 14, CHA: 7 },
     attacks: [
       {
-        nameKey: "attack.bite",
-        toHit: 4,
-        damageDice: "1d6+2",
-        damageType: "piercing",
-        reachFt: 5,
-      },
-      {
-        nameKey: "attack.claw",
-        toHit: 4,
-        damageDice: "1d4+2",
+        nameKey: "attack.rend",
+        toHit: 5,
+        damageDice: "1d6+3",
         damageType: "slashing",
         reachFt: 5,
       },
     ],
-    traits: ["trait.keen-smell", "trait.pounce"],
+    senses: { darkvisionFt: 60 },
   },
   // Pteranodon (2024 SRD 5.2.1). AC 13, HP 13, CR 1/4.
   {
@@ -1564,25 +1557,18 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     size: "Large",
     ac: 12,
     hp: 42,
-    speeds: { walk: 40, swim: 30 },
-    abilityScores: { STR: 20, DEX: 10, CON: 16, INT: 2, WIS: 13, CHA: 7 },
+    speeds: { walk: 40, swim: 40 },
+    abilityScores: { STR: 20, DEX: 14, CON: 16, INT: 2, WIS: 13, CHA: 7 },
     attacks: [
       {
-        nameKey: "attack.bite",
+        nameKey: "attack.rend",
         toHit: 7,
         damageDice: "1d8+5",
-        damageType: "piercing",
-        reachFt: 5,
-      },
-      {
-        nameKey: "attack.claws",
-        toHit: 7,
-        damageDice: "2d6+5",
         damageType: "slashing",
         reachFt: 5,
       },
     ],
-    traits: ["trait.keen-smell"],
+    senses: { darkvisionFt: 60 },
   },
   // Rhinoceros (2024 SRD 5.2.1). AC 13, HP 45, CR 2.
   {
