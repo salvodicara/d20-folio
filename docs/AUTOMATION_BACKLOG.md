@@ -1553,6 +1553,15 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       `value * 2` and reads `exhaustionPenalty` too. Regressions: `combat-action-log-type.test.ts`
       (table 1/3/5/6/9 → the exact pair, plus a per-level agreement check against the engine formulas) + `this-turn-condition-projection.test.tsx` (an Exhaustion-5 hero renders −10 · 25 ft, never −2).
 
+- [x] **PS-B (IT lexicon collision) — Exhaustion rendered as two different Italian words on ONE
+      screen.** FIXED 2026-07-24. The rail rubric read the canonical _Indebolimento_ (the official IT
+      SRD 5.2.1 lexeme, `src/i18n/it/srd/conditions.json`) while the combat turn-limiter banner read
+      _Sfinimento_ — chrome drift the SRD-only guard could not see. Fixed the string and CLOSED the
+      class: the IT-name guard now (a) pins all 15 condition `name.it` values to the closed-set
+      glossary (`docs/IT_NAME_REGISTRY.md`) and (b) runs the retired-lexeme scan over
+      `src/i18n/it/ui/*.json` as well as the SRD catalogues, with _Sfinimento_ on the retired list.
+      Regression: both new cases in `it-name-consistency.guard.test.ts`, fail-before/pass-after.
+
 ---
 
 ## Correctness + exposure batch (workstream D)

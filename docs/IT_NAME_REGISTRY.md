@@ -99,7 +99,13 @@ build on:
   a written justification; no wildcards, and any extra colliding member re-flags the group.
 - **Untranslated regressions** — an Italian name byte-equal to English, outside the allowlist of
   proper nouns Italian D&D genuinely keeps (Tiefling, Goliath, Halfling, Ranger, Warlock…).
-- **Retired-variant regressions** — a superseded old name reappearing as a `name` field.
+- **Retired-variant regressions** — a superseded old name reappearing as a `name` field, in SRD
+  prose, **or in the Italian CHROME strings** (`src/i18n/it/ui/*.json`). The chrome cross-references
+  the same closed sets the catalogues do, so it obeys the same lexicon: the combat turn-limiter
+  banner once read _Sfinimento_ while the rail rubric rendered the canonical _Indebolimento_ on the
+  SAME screen (fixed 2026-07-24), which is why the scan now covers the UI shards too.
+- **Closed-set condition drift** — the 15 condition `name.it` values are PINNED to the glossary table
+  above (the most cross-referenced closed set in the app); a new condition must be pinned too.
 
 The guard reads the `name` fields directly, so the JSON stays the single source of truth — this doc
 never duplicates the full per-entity list (that would just be a second thing to drift).

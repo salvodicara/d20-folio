@@ -20,7 +20,7 @@
  *
  * Authority + rationale: docs/IT_NAME_REGISTRY.md and docs/GOLDEN_RULES.md (D2).
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -474,6 +474,10 @@ export const RETIRED_IN_PROSE_SRD: readonly string[] = [
   "Segno del Cacciatore",
   "Sfera Fiammeggiante",
   "Sfera Vetriolica",
+  // Never a canonical lexeme: the Exhaustion condition is INDEBOLIMENTO in the official IT SRD
+  // 5.2.1. "Sfinimento" shipped once in the combat turn-limiter chrome and collided with the rail's
+  // rubric on the SAME screen (post-sweep defect PS-B) — locked out of prose AND of the UI shards.
+  "Sfinimento",
   "Sguardo Malefico",
   "Signore delle Mille Forme",
   "Sopravvissuto Disciplinato",
@@ -632,6 +636,56 @@ export function findRetiredNames(
   return ents
     .filter((e) => set.has(e.it.trim()))
     .map((e) => e.kind + ":" + e.id + ' -> "' + e.it + '"');
+}
+
+/** Every string value in a shard (chrome has no `name` convention — take them all). */
+function allStrings(v: unknown, out: string[]): void {
+  if (typeof v === "string") out.push(v);
+  else if (Array.isArray(v)) for (const x of v) allStrings(x, out);
+  else if (v && typeof v === "object")
+    for (const val of Object.values(v as Record<string, unknown>)) allStrings(val, out);
+}
+
+/** One localized CHROME string: the shard it lives in + its value. */
+export type UiString = { file: string; value: string };
+
+/**
+ * Every Italian CHROME string under `<root>/it/ui/*.json` (the app's own copy, as opposed to the
+ * `srd/` content catalogues `loadEntities` walks). The chrome cross-references SRD entities too —
+ * conditions, actions, damage types — so the closed-set glossary has to hold HERE as well: the
+ * Exhaustion collision (PS-B, 2026-07-24) was a chrome string reading "Sfinimento" while the rail
+ * rubric rendered the canonical "Indebolimento" on the same screen.
+ */
+export function loadUiStrings(root: string, locale = "it"): UiString[] {
+  const dir = resolve(root, locale, "ui");
+  if (!existsSync(dir)) return [];
+  const out: UiString[] = [];
+  for (const file of readdirSync(dir)) {
+    if (!file.endsWith(".json")) continue;
+    const values: string[] = [];
+    allStrings(JSON.parse(readFileSync(resolve(dir, file), "utf8")), values);
+    for (const value of values) out.push({ file: locale + "/ui/" + file, value });
+  }
+  return out;
+}
+
+/**
+ * Chrome strings reviving a distinctive retired lexeme — the {@link findRetiredInProse} check
+ * applied to the UI shards (same Title-Case-sensitive matching, same list).
+ */
+export function findRetiredInUi(
+  strings: ReadonlyArray<UiString>,
+  retired: Iterable<string> = RETIRED_IN_PROSE_SRD
+): string[] {
+  const pats = [...retired].map((v) => ({
+    v,
+    re: new RegExp("(?<!\\p{L})" + escapeRegex(v) + "(?!\\p{L})", "u"),
+  }));
+  const hits: string[] = [];
+  for (const s of strings)
+    for (const { v, re } of pats)
+      if (re.test(s.value)) hits.push(s.file + ' revives "' + v + '": ' + s.value);
+  return hits;
 }
 
 /**

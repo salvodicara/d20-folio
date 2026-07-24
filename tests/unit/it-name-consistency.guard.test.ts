@@ -11,10 +11,12 @@ import { resolve } from "node:path";
 import { describe, it, expect } from "vitest";
 import {
   loadEntities,
+  loadUiStrings,
   findCollisions,
   findUntranslated,
   findRetiredNames,
   findRetiredInProse,
+  findRetiredInUi,
   PUBLIC_SRD_I18N,
   type AllowedCollision,
   type Ent,
@@ -55,6 +57,32 @@ const EXPECTED_BASE_ACTION_IT: Record<string, string> = {
  * reference — no "azione " prefix needed, which also catches list-form members ("…o Utilizzare").
  */
 const RETIRED_ACTION_VERBS = ["Attaccare", "Utilizzare", "Esaminare"] as const;
+
+/**
+ * The canonical Italian names of the 15 conditions (IT SRD 5.2.1 "Condizioni" / the closed-set core
+ * glossary in docs/IT_NAME_REGISTRY.md). Conditions are the most cross-referenced closed set in the
+ * app — the rail rubric, the combat limiter banner, every spell's prose — so their lexemes are
+ * PINNED here: post-sweep defect PS-B shipped "Sfinimento" in the combat chrome while the rail
+ * rendered the canonical "Indebolimento" on the SAME screen. The `name` fields stay the source of
+ * truth; this map is the lock that stops one drifting.
+ */
+const EXPECTED_CONDITION_IT: Record<string, string> = {
+  blinded: "Accecato",
+  charmed: "Affascinato",
+  deafened: "Assordato",
+  exhaustion: "Indebolimento",
+  frightened: "Spaventato",
+  grappled: "Afferrato",
+  incapacitated: "Incapacitato",
+  invisible: "Invisibile",
+  paralyzed: "Paralizzato",
+  petrified: "Pietrificato",
+  poisoned: "Avvelenato",
+  prone: "Prono",
+  restrained: "Trattenuto",
+  stunned: "Stordito",
+  unconscious: "Privo di Sensi",
+};
 const IT_SRD_DIR = resolve(PUBLIC_SRD_I18N, "it", "srd");
 
 describe("IT name consistency (public SRD)", () => {
@@ -141,6 +169,26 @@ describe("IT name consistency (public SRD)", () => {
         "monsters:delta (Delta)",
       ]);
     });
+  });
+
+  it("pins the condition IT names to the official 2024 closed-set glossary", () => {
+    const conditions = ents.filter((e) => e.kind === "conditions");
+    const drift = conditions
+      .filter((c) => EXPECTED_CONDITION_IT[c.id] !== c.it)
+      .map(
+        (c) => `${c.id}: "${c.it}" ≠ official "${EXPECTED_CONDITION_IT[c.id] ?? "?"}"`
+      );
+    // Every shipped condition must be pinned (a new one must be added to the map above).
+    const unpinned = conditions
+      .filter((c) => !(c.id in EXPECTED_CONDITION_IT))
+      .map((c) => c.id);
+    expect({ drift, unpinned }).toEqual({ drift: [], unpinned: [] });
+  });
+
+  // The chrome cross-references the same closed set the catalogues do, so the retired-lexeme scan
+  // runs over `it/ui/*.json` too — where PS-B's "Sfinimento" actually shipped.
+  it("never revives a retired lexeme in the Italian CHROME strings", () => {
+    expect(findRetiredInUi(loadUiStrings(PUBLIC_SRD_I18N))).toEqual([]);
   });
 
   it("never cross-references a base action by a retired verb form (RA-W6/W8 prose sweep)", () => {
