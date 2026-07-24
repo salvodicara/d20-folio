@@ -126,9 +126,10 @@ describe("spell-data integrity", () => {
     // a re-pin: costGp = the first gp figure named, consumed = a "consume" clause.
     const GP = /([\d,]+)\s*\+?\s*gp/i; // first gp figure
     for (const s of spells) {
-      // SRD spells only — pack-spell priced-material rows are pinned in
-      // `content-pack/tests/unit/spell-data-integrity.pack.test.ts` (the same
-      // partition M08/M10/M01 use for pack content).
+      // SRD spells only — the pack spells' priced-material fill + a pack-side
+      // equivalence lock are a tracked FOLLOW-UP (AUTOMATION_BACKLOG.md → RA-23
+      // "PACK FOLLOW-UP"), not yet done; the M08/M10/M01 partition is where pack
+      // content pins live (V/S/M + provenance today).
       if (s.source !== "SRD") continue;
       const prose = srd("spell", `${s.id}.components`, "material", "en");
       const digits = GP.exec(prose)?.[1];
