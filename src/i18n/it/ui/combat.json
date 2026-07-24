@@ -236,7 +236,7 @@
     "limiterAttackDisadvantageScoped": "Svantaggio ai tiri per colpire contro bersagli diversi da chi ti afferra ({{cause}})",
     "limiterSpeedZero": "Velocità 0 ({{cause}})",
     "limiterAutoFailSaves": "Fallisci automaticamente i TS su {{abilities}} ({{cause}})",
-    "limiterExhaustion": "−2 a tutti i d20 (Sfinimento {{level}})",
+    "limiterExhaustion": "−{{n}} a tutti i Test con d20 · −{{speed}} di Velocità (Indebolimento {{level}})",
     "limiterSpellSlotLimit": "Solo uno slot incantesimo per turno (usati {{n}})",
     "cunningStrike": "Colpo Astuto",
     "apply": "Applica",

@@ -27,6 +27,7 @@ import {
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { ActionSummary } from "@/lib/smart-tracker";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { exhaustionPenalty, exhaustionSpeedReductionFt } from "@/lib/compute";
 
 function makeAction(
   source: ResolvedAction["source"],
@@ -396,6 +397,47 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
     });
     const ex = ls.find((l) => l.kind === "exhaustion");
     expect(ex?.kind === "exhaustion" && ex.level).toBe(6);
+  });
+
+  // REGRESSION — the limiter sentence used to hardcode "−2 to all d20" at EVERY
+  // level, so an Exhaustion-6 character was TAUGHT −2 while the header correctly
+  // showed INIT −10. The VM now carries the RESOLVED SRD penalties: −2 × level to
+  // D20 Tests and −5 ft × level to Speed.
+  it.each([
+    [1, 2, 5],
+    [3, 6, 15],
+    [5, 10, 25],
+    [6, 12, 30],
+    [9, 12, 30], // clamped to 6
+  ])(
+    "exhaustion %i → d20Penalty %i, speedPenaltyFt %i (never a fixed −2)",
+    (exhaustion, d20Penalty, speedPenaltyFt) => {
+      const ex = composeTurnLimiters({
+        conditions: [],
+        attackRollState: "none",
+        exhaustion,
+        locale: "en",
+      }).find((l) => l.kind === "exhaustion");
+      expect(ex?.kind === "exhaustion" && ex.d20Penalty).toBe(d20Penalty);
+      expect(ex?.kind === "exhaustion" && ex.speedPenaltyFt).toBe(speedPenaltyFt);
+    }
+  );
+
+  it("states exactly what the engine formulas compute, at every level", () => {
+    for (let level = 1; level <= 6; level++) {
+      const ex = composeTurnLimiters({
+        conditions: [],
+        attackRollState: "none",
+        exhaustion: level,
+        locale: "en",
+      }).find((l) => l.kind === "exhaustion");
+      expect(ex?.kind === "exhaustion" && ex.d20Penalty).toBe(
+        Math.abs(exhaustionPenalty(level))
+      );
+      expect(ex?.kind === "exhaustion" && ex.speedPenaltyFt).toBe(
+        exhaustionSpeedReductionFt(level)
+      );
+    }
   });
 });
 

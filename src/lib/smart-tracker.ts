@@ -98,6 +98,7 @@ import {
   featureSaveDc,
   isWeaponProficient,
   exhaustionPenalty,
+  exhaustionSpeedReductionFt,
   resolveWeaponAttackStat,
   resolveWeaponAttackCantrip,
   effectiveUnarmedStrike,
@@ -6705,11 +6706,6 @@ export function effectiveWalkingSpeedFt(
   // bonuses, multiplier, and flat reductions, so an exhausted / armor-penalised
   // Speed still floors back up to `speedFloorFt`. Default 0 = no floor.
   return Math.max(0, resolved, agg.speedFloorFt);
-}
-
-/** Exhaustion walking-Speed reduction: −5 ft per Exhaustion level (2024 RAW). */
-function exhaustionSpeedReductionFt(exhaustion: number): number {
-  return Math.max(0, exhaustion) * 5;
 }
 
 /**

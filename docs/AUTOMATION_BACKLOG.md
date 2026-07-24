@@ -1535,6 +1535,24 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       Regression in `resource-rail.test.tsx` (a normal-L1 preview lights the normal row, not the pact row),
       fail-before/pass-after.
 
+### Post-sweep defects (visual sweep of `main`, 2026-07-24)
+
+> A fresh Chromium sweep of the shipped sheet found these. Same bar as the ledger above: root-cause
+> fix at the shared seam + a fail-before regression in the same commit.
+
+- [x] **PS-A (WRONG NUMBER TAUGHT) — the turn-limiter banner hardcoded "−2 to all d20" at EVERY
+      Exhaustion level.** FIXED 2026-07-24. `combat.limiterExhaustion` stated a CONSTANT −2 while the
+      header (which routes through `exhaustionPenalty`) correctly showed INIT −10 at Exhaustion 6 — the
+      exact defect class the RA audit exists to kill. Root cause: the sentence restated the multiplier
+      instead of reading the engine. Fix at the seam — `composeTurnLimiters` now RESOLVES both SRD
+      penalties onto the limiter VM (`d20Penalty` = |`exhaustionPenalty(level)`| = 2 × level,
+      `speedPenaltyFt` = `exhaustionSpeedReductionFt(level)` = 5 ft × level) and the sentence
+      interpolates them (EN + IT, Speed localized through D3 `localeDistance`). The Speed half's formula
+      moved from a private helper in `smart-tracker.ts` to `compute.ts` beside its d20 twin, so the
+      Speed chokepoint and the banner read ONE formula; the rail's exhaustion widget stopped restating
+      `value * 2` and reads `exhaustionPenalty` too. Regressions: `combat-action-log-type.test.ts`
+      (table 1/3/5/6/9 → the exact pair, plus a per-level agreement check against the engine formulas) + `this-turn-condition-projection.test.tsx` (an Exhaustion-5 hero renders −10 · 25 ft, never −2).
+
 ---
 
 ## Correctness + exposure batch (workstream D)

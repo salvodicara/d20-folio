@@ -27,7 +27,11 @@ import { localizeText } from "@/lib/views/srd-i18n";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import type { GatedSlot } from "@/lib/condition-effects";
 import { conditionLabel } from "@/lib/views/tracker-view";
-import { clampExhaustion } from "@/lib/compute";
+import {
+  clampExhaustion,
+  exhaustionPenalty,
+  exhaustionSpeedReductionFt,
+} from "@/lib/compute";
 import {
   buildWeaponFacts,
   formatWeaponRange,
@@ -625,8 +629,15 @@ export type TurnLimiterVM =
   /** Auto-fail STR/DEX saves (Paralyzed/Stunned/Unconscious/…). `abilities`
    *  is a STABLE ordered id list (STR before DEX); the edge localizes each. */
   | { kind: "autoFailSaves"; abilities: ReadonlyArray<AbilityCode>; cause: string }
-  /** −2 to all d20 Tests per exhaustion level (level carried for the sentence). */
-  | { kind: "exhaustion"; level: number }
+  /**
+   * The Exhaustion penalties, RESOLVED (SRD "Exhaustion"): `d20Penalty` is the
+   * magnitude subtracted from every D20 Test (2 × level) and `speedPenaltyFt`
+   * the feet subtracted from Speed (5 × level) — both computed by the ONE pair of
+   * engine formulas (`exhaustionPenalty` / `exhaustionSpeedReductionFt`), so the
+   * banner can never state a number the header + movement meter disagree with (it
+   * used to hardcode "−2" at every level). `level` names the cause.
+   */
+  | { kind: "exhaustion"; level: number; d20Penalty: number; speedPenaltyFt: number }
   /** RA-08 — more than one spell slot has been expended to cast a spell this turn
    *  (2024 "one spell slot per turn"). ADVISORY only — never a block. `count` is
    *  the number of slot-paid casts so far. */
@@ -722,9 +733,17 @@ export function composeTurnLimiters(args: {
     if (cause) limiters.push({ kind: "autoFailSaves", abilities, cause });
   }
 
-  // 4. Exhaustion — −2 to all d20 Tests per level (2024). Only when ≥1 level.
+  // 4. Exhaustion — −2 × level to all d20 Tests AND −5 ft × level Speed (2024).
+  //    Only when ≥1 level. The numbers are RESOLVED here through the two engine
+  //    formulas every other surface reads, never restated as a constant.
   const level = clampExhaustion(exhaustion);
-  if (level > 0) limiters.push({ kind: "exhaustion", level });
+  if (level > 0)
+    limiters.push({
+      kind: "exhaustion",
+      level,
+      d20Penalty: Math.abs(exhaustionPenalty(level)),
+      speedPenaltyFt: exhaustionSpeedReductionFt(level),
+    });
 
   // 5. RA-08 — one spell slot per turn (2024 "Casting Spells"). ADVISORY, last:
   //    surfaces only once the player has expended MORE than one slot this turn (a

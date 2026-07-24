@@ -236,7 +236,7 @@
     "limiterAttackDisadvantageScoped": "Disadvantage on attacks against targets other than the grappler ({{cause}})",
     "limiterSpeedZero": "Speed 0 ({{cause}})",
     "limiterAutoFailSaves": "Auto-fail {{abilities}} saves ({{cause}})",
-    "limiterExhaustion": "−2 to all d20 (Exhaustion {{level}})",
+    "limiterExhaustion": "−{{n}} to all d20 Tests · −{{speed}} Speed (Exhaustion {{level}})",
     "limiterSpellSlotLimit": "Only one spell slot per turn (used {{n}})",
     "cunningStrike": "Cunning Strike",
     "apply": "Apply",

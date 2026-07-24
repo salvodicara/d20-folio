@@ -175,6 +175,22 @@ describe("ThisTurnTracker — 'what's limiting you this turn' summary (B3)", () 
     expect(text).toMatch(/Stunned/i);
   });
 
+  // REGRESSION — the exhaustion line used to read a hardcoded "−2 to all d20" at
+  // EVERY level, so an Exhaustion-5 hero was taught −2 while the header showed the
+  // real −10. It now renders the resolved penalties (2 × level d20, 5 ft × level).
+  it("names the REAL exhaustion penalties at the character's level (never a fixed −2)", () => {
+    load((doc) => {
+      doc.session.conditions = [];
+      doc.session.exhaustion = 5;
+    });
+    mount("none");
+    const text = document.querySelector(".turn-limiters")?.textContent ?? "";
+    expect(text).toMatch(/−10/);
+    expect(text).toMatch(/25 ft/);
+    expect(text).toMatch(/Exhaustion 5/i);
+    expect(text).not.toMatch(/−2\b/);
+  });
+
   it("a clean character (no conditions) → no blocked-economy clause", () => {
     load((doc) => {
       doc.session.conditions = [];

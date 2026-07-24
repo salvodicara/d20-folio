@@ -502,7 +502,15 @@ export function ThisTurnTracker({
           cause: l.cause,
         });
       case "exhaustion":
-        return t("combat.limiterExhaustion", { level: l.level });
+        // The REAL penalties at this level (2 × level to d20 Tests, 5 ft × level
+        // Speed) — resolved by the composer off the engine formulas, so the
+        // sentence agrees with the header's INIT and the movement meter. The
+        // Speed figure localizes through D3 (`localeDistance`: ft / metres).
+        return t("combat.limiterExhaustion", {
+          n: l.d20Penalty,
+          speed: localeDistance(l.speedPenaltyFt, locale),
+          level: l.level,
+        });
       case "spellSlotLimit":
         return t("combat.limiterSpellSlotLimit", { n: l.count });
     }

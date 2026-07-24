@@ -68,6 +68,18 @@ export function exhaustionPenalty(level: number): number {
 }
 
 /**
+ * D&D 2024 exhaustion walking-Speed reduction — the TWIN of
+ * {@link exhaustionPenalty}: −5 ft per Exhaustion level (SRD "Exhaustion":
+ * "subtract 5 × Exhaustion level from your Speed"). ONE formula both consumers
+ * read — the Speed chokepoint (`effectiveWalkingSpeedFt`) subtracts it and the
+ * turn-limiter banner names it (golden rule 6). Returns the non-negative number
+ * of feet to SUBTRACT.
+ */
+export function exhaustionSpeedReductionFt(level: number): number {
+  return clampExhaustion(level) * 5;
+}
+
+/**
  * Compute AC from equipped armor + DEX modifier + shield + item bonuses.
  *
  * D&D 2024 rules:

@@ -68,6 +68,7 @@ import { OverrideChipSet, type OverrideChipOption } from "./OverrideChipSet";
 import {
   effectiveAbilityScores,
   effectiveProficiencyBonus,
+  exhaustionPenalty,
   hasWeaponMastery,
   isHeavyArmorEquipped,
 } from "@/lib/compute";
@@ -1844,9 +1845,13 @@ function ExhaustionTrack({ value }: { value: number }) {
       ) : (
         value > 0 && (
           // 2024: −2 to every d20 Test per exhaustion level (level 6 = death,
-          // handled above). Computed + localized instead of a hardcoded map.
+          // handled above). Read off the ONE engine formula (`exhaustionPenalty`)
+          // the header bonuses and the turn-limiter banner also read — never a
+          // local restatement of the multiplier (golden rule 6).
           <div className="co-ex-eff">
-            {t("character.exhaustionEffect", { n: value * 2 })}
+            {t("character.exhaustionEffect", {
+              n: Math.abs(exhaustionPenalty(value)),
+            })}
           </div>
         )
       )}
