@@ -292,6 +292,17 @@
     "damageMathResisted": "Resistenza",
     "damageMathVulnerable": "Vulnerabilità",
     "damageMathReduced": "riduzione −{{n}}",
-    "damageTotalPreview": "Totale: {{raw}} → {{net}}"
+    "damageTotalPreview": "Totale: {{raw}} → {{net}}",
+    "rulesReference": {
+      "title": "Regole di riferimento",
+      "hint": "Regole situazionali di combattimento e viaggio, a colpo d'occhio",
+      "cover": "Copertura",
+      "mounted": "Combattimento in sella",
+      "underwater": "Combattimento subacqueo",
+      "travel": "Andatura di viaggio",
+      "perMinute": "{{dist}} al minuto",
+      "perHour": "{{dist}} all'ora",
+      "perDay": "{{dist}} al giorno"
+    }
   }
 }

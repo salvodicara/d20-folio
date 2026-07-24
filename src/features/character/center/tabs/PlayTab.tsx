@@ -40,6 +40,7 @@ import { getMagicItem } from "@/data/magic-items";
 import { ThisTurnTracker } from "../ThisTurnTracker";
 import { InCombatStatus } from "@/features/campaigns/in-combat-chip";
 import { CombatAlgorithm } from "./CombatAlgorithm";
+import { SituationalRules } from "./SituationalRules";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore, type EconomySlot } from "@/stores/combatStore";
 import { registerUndoableResult } from "@/stores/undoStore";
@@ -1080,6 +1081,10 @@ export function PlayTab() {
       {/* Combat helper — the user's combat-strategy playbook (blueprint §2.4
           "the combat helper"), folded in from the standalone Algorithm page. */}
       <CombatAlgorithm />
+
+      {/* Rules reference — the SRD situational-combat + travel facts a player
+          looks up at the table (Cover · Mounted · Underwater · Travel Pace). */}
+      <SituationalRules />
     </div>
   );
 }

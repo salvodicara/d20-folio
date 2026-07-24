@@ -3,8 +3,8 @@
  *
  * Neither variant carries a per-character mechanic (nothing to compute, no
  * Grant — the DC 10 save and the half-Speed cost live in the summary prose),
- * so these are pure reference tables the UI can render anywhere a
- * rules-reference surface exists — exactly like cover.ts / COVER_REFERENCE.
+ * so these are pure reference tables — exactly like cover.ts / COVER_REFERENCE.
+ * They render in the Play tab's "Rules reference" panel (`SituationalRules`).
  * Values are authoritative and shouldn't drift — see
  * tests/unit/combat-variants.test.ts.
  *

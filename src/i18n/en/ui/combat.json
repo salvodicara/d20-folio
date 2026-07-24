@@ -292,6 +292,17 @@
     "damageMathResisted": "Resisted",
     "damageMathVulnerable": "Vulnerability",
     "damageMathReduced": "−{{n}} reduction",
-    "damageTotalPreview": "Total: {{raw}} → {{net}}"
+    "damageTotalPreview": "Total: {{raw}} → {{net}}",
+    "rulesReference": {
+      "title": "Rules reference",
+      "hint": "Situational combat & travel rules, at a glance",
+      "cover": "Cover",
+      "mounted": "Mounted combat",
+      "underwater": "Underwater combat",
+      "travel": "Travel pace",
+      "perMinute": "{{dist}} per minute",
+      "perHour": "{{dist}} per hour",
+      "perDay": "{{dist}} per day"
+    }
   }
 }

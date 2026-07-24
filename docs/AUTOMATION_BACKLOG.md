@@ -459,9 +459,10 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       400 ft·4 mi·30 mi, normal 300·3·24, slow 200·2·18, assuming an 8-hour day; fast = -5 passive
       Perception, slow = may move stealthily), no per-character mechanic and no Grant. Display-only:
       like `cover.ts` it carries inline bilingual `BiText` behind a documented
-      `no-srd-strings-in-data` whitelist bypass (same rationale), consumed only by its
-      authoritative-values guard until a shared rules-reference render surface exists (the deferred
-      home it shares with `COVER_REFERENCE` and RA-30). Regression: `tests/unit/travel-pace.test.ts`.
+      `no-srd-strings-in-data` whitelist bypass (same rationale). RENDERED in the Play tab's "Rules
+      reference" panel (`SituationalRules`) — distances localize via `localeDistance` (feet) +
+      the new `localeMiles` (overland). Pinned by `tests/unit/travel-pace.test.ts` + the surface's
+      render test `tests/unit/situational-rules.test.tsx`.
 - [x] **RA-30 — Mounted & underwater combat have no reference surface.** _Combat variants · GAP ·
       S3 · rare._ SRD "Mounted Combat"/"Underwater Combat". Same treatment as the shipped
       `COVER_REFERENCE`: pure reference data. **T3.**
@@ -471,9 +472,11 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       ranged auto-miss beyond range + Disadvantage within, Fire Resistance) as inline-`BiText`
       reference data — the `cover.ts` recipe, whitelisted in `no-srd-strings-in-data.guard`. The
       2024 SRD facts (Piercing-not-the-2014-weapon-list; all ranged Disadvantaged) are pinned by
-      `tests/unit/combat-variants.test.ts`. Surfacing (a UI card) stays out of scope, exactly as
-      `COVER_REFERENCE` remains reference-only until RA-31 — it shares the same deferred
-      rules-reference render surface as `COVER_REFERENCE` and RA-29.
+      `tests/unit/combat-variants.test.ts`. RENDERED in the Play tab's "Rules reference" panel
+      (`SituationalRules`) alongside the Cover + Travel-pace tables (the shared surface built this
+      wave; render test `tests/unit/situational-rules.test.tsx`). This also retrofits the previously
+      data-only `COVER_REFERENCE` into that same panel — closing the "display-only, i.e. VISIBLE"
+      ledger promise for all three. (RA-31's contested self-side AC toggle stays a separate item.)
 - [ ] **RA-31 — Cover is reference-only; a self-side +2/+5 AC toggle is a defensible upgrade.**
       _Cover · INTERACTION · S3 (deliberate residual today; MECHANICS.md "battlefield geometry")._
       SRD "Cover": the bonus applies to the TARGET's AC/DEX saves — self-side, so it CAN ride the

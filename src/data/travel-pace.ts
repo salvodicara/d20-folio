@@ -2,14 +2,14 @@
  * RA-29 — Travel Pace quick-reference (D&D 2024 SRD 5.2.1, "Exploration").
  *
  * Travel pace has no per-character mechanic (nothing to compute, no Grant), so
- * this is a pure reference table the UI can render anywhere a rules-reference
- * surface exists — exactly like cover.ts / COVER_REFERENCE. Values are
- * authoritative and shouldn't drift — see tests/unit/travel-pace.test.ts.
+ * this is a pure reference table — exactly like cover.ts / COVER_REFERENCE. It
+ * renders in the Play tab's "Rules reference" panel (`SituationalRules`). Values
+ * are authoritative and shouldn't drift — see tests/unit/travel-pace.test.ts.
  *
  * Distances are the canonical SRD numbers (feet per minute, miles per hour,
- * miles per day; the per-day figures assume an 8-hour travel day). A render
- * consumer localizes them via the D3 helpers (feet through localeDistance);
- * this data stays unit-canonical.
+ * miles per day; the per-day figures assume an 8-hour travel day). The render
+ * consumer localizes them via the D3 helpers (feet through localeDistance, miles
+ * through localeMiles); this data stays unit-canonical.
  *
  * Source: SRD 5.2.1 (CC-BY-4.0), "Travel Pace" table — concise functional
  * restatements, not verbatim prose.

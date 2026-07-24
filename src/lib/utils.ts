@@ -180,6 +180,24 @@ export function localeDistance(ft: number, locale: string): string {
 }
 
 /**
+ * Convert a long distance in MILES to a locale-appropriate string. Miles are the
+ * SRD unit for travel/overland ranges (Travel Pace, some magic-item ranges); the
+ * companion to localeDistance's feet.
+ * - EN: "30 mi"
+ * - IT: "48 km" (1 mi ≈ 1.6 km — the standard conversion, matching the app's
+ *   existing IT item data, e.g. Dragon Scale Mail's "30 miles" → "48 km"); one
+ *   decimal with the Italian comma separator when not whole.
+ */
+export function localeMiles(miles: number, locale: string): string {
+  if (locale === "it") {
+    const km = Math.round(miles * 1.6 * 10) / 10;
+    const str = km % 1 === 0 ? String(km) : km.toFixed(1).replace(".", ",");
+    return `${str} km`;
+  }
+  return `${miles} mi`;
+}
+
+/**
  * Format a near/far range pair with a single trailing unit.
  * - EN: "20/60 ft"
  * - IT: "6/18 m"

@@ -6,6 +6,7 @@ import {
   formatSpeed,
   speedToLocaleValue,
   speedFromLocaleValue,
+  localeMiles,
   formatRange,
   idToHue,
   clampNumber,
@@ -166,6 +167,22 @@ describe("speedToLocaleValue", () => {
 
   it("returns original for non-numeric", () => {
     expect(speedToLocaleValue("varies", "en")).toBe("varies");
+  });
+});
+
+describe("localeMiles (RA-29 travel-pace units)", () => {
+  it("EN: appends the mile unit", () => {
+    expect(localeMiles(30, "en")).toBe("30 mi");
+    expect(localeMiles(4, "en")).toBe("4 mi");
+  });
+  it("IT: converts to km at 1 mi ≈ 1.6 km (whole)", () => {
+    expect(localeMiles(30, "it")).toBe("48 km");
+    expect(localeMiles(24, "it")).toBe("38,4 km");
+    expect(localeMiles(18, "it")).toBe("28,8 km");
+  });
+  it("IT: one decimal with the Italian comma when not whole", () => {
+    expect(localeMiles(4, "it")).toBe("6,4 km");
+    expect(localeMiles(2, "it")).toBe("3,2 km");
   });
 });
 
