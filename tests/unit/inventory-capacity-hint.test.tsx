@@ -67,6 +67,11 @@ describe("Inventory toolbar chips — on-demand hints (no native title)", () => 
     const reading = `${enc.carried} lb / ${enc.capacity} lb`;
     const chip = screen.getByRole("button", { name: `Carrying Capacity: ${reading}` });
     expect(chip).toHaveTextContent(reading);
+    // …and a chip that already names itself is NOT made to stutter: the
+    // attunement chip's own text ("Attuned 2 / 3") IS its accessible name.
+    expect(
+      screen.getByRole("button", { name: /^Attuned \d+ \/ \d+$/ })
+    ).toBeInTheDocument();
     // Nothing is disclosed until the player asks (progressive disclosure).
     expect(screen.queryByText(/push, drag, or lift/i)).toBeNull();
     fireEvent.click(chip);

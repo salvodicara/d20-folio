@@ -87,11 +87,13 @@ function ChipHint({
           // NOT `data-state`: Radix's popover trigger owns that attribute on this
           // element (open/closed), so the over-limit flag rides its own.
           data-over={danger ? "" : undefined}
-          // The chip shows only its numbers, so the name says WHICH numbers —
-          // "Carrying Capacity: 45 lb / 120 lb". It must CONTAIN the visible text
-          // (WCAG 2.5.3): a bare rubric would replace the reading in the
-          // accessible name and a screen reader would never hear the data.
-          aria-label={`${rubric}: ${text}`}
+          // A chip that shows only numbers gets its rubric prefixed, so the name
+          // says WHICH numbers ("Carrying Capacity: 45 lb / 120 lb") and still
+          // CONTAINS the visible text (WCAG 2.5.3) — a bare rubric would replace
+          // the reading and a screen reader would never hear the data. A chip
+          // that already names itself ("Attuned 2 / 3") keeps its contents as the
+          // name rather than stuttering the rubric twice.
+          aria-label={text.includes(rubric) ? undefined : `${rubric}: ${text}`}
         >
           {text}
         </button>
