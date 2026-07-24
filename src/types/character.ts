@@ -521,6 +521,14 @@ export interface ClassEntry {
 // Character Definition (Edit Mode Data)
 // ============================================================
 
+/**
+ * RA-25 — the manual override leg for the Initiative roll. `null` / undefined =
+ * auto (defer to the grants); `"advantage"` / `"disadvantage"` force the roll
+ * (Surprise rides `"disadvantage"`); `"off"` forces a plain roll, suppressing any
+ * granted Advantage. Netted with the grants by `initiativeRollState`.
+ */
+export type InitiativeAdvantageOverride = "advantage" | "disadvantage" | "off" | null;
+
 export interface CharacterData {
   /**
    * The hero's display name — a {@link NonEmptyString}, so "a character with no
@@ -593,15 +601,17 @@ export interface CharacterData {
    */
   initiativeBonusOverride?: number | null;
   /**
-   * Explicit user override for *rolling Initiative with Advantage*. `null` /
-   * undefined defers to the auto-computed result (`hasInitiativeAdvantage`,
-   * which reads `advantage-on { rollType: "initiative" }` grants — e.g. the
-   * Assassin's Assassinate). `true` forces Advantage on (a DM ruling / a
-   * situational source the engine can't model); `false` suppresses it.
-   * Advantage is a roll modifier, never an additive term, so it lives apart
-   * from `initiativeBonusOverride` rather than folding into the number.
+   * RA-25 — the initiative-roll override leg. `null` / undefined = auto (defer
+   * to the `advantage-on { rollType: "initiative" }` grants — e.g. the Assassin's
+   * Assassinate — netted against any `disadvantage-on` by `initiativeRollState`);
+   * the three explicit legs force the roll regardless of grants: `"advantage"`
+   * (a boon the engine can't see / a DM ruling), `"disadvantage"` (Surprise — SRD
+   * Disadvantage on Initiative, which the sheet can't derive), `"off"` (a plain
+   * roll, suppressing any granted Advantage). Advantage/Disadvantage are roll
+   * modifiers, never additive terms, so this lives apart from
+   * `initiativeBonusOverride` rather than folding into the number.
    */
-  initiativeAdvantageOverride?: boolean | null;
+  initiativeAdvantageOverride?: InitiativeAdvantageOverride;
   /**
    * The MANUAL language picks as STABLE SRD LANGUAGE IDS (`"common"`, `"gnomish"`,
    * `"undercommon"`, …) — the player's hand-added / `choice-language`-picked

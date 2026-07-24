@@ -33,6 +33,7 @@ import type {
   CustomEquipment,
   SrdFeatureRef,
   CustomFeature,
+  InitiativeAdvantageOverride,
 } from "@/types/character";
 import type { SrdEquipmentData, SrdClassTable, CompanionStatBlock } from "@/data/types";
 import type { ProficiencyToken } from "@/types/ids";
@@ -2345,20 +2346,17 @@ export function buildInitiativeBreakdown(
 }
 
 /**
- * Whether the character rolls Initiative with Advantage.
+ * Whether the character's granted features roll Initiative with Advantage.
  *
  * Initiative is a DEX check whose *bonus* is computed by `computeInitiative`,
  * but its advantage half can't be folded into a single number (advantage is a
  * roll modifier, never an additive term — and the project never rolls dice).
  * So this reads the dedicated `advantage-on { rollType: "initiative" }` grants
  * off the aggregate. The 2024 Assassin's Assassinate ("Advantage on Initiative
- * rolls") is the canonical source.
- *
- * Override-first: the caller passes `override` straight from the character's
- * manual toggle (`character.combat.initiativeAdvantageOverride`). `true`/`false`
- * force the flag on/off regardless of grants; `null`/`undefined` defers to the
- * auto-computed grant result — so a player can claim a situational advantage
- * the engine can't see, or suppress one a DM has ruled away.
+ * rolls") is the canonical source. The optional `override` short-circuits the
+ * grant read for a raw boolean caller. The UI does NOT use this directly — it
+ * reads the four-state NET via {@link initiativeRollState}, which calls this as
+ * its Advantage-grant reader.
  */
 export function hasInitiativeAdvantage(
   aggregate: Pick<AggregatedGrants, "advantages">,
@@ -2366,6 +2364,32 @@ export function hasInitiativeAdvantage(
 ): boolean {
   if (override != null) return override;
   return aggregate.advantages.some((a) => a.rollType === "initiative");
+}
+
+/**
+ * RA-25 — the NET Initiative roll state (override-first). The three explicit
+ * override legs win outright: `"advantage"` / `"disadvantage"` force the roll,
+ * `"off"` forces a plain roll (suppressing any granted Advantage). `null` /
+ * undefined defers to the grants, netting an initiative-`advantage-on` against
+ * an initiative-`disadvantage-on` by RAW cancellation (the same rule as
+ * `netRollState`, inlined here to avoid the compute↔condition-effects import
+ * cycle). No dice — the sheet renders the word as a corner mark. Surprise (SRD:
+ * Disadvantage on Initiative) rides the `"disadvantage"` leg: it is not a
+ * modeled grant, so the player pins it by hand.
+ */
+export function initiativeRollState(
+  aggregate: Pick<AggregatedGrants, "advantages" | "disadvantages">,
+  override?: InitiativeAdvantageOverride
+): "advantage" | "disadvantage" | "none" {
+  if (override === "advantage") return "advantage";
+  if (override === "disadvantage") return "disadvantage";
+  if (override === "off") return "none";
+  const hasAdv = hasInitiativeAdvantage(aggregate);
+  const hasDis = aggregate.disadvantages.some((a) => a.rollType === "initiative");
+  if (hasAdv && hasDis) return "none";
+  if (hasAdv) return "advantage";
+  if (hasDis) return "disadvantage";
+  return "none";
 }
 
 /**

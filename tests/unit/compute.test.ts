@@ -38,6 +38,7 @@ import {
   featureSaveDc,
   effectiveSpellSaveDc,
   effectiveSpellAttackBonus,
+  initiativeRollState,
   ALL_SKILLS,
 } from "@/lib/compute";
 import { getClassTable } from "@/data/classes";
@@ -339,6 +340,90 @@ describe("passiveAdvantageStep — RA-16", () => {
         "insight"
       )
     ).toBe(0);
+  });
+});
+
+describe("initiativeRollState — RA-25", () => {
+  const clause = (
+    rollType: AdvantageClause["rollType"],
+    vs: string
+  ): AdvantageClause => ({
+    sourceId: "x",
+    rollType,
+    vs,
+    description: litText({ en: "a", it: "a" }),
+  });
+
+  it("no clauses, no override → none", () => {
+    expect(initiativeRollState({ advantages: [], disadvantages: [] })).toBe("none");
+  });
+
+  it("an Advantage-on-initiative grant, no override → advantage", () => {
+    expect(
+      initiativeRollState({
+        advantages: [clause("initiative", "assassinate")],
+        disadvantages: [],
+      })
+    ).toBe("advantage");
+  });
+
+  it("override 'advantage' on an empty aggregate → advantage", () => {
+    expect(initiativeRollState({ advantages: [], disadvantages: [] }, "advantage")).toBe(
+      "advantage"
+    );
+  });
+
+  it("override 'disadvantage' on an empty aggregate → disadvantage (Surprise)", () => {
+    // THE NEW LEG — a surprised player pins Disadvantage; the sheet can't derive it.
+    expect(
+      initiativeRollState({ advantages: [], disadvantages: [] }, "disadvantage")
+    ).toBe("disadvantage");
+  });
+
+  it("override 'off' suppresses a granted Advantage → none", () => {
+    expect(
+      initiativeRollState(
+        { advantages: [clause("initiative", "assassinate")], disadvantages: [] },
+        "off"
+      )
+    ).toBe("none");
+  });
+
+  it("override null / undefined defers to the grants", () => {
+    const agg = {
+      advantages: [clause("initiative", "assassinate")],
+      disadvantages: [],
+    };
+    expect(initiativeRollState(agg, null)).toBe("advantage");
+    expect(initiativeRollState(agg, undefined)).toBe("advantage");
+    expect(initiativeRollState({ advantages: [], disadvantages: [] }, null)).toBe("none");
+  });
+
+  it("an initiative Advantage netted against an initiative Disadvantage → none (RAW)", () => {
+    expect(
+      initiativeRollState({
+        advantages: [clause("initiative", "boon")],
+        disadvantages: [clause("initiative", "surprised")],
+      })
+    ).toBe("none");
+  });
+
+  it("a lone initiative Disadvantage grant → disadvantage", () => {
+    expect(
+      initiativeRollState({
+        advantages: [],
+        disadvantages: [clause("initiative", "surprised")],
+      })
+    ).toBe("disadvantage");
+  });
+
+  it("a non-initiative clause does not leak", () => {
+    expect(
+      initiativeRollState({
+        advantages: [clause("check", "initiative")],
+        disadvantages: [],
+      })
+    ).toBe("none");
   });
 });
 

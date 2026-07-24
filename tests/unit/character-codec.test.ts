@@ -358,6 +358,44 @@ describe("codec — proficiency override keys conform EN label → token (GR10)"
   });
 });
 
+describe("codec — initiative-advantage override normalizes legacy booleans (RA-25 / GR10)", () => {
+  function parseWithInitOverride(initiativeAdvantage: unknown) {
+    const res = parseCharacter(
+      JSON.stringify({
+        schema: 3,
+        build: {
+          name: "Init",
+          race: "human",
+          classes: [{ classId: "fighter", level: 3 }],
+          background: "soldier",
+          abilities: { STR: 15, DEX: 13, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+          overrides: { initiativeAdvantage },
+        },
+        state: {},
+      })
+    );
+    return res.success ? res.doc : null;
+  }
+
+  it("maps a legacy `true` (force Advantage) to the 'advantage' leg", () => {
+    expect(parseWithInitOverride(true)?.character.initiativeAdvantageOverride).toBe(
+      "advantage"
+    );
+  });
+
+  it("maps a legacy `false` (suppress) to the 'off' leg", () => {
+    expect(parseWithInitOverride(false)?.character.initiativeAdvantageOverride).toBe(
+      "off"
+    );
+  });
+
+  it("passes a valid string leg through unchanged", () => {
+    expect(
+      parseWithInitOverride("disadvantage")?.character.initiativeAdvantageOverride
+    ).toBe("disadvantage");
+  });
+});
+
 describe("codec — tolerance", () => {
   it("ignores unknown top-level + build + state fields", () => {
     const res = parseCharacter(

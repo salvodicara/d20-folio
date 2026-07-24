@@ -180,28 +180,59 @@ describe("CombatHeader — edit-mode gating", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("#68/U2 — edit mode exposes a tri-state initiative-advantage toggle that cycles auto→on→off→auto", () => {
+  it("#68/U2/RA-25 — edit mode exposes a four-state initiative-roll toggle: auto→advantage→disadvantage→normal→auto", () => {
     load();
     useUIStore.setState({ sheetMode: "edit" });
     renderHeader();
-    const toggle = screen.getByRole("button", { name: /initiative advantage: auto/i });
-    // auto → always
+    const toggle = screen.getByRole("button", { name: /initiative roll: auto/i });
+    // auto → advantage
     fireEvent.click(toggle);
     expect(
       useCharacterStore.getState().character?.character.initiativeAdvantageOverride
-    ).toBe(true);
-    // always → off
+    ).toBe("advantage");
+    // advantage → disadvantage
+    fireEvent.click(screen.getByRole("button", { name: /initiative roll: advantage/i }));
+    expect(
+      useCharacterStore.getState().character?.character.initiativeAdvantageOverride
+    ).toBe("disadvantage");
+    // disadvantage → normal (off)
     fireEvent.click(
-      screen.getByRole("button", { name: /initiative advantage: always/i })
+      screen.getByRole("button", { name: /initiative roll: disadvantage/i })
     );
     expect(
       useCharacterStore.getState().character?.character.initiativeAdvantageOverride
-    ).toBe(false);
-    // off → auto (null)
-    fireEvent.click(screen.getByRole("button", { name: /initiative advantage: off/i }));
+    ).toBe("off");
+    // normal → auto (null)
+    fireEvent.click(screen.getByRole("button", { name: /initiative roll: normal/i }));
     expect(
       useCharacterStore.getState().character?.character.initiativeAdvantageOverride
     ).toBeNull();
+  });
+
+  it("#68/U2/RA-25 — a manual Disadvantage override shows the play-mode danger mark (Surprise)", () => {
+    load();
+    // Pin Disadvantage on the loaded character (a surprised player), then render play mode.
+    useCharacterStore.setState((s) => {
+      const doc = s.character;
+      if (!doc) return s;
+      return {
+        character: {
+          ...doc,
+          character: {
+            ...doc.character,
+            initiativeAdvantageOverride: "disadvantage",
+          },
+        },
+      };
+    });
+    renderHeader();
+    expect(
+      screen.getByRole("img", { name: /disadvantage on initiative/i })
+    ).toBeInTheDocument();
+    // Anchor to exclude the "Disadvantage…" substring match.
+    expect(
+      screen.queryByRole("img", { name: /^advantage on initiative/i })
+    ).not.toBeInTheDocument();
   });
 
   it("carries NO edit toggle — the edit control lives in the fob family, not the masthead", () => {

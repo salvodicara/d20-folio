@@ -416,7 +416,7 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       component); deleted the two orphan `combat.ritualBadge`/`combat.ritualHint` keys the note
       supersedes. Regression: `spells-page.test.tsx` (Detect Magic prepared → the chip renders; a
       non-ritual spell has none). **T3.**
-- [ ] **RA-25 — Surprise (Disadvantage on initiative) unmodeled.** _Combat start · GAP · S3 ·
+- [x] **RA-25 — Surprise (Disadvantage on initiative) unmodeled.** _Combat start · GAP · S3 ·
       rare._ SRD "Surprise". The initiative advantage tri-state has no disadvantage leg. Fix: extend
       the tri-state to adv/auto/off/dis. **T3.**
 - [x] **RA-26 — Jump distances are computed but dead.** _Movement · GAP · S3._ `compute.jumpDistance`

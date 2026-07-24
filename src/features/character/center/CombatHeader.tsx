@@ -33,7 +33,16 @@ import { useNavigate } from "react-router";
 import { totalLevel } from "@/lib/classes";
 import { useDismissOnOutside } from "@/hooks/useDismissOnOutside";
 import { useTranslation } from "react-i18next";
-import { Award, Camera, ChevronsUp, Dices, Footprints, Moon, Shield } from "lucide-react";
+import {
+  Award,
+  Camera,
+  ChevronsDown,
+  ChevronsUp,
+  Dices,
+  Footprints,
+  Moon,
+  Shield,
+} from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
@@ -43,10 +52,11 @@ import {
   proficiencyBonus,
   computeInitiative,
   buildInitiativeBreakdown,
-  hasInitiativeAdvantage,
+  initiativeRollState,
   characterHasFeat,
   effectiveAbilityScores,
 } from "@/lib/compute";
+import type { InitiativeAdvantageOverride } from "@/types/character";
 import {
   aggregateCharacterGrants,
   computeCharacterAC,
@@ -237,25 +247,35 @@ export function CombatHeader() {
         )
       : [];
   const initBreakdown = localizeBreakdown(initBreakdownParts, locale);
-  // #68 / U2 — initiative ADVANTAGE is override-first too: it auto-derives from
-  // `advantage-on { rollType: "initiative" }` grants (Assassin's Assassinate,
-  // Bard's Superior Inspiration top-up is separate), and a manual tri-state lets
-  // the player force it on/off. Surfaced only on the Init vital, only when
-  // relevant (a quiet gold mark in play, a corner toggle in edit) so it never
-  // clutters the header. Gold = the app's boon hue (matches `.uc-verdict`).
+  // #68 / U2 / RA-25 — the initiative ROLL is override-first: it auto-derives the
+  // NET of `advantage-on`/`disadvantage-on { rollType: "initiative" }` grants
+  // (Assassin's Assassinate on the boon side), and a manual four-state leg lets
+  // the player force Advantage / Disadvantage (Surprise — the sheet can't see it)
+  // / a plain roll. Surfaced only on the Init vital, only when relevant (a quiet
+  // gold boon or danger-hued penalty mark in play, a corner toggle in edit) so it
+  // never clutters the header. Gold = the app's boon hue (matches `.uc-verdict`).
   const initAdvOverride = charData.initiativeAdvantageOverride;
-  const initAdvActive = hasInitiativeAdvantage(initAgg, initAdvOverride);
+  const initRoll = initiativeRollState(initAgg, initAdvOverride);
   function cycleInitAdvantage(): void {
-    // auto (null) → always (true) → never (false) → auto (null)
-    const next = initAdvOverride == null ? true : initAdvOverride ? false : null;
+    // auto (null) → advantage → disadvantage → off → auto (null)
+    const next: InitiativeAdvantageOverride =
+      initAdvOverride == null
+        ? "advantage"
+        : initAdvOverride === "advantage"
+          ? "disadvantage"
+          : initAdvOverride === "disadvantage"
+            ? "off"
+            : null;
     patchCharacter({ initiativeAdvantageOverride: next });
   }
   const initAdvStateLabel =
     initAdvOverride == null
       ? t("character.vitals.initAdvAuto")
-      : initAdvOverride
+      : initAdvOverride === "advantage"
         ? t("character.vitals.initAdvOn")
-        : t("character.vitals.initAdvOff");
+        : initAdvOverride === "disadvantage"
+          ? t("character.vitals.initAdvDis")
+          : t("character.vitals.initAdvOff");
   // S13 — the EFFECTIVE walking Speed (override-first, mirroring AC). The
   // computed value flows Mobile / Fast Movement / Unarmored Movement / Roving /
   // Boots of Speed (×2) / exhaustion / the heavy-armor Strength penalty through
@@ -536,20 +556,42 @@ export function CombatHeader() {
                 <button
                   type="button"
                   className="v-adv-toggle"
-                  data-adv={initAdvActive ? "on" : "off"}
+                  data-adv={
+                    initRoll === "advantage"
+                      ? "on"
+                      : initRoll === "disadvantage"
+                        ? "dis"
+                        : "off"
+                  }
                   data-set={initAdvOverride != null ? "" : undefined}
                   onClick={cycleInitAdvantage}
                   title={initAdvStateLabel}
                   aria-label={initAdvStateLabel}
                 >
-                  <Icon as={ChevronsUp} size="xs" decorative />
+                  <Icon
+                    as={initRoll === "disadvantage" ? ChevronsDown : ChevronsUp}
+                    size="xs"
+                    decorative
+                  />
                 </button>
-              ) : initAdvActive ? (
+              ) : initRoll === "advantage" ? (
                 <span className="v-adv" title={t("character.vitals.initAdvActive")}>
                   <Icon
                     as={ChevronsUp}
                     size="xs"
                     label={t("character.vitals.initAdvActive")}
+                  />
+                </span>
+              ) : initRoll === "disadvantage" ? (
+                <span
+                  className="v-adv"
+                  data-adv="dis"
+                  title={t("character.vitals.initDisActive")}
+                >
+                  <Icon
+                    as={ChevronsDown}
+                    size="xs"
+                    label={t("character.vitals.initDisActive")}
                   />
                 </span>
               ) : null

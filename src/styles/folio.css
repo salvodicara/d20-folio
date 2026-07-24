@@ -4123,10 +4123,12 @@ button.pr-dot.lg::before {
   font-size: 13px;
 }
 
-/* #68 / U2 — initiative-advantage mark, pinned to the Init vital's top-right.
-   Gold is the app's boon hue (matches the advantage `.uc-verdict`). The play
-   badge appears only when advantage is effective; the edit toggle is a tri-state
-   corner button (auto → always → never). */
+/* #68 / U2 / RA-25 — initiative-roll mark, pinned to the Init vital's top-right.
+   Gold is the app's boon hue (matches the advantage `.uc-verdict`); the
+   `[data-adv="dis"]` disadvantage leg (Surprise) swaps to the danger hue. The
+   play badge appears only when advantage/disadvantage is effective; the edit
+   toggle is a four-state corner button (auto → advantage → disadvantage →
+   normal). */
 .v-adv,
 .v-adv-toggle {
   position: absolute;
@@ -4167,6 +4169,22 @@ button.pr-dot.lg::before {
 }
 [data-theme="light"] .v-adv-toggle[data-set][data-adv="on"] {
   background: color-mix(in oklab, var(--accent-text) 16%, var(--bg-surface-3));
+}
+/* Disadvantage leg (Surprise) — the app's danger hue, theme-aware via
+   `--color-danger`; both the play mark and the edit toggle. The light-scoped
+   twin beats the `[data-theme="light"]` base gold on specificity. */
+.v-adv[data-adv="dis"],
+.v-adv-toggle[data-adv="dis"] {
+  color: var(--color-danger);
+  border-color: color-mix(in oklab, var(--color-danger) 55%, var(--border-medium));
+}
+[data-theme="light"] .v-adv[data-adv="dis"],
+[data-theme="light"] .v-adv-toggle[data-adv="dis"] {
+  color: var(--color-danger);
+  border-color: color-mix(in oklab, var(--color-danger) 45%, var(--border-medium));
+}
+.v-adv-toggle[data-set][data-adv="dis"] {
+  background: color-mix(in oklab, var(--color-danger) 20%, var(--bg-surface-3));
 }
 .v-adv-toggle:hover {
   border-color: var(--accent-primary-bright);

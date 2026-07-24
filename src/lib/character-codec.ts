@@ -49,6 +49,7 @@ import type {
   CharacterLore,
   LogEntry,
   PortraitCrop,
+  InitiativeAdvantageOverride,
 } from "@/types/character";
 import type {
   SpellSchool,
@@ -602,6 +603,23 @@ function conformProficiencyOverrideKeys(raw: unknown): Record<string, boolean> {
   return out;
 }
 
+/**
+ * GR10 — one-way decode-boundary read-normalization for the RA-25 initiative
+ * override. A LIVE doc written before the four-state leg keyed it as a BOOLEAN
+ * (`true` = force Advantage, `false` = suppress); map those to the string legs
+ * (`true` → `"advantage"`, `false` → `"off"`) so an old export keeps its setting.
+ * A valid string passes through; anything else drops to auto (undefined). Never
+ * written back as a boolean.
+ */
+function normalizeInitiativeAdvantageOverride(
+  v: unknown
+): InitiativeAdvantageOverride | undefined {
+  if (v === true) return "advantage";
+  if (v === false) return "off";
+  if (v === "advantage" || v === "disadvantage" || v === "off") return v;
+  return undefined;
+}
+
 /** R4 — the per-class pick keys carried on a `ClassEntry` (string[] each). */
 const CLASS_ENTRY_PICK_KEYS = [
   "weaponMasteries",
@@ -794,6 +812,10 @@ function buildToMin(build: Record<string, unknown>): MinimalCharacter {
       // itself; an unrecognised key is dropped (it can no longer match anything).
       if (oKey === "armorProficiencies" || oKey === "weaponProficiencies") {
         min[minKey] = conformProficiencyOverrideKeys(o[oKey]);
+      } else if (oKey === "initiativeAdvantage") {
+        // GR10 — normalize a legacy boolean override to the RA-25 string leg.
+        const normalized = normalizeInitiativeAdvantageOverride(o[oKey]);
+        if (normalized !== undefined) min[minKey] = normalized;
       } else {
         min[minKey] = o[oKey];
       }
