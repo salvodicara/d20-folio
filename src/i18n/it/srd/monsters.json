@@ -3522,6 +3522,417 @@
     "name": "Inchiostro nocivo",
     "text": "Tiro salvezza su Costituzione: CD 23, tutte le creature in un'emanazione di 4,5 metri di cui il kraken è il punto di origine finché si trova sott'acqua. Fallimento: il bersaglio è Accecato e Avvelenato fino al termine del turno successivo del kraken. Dopodiché il kraken si muove fino alla sua velocità massima. Fallimento o successo: il kraken non può ripetere quest'azione fino all'inizio del proprio turno successivo."
   },
+  "lamia": {
+    "name": "Lamia"
+  },
+  "lamia.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il lamia effettua due attacchi Artiglio. Può sostituire un attacco con un utilizzo di Tocco corruttore."
+  },
+  "lamia.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Taglienti più 7 (2d6) danni Psichici."
+  },
+  "lamia.actions.corrupting-touch": {
+    "name": "Tocco corruttore",
+    "text": "Tiro salvezza su Saggezza: CD 13, una creatura che il lamia è in grado di vedere entro 1,5 metri. Fallimento: 13 (3d8) danni Psichici, e il bersaglio è maledetto per 1 ora. Finché la maledizione perdura, il bersaglio è Affascinato e Avvelenato."
+  },
+  "lamia.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il lamia lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 13): A volontà: Camuffare se stesso (può apparire come un bipede di taglia Grande o Media), illusione minore. 1/giorno ciascuno: Costrizione, immagine maggiore, scrutare."
+  },
+  "lamia.bonusActions.leap": {
+    "name": "Balzo",
+    "text": "Il lamia salta fino a 9 metri usando 3 metri di movimento."
+  },
+  "lemure": {
+    "name": "Lemure"
+  },
+  "lemure.traits.hellish-restoration": {
+    "name": "Ristoro immondo",
+    "text": "Se il lemure muore nei Nove Inferi, torna in vita con tutti i suoi punti ferita dopo 1d10 giorni, a meno che non venga ucciso da una creatura sotto gli effetti di un incantesimo benedizione o i suoi resti vengano spruzzati di acqua santa."
+  },
+  "lemure.actions.vile-slime": {
+    "name": "Melma vile",
+    "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 2 (1d4) danni da Veleno."
+  },
+  "lich": {
+    "name": "Lich"
+  },
+  "lich.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(4/giorno o 5/giorno nella tana) Se il lich fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "lich.traits.spirit-jar": {
+    "name": "Filatterio",
+    "text": "Se annientato, il lich si riforma dopo 1d10 giorni se possiede un filatterio, tornando in vita con tutti i suoi punti ferita. Il nuovo corpo appare in uno spazio libero all'interno della tana della lich."
+  },
+  "lich.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il lich effettua tre attacchi, usando Esplosione occulta o Tocco paralizzante in qualsiasi combinazione."
+  },
+  "lich.actions.eldritch-burst": {
+    "name": "Esplosione occulta",
+    "text": "Tiro per colpire in mischia o a distanza: +12, portata 1,5 m o gittata 36 m. Colpito: 31 (4d12 + 5) danni da Forza."
+  },
+  "lich.actions.paralyzing-touch": {
+    "name": "Tocco paralizzante",
+    "text": "Tiro per colpire in mischia: +12, portata 1,5 m. Colpito: 15 (3d6 + 5) danni da Freddo, e il bersaglio è Paralizzato fino all'inizio del turno successivo del lich."
+  },
+  "lich.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il lich lancia uno dei seguenti incantesimi, utilizzando Intelligenza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 20): A volontà: Dissolvi magie, fulmine (di 5º livello), individuazione dei pensieri, individuazione del magico, invisibilità, mano magica, palla di fuoco (di 5º livello), prestidigitazione. 2/giorno ciascuno: animare morti, porta dimensionale, spostamento planare. 1/giorno ciascuno: catena di fulmini, dito della morte, parola del potere uccidere, scrutare."
+  },
+  "lich.reactions.protective-magic": {
+    "name": "Magia di protezione",
+    "text": "Il lich lancia controincantesimo o scudo come risposta all'innesco dell'incantesimo, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "lich.legendaryActions.deathly-teleport": {
+    "name": "Teletrasporto mortale",
+    "text": "Il lich si teletrasporta fino a 18 metri in uno spazio libero che è in grado di vedere, e ogni creatura entro 3 metri dallo spazio che ha lasciato subisce 11 (2d10) danni Necrotici."
+  },
+  "lich.legendaryActions.disrupt-life": {
+    "name": "Distruggere vita",
+    "text": "Tiro salvezza su Costituzione: CD 20, tutte le creature diverse da un non morto in un'emanazione di 6 metri di cui il lich è il punto di origine. Fallimento: 31 (9d6) danni Necrotici. Successo: danni dimezzati. Fallimento o successo: il lich non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "lich.legendaryActions.frightening-gaze": {
+    "name": "Sguardo spaventoso",
+    "text": "Il lich lancia paura, utilizzando la stessa caratteristica da incantatore di Incantesimi. il lich non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "lion": {
+    "name": "Leone"
+  },
+  "lion.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il leone dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno degli alleati dell'animale si trova entro 1,5 metri dalla creatura e non ha la condizione incapacitato."
+  },
+  "lion.traits.running-leap": {
+    "name": "Balzo in corsa",
+    "text": "Dopo una rincorsa di 3 metri, il leone può effettuare un salto in lungo di un massimo di 7,5 metri."
+  },
+  "lion.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il leone effettua due attacchi Squarcio. Può sostituire un attacco con un utilizzo di Ruggito."
+  },
+  "lion.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Taglienti."
+  },
+  "lion.actions.roar": {
+    "name": "Ruggito",
+    "text": "Tiro salvezza su Saggezza: CD 11, una creatura entro 4,5 metri. Fallimento: il bersaglio è Spaventato fino all'inizio del turno successivo del leone."
+  },
+  "lizard": {
+    "name": "Lucertola"
+  },
+  "lizard.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "La lucertola può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "lizard.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 1 danno Perforante."
+  },
+  "mage": {
+    "name": "Mago"
+  },
+  "mage.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il mago effettua tre attacchi Esplosione arcana."
+  },
+  "mage.actions.arcane-burst": {
+    "name": "Esplosione arcana",
+    "text": "Tiro per colpire in mischia o a distanza: +6, portata 1,5 m o gittata 36 m. Colpito: 16 (3d8 + 3) danni da Forza."
+  },
+  "mage.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il mago lancia uno dei seguenti incantesimi, utilizzando Intelligenza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 14): A volontà: Armatura magica (inclusa nella CA), individuazione del magico, luce, mano magica, prestidigitazione. 2/giorno ciascuno: Invisibilità, palla di fuoco (di 4º livello). 1/giorno ciascuno: Cono di freddo, volare."
+  },
+  "mage.bonusActions.misty-step": {
+    "name": "Passo velato",
+    "text": "(3/giorno) Il mago lancia passo velato, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "mage.reactions.protective-magic": {
+    "name": "Magia di protezione",
+    "text": "(3/giorno) Il mago lancia controincantesimo o scudo come risposta all'innesco dell'incantesimo, utilizzando la stessa caratteristica da incantatore di Incantesimi."
+  },
+  "magma-mephit": {
+    "name": "Mephit del magma"
+  },
+  "magma-mephit.traits.death-burst": {
+    "name": "Esplosione mortale",
+    "text": "Il mephit esplode quando muore. Tiro salvezza su Destrezza: CD 11, tutte le creature in un'emanazione di 1,5 metri di cui il mephit è il punto di origine. Fallimento: 7 (2d6) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "magma-mephit.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 3 (1d4 + 1) danni Taglienti più 3 (1d6) danni da Fuoco."
+  },
+  "magma-mephit.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 11, tutte le creature in un cono di 4,5 metri. Fallimento: 7 (2d6) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "magmin": {
+    "name": "Magmin"
+  },
+  "magmin.traits.death-burst": {
+    "name": "Esplosione mortale",
+    "text": "Il magmin esplode quando muore. Tiro salvezza su Destrezza: CD 11, tutte le creature in un'emanazione di 3 metri di cui il magmin è il punto di origine. Fallimento: 7 (2d6) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "magmin.actions.touch": {
+    "name": "Tocco",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 7 (2d4 + 2) danni da Fuoco. Se il bersaglio è una creatura o un oggetto infiammabile che non è indossato o trasportato, prende fuoco."
+  },
+  "magmin.bonusActions.ignited-illumination": {
+    "name": "Illuminazione fiammeggiante",
+    "text": "Il magmin si incendia o estingue le sue fiamme. Finché è in fiamme, proietta luce intensa in un raggio di 3 metri e luce fioca per altri 3 metri."
+  },
+  "mammoth": {
+    "name": "Mammut"
+  },
+  "mammoth.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il mammut effettua due attacchi Trafiggere."
+  },
+  "mammoth.actions.gore": {
+    "name": "Trafiggere",
+    "text": "Tiro per colpire in mischia: +10, portata 3 m. Colpito: 18 (2d10 + 7) danni Perforanti. Se il bersaglio è una creatura di taglia Enorme o inferiore e il mammut si è mosso di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio cade a terra Prono."
+  },
+  "mammoth.bonusActions.trample": {
+    "name": "Calpestare",
+    "text": "Tiro salvezza su Destrezza: CD 18, una creatura Prona entro 1,5 metri. Fallimento: 29 (4d10 + 7) danni Contundenti. Successo: danni dimezzati."
+  },
+  "manticore": {
+    "name": "Manticora"
+  },
+  "manticore.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La manticora effettua tre attacchi, usando Squarcio o Aculeo caudale in qualsiasi combinazione."
+  },
+  "manticore.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Taglienti."
+  },
+  "manticore.actions.tail-spike": {
+    "name": "Aculeo caudale",
+    "text": "Tiro per colpire a distanza: +5, gittata 30/60 m. Colpito: 7 (1d8 + 3) danni Perforanti."
+  },
+  "marilith": {
+    "name": "Marilith"
+  },
+  "marilith.traits.demonic-restoration": {
+    "name": "Ristoro demoniaco",
+    "text": "Se il marilith muore al di fuori dell'Abisso, il suo corpo si dissolve diventando icore e ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nell'Abisso."
+  },
+  "marilith.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il marilith dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "marilith.traits.reactive": {
+    "name": "Reattiva",
+    "text": "Il marilith può effettuare una reazione a ogni turno in combattimento."
+  },
+  "marilith.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il marilith effettua sei attacchi Lama del patto e usa Stritolare."
+  },
+  "marilith.actions.pact-blade": {
+    "name": "Lama del patto",
+    "text": "Tiro per colpire in mischia: +10, portata 1,5 m. Colpito: 10 (1d8 + 5) danni Taglienti più 7 (2d6) danni Necrotici."
+  },
+  "marilith.actions.constrict": {
+    "name": "Stritolare",
+    "text": "Tiro salvezza su Forza: CD 17, una creatura di taglia Media o inferiore che il marilith è in grado di vedere entro 1,5 metri. Fallimento: 15 (2d10 + 4) danni Contundenti. Il bersaglio è Afferrato (CD 14 per sfuggire) ed è Trattenuto finché la presa perdura."
+  },
+  "marilith.bonusActions.teleport": {
+    "name": "Teletrasporto",
+    "text": "Il marilith si teletrasporta fino a massimo di 36 metri in uno spazio libero che è in grado di vedere."
+  },
+  "marilith.reactions.parry": {
+    "name": "Parata",
+    "text": "Attivazione: il marilith viene colpito da un tiro per colpire in mischia mentre tiene in mano un'arma. Esito: il marilith aggiunge 5 alla sua CA contro quell'attacco, aumentando le probabilità che il colpo non vada a segno."
+  },
+  "mastiff": {
+    "name": "Mastino"
+  },
+  "mastiff.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 4 (1d6 + 1) danni Perforanti. Se il bersaglio è una creatura di taglia Media o inferiore, cade a terra Prono."
+  },
+  "medusa": {
+    "name": "Medusa"
+  },
+  "medusa.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La medusa effettua due attacchi Artiglio e un attacco Chioma di serpenti, o tre attacchi Raggio velenoso."
+  },
+  "medusa.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Taglienti."
+  },
+  "medusa.actions.snake-hair": {
+    "name": "Chioma di serpenti",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 5 (1d4 + 3) danni Perforanti più 14 (4d6) danni da Veleno."
+  },
+  "medusa.actions.poison-ray": {
+    "name": "Raggio velenoso",
+    "text": "Tiro per colpire a distanza: +5, gittata 45 m. Colpito: 11 (2d8 + 2) danni da Veleno."
+  },
+  "medusa.bonusActions.petrifying-gaze": {
+    "name": "Sguardo pietrificante",
+    "text": "Tiro salvezza su Costituzione: CD 13, tutte le creature in un cono di 9 metri. Se la medusa vede il suo riflesso nel cono, deve effettuare questo tiro salvezza. Primo fallimento: il bersaglio è Trattenuto. Ripete il tiro salvezza al termine del proprio turno successivo se è ancora Trattenuto e, se lo supera, l'effetto svanisce. Secondo fallimento: il bersaglio è Pietrificato invece che Trattenuto."
+  },
+  "merfolk-skirmisher": {
+    "name": "Marinide schermagliatore"
+  },
+  "merfolk-skirmisher.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il marinide può respirare in aria e in acqua."
+  },
+  "merfolk-skirmisher.actions.ocean-spear": {
+    "name": "Lancia oceanica",
+    "text": "Tiro per colpire in mischia o a distanza: +2, portata 1,5 m o gittata 6/18 m. Colpito: 3 (1d6) danni Perforanti più 2 (1d4) danni da Freddo. Se il bersaglio è una creatura, la sua velocità è ridotta di 3 metri fino al termine del proprio turno successivo. Colpito o mancato: la lancia fa magicamente ritorno nella mano del marinide subito dopo un attacco a distanza."
+  },
+  "merrow": {
+    "name": "Merrow"
+  },
+  "merrow.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il merrow può respirare in aria e in acqua."
+  },
+  "merrow.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il merrow effettua due attacchi, usando Morso, Artiglio o Arpione in qualsiasi combinazione."
+  },
+  "merrow.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 6 (1d4 + 4) danni Perforanti, e il bersaglio è Avvelenato fino al termine del turno successivo del merrow."
+  },
+  "merrow.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 9 (2d4 + 4) danni Taglienti."
+  },
+  "merrow.actions.harpoon": {
+    "name": "Arpione",
+    "text": "Tiro per colpire in mischia o a distanza: +6, portata 1,5 m o gittata 6/18 m. Colpito: 11 (2d6 + 4) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore, il merrow trascina il bersaglio in linea retta verso di sé fino a 4,5 metri."
+  },
+  "mimic": {
+    "name": "Mimic"
+  },
+  "mimic.traits.adhesive": {
+    "name": "Adesivo (solo in forma di oggetto)",
+    "text": "Il mimic aderisce a qualsiasi cosa tocchi. Una creatura di taglia Enorme o inferiore attaccata al mimic è Afferrata (CD 13 per sfuggire). Le prove di caratteristica effettuate per sfuggire a questa presa subiscono svantaggio."
+  },
+  "mimic.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5 (con vantaggio se il bersaglio è Afferrato dal mimic), portata 1,5 m. Colpito: 7 (1d8 + 3) danni Perforanti, o 12 (2d8 + 3) danni Perforanti se il bersaglio è Afferrato dal mimic, più 4 (1d8) danni da Acido."
+  },
+  "mimic.actions.pseudopod": {
+    "name": "Pseudopode",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Contundenti più 4 (1d8) danni da Acido. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 13 per sfuggire). Le prove di caratteristica effettuate per sfuggire a questa presa subiscono svantaggio."
+  },
+  "mimic.bonusActions.shape-shift": {
+    "name": "Mutaforma",
+    "text": "Il mimic assume la forma di un oggetto Medio o Piccolo, mantenendo le proprie statistiche di gioco, o ritorna alla sua forma autentica. Nessun oggetto che indossa o trasporta viene trasformato."
+  },
+  "minotaur-of-baphomet": {
+    "name": "Minotauro di Baphomet"
+  },
+  "minotaur-of-baphomet.actions.abyssal-glaive": {
+    "name": "Falcione abissale",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 10 (1d12 + 4) danni Taglienti più 10 (3d6) danni Necrotici."
+  },
+  "minotaur-of-baphomet.actions.gore": {
+    "name": "Trafiggere",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 18 (4d6 + 4) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore e il minotauro si è mosso di 3 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio subisce 10 (3d6) danni Perforanti extra e cade a terra Prono."
+  },
+  "minotaur-skeleton": {
+    "name": "Scheletro di minotauro"
+  },
+  "minotaur-skeleton.actions.gore": {
+    "name": "Trafiggere",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 11 (2d6 + 4) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore e lo scheletro si è mosso di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio subisce 9 (2d8) danni Perforanti extra e cade a terra Prono."
+  },
+  "minotaur-skeleton.actions.slam": {
+    "name": "Schianto",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 15 (2d10 + 4) danni Contundenti."
+  },
+  "mule": {
+    "name": "Mulo"
+  },
+  "mule.traits.beast-of-burden": {
+    "name": "Bestia da soma",
+    "text": "Per determinare la sua capacità di carico, il mulo è considerato come se fosse di una categoria di taglia superiore."
+  },
+  "mule.actions.hooves": {
+    "name": "Zoccoli",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni Contundenti."
+  },
+  "mummy": {
+    "name": "Mummia"
+  },
+  "mummy.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La mummia effettua due attacchi Pugno di putrefazione e usa Sguardo funesto."
+  },
+  "mummy.actions.rotting-fist": {
+    "name": "Pugno di putrefazione",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 8 (1d10 + 3) danni Contundenti più 10 (3d6) danni Necrotici. Se il bersaglio è una creatura, viene maledetto. Finché è maledetto, il bersaglio non può recuperare punti ferita, i suoi punti ferita massimi non tornano alla normalità al termine di un riposo lungo e sono ridotti di 10 (3d6) ogni 24 ore trascorse. Una creatura muore e si disintegra in polvere se viene ridotta a 0 punti ferita da questo attacco."
+  },
+  "mummy.actions.dreadful-glare": {
+    "name": "Sguardo funesto",
+    "text": "Tiro salvezza su Saggezza: CD 11, una creatura che la mummia è in grado di vedere entro 18 metri. Fallimento: il bersaglio è Spaventato fino al termine del turno successivo della mummia. Successo: il bersaglio è immune allo Sguardo funesto di questa mummia per 24 ore."
+  },
+  "mummy-lord": {
+    "name": "Signore delle mummie"
+  },
+  "mummy-lord.traits.legendary-resistance": {
+    "name": "Resistenza leggendaria",
+    "text": "(3/giorno o 4/giorno nella tana) Se il signore delle mummie fallisce un tiro salvezza, può scegliere di superarlo comunque."
+  },
+  "mummy-lord.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il signore delle mummie dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "mummy-lord.traits.undead-restoration": {
+    "name": "Ristoro non morto",
+    "text": "Se annientata, la mummia acquisisce un nuovo corpo dopo 24 ore se il suo cuore è intatto, tornando in vita con tutti i suoi punti ferita. Il nuovo corpo appare in uno spazio libero all'interno della tana della mummia. Il cuore è un oggetto di taglia Minuscola con CA 17, PF 10 e immunità a tutti i danni, eccetto ai danni da Fuoco."
+  },
+  "mummy-lord.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il signore delle mummie effettua un attacco Pugno di putrefazione o Incanalare energia negativa, e usa Sguardo funesto."
+  },
+  "mummy-lord.actions.rotting-fist": {
+    "name": "Pugno di putrefazione",
+    "text": "Tiro per colpire in mischia: +9, portata 1,5 m. Colpito: 15 (2d10 + 4) danni Contundenti più 10 (3d6) danni Necrotici. Se il bersaglio è una creatura, viene maledetto. Finché è maledetto, il bersaglio non può recuperare punti ferita, non ottiene alcun beneficio dai riposi lunghi, e i suoi punti ferita massimi sono ridotti di 10 (3d6) ogni 24 ore trascorse. Una creatura muore e si disintegra in polvere se viene ridotta a 0 punti ferita da questo attacco."
+  },
+  "mummy-lord.actions.channel-negative-energy": {
+    "name": "Incanalare energia negativa",
+    "text": "Tiro per colpire a distanza: +9, gittata 18 m. Colpito: 25 (6d6 + 4) danni Necrotici."
+  },
+  "mummy-lord.actions.dreadful-glare": {
+    "name": "Sguardo funesto",
+    "text": "Tiro salvezza su Saggezza: CD 17, una creatura che la mummia è in grado di vedere entro 18 metri. Fallimento: 25 (6d6 + 4) danni Psichici, e il bersaglio è Paralizzato fino al termine del turno successivo della mummia."
+  },
+  "mummy-lord.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il signore delle mummie lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Saggezza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 17, +9 al tiro per colpire degli attacchi con incantesimo): A volontà: Dissolvi magie, taumaturgia. 1/giorno ciascuno: Animare morti, ferire, piaga degli insetti (di 7º livello)."
+  },
+  "mummy-lord.reactions.whirlwind-of-sand": {
+    "name": "Vortice di sabbia",
+    "text": "Attivazione: la mummia viene colpita con un tiro per colpire. Esito: la mummia aggiunge 2 alla sua CA contro quell'attacco, aumentando le probabilità che il colpo non vada a segno, e si teletrasporta fino a 18 metri in uno spazio libero che è in grado di vedere. Ogni creatura a sua scelta che è in grado di vedere entro 1,5 metri dallo spazio di destinazione è Accecata fino al termine del turno successivo della mummia."
+  },
+  "mummy-lord.legendaryActions.dread-command": {
+    "name": "Comando intimidatorio",
+    "text": "La mummia lancia comando (di 2º livello), utilizzando la stessa caratteristica da incantatore di Incantesimi. Non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "mummy-lord.legendaryActions.glare": {
+    "name": "Sguardo",
+    "text": "La mummia usa Sguardo funesto. Non può ripetere quest'azione fino all'inizio del proprio turno successivo."
+  },
+  "mummy-lord.legendaryActions.necrotic-strike": {
+    "name": "Colpo necrotico",
+    "text": "La mummia effettua un attacco Pugno di putrefazione o Incanalare energia negativa."
+  },
   "priest": {
     "name": "Sacerdote"
   },

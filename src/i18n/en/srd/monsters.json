@@ -3522,6 +3522,417 @@
     "name": "Toxic Ink",
     "text": "Constitution Saving Throw: DC 23, each creature in a 15-foot Emanation originating from the kraken while it is underwater. Failure: The target has the Blinded and Poisoned conditions until the end of the kraken's next turn. The kraken then moves up to its Speed. Failure or Success: The kraken can't take this action again until the start of its next turn."
   },
+  "lamia": {
+    "name": "Lamia"
+  },
+  "lamia.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The lamia makes two Claw attacks. It can replace one attack with a use of Corrupting Touch."
+  },
+  "lamia.actions.claw": {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Slashing damage plus 7 (2d6) Psychic damage."
+  },
+  "lamia.actions.corrupting-touch": {
+    "name": "Corrupting Touch",
+    "text": "Wisdom Saving Throw: DC 13, one creature the lamia can see within 5 feet. Failure: 13 (3d8) Psychic damage, and the target is cursed for 1 hour. Until the curse ends, the target has the Charmed and Poisoned conditions."
+  },
+  "lamia.actions.spellcasting": {
+    "name": "Spellcasting",
+    "text": "The lamia casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 13): At Will: Disguise Self (can appear as a Large or Medium biped), Minor Illusion. 1/Day Each: Geas, Major Image, Scrying."
+  },
+  "lamia.bonusActions.leap": {
+    "name": "Leap",
+    "text": "The lamia jumps up to 30 feet by spending 10 feet of movement."
+  },
+  "lemure": {
+    "name": "Lemure"
+  },
+  "lemure.traits.hellish-restoration": {
+    "name": "Hellish Restoration",
+    "text": "If the lemure dies in the Nine Hells, it revives with all its Hit Points in 1d10 days unless it is killed by a creature under the effects of a Bless spell or its remains are sprinkled with Holy Water."
+  },
+  "lemure.actions.vile-slime": {
+    "name": "Vile Slime",
+    "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 2 (1d4) Poison damage."
+  },
+  "lich": {
+    "name": "Lich"
+  },
+  "lich.traits.legendary-resistance": {
+    "name": "Legendary Resistance",
+    "text": "(4/Day, or 5/Day in Lair) If the lich fails a saving throw, it can choose to succeed instead."
+  },
+  "lich.traits.spirit-jar": {
+    "name": "Spirit Jar",
+    "text": "If destroyed, the lich reforms in 1d10 days if it has a spirit jar, reviving with all its Hit Points. The new body appears in an unoccupied space within the lich's lair."
+  },
+  "lich.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The lich makes three attacks, using Eldritch Burst or Paralyzing Touch in any combination."
+  },
+  "lich.actions.eldritch-burst": {
+    "name": "Eldritch Burst",
+    "text": "Melee or Ranged Attack Roll: +12, reach 5 ft. or range 120 ft. Hit: 31 (4d12 + 5) Force damage."
+  },
+  "lich.actions.paralyzing-touch": {
+    "name": "Paralyzing Touch",
+    "text": "Melee Attack Roll: +12, reach 5 ft. Hit: 15 (3d6 + 5) Cold damage, and the target has the Paralyzed condition until the start of the lich's next turn."
+  },
+  "lich.actions.spellcasting": {
+    "name": "Spellcasting",
+    "text": "The lich casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 20): At Will: Detect Magic, Detect Thoughts, Dispel Magic, Fireball (level 5 version), Invisibility, Lightning Bolt (level 5 version), Mage Hand, Prestidigitation. 2/Day Each: Animate Dead, Dimension Door, Plane Shift. 1/Day Each: Chain Lightning, Finger of Death, Power Word Kill, Scrying."
+  },
+  "lich.reactions.protective-magic": {
+    "name": "Protective Magic",
+    "text": "The lich casts Counterspell or Shield in response to the spell's trigger, using the same spellcasting ability as Spellcasting."
+  },
+  "lich.legendaryActions.deathly-teleport": {
+    "name": "Deathly Teleport",
+    "text": "The lich teleports up to 60 feet to an unoccupied space it can see, and each creature within 10 feet of the space it left takes 11 (2d10) Necrotic damage."
+  },
+  "lich.legendaryActions.disrupt-life": {
+    "name": "Disrupt Life",
+    "text": "Constitution Saving Throw: DC 20, each creature that isn't an Undead in a 20-foot Emanation originating from the lich. Failure: 31 (9d6) Necrotic damage. Success: Half damage. Failure or Success: The lich can't take this action again until the start of its next turn."
+  },
+  "lich.legendaryActions.frightening-gaze": {
+    "name": "Frightening Gaze",
+    "text": "The lich casts Fear, using the same spellcasting ability as Spellcasting. The lich can't take this action again until the start of its next turn."
+  },
+  "lion": {
+    "name": "Lion"
+  },
+  "lion.traits.pack-tactics": {
+    "name": "Pack Tactics",
+    "text": "The lion has Advantage on an attack roll against a creature if at least one of the lion's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
+  },
+  "lion.traits.running-leap": {
+    "name": "Running Leap",
+    "text": "With a 10-foot running start, the lion can Long Jump up to 25 feet."
+  },
+  "lion.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The lion makes two Rend attacks. It can replace one attack with a use of Roar."
+  },
+  "lion.actions.rend": {
+    "name": "Rend",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Slashing damage."
+  },
+  "lion.actions.roar": {
+    "name": "Roar",
+    "text": "Wisdom Saving Throw: DC 11, one creature within 15 feet. Failure: The target has the Frightened condition until the start of the lion's next turn."
+  },
+  "lizard": {
+    "name": "Lizard"
+  },
+  "lizard.traits.spider-climb": {
+    "name": "Spider Climb",
+    "text": "The lizard can climb difficult surfaces, including along ceilings, without needing to make an ability check."
+  },
+  "lizard.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage."
+  },
+  "mage": {
+    "name": "Mage"
+  },
+  "mage.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The mage makes three Arcane Burst attacks."
+  },
+  "mage.actions.arcane-burst": {
+    "name": "Arcane Burst",
+    "text": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 120 ft. Hit: 16 (3d8 + 3) Force damage."
+  },
+  "mage.actions.spellcasting": {
+    "name": "Spellcasting",
+    "text": "The mage casts one of the following spells, using Intelligence as the spellcasting ability (spell save DC 14): At Will: Detect Magic, Light, Mage Armor (included in AC), Mage Hand, Prestidigitation. 2/Day Each: Fireball (level 4 version), Invisibility. 1/Day Each: Cone of Cold, Fly."
+  },
+  "mage.bonusActions.misty-step": {
+    "name": "Misty Step",
+    "text": "(3/Day) The mage casts Misty Step, using the same spellcasting ability as Spellcasting."
+  },
+  "mage.reactions.protective-magic": {
+    "name": "Protective Magic",
+    "text": "(3/Day) The mage casts Counterspell or Shield in response to the spell's trigger, using the same spellcasting ability as Spellcasting."
+  },
+  "magma-mephit": {
+    "name": "Magma Mephit"
+  },
+  "magma-mephit.traits.death-burst": {
+    "name": "Death Burst",
+    "text": "The mephit explodes when it dies. Dexterity Saving Throw: DC 11, each creature in a 5-foot Emanation originating from the mephit. Failure: 7 (2d6) Fire damage. Success: Half damage."
+  },
+  "magma-mephit.actions.claw": {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 3 (1d4 + 1) Slashing damage plus 3 (1d6) Fire damage."
+  },
+  "magma-mephit.actions.fire-breath": {
+    "name": "Fire Breath",
+    "text": "Dexterity Saving Throw: DC 11, each creature in a 15-foot Cone. Failure: 7 (2d6) Fire damage. Success: Half damage."
+  },
+  "magmin": {
+    "name": "Magmin"
+  },
+  "magmin.traits.death-burst": {
+    "name": "Death Burst",
+    "text": "The magmin explodes when it dies. Dexterity Saving Throw: DC 11, each creature in a 10-foot Emanation originating from the magmin. Failure: 7 (2d6) Fire damage. Success: Half damage."
+  },
+  "magmin.actions.touch": {
+    "name": "Touch",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + 2) Fire damage. If the target is a creature or a flammable object that isn't being worn or carried, it starts burning."
+  },
+  "magmin.bonusActions.ignited-illumination": {
+    "name": "Ignited Illumination",
+    "text": "The magmin sets itself ablaze or extinguishes its flames. While ablaze, the magmin sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet."
+  },
+  "mammoth": {
+    "name": "Mammoth"
+  },
+  "mammoth.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The mammoth makes two Gore attacks."
+  },
+  "mammoth.actions.gore": {
+    "name": "Gore",
+    "text": "Melee Attack Roll: +10, reach 10 ft. Hit: 18 (2d10 + 7) Piercing damage. If the target is a Huge or smaller creature and the mammoth moved 20+ feet straight toward it immediately before the hit, the target has the Prone condition."
+  },
+  "mammoth.bonusActions.trample": {
+    "name": "Trample",
+    "text": "Dexterity Saving Throw: DC 18, one creature within 5 feet that has the Prone condition. Failure: 29 (4d10 + 7) Bludgeoning damage. Success: Half damage."
+  },
+  "manticore": {
+    "name": "Manticore"
+  },
+  "manticore.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The manticore makes three attacks, using Rend or Tail Spike in any combination."
+  },
+  "manticore.actions.rend": {
+    "name": "Rend",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Slashing damage."
+  },
+  "manticore.actions.tail-spike": {
+    "name": "Tail Spike",
+    "text": "Ranged Attack Roll: +5, range 100/200 ft. Hit: 7 (1d8 + 3) Piercing damage."
+  },
+  "marilith": {
+    "name": "Marilith"
+  },
+  "marilith.traits.demonic-restoration": {
+    "name": "Demonic Restoration",
+    "text": "If the marilith dies outside the Abyss, its body dissolves into ichor, and it gains a new body instantly, reviving with all its Hit Points somewhere in the Abyss."
+  },
+  "marilith.traits.magic-resistance": {
+    "name": "Magic Resistance",
+    "text": "The marilith has Advantage on saving throws against spells and other magical effects."
+  },
+  "marilith.traits.reactive": {
+    "name": "Reactive",
+    "text": "The marilith can take one Reaction on every turn of combat."
+  },
+  "marilith.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The marilith makes six Pact Blade attacks and uses Constrict."
+  },
+  "marilith.actions.pact-blade": {
+    "name": "Pact Blade",
+    "text": "Melee Attack Roll: +10, reach 5 ft. Hit: 10 (1d10 + 5) Slashing damage plus 7 (2d6) Necrotic damage."
+  },
+  "marilith.actions.constrict": {
+    "name": "Constrict",
+    "text": "Strength Saving Throw: DC 17, one Medium or smaller creature the marilith can see within 5 feet. Failure: 15 (2d10 + 4) Bludgeoning damage. The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
+  },
+  "marilith.bonusActions.teleport": {
+    "name": "Teleport",
+    "text": "The marilith teleports up to 120 feet to an unoccupied space it can see."
+  },
+  "marilith.reactions.parry": {
+    "name": "Parry",
+    "text": "Trigger: The marilith is hit by a melee attack roll while holding a weapon. Response: The marilith adds 5 to its AC against that attack, possibly causing it to miss."
+  },
+  "mastiff": {
+    "name": "Mastiff"
+  },
+  "mastiff.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 4 (1d6 + 1) Piercing damage. If the target is a Medium or smaller creature, it has the Prone condition."
+  },
+  "medusa": {
+    "name": "Medusa"
+  },
+  "medusa.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The medusa makes two Claw attacks and one Snake Hair attack, or it makes three Poison Ray attacks."
+  },
+  "medusa.actions.claw": {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage."
+  },
+  "medusa.actions.snake-hair": {
+    "name": "Snake Hair",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 5 (1d4 + 3) Piercing damage plus 14 (4d6) Poison damage."
+  },
+  "medusa.actions.poison-ray": {
+    "name": "Poison Ray",
+    "text": "Ranged Attack Roll: +5, range 150 ft. Hit: 11 (2d8 + 2) Poison damage."
+  },
+  "medusa.bonusActions.petrifying-gaze": {
+    "name": "Petrifying Gaze",
+    "text": "Constitution Saving Throw: DC 13, each creature in a 30-foot Cone. If the medusa sees its reflection in the Cone, the medusa must make this save. First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target has the Petrified condition instead of the Restrained condition."
+  },
+  "merfolk-skirmisher": {
+    "name": "Merfolk Skirmisher"
+  },
+  "merfolk-skirmisher.traits.amphibious": {
+    "name": "Amphibious",
+    "text": "The merfolk can breathe air and water."
+  },
+  "merfolk-skirmisher.actions.ocean-spear": {
+    "name": "Ocean Spear",
+    "text": "Melee or Ranged Attack Roll: +2, reach 5 ft. or range 20/60 ft. Hit: 3 (1d6) Piercing damage plus 2 (1d4) Cold damage. If the target is a creature, its Speed decreases by 10 feet until the end of its next turn. Hit or Miss: The spear magically returns to the merfolk’s hand immediately after a ranged attack."
+  },
+  "merrow": {
+    "name": "Merrow"
+  },
+  "merrow.traits.amphibious": {
+    "name": "Amphibious",
+    "text": "The merrow can breathe air and water."
+  },
+  "merrow.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The merrow makes two attacks, using Bite, Claw, or Harpoon in any combination."
+  },
+  "merrow.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 6 (1d4 + 4) Piercing damage, and the target has the Poisoned condition until the end of the merrow’s next turn."
+  },
+  "merrow.actions.claw": {
+    "name": "Claw",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (2d4 + 4) Slashing damage."
+  },
+  "merrow.actions.harpoon": {
+    "name": "Harpoon",
+    "text": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 20/60 ft. Hit: 11 (2d6 + 4) Piercing damage. If the target is a Large or smaller creature, the merrow pulls the target up to 15 feet straight toward itself."
+  },
+  "mimic": {
+    "name": "Mimic"
+  },
+  "mimic.traits.adhesive": {
+    "name": "Adhesive (Object Form Only)",
+    "text": "The mimic adheres to anything that touches it. A Huge or smaller creature adhered to the mimic has the Grappled condition (escape DC 13). Ability checks made to escape this grapple have Disadvantage."
+  },
+  "mimic.actions.bite": {
+    "name": "Bite",
+    "text": "Melee Attack Roll: +5 (with Advantage if the target is Grappled by the mimic), reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage—or 12 (2d8 + 3) Piercing damage if the target is Grappled by the mimic—plus 4 (1d8) Acid damage."
+  },
+  "mimic.actions.pseudopod": {
+    "name": "Pseudopod",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Bludgeoning damage plus 4 (1d8) Acid damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 13). Ability checks made to escape this grapple have Disadvantage."
+  },
+  "mimic.bonusActions.shape-shift": {
+    "name": "Shape-Shift",
+    "text": "The mimic shape-shifts to resemble a Medium or Small object while retaining its game statistics, or it returns to its true blob form. Any equipment it is wearing or carrying isn’t transformed."
+  },
+  "minotaur-of-baphomet": {
+    "name": "Minotaur of Baphomet"
+  },
+  "minotaur-of-baphomet.actions.abyssal-glaive": {
+    "name": "Abyssal Glaive",
+    "text": "Melee Attack Roll: +6, reach 10 ft. Hit: 10 (1d12 + 4) Slashing damage plus 10 (3d6) Necrotic damage."
+  },
+  "minotaur-of-baphomet.actions.gore": {
+    "name": "Gore",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 18 (4d6 + 4) Piercing damage. If the target is a Large or smaller creature and the minotaur moved 10+ feet straight toward it immediately before the hit, the target takes an extra 10 (3d6) Piercing damage and has the Prone condition."
+  },
+  "minotaur-skeleton": {
+    "name": "Minotaur Skeleton"
+  },
+  "minotaur-skeleton.actions.gore": {
+    "name": "Gore",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 11 (2d6 + 4) Piercing damage. If the target is a Large or smaller creature and the skeleton moved 20+ feet straight toward it immediately before the hit, the target takes an extra 9 (2d8) Piercing damage and has the Prone condition."
+  },
+  "minotaur-skeleton.actions.slam": {
+    "name": "Slam",
+    "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 15 (2d10 + 4) Bludgeoning damage."
+  },
+  "mule": {
+    "name": "Mule"
+  },
+  "mule.traits.beast-of-burden": {
+    "name": "Beast of Burden",
+    "text": "The mule counts as one size larger for the purpose of determining its carrying capacity."
+  },
+  "mule.actions.hooves": {
+    "name": "Hooves",
+    "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Bludgeoning damage."
+  },
+  "mummy": {
+    "name": "Mummy"
+  },
+  "mummy.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The mummy makes two Rotting Fist attacks and uses Dreadful Glare."
+  },
+  "mummy.actions.rotting-fist": {
+    "name": "Rotting Fist",
+    "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (1d10 + 3) Bludgeoning damage plus 10 (3d6) Necrotic damage. If the target is a creature, it is cursed. While cursed, the target can't regain Hit Points, its Hit Point maximum doesn't return to normal when finishing a Long Rest, and its Hit Point maximum decreases by 10 (3d6) every 24 hours that elapse. A creature dies and turns to dust if reduced to 0 Hit Points by this attack."
+  },
+  "mummy.actions.dreadful-glare": {
+    "name": "Dreadful Glare",
+    "text": "Wisdom Saving Throw: DC 11, one creature the mummy can see within 60 feet. Failure: The target has the Frightened condition until the end of the mummy's next turn. Success: The target is immune to this mummy's Dreadful Glare for 24 hours."
+  },
+  "mummy-lord": {
+    "name": "Mummy Lord"
+  },
+  "mummy-lord.traits.legendary-resistance": {
+    "name": "Legendary Resistance",
+    "text": "(3/Day, or 4/Day in Lair) If the mummy fails a saving throw, it can choose to succeed instead."
+  },
+  "mummy-lord.traits.magic-resistance": {
+    "name": "Magic Resistance",
+    "text": "The mummy has Advantage on saving throws against spells and other magical effects."
+  },
+  "mummy-lord.traits.undead-restoration": {
+    "name": "Undead Restoration",
+    "text": "If destroyed, the mummy gains a new body in 24 hours if its heart is intact, reviving with all its Hit Points. The new body appears in an unoccupied space within the mummy's lair. The heart is a Tiny object that has AC 17, HP 10, and Immunity to all damage except Fire."
+  },
+  "mummy-lord.actions.multiattack": {
+    "name": "Multiattack",
+    "text": "The mummy makes one Rotting Fist or Channel Negative Energy attack, and it uses Dreadful Glare."
+  },
+  "mummy-lord.actions.rotting-fist": {
+    "name": "Rotting Fist",
+    "text": "Melee Attack Roll: +9, reach 5 ft. Hit: 15 (2d10 + 4) Bludgeoning damage plus 10 (3d6) Necrotic damage. If the target is a creature, it is cursed. While cursed, the target can't regain Hit Points, it gains no benefit from finishing a Long Rest, and its Hit Point maximum decreases by 10 (3d6) every 24 hours that elapse. A creature dies and turns to dust if reduced to 0 Hit Points by this attack."
+  },
+  "mummy-lord.actions.channel-negative-energy": {
+    "name": "Channel Negative Energy",
+    "text": "Ranged Attack Roll: +9, range 60 ft. Hit: 25 (6d6 + 4) Necrotic damage."
+  },
+  "mummy-lord.actions.dreadful-glare": {
+    "name": "Dreadful Glare",
+    "text": "Wisdom Saving Throw: DC 17, one creature the mummy can see within 60 feet. Failure: 25 (6d6 + 4) Psychic damage, and the target has the Paralyzed condition until the end of the mummy's next turn."
+  },
+  "mummy-lord.actions.spellcasting": {
+    "name": "Spellcasting",
+    "text": "The mummy casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 17, +9 to hit with spell attacks): At Will: Dispel Magic, Thaumaturgy. 1/Day Each: Animate Dead, Harm, Insect Plague (level 7 version)."
+  },
+  "mummy-lord.reactions.whirlwind-of-sand": {
+    "name": "Whirlwind of Sand",
+    "text": "Trigger: The mummy is hit by an attack roll. Response: The mummy adds 2 to its AC against the attack, possibly causing the attack to miss, and the mummy teleports up to 60 feet to an unoccupied space it can see. Each creature of its choice that it can see within 5 feet of its destination space has the Blinded condition until the end of the mummy's next turn."
+  },
+  "mummy-lord.legendaryActions.dread-command": {
+    "name": "Dread Command",
+    "text": "The mummy casts Command (level 2 version), using the same spellcasting ability as Spellcasting. The mummy can't take this action again until the start of its next turn."
+  },
+  "mummy-lord.legendaryActions.glare": {
+    "name": "Glare",
+    "text": "The mummy uses Dreadful Glare. The mummy can't take this action again until the start of its next turn."
+  },
+  "mummy-lord.legendaryActions.necrotic-strike": {
+    "name": "Necrotic Strike",
+    "text": "The mummy makes one Rotting Fist or Channel Negative Energy attack."
+  },
   "priest": {
     "name": "Priest"
   },

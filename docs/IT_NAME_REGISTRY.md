@@ -92,7 +92,11 @@ per the SRD weapons table.
 `content-pack/tests/unit/it-name-consistency.guard.pack.test.ts` (cross-repo, pack mode) fail the
 build on:
 
-- **Collisions** — two _distinct_ entities sharing one Italian name (the Conjure/Summon class).
+- **Collisions** — two _distinct_ entities sharing one Italian name (the Conjure/Summon class),
+  minus a NARROW allowlist (`ALLOWED_COLLISIONS`) of exact `kind:id` pairs the official IT SRD
+  5.2.1 legitimately makes homonymous — e.g. the _Wizard_ class and the _Mage_ NPC statblock both
+  print _Mago_ (Italian has no Wizard/Mage lexical split). Each sanction is an exact-pair entry with
+  a written justification; no wildcards, and any extra colliding member re-flags the group.
 - **Untranslated regressions** — an Italian name byte-equal to English, outside the allowlist of
   proper nouns Italian D&D genuinely keeps (Tiefling, Goliath, Halfling, Ranger, Warlock…).
 - **Retired-variant regressions** — a superseded old name reappearing as a `name` field.
@@ -113,5 +117,8 @@ The bilingual **bestiary monster catalogue** (2026-07-24) sources every monster 
 prose from the official IT SRD 5.2.1 (tier 1 — extraction, never a fresh translation); IT prose
 reuses the closed-set glossary lexemes (damage nouns capitalized as defined terms, the condition
 lexemes verbatim). Monsters join the guard's kind list (`monsters`), so a monster name colliding with
-any other entity's Italian name (e.g. the reason the _Mage_ NPC — official IT _Mago_, which the
-_Wizard_ class already owns — is deferred, not renamed) fails the build.
+any other entity's Italian name fails the build. The one sanctioned exception landed with the `l–m`
+wave (2026-07-24): the _Mage_ NPC's official IT name _Mago_ byte-collides with the _Wizard_ class's
+canonical _Mago_ — distinct EN entities that Italian names identically. Rather than mistranslate
+either tier-1 print, the guard carries a narrow `ALLOWED_COLLISIONS` sanction for exactly the
+`classes:wizard` ↔ `monsters:mage` pair; the pilot's earlier drop of Mage is thereby resolved.

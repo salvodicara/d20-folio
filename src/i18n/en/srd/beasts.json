@@ -290,9 +290,6 @@
   "attack.gore": {
     "name": "Gore"
   },
-  "attack.stomp": {
-    "name": "Stomp"
-  },
   "attack.rock": {
     "name": "Rock"
   },
@@ -382,9 +379,6 @@
   },
   "trait.nimble-escape": {
     "name": "Nimble Escape"
-  },
-  "trait.roar": {
-    "name": "Roar"
   },
   "trait.running-leap": {
     "name": "Running Leap"

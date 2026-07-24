@@ -1407,7 +1407,7 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
     senses: { darkvisionFt: 60 },
-    traits: ["trait.pack-tactics", "trait.running-leap", "trait.roar"],
+    traits: ["trait.pack-tactics", "trait.running-leap"],
   },
   // Tiger (2024 SRD 5.2.1). AC 13, HP 30, CR 1.
   {
@@ -1831,25 +1831,17 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     size: "Huge",
     ac: 13,
     hp: 126,
-    speeds: { walk: 40 },
+    speeds: { walk: 50 },
     abilityScores: { STR: 24, DEX: 9, CON: 21, INT: 3, WIS: 11, CHA: 6 },
     attacks: [
       {
         nameKey: "attack.gore",
         toHit: 10,
-        damageDice: "4d8+7",
+        damageDice: "2d10+7",
         damageType: "piercing",
         reachFt: 10,
       },
-      {
-        nameKey: "attack.stomp",
-        toHit: 10,
-        damageDice: "4d10+7",
-        damageType: "bludgeoning",
-        reachFt: 5,
-      },
     ],
-    traits: ["trait.trampling-charge"],
   },
   // Giant Ape (2024 SRD 5.2.1). AC 12, HP 168, CR 7.
   {

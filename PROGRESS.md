@@ -540,9 +540,9 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     generator (`git rm`'d at the final wave) that regenerates `beasts.ts` + the `beasts.json`
     key deltas from the corpus, wave by wave; the pilot's `brown-bear` is re-derived to its
     2024 statblock (22 HP, Bite +5 1d8+3 / Claw +5 1d4+3, no traits — a live-user Polymorph
-    correctness fix), `rat` already matched. **Data waves 1–4/8 — `a–b` + `c–d` + `e–g` + `h–k` —
-    are IN**
-    (181 monsters: `a–b` = 59 Aboleth…Bulette; `c–d` = 32 Camel…Dust Mephit; `e–g` = 64
+    correctness fix), `rat` already matched. **Data waves 1–5/8 — `a–b` + `c–d` + `e–g` + `h–k` +
+    `l–m` — are IN**
+    (202 monsters: `a–b` = 59 Aboleth…Bulette; `c–d` = 32 Camel…Dust Mephit; `e–g` = 64
     Eagle…Guardian Naga — the elementals (earth/fire) + fire/frost giants, the two genies
     (efreeti) + the erinyes/glabrezu Fiends, the ettercap/ettin/gargoyle/gibbering-mouther/grick
     monstrosities, the flesh golem + gorgon, the green hag + guardian naga, the ghoul/ghast undead,
@@ -561,7 +561,21 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     `giant-vulture` adds the shared `attack.gouge` beast key. All 6 `h–k` beasts already matched
     their 2024 projection, so no beast value moved and no `polymorph.test.ts` literal changed this
     wave. `gnoll` joins the monster-tongue language catalogue (the Blink Dog precedent —
-    catalogue-only, not the player picker). NEXT: the 4 remaining data waves (`l–m`…`t–z`).
+    catalogue-only, not the player picker). `l–m` = 21 Lamia…Mummy Lord — the lamia + medusa +
+    manticore + merrow + mimic + minotaur-of-baphomet monstrosities, the lemure/marilith fiends,
+    the legendary **Lich** and **Mummy Lord** undead (both with `xpInLair` prints) + mummy +
+    minotaur-skeleton, the magma-mephit/magmin/merfolk-skirmisher elementals, the **Mage** NPC and
+    the l–m beast bench (lion · lizard · mammoth · mastiff · mule). Its beast intersection re-derives
+    two live-user Polymorph corrections: **Lion** drops its stale `roar` trait (2024 models Roar as a
+    Wisdom-save action, not a passive), and **Mammoth** collapses to its 2024 single-Gore statblock
+    (Speed 40→50, Gore 4d8+7→2d10+7, the old Stomp attack + Trampling Charge trait gone); `lizard` ·
+    `mastiff` · `mule` already matched, so no `polymorph.test.ts` literal moved (the pinned
+    `mammoth`-exclusion still holds — CR 6 stays above the offer cap). The **Mage** statblock's
+    official IT name `Mago` byte-collides with the Wizard class's canonical `Mago` (distinct EN
+    entities — Italian has no Wizard/Mage lexical split), which the pilot had DROPPED for lack of an
+    allowlist. This wave reintroduces Mage behind a narrow `ALLOWED_COLLISIONS` sanction in the
+    IT-name guard (the exact `classes:wizard` ↔ `monsters:mage` pair only — both tier-1 IT SRD 5.2.1
+    prints; `docs/IT_NAME_REGISTRY.md`). NEXT: the 3 remaining data waves (`n–p`…`t–z`).
 - **Companions/Extras:** a persistent companion-statblock surface on the sheet (Find Familiar,
   Primal Companion, Drakewarden, Artificer Steel Defender/Homunculus) — closes a
   rules-completeness hole; reuses the bestiary statblock renderer.

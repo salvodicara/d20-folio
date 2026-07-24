@@ -290,9 +290,6 @@
   "attack.gore": {
     "name": "Trafiggere"
   },
-  "attack.stomp": {
-    "name": "Calpestio"
-  },
   "attack.rock": {
     "name": "Roccia"
   },
@@ -383,11 +380,8 @@
   "trait.nimble-escape": {
     "name": "Fuga agile"
   },
-  "trait.roar": {
-    "name": "Ruggito"
-  },
   "trait.running-leap": {
-    "name": "Salto con rincorsa"
+    "name": "Balzo in corsa"
   },
   "attack.gouge": {
     "name": "Cavare"

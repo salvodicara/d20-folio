@@ -76,6 +76,14 @@ export const KEEP_ENGLISH_SRD: readonly string[] = [
   "Hezrou",
   "Imp",
   "Kraken",
+  "Lamia",
+  "Lemure",
+  "Lich",
+  "Magmin",
+  "Marilith",
+  "Medusa",
+  "Merrow",
+  "Mimic",
   "Piranha",
   "Pony",
   "Ranger",
@@ -84,6 +92,29 @@ export const KEEP_ENGLISH_SRD: readonly string[] = [
   "Versatile ({{die}})",
   "Warlock",
 ];
+/**
+ * Sanctioned distinct-entity name collisions — the NARROW allowlist consumed by `findCollisions`.
+ * An entry exempts EXACTLY the named `kind:id` pair sharing `itName`; a group with any other member
+ * set (an extra colliding entity) is still flagged. No wildcards — each pair is an explicit ruling
+ * against the IT SRD 5.2.1 (docs/IT_NAME_REGISTRY.md → authority hierarchy).
+ */
+export interface AllowedCollision {
+  itName: string;
+  /** The exactly-two entities that legitimately share `itName`, as `kind:id`. */
+  members: readonly [string, string];
+  justification: string;
+}
+export const ALLOWED_COLLISIONS: readonly AllowedCollision[] = [
+  {
+    itName: "Mago",
+    members: ["classes:wizard", "monsters:mage"],
+    justification:
+      "Both names are tier-1 official IT SRD 5.2.1 prints. Italian lacks the EN Wizard/Mage " +
+      "lexical distinction: the Wizard class and the Mage NPC statblock are distinct entities that " +
+      "legitimately share the single Italian lexeme 'Mago'. Exact-pair, sanctioned collision.",
+  },
+];
+
 /** Superseded public SRD names — never valid as an entity `name` again. */
 export const RETIRED_NAMES_SRD: readonly string[] = [
   "Abiti Raffinati",
@@ -524,8 +555,16 @@ export function loadEntities(roots: string[]): Ent[] {
   return ents;
 }
 
-/** DISTINCT-English entities sharing one Italian name. */
-export function findCollisions(ents: Ent[]): { it: string; members: string[] }[] {
+/**
+ * DISTINCT-English entities sharing one Italian name, minus the sanctioned exact-pair collisions
+ * (ALLOWED_COLLISIONS). A group is exempt only when its shared IT name and its FULL `kind:id` member
+ * set match an allowlist entry exactly — an extra colliding member re-flags the group.
+ */
+export function findCollisions(
+  ents: Ent[],
+  allowed: Iterable<AllowedCollision> = ALLOWED_COLLISIONS
+): { it: string; members: string[] }[] {
+  const allowList = [...allowed];
   const byIt = new Map<string, Ent[]>();
   for (const e of ents) {
     if (!e.it.trim()) continue;
@@ -537,11 +576,19 @@ export function findCollisions(ents: Ent[]): { it: string; members: string[] }[]
   const out: { it: string; members: string[] }[] = [];
   for (const group of byIt.values()) {
     const distinctEn = new Set(group.map((e) => norm(e.en)));
-    if (distinctEn.size > 1)
-      out.push({
-        it: group[0]?.it ?? "",
-        members: group.map((e) => e.kind + ":" + e.id + " (" + e.en + ")"),
-      });
+    if (distinctEn.size <= 1) continue;
+    const ids = new Set(group.map((e) => e.kind + ":" + e.id));
+    const sanctioned = allowList.some(
+      (a) =>
+        norm(a.itName) === norm(group[0]?.it ?? "") &&
+        ids.size === a.members.length &&
+        a.members.every((m) => ids.has(m))
+    );
+    if (sanctioned) continue;
+    out.push({
+      it: group[0]?.it ?? "",
+      members: group.map((e) => e.kind + ":" + e.id + " (" + e.en + ")"),
+    });
   }
   return out;
 }
