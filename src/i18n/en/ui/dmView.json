@@ -1,7 +1,6 @@
 {
   "dmView": {
     "readonly": "Read-only",
-    "readonlyTip": "Read-only: you're viewing a party member's sheet",
     "viewSheet": "View sheet",
     "backToCampaign": "Back to campaign",
     "notAllowedTitle": "You can't view this sheet",

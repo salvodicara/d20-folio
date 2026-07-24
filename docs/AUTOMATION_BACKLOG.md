@@ -1570,12 +1570,19 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       trigger, tap-to-open on every device, rubric from the existing canonical labels
       (`abilities.carryingCapacity` / `equipment.attuned`), same content EN lb / IT kg. The
       over-limit flag moved from `data-state="danger"` to `data-over` (Radix owns `data-state` on a
-      trigger). Rule recorded in `DESIGN.md` (Glossary terms). Regression:
-      `inventory-capacity-hint.test.tsx` (no chip carries a `title`; tapping the capacity chip
-      discloses the push/drag/lift figure in the branded popover). STILL ON `title=` and reported,
-      not fixed here: the rail tracker-name hover description (`.trk-name`, a row that already owns
-      spend interactions), the header initiative advantage/disadvantage marks (their text is already
-      exposed to AT via the icon `label`), and the read-only DM/admin view status chips.
+      trigger). Rule recorded in `DESIGN.md` (Glossary terms). The chip's accessible NAME carries
+      its reading (`aria-label="Carrying Capacity: 45 lb / 120 lb"`, WCAG 2.5.3) — a bare rubric
+      would replace the visible numbers in the accessible name and a screen reader would hear the
+      label and never the data. The read-only DM/admin status chips lost their `title=` outright:
+      it only expanded the visible "Read-only" text, and the admin copy expanded it WRONGLY ("a
+      party member's sheet" while an admin views any user's) — the chip plus its eye icon says it,
+      so the tip and its `dmView.readonlyTip` key are gone (golden rule 10, rule 19's
+      only-and-all-the-necessary). STILL ON `title=` and reported, not fixed here: the rail
+      tracker-name hover description (`.trk-name`, a row that already owns spend interactions) and
+      the header initiative advantage/disadvantage marks (their text is already exposed to AT via
+      the icon `label`). Regression: `inventory-capacity-hint.test.tsx` (no chip carries a `title`;
+      the capacity chip is reached BY ITS READING and discloses the push/drag/lift figure in the
+      branded popover).
 
 - [x] **PS-F (⌘K relevance) — mid-word substring hits polluted the palette.** FIXED 2026-07-24.
       Typing "cover" returned the right Reference hit plus FIVE compendium rows matching the

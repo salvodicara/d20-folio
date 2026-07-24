@@ -1,7 +1,6 @@
 {
   "dmView": {
     "readonly": "Sola lettura",
-    "readonlyTip": "Sola lettura: stai consultando la scheda di un membro del gruppo",
     "viewSheet": "Vedi scheda",
     "backToCampaign": "Torna alla campagna",
     "notAllowedTitle": "Non puoi consultare questa scheda",

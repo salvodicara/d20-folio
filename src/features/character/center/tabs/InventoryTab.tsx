@@ -17,7 +17,7 @@
  * theme-aware metal tokens. Honest blanks throughout; bilingual EN + IT.
  */
 
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Backpack } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -65,17 +65,18 @@ const CURRENCY_KEYS: readonly CurrencyKey[] = ["pp", "gp", "sp", "cp", "ep"];
  */
 function ChipHint({
   rubric,
+  text,
   hint,
   danger,
-  children,
 }: {
   /** The popover heading — an EXISTING canonical label key, never a new string. */
   rubric: string;
+  /** The chip's own reading — the numbers the player scans ("45 lb / 120 lb"). */
+  text: string;
   /** The plain-language explanation body. */
   hint: string;
   /** Over-limit (capacity exceeded / attunement over cap) — the crimson chip. */
   danger?: boolean;
-  children: ReactNode;
 }) {
   return (
     <Popover>
@@ -86,9 +87,13 @@ function ChipHint({
           // NOT `data-state`: Radix's popover trigger owns that attribute on this
           // element (open/closed), so the over-limit flag rides its own.
           data-over={danger ? "" : undefined}
-          aria-label={rubric}
+          // The chip shows only its numbers, so the name says WHICH numbers —
+          // "Carrying Capacity: 45 lb / 120 lb". It must CONTAIN the visible text
+          // (WCAG 2.5.3): a bare rubric would replace the reading in the
+          // accessible name and a screen reader would never hear the data.
+          aria-label={`${rubric}: ${text}`}
         >
-          {children}
+          {text}
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -424,28 +429,28 @@ export function InventoryTab() {
           {attunement.show && (
             <ChipHint
               rubric={t("equipment.attuned")}
-              hint={t("equipment.attunementHint")}
-              danger={attunement.bonded > attunement.cap}
-            >
-              {t("equipment.attunementCount", {
+              text={t("equipment.attunementCount", {
                 bonded: attunement.bonded,
                 cap: attunement.cap,
               })}
-            </ChipHint>
+              hint={t("equipment.attunementHint")}
+              danger={attunement.bonded > attunement.cap}
+            />
           )}
           {/* Honest blank: nothing carried → no chip (formatWeight renders 0 as
               empty, which read as a broken "/ 120 lb"). */}
           {encumbrance && encumbrance.carried > 0 && (
             <ChipHint
               rubric={t("abilities.carryingCapacity")}
+              text={`${formatWeight(encumbrance.carried, locale)} / ${formatWeight(
+                encumbrance.capacity,
+                locale
+              )}`}
               hint={t("equipment.encumbranceHint", {
                 pushDragLift: formatWeight(encumbrance.pushDragLift, locale),
               })}
               danger={encumbrance.over}
-            >
-              {formatWeight(encumbrance.carried, locale)} /{" "}
-              {formatWeight(encumbrance.capacity, locale)}
-            </ChipHint>
+            />
           )}
           {/* PLAY-NO-EDIT (Constitution §2.8) — loot lands DURING a session, so
               adding an item never requires edit mode. Edit mode keeps curation

@@ -55,7 +55,7 @@ function AdminSheet({ uid, charId }: { uid: string; charId: string }) {
           <Icon as={ArrowLeft} size="sm" decorative />
           {t("admin.backToConsole")}
         </Button>
-        <span role="status" className="toolbar-chip" title={t("dmView.readonlyTip")}>
+        <span role="status" className="toolbar-chip">
           <Icon as={Eye} size="sm" decorative />
           {t("dmView.readonly")}
         </span>

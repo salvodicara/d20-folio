@@ -54,17 +54,22 @@ describe("Inventory toolbar chips — on-demand hints (no native title)", () => 
 
   it("tapping the capacity chip reveals the push/drag/lift number in the folio popover", () => {
     load();
-    const { container } = renderTab();
+    renderTab();
     const enc = buildInventoryViewModel(
       structuredClone(MOCK_CHARACTER),
       "en"
     ).encumbrance;
     if (!enc) throw new Error("encumbrance VM missing"); // narrows; no non-null `!`
-    const chip = container.querySelector(".toolbar-chip[aria-label='Carrying Capacity']");
-    expect(chip).not.toBeNull();
+    // Reached the way a player reaches it — by its READING. The accessible name
+    // must CONTAIN the visible numbers (WCAG 2.5.3): a bare `aria-label="Carrying
+    // Capacity"` would replace them, and a screen reader would hear the rubric
+    // and never the data.
+    const reading = `${enc.carried} lb / ${enc.capacity} lb`;
+    const chip = screen.getByRole("button", { name: `Carrying Capacity: ${reading}` });
+    expect(chip).toHaveTextContent(reading);
     // Nothing is disclosed until the player asks (progressive disclosure).
     expect(screen.queryByText(/push, drag, or lift/i)).toBeNull();
-    fireEvent.click(chip as Element);
+    fireEvent.click(chip);
     const body = screen.getByText(/push, drag, or lift/i);
     expect(body).toBeInTheDocument();
     // The actual RA-27 number rides the sentence (STR 8 → 240 lb).
