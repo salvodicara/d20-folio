@@ -19,6 +19,7 @@
     "langUnderstandsAll": "understands commands given in any language but can't speak",
     "blindBeyond": "(blind beyond this radius)",
     "darkvisionMagical": "(unimpeded by magical Darkness)",
+    "speedNote_climb-or-fly-20": "Climb or Fly 20 ft. (GM's choice)",
     "gear": "Gear",
     "legendaryActions": "Legendary Actions",
     "legendaryUses": "Legendary Action Uses: {{count}}",

@@ -124,15 +124,6 @@ export const ALLOWED_COLLISIONS: readonly AllowedCollision[] = [
       "lexical distinction: the Wizard class and the Mage NPC statblock are distinct entities that " +
       "legitimately share the single Italian lexeme 'Mago'. Exact-pair, sanctioned collision.",
   },
-  {
-    itName: "Spettro",
-    members: ["monsters:specter", "subclasses:phantom"],
-    justification:
-      "Both names are tier-1 official Italian prints (the Specter monster in the SRD 5.2.1, the " +
-      "Rogue Phantom subclass in the content pack). Italian renders both the EN Specter and Phantom " +
-      "as the single lexeme 'Spettro' — distinct entities, one Italian word. Exact-pair, sanctioned " +
-      "collision (composed-seam only; the public SRD lane carries just the Specter).",
-  },
 ];
 
 /** Superseded public SRD names — never valid as an entity `name` again. */

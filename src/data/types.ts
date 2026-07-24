@@ -1961,6 +1961,16 @@ export interface MonsterStatBlock {
   speeds: Readonly<Partial<Record<"walk" | "climb" | "fly" | "swim" | "burrow", number>>>;
   /** "Fly 60 ft. (hover)". */
   hover?: true;
+  /**
+   * A GM's-choice speed print that a flat `speeds` record can't express — the
+   * Swarm of Insects' "Speed 20 ft., Climb or Fly 20 ft. (GM's choice)", where a
+   * single 20 ft. mode is EITHER Climb OR Fly at the GM's discretion (§A.4
+   * closed-set note, D-10). Rendered as a text affix appended to the Speed line
+   * via `monster.speedNote_<token>`. Sole print in the corpus; grow the union
+   * only when the SRD prints another. Corpus-guarded: valid ONLY on entries whose
+   * `speeds` carry neither `climb` nor `fly` (the note IS that choice).
+   */
+  speedNote?: "climb-or-fly-20";
 
   abilityScores: Readonly<Record<AbilityCode, number>>;
   /** Save proficiencies — save = mod + PB for these; `saveOverrides` catches a

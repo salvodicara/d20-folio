@@ -187,6 +187,13 @@ describe.each(cases)("%s", (id, m) => {
     ]) {
       expect(hasSrd("language", langId, "name", "en"), `language "${langId}"`).toBe(true);
     }
+    // The GM's-choice speed note IS the climb-or-fly choice — it must not sit
+    // beside an already-printed Climb or Fly speed (that would double the mode).
+    if (m.speedNote) {
+      expect(m.speedNote).toBe("climb-or-fly-20");
+      expect(m.speeds.climb, `${m.id} speedNote with a climb speed`).toBe(undefined);
+      expect(m.speeds.fly, `${m.id} speedNote with a fly speed`).toBe(undefined);
+    }
     // The one-way-telepathy affix is only meaningful beside a telepathy distance.
     if (m.languages?.telepathyOneWay) {
       expect(

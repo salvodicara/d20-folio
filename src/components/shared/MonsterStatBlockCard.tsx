@@ -218,6 +218,8 @@ export function MonsterStatBlockCard({
     if (mode === "fly" && m.hover) part += ` (${t("monster.hover")})`;
     speedParts.push(part);
   }
+  // GM's-choice speed print (swarm-of-insects) — a text affix on the Speed line.
+  if (m.speedNote) speedParts.push(t(`monster.speedNote_${m.speedNote}`));
 
   // Ledger defenses ------------------------------------------------------------
   const qualified = (kind: "resistance" | "immunity" | "vulnerability") =>

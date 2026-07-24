@@ -1805,6 +1805,9 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     ac: 11,
     hp: { average: 19, formula: "3d8+6" },
     speeds: { walk: 20 },
+    // "Speed 20 ft., Climb or Fly 20 ft. (GM's choice)" — one 20 ft. mode the GM
+    // picks as Climb OR Fly; a flat speeds record can't hold the choice (D-10).
+    speedNote: "climb-or-fly-20",
     abilityScores: { STR: 3, DEX: 13, CON: 14, INT: 1, WIS: 7, CHA: 1 },
     damageResistances: ["bludgeoning", "piercing", "slashing"],
     conditionImmunities: [

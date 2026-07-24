@@ -62,6 +62,17 @@ describe("MonsterStatBlockCard", () => {
     expect(line.textContent).not.toMatch(/Resistances\s*,/);
   });
 
+  it("appends the GM's-choice speed note to the Speed line (swarm-of-insects)", () => {
+    const swarm = getMonster("swarm-of-insects");
+    if (!swarm) throw new Error("pilot monster 'swarm-of-insects' missing");
+    const { container } = render(<MonsterStatBlockCard monster={swarm} locale="en" />);
+    const speed = Array.from(container.querySelectorAll(".mon-vitals dd")).find((el) =>
+      el.textContent.includes("ft")
+    );
+    if (!speed) throw new Error("speed cell did not render");
+    expect(speed.textContent).toBe("20 ft, Climb or Fly 20 ft. (GM's choice)");
+  });
+
   it("renders the one-way-telepathy affix beside the distance (otyugh)", () => {
     const otyugh = getMonster("otyugh");
     if (!otyugh) throw new Error("pilot monster 'otyugh' missing");
