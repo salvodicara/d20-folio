@@ -10,6 +10,8 @@ import {
   casterLevelContribution,
   multiclassCasterLevel,
   computeMulticlassSpellSlots,
+  applySlotMaxOverrides,
+  type SpellSlotEntry,
 } from "@/lib/multiclass-slots";
 import type { ClassEntry } from "@/types/character";
 
@@ -102,5 +104,51 @@ describe("multiclass-slots — Warlock Pact Magic stacks SEPARATELY", () => {
   it("pure warlock 5 → only Pact Magic (2 slots @ L3), no shared slots", () => {
     const slots = computeMulticlassSpellSlots([entry("warlock", 5)]);
     expect(slots).toEqual([{ level: 3, total: 2, pactMagic: true }]);
+  });
+});
+
+describe("applySlotMaxOverrides (RA-33 — durable per-level count override)", () => {
+  it("returns the base list unchanged (by reference) when there are no overrides", () => {
+    const base: SpellSlotEntry[] = [{ level: 1, total: 4 }];
+    expect(applySlotMaxOverrides(base, undefined)).toBe(base);
+  });
+
+  it("overrides one normal level, leaving the others untouched", () => {
+    expect(
+      applySlotMaxOverrides(
+        [
+          { level: 1, total: 4 },
+          { level: 2, total: 3 },
+        ],
+        { "1": 5 }
+      )
+    ).toEqual([
+      { level: 1, total: 5 },
+      { level: 2, total: 3 },
+    ]);
+  });
+
+  it("pins the normal and Pact rows at the SAME level independently (slotUsageKey)", () => {
+    const base: SpellSlotEntry[] = [
+      { level: 1, total: 4 },
+      { level: 1, total: 2, pactMagic: true },
+    ];
+    // The normal key `"1"` bumps ONLY the normal row.
+    const normal = applySlotMaxOverrides(base, { "1": 5 });
+    expect(normal.find((s) => !s.pactMagic)?.total).toBe(5);
+    expect(normal.find((s) => s.pactMagic)?.total).toBe(2);
+    // The pact key `"pact-1"` bumps ONLY the Pact row.
+    const pact = applySlotMaxOverrides(base, { "pact-1": 3 });
+    expect(pact.find((s) => !s.pactMagic)?.total).toBe(4);
+    expect(pact.find((s) => s.pactMagic)?.total).toBe(3);
+  });
+
+  it("guards garbage — non-finite/negative ignored, non-integer floored, 0 drops the row", () => {
+    const base: SpellSlotEntry[] = [{ level: 1, total: 4 }];
+    for (const bad of [NaN, Infinity, -Infinity, -1]) {
+      expect(applySlotMaxOverrides(base, { "1": bad })).toEqual([{ level: 1, total: 4 }]);
+    }
+    expect(applySlotMaxOverrides(base, { "1": 3.7 })).toEqual([{ level: 1, total: 3 }]);
+    expect(applySlotMaxOverrides(base, { "1": 0 })).toEqual([]);
   });
 });

@@ -430,6 +430,27 @@ describe("SpellsTab", () => {
     expect(slot?.total).toBe(2);
   });
 
+  it("pins the slot-total edit as a DURABLE override, then resets it to auto (RA-33)", () => {
+    load();
+    useUIStore.setState({ sheetMode: "edit" });
+    renderPage();
+    // Edit the L1 total → the count is pinned on the config AND materialized.
+    fireEvent.change(screen.getByLabelText(/Edit total slots for level 1/i), {
+      target: { value: "2" },
+    });
+    const afterEdit = useCharacterStore.getState().character?.character;
+    expect(afterEdit?.spellcasting?.slotMaxOverrides).toEqual({ "1": 2 });
+    expect(afterEdit?.spellSlots.find((s) => s.level === 1)?.total).toBe(2);
+    // The reset-to-auto affordance appears on the overridden cell.
+    const reset = screen.getByRole("button", { name: /reset to auto/i });
+    fireEvent.click(reset);
+    const afterReset = useCharacterStore.getState().character?.character;
+    // The map empties → the key is dropped ENTIRELY (never stored as `{}`), and the
+    // count returns to the derived default (Bard 9 L1 = 4).
+    expect(afterReset?.spellcasting?.slotMaxOverrides).toBeUndefined();
+    expect(afterReset?.spellSlots.find((s) => s.level === 1)?.total).toBe(4);
+  });
+
   it("opens the Add Spell modal in edit mode and shows the Add button", () => {
     load();
     useUIStore.setState({ sheetMode: "edit" });

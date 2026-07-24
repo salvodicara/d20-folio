@@ -26,6 +26,7 @@ import type { ClassEntry } from "@/types/character";
 import { pactSlots } from "@/data/classes/warlock";
 import { classTableIndex } from "@/data/classes";
 import { subclassSpellSlots, getSubclassSpellcasting } from "@/lib/subclass-spellcasting";
+import { slotUsageKey } from "@/lib/cast-options";
 
 /** Caster weighting per class id (2024 RAW). Absent id = non-caster (0 contribution). */
 type CasterFraction = "full" | "half" | "third" | "none";
@@ -185,4 +186,28 @@ export function deriveSpellSlots(classes: ClassEntry[]): SpellSlotEntry[] {
     return subclassSpellSlots(entry.level);
   }
   return [];
+}
+
+/**
+ * RA-33 — apply the durable per-level max-count overrides onto a derived slot list.
+ * Overrides are keyed by {@link slotUsageKey} (`"1"`..`"9"` shared, `"pact-N"`
+ * Pact Magic), so a normal and a Pact row at the same level override independently.
+ * Only levels the base list already carries are overridable (this never invents an
+ * ungranted slot level); a non-finite or negative value is ignored (the sole guard
+ * against a garbage map — this is the ONLY path from the override map to a derived
+ * count), a non-integer is floored, and a `0` drops the row. Absent map = identity.
+ */
+export function applySlotMaxOverrides(
+  base: SpellSlotEntry[],
+  overrides: Readonly<Record<string, number>> | undefined
+): SpellSlotEntry[] {
+  if (!overrides) return base;
+  return base
+    .map((slot) => {
+      const o = overrides[slotUsageKey(slot)];
+      return typeof o === "number" && Number.isFinite(o) && o >= 0
+        ? { ...slot, total: Math.floor(o) }
+        : slot;
+    })
+    .filter((s) => s.total > 0);
 }

@@ -473,6 +473,14 @@ export function rehydrateCharacter(min: MinimalCharacter): CharacterData {
         ...(stored.preparedMaxOverride != null
           ? { preparedMaxOverride: stored.preparedMaxOverride }
           : {}),
+        // RA-33 — the block is REBUILT from inferred for a table caster, so carry
+        // the durable slot-count overrides across (the stored `spellSlots` array
+        // itself is kept verbatim by the rehydrate, since it deviates from derived).
+        ...(stored.slotMaxOverrides &&
+        typeof stored.slotMaxOverrides === "object" &&
+        Object.keys(stored.slotMaxOverrides).length > 0
+          ? { slotMaxOverrides: stored.slotMaxOverrides }
+          : {}),
       };
     }
   }

@@ -72,8 +72,9 @@ appears on a weapon row.
 > hard-blocked economy slots under the incapacitated family + override-first advisory rendering for
 > the rest; long/short rest recovery of trackers/slots/pact/exhaustion; Heroic Inspiration incl.
 > Human Resourceful long-rest regain. Manual override paths exist on essentially every derived value
-> (skills/saves/passives/AC/HP/initiative/speed/weapons/DC/attack/prepared-max/PB) — the override
-> axis passed everywhere except RA-33.
+> (skills/saves/passives/AC/HP/initiative/speed/weapons/DC/attack/prepared-max/PB/spell-slot-counts)
+> — the override axis now passes everywhere (RA-33 closed the last gap: durable per-level slot-count
+> overrides).
 
 ### Band 1 — wrong numbers / wrong rules shipping today (S1)
 
@@ -424,10 +425,26 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       Attacks Affected". The gate's clause is deliberately coarse (documented inline); fix = the
       chip's description says "vs targets other than the grappler" (the existing per-clause
       `description` channel). **T3.**
-- [ ] **RA-33 — Spell-slot COUNTS have no manual override.** _Overrides · OVERRIDE-GAP · S3._ The
+- [x] **RA-33 — Spell-slot COUNTS have no manual override.** _Overrides · OVERRIDE-GAP · S3._ The
       one derived value found without an escape hatch: slots come only from `deriveSpellSlots` (+
       `scoped-extra-spell-slot` grants); homebrew slot tables can't be pinned. Fix: per-level
-      max-override map on `SpellcastingConfig`, editable where slots render. **T2.**
+      max-override map on `SpellcastingConfig`, editable where slots render. **SHIPPED wave 4
+      (2026-07-24):** correction — an inline slot-total editor ALREADY existed
+      (`SpellsTab.updateSlotTotal`), so the real gap was DURABILITY: `character.spellSlots` is a
+      materialized derived array clobbered by `reconcileBuildChoices` (any Bio class/level edit) and
+      `levelUp`. Added an additive `slotMaxOverrides?: Record<string, number>` on `SpellcastingConfig`
+      (keyed by `slotUsageKey`, so a Sorlock's normal + Pact rows at one level pin independently), a
+      pure `applySlotMaxOverrides` helper (the SOLE guarded path from the map to a count — ignores
+      non-finite/negative, floors non-integers, drops 0), and re-applied it at BOTH clobber sites +
+      preserved the map across reconcile/level-up/rehydrate (dropping it on a class change, mirroring
+      the DC/attack/preparedMax overrides). The existing editor now writes the durable override + a
+      reset-to-auto affordance (`spells.ritualNote` sibling recipe: the shared `common.resetToAuto`
+      button, gated on the presenter's `overridden` flag); the input clamps min 1 (a 0 override would
+      strand the row). Additive/fixture-safe by construction (absent field = today's behavior; the 6
+      team fixtures minimize byte-identically). Regression: `multiclass-slots.test.ts`
+      (helper + pact independence + garbage-safety), `spell-slot-override.test.ts` (durability across
+      reconcile level-only vs class-change + level-up + the presenter flag), `character-minimal.test.ts`
+      (round-trip + fixture-safety), `spells-page.test.tsx` (the durable edit + reset wiring). **T2.**
 - [ ] **RA-34 — Crit consequences unstated at the moment of a crit.** _Attack procedure · GAP ·
       S3._ The crit-range chip ships; "double the dice" appears nowhere at commit time. Fix: one
       glossary line on the attack card's crit chip. **T3.**

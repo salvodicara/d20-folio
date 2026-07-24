@@ -161,7 +161,11 @@ riders / scaling resolve per entry at THAT entry's class level. Display names DE
 `spellcasting`, derived `speed`, granted `languages`/`toolProficiencies`, the class/subclass/origin
 entries of `features[]`, `armorNote`, `sidebar` (UI layout), `combatAlgorithm` when empty,
 `ac`/`hp.max` (derived snapshots; a denormalized `ac`/`hp.max` still rides the Firestore doc for the
-SRD-free roster, but they are NOT part of this portable schema).
+SRD-free roster, but they are NOT part of this portable schema). The `spellcasting` block itself
+carries the caster's manual OVERRIDES (`saveDCOverride`, `attackBonusOverride`, `preparedMaxOverride`,
+and RA-33 `slotMaxOverrides` — durable per-slot-level max counts keyed by `slotUsageKey`); when any of
+those deviates from the inferred block it is KEPT, and a `slotMaxOverrides` entry likewise keeps the
+otherwise-derived `spellSlots` array (its counts differ from `deriveSpellSlots`).
 
 ### `build.toolChoices` — tool-CHOICE picks (the id-based home)
 

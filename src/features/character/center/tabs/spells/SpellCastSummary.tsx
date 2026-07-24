@@ -7,7 +7,7 @@
  * formatted at this edge (`fmtMod`, "x / y"); APP labels resolve via `t(...)`.
  */
 import { useTranslation } from "react-i18next";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,8 @@ export interface CastSummaryCallbacks {
   onAttackOverride: (value: number | null) => void;
   onPreparedMaxOverride: (value: number) => void;
   onPreparedMaxReset: () => void;
-  onSlotTotal: (level: number, total: number) => void;
+  onSlotTotal: (level: number, total: number, pactMagic: boolean) => void;
+  onSlotReset: (level: number, pactMagic: boolean) => void;
 }
 
 export function SpellCastSummary({
@@ -43,6 +44,7 @@ export function SpellCastSummary({
   onPreparedMaxOverride,
   onPreparedMaxReset,
   onSlotTotal,
+  onSlotReset,
 }: {
   summary: CastSummaryVM;
   slots: SlotSummaryVM[];
@@ -214,12 +216,14 @@ export function SpellCastSummary({
               </span>
               <Input
                 type="number"
-                min={0}
+                min={1}
                 max={9}
                 value={slot.total}
                 onChange={(e) => {
-                  const val = Math.max(0, Math.min(9, parseInt(e.target.value, 10) || 0));
-                  onSlotTotal(slot.level, val);
+                  // Clamp min 1: a 0 override would filter the row out of
+                  // `spellSlots`, stranding the override with no cell to reset from.
+                  const val = Math.max(1, Math.min(9, parseInt(e.target.value, 10) || 1));
+                  onSlotTotal(slot.level, val, slot.pactMagic);
                 }}
                 className="sm slot-edit"
                 aria-label={t("spells.editSlotTotal", { level: slot.level })}
@@ -227,6 +231,17 @@ export function SpellCastSummary({
               <span className="slot-edit-lbl" aria-hidden>
                 {t("spells.slotTotalLabel")}
               </span>
+              {slot.overridden && (
+                <button
+                  type="button"
+                  className="inline-edit-reset"
+                  onClick={() => onSlotReset(slot.level, slot.pactMagic)}
+                  title={t("common.resetToAuto")}
+                  aria-label={t("common.resetToAuto")}
+                >
+                  <RotateCcw className="h-3 w-3" />
+                </button>
+              )}
             </div>
           ))}
         </div>

@@ -411,6 +411,15 @@ export interface SpellcastingConfig {
   preparedMaxOverride?: number | null;
   saveDCOverride: number | null;
   attackBonusOverride: number | null;
+  /**
+   * RA-33 — durable per-slot-level max-count overrides, keyed by `slotUsageKey`
+   * (`"1"`..`"9"` shared pool, `"pact-1"`..`"pact-5"` Pact Magic) so a Sorlock's
+   * normal and Pact rows at one level pin independently. Absent/empty = pure
+   * derived counts (`deriveSpellSlots`). Re-applied wherever the slot array
+   * re-materializes (`reconcileBuildChoices` + `levelUp`), so a homebrew count
+   * survives a class/level edit. Additive-only; present only when a count deviates.
+   */
+  slotMaxOverrides?: Record<string, number>;
 }
 
 // ============================================================

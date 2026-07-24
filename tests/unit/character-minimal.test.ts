@@ -13,6 +13,7 @@ import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 import { MOCK_CHARACTER, MOCK_MULTICLASS_CHARACTER } from "@/lib/mock";
 import { buildScenario, DEV_SCENARIOS } from "@/lib/dev-scenarios";
 import { totalLevel } from "@/lib/classes";
+import { deriveSpellSlots, applySlotMaxOverrides } from "@/lib/multiclass-slots";
 import type { CharacterData } from "@/types/character";
 
 const mock = MOCK_CHARACTER.character;
@@ -498,5 +499,33 @@ describe("rehydrate drops the deleted legacy `initiativeBonus` field (rule 10)",
     expect("initiativeBonus" in round).toBe(false);
     // The legacy value never leaks into the live override channel.
     expect(round.initiativeBonusOverride).not.toBe(7);
+  });
+});
+
+describe("character-minimal — RA-33 slot-count overrides round-trip", () => {
+  it("a caster WITHOUT a slot override never gains a slotMaxOverrides key (fixture-safe)", () => {
+    // The 6 team fixtures carry no override — the derived spellSlots + inferred
+    // spellcasting block minimize byte-identically to pre-RA-33, and rehydrate never
+    // introduces the key.
+    const round = rehydrateCharacter(minimizeCharacter(mock));
+    expect(round.spellcasting?.slotMaxOverrides).toBeUndefined();
+  });
+
+  it("a caster WITH a slot override keeps the block + array and round-trips unchanged", () => {
+    const doc = structuredClone(mock);
+    if (!doc.spellcasting) throw new Error("mock is a caster");
+    doc.spellcasting.slotMaxOverrides = { "1": 5 };
+    doc.spellSlots = applySlotMaxOverrides(deriveSpellSlots(doc.classes), { "1": 5 });
+
+    const min = minimizeCharacter(doc) as Record<string, unknown>;
+    // Both deviate from their derived defaults, so both are kept in the minimal doc.
+    expect("spellcasting" in min).toBe(true);
+    expect("spellSlots" in min).toBe(true);
+
+    const round = rehydrateCharacter(minimizeCharacter(doc));
+    expect(round.spellcasting?.slotMaxOverrides).toEqual({ "1": 5 });
+    expect(
+      round.spellSlots.find((s) => s.level === 1 && s.pactMagic !== true)?.total
+    ).toBe(5);
   });
 });

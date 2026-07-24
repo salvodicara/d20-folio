@@ -54,7 +54,7 @@ import {
   totalLevel,
   classEntryLevel,
 } from "@/lib/classes";
-import { deriveSpellSlots } from "@/lib/multiclass-slots";
+import { deriveSpellSlots, applySlotMaxOverrides } from "@/lib/multiclass-slots";
 import { slotUsageKey } from "@/lib/cast-options";
 import { subclassSpellcastingState } from "@/lib/subclass-spellcasting";
 import { syncOriginFeats } from "@/lib/character-build";
@@ -313,7 +313,13 @@ export function reconcileBuildChoices(
   if (scopeChanged) {
     const derivedNext = deriveSpellSlots(c.classes);
     const derivedPrev = deriveSpellSlots(prevClasses);
-    if (derivedNext.length > 0) c.spellSlots = derivedNext;
+    // RA-33 — re-apply the durable per-level count overrides onto the fresh
+    // derivation, so a homebrew slot count survives a level-only Bio edit. The
+    // override DROPS on a class change (stale — a new class casts differently),
+    // mirroring the DC / attack / preparedMax overrides below.
+    const slotOverrides = classChanged ? undefined : prev.spellcasting?.slotMaxOverrides;
+    if (derivedNext.length > 0)
+      c.spellSlots = applySlotMaxOverrides(derivedNext, slotOverrides);
     else if (classChanged || derivedPrev.length > 0) c.spellSlots = [];
     // else keep stored (manual slots on a build the engine derives none for)
 
@@ -332,6 +338,9 @@ export function reconcileBuildChoices(
         ...(prevSc?.preparedMaxOverride != null
           ? { preparedMaxOverride: prevSc.preparedMaxOverride }
           : {}),
+        ...(prevSc?.slotMaxOverrides && Object.keys(prevSc.slotMaxOverrides).length > 0
+          ? { slotMaxOverrides: prevSc.slotMaxOverrides }
+          : {}),
       };
     } else if (subSc) {
       // Third-caster subclass (Eldritch Knight / Arcane Trickster) — re-derive the
@@ -345,6 +354,9 @@ export function reconcileBuildChoices(
         attackBonusOverride: prevSc ? prevSc.attackBonusOverride : null,
         ...(prevSc?.preparedMaxOverride != null
           ? { preparedMaxOverride: prevSc.preparedMaxOverride }
+          : {}),
+        ...(prevSc?.slotMaxOverrides && Object.keys(prevSc.slotMaxOverrides).length > 0
+          ? { slotMaxOverrides: prevSc.slotMaxOverrides }
           : {}),
       };
     } else if (

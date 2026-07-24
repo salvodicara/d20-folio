@@ -17,7 +17,10 @@ import { srdEn } from "@/i18n/srd-en";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import { applyFeatAsi } from "@/lib/feat-asi";
 import { getClasses, primaryClassEntry, totalLevel } from "@/lib/classes";
-import { computeMulticlassSpellSlots } from "@/lib/multiclass-slots";
+import {
+  computeMulticlassSpellSlots,
+  applySlotMaxOverrides,
+} from "@/lib/multiclass-slots";
 import type { SrdClassFeatureData } from "@/data/types";
 import type { CharacterData } from "@/types/character";
 import type { SrdFeatureRef, LevelUpChecklistItem } from "@/types/character";
@@ -390,7 +393,15 @@ function applySpellSlots(
     });
   }
 
-  return { ...updated, spellSlots: slotsWithPact };
+  // RA-33 — re-apply the durable per-level count overrides so a homebrew slot
+  // count survives a level-up recompute (the same seam reconcile re-applies).
+  return {
+    ...updated,
+    spellSlots: applySlotMaxOverrides(
+      slotsWithPact,
+      updated.spellcasting?.slotMaxOverrides
+    ),
+  };
 }
 
 // ─── Auto-add Class Features ─────────────────────────────────────────────────

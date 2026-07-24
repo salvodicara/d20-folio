@@ -41,7 +41,8 @@ import {
   type CastLevelOption,
   type MetamagicCastRow,
 } from "@/components/sheet/CastLevelModal";
-import { buildCastOptions } from "@/lib/cast-options";
+import { buildCastOptions, slotUsageKey } from "@/lib/cast-options";
+import { deriveSpellSlots, applySlotMaxOverrides } from "@/lib/multiclass-slots";
 import {
   resolveSpellCastOptions,
   resolveMetamagicForCast,
@@ -53,7 +54,7 @@ import { buildSpellsViewModel, type SpellCardVM } from "@/lib/views/spells-view"
 import { concentrationValue, customConcentrationValue } from "@/lib/concentration";
 import { confirmConcentrationSwap } from "@/features/character/confirm-concentration";
 import type { SrdSpellData } from "@/data/types";
-import type { CustomSpell } from "@/types/character";
+import type { CustomSpell, SpellcastingConfig } from "@/types/character";
 import {
   SpellCastSummary,
   PreparedOverLimitWarning,
@@ -168,22 +169,92 @@ export function SpellsTab() {
     [character]
   );
 
+  // RA-33 — a durable per-slot-level count edit. For a table/subclass caster the
+  // count is pinned as a `slotMaxOverrides` entry on the spellcasting config (so it
+  // survives reconcile + level-up), and `character.spellSlots` is re-materialized in
+  // the SAME write so every reader updates immediately. Keyed by `slotUsageKey`, so a
+  // Sorlock's normal and Pact rows at one level pin independently.
   const updateSlotTotal = useCallback(
-    (slotLevel: number, newTotal: number) => {
+    (slotLevel: number, newTotal: number, pactMagic: boolean) => {
       if (!character) return;
       const store = useCharacterStore.getState();
-      const slots = [...character.character.spellSlots];
-      const idx = slots.findIndex((s) => s.level === slotLevel);
+      const cd = character.character;
+      const sc = cd.spellcasting;
+      if (sc) {
+        const key = slotUsageKey({ level: slotLevel, pactMagic });
+        const nextOverrides = { ...(sc.slotMaxOverrides ?? {}), [key]: newTotal };
+        store.setCharacter({
+          ...character,
+          character: {
+            ...cd,
+            spellcasting: { ...sc, slotMaxOverrides: nextOverrides },
+            spellSlots: applySlotMaxOverrides(
+              deriveSpellSlots(cd.classes),
+              nextOverrides
+            ),
+          },
+        });
+        return;
+      }
+      // Non-caster homebrew (no spellcasting config to pin an override on): its
+      // `spellSlots` array is already durable (reconcile keeps stored manual slots),
+      // so edit the array in place, distinguishing pact vs normal at the same level.
+      const slots = [...cd.spellSlots];
+      const idx = slots.findIndex(
+        (s) => s.level === slotLevel && (s.pactMagic ?? false) === pactMagic
+      );
       if (idx >= 0) {
         const existing = slots[idx];
         if (existing) slots[idx] = { ...existing, total: newTotal };
       } else if (newTotal > 0) {
-        slots.push({ level: slotLevel, total: newTotal });
+        slots.push({
+          level: slotLevel,
+          total: newTotal,
+          ...(pactMagic ? { pactMagic: true } : {}),
+        });
       }
       const filtered = slots.filter((s) => s.total > 0);
+      store.setCharacter({ ...character, character: { ...cd, spellSlots: filtered } });
+    },
+    [character]
+  );
+
+  // RA-33 — reset ONE slot level back to its derived count: drop its
+  // `slotMaxOverrides` key, and when the map empties, drop the key ENTIRELY
+  // (never store `{}`) so the block minimizes back to the inferred default.
+  const resetSlotTotal = useCallback(
+    (slotLevel: number, pactMagic: boolean) => {
+      if (!character) return;
+      const store = useCharacterStore.getState();
+      const cd = character.character;
+      const sc = cd.spellcasting;
+      if (!sc?.slotMaxOverrides) return;
+      const key = slotUsageKey({ level: slotLevel, pactMagic });
+      const rest: Record<string, number> = Object.fromEntries(
+        Object.entries(sc.slotMaxOverrides).filter(([k]) => k !== key)
+      );
+      const hasRest = Object.keys(rest).length > 0;
+      const nextSc: SpellcastingConfig = {
+        ability: sc.ability,
+        preparedCaster: sc.preparedCaster,
+        preparedMax: sc.preparedMax,
+        saveDCOverride: sc.saveDCOverride,
+        attackBonusOverride: sc.attackBonusOverride,
+        ...(sc.preparedMaxOverride != null
+          ? { preparedMaxOverride: sc.preparedMaxOverride }
+          : {}),
+        ...(hasRest ? { slotMaxOverrides: rest } : {}),
+      };
       store.setCharacter({
         ...character,
-        character: { ...character.character, spellSlots: filtered },
+        character: {
+          ...cd,
+          spellcasting: nextSc,
+          spellSlots: applySlotMaxOverrides(
+            deriveSpellSlots(cd.classes),
+            hasRest ? rest : undefined
+          ),
+        },
       });
     },
     [character]
@@ -862,6 +933,7 @@ export function SpellsTab() {
           onPreparedMaxOverride={updatePreparedMax}
           onPreparedMaxReset={() => patchSpellcasting({ preparedMaxOverride: null })}
           onSlotTotal={updateSlotTotal}
+          onSlotReset={resetSlotTotal}
         />
       )}
 

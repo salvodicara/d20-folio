@@ -99,6 +99,9 @@ export interface SlotSummaryVM {
   /** True for a Warlock Pact-Magic pool (a Sorlock has a normal AND a pact row
    *  at the same level — each tracks its OWN usage counter, B3). */
   pactMagic: boolean;
+  /** RA-33 — this count is a durable manual override (not the derived default),
+   *  so the edit cell offers a reset-to-auto affordance. */
+  overridden: boolean;
 }
 
 /** The per-spell facts-grid rows that carry SRD-localized values. */
@@ -589,6 +592,7 @@ export function buildSpellsViewModel(
       total: slot.total,
       remaining: slot.total - used,
       pactMagic: slot.pactMagic === true,
+      overridden: sc?.slotMaxOverrides?.[slotUsageKey(slot)] != null,
     };
   });
 
