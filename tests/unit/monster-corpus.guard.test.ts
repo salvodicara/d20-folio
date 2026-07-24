@@ -24,6 +24,7 @@ import {
   xpForCr,
 } from "@/lib/monster";
 import INITIATIVE_PRINTS from "./__fixtures__/monster-initiative-prints.json";
+import { mergedUi } from "./__helpers__/ui-merged";
 import {
   ALL_ALIGNMENTS,
   ALL_CREATURE_TYPES,
@@ -273,6 +274,39 @@ describe.each(cases)("%s", (id, m) => {
           `${key} text/${locale}`
         ).toBeGreaterThan(0);
       }
+    }
+  });
+});
+
+/**
+ * Type-tag localization completeness (§F.13, D-3) — the identity-line placeholder
+ * lock. Every parenthesized creature tag ("Monstrosity (Titan)", "…(Lycanthrope)")
+ * is composed by `monster-identity.ts` via the chrome key `srd.creatureTag_${tag}`.
+ * That lookup happens INSIDE the deferred card/leaf render, so §F.10's prose sweep
+ * (which drives the spec `row()` string, not the tag) never exercises it — a tag
+ * with no chrome key renders the `⟦…⟧` placeholder in prod and throws in dev/test.
+ * This row pins the fact directly and corpus-wide: for every monster's every
+ * typeTag, `srd.creatureTag_${tag}` must resolve non-empty in BOTH locales.
+ */
+describe("type-tag localization completeness (§F.13, D-3)", () => {
+  const ui = { en: mergedUi("en"), it: mergedUi("it") } as const;
+  const tagPairs = MONSTERS.flatMap((m) =>
+    (m.typeTags ?? []).map((tag) => [m.id, tag] as const)
+  );
+
+  it("has at least one tagged monster (the guard exercises real data)", () => {
+    expect(tagPairs.length).toBeGreaterThan(0);
+  });
+
+  it.each(tagPairs)("%s tag %s resolves in both locales", (_id, tag) => {
+    for (const locale of ["en", "it"] as const) {
+      const srdChrome = ui[locale].srd as Record<string, unknown>;
+      const value = srdChrome[`creatureTag_${tag}`];
+      expect(typeof value, `srd.creatureTag_${tag} (${locale})`).toBe("string");
+      expect(
+        (value as string).trim().length,
+        `srd.creatureTag_${tag} (${locale})`
+      ).toBeGreaterThan(0);
     }
   });
 });

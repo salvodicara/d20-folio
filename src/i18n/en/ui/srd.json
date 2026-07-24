@@ -101,6 +101,8 @@
     "creatureTag_angel": "Angel",
     "creatureTag_genie": "Genie",
     "creatureTag_druid": "Druid",
+    "creatureTag_lycanthrope": "Lycanthrope",
+    "creatureTag_titan": "Titan",
     "alignment_lawful-good": "Lawful Good",
     "alignment_neutral-good": "Neutral Good",
     "alignment_chaotic-good": "Chaotic Good",
