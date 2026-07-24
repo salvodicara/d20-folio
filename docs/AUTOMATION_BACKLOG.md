@@ -481,9 +481,16 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       (helper + pact independence + garbage-safety), `spell-slot-override.test.ts` (durability across
       reconcile level-only vs class-change + level-up + the presenter flag), `character-minimal.test.ts`
       (round-trip + fixture-safety), `spells-page.test.tsx` (the durable edit + reset wiring). **T2.**
-- [ ] **RA-34 — Crit consequences unstated at the moment of a crit.** _Attack procedure · GAP ·
+- [x] **RA-34 — Crit consequences unstated at the moment of a crit.** _Attack procedure · GAP ·
       S3._ The crit-range chip ships; "double the dice" appears nowhere at commit time. Fix: one
-      glossary line on the attack card's crit chip. **T3.**
+      glossary line on the attack card's crit chip. **T3.** **SHIPPED (2026-07-24):** the ledger's
+      "crit chip" anchor doesn't exist as a glossable surface (the crit-range fragment is a
+      Champions-only join-string, and a default-20 character gets no crit text at all), so the rule
+      was added to the ALWAYS-present attack-roll `GlossaryTip` body instead — it now states the 2024
+      Critical Hit rule (roll all the attack's damage dice, including extra dice like Sneak Attack,
+      twice; the modifier is added once), reaching every attack card (weapon + spell + non-weapon)
+      and every character, not just Champions. Regression: `glossary-tip.test.tsx` (the crit clause
+      in EN + IT).
 - [ ] **RA-35 — Musician's Encouraging Song grants no Heroic Inspiration.** _Feats (content seed) ·
       GAP · S3._ The feat models only the instrument picks (matrix row honestly notes "melody
       narrative"); the rest-time "give Heroic Inspiration to PB allies" half is ally-targeted

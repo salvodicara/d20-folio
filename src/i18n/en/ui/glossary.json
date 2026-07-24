@@ -4,7 +4,7 @@
     "term": {
       "abilityScores": "The six scores that define your hero, from 3 (feeble) to 20 (legendary). What matters most is the modifier in front: you add it to nearly every roll you make.",
       "armorClass": "How hard you are to hit. An attacker rolls a d20 and adds its bonuses; it hits only if the total meets or beats this number. Armor, shields, and Dexterity raise it.",
-      "attackRoll": "Roll a d20 and add this bonus; you hit if the total meets or beats the target's Armor Class. The bonus is your ability modifier plus your Proficiency Bonus; damage adds only the ability modifier.",
+      "attackRoll": "Roll a d20 and add this bonus; you hit if the total meets or beats the target's Armor Class. The bonus is your ability modifier plus your Proficiency Bonus; damage adds only the ability modifier. On a Critical Hit you roll all the attack's damage dice twice (including extra dice like Sneak Attack) and total them; your modifier is still added only once.",
       "initiative": "When combat starts, everyone rolls a d20 and adds this bonus. The results set the turn order: highest acts first.",
       "speed": "How far you can move on your turn, alongside your action. Difficult terrain costs double.",
       "proficiencyBonus": "Your training bonus. Add it to every roll you are proficient in: trained skills, saving throws, weapon attacks, and your spells. It grows with level, from +2 at level 1 to +6 at level 20.",

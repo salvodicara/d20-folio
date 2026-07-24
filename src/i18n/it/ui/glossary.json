@@ -4,7 +4,7 @@
     "term": {
       "abilityScores": "I sei punteggi che definiscono il tuo eroe, da 3 (gracile) a 20 (leggendario). Ciò che conta di più è il modificatore davanti: lo sommi a quasi ogni tiro che effettui.",
       "armorClass": "Quanto è difficile colpirti. Chi ti attacca tira un d20 e somma i suoi bonus: ti colpisce solo se il totale raggiunge o supera questo numero. Armature, scudi e Destrezza la aumentano.",
-      "attackRoll": "Tira un d20 e somma questo bonus: colpisci se il totale raggiunge o supera la Classe Armatura del bersaglio. Il bonus è il tuo modificatore di caratteristica più il Bonus Competenza; il danno aggiunge solo il modificatore.",
+      "attackRoll": "Tira un d20 e somma questo bonus: colpisci se il totale raggiunge o supera la Classe Armatura del bersaglio. Il bonus è il tuo modificatore di caratteristica più il Bonus Competenza; il danno aggiunge solo il modificatore. Con un Colpo Critico tiri due volte tutti i dadi di danno dell'attacco (compresi i dadi extra come l'Attacco Furtivo) e li sommi; il modificatore si aggiunge comunque una sola volta.",
       "initiative": "Quando inizia un combattimento, ognuno tira un d20 e somma questo bonus. I risultati stabiliscono l'ordine dei turni: il più alto agisce per primo.",
       "speed": "Di quanto puoi muoverti nel tuo turno, oltre alla tua azione. Il terreno difficile costa il doppio.",
       "proficiencyBonus": "Il bonus del tuo addestramento. Lo sommi a ogni tiro in cui hai competenza: abilità, tiri salvezza, attacchi con le armi e i tuoi incantesimi. Cresce con il livello, da +2 al livello 1 fino a +6 al livello 20.",

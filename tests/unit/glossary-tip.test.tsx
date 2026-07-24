@@ -87,6 +87,17 @@ describe("glossary catalogue — completeness (table-driven)", () => {
     expect(itBody, `IT glossary.term.${id} is identical to EN`).not.toBe(en);
   });
 
+  // RA-34 — the always-present attack-roll tip now states the 2024 Critical Hit
+  // rule (roll ALL the attack's damage dice, incl. Sneak Attack, twice; modifier
+  // added once), so the crit consequence reaches every attack card (weapon +
+  // spell) rather than nowhere. Content-level pin (cheapest that fixes the fact).
+  it("RA-34 — the attack-roll body states the Critical Hit damage-dice doubling (EN + IT)", () => {
+    expect(EN_TERMS.attackRoll).toMatch(/Critical Hit/);
+    expect(EN_TERMS.attackRoll.toLowerCase()).toContain("twice");
+    expect(IT_TERMS.attackRoll).toMatch(/Colpo Critico/);
+    expect(IT_TERMS.attackRoll.toLowerCase()).toContain("due volte");
+  });
+
   it("has no dead entry: every catalogue id is referenced from src/", () => {
     const i18nDir = join("src", "i18n");
     const corpus = srcFiles({ exts: [".ts", ".tsx", ".json"] })
