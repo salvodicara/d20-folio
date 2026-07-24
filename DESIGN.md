@@ -571,6 +571,98 @@ If a panel looks like a flat rectangle, the elevation token is missing.
 **The Carved-In / Embossed-Out Rule.** Anything the user types or spends into recedes (inputs, pips);
 anything they read or act on rises (cards, buttons). Depth direction encodes interaction.
 
+### The plate grammar (BG3 panel MATERIAL — owner-directed 2026-07-24)
+
+> The owner's brief, verbatim: _"non puoi fare di meglio? … davvero migliorare i bordi delle
+> schede e farli diventare più fighi come Baldur's Gate 3 senza rompere niente?"_
+
+The elevation vocabulary above owns how far a surface sits off the page. The **plate grammar** owns
+what its EDGE is made of. Studied from the owner's own BG3 spellbook crop plus the trade,
+character-creation, level-up, and trader plates: a BG3 panel is five layers, always in this order —
+
+1. **Cast** — the wide soft drop that separates the plate from the scene. (`--elev-*`, already ours.)
+2. **Moat** — TWO parts, both outside the frame line: a hard 1px near-black **groove** the plate sits
+   in, and a soft symmetric **seat halo** that bleeds the plate's own darkness a few px into the
+   scene behind it. The plate sits in its own shadow, which is what makes it read as an object laid
+   on the page rather than a region cut out of it. This is the most load-bearing layer and the app
+   had neither part. (BG3's plates do this over live 3D backdrops; ours sit on painted art with
+   candles and gilt in it, so they need it more, not less. Decorative shadow only — it darkens the
+   ground AROUND the plate, so every ink contrast ON the plate is unchanged or better.)
+3. **Edge** — the frame line, lit **directionally**. One light, high and slightly left, never moving:
+   the top and left runs catch it, the bottom and right runs take the shade. A flat 1px line of one
+   colour on all four runs is a drawn outline; a lit/shaded pair is a rolled forged lip.
+4. **Body** — grain + vignette + (light theme only) a convex specular crown. Already ours except the
+   specular.
+5. **Ornament** — the style-A corner knot. Rides the frame line, unchanged by any of the above.
+
+The five primitives, per theme (`src/index.css` §05b), consumed at the shared recipes only:
+
+- **`--plate-rule`** — the frame LINE. BG3's runs are warm brass hairlines clearly lighter than the
+  plate they bind; ours was `--border-medium` (#352c1f), so close to the dark surfaces that the
+  frame all but vanished. Dark steps up from `--border-strong` toward the gilt; light deepens the
+  warm tan toward the umber accent (its edge needed inking, not warming).
+- **`--plate-edge`** / **`--plate-edge-hero`** — the moat + the directional bevel, at the two tiers.
+- **`--plate-sheen`** — the convex crown. **Light only** (see the limit below).
+- **`--plate-basin`** — the shallow tray that seats content below the rim, for the flat card
+  recipes that never carried a vignette.
+
+**The two-tier ladder (the state grammar).** BG3 marks the active panel by giving it a _richer
+frame_, never a different shape: the selected origin plaque gains brighter metal, the siblings keep
+the same geometry quieter. Ours does exactly that, and it is the whole of the ladder:
+
+| Tier                                   | Who                                                                               | Token               |
+| -------------------------------------- | --------------------------------------------------------------------------------- | ------------------- |
+| **Quiet**                              | `.folio-panel` · `.info-card` · `.ch-card` · `.party-card` · `.cmp-card`          | `--plate-edge`      |
+| **Hero** (earned — Constitution §4.16) | `.page-head.framed` · `.folio-panel.gilt-frame` · `.modal` · `.tome-leaf-surface` | `--plate-edge-hero` |
+| **Promotion**                          | `.ch-card:hover` / `:focus-visible`                                               | quiet → hero        |
+
+The tiers differ ONLY in light. Geometry, radius, and padding are identical, so no surface can shift
+when its state changes. Guard: `tests/unit/plate-grammar.guard.test.ts`.
+
+**The composition law — `box-shadow` REPLACES, it never merges.** The edge, the moat, and the basin
+all ride `box-shadow`, so any rule that sets `box-shadow` on a plate-bearing selector — a state
+(`:hover`, `[data-selected]`), a theme override, a media query — silently DELETES the material
+unless it composes the `--plate-*` tokens back in. Five states shipped stripped before this was
+pinned (light `.combat-current`, light `.ch-card:hover`, light `.info-card`, light
+`.page-head.framed`, `.ch-card[data-selected]`), so the guard now parses every declaration block in
+`folio.css` and fails any plate selector whose `box-shadow` carries no `--plate-*` token. Two
+documented exemptions: pseudo-element subjects (a `::before` is a child box — the `.folio-panel`
+translucency sandwiches re-carry only `--elev-resting`'s insets) and `.info-card.tip`, the quiet
+note that deliberately sheds its drop.
+
+One binding is theme-partial and pinned as such: `--plate-rule` is the frame line everywhere, but in
+LIGHT `.folio-panel` and `.info-card` re-tint that line at higher specificity (each wants its own
+gilt share, and `--plate-rule` is an inherited custom property, so re-declaring it per recipe would
+leak into nested plates).
+
+**The measured limit — dark ships no specular.** Dark plates are translucent over painted-darkness
+art (`--panel-alpha` 0.9), and `--text-muted` on the brightest composite already sits at **4.70:1**
+against the 4.5 AA floor (`verdict-ink-contrast.test.ts` → "candlelit translucency composite floor").
+A 1.5% cream sheen drops it to 4.53 and is invisible; 3% drops it to 4.36 and FAILS. An added
+highlight that is imperceptible where it is legal has no honest value, so dark's convexity stays
+where it already is — the surface-2 → surface-1 gradient at the crown, the smoke vignette at the
+hem. Light ships the sheen because ivory is flat and its ink has ~14:1 headroom. This is a contrast
+limit, not a taste call; re-opening it means re-deriving the composite floor first.
+
+**What the plate grammar deliberately does NOT do**, and why (all checked against the reference):
+
+- **No twin rail.** BG3 often runs an outer line plus a faint inner parallel. Forbidden here by the
+  **one-line law** (§5, owner 2026-07-24): the host's own 1px border is THE frame line, and a second
+  non-registering line is the exact "doesn't fit inside the borders" defect the owner rejected.
+- **No painted 9-slice frames.** BG3's UI is Noesis/XAML, so every frame is a hand-painted bitmap
+  strip — irregular wear, nicks, per-corner artwork. CSS `border-image` can 9-slice; what we cannot
+  carry is the _paint_. Bitmaps do not enter the eager closure — they land in the **PWA precache**
+  (`bundle-budget.guard.test.ts` → `PRECACHE_CEILING_KIB`, today 8578 / 8945 KiB, ~367 KiB of
+  headroom), and a full frame set is per-theme × per-radius × per-corner artwork that has to be
+  authored and re-authored every time a surface or a theme moves. We can reproduce the _light model_
+  of a painted frame; shipping the paint is an asset-production limit, not a technique one.
+- **No ogee head arch.** Drawable, but it needs the 100px+ of dead head air BG3's near-empty panels
+  have. Our surfaces are information-dense by mandate (Constitution §2.3 / §4.15).
+- **No inset nameplate cartouche.** BG3's panels name themselves once ("Reko", "Shadowheart"); ours
+  hold FIVE-plus named sections each (Abilities · Skills · Resources · Active · Status), so a plaque
+  per head would be five plaques per column — scatter, not craft. The section rubric (diamond +
+  small-caps + fading rule) stays the nameplate. An IA difference, not a fidelity gap.
+
 ## 5. Components
 
 Every interactive component ships default, hover, focus-visible, active, disabled, and (where it
