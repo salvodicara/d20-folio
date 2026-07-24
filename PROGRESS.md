@@ -493,15 +493,21 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     generator (`git rm`'d at the final wave) that regenerates `beasts.ts` + the `beasts.json`
     key deltas from the corpus, wave by wave; the pilot's `brown-bear` is re-derived to its
     2024 statblock (22 HP, Bite +5 1d8+3 / Claw +5 1d4+3, no traits — a live-user Polymorph
-    correctness fix), `rat` already matched. **Data waves 1–2/8 — `a–b` + `c–d` — are IN**
-    (91 monsters: `a–b` = 59 Aboleth…Bulette; `c–d` = 32 Camel…Dust Mephit — the chain/chimera
-    monstrosities, the golems + cloaker, the cloud giant, couatl + deva angels, the djinni genie,
-    the doppelganger/drider/dryad, the NPC humanoids (commoner · cultist(-fanatic) · druid), and
-    the c–d beasts), their beast intersections re-derived: `a–b` re-derived Ape and Allosaurus,
-    `c–d` re-derives **Dire Wolf** to its 2024 statblock (22 HP, Bite +5 1d10+3, Pack Tactics
-    only, gains Darkvision — a live-user Polymorph correctness fix) and unifies the shared IT
-    lexemes to the official IT SRD terms (Ram → "Sfondamento", Hold Breath → "Apnea"). NEXT: the
-    6 remaining data waves (`e–g`…`t–z`).
+    correctness fix), `rat` already matched. **Data waves 1–3/8 — `a–b` + `c–d` + `e–g` — are IN**
+    (155 monsters: `a–b` = 59 Aboleth…Bulette; `c–d` = 32 Camel…Dust Mephit; `e–g` = 64
+    Eagle…Guardian Naga — the elementals (earth/fire) + fire/frost giants, the two genies
+    (efreeti) + the erinyes/glabrezu Fiends, the ettercap/ettin/gargoyle/gibbering-mouther/grick
+    monstrosities, the flesh golem + gorgon, the green hag + guardian naga, the ghoul/ghast undead,
+    the gnoll/goblin(-boss/-minion)/gladiator/guard(-captain)/grimlock NPCs, the gold+green dragon
+    wyrmlings, the griffon, and the deep bench of e–g beasts (eagle · elephant · elk · frog · the
+    18 giant-\* animals · goat)), their beast intersections re-derived: `e–g` projects 55 corpus
+    beasts and delivers the four drifted-value corrections — **Giant Ape** 157→168 HP, **Giant
+    Boar** AC 12→13, **Giant Octopus** 52→45 HP, **Giant Vulture** 22→25 HP — plus every g-beast's
+    2024 attack/trait re-derivation (live-user Polymorph correctness). The `giant-spider` CON 12
+    (+1) that the polymorph CON-delta pin reads is unchanged by the 2024 print, so the pin holds;
+    `giant-vulture` adds the shared `attack.gouge` beast key. `gnoll` joins the monster-tongue
+    language catalogue (the Blink Dog precedent — catalogue-only, not the player picker). NEXT: the
+    5 remaining data waves (`h–k`…`t–z`).
 - **Companions/Extras:** a persistent companion-statblock surface on the sheet (Find Familiar,
   Primal Companion, Drakewarden, Artificer Steel Defender/Homunculus) — closes a
   rules-completeness hole; reuses the bestiary statblock renderer.

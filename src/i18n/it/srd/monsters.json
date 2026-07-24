@@ -2006,6 +2006,333 @@
     "name": "Sonno",
     "text": "Il mephit lancia sonno senza bisogno di componenti, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 10)."
   },
+  "eagle": {
+    "name": "Aquila"
+  },
+  "eagle.actions.talons": {
+    "name": "Speroni",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni Taglienti."
+  },
+  "earth-elemental": {
+    "name": "Elementale della terra"
+  },
+  "earth-elemental.traits.earth-glide": {
+    "name": "Scivolare nella terra",
+    "text": "L'elementale può scavare attraverso la terra e la pietra non magiche e non lavorate, senza disturbare il materiale attraverso cui si muove."
+  },
+  "earth-elemental.traits.siege-monster": {
+    "name": "Mostro da assedio",
+    "text": "L'elementale infligge danni doppi a oggetti e strutture."
+  },
+  "earth-elemental.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'elementale effettua due attacchi, usando Schianto o Lancio di roccia in qualsiasi combinazione."
+  },
+  "earth-elemental.actions.slam": {
+    "name": "Schianto",
+    "text": "Tiro per colpire in mischia: +8, portata 3 m. Colpito: 14 (2d8 + 5) danni Contundenti."
+  },
+  "earth-elemental.actions.rock-launch": {
+    "name": "Lancio di roccia",
+    "text": "Tiro per colpire a distanza: +8, gittata 18 m. Colpito: 8 (1d6 + 5) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra Prono."
+  },
+  "efreeti": {
+    "name": "Efreeti"
+  },
+  "efreeti.traits.elemental-restoration": {
+    "name": "Ristoro elementale",
+    "text": "Se l'efreeti muore al di fuori del Piano Elementale del Fuoco, il suo corpo si dissolve in cenere ed esso ne acquisisce uno nuovo dopo 1d4 giorni, tornando in vita con tutti i suoi punti ferita da qualche parte sul Piano Elementale del Fuoco."
+  },
+  "efreeti.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "L'efreeti dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "efreeti.traits.wishes": {
+    "name": "Desideri",
+    "text": "L'efreeti ha una probabilità del 30% di conoscere l'incantesimo desiderio. Se l'efreeti lo conosce, può lanciarlo solo per conto di una creatura diversa da un genio che comunica un desiderio in un modo che l'efreeti è in grado di comprendere. Se l'efreeti lancia l'incantesimo per conto della creatura, non subisce alcuna conseguenza derivante dal lancio dell'incantesimo. Una volta che l'efreeti l'ha lanciato tre volte, non può farlo di nuovo per 365 giorni."
+  },
+  "efreeti.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'efreeti effettua tre attacchi, usando Lama cocente o Scagliare fiamma in qualsiasi combinazione."
+  },
+  "efreeti.actions.heated-blade": {
+    "name": "Lama cocente",
+    "text": "Tiro per colpire in mischia: +10, portata 1,5 m. Colpito: 13 (2d6 + 6) danni Taglienti più 13 (2d12) danni da Fuoco."
+  },
+  "efreeti.actions.hurl-flame": {
+    "name": "Scagliare fiamma",
+    "text": "Tiro per colpire a distanza: +8, gittata 36 m. Colpito: 24 (7d6) danni da Fuoco."
+  },
+  "efreeti.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "L'efreeti lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Carisma come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 16): 1/giorno ciascuno: Forma gassosa, immagine maggiore, invisibilità, linguaggi, muro di fuoco (di 7º livello), spostamento planare. A volontà: Elementalismo, individuazione del magico."
+  },
+  "elephant": {
+    "name": "Elefante"
+  },
+  "elephant.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'elefante effettua due attacchi Trafiggere."
+  },
+  "elephant.actions.gore": {
+    "name": "Trafiggere",
+    "text": "Tiro per colpire in mischia: +8, portata 1,5 m. Colpito: 15 (2d8 + 6) danni Perforanti. Se il bersaglio è una creatura di taglia Enorme o inferiore e l'elefante si è mosso di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio cade a terra Prono."
+  },
+  "elephant.bonusActions.trample": {
+    "name": "Calpestare",
+    "text": "Tiro salvezza su Destrezza: CD 16, una creatura Prona entro 1,5 metri. Fallimento: 17 (2d10 + 6) danni Contundenti. Successo: danni dimezzati."
+  },
+  "elk": {
+    "name": "Alce"
+  },
+  "elk.actions.ram": {
+    "name": "Sfondamento",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 6 (1d6 + 3) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore e l'alce si è mosso di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio subisce 3 (1d6) danni Contundenti extra e cade a terra Prono."
+  },
+  "erinyes": {
+    "name": "Erinni"
+  },
+  "erinyes.traits.diabolical-restoration": {
+    "name": "Ristoro diabolico",
+    "text": "Se l'erinni muore al di fuori dei Nove Inferi, il suo corpo si dissolve in fumo sulfureo ed essa ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nei Nove Inferi."
+  },
+  "erinyes.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "L'erinni dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "erinyes.traits.magic-rope": {
+    "name": "Corda magica",
+    "text": "L'erinni possiede una corda magica. Finché la porta con sé, può usare l'azione Corda avvinghiante. La corda ha CA 20, 90 PF, e immunità ai danni Psichici e da Veleno. La corda si trasforma in polvere se viene ridotta a 0 punti ferita, se si trova a 1,5 metri o più dall'erinni per 1 ora o più, o se l'erinni muore. Se la corda è danneggiata o distrutta, l'erinni può ripristinarla interamente al termine di un riposo breve o lungo."
+  },
+  "erinyes.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'erinni effettua tre attacchi Spada inaridente e può usare Corda avvinghiante."
+  },
+  "erinyes.actions.withering-sword": {
+    "name": "Spada inaridente",
+    "text": "Tiro per colpire in mischia: +8, portata 1,5 m. Colpito: 13 (2d8 + 4) danni Taglienti più 11 (2d10) danni Necrotici."
+  },
+  "erinyes.actions.entangling-rope": {
+    "name": "Corda avvinghiante",
+    "text": "(Richiede Corda magica) Tiro salvezza su Forza: CD 16, una creatura che l'erinni è in grado di vedere entro 36 metri. Fallimento: 14 (4d6) danni da Forza, e il bersaglio è Trattenuto finché la corda non viene distrutta, finché l'erinni non usa un'azione bonus per liberare il bersaglio, o finché l'erinni non usa nuovamente Corda avvinghiante."
+  },
+  "erinyes.reactions.parry": {
+    "name": "Parata",
+    "text": "Attivazione: l'erinni viene colpita da un tiro per colpire in mischia mentre tiene in mano un'arma. Esito: l'erinni aggiunge 4 alla sua CA contro quell'attacco, aumentando le probabilità che il colpo non vada a segno."
+  },
+  "ettercap": {
+    "name": "Ettercap"
+  },
+  "ettercap.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "L'ettercap può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "ettercap.traits.web-walker": {
+    "name": "Andatura sulla ragnatela",
+    "text": "L'ettercap ignora le restrizioni di movimento causate dalle ragnatele e conosce l'ubicazione esatta di ogni altra creatura a contatto con la stessa ragnatela."
+  },
+  "ettercap.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'ettercap effettua un attacco Morso e un attacco Artiglio."
+  },
+  "ettercap.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Perforanti più 2 (1d4) danni da Veleno, e il bersaglio è Avvelenato fino all'inizio del turno successivo dell'ettercap."
+  },
+  "ettercap.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 7 (2d4 + 2) danni Taglienti."
+  },
+  "ettercap.actions.web-strand": {
+    "name": "Filo di ragnatela",
+    "text": "Tiro salvezza su Destrezza: CD 12, una creatura di taglia Grande o inferiore che l'ettercap è in grado di vedere entro 9 metri. Fallimento: il bersaglio è Trattenuto finché la ragnatela non viene distrutta (CA 10; PF 5; vulnerabilità ai danni da Fuoco; immunità ai danni Contundenti, Psichici e da Veleno)."
+  },
+  "ettercap.bonusActions.reel": {
+    "name": "Riavvolgere",
+    "text": "L'ettercap attira in linea retta verso di sé una creatura entro 9 metri Trattenuta dal suo Filo di ragnatela per un massimo di 7,5 metri."
+  },
+  "ettin": {
+    "name": "Ettin"
+  },
+  "ettin.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'ettin effettua un attacco Ascia da battaglia e un attacco Mazza chiodata."
+  },
+  "ettin.actions.battleaxe": {
+    "name": "Ascia da battaglia",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 14 (2d8 + 5) danni Taglienti. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra Prono."
+  },
+  "ettin.actions.morningstar": {
+    "name": "Mazza chiodata",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 14 (2d8 + 5) danni Perforanti, e il bersaglio subisce svantaggio al tiro per colpire successivo che effettua prima del termine del proprio turno successivo."
+  },
+  "fire-elemental": {
+    "name": "Elementale del fuoco"
+  },
+  "fire-elemental.traits.fire-aura": {
+    "name": "Aura di fuoco",
+    "text": "Alla fine di ogni turno dell'elementale, tutte le creature in un'emanazione di 3 metri di cui l'elementale è il punto di origine subiscono 5 (1d10) danni da Fuoco. Le creature e gli oggetti infiammabili che si trovano nell'emanazione iniziano a bruciare."
+  },
+  "fire-elemental.traits.fire-form": {
+    "name": "Forma di fuoco",
+    "text": "L'elementale può muoversi attraverso uno spazio stretto fino a 2,5 centimetri senza consumare movimento extra per farlo, e può entrare nello spazio di una creatura e fermarvisi. La prima volta che entra nello spazio di una creatura in un turno, quella creatura subisce 5 (1d10) danni da Fuoco."
+  },
+  "fire-elemental.traits.illumination": {
+    "name": "Illuminazione",
+    "text": "L'elementale emana luce intensa in un raggio di 9 metri e luce fioca per altri 9 metri."
+  },
+  "fire-elemental.traits.water-susceptibility": {
+    "name": "Suscettibilità all'acqua",
+    "text": "Per ogni 1,5 metri di cui l'elementale si muove nell'acqua o per ogni 4 litri d'acqua versatigli addosso, l'elementale subisce 3 (1d6) danni da Freddo."
+  },
+  "fire-elemental.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'elementale effettua due attacchi Bruciatura."
+  },
+  "fire-elemental.actions.burn": {
+    "name": "Bruciatura",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 10 (2d6 + 3) danni da Fuoco. Se il bersaglio è una creatura o un oggetto infiammabile, inizia a bruciare."
+  },
+  "fire-giant": {
+    "name": "Gigante del fuoco"
+  },
+  "fire-giant.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il gigante effettua due attacchi, usando Spada di fiamme o Lancio di martello in qualsiasi combinazione."
+  },
+  "fire-giant.actions.flame-sword": {
+    "name": "Spada di fiamme",
+    "text": "Tiro per colpire in mischia: +11, portata 3 m. Colpito: 21 (4d6 + 7) danni Taglienti più 10 (3d6) danni da Fuoco."
+  },
+  "fire-giant.actions.hammer-throw": {
+    "name": "Lancio di martello",
+    "text": "Tiro per colpire a distanza: +11, gittata 18/72 m. Colpito: 23 (3d10 + 7) danni Contundenti più 4 (1d8) danni da Fuoco, il bersaglio viene spinto in linea retta fino a un massimo di 4,5 metri di distanza dal gigante, e subisce svantaggio al tiro per colpire successivo che effettua prima del termine del proprio turno successivo."
+  },
+  "flesh-golem": {
+    "name": "Golem di carne"
+  },
+  "flesh-golem.traits.aversion-to-fire": {
+    "name": "Avversione al fuoco",
+    "text": "Se il golem subisce danni da Fuoco, subisce svantaggio ai tiri per colpire e alle prove di caratteristica fino al termine del proprio turno successivo."
+  },
+  "flesh-golem.traits.berserk": {
+    "name": "Berserk",
+    "text": "Ogni volta che il golem inizia il suo turno sanguinante, tira 1d6. Se esce 6, il golem entra in uno stato di berserk. A ogni suo turno, finché è in stato di berserk, il golem attacca la creatura più vicina che è in grado di vedere. Se nessuna creatura è abbastanza vicina per essere attaccata, il golem si scaglia contro un oggetto. Una volta che il golem entra in stato di berserk, rimane in questo stato finché non viene distrutto o non è più sanguinante. Il creatore del golem, se si trova entro 18 metri dal golem in stato di berserk, può cercare di calmarlo eseguendo un'azione per effettuare una prova di Carisma (Persuasione) con CD 15. Il golem deve essere in grado di udire il suo creatore. Se la prova ha successo, il golem esce dallo stato di berserk fino all'inizio del proprio turno successivo; a quel punto, se è ancora sanguinante, riprende a effettuare il tiro del tratto Berserk."
+  },
+  "flesh-golem.traits.immutable-form": {
+    "name": "Forma immutabile",
+    "text": "Il golem non può mutare forma."
+  },
+  "flesh-golem.traits.lightning-absorption": {
+    "name": "Assorbimento del fulmine",
+    "text": "Ogni volta che il golem subisce danni da Fulmine, recupera un numero di punti ferita pari ai danni da Fulmine inflitti."
+  },
+  "flesh-golem.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il golem dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "flesh-golem.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il golem effettua due attacchi Schianto."
+  },
+  "flesh-golem.actions.slam": {
+    "name": "Schianto",
+    "text": "Tiro per colpire in mischia: +7, portata 1,5 m. Colpito: 13 (2d8 + 4) danni Contundenti più 4 (1d8) danni da Fulmine."
+  },
+  "flying-snake": {
+    "name": "Serpente volante"
+  },
+  "flying-snake.traits.flyby": {
+    "name": "Volo sfuggente",
+    "text": "Il serpente non provoca attacchi di opportunità quando vola oltre la portata di un nemico."
+  },
+  "flying-snake.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 1 danno Perforante più 5 (2d4) danni da Veleno."
+  },
+  "frog": {
+    "name": "Rana"
+  },
+  "frog.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "La rana può respirare in aria e in acqua."
+  },
+  "frog.traits.standing-leap": {
+    "name": "Balzo da fermo",
+    "text": "La rana può compiere un salto in lungo di un massimo di 3 metri e uno in alto di un massimo di 1,5 metri, con o senza rincorsa."
+  },
+  "frog.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 1 danno Perforante."
+  },
+  "frost-giant": {
+    "name": "Gigante del gelo"
+  },
+  "frost-giant.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il gigante effettua due attacchi, usando Ascia del gelo o Grande arco in qualsiasi combinazione."
+  },
+  "frost-giant.actions.frost-axe": {
+    "name": "Ascia del gelo",
+    "text": "Tiro per colpire in mischia: +9, portata 3 m. Colpito: 19 (2d12 + 6) danni Taglienti più 9 (2d8) danni da Freddo."
+  },
+  "frost-giant.actions.great-bow": {
+    "name": "Grande arco",
+    "text": "Tiro per colpire a distanza: +9, gittata 45/180 m. Colpito: 17 (2d10 + 6) danni Perforanti più 7 (2d6) danni da Freddo, e la velocità del bersaglio è ridotta di 3 metri fino al termine del proprio turno successivo."
+  },
+  "frost-giant.bonusActions.war-cry": {
+    "name": "Grido di battaglia",
+    "text": "Il gigante o una creatura a sua scelta che il gigante è in grado di vedere o di sentire ottiene 16 (2d10 + 5) punti ferita temporanei e dispone di vantaggio ai tiri per colpire fino all'inizio del turno successivo del gigante."
+  },
+  "gargoyle": {
+    "name": "Gargoyle"
+  },
+  "gargoyle.traits.flyby": {
+    "name": "Volo sfuggente",
+    "text": "Il gargoyle non provoca attacchi di opportunità quando vola oltre la portata di un nemico."
+  },
+  "gargoyle.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il gargoyle effettua due attacchi Artiglio."
+  },
+  "gargoyle.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 7 (2d4 + 2) danni Taglienti."
+  },
+  "gelatinous-cube": {
+    "name": "Cubo gelatinoso"
+  },
+  "gelatinous-cube.traits.ooze-cube": {
+    "name": "Cubo di melma",
+    "text": "Il cubo occupa il suo intero spazio ed è trasparente. Le altre creature possono entrare in quello spazio, ma la creatura che lo fa è soggetta all'azione del cubo Avviluppare e subisce svantaggio al tiro salvezza. Le creature all'interno del cubo beneficiano di copertura totale, e il cubo può contenere una creatura di taglia Grande o fino a quattro creature di taglia Media o Piccola contemporaneamente. Con un'azione, una creatura entro 1,5 metri dal cubo può tirare fuori dal cubo una creatura o un oggetto superando una prova di Forza (Atletica) con CD 12, e chi esegue questa azione subisce 10 (3d6) danni da Acido."
+  },
+  "gelatinous-cube.traits.transparent": {
+    "name": "Trasparente",
+    "text": "Anche quando il cubo è in piena vista, una creatura deve superare una prova di Saggezza (Percezione) con CD 15 per avvistare il cubo se la creatura non ha visto il cubo muoversi o agire in un altro modo."
+  },
+  "gelatinous-cube.actions.pseudopod": {
+    "name": "Pseudopode",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 12 (3d6 + 2) danni da Acido."
+  },
+  "gelatinous-cube.actions.engulf": {
+    "name": "Avviluppare",
+    "text": "Il cubo si muove fino alla sua velocità massima senza provocare attacchi di opportunità. Il cubo può muoversi nello spazio di creature di taglia Grande o inferiore se, al suo interno, ha spazio sufficiente a contenerle (vedi il tratto Cubo di melma). Tiro salvezza su Destrezza: CD 12, tutte le creature nel cui spazio il cubo entra per la prima volta durante questo movimento. Fallimento: 10 (3d6) danni da Acido, e il bersaglio è avviluppato. Un bersaglio avviluppato soffoca, non può lanciare incantesimi con una componente Verbale, è Trattenuto e subisce 10 (3d6) danni da Acido all'inizio di ogni turno del cubo. Quando il cubo si muove, il bersaglio avviluppato si muove insieme a esso. Un bersaglio avviluppato può tentare di sfuggire usando un'azione per effettuare una prova di Forza (Atletica) con CD 12. Se la prova viene superata, il bersaglio sfugge ed entra nello spazio libero più vicino. Successo: danni dimezzati, e il bersaglio si sposta in uno spazio libero entro 1,5 metri dal cubo. Se non c'è alcuno spazio libero, il bersaglio fallisce la prova."
+  },
+  "ghast": {
+    "name": "Ghast"
+  },
+  "ghast.traits.stench": {
+    "name": "Fetore",
+    "text": "Tiro salvezza su Costituzione: CD 10, ogni creatura che inizi il suo turno in un'emanazione di 1,5 metri di cui il ghast è il punto di origine. Fallimento: il bersaglio è Avvelenato fino all'inizio del proprio turno successivo. Successo: il bersaglio è immune a Fetore di questo ghast per 24 ore."
+  },
+  "ghast.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Perforanti più 9 (2d8) danni Necrotici."
+  },
+  "ghast.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Taglienti. Se il bersaglio è una creatura diversa da un non morto, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 10. Fallimento: il bersaglio è Paralizzato fino al termine del proprio turno successivo."
+  },
   "ghost": {
     "name": "Fantasma"
   },
@@ -2037,6 +2364,486 @@
     "name": "Possessione",
     "text": "Tiro salvezza su Carisma: CD 13, un umanoide che il fantasma è in grado di vedere entro 1,5 metri. Fallimento: il bersaglio è posseduto dal fantasma; il fantasma scompare e il bersaglio è Incapacitato e perde il controllo del suo corpo. Ora il fantasma controlla il corpo del bersaglio, ma senza privarlo della sua consapevolezza. Il fantasma non può essere il bersaglio di alcun attacco, incantesimo o altro effetto, ad eccezione di quelli che bersagliano specificatamente i non morti. Le statistiche di gioco del fantasma sono le stesse, ma il fantasma usa la velocità e i modificatori di Forza, Destrezza e Costituzione del bersaglio. La possessione dura finché il corpo non scende a 0 punti ferita o il fantasma non lo abbandona con un'azione bonus. Quando la possessione termina, il fantasma riappare in uno spazio libero entro 1,5 metri dal bersaglio, e il bersaglio è immune alla Possessione di questo fantasma per 24 ore. Successo: Il bersaglio è immune alla Possessione di questo fantasma per 24 ore."
   },
+  "ghoul": {
+    "name": "Ghoul"
+  },
+  "ghoul.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il ghoul effettua due attacchi Morso."
+  },
+  "ghoul.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Perforanti più 3 (1d6) danni Necrotici."
+  },
+  "ghoul.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni Taglienti. Se il bersaglio è una creatura diversa da un non morto o da un elfo, subisce il seguente effetto. Tiro salvezza su Costituzione: CD 10. Fallimento: il bersaglio è Paralizzato fino al termine del proprio turno successivo."
+  },
+  "giant-ape": {
+    "name": "Gorilla gigante"
+  },
+  "giant-ape.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il gorilla effettua due attacchi Pugno."
+  },
+  "giant-ape.actions.fist": {
+    "name": "Pugno",
+    "text": "Tiro per colpire in mischia: +9, portata 3 m. Colpito: 22 (3d10 + 6) danni Contundenti."
+  },
+  "giant-ape.actions.boulder-toss": {
+    "name": "Lancio di massi",
+    "text": "Il gorilla scaglia un masso verso un punto che è in grado di vedere entro 27 metri. Tiro salvezza su Destrezza: CD 17, tutte le creature in una sfera dal raggio di 1,5 metri centrata su quel punto. Fallimento: 24 (7d6) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra Prono. Successo: danni dimezzati."
+  },
+  "giant-ape.bonusActions.leap": {
+    "name": "Balzo",
+    "text": "Il gorilla salta fino a 9 metri usando 3 metri di movimento."
+  },
+  "giant-badger": {
+    "name": "Tasso gigante"
+  },
+  "giant-badger.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 6 (2d4 + 1) danni Perforanti."
+  },
+  "giant-bat": {
+    "name": "Pipistrello gigante"
+  },
+  "giant-bat.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 6 (1d6 + 3) danni Perforanti."
+  },
+  "giant-boar": {
+    "name": "Cinghiale gigante"
+  },
+  "giant-boar.traits.bloodied-fury": {
+    "name": "Furia sanguinante",
+    "text": "Il cinghiale dispone di vantaggio ai tiri per colpire in mischia mentre è sanguinante."
+  },
+  "giant-boar.actions.gore": {
+    "name": "Trafiggere",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore e il cinghiale si è mosso di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio subisce 7 (2d6) danni Perforanti extra e cade a terra Prono."
+  },
+  "giant-centipede": {
+    "name": "Millepiedi gigante"
+  },
+  "giant-centipede.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 4 (1d4 + 2) danni Perforanti, e il bersaglio è Avvelenato fino all'inizio del turno successivo del millepiedi."
+  },
+  "giant-constrictor-snake": {
+    "name": "Serpente stritolatore gigante"
+  },
+  "giant-constrictor-snake.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il serpente effettua un attacco Morso e usa Stritolare."
+  },
+  "giant-constrictor-snake.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 11 (2d6 + 4) danni Perforanti."
+  },
+  "giant-constrictor-snake.actions.constrict": {
+    "name": "Stritolare",
+    "text": "Tiro salvezza su Forza: CD 14, una creatura di taglia Grande o inferiore che il serpente è in grado di vedere entro 3 metri. Fallimento: 13 (2d8 + 4) danni Contundenti, e il bersaglio è Afferrato (CD 14 per sfuggire)."
+  },
+  "giant-crab": {
+    "name": "Granchio gigante"
+  },
+  "giant-crab.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il granchio può respirare in aria e in acqua."
+  },
+  "giant-crab.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 4 (1d6 + 1) danni Contundenti. Se il bersaglio è una creatura di taglia Media o inferiore, è Afferrato (CD 11 per sfuggire) da una delle due chele."
+  },
+  "giant-crocodile": {
+    "name": "Coccodrillo gigante"
+  },
+  "giant-crocodile.traits.hold-breath": {
+    "name": "Apnea",
+    "text": "Il coccodrillo può trattenere il respiro per 1 ora."
+  },
+  "giant-crocodile.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il coccodrillo effettua un attacco Morso e un attacco Coda."
+  },
+  "giant-crocodile.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +8, portata 1,5 m. Colpito: 21 (3d10 + 5) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 15 per sfuggire). Mentre è Afferrato, il bersaglio è Trattenuto e non può essere bersagliato dalla Coda del coccodrillo."
+  },
+  "giant-crocodile.actions.tail": {
+    "name": "Coda",
+    "text": "Tiro per colpire in mischia: +8, portata 3 m. Colpito: 18 (3d8 + 5) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore, cade a terra Prono."
+  },
+  "giant-eagle": {
+    "name": "Aquila gigante"
+  },
+  "giant-eagle.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "L'aquila effettua due attacchi Squarcio."
+  },
+  "giant-eagle.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 5 (1d4 + 3) danni Taglienti più 3 (1d6) danni Radiosi."
+  },
+  "giant-elk": {
+    "name": "Alce gigante"
+  },
+  "giant-elk.actions.ram": {
+    "name": "Sfondamento",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 11 (2d6 + 4) danni Contundenti più 5 (2d4) danni Radiosi. Se il bersaglio è una creatura di taglia Enorme o inferiore e l'alce si è mosso di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio subisce 5 (2d4) danni Contundenti extra e cade a terra Prono."
+  },
+  "giant-fire-beetle": {
+    "name": "Scarabeo di fuoco gigante"
+  },
+  "giant-fire-beetle.traits.illumination": {
+    "name": "Illuminazione",
+    "text": "Lo scarabeo proietta luce intensa in un raggio di 3 metri e luce fioca per altri 3 metri."
+  },
+  "giant-fire-beetle.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +1, portata 1,5 m. Colpito: 1 danno da Fuoco."
+  },
+  "giant-frog": {
+    "name": "Rana gigante"
+  },
+  "giant-frog.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "La rana può respirare in aria e in acqua."
+  },
+  "giant-frog.traits.standing-leap": {
+    "name": "Balzo da fermo",
+    "text": "La rana può compiere un salto in lungo di un massimo di 6 metri e uno in alto di un massimo di 3 metri, con o senza rincorsa."
+  },
+  "giant-frog.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Perforanti. Se il bersaglio è una creatura di taglia Media o inferiore, è Afferrato (CD 11 per sfuggire)."
+  },
+  "giant-frog.actions.swallow": {
+    "name": "Inghiottire",
+    "text": "La rana inghiotte un bersaglio di taglia Piccola o inferiore che sta afferrando. La creatura inghiottita non è Afferrata, ma è Accecata e Trattenuta, e beneficia di copertura totale contro attacchi e altri effetti al di fuori della rana. Mentre inghiotte il bersaglio, la rana non può usare Morso; se la rana muore, il bersaglio inghiottito non è più Trattenuto e può fuggire dal cadavere usando 1,5 metri di movimento, uscendo Prono. Alla fine del turno successivo della rana, il bersaglio inghiottito subisce 5 (2d4) danni da Acido. Se i danni non uccidono il bersaglio, la rana lo vomita, facendolo uscire Prono."
+  },
+  "giant-goat": {
+    "name": "Capra gigante"
+  },
+  "giant-goat.actions.ram": {
+    "name": "Sfondamento",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 6 (1d6 + 3) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore e la capra si è mossa di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio subisce 5 (2d4) danni Contundenti extra e cade a terra Prono."
+  },
+  "giant-hyena": {
+    "name": "Iena gigante"
+  },
+  "giant-hyena.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 10 (2d6 + 3) danni Perforanti."
+  },
+  "giant-hyena.bonusActions.rampage": {
+    "name": "Furia",
+    "text": "Subito dopo aver inflitto danni a una creatura già sanguinante, la iena si muove fino a metà della sua velocità, ed effettua un attacco Morso."
+  },
+  "giant-lizard": {
+    "name": "Lucertola gigante"
+  },
+  "giant-lizard.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "La lucertola può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "giant-lizard.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 6 (1d8 + 2) danni Perforanti."
+  },
+  "giant-octopus": {
+    "name": "Piovra gigante"
+  },
+  "giant-octopus.traits.water-breathing": {
+    "name": "Respirare sott'acqua",
+    "text": "La piovra può respirare soltanto sott'acqua e può trattenere il respiro per 1 ora fuori dall'acqua."
+  },
+  "giant-octopus.actions.tentacles": {
+    "name": "Tentacoli",
+    "text": "Tiro per colpire in mischia: +5, portata 3 m. Colpito: 10 (2d6 + 3) danni Contundenti. Se il bersaglio è una creatura di taglia Media o inferiore, è Afferrato (CD 13 per sfuggire) da tutti e otto i tentacoli. Mentre è Afferrato, il bersaglio è anche Trattenuto."
+  },
+  "giant-octopus.reactions.ink-cloud": {
+    "name": "Nube di inchiostro",
+    "text": "Attivazione: la piovra subisce danni finché si trova sott'acqua. Esito: la piovra rilascia abbastanza inchiostro da riempire un cubo con spigolo di 3 metri intorno a sé, e può muoversi fino alla sua velocità di nuoto massima. Il cubo è pesantemente oscurato per 1 minuto, o finché una corrente forte o un altro effetto simile non disperde l'inchiostro."
+  },
+  "giant-owl": {
+    "name": "Gufo gigante"
+  },
+  "giant-owl.traits.flyby": {
+    "name": "Volo sfuggente",
+    "text": "Il gufo non provoca attacchi di opportunità quando vola oltre la portata di un nemico."
+  },
+  "giant-owl.actions.talons": {
+    "name": "Speroni",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 7 (1d10 + 2) danni Taglienti."
+  },
+  "giant-owl.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il gufo lancia uno dei seguenti incantesimi, senza bisogno di componenti, utilizzando Saggezza come caratteristica da incantatore: 1/giorno: Chiaroveggenza. A volontà: Individuazione del bene e del male, individuazione del magico."
+  },
+  "giant-rat": {
+    "name": "Topo gigante"
+  },
+  "giant-rat.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "Il topo dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno degli alleati del topo si trova entro 1,5 metri dalla creatura e non è Incapacitato."
+  },
+  "giant-rat.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 5 (1d4 + 3) danni Perforanti."
+  },
+  "giant-scorpion": {
+    "name": "Scorpione gigante"
+  },
+  "giant-scorpion.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Lo scorpione effettua due attacchi Artiglio e un attacco Pungiglione."
+  },
+  "giant-scorpion.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 6 (1d6 + 3) danni Contundenti. Se il bersaglio è una creatura di taglia Grande o inferiore, è Afferrato (CD 13 per sfuggire) da una delle due chele."
+  },
+  "giant-scorpion.actions.sting": {
+    "name": "Pungiglione",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Perforanti più 11 (2d10) danni da Veleno."
+  },
+  "giant-seahorse": {
+    "name": "Cavalluccio marino gigante"
+  },
+  "giant-seahorse.traits.water-breathing": {
+    "name": "Respirare sott'acqua",
+    "text": "Il cavalluccio marino può respirare solo sott'acqua."
+  },
+  "giant-seahorse.actions.ram": {
+    "name": "Sfondamento",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 9 (2d6 + 2) danni Contundenti, o 11 (2d8 + 2) danni Contundenti se il cavalluccio marino si è mosso di 6 metri o più in linea retta verso il bersaglio subito prima del colpo."
+  },
+  "giant-seahorse.bonusActions.bubble-dash": {
+    "name": "Scatto acquatico",
+    "text": "Finché è sott'acqua, il cavalluccio marino può muoversi fino alla metà della sua velocità di nuoto senza provocare attacchi di opportunità."
+  },
+  "giant-shark": {
+    "name": "Squalo gigante"
+  },
+  "giant-shark.traits.water-breathing": {
+    "name": "Respirare sott'acqua",
+    "text": "Lo squalo può respirare soltanto sott'acqua."
+  },
+  "giant-shark.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Lo squalo effettua due attacchi Morso."
+  },
+  "giant-shark.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +9 (con vantaggio se il bersaglio non ha tutti i punti ferita), portata 1,5 m. Colpito: 22 (3d10 + 6) danni Perforanti."
+  },
+  "giant-spider": {
+    "name": "Ragno gigante"
+  },
+  "giant-spider.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "Il ragno può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "giant-spider.traits.web-walker": {
+    "name": "Andatura sulla ragnatela",
+    "text": "Il ragno ignora le restrizioni di movimento causate dalle ragnatele e conosce l'ubicazione esatta di ogni altra creatura a contatto con la stessa ragnatela."
+  },
+  "giant-spider.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 7 (1d8 + 3) danni Perforanti più 7 (2d6) danni da Veleno."
+  },
+  "giant-spider.actions.web": {
+    "name": "Ragnatela",
+    "text": "Tiro salvezza su Destrezza: CD 13, una creatura che il ragno è in grado di vedere entro 18 metri. Fallimento: il bersaglio è Trattenuto finché la ragnatela non viene distrutta (CA 10; PF 5; vulnerabilità ai danni da Fuoco; immunità ai danni da Veleno e Psichici)."
+  },
+  "giant-toad": {
+    "name": "Rospo gigante"
+  },
+  "giant-toad.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il rospo può respirare in aria e in acqua."
+  },
+  "giant-toad.traits.standing-leap": {
+    "name": "Balzo da fermo",
+    "text": "Il rospo può compiere un salto in lungo di massimo 6 metri e uno in alto di massimo 3 metri, con o senza rincorsa."
+  },
+  "giant-toad.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Perforanti più 5 (2d4) danni da Veleno. Se il bersaglio è una creatura di taglia Media o inferiore, è Afferrato (CD 12 per sfuggire)."
+  },
+  "giant-toad.actions.swallow": {
+    "name": "Inghiottire",
+    "text": "Il rospo inghiotte un bersaglio di taglia Media o inferiore che sta afferrando. La creatura inghiottita non è Afferrata, ma è Accecata e Trattenuta, e beneficia di copertura totale contro attacchi e altri effetti al di fuori del rospo. Inoltre, il bersaglio subisce 10 (3d6) danni da Acido al termine di ogni turno del rospo. Il rospo può inghiottire un solo bersaglio alla volta e non può usare Morso finché ha un bersaglio inghiottito. Se il rospo muore, la creatura inghiottita non è più Trattenuta e può fuggire dal cadavere usando 1,5 metri di movimento, uscendo Prona."
+  },
+  "giant-venomous-snake": {
+    "name": "Serpente velenoso gigante"
+  },
+  "giant-venomous-snake.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +6, portata 3 m. Colpito: 6 (1d4 + 4) danni Perforanti più 4 (1d8) danni da Veleno."
+  },
+  "giant-vulture": {
+    "name": "Avvoltoio gigante"
+  },
+  "giant-vulture.traits.pack-tactics": {
+    "name": "Tattiche del branco",
+    "text": "L'avvoltoio dispone di vantaggio a un tiro per colpire contro una creatura se almeno uno dei suoi alleati si trova entro 1,5 metri dalla creatura e non è Incapacitato."
+  },
+  "giant-vulture.actions.gouge": {
+    "name": "Cavare",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 9 (2d6 + 2) danni Perforanti, e il bersaglio è Avvelenato fino al termine del proprio turno successivo."
+  },
+  "giant-wasp": {
+    "name": "Vespa gigante"
+  },
+  "giant-wasp.traits.flyby": {
+    "name": "Volo sfuggente",
+    "text": "La vespa non provoca attacchi di opportunità quando vola oltre la portata di un nemico."
+  },
+  "giant-wasp.actions.sting": {
+    "name": "Pungiglione",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Perforanti più 5 (2d4) danni da Veleno."
+  },
+  "giant-weasel": {
+    "name": "Faina gigante"
+  },
+  "giant-weasel.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 5 (1d4 + 3) danni Perforanti."
+  },
+  "giant-wolf-spider": {
+    "name": "Ragno lupo gigante"
+  },
+  "giant-wolf-spider.traits.spider-climb": {
+    "name": "Movimenti del ragno",
+    "text": "Il ragno può scalare le superfici difficili, compresi i soffitti, senza effettuare una prova di caratteristica."
+  },
+  "giant-wolf-spider.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 5 (1d4 + 3) danni Perforanti più 5 (2d4) danni da Veleno."
+  },
+  "gibbering-mouther": {
+    "name": "Fauce gorgogliante"
+  },
+  "gibbering-mouther.traits.aberrant-ground": {
+    "name": "Terreno aberrante",
+    "text": "Il terreno in un'emanazione di 3 metri di cui la fauce gorgogliante è il punto di origine è considerato terreno difficile."
+  },
+  "gibbering-mouther.traits.gibbering": {
+    "name": "Gorgogliare",
+    "text": "La fauce gorgoglia in modo incoerente fintanto che non è Incapacitata. Tiro salvezza su Saggezza: CD 10, ogni creatura che inizi il suo turno entro 6 metri dalla fauce finché questa gorgoglia. Fallimento: il bersaglio tira 1d8 per determinare cosa fare nel turno corrente: 1–4. Il bersaglio non fa nulla. 5–6. Il bersaglio non effettua alcuna azione, né azione bonus, e usa tutto il suo movimento per muoversi in una direzione casuale. 7–8. Il bersaglio effettua un attacco in mischia contro una creatura determinata casualmente entro la sua portata, oppure non fa nulla se non riesce a eseguire tale attacco."
+  },
+  "gibbering-mouther.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 7 (2d6) danni Perforanti. Se il bersaglio è una creatura di taglia Media o inferiore, cade a terra Prono. Il bersaglio muore se viene ridotto a 0 punti ferita da questo attacco. Del suo corpo, che viene assorbito dalla fauce gorgogliante, resta solo l'equipaggiamento."
+  },
+  "gibbering-mouther.actions.blinding-spittle": {
+    "name": "Sputo accecante",
+    "text": "Tiro salvezza su Destrezza: CD 10, tutte le creature in una sfera di 3 metri di raggio centrata su un punto entro 9 metri. Fallimento: 7 (2d6) danni Radiosi, e il bersaglio è Accecato fino al termine del turno successivo della fauce gorgogliante."
+  },
+  "glabrezu": {
+    "name": "Glabrezu"
+  },
+  "glabrezu.traits.demonic-restoration": {
+    "name": "Ristoro demoniaco",
+    "text": "Se il glabrezu muore al di fuori dell'Abisso, il suo corpo si dissolve diventando icore e ne acquisisce uno nuovo all'istante, tornando in vita con tutti i suoi punti ferita da qualche parte nell'Abisso."
+  },
+  "glabrezu.traits.magic-resistance": {
+    "name": "Resistenza alla magia",
+    "text": "Il glabrezu dispone di vantaggio ai tiri salvezza contro incantesimi e altri effetti magici."
+  },
+  "glabrezu.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il glabrezu effettua due attacchi Tenaglia, e utilizza Pugno o Incantesimi."
+  },
+  "glabrezu.actions.pincer": {
+    "name": "Tenaglia",
+    "text": "Tiro per colpire in mischia: +9, portata 3 m. Colpito: 16 (2d10 + 5) danni Taglienti. Se il bersaglio è una creatura di taglia Media o inferiore viene Afferrato (CD 15 per sfuggire) da una delle due tenaglie."
+  },
+  "glabrezu.actions.pummel": {
+    "name": "Pugno",
+    "text": "Tiro salvezza su Destrezza: CD 17, una creatura Afferrata dal glabrezu. Fallimento: 15 (3d6 + 5) danni Contundenti. Successo: danni dimezzati."
+  },
+  "glabrezu.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "Il glabrezu lancia uno dei seguenti incantesimi senza bisogno di componenti materiali, utilizzando Intelligenza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 16): 1/giorno ciascuno: confusione, parola del potere stordire, volare. A volontà: dissolvi magie, individuazione del magico, oscurità."
+  },
+  "gladiator": {
+    "name": "Gladiatore"
+  },
+  "gladiator.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il gladiatore effettua tre attacchi Lancia. Può sostituire un attacco con un utilizzo di Scudo da sfondamento."
+  },
+  "gladiator.actions.spear": {
+    "name": "Lancia",
+    "text": "Tiro per colpire in mischia o a distanza: +7, portata 1,5 m o gittata 6/18 m. Colpito: 11 (2d6 + 4) danni Perforanti."
+  },
+  "gladiator.actions.shield-bash": {
+    "name": "Scudo da sfondamento",
+    "text": "Tiro salvezza su Forza: CD 15, una creatura entro 1,5 metri che il gladiatore è in grado di vedere. Fallimento: 9 (2d4 + 4) danni Contundenti. Se il bersaglio è una creatura di taglia Media o inferiore, cade a terra Prono."
+  },
+  "gladiator.reactions.parry": {
+    "name": "Parata",
+    "text": "Attivazione: il gladiatore viene colpito da un tiro per colpire in mischia mentre tiene in mano un'arma. Esito: il gladiatore aggiunge 3 alla sua CA contro quell'attacco, aumentando le probabilità che il colpo non vada a segno."
+  },
+  "gnoll-warrior": {
+    "name": "Gnoll guerriero"
+  },
+  "gnoll-warrior.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Perforanti."
+  },
+  "gnoll-warrior.actions.bone-bow": {
+    "name": "Arco d'ossa",
+    "text": "Tiro per colpire a distanza: +3, gittata 45/180 m. Colpito: 6 (1d10 + 1) danni Perforanti."
+  },
+  "gnoll-warrior.bonusActions.rampage": {
+    "name": "Furia",
+    "text": "Subito dopo aver inflitto danni a una creatura già sanguinante, lo gnoll si muove fino a metà della sua velocità ed effettua un attacco Squarcio."
+  },
+  "goat": {
+    "name": "Capra"
+  },
+  "goat.actions.ram": {
+    "name": "Sfondamento",
+    "text": "Tiro per colpire in mischia: +2, portata 1,5 m. Colpito: 1 danno Contundente, o 2 (1d4) danni Contundenti se la capra si è mossa di 6 metri o più in linea retta verso il bersaglio subito prima del colpo."
+  },
+  "goblin-boss": {
+    "name": "Goblin capo"
+  },
+  "goblin-boss.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il goblin effettua due attacchi, utilizzando Scimitarra o Arco corto in qualsiasi combinazione."
+  },
+  "goblin-boss.actions.scimitar": {
+    "name": "Scimitarra",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 5 (1d6 + 2) danni Taglienti, più 2 (1d4) danni Taglienti se il tiro per colpire è stato effettuato con vantaggio."
+  },
+  "goblin-boss.actions.shortbow": {
+    "name": "Arco corto",
+    "text": "Tiro per colpire a distanza: +4, gittata 24/96 m. Colpito: 5 (1d6 + 2) danni Perforanti, più 2 (1d4) danni Perforanti se il tiro per colpire è stato effettuato con vantaggio."
+  },
+  "goblin-boss.bonusActions.nimble-escape": {
+    "name": "Fuga agile",
+    "text": "Il goblin effettua l'azione di Disimpegno o Nascondersi."
+  },
+  "goblin-boss.reactions.redirect-attack": {
+    "name": "Sviare attacco",
+    "text": "Attivazione: Una creatura che il goblin è in grado di vedere effettua un tiro per colpire contro di lui. Esito: Il goblin sceglie un alleato di taglia Piccola o Media entro 1,5 metri da sé. Il goblin e l'alleato si scambiano di posto, facendo sì che quest'ultimo diventi il bersaglio dell'attacco al suo posto."
+  },
+  "goblin-minion": {
+    "name": "Goblin tirapiedi"
+  },
+  "goblin-minion.actions.dagger": {
+    "name": "Pugnale",
+    "text": "Tiro per colpire in mischia o a distanza: +4, portata 1,5 m o gittata 6/18 m. Colpito: 4 (1d4 + 2) danni Perforanti."
+  },
+  "goblin-minion.bonusActions.nimble-escape": {
+    "name": "Fuga agile",
+    "text": "Il goblin effettua l'azione di Disimpegno o Nascondersi."
+  },
   "goblin-warrior": {
     "name": "Goblin guerriero"
   },
@@ -2051,6 +2858,183 @@
   "goblin-warrior.bonusActions.nimble-escape": {
     "name": "Fuga agile",
     "text": "Il goblin effettua l'azione di Disimpegno o Nascondersi."
+  },
+  "gold-dragon-wyrmling": {
+    "name": "Drago d'oro cucciolo"
+  },
+  "gold-dragon-wyrmling.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "gold-dragon-wyrmling.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua due attacchi Squarcio."
+  },
+  "gold-dragon-wyrmling.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 9 (1d10 + 4) danni Taglienti."
+  },
+  "gold-dragon-wyrmling.actions.fire-breath": {
+    "name": "Soffio di fuoco",
+    "text": "Tiro salvezza su Destrezza: CD 13, tutte le creature in un cono di 4,5 metri. Fallimento: 22 (4d10) danni da Fuoco. Successo: danni dimezzati."
+  },
+  "gold-dragon-wyrmling.actions.weakening-breath": {
+    "name": "Soffio indebolente",
+    "text": "Tiro salvezza su Forza: CD 13, ogni creatura che al momento non è sotto l'effetto di questo soffio in un cono di 4,5 metri. Fallimento: il bersaglio subisce svantaggio alle prove con d20 basate sulla Forza e sottrae 2 (1d4) ai tiri per i danni. La creatura ripete il tiro salvezza alla fine di ogni suo turno e, se lo supera, l'effetto svanisce. Dopo 1 minuto, il tiro viene superato automaticamente."
+  },
+  "gorgon": {
+    "name": "Gorgone"
+  },
+  "gorgon.actions.gore": {
+    "name": "Trafiggere",
+    "text": "Tiro per colpire in mischia: +8, portata 1,5 m. Colpito: 18 (2d12 + 5) danni Perforanti. Se il bersaglio è una creatura di taglia Grande o inferiore e la gorgone si è mossa di 6 metri o più in linea retta verso di esso subito prima del colpo, il bersaglio cade a terra Prono."
+  },
+  "gorgon.actions.petrifying-breath": {
+    "name": "Soffio pietrificante",
+    "text": "Tiro salvezza su Costituzione: CD 15, tutte le creature in un cono di 9 metri. Primo fallimento: il bersaglio è Trattenuto. Ripete il tiro salvezza al termine del proprio turno successivo se è ancora Trattenuto e, se lo supera, l'effetto svanisce. Secondo fallimento: il bersaglio è Pietrificato invece che Trattenuto."
+  },
+  "gorgon.bonusActions.trample": {
+    "name": "Calpestare",
+    "text": "Tiro salvezza su Destrezza: CD 16, una creatura Prona entro 1,5 metri. Fallimento: 16 (2d10 + 5) danni Contundenti. Successo: danni dimezzati."
+  },
+  "gray-ooze": {
+    "name": "Melma grigia"
+  },
+  "gray-ooze.traits.amorphous": {
+    "name": "Amorfo",
+    "text": "La melma può muoversi attraverso uno spazio stretto fino a 2,5 centimetri senza consumare movimento extra per farlo."
+  },
+  "gray-ooze.traits.corrosive-form": {
+    "name": "Forma corrosiva",
+    "text": "Le munizioni non magiche che colpiscono la melma e infliggono danni sono distrutte. Qualsiasi arma non magica subisce una penalità cumulativa di −1 ai tiri per colpire subito dopo aver inflitto danni alla melma ed essere entrata in contatto con essa. Se la penalità arriva a −5, l'arma è distrutta. La penalità può essere rimossa lanciando l'incantesimo riparare sull'arma. La melma può corrodere fino a 5 centimetri di metallo o legno non magico in 1 round."
+  },
+  "gray-ooze.actions.pseudopod": {
+    "name": "Pseudopode",
+    "text": "Tiro per colpire in mischia: +3, portata 1,5 m. Colpito: 10 (2d8 + 1) danni da Acido. L'armatura non magica indossata dal bersaglio subisce una penalità di −1 alla CA che fornisce. Se la penalità riduce la sua CA a 10, l'armatura si distrugge. La penalità può essere rimossa lanciando l'incantesimo riparare sull'armatura."
+  },
+  "green-dragon-wyrmling": {
+    "name": "Drago verde cucciolo"
+  },
+  "green-dragon-wyrmling.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "Il drago può respirare in aria e in acqua."
+  },
+  "green-dragon-wyrmling.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il drago effettua due attacchi Squarcio."
+  },
+  "green-dragon-wyrmling.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 7 (1d10 + 2) danni Taglienti più 3 (1d6) danni da Veleno."
+  },
+  "green-dragon-wyrmling.actions.poison-breath": {
+    "name": "Soffio di veleno",
+    "text": "Tiro salvezza su Costituzione: CD 11, tutte le creature in un cono di 4,5 metri. Fallimento: 21 (6d6) danni da Veleno. Successo: danni dimezzati."
+  },
+  "green-hag": {
+    "name": "Megera verde"
+  },
+  "green-hag.traits.amphibious": {
+    "name": "Anfibio",
+    "text": "La megera può respirare in aria e in acqua."
+  },
+  "green-hag.traits.coven-magic": {
+    "name": "Magia della congrega",
+    "text": "Finché si trova entro 9 metri da almeno due megere alleate, la megera può lanciare uno dei seguenti incantesimi senza bisogno di componenti materiali, utilizzando il normale tempo di lancio dell'incantesimo e Intelligenza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 11): identificare, localizza oggetto, presagio, scrutare, servitore inosservato o trova famiglio. La megera deve terminare un riposo lungo prima di utilizzare questo tratto per lanciare di nuovo l'incantesimo."
+  },
+  "green-hag.traits.mimicry": {
+    "name": "Imitare",
+    "text": "La megera può imitare i versi degli animali e le voci degli umanoidi. Una creatura che sente tali suoni riesce a capire che si tratta di imitazioni solo superando una prova di Saggezza (Intuizione) con CD 14."
+  },
+  "green-hag.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La megera effettua due attacchi Artiglio."
+  },
+  "green-hag.actions.claw": {
+    "name": "Artiglio",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 8 (1d8 + 4) danni Taglienti più 3 (1d6) danni da Veleno."
+  },
+  "green-hag.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "La megera lancia uno dei seguenti incantesimi, senza bisogno di componenti materiali, utilizzando Saggezza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 12, +4 al tiro per colpire degli attacchi con incantesimo): A volontà: Camuffare se stesso (durata di 24 ore), illusione minore, invisibilità (solo se stessa, la megera non lascia tracce mentre è invisibile), luci danzanti, raggio di infermità (di 3º livello)."
+  },
+  "grick": {
+    "name": "Grick"
+  },
+  "grick.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il grick effettua un attacco Becco e un attacco Tentacoli."
+  },
+  "grick.actions.beak": {
+    "name": "Becco",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 9 (2d6 + 2) danni Perforanti."
+  },
+  "grick.actions.tentacles": {
+    "name": "Tentacoli",
+    "text": "Tiro per colpire in mischia: +4, portata 1,5 m. Colpito: 7 (1d10 + 2) danni Taglienti. Se il bersaglio è una creatura di taglia Media o inferiore, è Afferrato (CD 12 per sfuggire) da tutti e quattro i tentacoli."
+  },
+  "griffon": {
+    "name": "Grifone"
+  },
+  "griffon.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "Il grifone effettua due attacchi Squarcio."
+  },
+  "griffon.actions.rend": {
+    "name": "Squarcio",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 8 (1d8 + 4) danni Perforanti. Se il bersaglio è una creatura di taglia Media o inferiore, è Afferrato (CD 14 per sfuggire) da entrambi gli artigli frontali del grifone."
+  },
+  "grimlock": {
+    "name": "Grimlock"
+  },
+  "grimlock.actions.bone-cudgel": {
+    "name": "Randello d'ossa",
+    "text": "Tiro per colpire in mischia: +5, portata 1,5 m. Colpito: 6 (1d6 + 3) danni Contundenti più 2 (1d4) danni Psichici."
+  },
+  "guard": {
+    "name": "Guardia"
+  },
+  "guard.actions.spear": {
+    "name": "Lancia",
+    "text": "Tiro per colpire in mischia o a distanza: +3, portata 1,5 m o gittata 6/18 m. Colpito: 4 (1d6 + 1) danni Perforanti."
+  },
+  "guard-captain": {
+    "name": "Capitano delle guardie"
+  },
+  "guard-captain.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La guardia effettua due attacchi, utilizzando Giavellotto o Spada lunga in qualsiasi combinazione."
+  },
+  "guard-captain.actions.javelin": {
+    "name": "Giavellotto",
+    "text": "Tiro per colpire in mischia o a distanza: +6, portata 1,5 m o gittata 9/36 m. Colpito: 14 (3d6 + 4) danni Perforanti."
+  },
+  "guard-captain.actions.longsword": {
+    "name": "Spada lunga",
+    "text": "Tiro per colpire in mischia: +6, portata 1,5 m. Colpito: 15 (2d10 + 4) danni Taglienti."
+  },
+  "guardian-naga": {
+    "name": "Naga guardiana"
+  },
+  "guardian-naga.traits.celestial-restoration": {
+    "name": "Ristoro celestiale",
+    "text": "Se la naga muore, torna in vita 1d6 giorni dopo e recupera tutti i suoi punti ferita, a meno che non venga lanciato dissolvi il bene e il male sui suoi resti."
+  },
+  "guardian-naga.actions.multiattack": {
+    "name": "Multiattacco",
+    "text": "La naga effettua due attacchi Morso. Può sostituire qualsiasi attacco con un utilizzo di Sputo velenoso."
+  },
+  "guardian-naga.actions.bite": {
+    "name": "Morso",
+    "text": "Tiro per colpire in mischia: +8, portata 3 m. Colpito: 17 (2d12 + 4) danni Perforanti più 22 (4d10) danni da Veleno."
+  },
+  "guardian-naga.actions.poisonous-spittle": {
+    "name": "Sputo velenoso",
+    "text": "Tiro salvezza su Costituzione: CD 16, una creatura che la naga è in grado di vedere entro 18 metri. Fallimento: 31 (7d8) danni da Veleno, e il bersaglio è Accecato fino all'inizio del turno successivo della naga. Successo: danni dimezzati."
+  },
+  "guardian-naga.actions.spellcasting": {
+    "name": "Incantesimi",
+    "text": "La naga lancia uno dei seguenti incantesimi, senza bisogno di componenti somatiche o materiali, utilizzando Saggezza come caratteristica da incantatore (CD del tiro salvezza sull'incantesimo 16): A volontà: taumaturgia. 1/giorno ciascuno: Chiaroveggenza, colpo infuocato (di 6º livello), costrizione, cura ferite (di 6º livello), visione del vero."
   },
   "priest": {
     "name": "Sacerdote"

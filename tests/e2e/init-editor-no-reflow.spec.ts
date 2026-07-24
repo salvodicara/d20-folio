@@ -127,11 +127,11 @@ test.describe("initiative editor floats — the card never reflows", () => {
   }) => {
     await bootEncounter(page);
 
-    // The un-rolled Goblin Boss (initiative null → a glowing "—" chip) is a stable target;
+    // The un-rolled Goblin Chief (initiative null → a glowing "—" chip) is a stable target;
     // pin the CARD by its title so it survives losing the urgent flag after the commit.
     const bossCard = page
       .locator(".party-card")
-      .filter({ hasText: "Goblin Boss" })
+      .filter({ hasText: "Goblin Chief" })
       .first();
     const bossTrigger = bossCard.locator("button.vital-init");
     const bossToggle = bossCard.locator(".party-head-toggle");

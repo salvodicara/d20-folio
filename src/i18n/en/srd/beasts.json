@@ -302,17 +302,11 @@
   "attack.hooves": {
     "name": "Hooves"
   },
-  "attack.tusk": {
-    "name": "Tusk"
-  },
   "attack.tail": {
     "name": "Tail"
   },
   "attack.tentacles": {
     "name": "Tentacles"
-  },
-  "attack.constrict": {
-    "name": "Constrict"
   },
   "attack.rend": {
     "name": "Rend"
@@ -326,12 +320,6 @@
   "trait.keen-smell": {
     "name": "Keen Smell"
   },
-  "trait.keen-sight": {
-    "name": "Keen Sight"
-  },
-  "trait.keen-sight-and-smell": {
-    "name": "Keen Sight and Smell"
-  },
   "trait.pack-tactics": {
     "name": "Pack Tactics"
   },
@@ -340,9 +328,6 @@
   },
   "trait.charge": {
     "name": "Charge"
-  },
-  "trait.relentless": {
-    "name": "Relentless"
   },
   "trait.spider-climb": {
     "name": "Spider Climb"
@@ -371,9 +356,6 @@
   "trait.beast-of-burden": {
     "name": "Beast of Burden"
   },
-  "trait.blood-frenzy": {
-    "name": "Blood Frenzy"
-  },
   "trait.bloodied-fury": {
     "name": "Bloodied Fury"
   },
@@ -401,19 +383,13 @@
   "trait.nimble-escape": {
     "name": "Nimble Escape"
   },
-  "trait.poison-resistance": {
-    "name": "Poison Resistance"
-  },
-  "trait.rampage": {
-    "name": "Rampage"
-  },
   "trait.roar": {
     "name": "Roar"
   },
   "trait.running-leap": {
     "name": "Running Leap"
   },
-  "trait.trample": {
-    "name": "Trample"
+  "attack.gouge": {
+    "name": "Gouge"
   }
 }

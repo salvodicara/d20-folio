@@ -220,7 +220,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
     senses: { darkvisionFt: 60 },
-    traits: ["trait.charge"],
   },
   // Hawk (2024 SRD 5.2.1). AC 13, HP 1, CR 0.
   {
@@ -553,8 +552,8 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       {
         nameKey: "attack.bite",
         toHit: 4,
-        damageDice: "2d4+1",
-        damageType: "poison",
+        damageDice: "1",
+        damageType: "piercing",
         reachFt: 5,
       },
     ],
@@ -819,7 +818,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
     senses: { darkvisionFt: 60 },
-    traits: ["trait.poison-resistance"],
   },
   // Giant Bat (2024 SRD 5.2.1). AC 13, HP 22, CR 1/4.
   {
@@ -1156,7 +1154,7 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
         reachFt: 5,
       },
     ],
-    traits: ["trait.water-breathing", "trait.charge"],
+    traits: ["trait.water-breathing"],
   },
   // Giant Wasp (2024 SRD 5.2.1). AC 13, HP 22, CR 1/2.
   {
@@ -1278,21 +1276,13 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     abilityScores: { STR: 16, DEX: 17, CON: 13, INT: 8, WIS: 14, CHA: 10 },
     attacks: [
       {
-        nameKey: "attack.beak",
+        nameKey: "attack.rend",
         toHit: 5,
-        damageDice: "1d6+3",
-        damageType: "piercing",
-        reachFt: 5,
-      },
-      {
-        nameKey: "attack.talons",
-        toHit: 5,
-        damageDice: "2d6+3",
+        damageDice: "1d4+3",
         damageType: "slashing",
         reachFt: 5,
       },
     ],
-    traits: ["trait.keen-sight"],
   },
   // Giant Hyena (2024 SRD 5.2.1). AC 12, HP 45, CR 1.
   {
@@ -1313,28 +1303,27 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
     senses: { darkvisionFt: 60 },
-    traits: ["trait.rampage"],
   },
-  // Giant Octopus (2024 SRD 5.2.1). AC 11, HP 52, CR 1.
+  // Giant Octopus (2024 SRD 5.2.1). AC 11, HP 45, CR 1.
   {
     id: "giant-octopus",
     cr: 1,
     size: "Large",
     ac: 11,
-    hp: 52,
+    hp: 45,
     speeds: { walk: 10, swim: 60 },
-    abilityScores: { STR: 17, DEX: 13, CON: 13, INT: 4, WIS: 10, CHA: 4 },
+    abilityScores: { STR: 17, DEX: 13, CON: 13, INT: 5, WIS: 10, CHA: 4 },
     attacks: [
       {
         nameKey: "attack.tentacles",
         toHit: 5,
         damageDice: "2d6+3",
         damageType: "bludgeoning",
-        reachFt: 15,
+        reachFt: 10,
       },
     ],
-    senses: { darkvisionFt: 30 },
-    traits: ["trait.hold-breath", "trait.water-breathing"],
+    senses: { darkvisionFt: 60 },
+    traits: ["trait.water-breathing"],
   },
   // Giant Spider (2024 SRD 5.2.1). AC 14, HP 26, CR 1.
   {
@@ -1354,7 +1343,7 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
         reachFt: 5,
       },
     ],
-    senses: { blindsightFt: 10, darkvisionFt: 60 },
+    senses: { darkvisionFt: 60 },
     traits: ["trait.spider-climb", "trait.web-walker"],
   },
   // Giant Toad (2024 SRD 5.2.1). AC 11, HP 39, CR 1.
@@ -1364,46 +1353,40 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     size: "Large",
     ac: 11,
     hp: 39,
-    speeds: { walk: 20, swim: 40 },
+    speeds: { walk: 30, swim: 30 },
     abilityScores: { STR: 15, DEX: 13, CON: 13, INT: 2, WIS: 10, CHA: 3 },
     attacks: [
       {
         nameKey: "attack.bite",
         toHit: 4,
-        damageDice: "1d10+2",
+        damageDice: "1d6+2",
         damageType: "piercing",
         reachFt: 5,
       },
     ],
-    senses: { darkvisionFt: 30 },
+    senses: { darkvisionFt: 60 },
     traits: ["trait.amphibious", "trait.standing-leap"],
   },
-  // Giant Vulture (2024 SRD 5.2.1). AC 10, HP 22, CR 1.
+  // Giant Vulture (2024 SRD 5.2.1). AC 10, HP 25, CR 1.
   {
     id: "giant-vulture",
     cr: 1,
     size: "Large",
     ac: 10,
-    hp: 22,
+    hp: 25,
     speeds: { walk: 10, fly: 60 },
-    abilityScores: { STR: 15, DEX: 10, CON: 15, INT: 6, WIS: 12, CHA: 7 },
+    abilityScores: { STR: 15, DEX: 10, CON: 16, INT: 6, WIS: 12, CHA: 7 },
     attacks: [
       {
-        nameKey: "attack.beak",
+        nameKey: "attack.gouge",
         toHit: 4,
-        damageDice: "2d4+2",
+        damageDice: "2d6+2",
         damageType: "piercing",
         reachFt: 5,
       },
-      {
-        nameKey: "attack.talons",
-        toHit: 4,
-        damageDice: "2d6+2",
-        damageType: "slashing",
-        reachFt: 5,
-      },
     ],
-    traits: ["trait.keen-sight-and-smell", "trait.pack-tactics"],
+    senses: { darkvisionFt: 60 },
+    traits: ["trait.pack-tactics"],
   },
   // Lion (2024 SRD 5.2.1). AC 12, HP 22, CR 1.
   {
@@ -1473,25 +1456,25 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
   },
-  // Giant Boar (2024 SRD 5.2.1). AC 12, HP 42, CR 2.
+  // Giant Boar (2024 SRD 5.2.1). AC 13, HP 42, CR 2.
   {
     id: "giant-boar",
     cr: 2,
     size: "Large",
-    ac: 12,
+    ac: 13,
     hp: 42,
     speeds: { walk: 40 },
     abilityScores: { STR: 17, DEX: 10, CON: 16, INT: 2, WIS: 7, CHA: 5 },
     attacks: [
       {
-        nameKey: "attack.tusk",
+        nameKey: "attack.gore",
         toHit: 5,
         damageDice: "2d6+3",
-        damageType: "slashing",
+        damageType: "piercing",
         reachFt: 5,
       },
     ],
-    traits: ["trait.charge", "trait.relentless"],
+    traits: ["trait.bloodied-fury"],
   },
   // Giant Constrictor Snake (2024 SRD 5.2.1). AC 12, HP 60, CR 2.
   {
@@ -1510,13 +1493,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
         damageType: "piercing",
         reachFt: 10,
       },
-      {
-        nameKey: "attack.constrict",
-        toHit: 6,
-        damageDice: "2d8+4",
-        damageType: "bludgeoning",
-        reachFt: 5,
-      },
     ],
     senses: { blindsightFt: 10 },
   },
@@ -1528,7 +1504,7 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     ac: 14,
     hp: 42,
     speeds: { walk: 60 },
-    abilityScores: { STR: 19, DEX: 16, CON: 14, INT: 7, WIS: 14, CHA: 10 },
+    abilityScores: { STR: 19, DEX: 18, CON: 14, INT: 7, WIS: 14, CHA: 10 },
     attacks: [
       {
         nameKey: "attack.ram",
@@ -1537,15 +1513,8 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
         damageType: "bludgeoning",
         reachFt: 10,
       },
-      {
-        nameKey: "attack.hooves",
-        toHit: 6,
-        damageDice: "4d8+4",
-        damageType: "bludgeoning",
-        reachFt: 5,
-      },
     ],
-    traits: ["trait.charge"],
+    senses: { darkvisionFt: 90 },
   },
   // Hunter Shark (2024 SRD 5.2.1). AC 12, HP 45, CR 2.
   {
@@ -1766,7 +1735,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
         reachFt: 5,
       },
     ],
-    traits: ["trait.charge", "trait.trample"],
   },
   // Hippopotamus (2024 SRD 5.2.1). AC 14, HP 82, CR 4.
   {
@@ -1834,7 +1802,7 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
     senses: { blindsightFt: 60 },
-    traits: ["trait.water-breathing", "trait.blood-frenzy"],
+    traits: ["trait.water-breathing"],
   },
   // Triceratops (2024 SRD 5.2.1). AC 14, HP 114, CR 5.
   {
@@ -1883,15 +1851,15 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     ],
     traits: ["trait.trampling-charge"],
   },
-  // Giant Ape (2024 SRD 5.2.1). AC 12, HP 157, CR 7.
+  // Giant Ape (2024 SRD 5.2.1). AC 12, HP 168, CR 7.
   {
     id: "giant-ape",
     cr: 7,
     size: "Huge",
     ac: 12,
-    hp: 157,
+    hp: 168,
     speeds: { walk: 40, climb: 40 },
-    abilityScores: { STR: 23, DEX: 14, CON: 18, INT: 7, WIS: 12, CHA: 7 },
+    abilityScores: { STR: 23, DEX: 14, CON: 18, INT: 5, WIS: 12, CHA: 7 },
     attacks: [
       {
         nameKey: "attack.fist",
@@ -1899,13 +1867,6 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
         damageDice: "3d10+6",
         damageType: "bludgeoning",
         reachFt: 10,
-      },
-      {
-        nameKey: "attack.rock",
-        toHit: 9,
-        damageDice: "7d6+6",
-        damageType: "bludgeoning",
-        range: { nearFt: 50, farFt: 100 },
       },
     ],
   },

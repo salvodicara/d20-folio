@@ -956,14 +956,14 @@ export function resolveDevCampaign(id: string): CampaignDoc {
  * AC / HP / conditions / initiative are read LIVE from the member's char doc + projected
  * `combat/state` (in dev, the team-fixture session), never copied here. The genuine
  * encounter-owned state is the monsters: a Goblin ×3 group with one downed token (one
- * prone), a single Goblin Boss, and a HIDDEN Shadow (DM ambush — the `hidden` flag demos
+ * prone), a single Goblin Chief, and a HIDDEN Shadow (DM ambush — the `hidden` flag demos
  * the filter). IDs only — names are user content.
  *
  *   • `"begun"` — turns have started: the FROZEN order is set and the current turn sits on
  *     Coralino's card. Matches the live initiative sort (Shadow 16 · Goblin 14 · Boss 12 ·
  *     then the rolled PCs), so the displayed frozen order reads naturally.
  *   • `"gathering"` — the initiative-gathering phase: no order, no current turn, and the
- *     Goblin Boss is left UN-ROLLED (`initiative: null`), so the Begin-turns gate renders
+ *     Goblin Chief is left UN-ROLLED (`initiative: null`), so the Begin-turns gate renders
  *     DISABLED with its "X/Y rolled" reason (C3 item 1).
  */
 function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
@@ -1011,7 +1011,10 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
       {
         kind: "monster",
         id: "monster-2",
-        name: "Goblin Boss",
+        // Ad-hoc demo combatant (carries its own ac/initiative — not a bestiary
+        // reference); a non-SRD label so it never collides with a real monster
+        // name (goblin-boss is now an authored statblock — GR7 name-literal guard).
+        name: "Goblin Chief",
         ac: 17,
         // Gathering demo: the Boss is the one combatant still UN-ROLLED, so the Begin-turns
         // gate is DISABLED with its rolled/total reason; begun: typed initiative 12.

@@ -22,5 +22,6 @@
   "sylvan": { "name": "Sylvan" },
   "thieves-cant": { "name": "Thieves' Cant" },
   "undercommon": { "name": "Undercommon" },
-  "blink-dog": { "name": "Blink Dog" }
+  "blink-dog": { "name": "Blink Dog" },
+  "gnoll": { "name": "Gnoll" }
 }

@@ -531,7 +531,7 @@ describe("Party combat — DM (editable layer)", () => {
     await screen.findAllByLabelText(/^Armor Class:/);
     // Monsters (genuine encounter state) render by their typed names.
     expect(screen.getAllByText("Goblin").length).toBeGreaterThan(0);
-    expect(screen.getByText("Goblin Boss")).toBeInTheDocument();
+    expect(screen.getByText("Goblin Chief")).toBeInTheDocument();
     // The DM sees the HIDDEN ambush monster (with its Hidden badge).
     expect(screen.getByText("Shadow")).toBeInTheDocument();
     expect(screen.getByText(/^Hidden$/)).toBeInTheDocument();
@@ -561,12 +561,12 @@ describe("Party combat — DM (editable layer)", () => {
   it("a monster token reuses the shared HP popover (no TEMP), delta-clamped to [0, maxHp]", async () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
-    // Expand the Goblin Boss row (single token [21], maxHp 21). A lone token reuses the
+    // Expand the Goblin Chief row (single token [21], maxHp 21). A lone token reuses the
     // PC card's `.vital-hp` chip + shared HpEditPopover and labels with the monster NAME
-    // (B9a) — the chip is the one carrying `.vital-hp` (the other "Goblin Boss" control
+    // (B9a) — the chip is the one carrying `.vital-hp` (the other "Goblin Chief" control
     // is the row's disclosure toggle).
     fireEvent.click(
-      screen.getByRole("button", { name: /goblin boss/i, expanded: false })
+      screen.getByRole("button", { name: /goblin chief/i, expanded: false })
     );
     const boss = () => currentEncounter().combatants.find((c) => c.id === "monster-2");
     const bossHp = (): number => {
@@ -576,7 +576,7 @@ describe("Party combat — DM (editable layer)", () => {
     const openHp = (): void => {
       fireEvent.click(
         screen
-          .getAllByLabelText("Goblin Boss")
+          .getAllByLabelText("Goblin Chief")
           .find((el) => el.classList.contains("vital-hp")) as HTMLElement
       );
     };
@@ -620,13 +620,15 @@ describe("Party combat — DM (editable layer)", () => {
   it("the DM sees the EXACT monster HP and can reveal it to players (CARD-5)", async () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
-    // The DM reads the exact summed HP (Goblin Boss: 21/21) — no concealed band.
-    const boss = screen.getByText("Goblin Boss").closest(".party-card");
+    // The DM reads the exact summed HP (Goblin Chief: 21/21) — no concealed band.
+    const boss = screen.getByText("Goblin Chief").closest(".party-card");
     if (!(boss instanceof HTMLElement)) throw new Error("no boss card");
     const scope = within(boss);
     expect(scope.getByTitle(/21.*21|21/)).toBeInTheDocument();
     // Expand → flip the per-monster reveal flag through the encounter writer.
-    fireEvent.click(scope.getByRole("button", { expanded: false, name: /goblin boss/i }));
+    fireEvent.click(
+      scope.getByRole("button", { expanded: false, name: /goblin chief/i })
+    );
     fireEvent.click(scope.getByRole("button", { name: /reveal hp/i }));
     const m2 = currentEncounter().combatants.find((c) => c.id === "monster-2");
     expect(m2?.kind === "monster" && m2.revealed).toBe(true);
@@ -735,9 +737,9 @@ describe("Party combat — C3 freeze / lock / reorder (DM)", () => {
     expect(screen.getAllByRole("button", { name: /^reorder /i }).length).toBeGreaterThan(
       0
     );
-    // Keyboard reorder: ArrowDown on the Goblin Boss grip steps it down ONE slot in the
+    // Keyboard reorder: ArrowDown on the Goblin Chief grip steps it down ONE slot in the
     // frozen order (the same reorderCombatant the pointer drop calls), pointer pinned.
-    fireEvent.keyDown(screen.getByRole("button", { name: /reorder goblin boss/i }), {
+    fireEvent.keyDown(screen.getByRole("button", { name: /reorder goblin chief/i }), {
       key: "ArrowDown",
     });
     await waitFor(() => {
@@ -756,8 +758,8 @@ describe("Party combat — C3 freeze / lock / reorder (DM)", () => {
     setCampaign(encounterCampaign());
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
-    const grip = screen.getByRole("button", { name: /reorder goblin boss/i });
-    // Lift Goblin Boss (monster-2) and follow the pointer far DOWN the list. Pointer Events
+    const grip = screen.getByRole("button", { name: /reorder goblin chief/i });
+    // Lift Goblin Chief (monster-2) and follow the pointer far DOWN the list. Pointer Events
     // are ONE code path for mouse AND touch (the old native HTML5 drag never fired on
     // touch); with no real layout (jsdom rects are 0) the live preview lands the held card
     // at the END, which commits through the SAME reorderCombatant the keyboard path calls.
@@ -780,7 +782,7 @@ describe("Party combat — C3 freeze / lock / reorder (DM)", () => {
     setCampaign(encounterCampaign());
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
-    const grip = screen.getByRole("button", { name: /reorder goblin boss/i });
+    const grip = screen.getByRole("button", { name: /reorder goblin chief/i });
     const clone = () => document.querySelector<HTMLElement>(".combatant-lift-clone");
 
     // Lift the card → a floating clone is appended to <body> and tracks the pointer.
@@ -853,7 +855,7 @@ describe("Party combat — player (read-only)", () => {
     await screen.findAllByLabelText(/^Armor Class:/);
     // The shared read-only view: visible monsters + the current-turn indicator.
     expect(screen.getAllByText("Goblin").length).toBeGreaterThan(0);
-    expect(screen.getByText("Goblin Boss")).toBeInTheDocument();
+    expect(screen.getByText("Goblin Chief")).toBeInTheDocument();
     // Whose turn it is reads PURELY off the lit card frame (BG3-style) — no name
     // readout. The accessible cue is a single `aria-current="true"` on the current card.
     expect(document.querySelectorAll('[aria-current="true"]')).toHaveLength(1);
@@ -869,7 +871,7 @@ describe("Party combat — player (read-only)", () => {
     expect(
       screen.queryByRole("button", { name: /add monster/i })
     ).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/goblin boss, token/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/goblin chief, token/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/initiative for/i)).not.toBeInTheDocument();
     // C3 — the DM-only drag-to-reorder grip never reaches a player.
     expect(screen.queryByRole("button", { name: /^reorder /i })).not.toBeInTheDocument();

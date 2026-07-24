@@ -285,7 +285,7 @@
     "name": "Becco"
   },
   "attack.talons": {
-    "name": "Serre"
+    "name": "Speroni"
   },
   "attack.gore": {
     "name": "Trafiggere"
@@ -302,17 +302,11 @@
   "attack.hooves": {
     "name": "Zoccoli"
   },
-  "attack.tusk": {
-    "name": "Zanna"
-  },
   "attack.tail": {
     "name": "Coda"
   },
   "attack.tentacles": {
     "name": "Tentacoli"
-  },
-  "attack.constrict": {
-    "name": "Costrizione"
   },
   "attack.rend": {
     "name": "Squarcio"
@@ -326,12 +320,6 @@
   "trait.keen-smell": {
     "name": "Olfatto acuto"
   },
-  "trait.keen-sight": {
-    "name": "Vista acuta"
-  },
-  "trait.keen-sight-and-smell": {
-    "name": "Vista e olfatto acuti"
-  },
   "trait.pack-tactics": {
     "name": "Tattiche del branco"
   },
@@ -341,26 +329,23 @@
   "trait.charge": {
     "name": "Carica"
   },
-  "trait.relentless": {
-    "name": "Implacabile"
-  },
   "trait.spider-climb": {
-    "name": "Scalata del ragno"
+    "name": "Movimenti del ragno"
   },
   "trait.web-walker": {
-    "name": "Camminatore della ragnatela"
+    "name": "Andatura sulla ragnatela"
   },
   "trait.amphibious": {
     "name": "Anfibio"
   },
   "trait.standing-leap": {
-    "name": "Salto da fermo"
+    "name": "Balzo da fermo"
   },
   "trait.hold-breath": {
     "name": "Apnea"
   },
   "trait.water-breathing": {
-    "name": "Respirare in acqua"
+    "name": "Respirare sott'acqua"
   },
   "trait.trampling-charge": {
     "name": "Carica travolgente"
@@ -370,9 +355,6 @@
   },
   "trait.beast-of-burden": {
     "name": "Bestia da soma"
-  },
-  "trait.blood-frenzy": {
-    "name": "Frenesia di sangue"
   },
   "trait.bloodied-fury": {
     "name": "Furia sanguinante"
@@ -384,7 +366,7 @@
     "name": "Compressione"
   },
   "trait.flyby": {
-    "name": "Volo radente"
+    "name": "Volo sfuggente"
   },
   "trait.illumination": {
     "name": "Illuminazione"
@@ -401,19 +383,13 @@
   "trait.nimble-escape": {
     "name": "Fuga agile"
   },
-  "trait.poison-resistance": {
-    "name": "Resistenza al veleno"
-  },
-  "trait.rampage": {
-    "name": "Assalto"
-  },
   "trait.roar": {
     "name": "Ruggito"
   },
   "trait.running-leap": {
     "name": "Salto con rincorsa"
   },
-  "trait.trample": {
-    "name": "Calpestio"
+  "attack.gouge": {
+    "name": "Cavare"
   }
 }

@@ -22,5 +22,6 @@
   "sylvan": { "name": "Silvano" },
   "thieves-cant": { "name": "Gergo Ladresco" },
   "undercommon": { "name": "Sottocomune" },
-  "blink-dog": { "name": "Cane intermittente" }
+  "blink-dog": { "name": "Cane intermittente" },
+  "gnoll": { "name": "Gnoll" }
 }
