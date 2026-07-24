@@ -126,7 +126,15 @@ const EAGER_CEILING_KB = 773; // baseline 727.1 → ~+6% (near budget — see AR
 // accumulated JS chunk growth carried in from main, not new atmosphere-branch asset
 // weight. Measured 8033.79 KiB (276 entries); +5 KiB deterministic headroom (never
 // exact-fit).
-const PRECACHE_CEILING_KIB = 8039; // baseline 8033.79 (2026-07-24 RA-wave chunk growth, post-rebase) + ~5 KiB deterministic headroom — never exact-fit
+// 2026-07-24: raised 8039 → 8046 (+7 KiB) for the RA-wave W2 rules content
+// (RA-18/19/20/21/32/34 + the Hex/Hunter's Mark toggle-label fix): ~28 new bilingual
+// i18n strings (the four new BASE_ACTIONS names + verdict/effect copy, the Ready /
+// Prone-Stand / crit / grappled-scope notes, the Hex+Hunter's Mark toggle labels)
+// plus the four new BASE_ACTIONS engine entries. Existing JS/JSON chunks grew
+// (cockpit-engine carries the action data, the spells chunk the buff-toggle labels);
+// NO new precache entries (still 276) and NO new images/fonts. Measured 8040.32 KiB;
+// +~6 KiB deterministic headroom (never exact-fit).
+const PRECACHE_CEILING_KIB = 8046; // baseline 8040.32 (2026-07-24 W2 rules content) + ~6 KiB deterministic headroom — never exact-fit
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
