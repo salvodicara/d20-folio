@@ -103,6 +103,25 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
     slug: "warlock-pact-slots",
     route: "/characters/scn-magical-cunning-warlock",
   },
+  // The COMPANIONS rail section AT REST — the chain-master Warlock's scenario
+  // seeds an active Imp familiar (`sessionFamiliar`), so the rail renders the
+  // Companions rubric + the familiar row (eyebrow · form name · AC · HP steppers)
+  // with no interaction. Brings the persistent-companion surface under the
+  // a11y + locale sweeps.
+  { slug: "companions-rail", route: "/characters/scn-chain-master" },
+  // The familiar STAT-BLOCK modal (one tap from the rail row): the chosen form
+  // with the 2024 type swap, the familiar-rules card, the Chain-Master
+  // enhancements callout, and the dismiss/recall/change-form actions.
+  { slug: "familiar-statblock", route: "/characters/scn-chain-master" },
+  // The familiar FORM PICKER modal (Change form): the corpus-derived CR-0 Beast
+  // pool + the Pact-of-the-Chain special forms, with the Celestial/Fey/Fiend
+  // type-swap Segmented in the detail leaf.
+  { slug: "familiar-picker", route: "/characters/scn-chain-master" },
+  // The GRANT-companion stat-block modal (pack Battle Smith → Steel Defender):
+  // the shared CompanionStatBlockCard one tap from the Companions rail row.
+  // Pack-scenario route (the scn-battlemaster-fighter precedent) — drops out of
+  // an SRD-only composition with the scenario itself.
+  { slug: "companion-statblock", route: "/characters/scn-battle-smith" },
   { slug: "create", route: "/characters/new" }, // creation wizard (re-mounted)
   ...GUIDED_STEP_SLUGS.map((slug): SurfaceRoute => ({ slug, route: "/characters/new" })),
   // The full-screen level-up wizard (wizard F). `level-up` is the Hit Points

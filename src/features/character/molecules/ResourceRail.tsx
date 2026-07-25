@@ -85,8 +85,8 @@ import { RailSection } from "../RailSection";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { CompanionStatBlockCard } from "@/components/shared/CompanionStatBlockCard";
 import {
-  buildCompanionRowVMs,
   buildCompanionCardViews,
+  companionRowsFromViews,
   type CompanionCardView,
 } from "@/lib/views/companion-row-view";
 import { RailNotes } from "./RailNotes";
@@ -233,21 +233,23 @@ export function ResourceRail() {
   );
 
   // Companions (Steel Defender / Eldritch Cannon / Beast Master Primal Companion,
-  // + pack spell-companions) — the persistent-companion surface. Rows (summary) +
-  // the full stat-block views (the modal) both come from the ONE shared presenter,
-  // so the rail agrees with the Features-tab card by construction (golden rule 6).
-  const companionRows = useMemo(
-    () => (character ? buildCompanionRowVMs(character, locale, t) : []),
+  // + pack spell-companions) — the persistent-companion surface. ONE presenter
+  // pass builds the card views (the modal); the summary rows and the id→view map
+  // both derive from it, so the rail agrees with the Features-tab card by
+  // construction (golden rule 6) and the aggregate/resolve work runs once.
+  const companionCardViews = useMemo(
+    () => (character ? buildCompanionCardViews(character, locale, t) : []),
     [character, locale, t]
+  );
+  const companionRows = useMemo(
+    () => companionRowsFromViews(companionCardViews, character?.session.familiar),
+    [companionCardViews, character?.session.familiar]
   );
   const companionViews = useMemo(() => {
     const map = new Map<string, CompanionCardView>();
-    if (character) {
-      for (const v of buildCompanionCardViews(character, locale, t))
-        map.set(v.featureId, v);
-    }
+    for (const v of companionCardViews) map.set(v.featureId, v);
     return map;
-  }, [character, locale, t]);
+  }, [companionCardViews]);
   const [openCompanionId, setOpenCompanionId] = useState<string | null>(null);
 
   // S9 — active CONSUMED buff-potion countdowns (Potion of Speed / Giant

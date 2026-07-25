@@ -186,7 +186,12 @@ export function FamiliarPanel() {
         size="md"
       >
         {form && (
-          <div className="flex flex-col gap-3">
+          // `min-h-0 flex-1 overflow-y-auto` — the scroll column ModalShell
+          // expects from its children (its own frame clips overflow), so the
+          // action row below a tall stat block stays reachable on short
+          // viewports (the a11y sweep caught the dismiss/change-form buttons
+          // unreachable without it).
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
             <MonsterStatBlockCard
               monster={{ ...form, type: familiar.creatureType, typeTags: undefined }}
               locale={locale}

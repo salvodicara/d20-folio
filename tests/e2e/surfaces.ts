@@ -144,6 +144,28 @@ function readyText(re: RegExp): (page: Page) => Promise<void> {
   };
 }
 
+/** The familiar rail row on the chain-master scenario has painted: the LAZY
+ *  FamiliarPanel resolved and shows the seeded form. "Imp" is the monster's
+ *  proper name in BOTH locales (EN + IT catalogues), so the anchor is
+ *  locale-stable; the row button's accessible name is "<eyebrow> Imp <AC …>"
+ *  ("Familiar …" / "Famiglio …"), which the HP steppers ("−1 HP Imp") never
+ *  match at the start. */
+const FAMILIAR_ROW = /^(familiar|famiglio)\s+imp\b/i;
+async function readyFamiliarRow(page: Page): Promise<void> {
+  await page
+    .getByRole("button", { name: FAMILIAR_ROW })
+    .first()
+    .waitFor({ timeout: 15000 });
+}
+
+/** Open the familiar STAT-BLOCK modal from the rail row (state-signal waits —
+ *  a miss fails the surface instead of shooting the wrong state). */
+async function openFamiliarStatblock(page: Page): Promise<void> {
+  await readyFamiliarRow(page);
+  await page.getByRole("button", { name: FAMILIAR_ROW }).first().click();
+  await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
+}
+
 /** Wait for the realm page's single <h1> (every realm page renders one via
  *  `PageHeader as="h1"`; the shell renders none, so it is unambiguous). Keys on
  *  the heading ROLE+LEVEL, never its translated text — locale-invariant. */
@@ -401,6 +423,68 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   // The Fiend Warlock's Play tab — the pact-slot register, which no other mock
   // character can render. `readyText` on the proper noun proves the sheet painted.
   "warlock-pact-slots": { edit: false, ready: readyText(/Carric/) },
+  // ─── Companions (the persistent-companion surfaces) ─────────────────────────
+  // The Companions rail section at rest on the chain-master Warlock (an active
+  // scenario-seeded Imp familiar). Ready = the scenario's proper noun AND the
+  // familiar row's form name ("Imp" — the same string in EN and IT), so the LAZY
+  // FamiliarPanel leaf has resolved before the scan/shot.
+  "companions-rail": {
+    edit: false,
+    ready: async (page) => {
+      await readyText(/Ysolde/)(page);
+      await readyFamiliarRow(page);
+    },
+  },
+  // The familiar stat-block MODAL — one tap on the rail row. State-signal waits
+  // (the 1d3667d2 pattern): a missed row/dialog FAILS the surface, never a silent
+  // capture of the wrong state.
+  "familiar-statblock": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyText(/Ysolde/),
+    prepare: async (page) => {
+      await openFamiliarStatblock(page);
+    },
+  },
+  // The familiar FORM PICKER — statblock modal → "Change form" (the reSummon
+  // path swaps the modals). Anchors on the picker's search input (CompendiumPicker
+  // autofocuses it — locale-invariant structure, never translated copy).
+  "familiar-picker": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyText(/Ysolde/),
+    prepare: async (page) => {
+      await openFamiliarStatblock(page);
+      // The action row sits BELOW the stat block in the modal's scroll column —
+      // auto-scroll reaches it now that the body carries the overflow recipe
+      // (the sweep caught it unreachable when the body clipped instead).
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: /change form|cambia forma/i })
+        .click();
+      await page.getByRole("dialog").locator("input").first().waitFor({ timeout: 15000 });
+    },
+  },
+  // The GRANT-companion stat-block modal (pack Battle Smith → Steel Defender):
+  // scope to the Companions rail section by its h2 rubric (the weapon-mastery-
+  // picker scoping precedent) and tap the row button (DOM-first, before the HP
+  // steppers) to open the shared CompanionStatBlockCard modal.
+  "companion-statblock": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyText(/Garrek/),
+    prepare: async (page) => {
+      const section = page
+        .locator("section", {
+          has: page.getByRole("heading", { name: /companions|compagni/i }),
+        })
+        .first();
+      const row = section.getByRole("button").first();
+      await row.waitFor({ timeout: 15000 });
+      await row.click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
+    },
+  },
   create: { edit: false, ready: readyCreate },
   // The level-up wizard route (wizard F). The eyebrow carries the character's
   // proper-noun name, so readyByName proves the chrome painted.

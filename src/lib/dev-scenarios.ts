@@ -52,6 +52,7 @@ import {
 } from "@/lib/resolve-grant-sources";
 import { DEV_SCENARIO_PREFIX } from "@/lib/dev-scenario-id";
 import { slotUsageKey } from "@/lib/cast-options";
+import { FIND_FAMILIAR_SPELL_ID, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { getBeast } from "@/data/beasts";
 import { polymorphBuildPatch, polymorphPriorSnapshot } from "@/lib/polymorph";
 import { concentrationValue } from "@/lib/concentration";
@@ -154,6 +155,22 @@ export interface ScenarioSpec {
    * banner). Ignored when the id isn't a catalogued Beast.
    */
   startingForm?: string;
+  /**
+   * Start with an ACTIVE Find Familiar summon (the `startingForm` precedent for
+   * the Companions surface): seeds `session.familiar` (the chosen form's monster
+   * id + the 2024 Celestial/Fey/Fiend type swap) and — when `hpCurrent` is given —
+   * `session.companionHp["find-familiar"]`, so the Companions rail row and the
+   * familiar stat-block modal render AT REST (no summon interaction needed; the
+   * a11y/locale sweeps reach them). Eager-safe: the id is NOT corpus-validated
+   * here (no `@/data/monsters` import) — an unknown id renders the honest
+   * "Unknown form" row, exactly as a stale stored form does.
+   */
+  sessionFamiliar?: {
+    monsterId: string;
+    creatureType: FamiliarCreatureType;
+    /** Current HP (absent = full — max derives from the form at render). */
+    hpCurrent?: number;
+  };
 }
 
 /**
@@ -326,6 +343,24 @@ export function buildScenario(spec: ScenarioSpec): CharacterDoc {
     activeFeatures: spec.activeFeatures ?? [],
     grantBundleChoices: { ...(spec.grantBundleChoices ?? {}) },
     logEntries: [],
+    // An at-rest Find Familiar summon (Companions rail + statblock modal).
+    ...(spec.sessionFamiliar
+      ? {
+          familiar: {
+            monsterId: spec.sessionFamiliar.monsterId,
+            creatureType: spec.sessionFamiliar.creatureType,
+          },
+          ...(spec.sessionFamiliar.hpCurrent != null
+            ? {
+                companionHp: {
+                  [FIND_FAMILIAR_SPELL_ID]: {
+                    current: spec.sessionFamiliar.hpCurrent,
+                  },
+                },
+              }
+            : {}),
+        }
+      : {}),
   };
 
   const doc: CharacterDoc = {
@@ -1017,8 +1052,14 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
       "agonizing-blast",
     ],
     spells: [{ srdId: "eldritch-blast" }, { srdId: "find-familiar", prepared: true }],
+    // The Companions surfaces render AT REST: an active Imp familiar (a Pact-of-
+    // the-Chain special form, fittingly a Fiend) with a few HP spent so the rail
+    // row shows a non-trivial 15/21 + steppers. The a11y/locale sweeps drive the
+    // rail row → statblock modal → form picker off this seed (surface-manifest
+    // rows `companions-rail` / `familiar-statblock` / `familiar-picker`).
+    sessionFamiliar: { monsterId: "imp", creatureType: "fiend", hpCurrent: 15 },
     exercises:
-      "S6 familiar enhancements: the Investment of the Chain Master invocation detail (Compendium → Invocations, or the Features re-picker 'More') carries the familiar buffs callout — Fly/Swim 40 ft, Quick Attack, Necrotic/Radiant damage, the owner's spell save DC (CHA, via the spells-view presenter), Reaction Resistance. Display-only.",
+      "S6 familiar enhancements + the at-rest Companions surface: the rail's Companions section shows the seeded Imp familiar row (15/21 HP, steppers); one tap opens the type-swapped stat-block modal (rules card + the Investment of the Chain Master enhancements callout — Fly/Swim 40 ft, Quick Attack, Necrotic/Radiant damage, the owner's spell save DC, Reaction Resistance); Change form opens the corpus-derived picker with the seven special forms.",
   },
   // S8 ONE-TAP APPLY — slot-less DETERMINISTIC temp-HP card: Fiend Warlock's
   // Dark One's Blessing ("when you reduce an enemy to 0 HP, gain CHA + warlock

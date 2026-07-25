@@ -285,17 +285,18 @@ export function buildCompanionCardViews(
 }
 
 /**
- * The rail-row summaries — one per fielded companion. Grant companions come from
- * {@link buildCompanionCardViews}; the Find Familiar summon (when present) appends a
- * `familiar` descriptor the eager rail turns into a lazy `FamiliarPanel` mount (the
- * form's stat block joins the monster corpus only inside that leaf).
+ * The rail-row summaries, derived from ALREADY-BUILT card views — grant rows are a
+ * plain `.map`, then the Find Familiar summon (when present) appends a `familiar`
+ * descriptor the eager rail turns into a lazy `FamiliarPanel` mount (the form's
+ * stat block joins the monster corpus only inside that leaf). Split out so a
+ * caller that needs BOTH the rows and the full views (the rail: summary rows +
+ * the tap-open modal) runs the enumerate/resolve/aggregate pass exactly ONCE.
  */
-export function buildCompanionRowVMs(
-  doc: CharacterDoc,
-  locale: Locale,
-  t: Translate
+export function companionRowsFromViews(
+  views: readonly CompanionCardView[],
+  familiar: SessionState["familiar"]
 ): CompanionRowVM[] {
-  const rows: CompanionRowVM[] = buildCompanionCardViews(doc, locale, t).map((v) => ({
+  const rows: CompanionRowVM[] = views.map((v) => ({
     kind: "grant" as const,
     featureId: v.featureId,
     name: v.label,
@@ -305,7 +306,6 @@ export function buildCompanionRowVMs(
     chip: v.variants?.find((o) => o.variantId === v.selectedVariantId)?.label,
   }));
 
-  const familiar = doc.session.familiar;
   if (familiar) {
     rows.push({
       kind: "familiar",
@@ -316,4 +316,19 @@ export function buildCompanionRowVMs(
   }
 
   return rows;
+}
+
+/**
+ * The rail-row summaries — one per fielded companion (the one-shot convenience:
+ * {@link buildCompanionCardViews} + {@link companionRowsFromViews}).
+ */
+export function buildCompanionRowVMs(
+  doc: CharacterDoc,
+  locale: Locale,
+  t: Translate
+): CompanionRowVM[] {
+  return companionRowsFromViews(
+    buildCompanionCardViews(doc, locale, t),
+    doc.session.familiar
+  );
 }
