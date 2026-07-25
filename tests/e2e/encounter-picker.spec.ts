@@ -116,6 +116,47 @@ test.describe("encounter bestiary picker", () => {
     await expect(dialog(page)).toHaveCount(0);
   });
 
+  test("the DM XP-budget readout ticks live as bestiary monsters are added (§D)", async ({
+    page,
+  }) => {
+    await bootEncounter(page, "en");
+
+    // At rest the round-bar readout already grades the seeded encounter: monster-1
+    // (Goblin Warrior, XP 50 × 3 tokens) = 150 XP costed.
+    await expect(page.getByText(/150 XP/i).first()).toBeVisible();
+
+    // Open the picker and add Goblin Warrior ×2 (CR 1/4 → 50 XP each = +100).
+    await page
+      .getByRole("button", { name: /add monster/i })
+      .first()
+      .click();
+    await expect(dialog(page)).toBeVisible();
+    await dialog(page)
+      .getByPlaceholder(/search monsters/i)
+      .fill("goblin warrior");
+    await dialog(page)
+      .getByRole("button", { name: /^goblin warrior$/i })
+      .first()
+      .click();
+    await expect(dialog(page).locator(".mon-ref, .beast-ref").first()).toBeVisible();
+    await dialog(page).getByRole("button", { name: "Increase" }).click(); // qty 1 → 2
+    await dialog(page)
+      .getByRole("button", { name: /add monster/i })
+      .click();
+
+    // The modal's own budget strip ticks LIVE to the new total: 150 + 2×50 = 250 XP.
+    await expect(
+      dialog(page)
+        .getByText(/250 XP/i)
+        .first()
+    ).toBeVisible();
+
+    // After close, the round-bar readout shows the same total (one source, two mounts).
+    await page.keyboard.press("Escape");
+    await expect(dialog(page)).toHaveCount(0);
+    await expect(page.getByText(/250 XP/i).first()).toBeVisible();
+  });
+
   test("IT leg: an added bestiary monster carries its Italian SRD name", async ({
     page,
   }) => {
