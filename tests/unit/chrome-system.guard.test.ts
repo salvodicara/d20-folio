@@ -593,3 +593,138 @@ describe("the chrome system — L1, a frame means container or interactive", () 
     ).toBe(true);
   });
 });
+
+/**
+ * L3 · STATE CHANGES LIGHT AND COLOUR ONLY. GEOMETRY IS FROZEN.
+ *
+ * The reference's tabs, plaques and rows are pixel-identical across every state
+ * and differ only in how they are lit. Ours used to grow: a row's spine thickened
+ * 3px → 4px when it opened, an edit hot-spot grew 6px of padding under the cursor
+ * and shifted every glyph after it on the line, a focus ring re-declared a radius,
+ * a dying readout re-gapped its own value. Each is invisible in isolation and each
+ * is a surface resizing because you looked at it.
+ *
+ * And the ladder itself is the point: five rungs in tokens (index.css §04b), so
+ * fifty controls share one grammar instead of fifty bespoke hovers. The rungs are
+ * `--state-metal-hover` / `--state-metal-selected` / `--state-metal-disabled` and
+ * the two washes; the wash is ONE translucent veil composited over the plate's own
+ * face, never a second gradient authored per component.
+ */
+describe("the chrome system — L3, state changes light and colour only", () => {
+  const LADDER = [
+    "--state-metal-hover",
+    "--state-metal-selected",
+    "--state-metal-disabled",
+    "--state-wash-hover",
+    "--state-wash-selected",
+  ] as const;
+
+  it("defines the ladder once, at :root, with a per-theme pressed veil", () => {
+    for (const name of LADDER) {
+      expect(
+        new RegExp(`${name}\\s*:`).test(indexCss),
+        `MISSING ${name}. The state ladder is a CLOSED set of rungs — a component ` +
+          `that invents its own hover is how fifty controls came to have fifty ` +
+          `different ideas of what "selected" looks like.`
+      ).toBe(true);
+    }
+    // The pressed veil is the one rung that cannot be shared: dark presses INTO
+    // shadow, light presses into warm umber. A grey press on ivory reads as dirt.
+    expect(readToken(themeBlock("dark"), "--state-wash-pressed")).toMatch(
+      /rgba\(0, 0, 0/
+    );
+    expect(readToken(themeBlock("light"), "--state-wash-pressed")).toMatch(
+      /rgba\(74, 56, 20/
+    );
+  });
+
+  it("never lets a state rule change geometry", () => {
+    /** Properties that MOVE something. `transform` is not here: the 1px settle on
+     *  a card is the one motion the ladder licenses, and it is composited, not
+     *  laid out. */
+    const GEOMETRY =
+      /\b(border(?:-(?:top|right|bottom|left))?-width|border-radius|padding(?:-\w+)?|margin(?:-\w+)?|(?:min-|max-)?(?:width|height)|font-size|gap|letter-spacing)\s*:/;
+    const STATE =
+      /(:hover|:active|:focus-visible|\[aria-pressed|\[aria-selected|\[data-current\]|\[data-selected\]|\[data-state=|\.is-active|\.is-current)/;
+    /**
+     * The two documented exemptions, and why each is not a state resizing a box:
+     *  - a `::before` / `::after` on a checked control is the MARK APPEARING
+     *    inside it (the switch knob, the checkmark, the radio dot); the control's
+     *    own box never moves;
+     *  - `[data-kind="text"]`'s `padding: 0` restates its own base so the flowing
+     *    edit hot-spot keeps a zero footprint — it is the absence of geometry.
+     */
+    const EXEMPT = [/::(before|after)/, /\[data-kind="text"\]/];
+
+    const offenders: string[] = [];
+    for (const [, rawSelector, body] of folio.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const sel = (rawSelector ?? "").trim();
+      if (!STATE.test(sel)) continue;
+      if (EXEMPT.some((re) => re.test(sel))) continue;
+      const m = GEOMETRY.exec(body ?? "");
+      if (!m) continue;
+      const decl = (body ?? "").slice(m.index).split(";")[0]?.trim() ?? "";
+      offenders.push(`${sel.slice(0, 90)} → ${decl}`);
+    }
+    expect(
+      offenders,
+      `These STATE rules change GEOMETRY. A surface that resizes under the cursor ` +
+        `is a web affordance; a surface that brightens is a material (L3). Move the ` +
+        `dimension to the element's resting rule and let the state carry LIGHT — a ` +
+        `frame can be revealed in box-shadow (no layout size), a border can be held ` +
+        `transparent and coloured in, a radius belongs to the box and not to its ` +
+        `focus ring:\n  ${offenders.join("\n  ")}`
+    ).toEqual([]);
+  });
+
+  it("routes every interactive family through the one ladder", () => {
+    // A representative rung from each family. If a family stops consuming the
+    // tokens it has gone back to inventing its own state grammar.
+    const CONSUMERS: [string, RegExp][] = [
+      ["the roster card", /\.ch-card:hover \{[^}]*var\(--state-metal-hover\)/],
+      [
+        "the ability tile",
+        /\.statcard:hover \.statcard-face \{[^}]*var\(--state-metal-hover\)/,
+      ],
+      ["the rest card", /\.rest-card:hover \{[^}]*var\(--state-metal-hover\)/],
+      ["the button", /\.btn:hover[^{]*\{[^}]*var\(--state-metal-hover\)/],
+      ["the filter chip", /\.fchip:hover \{[^}]*var\(--state-metal-hover\)/],
+      ["the codex tab", /\.cmp-tab:hover \{[^}]*var\(--state-metal-hover\)/],
+      [
+        "the cockpit tab",
+        /\.tabstrip \[role="tab"\]:hover[^{]*\{[^}]*var\(--state-metal-hover\)/,
+      ],
+      ["the option cell", /\.opt-cell:hover[^{]*\{[^}]*var\(--state-metal-hover\)/],
+      ["the wizard entry", /\.wiz-entry:hover \{[^}]*var\(--state-metal-hover\)/],
+    ];
+    for (const [label, re] of CONSUMERS) {
+      expect(
+        re.test(folio),
+        `${label} no longer takes its hover from the ladder. One grammar across ` +
+          `cards, rows, tabs, buttons and list items — that is what makes it a ` +
+          `system rather than fifty opinions (index.css §04b).`
+      ).toBe(true);
+    }
+    // …and SELECTED is the accent metal, everywhere it appears.
+    for (const [label, re] of [
+      [
+        "the roster card",
+        /\.ch-card\[data-selected\] \{[^}]*var\(--state-metal-selected\)/,
+      ],
+      [
+        "the filter chip",
+        /\.fchip\[aria-pressed="true"\] \{[^}]*var\(--state-metal-selected\)/,
+      ],
+      [
+        "the codex tab",
+        /\.cmp-tab\[aria-selected="true"\] \{[^}]*var\(--state-metal-selected\)/,
+      ],
+      [
+        "the option cell",
+        /\.opt-cell\[aria-pressed="true"\] \{[^}]*var\(--state-metal-selected\)/,
+      ],
+    ] as [string, RegExp][]) {
+      expect(re.test(folio), `${label}'s SELECTED metal is off the ladder.`).toBe(true);
+    }
+  });
+});

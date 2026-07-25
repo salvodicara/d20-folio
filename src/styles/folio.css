@@ -967,9 +967,12 @@ svg.icon[stroke],
   width: 14px;
   height: 14px;
 }
+/* THE STATE LADDER (index.css §04b) on a button. Every register below composes
+   the same three moves — the metal warms, a candle wash crosses the face, the
+   plate settles 1px — and differs only in the FACE it starts from. */
 .btn:hover:not(:disabled):not(.loading) {
   background: var(--bg-surface-3);
-  border-color: var(--border-strong);
+  border-color: var(--state-metal-hover);
   transform: translateY(-1px);
 }
 .btn:active:not(:disabled):not(.loading) {
@@ -1295,18 +1298,16 @@ svg.icon[stroke],
 }
 .btn.secondary:hover:not(:disabled):not(.loading) {
   transform: translateY(-1px);
-  border-color: var(--border-strong);
+  border-color: var(--state-metal-hover);
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--bg-surface-3) 88%, var(--accent-primary)) 0%,
     var(--bg-surface-2) 100%
   );
   box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--text-primary) 9%, transparent),
     inset 0 -1px 0 rgba(0, 0, 0, 0.22),
     0 2px 0 rgba(0, 0, 0, 0.3),
-    0 5px 12px color-mix(in oklab, black 26%, transparent),
-    0 0 8px color-mix(in oklab, var(--accent-glow) 12%, transparent);
+    0 5px 12px color-mix(in oklab, black 26%, transparent);
 }
 .btn.secondary:active:not(:disabled):not(.loading) {
   transform: translateY(1px);
@@ -3731,9 +3732,10 @@ button.vital {
   background: color-mix(in oklab, var(--semantic-danger) 12%, var(--bg-surface-2));
   color: var(--semantic-danger);
 }
+/* Dying re-skins the readout to the danger hue and nothing else: the 2px of extra
+   gap it used to add re-flowed the value line under a state change (L3). */
 .vital-hp[data-state="dying"] .vhp-val {
   color: var(--semantic-danger);
-  gap: 5px;
 }
 /* Phone masthead vitals (≤639px) — a deliberate 1+4 composition instead of the
    accidental 4+1 wrap that orphaned PB on its own row: HP (the stat touched most
@@ -7071,12 +7073,10 @@ button.trk-pip:active {
    excluded so the hover never fights the gilt-leaf selection. Style-only, no
    reflow (transform), and the global reduced-motion guard snaps it instantly. */
 .opt-cell:hover:not(:disabled):not([aria-pressed="true"]) {
-  border-color: var(--accent-primary);
+  border-color: var(--state-metal-hover);
   color: var(--text-primary);
-  background: color-mix(in oklab, var(--accent-glow) 8%, var(--bg-surface-1));
-  box-shadow:
-    var(--elev-raised),
-    0 0 12px color-mix(in oklab, var(--accent-glow) 16%, transparent);
+  background: color-mix(in oklab, var(--accent-glow) 10%, var(--bg-surface-1));
+  box-shadow: var(--elev-raised);
   transform: translateY(-1px);
 }
 .opt-cell:focus-visible {
@@ -7084,7 +7084,7 @@ button.trk-pip:active {
   outline-offset: 2px;
 }
 .opt-cell[aria-pressed="true"] {
-  border-color: color-mix(in oklab, var(--accent-primary) 70%, white);
+  border-color: var(--state-metal-selected);
   /* FLICKER FIX — paint the gold as `background-IMAGE`, never the `background`
      shorthand. The shorthand resets `background-color` to transparent; because
      `.opt-cell` TRANSITIONS `background`, deselecting then animated the colour
@@ -7319,6 +7319,9 @@ button.trk-pip:active {
   font-family: var(--font-body);
   font-size: 0.78rem;
   color: var(--text-secondary);
+  /* The focus ring follows the border-radius, so the radius lives HERE, on the
+     element, never on the `:focus-visible` strike — geometry is frozen (L3). */
+  border-radius: var(--r-chip);
 }
 .opt-cell-wrap[data-selected] .opt-more-select {
   color: var(--text-primary);
@@ -7326,7 +7329,6 @@ button.trk-pip:active {
 .opt-more-select:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
-  border-radius: var(--r-chip);
 }
 .opt-more-select:disabled {
   cursor: not-allowed;
@@ -7828,9 +7830,12 @@ button.create-need:focus-visible .create-need-chev {
     border-color var(--m-fast);
   cursor: pointer;
 }
+/* THE STATE LADDER (index.css §04b) on a card: the metal warms, a candle wash
+   crosses the face, and the plate settles 1px toward the light. Nothing resizes. */
 .ch-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--edge-metal-earned);
+  transform: translateY(-1px);
+  border-color: var(--state-metal-hover);
+  background-image: linear-gradient(var(--state-wash-hover), var(--state-wash-hover));
   box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 /* Pressed feedback on tap — matches the sibling .rest-card press vocabulary
@@ -7839,6 +7844,7 @@ button.create-need:focus-visible .create-need-chev {
 .ch-card:active {
   /* depress INTO the page like every other interactive surface (was 0). */
   transform: translateY(1px);
+  background-image: linear-gradient(var(--state-wash-pressed), var(--state-wash-pressed));
 }
 [data-motion="reduced"] .ch-card:active {
   transform: none;
@@ -8188,7 +8194,11 @@ button.create-need:focus-visible .create-need-chev {
 /* SELECTED — light and colour only: the edge metal goes full accent and the plate
    takes the earned seat. No inner ring (that was a second frame), no geometry. */
 .ch-card[data-selected] {
-  border-color: var(--accent-primary);
+  border-color: var(--state-metal-selected);
+  background-image: linear-gradient(
+    var(--state-wash-selected),
+    var(--state-wash-selected)
+  );
   box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 /* The selection checkbox is the shared `.cb` atom, only RE-POSITIONED here as a
@@ -8278,6 +8288,8 @@ button.create-need:focus-visible .create-need-chev {
   text-decoration: underline;
   text-underline-offset: 2px;
   white-space: nowrap;
+  /* The radius is the element's, not the focus strike's (L3). */
+  border-radius: var(--r-chip);
   transition: color var(--m-fast) var(--ease-standard);
 }
 .rbb-selectall:hover {
@@ -8286,7 +8298,6 @@ button.create-need:focus-visible .create-need-chev {
 .rbb-selectall:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  border-radius: var(--r-chip);
 }
 .rbb-selectall:disabled {
   opacity: 0.5;
@@ -8599,12 +8610,17 @@ button.create-need:focus-visible .create-need-chev {
     border-color var(--m-fast) var(--ease-standard),
     box-shadow var(--m-fast) var(--ease-standard);
 }
+/* The reveal is drawn ENTIRELY in box-shadow — the same technique the flowing
+   `[data-kind="text"]` strike below uses, for the same reason: a shadow adds no
+   layout size, so the frame can appear without the 6px of padding this state used
+   to grow into, which shifted every glyph after it on the line (L3: geometry is
+   frozen; only light changes). */
 .inline-edit-btn[data-affordance="quiet"]:hover,
 .inline-edit-btn[data-affordance="quiet"]:focus-visible {
-  padding: 2px 8px;
   background: var(--input-fill);
-  border-color: var(--border-accent);
-  box-shadow: var(--elev-recessed);
+  box-shadow:
+    0 0 0 6px var(--input-fill),
+    0 0 0 7px var(--border-accent);
   text-decoration: none;
 }
 /* Quiet TEXT fields (the cockpit name, campaign title, session label) hold
@@ -9390,10 +9406,13 @@ button.create-need:focus-visible .create-need-chev {
   color: var(--text-muted);
   transition: color var(--m-fast);
 }
+/* THE STATE LADDER (index.css §04b) on a tab. The reference's tabs are
+   pixel-identical across every state: the metal warms, the candle wash crosses
+   the face, the ink lifts. Nothing moves. */
 .cmp-tab:hover {
   color: var(--text-primary);
-  border-color: var(--border-strong);
-  background: var(--bg-surface-2);
+  border-color: var(--state-metal-hover);
+  background: var(--state-wash-hover);
 }
 /* Light strike: surface-2 on the ivory band was IMPERCEPTIBLE (near-ivory on
    ivory) — the one resting tab state with no visible hover. Kindle it with the
@@ -9401,7 +9420,6 @@ button.create-need:focus-visible .create-need-chev {
    ink, so ~9% reads as a soft candle-warmth on cream), same voice both themes. */
 [data-theme="light"] .cmp-tab:hover {
   background: color-mix(in oklab, var(--accent-primary) 9%, var(--bg-surface-2));
-  border-color: color-mix(in oklab, var(--accent-primary) 35%, var(--border-strong));
 }
 .cmp-tab:hover .icon {
   color: var(--accent-text);
@@ -9412,7 +9430,7 @@ button.create-need:focus-visible .create-need-chev {
 }
 .cmp-tab[aria-selected="true"] {
   color: var(--accent-text);
-  border-color: color-mix(in oklab, var(--accent-primary) 60%, var(--border-strong));
+  border-color: var(--state-metal-selected);
   border-bottom-color: transparent;
   background: linear-gradient(
     180deg,
@@ -10605,21 +10623,23 @@ button.create-need:focus-visible .create-need-chev {
   color: var(--text-faint);
 }
 .fchip:hover {
-  border-color: var(--border-strong);
+  border-color: var(--state-metal-hover);
+  background: var(--state-wash-hover);
   color: var(--text-primary);
 }
 .fchip[aria-pressed="true"] {
-  background: color-mix(in oklab, var(--accent-primary) 14%, transparent);
-  border-color: var(--accent-primary);
+  background: var(--state-wash-selected);
+  border-color: var(--state-metal-selected);
   color: var(--accent-text);
 }
 /* Light: the 14%-over-transparent active tint reads as a faint gray wash on the
    cream field, so a selected facet (compendium filters, add-modal facets) barely
    stands out. Lift it to a solid gilt fill over the surface + a stronger gold edge
    so the active chip reads as gilt-selected at a glance (light-theme craft rule). */
+/* Light needs a slightly denser veil for the same read: 16% of the deep gold over
+   ivory is a fainter step than 16% over near-black. Same rung, re-struck. */
 [data-theme="light"] .fchip[aria-pressed="true"] {
   background: color-mix(in oklab, var(--accent-primary) 24%, var(--bg-surface-1));
-  border-color: color-mix(in oklab, var(--accent-primary) 80%, var(--border-strong));
 }
 .fchip[aria-pressed="true"] .fc-count {
   color: var(--accent-text);
@@ -12540,11 +12560,12 @@ textarea.input.sess-notes-edit {
 }
 .statcard:hover .statcard-face {
   transform: translateY(-1px);
-  box-shadow: var(--elev-floating);
-  border-color: var(--border-strong);
+  border-color: var(--state-metal-hover);
+  background-image: linear-gradient(var(--state-wash-hover), var(--state-wash-hover));
 }
 .statcard:active .statcard-face {
   transform: translateY(1px);
+  background-image: linear-gradient(var(--state-wash-pressed), var(--state-wash-pressed));
 }
 [data-motion="reduced"] .statcard-face {
   transition: none;
@@ -13889,7 +13910,8 @@ button.party-avatar-btn:focus-visible {
 }
 .tabstrip [role="tab"]:hover:not([aria-selected="true"]) {
   color: var(--text-primary);
-  background: color-mix(in oklab, var(--accent-primary) 8%, transparent);
+  border-color: var(--state-metal-hover);
+  background: var(--state-wash-hover);
 }
 .tabstrip [role="tab"][aria-selected="true"] {
   background: linear-gradient(
@@ -13897,7 +13919,7 @@ button.party-avatar-btn:focus-visible {
     color-mix(in oklab, var(--accent-glow) 24%, var(--bg-surface-2)),
     color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-1))
   );
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 48%, var(--border-medium));
+  border-color: var(--state-metal-selected);
   color: var(--accent-text);
   box-shadow: var(--elev-resting);
 }
@@ -15924,15 +15946,18 @@ button.econ-tok-filter:active .econ-disc {
     box-shadow var(--m-normal) var(--ease-standard),
     border-color var(--m-fast) var(--ease-standard);
 }
+/* The ladder's hover rung, struck in the card's own rest hue (`--rc`): the metal
+   warms toward it and the face takes the wash. The 1px settle is the one motion
+   a CARD is licensed (index.css §04b). */
 .rest-card:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in oklab, var(--rc) 55%, var(--border-medium));
-  box-shadow:
-    var(--elev-floating),
-    0 0 16px color-mix(in oklab, var(--rc) 18%, transparent);
+  transform: translateY(-1px);
+  border-color: color-mix(in oklab, var(--rc) 55%, var(--state-metal-hover));
+  background-image: linear-gradient(var(--state-wash-hover), var(--state-wash-hover));
+  box-shadow: var(--elev-floating);
 }
 .rest-card:active {
   transform: translateY(1px);
+  background-image: linear-gradient(var(--state-wash-pressed), var(--state-wash-pressed));
 }
 .rest-card:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -17827,10 +17852,12 @@ button.econ-tok-filter:active .econ-disc {
 }
 .wiz-fork-tab:hover {
   color: var(--text-primary);
+  border-color: var(--state-metal-hover);
+  background: var(--state-wash-hover);
 }
 .wiz-fork-tab[aria-pressed="true"] {
   color: var(--accent-text);
-  border-color: var(--accent-primary);
+  border-color: var(--state-metal-selected);
   background: color-mix(in oklab, var(--accent-glow) 16%, var(--bg-surface-2));
   box-shadow: var(--elev-recessed);
 }
@@ -18531,7 +18558,8 @@ button.econ-tok-filter:active .econ-disc {
     background var(--m-normal) var(--ease-standard);
 }
 .wiz-entry:hover {
-  border-color: color-mix(in oklab, var(--accent-primary) 50%, transparent);
+  border-color: var(--state-metal-hover);
+  background-image: linear-gradient(var(--state-wash-hover), var(--state-wash-hover));
 }
 /* Reading: illuminated, but NOT gold — ceremony rides commit. */
 .wiz-entry[data-open] {

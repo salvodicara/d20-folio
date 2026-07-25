@@ -670,6 +670,38 @@ the same two values, so markup and stylesheet can never drift into a third. Guar
 the two, a circle, the one pill, or a calc off the plate value for an inner edge inside its own
 border.
 
+### The state ladder — five rungs, and there is no sixth
+
+L3 in practice. The rungs live as tokens in `src/index.css` §04b and every interactive family
+consumes them, so fifty controls share one grammar instead of fifty bespoke hovers.
+
+| rung         | metal                    | face                                             | ink             |
+| ------------ | ------------------------ | ------------------------------------------------ | --------------- |
+| **rest**     | the tier's own           | the plate's own                                  | the register's  |
+| **hover**    | `--state-metal-hover`    | `+ --state-wash-hover` (candle veil)             | lifts one step  |
+| **pressed**  | unchanged                | `+ --state-wash-pressed` (per theme)             | unchanged       |
+| **selected** | `--state-metal-selected` | `+ --state-wash-selected`, or the signature face | `--accent-text` |
+| **disabled** | `--state-metal-disabled` | flat                                             | `--text-muted`  |
+
+The **wash** is the whole mechanism: ONE translucent veil composited over the plate's own face,
+never a second gradient authored per component. `--state-wash-pressed` is the one rung that cannot
+be shared — dark presses into shadow, light into warm umber; a grey press on ivory reads as dirt.
+
+**Geometry is frozen.** No state may change a radius, a border width, a size, a padding or a
+position. Three techniques cover every case that used to: a border held `transparent` at rest and
+coloured in by the state; a frame revealed **entirely in `box-shadow`** (a shadow adds no layout
+size, so the reveal moves nothing — the inline-edit hot-spot recipe); and a radius declared on the
+element rather than on its `:focus-visible` strike. The one motion the ladder licenses is the
+reference's own **1px settle on a CARD** (`transform`, `[data-motion]`-gated) — a card lifts toward
+the light, it does not grow.
+
+Focus is the **2px `--focus-ring` at offset 2, alone**. No interior wash, no bloom, no halo: light
+on this material means depth, and a second light source would have to come from somewhere.
+
+Pinned by `tests/unit/chrome-system.guard.test.ts` — the ladder's existence, the per-theme pressed
+veil, every family's consumption of it, and a sweep that fails any state rule declaring a geometry
+property.
+
 ### Two tiers, differing ONLY in light
 
 | tier        | used by                                                        | metal | seat                 |

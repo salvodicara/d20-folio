@@ -174,6 +174,33 @@
   --edge-metal: var(--border-strong);
   --edge-metal-earned: var(--border-accent);
 
+  /* ── § 04b THE STATE LADDER — five rungs, and there is no sixth.
+     L3: STATE CHANGES LIGHT AND COLOUR ONLY. GEOMETRY IS FROZEN. Nothing a
+     pointer, a keyboard or a selection does may change a radius, a border width,
+     a size, a padding or a position — the reference's tabs, plaques and rows are
+     pixel-identical across every state and differ only in how they are lit. A
+     surface that resizes under the cursor is a web affordance; a surface that
+     brightens is a material.
+
+       rest      → the tier's own metal, the plate's own face
+       hover     → the metal warms toward gold, a candle WASH crosses the face
+       pressed   → the wash darkens (light: whitens) and the plate takes 1px in
+       selected  → the metal is the accent, the wash is the accent, the ink lifts
+       disabled  → the metal softens, the face flattens, the label goes muted
+
+     The WASH is the whole mechanism: one translucent veil composited over the
+     plate's own face, never a second gradient authored per component. That is
+     what makes fifty controls share one ladder instead of fifty bespoke hovers.
+
+     The only motion the ladder licenses is the reference's own 1px settle on a
+     CARD (transform, `[data-motion]`-gated) — a card lifts toward the light, it
+     does not grow. ── */
+  --state-metal-hover: var(--border-accent);
+  --state-metal-selected: var(--accent-primary);
+  --state-metal-disabled: var(--border-soft);
+  --state-wash-hover: color-mix(in oklab, var(--accent-glow) 10%, transparent);
+  --state-wash-selected: color-mix(in oklab, var(--accent-primary) 16%, transparent);
+
   /* ── § 06 Motion — The settling grammar (BG3 identity: motion SETTLES, never
      travels — short cubic-out fades with tiny translates; spring/bounce is
      reserved EXCLUSIVELY for warning/urgent notification pops). ── */
@@ -700,6 +727,9 @@
     inset 0 0 0 1px rgba(0, 0, 0, 0.5), inset 0 0 20px 2px rgba(0, 0, 0, 0.4);
   --edge-seat: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 10px 24px rgba(0, 0, 0, 0.5);
   --edge-seat-earned: 0 0 0 1px rgba(0, 0, 0, 0.75), 0 26px 60px rgba(0, 0, 0, 0.72);
+  /* Pressed veil (state ladder, §04b): a plate goes INTO the candlelight, so on
+     the dark theme the wash is shadow. */
+  --state-wash-pressed: rgba(0, 0, 0, 0.16);
 
   /* § 05 Elevation — Carved + Embossed (dark) */
   --elev-flat: none;
@@ -1160,6 +1190,9 @@
     inset 0 0 0 1px rgba(74, 56, 20, 0.16), inset 0 0 20px 2px rgba(74, 56, 20, 0.1);
   --edge-seat: 0 0 0 1px rgba(46, 30, 6, 0.18), 0 8px 20px rgba(46, 30, 6, 0.22);
   --edge-seat-earned: 0 0 0 1px rgba(46, 30, 6, 0.24), 0 22px 48px rgba(46, 30, 6, 0.32);
+  /* Pressed veil (state ladder, §04b): on ivory the press reads as the plate
+     taking the room's shade — warm umber, never grey. */
+  --state-wash-pressed: rgba(74, 56, 20, 0.1);
 
   /* § 05 Elevation — Carved + Embossed (light). Strengthened against the deeper
      vellum field: the prior drops (5–8% umber) vanished on near-white surfaces, so
