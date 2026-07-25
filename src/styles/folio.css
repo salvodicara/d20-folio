@@ -188,7 +188,7 @@ svg.icon[stroke],
   height: 32px;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: 50%;
   background: none;
   color: var(--accent-text);
   cursor: pointer;
@@ -872,7 +872,7 @@ svg.icon[stroke],
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   color: var(--text-muted);
   background: var(--bg-surface-1);
   border: 1px solid var(--border-soft);
@@ -937,7 +937,7 @@ svg.icon[stroke],
   text-transform: uppercase;
   color: var(--text-primary);
   padding: 8px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--bg-surface-2);
   border: 1px solid var(--border-medium);
   transition:
@@ -1569,7 +1569,7 @@ svg.icon[stroke],
   );
   border: 1px solid color-mix(in oklab, var(--border-strong) 90%, var(--carve-shade));
   padding: 8px 12px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   /* Fill the container (the correct form-input default) so a field is flush with
      BOTH inner edges of its cell — otherwise it sat at its intrinsic ~200px, left-
      aligned, leaving an asymmetric gap on the right of the last grid column. The
@@ -1733,7 +1733,7 @@ textarea.input::-webkit-resizer {
   width: 36px;
   height: 36px;
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--input-fill);
   box-shadow: var(--elev-recessed);
   color: var(--text-muted);
@@ -1751,7 +1751,7 @@ textarea.input::-webkit-resizer {
 }
 .csearch[data-open] .csearch-lens {
   border-right-color: transparent;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  border-radius: var(--r-chip) 0 0 var(--r-chip);
   color: var(--text-secondary);
 }
 /* The input is the second flex item; it animates from 0 → its open width. The
@@ -1763,7 +1763,7 @@ textarea.input::-webkit-resizer {
   padding-left: 0;
   padding-right: 0;
   border-left-width: 0;
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border-radius: 0 var(--r-chip) var(--r-chip) 0;
   opacity: 0;
   pointer-events: none;
   transition:
@@ -1849,7 +1849,7 @@ textarea.input::-webkit-resizer {
   gap: 5px;
   height: var(--tt-h, 2.25rem);
   padding: 0 11px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid var(--border-medium);
   background: var(--input-fill);
   box-shadow: var(--elev-recessed);
@@ -1899,7 +1899,7 @@ button.toolbar-chip:focus-visible {
   display: inline-flex;
   width: fit-content;
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   overflow: hidden;
   background: var(--bg-surface-2);
   box-shadow: var(--elev-recessed);
@@ -1934,7 +1934,7 @@ button.toolbar-chip:focus-visible {
 .num-stepper .input {
   min-width: 56px;
   border: none;
-  border-radius: 0;
+  border-radius: var(--r-chip);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 .num-stepper:focus-within {
@@ -1961,7 +1961,7 @@ button.toolbar-chip:focus-visible {
   text-transform: uppercase;
   line-height: 1;
   white-space: nowrap;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: color-mix(in oklab, var(--bd-c) 14%, var(--bg-surface-2));
   border: 1px solid var(--bd-c);
   /* LABEL uses the AA-safe ink when the call-site passes a saturated domain
@@ -2043,7 +2043,7 @@ button.toolbar-chip:focus-visible {
   place-items: center;
   width: 30px;
   height: 30px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 15px;
@@ -2181,7 +2181,7 @@ button.pr-dot.lg::before {
   padding: 5px 12px;
   color: var(--text-secondary);
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   transition:
     background var(--m-fast),
     color var(--m-fast);
@@ -2266,7 +2266,7 @@ button.pr-dot.lg::before {
   max-width: 32rem;
   background: var(--plate-dome), var(--plate-face);
   border: 2px solid var(--edge-metal-earned);
-  border-radius: 0;
+  border-radius: var(--r-plate);
   box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 .modal.sm {
@@ -2326,7 +2326,7 @@ button.pr-dot.lg::before {
   place-items: center;
   width: 28px;
   height: 28px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
 }
 .modal-close:hover {
   color: var(--accent-text);
@@ -2354,7 +2354,7 @@ button.pr-dot.lg::before {
 .popover {
   background: var(--bg-surface-2);
   border: 1px solid var(--border-accent);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   box-shadow: var(--elev-floating);
   overflow: hidden;
   max-width: 360px;
@@ -2390,7 +2390,7 @@ button.pr-dot.lg::before {
   background: var(--bg-surface-3);
   border: 1px solid var(--border-accent);
   border-top: 2px solid var(--accent-primary);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   padding: 8px 12px;
   font-family: var(--font-body);
   font-size: 12px;
@@ -2437,7 +2437,7 @@ button.pr-dot.lg::before {
   text-underline-offset: 3px;
   padding: 6px;
   margin: -6px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
 }
 .glossary-term {
   cursor: help;
@@ -2570,7 +2570,7 @@ button.pr-dot.lg::before {
     var(--bg-surface-2) 55%
   );
   border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, var(--border-accent));
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, var(--gold-leaf-50) 28%, transparent),
     var(--elev-floating);
@@ -2608,7 +2608,7 @@ button.pr-dot.lg::before {
   height: 24px;
   flex-shrink: 0;
   color: var(--text-muted);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   transition:
     color var(--m-fast),
     background var(--m-fast);
@@ -2700,7 +2700,7 @@ button.pr-dot.lg::before {
   gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-4);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, var(--border-accent));
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--accent-glow) 9%, var(--bg-surface-1)) 0%,
@@ -2716,7 +2716,7 @@ button.pr-dot.lg::before {
   position: absolute;
   inset: 0 0 auto 0;
   height: 2px;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: var(--r-plate) var(--r-plate) 0 0;
   background: linear-gradient(90deg, var(--accent-primary), var(--accent-primary-bright));
 }
 /* Light parity (T8 / C4): the gold-50 struck highlight inverts on vellum (see the
@@ -2837,7 +2837,7 @@ button.pr-dot.lg::before {
     transform var(--m-fast) var(--ease-settle);
 }
 .cb {
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
 }
 .rb {
   border-radius: 50%;
@@ -2932,7 +2932,7 @@ button.pr-dot.lg::before {
   padding: 3px;
   background: var(--bg-recessed);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   box-shadow: var(--elev-recessed);
 }
 .seg button {
@@ -2950,7 +2950,7 @@ button.pr-dot.lg::before {
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   text-align: center;
   transition:
     background var(--m-fast),
@@ -3052,7 +3052,7 @@ button.pr-dot.lg::before {
   );
   border: 1px solid color-mix(in oklab, var(--border-strong) 90%, var(--carve-shade));
   padding: 8px 32px 8px 12px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   min-width: 160px;
   box-shadow: var(--elev-recessed);
 }
@@ -3443,7 +3443,7 @@ button.pr-dot.lg::before {
   inset: 0;
   z-index: var(--z-sticky);
   pointer-events: none;
-  border-radius: 3px;
+  border-radius: var(--r-chip);
   box-shadow:
     inset 0 0 0 2px color-mix(in oklab, var(--edit-accent) 70%, transparent),
     inset 0 0 24px color-mix(in oklab, var(--edit-accent) 13%, transparent);
@@ -3546,7 +3546,7 @@ button.pr-dot.lg::before {
      The locked Folio language is lapidary (sharp 0–12px); round avatars clash
      against the sharp-cornered roster squares + EDIT button beside them. The
      pill radius (999px) is reserved for the switch track only. */
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -3601,7 +3601,7 @@ button.pr-dot.lg::before {
   /* COCKPIT-LUX — carved tile (gradient + emboss) instead of a flat surface-2
      slab, so the hero-bar vitals share the wizard's carved-plaque material. */
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: linear-gradient(180deg, var(--bg-surface-3), var(--bg-surface-2));
   box-shadow: var(--elev-resting);
 }
@@ -3756,7 +3756,7 @@ button.pr-dot.lg::before {
 .rest-medal .rm-coin {
   width: 44px;
   height: 44px;
-  border-radius: 999px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3824,7 +3824,7 @@ button.pr-dot.lg::before {
   padding: 1px 8px 1px 5px;
   background: color-mix(in oklab, var(--accent-primary) 10%, transparent);
   border: 1px solid var(--accent-primary-deep);
-  border-radius: 999px;
+  border-radius: var(--r-chip);
   color: var(--accent-text);
   font-size: 11px;
   letter-spacing: 0.09em;
@@ -3976,7 +3976,7 @@ button.pr-dot.lg::before {
   place-items: center;
   width: 17px;
   height: 17px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   background: var(--bg-surface-3);
   color: var(--accent-primary-bright);
   border: 1px solid
@@ -4090,7 +4090,7 @@ button.pr-dot.lg::before {
   place-items: center;
   width: 32px; /* was 30px */
   height: 32px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   color: var(--text-secondary); /* was text-muted (AA at icon size) */
   transition: color var(--m-fast);
   position: relative;
@@ -4135,7 +4135,7 @@ button.pr-dot.lg::before {
   align-items: baseline;
   gap: 5px;
   padding: 3px 9px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   position: relative;
   /* No `cursor: help` — these mods are not interactive and carry no tooltip
      (the explanation is a real sr-only child). A help cursor promised an
@@ -4273,7 +4273,7 @@ button.pr-dot.lg::before {
   padding: var(--sp-1) var(--sp-2);
   background: var(--input-fill, var(--bg-recessed));
   border: 1px dashed var(--border-medium);
-  border-radius: var(--radius-sm, 4px);
+  border-radius: var(--r-chip);
   font-size: var(--text-sm);
   color: var(--text-secondary);
   text-align: left;
@@ -4323,7 +4323,7 @@ textarea.input.rail-notes-area {
   /* A faint gilt-tinted pill at REST (so it reads as a control, not bare text),
      brightening on hover/focus — works on both the dark and the cream backdrop. */
   border: 1px solid color-mix(in oklab, var(--accent-primary) 20%, transparent);
-  border-radius: var(--radius-pill);
+  border-radius: 50%;
   background: color-mix(in oklab, var(--accent-primary) 6%, transparent);
   font-family: var(--font-numeric);
   font-size: var(--text-micro);
@@ -4396,7 +4396,7 @@ textarea.input.rail-notes-area {
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: 1px 5px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   margin-left: 4px;
   color: var(--lapis-300);
   border: 1px solid var(--lapis-300);
@@ -4426,7 +4426,7 @@ textarea.input.rail-notes-area {
   gap: 4px;
   width: 100%;
   padding: 5px 9px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid var(--border-medium);
   background: var(--bg-surface-2);
   transition:
@@ -4496,7 +4496,7 @@ textarea.input.rail-notes-area {
   padding-top: var(--sp-3);
   border: none;
   border-top: 1px solid var(--border-soft);
-  border-radius: 0;
+  border-radius: var(--r-chip);
   box-shadow: none;
   background: transparent;
   overflow: visible;
@@ -4546,7 +4546,7 @@ textarea.input.rail-notes-area {
   color: var(--lapis-300);
   background: color-mix(in oklab, var(--lapis-500) 15%, transparent);
   border: 1px solid color-mix(in oklab, var(--lapis-300) 40%, transparent);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   padding: 0 4px;
 }
 .hp-pop .pop-body {
@@ -4643,7 +4643,7 @@ textarea.input.rail-notes-area {
 }
 .hp-bar {
   height: 11px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--bg-recessed);
   border: 1px solid var(--border-strong);
   box-shadow: var(--elev-recessed);
@@ -4749,7 +4749,7 @@ textarea.input.rail-notes-area {
   padding: 4px 7px;
   background: var(--bg-surface-1);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
 }
 .slot-cell.depleted {
   opacity: 0.45;
@@ -4776,7 +4776,7 @@ textarea.input.rail-notes-area {
 .sc-pip {
   width: 9px;
   height: 9px;
-  border-radius: 1px;
+  border-radius: var(--r-chip);
   background: radial-gradient(
     circle at 35% 30%,
     color-mix(in oklab, var(--sl) 80%, white),
@@ -4852,7 +4852,7 @@ button.sc-pip:disabled {
   align-items: center;
   gap: 6px;
   padding: 4px 9px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   font-family: var(--font-numeric);
   font-size: 10px;
   font-weight: 500;
@@ -4936,7 +4936,7 @@ button.sc-pip:disabled {
   font-weight: 700;
   color: var(--accent-text);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 50%, transparent);
-  border-radius: 2px;
+  border-radius: var(--r-chip);
   padding: 0 4px;
 }
 .trk-rec {
@@ -4946,7 +4946,7 @@ button.sc-pip:disabled {
   font-weight: 700;
   color: var(--semantic-success);
   border: 1px solid var(--semantic-success);
-  border-radius: 2px;
+  border-radius: var(--r-chip);
   padding: 0 4px;
 }
 .trk-rec[data-r="long"] {
@@ -5059,7 +5059,7 @@ button.trk-pip:active {
   align-items: center;
   gap: 6px;
   padding: 3px 9px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   font-family: var(--font-numeric);
   font-size: 10px;
   font-weight: 500;
@@ -5130,7 +5130,7 @@ button.trk-pip:active {
      without sacrificing contrast. */
   color: var(--text-muted);
   border: 1px dashed var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   padding: 4px 9px;
   transition:
     color var(--m-fast),
@@ -5159,7 +5159,7 @@ button.trk-pip:active {
   overscroll-behavior: contain;
   background: var(--bg-surface-1);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   box-shadow: var(--elev-floating);
   padding: var(--sp-1) 0;
 }
@@ -5239,7 +5239,7 @@ button.trk-pip:active {
   cursor: pointer;
   flex: 1;
   height: 14px;
-  border-radius: 2px;
+  border-radius: var(--r-chip);
   background: var(--bg-recessed);
   border: 1px solid var(--border-strong);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -5331,7 +5331,7 @@ button.trk-pip:active {
      `flex:1` spacer's slack (and truncates within it); the invariants never budge.
      `flex-shrink: 0` is the guarantee — pinned by topbar-brand-invariant.spec.ts. */
   flex-shrink: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   transition:
     filter var(--m-fast) var(--ease-standard),
     transform var(--m-instant) var(--ease-settle);
@@ -5374,7 +5374,7 @@ button.trk-pip:active {
   max-width: min(480px, 42vw);
   margin: 0;
   padding: 4px 10px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid color-mix(in oklab, var(--cp-c) 55%, transparent);
   background: color-mix(in oklab, var(--cp-c) 12%, var(--bg-surface-2));
   color: var(--cp-ink);
@@ -5542,7 +5542,7 @@ button.trk-pip:active {
 .cp-dest-portrait {
   width: 22px;
   height: 22px;
-  border-radius: 3px;
+  border-radius: var(--r-chip);
   overflow: hidden;
   flex: none;
   border: 1px solid var(--gold-leaf-700);
@@ -5647,7 +5647,7 @@ button.trk-pip:active {
     width: auto;
     height: auto;
     padding: 4px 8px;
-    border-radius: var(--radius-md);
+    border-radius: var(--r-chip);
   }
   /* SPLIT PILL → glyph+count. The decorative status segment, the destination seal, its
      label, and the chevron all step aside; the compact `⚔{n}` lead (revealed here)
@@ -5739,7 +5739,7 @@ button.trk-pip:active {
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   text-decoration: none;
   color: var(--text-primary);
   border-left: 3px solid var(--cp-c);
@@ -5796,7 +5796,7 @@ button.trk-pip:active {
   flex-shrink: 0; /* fixed-size invariant — see .topbar-brand */
   gap: 8px;
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   padding: 8px 12px;
   font-size: var(--text-sm);
   color: var(--text-secondary);
@@ -5846,7 +5846,7 @@ button.trk-pip:active {
   /* Lapidary square to match the roster .ch-portrait + sheet-header .portrait
      (one avatar primitive, one corner idiom). Round avatars break the locked
      sharp-cornered Folio language; --radius-pill stays reserved for switches. */
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   object-fit: cover;
   border: 1px solid var(--border-medium);
   transition:
@@ -5884,7 +5884,7 @@ button.trk-pip:active {
   gap: 8px;
   padding: 2px 4px;
   margin: -2px -4px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   transition: box-shadow var(--m-fast) var(--ease-standard);
 }
 /* NEVER truncated (owner 2026-06-12: "truncations are a sign of
@@ -6419,7 +6419,7 @@ button.trk-pip:active {
   letter-spacing: 0.02em;
   padding: 13px 26px;
   color: var(--text-inverse);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
   background: linear-gradient(
     180deg,
@@ -6676,7 +6676,7 @@ button.trk-pip:active {
   padding: var(--sp-3) var(--sp-4);
   background: var(--bg-surface-2);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   box-shadow: var(--elev-resting);
   margin-bottom: var(--sp-4);
 }
@@ -6753,7 +6753,7 @@ button.trk-pip:active {
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-3);
   margin-bottom: var(--sp-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid var(--semantic-danger);
   background: color-mix(in oklab, var(--semantic-danger) 12%, var(--bg-surface-2));
   color: var(--semantic-danger);
@@ -6845,7 +6845,7 @@ button.trk-pip:active {
   border: 2px solid var(--edge-metal-earned);
   /* Square corners — the one-line law (owner, 2026-07-24): the corner ornament
      seats on a true square crossing of this band's own border. */
-  border-radius: 0;
+  border-radius: var(--r-plate);
   background:
     var(--plate-dome),
     linear-gradient(
@@ -6936,7 +6936,7 @@ button.trk-pip:active {
   color: var(--accent-text);
   background: color-mix(in oklab, var(--accent-primary) 14%, transparent);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 40%, transparent);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   padding: 1px 5px;
   /* The chip is a self-contained badge (own gold-tint fill + border), so it must
      NOT inherit the loose-on-backdrop dark outline halo its `.opt-head-label`
@@ -6967,7 +6967,7 @@ button.trk-pip:active {
   margin-top: var(--sp-3);
   padding: var(--sp-3) var(--sp-4) var(--sp-4);
   border-left: 2px solid color-mix(in oklab, var(--accent-primary) 55%, transparent);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border-radius: 0 var(--r-chip) var(--r-chip) 0;
   background: color-mix(in oklab, var(--accent-primary) 5%, transparent);
 }
 /* Light: a full-strength gold rule + a slightly stronger tint, so the block reads
@@ -7041,7 +7041,7 @@ button.trk-pip:active {
   line-height: 1.2;
   color: var(--text-secondary);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--bg-surface-1);
   box-shadow: var(--elev-recessed);
   transition:
@@ -7256,7 +7256,7 @@ button.trk-pip:active {
   gap: 8px;
   padding: 5px 8px;
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--bg-surface-1);
   box-shadow: var(--elev-recessed);
   transition:
@@ -7315,7 +7315,7 @@ button.trk-pip:active {
 .opt-more-select:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
 }
 .opt-more-select:disabled {
   cursor: not-allowed;
@@ -7357,7 +7357,7 @@ button.trk-pip:active {
   text-transform: uppercase;
   color: var(--accent-text);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 50%, var(--border-medium));
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   background: color-mix(in oklab, var(--bg-surface-1) 70%, transparent);
   transition:
     background var(--m-fast) var(--ease-settle),
@@ -7393,7 +7393,7 @@ button.trk-pip:active {
   font-size: 0.72rem;
   color: var(--text-secondary);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--bg-surface-1);
   box-shadow: var(--elev-recessed);
   transition:
@@ -7450,7 +7450,7 @@ button.trk-pip:active {
   padding: 10px 12px;
   border: 1px solid var(--border-medium);
   border-top: 1px dashed var(--border-soft);
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  border-radius: 0 0 var(--r-chip) var(--r-chip);
   background: color-mix(in oklab, var(--bg-surface-2) 60%, transparent);
   animation: optDetailIn var(--m-normal) var(--ease-settle);
 }
@@ -7479,7 +7479,7 @@ button.trk-pip:active {
   letter-spacing: 0.02em;
   color: #2a1e08;
   border: 1px solid color-mix(in oklab, var(--accent-primary) 55%, black);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: linear-gradient(
     160deg,
     color-mix(in oklab, var(--accent-primary-bright) 70%, white) 0%,
@@ -7533,7 +7533,7 @@ button.trk-pip:active {
   margin-top: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
   border: 1px solid var(--border-accent);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   background: color-mix(in oklab, var(--accent-glow) 8%, var(--bg-surface-2));
   box-shadow: var(--elev-resting);
 }
@@ -7571,7 +7571,7 @@ button.create-need {
   width: 100%;
   box-sizing: border-box;
   padding: 6px 8px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   font-size: var(--text-sm);
   font-family: inherit;
   color: var(--text-secondary);
@@ -7808,7 +7808,7 @@ button.create-need:focus-visible .create-need-chev {
   min-width: 0;
   background: var(--plate-dome), var(--plate-face);
   border: 1px solid var(--edge-metal);
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
   box-shadow: var(--edge-groove), var(--edge-seat);
   overflow: hidden;
   transition:
@@ -7884,7 +7884,7 @@ button.create-need:focus-visible .create-need-chev {
 .ch-portrait {
   width: 56px;
   height: 56px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   flex-shrink: 0;
   display: grid;
   place-items: center;
@@ -7959,7 +7959,7 @@ button.create-need:focus-visible .create-need-chev {
   position: absolute;
   inset: 0;
   z-index: 1;
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
 }
 .ch-open:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -8034,7 +8034,7 @@ button.create-need:focus-visible .create-need-chev {
   height: 28px;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   color: var(--text-muted);
   transition:
     color var(--m-fast),
@@ -8104,7 +8104,7 @@ button.create-need:focus-visible .create-need-chev {
   align-items: baseline;
   gap: 4px;
   padding: 3px 8px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--bg-surface-2);
   border: 1px solid var(--border-soft);
 }
@@ -8116,7 +8116,7 @@ button.create-need:focus-visible .create-need-chev {
   align-items: center;
   gap: 5px;
   padding: 3px 8px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--bg-surface-2);
   border: 1px solid var(--border-soft);
 }
@@ -8220,7 +8220,7 @@ button.create-need:focus-visible .create-need-chev {
   padding: 8px 10px;
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   border: 1px solid var(--border-accent);
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
   box-shadow: var(--elev-modal);
   backdrop-filter: blur(10px);
 }
@@ -8238,7 +8238,7 @@ button.create-need:focus-visible .create-need-chev {
   place-items: center;
   width: 30px;
   height: 30px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   color: var(--text-secondary);
   transition:
     background var(--m-fast) var(--ease-standard),
@@ -8275,7 +8275,7 @@ button.create-need:focus-visible .create-need-chev {
 .rbb-selectall:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: var(--r-chip);
 }
 .rbb-selectall:disabled {
   opacity: 0.5;
@@ -8540,7 +8540,7 @@ button.create-need:focus-visible .create-need-chev {
   color: var(--text-primary);
   background: var(--bg-recessed);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   box-shadow: var(--elev-recessed);
   transition:
     border-color var(--m-fast) var(--ease-standard),
@@ -8715,7 +8715,7 @@ button.create-need:focus-visible .create-need-chev {
   color: var(--text-primary);
   background: var(--input-fill);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   padding: 2px 4px;
   box-shadow: var(--elev-recessed);
   cursor: text;
@@ -8737,7 +8737,7 @@ button.create-need:focus-visible .create-need-chev {
   place-items: center;
   width: 22px;
   height: 22px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   color: var(--text-muted);
   transition:
     color var(--m-fast),
@@ -8753,7 +8753,7 @@ button.create-need:focus-visible .create-need-chev {
 .uc-note {
   margin-top: var(--sp-2);
   padding: var(--sp-2) var(--sp-2);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   background: var(--bg-recessed);
   border: 1px solid var(--border-soft);
   font-family: var(--font-body);
@@ -8808,7 +8808,7 @@ button.create-need:focus-visible .create-need-chev {
   align-items: center;
   gap: var(--sp-2);
   padding: 8px 10px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid var(--border-medium);
   background: var(--bg-surface-1);
   font-family: var(--font-body);
@@ -8868,7 +8868,7 @@ button.create-need:focus-visible .create-need-chev {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: var(--r-chip);
   color: var(--sl, var(--text-secondary));
   border: 1px solid color-mix(in oklab, var(--sl, var(--border-strong)) 45%, transparent);
   background: color-mix(in oklab, var(--sl, var(--bg-surface-2)) 14%, transparent);
@@ -8883,7 +8883,7 @@ button.create-need:focus-visible .create-need-chev {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: var(--r-chip);
   color: var(--semantic-success);
   border: 1px solid color-mix(in oklab, var(--semantic-success) 45%, transparent);
   background: color-mix(in oklab, var(--semantic-success) 14%, transparent);
@@ -8896,7 +8896,7 @@ button.create-need:focus-visible .create-need-chev {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 1px 5px;
-  border-radius: 2px;
+  border-radius: var(--r-chip);
   border: 1px solid currentColor;
 }
 .cl-opt .cl-rest {
@@ -8914,7 +8914,7 @@ button.create-need:focus-visible .create-need-chev {
   font-size: 11px;
   font-weight: 700;
   color: color-mix(in oklab, var(--sl) 30%, black);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   background: radial-gradient(
     circle at 35% 30%,
     color-mix(in oklab, var(--sl) 85%, white),
@@ -8956,7 +8956,7 @@ button.create-need:focus-visible .create-need-chev {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
   padding: 1px 6px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   color: color-mix(in oklab, var(--cl-cost-c) 70%, var(--text-primary));
   background: color-mix(in oklab, var(--cl-cost-c) 13%, transparent);
   border: 1px solid color-mix(in oklab, var(--cl-cost-c) 38%, transparent);
@@ -8993,7 +8993,7 @@ button.create-need:focus-visible .create-need-chev {
   align-items: baseline;
   gap: 8px;
   padding: 6px 12px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: color-mix(in oklab, var(--semantic-info) 9%, var(--bg-recessed));
   border: 1px solid color-mix(in oklab, var(--semantic-info) 26%, transparent);
 }
@@ -9072,7 +9072,7 @@ button.create-need:focus-visible .create-need-chev {
   align-items: center;
   gap: 6px;
   padding: 4px 9px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid color-mix(in oklab, var(--at-magic) 45%, var(--border-medium));
   background: color-mix(in oklab, var(--at-magic) 6%, var(--bg-surface-1));
   font-family: var(--font-numeric);
@@ -9114,7 +9114,7 @@ button.create-need:focus-visible .create-need-chev {
 .cl-higher {
   margin-top: var(--sp-3);
   padding: var(--sp-2);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   border: 1px solid var(--border-soft);
   background: var(--bg-recessed);
   font-family: var(--font-body);
@@ -9141,7 +9141,7 @@ button.create-need:focus-visible .create-need-chev {
   align-items: center;
   gap: var(--sp-3);
   padding: 6px 10px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid transparent;
   transition:
     background var(--m-fast),
@@ -9243,7 +9243,7 @@ button.create-need:focus-visible .create-need-chev {
   position: relative;
   --tome-leaf: var(--asset-parchment);
   border: 2px solid var(--edge-metal-earned);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--r-plate);
   background:
     var(--plate-dome), image-set(var(--tome-leaf) type("image/webp")),
     linear-gradient(176deg, var(--bg-surface-2), var(--bg-surface-1) 64%);
@@ -9365,7 +9365,7 @@ button.create-need:focus-visible .create-need-chev {
   color: var(--text-secondary);
   border: 1px solid var(--border-medium);
   border-bottom-color: transparent;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: var(--r-plate) var(--r-plate) 0 0;
   background: color-mix(in oklab, var(--bg-surface-1) 70%, transparent);
   transition:
     background var(--m-fast),
@@ -9562,7 +9562,7 @@ button.create-need:focus-visible .create-need-chev {
   width: 58px;
   height: 58px;
   margin-bottom: var(--sp-2);
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
   color: var(--accent-text);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, transparent);
   background: radial-gradient(
@@ -9689,7 +9689,7 @@ button.create-need:focus-visible .create-need-chev {
   border: none;
   padding: 0;
   font: inherit;
-  border-radius: var(--radius-xs, 3px);
+  border-radius: var(--r-chip);
   transition: color var(--m-fast) var(--ease-standard);
 }
 .palette-foot-chip:hover,
@@ -9723,7 +9723,7 @@ button.create-need:focus-visible .create-need-chev {
 .palette-results .menu-item {
   padding: 7px 11px;
   gap: var(--sp-3);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   font-size: 0.9rem;
 }
 .palette-results .menu-item .icon {
@@ -9838,7 +9838,7 @@ button.create-need:focus-visible .create-need-chev {
   min-height: 0;
   margin: 0 var(--sp-4) var(--sp-3);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   background: color-mix(in oklab, var(--bg-recessed) 40%, transparent);
   box-shadow: var(--elev-recessed);
 }
@@ -9960,7 +9960,7 @@ button.create-need:focus-visible .create-need-chev {
 [data-variant="codex"] .pick-row {
   gap: var(--sp-3);
   padding: 9px 12px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   border-color: var(--border-soft);
   background: linear-gradient(
     180deg,
@@ -10029,7 +10029,7 @@ button.create-need:focus-visible .create-need-chev {
   height: 30px;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   color: var(--seal-ink, var(--seal, var(--accent-text)));
   border: 1px solid
     color-mix(in oklab, var(--seal, var(--accent-primary)) 45%, transparent);
@@ -10058,7 +10058,7 @@ button.create-need:focus-visible .create-need-chev {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   padding: 3px 8px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   /* OWN-18 / COMPENDIUM-LUX — the chip carries NO separate ink token: its text
      derives from the ONE `--vd` hue, composited toward the theme's
      `--text-primary` (near-white in dark, near-black in light) so every chip is
@@ -10101,7 +10101,7 @@ button.create-need:focus-visible .create-need-chev {
   text-align: center;
   color: var(--text-secondary);
   border: 1px dashed color-mix(in oklab, var(--accent-primary) 45%, var(--border-medium));
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
   background: color-mix(in oklab, var(--accent-primary) 6%, transparent);
   box-shadow: var(--elev-recessed);
 }
@@ -10185,7 +10185,7 @@ button.create-need:focus-visible .create-need-chev {
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   font-family: var(--font-numeric);
   font-size: var(--text-micro);
   font-weight: 700;
@@ -10238,7 +10238,7 @@ button.create-need:focus-visible .create-need-chev {
 .cmp-entry-seal .cmp-seal {
   width: 44px;
   height: 44px;
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
   font-size: 22px;
 }
 .cmp-entry-seal .lvl-seal.cantrip {
@@ -10441,7 +10441,7 @@ button.create-need:focus-visible .create-need-chev {
   padding: clamp(var(--sp-5), 3vw, var(--sp-8))
     max(clamp(var(--sp-4), 4vw, var(--sp-10)), calc((100% - 80ch) / 2));
   border: 1px solid color-mix(in oklab, var(--accent-primary) 32%, var(--border-medium));
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
   background: color-mix(in oklab, var(--accent-glow) 7%, var(--bg-surface-1));
   box-shadow: var(--elev-recessed);
   font-size: 1rem;
@@ -10459,7 +10459,7 @@ button.create-need:focus-visible .create-need-chev {
   position: absolute;
   inset: 5px;
   border: 1px solid color-mix(in oklab, var(--accent-primary) 18%, transparent);
-  border-radius: calc(var(--radius-xl) - 3px);
+  border-radius: calc(var(--r-plate) - 3px);
   pointer-events: none;
 }
 /* The fine-print note under the plaque — why this exact block exists. */
@@ -10607,7 +10607,7 @@ button.create-need:focus-visible .create-need-chev {
   padding: 5px 11px;
   color: var(--text-secondary);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -10750,7 +10750,7 @@ button.uc-chevron {
   height: 34px;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   flex-shrink: 0;
 }
 .uc-seal.lvl {
@@ -10872,7 +10872,7 @@ button.uc-chevron {
      text was ~3.7:1 on the dark cards, below the 4.5:1 AA floor for 10px. */
   color: var(--amethyst-ink);
   border: 1px solid var(--amethyst-300);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   padding: 0 3px;
 }
 [data-theme="light"] .uc-rit {
@@ -10951,7 +10951,7 @@ button.uc-chevron {
   /* margin: 0 neutralizes .glossary-term's -6px hit-slop when the chip IS the
      breakdown-tip trigger (a button carrying both classes). */
   margin: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   /* Border keeps the saturated chip hue (3:1 graphic). TEXT uses the AA-safe
      -ink variant (≥4.5:1 on the faint-tinted chip surface) — the saturated hue
      was tuned for chips, not body text and failed AA for several outcomes. */
@@ -11279,7 +11279,7 @@ button.uc-chevron::before {
   background: var(--bg-surface-2);
   box-shadow: var(--elev-resting);
   border-bottom: none;
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  border-radius: var(--r-chip) var(--r-chip) 0 0;
 }
 .uc.is-open {
   border-left-width: 4px;
@@ -11333,7 +11333,7 @@ button.uc-chevron::before {
   padding: 0;
   background: transparent;
   box-shadow: none;
-  border-radius: 0;
+  border-radius: var(--r-chip);
   transition:
     padding var(--m-normal) var(--ease-standard),
     background var(--m-normal) var(--ease-standard);
@@ -11341,7 +11341,7 @@ button.uc-chevron::before {
 .uc.is-open .uc-detail {
   background: var(--bg-surface-1);
   box-shadow: var(--elev-recessed);
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  border-radius: 0 0 var(--r-chip) var(--r-chip);
   padding: var(--sp-3) var(--sp-4);
 }
 /* The typed-document reading spread (BG3 identity P2): each detail block is
@@ -11422,7 +11422,7 @@ button.uc-chevron::before {
   padding: 9px 11px;
   background: color-mix(in oklab, var(--accent-primary) 9%, transparent);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 28%, transparent);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
 }
 
 /* Shared-edit notice (D27) — an info-voiced banner that makes it OBVIOUS a change
@@ -11434,7 +11434,7 @@ button.uc-chevron::before {
   align-items: center;
   gap: 8px;
   padding: 8px 11px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   border: 1px solid color-mix(in oklab, var(--semantic-info) 34%, transparent);
   background: color-mix(in oklab, var(--semantic-info) 10%, transparent);
   color: var(--text-secondary);
@@ -11479,7 +11479,7 @@ button.uc-chevron::before {
   width: 30px;
   height: 30px;
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--input-fill);
   color: var(--text-secondary);
   cursor: pointer;
@@ -11587,7 +11587,7 @@ button.uc-chevron::before {
   gap: var(--sp-2);
   width: 100%;
   padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   cursor: pointer;
   color: var(--text-secondary);
   transition:
@@ -11643,7 +11643,7 @@ button.uc-chevron::before {
   font-family: var(--font-numeric);
   font-size: 0.92em;
   padding: 0.05em 0.35em;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   background: var(--bg-surface-2);
   border: 1px solid var(--border-soft);
   color: var(--accent-text);
@@ -11812,7 +11812,7 @@ h6.bm-heading {
   justify-content: center;
   width: 22px;
   height: 22px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   color: var(--text-secondary);
   cursor: pointer;
 }
@@ -11820,7 +11820,7 @@ h6.bm-heading {
   content: "";
   position: absolute;
   inset: calc(var(--sp-2) * -1) 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
 }
 .sess-summary:hover .sess-chevron {
   color: var(--accent-text);
@@ -11864,7 +11864,7 @@ h6.bm-heading {
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   color: var(--text-muted);
   cursor: pointer;
   transition: color var(--m-fast) var(--ease-standard);
@@ -12055,7 +12055,7 @@ textarea.input.sess-notes-edit {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-pill);
+  border-radius: 50%;
   color: var(--accent-text);
   background: radial-gradient(
     circle at 50% 28%,
@@ -12142,7 +12142,7 @@ textarea.input.sess-notes-edit {
   color: var(--text-secondary);
   background: var(--bg-surface-3);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
 }
 
 /* combat-mode additions: CTA column + slot pips */
@@ -12165,7 +12165,7 @@ textarea.input.sess-notes-edit {
   font-size: 12px;
   letter-spacing: 0.04em;
   padding: 7px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   color: var(--text-inverse);
   border: 1px solid color-mix(in oklab, var(--at-c) 78%, white);
   /* Text-safe band: --text-inverse flips per theme (ink in dark, cream in light)
@@ -12303,7 +12303,7 @@ textarea.input.sess-notes-edit {
 .uc-slotpips .sp {
   width: 9px;
   height: 9px;
-  border-radius: 1px;
+  border-radius: var(--r-chip);
   background: radial-gradient(
     circle at 35% 30%,
     color-mix(in oklab, var(--sl) 80%, white),
@@ -12347,7 +12347,7 @@ textarea.input.sess-notes-edit {
   /* A resting carved recess + frame so the toggle reads as a PRESSABLE control
      (brass-pressed Selection-A vocabulary), not a passive status dot. */
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--bg-recessed);
   box-shadow: var(--elev-recessed);
   /* above the chevron's row-stretch overlay so it stays independently clickable */
@@ -12501,7 +12501,7 @@ textarea.input.sess-notes-edit {
   padding: var(--sp-4) var(--sp-3) var(--sp-2);
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   box-shadow: var(--elev-raised);
   /* "cast brass tile" hover affordance — lift + glow on pointer, press-in on
      active (matches .ch-card / .rest-card). The whole card is a button. */
@@ -12570,7 +12570,7 @@ textarea.input.sess-notes-edit {
   place-items: center;
   background: var(--bg-recessed);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   box-shadow: var(--elev-recessed);
 }
 .sc-caster-rubric {
@@ -12630,7 +12630,7 @@ textarea.input.sess-notes-edit {
   text-transform: uppercase;
   line-height: 1;
   padding: 2px 5px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   color: var(--semantic-danger);
   border: 1px solid color-mix(in oklab, var(--semantic-danger) 45%, transparent);
   background: color-mix(in oklab, var(--semantic-danger) 14%, transparent);
@@ -12727,7 +12727,7 @@ textarea.input.sess-notes-edit {
   padding: 10px 10px 8px;
   background: var(--bg-surface-1);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   box-shadow: var(--elev-floating);
 }
 .sc-base-head {
@@ -12856,7 +12856,7 @@ textarea.input.sess-notes-edit {
   font-weight: 700;
   color: var(--accent-text);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 55%, transparent);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   padding: 1px 5px;
 }
 .tr-recovery {
@@ -12865,7 +12865,7 @@ textarea.input.sess-notes-edit {
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 1px 6px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
 }
 .tr-recovery[data-r="LR"],
 .tr-recovery[data-r="long"] {
@@ -12955,7 +12955,7 @@ button.tr-pip:active {
 .tr-pool {
   width: 96px;
   height: 12px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--bg-recessed);
   border: 1px solid var(--border-strong);
   box-shadow: var(--elev-recessed);
@@ -13105,7 +13105,7 @@ button.tr-pip:active {
 .info-card {
   background: var(--plate-dome), var(--plate-face);
   border: 1px solid var(--edge-metal);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   padding: var(--sp-3) var(--sp-4);
   margin-bottom: var(--sp-4);
   box-shadow: var(--edge-groove), var(--edge-seat);
@@ -13152,7 +13152,7 @@ button.tr-pip:active {
   padding: 14px;
   background: var(--plate-dome), var(--plate-face);
   border: 1px solid var(--edge-metal);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   box-shadow: var(--edge-groove), var(--edge-seat);
   overflow: hidden;
 }
@@ -13199,7 +13199,7 @@ button.tr-pip:active {
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 18px;
@@ -13282,7 +13282,7 @@ button.party-avatar-btn:focus-visible {
   border: none;
   text-align: left;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
 }
 .party-head-toggle:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -13307,7 +13307,7 @@ button.party-avatar-btn:focus-visible {
   gap: 4px;
   align-self: flex-start;
   padding: 3px 8px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   border: 1px dashed var(--border-soft);
   background: transparent;
   font-size: var(--text-2xs);
@@ -13401,7 +13401,7 @@ button.party-avatar-btn:focus-visible {
   gap: 4px;
   flex: none;
   padding: 3px 8px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   border: 1px solid var(--border-soft);
   background: var(--bg-surface-2);
   font-family: var(--font-numeric);
@@ -13439,7 +13439,7 @@ button.party-avatar-btn:focus-visible {
   gap: 8px 16px;
   padding: 10px 14px;
   border: 1px solid color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-2)),
@@ -13469,7 +13469,7 @@ button.party-avatar-btn:focus-visible {
   width: 28px;
   height: 28px;
   flex: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   color: var(--accent-text);
   background: color-mix(in oklab, var(--accent-primary) 18%, transparent);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 40%, transparent);
@@ -13554,7 +13554,7 @@ button.party-avatar-btn:focus-visible {
   width: 22px;
   height: 28px;
   margin-inline-start: -4px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   color: var(--text-faint);
   cursor: grab;
   touch-action: none;
@@ -13662,7 +13662,7 @@ button.party-avatar-btn:focus-visible {
   position: absolute;
   inset: 0;
   z-index: -1;
-  border-radius: calc(var(--radius-xl) - 1px);
+  border-radius: calc(var(--r-plate) - 1px);
   opacity: var(--panel-alpha);
   background: var(--plate-dome), var(--plate-face-veil), var(--plate-grain);
   background-size:
@@ -13693,50 +13693,28 @@ button.party-avatar-btn:focus-visible {
 .folio-panel.gilt-frame {
   box-shadow: var(--edge-seat-earned);
 }
-/* The ornamented gilt band goes SQUARE (the one-line law, owner 2026-07-24) so
-   the corner ornament seats on a true crossing of the band's own border. */
-.folio-panel.gilt-frame,
+/* The material pseudo sits INSIDE the band's 2px metal, so its radius is the
+   plate's less the border. (The band inherits `--r-plate` from `.folio-panel`;
+   only the inner edge differs, because only the border width does.) */
 .folio-panel.gilt-frame::before {
-  border-radius: 0;
+  border-radius: calc(var(--r-plate) - 2px);
 }
 
-/* ── Corner goldwork — the worked-gold knot that caps the app's two MARK-bearing
-   frames: the framed realm masthead, and the gilt-framed cockpit identity band
-   (which takes the screen's one mark on the route where no masthead renders).
-   ONE ornamented surface per screen, and it is the surface the user is acting
-   in; dialogs, resting cards and quiet panels carry none. THE ONE-LINE LAW: the
-   ornament contributes no run lines — the host's own border is THE frame line
-   and every ornament stroke is attached to it; nothing floats, ever. The pseudo
-   is decor only: pointer-events none, no layout, no animation; its ink is
-   paint-only overflow, so a mark-bearing host must NOT clip child paint.
-   z-index 0 keeps it above each host's material pseudo (`::before` at z -1);
-   the goldwork rides the frame line itself, clear of the hosts' padded (≥16px)
-   content. */
-.page-head.framed::before,
-.folio-panel.gilt-frame::after {
-  content: "";
-  position: absolute;
-  /* The fitting rule (owner, 2026-07-17 — "rilegatura"): each 64px corner
-     tile draws its rail centerline 20% (12.8px) in from the tile's outer
-     edge; insetting the paint box by -(0.2 × 64px + 0.5px) seats that
-     centerline exactly on the host's 1px border stroke and the weld diamond's
-     center on the stroke's corner vertex — at EVERY host size. */
-  inset: calc(-1 * (0.2 * 64px + 0.5px));
-  pointer-events: none;
-  z-index: 0;
-  /* Four FIXED-SIZE per-corner layers (the per-theme `--frame-ornate` list:
-     tl/tr/bl/br, each `64px 64px no-repeat` in its corner) — NEVER
-     border-image, and NEVER a layout border on this pseudo. The old
-     `border: 64px solid transparent` + border-image carrier forced a 128px
-     minimum pseudo box, so any shorter host (masthead 104.5px, cockpit band
-     97.7px) kept `top` and dropped `bottom` (over-constrained abspos) and the
-     bottom corners hung 25–32px below the plate (the "everything is
-     translated downward" regression); border-image's proportional tile-shrink
-     on small boxes also mis-seats the centerline (the outset stays fixed
-     while the tile scales). Fixed-size corner backgrounds register 0px at
-     every host size by construction. */
-  background: var(--frame-ornate);
-}
+/* ── THE MARK — currently UNMOUNTED. ─────────────────────────────────────────
+   The corner mark is drawn as a fan radiating INSIDE the corner's curve, and the
+   knot this chrome carried was built the other way round: it re-drew ~30px of the
+   host's own rail in each direction from a square vertex. On a rounded plate that
+   straight swell cannot register on the arc — it reads as a thickened, slightly
+   offset segment of line that abruptly returns to the border, which is the
+   two-line defect the one-line law (L2) exists to forbid.
+
+   So the mark comes OFF with the square corners rather than riding them wrong,
+   and returns redrawn: the corner TERMINAL (a glint fan alone, starting ≥24px in
+   from the vertex, reaching ≤20px, seated inside the radius, contributing no run
+   line) and the run CARTOUCHE (a symmetric interlace at a run's exact midpoint,
+   the border terminating either side of it). Budget unchanged: at most ONE
+   mark-bearing surface per screen, and it is the surface the user is acting in.
+   DESIGN.md §5 "The ornament vocabulary". ── */
 
 /* ── Campaign hub header art control (owner 2026-06-30) — the big 3:1 hero band
    was RETIRED. The campaign's art is now the page's atmospheric `--app-bg-art`
@@ -13827,7 +13805,7 @@ button.party-avatar-btn:focus-visible {
 .tabstrip {
   background: var(--input-fill);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   box-shadow: var(--elev-recessed);
   /* Breathing room when `useActiveTabScroll` reveals a selected off-edge tab. */
   scroll-padding-inline: 16px;
@@ -13851,7 +13829,7 @@ button.party-avatar-btn:focus-visible {
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--m-fast) var(--ease-standard);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
 }
 .tabstrip-shell::before {
   left: 1px;
@@ -14007,7 +13985,7 @@ button.party-avatar-btn:focus-visible {
   gap: 3px 8px;
   padding: 5px 8px 5px 10px;
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--bg-surface-2);
   transition:
     border-color var(--m-fast) var(--ease-standard),
@@ -14065,7 +14043,7 @@ button.party-avatar-btn:focus-visible {
   padding: 8px 6px;
   border: 0;
   background: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   cursor: pointer;
 }
 .insp-toggle:focus-visible {
@@ -14104,7 +14082,7 @@ button.party-avatar-btn:focus-visible {
   min-width: 22px;
   height: 22px;
   padding: 0 4px;
-  border-radius: 999px;
+  border-radius: 50%;
   background: var(--pip-empty-fill);
   border: 1px solid var(--pip-empty-border);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
@@ -14182,7 +14160,7 @@ button.party-avatar-btn:focus-visible {
   min-width: 26px;
   padding: 3px 6px;
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   background: var(--input-fill);
   box-shadow: var(--elev-recessed);
   font: 600 var(--text-2xs) / 1 var(--font-numeric);
@@ -14363,7 +14341,7 @@ button.party-avatar-btn:focus-visible {
     ),
     linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   border: 1px solid color-mix(in oklab, var(--accent-primary) 30%, var(--border-medium));
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   box-shadow: var(--elev-raised);
 }
 /* Light: the gilt edge GLOWS (the hub gilt-frame aura) — vellum can't halo, so
@@ -14651,7 +14629,7 @@ button.party-avatar-btn:focus-visible {
   padding: 0 3px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
+  border-radius: var(--r-chip);
   font-size: 9px;
   font-weight: 700;
   line-height: 1;
@@ -14780,7 +14758,7 @@ button.econ-tok-filter:active .econ-disc {
   border: 0;
   background: transparent;
   cursor: pointer;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   min-height: 36px;
 }
 .rider-token:focus-visible {
@@ -14848,7 +14826,7 @@ button.econ-tok-filter:active .econ-disc {
   background: none;
   border: 1px solid transparent;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--r-chip);
   transition:
     background var(--m-fast) var(--ease-standard),
     border-color var(--m-fast) var(--ease-standard),
@@ -15011,7 +14989,7 @@ button.econ-tok-filter:active .econ-disc {
 .move-bar-track {
   width: 100%;
   height: 11px;
-  border-radius: 6px;
+  border-radius: var(--r-chip);
   background: var(--bg-recessed);
   border: 1px solid var(--border-strong);
   box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8);
@@ -15024,7 +15002,7 @@ button.econ-tok-filter:active .econ-disc {
   top: 0;
   bottom: 0;
   width: calc(var(--mv-rem, 0) / var(--mv-max, 1) * 100%);
-  border-radius: 5px 2px 2px 5px;
+  border-radius: var(--r-chip);
   background: linear-gradient(90deg, var(--gold-leaf-500), var(--gold-leaf-100));
   transition: width var(--m-fast) var(--ease-settle);
 }
@@ -15123,7 +15101,7 @@ button.econ-tok-filter:active .econ-disc {
   background: transparent;
   border: 0;
   border-bottom: 1px dotted color-mix(in oklab, var(--text-secondary) 50%, transparent);
-  border-radius: 0;
+  border-radius: var(--r-chip);
 }
 .move-num-in:focus {
   outline: none;
@@ -15146,7 +15124,7 @@ button.econ-tok-filter:active .econ-disc {
   letter-spacing: 0.05em;
   padding: 10px 20px;
   color: var(--text-inverse);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
   background: linear-gradient(
     180deg,
@@ -15191,7 +15169,7 @@ button.econ-tok-filter:active .econ-disc {
   text-transform: uppercase;
   color: var(--text-muted);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: var(--bg-surface-1);
   transition:
     color var(--m-fast) var(--ease-settle),
@@ -15230,7 +15208,7 @@ button.econ-tok-filter:active .econ-disc {
   gap: var(--sp-2) var(--sp-3);
   margin-bottom: var(--sp-4);
   padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 40%, transparent);
   background: color-mix(in oklab, var(--accent-primary) 10%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent-primary) 18%, transparent);
@@ -15313,7 +15291,7 @@ button.econ-tok-filter:active .econ-disc {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 5px 11px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   color: var(--accent-text);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, transparent);
   background: var(--bg-surface-1);
@@ -15373,7 +15351,7 @@ button.econ-tok-filter:active .econ-disc {
   flex-direction: column;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4) var(--sp-4);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   border: 1px solid var(--border-accent);
   background: var(--bg-recessed);
   box-shadow: var(--elev-recessed);
@@ -15448,7 +15426,7 @@ button.econ-tok-filter:active .econ-disc {
   align-items: center;
   gap: 1px;
   padding: 4px 2px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid var(--border-medium);
   background: color-mix(in oklab, var(--bg-surface-1) 60%, transparent);
   font-family: var(--font-numeric);
@@ -15654,7 +15632,7 @@ button.econ-tok-filter:active .econ-disc {
   gap: var(--sp-2) var(--sp-3);
   margin-bottom: var(--sp-4);
   padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 40%, transparent);
   background: color-mix(in oklab, var(--accent-primary) 10%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent-primary) 18%, transparent);
@@ -15696,7 +15674,7 @@ button.econ-tok-filter:active .econ-disc {
   gap: var(--sp-2);
   padding: 5px 8px;
   border-left: 3px solid var(--border-medium);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  border-radius: 0 var(--r-chip) var(--r-chip) 0;
   background: var(--bg-surface-1);
   transition: background var(--m-fast);
 }
@@ -15759,7 +15737,7 @@ button.econ-tok-filter:active .econ-disc {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 2px 7px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   color: var(--at-c);
   background: color-mix(in oklab, var(--at-c) 14%, transparent);
   border: 1px solid color-mix(in oklab, var(--at-c) 38%, transparent);
@@ -15787,7 +15765,7 @@ button.econ-tok-filter:active .econ-disc {
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: 1px 6px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   color: var(--sl, var(--text-secondary));
   background: color-mix(in oklab, var(--sl, var(--border-medium)) 15%, transparent);
   border: 1px solid color-mix(in oklab, var(--sl, var(--border-medium)) 35%, transparent);
@@ -15898,7 +15876,7 @@ button.econ-tok-filter:active .econ-disc {
   flex-direction: column;
   gap: var(--sp-2);
   padding: var(--sp-5);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   border: 1px solid var(--border-medium);
   /* embossed tile: inner top highlight + outer drop = cast brass, not a flat box */
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
@@ -15989,7 +15967,7 @@ button.econ-tok-filter:active .econ-disc {
   font-size: var(--text-sm);
   letter-spacing: 0.03em;
   padding: 8px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   /* FILLED tonal CTA in the card's recovery hue (--rc) — a struck tile, not the old
      12%-tint outline that read as a washed-out pale green/blue (worst on light vellum).
      The fill stays SATURATED at both ends (88%/85% mixes, not lightened to a pastel) so
@@ -16106,7 +16084,7 @@ button.econ-tok-filter:active .econ-disc {
     list-style: none;
     padding: var(--sp-2) var(--sp-3);
     margin-bottom: var(--sp-2);
-    border-radius: var(--radius-md);
+    border-radius: var(--r-chip);
     background: var(--bg-surface-2);
     border: 1px solid var(--border-soft);
     font-family: var(--font-display);
@@ -16136,7 +16114,7 @@ button.econ-tok-filter:active .econ-disc {
 .rest-confirm-panel {
   background: var(--bg-surface-2);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   padding: var(--sp-4) var(--sp-5);
   box-shadow: var(--elev-resting);
 }
@@ -16162,7 +16140,7 @@ button.econ-tok-filter:active .econ-disc {
 .rest-summary-panel {
   background: color-mix(in oklab, var(--accent-glow) 5%, var(--bg-surface-2));
   border: 1px solid color-mix(in oklab, var(--accent-primary) 30%, transparent);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   padding: var(--sp-4) var(--sp-5);
   box-shadow: var(--elev-resting);
 }
@@ -16218,7 +16196,7 @@ button.econ-tok-filter:active .econ-disc {
 .rest-dice-stepper {
   background: var(--bg-surface-3);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   padding: var(--sp-3) var(--sp-4);
   margin-bottom: var(--sp-4);
   box-shadow: var(--elev-recessed);
@@ -16236,7 +16214,7 @@ button.econ-tok-filter:active .econ-disc {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid var(--border-medium);
   font-size: var(--text-lg);
   font-weight: 700;
@@ -16331,7 +16309,7 @@ button.econ-tok-filter:active .econ-disc {
 .cur-tok-btn {
   gap: 4px;
   padding: 4px 10px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   background: var(--input-fill);
   border: 1px solid var(--border-soft);
   box-shadow: var(--elev-recessed);
@@ -16612,7 +16590,7 @@ button.econ-tok-filter:active .econ-disc {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 2px 7px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   /* Ink-on-colored-frame (the folio badge/condition/damage convention): saturated
      `--step-c` text on a 12% tint of the same hue failed AA. Keep the colored
      border + tint; the readable ink carries the label. */
@@ -16683,7 +16661,7 @@ button.econ-tok-filter:active .econ-disc {
   place-items: center;
   width: 36px;
   height: 36px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   color: var(--text-secondary);
   background: var(--bg-surface-1);
   border: 1px solid var(--border-medium);
@@ -16887,7 +16865,7 @@ button.econ-tok-filter:active .econ-disc {
    bleeds into the chrome (wayfinding), embossed inner highlight, lapidary
    radius. */
 .lvl-card {
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   border: 1px solid var(--border-medium);
   border-left: 3px solid color-mix(in oklab, var(--lvl-accent) 70%, transparent);
   background: linear-gradient(
@@ -16915,7 +16893,7 @@ button.econ-tok-filter:active .econ-disc {
    unmistakable in the step's own colour, not generic gold. */
 .lvl-pick {
   position: relative;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid var(--border-medium);
   background: linear-gradient(180deg, var(--bg-surface-3), var(--bg-surface-2));
   box-shadow:
@@ -16990,7 +16968,7 @@ button.econ-tok-filter:active .econ-disc {
   align-items: center;
   gap: 3px;
   padding: var(--sp-2);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   border: 1px solid var(--border-medium);
   background: linear-gradient(180deg, var(--bg-surface-3), var(--bg-surface-2));
   box-shadow:
@@ -17018,7 +16996,7 @@ button.econ-tok-filter:active .econ-disc {
   height: 20px;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   border: 1px solid var(--border-medium);
   background: var(--bg-surface-1);
   color: var(--text-secondary);
@@ -17185,7 +17163,7 @@ button.econ-tok-filter:active .econ-disc {
 .site-footer-link {
   color: var(--accent-text);
   text-decoration: none;
-  border-radius: var(--radius-xs, 3px);
+  border-radius: var(--r-chip);
 }
 .site-footer-link:hover,
 .site-footer-link:focus-visible {
@@ -17611,7 +17589,7 @@ button.econ-tok-filter:active .econ-disc {
   padding: var(--sp-3) var(--sp-4);
   text-align: center;
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   box-shadow: var(--elev-resting);
   transition:
@@ -17659,7 +17637,7 @@ button.econ-tok-filter:active .econ-disc {
   place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: 999px;
+  border-radius: 50%;
   color: var(--text-muted);
   background: var(--bg-recessed);
   border: 1px solid var(--border-medium);
@@ -17747,7 +17725,7 @@ button.econ-tok-filter:active .econ-disc {
   place-items: center;
   width: 28px;
   height: 28px;
-  border-radius: 999px;
+  border-radius: 50%;
   font-family: var(--font-numeric);
   font-size: var(--text-micro);
   font-weight: 700;
@@ -17857,7 +17835,7 @@ button.econ-tok-filter:active .econ-disc {
   text-transform: uppercase;
   color: var(--text-muted);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: linear-gradient(180deg, var(--bg-surface-3), var(--bg-surface-2));
   box-shadow: var(--elev-resting);
 }
@@ -17924,7 +17902,7 @@ button.econ-tok-filter:active .econ-disc {
   gap: var(--sp-4);
   padding: var(--sp-4) var(--sp-5);
   border: 1px solid transparent;
-  border-radius: var(--radius-2xl);
+  border-radius: var(--r-plate);
   background:
     radial-gradient(
         ellipse at 18% 0%,
@@ -17978,7 +17956,7 @@ button.econ-tok-filter:active .econ-disc {
   place-items: center;
   width: 30px;
   height: 30px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   color: var(--text-muted);
   border: 1px solid transparent;
 }
@@ -17992,7 +17970,7 @@ button.econ-tok-filter:active .econ-disc {
   place-items: center;
   width: 56px;
   height: 56px;
-  border-radius: 999px;
+  border-radius: 50%;
   color: var(--text-inverse);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
   background: radial-gradient(
@@ -18115,7 +18093,7 @@ button.econ-tok-filter:active .econ-disc {
   padding: var(--sp-4) var(--sp-3) var(--sp-3);
   text-align: center;
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   box-shadow: var(--elev-resting);
   transition:
@@ -18172,7 +18150,7 @@ button.econ-tok-filter:active .econ-disc {
   place-items: center;
   width: 26px;
   height: 26px;
-  border-radius: 999px;
+  border-radius: 50%;
   color: var(--text-inverse);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
   background: radial-gradient(
@@ -18187,7 +18165,7 @@ button.econ-tok-filter:active .econ-disc {
   place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: 999px;
+  border-radius: 50%;
   color: var(--accent-text);
   background: var(--bg-recessed);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 35%, var(--border-medium));
@@ -18258,7 +18236,7 @@ button.econ-tok-filter:active .econ-disc {
   color: var(--accent-text);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 40%, transparent);
   background: color-mix(in oklab, var(--accent-primary) 14%, transparent);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   padding: 0 4px;
   font-family: var(--font-numeric);
   font-size: var(--text-micro);
@@ -18302,7 +18280,7 @@ button.econ-tok-filter:active .econ-disc {
   place-items: center;
   width: 52px;
   height: 52px;
-  border-radius: 999px;
+  border-radius: 50%;
   color: var(--text-secondary);
   border: 1px solid var(--border-medium);
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
@@ -18464,7 +18442,7 @@ button.econ-tok-filter:active .econ-disc {
     flex-direction: row;
     gap: 8px;
     padding: 8px 14px;
-    border-radius: 999px;
+    border-radius: var(--r-plate);
     border: 1px solid var(--border-medium);
     background: color-mix(in oklab, var(--bg-page) 88%, transparent);
     -webkit-backdrop-filter: blur(10px);
@@ -18559,7 +18537,7 @@ button.econ-tok-filter:active .econ-disc {
 .wiz-entry {
   position: relative;
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   box-shadow: var(--elev-resting);
   transition:
@@ -18716,7 +18694,7 @@ button.econ-tok-filter:active .econ-disc {
   place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: 999px;
+  border-radius: 50%;
   color: var(--accent-text);
   background: var(--bg-recessed);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 35%, var(--border-medium));
@@ -18844,7 +18822,7 @@ button.econ-tok-filter:active .econ-disc {
   place-items: center;
   width: 20px;
   height: 20px;
-  border-radius: 999px;
+  border-radius: 50%;
   color: var(--text-inverse);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
   background: radial-gradient(
@@ -18902,7 +18880,7 @@ button.econ-tok-filter:active .econ-disc {
   place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   color: var(--accent-text);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, transparent);
 }
@@ -19091,7 +19069,7 @@ button.econ-tok-filter:active .econ-disc {
 .wiz-asks .wiz-list .wiz-row .uc-seal {
   width: 26px;
   height: 26px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
 }
 .wiz-asks .wiz-list .wiz-row .uc-seal.lvl {
   font-size: 12px;
@@ -19126,7 +19104,7 @@ button.econ-tok-filter:active .econ-disc {
   font-size: 0.8rem;
   color: var(--accent-text);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, transparent);
-  border-radius: 999px;
+  border-radius: var(--r-chip);
   background: color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-1));
 }
 .wiz-kept:hover {
@@ -19149,7 +19127,7 @@ button.econ-tok-filter:active .econ-disc {
   gap: var(--sp-3);
   padding: var(--sp-4) var(--sp-5);
   border: 1px solid var(--border-accent);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--r-plate);
   background:
     radial-gradient(
       ellipse at 18% 0%,
@@ -19172,7 +19150,7 @@ button.econ-tok-filter:active .econ-disc {
   width: 52px;
   height: 52px;
   flex: none;
-  border-radius: 999px;
+  border-radius: 50%;
   color: var(--text-inverse);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
   background: radial-gradient(
@@ -19262,7 +19240,7 @@ button.wiz-review-jump {
   margin: 0;
   padding: var(--sp-2) var(--sp-1);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   background: none;
   font: inherit;
   text-align: inherit;
@@ -19322,7 +19300,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   min-height: 48px;
   padding: var(--sp-1) var(--sp-3);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   box-shadow: var(--elev-resting);
 }
@@ -19386,7 +19364,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   min-height: 64px;
   padding: var(--sp-3) var(--sp-4);
   border: 1px solid var(--border-accent);
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
   background: color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-1));
   box-shadow: var(--elev-resting);
 }
@@ -19412,7 +19390,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
 .wiz-tab-count {
   margin-left: 7px;
   padding: 1px 6px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-chip);
   background: var(--bg-recessed);
   border: 1px solid var(--border-medium);
   box-shadow: var(--elev-recessed);
@@ -19455,7 +19433,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   gap: var(--sp-1);
   padding: var(--sp-4) var(--sp-4) var(--sp-3);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 40%, var(--border-medium));
-  border-radius: var(--radius-2xl);
+  border-radius: var(--r-plate);
   background:
     radial-gradient(
       ellipse at 50% 0%,
@@ -19523,7 +19501,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   gap: 4px;
   padding: var(--sp-3) var(--sp-2) var(--sp-2);
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-plate);
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   box-shadow: var(--elev-resting);
   transition:
@@ -19554,7 +19532,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
 }
 /* The shared NumberStepper, sized up to carved purchase keys. */
 .wiz-abil .num-stepper {
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
 }
 .wiz-abil .num-stepper button {
   width: 32px;
@@ -19602,7 +19580,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   padding: 8px 12px;
   text-align: center;
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-lg);
+  border-radius: var(--r-plate);
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   box-shadow: var(--elev-resting);
   transition:
@@ -19697,7 +19675,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   margin: 0 auto;
   padding: var(--sp-4) var(--sp-5);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 40%, var(--border-medium));
-  border-radius: var(--radius-2xl);
+  border-radius: var(--r-plate);
   background:
     radial-gradient(
       ellipse at 50% 0%,
@@ -19726,7 +19704,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   padding: var(--sp-8) var(--sp-6);
   text-align: center;
   border: 1px solid var(--border-accent);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--r-plate);
   background:
     radial-gradient(
       ellipse at 50% 0%,
@@ -19754,7 +19732,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   place-items: center;
   width: 64px;
   height: 64px;
-  border-radius: 999px;
+  border-radius: 50%;
   color: var(--text-inverse);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
   background: radial-gradient(
@@ -20056,7 +20034,7 @@ body:has(.fob) .toast-region {
   box-sizing: border-box;
   display: grid;
   place-items: center;
-  border-radius: 999px;
+  border-radius: 50%;
   background: radial-gradient(circle at 35% 28%, #2e2718, #15110b 72%);
   border: 1px solid var(--border-accent);
   color: var(--accent-text);

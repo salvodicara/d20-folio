@@ -232,6 +232,66 @@ describe("the chrome system — the material's tokens", () => {
     expect(folio).toMatch(/\.gilt-frame \{[^}]*border-color: var\(--edge-metal-earned\)/);
   });
 
+  it("uses exactly TWO radii — 10px plates and square chips", () => {
+    // The chrome ran EIGHT distinct radii in simultaneous use on one page. There
+    // are two now: `--r-plate` (10px, every container and plaque — the reference
+    // has no square-cornered panel, and its ORNAMENTED corners are rounded too)
+    // and `--r-chip` (0, every chip, cell, pip and read-only facet). A circle is
+    // a SHAPE, not a third radius; the settings switch track is the one true pill.
+    expect(indexCss).toMatch(/--r-plate: 10px;/);
+    expect(indexCss).toMatch(/--r-chip: 0;/);
+    // The legacy scale is gone from the design tokens; the ONLY `--radius-*`
+    // declarations left are the Tailwind `@theme` bridge, and every one of them
+    // resolves to one of the two values so a `rounded-*` utility in markup can
+    // never drift into a third. (`--radius-full` is deleted outright: a circle is
+    // Tailwind's own `rounded-full`, not a token.)
+    expect(indexCss).not.toMatch(/--radius-(full|xs):/);
+    const bridge = [...indexCss.matchAll(/--radius-(sm|md|lg|xl|2xl):\s*([^;]+);/g)].map(
+      (m) => (m[2] ?? "").trim()
+    );
+    expect(bridge.length, "the Tailwind radius bridge must exist").toBeGreaterThan(0);
+    expect(
+      [...new Set(bridge)].sort(),
+      "every Tailwind `--radius-*` must map to a plate (10px) or a chip (0px)"
+    ).toEqual(["0px", "10px"]);
+    // No stylesheet consumes the bridge directly — it exists for markup utilities.
+    expect(folioCss).not.toMatch(/var\(--radius-(sm|md|lg|xl|2xl|full|xs)\)/);
+    // Every border-radius in the stylesheet is one of the two, a circle, the one
+    // pill, or a calc off the plate value (an inner edge inside its own border).
+    const offenders = [...folioCss.matchAll(/border-radius:\s*([^;]+);/g)]
+      .map((m) => (m[1] ?? "").trim())
+      .filter((v) => {
+        // A shorthand (a flush-joined corner in a composite control) is fine as
+        // long as EVERY corner in it is one of the two values, a circle, or 0.
+        const corners = v.split(/\s+(?![^(]*\))/);
+        return !corners.every((c) =>
+          /^(var\(--r-plate\)|var\(--r-chip\)|0|50%|999px|var\(--radius-pill\)|inherit|calc\(var\(--r-plate\) - \dpx\))$/.test(
+            c
+          )
+        );
+      });
+    expect(
+      [...new Set(offenders)],
+      "Every radius in the chrome must be `--r-plate`, `--r-chip`, a circle (50%), " +
+        "the one pill, or a calc off the plate value for an inner edge. A literal is a " +
+        "third radius:"
+    ).toEqual([]);
+    // THE SQUARE-CORNER RULING IS REVERSED. The three registers that went
+    // `border-radius: 0` to give a knot a "true crossing" are plates again; the
+    // one-line law they served survives as L2 and is strengthened.
+    for (const open of [
+      "\\.modal \\{",
+      "\\.page-head\\.framed \\{",
+      "\\.folio-panel \\{",
+    ]) {
+      expect(
+        new RegExp(`${open}[^}]*border-radius: var\\(--r-plate\\)`).test(folio),
+        `A framed register is still square (${open}). The reference has no ` +
+          `square-cornered panel — including the ornamented ones.`
+      ).toBe(true);
+    }
+  });
+
   it("the ACTIVE combatant plate keeps its material", () => {
     // `box-shadow` is REPLACED, so a state rule that forgets the plate tokens
     // makes a card silently shed its substance the moment it becomes current.

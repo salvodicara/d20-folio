@@ -108,14 +108,29 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --measure: 72ch;
 
-  /* ── § 04 Radius — Lapidary (chips are facets, NOT pills) ─────────────── */
-  --radius-sm: 0;
-  --radius-md: 2px;
-  --radius-lg: 4px;
-  --radius-xl: 8px;
-  --radius-2xl: 12px;
-  --radius-full: 4px; /* chips @ 4px facet — the ONLY true pill is the §21 switch track (999px) */
-  --radius-pill: 999px; /* reserved: switch track only */
+  /* ── § 04 Radius — TWO values, and there is no third ──────────────────────
+     A plate is 10px. A chip is square. That is the whole system.
+
+     The reference has no square-cornered panel and no third radius: its panels,
+     plaques and modals all sit at ~10–12px, INCLUDING the ornamented ones — an
+     ornamented corner is rounded too, with the mark radiating inside the curve.
+     (This reverses the 2026-07-24 square-corner ruling, which was made to give a
+     corner knot a "true crossing" to seat on. The one-line law it served is kept
+     and strengthened as L2; the squareness it justified has no support in the
+     reference, and the mark's registration is solved by sitting inside the
+     radius rather than by flattening the corner.)
+
+     `--r-chip: 0` is what a chip, a grid cell, a pip and a read-only facet take —
+     square, exactly as the reference's cells are. `--radius-pill` survives for
+     the ONE true pill in the app, the settings switch track; a circular
+     medallion (a coin, a seal, a portrait well) is a SHAPE, not a third radius,
+     and the reference frames its portraits and its hotbar hub the same way.
+     The Tailwind `--radius-*` bridge at the bottom of this file re-points every
+     `rounded-*` utility at the same two values, so markup and stylesheet can
+     never drift into a third. ── */
+  --r-plate: 10px;
+  --r-chip: 0;
+  --radius-pill: 999px; /* reserved: the settings switch track only */
 
   /* ── § 06 Motion — The settling grammar (BG3 identity: motion SETTLES, never
      travels — short cubic-out fades with tiny translates; spring/bounce is
@@ -434,45 +449,6 @@
   --metal-silver: #c4baa9;
   --metal-bronze: #6e5a3c;
 
-  /* § Reliquary goldwork (the full-BG3 identity push, owner-ratified 2026-07-16;
-     the STYLE-A corner knot, owner-picked 2026-07-24 — DESIGN.md §5 "The
-     ornament vocabulary"; pattern homework in the ornaments-v2 research corpus).
-     The worked-gold frame that binds the app's hero surfaces (framed masthead,
-     gilt-framed hero band, dialogs), a faithful transcription of the owner's
-     BG3 spellbook-reference corner. Anatomy, per corner (defs g#e/g#v/g#k/g#f):
-     the rail SWELL crosses the vertex in a fine whisker overshoot (g#e, tips on
-     the rail axis — attached; used twice in g#k, once diagonal-mirrored to the
-     vertical rail); ONE wave-volute comma-curl rising outward on the diagonal
-     over an OPEN eye (g#v); a small weld DIAMOND seating the crossing; and a
-     five-ray glint FAN radiating into the panel (g#f). NO mid-rail leaves —
-     each corner is ONE compact terminal that CONCLUDES cleanly: the swell
-     tapers to a 1px hairline (≈x=30) that dissolves into the host's own border
-     stroke, and the edge between opposing terminals is bare border (owner,
-     2026-07-24: the earlier sickle-leaf pair read as scattered "dirt" mid-edge
-     on the short hosts). MECHANISM: NOT border-image — the token is a list of
-     FOUR fixed-size per-corner SVG background layers (tl/tr/bl/br, each a 64×64
-     tile drawn 1:1, anchored left top / right top / left bottom / right bottom
-     at 64px 64px no-repeat) painted on the `.page-head.framed::before` /
-     `.gilt-frame::after` / `.modal::after` overlay pseudo, inset
-     -13.3px so each tile's 20%-mark rail centerline (12.8px) seats on the
-     host's 1px border stroke at EVERY host size (the fixed-size layers register
-     0±1px by construction, guard-pinned). Data-URI because CSS custom properties
-     cannot reach inside an SVG url: each theme bakes its own metal. TWO-TONE
-     STRIKE (kept): the geometry (g#e/g#v/g#k, g#f) is mirrored per-corner
-     UNFILLED first (tl unmirrored; tr/bl/br via one matrix each into g#K/g#F)
-     and toned AFTER in screen space (knot shade +1,+1.4 / glint -.6,-.9 / body;
-     fan +.6,+.85 / -.35,-.5 / body), so the bevel light stays top-left on every
-     corner. Dark = raised struck gold on the gold-300 body. */
-  --frame-ornate:
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g></defs><use href='%23f' fill='%23000' opacity='.35' transform='translate(.6 .85)'/><use href='%23f' fill='%23f0d791' opacity='.45' transform='translate(-.35 -.5)'/><use href='%23f' fill='%23d4ac4d' opacity='.62'/><use href='%23k' fill='%23000' opacity='.5' transform='translate(1 1.4)'/><use href='%23k' fill='%23f0d791' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23k' fill='%23d4ac4d'/></svg>")
-      left top / 64px 64px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(-1 0 0 1 64 0)'/></g><g id='F'><use href='%23f' transform='matrix(-1 0 0 1 64 0)'/></g></defs><use href='%23F' fill='%23000' opacity='.35' transform='translate(.6 .85)'/><use href='%23F' fill='%23f0d791' opacity='.45' transform='translate(-.35 -.5)'/><use href='%23F' fill='%23d4ac4d' opacity='.62'/><use href='%23K' fill='%23000' opacity='.5' transform='translate(1 1.4)'/><use href='%23K' fill='%23f0d791' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%23d4ac4d'/></svg>")
-      right top / 64px 64px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(1 0 0 -1 0 64)'/></g><g id='F'><use href='%23f' transform='matrix(1 0 0 -1 0 64)'/></g></defs><use href='%23F' fill='%23000' opacity='.35' transform='translate(.6 .85)'/><use href='%23F' fill='%23f0d791' opacity='.45' transform='translate(-.35 -.5)'/><use href='%23F' fill='%23d4ac4d' opacity='.62'/><use href='%23K' fill='%23000' opacity='.5' transform='translate(1 1.4)'/><use href='%23K' fill='%23f0d791' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%23d4ac4d'/></svg>")
-      left bottom / 64px 64px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(-1 0 0 -1 64 64)'/></g><g id='F'><use href='%23f' transform='matrix(-1 0 0 -1 64 64)'/></g></defs><use href='%23F' fill='%23000' opacity='.35' transform='translate(.6 .85)'/><use href='%23F' fill='%23f0d791' opacity='.45' transform='translate(-.35 -.5)'/><use href='%23F' fill='%23d4ac4d' opacity='.62'/><use href='%23K' fill='%23000' opacity='.5' transform='translate(1 1.4)'/><use href='%23K' fill='%23f0d791' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%23d4ac4d'/></svg>")
-      right bottom / 64px 64px no-repeat;
-
   --semantic-success: var(--verdigris-300);
   --semantic-danger: var(--vermilion-300);
   --semantic-warning: var(--gold-leaf-300);
@@ -681,8 +657,6 @@
        · earned — dialogs, the identity band, the realm masthead, the codex leaf:
                   2px metal, the far seat.
      ── */
-  --r-plate: 10px;
-  --r-chip: 0;
   --plate-face: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   /* The face's translucent twin, used ONLY where a grain tile sits beneath it:
      the veil is what keeps the grain a low mottle instead of a pattern behind
@@ -965,25 +939,6 @@
      alternation, value-inverted for the vellum ground. */
   --metal-silver: #837a6a;
   --metal-bronze: #99793f;
-
-  /* § Reliquary goldwork, light strike (same style-A knot + four-corner-layer
-     mechanism as the dark note above — same geometry, inverted tone): the frame
-     is GOLD on the ivory bands (owner, 2026-07-24 — "they can be gold too in
-     light theme"; supersedes the engraved-bronze treatment): a deep antique-gold
-     body (#94741f — true gold hue, dark enough to hold on cream) letterpressed
-     INTO the vellum — a warm-cream understroke (+1,+1.4) below-right (light
-     catching the groove's far wall) + a faint umber upper shadow wall (-.6,-.9).
-     The two-tone strike is inverted from dark's (glint below-right, shadow
-     above-left) so the goldwork reads pressed-in, not raised. */
-  --frame-ornate:
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g></defs><use href='%23f' fill='%23fff8e2' opacity='.5' transform='translate(.6 .85)'/><use href='%23f' fill='%233d2f12' opacity='.28' transform='translate(-.35 -.5)'/><use href='%23f' fill='%2394741f' opacity='.66'/><use href='%23k' fill='%23fff8e2' opacity='.6' transform='translate(1 1.4)'/><use href='%23k' fill='%233d2f12' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23k' fill='%2394741f'/></svg>")
-      left top / 64px 64px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(-1 0 0 1 64 0)'/></g><g id='F'><use href='%23f' transform='matrix(-1 0 0 1 64 0)'/></g></defs><use href='%23F' fill='%23fff8e2' opacity='.5' transform='translate(.6 .85)'/><use href='%23F' fill='%233d2f12' opacity='.28' transform='translate(-.35 -.5)'/><use href='%23F' fill='%2394741f' opacity='.66'/><use href='%23K' fill='%23fff8e2' opacity='.6' transform='translate(1 1.4)'/><use href='%23K' fill='%233d2f12' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%2394741f'/></svg>")
-      right top / 64px 64px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(1 0 0 -1 0 64)'/></g><g id='F'><use href='%23f' transform='matrix(1 0 0 -1 0 64)'/></g></defs><use href='%23F' fill='%23fff8e2' opacity='.5' transform='translate(.6 .85)'/><use href='%23F' fill='%233d2f12' opacity='.28' transform='translate(-.35 -.5)'/><use href='%23F' fill='%2394741f' opacity='.66'/><use href='%23K' fill='%23fff8e2' opacity='.6' transform='translate(1 1.4)'/><use href='%23K' fill='%233d2f12' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%2394741f'/></svg>")
-      left bottom / 64px 64px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(-1 0 0 -1 64 64)'/></g><g id='F'><use href='%23f' transform='matrix(-1 0 0 -1 64 64)'/></g></defs><use href='%23F' fill='%23fff8e2' opacity='.5' transform='translate(.6 .85)'/><use href='%23F' fill='%233d2f12' opacity='.28' transform='translate(-.35 -.5)'/><use href='%23F' fill='%2394741f' opacity='.66'/><use href='%23K' fill='%23fff8e2' opacity='.6' transform='translate(1 1.4)'/><use href='%23K' fill='%233d2f12' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%2394741f'/></svg>")
-      right bottom / 64px 64px no-repeat;
 
   --semantic-success: var(--verdigris-700);
   --semantic-danger: var(--vermilion-700);
@@ -1383,11 +1338,16 @@
   --font-title: var(--font-title);
   --font-mono: var(--font-numeric);
 
-  /* Radius — lapidary facets */
+  /* Radius — the Tailwind bridge for the TWO values (§04). Every `rounded-*`
+     utility in the markup resolves to a plate (10px) or a chip (0); there is no
+     third value, and leaving any of these unset would let Tailwind's own
+     defaults (0.375rem, 0.5rem, …) quietly re-introduce one. `rounded-full`
+     stays a CIRCLE — a shape, not a radius. */
   --radius-sm: 0px;
-  --radius-md: 2px;
-  --radius-lg: 4px;
-  --radius-xl: 8px;
+  --radius-md: 0px;
+  --radius-lg: 10px;
+  --radius-xl: 10px;
+  --radius-2xl: 10px;
 
   /* Breakpoint — the rail-drop threshold as a NAMED Tailwind variant (`rail:` /
      `max-rail:`), bridging the canonical --bp-rail width (1180px, above) into
@@ -1655,7 +1615,7 @@ body::after {
   min-height: 36px;
   min-width: 36px;
   border: 3px solid transparent;
-  border-radius: 5px;
+  border-radius: var(--r-chip);
   background: color-mix(in oklab, var(--text-muted) 40%, transparent);
   background-clip: padding-box;
 }
@@ -1730,7 +1690,7 @@ button:disabled,
   background: var(--bg-surface-2);
   color: var(--text-primary);
   border: 1px solid var(--border-accent);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-chip);
   box-shadow: var(--elev-raised);
   font: 600 var(--text-sm) / 1 var(--font-numeric);
   text-transform: uppercase;

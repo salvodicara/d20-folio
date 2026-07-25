@@ -193,7 +193,7 @@ disagree, the CSS is authoritative.
 - Parchment/vellum surfaces with carved (inset) and embossed (raised) depth, never flat fills.
 - Gold-leaf as the single brand voice; semantic and domain pigments do the rest of the talking.
 - Serif display for names/titles/numbers, serif body for reading, mono for every label and count.
-- Lapidary geometry: sharp-to-small radii (0 to 12px); chips are 4px facets, not pills.
+- TWO radii, and there is no third: a plate is 10px, a chip is square (§4). A circle is a shape, not a radius; the settings switch track is the one true pill.
 - Full light + dark parity, each AA-tuned, driven by `[data-theme]` on `<html>`.
 - Motion is brass-and-spring: snappy, slightly overshooting, and fully reduced-motion-safe.
 
@@ -584,6 +584,30 @@ moat → metal → groove → body
 | `--edge-seat`         | the moat + the near cast                                           |
 | `--edge-seat-earned`  | the moat + the far cast                                            |
 
+### Two radii, and there is no third
+
+A plate is **10px**. A chip is **square**. That is the whole geometry.
+
+The reference has no square-cornered panel and no third radius: its panels, plaques and modals all
+sit at ~10–12px, **including the ornamented ones** — an ornamented corner is rounded too, with the
+mark radiating inside the curve. This reverses the square-corner ruling (`border-radius: 0` on the
+masthead, the identity band and dialogs) that was made to give a corner knot a "true crossing" to
+seat on: the one-line law that ruling served is **kept and strengthened** as L2 (§5), but the
+squareness it justified has no support in the reference, and a mark's registration is solved by
+sitting _inside_ the radius rather than by flattening the corner.
+
+- `--r-plate: 10px` — every container and every plaque, at every size.
+- `--r-chip: 0` — every chip, grid cell, pip and read-only facet.
+- A **circle** (`50%`) is a shape, not a radius: coins, seals, sockets, orbs and portrait wells. The
+  reference frames its portraits and its hotbar hub the same way.
+- `--radius-pill` survives for the ONE true pill in the app, the settings switch track.
+
+The Tailwind `@theme` bridge at the foot of `src/index.css` re-points every `rounded-*` utility at
+the same two values, so markup and stylesheet can never drift into a third. Guard-pinned in
+`tests/unit/chrome-system.guard.test.ts`: every `border-radius` in the chrome must resolve to one of
+the two, a circle, the one pill, or a calc off the plate value for an inner edge inside its own
+border.
+
 ### Two tiers, differing ONLY in light
 
 | tier       | used by                                                        | metal | seat                 |
@@ -621,7 +645,7 @@ applies) loading and error states. Affordances are consistent across every surfa
 
 ### Buttons
 
-- **Shape:** 2px radius (`--radius-md`); icon-only buttons are 32px square (28px sm, 40px lg).
+- **Shape:** the plate radius (`--r-plate`); icon-only buttons are 32px square (28px sm, 40px lg).
 - **Primary (brass):** display font, 12px, a four-stop gold-leaf gradient with a metallic bevel (inset
   top sheen, bottom inset, brass lip, contained drop). Label is `--text-inverse` in dark and
   `--accent-text` (deep gold) on a lighter gold band in light. It rests quiet and warm, then
@@ -639,7 +663,7 @@ applies) loading and error states. Affordances are consistent across every surfa
 
 - **Style:** one atom parameterized by `--bd-c` (the hue). Background is a 14% tint of the hue over the
   surface; border is the full `--bd-c`; label is `--bd-ink` (the AA-safe variant) for domain colors.
-  Mono uppercase, 11px, 4px facet radius.
+  Mono uppercase, 11px, square (`--r-chip`).
 - **Variants:** `emphasized` (22% tint + glow), `solid` (gradient fill, inverse text), `outline`
   (transparent), `muted` (neutral). Any domain-colored badge must pass `--bd-ink`.
 
@@ -803,7 +827,7 @@ in-the-moment affordance, one keyboard path — and CTAs never reverse.**
 
 ### Cards / Containers
 
-- **Corner Style:** 8px (`--radius-xl`) for cards; 12px (`--radius-2xl`) for the largest containers.
+- **Corner Style:** `--r-plate` (10px) — every container, every plaque, every size. The reference has no square-cornered panel, and its ornamented corners are rounded too.
 - **Background:** `--bg-surface-1`; carried on an embossed (`--elev-resting`) tile.
 - **Shadow Strategy:** resting at rest, raised on hover; see Elevation. Never flat.
 - **Border:** 1px `--border-soft` dividers between stacked rows.
@@ -915,7 +939,7 @@ is geometry-identical EN vs IT.
 ### Inputs / Fields
 
 - **Style:** mono 13px in a carved channel: a recessed gradient fill (`--bg-recessed`) with
-  `--elev-recessed` inset shadow and a near-black `--border-strong` edge; 2px radius. Inputs push into
+  `--elev-recessed` inset shadow and a near-black `--border-strong` edge; the chip radius. Inputs push into
   the page.
 - **Focus:** border shifts to `--accent-primary-bright` with a 1px ring and a 24px gold glow stacked on
   the inset shadow.
@@ -1089,7 +1113,7 @@ campaign hub if it adopts tabbed IA — never re-roll a second tab look.
 
 ### Modals (`ModalShell`) + command palette
 
-- **`ModalShell`:** centered, `--bg-surface-2`, `--elev-modal`, `--radius-xl`, scrim behind, at
+- **`ModalShell`:** centered, the plate material on the earned tier (`--r-plate`), scrim behind, at
   `--z-modal`; a diamond-rubric Cinzel-titled head; body scrolls; footer actions right-aligned
   (primary = Pressed-Brass). Always commit/cancel; a modal never relocates the realm. **One trap
   owner:** it must trap focus, handle Escape, and set initial focus (WCAG 2.1.2 / 2.4.3).
@@ -1781,9 +1805,11 @@ would flag that are **intended**. Filing them as defects violates the identity g
    ceremonial surfaces, Alegreya headings + body prose, Source Serif 4 tabular-lining numbers and
    uppercase labels) — the deliberate "Gilded Plate" type system (owner-ratified 2026-07-02), not
    "old/heavy."
-3. **Lapidary square avatars + sharp/small radii (0–4px) + chips as 4px facets** — the locked
-   lapidary geometry. The round-avatar / pill-chip "fix" is explicitly rejected.
-4. **The single 999px pill = the settings switch track** — the one sanctioned pill.
+3. **Square avatars + TWO radii (a 10px plate, a square chip)** — the locked geometry, re-derived
+   from the reference in the chrome reset. The round-avatar / pill-chip "fix" is explicitly
+   rejected, and so is a third radius.
+4. **The single 999px pill = the settings switch track** — the one sanctioned pill. A circular
+   medallion (a coin, a seal, a portrait well) is `50%`: a SHAPE, not a radius.
 5. **The gold focus RING** (`--focus-ring`, 2px at offset 2, alone) — the deliberate pick. No
    interior wash, no halo: a state changes light and colour, never emits.
 6. **Gold-on-gold defenses** (`--accent-text` deep-gold for all gold text; the brand mark shifting to

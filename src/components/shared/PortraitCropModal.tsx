@@ -186,7 +186,7 @@ export function PortraitCropModal({
                     boxShadow: "0 0 0 9999px rgba(0,0,0,0.65)",
                     // Portrait = the lapidary rounded square the tiles render;
                     // banner = sharp wide rect. The boxShadow scrim follows it.
-                    ...(isBanner ? {} : { borderRadius: "var(--radius-lg)" }),
+                    ...(isBanner ? {} : { borderRadius: "var(--r-plate)" }),
                   },
                 }}
               />

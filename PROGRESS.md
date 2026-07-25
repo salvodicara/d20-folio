@@ -571,6 +571,13 @@ The phases (each one worktree, one merge, green on both build modes):
 | 6     | The MARK — the corner terminal redrawn as the glint fan alone, seated inside the radius, plus the run cartouche; mounted on exactly one surface per route. The only ADDITIVE phase; owner preview                                                                                                  | open     |
 | 7     | Light sibling re-derived against the finished dark system + guards + budget                                                                                                                                                                                                                        | open     |
 
+**Phase 3** collapsed eight simultaneous corner radii to two — a 10px plate and a square chip —
+reversed the square-corner ruling on the masthead, the identity band and dialogs (the reference has
+no square-cornered panel, and its ornamented corners are rounded too), and **unmounted the corner
+mark**: the shipped knot re-drew ~30px of the host's own rail from a square vertex, which cannot
+register on a 10px arc. It returns in Phase 6 redrawn as a fan seated inside the radius, which also
+releases the 10.6 KB raw SVG payload the four corner tiles carried per theme.
+
 **Phase 2** replaced both depth grammars on every plate with the one material: the dome ships in
 BOTH themes (it was `none` in dark, so the flagship theme's plates were the only undomed ones), the
 cream inner lip is gone system-wide, and `.folio-panel`'s two 30-line per-theme material blocks

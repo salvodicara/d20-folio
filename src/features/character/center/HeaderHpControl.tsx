@@ -335,7 +335,7 @@ export function HeaderHpControl() {
         // Liquid-Mercury bar, then the HP label — column-stacked exactly like the
         // AC / Init / Speed / PB tiles, so it sits in the vitals row as a peer
         // instead of a stray boxed pill. Focus-visible falls through to the global
-        // gold-halo ring (§07, AA-safe both themes); the `--radius-md` hugs it.
+        // gold-halo ring (§07, AA-safe both themes); the chip radius hugs it.
         className="vital vital-hp"
         data-density="tile"
       >

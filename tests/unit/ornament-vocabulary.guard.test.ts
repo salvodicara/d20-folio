@@ -40,38 +40,21 @@ const index = indexCss.replace(/\/\*[\s\S]*?\*\//g, "");
  *        never a label.
  */
 describe("the ornament vocabulary", () => {
-  it("keeps the ornament BUDGET: the mark-bearing frames, and nothing else", () => {
-    // The two frames that may carry the corner mark — the realm masthead, and
-    // the cockpit identity band (which takes the screen's one mark on the route
-    // where no masthead renders). The selector list IS the budget.
-    const host = folio.match(
-      /\.page-head\.framed::before,\s*\.folio-panel\.gilt-frame::after \{([^}]*)\}/
-    );
-    expect(
-      host,
-      "The corner-mark host rule must be exactly `.page-head.framed::before, " +
-        ".folio-panel.gilt-frame::after`. Adding a third selector spends the screen's " +
-        "one-ornament budget twice."
-    ).not.toBeNull();
-    expect(host?.[1]).toContain("background: var(--frame-ornate);");
-    // A DIALOG CARRIES NO ORNAMENT. It already commands the screen; the
-    // reference's own modals are plain plates with a title and a whisper.
+  it("keeps the ornament BUDGET at ZERO while the MARK is unmounted", () => {
+    // The corner knot came off with the square corners: it re-drew ~30px of the
+    // host's own rail from a square vertex, which cannot register on a rounded
+    // plate — a thickened, offset segment of line that abruptly returns to the
+    // border is exactly the two-line defect L2 forbids. Nothing carries a mark
+    // until it is redrawn as a fan seated INSIDE the radius.
+    expect(indexCss).not.toMatch(/--frame-ornate/);
+    expect(folio).not.toMatch(/--frame-ornate/);
+    // …and no surface grew a replacement in the meantime. A DIALOG in particular
+    // carries none, ever: it already commands the screen, and the reference's own
+    // modals are plain plates with a title and a whisper.
     expect(folio).not.toMatch(/\.modal::after\s*\{/);
     expect(folio).not.toMatch(/\.modal::before\s*\{/);
-    // The mark rides the host's OWN border box — no layout border, no
-    // border-image (a border-based carrier over-constrains short hosts and
-    // border-image's proportional shrink mis-seats the centerline).
-    expect(host?.[1]).not.toContain("border:");
-    expect(host?.[1]).not.toContain("border-image");
-    expect(folio).not.toMatch(/border-image:\s*var\(--frame-ornate\)/);
-  });
-
-  it("keeps the light theme's ornament ink GOLD, never bronze (owner, 2026-07-24)", () => {
-    const lightBlock = indexCss.slice(indexCss.indexOf('[data-theme="light"]'));
-    const lightFrame = lightBlock.match(/--frame-ornate:\s*([^;]+);/)?.[1];
-    expect(lightFrame).toBeDefined();
-    expect(lightFrame).toContain("fill='%2394741f'");
-    expect(lightFrame).not.toContain("fill='%237a5f24'");
+    expect(folio).not.toMatch(/\.page-head\.framed::before\s*\{/);
+    expect(folio).not.toMatch(/\.folio-panel\.gilt-frame::after\s*\{/);
   });
 
   it("draws NO ornament over a line — no head figure, no divider node", () => {
