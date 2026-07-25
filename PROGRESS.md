@@ -581,10 +581,16 @@ releases the 10.6 KB raw SVG payload the four corner tiles carried per theme.
 **Phase 2** replaced both depth grammars on every plate with the one material: the dome ships in
 BOTH themes (it was `none` in dark, so the flagship theme's plates were the only undomed ones), the
 cream inner lip is gone system-wide, and `.folio-panel`'s two 30-line per-theme material blocks
-collapse into one rule whose whole light delta is four colour roles in tokens. The dome's ink cost
-is paid by `--text-muted` `#988b6e` → `#ae9f7e` (measured 4.62:1 on the worst domed composite,
-against 3.58:1 for the old value), and `verdict-ink-contrast.test.ts` now composites the dome term
-so the floor is computed against the plate the app actually paints.
+collapse into one rule whose whole light delta is four colour roles in tokens. **The dark pool's
+alpha is derived from the ink ladder, not chosen:** the dark plate carries three ink registers and
+the faintest has to clear AA at the pool's peak, which caps the pool at **4%** (1.59× the plate's
+corner luminance — the ~1.6× the spec sets for dark). It first shipped at 10% (2.78×, brighter than
+the 2.4× reference) with only `--text-muted` compensated, which took `--text-faint` to 3.64:1 —
+a real AA failure on help text, placeholders and slot labels; the fix re-derived the whole ladder
+(`--text-muted` `#988b6e` → `#ae9f7e`, `--text-faint` `#9a8c6e` → `#a09272`, both ≥4.58:1 on every
+domed ground). `verdict-ink-contrast.test.ts` now checks a GRID — every domed ground × both
+small-prose registers, plus a minimum L\* separation so the floor can never be met by collapsing a
+tier — instead of the single (panel, `--text-muted`) pair that let the regression through.
 
 **Phase 1 removed ~95 painted layers and added one** (the hairline): the double separator, the
 compendium leaf's double gilt frame, the third parchment-texture copy, the ornament on dialogs, all

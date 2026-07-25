@@ -152,9 +152,18 @@
      THE DOME is the plate's whole convexity: ONE elliptical specular pool at
      (50%, 30%), falling to nothing by the edges. Its falloff IS the vignette and
      IS the basin — there is no second darkening layer anywhere. The reference's
-     pool peaks at 2.4× its corner luminance; dark ships ~1.6× because our dark
-     plates are TRANSLUCENT over painted candlelight and the ink budget is real
-     (see the compensation on --text-muted below).
+     pool peaks at 2.4× its corner luminance; DARK ships 1.59× because our dark
+     plates are TRANSLUCENT over painted candlelight and the ink budget is real.
+     That 1.6× is the ceiling the INK TIERS buy, not a taste call: the dark plate
+     carries THREE ink registers (secondary → muted → faint) and the faintest one
+     has to clear 4.5:1 at the pool's peak. Measured on the worst domed composite
+     (surface-2 at --panel-alpha over the brightest backdrop region, then domed):
+     the pool costs --text-faint ~0.10 of contrast per 1% of alpha, so a 10% pool
+     leaves NO room for a third register (its minimum passing ink lands on top of
+     --text-muted) while 4% keeps all three, each a visible L* step apart. Raising
+     this alpha means deleting an ink tier — re-derive BOTH tokens first (the
+     floor is pinned in tests/unit/verdict-ink-contrast.test.ts, which composites
+     the dome over the opaque plate, the panel and the rail).
 
      TWO TIERS, differing ONLY in light — never in geometry:
        · quiet  — cards, panels, rows, plaques: 1px metal, the near seat.
@@ -396,22 +405,28 @@
      surface-3 (trivially AA; the point is the distinct register). */
   --text-special: #fff2b3;
   --text-secondary: #c4b89e;
-  /* The muted register carries the DOME's cost. A dark plate is translucent over
-     painted candlelight, and the specular pool brightens the very composite the
-     ink sits on: on the worst measured composite — surface-2 at --panel-alpha over
-     the brightest glyph-scale backdrop region (#be8031 at --app-bg-art-opacity),
-     rgb(43,33,19) — a 10% dome lifts the ground to rgb(63,53,35), where the old
-     #988b6e measured 3.58:1 and FAILED AA. #ae9f7e measures 4.62:1 on that exact
-     composite WITH the dome (5.24:1 on a plain domed plate, 5.43:1 on the game
-     rail) and stays a clear step below --text-secondary. The headroom over the
-     4.5 floor is 0.12 — deliberate and thin: raise the dome and this token has to
-     be re-derived FIRST (the composite floor is pinned in
-     tests/unit/verdict-ink-contrast.test.ts, which composites the dome term). */
+  /* THE THREE DARK INK REGISTERS, and the dome they are budgeted against.
+     A dark plate is TRANSLUCENT over painted candlelight and the specular pool
+     brightens the very composite the ink sits on, so all three registers are
+     derived on the worst ground the app actually paints: surface-2 at
+     --panel-alpha over the brightest glyph-scale backdrop region (#be8031 at
+     --app-bg-art-opacity) = rgb(43,33,19), then domed at the pool's peak.
+
+     At the shipped 4% dome that ground is rgb(51,41,25) and the ladder measures
+     secondary 7.25 · muted 5.46 · faint 4.64 — three registers, each a visible
+     L* step apart (secondary−muted 9.1, muted−faint 5.0), all clear of 4.5.
+     (At the 10% dome the branch briefly shipped, the same ladder was 6.13 · 4.62
+     · 3.64 — the faint register FAILED AA, and its minimum passing value landed
+     on top of --text-muted. The dome, not the ink, was the thing out of spec.) */
   --text-muted: #ae9f7e;
-  /* text-faint raised to meet ~4.5:1 at the 8-11px sizes it is actually used for
-     (placeholders, .es-note, slot labels, fchip counts) — was #5a5141 (~2.3:1, FAIL).
-     Decoration-only faint should use --border-strong, never this. */
-  --text-faint: #9a8c6e;
+  /* The faintest register — help text, placeholders, slot labels, timestamps, at
+     the 8–11px sizes it is actually used for. #9a8c6e (its value before the dome)
+     measures 4.30:1 on the domed panel composite and FAILS; #a09272 measures
+     4.64:1 there, 5.26:1 on a domed opaque plate and 4.58:1 on the darkest case a
+     domed surface-3 can make — while staying 5.0 L* below --text-muted, so the
+     third register is still a register. Decoration-only faint should use
+     --border-strong, never this. */
+  --text-faint: #a09272;
   --text-inverse: #1a1610;
 
   --border-soft: #241e15;
@@ -670,9 +685,14 @@
     color-mix(in srgb, var(--bg-surface-2) 62%, transparent),
     color-mix(in srgb, var(--bg-surface-1) 62%, transparent)
   );
+  /* The dark pool: 4%, i.e. 1.59× the plate's corner luminance — the ~1.6× the
+     material spec sets for dark (§05a above). It shipped at 10% (2.78×, brighter
+     than the 2.4× reference itself) and that overshoot took --text-faint to
+     3.64:1 on the panel composite. 4% is the strongest pool three ink registers
+     can pay for. */
   --plate-dome: radial-gradient(
     ellipse 82% 62% at 50% 30%,
-    rgba(245, 230, 180, 0.1),
+    rgba(245, 230, 180, 0.04),
     rgba(245, 230, 180, 0) 74%
   );
   --plate-grain: image-set(var(--asset-panel-leather) type("image/webp"));

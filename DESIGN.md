@@ -630,13 +630,31 @@ independently-authored bevels doing the same job in the same place. Both are gua
 (`tests/unit/chrome-system.guard.test.ts`). The legacy `--elev-*` stack survives ONLY on the small
 controls the state-grammar pass has yet to reach; it may never touch a plate.
 
-**The Dome Costs Ink, and the Ink Is Paid For.** A dark plate is translucent over painted
-candlelight, so the dome brightens the very composite the ink sits on. `--text-muted` is `#ae9f7e`
-for exactly that reason: on the worst measured composite — surface-2 at `--panel-alpha` over the
-brightest glyph-scale backdrop region — a 10% dome leaves it at **4.62:1**, and the old `#988b6e`
-at 3.58:1 (FAIL). The floor is computed WITH the dome term in
-`tests/unit/verdict-ink-contrast.test.ts`; the headroom is 0.12, so the dome cannot be raised
-without re-deriving the ink first.
+**The Dome Costs Ink, and the Ink Buys the Dome's Alpha.** A dark plate is translucent over painted
+candlelight, so the dome brightens the very composite the ink sits on. The dark plate carries
+**three ink registers** — `--text-secondary` → `--text-muted` → `--text-faint` — and the faintest
+one has to clear 4.5:1 at the pool's peak, so the pool's alpha is **derived from the ink ladder,
+not chosen**. On the worst measured composite (surface-2 at `--panel-alpha` over the brightest
+glyph-scale backdrop region, then domed):
+
+| dark dome    | peak / corner | `--text-secondary` | `--text-muted` | `--text-faint` |
+| ------------ | ------------- | ------------------ | -------------- | -------------- |
+| 4% (shipped) | 1.59×         | 7.25               | 5.46           | **4.64**       |
+| 10%          | 2.78×         | 6.13               | 4.62           | **3.64 ✗**     |
+
+At 10% the faint register fails AA, and its minimum passing value (`#ac9d7b`) lands on top of
+`--text-muted` — i.e. a 10% pool has no room for a third register at all. 4% is the strongest pool
+three registers can pay for, and it is also the ~1.6× the material spec sets for dark (§4 above;
+the reference itself peaks at 2.4×). `--text-muted` is `#ae9f7e` and `--text-faint` is `#a09272`
+for the same reason — the pre-dome pair `#988b6e` / `#9a8c6e` measured 3.58 / 4.30 (FAIL). The
+floor is a GRID in `tests/unit/verdict-ink-contrast.test.ts` — every domed ground (opaque plate,
+panel composite, rail composite, nested surface-3) × both small-prose registers, plus a minimum
+L\* separation between the three, so the floor can never be met by collapsing a tier.
+**Raising the dome means deleting an ink register: re-derive the ladder first.**
+
+Light needs no compensation — its pool is near-white over near-ivory (a 1.04× lift) under
+near-black ink, ≥14:1 on every plate. Light ships `--text-muted` and `--text-faint` at the same
+value (`#291e0a`): two registers, a standing daylight-sibling call, not a dome cost.
 
 ## 5. Components
 

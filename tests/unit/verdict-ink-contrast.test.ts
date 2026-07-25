@@ -272,6 +272,12 @@ describe("muted/faint text clears WCAG-AA on the DEEPEST recessed surface", () =
   // darker (light: #d6c8a0) and carries muted/faint text (the search-spells
   // placeholder, slot labels, etc.). A latent footgun — assert both clear 4.5:1
   // on --bg-recessed in BOTH themes so a placeholder never silently fails AA.
+  //
+  // NOT SUFFICIENT ON ITS OWN: --bg-recessed is an UNDOMED surface and the
+  // darkest one in the theme, so this pair passes for inks that are far too dark
+  // for any PLATE. The binding floor for muted/faint is the domed-ground grid in
+  // "candlelit translucency composite floor" below; this describe only keeps the
+  // carved-channel case honest.
   for (const theme of ["dark", "light"] as const) {
     const block = themeBlock(theme);
     const recessed = readVar(block, "--bg-recessed");
@@ -397,25 +403,73 @@ describe("candlelit translucency composite floor (dark --panel-alpha)", () => {
   // body::after paints the art at --app-bg-art-opacity over the page field.
   const backdrop = mix(WORST_ART_REGION, bgPage, artOpacity * 100);
 
-  it("dark: --text-muted ≥ 4.5:1 at the DOME's peak on the folio-panel composite", () => {
-    // Rail rubrics (.rail-head h5) are text-muted directly on the panel field —
-    // and the panel is domed, so the worst point is the pool's peak.
-    const comp = domed(
+  // EVERY plate is domed, translucent or not: `.modal` and `.info-card` paint
+  // `var(--plate-dome), var(--plate-face)` on an OPAQUE face, and the nested
+  // surface-3 tier can end up under the same pool. So the floor is a GRID —
+  // every domed ground × every ink register that renders on one — not the single
+  // (panel, --text-muted) pair the guard first modelled. That single pair is
+  // exactly how the 10% dome shipped with --text-faint at 3.64:1: the token was
+  // measured only against `--bg-recessed`, an UNDOMED surface, which it passes
+  // even when it is far too dark for any plate.
+  const domedGrounds = (): Record<string, string> => ({
+    // `.modal` / `.info-card` — the opaque plate's face tops out at surface-2.
+    "opaque plate (.modal/.info-card)": domed(readVar(block, "--bg-surface-2"), "dark"),
+    // `.folio-panel` — surface-2 at --panel-alpha over the worst backdrop.
+    "folio-panel composite": domed(
       mix(readVar(block, "--bg-surface-2"), backdrop, alpha * 100),
       "dark"
-    );
-    expect(
-      contrast(readVar(block, "--text-muted"), comp),
-      `text-muted on the DOMED panel composite ${comp} (alpha ${alpha})`
-    ).toBeGreaterThanOrEqual(AA_FLOOR);
+    ),
+    // The cockpit game `.rail` — the page field at --panel-alpha over it.
+    "game-rail composite": domed(mix(bgPage, backdrop, alpha * 100), "dark"),
+    // The nested raised tier, should a pool ever fall across one.
+    "nested surface-3": domed(readVar(block, "--bg-surface-3"), "dark"),
   });
 
-  it("dark: --text-muted ≥ 4.5:1 at the DOME's peak on the game-rail composite", () => {
-    const comp = domed(mix(bgPage, backdrop, alpha * 100), "dark");
-    expect(
-      contrast(readVar(block, "--text-muted"), comp),
-      `text-muted on the DOMED rail composite ${comp} (alpha ${alpha})`
-    ).toBeGreaterThanOrEqual(AA_FLOOR);
+  // The two registers that render as small prose ON a plate. `--text-muted`
+  // carries rail rubrics and row labels; `--text-faint` carries `.sr-help`,
+  // `.field-help`, `.uc-slotpips .sp-lbl`, `.sc-save-rest` and `.log-ts` — all
+  // of them 8–11px, all of them on a domed plate.
+  for (const ink of ["--text-muted", "--text-faint"] as const) {
+    for (const [label, ground] of Object.entries(domedGrounds())) {
+      it(`dark: ${ink} ≥ ${AA_FLOOR}:1 at the DOME's peak on the ${label}`, () => {
+        expect(
+          contrast(readVar(block, ink), ground),
+          `${ink} on the DOMED ${label} ${ground} (panel-alpha ${alpha}, dome ${domePeak("dark").alpha})`
+        ).toBeGreaterThanOrEqual(AA_FLOOR);
+      });
+    }
+  }
+
+  it("dark: the three ink registers stay three DISTINGUISHABLE registers", () => {
+    // The floor above can be satisfied by collapsing faint onto muted. It must
+    // not be: secondary → muted → faint is information hierarchy, and the dome's
+    // alpha is budgeted so all three survive (see the --text-muted docblock).
+    // 3.0 L* is the smallest step that still reads as a different ink at 8–11px.
+    const L = (hex: string): number => {
+      const y = relLuminance(hexToRgb(hex));
+      return y > 0.008856 ? 116 * Math.cbrt(y) - 16 : 903.3 * y;
+    };
+    const sec = L(readVar(block, "--text-secondary"));
+    const muted = L(readVar(block, "--text-muted"));
+    const faint = L(readVar(block, "--text-faint"));
+    expect(sec - muted, "secondary must sit a visible step above muted").toBeGreaterThan(
+      3
+    );
+    expect(muted - faint, "muted must sit a visible step above faint").toBeGreaterThan(3);
+  });
+
+  it("light: the plate's pool never eats the light theme's faint ink", () => {
+    // Light's pool is a near-white over near-ivory (a 1.04× lift) and its ink is
+    // near-black, so the dome BUYS contrast here rather than spending it. Pinned
+    // anyway: a lightened light-theme ink is the same defect class.
+    const lightBlock = themeBlock("light");
+    for (const ink of ["--text-muted", "--text-faint"] as const) {
+      const ground = domed(readVar(lightBlock, "--bg-surface-2"), "light");
+      expect(
+        contrast(readVar(lightBlock, ink), ground),
+        `${ink} on the DOMED light plate ${ground}`
+      ).toBeGreaterThanOrEqual(AA_FLOOR);
+    }
   });
 
   it("dark: --text-secondary ≥ 4.5:1 on the framed head's brightest composite", () => {

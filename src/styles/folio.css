@@ -856,7 +856,10 @@ svg.icon[stroke],
    right-aligned control. Promoted verbatim from previews/folio_design/settings.html
    (the full-page `/settings` uses these rows; the slide-out `.set-panel`/`.set-scrim`
    chrome is intentionally NOT promoted). The icon badge is what gives the row its
-   carved character; the help ink is the AA-safe `--text-faint` (≥5.3:1 both themes). */
+   carved character; the help ink is `--text-faint`, the faintest of the three ink
+   registers — AA-safe on the DOMED plate the row sits on (dark ≥4.58:1 at the
+   pool's peak, light ≥15:1), pinned by the composite floor in
+   tests/unit/verdict-ink-contrast.test.ts. */
 .set-row {
   display: flex;
   align-items: center;
