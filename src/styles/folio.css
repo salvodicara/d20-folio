@@ -303,6 +303,7 @@ svg.icon[stroke],
     .text-text-faint,
     .opt-count,
     .sec-meta,
+    .sec-count,
     .field-help,
     .wiz-pick-head,
     .wiz-count,
@@ -13664,7 +13665,11 @@ button.party-avatar-btn:focus-visible {
   z-index: -1;
   border-radius: calc(var(--r-plate) - 1px);
   opacity: var(--panel-alpha);
-  background: var(--plate-dome), var(--plate-face-veil), var(--plate-grain);
+  /* The paint floor, not a fourth layer: the grain tile is opaque, but a missing
+     texture would otherwise leave an 80%-veil panel with the backdrop bleeding
+     through it — and light ink on a bled panel fails AA. */
+  background-color: var(--bg-surface-1);
+  background-image: var(--plate-dome), var(--plate-face-veil), var(--plate-grain);
   background-size:
     auto,
     auto,

@@ -232,7 +232,7 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
         "the light panel silently reads dark's leather, or no grain at all."
     ).toBe(true);
     const material =
-      /\.folio-panel::before \{[^}]*opacity: var\(--panel-alpha\)[^}]*var\(--plate-grain\)/;
+      /\.folio-panel::before \{[^}]*opacity: var\(--panel-alpha\)[^}]*background-image:[^;]*var\(--plate-grain\)/;
     expect(
       material.test(css),
       "MISSING: `.folio-panel::before` rendering the grain at var(--panel-alpha) — the " +

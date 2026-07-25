@@ -96,13 +96,42 @@ describe("the chrome system — the material's tokens", () => {
       "--edge-seat-earned",
       "--plate-face-veil",
     ] as const;
-    const root = indexCss.slice(0, indexCss.indexOf('[data-theme="light"]'));
+    // The TRUE `:root` block, not "everything before the light block" — a token
+    // that lands in `[data-theme="dark"]` by accident is defined for exactly one
+    // theme and silently un-styles the other (the light plates lost their face
+    // and their metal outright until this assertion was tightened).
+    const rootOpen = indexCss.indexOf("{", indexCss.indexOf(":root"));
+    let depth = 0;
+    let rootClose = rootOpen;
+    for (let i = rootOpen; i < indexCss.length; i++) {
+      if (indexCss[i] === "{") depth++;
+      else if (indexCss[i] === "}") {
+        depth--;
+        if (depth === 0) {
+          rootClose = i;
+          break;
+        }
+      }
+    }
+    const root = indexCss.slice(rootOpen, rootClose).replace(/\/\*[\s\S]*?\*\//g, "");
+    const dark = themeBlock("dark").replace(/\/\*[\s\S]*?\*\//g, "");
     for (const name of PRIMITIVES) {
+      const atRoot = new RegExp(`${name}\\s*:`).test(root);
+      const perTh = (perTheme as readonly string[]).includes(name);
       expect(
-        new RegExp(`${name}\\s*:`).test(root.replace(/\/\*[\s\S]*?\*\//g, "")),
-        `MISSING ${name} at the root. The plate material is ONE closed set of nine ` +
-          `primitives; a recipe that reaches past them is a new grammar.`
+        perTh ? new RegExp(`${name}\\s*:`).test(dark) : atRoot,
+        `MISSING ${name} ${perTh ? "in the DARK theme block" : "at :root"}. The plate ` +
+          `material is ONE closed set of nine primitives, and a STRUCTURAL one must live ` +
+          `at :root — dropped into a theme block it defines the material for exactly one ` +
+          `theme and silently un-styles the other.`
       ).toBe(true);
+      if (!perTh) {
+        expect(
+          new RegExp(`${name}\\s*:`).test(dark),
+          `${name} is structural (theme-independent by indirection) and must NOT be ` +
+            `re-declared inside a theme block.`
+        ).toBe(false);
+      }
     }
     const light = themeBlock("light").replace(/\/\*[\s\S]*?\*\//g, "");
     for (const name of perTheme) {

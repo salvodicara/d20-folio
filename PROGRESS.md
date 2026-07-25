@@ -1053,7 +1053,7 @@ formerly-IN-FLIGHT items 2–5 all SHIPPED, reconciled 2026-07-24):
    (no mount animation — the content change is the navigation signal). Proven by overlap-diff: the
    crest strip is 0-differing-pixels across all three realms + a return visit; a 39-sample
    navigation trace shows zero off-target frames. Guards: `scroll-restoration.test.ts` (PUSH never
-   restores), `page-header-crest.test.tsx` (no `.page-head*` animation), `navigation.spec.ts`
+   restores), `page-header.test.tsx` (no `.page-head*` animation), `navigation.spec.ts`
    (realm switch lands at top and stays).
    1b. SHIPPED (2026-07-10) — app-wide navigation-feel audit + compose-once fixes (Fable, the
    follow-through on directive 1): EVERY transition class frame-recorded in real Chromium with

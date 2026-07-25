@@ -132,6 +132,39 @@
   --r-chip: 0;
   --radius-pill: 999px; /* reserved: the settings switch track only */
 
+  /* ── § 04a THE PLATE MATERIAL — the one material every container is made of.
+     Measured off the reference, not invented (DESIGN.md §4 "The plate material").
+
+     A plate is FOUR tonal events in this order, and nothing else:
+       moat → metal → groove → body.
+     The MOAT is a 1px dark ring OUTSIDE the frame (the reference's plates sit in
+     their own shadow groove — darker than the scene, so a plate reads as an
+     object laid ON the page, not a region cut out of it). The METAL is the
+     border itself, ONE warm value on all four runs (the reference's frame is
+     top-lit by ~30% at most — inside our rendering noise, and deliberately not
+     modelled: a hard lit/shaded split reads as a web bevel, not as metal). The
+     GROOVE is darkness immediately INSIDE the frame. There is NO cream inner
+     lip: the reference puts darkness inside a frame and the plate brightens
+     AWAY from the edge because of the dome, not because of a highlight. That
+     one idiom — the 1px cream line under a top border — is the single most
+     common thing this chrome used to do, and it is banned outright.
+
+     THE DOME is the plate's whole convexity: ONE elliptical specular pool at
+     (50%, 30%), falling to nothing by the edges. Its falloff IS the vignette and
+     IS the basin — there is no second darkening layer anywhere. The reference's
+     pool peaks at 2.4× its corner luminance; dark ships ~1.6× because our dark
+     plates are TRANSLUCENT over painted candlelight and the ink budget is real
+     (see the compensation on --text-muted below).
+
+     TWO TIERS, differing ONLY in light — never in geometry:
+       · quiet  — cards, panels, rows, plaques: 1px metal, the near seat.
+       · earned — dialogs, the identity band, the realm masthead, the codex leaf:
+                  2px metal, the far seat.
+     ── */
+  --plate-face: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
+  --edge-metal: var(--border-strong);
+  --edge-metal-earned: var(--border-accent);
+
   /* ── § 06 Motion — The settling grammar (BG3 identity: motion SETTLES, never
      travels — short cubic-out fades with tiny translates; spring/bounce is
      reserved EXCLUSIVELY for warning/urgent notification pops). ── */
@@ -628,36 +661,7 @@
   --cur-cp: #c87c44;
   --cur-cp-deep: #6a3818;
 
-  /* ── § 05a THE PLATE MATERIAL — the one material every container is made of.
-     Measured off the reference, not invented (DESIGN.md §4 "The plate material").
-
-     A plate is FOUR tonal events in this order, and nothing else:
-       moat → metal → groove → body.
-     The MOAT is a 1px dark ring OUTSIDE the frame (the reference's plates sit in
-     their own shadow groove — darker than the scene, so a plate reads as an
-     object laid ON the page, not a region cut out of it). The METAL is the
-     border itself, ONE warm value on all four runs (the reference's frame is
-     top-lit by ~30% at most — inside our rendering noise, and deliberately not
-     modelled: a hard lit/shaded split reads as a web bevel, not as metal). The
-     GROOVE is darkness immediately INSIDE the frame. There is NO cream inner
-     lip: the reference puts darkness inside a frame and the plate brightens
-     AWAY from the edge because of the dome, not because of a highlight. That
-     one idiom — the 1px cream line under a top border — is the single most
-     common thing this chrome used to do, and it is banned outright.
-
-     THE DOME is the plate's whole convexity: ONE elliptical specular pool at
-     (50%, 30%), falling to nothing by the edges. Its falloff IS the vignette and
-     IS the basin — there is no second darkening layer anywhere. The reference's
-     pool peaks at 2.4× its corner luminance; dark ships ~1.6× because our dark
-     plates are TRANSLUCENT over painted candlelight and the ink budget is real
-     (see the compensation on --text-muted below).
-
-     TWO TIERS, differing ONLY in light — never in geometry:
-       · quiet  — cards, panels, rows, plaques: 1px metal, the near seat.
-       · earned — dialogs, the identity band, the realm masthead, the codex leaf:
-                  2px metal, the far seat.
-     ── */
-  --plate-face: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
+  /* § 05a THE PLATE MATERIAL, dark strike — the four colour roles (§04a). */
   /* The face's translucent twin, used ONLY where a grain tile sits beneath it:
      the veil is what keeps the grain a low mottle instead of a pattern behind
      text. (CSS has no per-layer background alpha and the tile is opaque.) */
@@ -672,8 +676,6 @@
     rgba(245, 230, 180, 0) 74%
   );
   --plate-grain: image-set(var(--asset-panel-leather) type("image/webp"));
-  --edge-metal: var(--border-strong);
-  --edge-metal-earned: var(--border-accent);
   --edge-groove:
     inset 0 0 0 1px rgba(0, 0, 0, 0.5), inset 0 0 20px 2px rgba(0, 0, 0, 0.4);
   --edge-seat: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 10px 24px rgba(0, 0, 0, 0.5);
