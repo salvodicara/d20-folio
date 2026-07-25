@@ -285,16 +285,13 @@ and domain hues (lapis, spell levels, damage types, …) are MEANT to be colored
 fullscreen/blocking surfaces — the portrait lightbox). BG3 ships exactly these two modal-scrim
 weights (identity epic, 2026-07-02). Never a literal black alpha behind an overlay.
 
-**The Focus Wash.** Keyboard focus = the crisp gold a11y ring PLUS a warm interior wash
-(`--focus-wash`: `#fddda6` @ 25% dark / struck-gold @ 35% light), layered in the shared
-`:focus-visible` recipe. BG3 focuses controls by washing their interior with warm light at 23–60%
-alpha (identity epic, 2026-07-02). The wash is additive warmth; the ring is the a11y contract and
-never drops.
-
 **No Emission.** The chrome does not glow. There is no focus halo, no selection aura, no hover
-sweep, no commit bloom: light on this material means DEPTH — the plate's own dome and its seat —
-and a second light source would have to come from somewhere. `--glow-stroke-gold` survives only as
-the deep grounding tone the gold semantic palette derives from.
+sweep, no commit bloom, and no interior focus wash: light on this material means DEPTH — the
+plate's own dome and its seat — and a second light source would have to come from somewhere.
+**Keyboard focus is the ring, alone:** `2px solid --focus-ring` at `offset 2`, which clears WCAG
+1.4.11 on its own. The `--focus-wash` interior tint was deleted with the rest of the emission
+systems in the chrome reset. `--glow-stroke-gold` survives only as the deep grounding tone the gold
+semantic palette derives from.
 
 ## 3. Typography
 
@@ -845,10 +842,13 @@ in-the-moment affordance, one keyboard path — and CTAs never reverse.**
 
 ### Cards / Containers
 
+A card IS a plate (§4). It is built from the one material and never from a second depth grammar —
+an `--elev-*` term on a card is a guard failure (`tests/unit/chrome-system.guard.test.ts`).
+
 - **Corner Style:** `--r-plate` (10px) — every container, every plaque, every size. The reference has no square-cornered panel, and its ornamented corners are rounded too.
-- **Background:** `--bg-surface-1`; carried on an embossed (`--elev-resting`) tile.
-- **Shadow Strategy:** resting at rest, raised on hover; see Elevation. Never flat.
-- **Border:** 1px `--border-soft` dividers between stacked rows.
+- **Background:** `var(--plate-dome), var(--plate-face)` — the domed face, quiet tier.
+- **Edge + Shadow:** `1px solid var(--edge-metal)` with `box-shadow: var(--edge-groove), var(--edge-seat)` — moat → metal → groove → body, four tonal events and no more. Hover changes light and colour (and at most a 1–2px lift), never the assembly.
+- **Border:** 1px `--border-soft` dividers between stacked rows (a divider inside a card is the `--hairline`; `--border-soft` is only for structural row splits).
 - **Internal Padding:** `--sp-2`/`--sp-3` (8/12px) on dense rows; larger containers use the 4px scale.
 
 ### Universal Card (signature component)
@@ -1131,16 +1131,18 @@ campaign hub if it adopts tabbed IA — never re-roll a second tab look.
 
 ### Modals (`ModalShell`) + command palette
 
-- **`ModalShell`:** centered, the plate material on the earned tier (`--r-plate`), scrim behind, at
-  `--z-modal`; a diamond-rubric Cinzel-titled head; body scrolls; footer actions right-aligned
-  (primary = Pressed-Brass). Always commit/cancel; a modal never relocates the realm. **One trap
-  owner:** it must trap focus, handle Escape, and set initial focus (WCAG 2.1.2 / 2.4.3).
+- **`ModalShell`:** centered, the plate material on the earned tier (`--r-plate`, 2px
+  `--edge-metal-earned`, `--edge-seat-earned`), scrim behind, at `--z-modal`; a Cinzel-titled head
+  ended by the one `--hairline`, **and no ornament** (§5: a dialog already commands the screen);
+  body scrolls; footer actions right-aligned (primary = Pressed-Brass). Always commit/cancel; a
+  modal never relocates the realm. **One trap owner:** it must trap focus, handle Escape, and set
+  initial focus (WCAG 2.1.2 / 2.4.3).
   - **Scrollable body is keyboard-reachable.** The shared `.modal-body`/`DialogBody` is a
     `max-height: 64vh; overflow-y: auto` scroll region, so it carries an unconditional `tabIndex=0`
     (in `ModalBody`, `src/components/ui/modal-head.tsx`) — otherwise a non-pointer user cannot reach
     it to arrow-scroll (axe `scrollable-region-focusable`, serious). Because a large region is not an
-    interactive control, `.modal-body:focus-visible` draws the crisp ring INSET and suppresses the
-    global interior focus-wash that would otherwise flood the whole body.
+    interactive control, `.modal-body:focus-visible` draws the crisp ring INSET
+    (`outline-offset: -2px`) so it reads inside the plate rather than around it.
 - **Command palette ("Ask the Folio"):** a floating panel (`--bg-surface-2` + `--elev-floating`,
   `--z-overlay`, scrim) with a carved search field and keyboard-navigable result rows (hover/selected
   → `--bg-surface-3` + a left `--accent-primary` marker), section eyebrows, and `aria-current` on the
@@ -1591,7 +1593,11 @@ that earns it.
 ### The ornament vocabulary
 
 Ornament is **earned by information, never spent on decoration**. The whole grammar is three
-rules and two marks.
+rules; **the ornament budget is currently ZERO** — the corner mark came off with the square corners
+in Phase 3 and no surface carries a mark until it is redrawn (`PROGRESS.md` → Phase 6; pinned by
+`tests/unit/ornament-vocabulary.guard.test.ts`, which fails if `--frame-ornate` or a replacement
+pseudo reappears). The rules below are written for the mark's return; the pieces list is what
+actually ships.
 
 **L2 · An ornament REPLACES the line.** It is never drawn over it, beside it, or near it.
 Wherever a mark appears the rule terminates, the mark occupies the interval, and the rule
@@ -1600,12 +1606,13 @@ on top of each other; a head that drew both — a full-width border-image rule u
 winged fleur that carried its own 260px rail, one pixel apart, at different lengths and weights —
 is what the owner saw and named.
 
-**The budget: ONE ornamented surface per screen, and it is the surface the user is acting in.**
-The framed realm masthead (`.page-head.framed::before`) carries it; on the cockpit, where no
-masthead renders, the identity band takes it instead (`.folio-panel.gilt-frame::after`) — never
-both. **A dialog carries none**: it already commands the screen, and the reference's own modals
-are plain plates with a title and a whisper hairline. Neither does a sibling panel, a resting
-card, a section heading, a list row, a chip or a secondary button.
+**The budget: AT MOST ONE ornamented surface per screen, and it is the surface the user is acting
+in.** Today it is **zero** — the mark is unmounted. When it returns it goes on the framed realm
+masthead (`.page-head.framed::before`); on the cockpit, where no masthead renders, the identity
+band takes it instead (`.folio-panel.gilt-frame::after`) — never both. **A dialog carries none**:
+it already commands the screen, and the reference's own modals are plain plates with a title and a
+whisper hairline. Neither does a sibling panel, a resting card, a section heading, a list row, a
+chip or a secondary button.
 
 **States change light and colour, never geometry, and never emit.** There is no glow, no bloom,
 no aura, no hover sweep and no focus halo anywhere in the chrome: light on this material means
@@ -1631,23 +1638,11 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
   bullet; a marker is ink colour; a pip is a square facet. The one surviving `rotate(45deg)` in
   the chrome is the `<select>` caret — a chevron drawn from two borders, the standard
   form-control idiom, guard-pinned as the only one.
-- **THE CORNER MARK (`--frame-ornate`).** The worked-gold knot seated tight ON the frame line of
-  the screen's one mark-bearing surface: the rail **swells** crossing the vertex in a fine
-  whisker overshoot, ONE **wave-volute** comma-curl rising outward on the diagonal over an open
-  eye, a small **weld diamond** seating the crossing, and a **five-ray glint fan** radiating into
-  the panel. **The metal is dimensional, not line-art:** every struck member carries a
-  light/shade pair. Dark = raised struck gold (gold-300 body on a near-black under-shadow seat
-  offset below-right, a faint gold-200 glint above-left). Light = **GOLD, not bronze**
-  (owner, 2026-07-24 — "they can be gold too in light theme"): a deep antique-gold body (#94741f)
-  inverted to the letterpress logic — a warm-cream understroke below-right, a faint umber upper
-  shadow wall. Construction rule (guard-pinned): each corner SVG mirrors the UNFILLED master
-  geometry first and tones AFTER in screen space, so the bevel light stays top-left on all four
-  corners. **Mechanism:** four fixed-size per-corner SVG background layers (64×64, anchored
-  `left top` / `right top` / `left bottom` / `right bottom`) on an overlay pseudo — **never**
-  border-image and **never** a layout border on the pseudo (a 64px transparent border forces a
-  128px minimum box that hangs off every shorter host; border-image's proportional tile-shrink
-  mis-seats the centerline). Decor only: `pointer-events: none`, no layout, no animation. Corner
-  ink is paint-only overflow, so a mark-bearing host carries no `overflow: hidden`.
+- **THERE IS NO CORNER MARK.** `--frame-ornate` and its four corner tiles are deleted, not
+  disabled: the knot re-drew ~30px of the host's own rail from a square vertex and cannot register
+  on a 10px arc. Its redraw — the glint fan alone, seated INSIDE the radius — is Phase 6's brief
+  and the spec lives there (`PROGRESS.md` → the phase table). Nothing in the chrome carries a mark
+  in the meantime, and `ornament-vocabulary.guard.test.ts` fails if one reappears.
 - **SELECTION is the frame metal.** The `--frame-selected` silver-over-bronze gradient (from the
   per-theme `--metal-silver` / `--metal-bronze` pair) marks the wizard hero altar and the chosen
   plaque. At-rest surfaces are never decorated with selection ornament.
@@ -1672,14 +1667,19 @@ Pinned by `tests/unit/ornament-vocabulary.guard.test.ts`.
 
 ### Surface hierarchy (never skip the ramp)
 
-| Layer           | Token                                       | Used for                                                |
-| --------------- | ------------------------------------------- | ------------------------------------------------------- |
-| Page            | `--bg-page` + `--vellum-grain`              | the app background (fixed)                              |
-| Panel / rail    | `--bg-surface-1`                            | left HUD, right HUD, topbar                             |
-| Content surface | `--bg-surface-2`                            | center panel, cards, modal body                         |
-| Raised inset    | `--bg-surface-3`                            | nested headers, portrait well, hover                    |
-| Recessed        | `--bg-recessed` / `--input-fill`            | carved channels: inputs, HP/resource sockets, pip wells |
-| Overlay         | surface-2 + `--elev-floating/modal` + scrim | popovers, palette, dialogs                              |
+| Layer           | Token                                 | Used for                                                |
+| --------------- | ------------------------------------- | ------------------------------------------------------- |
+| Page            | `--bg-page` + `--vellum-grain`        | the app background (fixed)                              |
+| Panel / rail    | `--bg-surface-1`                      | left HUD, right HUD, topbar                             |
+| Content surface | `--bg-surface-2`                      | center panel, cards, modal body                         |
+| Raised inset    | `--bg-surface-3`                      | nested headers, portrait well, hover                    |
+| Recessed        | `--bg-recessed` / `--input-fill`      | carved channels: inputs, HP/resource sockets, pip wells |
+| Overlay         | surface-2 + `--elev-floating` + scrim | popovers, palette (NOT dialogs — see below)             |
+
+**Dialogs are not in the overlay row.** A dialog is a PLATE on the earned tier: the one material,
+2px `--edge-metal-earned`, `--edge-groove` + `--edge-seat-earned`, over a `--scrim-dim` backdrop.
+`--elev-*` never touches it. The overlay row covers only the light chrome that still rides the
+legacy elevation stack — popovers, menus and the command palette.
 
 A card on a rail (surface-1) is surface-2; a control inside a card is recessed. This one ordering
 holds on every screen.
