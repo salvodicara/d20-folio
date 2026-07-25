@@ -617,7 +617,8 @@
      needs a deeper one. `.rt-dis` needs no variant in either theme. */
   --rt-adv-ink: var(--semantic-success);
   /* ONE edit-mode voice (amber/gold) — the EditingPill is the sole visual edit
-     indicator. Distinct from --semantic-success (reserved for SaveIndicator). */
+     indicator. Distinct from --semantic-success (the SaveIndicator's green + the
+     encounter budget readout's "Low" verdict chip). */
   --edit-accent: var(--gold-leaf-300);
 
   /* § 09 Action-type slots + magic marker */

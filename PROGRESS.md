@@ -16,7 +16,8 @@ step**. Deploys stay owner-gated (golden rule 22), so `main` may run ahead of li
 **6 real users** have been playing since 2026-06-08. The repo went **open-source + split-repo**
 (2026-07-17), the **full-BG3 identity pivot** landed code-complete (asset integration pending), and
 the **DDB-parity feature epic** is now **ACTIVE** (OPENED 2026-07-23) with its **bestiary flagship
-SHIPPED** (2026-07-24) and the **encounter picker SHIPPED** (2026-07-25; bestiary-first; the
+SHIPPED** (2026-07-24), the **encounter picker SHIPPED** (2026-07-25; bestiary-first), and the
+**2024-DMG XP-budget difficulty calculator SHIPPED** (2026-07-25; the DM-only budget readout, the
 competitive map is `docs/POSITIONING.md`). **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
 **id-storage + GR7 i18n-leak-eradication campaign** is **CLOSED** (v0.13.0): every SRD-derived value
@@ -53,9 +54,12 @@ tracker) is **shipped and live**. The **2024 core-rules SYSTEM audit (RA-01…RA
 core-rules audit close-out_), and the tracking-doc reconciliation truth-sweep landed with it. The
 forward frontier (detailed under _Next — the forward plan_) is the **ACTIVE DDB-parity feature
 epic** — its **bestiary flagship SHIPPED** (2026-07-24: 330 SRD monsters EN+IT + the compendium
-Monsters section; see _Shipped — the SRD bestiary campaign_) and the **encounter picker SHIPPED**
-(2026-07-25: the DM bestiary picker + statblock disclosure), the live head now the **2024-DMG
-difficulty calculator**, with the **pack-side MM corpus** advancing along the
+Monsters section; see _Shipped — the SRD bestiary campaign_), the **encounter picker SHIPPED**
+(2026-07-25: the DM bestiary picker + statblock disclosure), and the **2024-DMG XP-budget difficulty
+calculator SHIPPED** (2026-07-25: the pure `encounter-difficulty.ts` SRD-table engine + the DM-only
+budget readout in the round bar & Add-monster modal, the custom-monster CR select, and the lair-XP
+toggle — more correct than DDB's standalone tool, which still runs 2014 multiplier math). The live
+head is now the **pack-side MM corpus**, advancing along the
 same manifest (`docs/POSITIONING.md`) — the react-router advisory triage, and the P4 polish tail
 (guided tour, compendium polish).
 

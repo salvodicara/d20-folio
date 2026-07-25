@@ -21,6 +21,14 @@ import {
   sortByInitiative,
   type MonsterInput,
 } from "@/features/campaigns/encounter";
+import { totalLevel } from "@/lib/classes";
+import {
+  budgetVerdict,
+  encounterXpCost,
+  partyXpBudget,
+  type BudgetVerdict,
+  type XpBudget,
+} from "@/lib/encounter-difficulty";
 import type { EncounterState } from "@/types/campaign";
 import type { ClassEntry, PortraitCrop } from "@/types/character";
 import type { RaceId } from "@/types/ids";
@@ -197,6 +205,77 @@ export function buildEncounterView(
     rows: viewerIsDm ? sortedRows : sortedRows.filter((r) => !r.hidden),
     turnOrderIds: sortedRows.map((r) => r.id),
     currentId: encounter.currentCombatantId,
+  };
+}
+
+/**
+ * The DM-only XP-budget grading of a built encounter (SRD 5.2.1 "Combat Encounter
+ * Difficulty"). A pure derivation off the encounter doc + the party's LIVE levels —
+ * no persistence, no corpus fetch (the monster XP is already seeded on the doc at
+ * add time, §C), so it renders offline on any device for any doc age.
+ */
+export interface EncounterBudgetView {
+  /** Party budget off the LIVE levels of the encounter's PC combatants; null when
+   *  none are resolvable (no PCs, or all still loading). */
+  budget: XpBudget | null;
+  /** PCs whose live doc (`classes[]`) hasn't resolved yet — while > 0 the verdict is
+   *  withheld (never a wrong verdict off a partial party). */
+  pendingPcs: number;
+  /** PC characters counted into the budget (resolved live docs). */
+  partySize: number;
+  /** SRD Step 3: Σ (xp × token count) over the costed monster groups. */
+  costedXp: number;
+  /** Monster groups with no XP (a stat-less custom monster, a pre-feature doc) — the
+   *  readout reports these as an un-costed floor, never guesses them. */
+  uncostedGroups: number;
+  /** null while budget is null, pendingPcs > 0, or no monster is costed yet. */
+  verdict: BudgetVerdict | null;
+}
+
+/**
+ * Build the DM XP-budget view-model.
+ *
+ * @param encounter   the campaign-doc structure (PC references + monster state,
+ *                    each monster carrying its seeded `xp` + `tokens`).
+ * @param pcLiveById  the merged live facts per PC combatant id — the PC LEVEL sum
+ *                    reads `PcLive.classes` (threaded from the member's live doc by
+ *                    `derivePcLive`); `undefined` classes = that PC is still pending.
+ *
+ * Monster groups: HIDDEN ambush monsters and DEFEATED monsters BOTH count — the
+ * readout is a DM-only planning number that grades the encounter AS BUILT (SRD Step
+ * 3), not a live "remaining threat" meter, so it stays stable mid-fight. Group count
+ * is `tokens.length` (Goblin ×3 = 3 × xp).
+ */
+export function buildBudgetView(
+  encounter: EncounterState,
+  pcLiveById: Readonly<Record<string, PcLive | undefined>>
+): EncounterBudgetView {
+  const levels: number[] = [];
+  let pendingPcs = 0;
+  const monsterGroups: { xp?: number; count: number }[] = [];
+  for (const c of encounter.combatants) {
+    if (c.kind === "pc") {
+      const classes = pcLiveById[c.id]?.classes;
+      if (classes === undefined) pendingPcs += 1;
+      else levels.push(totalLevel({ classes }));
+    } else {
+      monsterGroups.push({ xp: c.xp, count: c.tokens.length });
+    }
+  }
+  const budget = partyXpBudget(levels);
+  const { costedXp, uncostedGroups } = encounterXpCost(monsterGroups);
+  const costedGroups = monsterGroups.length - uncostedGroups;
+  const verdict =
+    budget !== null && pendingPcs === 0 && costedGroups > 0
+      ? budgetVerdict(costedXp, budget)
+      : null;
+  return {
+    budget,
+    pendingPcs,
+    partySize: levels.length,
+    costedXp,
+    uncostedGroups,
+    verdict,
   };
 }
 

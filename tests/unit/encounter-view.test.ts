@@ -11,11 +11,12 @@
 import { describe, it, expect } from "vitest";
 import {
   addReinforcement,
+  buildBudgetView,
   buildEncounterView,
   type PcLive,
 } from "@/features/campaigns/encounter-view";
 import { removeCombatant } from "@/features/campaigns/encounter";
-import type { EncounterState } from "@/types/campaign";
+import type { EncounterMonster, EncounterState } from "@/types/campaign";
 import { asRaceId } from "@/data/srd-names";
 
 function pcLive(over: Partial<PcLive> = {}): PcLive {
@@ -343,5 +344,115 @@ describe("buildEncounterView — hidden ambush filtering", () => {
     const assassin = view.rows.find((r) => r.id === "monster-1");
     expect(assassin).toBeDefined();
     expect(assassin?.hidden).toBe(true);
+  });
+});
+
+// ─── §D — buildBudgetView (the DM XP-budget grading) ────────────────────────────
+
+/** A monster combatant with the fields the budget cares about (xp + token count). */
+function mon(id: string, over: Partial<EncounterMonster> = {}): EncounterMonster {
+  return {
+    kind: "monster",
+    id,
+    name: "Ogre",
+    ac: 11,
+    initiative: 8,
+    conditions: [],
+    maxHp: 59,
+    tokens: [59],
+    ...over,
+  };
+}
+
+describe("buildBudgetView — SRD Step 2/3 grading off live levels + seeded XP", () => {
+  const pcMara = {
+    kind: "pc" as const,
+    id: "pc-mara",
+    memberUid: "mara",
+    characterId: "c1",
+  };
+  const pcBren = {
+    kind: "pc" as const,
+    id: "pc-bren",
+    memberUid: "bren",
+    characterId: "c2",
+  };
+
+  it("grades a normal encounter: 2 × L5 party → moderate at 1,200 XP", () => {
+    const view = buildBudgetView(
+      encounter({
+        combatants: [pcMara, pcBren, mon("monster-1", { xp: 400, tokens: [59, 59, 59] })],
+      }),
+      { "pc-mara": pcLive(), "pc-bren": pcLive() } // both bard L5
+    );
+    expect(view.partySize).toBe(2);
+    expect(view.budget).toEqual({ low: 1000, moderate: 1500, high: 2200 });
+    expect(view.costedXp).toBe(1200); // 400 × 3 tokens
+    expect(view.uncostedGroups).toBe(0);
+    expect(view.verdict).toBe("moderate");
+  });
+
+  it("withholds the verdict while a PC's live doc is still pending", () => {
+    const view = buildBudgetView(
+      encounter({
+        combatants: [pcMara, pcBren, mon("monster-1", { xp: 400, tokens: [59, 59, 59] })],
+      }),
+      { "pc-mara": pcLive({ classes: undefined }), "pc-bren": pcLive() }
+    );
+    expect(view.pendingPcs).toBe(1);
+    expect(view.partySize).toBe(1);
+    expect(view.costedXp).toBe(1200); // the cost is still shown…
+    expect(view.verdict).toBeNull(); // …but never a verdict off a partial party
+  });
+
+  it("no PC combatants → null budget, verdict withheld, cost still summed", () => {
+    const view = buildBudgetView(
+      encounter({ combatants: [mon("monster-1", { xp: 700 })] }),
+      {}
+    );
+    expect(view.partySize).toBe(0);
+    expect(view.budget).toBeNull();
+    expect(view.costedXp).toBe(700);
+    expect(view.verdict).toBeNull();
+  });
+
+  it("HIDDEN and DEFEATED monsters both count (the encounter AS BUILT, not remaining threat)", () => {
+    const view = buildBudgetView(
+      encounter({
+        combatants: [
+          pcMara,
+          mon("monster-1", { xp: 100, tokens: [10, 10], hidden: true }), // 2 × 100
+          mon("monster-2", { xp: 50, tokens: [0] }), // defeated, still 1 × 50
+        ],
+      }),
+      { "pc-mara": pcLive() }
+    );
+    expect(view.costedXp).toBe(250);
+    expect(view.uncostedGroups).toBe(0);
+  });
+
+  it("a group without XP is counted as un-costed, separate from the costed sum", () => {
+    const view = buildBudgetView(
+      encounter({
+        combatants: [
+          pcMara,
+          mon("monster-1", { xp: 100, tokens: [7] }),
+          mon("monster-2", { tokens: [7, 7] }), // no xp → un-costed
+        ],
+      }),
+      { "pc-mara": pcLive() }
+    );
+    expect(view.costedXp).toBe(100);
+    expect(view.uncostedGroups).toBe(1);
+  });
+
+  it("a genuine xp:0 monster is COSTED (existence, not truthiness) and yields a Low verdict", () => {
+    const view = buildBudgetView(
+      encounter({ combatants: [pcMara, mon("monster-1", { xp: 0 })] }),
+      { "pc-mara": pcLive() }
+    );
+    expect(view.uncostedGroups).toBe(0);
+    expect(view.costedXp).toBe(0);
+    expect(view.verdict).toBe("low"); // 0 ≤ low — a lone harmless monster is a Low encounter
   });
 });

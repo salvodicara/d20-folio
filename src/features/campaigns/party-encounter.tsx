@@ -59,14 +59,18 @@ import {
   Dices,
   Eye,
   EyeOff,
+  Flame,
   Footprints,
   GripVertical,
   Heart,
   Plus,
   ScrollText,
   Shield,
+  ShieldCheck,
   Skull,
+  Swords,
   Trash2,
+  TriangleAlert,
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +92,9 @@ import {
   type EditorOpenReporter,
 } from "@/components/shared/card-editor-scope";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
-import { cn, formatSpeed, localeDistance } from "@/lib/utils";
+import { Select } from "@/components/shared/Select";
+import { cn, fmtXp, formatCr, formatSpeed, localeDistance } from "@/lib/utils";
+import { CR_VALUES, xpForCr } from "@/lib/monster";
 import { ensureSrdKind } from "@/i18n";
 import { useLocale } from "@/hooks/useLocale";
 import { conditionChips } from "@/lib/views/tracker-view";
@@ -124,6 +130,8 @@ import {
   type MonsterInput,
 } from "@/features/campaigns/encounter";
 import { setEncounterInitiative } from "@/features/campaigns/campaign-io";
+import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
+import type { BudgetVerdict } from "@/lib/encounter-difficulty";
 import {
   applyHpDelta,
   setCombatCondition,
@@ -1228,10 +1236,14 @@ function DetailRow({ label, value }: { label: string; value: string | number }) 
 export function EncounterRoundBar({
   round,
   isDm,
+  budget,
   onEnd,
 }: {
   round: number;
   isDm: boolean;
+  /** The DM XP-budget grading of this encounter (§D.1 mount 1) — rendered right of
+   *  the Round badge, DM-only. */
+  budget: EncounterBudgetView;
   onEnd: () => void;
 }) {
   const { t } = useTranslation();
@@ -1245,6 +1257,7 @@ export function EncounterRoundBar({
       >
         {t("campaignHub.encounterRound", { round })}
       </Badge>
+      {isDm && <EncounterBudgetReadout budget={budget} />}
       {isDm && (
         <Button variant="destructive" size="sm" className="ml-auto" onClick={onEnd}>
           <Icon as={X} size="sm" decorative />
@@ -1252,6 +1265,117 @@ export function EncounterRoundBar({
         </Button>
       )}
     </div>
+  );
+}
+
+// ─── The DM XP-budget readout (§D) ───────────────────────────────────────────
+
+/** Verdict id → its i18n label key. An EXPLICIT record, never a template-built key
+ *  — the i18n-dynamic-key guard enumerates `${}` families, and a literal map keeps
+ *  the four keys statically discoverable (correction 3). */
+const VERDICT_LABEL: Record<BudgetVerdict, string> = {
+  low: "campaignHub.encounterBudgetLow",
+  moderate: "campaignHub.encounterBudgetModerate",
+  high: "campaignHub.encounterBudgetHigh",
+  over: "campaignHub.encounterBudgetOver",
+};
+
+/** Verdict id → its chip color token. low→success(green), moderate→accent(gold),
+ *  high→warning(amber), over→danger(red). Both themes ride the semantic tokens. */
+const VERDICT_COLOR: Record<BudgetVerdict, string> = {
+  low: "var(--semantic-success)",
+  moderate: "var(--accent-primary)",
+  high: "var(--semantic-warning)",
+  over: "var(--semantic-danger)",
+};
+
+/** Verdict id → a DISTINCT threat-escalation glyph. In dark, moderate(gold-leaf-500)
+ *  and high(gold-leaf-300) are two close golds; a distinct glyph per verdict (plus the
+ *  verdict WORD in the chip) keeps the four states unmistakable regardless of the gold
+ *  proximity (correction 2). */
+const VERDICT_GLYPH: Record<BudgetVerdict, typeof ShieldCheck> = {
+  low: ShieldCheck,
+  moderate: Swords,
+  high: Flame,
+  over: TriangleAlert,
+};
+
+/**
+ * The DM XP-budget readout (§D.2) — ONE tonal verdict chip + a costed-XP text run,
+ * mounted in the round bar and the Add-monster modal. DM-only (its two callers gate
+ * on `isDm`; a player never receives it — constitution §2.9, and it spares the
+ * metagame). Every state from §D.3 is designed: a colored verdict chip when the
+ * budget + a costed monster both exist; a muted "—" chip while the party budget is
+ * pending, absent (no PCs), or no monster is costed yet; and a muted `+n ?` marker
+ * (its own tooltip) whenever some groups carry no XP, so the verdict reads as an
+ * HONEST floor computed from the costed monsters only.
+ */
+export function EncounterBudgetReadout({
+  budget: view,
+}: {
+  budget: EncounterBudgetView;
+}) {
+  const { t } = useTranslation();
+  const { language: locale } = useLocale();
+  const { budget, verdict, costedXp, uncostedGroups, partySize } = view;
+
+  // The chip tooltip (progressive disclosure §2.3), by state precedence: pending →
+  // budget math (whenever a party budget exists) → no-party.
+  const chipTitle =
+    view.pendingPcs > 0
+      ? t("campaignHub.encounterBudgetPending")
+      : budget !== null
+        ? t("campaignHub.encounterBudgetTooltip", {
+            count: partySize,
+            low: fmtXp(budget.low, locale),
+            moderate: fmtXp(budget.moderate, locale),
+            high: fmtXp(budget.high, locale),
+          })
+        : t("campaignHub.encounterBudgetNoParty");
+
+  // No monster groups at all → nudge the DM to add some (on the costed-XP run, whose
+  // "0 XP" is otherwise inert). `uncostedGroups + (costed groups)` — the costed count
+  // is not in the view, but "nothing costed AND nothing un-costed" ⇒ zero groups.
+  const noMonsters = costedXp === 0 && uncostedGroups === 0 && verdict === null;
+
+  const VerdictGlyph = verdict !== null ? VERDICT_GLYPH[verdict] : null;
+
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      {verdict !== null ? (
+        <Badge
+          variant="tonal"
+          size="sm"
+          color={VERDICT_COLOR[verdict]}
+          glyph={
+            VerdictGlyph ? (
+              <VerdictGlyph width={12} height={12} aria-hidden="true" />
+            ) : undefined
+          }
+          title={chipTitle}
+        >
+          {t(VERDICT_LABEL[verdict])}
+        </Badge>
+      ) : (
+        <Badge variant="muted" size="sm" title={chipTitle}>
+          {"—"}
+        </Badge>
+      )}
+      <span
+        className="tabular-nums text-xs text-text-muted"
+        title={noMonsters ? t("campaignHub.encounterBudgetNoMonsters") : undefined}
+      >
+        {t("campaignHub.encounterBudgetXp", { xp: fmtXp(costedXp, locale) })}
+      </span>
+      {uncostedGroups > 0 && (
+        <span
+          className="text-xs text-text-muted"
+          title={t("campaignHub.encounterBudgetUncostedHint")}
+        >
+          {t("campaignHub.encounterBudgetUncosted", { count: uncostedGroups })}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -1633,6 +1757,9 @@ export function MonsterCard({
           <EncounterStatblockModal
             srdId={monster.srdId}
             combatantName={monster.name}
+            combatantId={monster.id}
+            currentXp={monster.xp}
+            apply={apply}
             onClose={() => setStatblockOpen(false)}
           />
         </Suspense>
@@ -1917,17 +2044,24 @@ export function AddMonsterForm({
   onAdd: (input: MonsterInput) => void;
 }) {
   const { t } = useTranslation();
+  const { language: locale } = useLocale();
   const [name, setName] = useState("");
   const [initiative, setInitiativeVal] = useState(10);
   const [ac, setAc] = useState(12);
   const [maxHp, setMaxHp] = useState(10);
   const [count, setCount] = useState(1);
   const [notes, setNotes] = useState("");
+  // Optional CR (§D.4) — a closed-set select so an invalid CR is untypeable; blank ""
+  // = no CR (a stat-less improv NPC stays un-costed, zero friction — rule 20). The
+  // stored value is the CR's stringified number ("0.25"); "" is the blank sentinel.
+  const [cr, setCr] = useState("");
 
   function add(): void {
     const trimmed = name.trim();
     if (trimmed === "") return;
-    onAdd({ name: trimmed, ac, maxHp, count, initiative, notes });
+    // A chosen CR seeds the SRD XP (SRD Step 3 — the DM thinks in CR); blank omits it.
+    const xp = cr === "" ? undefined : xpForCr(Number(cr));
+    onAdd({ name: trimmed, ac, maxHp, count, initiative, notes, xp });
     // Each "Add" is a DISTINCT creature (identical copies use `count`) — reset EVERY
     // field, not just name/count/notes, so the next (different) monster never silently
     // inherits this group's AC/HP/initiative (B25).
@@ -1937,6 +2071,7 @@ export function AddMonsterForm({
     setMaxHp(10);
     setCount(1);
     setNotes("");
+    setCr("");
   }
 
   return (
@@ -1994,6 +2129,30 @@ export function AddMonsterForm({
           max={20}
           digits={2}
         />
+        {/* Optional CR (§D.4) — a `label.contents` row so it drops into the SAME
+            two-column grid as the steppers (correction 6): the label lands in the
+            shared `max-content` column, the Select hugs it in the next. The DM sees
+            each CR's XP cost while choosing (no second field), and a closed set makes
+            an invalid CR untypeable. */}
+        <label className="contents">
+          <span className="text-sm text-text-secondary">{t("monster.crRubric")}</span>
+          <Select
+            size="sm"
+            value={cr}
+            onChange={(e) => setCr(e.target.value)}
+            aria-label={t("monster.crRubric")}
+          >
+            <option value="">{"—"}</option>
+            {CR_VALUES.map((value) => (
+              <option key={value} value={String(value)}>
+                {t("campaignHub.encounterCrOption", {
+                  cr: formatCr(value),
+                  xp: fmtXp(xpForCr(value), locale),
+                })}
+              </option>
+            ))}
+          </Select>
+        </label>
       </div>
       {/* Optional DM notes — same free-text field the card's DM disclosure shows. */}
       <Textarea

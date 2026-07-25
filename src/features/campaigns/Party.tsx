@@ -75,6 +75,7 @@ import {
 } from "@/features/campaigns/encounter";
 import {
   addReinforcement,
+  buildBudgetView,
   buildEncounterView,
   type PcLive,
 } from "@/features/campaigns/encounter-view";
@@ -177,6 +178,13 @@ export function Party() {
   const view = useMemo(
     () => (encounter ? buildEncounterView(encounter, pcLiveById, isDm) : null),
     [encounter, pcLiveById, isDm]
+  );
+  // The DM XP-budget grading — recomputed off the same live PC facts + the seeded
+  // monster XP. Feeds the DM-only readout in the round bar + the Add-monster modal;
+  // each add re-renders CombatLayer with a fresh view so the open modal ticks live.
+  const budgetView = useMemo(
+    () => (encounter ? buildBudgetView(encounter, pcLiveById) : null),
+    [encounter, pcLiveById]
   );
 
   // Apply a pure reducer to the LIVE encounter (read through getState so a rapid burst
@@ -415,11 +423,12 @@ export function Party() {
     <section aria-labelledby="party-head">
       <SectionHeader as="h2" tight onArt id="party-head" title={t("campaignHub.party")} />
 
-      {encounter && view ? (
+      {encounter && view && budgetView ? (
         // ── Combat layer — the SAME live cards, reordered by initiative + monsters ──
         <CombatLayer
           encounter={encounter}
           view={view}
+          budget={budgetView}
           isDm={isDm}
           apply={apply}
           ctx={cardCtx}
@@ -490,6 +499,7 @@ export function Party() {
 function CombatLayer({
   encounter,
   view,
+  budget,
   isDm,
   apply,
   ctx,
@@ -500,6 +510,10 @@ function CombatLayer({
 }: {
   encounter: EncounterState;
   view: NonNullable<ReturnType<typeof buildEncounterView>>;
+  /** The DM XP-budget grading (§D) — DM-only, mounted in the round bar + the
+   *  Add-monster modal. Pure data (no new lazy-chunk import), recomputed by the
+   *  parent so each add ticks the open modal's strip live. */
+  budget: NonNullable<ReturnType<typeof buildBudgetView>>;
   isDm: boolean;
   apply: ApplyFn | undefined;
   ctx: MemberCardCtx;
@@ -748,12 +762,18 @@ function CombatLayer({
         >
           <EncounterAddMonsterModal
             onAdd={addMonsterReinforcement}
+            budget={budget}
             onClose={() => setPickerOpen(false)}
           />
         </Suspense>
       )}
 
-      <EncounterRoundBar round={encounter.round} isDm={isDm} onEnd={onEnd} />
+      <EncounterRoundBar
+        round={encounter.round}
+        isDm={isDm}
+        budget={budget}
+        onEnd={onEnd}
+      />
 
       <ul ref={listRef} className="flex flex-col gap-2">
         {displayRows.map((row) => {

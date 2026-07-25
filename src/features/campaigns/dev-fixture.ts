@@ -1004,8 +1004,11 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         name: "Goblin",
         // A picker-added group: its `srdId` reaches the DM statblock disclosure. The
         // user name "Goblin" deliberately differs from the statblock name ("Goblin
-        // Warrior") to demo §C.3's dual-title.
+        // Warrior") to demo §C.3's dual-title. `xp: 50` (Goblin Warrior CR 1/4) seeds
+        // the DM budget readout; "Goblin Chief"/"Shadow" carry none, so the readout
+        // renders its un-costed marker at rest (screenshot/a11y matrix coverage).
         srdId: "goblin-warrior",
+        xp: 50,
         ac: 13,
         initiative: 14,
         conditions: ["prone"],

@@ -20,13 +20,17 @@ import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
 import { MonsterStatBlockCard } from "@/components/shared/MonsterStatBlockCard";
+import { Switch } from "@/components/ui/selection";
 import { CompendiumPicker } from "@/features/compendium/picker";
 import { getMonster } from "@/data/monsters";
 import { localizeSrd } from "@/i18n/resolver";
 import { useLocale } from "@/hooks/useLocale";
-import { AddMonsterForm } from "./party-encounter";
+import { fmtXp } from "@/lib/utils";
+import { monsterXp } from "@/lib/monster";
+import { AddMonsterForm, EncounterBudgetReadout, type ApplyFn } from "./party-encounter";
 import { makeEncounterMonsterSpec } from "./encounter-monster-spec";
-import type { MonsterInput } from "./encounter";
+import { setMonsterXp, type MonsterInput } from "./encounter";
+import type { EncounterBudgetView } from "./encounter-view";
 
 /**
  * The DM's Add-monster modal — two tabs: Bestiary (the shared picker) and Custom
@@ -36,9 +40,15 @@ import type { MonsterInput } from "./encounter";
  */
 export function EncounterAddMonsterModal({
   onAdd,
+  budget,
   onClose,
 }: {
   onAdd: (input: MonsterInput) => void;
+  /** The DM XP-budget grading (§D.1 mount 2) — a live strip under the tab switcher
+   *  so the DM sees the running total WHILE picking (the modal hides the round bar on
+   *  mobile; SRD Step 3 is literally "deduct as you add"). Each add re-renders the
+   *  caller → a fresh prop → this strip ticks live. */
+  budget: EncounterBudgetView;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -64,6 +74,11 @@ export function EncounterAddMonsterModal({
           custom: t("campaignHub.encounterCustomTab"),
         }}
       />
+      {/* SRD Step 3 at a glance while picking (§D.1) — the same readout the round bar
+          shows, both tabs. */}
+      <div className="flex flex-wrap items-center gap-2 px-4 py-2">
+        <EncounterBudgetReadout budget={budget} />
+      </div>
       {activeTab === "custom" ? (
         <AddMonsterForm onAdd={onAdd} />
       ) : (
@@ -90,10 +105,21 @@ export function EncounterAddMonsterModal({
 export function EncounterStatblockModal({
   srdId,
   combatantName,
+  combatantId,
+  currentXp,
+  apply,
   onClose,
 }: {
   srdId: string;
   combatantName: string;
+  /** This combatant's id — the target of the lair-XP toggle's `setMonsterXp`. */
+  combatantId: string;
+  /** This combatant's currently-stored per-token XP — the toggle is checked ⇔ it
+   *  equals `xpInLair` (derived, no new field). */
+  currentXp?: number;
+  /** The DM optimistic-write seam — present only for the DM; when absent (a player,
+   *  though players never reach the disclosure) the lair toggle is not rendered. */
+  apply?: ApplyFn;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -103,11 +129,42 @@ export function EncounterStatblockModal({
     <ModalShell open onClose={onClose} title={combatantName}>
       <div className="overflow-y-auto p-4">
         {m ? (
-          <MonsterStatBlockCard
-            monster={m}
-            locale={locale}
-            title={localizeSrd("monster", m.id, "name", locale)}
-          />
+          <>
+            {/* Lair XP (§D.5) — one Switch, ONLY when the statblock prints a lair
+                alternative (27 corpus entries) and the DM can write. Checked ⇔ the
+                combatant carries the lair value; toggling rewrites the seeded XP
+                between the base and lair prints through the DM `apply`. Discoverable
+                exactly where the "or N in lair" print lives; invisible for the other
+                300+ monsters. */}
+            {apply && m.xpInLair != null && (
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <label
+                  htmlFor={`lair-xp-${combatantId}`}
+                  className="text-sm text-text-secondary"
+                >
+                  {t("campaignHub.encounterLairXp", { xp: fmtXp(m.xpInLair, locale) })}
+                </label>
+                <Switch
+                  id={`lair-xp-${combatantId}`}
+                  checked={currentXp === m.xpInLair}
+                  onCheckedChange={(checked) =>
+                    apply((e) =>
+                      setMonsterXp(
+                        e,
+                        combatantId,
+                        checked ? (m.xpInLair ?? monsterXp(m)) : monsterXp(m)
+                      )
+                    )
+                  }
+                />
+              </div>
+            )}
+            <MonsterStatBlockCard
+              monster={m}
+              locale={locale}
+              title={localizeSrd("monster", m.id, "name", locale)}
+            />
+          </>
         ) : (
           <p className="text-sm text-text-muted">
             {t("campaignHub.encounterStatblockMissing")}

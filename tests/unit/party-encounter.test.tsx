@@ -17,9 +17,30 @@ import {
   AddMonsterForm,
   MonsterCard,
   EncounterTurnControls,
+  EncounterBudgetReadout,
+  EncounterRoundBar,
 } from "@/features/campaigns/party-encounter";
-import { addMonster, startEncounter } from "@/features/campaigns/encounter";
+import {
+  addMonster,
+  startEncounter,
+  type MonsterInput,
+} from "@/features/campaigns/encounter";
+import { xpForCr } from "@/lib/monster";
+import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
 import type { EncounterMonster } from "@/types/campaign";
+
+/** A budget view fixture — override the fields a given test cares about. */
+function budgetView(over: Partial<EncounterBudgetView> = {}): EncounterBudgetView {
+  return {
+    budget: { low: 800, moderate: 1200, high: 1600 },
+    pendingPcs: 0,
+    partySize: 4,
+    costedXp: 0,
+    uncostedGroups: 0,
+    verdict: null,
+    ...over,
+  };
+}
 
 beforeAll(async () => {
   if (i18n.language !== "en") await i18n.changeLanguage("en");
@@ -193,6 +214,97 @@ describe("MonsterCard — init-chip null relaxation once turns begin (§D.3)", (
       />
     );
     expect(screen.queryByRole("button", { name: "Initiative for Goblin A" })).toBeNull();
+  });
+});
+
+// ─── §D — the DM XP-budget readout ─────────────────────────────────────────────
+
+describe("EncounterBudgetReadout — verdict chip + costed XP + un-costed marker (§D.2/D.3)", () => {
+  const t = i18n.getFixedT("en");
+
+  it("renders the verdict chip label + the costed-XP run for a graded encounter", () => {
+    render(
+      <EncounterBudgetReadout
+        budget={budgetView({ costedXp: 1250, verdict: "moderate" })}
+      />
+    );
+    expect(screen.getByText(t("campaignHub.encounterBudgetModerate"))).toBeTruthy();
+    expect(
+      screen.getByText(t("campaignHub.encounterBudgetXp", { xp: "1,250" }))
+    ).toBeTruthy();
+  });
+
+  it("shows the un-costed marker when some groups carry no XP", () => {
+    render(
+      <EncounterBudgetReadout
+        budget={budgetView({ costedXp: 200, verdict: "low", uncostedGroups: 2 })}
+      />
+    );
+    expect(
+      screen.getByText(t("campaignHub.encounterBudgetUncosted", { count: 2 }))
+    ).toBeTruthy();
+  });
+
+  it("withholds the verdict (muted em-dash chip) while the party budget is pending", () => {
+    render(
+      <EncounterBudgetReadout budget={budgetView({ pendingPcs: 1, verdict: null })} />
+    );
+    expect(screen.queryByText(t("campaignHub.encounterBudgetModerate"))).toBeNull();
+    expect(screen.getByText("—")).toBeTruthy();
+  });
+});
+
+describe("EncounterRoundBar — the readout is DM-only (§D.3 player row)", () => {
+  it("a DM sees the verdict chip", () => {
+    render(
+      <EncounterRoundBar
+        round={2}
+        isDm
+        budget={budgetView({ costedXp: 1250, verdict: "moderate" })}
+        onEnd={() => {}}
+      />
+    );
+    expect(
+      screen.getByText(i18n.getFixedT("en")("campaignHub.encounterBudgetModerate"))
+    ).toBeTruthy();
+  });
+
+  it("a player sees NO readout (no verdict, no XP run) — only the round badge", () => {
+    render(
+      <EncounterRoundBar
+        round={2}
+        isDm={false}
+        budget={budgetView({ costedXp: 1250, verdict: "moderate" })}
+        onEnd={() => {}}
+      />
+    );
+    expect(
+      screen.queryByText(i18n.getFixedT("en")("campaignHub.encounterBudgetModerate"))
+    ).toBeNull();
+  });
+});
+
+describe("AddMonsterForm — the optional CR select emits xp (§D.4)", () => {
+  it("choosing a CR emits xpForCr(cr) on the committed input; blank emits none", () => {
+    const onAdd = vi.fn<(input: MonsterInput) => void>();
+    render(<AddMonsterForm onAdd={onAdd} />);
+    fireEvent.change(screen.getByLabelText("Monster name"), {
+      target: { value: "Goblin" },
+    });
+    // Blank CR → no xp.
+    fireEvent.click(screen.getByRole("button", { name: "Add monster" }));
+    expect(onAdd.mock.calls[0]?.[0]?.xp).toBeUndefined();
+
+    // Choose CR 1/4 (value "0.25") → xp = xpForCr(0.25) = 50.
+    fireEvent.change(screen.getByLabelText("Monster name"), {
+      target: { value: "Goblin" },
+    });
+    fireEvent.change(screen.getByLabelText("CR"), { target: { value: "0.25" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add monster" }));
+    expect(onAdd.mock.calls[1]?.[0]?.xp).toBe(xpForCr(0.25));
+
+    // The select resets to blank after the add (next monster starts un-costed).
+    expect(screen.getByLabelText("CR")).toHaveValue("");
   });
 });
 

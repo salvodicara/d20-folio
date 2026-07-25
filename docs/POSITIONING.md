@@ -49,13 +49,16 @@ _toward_ "rules as data," the architecture this app already has.**
 This entire list **is the active epic** (`PROGRESS.md` → _"Active epic — The DDB-parity
 frontier"_), sequenced **bestiary-first**:
 
-- **Bestiary SHIPPED (2026-07-24); encounter picker + difficulty calc still open** — the epic
-  flagship, half delivered. The **bestiary half is DONE**: the full **330-creature SRD 5.2.1
-  bestiary** (bilingual) + the **compendium Monsters section** (statblock plaque, CR/size/type
-  facets) ship in-repo, and the beast catalogue is re-derived to 2024 (84 Polymorph forms). The
-  **open half** is the DM-side tooling that consumes it: the **encounter picker** (replacing the
-  type-by-hand AddMonsterForm) and the **2024-DMG XP-budget difficulty calculator** (DDB's
-  standalone tool is stuck on 2014 math — we can be _more correct_, not just level). The pack-side
+- **Bestiary + encounter picker + difficulty calc all SHIPPED (2026-07-24/25)** — the epic
+  flagship, fully delivered. The **bestiary**: the full **330-creature SRD 5.2.1 bestiary**
+  (bilingual) + the **compendium Monsters section** (statblock plaque, CR/size/type facets) ship
+  in-repo, and the beast catalogue is re-derived to 2024 (84 Polymorph forms). The **DM-side tooling
+  that consumes it**: the **encounter picker** (replacing the type-by-hand AddMonsterForm) and the
+  **2024-DMG XP-budget difficulty calculator** — the DM-only budget readout in the encounter round
+  bar & Add-monster modal, driven by the pure `encounter-difficulty.ts` SRD-table engine, with a
+  custom-monster CR select and a lair-XP toggle. We are **_more correct_ than DDB here, not just at
+  level**: DDB's standalone encounter tool is stuck on 2014 per-count multiplier math and four
+  tiers, while we implement the 2024 procedure exactly — no multipliers, three grades. The pack-side
   MM statblock corpus advances along the same manifest.
 - **No homebrew authoring** — the planned ladder (account library → campaign sharing → monster
   editor → species/feats/subclasses) ends at **homebrew classes**, declared the _horizon flagship_

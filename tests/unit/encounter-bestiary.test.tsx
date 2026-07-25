@@ -22,6 +22,20 @@ import {
 } from "@/features/campaigns/encounter-bestiary";
 import { makeEncounterMonsterSpec } from "@/features/campaigns/encounter-monster-spec";
 import { localizeSrd } from "@/i18n/resolver";
+import { monsterXp } from "@/lib/monster";
+import { fmtXp } from "@/lib/utils";
+import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
+
+/** A blank budget view — enough for the modal render tests (the readout's own state
+ *  matrix is exercised in party-encounter.test.tsx). */
+const BLANK_BUDGET: EncounterBudgetView = {
+  budget: null,
+  pendingPcs: 0,
+  partySize: 0,
+  costedXp: 0,
+  uncostedGroups: 0,
+  verdict: null,
+};
 
 beforeAll(async () => {
   if (i18n.language !== "en") await i18n.changeLanguage("en");
@@ -30,7 +44,9 @@ beforeAll(async () => {
 
 describe("EncounterAddMonsterModal — Bestiary + Custom tabs (§A.2)", () => {
   it("opens on the Bestiary tab with the overridden tab labels + the monster picker", () => {
-    render(<EncounterAddMonsterModal onAdd={vi.fn()} onClose={vi.fn()} />);
+    render(
+      <EncounterAddMonsterModal onAdd={vi.fn()} budget={BLANK_BUDGET} onClose={vi.fn()} />
+    );
     // The tab labels are overridden (Bestiary, not "SRD Database").
     expect(screen.getByRole("button", { name: "Bestiary" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Custom monster" })).toBeTruthy();
@@ -39,9 +55,27 @@ describe("EncounterAddMonsterModal — Bestiary + Custom tabs (§A.2)", () => {
   });
 
   it("the Custom tab mounts the manual AddMonsterForm", () => {
-    render(<EncounterAddMonsterModal onAdd={vi.fn()} onClose={vi.fn()} />);
+    render(
+      <EncounterAddMonsterModal onAdd={vi.fn()} budget={BLANK_BUDGET} onClose={vi.fn()} />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Custom monster" }));
     expect(screen.getByLabelText("Monster name")).toBeTruthy();
+  });
+
+  it("mounts the DM budget readout strip, ticking to the passed costed total (§D.1)", () => {
+    render(
+      <EncounterAddMonsterModal
+        onAdd={vi.fn()}
+        budget={{ ...BLANK_BUDGET, costedXp: 350 }}
+        onClose={vi.fn()}
+      />
+    );
+    // The readout's costed-XP run reflects the prop (SRD Step 3 deduct-as-you-add).
+    expect(
+      screen.getByText(
+        i18n.getFixedT("en")("campaignHub.encounterBudgetXp", { xp: fmtXp(350, "en") })
+      )
+    ).toBeTruthy();
   });
 });
 
@@ -51,6 +85,7 @@ describe("EncounterStatblockModal — DM statblock disclosure (§C.3)", () => {
       <EncounterStatblockModal
         srdId="goblin-warrior"
         combatantName="Goblin A"
+        combatantId="monster-1"
         onClose={vi.fn()}
       />
     );
@@ -67,6 +102,7 @@ describe("EncounterStatblockModal — DM statblock disclosure (§C.3)", () => {
         <EncounterStatblockModal
           srdId="not-a-monster"
           combatantName="Mysterious Shape"
+          combatantId="monster-1"
           onClose={vi.fn()}
         />
       )
@@ -74,6 +110,108 @@ describe("EncounterStatblockModal — DM statblock disclosure (§C.3)", () => {
     expect(
       screen.getByText(i18n.getFixedT("en")("campaignHub.encounterStatblockMissing"))
     ).toBeTruthy();
+  });
+});
+
+describe("EncounterStatblockModal — lair XP toggle (§D.5)", () => {
+  it("renders NO lair toggle for a statblock without xpInLair (goblin-warrior)", () => {
+    render(
+      <EncounterStatblockModal
+        srdId="goblin-warrior"
+        combatantName="Goblin A"
+        combatantId="monster-1"
+        apply={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+    expect(screen.queryByRole("switch")).toBeNull();
+  });
+
+  it("renders NO lair toggle when there is no DM apply (a non-writer)", () => {
+    render(
+      <EncounterStatblockModal
+        srdId="aboleth"
+        combatantName="The Deep One"
+        combatantId="monster-1"
+        onClose={vi.fn()}
+      />
+    );
+    expect(screen.queryByRole("switch")).toBeNull();
+  });
+
+  it("an xpInLair statblock + DM apply renders the toggle, checked ⇔ lair XP, both ways", () => {
+    const aboleth = getMonster("aboleth");
+    if (!aboleth || aboleth.xpInLair == null) throw new Error("aboleth/xpInLair missing");
+    const base = monsterXp(aboleth);
+    const lair = aboleth.xpInLair;
+
+    // Unchecked while the combatant carries the BASE xp.
+    const applyBase = vi.fn();
+    const { unmount } = render(
+      <EncounterStatblockModal
+        srdId="aboleth"
+        combatantName="The Deep One"
+        combatantId="monster-1"
+        currentXp={base}
+        apply={applyBase}
+        onClose={vi.fn()}
+      />
+    );
+    const toggle = screen.getByRole("switch");
+    expect(toggle.getAttribute("aria-checked")).toBe("false");
+    // Turning it ON seeds the lair value.
+    fireEvent.click(toggle);
+    expect(applyBase).toHaveBeenCalledTimes(1);
+    const onFn = applyBase.mock.calls[0]?.[0] as (
+      e: import("@/types/campaign").EncounterState
+    ) => import("@/types/campaign").EncounterState;
+    const seed = (xp?: number) => ({
+      combatants: [
+        {
+          kind: "monster" as const,
+          id: "monster-1",
+          name: "The Deep One",
+          ac: 17,
+          initiative: null,
+          conditions: [],
+          maxHp: 150,
+          tokens: [150],
+          ...(xp != null ? { xp } : {}),
+        },
+      ],
+      round: 1,
+      currentCombatantId: null,
+      epoch: 1,
+      status: "active" as const,
+    });
+    const afterOn = onFn(seed(base));
+    expect(afterOn.combatants[0]?.kind === "monster" && afterOn.combatants[0].xp).toBe(
+      lair
+    );
+    unmount();
+
+    // Checked while the combatant already carries the LAIR xp; toggling OFF restores base.
+    const applyLair = vi.fn();
+    render(
+      <EncounterStatblockModal
+        srdId="aboleth"
+        combatantName="The Deep One"
+        combatantId="monster-1"
+        currentXp={lair}
+        apply={applyLair}
+        onClose={vi.fn()}
+      />
+    );
+    const toggle2 = screen.getByRole("switch");
+    expect(toggle2.getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(toggle2);
+    const offFn = applyLair.mock.calls[0]?.[0] as (
+      e: import("@/types/campaign").EncounterState
+    ) => import("@/types/campaign").EncounterState;
+    const afterOff = offFn(seed(lair));
+    expect(afterOff.combatants[0]?.kind === "monster" && afterOff.combatants[0].xp).toBe(
+      base
+    );
   });
 });
 
