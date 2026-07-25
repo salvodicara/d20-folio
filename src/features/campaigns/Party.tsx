@@ -400,7 +400,7 @@ export function Party() {
 
   return (
     <section aria-labelledby="party-head">
-      <SectionHeader as="h2" tight id="party-head" title={t("campaignHub.party")} />
+      <SectionHeader as="h2" tight onArt id="party-head" title={t("campaignHub.party")} />
 
       {encounter && view ? (
         // ── Combat layer — the SAME live cards, reordered by initiative + monsters ──

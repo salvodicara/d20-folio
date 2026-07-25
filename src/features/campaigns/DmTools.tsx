@@ -187,6 +187,7 @@ export function DmTools() {
       sectionId="dm"
       className="lg:col-span-2"
       title={t("campaignHub.dmTools")}
+      framed
     >
       {/* ROLE + DANGER only, laid out 2-up on desktop (one column on mobile). The party
           overview + encounter tracker live in the Party section; the invite link + its

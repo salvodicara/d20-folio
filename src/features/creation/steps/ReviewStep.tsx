@@ -235,7 +235,7 @@ export function HpModeSelector({
           </WizardForkTab>
         </div>
         {mode === "average" && (
-          <span className="ml-auto self-center font-mono text-sm font-bold text-accent tnum">
+          <span className="on-art-title ml-auto self-center font-mono text-sm font-bold text-accent tnum">
             {averageHp + hpBonus} {t("stats.hp")}
           </span>
         )}

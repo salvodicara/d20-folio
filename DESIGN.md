@@ -2294,7 +2294,7 @@ setting (there is **no in-app animations toggle** — removed 2026-06-07), writt
 5. **Text on the atmospheric backdrop.** Where text sits directly on the prominent atmospheric art
    (not on a card), light uses the BG3/DDB pattern — **bright ink + a dark halo** (`--text-on-
 backdrop` + `--text-on-backdrop-title` + `--text-on-backdrop-danger` for error/required ink, the
-   halo = the single `--on-art-halo` token, via the `.on-art` / `.on-art-scope` recipes). The halo
+   halo = the single `--on-art-halo` token, via the opt-in `.on-art` / `.on-art-title` classes). The halo
    was RE-STRUCK for the daylight sibling plates: the original four-direction 1px offset copies were
    a hard stroke — right on the borrowed night art, but on the honey/amber morning plates every
    loose label read as OUTLINED "game subtitle" text. It is now a tight dark micro-edge (the a11y
@@ -2305,10 +2305,28 @@ backdrop` + `--text-on-backdrop-title` + `--text-on-backdrop-danger` for error/r
    **The halo is not a light-theme device.** "The art is dark, so light ink is safe" is false — our
    backdrops carry large BRIGHT regions, and measured against the real composited pixels dark's own
    `--text-muted` read **1.64:1** on the campaign hub's section counts, its gold rubric 1.95:1 and
-   the treasury total chip 1.46:1. So the GROUND is theme-agnostic and the INK flip is light's: each
-   register list carries an unprefixed **ground twin** (`text-shadow` only) beside its
-   `[data-theme="light"]` flip, and a unit guard cross-checks that the two list the same registers,
-   so a register can never be grounded in one theme and bare in the other.
+   the treasury total chip 1.46:1. So the GROUND is theme-agnostic and the INK flip is light's:
+   `.on-art, .on-art-title { text-shadow: var(--on-art-halo) }` is one unprefixed rule, and only the
+   two `color` declarations under it are light's.
+
+   **THE TREATMENT IS OPT-IN, AND THAT IS THE WHOLE MECHANISM.** It used to be a BLANKET: a list of
+   ink registers matched anywhere inside `.on-art-scope`, minus a hand-written list of surface
+   classes (`SURF`). That list is not maintainable, because "is this text on a surface" is a fact
+   about the rendered ancestor chain and no CSS selector can express it. It rotted the first time a
+   surface was rebuilt out of classes nobody added: the campaign hub's sections moved to
+   `.folio-panel.section-card` / `.hub-row` / `.hub-cell`, and Sessions, Shared notes, Access, DM
+   tools and Danger zone took **cream ink and a dark halo inside an opaque ivory panel** — 43
+   elements in light theme, on the owner's own campaign prose. The unit guard beside it asserted only
+   that the STRING `.info-card` still appeared in the exclusion, so it stayed green while no
+   component in those sections used that class any more. So:
+   - `.on-art` — body ink on the leaf that genuinely sits on the art;
+   - `.on-art-title` — the same ground with light's gilt title ink;
+   - `.on-art-chip` / `--on-art-plate` — an OBJECT that backs itself (below).
+     A surface needs no exclusion, no reset and no allowlist, because nothing reaches into it. Shared
+     components (`SectionHeader`, `Section`, `RunicEmptyState`) expose an **`onArt` prop**: the caller
+     is the only thing that knows where it mounted the component. The one region-level opt-in that
+     remains is the wizard column (`.wiz`), which is loose by construction and names its OPEN-COLUMN
+     registers positively — a plaque's text has different classes and is not in the list.
 
    **The halo goes on the LEAF, never on a wrapper.** Inheriting it from `.on-art-scope` is one rule
    instead of two and it is the obvious thing to try — but an auditor reads a container's
@@ -2321,9 +2339,13 @@ backdrop` + `--text-on-backdrop-title` + `--text-on-backdrop-danger` for error/r
    wizard's gutter page-turn caption, takes the ground by name at the width where it floats.
 
    **A halo grounds INK; it cannot ground an EDGE.** A chip or a dashed affordance loose on the
-   scene therefore paints its own translucent `--on-art-plate` in both themes — the "+ Attach a
-   character" affordance and the treasury gp-total chip do, in BOTH themes — or its border dissolves
-   across the bright half of the art. This is the same self-backing law as the gilt coin below, and
+   scene therefore paints its own translucent `--on-art-plate` — the "+ Attach a character"
+   affordance and the treasury gp-total chip do — or its border dissolves across the bright half of
+   the art. The plate is **per-theme**, and so are the ink and the ground it carries
+   (`--on-art-plate-ink`, `--on-art-plate-halo`): dark backs a near-black scrim and writes parchment
+   on it, light backs a warm parchment scrim and writes the page's own deep ink, with no halo (a
+   dark outline behind deep ink on parchment is a smudge). One theme-agnostic scrim made the attach
+   affordance the only near-black object on the cream hub, sitting between two ivory panels. This is the same self-backing law as the gilt coin below, and
    it is pinned in `chrome-system.guard.test.ts`, because the rendered battery measures ink and
    cannot see a border (deleting the recipe leaves that battery green — proven).
    - ✅ **GUARDED MANIFEST-WIDE (ON-ART-INK, 2026-06-12).** This used to be the #1 recurring light
@@ -2339,13 +2361,19 @@ backdrop` + `--text-on-backdrop-title` + `--text-on-backdrop-danger` for error/r
      fold, and any EDGE — are recorded in the spec's own header. Text inside any card/leaf/chip/input is never probed (no false
      positives). A red `on-art ink:` test = put the element in the canonical treatment, never a
      one-off colour:
-     - loose **text** → the region under `.on-art-scope` (preferred), or the `.on-art` class on the
-       **leaf** element (context-fixed surfaces only — never a wrapper);
-     - a **ghost button** → automatic inside `.on-art-scope` (one recipe, surface-excluded), or the
-       explicit `.btn.ghost.on-art` leaf (login hero);
-     - **facet chips** (`.fchip`), the wizard **page-turn captions**, **`.text-error`**, and the
-       **RunicEmptyState** family are already in the scope vocabulary (mechanism pins in
-       `on-art-scope.guard.test.ts`).
+     - loose **text** → `.on-art` (body) or `.on-art-title` (gilt) on the **leaf** element, never a
+       wrapper; a shared component takes the `onArt` prop instead of stamping the class;
+     - a **ghost button** → the explicit `.btn.ghost.on-art` leaf (login hero, member-sheet back,
+       the region crash net). There is no automatic arm any more;
+     - **facet chips** (`.fchip`) and the wizard **page-turn captions** keep their own scoped
+       recipes — the caption's ground and ink flip must arrive TOGETHER, inside the ≥1360px gutter
+       query, or axe reads the halo as a `#73613c` opaque ground behind unflipped gilt ink and
+       reports 2.17:1 on seven wizard surfaces.
+   - ✅ **AND THE OTHER DIRECTION IS MEASURED TOO (2026-07-25).** `on-art-ink.spec.ts` gains a LEAK
+     leg in both themes: text whose rendered ancestor chain paints a surface may carry neither the
+     on-art ground nor the on-art ink. Nothing measured over-reach before, which is how 43 cream-on-
+     ivory elements shipped on the hub while every leg here was green. Mutation-proved: re-applying
+     the treatment to `.section-card .sess-prose` turns it red on both hub cells.
      - **A gilt OBJECT is SELF-BACKED — never background-dependent (gilt-coin rule, 2026-06-30).**
        A struck "coin" (the section count **medallion** `.sec-count`, the disclosure **knob**, any
        seal) is a premium gilt register (§ register ladder) and must read on a card OR on the raw
@@ -2370,12 +2398,12 @@ backdrop` + `--text-on-backdrop-title` + `--text-on-backdrop-danger` for error/r
        surface is `body::after` itself — it IS the raw art this guard protects — so `<body>`/`<html>`
        pseudos are excluded. This closed a FALSE POSITIVE (every rail number inside a `.folio-panel`
        read as "on raw art" though the panel plainly backs it).
-   - ⚠️ **The INVERSE leak — never hardcode `.on-art` in a SHARED component** (`src/components/**`).
-     A shared leaf renders in BOTH contexts: on the creation art it would read fine, but inside a
-     modal/card the white-ink + dark-outline backdrop treatment leaks onto the plain surface (owner-
-     reported: the savant spellbook hint inside the level-up modal, 2026-06-10). Context decides —
-     rely on the `.on-art-scope` ancestor flip (it restyles loose text per context and never matches
-     surfaces). Guarded: `on-art-scope.guard.test.ts` fails on any hardcoded `on-art` under
+   - ⚠️ **The INVERSE leak — never stamp an on-art class UNCONDITIONALLY in a shared component**
+     (`src/components/**`). A shared leaf renders in BOTH contexts: on the creation art it reads
+     fine, but inside a modal/card the bright ink + dark halo leaks onto the plain surface (owner-
+     reported: the savant spellbook hint inside the level-up modal, 2026-06-10). The caller decides,
+     through an `onArt` prop — a gated `onArt && "on-art"` is the sanctioned shape, a bare literal is
+     not. Guarded: `on-art-scope.guard.test.ts` fails on any ungated `on-art` under
      `src/components/`.
 
 6. **AA engineered per token, per theme.** The `-ink` variants, the deepened light muted/faint inks
@@ -2427,9 +2455,9 @@ test.ts` READS the live `.cp-dest-chip` declaration out of `folio.css`, resolves
      NOT a change to the owner-ratified 0.55 art opacity.
    - **On-field inks + foil.** The light muted/faint/secondary inks are deepened one crisp step (loose
      labels on the bare deep-parchment field read crisp; every AA pin only gains headroom). The on-art
-     gold-foil section titles (`.on-art-scope .sec-title`) take a tight crisp outline + warm sheen
+     gold-foil section titles (`.sec-title.on-art-title`) take a tight crisp outline + warm sheen
      instead of the body-tuned soft-blur halo that smudged, and the treasury GP-total cartouche
-     (`.on-art-scope .badge.muted`) self-backs on a warm plate + gilt edge so its gold reads struck, not
+     (`.badge.muted.on-art-chip`) self-backs on a warm plate + gilt edge so its gold reads struck, not
      outlined-and-floating.
 
 > **Do not re-wire the intentionally-orphaned `--surface-sheen` / `--gilt-gradient`** as a blanket
@@ -2667,7 +2695,9 @@ band, so the Party/combat sit in the fold. The campaign's art — the DM's custo
 else `campaign-backdrop.webp` — is fed to `--app-bg-art` on the document root for as long as the hub
 is mounted (restored on unmount), so the global `body::after` painter renders it atmospherically
 under the app's own scrim/grain (craft law 3 — atmosphere under content, never a competing band). The
-hub content keeps its `.on-art-scope` wrapper so every loose-on-backdrop element (section labels, the
+hub content keeps its `.on-art-scope` wrapper (the scope still carries the per-recipe treatments —
+the facet chips, the pager caption, the selection colours — it no longer blankets ink registers), and
+every loose-on-backdrop element (section labels, the
 DMPC "attach" button, the treasury "total" chip) stays legible in light theme (guarded by
 `on-art-ink.spec.ts`).
 
@@ -2683,7 +2713,7 @@ motion keeps the cut (mechanism in §9's motion table, "Backdrop swap"). Current
 **compendium** (`CompendiumPage` → `--asset-compendium-scene`, the Grand Library pair above — the
 codex spread sits over the plate's calm centre aisle in both themes, desktop and mobile), the
 **roster** (`RosterPage` → `--asset-roster-scene`, the Hall of Heroes pair — the character cards +
-toolbar sit over the hall's calm centre band; the page's existing `.on-art` / `.on-art-scope`
+toolbar sit over the hall's calm centre band; the page's existing `.on-art` / `.on-art-title`
 loose-element chrome stays correct over the new plates), and the **wizards** (`WizardFrame` →
 `--asset-creation-scene`, the Ritual of Making scriptorium pair — ONE mount in the shared frame
 covers both creation and level-up, and the frame's `.wiz on-art-scope` chrome already carries the

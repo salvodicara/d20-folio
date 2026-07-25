@@ -33,31 +33,46 @@ const css = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8").re
 );
 
 describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", () => {
-  it("#3 — ghost buttons on the art read in light theme (leaf `.on-art` AND `.on-art-scope`)", () => {
-    // ONE recipe, two ways in (ON-ART-INK, 2026-06-12): the explicit
-    // `.btn.ghost.on-art` leaf (login retry) and AUTOMATICALLY for a ghost
-    // button loose inside the canonical `.on-art-scope` (the read-only
-    // member-sheet back button) — with the surface exclusion so a card-bound
-    // ghost is never touched. Pins both arms + the gilt ink.
+  it("#3 — a ghost button on the art reads in light theme (`.btn.ghost.on-art`)", () => {
+    // ONE recipe, ONE way in. It used to have two: the explicit `.btn.ghost.on-art`
+    // leaf AND an automatic arm for any ghost inside `.on-art-scope` minus a
+    // hand-written surface list. The automatic arm is deleted — that list is the
+    // mechanism that put cream ink on the campaign hub's ivory panels — so a ghost
+    // that stands on the scene says so, and its callers are the login retry, the
+    // read-only member-sheet back button and the region crash net.
     const rule =
-      /\[data-theme="light"\]\s*:is\(\s*\.btn\.ghost\.on-art,\s*\.on-art-scope\s*\.btn\.ghost:not\(\s*:where\([^)]*\.info-card[^)]*\[class\*="bg-"\][^{]*\{[^}]*color:\s*var\(--text-on-backdrop-title\)/;
+      /\[data-theme="light"\] \.btn\.ghost\.on-art \{[^}]*color: var\(--text-on-backdrop-title\)/;
     expect(
       rule.test(css),
-      "MISSING: `[data-theme=light] :is(.btn.ghost.on-art, .on-art-scope .btn.ghost:not(:where(…surfaces…) *)) " +
-        "{ color: var(--text-on-backdrop-title) }`. Without it ghost buttons on the dark art " +
-        "(login retry, member-sheet back) are invisible in light theme."
+      "MISSING: `[data-theme=light] .btn.ghost.on-art { color: var(--text-on-backdrop-title) }`. " +
+        "Without it a ghost button on the dark art (login retry, member-sheet back) is " +
+        "invisible in light theme."
     ).toBe(true);
+    // …and the deleted arm stays deleted.
+    expect(
+      /\.on-art-scope\s+\.btn\.ghost:not\(/.test(css),
+      "The automatic `.on-art-scope .btn.ghost:not(:where(<surfaces>))` arm is back. " +
+        "That surface list cannot be derived and rots silently; put `.on-art` on the " +
+        "button instead."
+    ).toBe(false);
   });
 
-  it("#4 — `.field-help` is in the on-art-scope backdrop-ink flip", () => {
-    // The flip's loose-text :is(...) group must include .field-help so the
-    // subclass-unlock hint takes the cream on-backdrop ink in light theme.
-    const rule =
-      /\.on-art-scope\s*:is\([^)]*\.field-help[^)]*\)\s*:not\(\s*:where\([^)]*\.info-card/;
+  it("#4 — `.field-help` takes the backdrop treatment in the wizard column", () => {
+    // The subclass-unlock hint sits in the wizard's open column, on the art. It used
+    // to be reached by a blanket register flip minus a surface list; it is now named
+    // in the one region rule, which lists the open-column vocabulary POSITIVELY.
     expect(
-      rule.test(css),
-      "MISSING: `.field-help` in the `.on-art-scope :is(…):not(:where(…surfaces…))` flip. " +
-        "Without it the 'Si sblocca al livello N' hint is unreadable on the backdrop in light theme."
+      /\.wiz\s*:is\([^)]*\.field-help[^)]*\)\s*\{\s*text-shadow: var\(--on-art-halo\)/.test(
+        css
+      ),
+      "`.field-help` lost its GROUND in the wizard column."
+    ).toBe(true);
+    expect(
+      /\[data-theme="light"\]\s*\.wiz\s*:is\([^)]*\.field-help[^)]*\)\s*\{\s*color: var\(--text-on-backdrop\)/.test(
+        css
+      ),
+      "`.field-help` lost light's parchment INK in the wizard column — the " +
+        "'unlocks at level N' hint goes back to dark-on-dark on the candlelit art."
     ).toBe(true);
   });
 

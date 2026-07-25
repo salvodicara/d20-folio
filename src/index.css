@@ -423,6 +423,16 @@
      bright half of the art — the "+ Attach a character" affordance did, in both
      themes, and the treasury total chip measured 1.46:1 in dark. */
   --on-art-plate: color-mix(in srgb, #140d04 66%, transparent);
+  /* …and the INK + GROUND that plate carries. Both are per-theme, because the plate
+     is: DARK backs a translucent near-black scrim and writes parchment on it, LIGHT
+     backs a warm parchment scrim and writes the page's own deep ink. The light
+     values are NOT a nicety — the near-black plate was theme-agnostic, so on the
+     cream hub it was the only near-black object on the page, sitting between two
+     ivory panels. An object on the scene backs itself in the room it is standing
+     in. The halo goes with the dark plate only: a dark outline behind DEEP ink on
+     parchment is a smudge, not a ground. */
+  --on-art-plate-ink: var(--text-on-backdrop);
+  --on-art-plate-halo: var(--on-art-halo);
 
   --on-art-halo:
     0 0 1px rgba(20, 13, 4, 0.95), 0 0 2px rgba(20, 13, 4, 0.85),
@@ -1002,6 +1012,12 @@
      fill pops), and the outline is what clears the a11y gate (bright fg vs the dark
      outline axe credits as the backing). Body = warm white; titles = bright gilt. */
   --text-on-backdrop-title: var(--gold-leaf-100);
+  /* The self-backing plate, daylight strike — a warm parchment scrim with the page's
+     own deep ink on it, so a control loose on the light scene reads as an object in
+     THIS room rather than as a hole punched into it. */
+  --on-art-plate: color-mix(in srgb, #fbf3dc 88%, transparent);
+  --on-art-plate-ink: var(--text-primary);
+  --on-art-plate-halo: none;
   /* Error/required ink ON the backdrop: the field's --semantic-danger is the deep
      vermilion-700 ink (vanishes on the dark art exactly like the field text). This
      is its on-backdrop sibling — a lifted warm vermilion, bright enough to read on

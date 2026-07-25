@@ -67,6 +67,7 @@ export function CampaignInvite({ canManage }: { canManage: boolean }) {
     <SectionPanel
       sectionId="invite"
       title={t("campaignHub.access")}
+      framed
       meta={
         joinsLocked ? (
           <Badge

@@ -97,7 +97,7 @@ export function SettingsPage() {
           under it. */}
       <div className="on-art-scope mx-auto max-w-3xl">
         {/* ── Appearance: theme · language ──────────────────────────────────── */}
-        <Section title={t("settings.appearance")}>
+        <Section title={t("settings.appearance")} onArt>
           {/* Seated in the SAME .info-card recipe as the Account card below, so the
               appearance rows read as a composed tile instead of floating bare on the
               page (the two .set-rows divide inside the one card). */}
@@ -139,7 +139,7 @@ export function SettingsPage() {
         </Section>
 
         {/* ── Account: the signed-in identity ───────────────────────────────── */}
-        <Section title={t("common.account")}>
+        <Section title={t("common.account")} onArt>
           <InfoCard className="flex items-center gap-3">
             {/* One avatar primitive (#45/#92): Google photo or the per-seed tinted
                 initial — consistent with the topbar + roster + admin. */}
@@ -166,7 +166,7 @@ export function SettingsPage() {
 
         {/* ── Admin: link only (the re-home is a later slice) ───────────────── */}
         {isAdmin ? (
-          <Section title={t("nav.admin")}>
+          <Section title={t("nav.admin")} onArt>
             <Button
               variant="secondary"
               onClick={() => void navigate("/admin")}

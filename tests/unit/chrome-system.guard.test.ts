@@ -1055,9 +1055,8 @@ describe("the chrome system — L3, state changes light and colour only", () => 
    * recipe is pinned here instead, where the stylesheet is the artifact.
    */
   it("gives every on-art control its own ground, not just its ink", () => {
-    const rule = /\.on-art-scope \.party-dm-attach \{([^}]*)\}/.exec(folio)?.[1] ?? "";
-    const chip =
-      /\.on-art-scope \.badge\.muted:not\([^{]*\{([^}]*)\}/.exec(folio)?.[1] ?? "";
+    const rule = /\.party-dm-attach \{([^}]*)\}/.exec(folio)?.[1] ?? "";
+    const chip = /\.badge\.muted\.on-art-chip \{([^}]*)\}/.exec(folio)?.[1] ?? "";
     expect(
       rule,
       "MISSING the self-backing recipe for the controls that sit LOOSE on the " +
@@ -1066,54 +1065,38 @@ describe("the chrome system — L3, state changes light and colour only", () => 
         "themes — or its border dissolves on the bright half of the backdrop."
     ).not.toBe("");
     expect(rule).toContain("var(--on-art-plate)");
-    expect(rule).toContain("var(--text-on-backdrop)");
+    // …and the plate's INK is the per-theme token, not the parchment ink hard-wired
+    // for both rooms: a theme-agnostic near-black scrim made this the only near-black
+    // object on the cream campaign hub, between two ivory panels.
+    expect(rule).toContain("var(--on-art-plate-ink)");
     expect(
       chip,
-      "…and the same for the treasury's gp-total cartouche, whose theme-agnostic " +
-        "plate rule carries the surface exclusion so it can never reach a card-bound chip."
+      "…and the same for the treasury's gp-total cartouche, which OPTS IN by class " +
+        "(`.on-art-chip`) so it can never reach a card-bound `.badge.muted` — the " +
+        "party encounter's monster xN token keeps the plain card recipe."
     ).toContain("var(--on-art-plate)");
     // …and the halo itself is theme-agnostic: the premise "the art is dark, so light
     // ink is safe" cost dark a whole class of defect (1.64:1 on the hub's counts).
-    // The GROUND rides an unprefixed twin of each register list the ink flip uses.
-    const groundTwins = [...folio.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-      .filter(
-        ([, sel, decls]) =>
-          /^\.on-art-scope :is\(/.test((sel ?? "").trim()) &&
-          /^\s*text-shadow: var\(--on-art-halo\);\s*$/.test(decls ?? "")
-      )
-      .map(([, sel]) => (sel ?? "").trim());
+    // With the treatment opt-in, that is one rule rather than a pair of twins per
+    // register list: BOTH tiers take the ground unprefixed, and only the INK is
+    // light's. (The twins existed because the ground had to shadow a blanket flip
+    // register-for-register; there is no blanket to shadow now.)
     expect(
-      groundTwins.length,
-      "The on-art halo went back to being a LIGHT-theme device. It is the ONE ground " +
-        "for loose ink in BOTH themes — our backdrops carry large bright regions, and " +
-        "dark's own `--text-muted` measured 1.64:1 against them. Each register list " +
-        "the light flip carries needs an unprefixed twin that carries only the halo."
-    ).toBeGreaterThanOrEqual(2);
-    // …and the twins list the SAME registers as the flips they shadow — otherwise a
-    // register added to one and not the other is grounded in exactly one theme.
-    // TEXT flips need a ground twin. A flip that also re-colours a BORDER is a
-    // CONTROL flip — a control is an object and grounds itself on `--on-art-plate`,
-    // which is what the two assertions above already pin, so it needs no twin.
-    const flipRegisters = [
-      ...folio.matchAll(
-        /\[data-theme="light"\] \.on-art-scope :is\(([^)]*)\):not\([^{]*\{([^}]*)\}/g
-      ),
-    ]
-      .filter(
-        ([, , decls]) =>
-          /color: var\(--text-on-backdrop/.test(decls ?? "") &&
-          !/border-color/.test(decls ?? "")
-      )
-      .map((m) => (m[1] ?? "").replace(/\s/g, ""));
-    expect(
-      flipRegisters.length,
-      "no light TEXT flip found — did the on-art vocabulary get renamed?"
-    ).toBeGreaterThan(0);
-    for (const list of flipRegisters) {
+      /\.on-art,\s*\.on-art-title \{ text-shadow: var\(--on-art-halo\); \}/.test(folio),
+      "The on-art GROUND went back to being a LIGHT-theme device, or the two opt-in " +
+        "tiers stopped sharing it. It is the ONE ground for loose ink in BOTH themes — " +
+        "our backdrops carry large bright regions, and dark's own `--text-muted` " +
+        "measured 1.64:1 against them."
+    ).toBe(true);
+    for (const [tier, ink] of [
+      ["\\.on-art", "--text-on-backdrop"],
+      ["\\.on-art-title", "--text-on-backdrop-title"],
+    ] as const) {
       expect(
-        groundTwins.some((t) => t.replace(/\s/g, "").includes(list)),
-        `A light ink flip lists registers no GROUND twin carries, so those registers ` +
-          `are grounded in light and bare in dark:\n  :is(${list.slice(0, 120)}…)`
+        new RegExp(
+          `\\[data-theme="light"\\] ${tier} \\{ color: var\\(${ink}\\); \\}`
+        ).test(folio),
+        `The light INK for ${tier.replace("\\", "")} is missing — dark ink on the dark art.`
       ).toBe(true);
     }
     // A `<button>` does not inherit `text-shadow`, so the scope's halo stops at every

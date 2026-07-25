@@ -160,15 +160,16 @@ function MemberSheet({
   // carries both affordances (owner 2026-06-12: never two stacked rows): the
   // back button inline-left, and a quiet "Read-only" status chip inline-right
   // (the reused `.toolbar-chip` recipe) whose title carries the full sentence.
-  // The row floats DIRECTLY on the backdrop art (no card), so it sits in the
-  // canonical `.on-art-scope`: the ghost back button takes the on-art gilt
-  // treatment in light theme (the chip is its own carved surface — untouched).
+  // The row floats DIRECTLY on the backdrop art (no card), so the ghost back button
+  // opts IN to the on-art gilt treatment in light theme (`.on-art`); the read-only
+  // chip is its own carved surface and takes nothing.
   return (
     <div className="flex flex-col">
       <div className="on-art-scope mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-2 px-4 pt-4">
         <Button
           variant="ghost"
           size="sm"
+          className="on-art"
           onClick={() => void navigate(`/campaigns/${campaignId}`)}
         >
           <Icon as={ArrowLeft} size="sm" decorative />

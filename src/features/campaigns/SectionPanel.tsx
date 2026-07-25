@@ -150,7 +150,19 @@ export function SectionPanel({
 
   return (
     <section aria-labelledby={headId} className={cn("section-panel", className)}>
-      <SectionHeader as="h2" tight id={headId} title={title} count={count} meta={meta} />
+      {/* The rubric sits ABOVE the panel, directly on the backdrop art — so it
+          opts IN to the on-art treatment. The panel below it does not, and that is
+          the whole point of the treatment being a prop: the same header component
+          renders inside a card elsewhere in the app and must stay untouched. */}
+      <SectionHeader
+        as="h2"
+        tight
+        onArt
+        id={headId}
+        title={title}
+        count={count}
+        meta={meta}
+      />
       {detail ? (
         // ONE rail encloses the fixed panel + the disclosure + the expandable detail
         // (owner: the gilt-knob chevron sits ON the card, never floats below it). The

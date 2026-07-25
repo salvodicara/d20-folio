@@ -336,12 +336,12 @@ const MIN_ON_ART_CONTRAST = 4.5;
  */
 async function measureOnArtContrast(
   page: import("@playwright/test").Page
-): Promise<Measured[]> {
-  const cands = await page.evaluate(() => {
+): Promise<{ measured: Measured[]; walked: number }> {
+  const { cands, walked } = await page.evaluate(() => {
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = 1;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return [];
+    if (!ctx) return { cands: [], walked: 0 };
     const rgba = (css: string): [number, number, number, number] => {
       ctx.clearRect(0, 0, 1, 1);
       ctx.fillStyle = "#000";
@@ -409,6 +409,8 @@ async function measureOnArtContrast(
       halo: [number, number, number] | null;
     }[] = [];
     const seen = new Set<Element>();
+    /** Text-bearing elements the walk actually reached — the probe's own liveness. */
+    let walked = 0;
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
       const tn = walker.currentNode as Text;
@@ -422,6 +424,7 @@ async function measureOnArtContrast(
       const range = document.createRange();
       range.selectNodeContents(tn);
       const bx = range.getBoundingClientRect();
+      walked++;
       if (bx.width < 1 || bx.height < 1) continue;
       // In-viewport only: the box has to map to a screenshot pixel.
       if (bx.top < 0 || bx.bottom > innerHeight || bx.left < 0 || bx.right > innerWidth) {
@@ -440,10 +443,10 @@ async function measureOnArtContrast(
         halo: haloOf(cs.textShadow),
       });
     }
-    return out;
+    return { cands: out, walked };
   });
 
-  if (cands.length === 0) return [];
+  if (cands.length === 0) return { measured: [], walked };
 
   // The GROUND, straight off the rendered page: every text painted transparent, so
   // what remains is exactly the composite the ink sits on.
@@ -454,7 +457,7 @@ async function measureOnArtContrast(
   });
   const shot = (await page.screenshot({ type: "png" })).toString("base64");
 
-  return page.evaluate(
+  const measured = await page.evaluate(
     async ({ cands: list, uri }) => {
       const img = new Image();
       img.src = uri;
@@ -509,6 +512,7 @@ async function measureOnArtContrast(
     },
     { cands, uri: `data:image/png;base64,${shot}` }
   );
+  return { measured, walked };
 }
 
 for (const surface of SURFACES) {
@@ -526,18 +530,21 @@ for (const surface of SURFACES) {
       if (surface.prepare) await surface.prepare(page);
       await freezeMotion(page);
 
-      const measured = await measureOnArtContrast(page);
-      // THE FLOOR (golden rule 13). `failing` is a FILTER over a derived set, so an
-      // empty derivation and a clean surface are the same green — a probe that stops
-      // finding on-art text (a walker that throws, a readiness signal that fires
-      // before the art paints, a scope that gets renamed) would report perfection.
+      const { measured, walked } = await measureOnArtContrast(page);
+      // THE FLOOR (golden rule 13), on the WALK and not on the RESULT. `failing` is a
+      // filter over a derived set, so a broken probe and a clean surface are the same
+      // green. The floor cannot be "loose ink was found", though — plenty of surfaces
+      // in this battery are all panel (the compendium, the cockpit tabs) and measure
+      // zero legitimately; asserting otherwise just fails 40 honest cells. What must
+      // never be zero is the number of text-bearing elements the walk REACHED: that
+      // is the probe reading the page, and it goes to zero exactly when the page did
+      // not paint, the readiness signal fired early, or the walker threw.
       expect(
-        measured.length,
-        `The on-art probe found NO loose ink at all on ${surface.slug} [${theme}]. ` +
-          `Every surface in this battery is one that puts text on the candlelit ` +
-          `backdrop — zero measurements means the probe stopped reading the page, ` +
-          `not that the page is clean.`
-      ).toBeGreaterThan(0);
+        walked,
+        `The on-art probe reached NO text at all on ${surface.slug} [${theme}] — it ` +
+          `stopped reading the page. Zero measurements would then be a green light ` +
+          `that means nothing.`
+      ).toBeGreaterThan(5);
       const failing = measured
         .filter((m) => m.ratio < MIN_ON_ART_CONTRAST)
         .sort((a, b) => a.ratio - b.ratio);
@@ -558,6 +565,180 @@ for (const surface of SURFACES) {
           `in \`.on-art-scope\` so the ink inherits the one \`--on-art-halo\`, and give ` +
           `any CONTROL loose on the scene its own \`--on-art-plate\` (a halo grounds ` +
           `INK; it cannot ground an EDGE). DESIGN.md § On-art ink:\n${summary}`
+      ).toEqual([]);
+    });
+  }
+}
+
+/**
+ * THE OTHER DIRECTION — on-art ink must never appear ON A SURFACE.
+ *
+ * Every check in this file measured under-grounding: is loose ink legible on the
+ * art. Nothing measured OVER-reach, and the treatment used to be a blanket — a set
+ * of ink registers matched anywhere inside `.on-art-scope`, minus a hand-written
+ * list of surface classes. So when the campaign hub's sections were rebuilt on
+ * `.folio-panel.section-card` / `.hub-row` / `.hub-cell`, none of which were in that
+ * list, Sessions, Shared notes, Access, DM tools and Danger zone took **cream ink
+ * and a dark halo inside an opaque ivory panel** — 43 elements in light theme, on
+ * the owner's own campaign prose. Every probe here stayed green, because the panel
+ * IS a surface and this file only ever looked at text that was not on one.
+ *
+ * The unit guard beside it was worse than silent: it regex-matched that the string
+ * `.info-card` still appeared inside the exclusion, and passed while no component in
+ * those sections used that class any more. Its own docstring named "re-leaking the
+ * outline onto the DM Tools card" as the regression it existed to prevent.
+ *
+ * So the assertion is rendered, and it is the inverse of the battery above: if the
+ * text is on a surface, it may carry neither the on-art ground nor the on-art ink.
+ *
+ * WHAT IT CANNOT SEE:
+ *   · Inside `.wiz`. The creation/level-up column is loose by construction and takes
+ *     its ground from ONE region rule rather than ~60 markup opt-ins, so the wizard
+ *     is skipped here. What protects it instead is that the rule lists only the
+ *     wizard's OPEN-COLUMN registers — a plaque's own text has different classes —
+ *     and the census + contrast legs cover the plaques themselves.
+ *   · A surface it cannot recognise. "Is this on a surface" is read off the rendered
+ *     ancestor chain (an opaque fill, or a full-box painted pseudo), which is exactly
+ *     the fact no CSS selector can express — but a plate that paints itself some
+ *     third way is invisible here too.
+ *   · Text below the fold is measured (no viewport clip on this leg) but text a
+ *     later paint covers is not.
+ */
+for (const surface of SURFACES) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`on-art leak: ${surface.slug} [${theme}] — no backdrop ink on a surface`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: DESKTOP.width, height: 2400 });
+      await seedUI(page, theme, surface.edit ? "edit" : "play");
+      await seedLang(page, "en");
+      await page.goto(surface.route, { waitUntil: "domcontentloaded" });
+      await surface.ready(page);
+      if (surface.prepare) await surface.prepare(page);
+      await freezeMotion(page);
+
+      const { leaks, scanned } = await page.evaluate(() => {
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = 1;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return { leaks: [], scanned: 0 };
+        const rgba = (css: string): [number, number, number, number] => {
+          ctx.clearRect(0, 0, 1, 1);
+          ctx.fillStyle = "#000";
+          ctx.fillStyle = css;
+          ctx.fillRect(0, 0, 1, 1);
+          const d = ctx.getImageData(0, 0, 1, 1).data;
+          return [d[0] ?? 0, d[1] ?? 0, d[2] ?? 0, (d[3] ?? 0) / 255];
+        };
+        const fillsBox = (p: CSSStyleDeclaration): boolean =>
+          p.content !== "none" &&
+          (p.position === "absolute" || p.position === "fixed") &&
+          p.top === "0px" &&
+          p.right === "0px" &&
+          p.bottom === "0px" &&
+          p.left === "0px";
+        const opaqueFill = (p: CSSStyleDeclaration): boolean =>
+          p.backgroundImage !== "none" || rgba(p.backgroundColor)[3] >= 0.5;
+        const isSurface = (el: Element): boolean => {
+          const cs = getComputedStyle(el);
+          if (opaqueFill(cs)) return true;
+          if (el === document.body || el === document.documentElement) return false;
+          for (const pseudo of ["::before", "::after"]) {
+            const pcs = getComputedStyle(el, pseudo);
+            if (fillsBox(pcs) && opaqueFill(pcs)) return true;
+          }
+          return false;
+        };
+        /**
+         * The opt-ins. An element that says "I am on the art" — and anything it
+         * hands its inherited ground down to — is an OBJECT that backs itself and
+         * may stand anywhere; `.wiz` is the one region-level opt-in left.
+         */
+        const OPT_IN = ".on-art, .on-art-title, .on-art-chip, .party-dm-attach, .wiz";
+        // The engine resolves the halo for us, so the probe never guesses a string.
+        const ref = document.createElement("span");
+        ref.style.textShadow = "var(--on-art-halo)";
+        document.body.appendChild(ref);
+        const HALO = getComputedStyle(ref).textShadow;
+        ref.style.textShadow = "";
+        // The INK signal is only usable when the on-backdrop ink is DISTINCT from the
+        // page's own body ink. `--text-on-backdrop-title` is a light-theme token, so
+        // in dark `var()` falls back to the inherited colour and "backdrop ink" would
+        // match every ordinary paragraph in the app. Derive that rather than assume
+        // it: any tier that resolves to the body ink carries no information and is
+        // dropped, leaving the GROUND (which is theme-agnostic) to carry the check.
+        const BODY = getComputedStyle(document.body).color;
+        ref.style.color = "var(--text-on-backdrop)";
+        const inkBody = getComputedStyle(ref).color;
+        ref.style.color = "var(--text-on-backdrop-title)";
+        const inkTitle = getComputedStyle(ref).color;
+        ref.remove();
+        const INKS = [inkBody, inkTitle].filter((c) => c !== BODY);
+
+        const compactPath = (el: Element): string => {
+          const bits: string[] = [];
+          for (let n: Element | null = el, i = 0; n && i < 3; n = n.parentElement, i++) {
+            const cls = Array.from(n.classList).slice(0, 3).join(".");
+            bits.unshift(n.tagName.toLowerCase() + (cls ? `.${cls}` : ""));
+          }
+          return bits.join(" > ");
+        };
+
+        const leaks: string[] = [];
+        let scanned = 0;
+        const seen = new Set<Element>();
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+          const tn = walker.currentNode as Text;
+          if (!tn.data.trim()) continue;
+          const el = tn.parentElement;
+          if (!el || seen.has(el)) continue;
+          seen.add(el);
+          if (!el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) {
+            continue;
+          }
+          scanned++;
+          if (el.closest(OPT_IN)) continue;
+          let host: Element | null = null;
+          for (
+            let n: Element | null = el;
+            n && n !== document.documentElement;
+            n = n.parentElement
+          ) {
+            if (isSurface(n)) {
+              host = n;
+              break;
+            }
+          }
+          if (!host) continue;
+          const cs = getComputedStyle(el);
+          const ground = cs.textShadow === HALO;
+          const ink = INKS.includes(cs.color);
+          if (!ground && !ink) continue;
+          leaks.push(
+            `${compactPath(el)}\n  "${tn.data.trim().slice(0, 44)}" — ` +
+              (ink ? `backdrop INK ${cs.color}` : `ink ${cs.color}`) +
+              `${ground ? " + the on-art GROUND" : ""}\n  on ${compactPath(host)}`
+          );
+        }
+        return { leaks, scanned };
+      });
+
+      expect(
+        scanned,
+        `No visible text found at all on ${surface.slug} [${theme}] — the probe ` +
+          `stopped reading the page, and an empty scan is a green light that means ` +
+          `nothing (golden rule 13).`
+      ).toBeGreaterThan(5);
+      expect(
+        leaks,
+        `On-art ink LEAKED ONTO A SURFACE in ${theme.toUpperCase()}. The treatment ` +
+          `is opt-in — \`.on-art\` / \`.on-art-title\` on the leaf that genuinely sits ` +
+          `on the backdrop art, \`.on-art-chip\` / \`--on-art-plate\` for an object that ` +
+          `backs itself. Text inside a panel or a card is grounded BY THE PANEL, and ` +
+          `giving it the parchment ink paints cream on ivory. Do not add a class to ` +
+          `an exclusion list: that mechanism is what put this here.\n\n` +
+          leaks.join("\n\n")
       ).toEqual([]);
     });
   }

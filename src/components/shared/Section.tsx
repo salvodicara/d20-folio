@@ -21,12 +21,14 @@ export interface SectionProps {
   children: ReactNode;
   /** Extra classes on the wrapping `<section>`. */
   className?: string;
+  /** The rubric sits directly on the backdrop art (see `SectionHeader.onArt`). */
+  onArt?: boolean;
 }
 
-export function Section({ title, children, className }: SectionProps) {
+export function Section({ title, children, className, onArt }: SectionProps) {
   return (
     <section className={cn("mt-8 first:mt-0", className)}>
-      <SectionHeader as="h2" title={title} />
+      <SectionHeader as="h2" title={title} onArt={onArt} />
       {children}
     </section>
   );

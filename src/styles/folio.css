@@ -286,355 +286,107 @@ svg.icon[stroke],
    hub's section counts and its gold rubric 1.95:1. Light additionally FLIPS its ink
    (dark ink vanishes on dark art); dark keeps its inks and takes only the ground.
 
-   IT GOES ON THE LEAF, NEVER ON A WRAPPER. Inheriting it from `.on-art-scope` is
+   IT GOES ON THE LEAF, NEVER ON A WRAPPER. Inheriting it from a scope container is
    one rule instead of two and it was the first thing tried — but an auditor reads a
    container's `text-shadow` as an opaque BACKGROUND for everything inside it, so a
    scope-level halo made axe resolve a `#73613c` ground behind every descendant and
    manufactured serious `color-contrast` violations on eight clean light surfaces.
-   The halo therefore rides the same per-register selectors the ink flip does: the
-   theme-agnostic twin below carries the GROUND for both themes, and the
-   `[data-theme="light"]` rules that follow carry the INK. ────────────────────── */
-.on-art {
+
+   AND IT IS OPT-IN, BY CLASS, ON THE ELEMENT. It used to be a BLANKET: a list of
+   ink registers matched anywhere inside `.on-art-scope`, minus a hand-written list
+   of surface classes (`SURF`) that were assumed to cover every plate in the app.
+   That list is the defect. It cannot be derived — "is this text on a surface" is a
+   fact about the rendered ancestor chain, not about any class — so it rots silently
+   the moment a surface is built out of a class nobody thought to add. It did: the
+   campaign hub's sections were rebuilt on `.folio-panel.section-card` / `.hub-row` /
+   `.hub-cell`, none of which were in `SURF`, and the whole of Sessions, Shared
+   notes, Access, DM tools and Danger zone took cream ink and a dark halo INSIDE an
+   opaque ivory panel — 43 elements, unreadable, on the owner's own campaign prose.
+   The unit guard beside it only checked that the STRING `.info-card` still appeared
+   in the exclusion, so it stayed green while no component used that class any more.
+
+   So there is no blanket. Text that genuinely sits on the art says so:
+     `.on-art`        — body ink: the ground in both themes, the parchment flip in light
+     `.on-art-title`  — the same ground, and light's gilt title ink
+   Two tiers, one class each, applied to the LEAF that carries the text. A surface
+   needs no exclusion, no reset and no allowlist, because nothing reaches into it.
+   Both directions are measured on the rendered page, not asserted about the CSS:
+   `tests/e2e/on-art-ink.spec.ts` fails if loose ink is NOT grounded (contrast on the
+   real composite) and if grounded ink appears ON a surface (the leak this replaced).
+   [[light-on-backdrop-text]] ─────────────────────────────────────────────────── */
+.on-art,
+.on-art-title {
   text-shadow: var(--on-art-halo);
 }
 
-/* `.on-art` — text that sits directly on the candlelit backdrop (not on a card).
-   In light theme the dark field-ink vanished on the prominent 0.55 art; this paints
-   such text the warm illuminated-parchment `--text-on-backdrop` + a soft dark halo,
-   so it reads as gilt lettering on the dark scene across the whole void (the halo
-   carries the occasional lighter candle-lit patch, where a flat light colour alone
-   would wash). Light-only: dark theme's loose text is already light. Apply to the
-   LEAF text element, never a wrapper, so card text below it is never recoloured. */
+/* In light theme the dark field-ink vanishes on the prominent 0.55 art, so loose
+   text takes the warm illuminated-parchment ink and reads as lettering on the dark
+   scene; the halo carries it across the occasional candle-lit patch, where a flat
+   light colour alone would wash. Dark keeps its own inks and takes only the ground.
+   Structural labels and accents take the GILT title ink instead of the parchment
+   body ink — the same distinction the two tiers of loose text have always had. */
 [data-theme="light"] .on-art {
   color: var(--text-on-backdrop);
-  text-shadow: var(--on-art-halo);
 }
-/* THE GROUND, both themes — the exact register lists the ink flips below use, with
-   the `[data-theme="light"]` prefix dropped and nothing but the halo in the body.
-   Dark needs the ground and not the flip; light needs both. Yes, the two selectors
-   are twins: the alternative is a shadow on the SCOPE, and a container's shadow is
-   read by an auditor as an opaque background for everything inside it. */
-.on-art-scope
+[data-theme="light"] .on-art-title {
+  color: var(--text-on-backdrop-title);
+}
+
+/* THE WIZARD COLUMN IS LOOSE BY CONSTRUCTION, so its own vocabulary opts in once
+   here rather than at ~60 JSX sites. This is NOT the blanket coming back: there is
+   no surface allowlist and no exclusion — every class listed is a wizard-only
+   SEMANTIC register that renders in the wizard's open column, never inside one of
+   its plaques (a plaque's text has its own classes). The rendered probe in
+   `on-art-ink.spec.ts` is what holds it to that in both directions: it fails if any
+   of these ever appears on a surface, and it fails if any loose ink loses its
+   ground. `.field-label` / `.text-error` are shared classes, so they are reached
+   through `.wiz` and stay untouched in every modal and card elsewhere.
+
+   `.wiz-pager-cap` is deliberately NOT here. The page-turn caption only floats free
+   on the ≥1360px gutter layout — below it the pager folds into opaque pills — and
+   the ground and the ink flip have to arrive TOGETHER: giving it the halo at every
+   width, while its deep-gilt ink survives at narrow widths, makes axe resolve the
+   halo as a `#73613c` opaque ground behind `#3d2f12` ink and report 2.17:1 on seven
+   wizard surfaces. Its pair of rules lives in the gutter media query. */
+.wiz
   :is(
-    .text-text-muted,
-    .text-text-secondary,
-    .text-text-faint,
-    .opt-count,
-    .sec-meta,
-    .sec-count,
-    .field-help,
-    .wiz-pick-head,
+    .wiz-pick-label,
     .wiz-count,
-    .wiz-rubric,
     .wiz-asks-head,
     .wiz-asks-quiet,
-    .es-title,
-    .es-blurb,
-    .es-note
-  ):not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .badge,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *,
-    :where(
-      .opt-cell,
-      .info-card,
-      .badge,
-      .choice-picker-card,
-      .party-card,
-      .rcard,
-      .lvl-pick,
-      .lvl-card,
-      .wiz-entry,
-      .wiz-card,
-      .wiz-hero,
-      .wiz-path,
-      .wiz-abil,
-      .wiz-budget,
-      .wiz-asi,
-      .wiz-fork-tab,
-      .wiz-kept,
-      .wiz-summary,
-      .wiz-equip-item,
-      .wiz-asi-tile,
-      .wiz-done,
-      .vital,
-      .input,
-      .seg,
-      [class*="bg-"]
-    )
-  ) {
-  text-shadow: var(--on-art-halo);
-}
-.on-art-scope
-  :is(
+    .wiz-rubric,
     .field-label,
-    .opt-head-label,
+    .field-help,
     .choice-class-em,
-    .text-accent,
-    .sec-title,
-    .cause-head,
-    .wiz-pick-filter,
-    .wiz-count.full,
-    .wiz-pick-done .wiz-pick-label,
-    .es-eyebrow,
-    .es-title em,
-    .wiz-equip-coin
-  ):not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .badge,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-equip-gold,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *,
-    :where(
-      .opt-cell,
-      .info-card,
-      .badge,
-      .choice-picker-card,
-      .party-card,
-      .rcard,
-      .lvl-pick,
-      .lvl-card,
-      .wiz-entry,
-      .wiz-card,
-      .wiz-hero,
-      .wiz-path,
-      .wiz-abil,
-      .wiz-budget,
-      .wiz-asi,
-      .wiz-fork-tab,
-      .wiz-kept,
-      .wiz-summary,
-      .wiz-equip-item,
-      .wiz-equip-gold,
-      .wiz-asi-tile,
-      .wiz-done,
-      .vital,
-      .input,
-      .seg,
-      [class*="bg-"]
-    )
+    .wiz-equip-coin,
+    .wiz-pick-filter
   ) {
   text-shadow: var(--on-art-halo);
 }
-
-/* ON-ART SCOPE (light) — a region whose LOOSE content sits directly on the
-   candlelit backdrop (the creation-wizard column, the campaign hub, the settings
-   form, …). Loose text takes the illuminated-parchment ink + a crisp dark outline
-   so it reads on the busy art; structural labels/accents take the gilt title ink.
-
-   CORRECT-BY-CONSTRUCTION (owner, 2026-06-06 — "card text should NEVER be
-   considered on the backdrop in the first place"): the flip is EXCLUDED from
-   anything on a surface via `:not(:where(SURF) *, :where(SURF))` — so card text is
-   never matched, never flipped, and needs no reset/undo. The exclusion covers BOTH
-   a descendant of a surface (`:where(SURF) *`) AND an element that IS a surface
-   (`:where(SURF)`, e.g. a `bg-bg-tertiary text-text-secondary` box). `:where()`
-   carries ZERO specificity, so the exclusion adds nothing to the flip's weight —
-   no specificity arms race, no fragile reset layer to keep in sync. SURF = the
-   surface vocabulary repeated in the `:where()`s below. Self-enforced by
-   `tests/unit/on-art-scope.guard.test.ts`. [[light-on-backdrop-text]] */
 [data-theme="light"]
-  .on-art-scope
+  .wiz
   :is(
-    .text-text-muted,
-    .text-text-secondary,
-    .text-text-faint,
-    .opt-count,
-    .sec-meta,
-    .sec-count,
-    .field-help,
-    .wiz-pick-head,
+    .wiz-pick-label,
     .wiz-count,
-    .wiz-rubric,
     .wiz-asks-head,
     .wiz-asks-quiet,
-    .es-title,
-    .es-blurb,
-    .es-note
-  ):not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .badge,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *,
-    :where(
-      .opt-cell,
-      .info-card,
-      .badge,
-      .choice-picker-card,
-      .party-card,
-      .rcard,
-      .lvl-pick,
-      .lvl-card,
-      .wiz-entry,
-      .wiz-card,
-      .wiz-hero,
-      .wiz-path,
-      .wiz-abil,
-      .wiz-budget,
-      .wiz-asi,
-      .wiz-fork-tab,
-      .wiz-kept,
-      .wiz-summary,
-      .wiz-equip-item,
-      .wiz-asi-tile,
-      .wiz-done,
-      .vital,
-      .input,
-      .seg,
-      [class*="bg-"]
-    )
+    .wiz-rubric,
+    .field-help
   ) {
   color: var(--text-on-backdrop);
-  text-shadow: var(--on-art-halo);
 }
 [data-theme="light"]
-  .on-art-scope
-  :is(
-    .field-label,
-    .opt-head-label,
-    .choice-class-em,
-    .text-accent,
-    .sec-title,
-    .cause-head,
-    .wiz-pick-filter,
-    .wiz-count.full,
-    .wiz-pick-done .wiz-pick-label,
-    .es-eyebrow,
-    .es-title em,
-    .wiz-equip-coin
-  ):not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .badge,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-equip-gold,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *,
-    :where(
-      .opt-cell,
-      .info-card,
-      .badge,
-      .choice-picker-card,
-      .party-card,
-      .rcard,
-      .lvl-pick,
-      .lvl-card,
-      .wiz-entry,
-      .wiz-card,
-      .wiz-hero,
-      .wiz-path,
-      .wiz-abil,
-      .wiz-budget,
-      .wiz-asi,
-      .wiz-fork-tab,
-      .wiz-kept,
-      .wiz-summary,
-      .wiz-equip-item,
-      .wiz-equip-gold,
-      .wiz-asi-tile,
-      .wiz-done,
-      .vital,
-      .input,
-      .seg,
-      [class*="bg-"]
-    )
-  ) {
+  .wiz
+  :is(.field-label, .choice-class-em, .wiz-equip-coin, .wiz-pick-filter) {
   color: var(--text-on-backdrop-title);
+}
+/* The required-field star and inline errors ride the same column: light's deep
+   vermilion ink vanishes on the art exactly like the field text does. */
+.wiz .text-error {
   text-shadow: var(--on-art-halo);
+}
+[data-theme="light"] .wiz .text-error {
+  color: var(--text-on-backdrop-danger);
 }
 /* LIGHT FOIL — the gold-foil section titles + the treasury GP-total cartouche must
    read as CRISP struck gold on the candlelit backdrop, not the muddy dark smear the
@@ -645,7 +397,7 @@ svg.icon[stroke],
    muddy blur) plus a warm top sheen so the foil reads struck; self-back the cartouche
    with a warm plate + gilt edge so its gold no longer floats outlined on the art. Ink
    stays gold-leaf-100, so the on-art-ink gate + axe hold. */
-[data-theme="light"] .on-art-scope .sec-title {
+[data-theme="light"] .sec-title.on-art-title {
   text-shadow:
     0 0 1px rgba(20, 13, 3, 0.92),
     1px 1px 0 rgba(20, 13, 3, 0.88),
@@ -670,11 +422,6 @@ svg.icon[stroke],
    So the boundary stands. The one label that genuinely floats free (the gutter
    pager's caption) takes the ground by name at the width where it floats, and the
    two CONTROLS that sit on the scene take a plate. ── */
-.on-art-scope .party-dm-attach {
-  background-color: var(--on-art-plate);
-  border-color: color-mix(in oklab, var(--text-on-backdrop) 50%, transparent);
-  color: var(--text-on-backdrop);
-}
 
 /* A CONTROL ON THE BACKDROP SELF-BACKS, IN BOTH THEMES (DESIGN.md §13.5). The halo
    grounds INK; it cannot ground an EDGE, so this chip paints its own translucent
@@ -684,104 +431,18 @@ svg.icon[stroke],
    party-encounter monster ×N token badge on `.party-card`), which keeps its plain
    card-surface badge recipe. Same SURF exclusion (minus `.badge`, so the chip isn't
    self-excluded) as the ink flip below. */
-.on-art-scope
-  .badge.muted:not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *,
-    :where(
-      .opt-cell,
-      .info-card,
-      .choice-picker-card,
-      .party-card,
-      .rcard,
-      .lvl-pick,
-      .lvl-card,
-      .wiz-entry,
-      .wiz-card,
-      .wiz-hero,
-      .wiz-path,
-      .wiz-abil,
-      .wiz-budget,
-      .wiz-asi,
-      .wiz-fork-tab,
-      .wiz-kept,
-      .wiz-summary,
-      .wiz-equip-item,
-      .wiz-asi-tile,
-      .wiz-done,
-      .vital,
-      .input,
-      .seg,
-      [class*="bg-"]
-    )
-  ) {
+.badge.muted.on-art-chip {
   background: var(--on-art-plate);
   border-color: color-mix(in oklab, var(--gold-leaf-300) 58%, transparent);
-  color: var(--text-on-backdrop);
-  text-shadow: 0 1px 1px rgba(20, 13, 3, 0.5);
+  color: var(--on-art-plate-ink);
+  text-shadow: var(--on-art-plate-halo);
 }
 /* Error/required ink loose on the backdrop (the wizard's required-field "*" and
    inline error lines): the deep light-theme --semantic-danger ink vanishes on the
    dark art exactly like the field text, so it takes the lifted on-backdrop danger
    ink + the halo. Same surface exclusion — an error inside a card keeps the
    standard danger ink. */
-[data-theme="light"]
-  .on-art-scope
-  .text-error:not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .badge,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *
-  ) {
+[data-theme="light"] :is(.on-art, .on-art-title) .text-error {
   color: var(--text-on-backdrop-danger);
   text-shadow: var(--on-art-halo);
 }
@@ -791,221 +452,32 @@ svg.icon[stroke],
    parchment-tint frame, and the halo; hover answers in gilt. A PRESSED chip is
    excluded — its light recipe already paints an opaque gilt fill (a surface), so
    it keeps the deep AA ink. Same surface exclusion as the text flips. */
-[data-theme="light"]
-  .on-art-scope
-  .fchip:not([aria-pressed="true"]):not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .badge,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *
-  ) {
+.on-art-scope .fchip {
+  text-shadow: var(--on-art-halo);
+}
+[data-theme="light"] .on-art-scope .fchip:not([aria-pressed="true"]) {
   color: var(--text-on-backdrop);
   border-color: color-mix(in oklab, var(--text-on-backdrop) 45%, transparent);
   text-shadow: var(--on-art-halo);
 }
-[data-theme="light"]
-  .on-art-scope
-  .fchip:not([aria-pressed="true"])
-  .fc-count:not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .badge,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *
-  ) {
+[data-theme="light"] .on-art-scope .fchip:not([aria-pressed="true"]) .fc-count {
   color: inherit;
 }
-[data-theme="light"]
-  .on-art-scope
-  .fchip:not([aria-pressed="true"]):hover:not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .badge,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *
-  ) {
+[data-theme="light"] .on-art-scope .fchip:not([aria-pressed="true"]):hover {
   color: var(--text-on-backdrop-title);
   border-color: color-mix(in oklab, var(--text-on-backdrop-title) 70%, transparent);
 }
-/* Ghost/dashed affordances + TRANSPARENT muted chips loose on the backdrop take the
-   parchment ink + halo in light theme — the same on-art treatment every other loose
-   control gets. Targets the DMPC "attach a character" dashed button (`.party-dm-attach`)
-   and the `.badge.muted` ("X gp total" treasury chip): both paint a TRANSPARENT
-   background, so they read dark-on-dark on the candlelit backdrop in light theme — the
-   owner's "muddy text". `.badge` is treated as a SURFACE by the text flips above (its
-   label never flips), so a transparent `.badge.muted` needs this explicit flip. The
-   exclusion repeats the SURF list MINUS `.badge` (so the chip isn't self-excluded) —
-   a card-bound `.badge.muted` / button keeps its deep ink. Guarded by
-   tests/e2e/on-art-ink.spec.ts (campaign-hub + campaign-hub-encounter). */
-[data-theme="light"]
-  .on-art-scope
-  :is(.party-dm-attach, .badge.muted):not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *,
-    :where(
-      .opt-cell,
-      .info-card,
-      .choice-picker-card,
-      .party-card,
-      .rcard,
-      .lvl-pick,
-      .lvl-card,
-      .wiz-entry,
-      .wiz-card,
-      .wiz-hero,
-      .wiz-path,
-      .wiz-abil,
-      .wiz-budget,
-      .wiz-asi,
-      .wiz-fork-tab,
-      .wiz-kept,
-      .wiz-summary,
-      .wiz-equip-item,
-      .wiz-asi-tile,
-      .wiz-done,
-      .vital,
-      .input,
-      .seg,
-      [class*="bg-"]
-    )
-  ) {
-  color: var(--text-on-backdrop);
-  border-color: color-mix(in oklab, var(--text-on-backdrop) 45%, transparent);
-  text-shadow: var(--on-art-halo);
-}
-/* Inheritance hygiene — every surface establishes a clean no-outline baseline, so
-   text inside a card (or a card nested under a lit loose ancestor) can never INHERIT
-   the backdrop halo. This is the OTHER half of the one halo mechanism above: the
-   scope hands the halo down to every loose descendant, and this rule takes it back
-   at each surface boundary, where the surface itself is the ground. A FILLED button
-   is a surface too (its label sits on struck metal, not on the scene); the frameless
+/* NO SEPARATE LIGHT FLIP for these two controls any more. They are OBJECTS that
+   back themselves, and the recipe above is theme-agnostic because the plate's
+   ink and ground are tokens the theme re-derives (`--on-art-plate-ink` /
+   `--on-art-plate-halo`) — one recipe, two rooms, and no surface allowlist to rot. */
+/* NO INHERITANCE HYGIENE RULE ANY MORE, and that is the point. A surface used to
+   need `text-shadow: none` to take BACK a halo the scope had handed down to every
+   descendant — one list of surfaces to undo what another list of surfaces failed to
+   exclude. With the treatment opt-in on the leaf, nothing reaches into a surface, so
+   there is nothing to undo. (What follows is the historical note kept for the reader:
+   a FILLED button is a surface too; the frameless
    ghost tier is not, and keeps the halo. Theme-agnostic, because the halo is. */
-.on-art-scope
-  :is(
-    .opt-cell,
-    .info-card,
-    .badge,
-    .choice-picker-card,
-    .party-card,
-    .rcard,
-    .lvl-pick,
-    .lvl-card,
-    .wiz-entry,
-    .wiz-card,
-    .wiz-hero,
-    .wiz-path,
-    .wiz-abil,
-    .wiz-budget,
-    .wiz-asi,
-    .wiz-fork-tab,
-    .wiz-kept,
-    .wiz-summary,
-    .wiz-equip-item,
-    .wiz-asi-tile,
-    .wiz-done,
-    .vital,
-    .input,
-    .seg,
-    .btn:not(.ghost),
-    [class*="bg-"]
-  ) {
-  text-shadow: none;
-}
 /* SYSTEMATIC backdrop-text — every SHARED structural-text vocabulary that sits on
    the candlelit backdrop (not on a card) takes the illuminated-parchment ink in
    light theme, so the fix propagates app-wide from one place instead of per-page:
@@ -1614,85 +1086,17 @@ svg.icon[stroke],
    and vanished on the art (Img #3; owner again 2026-06-12). Repaint it like the
    on-art banner control: the gilt title ink + a gilt-tint frame + the same crisp
    dark halo `.on-art` text uses, so it reads as a framed gold button on the scene
-   (matching dark). TWO ways in, ONE recipe: the explicit `.on-art` leaf (for
-   context-fixed surfaces like the login hero) and AUTOMATICALLY for any ghost
-   button loose inside the canonical `.on-art-scope` (same zero-specificity
-   surface exclusion as the text flips, so a card-bound ghost button is never
-   touched). Light-only — no dark regression. */
-[data-theme="light"]
-  :is(
-    .btn.ghost.on-art,
-    .on-art-scope
-      .btn.ghost:not(
-        :where(
-            .opt-cell,
-            .info-card,
-            .badge,
-            .choice-picker-card,
-            .party-card,
-            .rcard,
-            .lvl-pick,
-            .lvl-card,
-            .wiz-entry,
-            .wiz-card,
-            .wiz-hero,
-            .wiz-path,
-            .wiz-abil,
-            .wiz-budget,
-            .wiz-asi,
-            .wiz-fork-tab,
-            .wiz-kept,
-            .wiz-summary,
-            .wiz-equip-item,
-            .wiz-asi-tile,
-            .wiz-done,
-            .vital,
-            .input,
-            .seg,
-            [class*="bg-"]
-          )
-          *
-      )
-  ) {
+   (matching dark). OPT-IN, like every other on-art treatment: a ghost that sits on
+   the scene says so with `.on-art`. It used to ALSO fire automatically for any
+   ghost inside `.on-art-scope` minus a hand-written surface list, which is the
+   mechanism that put cream ink on the campaign hub's ivory panels. Light-only —
+   no dark regression. */
+[data-theme="light"] .btn.ghost.on-art {
   color: var(--text-on-backdrop-title);
   border-color: color-mix(in oklab, var(--accent-primary-bright) 52%, transparent);
   text-shadow: var(--on-art-halo);
 }
-[data-theme="light"]
-  :is(
-    .btn.ghost.on-art,
-    .on-art-scope
-      .btn.ghost:not(
-        :where(
-            .opt-cell,
-            .info-card,
-            .badge,
-            .choice-picker-card,
-            .party-card,
-            .rcard,
-            .lvl-pick,
-            .lvl-card,
-            .wiz-entry,
-            .wiz-card,
-            .wiz-hero,
-            .wiz-path,
-            .wiz-abil,
-            .wiz-budget,
-            .wiz-asi,
-            .wiz-fork-tab,
-            .wiz-kept,
-            .wiz-summary,
-            .wiz-equip-item,
-            .wiz-asi-tile,
-            .wiz-done,
-            .vital,
-            .input,
-            .seg,
-            [class*="bg-"]
-          )
-          *
-      )
-  ):hover:not(:disabled):not(.loading) {
+[data-theme="light"] .btn.ghost.on-art:hover:not(:disabled):not(.loading) {
   border-color: var(--accent-primary-bright);
   background: color-mix(in oklab, #120c03 40%, transparent);
 }
@@ -13762,10 +13166,18 @@ button.party-avatar-btn:focus-visible {
   align-self: flex-start;
   padding: 3px 8px;
   border-radius: var(--r-chip);
-  border: 1px dashed var(--border-soft);
-  background: transparent;
+  /* A CONTROL LOOSE ON THE SCENE BACKS ITSELF, IN BOTH ROOMS. This affordance never
+     stands on a card — it is the DM banner's attach button, on the backdrop art — so
+     it paints its own translucent plate: a halo grounds INK, and it cannot ground the
+     dashed EDGE, which dissolved across the bright half of the art in both themes.
+     Plate, ink and ground are per-theme tokens, so one recipe serves both rooms (the
+     near-black scrim used to be theme-agnostic, which made it the only near-black
+     object on the cream hub, between two ivory panels). */
+  border: 1px dashed color-mix(in oklab, var(--on-art-plate-ink) 50%, transparent);
+  background-color: var(--on-art-plate);
   font-size: var(--text-2xs);
-  color: var(--text-secondary);
+  color: var(--on-art-plate-ink);
+  text-shadow: var(--on-art-plate-halo);
   cursor: pointer;
   transition:
     color var(--m-fast) var(--ease-standard),
@@ -17580,9 +16992,11 @@ button.econ-tok-filter:active .econ-disc {
 [data-theme="light"] .site-footer {
   background: linear-gradient(180deg, transparent, rgba(18, 12, 4, 0.4));
 }
-[data-theme="light"] :is(.site-footer-colophon, .site-footer-ver, .site-footer-link) {
+/* The colophon carries `.on-art` in the markup (SiteFooter.tsx), which is where the
+   ground and the parchment ink come from. This rule only re-states the ink for the
+   two spans the `<a>`/`<span>` inheritance does not reach. */
+[data-theme="light"] :is(.site-footer-ver, .site-footer-link) {
   color: var(--text-on-backdrop);
-  text-shadow: var(--on-art-halo);
 }
 [data-theme="light"] .site-footer-rule {
   background: linear-gradient(

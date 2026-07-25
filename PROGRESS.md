@@ -723,6 +723,45 @@ by 288 B gzipped (2,556 B raw)**. Nothing was ever broken by it (no ceiling was 
 `bundle-budget` is green either way); the number was simply not reproducible, and a budget figure
 that cannot be re-derived is worse than none.
 
+**AND THE HUB'S SECTIONS TOOK CREAM INK ON IVORY — the wave's own worst regression, caught by an
+independent design review.** Rebuilding Sessions · Shared notes · Access · DM tools · Danger zone on
+`.folio-panel.section-card` / `.hub-row` / `.hub-cell` moved them OUT of the on-art flip's
+hand-written surface-exclusion list, so in LIGHT theme the session summaries, the shared-note bodies,
+the note-row glyphs and `EDIT SUMMARY` computed `rgb(248,241,222)` + a four-layer dark halo **inside
+an opaque ivory panel** — 43 elements, on the owner's own campaign prose. Nothing caught it:
+`on-art-ink.spec.ts` only ever measured UNDER-grounding (is loose ink legible on the art) and the
+panel is a surface, so it skipped every one; and `on-art-scope.guard.test.ts` regex-matched that the
+string `.info-card` still appeared inside the exclusion, which it did, while no component in those
+sections used the class any more. Its own docstring named "re-leaking the outline onto the DM Tools
+card" as the regression it existed to prevent.
+
+**The fix is the mechanism, not the list.** "Is this text on a surface" is a fact about the rendered
+ancestor chain; no CSS selector can express it, so an exclusion list cannot be derived and rots on
+contact with the next surface class. The blanket is DELETED — five rules, ~9.9 KB of raw CSS — and
+the treatment is opt-in on the leaf: `.on-art` (body ink), `.on-art-title` (gilt), `.on-art-chip` /
+`--on-art-plate` for an object that backs itself. Shared components (`SectionHeader`, `Section`,
+`RunicEmptyState`) take an **`onArt` prop**, because the caller is the only thing that knows where it
+mounted them. One region-level opt-in remains — the wizard column, loose by construction, which names
+its OPEN-COLUMN registers positively so a plaque's text is simply not in the list.
+
+**And the vacuous guard is replaced by a rendered one, in the direction nobody was measuring:** in
+both themes, text whose ancestor chain paints a surface may carry neither the on-art ground nor the
+on-art ink. Mutation-proved (re-applying the treatment to `.section-card .sess-prose` turns both hub
+cells red). Its sibling floor was also wrong and is fixed: the contrast leg's new non-empty assertion
+floored the RESULT (`loose ink was found`), which fails 40 honest cells — plenty of surfaces are all
+panel — so it floors the WALK instead (`the probe reached text at all`).
+
+**Two second-order calls, both made deliberately.** (1) Access · DM tools · Danger zone had lost
+their `InfoCard` and their prose was floating on the artwork at 1.34–1.79:1, rescued only by the
+halo, beside siblings that KEPT their plates — so they take the same `framed` section material as
+Sessions/Shared notes/Treasury. Five framed panels on the hub now, not three; the hub is consistent
+with itself, which is what the wave set out to fix. (2) `--on-art-plate` was theme-agnostic
+near-black, making the DM attach affordance the only near-black object on the cream hub between two
+ivory panels. The plate, its ink and its ground are per-theme tokens now, so one recipe serves both
+rooms. **Measured after: the hub's panel prose is `rgb(46,35,16)` with `text-shadow: none` in light
+and its own inks with no halo in dark; the rubrics above the panels keep the gilt + foil outline;
+0 leaks and 0 contrast failures on every swept surface in both themes.**
+
 **Phase 8 closed the review, and the class the review named: our guards kept sampling the one place
 the work was done.** Two of the four defects were that pattern. `.cmp-seal` — the mark eight of the
 ten codex tabs lead every row with (509 rows on Features, 400 on Magic Items) — survived the

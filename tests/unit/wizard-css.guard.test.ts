@@ -210,22 +210,54 @@ describe("wizard pager cluster (fb3 mobile navigation)", () => {
   });
 });
 
-describe("on-art SURF exclusion covers the wizard surfaces", () => {
-  it(".lvl-pick is a SURF (chip ink never takes the backdrop treatment)", () => {
-    // The flip exclusion `:not(:where(… .lvl-pick …))` must name .lvl-pick.
-    expect(css).toMatch(
-      /\.on-art-scope :is\([^)]*\.text-text-secondary[^)]*\):not\( :where\([^)]*\.lvl-pick/
-    );
+describe("the wizard column takes the on-art treatment, and its PLAQUES do not", () => {
+  // The SURF exclusion these tests used to pin is gone. It was a hand-written list
+  // of surface classes subtracted from a blanket flip, and it is what put cream ink
+  // on the campaign hub's ivory panels the moment a section was rebuilt on a class
+  // nobody remembered to add. The wizard column is loose BY CONSTRUCTION, so its own
+  // open-column registers take the treatment from one region rule — and the plaque
+  // classes these tests were protecting are simply not in it, which is a fact the
+  // rule states positively instead of subtracting.
+  const REGION = /\.wiz\s*:is\(([^)]*)\)\s*\{\s*text-shadow: var\(--on-art-halo\)/;
+
+  it("the open-column registers are named in the region rule", () => {
+    const listed = REGION.exec(css)?.[1] ?? "";
+    expect(
+      listed,
+      "MISSING the wizard's on-art region rule (`.wiz :is(<open-column registers>) " +
+        "{ text-shadow: var(--on-art-halo) }`). Without it every label, count and " +
+        "rubric in creation and level-up loses its ground on the candlelit art."
+    ).not.toBe("");
+    for (const cls of [
+      ".wiz-pick-label",
+      ".wiz-count",
+      ".wiz-asks-head",
+      ".wiz-rubric",
+      ".field-label",
+      ".field-help",
+    ]) {
+      expect(
+        listed.includes(cls),
+        `${cls} is not in the wizard's on-art region rule`
+      ).toBe(true);
+    }
   });
 
-  it("the wizard entry/card/hero surfaces are SURFs too", () => {
-    for (const cls of [".wiz-entry", ".wiz-card", ".wiz-hero", ".wiz-abil"]) {
+  it("no PLAQUE class is in it — a surface grounds its own text", () => {
+    const listed = REGION.exec(css)?.[1] ?? "";
+    for (const cls of [
+      ".lvl-pick",
+      ".wiz-entry",
+      ".wiz-card",
+      ".wiz-hero",
+      ".wiz-abil",
+    ]) {
       expect(
-        new RegExp(
-          `\\.on-art-scope :is\\([^)]*\\.text-text-secondary[^)]*\\):not\\( :where\\([^)]*${cls.replace(".", "\\.")}`
-        ).test(css),
-        `${cls} missing from the SURF exclusion`
-      ).toBe(true);
+        listed.includes(cls),
+        `${cls} is a SURFACE — it paints a face and grounds the text on it. Putting ` +
+          `it in the on-art region rule paints backdrop ink on a plaque, which is the ` +
+          `exact defect the old exclusion list existed to prevent and then failed to.`
+      ).toBe(false);
     }
   });
 });
