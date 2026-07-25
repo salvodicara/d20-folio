@@ -22,6 +22,7 @@ import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { MonsterStatBlockCard } from "@/components/shared/MonsterStatBlockCard";
+import { monsterIdentity } from "@/components/shared/monster-identity";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { FamiliarEnhancementsCard } from "@/components/shared/FamiliarEnhancementsCard";
 import { getMonster } from "@/data/monsters";
@@ -174,6 +175,14 @@ export function FamiliarPanel() {
         open={statOpen && form != null}
         onClose={() => setStatOpen(false)}
         title={name ?? ""}
+        subtitle={
+          form
+            ? monsterIdentity(
+                { ...form, type: familiar.creatureType, typeTags: undefined },
+                t
+              )
+            : undefined
+        }
         size="md"
       >
         {form && (
