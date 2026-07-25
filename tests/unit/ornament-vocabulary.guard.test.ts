@@ -129,6 +129,138 @@ describe("the ornament vocabulary", () => {
         "Every struck member carries a light/shade pair: a shade group, the body, " +
           "and a glint group. Line-art gold is not this material."
       ).toBeGreaterThanOrEqual(3);
+
+      // ── THE CORNER IS A THREE-MEMBER UNIT, MEASURED OFF THE REFERENCE ─────
+      // What shipped first was ONE member — a symmetric fan of seven near-equal
+      // rays — which at 8× read as a whisk rather than as astral drafting. The
+      // reference's corner (`crop-lvl-panel-topleft.png`) is three: crossed BLADES
+      // with crescent-hook terminals overshooting the vertex, a PAIR of long
+      // quarter-arcs, and RAYS of markedly different lengths. Both facts below are
+      // DERIVED from the tile's own path data, not restated as a shape count.
+      const master = /<g id="a"[^>]*>([\s\S]*?)<\/g>/.exec(svg)?.[1] ?? "";
+      const paths = [...master.matchAll(/<path d="([^"]*)"\/>/g)].map((m) => m[1] ?? "");
+      expect(paths.length, "the corner master must hold the figure").toBeGreaterThan(6);
+
+      // A RAY is the straight tapering sliver `M x y L x y L x y Z`; an ARC / BLADE /
+      // HOOK is a closed lens between two quadratics. Both kinds must be present —
+      // a tile of only rays is the whisk, a tile of only curves has no fan.
+      const rays = paths.filter((d) => !d.includes("Q"));
+      const curved = paths.filter((d) => d.includes("Q"));
+      expect(
+        rays.length,
+        "the corner has no RAYS left — the fan is one of its three members"
+      ).toBeGreaterThanOrEqual(3);
+      expect(
+        curved.length,
+        "the corner is a fan of rays and nothing else. The reference's corner also " +
+          "carries a PAIR of long quarter-arcs and crescent-hook terminals — the " +
+          "members that give it scale and make it read as drafting, not a whisk."
+      ).toBeGreaterThanOrEqual(4);
+
+      // …and the rays' lengths are MARKEDLY different. Seven near-equal spokes is
+      // the exact figure this replaced, so the spread is the assertion.
+      const lengths = rays
+        .map((d) => {
+          const n = [...d.matchAll(/(-?[\d.]+) (-?[\d.]+)/g)].map((m) => [
+            Number(m[1]),
+            Number(m[2]),
+          ]);
+          if (n.length < 2) return 0;
+          const [ox, oy] = n[0] as [number, number];
+          const [tx, ty] = n[1] as [number, number];
+          return Math.hypot(tx - ox, ty - oy);
+        })
+        .filter((v) => v > 0)
+        .sort((x, y) => x - y);
+      const spread = (lengths.at(-1) ?? 0) / (lengths[0] ?? 1);
+      expect(
+        spread,
+        `The corner's rays are near-equal (longest / shortest = ${spread.toFixed(2)}). ` +
+          `The reference's are not: one runs nearly the panel's width and the shortest ` +
+          `a third of it, and that unevenness is what stops the fan reading as a whisk.`
+      ).toBeGreaterThan(1.9);
+    }
+  });
+
+  /**
+   * THE CARTOUCHE'S CENTRE IS THE BRIGHTEST POINT ON THE RULE.
+   *
+   * The reference's mid-edge event (`crop-lvl-winged-divider.png`) is a LUMINOUS
+   * V-fleur — the brightest thing on its rule by a wide margin — with the rail
+   * stopping and returning in scrolls either side of it. Ours shipped inverted: two
+   * dim leaf-slivers with a centre chevron DIMMER than its own wings, so the eye
+   * landed on the wings and the figure had no event at all.
+   *
+   * The check composites the tile's OWN fills — body over shade, then the glint at
+   * its declared opacity — and compares the two members' relative luminance. It
+   * cannot see whether the figure is beautiful; it can see which member the eye
+   * lands on, which is the thing that was wrong.
+   */
+  it("strikes the run cartouche's CENTRE brighter than its wings", () => {
+    for (const theme of ["dark", "light"] as const) {
+      const start = indexCss.indexOf(`[data-theme="${theme}"]`);
+      const block = indexCss.slice(start, indexCss.indexOf("\n}", start));
+      const raw =
+        /--mark-run: url\("data:image\/svg\+xml,([^"]*)"\)/.exec(block)?.[1] ?? "";
+      const svg = decodeURIComponent(raw);
+      const lum = (hex: string): number => {
+        const n = parseInt(hex.slice(1), 16);
+        const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+          const c = v / 255;
+          return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * (ch[0] ?? 0) + 0.7152 * (ch[1] ?? 0) + 0.0722 * (ch[2] ?? 0);
+      };
+      /** The composite a `use` group paints: its fill, veiled by the glint above it. */
+      const composite = (fill: string, glint: string, alpha: number): number =>
+        lum(fill) * (1 - alpha) + lum(glint) * alpha;
+      // Every `<g fill="#…" …><use href="#X"/></g>` pass, in paint order.
+      const passes = [
+        ...svg.matchAll(
+          /<g([^>]*?)fill="(#[0-9a-f]{6})"([^>]*?)><use href="#([wgcf])"\/><\/g>/g
+        ),
+      ].map((m) => {
+        const attrs = `${m[1] ?? ""}${m[3] ?? ""}`;
+        return {
+          fill: m[2] ?? "",
+          target: m[4] ?? "",
+          alpha: Number(/opacity="([\d.]+)"/.exec(attrs)?.[1] ?? 1),
+          // The SHADE and the GLINT are the translated passes; the BODY is the one
+          // struck in place. Reading "the first opaque pass" picks the shade and
+          // makes the whole comparison a comparison of two blacks — which is how the
+          // first draft of this check passed a mutation that brightened the wings.
+          shifted: /transform="translate\(/.test(attrs),
+        };
+      });
+      const body = (t: string) =>
+        passes.find((p) => p.target === t && p.alpha === 1 && !p.shifted);
+      const glint = (t: string) => passes.find((p) => p.target === t && p.alpha < 1);
+      const wing = body("g");
+      const wingGlint = glint("g");
+      const fleur = body("f");
+      const fleurGlint = glint("f");
+      expect(
+        Boolean(wing && fleur && wingGlint && fleurGlint),
+        `${theme}: the run tile must strike its WINGS and its CENTRE as separate ` +
+          `passes — that is the only way one can be brighter than the other.`
+      ).toBe(true);
+      const wingL = composite(
+        wing?.fill ?? "#000",
+        wingGlint?.fill ?? "#000",
+        wingGlint?.alpha ?? 0
+      );
+      const fleurL = composite(
+        fleur?.fill ?? "#000",
+        fleurGlint?.fill ?? "#000",
+        fleurGlint?.alpha ?? 0
+      );
+      expect(
+        fleurL / Math.max(wingL, 0.0001),
+        `${theme}: the cartouche's CENTRE (${fleurL.toFixed(3)}) is not clearly ` +
+          `brighter than its wings (${wingL.toFixed(3)}). The reference's mid-edge ` +
+          `event is the brightest thing on its rule; ours read as two slivers with a ` +
+          `dimmer chevron between them, so the figure had no event at all.`
+      ).toBeGreaterThan(1.6);
     }
   });
 

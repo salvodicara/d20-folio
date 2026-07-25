@@ -1899,19 +1899,30 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
   bullet; a marker is ink colour; a pip is a square facet. The one surviving `rotate(45deg)` in
   the chrome is the `<select>` caret — a chevron drawn from two borders, the standard
   form-control idiom, guard-pinned as the only one.
-- **THE MARK (`--mark-tl/tr/bl/br` + `--mark-run`) — the one ornament.** Two members of one vector
+- **THE MARK (`--mark-tl/tr/bl/br` + `--mark-run`) — the one ornament.** Two figures of one vector
   family, both drawn as the LINE'S OWN LOCAL FORM, never as a second rail beside it:
-  - **the corner terminal** — a glint fan of seven hair-thin tapering rays, anchored ON the corner
-    arc's inner edge (never floating, never crossing the vertex) and radiating inward across a 60°
-    arc that stays clear of both rails. It contributes no run line at all: the host's own border is
-    the only line at that corner.
-  - **the run cartouche** — a symmetric interlace at the exact midpoint of the bottom run. Pointed
-    **leaves**, not strokes: a leaf is a closed lens between two arcs, so it tapers to a true point
-    at both ends, which is what makes struck goldwork read struck. Two leaves per side weave over
-    and under the rail and converge on a small descending chevron. The rail passes through
-    unbroken — one line, wearing a different form for the length of the mark. It mounts only at
-    ≥1024px: ornament coverage is capped at a third of the run, the four fans already spend ~68px
-    of it, and below that width the 216px figure would breach the cap and crowd the plate's ink.
+  - **the corner terminal — a THREE-MEMBER unit** (56×56), measured off the reference's own corner
+    rather than invented: **crossed blades** whose crescent-hook terminals overshoot the vertex
+    (each hook begins AT the knot, so nothing in the figure floats free of it), a **pair of long
+    quarter-arcs** at different radii and different chords so they cross rather than sit
+    concentric, and **rays of markedly different lengths** — one running nearly the width of the
+    figure, the shortest a third of it. The unevenness is the point: a symmetric fan of near-equal
+    spokes reads at 8× as a whisk, not as astral drafting, and that is what the first strike was.
+    Every stroke is hair-thin and **monoline** — the variation is LENGTH, never weight. It
+    contributes no run line at all: the host's own border is the only line at that corner.
+  - **the run cartouche — wings around a LUMINOUS CENTRE.** A symmetric interlace at the exact
+    midpoint of the bottom run. Pointed **leaves**, not strokes: a leaf is a closed lens between
+    two arcs, so it tapers to a true point at both ends, which is what makes struck goldwork read
+    struck. Two leaves per side weave over and under the rail — the weave is VISIBLE because the
+    rail is re-struck over the leaf at four crossings, in its own metal and its own 2px band, so
+    the leaf plainly passes behind it. They converge on a **V-fleur**: two barbed prongs rising
+    from one node with a tapering tail descending past the rail, struck in the brightest metal the
+    tile carries. The centre is the brightest point on the rule (the reference's mid-edge event is
+    the brightest thing on its own rule; ours shipped inverted, a centre chevron dimmer than its
+    wings, so the figure had no event at all). The rail passes through unbroken — one line, wearing
+    a different form for the length of the mark. It mounts only at ≥1024px: ornament coverage is
+    capped at a third of the run, and below that width the 216px figure would breach the cap and
+    crowd the plate's ink.
 
   **The metal is dimensional, not line-art.** Every struck member carries a light/shade pair, and
   the geometry is authored once, **mirrored** per corner, and **toned after the mirror, in screen
@@ -1921,17 +1932,31 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
   logic, the umber shadow wall **above**-left and the warm-cream understroke **below**-right,
   because on vellum a figure is pressed into the page rather than lit off it.
 
-  **Mechanism:** fixed-size per-corner SVG background layers on a decorative overlay pseudo.
+  **Mechanism:** fixed-size per-corner SVG background layers on a decorative overlay pseudo. The
+  overlay bleeds **6px** past the plate on three sides so the crescent terminals can overshoot the
+  vertex, and `--mark-drop` seats the cartouche's centreline on the rail — **20 + border/2 − bleed**,
+  which is 15px. The subtlety worth knowing: an absolutely-positioned child's `inset` resolves
+  against its ancestor's PADDING box, not its border box, and getting that wrong is what left the
+  shipped cartouche floating 2px above the rule it was supposed to interrupt.
   **Never `border-image`** (its proportional tile-shrink mis-seats the centreline) and **never a
   layout border on the pseudo** (a transparent 48px border forces a 96px minimum box). Decor only:
   `pointer-events: none`, no layout, no animation. The overlay hangs `--mark-drop` past the plate's
   foot so the cartouche's underside can paint — a background is clipped to its own box — which is
   why **a mark-bearing host must never carry `overflow: hidden`**.
 
-  **Measured, dark, on the 1184px masthead:** ornament ink peaks at **2.40×** the rule it
-  interrupts (the reference measures 2.0–2.5×) and covers **19–24%** of the run, against the 34%
-  cap. In light the mark's contrast against the plate is 1.59× the rule's — the daylight sibling of
-  the same relationship.
+  **Measured on the rendered 1184px masthead** (the mark diffed against the same plate with the
+  overlay hidden, so only the mark's own pixels are read):
+
+  |       | corner peak    | CARTOUCHE-CENTRE peak | coverage of the run |
+  | ----- | -------------- | --------------------- | ------------------- |
+  | dark  | 5.81× the rule | **6.65×**             | 14.4% (cap 34%)     |
+  | light | 9.50× the rule | **10.93×**            | 15.2% (cap 34%)     |
+
+  The relationship that matters is the one in bold: **the peak is on the cartouche's centre, not on
+  a corner.** It used to be the other way round in both themes (dark 6.35× corner vs 5.67× centre),
+  which is the measurement of "the figure has no event". Pinned by
+  `ornament-vocabulary.guard.test.ts`, which composites the tile's own fills rather than trusting a
+  colour name.
 
 - **SELECTION is the frame metal, and it is spent ONCE.** The `--frame-selected` silver-over-bronze
   gradient (from the per-theme `--metal-silver` / `--metal-bronze` pair) marks the **wizard hero
