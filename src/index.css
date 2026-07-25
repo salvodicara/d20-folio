@@ -186,7 +186,8 @@
        hover     → the metal warms toward gold, a candle WASH crosses the face
        pressed   → the wash darkens (light: whitens) and the plate takes 1px in
        selected  → the metal is the accent, the wash is the accent, the ink lifts
-       disabled  → the metal softens, the face flattens, the label goes muted
+       disabled  → the face flattens and desaturates, the label goes muted
+                   (`.btn:disabled` — a recipe, not a metal, so it has no token)
 
      The WASH is the whole mechanism: one translucent veil composited over the
      plate's own face, never a second gradient authored per component. That is
@@ -197,7 +198,6 @@
      does not grow. ── */
   --state-metal-hover: var(--border-accent);
   --state-metal-selected: var(--accent-primary);
-  --state-metal-disabled: var(--border-soft);
   /* The three WASHES are per-theme, because a veil is not an inversion. The same
      alpha is a different STEP on near-black than it is on ivory: 10% of the warm
      gold lifts the dark plate by ΔL* 5.9 and the ivory one by ΔL* 3.4. The two

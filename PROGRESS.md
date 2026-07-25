@@ -606,6 +606,16 @@ re-framing ONE low-cardinality class still fits — putting the metal back on `.
 boxes and passes the census. The second is why the census is a companion to the stylesheet guards
 and not a replacement: the unit rail guard catches exactly that case.
 
+Phase 8 also carries the over-engineering sweep — `--state-metal-disabled` (zero consumers; disabled
+is a recipe, not a metal), `.rule-below` (zero call sites), `--mark-inset` (a one-value variable read
+twice in one rule), the last-tracker-row restating the whole spine gradient to drop one hairline
+layer, a no-op escape `replace` in the theme sweep, the rail's bespoke seat expect folded into the
+QUIET tier table, and the action log's attribute-less wrapper `<div>`. **Budget: CSS 74,766 → 74,601
+B gzipped (−165 B).** Three mutation proofs, each applied, caught and reverted: restoring
+`.cmp-seal`'s border fails both the new UNFRAMED entry and the new census cell at exactly 49/23;
+`.uc.is-open { border-left-width: 4px }` now fails the L3 sweep; deleting the light pact ink fails
+the new slot-label contrast guard at 2.97:1.
+
 **Phase 7 re-derived the light sibling against the finished system, and pinned all of it.** What
 light now re-derives rather than inherits, each for a stated reason: the dome (wider and softer — an
 ivory plate bands sooner), the groove and the cast (warm umber, never black or grey), the state
@@ -715,7 +725,7 @@ list row (the action rows, the codex index, the log, the treasury) became framel
 wash on hover and a hairline-bounded WASH BAND when selected; the grouping rail (`.folio-panel`)
 gave up its metal entirely, which is what buys back the nesting level the interactive tiles standing
 on it need; and the four remaining raw-`border-t` dividers in markup collapsed onto the one hairline
-behind the `.rule-above` / `.rule-below` utilities. **Framed nesting is 2 on every surface**, down
+behind the `.rule-above` utility. **Framed nesting is 2 on every surface**, down
 from 3, and the count of framed boxes the user can actually SEE fell: compendium **114 → 18**,
 cockpit **261 → 83** (42 of those 83 are the per-action commit CTAs — content, not chrome; the
 chrome frames went 219 → 41), campaign hub **55 → 41**, roster **14 → 8**, settings **18 → 10**. The

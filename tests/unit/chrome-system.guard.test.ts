@@ -210,24 +210,24 @@ describe("the chrome system — the material's tokens", () => {
   });
 
   it("wears TWO tiers, and the earned registers take the far one", () => {
-    const QUIET: [string, string][] = [
-      [".ch-card", "\\.ch-card \\{"],
-      [".info-card", "\\.info-card \\{"],
-      [".party-card", "\\.party-card \\{"],
+    // `[label, rule-opener, binds the quiet metal]`. Everything on the quiet tier
+    // takes the NEAR seat; only the PLATES also take the metal — the rail is a
+    // MATERIAL, so it keeps the seat (it is still an object laid on the page) and
+    // gives the metal up entirely, which the L1 block below pins.
+    const QUIET: [string, string, boolean][] = [
+      [".ch-card", "\\.ch-card \\{", true],
+      [".info-card", "\\.info-card \\{", true],
+      [".party-card", "\\.party-card \\{", true],
+      [".folio-panel", "\\.folio-panel \\{", false],
     ];
-    // The rail is a MATERIAL, not a plate: it keeps the seat (it is still an
-    // object laid on the page) and gives up the metal entirely.
-    expect(
-      /\.folio-panel \{[^}]*var\(--edge-seat\)/.test(folio),
-      "MISSING the seat on `.folio-panel` — a frameless rail still sits in its own " +
-        "moat and casts; that is what keeps it an object on the page."
-    ).toBe(true);
-    for (const [label, open] of QUIET) {
+    for (const [label, open, metal] of QUIET) {
       expect(
         new RegExp(`${open}[^}]*var\\(--edge-seat\\)`).test(folio),
         `MISSING the QUIET seat on \`${label}\`. Ordinary plates are the reference's ` +
-          `sibling panels: the same geometry as the active one, quieter light.`
+          `sibling panels: the same geometry as the active one, quieter light — and a ` +
+          `frameless rail still sits in its own moat and casts.`
       ).toBe(true);
+      if (!metal) continue;
       expect(
         new RegExp(`${open}[^}]*border: 1px solid var\\(--edge-metal\\)`).test(folio),
         `\`${label}\` must bind 1px of \`var(--edge-metal)\` — the quiet tier's metal.`
@@ -525,9 +525,7 @@ describe("the chrome system — L1, a frame means container or interactive", () 
       if (!/^\[data-theme="(dark|light)"\]/.test(sel)) continue;
       // Only the recipes L1 unframed, matched on the selector's SUBJECT.
       const subject = sel.split(/\s+/).pop() ?? "";
-      const hit = UNFRAMED.find((u) =>
-        new RegExp(`${u.replace(/\\\\/g, "\\")}(?![\\w-])`).test(subject)
-      );
+      const hit = UNFRAMED.find((u) => new RegExp(`${u}(?![\\w-])`).test(subject));
       if (!hit) continue;
       const decls = body ?? "";
       const border =
@@ -616,14 +614,12 @@ describe("the chrome system — L1, a frame means container or interactive", () 
   });
 
   it("ships the one divider utility, and the ghost tier is frameless", () => {
-    for (const util of ["\\.rule-above", "\\.rule-below"]) {
-      expect(
-        new RegExp(`${util} \\{[^}]*var\\(--hairline\\)`).test(folio),
-        `MISSING the \`${util}\` divider utility. Markup that needs a separator on ` +
-          `an element it does not otherwise style must reach for the ONE hairline, ` +
-          `never a raw \`border-top\`.`
-      ).toBe(true);
-    }
+    expect(
+      /\.rule-above \{[^}]*var\(--hairline\)/.test(folio),
+      "MISSING the `.rule-above` divider utility. Markup that needs a separator on " +
+        "an element it does not otherwise style must reach for the ONE hairline, " +
+        "never a raw `border-top`."
+    ).toBe(true);
     const ghost = ruleBody("\\.btn\\.ghost");
     expect(
       /border:\s*1px solid transparent;/.test(ghost),
@@ -651,19 +647,16 @@ describe("the chrome system — L1, a frame means container or interactive", () 
  * or a spine cannot quietly grow when it opens, and the four body recipes that do
  * resize are named exemptions with a stated reason.
  *
- * And the ladder itself is the point: five rungs in tokens (index.css §04b), so
- * fifty controls share one grammar instead of fifty bespoke hovers. The rungs are
- * `--state-metal-hover` / `--state-metal-selected` / `--state-metal-disabled` and
- * the two washes; the wash is ONE translucent veil composited over the plate's own
- * face, never a second gradient authored per component.
+ * And the ladder itself is the point: the rungs live in tokens (index.css §04b), so
+ * fifty controls share one grammar instead of fifty bespoke hovers — the hover and
+ * selected metals plus the three washes; the wash is ONE translucent veil composited
+ * over the plate's own face, never a second gradient authored per component.
+ * (Disabled is a rung too, but not a METAL: it is the desaturate-and-flatten recipe
+ * on `:disabled`, so the ladder holds no token for it.)
  */
 describe("the chrome system — L3, state changes light and colour only", () => {
   /** The metals resolve through per-theme tokens, so they live at :root once. */
-  const LADDER_ROOT = [
-    "--state-metal-hover",
-    "--state-metal-selected",
-    "--state-metal-disabled",
-  ] as const;
+  const LADDER_ROOT = ["--state-metal-hover", "--state-metal-selected"] as const;
   /** The VEILS cannot be shared — see the assertion below. */
   const LADDER_THEMED = [
     "--state-wash-hover",

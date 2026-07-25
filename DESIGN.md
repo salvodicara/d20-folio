@@ -606,7 +606,7 @@ The consequences, stated plainly, because each is a place a border wants to come
   reeded milled rim is the owner-picked strike itself (2026-07-03) rather than chrome around it.
 - **A separator is the one hairline**, painted and inset — never a `border-top`, which is a hard,
   wall-to-wall, unfading line and reads as the underside of a frame. Markup that needs a divider on
-  an element it does not otherwise style takes `.rule-above` / `.rule-below`.
+  an element it does not otherwise style takes `.rule-above`.
 - **A transparent border is the geometry-freezing idiom.** Where an element has an interactive or
   selected strike that shows metal, the resting strike declares `1px solid transparent` so the
   colour arrives without a single glyph moving (L3).
@@ -685,13 +685,13 @@ border.
 L3 in practice. The rungs live as tokens in `src/index.css` §04b and every interactive family
 consumes them, so fifty controls share one grammar instead of fifty bespoke hovers.
 
-| rung         | metal                    | face                                             | ink             |
-| ------------ | ------------------------ | ------------------------------------------------ | --------------- |
-| **rest**     | the tier's own           | the plate's own                                  | the register's  |
-| **hover**    | `--state-metal-hover`    | `+ --state-wash-hover` (candle veil)             | lifts one step  |
-| **pressed**  | unchanged                | `+ --state-wash-pressed` (per theme)             | unchanged       |
-| **selected** | `--state-metal-selected` | `+ --state-wash-selected`, or the signature face | `--accent-text` |
-| **disabled** | `--state-metal-disabled` | flat                                             | `--text-muted`  |
+| rung         | metal                       | face                                             | ink             |
+| ------------ | --------------------------- | ------------------------------------------------ | --------------- |
+| **rest**     | the tier's own              | the plate's own                                  | the register's  |
+| **hover**    | `--state-metal-hover`       | `+ --state-wash-hover` (candle veil)             | lifts one step  |
+| **pressed**  | unchanged                   | `+ --state-wash-pressed` (per theme)             | unchanged       |
+| **selected** | `--state-metal-selected`    | `+ --state-wash-selected`, or the signature face | `--accent-text` |
+| **disabled** | the tier's own, desaturated | flat (`filter: saturate(.4)`, no struck light)   | `--text-muted`  |
 
 The **wash** is the whole mechanism: ONE translucent veil composited over the plate's own face,
 never a second gradient authored per component.
@@ -1752,9 +1752,10 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
   count is plain numerals in the rubric row (L1: a number you cannot act on is not an object);
   the disclosure knob is the only framed thing in that row, because it is the only thing a
   pointer can act on.
-- **THE DIVIDER UTILITY.** `.rule-above` / `.rule-below` paint the hairline on an element markup
-  does not otherwise style. They are the ONLY sanctioned separator in markup: a `border-t`
-  Tailwind utility is a hard, wall-to-wall, unfading line, which is the underside of a frame.
+- **THE DIVIDER UTILITY.** `.rule-above` paints the hairline on an element markup does not
+  otherwise style. It is the ONLY sanctioned separator in markup: a `border-t` Tailwind utility is
+  a hard, wall-to-wall, unfading line, which is the underside of a frame. There is no
+  `.rule-below`: every separator in the app is "above the group that follows".
 - **NO ROTATED-DIAMOND FAMILY.** The 18 lapidary lozenges that shipped as rubric markers, rail
   heads, list bullets, divider nodes, charge pips and menu markers are gone. A bullet is a
   bullet; a marker is ink colour; a pip is a square facet. The one surviving `rotate(45deg)` in

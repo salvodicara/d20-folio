@@ -170,16 +170,13 @@ svg.icon[stroke],
   background: var(--hairline);
 }
 /* THE DIVIDER UTILITY — the one hairline wherever markup needs a separator on an
-   element it does not otherwise style. `.rule-above` / `.rule-below` are the only
-   sanctioned way to separate two groups inside a container: never a `border-top`,
+   element it does not otherwise style. `.rule-above` is the only sanctioned way
+   to separate two groups inside a container: never a `border-top`,
    which is a hard, wall-to-wall, unfading line and reads as the underside of a
    frame. Whitespace comes first; this is for the two-groups-of-different-kind
    case (DESIGN.md §5, "THE HAIRLINE"). */
 .rule-above {
   background: var(--hairline) top center / 100% 1px no-repeat;
-}
-.rule-below {
-  background: var(--hairline) bottom center / 100% 1px no-repeat;
 }
 /* ── Header-as-disclosure (owner-ratified 2026-07-24) — the opt-in SectionHeader
    toggle for on-demand reference sections (the Play tab's collapsed-by-default
@@ -6950,16 +6947,15 @@ button.trk-pip:active {
    the masthead has both free and takes `::before`. */
 .page-head.framed,
 .folio-panel.gilt-frame {
-  --mark-inset: 2px;
   --mark-drop: 17px;
 }
 .page-head.framed::before,
 .folio-panel.gilt-frame::after {
   content: "";
   position: absolute;
-  /* the plate's OUTER edge on three sides, dropped past the foot on the fourth */
-  inset: calc(-1 * var(--mark-inset)) calc(-1 * var(--mark-inset))
-    calc(-1 * (var(--mark-inset) + var(--mark-drop)));
+  /* the plate's OUTER edge on three sides (2px of bleed so the fan's outermost
+     ray is not clipped), dropped past the foot on the fourth */
+  inset: -2px -2px calc(-2px - var(--mark-drop));
   z-index: 1;
   pointer-events: none;
   background-image: var(--mark-tl), var(--mark-tr), var(--mark-bl), var(--mark-br);
@@ -12958,8 +12954,13 @@ textarea.input.sess-notes-edit {
     auto,
     calc(100% - 2 * var(--sp-3)) 1px;
 }
+/* The last row has nothing below it to separate, so it drops the hairline LAYER
+   rather than restating the spine gradient — a second copy of the spine is the
+   kind of duplicate that drifts the moment one of them is re-tuned. */
 .tr-row:last-child {
-  background-image: linear-gradient(90deg, var(--tr-c) 0 3px, transparent 3px);
+  background-size:
+    auto,
+    0 0;
 }
 .tr-row[data-color="verdigris"] {
   --tr-c: var(--verdigris-300);
