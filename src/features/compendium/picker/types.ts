@@ -205,6 +205,13 @@ export interface CompendiumPickerSpec<T> {
    * `onAdd` receives the real unit count. Honoured only with `supportsQuantity`.
    */
   quantityStep?: (entry: T) => number;
+  /**
+   * The stepper's MAXIMUM for an entry (default 9999) — so an out-of-range count
+   * is untypeable, not clamped after the fact (golden rule 20). Symmetric with
+   * {@link quantityStep}; honoured only with `supportsQuantity` (e.g. the encounter
+   * picker caps a monster group at 20).
+   */
+  quantityMax?: (entry: T) => number;
   /** Close the host modal after a successful add (magic items do). */
   closeOnAdd?: boolean;
   /** Footer add-button label (defaults to common.addToCharacter). */

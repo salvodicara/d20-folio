@@ -30,7 +30,7 @@ beforeAll(async () => {
 describe("AddMonsterForm — add() resets every field, not just name/count/notes (B25)", () => {
   it("clears the whole form (incl. ac/maxHp/initiative) back to its defaults on a successful add", () => {
     const onAdd = vi.fn();
-    render(<AddMonsterForm onAdd={onAdd} onClose={vi.fn()} />);
+    render(<AddMonsterForm onAdd={onAdd} />);
 
     fireEvent.change(screen.getByLabelText("Monster name"), {
       target: { value: "Ogre" },

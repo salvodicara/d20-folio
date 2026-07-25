@@ -335,7 +335,7 @@ export default defineConfig({
             if (/[\\/]data[\\/](feats|invocations|maneuvers|metamagic)\.ts$/.test(id))
               return "srd-class-options"; // feats + class-option pools
             // The bestiary corpus — reachable ONLY through the lazy compendium specs
-            // barrel (+ the future encounter picker). It must never fall into the
+            // barrel (+ the encounter-bestiary seam). It must never fall into the
             // eagerly-reachable srd-content chunk; the bundle-budget ratchet is the guard.
             if (/[\\/]src[\\/]data[\\/]monsters[\\/]/.test(id)) return "srd-monsters";
             // Heavy cockpit/compendium-only content: spells + magic-items +

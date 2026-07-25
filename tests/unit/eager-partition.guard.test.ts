@@ -20,7 +20,7 @@
  *    used to be a barrel TLA — moved out because a TLA fragmented the eager closure).
  */
 import { describe, it, expect } from "vitest";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -55,5 +55,44 @@ describe("eager-partition tripwires", () => {
     expect(read("src/features/compendium/picker/index.ts")).not.toMatch(
       /from\s+["']\.\/specs["']/
     );
+  });
+
+  it("the campaigns feature reaches the bestiary only through the lazy encounter-bestiary seam", () => {
+    // DERIVED input (rule 13): sweep EVERY file in the campaigns dir — a moved/renamed
+    // file can't slip past a hand-list. Only `encounter-bestiary.tsx` may statically
+    // import the corpus/monster spec; every OTHER file must reach it via a dynamic
+    // `import("./encounter-bestiary")`, and every such dynamic import must be paired
+    // with the `ensureSrdKind("monster")` catalogue gate (both lazy doors).
+    //
+    // Blind spot (rule 13): this scans one directory's DIRECT import literals — it
+    // cannot see a TRANSITIVE leak (a campaigns file importing a shared module that
+    // itself imports the corpus) nor an alias-renamed path. The compendium-side D-2
+    // tripwires and the precache ceiling remain the backstops. Mutation-proved by
+    // temporarily adding `import { MONSTERS } from "@/data/monsters"` to Party.tsx.
+    // The seam is TWO sibling files, both reachable only from the lazy chunk:
+    // `encounter-bestiary.tsx` (the components) + `encounter-monster-spec.ts` (the
+    // corpus-bearing spec factory, split out so the .tsx stays component-only for
+    // react-refresh). Only these may statically reach the corpus / monster spec.
+    const SEAM = new Set(["encounter-bestiary.tsx", "encounter-monster-spec.ts"]);
+    const dir = join(REPO_ROOT, "src/features/campaigns");
+    const files = readdirSync(dir).filter((f) => /\.(ts|tsx)$/.test(f));
+    expect(files.length).toBeGreaterThan(10); // derived set non-empty (a moved dir can't empty it)
+    for (const f of files) {
+      const src = read(`src/features/campaigns/${f}`);
+      if (!SEAM.has(f)) {
+        expect(src, f).not.toMatch(/from\s+["']@\/data\/monsters/);
+        expect(src, f).not.toMatch(/picker\/specs\/monster/);
+        // Only `import("./encounter-bestiary")` (dynamic) is allowed elsewhere; a
+        // static import of either seam file would pull the corpus into an eager path.
+        expect(src, f).not.toMatch(/from\s+["']\.\/encounter-bestiary["']/);
+        expect(src, f).not.toMatch(/from\s+["']\.\/encounter-monster-spec["']/);
+      }
+      // BOTH lazy factories must pair the dynamic import with the catalogue gate.
+      if (/import\(["']\.\/encounter-bestiary["']\)/.test(src)) {
+        expect(src, `${f}: dynamic import must gate on ensureSrdKind("monster")`).toMatch(
+          /ensureSrdKind\(["']monster["']\)/
+        );
+      }
+    }
   });
 });

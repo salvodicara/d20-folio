@@ -30,11 +30,14 @@
  * only a PURE REFERENCE per PC; the live view is composed by {@link buildEncounterView}.
  */
 
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Crown, Lock, Plus, Swords, UserRound } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
+import { ModalShell } from "@/components/shared/ModalShell";
+import { FolioLoader } from "@/components/shared/FolioLoader";
+import { ensureSrdKind } from "@/i18n";
 import { Portrait } from "@/components/shared/Portrait";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { PortraitLightbox } from "@/components/shared/PortraitLightbox";
@@ -78,7 +81,6 @@ import {
 import { useLiftReorder } from "@/features/campaigns/use-lift-reorder";
 import { derivePcLive } from "@/features/campaigns/party-stats";
 import {
-  AddMonsterForm,
   DmControlBanner,
   EncounterRoundBar,
   EncounterTurnControls,
@@ -105,6 +107,17 @@ import {
   snapshotClasses,
   snapshotTotalLevel,
 } from "@/features/campaigns/member-snapshot";
+
+// The bestiary surface is the ONE lazy seam (docs/ARCHITECTURE.md → "The lazy
+// SRD-kind tier"): the router.tsx D-2 pattern — the chunk fetch and the `monster`
+// catalogue load run in parallel, and `ensureSrdKind` marks the kind resident so a
+// later locale switch carries the corpus. The campaign chunk gains only this lazy
+// wrapper; the eager closure gains zero corpus bytes (the eager-partition tripwire).
+const EncounterAddMonsterModal = lazy(() =>
+  Promise.all([import("./encounter-bestiary"), ensureSrdKind("monster")]).then(([m]) => ({
+    default: m.EncounterAddMonsterModal,
+  }))
+);
 
 export function Party() {
   const { t } = useTranslation();
@@ -498,10 +511,10 @@ function CombatLayer({
   onEnd: () => void;
 }) {
   const { t } = useTranslation();
-  // The add-monster disclosure lives HERE (not inside the form) so its trigger can ride
-  // the banner's right control cluster next to Begin-turns while the form body expands
-  // full-width below the banner. DM-only; reinforcements are addable all through the fight.
-  const [addOpen, setAddOpen] = useState(false);
+  // The Add-monster trigger rides the banner's right control cluster next to Begin-turns;
+  // it opens the bestiary picker MODAL (Bestiary + Custom tabs). DM-only; reinforcements
+  // are addable all through the fight. The chunk + catalogue fetch happens on FIRST open.
+  const [pickerOpen, setPickerOpen] = useState(false);
   // The FULL live turn order INCLUDING hidden (hidden is a display filter, not a turn
   // filter), so the DM and a player step the identical order and a staged ambush still
   // takes its turn.
@@ -597,7 +610,17 @@ function CombatLayer({
   const addMonsterReinforcement = (
     input: Parameters<typeof addReinforcement>[1]
   ): void => {
-    if (apply) apply((e) => addReinforcement(e, input, pcLiveById));
+    if (!apply) return;
+    apply((e) => addReinforcement(e, input, pcLiveById));
+    // The commit lands BEHIND the modal (which stays open for the next pick), so a
+    // toast confirms it — the same store the turn-advance error path uses.
+    useToastStore.getState().showToast({
+      message: t("campaignHub.encounterAddedToast", {
+        name: input.name,
+        count: Math.max(1, Math.floor(input.count)),
+      }),
+      duration: 3000,
+    });
   };
 
   // C3 item 3 — DM LIFT-&-FOLLOW reorder of the FROZEN order. Available ONLY to the DM
@@ -666,9 +689,9 @@ function CombatLayer({
       {/* FIX 1 — the DM control banner heads the combat layer too: identity (every
           viewer) + the DM-only assembly controls, ONE tight row: the Add-monster trigger
           and (during the gathering phase) Begin-turns sit as a right-aligned pair on the
-          banner. The Add-monster FORM (when open) drops full-width below as the banner's
-          extra; Begin-turns is hard-disabled until everyone has rolled (FIX 2 — locked
-          glyph). Reinforcements are addable all through the fight. */}
+          banner. Add-monster opens the bestiary picker MODAL (below); Begin-turns is
+          hard-disabled until everyone has rolled (FIX 2 — locked glyph). Reinforcements
+          are addable all through the fight. */}
       <DmControlBanner
         dmName={dmName}
         isDmViewer={isDm}
@@ -677,8 +700,8 @@ function CombatLayer({
             <>
               <Button
                 variant="secondary"
-                onClick={() => setAddOpen((o) => !o)}
-                aria-expanded={addOpen}
+                onClick={() => setPickerOpen(true)}
+                aria-haspopup="dialog"
               >
                 <Icon as={Plus} size="sm" decorative />
                 {t("campaignHub.encounterAddMonster")}
@@ -705,15 +728,30 @@ function CombatLayer({
             </>
           ) : undefined
         }
-        extra={
-          apply && addOpen ? (
-            <AddMonsterForm
-              onAdd={addMonsterReinforcement}
-              onClose={() => setAddOpen(false)}
-            />
-          ) : undefined
-        }
       />
+
+      {/* The bestiary picker modal — conditionally mounted so the chunk + catalogue
+          fetch happens on FIRST open, never on hub load. The Suspense fallback shows
+          the real shell + loader (both eager-reachable) so a cold tap gives instant
+          feedback; warm opens are instant (module cache + resident catalogue). */}
+      {pickerOpen && (
+        <Suspense
+          fallback={
+            <ModalShell
+              open
+              onClose={() => setPickerOpen(false)}
+              title={t("campaignHub.encounterAddForm")}
+            >
+              <FolioLoader variant="region" />
+            </ModalShell>
+          }
+        >
+          <EncounterAddMonsterModal
+            onAdd={addMonsterReinforcement}
+            onClose={() => setPickerOpen(false)}
+          />
+        </Suspense>
+      )}
 
       <EncounterRoundBar round={encounter.round} isDm={isDm} onEnd={onEnd} />
 

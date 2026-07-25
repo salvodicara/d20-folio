@@ -81,9 +81,7 @@ import {
   useReportEditorOpen,
   type EditorOpenReporter,
 } from "@/components/shared/card-editor-scope";
-import { InfoCard } from "@/components/shared/InfoCard";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
-import { SectionHeader } from "@/components/shared/SectionHeader";
 import { cn, formatSpeed, localeDistance } from "@/lib/utils";
 import { useLocale } from "@/hooks/useLocale";
 import { conditionChips } from "@/lib/views/tracker-view";
@@ -1844,13 +1842,13 @@ function MonsterTokens({
  *  full-width body, and `onClose` (Cancel) collapses it back to the banner trigger. */
 export function AddMonsterForm({
   onAdd,
-  onClose,
 }: {
   /** Add the typed monster group. Routed by the caller through the REINFORCEMENT auto-slot
    *  ({@link "@/features/campaigns/encounter-view".addReinforcement}) so a monster added
-   *  mid-combat slots into the FROZEN order at its initiative (C3, item 4). */
+   *  mid-combat slots into the FROZEN order at its initiative (C3, item 4). The Custom
+   *  tab of the encounter picker mounts this form as its body; the ModalShell owns
+   *  dismissal (no Cancel button here). */
   onAdd: (input: MonsterInput) => void;
-  onClose: () => void;
 }) {
   const { t } = useTranslation();
   const [name, setName] = useState("");
@@ -1877,12 +1875,12 @@ export function AddMonsterForm({
 
   return (
     // FOCUSED COLUMN (CARD-7 polish) — the form body is capped to a ~24rem reading
-    // column, left-aligned in the panel, so the name/notes inputs span that column
-    // (not the full ~1140px desktop panel) and the stat rows can hug their labels.
-    // No breakpoint: on mobile the column cap sits below the viewport, so it just
-    // fills width exactly as before — identical markup, no regression.
-    <InfoCard className="flex max-w-sm flex-col gap-3">
-      <SectionHeader as="h3" tight title={t("campaignHub.encounterAddForm")} />
+    // column, left-aligned, so the name/notes inputs span that column and the stat
+    // rows can hug their labels. No breakpoint: on mobile the column cap sits below
+    // the viewport, so it fills width exactly. The modal title carries "Add to the
+    // encounter"; a card-in-a-modal would be double chrome, so this is a plain
+    // column, not an InfoCard.
+    <div className="flex max-w-sm flex-col gap-3 p-4">
       <Input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -1946,11 +1944,8 @@ export function AddMonsterForm({
           <Icon as={Plus} size="sm" decorative />
           {t("campaignHub.encounterAddMonster")}
         </Button>
-        <Button variant="ghost" onClick={onClose}>
-          {t("common.cancel")}
-        </Button>
       </div>
-    </InfoCard>
+    </div>
   );
 }
 

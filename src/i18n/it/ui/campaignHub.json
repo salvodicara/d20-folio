@@ -163,6 +163,11 @@
     "encounterReveal": "Mostra combattente",
     "encounterRevealHp": "Mostra PF",
     "encounterHideHp": "Nascondi PF",
+    "encounterBestiaryTab": "Bestiario",
+    "encounterCustomTab": "Mostro personalizzato",
+    "encounterStatblock": "Blocco statistiche",
+    "encounterStatblockMissing": "Il blocco statistiche di questa creatura non è nel tuo bestiario.",
+    "encounterAddedToast": "{{name}} ×{{count}} aggiunto allo scontro",
     "hpBand": {
       "healthy": "In forze",
       "nearDeath": "In fin di vita"

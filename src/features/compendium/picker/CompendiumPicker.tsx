@@ -74,7 +74,7 @@ export function CompendiumPicker<T>({
                     value={picker.quantity}
                     onChange={picker.setQuantity}
                     min={picker.quantityStep}
-                    max={9999}
+                    max={picker.quantityMax}
                     step={picker.quantityStep}
                     ariaLabel={t("equipment.quantity")}
                   />

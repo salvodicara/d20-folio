@@ -163,6 +163,11 @@
     "encounterReveal": "Reveal combatant",
     "encounterRevealHp": "Reveal HP",
     "encounterHideHp": "Hide HP",
+    "encounterBestiaryTab": "Bestiary",
+    "encounterCustomTab": "Custom monster",
+    "encounterStatblock": "Statblock",
+    "encounterStatblockMissing": "This creature's statblock is not in your bestiary.",
+    "encounterAddedToast": "{{name}} ×{{count}} added to the encounter",
     "hpBand": {
       "healthy": "Healthy",
       "nearDeath": "Near Death"

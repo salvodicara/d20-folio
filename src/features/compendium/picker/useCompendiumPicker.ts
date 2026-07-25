@@ -85,6 +85,8 @@ export interface CompendiumPickerApi<T> {
   supportsQuantity: boolean;
   /** The stepper's step + minimum for the open detail (bundle size for ammo). */
   quantityStep: number;
+  /** The stepper's maximum for the open detail (default 9999; a spec cap otherwise). */
+  quantityMax: number;
 }
 
 export function useCompendiumPicker<T>(
@@ -248,5 +250,7 @@ export function useCompendiumPicker<T>(
     supportsQuantity: spec.supportsQuantity ?? false,
     // The stepper's step + minimum for the open detail (one bundle for ammo).
     quantityStep: selected && spec.quantityStep ? spec.quantityStep(selected) : 1,
+    // The stepper's maximum for the open detail (a spec cap, else the 9999 default).
+    quantityMax: selected && spec.quantityMax ? spec.quantityMax(selected) : 9999,
   };
 }

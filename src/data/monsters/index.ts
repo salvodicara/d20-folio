@@ -6,7 +6,7 @@
  * both build modes. Names/prose resolve through the LAZY `monster` catalogue.
  *
  * **Nothing eager may import this module** — the bestiary corpus is reachable ONLY
- * through the lazy compendium specs barrel (+ the future encounter picker), so it
+ * through the lazy compendium specs barrel (+ the encounter-bestiary seam), so it
  * never joins the eager startup closure (the bundle-budget ratchet is the guard,
  * `vite.config.ts` → the `srd-monsters` chunk).
  */

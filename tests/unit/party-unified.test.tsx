@@ -601,10 +601,15 @@ describe("Party combat — DM (editable layer)", () => {
     expect(bossHp()).toBe(21);
   });
 
-  it("adds a monster group through the inline form", async () => {
+  it("adds a monster group through the Custom tab of the picker modal", async () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
     fireEvent.click(screen.getByRole("button", { name: /add monster/i }));
+    // "Add monster" now opens the bestiary picker MODAL (lazy) — switch to the Custom
+    // manual tab, which mounts the surviving AddMonsterForm.
+    fireEvent.click(
+      await screen.findByRole("button", { name: /custom monster/i }, { timeout: 5000 })
+    );
     fireEvent.change(screen.getByLabelText(/monster name/i), {
       target: { value: "Dire Wolf" },
     });
@@ -819,6 +824,10 @@ describe("Party combat — C3 freeze / lock / reorder (DM)", () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
     fireEvent.click(screen.getByRole("button", { name: /add monster/i }));
+    // The Custom tab of the picker modal carries the manual form (default init 10).
+    fireEvent.click(
+      await screen.findByRole("button", { name: /custom monster/i }, { timeout: 5000 })
+    );
     fireEvent.change(screen.getByLabelText(/monster name/i), {
       target: { value: "Dire Wolf" },
     });
