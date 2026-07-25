@@ -558,7 +558,7 @@ phase plan are recorded in `DESIGN.md` (§4 "The plate material", §5 "The ornam
 2. **An ornament REPLACES the line.** It is never drawn over it, beside it, or near it.
 3. **State changes light and colour only. Geometry is frozen.**
 
-**All eight phases have landed.** The chrome is one system: six primitives, two tiers, two radii,
+**All nine phases have landed.** The chrome is one system: six primitives, two tiers, two radii,
 one divider, one state ladder, one mark. The phases (each one worktree, one merge, green on both
 build modes):
 
@@ -572,6 +572,38 @@ build modes):
 | 5     | The state grammar (L3) — **one ladder in tokens** (`index.css` §04b), consumed by cards, tiles, rows, tabs, chips, option cells, wizard entries and every button register; every geometry-changing state deleted                                                                                                                                                                                                                                                                                               | **DONE** |
 | 6     | **The MARK** — the corner terminal (a glint fan of seven hair-thin tapering rays, anchored ON the corner arc and radiating inward, contributing no run line) + the run cartouche (pointed leaves weaving over and under the rail, converging on a descending chevron at the exact midpoint), mounted on exactly ONE surface per route — the screen's identity plate. Dimensional metal, gold in BOTH themes, mirrored geometry toned in screen space, fixed-size SVG background layers on a decor-only overlay | **DONE** |
 | 7     | Light sibling re-derived against the finished dark system + the guard suite extended to pin phases 4–6 (eleven mutation proofs) + the budget measured                                                                                                                                                                                                                                                                                                                                                          | **DONE** |
+| 8     | **CONVERGENCE REVIEW** — the four defects the independent review found, and the guard-coverage class behind two of them (a guard that samples only where the work was done)                                                                                                                                                                                                                                                                                                                                    | **DONE** |
+
+**Phase 8 closed the review, and the class the review named: our guards kept sampling the one place
+the work was done.** Two of the four defects were that pattern. `.cmp-seal` — the mark eight of the
+ten codex tabs lead every row with (509 rows on Features, 400 on Magic Items) — survived the
+unframing with a border AND the exact two-line lip its siblings `.lvl-seal` / `.uc-seal.lvl` had
+given up, because the census's compendium cell lands on the DEFAULT Spells tab, the only tab whose
+seals were already unframed; `/compendium?type=feature` measured **49 framed boxes against a ceiling
+of 23**. And the L3 geometry sweep covered pointer and selection states but not DISCLOSURE, so
+re-inserting the phase's own flagship defect (`.uc.is-open { border-left-width: 4px }`, the 3px → 4px
+spine) produced **zero** offenders.
+
+The class fix is in the sampling, not in the two rules: the census now takes each realm's VARIETY
+rather than its landing state — a `.cmp-seal` codex tab, the three cockpit tabs that carry a framed
+family the Play tab does not, and the campaign hub's running-encounter sub-view — twenty cells, up
+from ten. That immediately found a third framed level nobody had measured: the topbar's split combat
+pill wrapped a bordered destination chip inside a bordered pill inside the framed topbar, so the seam
+is painted now and the chip's cream lip is gone. The other two defects: a new `.slot-cell.pact
+.sc-lvl` (0,3,0) silently out-ranked the light AA safety override two rules below it (0,2,0) and
+shipped the bright lapis at **2.91:1** on the light rail — a warlock-only state no rendered check can
+reach, since every mock character is a full caster, so the pair is now pinned by a cascade-resolving
+unit guard that resolves the WINNER per theme and picks up any future `.slot-cell.<x> .sc-lvl` strike
+automatically; and `button.vital[data-density="chip"]` ran its HP bar into its own left border in
+both themes, because the unframed read-only strike's zero-left padding was never scoped away from
+the interactive one.
+
+**Two census blind spots are recorded, not closed** (in the spec's own header — they need a ruling,
+not a longer route list): the 20×20 floor skips 106 framed sub-20px elements on the cockpit alone
+(pips and bars, `.idp-die` at 27×19, `.move-num-in` at 24×16), and a ceiling's +5 of slack means
+re-framing ONE low-cardinality class still fits — putting the metal back on `.folio-panel` adds two
+boxes and passes the census. The second is why the census is a companion to the stylesheet guards
+and not a replacement: the unit rail guard catches exactly that case.
 
 **Phase 7 re-derived the light sibling against the finished system, and pinned all of it.** What
 light now re-derives rather than inherits, each for a stated reason: the dome (wider and softer — an
@@ -596,8 +628,9 @@ mark: exactly two hosts and no third consumer anywhere in the stylesheet, the ti
 themes, no `rect`/`line`/`polyline` in a corner tile (a ray is a triangle, never a rail), the
 mirror-then-tone construction, three tonal passes, and the mechanism ban (`border-image`, a layout
 border on the pseudo, any animation, any `overflow: hidden` on a host). And
-`tests/e2e/chrome-census.spec.ts` is new: it walks five routes in both themes on the RENDERED page
-and fails on nesting > 2 or a per-surface framed-box ceiling set at measured + 5.
+`tests/e2e/chrome-census.spec.ts` is new: it walks the app's surfaces in both themes on the RENDERED
+page and fails on nesting > 2 or a per-surface framed-box ceiling set at measured + 5. (Phase 8
+widened it from five landing routes to ten states — see above.)
 
 **Eleven mutation proofs**, each applied, caught, and reverted: re-framing the rail · re-framing a
 read-only chip · a state rule that resizes · a family leaving the ladder · a list row re-framing at

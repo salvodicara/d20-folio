@@ -469,6 +469,7 @@ describe("the chrome system — L1, a frame means container or interactive", () 
     "\\.uc-seal\\.kind", // the row's kind glyph
     "\\.uc-seal\\.lvl", // the row's level gem
     "\\.lvl-seal", // the compendium/picker level gem (×421 on one index)
+    "\\.cmp-seal", // the codex row's per-TYPE glyph gem (×509 on the Features tab)
     "\\.cmp-verdict", // the codex row's school/rarity classifier
     "\\.uc-callout", // the "at higher levels" aside
     "\\.algo-kw", // a rules-walkthrough keyword
@@ -643,6 +644,13 @@ describe("the chrome system — L1, a frame means container or interactive", () 
  * a dying readout re-gapped its own value. Each is invisible in isolation and each
  * is a surface resizing because you looked at it.
  *
+ * THE ONE THING THE LAW DOES NOT COVER is a DISCLOSURE body: opening a row is not
+ * "the same box, lit differently", it is revealed content arriving, so the body a
+ * disclosure reveals may take its own size. Its FRAME may not — the sweep below
+ * covers `.is-open` / `[data-open]` / `[aria-expanded]` exactly so a header, a row
+ * or a spine cannot quietly grow when it opens, and the four body recipes that do
+ * resize are named exemptions with a stated reason.
+ *
  * And the ladder itself is the point: five rungs in tokens (index.css §04b), so
  * fifty controls share one grammar instead of fifty bespoke hovers. The rungs are
  * `--state-metal-hover` / `--state-metal-selected` / `--state-metal-disabled` and
@@ -710,10 +718,19 @@ describe("the chrome system — L3, state changes light and colour only", () => 
      *  laid out. */
     const GEOMETRY =
       /\b(border(?:-(?:top|right|bottom|left))?-width|border-radius|padding(?:-\w+)?|margin(?:-\w+)?|(?:min-|max-)?(?:width|height)|font-size|gap|letter-spacing)\s*:/;
-    const STATE =
-      /(:hover|:active|:focus-visible|\[aria-pressed|\[aria-selected|\[data-current\]|\[data-selected\]|\[data-state=|\.is-active|\.is-current)/;
     /**
-     * The two documented exemptions, and why each is not a state resizing a box:
+     * Every state a selector can express — POINTER (`:hover`/`:active`),
+     * FOCUS, SELECTION (`aria-pressed`/`aria-selected`/`data-current`/
+     * `data-selected`/`data-state=`/`.is-active`/`.is-current`) and DISCLOSURE
+     * (`.is-open`/`[data-open]`/`[aria-expanded`). Disclosure was the omission
+     * that let the phase's own flagship defect back in: re-inserting
+     * `.uc.is-open { border-left-width: 4px }` — the 3px → 4px spine the phase
+     * deleted — produced ZERO offenders until it was added here.
+     */
+    const STATE =
+      /(:hover|:active|:focus-visible|\[aria-pressed|\[aria-selected|\[data-current\]|\[data-selected\]|\[data-state=|\.is-active|\.is-current|\.is-open|\[data-open\]|\[aria-expanded)/;
+    /**
+     * The documented exemptions, and why each is not a state resizing a box:
      *  - a `::before` / `::after` on a checked control is the MARK APPEARING
      *    inside it (the switch knob, the checkmark, the radio dot); the control's
      *    own box never moves;
@@ -721,12 +738,43 @@ describe("the chrome system — L3, state changes light and colour only", () => 
      *    edit hot-spot keeps a zero footprint — it is the absence of geometry.
      */
     const EXEMPT = [/::(before|after)/, /\[data-kind="text"\]/];
+    /**
+     * DISCLOSURE BODIES. A disclosure is the one state that legitimately changes
+     * size, because opening it is not "the same box, lit differently" — it is
+     * REVEALED CONTENT arriving. The law still binds the disclosure's own frame
+     * (a header/row/spine may not thicken, re-pad or re-radius when it opens);
+     * what is exempt is the body the open state reveals, and the control that
+     * body flows out of. Each of these is a body/socket, never a resting frame:
+     */
+    const DISCLOSURE_BODY: [RegExp, string][] = [
+      [
+        /^\.csearch\[data-open\] /,
+        "the compendium search UNFURLS from a lens button into a text field — the " +
+          "input and the lens are the revealed control itself, not chrome around it",
+      ],
+      [
+        /^\.uc\.is-open \.uc-detail$/,
+        "the action row's detail PANEL — the body that appears; the row's own head " +
+          "and spine are geometry-frozen and stay under the law",
+      ],
+      [
+        /^\.sess-item\[data-open\] \.sess-body$/,
+        "the session entry's body pads out as it opens; the item's frame does not move",
+      ],
+      [
+        /^\.wiz-entry\[data-open\] > \.wiz-row/,
+        "the wizard entry's open row IS the hero altar the step morphs into — the " +
+          "socket grows, the eyebrow/gloss collapse and the name takes display size " +
+          "as part of the reveal, not as a hover affordance",
+      ],
+    ];
 
     const offenders: string[] = [];
     for (const [, rawSelector, body] of folio.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
       const sel = (rawSelector ?? "").trim();
       if (!STATE.test(sel)) continue;
       if (EXEMPT.some((re) => re.test(sel))) continue;
+      if (DISCLOSURE_BODY.some(([re]) => re.test(sel))) continue;
       const m = GEOMETRY.exec(body ?? "");
       if (!m) continue;
       const decl = (body ?? "").slice(m.index).split(";")[0]?.trim() ?? "";

@@ -71,15 +71,85 @@ interface Census {
  * CONTENT, not chrome — the reference frames its hotbar slots exactly the same
  * way — so the budget below is "the CTAs, plus a chrome allowance in the same
  * range as every other surface".
+ *
+ * ── A ROUTE IS NOT A SURFACE: SAMPLE THE VARIETY, NOT THE DEFAULT ────────────
+ * The census used to visit five bare routes, and every one of them landed on its
+ * DEFAULT state. That is the blind spot that let `.cmp-seal` keep a border and a
+ * two-line lip right through an unframing phase: `/compendium` opens on Spells,
+ * the ONE tab whose leading gem is the already-unframed `.lvl-seal`, while the
+ * other eight tabs lead every row with `.cmp-seal` — 509 rows on Features, which
+ * measured 49 framed boxes against this file's ceiling of 23 and never ran.
+ *
+ * So each realm now contributes its VARIETY, not its landing state: the codex
+ * samples a `.cmp-seal` tab (Features) as well as Spells; the cockpit samples the
+ * tabs that carry a framed family Play does not (Inventory's toolbar, Spells'
+ * prepare toggles + school chips, Features' Binder's Fob); and the campaign hub
+ * samples its combat sub-view (the inline initiative tracker) as well as the
+ * party overview the dev fixture rests on. A cell whose framed inventory is
+ * identical to one already covered is NOT added — the point is coverage of
+ * FAMILIES, not of URLs, which is why the codex takes one `.cmp-seal` tab rather
+ * than all eight.
+ *
+ * TWO KNOWN BLIND SPOTS, recorded rather than closed (they need their own ruling,
+ * not a bigger list of routes):
+ *   1. **The 20×20 floor.** Anything smaller is skipped as a pip/dot/caret, which
+ *      hides 106 framed sub-20px elements on the cockpit alone — the pips and
+ *      bars, `.idp-die` (27×19), `.move-num-in` (24×16). They are real edges the
+ *      eye does see; the floor exists because counting every dot drowns the
+ *      signal, not because they are exempt from L1.
+ *   2. **A ceiling has +5 of slack by design**, so re-framing ONE class of low
+ *      cardinality still fits: putting the metal back on `.folio-panel` adds two
+ *      boxes and passes here. That case is caught by the unit rail guard
+ *      (`chrome-system.guard.test.ts`, "keeps the rail a material"), which is why
+ *      the census is a companion to the stylesheet guards and not a replacement.
  */
-const SURFACES: { slug: string; route: string; ceiling: number }[] = [
+const SURFACES: {
+  slug: string;
+  route: string;
+  ceiling: number;
+  /** Extra seeding for a state a URL cannot express (the running encounter). */
+  prepare?: (page: import("@playwright/test").Page) => Promise<void>;
+}[] = [
   // Measured, both themes, then + 5 of headroom — tight enough that a re-framed
   // CLASS (a chip family, a row frame, a re-framed rail) cannot fit under it, and
   // loose enough that one new control on a page is not a gate failure.
   { slug: "roster", route: "/characters", ceiling: 13 }, // measured 8
+  // The cockpit's five tabs are five different centre panels; `?tab=` addresses
+  // them, so each one that carries a framed family Play does not is its own cell.
   { slug: "cockpit", route: "/characters/mock-1", ceiling: 88 }, // measured 83
+  // + the inventory toolbar chips and the add/equip verbs.
+  { slug: "cockpit-inventory", route: "/characters/mock-1?tab=inventory", ceiling: 37 }, // measured 32
+  // + 20 per-spell PREPARE toggles (content, like the cockpit's CTAs) + the 8 school chips.
+  { slug: "cockpit-spells", route: "/characters/mock-1?tab=spells", ceiling: 59 }, // measured 54
+  // + the Binder's Fob (the management chrome only this tab mounts).
+  { slug: "cockpit-features", route: "/characters/mock-1?tab=features", ceiling: 30 }, // measured 25
   { slug: "compendium", route: "/compendium", ceiling: 23 }, // measured 18
+  // The Features tab — one of the EIGHT codex tabs that lead every row with
+  // `.cmp-seal` rather than the Spells tab's `.lvl-seal`, and the densest of them
+  // (509 rows). This is the cell that would have caught the seal keeping its
+  // border and its two-line lip through the unframing phase: it measured 49
+  // against this file's ceiling of 23 while the suite only ever visited Spells.
+  { slug: "compendium-feature", route: "/compendium?type=feature", ceiling: 23 }, // measured 18
   { slug: "campaign-hub", route: "/campaigns/mock-1", ceiling: 46 }, // measured 41
+  // The hub's OTHER half: the dev fixture rests on the party overview, so the
+  // running-encounter sub-view (the inline initiative tracker + the DM verbs) was
+  // never measured — and it is the denser of the two.
+  {
+    slug: "campaign-hub-encounter",
+    route: "/campaigns/mock-1",
+    ceiling: 57, // measured 52
+    prepare: async (page) => {
+      await page.addInitScript(() =>
+        window.localStorage.setItem("d20-dev-encounter", "1")
+      );
+      await page.reload();
+      await page
+        .getByText(/coralino/i)
+        .first()
+        .waitFor({ timeout: 8000 })
+        .catch(() => {});
+    },
+  },
   { slug: "settings", route: "/settings", ceiling: 15 }, // measured 10
 ];
 
@@ -175,7 +245,7 @@ async function census(page: import("@playwright/test").Page): Promise<Census> {
   });
 }
 
-for (const { slug, route, ceiling } of SURFACES) {
+for (const { slug, route, ceiling, prepare } of SURFACES) {
   for (const theme of ["dark", "light"] as const) {
     test(`framed-box census: ${slug} [${theme}]`, async ({ page }) => {
       await page.setViewportSize({ width: DESKTOP.width, height: 2400 });
@@ -183,6 +253,7 @@ for (const { slug, route, ceiling } of SURFACES) {
       await seedLang(page, "en");
       await page.goto(route, { waitUntil: "domcontentloaded" });
       await page.getByRole("heading", { level: 1 }).first().waitFor({ timeout: 20000 });
+      if (prepare) await prepare(page);
       await freezeMotion(page);
       await page.waitForTimeout(600);
 

@@ -3957,7 +3957,17 @@ button.vital {
   min-width: 0;
   min-height: 0;
   gap: 5px;
+}
+/* A READ-ONLY chip is type in a column (L1), so it drops its leading padding and
+   starts on the row's own alignment edge… */
+.vital[data-density="chip"]:not(button) {
   padding: 3px 8px 3px 0;
+}
+/* …but a chip you can PRESS is a plaque (`button.vital` above re-colours the
+   metal and lays the gradient in), and a plaque's content sits inside its frame:
+   the zero-left padding ran the HP bar and the acronym straight into the border. */
+button.vital[data-density="chip"] {
+  padding: 3px 8px;
 }
 .vital[data-density="chip"] .v-lbl {
   margin-top: 0;
@@ -4793,6 +4803,13 @@ textarea.input.rail-notes-area {
 [data-theme="light"] .sc-lvl {
   color: color-mix(in oklab, var(--sl) 52%, #140d04);
 }
+/* …and the PACT strike needs its own light sibling, because `.slot-cell.pact
+   .sc-lvl` (0,3,0) out-specifies the safety override above (0,2,0): the bright
+   lapis it pins measures 2.91:1 on the light rail, well under AA for 10px text.
+   Deepen to the same lapis-700 the long-rest recovery mark uses in light. */
+[data-theme="light"] .slot-cell.pact .sc-lvl {
+  color: var(--lapis-700);
+}
 .sc-pips {
   display: flex;
   gap: 3px;
@@ -5511,12 +5528,21 @@ button.trk-pip:active {
   align-self: stretch;
   padding: 3px 9px;
   border: 0;
-  border-left: 1px solid var(--border-medium);
-  /* A carved warm-black socket in BOTH themes (the darkest stop is tokenised so the
+  /* THE SPLIT IS A DIVIDER, NOT A FRAME (L1). The pill is already framed and it
+     sits inside the framed topbar, so a bordered right segment was a THIRD framed
+     level in the app chrome — and its `inset 0 1px 0` cream line was the banned
+     lip besides. The seam is now PAINTED: a 1px background layer on the left edge,
+     the same "a separator is a painted line, never the underside of a frame" move
+     the action row's head makes. Keep the two layers composed in every strike —
+     `background` is a REPLACED property, so a bare gradient drops the seam.
+     A carved warm-black socket in BOTH themes (the darkest stop is tokenised so the
      contrast guard can hold it to AA); its LABEL ink is the FIXED --cp-dest-ink, NOT
      the theme-flipping --text-secondary (which vanished on this dark fill in light —
      the "Apri Lyra" bug). Both tokens live in index.css per theme. */
-  background: linear-gradient(180deg, #241d12, var(--cp-dest-bg));
+  background:
+    linear-gradient(var(--border-medium), var(--border-medium)) left center / 1px 100%
+      no-repeat,
+    linear-gradient(180deg, #241d12, var(--cp-dest-bg));
   color: var(--cp-dest-ink);
   text-decoration: none;
   font-family: var(--font-numeric);
@@ -5525,7 +5551,6 @@ button.trk-pip:active {
   letter-spacing: 0.02em;
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: inset 0 1px 0 rgba(243, 223, 174, 0.12);
   transition:
     background var(--m-fast) var(--ease-settle),
     color var(--m-fast) var(--ease-settle),
@@ -5533,7 +5558,10 @@ button.trk-pip:active {
     box-shadow var(--m-fast) var(--ease-settle);
 }
 .cp-dest-chip:hover {
-  background: linear-gradient(180deg, #322717, #241b10);
+  background:
+    linear-gradient(var(--border-medium), var(--border-medium)) left center / 1px 100%
+      no-repeat,
+    linear-gradient(180deg, #322717, #241b10);
   color: var(--gold-leaf-100);
 }
 .cp-dest-chip:active {
@@ -5680,8 +5708,12 @@ button.trk-pip:active {
   .topbar:has(.combat-pip-wrap) .cp-dest-lead {
     display: inline-flex;
   }
+  /* Mobile drops the painted seam with the label — the glyph-only chip reads as
+     one socket, so the divider has nothing left to divide. */
   .topbar:has(.combat-pip-wrap) .cp-dest-chip {
-    border-left: 0;
+    background-size:
+      0 0,
+      auto;
     padding-left: 8px;
     padding-right: 8px;
   }
@@ -10122,9 +10154,14 @@ button.create-need:focus-visible .create-need-chev {
   line-clamp: 2;
 }
 
-/* The codex seal frame — wraps a per-type glyph in the same carved medallion the
-   spell level-seal uses, so a feat / item / maneuver row wears a real seal (not a
-   bare lucide glyph floating in the gutter). Pigment via `--seal` (set inline). */
+/* The codex seal — a per-type glyph struck as the same medallion a spell row
+   wears (`.lvl-seal`), so a feat / item / maneuver row carries a real seal and
+   not a bare lucide glyph floating in the gutter. Pigment via `--seal` (inline).
+   A GEM IS A SHAPE, NOT A FRAME (L1). Eight of the ten codex tabs lead every row
+   with this mark — 509 rows on Features, 400 on Magic Items — so the border plus
+   the two-line lip it used to carry was a thousand boxes and the banned cream
+   highlight, a thousand times, down one index. The facet's own dome at
+   (35%, 28%) is what makes it read struck, exactly as on `.lvl-seal`. */
 .cmp-seal {
   flex-shrink: 0;
   width: 30px;
@@ -10133,16 +10170,11 @@ button.create-need:focus-visible .create-need-chev {
   place-items: center;
   border-radius: var(--r-plate);
   color: var(--seal-ink, var(--seal, var(--accent-text)));
-  border: 1px solid
-    color-mix(in oklab, var(--seal, var(--accent-primary)) 45%, transparent);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--seal, var(--accent-primary)) 22%, var(--bg-surface-2)),
     color-mix(in oklab, var(--seal, var(--accent-primary)) 10%, var(--bg-surface-1)) 96%
   );
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.12),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.22);
 }
 .cmp-seal .icon {
   width: 16px;
@@ -17528,14 +17560,11 @@ button.econ-tok-filter:active .econ-disc {
 [data-variant="codex"] .pick-row[data-current] .pick-name {
   color: var(--text-special);
 }
-[data-theme="light"] .cmp-seal {
-  border-color: color-mix(
-    in oklab,
-    var(--seal, var(--accent-primary)) 60%,
-    var(--border-strong)
-  );
-  box-shadow: inset 0 -2px 3px color-mix(in oklab, var(--carve-shade) 50%, transparent);
-}
+/* (No light strike for `.cmp-seal`: light is a different ROOM, not a different
+   rulebook. The strike that used to live here re-tinted a border and carved an
+   inset back onto a seal the base rule unframes — the same question L1 already
+   closed. Its pigment already re-derives, because the fill mixes `--seal` into
+   the light theme's own surfaces.) */
 [data-theme="light"] .cmp-meta {
   background: linear-gradient(
     180deg,

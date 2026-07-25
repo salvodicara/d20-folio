@@ -623,3 +623,108 @@ describe("monster CR seal is theme-invariant gilt jewelry (owner-directed 2026-0
     expect(pair("dark")).toBe(pair("light"));
   });
 });
+
+/**
+ * SPELL-SLOT LEVEL LABELS (`.sc-lvl`, the Resources rail's slot rows).
+ *
+ * THE DEFECT CLASS. `--sl` is the BRIGHT gem hue, so light carries a safety
+ * override — `[data-theme="light"] .sc-lvl` (0,2,0) — whose own comment says the
+ * bright hue "fails AA as small text on the light cards". A VARIANT strike then
+ * pinned its own hue at higher specificity (`.slot-cell.pact .sc-lvl`, 0,3,0) and
+ * silently out-ranked that safety net: the warlock pact label measured 2.91:1 on
+ * the light rail, and nothing caught it. Nothing COULD — no rendered check we
+ * have puts pact slots on screen, because every mock character is a full caster,
+ * so the pair is invisible to axe and to the on-art ink sweep alike.
+ *
+ * THE GUARD. Replay the cascade statically. Read every `.sc-lvl` colour rule out
+ * of folio.css, derive the variant contexts they imply (base, `.pact`, whatever
+ * a later wave adds), resolve the WINNER per theme by specificity + source order,
+ * and hold it to AA on the rail's own two tiers. A new `.slot-cell.<x> .sc-lvl`
+ * strike is picked up automatically — the point is to close the CLASS, not the
+ * one pair, because a build-gated state cannot be reached by a rendered check.
+ */
+describe("spell-slot level labels clear WCAG-AA on the rail (cascade-resolved)", () => {
+  interface SlotRule {
+    /** Variant classes other than `.sc-lvl` — e.g. `["slot-cell", "pact"]`. */
+    variants: string[];
+    /** `dark` / `light` when the rule is theme-scoped, else `both`. */
+    theme: "dark" | "light" | "both";
+    /** Class + attribute count — every component of these selectors is (0,n,0). */
+    specificity: number;
+    /** Source order (later wins a specificity tie). */
+    order: number;
+    value: string;
+  }
+
+  const flat = folioCss.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ");
+  const rules: SlotRule[] = [];
+  let order = 0;
+  for (const [, rawSelector, body] of flat.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    order += 1;
+    const sel = (rawSelector ?? "").trim();
+    // Only rules whose SUBJECT (the last compound) is the label itself.
+    const subject = sel.split(/\s+/).pop() ?? "";
+    if (!/\.sc-lvl(?![\w-])/.test(subject)) continue;
+    const value = /(?:^|;|\{|\s)color\s*:\s*([^;]+)/.exec(body ?? "")?.[1]?.trim();
+    if (!value) continue;
+    const themeMatch = /^\[data-theme="(dark|light)"\]/.exec(sel);
+    rules.push({
+      variants: [...sel.matchAll(/\.([\w-]+)/g)]
+        .map((m) => m[1] ?? "")
+        .filter((c) => c !== "sc-lvl"),
+      theme: (themeMatch?.[1] as "dark" | "light" | undefined) ?? "both",
+      specificity: (sel.match(/\./g) ?? []).length + (sel.match(/\[/g) ?? []).length,
+      order,
+      value,
+    });
+  }
+
+  it("finds the label's colour rules at all (the guard must never go vacuous)", () => {
+    expect(rules.length, "no `.sc-lvl` colour rule found in folio.css").toBeGreaterThan(
+      1
+    );
+  });
+
+  // Every DISTINCT variant context the stylesheet implies, plus the bare base.
+  const contexts: string[][] = [
+    [],
+    ...new Set(
+      rules.filter((r) => r.variants.length > 0).map((r) => r.variants.join("."))
+    ),
+  ].map((c) => (Array.isArray(c) ? c : c.split(".")));
+
+  for (const theme of ["dark", "light"] as const) {
+    const block = themeBlock(theme);
+    // The slot rows sit on `.folio-panel`, whose face is the plate gradient
+    // `linear-gradient(--bg-surface-2, --bg-surface-1)` — both ends are ground.
+    const grounds = [readVar(block, "--bg-surface-1"), readVar(block, "--bg-surface-2")];
+
+    for (const context of contexts) {
+      const label = context.length ? `.${context.join(".")}` : "(base)";
+      const winner = rules
+        .filter((r) => r.theme === "both" || r.theme === theme)
+        .filter((r) => r.variants.every((v) => context.includes(v)))
+        .sort((a, b) => a.specificity - b.specificity || a.order - b.order)
+        .at(-1);
+      it(`${theme}: the slot label ${label} clears ${AA}:1 on the rail`, () => {
+        expect(winner, `no rule wins for ${label} in ${theme}`).toBeTruthy();
+        const raw = winner?.value ?? "";
+        // `--sl` is the per-LEVEL gem hue, set INLINE by the markup (and mixed
+        // per theme in light), so it has no static value here; the gem ramp is
+        // pinned by its own guard. Skip anything routing through it, and anything
+        // that is not a bare hex or a bare token. What this guard exists for is
+        // the strikes that pin a CONCRETE hue — those are the ones that can
+        // out-rank a theme safety override without anyone measuring the result.
+        if (/--sl(?![\w-])/.test(raw)) return;
+        if (!/^(#[0-9a-fA-F]{3,8}|var\(\s*--[\w-]+\s*\))$/.test(raw)) return;
+        const ink = resolveColor(raw, block);
+        for (const ground of grounds) {
+          expect(
+            contrast(ink, ground),
+            `${label} ink ${ink} on ${ground} (${theme})`
+          ).toBeGreaterThanOrEqual(AA);
+        }
+      });
+    }
+  }
+});
