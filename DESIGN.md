@@ -2326,7 +2326,27 @@ backdrop` + `--text-on-backdrop-title` + `--text-on-backdrop-danger` for error/r
      components (`SectionHeader`, `Section`, `RunicEmptyState`) expose an **`onArt` prop**: the caller
      is the only thing that knows where it mounted the component. The one region-level opt-in that
      remains is the wizard column (`.wiz`), which is loose by construction and names its OPEN-COLUMN
-     registers positively — a plaque's text has different classes and is not in the list.
+     registers positively.
+
+   **AND THE TREATMENT STOPS AT A SURFACE (2026-07-25).** The region rule above shipped with the
+   claim that "a plaque's text has different classes and is not in the list" — and it is false.
+   PLATES stand inside the loose column (the enthroned hero altar, the level-up ASI/boon panel, an
+   open feat entry) and they host those exact registers, so the region rule reached them THROUGH the
+   plate and light theme painted cream on ivory again: `.wiz-hero .wiz-asks-head` measured
+   **1.04:1** and `.wiz-asi .wiz-pick-label` **1.02:1** in real Chromium. So `folio.css` carries one
+   positive counter-law — a register standing on a SURFACE takes `text-shadow: none` and gets its
+   own declared ink back — and the surface list is **derived, not maintained**: a surface is a rule
+   that paints one of the two canonical materials (`--plate-face`, `--panel-alpha`),
+   `wizard-css.guard.test.ts` re-derives that set from `folio.css` and fails if any member (or any
+   register) is missing from the counter-law. The guard cannot see CONTAINMENT — that is a fact
+   about the rendered tree — so the rendered probe carries it, which is why:
+
+   **NO REGION MAY SIT IN THE LEAK PROBE'S `OPT_IN`.** `.wiz` did, "because the wizard has ~60
+   markup opt-ins", and it skipped the ENTIRE wizard: the hand-written CSS exclusion list the
+   rewrite deleted had simply moved into a hand-written PROBE exclusion, and the ghosted altar
+   shipped with 250 green cells. The stated cost was false too — removing `.wiz` flagged 3 cells out
+   of 100, every one of them real. Only self-backing LEAF objects belong in that list; the guard
+   reads it and fails on the region rule's scope root or on any derived surface.
 
    **The halo goes on the LEAF, never on a wrapper.** Inheriting it from `.on-art-scope` is one rule
    instead of two and it is the obvious thing to try — but an auditor reads a container's

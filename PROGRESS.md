@@ -718,10 +718,11 @@ and its own owner ruling.
 **Budget, RE-MEASURED (the recorded figure had the wrong sign).** Commit `0d10f34` recorded
 "CSS 73,768 → 74,340 B gzipped for the whole of this wave". Measured with full production builds of
 the merge base and of the branch head and `gzip -9` on the emitted stylesheet: **base `8f10927`
-512,073 B raw / 73,907 B gzipped → head 509,517 B raw / 73,619 B gzipped — the wave SHRANK the CSS
-by 288 B gzipped (2,556 B raw)**. Nothing was ever broken by it (no ceiling was raised and
-`bundle-budget` is green either way); the number was simply not reproducible, and a budget figure
-that cannot be re-derived is worse than none.
+512,073 B raw / 73,851 B gzipped → head 501,329 B raw / 73,300 B gzipped — the wave SHRANK the CSS
+by 551 B gzipped (10,744 B raw)**, of which the plate-grounding counter-law spends back
++1,684 raw / +176 gzipped. Nothing was ever broken by it (no ceiling was raised and
+`bundle-budget` is green throughout); the original number was simply not reproducible, and a budget
+figure that cannot be re-derived is worse than none.
 
 **AND THE HUB'S SECTIONS TOOK CREAM INK ON IVORY — the wave's own worst regression, caught by an
 independent design review.** Rebuilding Sessions · Shared notes · Access · DM tools · Danger zone on
@@ -742,7 +743,31 @@ the treatment is opt-in on the leaf: `.on-art` (body ink), `.on-art-title` (gilt
 `--on-art-plate` for an object that backs itself. Shared components (`SectionHeader`, `Section`,
 `RunicEmptyState`) take an **`onArt` prop**, because the caller is the only thing that knows where it
 mounted them. One region-level opt-in remains — the wizard column, loose by construction, which names
-its OPEN-COLUMN registers positively so a plaque's text is simply not in the list.
+its OPEN-COLUMN registers positively.
+
+**AND THE POSITIVE REWRITE RE-CREATED THE GHOSTING ONE LAYER UP — caught by pass-2 review.** "A
+plaque's text is simply not in the list" was false. PLATES stand INSIDE the loose column — the
+enthroned hero altar, the level-up ASI/boon panel, an open feat entry — and they host those very
+registers, so the region rule reached them through the plate: measured in real Chromium,
+`.wiz-hero .wiz-asks-head` was cream `rgb(248,241,222)` on an ivory plate at **1.04:1** and
+`.wiz-asi .wiz-pick-label` / `.wiz-count` at **1.02:1 / 1.00:1**. Nothing caught it because the
+hand-written CSS exclusion had moved into a hand-written PROBE exclusion: `.wiz` sat in the leak
+leg's `OPT_IN`, skipping the entire wizard, and `wizard-css.guard` asserted only that `.wiz-hero`
+was not in the REGISTER list — true, and the wrong axis, since the defect is `.wiz-hero` as an
+ANCESTOR. The stated justification for the skip ("~60 markup opt-ins") was false as well: removing
+it flags **3 cells out of 100**, all real. Fixed on all three axes — a positive counter-law in
+`folio.css` (a register on a SURFACE loses the halo and gets its own declared ink back), the
+`OPT_IN` narrowed to self-backing leaves (`.fchip` named instead of the whole wizard), and the
+guard's axis corrected. **Both lists are now DERIVED**: a surface is any rule painting
+`--plate-face` or `--panel-alpha`, and `wizard-css.guard.test.ts` re-derives that set plus the
+register set from `folio.css` and fails if the counter-law misses either — so adding a plate, or a
+register, cannot silently reopen this. **Measured after: altar 15.15:1 light / 6.43:1 dark, boon
+panel 14.20:1 and 14.49:1 light / 6.71:1 and 6.72:1 dark; a rendered walk of BOTH wizards (creation
+steps 1–10 and three level-up scenarios, resting + enthroned, both themes) reports 0 over-treated
+and 0 ungrounded; `on-art-ink` 250/250 green with the wizard no longer skipped.** Four mutation
+proofs: a new `--plate-face` rule, a new register in the region rule, `.wiz` back in `OPT_IN`, and a
+re-introduced `.wiz-hero .wiz-asks-head { text-shadow: var(--on-art-halo) }` each turn a distinct
+assertion red.
 
 **And the vacuous guard is replaced by a rendered one, in the direction nobody was measuring:** in
 both themes, text whose ancestor chain paints a surface may carry neither the on-art ground nor the
