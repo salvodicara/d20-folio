@@ -115,6 +115,56 @@ export type WhileActiveDuration =
       maxRounds?: number;
     };
 
+/**
+ * PS-J — the closed vocabulary of SCOPES an attack-side effect can be limited to.
+ * The sheet models ONE character and never models enemies (`docs/MECHANICS.md` →
+ * "Non-automatable residuals"), so an effect scoped to a specific creature — or
+ * to a subset of the character's own attacks the action card cannot yet
+ * distinguish — is NEVER netted into the card's Adv./Disadv. verdict: the card
+ * STATES the scope instead ("Adv. vs marked target"), the same grammar the
+ * marked-target damage riders already ship one line above (`ActionRiders`).
+ *
+ * `"all"` is the ONLY scope a verdict may fold in: the clause applies to every
+ * attack roll the character can make right now.
+ *
+ * Each member is also the suffix of its localized phrase (`combat.attackScope_*`,
+ * shared with the damage riders); the dynamic-key coverage guard derives the
+ * required keys from THIS tuple, so a new scope without a phrase fails CI.
+ */
+export const ATTACK_CLAUSE_SCOPES = [
+  /** Every attack roll you can make right now — the netted verdict. */
+  "all",
+  /** The creature marked by your Hunter's Mark (Precise Hunter, the HM rider). */
+  "marked",
+  /** The creature cursed by your Hex (the Hex damage rider). */
+  "cursed",
+  /** The creature you have vowed enmity against (Vow of Enmity). */
+  "vowed",
+  /** The creature you missed on your last attack (Studied Attacks). */
+  "missed",
+  /** A creature that has not taken a turn yet (Assassinate). */
+  "untaken",
+  /** Your Strength-based attack rolls only (Reckless Attack). */
+  "strength",
+  /** Your Sorcerer spell attack rolls only (Innate Sorcery). */
+  "sorcery",
+] as const;
+
+/** One scope from {@link ATTACK_CLAUSE_SCOPES}. */
+export type AttackClauseScope = (typeof ATTACK_CLAUSE_SCOPES)[number];
+
+/**
+ * The roll an adv/dis clause applies to. An ATTACK clause MUST declare its
+ * {@link AttackClauseScope} — the required field is what makes PS-J's defect
+ * class (a narrow clause silently glossed as a blanket verdict on every attack
+ * card) unrepresentable rather than merely guarded. The other roll types render
+ * their own localized `description` in the rail, which already carries the scope,
+ * so they carry no `scope`.
+ */
+type AttackScopedRoll =
+  | { rollType: "save" | "check" | "initiative"; scope?: never }
+  | { rollType: "attack"; scope: AttackClauseScope };
+
 export type Grant =
   // ── Senses (merge: max per kind) ─────────────────────────────────────────
   | { type: "darkvision"; range: number /* feet */ }
@@ -1781,7 +1831,7 @@ export type Grant =
     }
 
   // ── Conditional advantage / disadvantage (set-union, soft-typed) ────────
-  | {
+  | ({
       /**
        * Phase C — Permanent advantage on a typed roll. `rollType` narrows to
        * save/check/attack/initiative; `vs` is a free-text descriptor (e.g.
@@ -1801,17 +1851,15 @@ export type Grant =
        * auto-clears it after round 1. Omitted = a permanent clause (the default).
        */
       type: "advantage-on";
-      rollType: "save" | "check" | "attack" | "initiative";
       vs: string;
       round1?: boolean;
       description?: BiText;
-    }
-  | {
+    } & AttackScopedRoll)
+  | ({
       type: "disadvantage-on";
-      rollType: "save" | "check" | "attack" | "initiative";
       vs: string;
       description?: BiText;
-    }
+    } & AttackScopedRoll)
   | {
       /**
        * A ROUND-1-only, save-gated damage DOUBLER note (Assassin Death Strike, L17:
@@ -3132,6 +3180,19 @@ export function grantField(ref: GrantRef, field: string, lit?: BiText): LocText 
 const EMPTY_BITEXT: BiText = { en: "", it: "" };
 
 /**
+ * PS-J — the `scope` slice an adv/dis clause carries into the aggregate: present
+ * ONLY when the clause is an ATTACK clause narrower than "every attack roll"
+ * ({@link AdvantageClause.scope}). `"all"` is dropped so a consumer testing
+ * `scope === undefined` reads exactly one thing: this clause nets into the
+ * card's verdict.
+ */
+function narrowedScope(g: Extract<Grant, { type: "advantage-on" | "disadvantage-on" }>): {
+  scope?: AttackClauseScope;
+} {
+  return g.rollType === "attack" && g.scope !== "all" ? { scope: g.scope } : {};
+}
+
+/**
  * The catalogue ref of a source's top-level grant at `index` — the same
  * `<sourceKey>.grants.<seg>` the evaluator computes. Exported so the (deliberate)
  * second bundle-collector (`feature-choices.collectGrantBundles`) keys its labels
@@ -3402,6 +3463,17 @@ export interface AdvantageClause {
    * `weaponDamageBonuses.whileActiveKey` does. Absent = an unconditional clause.
    */
   whileActiveKey?: string;
+  /**
+   * PS-J — for an ATTACK clause whose reach is NARROWER than "every attack roll
+   * you can make right now": the {@link AttackClauseScope} the card must STATE
+   * instead of asserting a verdict. Absent = the clause is blanket and nets into
+   * the card's Adv./Disadv. gloss (`"all"` never travels — the evaluator drops
+   * it, so "absent" has exactly one meaning). Condition-built clauses
+   * (`condition-effects`) omit it: the 2024 condition set was triaged by RA-32,
+   * whose one scoped member (Grappled) states its exclusion in the turn-limiter
+   * sentence instead.
+   */
+  scope?: AttackClauseScope;
 }
 
 /**
@@ -5286,6 +5358,7 @@ export function evaluateGrants(
           description: grantField(gref, "description", g.description),
           ...(g.round1 ? { round1: true } : {}),
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
+          ...narrowedScope(g),
         });
         break;
       case "disadvantage-on":
@@ -5295,6 +5368,7 @@ export function evaluateGrants(
           vs: g.vs,
           description: grantField(gref, "description", g.description),
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
+          ...narrowedScope(g),
         });
         break;
       case "round1-damage-double":

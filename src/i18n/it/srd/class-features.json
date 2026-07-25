@@ -767,7 +767,7 @@
     "label": "Arma Consacrata"
   },
   "paladin-devotion-sacred-weapon.mechanics.actions.0": {
-    "description": "Canalizzare Divinità (nell'azione di Attacco): aggiungi CHA (min +1) ai tiri per colpire con un'arma da Mischia per 10 minuti; i colpi possono infliggere danni Radianti.",
+    "description": "Incanalare Divinità (nell'azione di Attacco): aggiungi CHA (min +1) ai tiri per colpire con un'arma da Mischia per 10 minuti; i colpi possono infliggere danni Radianti.",
     "label": "Arma Consacrata",
     "summary": "Aggiungi Car agli attacchi di un'arma per 10 minuti"
   },

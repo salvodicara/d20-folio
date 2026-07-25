@@ -11,6 +11,7 @@ import { resolve } from "node:path";
 import { describe, it, expect } from "vitest";
 import {
   loadEntities,
+  loadSubEntityProse,
   loadUiStrings,
   findCollisions,
   findUntranslated,
@@ -24,6 +25,9 @@ import {
 import { BASE_ACTIONS } from "@/lib/smart-tracker";
 
 const ents = loadEntities([PUBLIC_SRD_I18N]);
+// The sub-keyed catalogue rows (grant / action / trait blurbs) — user-visible prose
+// the entity loader skips, scanned by the retired-lexeme check alongside `ents`.
+const subProse = loadSubEntityProse([PUBLIC_SRD_I18N]);
 
 /**
  * The canonical Italian NOUN names of the 2024 generic actions (IT SRD 5.2.1 "Azioni" table /
@@ -99,7 +103,10 @@ describe("IT name consistency (public SRD)", () => {
     expect(findRetiredNames(ents)).toEqual([]);
   });
   it("never revives a retired cross-reference lexeme in prose", () => {
-    expect(findRetiredInProse(ents)).toEqual([]);
+    // Entity prose AND the sub-keyed grant / action / trait blurbs (the blind spot
+    // PS-J found: an action summary can drift while the feature name is right).
+    expect(subProse.length).toBeGreaterThan(100);
+    expect(findRetiredInProse([...ents, ...subProse])).toEqual([]);
   });
   it("pins the base-action IT names to the official 2024 nouns", () => {
     const drift: string[] = [];

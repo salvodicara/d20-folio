@@ -14,7 +14,12 @@
  * the bilingual `BiText` descriptions that already live on the grants.
  */
 
-import type { AggregatedGrants, AdvantageClause, NonWalkingSpeed } from "@/lib/grants";
+import type {
+  AggregatedGrants,
+  AdvantageClause,
+  AttackClauseScope,
+  NonWalkingSpeed,
+} from "@/lib/grants";
 import type { DamageDefenses } from "@/lib/damage-intake";
 import type { AbilityCode, ConditionId, DamageSource, DamageType } from "@/data/types";
 import { SRD_LANGUAGE_IDS } from "@/lib/feat-language-choices";
@@ -685,6 +690,13 @@ export interface AdvantageChip {
    * conditional on the toggle — mirrors the weapon-damage breakdown note.
    */
   whileActive?: boolean;
+  /**
+   * PS-J — for an ATTACK chip narrower than "every attack roll you can make right
+   * now": the {@link AttackClauseScope} the combat card STATES ("Adv. vs marked
+   * target") instead of asserting a blanket verdict. Absent = blanket, and only a
+   * blanket chip may net into the card's Adv./Disadv. gloss.
+   */
+  scope?: AttackClauseScope;
 }
 
 /**
@@ -715,6 +727,7 @@ export function deriveAdvantageChips(
       description: c.description,
       ...(c.round1 ? { round1: true } : {}),
       ...(c.whileActiveKey ? { whileActive: true } : {}),
+      ...(c.scope ? { scope: c.scope } : {}),
     });
   }
   for (const c of [...aggregate.disadvantages, ...(extra?.disadvantages ?? [])]) {
@@ -725,6 +738,7 @@ export function deriveAdvantageChips(
       vs: c.vs,
       description: c.description,
       ...(c.whileActiveKey ? { whileActive: true } : {}),
+      ...(c.scope ? { scope: c.scope } : {}),
     });
   }
   return chips;

@@ -286,7 +286,7 @@ function riderToken(rider: RiderVM, t: TranslateFn): { text: string; outcome: st
       // chip so the +die reads as conditional on hitting THAT creature, never every
       // attack (the app models no enemy — the player applies it on the right hit).
       const markLabel = rider.vsMarkedTarget
-        ? ` ${t(`combat.vsMarkedTarget_${rider.vsMarkedTarget}`)}`
+        ? ` ${t(`combat.attackScope_${rider.vsMarkedTarget}`)}`
         : "";
       return {
         text: `+${rider.dice}${typeWord ? ` ${typeWord}` : ""}${markLabel}`,

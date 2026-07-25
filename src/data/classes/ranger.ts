@@ -301,6 +301,9 @@ export const RANGER_FEATURES: SrdClassFeatureData[] = [
         type: "advantage-on",
         rollType: "attack",
         vs: "hunters-mark-target",
+        // Per-target: only the marked creature. The card states the scope — the
+        // SAME phrase the Hunter's-Mark damage rider shows beside it (PS-J).
+        scope: "marked",
       },
     ],
     source: "SRD",

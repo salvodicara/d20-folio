@@ -51,7 +51,8 @@ import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { slotUsageKey } from "@/lib/cast-options";
 import { resolveSpellCastOptions } from "@/lib/views/spell-cast-sources";
 import { resolveConditionEffects, netRollState } from "@/lib/condition-effects";
-import { deriveAdvantageChips } from "@/lib/views/sheet-view";
+import { ADVANTAGE_MODES, deriveAdvantageChips } from "@/lib/views/sheet-view";
+import type { AttackClauseScope } from "@/lib/grants";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import { useToastStore } from "@/stores/toastStore";
 import {
@@ -137,6 +138,26 @@ function combatKind(action: ResolvedAction): UniversalCardKind {
 }
 
 /**
+ * PS-J — the character's attack-roll modifier state as the cards read it: the
+ * NETTED verdict (`state`) for clauses that apply to every attack roll, plus the
+ * SCOPED clauses the sheet cannot resolve, each stated with the scope it is
+ * limited to. Splitting the two is the fix: netting a scoped clause into `state`
+ * asserted a blanket "Adv." / "Disadv." on every attack card for a clause that
+ * only holds against one creature (Vow of Enmity, Precise Hunter) or on a subset
+ * of the character's own attacks (Reckless Attack, Innate Sorcery).
+ */
+export interface AttackRollView {
+  state: "advantage" | "disadvantage" | "none";
+  scoped: ReadonlyArray<{
+    mode: (typeof ADVANTAGE_MODES)[number];
+    scope: Exclude<AttackClauseScope, "all">;
+  }>;
+}
+
+/** No advantage, no disadvantage, nothing scoped — the cards' resting state. */
+const NO_ATTACK_ROLL: AttackRollView = { state: "none", scoped: [] };
+
+/**
  * The quiet mono gloss sub-line (range · to-hit / save · trigger · duration ·
  * uses-left) — the secondary, decision-useful facts that don't fit the verdict.
  */
@@ -145,7 +166,7 @@ function combatGloss(
   t: TFunction,
   locale: Locale,
   concentrating: boolean,
-  attackRollState: "advantage" | "disadvantage" | "none" = "none"
+  attackRoll: AttackRollView = NO_ATTACK_ROLL
 ): string {
   const parts: string[] = [];
   if (summary.range) parts.push(summary.range);
@@ -160,8 +181,17 @@ function combatGloss(
     // Inline modifier — the engine-derived advantage / disadvantage on THIS
     // attack roll (active conditions like Frightened + grant clauses, netted RAW
     // by `netRollState`). Display of engine truth only — no roll, no RNG.
-    if (attackRollState === "advantage") parts.push(t("abilities.advantage"));
-    else if (attackRollState === "disadvantage") parts.push(t("abilities.disadvantage"));
+    if (attackRoll.state === "advantage") parts.push(t("abilities.advantage"));
+    else if (attackRoll.state === "disadvantage") parts.push(t("abilities.disadvantage"));
+    // PS-J — a clause whose reach the sheet cannot resolve (per-target: the vowed
+    // creature, the marked creature; per-roll: Strength attacks, Sorcerer spell
+    // attacks) is NEVER netted into the verdict above: it STATES its scope, the
+    // same "polarity + scope phrase" grammar the marked-target damage riders use
+    // ("+1d6 Force vs marked target"). The player owns the one fact the app can't
+    // know — which creature this swing is aimed at.
+    for (const c of attackRoll.scoped) {
+      parts.push(`${t(`abilities.${c.mode}`)} ${t(`combat.attackScope_${c.scope}`)}`);
+    }
   }
   if (summary.saveDC != null && summary.saveAbility) {
     parts.push(
@@ -355,8 +385,8 @@ export function PlayTab() {
   // conditions' self-side clauses (`resolveConditionEffects`, e.g. Frightened →
   // Disadvantage on attacks). Display of engine truth — no new modifier math.
   // One character-level value applied to every attack-roll card's gloss.
-  const attackRollState = useMemo<"advantage" | "disadvantage" | "none">(() => {
-    if (!character) return "none";
+  const attackRoll = useMemo<AttackRollView>(() => {
+    if (!character) return NO_ATTACK_ROLL;
     const aggregate = aggregateCharacterGrants(character.character, character.session);
     const cond = resolveConditionEffects(character.session.conditions);
     // S13 — wearing armor the class lacks proficiency with imposes Disadvantage on
@@ -372,10 +402,24 @@ export function PlayTab() {
       // advantage) applies ONLY in combat round 1, then auto-clears from round 2+.
       // A permanent clause has no `round1` flag and always applies.
       .filter((c) => !c.round1 || round === 1);
-    return netRollState(
-      attackChips.some((c) => c.mode === "advantage"),
-      attackChips.some((c) => c.mode === "disadvantage")
-    );
+    // PS-J — ONLY a blanket clause (no `scope`) may become the card's verdict; a
+    // scoped one is stated with its scope instead (`combatGloss`), because the
+    // sheet models no enemies and cannot know whether it applies to this swing.
+    const blanket = attackChips.filter((c) => c.scope === undefined);
+    // One line per distinct (polarity, scope) — two sources vowing the same scope
+    // read as one statement, the same collapse the rail's chip presenter makes.
+    const scoped = new Map<string, AttackRollView["scoped"][number]>();
+    for (const c of attackChips) {
+      if (c.scope === undefined || c.scope === "all") continue;
+      scoped.set(`${c.mode}|${c.scope}`, { mode: c.mode, scope: c.scope });
+    }
+    return {
+      state: netRollState(
+        blanket.some((c) => c.mode === "advantage"),
+        blanket.some((c) => c.mode === "disadvantage")
+      ),
+      scoped: [...scoped.values()],
+    };
   }, [character, round]);
 
   // BG3 grammar (owner ruling 2026-07-10) — Extra Attack's "attacks remaining"
@@ -833,7 +877,7 @@ export function PlayTab() {
         <ThisTurnTracker
           activeFilter={filter}
           onFilterByType={(type) => setFilter((f) => (f === type ? "all" : type))}
-          attackRollState={attackRollState}
+          attackRollState={attackRoll.state}
         />
         {/* TB1 — when the open PC is in an active campaign encounter, the in-combat
             campaign control (the shared own-turn turn-advance) renders WITH the combat
@@ -913,7 +957,7 @@ export function PlayTab() {
                 attackCount={attackCountFor(action)}
                 attackOccupant={attackOccupantFor(action)}
                 slotData={slotPipsFor(action)}
-                attackRollState={attackRollState}
+                attackRoll={attackRoll}
                 higherLevelsFor={higherLevelsFor}
                 onSpendRider={spendRider}
                 depletedTrackers={depletedTrackers}
@@ -951,7 +995,7 @@ export function PlayTab() {
               attackCountFor={attackCountFor}
               attackOccupantFor={attackOccupantFor}
               slotPipsFor={slotPipsFor}
-              attackRollState={attackRollState}
+              attackRoll={attackRoll}
               higherLevelsFor={higherLevelsFor}
               onSpendRider={spendRider}
               depletedTrackers={depletedTrackers}
@@ -975,7 +1019,7 @@ export function PlayTab() {
               attackCountFor={attackCountFor}
               attackOccupantFor={attackOccupantFor}
               slotPipsFor={slotPipsFor}
-              attackRollState={attackRollState}
+              attackRoll={attackRoll}
               higherLevelsFor={higherLevelsFor}
               onSpendRider={spendRider}
               depletedTrackers={depletedTrackers}
@@ -1011,7 +1055,7 @@ export function PlayTab() {
                 committed={reactionUsedId === action.id}
                 blockedReason={blockedReasonFor_(action, false)}
                 slotData={slotPipsFor(action)}
-                attackRollState={attackRollState}
+                attackRoll={attackRoll}
                 higherLevelsFor={higherLevelsFor}
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
@@ -1050,7 +1094,7 @@ export function PlayTab() {
                 attackCount={attackCountFor(action)}
                 attackOccupant={attackOccupantFor(action)}
                 slotData={slotPipsFor(action)}
-                attackRollState={attackRollState}
+                attackRoll={attackRoll}
                 higherLevelsFor={higherLevelsFor}
                 onSpendRider={spendRider}
                 depletedTrackers={depletedTrackers}
@@ -1206,7 +1250,7 @@ function ActionGroup({
   attackCountFor,
   attackOccupantFor,
   slotPipsFor,
-  attackRollState,
+  attackRoll,
   higherLevelsFor,
   onSpendRider,
   depletedTrackers,
@@ -1226,7 +1270,7 @@ function ActionGroup({
   attackCountFor: (action: ResolvedAction) => string | null;
   attackOccupantFor: (action: ResolvedAction) => boolean;
   slotPipsFor: (action: ResolvedAction) => SlotPips | undefined;
-  attackRollState: "advantage" | "disadvantage" | "none";
+  attackRoll: AttackRollView;
   higherLevelsFor: (action: ResolvedAction) => string | null;
   onSpendRider: (action: ResolvedAction, rider: RiderVM) => void;
   depletedTrackers: ReadonlySet<string>;
@@ -1254,7 +1298,7 @@ function ActionGroup({
             attackCount={attackCountFor(action)}
             attackOccupant={attackOccupantFor(action)}
             slotData={slotPipsFor(action)}
-            attackRollState={attackRollState}
+            attackRoll={attackRoll}
             higherLevelsFor={higherLevelsFor}
             onSpendRider={onSpendRider}
             depletedTrackers={depletedTrackers}
@@ -1290,7 +1334,7 @@ function CombatActionCard({
   attackCount,
   attackOccupant,
   slotData,
-  attackRollState,
+  attackRoll,
   higherLevelsFor,
   onSpendRider,
   depletedTrackers,
@@ -1317,7 +1361,7 @@ function CombatActionCard({
    *  gold ring as the group's occupant (see `attackSwingIds`). */
   attackOccupant: boolean;
   slotData?: SlotPips;
-  attackRollState: "advantage" | "disadvantage" | "none";
+  attackRoll: AttackRollView;
   higherLevelsFor: (action: ResolvedAction) => string | null;
   /** Spend a consumable on-hit rider on this card (debit + undo toast). */
   onSpendRider: (action: ResolvedAction, rider: RiderVM) => void;
@@ -1369,7 +1413,7 @@ function CombatActionCard({
     t,
     locale,
     action.concentration,
-    attackRollState
+    attackRoll
   );
   const facts = combatFacts(effectiveSummary, t, locale);
 
@@ -1882,7 +1926,7 @@ function ReactionCard({
   committed,
   blockedReason,
   slotData,
-  attackRollState,
+  attackRoll,
   higherLevelsFor,
   open,
   onOpenChange,
@@ -1899,7 +1943,7 @@ function ReactionCard({
    *  condition state, same as the action cards). Null when freely usable. */
   blockedReason: string | null;
   slotData?: SlotPips;
-  attackRollState: "advantage" | "disadvantage" | "none";
+  attackRoll: AttackRollView;
   higherLevelsFor: (action: ResolvedAction) => string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1910,13 +1954,7 @@ function ReactionCard({
   const kind = combatKind(action);
   const verdict = combatVerdict(action, t);
   const verdictOutcome = combatVerdictOutcome(action.summary);
-  const gloss = combatGloss(
-    action.summary,
-    t,
-    locale,
-    action.concentration,
-    attackRollState
-  );
+  const gloss = combatGloss(action.summary, t, locale, action.concentration, attackRoll);
   const facts = combatFacts(action.summary, t, locale);
   // D9 — an upcastable reaction spell (Counterspell, Shield, Absorb Elements, …)
   // shows the SAME "At Higher Levels" callout as the action card / Spells page.

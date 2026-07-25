@@ -40,7 +40,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
         grants: [
           { type: "advantage-on", rollType: "check", vs: "foresight" },
           { type: "advantage-on", rollType: "save", vs: "foresight" },
-          { type: "advantage-on", rollType: "attack", vs: "foresight" },
+          { type: "advantage-on", rollType: "attack", vs: "foresight", scope: "all" },
         ],
       },
     ],

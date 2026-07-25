@@ -63,16 +63,20 @@ describe("Barbarian Danger Sense declares the DEX-save advantage", () => {
   });
 });
 
-describe("Ranger Precise Hunter declares the attack advantage (G16)", () => {
-  it("carries the exact advantage-on(attack) clause vs its target", () => {
+describe("Ranger Precise Hunter declares the attack advantage (G16 · PS-J)", () => {
+  it("carries the exact advantage-on(attack) clause, SCOPED to the marked target", () => {
     // The hunters-mark-target pattern — a stable `vs` token (never rendered to
-    // the user; surfaced as the inline attack gloss). Its pack sibling (Paladin
-    // Vow of Enmity) is pinned in content-pack/tests/unit/advantage-rail.pack.test.ts.
+    // the user) plus the `scope` the card STATES ("Adv. vs marked target"), the
+    // same phrase the Hunter's-Mark damage rider shows beside it. Without the
+    // scope this Advantage glossed EVERY attack card from Ranger 17 (PS-J). Its
+    // pack sibling (Paladin Vow of Enmity) is pinned in
+    // content-pack/tests/unit/advantage-rail.pack.test.ts.
     const grants = classFeatureIndex.get("ranger-precise-hunter")?.grants ?? [];
     expect(grants.find((g) => g.type === "advantage-on")).toEqual({
       type: "advantage-on",
       rollType: "attack",
       vs: "hunters-mark-target",
+      scope: "marked",
     });
   });
 });

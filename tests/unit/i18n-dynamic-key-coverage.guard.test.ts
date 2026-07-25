@@ -69,7 +69,7 @@ import { castingTimeI18nKey } from "@/lib/utils";
 import { spells } from "@/data/spells";
 import { BASE_ACTIONS } from "@/lib/smart-tracker";
 import { SENSE_KINDS, SPEED_KINDS, ADVANTAGE_MODES } from "@/lib/views/sheet-view";
-import { AURA_AFFECTS } from "@/lib/grants";
+import { ATTACK_CLAUSE_SCOPES, AURA_AFFECTS } from "@/lib/grants";
 import { MANEUVER_SLOTS } from "@/data/maneuvers";
 import { REPORT_TYPES, REPORT_SEVERITIES } from "@/features/report/types";
 import { ALL_TOOL_CHOICE_KINDS } from "@/data/background-equipment";
@@ -258,6 +258,20 @@ const FAMILIES: readonly Family[] = [
     label: "combat.reactionTrigger_${action.trigger}",
     source: "ALL_REACTION_TRIGGERS (@/data/types)",
     keys: () => ALL_REACTION_TRIGGERS.map((t) => `combat.reactionTrigger_${t}`),
+  },
+
+  {
+    // PS-J — the scope phrase an attack-side effect states when the sheet cannot
+    // resolve it: `t(\`combat.attackScope_${scope}\`)`, emitted by BOTH consumers
+    // of the one family — the situational attack-advantage clauses (`PlayTab`'s
+    // gloss) and the marked/cursed-target damage riders (`ActionRiders`). `"all"`
+    // never reaches a key: it is the blanket scope that nets into the verdict.
+    label: "combat.attackScope_${scope}",
+    source: "ATTACK_CLAUSE_SCOPES (@/lib/grants)",
+    keys: () =>
+      ATTACK_CLAUSE_SCOPES.filter((s) => s !== "all").map(
+        (s) => `combat.attackScope_${s}`
+      ),
   },
 
   // ── equipment.* (category plural + currency abbr) ──────────────────────────

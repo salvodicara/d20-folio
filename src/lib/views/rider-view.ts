@@ -79,7 +79,8 @@ export interface RiderVM {
   /**
    * A per-hit "vs a specific marked/cursed creature" rider (Hunter's Mark /
    * Hex): the chip appends a "vs marked target" / "vs cursed target" label
-   * (`combat.vsMarkedTarget_*`) so the player applies the die only when the hit
+   * (`combat.attackScope_*` — the ONE scope-phrase family, shared with the
+   * situational attack-advantage clauses) so the player applies the die only when the hit
    * lands on that creature — never every attack (the app models no enemy). The
    * token picks the localized noun. Absent → an always-applies rider.
    */

@@ -165,6 +165,9 @@ export const SORCERER_FEATURES: SrdClassFeatureData[] = [
             type: "advantage-on",
             rollType: "attack",
             vs: "sorcerer-spells",
+            // Sorcerer SPELL attack rolls only — a weapon swing gets nothing, so
+            // the card states the scope instead of a blanket verdict (PS-J).
+            scope: "sorcery",
           },
         ],
       },

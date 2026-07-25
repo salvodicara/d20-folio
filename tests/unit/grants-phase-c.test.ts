@@ -294,6 +294,7 @@ describe("advantage / disadvantage chips", () => {
           type: "disadvantage-on",
           rollType: "attack",
           vs: "sunlight",
+          scope: "all",
           description: {
             en: "Disadvantage in sunlight",
             it: "Svantaggio alla luce del sole",

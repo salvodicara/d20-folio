@@ -404,6 +404,9 @@ export const RETIRED_IN_PROSE_SRD: readonly string[] = [
   "Bevitrice di Vita",
   "Cacciatore Preciso",
   "Cambio Forma",
+  // PS-J sweep — the paladin/cleric feature is canonically "Incanalare Divinità"
+  // (its own `name`); two action blurbs had drifted to this variant.
+  "Canalizzare Divinità",
   "Cognizioni del Cacciatore",
   "Colonna di Fuoco",
   "Colpi Ingannevoli",
@@ -572,6 +575,35 @@ export function loadEntities(roots: string[]): Ent[] {
           it: iv && typeof iv.name === "string" ? iv.name : "",
           itFields: fields,
         });
+      }
+    }
+  }
+  return ents;
+}
+
+/**
+ * The SUB-KEYED catalogue rows — `<entityId>.grants.<seg>`, `<entityId>.mechanics.actions.<n>`,
+ * `<entityId>.traits.<id>` — which {@link loadEntities} deliberately skips (they carry no entity
+ * `name` to collide or leave untranslated). Their `description` / `summary` / `label` strings ARE
+ * user-visible prose (the action-card blurb, the rail's grant line), so they obey the SAME
+ * cross-reference lexeme rule (D2), and NOTHING was scanning them: the PS-J sweep found two action
+ * blurbs reading "Canalizzare Divinità" while the feature's own name is "Incanalare Divinità".
+ *
+ * Returned as `Ent`s with empty `en`/`it` names so they feed ONLY the prose scan — never the
+ * name-collision / untranslated / retired-NAME checks, which need a real entity name.
+ */
+export function loadSubEntityProse(roots: string[]): Ent[] {
+  const ents: Ent[] = [];
+  for (const root of roots) {
+    for (const kind of KINDS) {
+      const itP = resolve(root, "it", "srd", kind + ".json");
+      if (!existsSync(itP)) continue;
+      const it = JSON.parse(readFileSync(itP, "utf8")) as Record<string, unknown>;
+      for (const [id, ivRaw] of Object.entries(it)) {
+        if (!id.includes(".") || typeof ivRaw !== "object" || ivRaw === null) continue;
+        const fields: string[] = [];
+        proseStrings(ivRaw, fields);
+        if (fields.length > 0) ents.push({ kind, id, en: "", it: "", itFields: fields });
       }
     }
   }

@@ -103,7 +103,12 @@ build on:
   prose, **or in the Italian CHROME strings** (`src/i18n/it/ui/*.json`). The chrome cross-references
   the same closed sets the catalogues do, so it obeys the same lexicon: the combat turn-limiter
   banner once read _Sfinimento_ while the rail rubric rendered the canonical _Indebolimento_ on the
-  SAME screen (fixed 2026-07-24), which is why the scan now covers the UI shards too.
+  SAME screen (fixed 2026-07-24), which is why the scan now covers the UI shards too. The prose scan
+  ALSO covers the **sub-keyed catalogue rows** — `<entityId>.grants.<seg>`,
+  `<entityId>.mechanics.actions.<n>`, `<entityId>.traits.<id>` (`loadSubEntityProse`): those blurbs
+  are what the action card and the rail actually render, and nothing was reading them until the PS-J
+  sweep found two Channel Divinity action summaries printing _Canalizzare Divinità_ while the
+  feature's own name is the canonical _Incanalare Divinità_ (fixed 2026-07-25).
 - **Closed-set condition drift** — the 15 condition `name.it` values are PINNED to the glossary table
   above (the most cross-referenced closed set in the app); a new condition must be pinned too.
 

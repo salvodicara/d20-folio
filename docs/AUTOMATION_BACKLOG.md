@@ -1284,16 +1284,44 @@ were DEAD duplicates.
       | `CONDITION_GATES` grappled                           | `grappled`                         | per-target (not grappler)| ALREADY triaged by RA-32 (scoped limiter line) |
       | `unproficient-armor` (S13)                           | `unproficient-armor`               | STR/DEX attacks          | see PS-J7 (same per-roll-ability shape)        |
 
-- [ ] **PS-J2…PS-J7 (WRONG GLOSS SHIPPED) — narrowing-scope attack clauses still gloss EVERY attack
-      card.** OPEN (2026-07-25). The six rows above whose scope is narrower than the roll being
-      glossed: `attackRollState` reads `rollType` and ignores `vs`, so each is asserted as a blanket
-      verdict on every attack card — Precise Hunter (Ranger 17) and Vow of Enmity (Oath of Vengeance 3,
-      pack — the highest-impact: a popular subclass at level 3) show a permanent false "Adv."; Studied
-      Attacks and Assassinate show one while their own window is open; Innate Sorcery marks WEAPON
-      attacks advantaged; Reckless Attack marks DEX attacks advantaged. Per-target scoping is a
-      DOCUMENTED residual (`docs/MECHANICS.md` → "Non-automatable residuals") and stays one — the fix
-      is never to model enemies, it is to **stop glossing a conditional effect as unconditional**: an
-      effect the app cannot scope must be STATED with its condition, not asserted as a verdict.
+- [x] **PS-J2…PS-J7 (WRONG GLOSS SHIPPED) — narrowing-scope attack clauses glossed EVERY attack
+      card.** FIXED 2026-07-25. The six rows above whose scope is narrower than the roll being
+      glossed: `attackRollState` read `rollType` and ignored the scope, so each was asserted as a
+      blanket verdict on every attack card — Precise Hunter (Ranger 17) and Vow of Enmity (Oath of
+      Vengeance 3, pack — the highest-impact: a popular subclass at level 3) showed a PERMANENT false
+      "Adv."; Studied Attacks and Assassinate showed one while their own window was open; Innate
+      Sorcery marked WEAPON attacks advantaged; Reckless Attack marked DEX attacks advantaged.
+
+      Per-target scoping stays the DOCUMENTED residual it always was (`docs/MECHANICS.md` →
+      "Non-automatable residuals" — the sheet models one character and no enemies). The fix is not
+      enemy modeling, it is to **stop glossing a conditional effect as unconditional**:
+
+      - **The seam.** Every `rollType: "attack"` adv/dis grant now REQUIRES a `scope`
+        (`ATTACK_CLAUSE_SCOPES`, `src/lib/grants.ts`). `"all"` is the only scope the netted verdict
+        folds in; a narrower one travels to the card as `AdvantageChip.scope`. A narrow clause can no
+        longer be authored as a blanket verdict — the type rejects it, which is why the compiler (not
+        a crawl) produced the audit table above.
+      - **The card.** `PlayTab`'s `attackRoll` splits into the netted `state` (blanket clauses only)
+        and the `scoped` list; each scoped clause states itself as "polarity + scope phrase"
+        ("Adv. vs marked target", "Adv. on Strength attacks") — the SAME grammar the marked-target
+        damage riders already ship on that card. The phrase family `combat.attackScope_*` is now the
+        ONE home for both (it absorbed the riders' `combat.vsMarkedTarget_*` keys — one semantic
+        unit, one key), derived into the dynamic-key coverage guard from the tuple.
+      - **Vow of Enmity additionally became the 1-minute activation it always was:** a `while-active`
+        + `{ kind: "timed", minutes: 1 }` wrapper (Innate Sorcery's shape). Because the feature also
+        carries `mechanics.actions`, the engine already infers it as an ACTIVATION feature, so using
+        the Channel Divinity card lights the toggle and arms the countdown — no new UI. Before the
+        vow is uttered the paladin now carries no advantage at all.
+
+      Regressions: `tests/unit/attack-scope-clauses.test.tsx` (the rendered attack-card gloss for
+      Precise Hunter + Reckless Attack, lit and unlit) and
+      `content-pack/tests/unit/advantage-rail.pack.test.ts` (Vow of Enmity's activation + scoped chip).
+
+      Left open deliberately: `strength` and `sorcery` are scopes the ACTION SUMMARY could resolve per
+      card (it knows neither the attack's ability nor a spell's owning class today). Stating the scope
+      is correct but shows the line on cards it cannot apply to; threading those two facts onto
+      `ResolvedAction["summary"]` would let the card resolve them exactly. Not built — no user has
+      asked, and the stated scope is never wrong (golden rule 1, YAGNI).
 
 - [x] **B1 (CRITICAL, live data) — Rage auto-expires at round 10, not round 100.** FIXED 2026-06-24.
       `barbarian.ts:175` now `maxRounds:100` (RAW: 10 minutes = 100 rounds @ 6 s/round) so the End-Turn

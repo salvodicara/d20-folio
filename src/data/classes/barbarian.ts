@@ -295,6 +295,9 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
             type: "advantage-on",
             rollType: "attack",
             vs: "strength-attacks",
+            // RAW is Strength-BASED attack rolls only, so the card states the
+            // scope instead of glossing every swing (PS-J).
+            scope: "strength",
           },
           { type: "incoming-attack-advantage" },
         ],

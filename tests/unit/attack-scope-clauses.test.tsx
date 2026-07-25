@@ -49,8 +49,10 @@ function renderPage() {
 }
 
 /** Every attack-card gloss on the page (the mono sub-line carrying "+N to hit"). */
-function attackGlosses(): string[] {
-  return screen.getAllByText(/to hit/i).map((el) => el.textContent);
+function attackGlosses(): (string | null)[] {
+  // The gloss is the ONE node whose text carries the signed to-hit figure; the
+  // card's expanded fact row renders the bare "to hit" rubric on its own.
+  return screen.getAllByText(/[+\-−]\d+ to hit/i).map((el) => el.textContent);
 }
 
 beforeEach(() => {
@@ -85,5 +87,45 @@ describe("PS-J — narrowing-scope attack clauses never gloss every attack card"
     const glosses = attackGlosses();
     expect(glosses.length).toBeGreaterThan(0);
     for (const g of glosses) expect(g).not.toMatch(/Disadv\./);
+  });
+
+  it("Precise Hunter STATES its scope instead of asserting Advantage on every swing", () => {
+    load(hunter(17));
+    renderPage();
+    const glosses = attackGlosses();
+    expect(glosses.length).toBeGreaterThan(0);
+    for (const g of glosses) {
+      // The bare verdict — "+9 to hit · Adv." — is the defect; the scoped
+      // statement is the fix, and it must never appear without its scope.
+      expect(g).toMatch(/Adv\. vs marked target/);
+      expect(g).not.toMatch(/Adv\.(?! vs marked target)/);
+    }
+  });
+
+  it("Reckless Attack scopes to Strength attacks ONLY while the toggle is lit", () => {
+    // A blanket "Adv." here would be wrong twice over: Reckless is a declared
+    // state, and RAW it reaches Strength-based attack rolls only.
+    const barbarian = (activeFeatures: string[]): ScenarioSpec => ({
+      name: "Vokka",
+      raceId: "human",
+      classId: "barbarian",
+      subclassId: "berserker",
+      level: 3,
+      background: "soldier",
+      abilityScores: S,
+      weapons: [{ srdId: "greataxe", quantity: 1 }],
+      activeFeatures,
+    });
+
+    load(barbarian([]));
+    const off = renderPage();
+    for (const g of attackGlosses()) expect(g).not.toMatch(/Adv\./);
+    off.unmount();
+
+    load(barbarian(["barbarian-reckless-attack"]));
+    renderPage();
+    const lit = attackGlosses();
+    expect(lit.length).toBeGreaterThan(0);
+    for (const g of lit) expect(g).toMatch(/Adv\. on Strength attacks/);
   });
 });

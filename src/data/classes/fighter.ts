@@ -303,6 +303,9 @@ export const FIGHTER_FEATURES: SrdClassFeatureData[] = [
             type: "advantage-on",
             rollType: "attack",
             vs: "missed-creature",
+            // "against that creature" — a per-target scope the sheet cannot see,
+            // so the card states it rather than glossing every attack (PS-J).
+            scope: "missed",
           },
         ],
         duration: { kind: "timed", minutes: 0, maxRounds: 2 },
