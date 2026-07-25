@@ -380,6 +380,33 @@ describe("highlightRulesText — Advantage / Disadvantage (.rt-adv / .rt-dis)", 
       hl("it", "questo è il vantaggio del piano").querySelector(".rt-adv")
     ).toBeNull();
   });
+
+  it("(l4) IT 'dispone di' + 'subisce' ink — the corpus's two DOMINANT verb forms", () => {
+    // Counted over `src/i18n/it/srd/*.json`: "dispone di vantaggio" ×64 and
+    // "subisce/subiscono svantaggio" ×24 — 88 of the ~115 verb-phrase
+    // occurrences. The gate covered neither, so most of IT's Advantage /
+    // Disadvantage prose shipped un-inked while the same EN prose inked. The
+    // mimic statblock ("…subiscono svantaggio") is the surface that surfaced it.
+    expect(
+      toks(hl("it", "il berserker dispone di vantaggio sui tiri per colpire"), "rt-adv")
+    ).toEqual([["vantaggio", ""]]);
+    expect(
+      toks(hl("it", "le creature dispongono di vantaggio su quella prova"), "rt-adv")
+    ).toEqual([["vantaggio", ""]]);
+    expect(
+      toks(hl("it", "il bersaglio subisce svantaggio ai tiri per colpire"), "rt-dis")
+    ).toEqual([["svantaggio", ""]]);
+    expect(
+      toks(hl("it", "le prove per sfuggire subiscono svantaggio"), "rt-dis")
+    ).toEqual([["svantaggio", ""]]);
+    expect(
+      hl("it", "senza subire svantaggio").querySelector(".rt-dis")?.textContent
+    ).toBe("svantaggio");
+    // Still gated: no verb in front, no ink.
+    expect(
+      hl("it", "il piano offre un netto vantaggio").querySelector(".rt-adv")
+    ).toBeNull();
+  });
 });
 
 describe("highlightRulesText — mark safety through InlineMarkdown", () => {

@@ -50,10 +50,14 @@ export interface RulesProseVocab {
   disadvantage: string;
   /**
    * The verb-phrase LOOKBEHIND that unlocks the lowercase Advantage/Disadvantage
-   * forms — the SRD writes "has/have/with/gains advantage" (EN) and the verb
-   * forms "ha/hai/hanno/avere (anche) (s)vantaggio" + "con (s)vantaggio" (IT) in
-   * lower case, all mechanical. Only the adv/dis word is inked, never the verb
-   * (this gates it). Alternations only, no captures.
+   * forms — the SRD writes "has/have/with/gains advantage" (EN) and, in IT, the
+   * verb forms "ha/hai/hanno/avere (anche) (s)vantaggio", "con (s)vantaggio",
+   * "dispone/dispongono di vantaggio" and "subisce/subiscono/subire svantaggio",
+   * all lower case, all mechanical. The IT list is NOT decorative: "dispone di"
+   * and "subisce" carry 88 of the ~115 verb-phrase occurrences in the IT SRD
+   * catalogues, so omitting them left most of the locale's Advantage /
+   * Disadvantage prose silently un-inked while EN's inked. Only the adv/dis word
+   * is inked, never the verb (this gates it). Alternations only, no captures.
    */
   advGate: string;
   /**
@@ -132,7 +136,8 @@ export const RULES_PROSE: Record<Locale, RulesProseVocab> = {
       "\\d+(?:[.,]\\d+)*[-\\s](?:piede|piedi|centimetr[oi]|metr[oi]|chilometr[oi]|migli[oa]|or[ae]|minut[oi]|round|giorn[oi])",
     advantage: "Vantaggio",
     disadvantage: "Svantaggio",
-    advGate: "(?:[Hh]a|[Hh]ai|[Hh]anno|[Aa]vere|[Cc]on)\\s+(?:anche\\s+)?",
+    advGate:
+      "(?:[Hh]a|[Hh]ai|[Hh]anno|[Aa]vere|[Cc]on|[Dd]ispon(?:e|gono)\\s+di|[Ss]ubi(?:sce|scono|re))\\s+(?:anche\\s+)?",
     invisibleContext: null,
     conditionVariants: {
       blinded: ["Accecata", "Accecati", "Accecate"],

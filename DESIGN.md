@@ -1652,10 +1652,15 @@ four arms above, three false-positive gates earn their place: a measured number 
 decimal/thousand separators as one token (IT "1,5 metri", EN "1,000 feet"); "invisible" inks only as
 the capitalized defined term or in creature/condition context (objects wear "an invisible barrier"
 without the condition); and Advantage/Disadvantage also ink their lowercase verb-phrase forms ("has
-advantage" / "con vantaggio"), gated so only the adv/dis word lifts. All locale words live in
+advantage" / "con vantaggio"), gated so only the adv/dis word lifts. **The verb gate is per-locale
+and must be counted against the real corpus, not translated from English's:** IT's gate covered
+`ha/hai/hanno/avere/con` and missed `dispone di` (×64) and `subisce/subiscono` (×24), so 88 of the
+~115 verb-phrase occurrences in `src/i18n/it/srd/*.json` shipped un-inked while the same EN prose
+inked — a bilingual-parity break invisible to every EN test. All locale words live in
 `src/i18n/rules-prose.ts` (typed over `DamageType` × `Locale`); it edits ZERO SRD strings and never
 touches `parseInline`. Contract pinned in `tests/unit/highlight-rules-text.test.tsx`;
-ink-on-prose-ground AA pinned in `tests/unit/verdict-ink-contrast.test.ts`.
+ink-on-prose-ground AA pinned in `tests/unit/verdict-ink-contrast.test.ts` (tokens) and
+`tests/e2e/statblock-ink-contrast.spec.ts` (composited, real Chromium).
 
 ### Bounded prose + bounded lists (the overflow recipes)
 
