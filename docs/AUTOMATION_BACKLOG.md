@@ -1247,6 +1247,22 @@ were DEAD duplicates.
 > commit** (golden rule 13); a correctness-only fix that changes a pinned value updates that test in the
 > same commit.
 
+- [ ] **PS-J (WRONG GLOSS SHIPPED) — Hunter _Escape the Horde_ marks EVERY attack the character makes
+      Disadvantaged.** OPEN (found 2026-07-25 by the post-sweep convergence review; pre-existing on
+      `main`, NOT introduced by that wave). `ranger.ts:402-408` models the option as
+      `disadvantage-on { rollType: "attack", vs: "opportunity-attacks-against-you" }` **on the
+      character**, but the RAW effect is on attacks made _against_ you (Opportunity Attacks against
+      you have Disadvantage). `PlayTab`'s `attackRollState` nets every `rollType: "attack"` clause the
+      character carries, so a Hunter who picks Escape the Horde sees EVERY attack card glossed
+      "Disadvantage" — a wrong modifier taught on every swing, from Hunter level 7 on. The clause belongs in
+      the `incoming-attack-disadvantage` family (the SELF-side defensive mirror — Blur's shape), which
+      the rail renders as a framed defensive line and `attackRollState` correctly ignores. This is the
+      FIRST real violation of the authoring rule PS-G wrote into `docs/MECHANICS.md` (**ONE `vs` slug =
+      ONE scope**): the slug names an incoming-attack scope while sitting in the outgoing-attack
+      family, and nothing today can catch that mismatch — the fix should consider a guard pairing
+      `vs` slugs to the grant family they may appear in. The bundle's other option
+      (`multiattack-defense`) is a `granted-action` chip, so it is unaffected.
+
 - [x] **B1 (CRITICAL, live data) — Rage auto-expires at round 10, not round 100.** FIXED 2026-06-24.
       `barbarian.ts:175` now `maxRounds:100` (RAW: 10 minutes = 100 rounds @ 6 s/round) so the End-Turn
       countdown no longer drops Rage 90 rounds early. Fixed every "Rage = 10 rounds" doc-comment across
@@ -1657,6 +1673,16 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       stay). Regressions: `advantage-rail.test.ts` — Champion + Sentinel Shield → each row once,
       no restated label in either locale, AND the other direction (two attuned cloaks granting
       `vs: "stealth"` with different qualifiers → BOTH rows stay) — fail-before/pass-after.
+      **Because the key is the localized text, the collapse must not be locale-dependent:** three
+      items + one pack feature shared ONE English string ("Saving throws against spells") while IT
+      spelled it two ways ("contro incantesimi" · "contro _gli_ incantesimi"), so an attuned
+      character saw one row in EN and two indistinguishable rows in IT — PS-G alive in one locale.
+      Same shape in the pack for the Charmed-or-Frightened save pair (Aberrant Sorcerer vs Fey
+      Wanderer). Both groups were normalized to the IT corpus majority (14 vs 5 for "contro
+      incantesimi"; 28 vs 1 for "evitare o terminare la condizione") and locked by a new
+      `advantage-vs-slug.guard.test.ts` case: grant descriptions that agree in one locale MUST agree
+      in the other — both directions, both roots. Its scan over all 208 descriptions finds exactly
+      those two groups and nothing else, fail-before/pass-after.
 
 - [x] **PS-H (three minor sheet defects).** FIXED 2026-07-24. (h1) `DyingBanner` bailed on
       `current > 0`, so an Exhaustion-6 death — which kills at FULL HP — raised no banner at all;
@@ -1668,18 +1694,22 @@ code, comment, and tests are all correct — pinned by `tests/unit/multiclass-sl
       penalty with an ASCII hyphen ("-5") instead of the app's true minus. Regressions in
       `dying-banner.test.tsx`, `spell-card-verdict.test.ts`, `travel-pace.test.ts`.
 
-- [ ] **PS-I (sweep findings NOT fixed here) — the deliberate carry-forward.** The sweep's
-      remaining three, left open on purpose so the wave stayed one coherent unit: 1. **The creation-review ledger misaligns in IT.** In "Le tue scelte" the long
-      `EQUIPAGGIAMENTO` rubric pushes its value out of the column the other six rows share, so
-      the IT ledger reads ragged where EN is flush (IT only, both themes — sweep shot `17b`).
-      Fix belongs at the row grid (a rubric column sized to the LONGEST rubric), not per row. 2. **The ⌘K gloss band shows no match REASON.** After PS-F the band is capped and
-      word-quality-only, but a gloss row still lands with nothing visible to explain it ("cover"
-      → _Light_, _Sacred Flame_, _Thorn Whip_ — the match lives in prose the row does not show).
-      Either show the matched fragment or drop the band; deciding that is a design call, not a
-      bug fix. 3. **The spell-card meta line's `conc.` reads lowercase** beside its Title-Case siblings
-      ("Divination · Self · conc."). Reviewed with PS-H's casing fixes and CLOSED AS A KEEP: it
-      is an abbreviation, not a header — the one lowercase token on the line is deliberate, and
-      PS-H's h2 fixed the genuine slip (the verdict chip) beside it.
+- [ ] **PS-I (sweep findings NOT fixed here) — the deliberate carry-forward.** The sweep found
+      eleven defects and this wave fixed eight (PS-A…PS-H); these are what it left, reconstructed
+      from the sweep's own Chromium shots and the wave's commits — the sweep's original written list
+      was never committed, so this enumeration is REBUILT evidence, not a transcript, and a
+      forgotten fourth finding cannot be ruled out. (1) **The creation-review ledger misaligns in
+      IT** — in "Le tue scelte" the long `EQUIPAGGIAMENTO` rubric pushes its value out of the column
+      the other six rows share, so the IT ledger reads ragged where EN is flush (IT only, both
+      themes; sweep shot `17b`). The fix belongs at the row grid (a rubric column sized to the
+      LONGEST rubric), not per row. (2) **The ⌘K gloss band shows no match REASON** — after PS-F the
+      band is capped and word-quality-only, but a gloss row still lands with nothing visible to
+      explain it ("cover" → _Light_, _Sacred Flame_, _Thorn Whip_: the match lives in prose the row
+      does not show). Either surface the matched fragment or drop the band — a design call, not a
+      bug fix. (3) **The spell-card meta line's `conc.` reads lowercase** beside its Title-Case
+      siblings ("Divination · Self · conc."), reviewed alongside PS-H's casing fixes and CLOSED AS A
+      KEEP: it is an abbreviation, not a header, so the one lowercase token on the line is
+      deliberate — PS-H's h2 fixed the genuine slip (the verdict chip) beside it.
 
 ---
 

@@ -366,10 +366,12 @@ push/drag/lift number hidden in a native `title=` and unreachable on touch (PS-C
 Rules-Reference grid stretching its short cards (PS-D), two casing conventions on one screen (PS-E),
 ⌘K ranking a substring buried inside another word as high as a real name (PS-F), the Advantages rail
 listing one advantage twice in two registers (PS-G), and three minor sheet slips including a death
-that raised no banner (PS-H). The three deliberately left are recorded as **PS-I** in the same
-ledger: the IT creation-review ledger's column misalignment, the ⌘K gloss band's missing match
-reason, and the spell-card `conc.` abbreviation (closed as a keep). UNDEPLOYED on `main` (golden
-rule 22).
+that raised no banner (PS-H). The three left are recorded as **PS-I** in the same ledger (the IT
+creation-review ledger's column misalignment, the ⌘K gloss band's missing match reason, and the
+spell-card `conc.` abbreviation — closed as a keep). The eleven/eight/three split is REBUILT from
+the sweep's Chromium shots and the wave's commits: the sweep's written list was never committed, so
+PS-I carries that provenance and a forgotten finding cannot be ruled out. UNDEPLOYED on `main`
+(golden rule 22).
 
 ## Shipped — Combat-tab reference disclosure (2026-07-24)
 
