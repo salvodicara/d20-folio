@@ -23,7 +23,23 @@ import type { EncounterMonster } from "@/types/campaign";
 
 beforeAll(async () => {
   if (i18n.language !== "en") await i18n.changeLanguage("en");
+  // jsdom has no layout — the current-combatant auto-scroll would throw otherwise.
+  HTMLElement.prototype.scrollIntoView = vi.fn();
 });
+
+/** A monster group carrying a bestiary `srdId` (a picker-added group). */
+function goblinWithSrd(over: Partial<Parameters<typeof addMonster>[1]> = {}) {
+  const state = addMonster(startEncounter({}, [], 1), {
+    name: "Goblin A",
+    ac: 13,
+    maxHp: 7,
+    count: 3,
+    initiative: null,
+    srdId: "goblin-warrior",
+    ...over,
+  });
+  return state.combatants[0] as EncounterMonster;
+}
 
 // ─── B25 — AddMonsterForm.add() resets EVERY field ──────────────────────────────
 
@@ -117,6 +133,66 @@ describe("MonsterInitChip (via MonsterCard) — focusing the edit input never sc
     render(<MonsterCard monster={ogre()} isCurrent={false} apply={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Initiative for Ogre" }));
     expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
+  });
+});
+
+// ─── §C — the DM statblock disclosure + rename ──────────────────────────────────
+
+describe("MonsterCard — DM statblock disclosure (§C.1/§C.2)", () => {
+  it("a DM card with srdId shows the Statblock button", () => {
+    render(<MonsterCard monster={goblinWithSrd()} isCurrent apply={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Statblock" })).toBeTruthy();
+  });
+
+  it("a DM card WITHOUT srdId shows no Statblock button (hand-typed monster)", () => {
+    const noSrd = goblinWithSrd({ srdId: undefined });
+    render(<MonsterCard monster={noSrd} isCurrent apply={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Statblock" })).toBeNull();
+  });
+
+  it("a PLAYER card (no apply) shows NO disclosure body even with srdId (byte-identical player card)", () => {
+    render(<MonsterCard monster={goblinWithSrd()} isCurrent={false} />);
+    // No DM affordances at all — no statblock, no rename, no remove.
+    expect(screen.queryByRole("button", { name: "Statblock" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Monster name" })).toBeNull();
+  });
+});
+
+describe("MonsterCard — DM rename-in-place routes through apply (§C.4)", () => {
+  it("committing a new name calls apply (setMonsterName)", () => {
+    const apply = vi.fn();
+    render(<MonsterCard monster={goblinWithSrd()} isCurrent apply={apply} />);
+    fireEvent.click(screen.getByRole("button", { name: "Monster name" }));
+    const input = screen.getByLabelText("Monster name");
+    fireEvent.change(input, { target: { value: "Goblin B" } });
+    fireEvent.blur(input);
+    expect(apply).toHaveBeenCalled();
+  });
+});
+
+describe("MonsterCard — init-chip null relaxation once turns begin (§D.3)", () => {
+  it("initLocked + a NULL initiative keeps the chip EDITABLE (a fresh reinforcement)", () => {
+    render(
+      <MonsterCard
+        monster={goblinWithSrd({ initiative: null })}
+        isCurrent={false}
+        initLocked
+        apply={vi.fn()}
+      />
+    );
+    expect(screen.getByRole("button", { name: "Initiative for Goblin A" })).toBeTruthy();
+  });
+
+  it("initLocked + a SET initiative renders the STATIC chip (locked like every frozen row)", () => {
+    render(
+      <MonsterCard
+        monster={goblinWithSrd({ initiative: 12 })}
+        isCurrent={false}
+        initLocked
+        apply={vi.fn()}
+      />
+    );
+    expect(screen.queryByRole("button", { name: "Initiative for Goblin A" })).toBeNull();
   });
 });
 

@@ -16,8 +16,12 @@ vi.mock("@/features/campaigns/dm-readers", () => ({
   recomputeDmReadersForChars: vi.fn(() => Promise.resolve()),
 }));
 
-import { EncounterAddMonsterModal } from "@/features/campaigns/encounter-bestiary";
+import {
+  EncounterAddMonsterModal,
+  EncounterStatblockModal,
+} from "@/features/campaigns/encounter-bestiary";
 import { makeEncounterMonsterSpec } from "@/features/campaigns/encounter-monster-spec";
+import { localizeSrd } from "@/i18n/resolver";
 
 beforeAll(async () => {
   if (i18n.language !== "en") await i18n.changeLanguage("en");
@@ -38,6 +42,38 @@ describe("EncounterAddMonsterModal — Bestiary + Custom tabs (§A.2)", () => {
     render(<EncounterAddMonsterModal onAdd={vi.fn()} onClose={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Custom monster" }));
     expect(screen.getByLabelText("Monster name")).toBeTruthy();
+  });
+});
+
+describe("EncounterStatblockModal — DM statblock disclosure (§C.3)", () => {
+  it("a real id renders the statblock with the canonical name title + identity line", () => {
+    render(
+      <EncounterStatblockModal
+        srdId="goblin-warrior"
+        combatantName="Goblin A"
+        onClose={vi.fn()}
+      />
+    );
+    // The ModalShell title is the combatant's user-typed name…
+    expect(screen.getByText("Goblin A")).toBeTruthy();
+    // …and the card prints the canonical localized statblock name (the dual-title).
+    const canonical = localizeSrd("monster", "goblin-warrior", "name", "en");
+    expect(screen.getAllByText(new RegExp(canonical, "i")).length).toBeGreaterThan(0);
+  });
+
+  it("a stale/unknown id degrades to the quiet empty state, never throwing", () => {
+    expect(() =>
+      render(
+        <EncounterStatblockModal
+          srdId="not-a-monster"
+          combatantName="Mysterious Shape"
+          onClose={vi.fn()}
+        />
+      )
+    ).not.toThrow();
+    expect(
+      screen.getByText(i18n.getFixedT("en")("campaignHub.encounterStatblockMissing"))
+    ).toBeTruthy();
   });
 });
 

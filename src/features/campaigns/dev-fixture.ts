@@ -1002,6 +1002,10 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         kind: "monster",
         id: "monster-1",
         name: "Goblin",
+        // A picker-added group: its `srdId` reaches the DM statblock disclosure. The
+        // user name "Goblin" deliberately differs from the statblock name ("Goblin
+        // Warrior") to demo §C.3's dual-title.
+        srdId: "goblin-warrior",
         ac: 13,
         initiative: 14,
         conditions: ["prone"],

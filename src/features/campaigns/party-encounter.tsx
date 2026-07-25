@@ -36,6 +36,8 @@
  */
 
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -49,6 +51,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import {
+  BookOpen,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -76,6 +79,9 @@ import { Kbd } from "@/components/ui/kbd";
 import { Portrait } from "@/components/shared/Portrait";
 import { StatBadge, HpBadge, InitBadge, StatLabel } from "@/components/shared/StatBadge";
 import { AutoAnimateHeight } from "@/components/shared/AutoAnimateHeight";
+import { InlineEditable } from "@/components/shared/InlineEditable";
+import { ModalShell } from "@/components/shared/ModalShell";
+import { FolioLoader } from "@/components/shared/FolioLoader";
 import {
   CardEditorScopeContext,
   useReportEditorOpen,
@@ -83,6 +89,7 @@ import {
 } from "@/components/shared/card-editor-scope";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { cn, formatSpeed, localeDistance } from "@/lib/utils";
+import { ensureSrdKind } from "@/i18n";
 import { useLocale } from "@/hooks/useLocale";
 import { conditionChips } from "@/lib/views/tracker-view";
 import { bloodiedFromHp } from "@/lib/aggregate-character";
@@ -110,6 +117,7 @@ import {
   setHidden,
   setHp,
   setInitiative,
+  setMonsterName,
   setMonsterNotes,
   setRevealed,
   toggleCondition,
@@ -130,6 +138,16 @@ import type {
   EncounterState,
   MemberCharacterSnapshot,
 } from "@/types/campaign";
+
+// The DM statblock disclosure — the SECOND door into the ONE lazy bestiary chunk
+// (the same seam Party.tsx's Add-monster modal uses; router.tsx D-2 pattern: chunk
+// fetch ∥ catalogue load, `ensureSrdKind` marks the kind resident). Only this
+// dynamic `import("./encounter-bestiary")` may reference the seam from party-encounter.
+const EncounterStatblockModal = lazy(() =>
+  Promise.all([import("./encounter-bestiary"), ensureSrdKind("monster")]).then(([m]) => ({
+    default: m.EncounterStatblockModal,
+  }))
+);
 
 /** A reducer applied to the live encounter — present for the DM, absent (read-only)
  *  for a player. */
@@ -1364,6 +1382,8 @@ export function MonsterCard({
   const cardRef = useRef<HTMLLIElement>(null);
   const editable = !!apply;
   const [open, setOpen] = useState(isCurrent && editable);
+  // The DM-only statblock disclosure (a picker-added monster carries `srdId`).
+  const [statblockOpen, setStatblockOpen] = useState(false);
   // Auto-EXPAND the card the moment the turn lands on it (DM only) — the documented
   // "adjust state when a prop changes" pattern, not a setState-in-effect.
   const [wasCurrent, setWasCurrent] = useState(isCurrent);
@@ -1455,9 +1475,22 @@ export function MonsterCard({
       </div>
     ) : null;
 
-  // The DM-only disclosure body — HP steppers + conditions editor + reveal/hide/remove.
+  // The DM-only disclosure body — rename + HP steppers + conditions editor +
+  // reveal/hide/remove (+ the statblock disclosure for a picker-added monster).
   const body = apply ? (
     <>
+      {/* Rename in place (§C.4) — the monster name is the one free user string
+          (golden rule 7); a picker add pre-fills it, the DM edits it here. An empty
+          commit is a reducer no-op, so the non-empty invariant is unbreakable. */}
+      <InlineEditable
+        type="text"
+        editable
+        value={monster.name}
+        onChange={(v) => apply((e) => setMonsterName(e, monster.id, v))}
+        ariaLabel={t("campaignHub.encounterMonsterName")}
+        maxLength={60}
+      />
+
       <MonsterTokens
         monster={monster}
         onSet={(tokenIndex, v) => apply((e) => setHp(e, monster.id, tokenIndex, v))}
@@ -1484,6 +1517,15 @@ export function MonsterCard({
       />
 
       <div className="flex flex-wrap items-center gap-2">
+        {/* DM-only statblock disclosure (§C.2) — only for a picker-added monster
+            (`srdId` present); a hand-typed monster keeps today's exact card. Present
+            regardless of whether the id will resolve — the modal owns the degrade. */}
+        {monster.srdId && (
+          <Button variant="ghost" size="sm" onClick={() => setStatblockOpen(true)}>
+            <Icon as={BookOpen} size="sm" decorative />
+            {t("campaignHub.encounterStatblock")}
+          </Button>
+        )}
         {/* CARD-5 — flip players between the concealed band and the exact number. Routed
             through `apply` → the SAME debounced structural encounter writer as every
             other monster edit (no rules change: the DM owns the encounter). */}
@@ -1521,57 +1563,81 @@ export function MonsterCard({
   ) : undefined;
 
   return (
-    <CombatantCard
-      cardRef={cardRef}
-      side="enemy"
-      isCurrent={isCurrent}
-      dimmed={down}
-      dashed={monster.hidden}
-      seal={
-        <span className="seal party-avatar" aria-hidden>
-          <Portrait
-            src={null}
-            name={monster.name}
-            seed={monster.id}
-            className="h-full w-full"
-          />
-        </span>
-      }
-      lead={
-        // Editable typed-init chip ONLY for the DM and ONLY before turns begin; once the
-        // order is frozen (initLocked) every viewer — DM included — reads a static chip.
-        apply && !initLocked ? (
-          <MonsterInitChip
-            value={monster.initiative}
-            ariaLabel={t("campaignHub.encounterInitiativeFor", { name: monster.name })}
-            onCommit={(v) => apply((e) => setInitiative(e, monster.id, v))}
-          />
-        ) : (
-          <span
-            className="vital vital-init"
-            data-density="chip"
-            title={t("character.vitals.initAria")}
-          >
-            <InitBadge
-              value={monster.initiative ?? "—"}
-              acronym={t("character.vitals.init")}
-              icon={Dices}
+    <>
+      <CombatantCard
+        cardRef={cardRef}
+        side="enemy"
+        isCurrent={isCurrent}
+        dimmed={down}
+        dashed={monster.hidden}
+        seal={
+          <span className="seal party-avatar" aria-hidden>
+            <Portrait
+              src={null}
+              name={monster.name}
+              seed={monster.id}
+              className="h-full w-full"
             />
           </span>
-        )
-      }
-      title={monster.name}
-      subline={subline}
-      cluster={cluster}
-      badges={badges}
-      conditions={conditions}
-      body={body}
-      open={open}
-      onToggle={() => setOpen((v) => !v)}
-      detailId={`monster-detail-${monster.id}`}
-      toggleLabel={monster.name}
-      reorder={reorder}
-    />
+        }
+        lead={
+          // Editable typed-init chip for the DM before turns begin; once the order is
+          // frozen (initLocked) it goes static — EXCEPT a mid-fight reinforcement that
+          // still has NO initiative (every picker add commits `null`): it must be able to
+          // RECEIVE its rolled value after turns began (§D.3), or the number would be
+          // untypeable forever. Once set, it locks like every other frozen-order chip;
+          // typing it does not re-slot the frozen order (setInitiative's semantics).
+          apply && (!initLocked || monster.initiative === null) ? (
+            <MonsterInitChip
+              value={monster.initiative}
+              ariaLabel={t("campaignHub.encounterInitiativeFor", { name: monster.name })}
+              onCommit={(v) => apply((e) => setInitiative(e, monster.id, v))}
+            />
+          ) : (
+            <span
+              className="vital vital-init"
+              data-density="chip"
+              title={t("character.vitals.initAria")}
+            >
+              <InitBadge
+                value={monster.initiative ?? "—"}
+                acronym={t("character.vitals.init")}
+                icon={Dices}
+              />
+            </span>
+          )
+        }
+        title={monster.name}
+        subline={subline}
+        cluster={cluster}
+        badges={badges}
+        conditions={conditions}
+        body={body}
+        open={open}
+        onToggle={() => setOpen((v) => !v)}
+        detailId={`monster-detail-${monster.id}`}
+        toggleLabel={monster.name}
+        reorder={reorder}
+      />
+      {/* The DM statblock disclosure — lazily loaded on first open through the SAME
+          bestiary chunk as the Add-monster modal. A stale/unknown id degrades inside
+          the modal (quiet empty state), never here. */}
+      {statblockOpen && monster.srdId && (
+        <Suspense
+          fallback={
+            <ModalShell open onClose={() => setStatblockOpen(false)} title={monster.name}>
+              <FolioLoader variant="region" />
+            </ModalShell>
+          }
+        >
+          <EncounterStatblockModal
+            srdId={monster.srdId}
+            combatantName={monster.name}
+            onClose={() => setStatblockOpen(false)}
+          />
+        </Suspense>
+      )}
+    </>
   );
 }
 
