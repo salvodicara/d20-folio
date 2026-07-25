@@ -686,9 +686,33 @@ per-cast modal, EK War Magic note, familiar enhancements** — landed 2026-06-24
 - [x] 10 Metamagic options as per-cast affordances (SP debit + per-option effect). Consumer: `metamagicOptionsForCast` (`lib/cast-options.ts`) + the shared `resolveMetamagicForCast`/`remainingSorceryPoints` (`lib/views/spell-cast-sources.ts`), surfaced as an amethyst multi-select chip row in `CastLevelModal` and debited from the `sorcerer-font-of-magic` pool in BOTH cast paths (`TurnEconomyProvider.commitCastOption` + `SpellsTab.castAtLevel/castFreeAt/castMastery`), undoable. Applicability (Heightened→save spells, Quickened→Action-time) is data-driven on the option id (`appliesWhen`), never a name regex. Render-site: the cast modal.
 - [x] Alt-recovery buttons (`resolveAltRecovery` — Sorcerer SP-restore family, Know Your Enemy, etc.) → ResourceRail; alt-cost picker (`getActionCostOptions` — Druid Wild Companion slot-or-use) → TurnEconomyProvider. Render-site: the rail tracker row. **Extended 2026-06-26:** `AltRecoveryCost` is now a discriminated union — the existing pool-funded `{ amount, fromTracker }` plus a SLOT-funded `{ fromSpellSlot: <minLevel> }` variant for the two "restore by expending a level N+ spell slot" features (Cleric Divine Foreknowledge → 6, Ranger Persistent Wrath → 4). Consumer: `resolveSlotAltRecovery` (pure, reads live unspent slots) → `recoverTrackerByMinSlot` (spends the cheapest eligible slot, restores one use, undoable) → a second rail affordance ("spend a level N+ slot → recover"). Closes the previously-recorded slot-funded model gap.
 - [x] EK War Magic note (`resolveReplaceAttackWithCast`, capped at `attacksPerAction`). Consumer wired into PlayTab — a display-only amethyst badge ("Replace 1 attack with a cantrip/spell") in the attacks-per-action cluster, keyed off the rider's numbers (`maxSpellLevel`); no debit. Render-site: the Attack-action affordance.
-- [x] Investment of the Chain Master (`resolveFamiliarEnhancements`). Consumer wired into the invocation compendium spec (`specs/invocation.tsx`) — a display-only `InfoCard` callout (Fly/Swim 40 ft, Quick Attack, damage conversion, the owner's spell save DC via the spells-view presenter, Reaction Resistance) shown ONLY for `investment-of-the-chain-master` in character context. Render-site: the invocation detail `extras`.
+- [x] Investment of the Chain Master (`resolveFamiliarEnhancements`). The consumer is now the SHARED `FamiliarEnhancementsCard` (`components/shared/`, golden rule 6) — a display-only callout (Fly/Swim 40 ft, Quick Attack, damage conversion, the owner's spell save DC via the spells-view presenter, Reaction Resistance) mounted at TWO render-sites: the invocation compendium detail `extras` AND the Companions rail's familiar stat-block modal (2026-07-25), so a Chain-Master warlock finally sees the buffs ON the familiar it summoned, not only in the compendium.
 - [x] **Metamagic applies to CANTRIPS (G6/W3, defect C).** _Landed 2026-06-24._ Dropped the blanket `if (spell.level === 0) return []` in `resolveMetamagicForCast`; the per-option `appliesWhen` predicate now decides for cantrips too. Added structured conditions `requiresDamage` (Empowered/Transmuted), `requiresAttack` (Seeking), and `excludesCantrip` (Extended/Twinned — neither is possible on a cantrip per RAW) alongside the existing `requiresSave` (Careful/Heightened) + `requiresActionCastingTime` (Quickened); `metamagicOptionsForCast` reads the spell's `level`/`damageDice`/`attackType` facts. So Fire Bolt offers Empowered/Quickened/Distant/Seeking/Transmuted (not the save/cantrip-excluded ones) and Sacred Flame offers Heightened/Careful. The slotless cantrip cast path is wired in `SpellsTab.castCantrip` (debits the Metamagic SP, spends NO slot, undoable) via a new `kind:"cantrip"` cast option + a footer Cast button in `CastLevelModal`. Render-site: `CastLevelModal`.
 - [x] **Enforce ONE Metamagic option per cast (BUG-6, defect E).** _Landed 2026-06-24._ Added `stacksWithPrimary?: boolean` to `SrdMetamagicOption` (TRUE on `empowered-spell` + `seeking-spell` only — the two whose SRD text carries "you can use … even if you've already used a different Metamagic option"; verified against `dnd2024.wikidot.com/sorcerer:metamagic`). The pure reducer `toggleMetamagicSelection` (`lib/cast-options.ts`, shared by both cast modals) enforces it: a primary swaps in as the SOLE primary (drops any other primary, keeps the stackers), Empowered/Seeking add on top. SP cost = sum of the selected options. The modal surfaces the rule (`metamagic.onePrimaryRule`) + a swap hint (`metamagic.swapsPrimary`). Render-site: the cast modal.
+
+### Companion surface — shipped + the deliberate out-of-scope residuals (2026-07-25)
+
+The persistent companion surface SHIPPED (the Companions rail, the shared
+`CompanionStatBlockCard` + Beast Master variant picker, the full Find Familiar flow;
+see `PROGRESS.md` → "Companions/Extras" + `docs/AUTOMATION_COVERAGE.md`). The
+deliberately-deferred neighbours, each with its reason (YAGNI, not a gap):
+
+- **Summon Beast/Fey/etc. spell family (pack):** concentration-scoped temporary
+  summons whose stat block scales with the CAST slot level — a per-cast state
+  contract the persistent-companion model deliberately doesn't own (the
+  concentration chip + spell card carry them today). Follow-up seam:
+  `CompanionStatBlock` + a slot-level input on `resolveCompanion`.
+- **Find Steed / Phantom Steed (SRD):** the same cast-level-scaling contract
+  (Otherworldly Steed is a spell-embedded scaling block, not a corpus monster);
+  rides the same follow-up.
+- **Wild Shape forms:** a SELF-swap (the Polymorph/S7 contract below), not a
+  companion — tracked in this same section.
+- **Sidekicks / wholly custom companions:** homebrew-ladder territory (the epic's
+  later step).
+- **The MM-only 8th Pact-of-the-Chain special form:** a non-SRD statblock — tracked
+  in the pack backlog (`content-pack/docs/`); when it lands, the pack overlay appends
+  its id to `pact-of-the-chain`'s `familiar-forms` grant (the resolver already
+  tolerates the id in both build modes). No dangling id ships meanwhile.
 
 ### S7 — form-swap model _(workstream A; defects A, C)_
 

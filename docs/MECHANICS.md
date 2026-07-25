@@ -482,5 +482,9 @@ The structural reasons the declarative-grant model is intentionally not the righ
   choice with no session-long state to track — it stays prose in the invocation description (the
   familiar's own statblock, form pool, and current HP ARE modeled; see `familiar-forms` above +
   the Companions rail section).
-- **Companion stat-block breadth.** Full creature stat-blocks (summons / Wild Shape forms / steel
-  defender) are beyond the current engine breadth — tracked in `docs/AUTOMATION_BACKLOG.md`.
+- **Cast-level-scaling summons.** The feature-declared companions (Steel Defender / Eldritch Cannon
+  / Beast Master Primal Companion / pack Homunculus) AND the Find Familiar summon are now modeled +
+  rendered (the Companions rail; `docs/AUTOMATION_COVERAGE.md`). The remaining residual is the
+  narrower **cast-level-scaling summon family** — Summon Beast/Fey/etc., Find Steed / Phantom Steed —
+  whose stat block scales with the CAST slot level (a per-cast contract the persistent-companion
+  model deliberately doesn't own); tracked in `docs/AUTOMATION_BACKLOG.md`.

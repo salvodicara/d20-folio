@@ -1158,9 +1158,24 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     rename-in-place. The whole bestiary surface loads in ONE lazy chunk on first open (zero eager
     delta — tripwired); a spec-driven `quantityMax` was added to the shared picker footer. NEXT: the
     2024-DMG XP-budget difficulty calculator.
-- **Companions/Extras:** a persistent companion-statblock surface on the sheet (Find Familiar,
-  Primal Companion, Drakewarden, Artificer Steel Defender/Homunculus) — closes a
-  rules-completeness hole; reuses the bestiary statblock renderer.
+- **Companions/Extras — SHIPPED (2026-07-25):** a persistent, play-reachable
+  companion surface. A "Companions" section in the resources rail (after Active
+  Features) fields every companion: the Artificer constructs + the Beast Master
+  **Primal Companion** with its now-live Land/Sea/Sky variant picker (closing the
+  documented dead-code gap — `session.companionVariant` + `selectCompanionVariant`
+  finally have a consumer), a shared `CompanionStatBlockCard` mounted by both the
+  Features tab and the rail modal (golden rule 6), and the full **Find Familiar**
+  flow — a lazy form picker over every CR-0 Beast + the seven Pact-of-the-Chain
+  special forms (the new `familiar-forms` grant), the 2024 Celestial/Fey/Fiend type
+  swap (rendered by the bestiary `MonsterStatBlockCard`, statistics verbatim), HP
+  tracking, pocket-dimension dismiss/recall, and the Investment-of-the-Chain-Master
+  enhancements on the sheet. The find-familiar spell text was re-sourced to 2024.
+  Charter reconciliation: **Drakewarden does not exist** in the 2024 SRD corpus OR
+  the pack's 2024 ranger set (beast-master · fey-wanderer · gloom-stalker ·
+  hollow-warden · winter-walker) — the charter named a 2014-era subclass with no
+  2024 source; no data work exists. The **Homunculus Servant** spell-companion rides
+  the shipped public `SrdSpellData.companion` seam pack-side (D11). The lazy leaf
+  keeps the eager bundle at zero corpus delta (tripwired).
 - **Homebrew — the full ladder:** (a) an account-level library promoting the per-character
   CustomSpell/Feature/Equipment/Weapon types to reusable account docs; (b) campaign sharing of
   that library; (c) authoring types staged after the bestiary — monster editor first, then
@@ -1189,8 +1204,8 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   2026-07-23: the #32 open-sourcing split COMPLETED 2026-07-17 — before this epic opened — so the
   split-aware authoring the charter references is already the live world (public SRD repo + private
   pack); the old #32 issue was deleted with the split, so THIS charter is the surviving coordination
-  record. `bestiary` is now DONE (2026-07-24) and `encounter picker` is DONE (2026-07-25); the live
-  attack-order head is `difficulty calc`.]
+  record. `bestiary` is now DONE (2026-07-24), `encounter picker` is DONE (2026-07-25), and `companions`
+  is DONE (2026-07-25); the live attack-order head is `difficulty calc` / `homebrew library`.]
 
 ## Shipped epic — BG3-Grade Identity Evolution Epic
 
