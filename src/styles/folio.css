@@ -4090,7 +4090,11 @@ button.vital {
    FULL struck gilt (the small-control rule: solid saturated gilt + an ember pool
    below), the deep-gold caps engraved on it (grammar "Ember Penumbra"). */
 [data-theme="light"] .lvl-chip {
-  background: linear-gradient(180deg, #dcb75e, #c19538);
+  /* Longhands, not the shorthand: the shorthand reset `background-image` and took
+     the ladder's veil slot with it, so the chip's hover rung painted nothing in
+     light. The color is still cleared — the gilt enamel is fully opaque. */
+  background-color: transparent;
+  background-image: var(--state-veil), linear-gradient(180deg, #dcb75e, #c19538);
   border-color: var(--ember-edge);
   color: var(--accent-text);
   box-shadow:
@@ -12944,9 +12948,12 @@ textarea.input.sess-notes-edit {
   border-color: var(--state-metal-hover);
   --state-veil: var(--veil-hover);
 }
+/* …and the PRESSED rung rides the slot too. Straight into `background-image` it
+   REPLACED the face: pressing an ability card computed a bare
+   `linear-gradient(rgba(0,0,0,.16), …)` over `background-color: transparent`. */
 .statcard:active .statcard-face {
   transform: translateY(1px);
-  background-image: linear-gradient(var(--state-wash-pressed), var(--state-wash-pressed));
+  --state-veil: var(--veil-pressed);
 }
 [data-motion="reduced"] .statcard-face {
   transition: none;
@@ -13070,11 +13077,16 @@ textarea.input.sess-notes-edit {
   /* NOTE: no padding-top override — every face already reserves the eyebrow row
      (var(--sp-5)) so the caster eyebrow sits in pre-allocated space and the
      .sc-mod baseline stays aligned with the other five cards. */
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-2)),
-    var(--bg-surface-1)
-  );
+  /* The variant re-cuts the FACE, so it re-composes the veil slot ahead of it — the
+     `background` SHORTHAND resets `background-image`, which silently dropped
+     `var(--state-veil)` and made the ladder's rungs no-ops on the caster card. */
+  background-image:
+    var(--state-veil),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-2)),
+      var(--bg-surface-1)
+    );
   box-shadow:
     var(--elev-raised),
     0 0 16px color-mix(in oklab, var(--accent-glow) 16%, transparent);
@@ -16340,9 +16352,13 @@ button.econ-tok-filter:active .econ-disc {
   --state-veil: var(--veil-hover);
   box-shadow: var(--elev-floating);
 }
+/* …and the PRESSED rung rides the same slot. Writing the wash straight into
+   `background-image` replaced the face instead of crossing it — and `.rest-card` is
+   `all: unset`, so no background-color sits underneath to catch the fall: the tile
+   went 84% transparent under the thumb, on a core play surface. */
 .rest-card:active {
   transform: translateY(1px);
-  background-image: linear-gradient(var(--state-wash-pressed), var(--state-wash-pressed));
+  --state-veil: var(--veil-pressed);
 }
 .rest-card:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -17691,14 +17707,18 @@ button.econ-tok-filter:active .econ-disc {
      `.tome-leaf-surface`) are NOT re-specified here: they wear the one plate
      material, and the whole light delta lives in `--plate-dome` /
      `--plate-grain` / `--edge-groove` / `--edge-seat` / `--edge-metal`. — */
+/* Both light faces re-compose `var(--state-veil)` at the head of the stack: a theme
+   override that re-cuts a face with the `background` shorthand resets
+   `background-image` and drops the ladder's slot out of the composition — which is
+   how the hover wash painted on exactly ONE of the four statcard combinations. */
 [data-theme="light"] .statcard-face {
-  background:
-    var(--surface-sheen),
+  background-image:
+    var(--state-veil), var(--surface-sheen),
     linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
 }
 [data-theme="light"] .statcard.caster .statcard-face {
-  background:
-    var(--surface-sheen),
+  background-image:
+    var(--state-veil), var(--surface-sheen),
     linear-gradient(
       180deg,
       color-mix(in oklab, var(--accent-primary-bright) 16%, var(--bg-surface-2)),

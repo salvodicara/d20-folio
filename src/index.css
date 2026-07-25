@@ -218,6 +218,16 @@
      of the ladder sets THAT, never the background. A state can then no longer cost a
      surface its substance, and the wash is literally what §04b says it is: one
      translucent veil composited over the plate's own face.
+
+     AND THE SLOT SURVIVES THE CASCADE: a variant or theme rule that re-cuts the same
+     face — the caster statcard, the light strike of the level chip — must re-compose
+     `var(--state-veil)` at the head of ITS stack, and must use the `background-image`
+     longhand. The `background` SHORTHAND resets `background-image`, so an override
+     written that way drops the slot and turns every rung below it into a no-op —
+     which is exactly what made the statcard's hover wash paint on one of its four
+     theme × variant combinations and no others.
+     (No theme selector is written literally in this comment: two guards locate a
+     theme block with `indexOf`, so a prose mention of one moves their cursor.)
      Enforced by `chrome-system.guard.test.ts` → "never lets a state rule silently
      strip a plate's FACE", which derives the plate list from the stylesheet. ── */
   --veil-hover: linear-gradient(var(--state-wash-hover), var(--state-wash-hover));

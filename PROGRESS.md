@@ -670,11 +670,24 @@ stylesheet at the site so neither is tried again.
 `background-image` is a REPLACED property exactly like `box-shadow` — so `.ch-card:hover`, which set
 `background-image: linear-gradient(<wash>, <wash>)`, **discarded the plate's dome and face**: the
 roster tile went translucent under the pointer, with the candlelit backdrop showing straight through
-the card and `--text-muted` stranded on a lit candle. `.ch-card:active`, `.ch-card[data-selected]`,
-`.statcard-face` and `.rest-card` carried the same rule. The No-Second-Grammar guard was written
-about `box-shadow` and stopped one property short, and it was green throughout. The ladder now
-reaches a plate through **the veil slot** (`--state-veil`, composed by the plate at rest, set by
-every rung), and the two guards that pin it DERIVE the plate list from the stylesheet.
+the card and `--text-muted` stranded on a lit candle. `.ch-card:active` and `.ch-card[data-selected]`
+carried the same rule and were converted with it. The No-Second-Grammar guard was written about
+`box-shadow` and stopped one property short, and it was green throughout. The ladder now reaches a
+plate through **the veil slot** (`--state-veil`, composed by the plate at rest, set by every rung),
+and the two guards that pin it DERIVE the plate list from the stylesheet.
+
+**The convergence review then found that sweep was not exhaustive, in both directions.** Two
+`:active` rungs still replaced the face — `.rest-card:active` (the Short/Long-rest tile, a core play
+surface, and `all: unset` so there is no background-color under it to catch the fall: pressing it
+computed a bare `linear-gradient(rgba(0,0,0,.16), …)` on a transparent tile) and
+`.statcard:active .statcard-face`. And in the other direction, four higher-specificity
+variant/theme rules re-cut a face with the `background` SHORTHAND, which resets `background-image`
+and drops the slot out of the composition — `[data-theme="light"] .statcard-face`,
+`[data-theme="light"] .statcard.caster .statcard-face`, `.statcard.caster .statcard-face` and
+`[data-theme="light"] .lvl-chip` — so this wave's own new hover rung was a **no-op on three of the
+four statcard combinations** and on the level chip in light. All six compose the slot now
+(browser-verified: the veil paints and the face survives on dark/light × plain/caster, hover and
+pressed, and the pressed rest tile keeps its gradient).
 
 **Phase 8 closed the review, and the class the review named: our guards kept sampling the one place
 the work was done.** Two of the four defects were that pattern. `.cmp-seal` — the mark eight of the

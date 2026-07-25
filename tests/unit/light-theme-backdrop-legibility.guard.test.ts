@@ -298,8 +298,13 @@ describe("light ember-penumbra grammar guards (owner-ratified 2026-07-11)", () =
   it("the awaiting-level chip is a solid struck-gilt pill over its ember in light", () => {
     // At pill scale a tinted wash vanishes on ivory, so the light chip goes FULL gilt
     // (a solid gold gradient) + the engraved deep-gold caps + the ember pool below.
+    // The gilt is written as the `background-image` LONGHAND, behind the state
+    // ladder's veil slot: the shorthand resets `background-image` and would drop
+    // `--state-veil`, which is what made the chip's hover rung a no-op in light. The
+    // fact pinned here is the ENAMEL, so the slot ahead of it is optional in the
+    // pattern and the gilt gradient itself is not.
     const strict =
-      /\[data-theme="light"\] \.lvl-chip \{[^}]*background:\s*linear-gradient[^}]*color:\s*var\(--accent-text\)[^}]*rgba\(var\(--ember-umber\)/;
+      /\[data-theme="light"\] \.lvl-chip \{[^}]*background-image:\s*(?:var\(--state-veil\),\s*)?linear-gradient[^}]*color:\s*var\(--accent-text\)[^}]*rgba\(var\(--ember-umber\)/;
     expect(
       strict.test(css),
       "MISSING: `[data-theme=light] .lvl-chip` as a solid gilt gradient pill with the " +
