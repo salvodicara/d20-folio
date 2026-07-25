@@ -108,7 +108,13 @@ build on:
   `<entityId>.mechanics.actions.<n>`, `<entityId>.traits.<id>` (`loadSubEntityProse`): those blurbs
   are what the action card and the rail actually render, and nothing was reading them until the PS-J
   sweep found two Channel Divinity action summaries printing _Canalizzare Divinità_ while the
-  feature's own name is the canonical _Incanalare Divinità_ (fixed 2026-07-25).
+  feature's own name is the canonical _Incanalare Divinità_ (fixed 2026-07-25). **What that scan still
+  cannot see:** `proseStrings` skips any field literally called `name`, so a sub-entity's OWN name is
+  unscanned — and three of them currently carry retired lexemes
+  (`lifedrinker.grants.lifedrinker.name`, `eldritch-smite.grants.eldritch-smite.name`,
+  `dhampir.traits.spider-climb.name`). Scanning those needs a per-entity ruling on the canonical
+  lexeme first (a sub-entity may legitimately share a retired top-level name), so it is a separate
+  unit of work, not an oversight in the scan.
 - **Closed-set condition drift** — the 15 condition `name.it` values are PINNED to the glossary table
   above (the most cross-referenced closed set in the app); a new condition must be pinned too.
 

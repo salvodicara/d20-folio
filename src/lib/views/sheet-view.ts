@@ -28,6 +28,7 @@ import { isUmbrellaTool } from "@/lib/tool-names";
 import { srdEn } from "@/i18n/srd-en";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { ALL_SKILLS } from "@/lib/skills";
+import { netRollState } from "@/lib/condition-effects";
 
 type SkillProficiency = "proficient" | "expertise" | "halfProficiency";
 
@@ -743,3 +744,96 @@ export function deriveAdvantageChips(
   }
   return chips;
 }
+
+// ─── PS-J — the attack-roll view the combat cards read ──────────────────────
+
+/**
+ * The character's attack-roll modifier state as the combat cards read it: the
+ * netted verdict for clauses that apply to EVERY attack roll (`state`), plus one
+ * entry per SCOPED clause whose reach the sheet cannot resolve — each already
+ * netted AGAINST the blanket set, so the card never has to compose two claims.
+ *
+ * The composition is the whole point. A blanket Disadvantage (Prone) and a scoped
+ * Advantage (Reckless Attack's Strength attacks) do NOT sit side by side on a
+ * greataxe card: RAW they cancel, and the card must say so once — "Disadv. ·
+ * Straight roll on Strength attacks" — never assert both.
+ */
+export interface AttackRollView {
+  /** The verdict for an attack roll NO scoped clause touches. */
+  state: RollState;
+  /** Per scope, the verdict for a roll INSIDE that scope — only where it differs
+   *  from {@link state} (an entry that agrees carries no information). */
+  scoped: ReadonlyArray<{ scope: NarrowAttackScope; state: RollState }>;
+}
+
+/** A netted d20 posture — Advantage, Disadvantage, or neither. */
+export type RollState = "advantage" | "disadvantage" | "none";
+
+/** Every scope except the blanket one (`"all"` never reaches a chip). */
+export type NarrowAttackScope = Exclude<AttackClauseScope, "all">;
+
+/** No advantage, no disadvantage, nothing scoped — the cards' resting state. */
+export const NO_ATTACK_ROLL: AttackRollView = { state: "none", scoped: [] };
+
+/**
+ * Net the character's attack chips into an {@link AttackRollView}. Blanket chips
+ * (no `scope`) make the card verdict; each narrow scope is netted as
+ * `blanket ∪ that scope` and kept ONLY when it disagrees with the verdict, so a
+ * scoped Advantage under a blanket Advantage adds no line and a scoped Advantage
+ * under a blanket Disadvantage reads as the straight roll it is.
+ *
+ * Pure + locale-free (the phrases are the renderer's job). Callers pass chips
+ * already filtered to `rollType === "attack"` and to the current round.
+ */
+export function deriveAttackRollView(
+  chips: ReadonlyArray<AdvantageChip>
+): AttackRollView {
+  const blanketAdv = chips.some((c) => c.scope === undefined && c.mode === "advantage");
+  const blanketDis = chips.some(
+    (c) => c.scope === undefined && c.mode === "disadvantage"
+  );
+  const state = netRollState(blanketAdv, blanketDis);
+
+  // Ordered by first appearance so the card's lines are stable across renders.
+  const scopes: NarrowAttackScope[] = [];
+  for (const c of chips) {
+    if (c.scope === undefined || c.scope === "all") continue;
+    if (!scopes.includes(c.scope)) scopes.push(c.scope);
+  }
+
+  const scoped: Array<{ scope: NarrowAttackScope; state: RollState }> = [];
+  for (const scope of scopes) {
+    const inScope = chips.filter((c) => c.scope === scope);
+    const netted = netRollState(
+      blanketAdv || inScope.some((c) => c.mode === "advantage"),
+      blanketDis || inScope.some((c) => c.mode === "disadvantage")
+    );
+    if (netted !== state) scoped.push({ scope, state: netted });
+  }
+  return { state, scoped };
+}
+
+/**
+ * Can a clause with this scope reach an attack roll made from a card of this
+ * SOURCE? The cheap half of per-card resolution: a Sorcerer-spell clause can
+ * never touch a weapon swing, and an ability-scoped clause (Strength; the
+ * unproficient-armor STR/DEX penalty) can never touch a spell attack, which uses
+ * the caster's spellcasting ability. A scope this rules out is dropped from the
+ * card entirely rather than stated.
+ *
+ * The per-TARGET scopes always survive — which creature the swing is aimed at is
+ * the residual the sheet does not model (`docs/MECHANICS.md`). Resolving
+ * `strength` / `strDex` EXACTLY on a weapon card needs the attack's ability on
+ * `ResolvedAction`, which it does not carry (a Pact weapon attacks with Charisma).
+ */
+export function attackScopeReachesCard(
+  scope: NarrowAttackScope,
+  source: ResolvedActionSource
+): boolean {
+  if (scope === "sorcery") return source === "spell";
+  if (scope === "strength" || scope === "strDex") return source !== "spell";
+  return true;
+}
+
+/** The card kinds an attack roll can come from (`ResolvedAction["source"]`). */
+export type ResolvedActionSource = "spell" | "weapon" | "feature";

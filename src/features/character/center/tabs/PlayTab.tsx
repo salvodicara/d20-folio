@@ -50,9 +50,16 @@ import { matchesSearch } from "@/lib/search";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { slotUsageKey } from "@/lib/cast-options";
 import { resolveSpellCastOptions } from "@/lib/views/spell-cast-sources";
-import { resolveConditionEffects, netRollState } from "@/lib/condition-effects";
-import { ADVANTAGE_MODES, deriveAdvantageChips } from "@/lib/views/sheet-view";
-import type { AttackClauseScope } from "@/lib/grants";
+import { resolveConditionEffects } from "@/lib/condition-effects";
+import {
+  attackScopeReachesCard,
+  deriveAdvantageChips,
+  deriveAttackRollView,
+  NO_ATTACK_ROLL,
+  type AttackRollView,
+  type RollState,
+  type ResolvedActionSource,
+} from "@/lib/views/sheet-view";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import { useToastStore } from "@/stores/toastStore";
 import {
@@ -138,24 +145,16 @@ function combatKind(action: ResolvedAction): UniversalCardKind {
 }
 
 /**
- * PS-J — the character's attack-roll modifier state as the cards read it: the
- * NETTED verdict (`state`) for clauses that apply to every attack roll, plus the
- * SCOPED clauses the sheet cannot resolve, each stated with the scope it is
- * limited to. Splitting the two is the fix: netting a scoped clause into `state`
- * asserted a blanket "Adv." / "Disadv." on every attack card for a clause that
- * only holds against one creature (Vow of Enmity, Precise Hunter) or on a subset
- * of the character's own attacks (Reckless Attack, Innate Sorcery).
+ * PS-J — the ONE word for a netted d20 posture. The third polarity is the point:
+ * a scoped clause that CANCELS the card's verdict (Reckless Attack's Strength
+ * Advantage under Prone's Disadvantage) must read as the straight roll it is,
+ * never as a second contradictory claim beside the verdict.
  */
-export interface AttackRollView {
-  state: "advantage" | "disadvantage" | "none";
-  scoped: ReadonlyArray<{
-    mode: (typeof ADVANTAGE_MODES)[number];
-    scope: Exclude<AttackClauseScope, "all">;
-  }>;
+function rollStateWord(state: RollState, t: TFunction): string {
+  if (state === "advantage") return t("abilities.advantage");
+  if (state === "disadvantage") return t("abilities.disadvantage");
+  return t("abilities.straightRoll");
 }
-
-/** No advantage, no disadvantage, nothing scoped — the cards' resting state. */
-const NO_ATTACK_ROLL: AttackRollView = { state: "none", scoped: [] };
 
 /**
  * The quiet mono gloss sub-line (range · to-hit / save · trigger · duration ·
@@ -166,7 +165,11 @@ function combatGloss(
   t: TFunction,
   locale: Locale,
   concentrating: boolean,
-  attackRoll: AttackRollView = NO_ATTACK_ROLL
+  attackRoll: AttackRollView = NO_ATTACK_ROLL,
+  /** The card's own kind — drops a scope this card's rolls can never be in (a
+   *  Sorcerer-spell clause on a weapon swing, an ability-scoped one on a spell
+   *  attack). Defaults to the permissive case for the non-attack callers. */
+  cardSource: ResolvedActionSource = "feature"
 ): string {
   const parts: string[] = [];
   if (summary.range) parts.push(summary.range);
@@ -181,16 +184,19 @@ function combatGloss(
     // Inline modifier — the engine-derived advantage / disadvantage on THIS
     // attack roll (active conditions like Frightened + grant clauses, netted RAW
     // by `netRollState`). Display of engine truth only — no roll, no RNG.
-    if (attackRoll.state === "advantage") parts.push(t("abilities.advantage"));
-    else if (attackRoll.state === "disadvantage") parts.push(t("abilities.disadvantage"));
+    if (attackRoll.state !== "none") parts.push(rollStateWord(attackRoll.state, t));
     // PS-J — a clause whose reach the sheet cannot resolve (per-target: the vowed
     // creature, the marked creature; per-roll: Strength attacks, Sorcerer spell
-    // attacks) is NEVER netted into the verdict above: it STATES its scope, the
-    // same "polarity + scope phrase" grammar the marked-target damage riders use
+    // attacks) never becomes the verdict above: it STATES its scope, the same
+    // "polarity + scope phrase" grammar the marked-target damage riders use
     // ("+1d6 Force vs marked target"). The player owns the one fact the app can't
-    // know — which creature this swing is aimed at.
+    // know — which creature this swing is aimed at. Each line is already netted
+    // against the verdict (`deriveAttackRollView`), so a scoped Advantage under a
+    // blanket Disadvantage reads "Straight roll on …" and the card never asserts
+    // both at once.
     for (const c of attackRoll.scoped) {
-      parts.push(`${t(`abilities.${c.mode}`)} ${t(`combat.attackScope_${c.scope}`)}`);
+      if (!attackScopeReachesCard(c.scope, cardSource)) continue;
+      parts.push(`${rollStateWord(c.state, t)} ${t(`combat.attackScope_${c.scope}`)}`);
     }
   }
   if (summary.saveDC != null && summary.saveAbility) {
@@ -403,23 +409,10 @@ export function PlayTab() {
       // A permanent clause has no `round1` flag and always applies.
       .filter((c) => !c.round1 || round === 1);
     // PS-J — ONLY a blanket clause (no `scope`) may become the card's verdict; a
-    // scoped one is stated with its scope instead (`combatGloss`), because the
-    // sheet models no enemies and cannot know whether it applies to this swing.
-    const blanket = attackChips.filter((c) => c.scope === undefined);
-    // One line per distinct (polarity, scope) — two sources vowing the same scope
-    // read as one statement, the same collapse the rail's chip presenter makes.
-    const scoped = new Map<string, AttackRollView["scoped"][number]>();
-    for (const c of attackChips) {
-      if (c.scope === undefined || c.scope === "all") continue;
-      scoped.set(`${c.mode}|${c.scope}`, { mode: c.mode, scope: c.scope });
-    }
-    return {
-      state: netRollState(
-        blanket.some((c) => c.mode === "advantage"),
-        blanket.some((c) => c.mode === "disadvantage")
-      ),
-      scoped: [...scoped.values()],
-    };
+    // scoped one is netted against that verdict and stated with its scope instead
+    // (`combatGloss`), because the sheet models no enemies and cannot know whether
+    // it applies to this swing.
+    return deriveAttackRollView(attackChips);
   }, [character, round]);
 
   // BG3 grammar (owner ruling 2026-07-10) — Extra Attack's "attacks remaining"
@@ -1413,7 +1406,8 @@ function CombatActionCard({
     t,
     locale,
     action.concentration,
-    attackRoll
+    attackRoll,
+    action.source
   );
   const facts = combatFacts(effectiveSummary, t, locale);
 
@@ -1954,7 +1948,14 @@ function ReactionCard({
   const kind = combatKind(action);
   const verdict = combatVerdict(action, t);
   const verdictOutcome = combatVerdictOutcome(action.summary);
-  const gloss = combatGloss(action.summary, t, locale, action.concentration, attackRoll);
+  const gloss = combatGloss(
+    action.summary,
+    t,
+    locale,
+    action.concentration,
+    attackRoll,
+    action.source
+  );
   const facts = combatFacts(action.summary, t, locale);
   // D9 — an upcastable reaction spell (Counterspell, Shield, Absorb Elements, …)
   // shows the SAME "At Higher Levels" callout as the action card / Spells page.

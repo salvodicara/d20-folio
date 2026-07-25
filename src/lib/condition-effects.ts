@@ -333,6 +333,11 @@ export function resolveArmorEffects(
     {
       sourceId: "unproficient-armor",
       rollType: "attack",
+      // PS-J — RAW the penalty hits D20 Tests that use STRENGTH or DEXTERITY, so
+      // it never reaches a SPELL attack (which uses the spellcasting ability). It
+      // used to gloss every card, teaching a wizard in unproficient plate a
+      // Disadvantage their Fire Bolt does not have.
+      scope: "strDex",
       vs: "unproficient-armor",
       description: litText(UNPROFICIENT_ARMOR_ATTACKS),
     },

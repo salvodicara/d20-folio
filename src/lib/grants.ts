@@ -146,12 +146,25 @@ export const ATTACK_CLAUSE_SCOPES = [
   "untaken",
   /** Your Strength-based attack rolls only (Reckless Attack). */
   "strength",
+  /** Your Strength- and Dexterity-based attack rolls only (the S13
+   *  unproficient-armor penalty — RAW it touches D20 Tests that use STR or DEX,
+   *  so it never reaches a spell attack, which uses the spellcasting ability). */
+  "strDex",
   /** Your Sorcerer spell attack rolls only (Innate Sorcery). */
   "sorcery",
 ] as const;
 
 /** One scope from {@link ATTACK_CLAUSE_SCOPES}. */
 export type AttackClauseScope = (typeof ATTACK_CLAUSE_SCOPES)[number];
+
+/**
+ * The two PER-TARGET scopes a damage rider can be limited to (Hunter's Mark's
+ * marked creature, Hex's cursed one). Derived from {@link ATTACK_CLAUSE_SCOPES}
+ * rather than re-listed, so the rider and the advantage clauses provably share
+ * ONE scope vocabulary — and one phrase family (`combat.attackScope_*`), whose
+ * coverage guard enumerates that same tuple.
+ */
+export type MarkedTargetScope = Extract<AttackClauseScope, "marked" | "cursed">;
 
 /**
  * The roll an adv/dis clause applies to. An ATTACK clause MUST declare its
@@ -1467,7 +1480,7 @@ export type Grant =
       dice?: string;
       diceByLevel?: Readonly<Record<number, string>>;
       amount?: "PB";
-      vsMarkedTarget?: "marked" | "cursed";
+      vsMarkedTarget?: MarkedTargetScope;
       damageType: DamageType | "same-as-weapon";
       /**
        * Which attacks the rider rides:
@@ -3948,7 +3961,7 @@ export interface AggregatedGrants {
      *  Mark / Hex) — the consumer surfaces it as a DISPLAY-ONLY chip labeled "vs
      *  marked / cursed target" (never auto-summed); the token drives the localized
      *  label at the render edge. Absent → an always-applies rider. */
-    vsMarkedTarget?: "marked" | "cursed";
+    vsMarkedTarget?: MarkedTargetScope;
     damageType: DamageType | "same-as-weapon";
     appliesTo: "melee-weapon" | "weapon" | "one-handed-melee" | "attack-or-spell";
     oncePerTurn: boolean;

@@ -9,7 +9,12 @@
 import { describe, expect, it } from "vitest";
 import { classFeatureIndex } from "@/data/classes";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
-import { deriveAdvantageChips } from "@/lib/views/sheet-view";
+import {
+  attackScopeReachesCard,
+  deriveAdvantageChips,
+  deriveAttackRollView,
+} from "@/lib/views/sheet-view";
+import type { AdvantageChip } from "@/lib/views/sheet-view";
 import { advantageChipVMs, incomingAttackAdvantageVMs } from "@/lib/views/tracker-view";
 import { buildScenario, type ScenarioSpec } from "@/lib/dev-scenarios";
 import { loc } from "../_harness/loc";
@@ -242,5 +247,80 @@ describe("the rail surfaces durable non-attack advantages", () => {
       /frightened/i.test(loc(c.description, "en"))
     );
     expect(frightened).toHaveLength(1);
+  });
+});
+
+describe("PS-J — deriveAttackRollView composes scoped clauses with the verdict", () => {
+  // The chips the presenter reads, built by hand so each composition case is one
+  // line (the data paths that PRODUCE them are pinned by their own suites).
+  const chip = (
+    mode: AdvantageChip["mode"],
+    scope?: AdvantageChip["scope"]
+  ): AdvantageChip => ({
+    sourceId: scope ?? "blanket",
+    mode,
+    rollType: "attack",
+    vs: scope ?? "blanket",
+    description: { lit: { en: "", it: "" } },
+    ...(scope ? { scope } : {}),
+  });
+
+  it("nets a scoped Advantage against a blanket Disadvantage into a STRAIGHT roll", () => {
+    // Prone + Reckless Attack: RAW the Strength swing has both, so it cancels.
+    // Reporting "Disadv." AND "Adv. on Strength attacks" side by side asserts two
+    // mutually exclusive things about one roll.
+    const view = deriveAttackRollView([
+      chip("disadvantage"),
+      chip("advantage", "strength"),
+    ]);
+    expect(view.state).toBe("disadvantage");
+    expect(view.scoped).toEqual([{ scope: "strength", state: "none" }]);
+  });
+
+  it("keeps a scoped clause that stands alone", () => {
+    const view = deriveAttackRollView([chip("advantage", "marked")]);
+    expect(view.state).toBe("none");
+    expect(view.scoped).toEqual([{ scope: "marked", state: "advantage" }]);
+  });
+
+  it("DROPS a scoped clause that agrees with the verdict (it carries no news)", () => {
+    // Invisible (blanket Advantage) + Precise Hunter: inside the scope the roll is
+    // still just Advantage, so a second line would only repeat the verdict.
+    const view = deriveAttackRollView([chip("advantage"), chip("advantage", "marked")]);
+    expect(view.state).toBe("advantage");
+    expect(view.scoped).toEqual([]);
+  });
+
+  it("leaves a blanket-only character with a bare verdict", () => {
+    expect(deriveAttackRollView([chip("disadvantage")])).toEqual({
+      state: "disadvantage",
+      scoped: [],
+    });
+    expect(deriveAttackRollView([chip("advantage"), chip("disadvantage")])).toEqual({
+      state: "none",
+      scoped: [],
+    });
+  });
+
+  it("nets two sources naming the SAME scope into one line", () => {
+    const view = deriveAttackRollView([
+      chip("advantage", "marked"),
+      chip("advantage", "marked"),
+    ]);
+    expect(view.scoped).toHaveLength(1);
+  });
+
+  it("rules a scope out of the cards its rolls can never come from", () => {
+    // A Sorcerer-spell clause never reaches a weapon swing; an ability-scoped one
+    // never reaches a spell attack (which rolls off the spellcasting ability).
+    expect(attackScopeReachesCard("sorcery", "weapon")).toBe(false);
+    expect(attackScopeReachesCard("sorcery", "spell")).toBe(true);
+    expect(attackScopeReachesCard("strength", "spell")).toBe(false);
+    expect(attackScopeReachesCard("strDex", "spell")).toBe(false);
+    expect(attackScopeReachesCard("strDex", "weapon")).toBe(true);
+    // A per-TARGET scope survives everywhere — the residual the sheet never models.
+    for (const source of ["spell", "weapon", "feature"] as const) {
+      expect(attackScopeReachesCard("vowed", source)).toBe(true);
+    }
   });
 });

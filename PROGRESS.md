@@ -399,8 +399,13 @@ Hunter_, _Studied Attacks_, _Assassinate_, _Reckless Attack_ and _Innate Sorcery
 scoping stays the documented residual it always was: the fix is that a clause the sheet cannot
 resolve now STATES its scope on the card ("Adv. vs marked target") in the same grammar the
 marked-target damage riders already use, and only a clause true of every attack roll still reads as
-a bare verdict. Every attack clause must now declare that scope, so the defect class is
-unrepresentable rather than merely guarded. The sweep also closed a guard blind spot — the
+a bare verdict. Each scoped line is netted AGAINST that verdict, so a scoped Advantage under a blanket Disadvantage
+(Reckless Attack while Prone) reads as the straight roll it is instead of asserting both. Every
+GRANT-authored attack clause must now declare its scope, so that half of the defect class is
+unrepresentable rather than merely guarded — the `condition-effects` path builds its clauses
+directly and bypasses that type, which is exactly how the S13 unproficient-armor penalty was still
+glossing spell attacks (PS-J8, fixed here) and where Grappled's RAW target exclusion still lives
+(RA-32, carried by the turn-limiter sentence). The sweep also closed a guard blind spot — the
 IT-name prose scan never read the sub-keyed catalogue rows (grant / action / trait blurbs) the
 action card and the rail actually render, which is how two "Canalizzare Divinità" action summaries
 shipped beside the canonical "Incanalare Divinità". UNDEPLOYED on `main` (golden rule 22).

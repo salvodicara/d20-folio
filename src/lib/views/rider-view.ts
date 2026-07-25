@@ -31,6 +31,7 @@
 import type { Locale } from "@/lib/locale";
 import type { RawActionSummary } from "@/lib/smart-tracker";
 import type { LocText } from "@/lib/loc-text";
+import type { MarkedTargetScope } from "@/lib/grants";
 import { localizeText } from "@/lib/views/srd-i18n";
 
 /** The kind of rider — drives the token's icon/colour register + composition. */
@@ -84,7 +85,7 @@ export interface RiderVM {
    * lands on that creature — never every attack (the app models no enemy). The
    * token picks the localized noun. Absent → an always-applies rider.
    */
-  vsMarkedTarget?: "marked" | "cursed";
+  vsMarkedTarget?: MarkedTargetScope;
   /**
    * `true` when the rider rides a `while-active` toggle that is currently up
    * (Rage's Brutal Strike, Divine Favor). The chip appends a "· active" suffix
@@ -219,7 +220,7 @@ export interface RiderChipVM {
    * the expanded rider strip (progressive disclosure). Absent → an unconditional
    * rider, shown bare (a flat "+3d6" is NEVER tagged).
    */
-  vsMarkedTarget?: "marked" | "cursed";
+  vsMarkedTarget?: MarkedTargetScope;
 }
 
 /** The collapsed-face damage-cluster summary — a bounded list of rider chips that

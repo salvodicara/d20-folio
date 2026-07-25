@@ -768,11 +768,13 @@ forgotten).
 
 **S10 OPEN — zero / parity-primitive declarations (no NEW primitive; reuse a shipped kind):**
 
-- [x] **Vow of Enmity advantage chip (G16).** `paladin.ts:718` now carries
-      `{type:"advantage-on", rollType:"attack", vs:"vow-of-enmity-target"}` — identical to Precise
-      Hunter's shipped `advantage-on` + `vs:"hunters-mark-target"`. The `vs` value is a stable id token
-      (never user-rendered); the human-readable clause lives in the catalogue at
-      `paladin-vengeance-vow-of-enmity.grants.0.description` (en+it), the same way Precise Hunter does.
+- [x] **Vow of Enmity advantage chip (G16).** SUPERSEDED by PS-J3 (2026-07-25) — read that row, not
+      this one, for the current shape. G16 shipped a bare, PERMANENT
+      `{type:"advantage-on", rollType:"attack", vs:"vow-of-enmity-target"}`, which glossed every attack
+      card "Adv." from Oath level 3; the clause now rides a `while-active` +
+      `{kind:"timed", minutes:1, maxRounds:10}` wrapper and declares `scope:"vowed"`, so the catalogue
+      key that held its description moved down one level (`…grants.0` now carries the toggle's
+      `label`, `…grants.0.grants.0` the clause description).
 - [x] **Goliath Large Form STR-check advantage + Dwarf Stonecunning tremorsense (G17).** Added
       `advantage-on` (check, `vs:"strength-checks"`) inside the existing `goliath-large-form`
       while-active, and a new `dwarf-stonecunning` while-active wrapping `{type:"tremorsense",range:60}`
@@ -1282,9 +1284,9 @@ were DEAD duplicates.
       | `cleric-…-divine-foreknowledge` (pack)               | `divine-foreknowledge`             | every D20 Test           | correct as-is (blanket)                        |
       | `CONDITION_GATES` blinded/frightened/poisoned/prone/restrained/invisible | condition id  | blanket while declared   | correct as-is                                  |
       | `CONDITION_GATES` grappled                           | `grappled`                         | per-target (not grappler)| ALREADY triaged by RA-32 (scoped limiter line) |
-      | `unproficient-armor` (S13)                           | `unproficient-armor`               | STR/DEX attacks          | see PS-J7 (same per-roll-ability shape)        |
+      | `unproficient-armor` (S13)                           | `unproficient-armor`               | STR/DEX attacks          | PS-J8 — `scope:"strDex"`, built in `condition-effects` |
 
-- [x] **PS-J2…PS-J7 (WRONG GLOSS SHIPPED) — narrowing-scope attack clauses glossed EVERY attack
+- [x] **PS-J2…PS-J8 (WRONG GLOSS SHIPPED) — narrowing-scope attack clauses glossed EVERY attack
       card.** FIXED 2026-07-25. The six rows above whose scope is narrower than the roll being
       glossed: `attackRollState` read `rollType` and ignored the scope, so each was asserted as a
       blanket verdict on every attack card — Precise Hunter (Ranger 17) and Vow of Enmity (Oath of
@@ -1307,21 +1309,39 @@ were DEAD duplicates.
         damage riders already ship on that card. The phrase family `combat.attackScope_*` is now the
         ONE home for both (it absorbed the riders' `combat.vsMarkedTarget_*` keys — one semantic
         unit, one key), derived into the dynamic-key coverage guard from the tuple.
+      - **Scoped clauses COMPOSE with the verdict, never sit beside it.** `deriveAttackRollView`
+        nets each scope as `blanket ∪ that scope` and keeps the line only when the result DIFFERS
+        from the verdict, so a scoped Advantage under a blanket Disadvantage (Reckless Attack while
+        Prone — a Barbarian's default posture after a knockdown) reads "Disadv. · Straight roll on
+        Strength attacks" instead of asserting both. That third polarity is the grammar's
+        `abilities.straightRoll` word; a scope that AGREES with the verdict prints nothing.
+      - **A scope a card's rolls can never be in is dropped, not stated** (`attackScopeReachesCard`):
+        a Sorcerer-spell clause never reaches a weapon swing, and an ability-scoped clause never
+        reaches a spell attack (which rolls off the spellcasting ability).
       - **Vow of Enmity additionally became the 1-minute activation it always was:** a `while-active`
-        + `{ kind: "timed", minutes: 1 }` wrapper (Innate Sorcery's shape). Because the feature also
-        carries `mechanics.actions`, the engine already infers it as an ACTIVATION feature, so using
-        the Channel Divinity card lights the toggle and arms the countdown — no new UI. Before the
-        vow is uttered the paladin now carries no advantage at all.
+        + `{ kind: "timed", minutes: 1, maxRounds: 10 }` wrapper (Sacred Weapon's shape — `maxRounds`
+        is the field the turn/round engine reads; `resolveActiveTimedEffects` skips a duration
+        without it, so a `minutes`-only timer never counts down). Because the feature also carries
+        `mechanics.actions`, the engine already infers it as an ACTIVATION feature, so using the
+        Channel Divinity card lights the toggle and arms that countdown — no new UI. Before the vow
+        is uttered the paladin now carries no advantage at all.
 
       Regressions: `tests/unit/attack-scope-clauses.test.tsx` (the rendered attack-card gloss for
       Precise Hunter + Reckless Attack, lit and unlit) and
       `content-pack/tests/unit/advantage-rail.pack.test.ts` (Vow of Enmity's activation + scoped chip).
 
-      Left open deliberately: `strength` and `sorcery` are scopes the ACTION SUMMARY could resolve per
-      card (it knows neither the attack's ability nor a spell's owning class today). Stating the scope
-      is correct but shows the line on cards it cannot apply to; threading those two facts onto
-      `ResolvedAction["summary"]` would let the card resolve them exactly. Not built — no user has
-      asked, and the stated scope is never wrong (golden rule 1, YAGNI).
+      **PS-J8 (the same wave)** — the S13 `unproficient-armor` attack clause is built in
+      `condition-effects.ts`, NOT from a Grant, so the required-`scope` type never saw it: a wizard in
+      unproficient plate read "Disadv." on every SPELL attack card, which RAW (Disadvantage on D20
+      Tests using Strength or Dexterity) does not touch. It now declares `scope: "strDex"`.
+
+      Left open deliberately: `strength` / `strDex` cannot be resolved EXACTLY on a weapon card —
+      `ResolvedAction` carries `weaponId` but not the attack's ability, and a Pact weapon attacks with
+      Charisma — so those lines are stated rather than folded into the verdict there. The cheap half
+      IS done: `source: "spell" | "weapon" | "feature"` is already on `ResolvedAction`, so a scope a
+      card's rolls can never be in is dropped outright. What remains is threading the resolved attack
+      ability (and a spell's owning class) onto the action summary; not built — no user has asked, and
+      a stated scope is never wrong (golden rule 1, YAGNI).
 
 - [x] **B1 (CRITICAL, live data) — Rage auto-expires at round 10, not round 100.** FIXED 2026-06-24.
       `barbarian.ts:175` now `maxRounds:100` (RAW: 10 minutes = 100 rounds @ 6 s/round) so the End-Turn

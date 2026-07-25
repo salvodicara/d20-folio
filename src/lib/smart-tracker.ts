@@ -57,6 +57,7 @@ import {
   type FormAttack,
   type PactWeapon,
   type PactWeaponRider,
+  type MarkedTargetScope,
 } from "@/lib/grants";
 import {
   resolveGrantSourcesForFeatures,
@@ -873,7 +874,7 @@ export interface RawActionSummary extends Omit<
      * so the player applies it only on the right hit (never auto-summed). The
      * token picks the localized noun. Absent → an always-applies rider.
      */
-    vsMarkedTarget?: "marked" | "cursed";
+    vsMarkedTarget?: MarkedTargetScope;
     /** Source feature/feat/invocation NAME ref — provenance (e.g. "Frenzy"). */
     source: LocText;
     /**

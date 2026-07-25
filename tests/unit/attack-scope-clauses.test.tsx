@@ -80,6 +80,22 @@ const hunter = (level: number, bundle?: Record<string, string>): ScenarioSpec =>
   ...(bundle ? { grantBundleChoices: bundle } : {}),
 });
 
+const barbarian = (
+  activeFeatures: string[],
+  conditions: string[] = []
+): ScenarioSpec => ({
+  name: "Vokka",
+  raceId: "human",
+  classId: "barbarian",
+  subclassId: "berserker",
+  level: 3,
+  background: "soldier",
+  abilityScores: S,
+  weapons: [{ srdId: "greataxe", quantity: 1 }],
+  activeFeatures,
+  conditions,
+});
+
 describe("PS-J — narrowing-scope attack clauses never gloss every attack card", () => {
   it("Escape the Horde (Opportunity Attacks AGAINST you) leaves the player's own attacks clean", () => {
     load(hunter(7, { "ranger-hunter-defensive-tactics": "escape-the-horde" }));
@@ -105,18 +121,6 @@ describe("PS-J — narrowing-scope attack clauses never gloss every attack card"
   it("Reckless Attack scopes to Strength attacks ONLY while the toggle is lit", () => {
     // A blanket "Adv." here would be wrong twice over: Reckless is a declared
     // state, and RAW it reaches Strength-based attack rolls only.
-    const barbarian = (activeFeatures: string[]): ScenarioSpec => ({
-      name: "Vokka",
-      raceId: "human",
-      classId: "barbarian",
-      subclassId: "berserker",
-      level: 3,
-      background: "soldier",
-      abilityScores: S,
-      weapons: [{ srdId: "greataxe", quantity: 1 }],
-      activeFeatures,
-    });
-
     load(barbarian([]));
     const off = renderPage();
     for (const g of attackGlosses()) expect(g).not.toMatch(/Adv\./);
@@ -127,5 +131,67 @@ describe("PS-J — narrowing-scope attack clauses never gloss every attack card"
     const lit = attackGlosses();
     expect(lit.length).toBeGreaterThan(0);
     for (const g of lit) expect(g).toMatch(/Adv\. on Strength attacks/);
+  });
+
+  // ── The COMPOSITION cases: a scoped clause is netted AGAINST the verdict, so
+  //    the card never asserts two contradictory claims on one roll. ──────────
+
+  it("a scoped Advantage under a blanket Disadvantage reads as the straight roll it is", () => {
+    // Prone (blanket Disadvantage on attacks) + Reckless (Advantage on Strength
+    // attacks) — a Barbarian's default posture after being knocked down. RAW the
+    // greataxe swing has both, so it is a STRAIGHT roll; the card used to print
+    // "Disadv. · Adv. on Strength attacks" and assert both at once.
+    load(barbarian(["barbarian-reckless-attack"], ["prone"]));
+    renderPage();
+    const glosses = attackGlosses();
+    expect(glosses.length).toBeGreaterThan(0);
+    for (const g of glosses) {
+      expect(g).toMatch(/Disadv\. · Straight roll on Strength attacks/);
+      expect(g).not.toMatch(/Adv\. on Strength attacks/);
+    }
+  });
+
+  it("the turn-limiter banner states the SAME blanket verdict the cards carry", () => {
+    // One source of truth: the banner reports the posture of a roll no scope
+    // touches, which is exactly the card's verdict — the scoped exception rides
+    // the card. The two can never disagree.
+    load(barbarian(["barbarian-reckless-attack"], ["prone"]));
+    renderPage();
+    expect(screen.getByText(/Disadvantage on attacks \(Prone\)/)).toBeInTheDocument();
+    for (const g of attackGlosses()) expect(g).toMatch(/to hit · Disadv\./);
+  });
+
+  it("a blanket clause with nothing scoped still reads as a bare verdict", () => {
+    load(barbarian([], ["prone"]));
+    renderPage();
+    const glosses = attackGlosses();
+    expect(glosses.length).toBeGreaterThan(0);
+    for (const g of glosses) {
+      expect(g).toMatch(/to hit · Disadv\.$/);
+      expect(g).not.toMatch(/Straight roll/);
+    }
+  });
+
+  it("drops a scope the card's rolls can never be in (Innate Sorcery on a weapon)", () => {
+    // A Sorcerer-spell clause cannot reach a quarterstaff swing, so the weapon
+    // card states nothing; the spell cards carry the line.
+    load({
+      name: "Rell",
+      raceId: "human",
+      classId: "sorcerer",
+      subclassId: "draconic-sorcery",
+      level: 3,
+      background: "sage",
+      abilityScores: { ...S, CHA: 16 },
+      weapons: [{ srdId: "quarterstaff", quantity: 1 }],
+      spells: [{ srdId: "fire-bolt" }],
+      activeFeatures: ["sorcerer-innate-sorcery"],
+    });
+    renderPage();
+    const glosses = attackGlosses();
+    const weapon = glosses.filter((g) => g?.includes("5 ft"));
+    expect(weapon.length).toBeGreaterThan(0);
+    for (const g of weapon) expect(g).not.toMatch(/Sorcerer spell attacks/);
+    expect(glosses.some((g) => g?.includes("on Sorcerer spell attacks"))).toBe(true);
   });
 });
