@@ -46,6 +46,44 @@ const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8
 /** folio.css with comments stripped + whitespace flattened, for selector probes. */
 const folio = folioCss.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ");
 
+/**
+ * Split a selector LIST on top-level commas only. A naive `.split(",")` shatters
+ * `:not(:where(.a, .b))` into fragments and reports `.b` as a subject it never is —
+ * which is how a derived probe grows a page of phantom offenders.
+ */
+function selectorParts(list: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let buf = "";
+  for (const ch of list) {
+    if (ch === "(") depth++;
+    else if (ch === ")") depth--;
+    if (ch === "," && depth === 0) {
+      parts.push(buf);
+      buf = "";
+    } else buf += ch;
+  }
+  parts.push(buf);
+  return parts.map((p) => p.trim().replace(/\s+/g, " ")).filter(Boolean);
+}
+
+/** The last compound of a selector — the element the rule actually styles. */
+function subjectOf(selector: string): string {
+  return selector.split(/\s*[\s>+~]\s*/).pop() ?? "";
+}
+
+/**
+ * True when `subject` is `base` wearing a state, a variant class or a BEM modifier
+ * — `.ch-card:hover`, `.wiz-card[data-chosen]`, `.lvl-pick.selected`,
+ * `.wiz-equip-item--choice` — but NOT a different class that merely starts with the
+ * same letters (`.wiz-card-badge` is not `.wiz-card`).
+ */
+function isStrikeOf(subject: string, base: string): boolean {
+  if (subject === base) return true;
+  if (!subject.startsWith(base)) return false;
+  return /^([:.[]|--)/.test(subject.slice(base.length));
+}
+
 /** Extract the `[data-theme="<theme>"] { … }` first block body from index.css. */
 function themeBlock(theme: "dark" | "light"): string {
   const start = indexCss.indexOf(`[data-theme="${theme}"]`);
@@ -483,6 +521,21 @@ describe("the chrome system — L1, a frame means container or interactive", () 
     "\\.insp-chip", // the inspiration readouts
     "\\.set-row \\.sr-icon", // a settings row's leading glyph
     "\\.dm-banner-glyph", // the GM mark
+    // ── THE WIZARDS. Creation + level-up are the FIRST screens a new player meets,
+    // and every recipe below was still framed after the reset swept the rest of the
+    // app: a hit-die chip with a real gold border ×13 on the class gallery, and six
+    // gems carrying a ring and a carved well inside a card that is already a frame.
+    "\\.wiz-card-badge", // the class plaque's hit die (×13 on /characters/new)
+    "\\.wiz-tab-count", // the spell-slot tab's read-only count
+    "\\.wiz-card-seal", // the class plaque's domain glyph
+    "\\.wiz-path-glyph", // the Quick/Guided fork's glyph
+    "\\.wiz-socket", // the morph-list row's star socket
+    "\\.wiz-orb", // the stepper orb
+    "\\.wiz-hero-seal", // the altar's enthroned gem
+    "\\.wiz-summary-seal", // the review card's gem
+    "\\.wiz-done-seal", // the commit ceremony's gem
+    "\\.wiz-row-check", // the picked row's check gem
+    "\\.wiz-pager-seal", // the page-turn coin
   ] as const;
 
   it("draws no border and no inset around read-only information", () => {
@@ -803,6 +856,20 @@ describe("the chrome system — L3, state changes light and colour only", () => 
       ],
       ["the option cell", /\.opt-cell:hover[^{]*\{[^}]*var\(--state-metal-hover\)/],
       ["the wizard entry", /\.wiz-entry:hover \{[^}]*var\(--state-metal-hover\)/],
+      // ── THE WIZARDS. Of ~250 `.wiz-*` rules, exactly THREE consumed a state token
+      // before this: the class/species/background plaque — the wizard's whole reason
+      // to exist — hovered with its own border-mix, its own elevation stack and
+      // DOUBLE the licensed 1px settle. These are the first screens a new player
+      // meets, so they are pinned family by family.
+      ["the wizard plaque", /\.wiz-card:hover \{[^}]*var\(--state-metal-hover\)/],
+      ["the wizard path fork", /\.wiz-path:hover \{[^}]*var\(--state-metal-hover\)/],
+      ["the wizard fork tab", /\.wiz-fork-tab:hover \{[^}]*var\(--state-metal-hover\)/],
+      [
+        "the wizard ASI tile",
+        /\.wiz-asi-tile:hover[^{]*\{[^}]*var\(--state-metal-hover\)/,
+      ],
+      ["the level-up pick", /\.lvl-pick:hover[^{]*\{[^}]*var\(--state-metal-hover\)/],
+      ["the level-up chip", /\.lvl-chip:hover[^{]*\{[^}]*var\(--state-metal-hover\)/],
     ];
     for (const [label, re] of CONSUMERS) {
       expect(
@@ -830,8 +897,129 @@ describe("the chrome system — L3, state changes light and colour only", () => 
         "the option cell",
         /\.opt-cell\[aria-pressed="true"\] \{[^}]*var\(--state-metal-selected\)/,
       ],
+      // The chosen plaque used to carry its OWN selection frame — the
+      // silver-over-bronze `--frame-selected` gradient — while every other
+      // selectable surface in the app took the accent metal. That metal is EARNED
+      // by the one enthroned altar, never by a sibling among twelve equals.
+      [
+        "the wizard plaque",
+        /\.wiz-card\[data-chosen\] \{[^}]*var\(--state-metal-selected\)/,
+      ],
+      [
+        "the wizard path fork",
+        /\.wiz-path\[aria-pressed="true"\] \{[^}]*var\(--state-metal-selected\)/,
+      ],
+      [
+        "the wizard ASI tile",
+        /\.wiz-asi-tile\[data-chosen\] \{[^}]*var\(--state-metal-selected\)/,
+      ],
+      [
+        "the wizard entry",
+        /\.wiz-entry\[data-chosen\],\s*\.wiz-entry\[data-picked\] \{[^}]*var\(--state-metal-selected\)/,
+      ],
     ] as [string, RegExp][]) {
       expect(re.test(folio), `${label}'s SELECTED metal is off the ladder.`).toBe(true);
     }
+  });
+
+  /**
+   * THE VEIL SLOT — `background-image` is a REPLACED property too.
+   *
+   * The No-Second-Grammar rule was written about `box-shadow` and stopped there. The
+   * SAME trap sits one property over: a state rung that writes
+   * `background-image: linear-gradient(<wash>, <wash>)` onto a plate DISCARDS the
+   * plate's dome and face, and the surface goes translucent — on the app's landing
+   * route the roster tile did exactly that, dissolving under the pointer with the
+   * candlelit backdrop showing through it and its muted ink stranded on the scene.
+   * Three shipped rules carried it, and the box-shadow guard beside them was green.
+   *
+   * So the ladder reaches a plate through `--state-veil`, a slot the plate composes
+   * at rest, and this check DERIVES its subject list from the stylesheet — every
+   * selector that declares `var(--plate-face)` — rather than restating a list a new
+   * plate could be added outside of.
+   *
+   * WHAT IT CANNOT SEE: a plate whose face is authored INLINE (a literal
+   * `linear-gradient(180deg, var(--bg-surface-2), …)` rather than `--plate-face`) is
+   * not in the derived set, so its own state rules are unchecked — the fix for that
+   * is to put the recipe on the material, not to widen the pattern.
+   */
+  it("never lets a state rule silently strip a plate's FACE", () => {
+    const rules = [...folio.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+    /** Every selector that declares the plate material — derived, never listed. */
+    const plateSubjects = new Set<string>();
+    for (const [, sel, body] of rules) {
+      if (!/var\(--plate-face\)/.test(body ?? "")) continue;
+      for (const part of selectorParts(sel ?? "")) plateSubjects.add(subjectOf(part));
+    }
+    expect(
+      plateSubjects.size,
+      "the derived plate set must not be empty — did `--plate-face` get renamed?"
+    ).toBeGreaterThan(4);
+
+    /**
+     * The ONE documented exemption, allowlisted by SELECTOR and never by value:
+     * `.info-card.tip` is the quiet creation-wizard note, which deliberately sheds
+     * the whole material (and its drop) so it does not read as a second cartouche.
+     */
+    const EXEMPT = /^\.info-card\.tip$/;
+
+    const offenders: string[] = [];
+    for (const [, sel, body] of rules) {
+      const decls = (body ?? "").replace(/\s+/g, " ");
+      const bg = /(?:^|;)\s*background(?:-image)?\s*:\s*([^;]+)/.exec(decls)?.[1];
+      if (bg === undefined) continue;
+      // Composing the face back, or declaring the slot itself, is the correct form.
+      if (/--plate-face|var\(--state-veil\)/.test(bg)) continue;
+      for (const s of selectorParts(sel ?? "")) {
+        const subject = subjectOf(s);
+        if (/::(before|after)/.test(subject) || EXEMPT.test(subject)) continue;
+        if (![...plateSubjects].some((p) => isStrikeOf(subject, p))) continue;
+        offenders.push(`${s} → background: ${bg.trim().slice(0, 60)}`);
+      }
+    }
+    expect(
+      offenders,
+      `These rules SET a background on a PLATE-bearing selector without composing the ` +
+        `plate's own face, so they silently dissolve the material (\`background-image\` ` +
+        `is REPLACED, never merged — exactly like \`box-shadow\`). Route the wash ` +
+        `through the ladder's veil slot instead:\n` +
+        `    <plate>       { --state-veil: none; background-image: var(--state-veil), var(--plate-dome), var(--plate-face); }\n` +
+        `    <plate>:hover { --state-veil: var(--veil-hover); }\n  ` +
+        offenders.join("\n  ")
+    ).toEqual([]);
+  });
+
+  /**
+   * …and the other half of the slot: a rung that SETS `--state-veil` on a recipe
+   * whose resting rule never composes it is a wash that silently does nothing. Both
+   * halves are derived from the stylesheet, so neither can be satisfied by a list.
+   */
+  it("never lets a veil rung fire on a recipe that does not compose the slot", () => {
+    const rules = [...folio.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+    const composers = new Set<string>();
+    for (const [, sel, body] of rules) {
+      if (!/background-image:\s*var\(--state-veil\)/.test(body ?? "")) continue;
+      for (const part of selectorParts(sel ?? "")) composers.add(subjectOf(part));
+    }
+    const offenders: string[] = [];
+    for (const [, sel, body] of rules) {
+      if (
+        !/--state-veil:\s*var\(--veil-|--state-veil:\s*linear-gradient/.test(body ?? "")
+      ) {
+        continue;
+      }
+      for (const s of selectorParts(sel ?? "")) {
+        const subject = subjectOf(s);
+        if ([...composers].some((c) => isStrikeOf(subject, c))) continue;
+        offenders.push(s);
+      }
+    }
+    expect(
+      offenders,
+      `These rules set \`--state-veil\` on a recipe whose resting rule never composes ` +
+        `it — the wash resolves to nothing and the state is INVISIBLE. Add ` +
+        `\`--state-veil: none\` + \`background-image: var(--state-veil), …\` to the base ` +
+        `rule:\n  ${offenders.join("\n  ")}`
+    ).toEqual([]);
   });
 });

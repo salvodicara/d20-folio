@@ -794,7 +794,20 @@ consumes them, so fifty controls share one grammar instead of fifty bespoke hove
 | **disabled** | the tier's own, desaturated | flat (`filter: saturate(.4)`, no struck light)   | `--text-muted`  |
 
 The **wash** is the whole mechanism: ONE translucent veil composited over the plate's own face,
-never a second gradient authored per component.
+never a second gradient authored per component. It reaches a plate through **the veil slot**:
+`background-image` is a REPLACED property exactly like `box-shadow`, so a rung that writes the wash
+straight onto the background **discards the plate's dome and face** and the surface goes translucent
+under the pointer. Every plate therefore composes the slot at rest and every rung sets only that:
+
+```css
+.plate {
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
+}
+.plate:hover {
+  --state-veil: var(--veil-hover);
+} /* --veil-pressed · --veil-selected */
+```
 
 **A veil is not an inversion.** All three washes are re-derived per theme, because the same alpha is
 a different STEP on near-black than it is on ivory: 10% of the warm gold lifts the dark plate by
@@ -840,11 +853,14 @@ which is how one route came to render 273 framed boxes and another 1313. If you 
 box is _for_, delete it and let type and space do the work (L1; `chrome-system.guard.test.ts` +
 `tests/e2e/chrome-census.spec.ts`).
 
-**The No-Second-Grammar Rule.** `box-shadow` is a REPLACED property, so a rule that sets it on a
-plate without composing the plate's own tokens back in silently strips the material — and a rule
-that composes BOTH an `--edge-*` and an `--elev-*` term is the literal lasagna: two
-independently-authored bevels doing the same job in the same place. Both are guard-failures
-(`tests/unit/chrome-system.guard.test.ts`). The legacy `--elev-*` stack survives ONLY on the small
+**The No-Second-Grammar Rule.** `box-shadow` and `background-image` are both REPLACED properties, so
+a rule that sets either on a plate without composing the plate's own tokens back in silently strips
+the material — the shadow case costs the plate its seat, the background case costs it its **face and
+dome**, and a surface that loses its face goes translucent, with the candlelit backdrop showing
+through it and its ink stranded on the scene. A rule that composes BOTH an `--edge-*` and an
+`--elev-*` term is the literal lasagna: two independently-authored bevels doing the same job in the
+same place. All three are guard-failures (`tests/unit/chrome-system.guard.test.ts`), and the
+background case is what the ladder's **veil slot** exists to make unreachable. The legacy `--elev-*` stack survives ONLY on the small
 controls the state-grammar pass has yet to reach; it may never touch a plate.
 
 **The Dome Costs Ink, and the Ink Buys the Dome's Alpha.** A dark plate is translucent over painted
@@ -1548,6 +1564,11 @@ The ONE F-family picker for every in-wizard choice pool (`WizardPickList` in
 `src/features/wizard/pick-list.tsx`; its large-feat-pool sibling `feat-list.tsx`; spells in
 `spell-list.tsx`). It implements the Picker Doctrine (Constitution §2.7) as one recipe:
 
+- **The entry is a PLATE, and its three states are the ladder:** collapsed is the quiet tier;
+  reading warms the metal to the hover rung and takes the earned seat; chosen is
+  `--state-metal-selected` over the selected veil. No bloom marks any of them — the entry is an
+  object you can act on, so it is framed, and everything read-only inside it (the socket, the
+  check, the hit die) is type and shape (L1).
 - **Three states, one geometry:** every entry keeps ONE header and ONE body through
   collapsed · reading · chosen. A tap unfolds the reading spread (free browsing — an exploratory
   tap never burns a pick); an explicit **Choose / Learn** commits; the committed row swaps the
@@ -1568,11 +1589,12 @@ The ONE F-family picker for every in-wizard choice pool (`WizardPickList` in
 - **Illegal options are absent, not greyed:** the presenter (`lib/views/feat-pick-view.ts` et al.)
   filters out unmet-prerequisite and already-taken options; the only disabled-row note is a
   blocking reason ("Already taken"). Met preconditions are never announced.
-- **The commit moment is marked (the Create ceremony):** the wizard's final commit control — the
+- **The commit moment is marked by the REGISTER LADDER:** the wizard's final commit control — the
   creation "Create Character" and the level-up confirm — is the ONE `WizardNav` next button that
-  takes `commit`, whose gold seal emits a single gold-leaf **bloom** on press (an expanding, fading
-  radial halo on `--ease-settle`, ~400ms; reduced motion collapses it to the existing press). No new
-  colours, no confetti; both wizards share the one recipe (`.wiz-pager-btn.commit`).
+  takes `commit`, and its gold coin steps from the quiet seat to the **earned** one
+  (`.wiz-pager-btn.commit`). Light, never geometry, never emission: this chrome has no bloom
+  anywhere, so the biggest moment in the app is marked the same way every other earned register is.
+  Both wizards share the one recipe.
 
 ### Compendium codex — the two-leaf spread (COMPENDIUM-LUX)
 
@@ -1907,9 +1929,12 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
   cap. In light the mark's contrast against the plate is 1.59× the rule's — the daylight sibling of
   the same relationship.
 
-- **SELECTION is the frame metal.** The `--frame-selected` silver-over-bronze gradient (from the
-  per-theme `--metal-silver` / `--metal-bronze` pair) marks the wizard hero altar and the chosen
-  plaque. At-rest surfaces are never decorated with selection ornament.
+- **SELECTION is the frame metal, and it is spent ONCE.** The `--frame-selected` silver-over-bronze
+  gradient (from the per-theme `--metal-silver` / `--metal-bronze` pair) marks the **wizard hero
+  altar** — the single enthroned result of a step, never a sibling among equals. Everything a user
+  _selects among_ — the chosen class plaque, the chosen path, the chosen ASI, the picked entry —
+  takes the state ladder's own `--state-metal-selected` + `--state-wash-selected`, like every other
+  selectable surface in the app. At-rest surfaces are never decorated with selection ornament.
 - **TYPE IS FLAT.** No engraving, no letterpress, no underglow, no gradient on any title. A
   section heading takes the body colour one size up, not an accent hue. **Gold means a value or a
   state — never a label.**

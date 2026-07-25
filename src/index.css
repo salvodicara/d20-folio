@@ -205,6 +205,28 @@
      perceptual step — hover ≈ ΔL* 6, selected ≈ ΔL* 9.5 — which is what makes the
      ladder feel identical in a room it was separately designed for. */
 
+  /* ── THE VEIL SLOT — how a wash reaches a PLATE without destroying it.
+     `background-image` is a REPLACED property, exactly like `box-shadow`: a state
+     rule that sets it on a plate discards the plate's own dome and face, and the
+     surface goes TRANSLUCENT under the pointer (the roster tile did, on the app's
+     landing route, with the candlelit art showing straight through the card and its
+     muted ink stranded on the scene).
+
+     So a plate composes ONE veil layer at rest — `background-image: var(--state-veil),
+     var(--plate-dome), var(--plate-face)` with `--state-veil: none` declared on the
+     plate itself (so a plate nested inside a lit one starts clean) — and every rung
+     of the ladder sets THAT, never the background. A state can then no longer cost a
+     surface its substance, and the wash is literally what §04b says it is: one
+     translucent veil composited over the plate's own face.
+     Enforced by `chrome-system.guard.test.ts` → "never lets a state rule silently
+     strip a plate's FACE", which derives the plate list from the stylesheet. ── */
+  --veil-hover: linear-gradient(var(--state-wash-hover), var(--state-wash-hover));
+  --veil-pressed: linear-gradient(var(--state-wash-pressed), var(--state-wash-pressed));
+  --veil-selected: linear-gradient(
+    var(--state-wash-selected),
+    var(--state-wash-selected)
+  );
+
   /* ── § 06 Motion — The settling grammar (BG3 identity: motion SETTLES, never
      travels — short cubic-out fades with tiny translates; spring/bounce is
      reserved EXCLUSIVELY for warning/urgent notification pops). ── */

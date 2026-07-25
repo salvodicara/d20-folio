@@ -150,6 +150,22 @@ const SURFACES: {
         .catch(() => {});
     },
   },
+  // ── THE WIZARDS. Creation and level-up were never in this census, which is a
+  // large part of why they were never brought onto the reset at all: nothing
+  // measured them, so nothing failed. They are also the FIRST screens a new player
+  // meets, so they are the last place a stray box should be affordable.
+  //
+  // Quick Start's ceiling is the one that needs explaining, and it is the cockpit's
+  // argument exactly: 114 of its 137 boxes are the CHOICES — 68 morph-list entries,
+  // 13 class plaques, 11 group tabs, 10 equipment lines, 6 ability tiles, 6 ASI
+  // tiles. The page's entire promise is "every choice on one page" (the step header
+  // says so), so those are CONTENT, like the cockpit's 42 commit CTAs and the
+  // reference's own hotbar slots. What is budgeted here is the ~23 of chrome around
+  // them, and the nesting law is the real teeth: it caught the point-buy tile at a
+  // THIRD framed level (`.wiz-abil` > `.num-stepper` > `.input`, a carved well 1px
+  // inside a carved well) the moment the route was added.
+  { slug: "create-quick", route: "/characters/new", ceiling: 142 }, // measured 137
+  { slug: "level-up", route: "/characters/mock-1/level-up", ceiling: 20 }, // measured 15
   { slug: "settings", route: "/settings", ceiling: 15 }, // measured 10
 ];
 

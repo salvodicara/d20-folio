@@ -14,7 +14,6 @@
  * so nothing below the hint is reserved).
  */
 import type { ComponentType, ReactNode, SVGProps } from "react";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight, BookOpen, Check, Zap } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
@@ -279,14 +278,12 @@ export function WizardNav({
   onNext: () => void;
   nextDisabled?: boolean;
   loading?: boolean;
-  /** TRUE only on the final commit step (Create / Confirm): marks the next seal
-   *  with a one-shot gold bloom on press (the ceremony). */
+  /** TRUE only on the final commit step (Create / Confirm): the forward coin steps
+   *  from the quiet seat to the EARNED one — the register ladder marking the moment
+   *  in light, which is the only way this chrome marks anything (there is no bloom
+   *  and no halo anywhere in it). */
   commit?: boolean;
 }) {
-  // The ceremony bloom is a one-shot: armed on the commit press, cleared when the
-  // ::after animation ends (reduced motion collapses the animation to ~0ms, so it
-  // still fires and clears — never a stuck state).
-  const [blooming, setBlooming] = useState(false);
   return (
     <nav className="wiz-pager">
       <button
@@ -303,14 +300,8 @@ export function WizardNav({
       </button>
       <button
         type="button"
-        className={cn("wiz-pager-btn next", commit && "commit", blooming && "blooming")}
-        onClick={() => {
-          if (commit) setBlooming(true);
-          onNext();
-        }}
-        onAnimationEnd={(e) => {
-          if (e.animationName === "pager-bloom") setBlooming(false);
-        }}
+        className={cn("wiz-pager-btn next", commit && "commit")}
+        onClick={onNext}
         disabled={nextDisabled || loading}
         aria-label={nextLabel}
         aria-busy={loading || undefined}

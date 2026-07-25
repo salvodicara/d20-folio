@@ -1,16 +1,34 @@
 /**
- * The Create ceremony — WizardNav's commit-moment gold bloom — plus the frame's
- * realm backdrop.
+ * The commit moment — WizardNav's final forward coin — plus the frame's realm
+ * backdrop.
  *
  * The final commit control (creation "Create Character" / level-up confirm) is the
- * ONE next-button that carries `commit`; both wizards pass the same flag. This pins
- * the wiring: `commit` marks the next button `.commit` (the CSS then arms the press
- * bloom), a non-commit step does NOT, and pressing a commit button arms the
- * one-shot `.blooming` class (the ::after animation).
+ * ONE next-button that carries `commit`; both wizards pass the same flag. The
+ * ceremony it marks is the REGISTER LADDER, not an effect of its own: the coin steps
+ * from the quiet seat to the earned one.
+ *
+ * WHY THE ASSERTION READS THE STYLESHEET. This spec used to assert only that the
+ * button carried `.commit` and, on press, `.blooming` — and it stayed GREEN for the
+ * whole life of a chrome reset that had DELETED the `pager-bloom` keyframes those
+ * classes existed to trigger. A class name is not a treatment; the wiring test has
+ * to reach the artifact the wiring is FOR, so it also checks that `.commit` still
+ * resolves to something in `folio.css`.
+ *
+ * WHAT IT CANNOT SEE: whether the earned seat is VISIBLY different from the quiet
+ * one at the coin's size — that is a rendered question, and the pair of tier tokens
+ * is pinned in `chrome-system.guard.test.ts`.
  */
 import { describe, it, expect, vi } from "vitest";
-import { render, fireEvent } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+import { render } from "@testing-library/react";
 import { WizardFrame, WizardNav } from "@/features/wizard/chrome";
+
+const folio = readFileSync(
+  resolve(dirname(fileURLToPath(import.meta.url)), "../../src/styles/folio.css"),
+  "utf8"
+);
 
 function nextButton(commit: boolean): HTMLElement {
   const { container } = render(
@@ -27,22 +45,28 @@ function nextButton(commit: boolean): HTMLElement {
   return next;
 }
 
-describe("WizardNav commit ceremony", () => {
+describe("WizardNav commit moment", () => {
   it("crowns the commit next button with the .commit class", () => {
     expect(nextButton(true).classList.contains("commit")).toBe(true);
   });
 
   it("leaves a non-commit step's next button uncrowned", () => {
-    const next = nextButton(false);
-    expect(next.classList.contains("commit")).toBe(false);
-    expect(next.classList.contains("blooming")).toBe(false);
+    expect(nextButton(false).classList.contains("commit")).toBe(false);
   });
 
-  it("arms the one-shot gold bloom on a commit press", () => {
-    const next = nextButton(true);
-    expect(next.classList.contains("blooming")).toBe(false);
-    fireEvent.click(next);
-    expect(next.classList.contains("blooming")).toBe(true);
+  it("…and `.commit` resolves to a real treatment — the EARNED seat", () => {
+    const rule =
+      /\.wiz-pager-btn\.commit \.wiz-pager-seal \{([^}]*)\}/.exec(folio)?.[1] ?? "";
+    expect(
+      rule,
+      "`.commit` is emitted by WizardNav but nothing in folio.css answers it — the " +
+        "class marks the app's single most important moment and paints nothing."
+    ).not.toBe("");
+    expect(rule).toContain("var(--edge-seat-earned)");
+  });
+
+  it("emits no bloom: the ceremony is the tier, never a halo", () => {
+    expect(folio).not.toMatch(/pager-bloom|\.blooming/);
   });
 });
 

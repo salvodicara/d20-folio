@@ -1949,11 +1949,16 @@ button.toolbar-chip:focus-visible {
   opacity: 0.35;
   cursor: not-allowed;
 }
+/* The value field inside the stepper pill is NOT its own object — the pill is. Its
+   own carved well was a second recess 1px inside the first (a frame inside a frame,
+   L1), and it is what pushed the point-buy tile to a THIRD framed level:
+   `.wiz-abil` > `.num-stepper` > `.input`. The pill's own `--elev-recessed` is the
+   one well; the field is type sitting in it. */
 .num-stepper .input {
   min-width: 56px;
   border: none;
   border-radius: var(--r-chip);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+  box-shadow: none;
 }
 .num-stepper:focus-within {
   border-color: var(--accent-primary-bright);
@@ -2283,7 +2288,8 @@ button.pr-dot.lg::before {
   position: relative;
   width: 100%;
   max-width: 32rem;
-  background: var(--plate-dome), var(--plate-face);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
   border: 2px solid var(--edge-metal-earned);
   border-radius: var(--r-plate);
   box-shadow: var(--edge-groove), var(--edge-seat-earned);
@@ -3846,7 +3852,9 @@ button.vital {
   gap: 3px;
   margin-left: 10px;
   padding: 1px 8px 1px 5px;
-  background: color-mix(in oklab, var(--accent-primary) 10%, transparent);
+  --state-veil: none;
+  background-color: color-mix(in oklab, var(--accent-primary) 10%, transparent);
+  background-image: var(--state-veil);
   border: 1px solid var(--accent-primary-deep);
   border-radius: var(--r-chip);
   color: var(--accent-text);
@@ -3857,15 +3865,22 @@ button.vital {
   cursor: pointer;
   vertical-align: 1px;
   white-space: nowrap;
-  transition: box-shadow var(--m-fast) var(--ease-standard);
+  transition:
+    box-shadow var(--m-fast) var(--ease-standard),
+    border-color var(--m-fast) var(--ease-standard),
+    background-color var(--m-fast) var(--ease-standard);
 }
 .lvl-chip svg {
   width: 11px;
   height: 11px;
 }
+/* THE STATE LADDER (index.css §04b), not a bloom: the metal warms and the candle
+   veil crosses the face. Light on this material means depth — a chip that emits
+   its own halo is a second light source with no source. */
 .lvl-chip:hover,
 .lvl-chip:focus-visible {
-  box-shadow: 0 0 10px rgb(212 172 77 / 0.35);
+  border-color: var(--state-metal-hover);
+  --state-veil: var(--veil-hover);
 }
 /* LIGHT ember — at pill scale a tinted wash vanishes on ivory, so the enamel goes
    FULL struck gilt (the small-control rule: solid saturated gilt + an ember pool
@@ -7925,7 +7940,8 @@ button.create-need:focus-visible .create-need-chev {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: var(--plate-dome), var(--plate-face);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
   border: 1px solid var(--edge-metal);
   border-radius: var(--r-plate);
   box-shadow: var(--edge-groove), var(--edge-seat);
@@ -7941,7 +7957,7 @@ button.create-need:focus-visible .create-need-chev {
 .ch-card:hover {
   transform: translateY(-1px);
   border-color: var(--state-metal-hover);
-  background-image: linear-gradient(var(--state-wash-hover), var(--state-wash-hover));
+  --state-veil: var(--veil-hover);
   box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 /* Pressed feedback on tap — matches the sibling .rest-card press vocabulary
@@ -7950,7 +7966,7 @@ button.create-need:focus-visible .create-need-chev {
 .ch-card:active {
   /* depress INTO the page like every other interactive surface (was 0). */
   transform: translateY(1px);
-  background-image: linear-gradient(var(--state-wash-pressed), var(--state-wash-pressed));
+  --state-veil: var(--veil-pressed);
 }
 [data-motion="reduced"] .ch-card:active {
   transform: none;
@@ -8304,10 +8320,7 @@ button.create-need:focus-visible .create-need-chev {
    takes the earned seat. No inner ring (that was a second frame), no geometry. */
 .ch-card[data-selected] {
   border-color: var(--state-metal-selected);
-  background-image: linear-gradient(
-    var(--state-wash-selected),
-    var(--state-wash-selected)
-  );
+  --state-veil: var(--veil-selected);
   box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 /* The selection checkbox is the shared `.cb` atom, only RE-POSITIONED here as a
@@ -12650,7 +12663,9 @@ textarea.input.sess-notes-edit {
      a trimmed bottom, so each card reads as a substantial DDB/BG3 stat block, not a
      slim tall strip. Top room is kept for the absolute caster eyebrow. */
   padding: var(--sp-4) var(--sp-3) var(--sp-2);
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
+  --state-veil: none;
+  background-image:
+    var(--state-veil), linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   border: 1px solid var(--border-medium);
   border-radius: var(--r-plate);
   box-shadow: var(--elev-raised);
@@ -12664,7 +12679,7 @@ textarea.input.sess-notes-edit {
 .statcard:hover .statcard-face {
   transform: translateY(-1px);
   border-color: var(--state-metal-hover);
-  background-image: linear-gradient(var(--state-wash-hover), var(--state-wash-hover));
+  --state-veil: var(--veil-hover);
 }
 .statcard:active .statcard-face {
   transform: translateY(1px);
@@ -13265,7 +13280,8 @@ button.tr-pip:active {
 
 /* The universal card — THE PLATE, quiet tier. */
 .info-card {
-  background: var(--plate-dome), var(--plate-face);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
   border: 1px solid var(--edge-metal);
   border-radius: var(--r-plate);
   padding: var(--sp-3) var(--sp-4);
@@ -13312,7 +13328,8 @@ button.tr-pip:active {
   gap: 10px;
   min-width: 0;
   padding: 14px;
-  background: var(--plate-dome), var(--plate-face);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
   border: 1px solid var(--edge-metal);
   border-radius: var(--r-plate);
   box-shadow: var(--edge-groove), var(--edge-seat);
@@ -16042,7 +16059,9 @@ button.econ-tok-filter:active .econ-disc {
   border-radius: var(--r-plate);
   border: 1px solid var(--border-medium);
   /* embossed tile: inner top highlight + outer drop = cast brass, not a flat box */
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
+  --state-veil: none;
+  background-image:
+    var(--state-veil), linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
   box-shadow: var(--elev-raised);
   transition:
     transform var(--m-fast) var(--ease-settle),
@@ -16055,7 +16074,7 @@ button.econ-tok-filter:active .econ-disc {
 .rest-card:hover {
   transform: translateY(-1px);
   border-color: color-mix(in oklab, var(--rc) 55%, var(--state-metal-hover));
-  background-image: linear-gradient(var(--state-wash-hover), var(--state-wash-hover));
+  --state-veil: var(--veil-hover);
   box-shadow: var(--elev-floating);
 }
 .rest-card:active {
@@ -17021,20 +17040,21 @@ button.econ-tok-filter:active .econ-disc {
   color: var(--accent-text);
 }
 
-/* Carved step container — replaces `rounded-xl border bg-bg-tertiary`. A
-   recessed vellum panel with a thin accent left-edge so the step's pigment
-   bleeds into the chrome (wayfinding), embossed inner highlight, lapidary
-   radius. */
+/* The step's content plate — THE PLATE on the quiet tier (DESIGN.md §4): one domed
+   face, 1px of metal in its moat, one groove, one cast. The step's pigment rides the
+   SPINE — a painted stripe in the face, the UniversalCard's own idiom — because a
+   thicker coloured border run is a second frame grammar on one of the four edges. */
 .lvl-card {
   border-radius: var(--r-plate);
-  border: 1px solid var(--border-medium);
-  border-left: 3px solid color-mix(in oklab, var(--lvl-accent) 70%, transparent);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--lvl-accent) 4%, var(--bg-surface-2)),
-    var(--bg-surface-1)
-  );
-  box-shadow: var(--elev-resting);
+  border: 1px solid var(--edge-metal);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--lvl-accent) 70%, transparent) 0 3px,
+      transparent 3px
+    ),
+    var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat);
   padding: var(--sp-3);
 }
 /* Scaling-upgrade rows — the SAME real surface, voiced warning-amber via the
@@ -17048,18 +17068,18 @@ button.econ-tok-filter:active .econ-disc {
   padding: var(--sp-2) var(--sp-3);
 }
 
-/* Selectable option — replaces `border-accent bg-accent/10`. Rest reads as a
-   quiet embossed tile; selected fills with the STEP pigment (tinted face +
-   full accent border + inset glow + accent text), so the chosen option is
-   unmistakable in the step's own colour, not generic gold. */
+/* Selectable option — THE PLATE on the quiet tier, ridden by THE STATE LADDER
+   (index.css §04b). The one thing this recipe keeps of its own is the step's
+   PIGMENT: `--lvl-accent` mixes into the ladder's metal so the chosen option reads
+   in the step's colour rather than generic gold. The rungs, the veil and the settle
+   are the app's, not this recipe's. */
 .lvl-pick {
   position: relative;
   border-radius: var(--r-chip);
-  border: 1px solid var(--border-medium);
-  background: linear-gradient(180deg, var(--bg-surface-3), var(--bg-surface-2));
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--text-primary) 6%, transparent),
-    0 1px 0 rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--edge-metal);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat);
   color: var(--text-primary);
   cursor: pointer;
   transition:
@@ -17069,44 +17089,42 @@ button.econ-tok-filter:active .econ-disc {
     transform var(--m-fast) var(--ease-settle);
 }
 .lvl-pick:hover:not(:disabled):not(.selected) {
-  border-color: color-mix(in oklab, var(--lvl-accent) 55%, transparent);
   transform: translateY(-1px);
+  border-color: color-mix(in oklab, var(--lvl-accent) 55%, var(--state-metal-hover));
+  --state-veil: var(--veil-hover);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 [data-motion="reduced"] .lvl-pick:hover {
   transform: none;
 }
+.lvl-pick:active:not(:disabled) {
+  transform: translateY(1px);
+  --state-veil: var(--veil-pressed);
+}
+[data-motion="reduced"] .lvl-pick:active {
+  transform: none;
+}
 .lvl-pick.selected {
   border-color: var(--lvl-accent);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--lvl-accent) 22%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--lvl-accent) 12%, var(--bg-surface-1))
+  --state-veil: linear-gradient(
+    color-mix(in oklab, var(--lvl-accent) 22%, var(--state-wash-selected)),
+    color-mix(in oklab, var(--lvl-accent) 22%, var(--state-wash-selected))
   );
   color: color-mix(in oklab, var(--lvl-accent-bright) 70%, var(--text-primary));
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--lvl-accent-bright) 30%, transparent),
-    inset 0 0 0 1px color-mix(in oklab, var(--lvl-accent) 40%, transparent),
-    0 0 12px color-mix(in oklab, var(--lvl-accent) 24%, transparent);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 /* LIGHT — the SELECTED pick must OUTSHINE the unselected ones (light-craft audit:
    on the HP step, whose accent defaults to the GOLD `--accent-primary` = deep umber
    in light, the selected tile mixed that umber into the surface and read GREYER +
-   muddier than its bright unselected sibling — an emphasis inversion). Tint + halo
-   with the BRIGHT `--lvl-accent-bright` instead of the deep `--lvl-accent`, so the
-   pick warms + lights up on cream (gold reads gilt, the coloured steps read as a
-   brighter wash of their own hue) while the deep `--lvl-accent` still carries the
-   edge + label at AA. */
+   muddier than its bright unselected sibling — an emphasis inversion). Tint with the
+   BRIGHT `--lvl-accent-bright` instead of the deep `--lvl-accent`, so the pick warms
+   on cream while the deep `--lvl-accent` still carries the edge + label at AA. */
 [data-theme="light"] .lvl-pick.selected {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--lvl-accent-bright) 26%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--lvl-accent-bright) 15%, var(--bg-surface-1))
+  --state-veil: linear-gradient(
+    color-mix(in oklab, var(--lvl-accent-bright) 26%, var(--state-wash-selected)),
+    color-mix(in oklab, var(--lvl-accent-bright) 26%, var(--state-wash-selected))
   );
   color: var(--lvl-accent);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 0 0 1px color-mix(in oklab, var(--lvl-accent) 45%, transparent),
-    0 0 12px color-mix(in oklab, var(--lvl-accent-bright) 30%, transparent);
 }
 .lvl-pick:disabled {
   cursor: not-allowed;
@@ -17698,49 +17716,38 @@ button.econ-tok-filter:active .econ-disc {
   width: 230px;
   padding: var(--sp-3) var(--sp-4);
   text-align: center;
-  border: 1px solid var(--border-medium);
+  border: 1px solid var(--edge-metal);
   border-radius: var(--r-plate);
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow: var(--elev-resting);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat);
   transition:
     border-color var(--m-fast) var(--ease-standard),
     transform var(--m-fast) var(--ease-settle),
     box-shadow var(--m-fast) var(--ease-standard);
 }
+/* THE STATE LADDER on a card: the metal warms, a candle wash crosses the face, and
+   the plate settles ONE pixel toward the light. Nothing resizes (L3). */
 .wiz-path:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--elev-raised);
+  transform: translateY(-1px);
+  border-color: var(--state-metal-hover);
+  --state-veil: var(--veil-hover);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
+}
+[data-motion="reduced"] .wiz-path:hover {
+  transform: none;
+}
+.wiz-path:active {
+  transform: translateY(1px);
+  --state-veil: var(--veil-pressed);
+}
+[data-motion="reduced"] .wiz-path:active {
+  transform: none;
 }
 .wiz-path[aria-pressed="true"] {
-  border-color: var(--accent-primary);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-glow) 18%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--accent-glow) 7%, var(--bg-surface-1))
-  );
-  box-shadow:
-    var(--elev-raised),
-    0 0 16px color-mix(in oklab, var(--accent-glow) 25%, transparent);
-}
-/* LIGHT — the enthroned path plaque must read chosen at a glance next to its
-   ivory sibling: both plaques are bright tiles on the mid-tone art, so dark's
-   gold-ring-and-ink cue collapses to a near-invisible tint shift. Strike the
-   chosen plaque with the SAME gilt-selected band the facet chips use (the
-   verified `.fchip[aria-pressed]` light recipe): a struck gold-500 gradient,
-   a full-strength gold edge, and the small gilt aura. Ink stays the deep
-   AA gold (`.wiz-path-name` → --accent-text) — dark is untouched. */
-[data-theme="light"] .wiz-path[aria-pressed="true"] {
-  border-color: color-mix(
-    in oklab,
-    var(--accent-primary-bright) 75%,
-    var(--accent-primary)
-  );
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-primary-bright) 30%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--accent-primary-bright) 16%, var(--bg-surface-1))
-  );
-  box-shadow: var(--elev-raised);
+  border-color: var(--state-metal-selected);
+  --state-veil: var(--veil-selected);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 .wiz-path-glyph {
   display: grid;
@@ -17749,19 +17756,19 @@ button.econ-tok-filter:active .econ-disc {
   height: 34px;
   border-radius: 50%;
   color: var(--text-muted);
-  background: var(--bg-recessed);
-  border: 1px solid var(--border-medium);
-  box-shadow: var(--elev-recessed);
+  background: radial-gradient(
+    circle at 35% 28%,
+    color-mix(in oklab, var(--bg-surface-3) 88%, white),
+    var(--bg-recessed) 96%
+  );
 }
 .wiz-path[aria-pressed="true"] .wiz-path-glyph {
   color: var(--text-inverse);
-  border-color: color-mix(in oklab, var(--accent-primary) 70%, white);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--accent-primary) 80%, white),
     color-mix(in oklab, var(--accent-primary) 92%, black) 96%
   );
-  box-shadow: none;
 }
 .wiz-path-name {
   font-family: var(--font-display);
@@ -17840,9 +17847,13 @@ button.econ-tok-filter:active .econ-disc {
   font-size: var(--text-micro);
   font-weight: 700;
   color: var(--text-muted);
-  background: var(--bg-recessed);
-  border: 1px solid var(--border-medium);
-  box-shadow: var(--elev-recessed);
+  /* A GEM IS A SHAPE, NOT A FRAME (L1): the fill boundary IS the edge and one
+     specular pool at (35%, 28%) is what makes it read struck. No lip, no ring. */
+  background: radial-gradient(
+    circle at 35% 28%,
+    color-mix(in oklab, var(--bg-surface-3) 88%, white),
+    var(--bg-recessed) 96%
+  );
   transition:
     width var(--m-fast) var(--ease-standard),
     height var(--m-fast) var(--ease-standard);
@@ -17853,13 +17864,11 @@ button.econ-tok-filter:active .econ-disc {
 .wiz-orb.done {
   cursor: pointer;
   color: var(--text-inverse);
-  border-color: color-mix(in oklab, var(--accent-primary) 70%, white);
-  background: linear-gradient(
-    180deg,
+  background: radial-gradient(
+    circle at 35% 28%,
     color-mix(in oklab, var(--accent-primary-bright) 80%, white),
-    var(--accent-primary)
+    var(--accent-primary) 96%
   );
-  box-shadow: none;
 }
 .wiz-orb.done:disabled {
   cursor: default;
@@ -17868,15 +17877,11 @@ button.econ-tok-filter:active .econ-disc {
   width: 38px;
   height: 38px;
   color: var(--text-inverse);
-  border-color: color-mix(in oklab, var(--accent-primary) 55%, black);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--accent-primary) 80%, white),
     color-mix(in oklab, var(--accent-primary) 92%, black) 96%
   );
-  box-shadow:
-    var(--elev-resting),
-    0 0 14px color-mix(in oklab, var(--accent-glow) 45%, transparent);
 }
 .wiz-orb-rule {
   display: inline-block;
@@ -17944,38 +17949,24 @@ button.econ-tok-filter:active .econ-disc {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);
-  border: 1px solid var(--border-medium);
+  border: 1px solid var(--edge-metal);
   border-radius: var(--r-chip);
-  background: linear-gradient(180deg, var(--bg-surface-3), var(--bg-surface-2));
-  box-shadow: var(--elev-resting);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat);
 }
 .wiz-fork-tab:hover {
   color: var(--text-primary);
   border-color: var(--state-metal-hover);
-  background: var(--state-wash-hover);
+  --state-veil: var(--veil-hover);
+}
+.wiz-fork-tab:active {
+  --state-veil: var(--veil-pressed);
 }
 .wiz-fork-tab[aria-pressed="true"] {
   color: var(--accent-text);
   border-color: var(--state-metal-selected);
-  background: color-mix(in oklab, var(--accent-glow) 16%, var(--bg-surface-2));
-  box-shadow: var(--elev-recessed);
-}
-/* LIGHT — the active fork tab joins the gilt-selected family (fchip / path
-   plaque / segmented): dark marks it with gold ink + a gold ring, but the deep
-   AA gold ink is near-black on vellum, so the light cue was carried by the
-   recess alone. The struck gold-500 band + full-strength gold edge make the
-   chosen fork read lit at a glance; the recess still says "pressed in". */
-[data-theme="light"] .wiz-fork-tab[aria-pressed="true"] {
-  border-color: color-mix(
-    in oklab,
-    var(--accent-primary-bright) 75%,
-    var(--accent-primary)
-  );
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-primary-bright) 30%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--accent-primary-bright) 16%, var(--bg-surface-1))
-  );
+  --state-veil: var(--veil-selected);
 }
 .wiz-fork-tab:focus-visible,
 .wiz-orb:focus-visible,
@@ -18002,9 +17993,12 @@ button.econ-tok-filter:active .econ-disc {
 
 /* ── The hero altar (gallery steps) — the SELECTED panel, so it wears the
    selection decor of the ornament vocabulary (T5): the silver-over-bronze
-   `--frame-selected` gradient frame (painted as a border-box layer under
-   padding-box fills — border-image can't follow the 12px radius) plus an accent
-   glow. Ornament = state: the altar exists only when something is chosen. ────── */
+   `--frame-selected` gradient frame, painted as a border-box layer under the
+   padding-box plate (border-image cannot follow the radius). It is the ONE surface
+   in the app that wears that metal — the altar is not a sibling among equals, it is
+   the single enthroned result of the step, so the selection metal is EARNED here and
+   nowhere else. Everything under the metal is the one material on the EARNED seat;
+   there is no bloom (light on this material means depth, §5). ────────────────────── */
 .wiz-hero {
   position: relative;
   display: grid;
@@ -18016,17 +18010,10 @@ button.econ-tok-filter:active .econ-disc {
   border: 1px solid transparent;
   border-radius: var(--r-plate);
   background:
-    radial-gradient(
-        ellipse at 18% 0%,
-        color-mix(in oklab, var(--accent-primary) 14%, transparent),
-        transparent 55%
-      )
-      padding-box,
-    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1)) padding-box,
+    var(--plate-dome) padding-box,
+    var(--plate-face) padding-box,
     var(--frame-selected) border-box;
-  box-shadow:
-    var(--elev-raised),
-    0 0 24px color-mix(in oklab, var(--accent-glow) 14%, transparent);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 .wiz-hero:has(.wiz-hero-asks) {
   grid-template-columns: 64px minmax(0, 1.2fr) minmax(260px, 1fr);
@@ -18038,10 +18025,14 @@ button.econ-tok-filter:active .econ-disc {
   justify-content: center;
   gap: 4px;
   min-height: 110px;
+  /* The WAITING altar: nothing is chosen yet, so it wears no selection metal — the
+     one hairline-weight dashed edge says "a plate belongs here", and the plate
+     itself stays quiet. */
   border-style: dashed;
-  border-color: color-mix(in oklab, var(--accent-primary) 50%, var(--border-medium));
-  background: color-mix(in oklab, var(--accent-glow) 6%, var(--bg-surface-1));
-  box-shadow: var(--elev-recessed);
+  border-color: color-mix(in oklab, var(--accent-primary) 50%, var(--edge-metal));
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat);
   text-align: center;
 }
 .wiz-hero-empty-line {
@@ -18074,9 +18065,11 @@ button.econ-tok-filter:active .econ-disc {
 }
 .wiz-hero-x:hover {
   color: var(--text-primary);
-  border-color: var(--border-medium);
-  background: var(--bg-surface-3);
+  border-color: var(--state-metal-hover);
+  background: var(--state-wash-hover);
 }
+/* A GEM IS A SHAPE, NOT A FRAME — the fill boundary is the edge, one specular pool
+   at (35%, 28%), no lip and no ring (L1). */
 .wiz-hero-seal {
   display: grid;
   place-items: center;
@@ -18084,13 +18077,11 @@ button.econ-tok-filter:active .econ-disc {
   height: 56px;
   border-radius: 50%;
   color: var(--text-inverse);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--accent-primary) 85%, white),
     color-mix(in oklab, var(--accent-primary) 90%, black) 96%
   );
-  box-shadow: 0 0 18px color-mix(in oklab, var(--accent-glow) 40%, transparent);
 }
 .wiz-hero-main {
   min-width: 0; /* grid child: let the eyebrow/prose wrap instead of overflowing */
@@ -18204,55 +18195,47 @@ button.econ-tok-filter:active .econ-disc {
   gap: 6px;
   padding: var(--sp-4) var(--sp-3) var(--sp-3);
   text-align: center;
-  border: 1px solid var(--border-medium);
+  /* THE PLATE on the quiet tier (DESIGN.md §4) — the SAME four tonal events the
+     roster tile wears. This is the first plaque a new player ever meets; it is not
+     the place for a second material. */
+  border: 1px solid var(--edge-metal);
   border-radius: var(--r-plate);
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow: var(--elev-resting);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat);
   transition:
     border-color var(--m-fast) var(--ease-standard),
     transform var(--m-fast) var(--ease-settle),
     box-shadow var(--m-fast) var(--ease-standard);
 }
+/* THE STATE LADDER (index.css §04b) on a card: the metal warms, a candle wash
+   crosses the face, and the plate settles ONE pixel toward the light — the one
+   motion the ladder licenses. Nothing resizes (L3). */
 .wiz-card:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in oklab, var(--accent-primary) 50%, transparent);
-  box-shadow: var(--elev-raised);
+  transform: translateY(-1px);
+  border-color: var(--state-metal-hover);
+  --state-veil: var(--veil-hover);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
-/* The chosen plaque wears the selection FRAME (silver-over-bronze, T5) so the
-   pick reads as a re-metalled frame, not just a brighter gold border — the wax
-   check keeps the top-right corner. */
+[data-motion="reduced"] .wiz-card:hover {
+  transform: none;
+}
+.wiz-card:active {
+  transform: translateY(1px);
+  --state-veil: var(--veil-pressed);
+}
+[data-motion="reduced"] .wiz-card:active {
+  transform: none;
+}
+/* CHOSEN is the ladder's own selected rung — the accent metal, the selected veil,
+   and the earned seat — NOT a bespoke frame. The plaque is a sibling among twelve
+   equals, so it takes the app's selection grammar; the silver-over-bronze
+   `--frame-selected` belongs to the ONE altar the pick is enthroned on. The wax
+   check still keeps the top-right corner. */
 .wiz-card[data-chosen] {
-  border-color: transparent;
-  background:
-    linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--accent-glow) 20%, var(--bg-surface-2)),
-        color-mix(in oklab, var(--accent-glow) 8%, var(--bg-surface-1))
-      )
-      padding-box,
-    var(--frame-selected) border-box;
-  box-shadow:
-    var(--elev-raised),
-    0 0 16px color-mix(in oklab, var(--accent-glow) 28%, transparent);
-}
-/* LIGHT — the SELECTED plaque must OUTSHINE the unselected ones (light-craft audit:
-   selection read GREYER than non-selection — an emphasis inversion). The default
-   chosen recipe tints with `--accent-primary` (deep umber on light) and haloes with
-   it too, so on the bright ivory field the picked card darkened to a muddy grey and
-   its "glow" was a brown non-bloom. Light re-tints with the BRIGHT `--accent-glow`
-   (a warm gilt wash that reads WARMER + brighter than the plain ivory sibling) and
-   routed its halo through the gilt bloom of the time so the pick lit up. The
-   `--frame-selected` gilt frame + wax check are unchanged. */
-[data-theme="light"] .wiz-card[data-chosen] {
-  background:
-    linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--accent-glow) 24%, var(--bg-surface-2)),
-        color-mix(in oklab, var(--accent-glow) 13%, var(--bg-surface-1))
-      )
-      padding-box,
-    var(--frame-selected) border-box;
-  box-shadow: var(--elev-raised);
+  border-color: var(--state-metal-selected);
+  --state-veil: var(--veil-selected);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 .wiz-card-wax {
   position: absolute;
@@ -18264,7 +18247,6 @@ button.econ-tok-filter:active .econ-disc {
   height: 26px;
   border-radius: 50%;
   color: var(--text-inverse);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--accent-primary) 85%, white),
@@ -18272,6 +18254,9 @@ button.econ-tok-filter:active .econ-disc {
   );
   box-shadow: var(--elev-floating);
 }
+/* A GEM IS A SHAPE, NOT A FRAME (L1): the fill boundary is the edge and one
+   specular pool makes it read struck. No ring, no carved well — a recess is the
+   same "this is an object" claim, made with light instead of a line. */
 .wiz-card-seal {
   display: grid;
   place-items: center;
@@ -18279,9 +18264,11 @@ button.econ-tok-filter:active .econ-disc {
   height: 40px;
   border-radius: 50%;
   color: var(--accent-text);
-  background: var(--bg-recessed);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 35%, var(--border-medium));
-  box-shadow: var(--elev-recessed);
+  background: radial-gradient(
+    circle at 35% 28%,
+    color-mix(in oklab, var(--bg-surface-3) 88%, white),
+    var(--bg-recessed) 96%
+  );
 }
 .wiz-card[data-chosen] .wiz-card-seal {
   color: var(--text-inverse);
@@ -18290,8 +18277,6 @@ button.econ-tok-filter:active .econ-disc {
     color-mix(in oklab, var(--accent-primary) 80%, white),
     color-mix(in oklab, var(--accent-primary) 92%, black) 96%
   );
-  border-color: color-mix(in oklab, var(--accent-primary) 70%, white);
-  box-shadow: none;
 }
 .wiz-card-name {
   font-family: var(--font-display);
@@ -18344,19 +18329,17 @@ button.econ-tok-filter:active .econ-disc {
 .wiz-card-foot .wiz-card-badge {
   flex: none;
 }
+/* THE HIT DIE IS A READ-ONLY FACET — a die size you cannot act on, thirteen of them
+   on the class gallery and three per level-up step. So it is TYPE IN A COLUMN (L1),
+   exactly like `.trk-die` / `.tr-die`: the gold numeric face against the micro-caps
+   eyebrow it shares a baseline with, and nothing drawn around it. */
 .wiz-card-badge {
   color: var(--accent-text);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 40%, transparent);
-  background: color-mix(in oklab, var(--accent-primary) 14%, transparent);
   border-radius: var(--r-chip);
-  padding: 0 4px;
+  padding: 0 2px;
   font-family: var(--font-numeric);
   font-size: var(--text-micro);
   font-weight: 700;
-}
-[data-theme="light"] .wiz-card-badge {
-  background: color-mix(in oklab, var(--accent-primary) 24%, var(--bg-surface-1));
-  border-color: color-mix(in oklab, var(--accent-primary) 80%, var(--border-strong));
 }
 
 /* ── PAGE-TURN navigation (owner 2026-06-11: no bar, never scroll to navigate) ──
@@ -18387,6 +18370,20 @@ button.econ-tok-filter:active .econ-disc {
 .wiz-pager-btn.next {
   right: calc(50vw - 550px - 116px);
 }
+/* THE COMMIT MOMENT is marked by the REGISTER LADDER, not by a ceremony of its own:
+   the final forward coin (creation "Create Character", the level-up confirm) steps
+   from the quiet seat to the EARNED one. Light, never geometry, never emission —
+   the same tier difference the dialogs and the identity band wear. */
+.wiz-pager-btn.commit .wiz-pager-seal {
+  box-shadow: var(--edge-seat-earned);
+}
+.wiz-pager-btn.commit:hover:not(:disabled) .wiz-pager-seal {
+  box-shadow: var(--edge-seat-earned);
+}
+
+/* The page-turn seal is a COIN — a shape, not a frame: the fill boundary is the
+   edge, one specular pool at (35%, 28%), no ring. It SETTLES one pixel toward the
+   light on hover (the ladder's one licensed motion) — it does not grow. */
 .wiz-pager-seal {
   display: grid;
   place-items: center;
@@ -18394,35 +18391,32 @@ button.econ-tok-filter:active .econ-disc {
   height: 52px;
   border-radius: 50%;
   color: var(--text-secondary);
-  border: 1px solid var(--border-medium);
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow: var(--elev-raised);
+  background: radial-gradient(
+    circle at 35% 28%,
+    color-mix(in oklab, var(--bg-surface-2) 82%, white),
+    var(--bg-surface-1) 96%
+  );
+  box-shadow: var(--edge-seat);
   transition:
     transform var(--m-fast) var(--ease-settle),
-    border-color var(--m-fast) var(--ease-standard),
+    filter var(--m-fast) var(--ease-standard),
     box-shadow var(--m-fast) var(--ease-standard);
 }
 .wiz-pager-seal.gold {
   color: var(--text-inverse);
-  border-color: color-mix(in oklab, var(--accent-primary) 70%, white);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--accent-primary) 80%, white),
     color-mix(in oklab, var(--accent-primary) 92%, black) 96%
   );
-  box-shadow:
-    var(--elev-raised),
-    0 0 16px color-mix(in oklab, var(--accent-glow) 35%, transparent);
 }
 .wiz-pager-btn:hover:not(:disabled) .wiz-pager-seal {
-  transform: scale(1.06);
-  border-color: color-mix(in oklab, var(--accent-primary) 55%, var(--border-medium));
+  transform: translateY(-1px);
+  filter: brightness(1.12);
+  box-shadow: var(--edge-seat-earned);
 }
-.wiz-pager-btn:hover:not(:disabled) .wiz-pager-seal.gold {
-  border-color: color-mix(in oklab, var(--accent-primary) 80%, white);
-  box-shadow:
-    var(--elev-floating),
-    0 0 22px color-mix(in oklab, var(--accent-glow) 45%, transparent);
+[data-motion="reduced"] .wiz-pager-btn:hover:not(:disabled) .wiz-pager-seal {
+  transform: none;
 }
 /* LIGHT — strike the forward-nav ("Continue") gold seal as a struck-gold coin, not
    the flat olive it read (light-craft audit). The default recipe mixes
@@ -18433,18 +18427,12 @@ button.econ-tok-filter:active .econ-disc {
    (ivory-on-ivory) is untouched, keeping the primary/secondary contrast. */
 [data-theme="light"] .wiz-pager-seal.gold {
   color: var(--gold-leaf-900);
-  border-color: var(--gold-leaf-700);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--gold-leaf-100) 88%, white),
     var(--gold-leaf-400) 56%,
     var(--gold-leaf-700) 100%
   );
-  box-shadow: var(--elev-raised);
-}
-[data-theme="light"] .wiz-pager-btn:hover:not(:disabled) .wiz-pager-seal.gold {
-  border-color: var(--gold-leaf-500);
-  box-shadow: var(--elev-floating);
 }
 .wiz-pager-btn:focus-visible .wiz-pager-seal {
   outline: 2px solid var(--focus-ring);
@@ -18467,9 +18455,8 @@ button.econ-tok-filter:active .econ-disc {
    (0,3,0) + later source order overrides the light `.gold` disc recipe above. */
 .wiz-pager-btn:disabled .wiz-pager-seal {
   color: var(--text-muted);
-  border-color: var(--border-medium);
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow: var(--elev-resting);
+  box-shadow: var(--edge-seat);
 }
 
 .wiz-pager-cap {
@@ -18647,10 +18634,11 @@ button.econ-tok-filter:active .econ-disc {
 }
 .wiz-entry {
   position: relative;
-  border: 1px solid var(--border-medium);
+  border: 1px solid var(--edge-metal);
   border-radius: var(--r-plate);
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow: var(--elev-resting);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat);
   transition:
     border-color var(--m-normal) var(--ease-standard),
     box-shadow var(--m-normal) var(--ease-standard),
@@ -18658,34 +18646,22 @@ button.econ-tok-filter:active .econ-disc {
 }
 .wiz-entry:hover {
   border-color: var(--state-metal-hover);
-  background-image: linear-gradient(var(--state-wash-hover), var(--state-wash-hover));
+  --state-veil: var(--veil-hover);
 }
-/* Reading: illuminated, but NOT gold — ceremony rides commit. */
+/* OPEN — reading, not committed: the metal warms to the hover rung and the plate
+   takes the earned seat, so the entry you are inside reads lifted without a bloom. */
 .wiz-entry[data-open] {
-  border-color: color-mix(in oklab, var(--accent-primary) 55%, var(--border-medium));
-  background:
-    radial-gradient(
-      ellipse at 14% 0%,
-      color-mix(in oklab, var(--accent-primary) 9%, transparent),
-      transparent 55%
-    ),
-    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow:
-    var(--elev-raised),
-    0 0 14px color-mix(in oklab, var(--accent-glow) 12%, transparent);
+  border-color: var(--state-metal-hover);
+  --state-veil: var(--veil-hover);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
-/* Chosen: the full gold ceremony on the entry (the hero-altar voice). */
+/* CHOSEN — the ladder's selected rung: the accent metal, the selected veil, the
+   earned seat. The ceremony is the ink and the check, not a halo. */
 .wiz-entry[data-chosen],
 .wiz-entry[data-picked] {
-  border-color: var(--accent-primary);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-glow) 20%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--accent-glow) 8%, var(--bg-surface-1))
-  );
-  box-shadow:
-    var(--elev-raised),
-    0 0 16px color-mix(in oklab, var(--accent-glow) 25%, transparent);
+  border-color: var(--state-metal-selected);
+  --state-veil: var(--veil-selected);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 
 /* ── The generic F pick list (C1) — head rubric + fact/prose rows ──────────── */
@@ -18748,21 +18724,17 @@ button.econ-tok-filter:active .econ-disc {
    the exact negative of the gold picked state. */
 .wiz-entry[data-removing] {
   border-color: var(--semantic-danger);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--semantic-danger) 18%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--semantic-danger) 7%, var(--bg-surface-1))
+  --state-veil: linear-gradient(
+    color-mix(in oklab, var(--semantic-danger) 18%, transparent),
+    color-mix(in oklab, var(--semantic-danger) 18%, transparent)
   );
-  box-shadow:
-    var(--elev-raised),
-    0 0 16px color-mix(in oklab, var(--semantic-danger) 22%, transparent);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 .wiz-entry[data-removing] > .wiz-row .wiz-row-name {
   color: var(--semantic-danger);
 }
 .wiz-entry[data-removing] > .wiz-row .wiz-row-check {
   --check-bloom: color-mix(in oklab, var(--semantic-danger) 45%, transparent);
-  border-color: color-mix(in oklab, var(--semantic-danger) 70%, white);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--semantic-danger) 85%, white),
@@ -18808,9 +18780,12 @@ button.econ-tok-filter:active .econ-disc {
   height: 34px;
   border-radius: 50%;
   color: var(--accent-text);
-  background: var(--bg-recessed);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 35%, var(--border-medium));
-  box-shadow: var(--elev-recessed);
+  /* A GEM IS A SHAPE, NOT A FRAME (L1) — fill boundary, one specular pool, no ring. */
+  background: radial-gradient(
+    circle at 35% 28%,
+    color-mix(in oklab, var(--bg-surface-3) 88%, white),
+    var(--bg-recessed) 96%
+  );
   transition:
     width var(--m-normal) var(--ease-settle),
     height var(--m-normal) var(--ease-settle),
@@ -18829,8 +18804,6 @@ button.econ-tok-filter:active .econ-disc {
     color-mix(in oklab, var(--accent-primary) 80%, white),
     color-mix(in oklab, var(--accent-primary) 92%, black) 96%
   );
-  border-color: color-mix(in oklab, var(--accent-primary) 70%, white);
-  box-shadow: 0 0 14px color-mix(in oklab, var(--accent-glow) 35%, transparent);
 }
 .wiz-row .uc-seal {
   flex: none;
@@ -18936,7 +18909,7 @@ button.econ-tok-filter:active .econ-disc {
   height: 20px;
   border-radius: 50%;
   color: var(--text-inverse);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
+  /* A GEM IS A SHAPE (L1) — the struck fill IS the edge. */
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--accent-primary) 85%, white),
@@ -18997,7 +18970,8 @@ button.econ-tok-filter:active .econ-disc {
   border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, transparent);
 }
 .wiz-book:hover {
-  background: color-mix(in oklab, var(--accent-primary) 18%, transparent);
+  border-color: var(--state-metal-hover);
+  background: var(--state-wash-hover);
 }
 
 /* ── The animated unfold/REFOLD (owner 2026-06-11: closing must glide too) ──
@@ -19217,10 +19191,13 @@ button.econ-tok-filter:active .econ-disc {
   color: var(--accent-text);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, transparent);
   border-radius: var(--r-chip);
-  background: color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-1));
+  --state-veil: none;
+  background-color: color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-1));
+  background-image: var(--state-veil);
 }
 .wiz-kept:hover {
-  background: color-mix(in oklab, var(--accent-glow) 20%, var(--bg-surface-1));
+  border-color: var(--state-metal-hover);
+  --state-veil: var(--veil-hover);
 }
 .wiz-empty {
   font-family: var(--font-body);
@@ -19232,24 +19209,19 @@ button.econ-tok-filter:active .econ-disc {
   margin: 0;
 }
 
-/* ── The wizard SUMMARY card (creation review / preview) — gold ceremony ──── */
+/* ── The wizard SUMMARY card (creation review / preview) — the EARNED tier of the
+   one edge: 2px of the earned metal over the same material, on the far seat. It is
+   the review step's single identity plate, never a sibling among equals. ───────── */
 .wiz-summary {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
   padding: var(--sp-4) var(--sp-5);
-  border: 1px solid var(--border-accent);
+  border: 2px solid var(--edge-metal-earned);
   border-radius: var(--r-plate);
-  background:
-    radial-gradient(
-      ellipse at 18% 0%,
-      color-mix(in oklab, var(--accent-primary) 14%, transparent),
-      transparent 55%
-    ),
-    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow:
-    var(--elev-raised),
-    0 0 24px color-mix(in oklab, var(--accent-glow) 14%, transparent);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 .wiz-summary-head {
   display: flex;
@@ -19264,13 +19236,11 @@ button.econ-tok-filter:active .econ-disc {
   flex: none;
   border-radius: 50%;
   color: var(--text-inverse);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--accent-primary) 85%, white),
     color-mix(in oklab, var(--accent-primary) 90%, black) 96%
   );
-  box-shadow: 0 0 16px color-mix(in oklab, var(--accent-glow) 35%, transparent);
 }
 .wiz-summary-name {
   margin: 0;
@@ -19317,8 +19287,13 @@ button.econ-tok-filter:active .econ-disc {
   gap: var(--sp-4);
   padding: var(--sp-2) 0;
 }
+/* A SEPARATOR IS THE ONE HAIRLINE (§5) — painted and inset, never a `border-top`,
+   which is a hard, wall-to-wall, unfading line and reads as the underside of a frame. */
 .wiz-review-lines > li + li {
-  border-top: 1px solid var(--border-soft);
+  background-image: var(--hairline);
+  background-repeat: no-repeat;
+  background-position: top;
+  background-size: 100% 1px;
 }
 .wiz-review-k {
   flex: none;
@@ -19363,7 +19338,7 @@ button.wiz-review-jump {
 }
 button.wiz-review-jump:hover,
 button.wiz-review-jump:focus-visible {
-  background: color-mix(in oklab, var(--accent-primary) 10%, transparent);
+  background: var(--state-wash-hover);
 }
 button.wiz-review-jump:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -19411,10 +19386,11 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   gap: var(--sp-2);
   min-height: 48px;
   padding: var(--sp-1) var(--sp-3);
-  border: 1px solid var(--border-medium);
+  border: 1px solid var(--edge-metal);
   border-radius: var(--r-plate);
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow: var(--elev-resting);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat);
 }
 .wiz-equip-name {
   min-width: 0;
@@ -19430,12 +19406,8 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
    (no per-word capitalize) and italics to mark it as not-yet-resolved. */
 .wiz-equip-item--choice {
   border-style: dashed;
-  border-color: color-mix(in oklab, var(--accent-primary) 55%, var(--border-strong));
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-2)),
-    var(--bg-surface-1)
-  );
+  border-color: color-mix(in oklab, var(--accent-primary) 55%, var(--edge-metal));
+  --state-veil: var(--veil-hover);
 }
 .wiz-equip-item--choice .wiz-equip-name {
   text-transform: none;
@@ -19475,10 +19447,10 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   gap: 6px;
   min-height: 64px;
   padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--border-accent);
+  border: 1px solid var(--edge-metal);
   border-radius: var(--r-plate);
-  background: color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-1));
-  box-shadow: var(--elev-resting);
+  background: var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat);
 }
 .wiz-equip-gold-amt {
   font-family: var(--font-display);
@@ -19499,24 +19471,16 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
 .wiz-slot-tabs {
   margin-top: 0;
 }
+/* A READ-ONLY COUNT inside a tab is TYPE IN A COLUMN (L1) — no well, no ring; a
+   number you cannot act on is not an object. Filled reads in the accent ink. */
 .wiz-tab-count {
   margin-left: 7px;
-  padding: 1px 6px;
+  padding: 1px 2px;
   border-radius: var(--r-chip);
-  background: var(--bg-recessed);
-  border: 1px solid var(--border-medium);
-  box-shadow: var(--elev-recessed);
   color: var(--text-muted);
 }
 .wiz-tab-count.full {
-  color: var(--text-inverse);
-  border-color: color-mix(in oklab, var(--accent-primary) 70%, white);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-primary-bright) 80%, white),
-    var(--accent-primary)
-  );
-  box-shadow: none;
+  color: var(--accent-text);
 }
 .wiz-rubric {
   font-family: var(--font-body);
@@ -19544,22 +19508,15 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   align-items: center;
   gap: var(--sp-1);
   padding: var(--sp-4) var(--sp-4) var(--sp-3);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 40%, var(--border-medium));
+  border: 2px solid var(--edge-metal-earned);
   border-radius: var(--r-plate);
-  background:
-    radial-gradient(
-      ellipse at 50% 0%,
-      color-mix(in oklab, var(--accent-primary) 12%, transparent),
-      transparent 60%
-    ),
-    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow: var(--elev-raised);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
+/* SPENT — the purse is empty: the ladder's selected veil, not a halo. */
 .wiz-budget[data-spent] {
-  border-color: var(--accent-primary);
-  box-shadow:
-    var(--elev-raised),
-    0 0 20px color-mix(in oklab, var(--accent-glow) 25%, transparent);
+  --state-veil: var(--veil-selected);
 }
 .wiz-budget-text {
   display: flex;
@@ -19612,19 +19569,20 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   align-items: center;
   gap: 4px;
   padding: var(--sp-3) var(--sp-2) var(--sp-2);
-  border: 1px solid var(--border-medium);
+  border: 1px solid var(--edge-metal);
   border-radius: var(--r-plate);
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow: var(--elev-resting);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat);
   transition:
     border-color var(--m-fast) var(--ease-standard),
     box-shadow var(--m-fast) var(--ease-standard);
 }
+/* AT MAX — the ladder's selected rung, not a bloom. */
 .wiz-abil[data-max] {
-  border-color: color-mix(in oklab, var(--accent-primary) 60%, var(--border-medium));
-  box-shadow:
-    var(--elev-resting),
-    0 0 12px color-mix(in oklab, var(--accent-glow) 16%, transparent);
+  border-color: var(--state-metal-selected);
+  --state-veil: var(--veil-selected);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 .wiz-abil-code {
   font-family: var(--font-numeric);
@@ -19691,35 +19649,37 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   min-width: 74px;
   padding: 8px 12px;
   text-align: center;
-  border: 1px solid var(--border-medium);
+  border: 1px solid var(--edge-metal);
   border-radius: var(--r-plate);
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow: var(--elev-resting);
+  --state-veil: none;
+  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat);
   transition:
     border-color var(--m-fast) var(--ease-standard),
     box-shadow var(--m-fast) var(--ease-standard);
 }
 .wiz-asi-tile:hover:not(:disabled) {
-  border-color: color-mix(in oklab, var(--accent-primary) 50%, var(--border-medium));
+  border-color: var(--state-metal-hover);
+  --state-veil: var(--veil-hover);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
+.wiz-asi-tile:active:not(:disabled) {
+  --state-veil: var(--veil-pressed);
+}
+/* DISABLED is the ladder's last rung: desaturate and flatten — no struck light. */
 .wiz-asi-tile:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+  filter: saturate(0.4);
 }
 .wiz-asi-tile:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 .wiz-asi-tile[data-chosen] {
-  border-color: var(--accent-primary);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-glow) 20%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--accent-glow) 8%, var(--bg-surface-1))
-  );
-  box-shadow:
-    var(--elev-resting),
-    0 0 12px color-mix(in oklab, var(--accent-glow) 25%, transparent);
+  border-color: var(--state-metal-selected);
+  --state-veil: var(--veil-selected);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 .wiz-asi-code {
   font-family: var(--font-numeric);
@@ -19786,16 +19746,10 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   max-width: 560px;
   margin: 0 auto;
   padding: var(--sp-4) var(--sp-5);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 40%, var(--border-medium));
+  border: 2px solid var(--edge-metal-earned);
   border-radius: var(--r-plate);
-  background:
-    radial-gradient(
-      ellipse at 50% 0%,
-      color-mix(in oklab, var(--accent-primary) 12%, transparent),
-      transparent 60%
-    ),
-    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow: var(--elev-raised);
+  background: var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 .wiz-count {
   margin-left: 8px;
@@ -19815,18 +19769,10 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   width: min(560px, 100%);
   padding: var(--sp-8) var(--sp-6);
   text-align: center;
-  border: 1px solid var(--border-accent);
+  border: 2px solid var(--edge-metal-earned);
   border-radius: var(--r-plate);
-  background:
-    radial-gradient(
-      ellipse at 50% 0%,
-      color-mix(in oklab, var(--accent-primary) 18%, transparent),
-      transparent 60%
-    ),
-    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  box-shadow:
-    var(--elev-floating),
-    0 0 36px color-mix(in oklab, var(--accent-glow) 22%, transparent);
+  background: var(--plate-dome), var(--plate-face);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
   animation: wiz-done-rise 420ms var(--ease-settle);
 }
 @keyframes wiz-done-rise {
@@ -19846,13 +19792,11 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   height: 64px;
   border-radius: 50%;
   color: var(--text-inverse);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--accent-primary) 85%, white),
     color-mix(in oklab, var(--accent-primary) 90%, black) 96%
   );
-  box-shadow: 0 0 22px color-mix(in oklab, var(--accent-glow) 45%, transparent);
   margin-bottom: var(--sp-1);
 }
 .wiz-done-eyebrow {

@@ -540,7 +540,7 @@ The pivot's work packages:
   convention"); `_identity-shots` and `_polish-shots` stay SEPARATE by design (theme-surface vs
   full-surface sweeps), not folded.
 
-## Shipped epic — The chrome reset (owner-ratified 2026-07-24; phases 0–7 DONE)
+## Shipped epic — The chrome reset (owner-ratified 2026-07-24; phases 0–9 DONE)
 
 **The owner's verdict, verbatim:** the accreted chrome is _"a lasagna — layers, not a design"_. The
 ruling: **ONE design vision, copy BG3 as faithfully as possible, re-question everything, nothing
@@ -574,6 +574,32 @@ build modes):
 | 6     | **The MARK** — the corner terminal (a glint fan of seven hair-thin tapering rays, anchored ON the corner arc and radiating inward, contributing no run line) + the run cartouche (pointed leaves weaving over and under the rail, converging on a descending chevron at the exact midpoint), mounted on exactly ONE surface per route — the screen's identity plate. Dimensional metal, gold in BOTH themes, mirrored geometry toned in screen space, fixed-size SVG background layers on a decor-only overlay | **DONE** |
 | 7     | Light sibling re-derived against the finished dark system + the guard suite extended to pin phases 4–6 (eleven mutation proofs) + the budget measured                                                                                                                                                                                                                                                                                                                                                          | **DONE** |
 | 8     | **CONVERGENCE REVIEW** — the four defects the independent review found, and the guard-coverage class behind two of them (a guard that samples only where the work was done)                                                                                                                                                                                                                                                                                                                                    | **DONE** |
+| 9     | **THE SCREENS THE RESET NEVER REACHED** — the two wizards, the campaign hub's nested cards, the dark on-art ink the light-only battery could not see, the MARK's anatomy, and the discipline behind all of it written into the golden rules                                                                                                                                                                                                                                                                    | **DONE** |
+
+**Phase 9 answered the owner's standing question — "is this what a team with one vision would have
+shipped from day one?" — whose independent-review answer was "No, and the tell is that you can still
+name which screens they did first."** The tell was the WIZARDS. `folio.css` carried ~250 `.wiz-*`
+rules and exactly **three** consumed a state token: the class/species/background plaque — the
+wizard's whole reason to exist, and the first plaque a new player ever meets — hovered with its own
+border-mix, its own elevation stack and DOUBLE the licensed 1px settle; the chosen plaque wore its
+own silver-over-bronze selection frame while every other selectable surface in the app took the
+accent metal; the hit-die chip kept a real 1px gold border on a read-only classifier the recipe
+classes `.trk-die` / `.tr-die` / `.uc-tag` had all given up; and **twenty-two** wizard rules emitted
+a bloom into a chrome whose §5 says it has none. The whole family is on the reset now — the plate on
+both tiers, the ladder for hover/pressed/selected/disabled, eleven read-only facets and gems
+unframed, the selection frame spent once (on the altar, which is not a sibling among equals), and
+the 1px settle honoured. Both wizards are in the census for the first time, which is most of why
+none of it was ever caught.
+
+**Bringing the ladder to a plate surfaced a live severe defect on the deployed app's landing route.**
+`background-image` is a REPLACED property exactly like `box-shadow` — so `.ch-card:hover`, which set
+`background-image: linear-gradient(<wash>, <wash>)`, **discarded the plate's dome and face**: the
+roster tile went translucent under the pointer, with the candlelit backdrop showing straight through
+the card and `--text-muted` stranded on a lit candle. `.ch-card:active`, `.ch-card[data-selected]`,
+`.statcard-face` and `.rest-card` carried the same rule. The No-Second-Grammar guard was written
+about `box-shadow` and stopped one property short, and it was green throughout. The ladder now
+reaches a plate through **the veil slot** (`--state-veil`, composed by the plate at rest, set by
+every rung), and the two guards that pin it DERIVE the plate list from the stylesheet.
 
 **Phase 8 closed the review, and the class the review named: our guards kept sampling the one place
 the work was done.** Two of the four defects were that pattern. `.cmp-seal` — the mark eight of the
