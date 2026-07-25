@@ -2298,22 +2298,30 @@ backdrop` + `--text-on-backdrop-title` + `--text-on-backdrop-danger` for error/r
    text reads as gilt lettering catching light. The bright fill pops on dark patches; the dark edge
    separates it on the sunlit ones and is what clears the a11y gate.
 
-   **The halo is not a light-theme device, and it is ONE mechanism.** "The art is dark, so light ink
-   is safe" is false — our backdrops carry large BRIGHT regions, and measured against the real
-   composited pixels dark's own `--text-muted` read **1.64:1** on the campaign hub's section counts,
-   its gold rubric 1.95:1 and the treasury total chip 1.46:1. So `.on-art` / `.on-art-scope` carry
-   the halo in BOTH themes and hand it down by **inheritance** (`text-shadow` inherits), with the
-   surface-hygiene rule taking it back at every card / plate / filled-control boundary; light
-   additionally FLIPS its loose ink, dark keeps its own. Two rules reach every loose register
-   app-wide instead of each register restating the treatment. A `<button>` does not inherit
-   `text-shadow` from the UA stylesheet, so the scope hands it back explicitly.
+   **The halo is not a light-theme device.** "The art is dark, so light ink is safe" is false — our
+   backdrops carry large BRIGHT regions, and measured against the real composited pixels dark's own
+   `--text-muted` read **1.64:1** on the campaign hub's section counts, its gold rubric 1.95:1 and
+   the treasury total chip 1.46:1. So the GROUND is theme-agnostic and the INK flip is light's: each
+   register list carries an unprefixed **ground twin** (`text-shadow` only) beside its
+   `[data-theme="light"]` flip, and a unit guard cross-checks that the two list the same registers,
+   so a register can never be grounded in one theme and bare in the other.
+
+   **The halo goes on the LEAF, never on a wrapper.** Inheriting it from `.on-art-scope` is one rule
+   instead of two and it is the obvious thing to try — but an auditor reads a container's
+   `text-shadow` as an opaque BACKGROUND for everything inside it, so a scope-level halo made axe
+   resolve a `#73613c` ground behind every descendant and manufactured serious `color-contrast`
+   violations on eight clean light surfaces. Putting it on every `<span>` inside a control is worse
+   again: it paints a dark halo behind dark ink that was never part of the on-art vocabulary. A
+   `<button>` therefore keeps the UA's `text-shadow` reset, which is correct — a control on the
+   scene is an OBJECT and grounds itself (below). The ONE label that genuinely floats free, the
+   wizard's gutter page-turn caption, takes the ground by name at the width where it floats.
 
    **A halo grounds INK; it cannot ground an EDGE.** A chip or a dashed affordance loose on the
    scene therefore paints its own translucent `--on-art-plate` in both themes — the "+ Attach a
-   character" affordance and the treasury gp-total chip do — or its border dissolves across the
-   bright half of the art. This is the same self-backing law as the gilt coin below, and it is
-   pinned in `chrome-system.guard.test.ts`, because the rendered battery measures ink and cannot
-   see a border.
+   character" affordance and the treasury gp-total chip do, in BOTH themes — or its border dissolves
+   across the bright half of the art. This is the same self-backing law as the gilt coin below, and
+   it is pinned in `chrome-system.guard.test.ts`, because the rendered battery measures ink and
+   cannot see a border (deleting the recipe leaves that battery green — proven).
    - ✅ **GUARDED MANIFEST-WIDE (ON-ART-INK, 2026-06-12).** This used to be the #1 recurring light
      bug ("apply the recipe when you add loose-on-backdrop UI" relied on memory; the member-sheet
      back button + the wizard page-turn captions/facet chips shipped dark-on-dark). It can no longer

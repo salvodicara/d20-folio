@@ -648,12 +648,23 @@ cartouche floated **2px above** the rule it was supposed to interrupt.
 `tests/e2e/on-art-ink.spec.ts` ran LIGHT ONLY, on the premise "the art is dark, so light ink is
 safe" — but the backdrops carry large BRIGHT regions. Measured against the real composited pixels,
 dark's `--text-muted` read **1.64:1** on the campaign hub's section counts, its gold rubric 1.95:1,
-the treasury gp-total chip 1.46:1, and the wizard's "Create Character" caption 1.52:1. The halo is
-one mechanism in both themes now — inherited from `.on-art-scope`, taken back at every surface
-boundary — and a control loose on the scene self-backs on `--on-art-plate`, because a halo grounds
-INK and cannot ground an EDGE. **All four routes measure 0 failures at 4.5:1 in both themes.** The
-guard's new CONTRAST leg screenshots each surface with every text transparent and samples the
-composite the ink actually sits on; reverting the halo to light-only fails it at 1.59:1.
+the treasury gp-total chip 1.46:1, and the wizard's "Create Character" caption 1.52:1. The GROUND is
+theme-agnostic now and only the INK flip is light's: each register list carries an unprefixed twin
+beside its light flip, cross-checked by a guard so a register can never be grounded in one theme and
+bare in the other. A control loose on the scene self-backs on `--on-art-plate` instead, because a
+halo grounds INK and cannot ground an EDGE. **Every swept surface measures 0 failures at 4.5:1 in
+both themes.** The battery's new CONTRAST leg screenshots each surface with every text transparent
+and samples the composite the ink actually sits on; reverting the ground to light-only fails it at
+1.59:1.
+
+The route there is worth recording, because it is the same shape as the defects it fixes: the first
+mechanism put the halo on `.on-art-scope` and let it INHERIT — one rule instead of two, and the
+obvious thing to try. An auditor reads a container's `text-shadow` as an opaque BACKGROUND for
+everything inside it, so that made axe resolve a `#73613c` ground behind every descendant and turned
+**eight clean light surfaces into serious `color-contrast` violations**. The second attempt (the
+halo on every `<span>` inside a control) painted a dark halo behind dark ink that was never in the
+on-art vocabulary. The halo rides the LEAF selectors, and both dead ends are written into the
+stylesheet at the site so neither is tried again.
 
 **Bringing the ladder to a plate surfaced a live severe defect on the deployed app's landing route.**
 `background-image` is a REPLACED property exactly like `box-shadow` — so `.ch-card:hover`, which set

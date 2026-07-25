@@ -44,7 +44,7 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { DESKTOP, seedUI, seedLang, freezeMotion } from "./surfaces";
+import { DESKTOP, SURFACES, seedUI, seedLang, freezeMotion } from "./surfaces";
 
 /** A framed box the probe found, reduced to `tag.class` + how deep it sits. */
 interface FramedBox {
@@ -103,10 +103,27 @@ interface Census {
  *      (`chrome-system.guard.test.ts`, "keeps the rail a material"), which is why
  *      the census is a companion to the stylesheet guards and not a replacement.
  */
-const SURFACES: {
+/**
+ * READINESS COMES FROM THE MANIFEST, NOT FROM AN ASSUMPTION. This spec used to wait
+ * on `getByRole("heading", { level: 1 })` for every route — which quietly encoded
+ * "every page in this app has an h1". The wizards do not (their step title is an
+ * `h2` under a chrome frame), so the moment they were added the cells timed out
+ * rather than measuring anything. The shared surface manifest already knows how to
+ * tell that each route has painted; a cell reuses that where a slug matches, and
+ * falls back to the h1 for the routes that genuinely have one.
+ */
+const readyFor = (slug: string) =>
+  SURFACES.find((s) => s.slug === slug)?.ready ??
+  (async (page: import("@playwright/test").Page) => {
+    await page.getByRole("heading", { level: 1 }).first().waitFor({ timeout: 20000 });
+  });
+
+const SURFACE_CELLS: {
   slug: string;
   route: string;
   ceiling: number;
+  /** Manifest slug whose readiness signal proves THIS route painted. */
+  readyAs?: string;
   /** Extra seeding for a state a URL cannot express (the running encounter). */
   prepare?: (page: import("@playwright/test").Page) => Promise<void>;
 }[] = [
@@ -169,8 +186,13 @@ const SURFACES: {
   // them, and the nesting law is the real teeth: it caught the point-buy tile at a
   // THIRD framed level (`.wiz-abil` > `.num-stepper` > `.input`, a carved well 1px
   // inside a carved well) the moment the route was added.
-  { slug: "create-quick", route: "/characters/new", ceiling: 142 }, // measured 137
-  { slug: "level-up", route: "/characters/mock-1/level-up", ceiling: 20 }, // measured 15
+  { slug: "create-quick", route: "/characters/new", ceiling: 142, readyAs: "create" }, // measured 137
+  {
+    slug: "level-up",
+    route: "/characters/mock-1/level-up",
+    ceiling: 20,
+    readyAs: "level-up",
+  }, // measured 15
   { slug: "settings", route: "/settings", ceiling: 15 }, // measured 10
 ];
 
@@ -266,14 +288,14 @@ async function census(page: import("@playwright/test").Page): Promise<Census> {
   });
 }
 
-for (const { slug, route, ceiling, prepare } of SURFACES) {
+for (const { slug, route, ceiling, readyAs, prepare } of SURFACE_CELLS) {
   for (const theme of ["dark", "light"] as const) {
     test(`framed-box census: ${slug} [${theme}]`, async ({ page }) => {
       await page.setViewportSize({ width: DESKTOP.width, height: 2400 });
       await seedUI(page, theme, "play");
       await seedLang(page, "en");
       await page.goto(route, { waitUntil: "domcontentloaded" });
-      await page.getByRole("heading", { level: 1 }).first().waitFor({ timeout: 20000 });
+      await readyFor(readyAs ?? slug)(page);
       if (prepare) await prepare(page);
       await freezeMotion(page);
       await page.waitForTimeout(600);

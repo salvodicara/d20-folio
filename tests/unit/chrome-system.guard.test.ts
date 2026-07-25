@@ -1053,23 +1053,68 @@ describe("the chrome system — L3, state changes light and colour only", () => 
     ).toContain("var(--on-art-plate)");
     // …and the halo itself is theme-agnostic: the premise "the art is dark, so light
     // ink is safe" cost dark a whole class of defect (1.64:1 on the hub's counts).
+    // The GROUND rides an unprefixed twin of each register list the ink flip uses.
+    const groundTwins = [...folio.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter(
+        ([, sel, decls]) =>
+          /^\.on-art-scope :is\(/.test((sel ?? "").trim()) &&
+          /^\s*text-shadow: var\(--on-art-halo\);\s*$/.test(decls ?? "")
+      )
+      .map(([, sel]) => (sel ?? "").trim());
     expect(
-      /(^|[^\]])\.on-art,\s*\.on-art-scope,/.test(folio) &&
-        /\.site-footer \{ text-shadow: var\(--on-art-halo\); \}/.test(folio),
+      groundTwins.length,
       "The on-art halo went back to being a LIGHT-theme device. It is the ONE ground " +
         "for loose ink in BOTH themes — our backdrops carry large bright regions, and " +
-        "dark's own `--text-muted` measured 1.64:1 against them."
-    ).toBe(true);
-    // A form control does not inherit `text-shadow` from the UA stylesheet, so the
-    // scope has to hand the halo back explicitly or it stops at every on-art button.
+        "dark's own `--text-muted` measured 1.64:1 against them. Each register list " +
+        "the light flip carries needs an unprefixed twin that carries only the halo."
+    ).toBeGreaterThanOrEqual(2);
+    // …and the twins list the SAME registers as the flips they shadow — otherwise a
+    // register added to one and not the other is grounded in exactly one theme.
+    // TEXT flips need a ground twin. A flip that also re-colours a BORDER is a
+    // CONTROL flip — a control is an object and grounds itself on `--on-art-plate`,
+    // which is what the two assertions above already pin, so it needs no twin.
+    const flipRegisters = [
+      ...folio.matchAll(
+        /\[data-theme="light"\] \.on-art-scope :is\(([^)]*)\):not\([^{]*\{([^}]*)\}/g
+      ),
+    ]
+      .filter(
+        ([, , decls]) =>
+          /color: var\(--text-on-backdrop/.test(decls ?? "") &&
+          !/border-color/.test(decls ?? "")
+      )
+      .map((m) => (m[1] ?? "").replace(/\s/g, ""));
     expect(
-      /\.on-art-scope :is\(button, input, select, textarea\) \{ text-shadow: inherit; \}/.test(
+      flipRegisters.length,
+      "no light TEXT flip found — did the on-art vocabulary get renamed?"
+    ).toBeGreaterThan(0);
+    for (const list of flipRegisters) {
+      expect(
+        groundTwins.some((t) => t.replace(/\s/g, "").includes(list)),
+        `A light ink flip lists registers no GROUND twin carries, so those registers ` +
+          `are grounded in light and bare in dark:\n  :is(${list.slice(0, 120)}…)`
+      ).toBe(true);
+    }
+    // A `<button>` does not inherit `text-shadow`, so the scope's halo stops at every
+    // control. That boundary is deliberate — a control on the scene is an OBJECT and
+    // grounds itself — but the wizard's gutter captions genuinely float, so they take
+    // the ground by name, in BOTH themes.
+    expect(
+      /\.on-art-scope \.wiz-pager-cap \{ text-shadow: var\(--on-art-halo\); \}/.test(
         folio
       ),
-      "MISSING the form-control halo hand-back. `<button>` resets `text-shadow`, so " +
-        "the scope's halo stops dead at every on-art control and leaves its label the " +
-        "only ungrounded ink on the page."
+      "MISSING the pager caption's own halo, or it went back to being light-only. " +
+        "At the gutter width these labels sit on the scene with nothing behind them, " +
+        "and dark's gold caption measured 1.52:1 against the bright half of the art."
     ).toBe(true);
+    // …and the halo never goes onto the CONTROL or blanket-onto its spans: an
+    // auditor reads a container's shadow as an opaque ground for everything inside
+    // (eight false light violations), and a blanket span rule haloes dark ink too.
+    expect(
+      /:is\(button, input, select, textarea\)[^{]*\{ text-shadow/.test(folio),
+      "The on-art halo went back onto form CONTROLS. It is read as an opaque ground " +
+        "for their children and manufactures contrast violations."
+    ).toBe(false);
   });
 
   /**

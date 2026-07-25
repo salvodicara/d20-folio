@@ -101,8 +101,20 @@ describe("ON-ART-INK (owner 2026-06-12) — the canonical scope covers the recur
   it("the wide-gutter page-turn captions flip — and ONLY at the gutter breakpoint (mobile pills keep their ink)", () => {
     // The caption floats on the art only on the ≥1360px gutter layout; below it
     // the pager folds into opaque blurred pills where cream ink would wash out.
+    // The GROUND is theme-agnostic (dark's gold caption measured 1.52:1 on the
+    // bright half of the art); only the INK flip is light's. Both must stay inside
+    // the gutter media query — below it the pager folds into opaque pills where
+    // cream ink would wash out.
     const mediaScoped =
-      /@media \(min-width: 1360px\)\s*\{\s*\[data-theme="light"\]\s*\.on-art-scope\s*\.wiz-pager-cap\s*\{[^}]*color:\s*var\(--text-on-backdrop\)/;
+      /@media \(min-width: 1360px\)\s*\{[\s\S]{0,900}?\[data-theme="light"\]\s*\.on-art-scope\s*\.wiz-pager-cap\s*\{[^}]*color:\s*var\(--text-on-backdrop\)/;
+    const groundScoped =
+      /@media \(min-width: 1360px\)\s*\{[\s\S]{0,900}?\.on-art-scope\s*\.wiz-pager-cap\s*\{\s*text-shadow:\s*var\(--on-art-halo\)/;
+    expect(
+      groundScoped.test(css),
+      "MISSING: the media-scoped `.on-art-scope .wiz-pager-cap` HALO (both themes). " +
+        "A `<button>` does not pass the scope's halo down, and at the gutter width " +
+        "these captions sit on the scene with nothing behind them."
+    ).toBe(true);
     expect(
       mediaScoped.test(css),
       "MISSING: the media-scoped `[data-theme=light] .on-art-scope .wiz-pager-cap` flip " +
