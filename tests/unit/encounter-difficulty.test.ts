@@ -3,7 +3,8 @@
  * Encounter Difficulty").
  *
  * The table below is an INDEPENDENT literal transcription of the SRD extract
- * (§A.2, EN lines 20142–20166): all 60 cells are asserted against the module's
+ * (SRD 5.2.1, Combat Encounter Difficulty — XP Budget per Character): all 60 cells
+ * are asserted against the module's
  * copy, so a silent drift in either fails the build (mutation-proof — the guard's
  * subjects come from a second-source transcription, not the module under test).
  * The party/cost/verdict functions are pinned by the SRD's OWN three worked

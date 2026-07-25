@@ -33,8 +33,9 @@ export type BudgetVerdict = EncounterDifficulty | "over";
 
 /**
  * SRD 5.2.1 "XP Budget per Character" — index by character level 1–20. The values
- * ARE the SRD extract (§A.2, EN lines 20142–20166); the test file carries its own
- * literal transcription so the table cannot drift silently (mutation-proof).
+ * ARE the SRD extract (SRD 5.2.1, Combat Encounter Difficulty — XP Budget per
+ * Character); the test file carries its own literal transcription so the table
+ * cannot drift silently (mutation-proof).
  */
 const XP_BUDGET_PER_CHARACTER: Readonly<Record<number, XpBudget>> = {
   1: { low: 50, moderate: 75, high: 100 },

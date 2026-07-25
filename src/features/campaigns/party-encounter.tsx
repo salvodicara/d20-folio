@@ -1241,7 +1241,7 @@ export function EncounterRoundBar({
 }: {
   round: number;
   isDm: boolean;
-  /** The DM XP-budget grading of this encounter (§D.1 mount 1) — rendered right of
+  /** The DM XP-budget grading of this encounter — rendered right of
    *  the Round badge, DM-only. */
   budget: EncounterBudgetView;
   onEnd: () => void;
@@ -1268,11 +1268,11 @@ export function EncounterRoundBar({
   );
 }
 
-// ─── The DM XP-budget readout (§D) ───────────────────────────────────────────
+// ─── The DM XP-budget readout ─────────────────────────────────────────────────
 
 /** Verdict id → its i18n label key. An EXPLICIT record, never a template-built key
  *  — the i18n-dynamic-key guard enumerates `${}` families, and a literal map keeps
- *  the four keys statically discoverable (correction 3). */
+ *  the four keys statically discoverable. */
 const VERDICT_LABEL: Record<BudgetVerdict, string> = {
   low: "campaignHub.encounterBudgetLow",
   moderate: "campaignHub.encounterBudgetModerate",
@@ -1292,7 +1292,7 @@ const VERDICT_COLOR: Record<BudgetVerdict, string> = {
 /** Verdict id → a DISTINCT threat-escalation glyph. In dark, moderate(gold-leaf-500)
  *  and high(gold-leaf-300) are two close golds; a distinct glyph per verdict (plus the
  *  verdict WORD in the chip) keeps the four states unmistakable regardless of the gold
- *  proximity (correction 2). */
+ *  proximity. */
 const VERDICT_GLYPH: Record<BudgetVerdict, typeof ShieldCheck> = {
   low: ShieldCheck,
   moderate: Swords,
@@ -1301,10 +1301,10 @@ const VERDICT_GLYPH: Record<BudgetVerdict, typeof ShieldCheck> = {
 };
 
 /**
- * The DM XP-budget readout (§D.2) — ONE tonal verdict chip + a costed-XP text run,
+ * The DM XP-budget readout — ONE tonal verdict chip + a costed-XP text run,
  * mounted in the round bar and the Add-monster modal. DM-only (its two callers gate
  * on `isDm`; a player never receives it — constitution §2.9, and it spares the
- * metagame). Every state from §D.3 is designed: a colored verdict chip when the
+ * metagame). Every state is designed: a colored verdict chip when the
  * budget + a costed monster both exist; a muted "—" chip while the party budget is
  * pending, absent (no PCs), or no monster is costed yet; and a muted `+n ?` marker
  * (its own tooltip) whenever some groups carry no XP, so the verdict reads as an
@@ -1338,8 +1338,6 @@ export function EncounterBudgetReadout({
   // is not in the view, but "nothing costed AND nothing un-costed" ⇒ zero groups.
   const noMonsters = costedXp === 0 && uncostedGroups === 0 && verdict === null;
 
-  const VerdictGlyph = verdict !== null ? VERDICT_GLYPH[verdict] : null;
-
   return (
     <span className="flex flex-wrap items-center gap-2">
       {verdict !== null ? (
@@ -1347,11 +1345,7 @@ export function EncounterBudgetReadout({
           variant="tonal"
           size="sm"
           color={VERDICT_COLOR[verdict]}
-          glyph={
-            VerdictGlyph ? (
-              <VerdictGlyph width={12} height={12} aria-hidden="true" />
-            ) : undefined
-          }
+          glyph={((Glyph) => <Glyph width={12} height={12} />)(VERDICT_GLYPH[verdict])}
           title={chipTitle}
         >
           {t(VERDICT_LABEL[verdict])}
@@ -2051,7 +2045,7 @@ export function AddMonsterForm({
   const [maxHp, setMaxHp] = useState(10);
   const [count, setCount] = useState(1);
   const [notes, setNotes] = useState("");
-  // Optional CR (§D.4) — a closed-set select so an invalid CR is untypeable; blank ""
+  // Optional CR — a closed-set select so an invalid CR is untypeable; blank ""
   // = no CR (a stat-less improv NPC stays un-costed, zero friction — rule 20). The
   // stored value is the CR's stringified number ("0.25"); "" is the blank sentinel.
   const [cr, setCr] = useState("");
@@ -2129,8 +2123,8 @@ export function AddMonsterForm({
           max={20}
           digits={2}
         />
-        {/* Optional CR (§D.4) — a `label.contents` row so it drops into the SAME
-            two-column grid as the steppers (correction 6): the label lands in the
+        {/* Optional CR — a `label.contents` row so it drops into the SAME
+            two-column grid as the steppers: the label lands in the
             shared `max-content` column, the Select hugs it in the next. The DM sees
             each CR's XP cost while choosing (no second field), and a closed set makes
             an invalid CR untypeable. */}

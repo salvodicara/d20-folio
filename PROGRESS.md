@@ -17,8 +17,8 @@ step**. Deploys stay owner-gated (golden rule 22), so `main` may run ahead of li
 (2026-07-17), the **full-BG3 identity pivot** landed code-complete (asset integration pending), and
 the **DDB-parity feature epic** is now **ACTIVE** (OPENED 2026-07-23) with its **bestiary flagship
 SHIPPED** (2026-07-24), the **encounter picker SHIPPED** (2026-07-25; bestiary-first), and the
-**2024-DMG XP-budget difficulty calculator SHIPPED** (2026-07-25; the DM-only budget readout, the
-competitive map is `docs/POSITIONING.md`). **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
+**2024-DMG XP-budget difficulty calculator SHIPPED** (2026-07-25; the DM-only budget readout); the
+competitive map is `docs/POSITIONING.md`. **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
 **id-storage + GR7 i18n-leak-eradication campaign** is **CLOSED** (v0.13.0): every SRD-derived value
 is a stable, mostly-branded id; every user-visible string lives in `src/i18n/**` (a new language = a

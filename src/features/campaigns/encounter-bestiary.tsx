@@ -125,6 +125,7 @@ export function EncounterStatblockModal({
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const m = getMonster(srdId); // corpus resident: the lazy factory gates on ensureSrdKind
+  const lairXp = m?.xpInLair; // hoisted so the != null narrowing survives into the toggle callback
   return (
     <ModalShell open onClose={onClose} title={combatantName}>
       <div className="overflow-y-auto p-4">
@@ -136,24 +137,20 @@ export function EncounterStatblockModal({
                 between the base and lair prints through the DM `apply`. Discoverable
                 exactly where the "or N in lair" print lives; invisible for the other
                 300+ monsters. */}
-            {apply && m.xpInLair != null && (
+            {apply && lairXp != null && (
               <div className="mb-3 flex items-center justify-between gap-3">
                 <label
                   htmlFor={`lair-xp-${combatantId}`}
                   className="text-sm text-text-secondary"
                 >
-                  {t("campaignHub.encounterLairXp", { xp: fmtXp(m.xpInLair, locale) })}
+                  {t("campaignHub.encounterLairXp", { xp: fmtXp(lairXp, locale) })}
                 </label>
                 <Switch
                   id={`lair-xp-${combatantId}`}
-                  checked={currentXp === m.xpInLair}
+                  checked={currentXp === lairXp}
                   onCheckedChange={(checked) =>
                     apply((e) =>
-                      setMonsterXp(
-                        e,
-                        combatantId,
-                        checked ? (m.xpInLair ?? monsterXp(m)) : monsterXp(m)
-                      )
+                      setMonsterXp(e, combatantId, checked ? lairXp : monsterXp(m))
                     )
                   }
                 />
