@@ -40,21 +40,120 @@ const index = indexCss.replace(/\/\*[\s\S]*?\*\//g, "");
  *        never a label.
  */
 describe("the ornament vocabulary", () => {
-  it("keeps the ornament BUDGET at ZERO while the MARK is unmounted", () => {
-    // The corner knot came off with the square corners: it re-drew ~30px of the
-    // host's own rail from a square vertex, which cannot register on a rounded
-    // plate — a thickened, offset segment of line that abruptly returns to the
-    // border is exactly the two-line defect L2 forbids. Nothing carries a mark
-    // until it is redrawn as a fan seated INSIDE the radius.
-    expect(indexCss).not.toMatch(/--frame-ornate/);
-    expect(folio).not.toMatch(/--frame-ornate/);
-    // …and no surface grew a replacement in the meantime. A DIALOG in particular
-    // carries none, ever: it already commands the screen, and the reference's own
-    // modals are plain plates with a title and a whisper.
-    expect(folio).not.toMatch(/\.modal::after\s*\{/);
-    expect(folio).not.toMatch(/\.modal::before\s*\{/);
-    expect(folio).not.toMatch(/\.page-head\.framed::before\s*\{/);
-    expect(folio).not.toMatch(/\.folio-panel\.gilt-frame::after\s*\{/);
+  it("spends the ornament budget on exactly TWO hosts, which can never co-occur", () => {
+    // At most ONE mark-bearing surface per screen, and it is the screen's
+    // IDENTITY plate: the framed realm masthead on every route that renders one,
+    // and the cockpit's identity band on the ONE route that renders none. They
+    // can never both appear — the cockpit is the only surface that mounts
+    // `.folio-panel.gilt-frame`, and it renders no `PageHeader`.
+    const HOSTS = ["\\.page-head\\.framed::before", "\\.folio-panel\\.gilt-frame::after"];
+    for (const host of HOSTS) {
+      expect(
+        new RegExp(`${host}[^{]*\\{[^}]*var\\(--mark-tl\\)`).test(folio),
+        `MISSING the mark on \`${host}\`. The budget is ONE ornamented surface per ` +
+          `screen and it is the identity plate — the reference's own second ornament ` +
+          `home (the ogee head of a hero/identity panel).`
+      ).toBe(true);
+    }
+    // Every OTHER surface carries none. A dialog in particular carries none,
+    // ever: it already commands the screen, and the reference's own modals are
+    // plain plates with a title and a whisper.
+    for (const forbidden of [
+      /\.modal::after\s*\{/,
+      /\.modal::before\s*\{/,
+      /\.ch-card::before\s*\{/,
+      /\.info-card::(before|after)\s*\{/,
+      /\.tome-leaf-surface::after\s*\{/,
+    ]) {
+      expect(folio).not.toMatch(forbidden);
+    }
+    // …and nothing else in the stylesheet consumes a mark layer. At-rule
+    // preludes are unwrapped first, so a media-query strike is judged by the
+    // SELECTOR inside it rather than by `@media (…)`.
+    const flat = folio.replace(/@media[^{]*\{/g, "");
+    const consumers = [...flat.matchAll(/([^{}]+)\{[^}]*var\(--mark-(?:tl|run)\)/g)].map(
+      (m) => (m[1] ?? "").trim().replace(/\s+/g, " ")
+    );
+    expect(consumers.length, "the mark must be mounted somewhere").toBeGreaterThan(0);
+    for (const subject of consumers) {
+      expect(
+        subject,
+        `\`${subject}\` mounts the MARK. Only the two identity plates may — a sibling ` +
+          `panel, a resting card, a section heading, a list row and a chip carry ` +
+          `none, ever.`
+      ).toBe(".page-head.framed::before, .folio-panel.gilt-frame::after");
+    }
+  });
+
+  it("draws the mark as the LINE'S OWN FORM — never a second rail, never floating", () => {
+    // THE CORNER TERMINAL contributes no run line at all: the host's own border
+    // is the only line at the corner. The knot this chrome used to carry re-drew
+    // ~30px of that rail from a square vertex, which is the two-line defect L2
+    // exists to forbid — so the fan is pure rays, anchored ON the corner arc.
+    for (const theme of ["dark", "light"] as const) {
+      const start = indexCss.indexOf(`[data-theme="${theme}"]`);
+      const block = indexCss.slice(start, indexCss.indexOf("\n}", start));
+      for (const name of [
+        "--mark-tl",
+        "--mark-tr",
+        "--mark-bl",
+        "--mark-br",
+        "--mark-run",
+      ]) {
+        expect(
+          new RegExp(`${name}:`).test(block),
+          `MISSING ${name} in the ${theme} theme. The mark is GOLD in both themes ` +
+            `(bronze is banned) — a mark that exists in one theme only is a mark the ` +
+            `daylight sibling was never designed for.`
+        ).toBe(true);
+      }
+      const tl =
+        /--mark-tl: url\("data:image\/svg\+xml,([^"]*)"\)/.exec(block)?.[1] ?? "";
+      const svg = decodeURIComponent(tl);
+      // Rays are TRIANGLES from one origin — no rect, no line, no long straight
+      // path that could read as a rail beside the host's own.
+      expect(svg).not.toMatch(/<(rect|line|polyline)\b/);
+      // …and the geometry is authored ONCE and MIRRORED, with the toning applied
+      // AFTER the mirror so the bevel's light stays top-left on all four corners.
+      expect(
+        /<use href="#a"\/>/.test(svg) && /translate\([-\d.]+ [-\d.]+\)/.test(svg),
+        "The corner tile must mirror an unfilled master and tone it in SCREEN space " +
+          "(a translated shade group + a translated glint group around the body)."
+      ).toBe(true);
+      // Three tonal passes: the metal is DIMENSIONAL, not line-art.
+      expect(
+        (svg.match(/<g /g) ?? []).length,
+        "Every struck member carries a light/shade pair: a shade group, the body, " +
+          "and a glint group. Line-art gold is not this material."
+      ).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("mounts the mark as decor only — no border-image, no layout, no animation", () => {
+    const rule =
+      /\.page-head\.framed::before,\s*\.folio-panel\.gilt-frame::after \{([^}]*)\}/.exec(
+        folio
+      )?.[1] ?? "";
+    expect(rule, "the mark overlay rule must exist").not.toBe("");
+    expect(rule).toContain("pointer-events: none;");
+    // `border-image` mis-seats the centreline (its tiles shrink proportionally),
+    // and a layout border on the pseudo would force a minimum box the size of the
+    // tile. Neither is ever the mechanism.
+    expect(folio).not.toMatch(/border-image[^;]*--mark/);
+    expect(rule).not.toMatch(/border(-\w+)?\s*:/);
+    expect(rule).not.toMatch(/(animation|transition)\s*:/);
+    // The overlay hangs past the plate's foot so the cartouche's underside can
+    // paint (a background is clipped to its own box) — so a mark-bearing host
+    // must never clip.
+    expect(rule).toMatch(/var\(--mark-drop\)/);
+    for (const host of ["\\.page-head\\.framed", "\\.folio-panel\\.gilt-frame"]) {
+      const body = new RegExp(`${host} \\{([^}]*)\\}`).exec(folio)?.[1] ?? "";
+      expect(
+        /overflow[^;]*:\s*(hidden|clip)/.test(body),
+        `A mark-bearing host must not clip: the corner ink and the cartouche's ` +
+          `underside are paint-only overflow.`
+      ).toBe(false);
+    }
   });
 
   it("draws NO ornament over a line — no head figure, no divider node", () => {

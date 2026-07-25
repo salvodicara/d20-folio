@@ -6889,6 +6889,85 @@ button.trk-pip:active {
   }
 }
 
+/* ── THE MARK — mounted on exactly ONE surface per route ─────────────────────
+   The budget is hard: at most one mark-bearing surface per screen, and it is the
+   screen's IDENTITY plate — the reference's second ornament home (the ogee head
+   of a hero/identity panel), and the only surface on any of our routes that is
+   unique, earned-tier, and never a sibling among equals.
+
+     · the framed realm masthead, on every route that renders one;
+     · the cockpit's identity band, on the ONE route that renders no masthead.
+
+   They can never co-occur: the cockpit is the only surface that mounts
+   `.folio-panel.gilt-frame`, and it renders no `PageHeader`. Everything else
+   carries none — not a dialog (it already commands the screen, and the
+   reference's own modals are plain plates), not a sibling panel, not a resting
+   card, not a section heading, not a list row, not a chip.
+
+   The overlay is DECOR ONLY: `pointer-events: none`, no layout, no animation,
+   and it takes no border of its own. It hangs `--mark-drop` past the plate's
+   bottom edge so the cartouche's underside can paint — a background is clipped
+   to its own box — which is also why a mark-bearing host must never carry
+   `overflow: hidden`.
+
+   The run cartouche mounts only at ≥1024px. Ornament coverage is capped at a
+   third of the run it interrupts, and the four corner fans already spend ~68px
+   of it: below that width the 216px figure would take the run past the cap and
+   start crowding the plate's own ink. The fans alone carry the narrow strike. ── */
+/* The two hosts, and the whole of the budget. `.folio-panel`'s `::before` is
+   already the plate's material, so the identity band wears the mark on `::after`;
+   the masthead has both free and takes `::before`. */
+.page-head.framed,
+.folio-panel.gilt-frame {
+  --mark-inset: 2px;
+  --mark-drop: 17px;
+}
+.page-head.framed::before,
+.folio-panel.gilt-frame::after {
+  content: "";
+  position: absolute;
+  /* the plate's OUTER edge on three sides, dropped past the foot on the fourth */
+  inset: calc(-1 * var(--mark-inset)) calc(-1 * var(--mark-inset))
+    calc(-1 * (var(--mark-inset) + var(--mark-drop)));
+  z-index: 1;
+  pointer-events: none;
+  background-image: var(--mark-tl), var(--mark-tr), var(--mark-bl), var(--mark-br);
+  background-repeat: no-repeat;
+  background-position:
+    left top,
+    right top,
+    left bottom var(--mark-drop),
+    right bottom var(--mark-drop);
+  background-size:
+    48px 48px,
+    48px 48px,
+    48px 48px,
+    48px 48px;
+}
+@media (min-width: 1024px) {
+  .page-head.framed::before,
+  .folio-panel.gilt-frame::after {
+    background-image:
+      var(--mark-tl), var(--mark-tr), var(--mark-bl), var(--mark-br), var(--mark-run);
+    background-position:
+      left top,
+      right top,
+      left bottom var(--mark-drop),
+      right bottom var(--mark-drop),
+      center bottom;
+    background-size:
+      48px 48px,
+      48px 48px,
+      48px 48px,
+      48px 48px,
+      216px 40px;
+  }
+}
+/* `--mark-drop` seats the cartouche's own centreline exactly on the host rail's
+   centreline: the tile is 40px tall, so its midline lands 20px above the overlay's
+   foot, and the rail's centre sits (border ÷ 2) inside the plate's outer edge —
+   40/2 − (2 + 2/2) = 17. */
+
 /* The masthead is deliberately STATIC on navigation (owner, 2026-07-10): no
    mount animation on the band or its content. Realm switches must read as
    rock-solid — the frame, crest, and ink land in exactly the same place every
@@ -13733,8 +13812,9 @@ button.party-avatar-btn:focus-visible {
    DESIGN.md §5. Ornament is EARNED, never decorative: ONE ornamented surface per
    screen, and it is the surface the user is acting in. Section rubrics, rail
    heads, list rows, chips and dividers carry NONE — a heading is type and space,
-   a divider is the one hairline. What ornament remains is the corner MARK on the
-   screen's single mark-bearing frame, and the selection metals
+   a divider is the one hairline. The ornament that remains is the MARK on the
+   screen's single identity plate (mounted at `.page-head.framed::before` /
+   `.folio-panel.gilt-frame::after`, above), and the selection metals
    (`--metal-silver`/`--metal-bronze`) driving `--frame-selected` on the wizard
    hero altar and the chosen plaque. */
 
@@ -13759,22 +13839,6 @@ button.party-avatar-btn:focus-visible {
   border-radius: calc(var(--r-plate) - 2px);
   box-shadow: var(--edge-groove);
 }
-
-/* ── THE MARK — currently UNMOUNTED. ─────────────────────────────────────────
-   The corner mark is drawn as a fan radiating INSIDE the corner's curve, and the
-   knot this chrome carried was built the other way round: it re-drew ~30px of the
-   host's own rail in each direction from a square vertex. On a rounded plate that
-   straight swell cannot register on the arc — it reads as a thickened, slightly
-   offset segment of line that abruptly returns to the border, which is the
-   two-line defect the one-line law (L2) exists to forbid.
-
-   So the mark comes OFF with the square corners rather than riding them wrong,
-   and returns redrawn: the corner TERMINAL (a glint fan alone, starting ≥24px in
-   from the vertex, reaching ≤20px, seated inside the radius, contributing no run
-   line) and the run CARTOUCHE (a symmetric interlace at a run's exact midpoint,
-   the border terminating either side of it). Budget unchanged: at most ONE
-   mark-bearing surface per screen, and it is the surface the user is acting in.
-   DESIGN.md §5 "The ornament vocabulary". ── */
 
 /* ── Campaign hub header art control (owner 2026-06-30) — the big 3:1 hero band
    was RETIRED. The campaign's art is now the page's atmospheric `--app-bg-art`

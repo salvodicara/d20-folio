@@ -1697,11 +1697,7 @@ that earns it.
 ### The ornament vocabulary
 
 Ornament is **earned by information, never spent on decoration**. The whole grammar is three
-rules; **the ornament budget is currently ZERO** — the corner mark came off with the square corners
-in Phase 3 and no surface carries a mark until it is redrawn (`PROGRESS.md` → Phase 6; pinned by
-`tests/unit/ornament-vocabulary.guard.test.ts`, which fails if `--frame-ornate` or a replacement
-pseudo reappears). The rules below are written for the mark's return; the pieces list is what
-actually ships.
+rules, and the budget is **one mark-bearing surface per screen**.
 
 **L2 · An ornament REPLACES the line.** It is never drawn over it, beside it, or near it.
 Wherever a mark appears the rule terminates, the mark occupies the interval, and the rule
@@ -1710,13 +1706,15 @@ on top of each other; a head that drew both — a full-width border-image rule u
 winged fleur that carried its own 260px rail, one pixel apart, at different lengths and weights —
 is what the owner saw and named.
 
-**The budget: AT MOST ONE ornamented surface per screen, and it is the surface the user is acting
-in.** Today it is **zero** — the mark is unmounted. When it returns it goes on the framed realm
-masthead (`.page-head.framed::before`); on the cockpit, where no masthead renders, the identity
-band takes it instead (`.folio-panel.gilt-frame::after`) — never both. **A dialog carries none**:
-it already commands the screen, and the reference's own modals are plain plates with a title and a
-whisper hairline. Neither does a sibling panel, a resting card, a section heading, a list row, a
-chip or a secondary button.
+**The budget: AT MOST ONE ornamented surface per screen, and it is the screen's IDENTITY plate.**
+It goes on the framed realm masthead (`.page-head.framed::before`); on the cockpit, where no
+masthead renders, the identity band takes it instead (`.folio-panel.gilt-frame::after`) — and they
+can never co-occur, because the cockpit is the only surface that mounts `.folio-panel.gilt-frame`
+and it renders no `PageHeader`. The identity plate is the reference's own second ornament home (the
+ogee head of a hero/identity panel), and the only surface on any route that is unique, earned-tier,
+and never a sibling among equals. **A dialog carries none**: it already commands the screen, and the
+reference's own modals are plain plates with a title and a whisper hairline. Neither does a sibling
+panel, a resting card, a section heading, a list row, a chip or a secondary button.
 
 **States change light and colour, never geometry, and never emit.** There is no glow, no bloom,
 no aura, no hover sweep and no focus halo anywhere in the chrome: light on this material means
@@ -1745,11 +1743,40 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
   bullet; a marker is ink colour; a pip is a square facet. The one surviving `rotate(45deg)` in
   the chrome is the `<select>` caret — a chevron drawn from two borders, the standard
   form-control idiom, guard-pinned as the only one.
-- **THERE IS NO CORNER MARK.** `--frame-ornate` and its four corner tiles are deleted, not
-  disabled: the knot re-drew ~30px of the host's own rail from a square vertex and cannot register
-  on a 10px arc. Its redraw — the glint fan alone, seated INSIDE the radius — is Phase 6's brief
-  and the spec lives there (`PROGRESS.md` → the phase table). Nothing in the chrome carries a mark
-  in the meantime, and `ornament-vocabulary.guard.test.ts` fails if one reappears.
+- **THE MARK (`--mark-tl/tr/bl/br` + `--mark-run`) — the one ornament.** Two members of one vector
+  family, both drawn as the LINE'S OWN LOCAL FORM, never as a second rail beside it:
+  - **the corner terminal** — a glint fan of seven hair-thin tapering rays, anchored ON the corner
+    arc's inner edge (never floating, never crossing the vertex) and radiating inward across a 60°
+    arc that stays clear of both rails. It contributes no run line at all: the host's own border is
+    the only line at that corner.
+  - **the run cartouche** — a symmetric interlace at the exact midpoint of the bottom run. Pointed
+    **leaves**, not strokes: a leaf is a closed lens between two arcs, so it tapers to a true point
+    at both ends, which is what makes struck goldwork read struck. Two leaves per side weave over
+    and under the rail and converge on a small descending chevron. The rail passes through
+    unbroken — one line, wearing a different form for the length of the mark. It mounts only at
+    ≥1024px: ornament coverage is capped at a third of the run, the four fans already spend ~68px
+    of it, and below that width the 216px figure would breach the cap and crowd the plate's ink.
+
+  **The metal is dimensional, not line-art.** Every struck member carries a light/shade pair, and
+  the geometry is authored once, **mirrored** per corner, and **toned after the mirror, in screen
+  space** — so the bevel's light stays top-left on all four corners instead of rotating with the
+  figure. Dark: a gold-300 body on a near-black under-shadow below-right with a gold-200 glint
+  above-left. Light: the **same gold** — bronze is banned in both themes — struck by letterpress
+  logic, the umber shadow wall **above**-left and the warm-cream understroke **below**-right,
+  because on vellum a figure is pressed into the page rather than lit off it.
+
+  **Mechanism:** fixed-size per-corner SVG background layers on a decorative overlay pseudo.
+  **Never `border-image`** (its proportional tile-shrink mis-seats the centreline) and **never a
+  layout border on the pseudo** (a transparent 48px border forces a 96px minimum box). Decor only:
+  `pointer-events: none`, no layout, no animation. The overlay hangs `--mark-drop` past the plate's
+  foot so the cartouche's underside can paint — a background is clipped to its own box — which is
+  why **a mark-bearing host must never carry `overflow: hidden`**.
+
+  **Measured, dark, on the 1184px masthead:** ornament ink peaks at **2.40×** the rule it
+  interrupts (the reference measures 2.0–2.5×) and covers **19–24%** of the run, against the 34%
+  cap. In light the mark's contrast against the plate is 1.59× the rule's — the daylight sibling of
+  the same relationship.
+
 - **SELECTION is the frame metal.** The `--frame-selected` silver-over-bronze gradient (from the
   per-theme `--metal-silver` / `--metal-bronze` pair) marks the wizard hero altar and the chosen
   plaque. At-rest surfaces are never decorated with selection ornament.
