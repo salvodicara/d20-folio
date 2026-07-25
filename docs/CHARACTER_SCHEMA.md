@@ -231,6 +231,17 @@ a spent migration is removed COMPLETELY; git history preserves `scripts/migrate-
 | `inspiration`   | bool?                 | omit when false                                                                                |
 | `log`           | `[ {event, ts, id} ]` | the session log — a structured `CombatEvent` (ids/tokens, localized at render), never raw text |
 
+Play-state also carries several **additive-only optional** keys, each absent on a doc that never
+uses it (so the envelope stays byte-identical): `activeFeatures`, `effectTimers`, `grantBundleChoices`,
+`companionHp` (summoned-companion current HP, keyed by granting source id), `companionVariant`
+(Beast Master's chosen `variantId`, keyed by feature id), `familiar`
+(`{ monsterId, creatureType: celestial|fey|fiend, dismissed? }` — the Find Familiar summon; its
+current HP rides `companionHp["find-familiar"]`), `manifestedWeaponOverrides`, `pactWeaponConfig`,
+`pactWeaponRiderTypes`, `polymorphForm`, `bardicInspirationDie`, `sessionDefenses`, `hiddenDc`. A
+malformed `familiar` (non-string `monsterId`, `creatureType` outside the closed set) is dropped at
+the parse boundary (the `polymorphForm` precedent); a stale/unknown `monsterId` is KEPT and degrades
+quietly at render (the encounter stale-`srdId` precedent).
+
 Everything absent ⇒ its fresh/default value on import. So a brand-new character's `state` is `{}`.
 
 > **`hp` / `conditions` (+ `initiative` / `deathSucc` / `deathFail`) — the combat trio.** These remain

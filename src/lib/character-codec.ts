@@ -84,6 +84,7 @@ import {
 } from "@/data/srd-names";
 import { alignmentIdByLabel, asAlignmentId } from "@/lib/lore-utils";
 import { nonEmptyString, assertNonEmptyString } from "@/lib/non-empty-string";
+import { FAMILIAR_CREATURE_TYPES, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { enToProficiencyToken } from "@/data/proficiency-vocab";
 
 // ─── Primitive validators ───────────────────────────────────────────────────
@@ -514,6 +515,11 @@ function isNonEmptyArray(v: unknown): v is unknown[] {
 }
 function isNonEmptyRecord(v: unknown): v is Record<string, unknown> {
   return isRecord(v) && Object.keys(v).length > 0;
+}
+function isFamiliarCreatureType(v: unknown): v is FamiliarCreatureType {
+  return (
+    typeof v === "string" && (FAMILIAR_CREATURE_TYPES as readonly string[]).includes(v)
+  );
 }
 function asString(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -992,6 +998,10 @@ function sessionToState(s: SessionState): Record<string, unknown> {
   if (isNonEmptyRecord(s.grantBundleChoices))
     state.grantBundleChoices = s.grantBundleChoices;
   if (isNonEmptyRecord(s.companionHp)) state.companionHp = s.companionHp;
+  // Companion variant pick (Beast Master) + the Find Familiar summon — absent on
+  // every non–companion doc, so the envelope stays byte-identical (ADDITIVE-only).
+  if (isNonEmptyRecord(s.companionVariant)) state.companionVariant = s.companionVariant;
+  if (s.familiar) state.familiar = s.familiar;
   if (isNonEmptyRecord(s.manifestedWeaponOverrides))
     state.manifestedWeaponOverrides = s.manifestedWeaponOverrides;
   if (isNonEmptyRecord(s.pactWeaponConfig)) state.pactWeaponConfig = s.pactWeaponConfig;
@@ -1079,6 +1089,24 @@ function stateToSession(state: Record<string, unknown>): Partial<SessionState> {
   }
   if (isRecord(state.companionHp)) {
     s.companionHp = state.companionHp as SessionState["companionHp"];
+  }
+  if (isRecord(state.companionVariant)) {
+    s.companionVariant = state.companionVariant as SessionState["companionVariant"];
+  }
+  // The Find Familiar summon — shape-validated at this untrusted-input boundary (the
+  // polymorphForm precedent): `monsterId` must be a string, `creatureType` in the
+  // closed swap set. A stale/pack-only `monsterId` is KEPT (degrades quietly at
+  // render — the encounter stale-`srdId` precedent); only a MALFORMED record drops.
+  if (
+    isRecord(state.familiar) &&
+    typeof state.familiar.monsterId === "string" &&
+    isFamiliarCreatureType(state.familiar.creatureType)
+  ) {
+    s.familiar = {
+      monsterId: state.familiar.monsterId,
+      creatureType: state.familiar.creatureType,
+      ...(state.familiar.dismissed === true ? { dismissed: true } : {}),
+    };
   }
   if (isRecord(state.manifestedWeaponOverrides)) {
     s.manifestedWeaponOverrides =

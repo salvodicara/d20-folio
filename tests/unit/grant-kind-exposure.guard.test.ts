@@ -472,6 +472,13 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "resolveFamiliarEnhancements",
     consumer: "src/features/compendium/picker/specs/invocation.tsx",
   },
+  // Pact of the Chain's special forms widen the Find Familiar pool; the resolver
+  // `resolveFamiliarForms` joins the aggregate's `familiarFormIds` to the corpus
+  // (lazy) and the form picker renders them (see lib/familiar.ts).
+  "familiar-forms": {
+    via: "familiarFormIds",
+    consumer: "src/lib/familiar.ts",
+  },
   // ATTACK-PIPS — War Magic became an INTERACTION: the provider reads
   // `resolveReplaceAttackWithCast` to route a mid-Attack-action cantrip cast onto
   // an attack pip (replace an attack) instead of a fresh Action slot.

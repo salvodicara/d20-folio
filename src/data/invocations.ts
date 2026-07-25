@@ -358,12 +358,26 @@ export const SRD_INVOCATIONS: SrdEldritchInvocation[] = [
     // expending a spell slot." → the at-will slotless self-cast primitive, exactly
     // like the other at-will invocations (Armor of Shadows, …). always-prepared
     // makes Find Familiar visible/prepared on the Spells page; at-will-cast-spell
-    // adds the unbounded slotless cast option (Warlock CHA). The special familiar
-    // forms + "forgo an attack to let the familiar attack" are creature-companion
-    // narrative (no stat-block engine in scope) and stay prose in the description.
+    // adds the unbounded slotless cast option (Warlock CHA). `familiar-forms` widens
+    // the summon's eligible-form pool with the seven SRD special forms (the form
+    // picker offers them alongside the base CR-0 Beasts). "Forgo an attack to let the
+    // familiar attack with its Reaction" is a per-attack choice with no automatable
+    // state (a documented residual, docs/MECHANICS.md) and stays prose.
     grants: [
       { type: "always-prepared-spell", spellId: "find-familiar", spellAbility: "CHA" },
       { type: "at-will-cast-spell", spellId: "find-familiar", casterAbility: "CHA" },
+      {
+        type: "familiar-forms",
+        monsterIds: [
+          "imp",
+          "pseudodragon",
+          "quasit",
+          "skeleton",
+          "sphinx-of-wonder",
+          "sprite",
+          "venomous-snake",
+        ],
+      },
     ],
   },
   {

@@ -143,6 +143,12 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     effectTimers: session.effectTimers,
     grantBundleChoices: session.grantBundleChoices,
     companionHp: session.companionHp,
+    // Companion variant pick (Beast Master) + the Find Familiar summon. Enumerated
+    // passthrough so they round-trip a reload; the codec parse leg shape-validates
+    // an untrusted `familiar` (the polymorphForm precedent), this rebuild only
+    // preserves the field. Absent on every non–companion doc (additive-only).
+    companionVariant: session.companionVariant,
+    familiar: session.familiar,
     manifestedWeaponOverrides: session.manifestedWeaponOverrides,
     pactWeaponConfig: session.pactWeaponConfig,
     pactWeaponRiderTypes: session.pactWeaponRiderTypes,

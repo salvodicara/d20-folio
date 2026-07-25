@@ -2403,6 +2403,23 @@ export type Grant =
       reactionResistance?: boolean;
     }
 
+  // ── Familiar special forms (Pact of the Chain) ────────────────────────────
+  | {
+      /**
+       * Widens the Find Familiar eligible-form pool with SPECIAL forms — the
+       * creatures a feature lets the caster summon BEYOND the base CR-0 Beasts.
+       * `monsterIds` are {@link import("@/data/types").MonsterStatBlock} ids. The
+       * sole 2024 case is Warlock **Pact of the Chain** ("Imp, Pseudodragon,
+       * Quasit, Skeleton, Sphinx of Wonder, Sprite, or Venomous Snake", SRD
+       * 5.2.1). Evaluator = set-union across sources → `familiarFormIds`; consumer
+       * = `resolveFamiliarForms` (`lib/familiar.ts`), the LAZY corpus join. Only
+       * ids travel through the aggregate — the eager engine never imports the
+       * corpus (the sacred data↔UI seam, golden rules 5/6).
+       */
+      type: "familiar-forms";
+      monsterIds: ReadonlyArray<string>;
+    }
+
   // ── Cunning Strike option (Rogue catalogue — not the action economy) ──────
   | {
       /**
@@ -4291,6 +4308,14 @@ export interface AggregatedGrants {
   familiarEnhancements: ReadonlyArray<FamiliarEnhancement>;
 
   /**
+   * Find Familiar SPECIAL-form ids (`familiar-forms`) — the forms a feature adds
+   * to the base CR-0-Beast pool (Warlock Pact of the Chain). Set-union across
+   * sources. The consumer (`resolveFamiliarForms`, `lib/familiar.ts`) joins these
+   * ids to the corpus LAZILY; the eager aggregate carries ids only.
+   */
+  familiarFormIds: ReadonlySet<string>;
+
+  /**
    * Rogue Cunning Strike catalogue — every option an effective character knows
    * (base L5, Devious Strikes L14, plus subclass adders). Deduped by `optionId`
    * (first source wins). The consumer (`resolveCunningStrikeOptions`) resolves
@@ -4455,6 +4480,7 @@ export function emptyAggregate(): AggregatedGrants {
     pactWeapons: [],
     pactWeaponRiders: [],
     familiarEnhancements: [],
+    familiarFormIds: new Set(),
     cunningStrikeOptions: [],
     tempHpGrants: [],
     trackerAltRecoveries: [],
@@ -4734,6 +4760,7 @@ export function evaluateGrants(
 
   // Familiar-enhancement bundles (Investment of the Chain Master) — deduped by sourceId.
   const familiarEnhancements: FamiliarEnhancement[] = [];
+  const familiarFormIds = new Set<string>();
 
   // Cunning Strike catalogue (deduped by optionId — first source wins)
   const cunningStrikeOptions: CunningStrikeOption[] = [];
@@ -5851,6 +5878,13 @@ export function evaluateGrants(
         }
         break;
 
+      // ── Familiar special forms (Pact of the Chain) ────────────────────
+      case "familiar-forms":
+        // Set-union across sources — a caster could theoretically gain the
+        // pool from more than one feature; the ids dedupe naturally.
+        for (const id of g.monsterIds) familiarFormIds.add(id);
+        break;
+
       // ── Cunning Strike option (Rogue catalogue) ───────────────────────
       case "cunning-strike-option":
         // Dedupe by optionId — a character can pick up the same effect from
@@ -6030,6 +6064,7 @@ export function evaluateGrants(
     pactWeapons,
     pactWeaponRiders,
     familiarEnhancements,
+    familiarFormIds,
     cunningStrikeOptions,
     tempHpGrants,
     trackerAltRecoveries,

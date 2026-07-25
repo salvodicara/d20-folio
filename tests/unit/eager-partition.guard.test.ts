@@ -20,12 +20,27 @@
  *    used to be a barrel TLA — moved out because a TLA fragmented the eager closure).
  */
 import { describe, it, expect } from "vitest";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const read = (rel: string): string => readFileSync(join(REPO_ROOT, rel), "utf-8");
+
+/** Every `.ts`/`.tsx` under `rel`, recursively, as repo-relative POSIX paths. */
+function sourceFilesUnder(rel: string): string[] {
+  const out: string[] = [];
+  const walk = (abs: string): void => {
+    for (const entry of readdirSync(abs)) {
+      const child = join(abs, entry);
+      if (statSync(child).isDirectory()) walk(child);
+      else if (/\.(ts|tsx)$/.test(entry))
+        out.push(relative(REPO_ROOT, child).split("\\").join("/"));
+    }
+  };
+  walk(join(REPO_ROOT, rel));
+  return out;
+}
 
 describe("eager-partition tripwires", () => {
   it("route-prefetch never references the codex browse route (M1)", () => {
@@ -93,6 +108,44 @@ describe("eager-partition tripwires", () => {
           /ensureSrdKind\(["']monster["']\)/
         );
       }
+    }
+  });
+
+  it("the character feature + engine libs reach the corpus ONLY through the lazy familiar seam", () => {
+    // DERIVED input (rule 13): sweep EVERY source file under src/lib and
+    // src/features/character — a moved/renamed file can't slip past a hand-list.
+    // Only the SEAM files (the lazy familiar leaf) may statically import the corpus
+    // or the monster spec; every OTHER file in the cockpit/engine closure must not,
+    // or the eager startup bundle grows the ~250 KB bestiary + both locale shards.
+    //
+    // Blind spot (rule 13): this scans DIRECT import literals only — it cannot see a
+    // TRANSITIVE leak (a scanned file importing a shared module that itself imports
+    // the corpus) nor an alias-renamed path; the bundle-budget BFS + PWA precache
+    // ceiling are the backstops. Mutation-proved by temporarily adding
+    // `import { MONSTERS } from "@/data/monsters"` to ResourceRail.tsx (watch it fail).
+    const SEAM = new Set<string>([
+      "src/lib/familiar.ts",
+      "src/features/character/companions/familiar-picker.tsx",
+      "src/features/character/companions/FamiliarPanel.tsx",
+    ]);
+    const files = [
+      ...sourceFilesUnder("src/lib"),
+      ...sourceFilesUnder("src/features/character"),
+    ];
+    expect(files.length).toBeGreaterThan(50); // derived set non-empty (a moved dir can't empty it)
+    // Every SEAM file that EXISTS must actually import the corpus — a stale seam
+    // entry (a renamed/removed leaf) can't quietly widen the allowlist.
+    for (const seam of SEAM) {
+      if (!existsSync(join(REPO_ROOT, seam))) continue;
+      expect(read(seam), `${seam}: seam file must import the corpus`).toMatch(
+        /from\s+["']@\/data\/monsters/
+      );
+    }
+    for (const f of files) {
+      if (SEAM.has(f)) continue;
+      const src = read(f);
+      expect(src, f).not.toMatch(/from\s+["']@\/data\/monsters/);
+      expect(src, f).not.toMatch(/picker\/specs\/monster/);
     }
   });
 });

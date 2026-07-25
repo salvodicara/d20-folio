@@ -408,3 +408,22 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
     expect(out.tempHpGrants).toHaveLength(1);
   });
 });
+
+describe("evaluateGrants — familiar-forms (Pact of the Chain special forms)", () => {
+  it("empty by default (no source grants special forms)", () => {
+    expect(evaluateGrants([]).familiarFormIds).toEqual(new Set());
+  });
+
+  it("unions the special-form ids across sources, deduped", () => {
+    const out = evaluateGrants([
+      make("pact-of-the-chain", [
+        { type: "familiar-forms", monsterIds: ["imp", "quasit"] },
+      ]),
+      // A hypothetical second source overlapping one id — the Set dedupes.
+      make("other-source", [
+        { type: "familiar-forms", monsterIds: ["quasit", "sprite"] },
+      ]),
+    ]);
+    expect(out.familiarFormIds).toEqual(new Set(["imp", "quasit", "sprite"]));
+  });
+});

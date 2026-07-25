@@ -690,3 +690,79 @@ describe("read path conforms a legacy concentration LOG event.spell (GR10 bounda
     });
   });
 });
+
+describe("codec — companionVariant + familiar session round-trip (additive-only)", () => {
+  function parseState(state: Record<string, unknown>) {
+    const res = parseCharacter(
+      JSON.stringify({
+        schema: 3,
+        build: {
+          name: "Summoner",
+          race: "human",
+          classes: [{ classId: "wizard", level: 3 }],
+          background: "sage",
+          abilities: { STR: 10, DEX: 12, CON: 14, INT: 16, WIS: 12, CHA: 8 },
+        },
+        state,
+      })
+    );
+    return res.success ? res.doc : null;
+  }
+
+  it("round-trips a familiar-carrying doc byte-identically", () => {
+    const x = JSON.stringify({
+      schema: 3,
+      build: {
+        name: "Summoner",
+        race: "human",
+        classes: [{ classId: "wizard", level: 3 }],
+        background: "sage",
+        abilities: { STR: 10, DEX: 12, CON: 14, INT: 16, WIS: 12, CHA: 8 },
+      },
+      state: {
+        familiar: { monsterId: "bat", creatureType: "fey" },
+        companionHp: { "find-familiar": { current: 2 } },
+        companionVariant: { "ranger-beast-master-primal-companion": "beast-of-the-sky" },
+      },
+    });
+    const canonicalX = serializeCharacter(lift(parseCharacter(x)));
+    expect(serializeCharacter(lift(parseCharacter(canonicalX)))).toBe(canonicalX);
+  });
+
+  it("parses a well-formed familiar (incl. dismissed) onto the session", () => {
+    const doc = parseState({
+      familiar: { monsterId: "owl", creatureType: "celestial", dismissed: true },
+    });
+    expect(doc?.session.familiar).toEqual({
+      monsterId: "owl",
+      creatureType: "celestial",
+      dismissed: true,
+    });
+  });
+
+  it("absent fields stay absent (byte-identical to a doc that never set them)", () => {
+    const withNone = parseState({});
+    expect(withNone?.session.familiar).toBeUndefined();
+    expect(withNone?.session.companionVariant).toBeUndefined();
+  });
+
+  it("drops a malformed familiar (creatureType outside the closed swap set)", () => {
+    const doc = parseState({ familiar: { monsterId: "bat", creatureType: "beast" } });
+    expect(doc?.session.familiar).toBeUndefined();
+  });
+
+  it("drops a familiar with a non-string monsterId", () => {
+    const doc = parseState({ familiar: { monsterId: 42, creatureType: "fey" } });
+    expect(doc?.session.familiar).toBeUndefined();
+  });
+
+  it("KEEPS a stale/unknown monsterId (degrades quietly at render, not on parse)", () => {
+    const doc = parseState({
+      familiar: { monsterId: "pack-only-form", creatureType: "fiend" },
+    });
+    expect(doc?.session.familiar).toEqual({
+      monsterId: "pack-only-form",
+      creatureType: "fiend",
+    });
+  });
+});

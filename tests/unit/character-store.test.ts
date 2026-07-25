@@ -2342,3 +2342,104 @@ describe("characterStore — undo/redo stack integration (§5.4)", () => {
     expect(resolve(frozenLabel, () => "Spaventato")).toBe("Cast Bless (L1)");
   });
 });
+
+describe("characterStore — companion variant + Find Familiar summon", () => {
+  beforeEach(() => {
+    useCharacterStore.getState().setCharacter(null);
+  });
+
+  it("setCompanionVariant writes the pick and RESETS that companion's HP pool", () => {
+    const char = mockCharacter();
+    char.session.companionHp = { "ranger-beast-master-primal-companion": { current: 9 } };
+    useCharacterStore.getState().setCharacter(char);
+    useCharacterStore
+      .getState()
+      .setCompanionVariant("ranger-beast-master-primal-companion", "beast-of-the-sky");
+
+    const updated = useCharacterStore.getState().character;
+    expect(updated?.session.companionVariant).toEqual({
+      "ranger-beast-master-primal-companion": "beast-of-the-sky",
+    });
+    // A different beast = a different HP pool → the stale entry is cleared.
+    expect(
+      updated?.session.companionHp?.["ranger-beast-master-primal-companion"]
+    ).toBeUndefined();
+  });
+
+  it("summonFamiliar seeds session.familiar + companionHp; undo restores exactly", () => {
+    const char = mockCharacter();
+    useCharacterStore.getState().setCharacter(char);
+    const undo = useCharacterStore.getState().summonFamiliar("bat", "fey", 3);
+    expect(undo).not.toBeNull();
+
+    const after = useCharacterStore.getState().character;
+    expect(after?.session.familiar).toEqual({ monsterId: "bat", creatureType: "fey" });
+    expect(after?.session.companionHp?.["find-familiar"]).toEqual({ current: 3 });
+
+    undo?.();
+    const restored = useCharacterStore.getState().character;
+    expect(restored?.session.familiar).toBeUndefined();
+    expect(restored?.session.companionHp?.["find-familiar"]).toBeUndefined();
+  });
+
+  it("summonFamiliar with an active familiar adopts the new form (One Familiar Only)", () => {
+    const char = mockCharacter();
+    char.session.familiar = { monsterId: "bat", creatureType: "fey" };
+    char.session.companionHp = { "find-familiar": { current: 1 } };
+    useCharacterStore.getState().setCharacter(char);
+    useCharacterStore.getState().summonFamiliar("owl", "celestial", 1);
+
+    const after = useCharacterStore.getState().character;
+    expect(after?.session.familiar).toEqual({
+      monsterId: "owl",
+      creatureType: "celestial",
+    });
+    expect(after?.session.companionHp?.["find-familiar"]).toEqual({ current: 1 });
+  });
+
+  it("setFamiliarDismissed toggles the pocket-dimension flag both ways", () => {
+    const char = mockCharacter();
+    char.session.familiar = { monsterId: "cat", creatureType: "fey" };
+    useCharacterStore.getState().setCharacter(char);
+
+    useCharacterStore.getState().setFamiliarDismissed(true);
+    expect(useCharacterStore.getState().character?.session.familiar).toEqual({
+      monsterId: "cat",
+      creatureType: "fey",
+      dismissed: true,
+    });
+
+    useCharacterStore.getState().setFamiliarDismissed(false);
+    expect(useCharacterStore.getState().character?.session.familiar).toEqual({
+      monsterId: "cat",
+      creatureType: "fey",
+    });
+  });
+
+  it("dismissFamiliar clears both keys; undo restores both", () => {
+    const char = mockCharacter();
+    char.session.familiar = { monsterId: "raven", creatureType: "fiend" };
+    char.session.companionHp = { "find-familiar": { current: 2 } };
+    useCharacterStore.getState().setCharacter(char);
+
+    const undo = useCharacterStore.getState().dismissFamiliar();
+    expect(undo).not.toBeNull();
+    const after = useCharacterStore.getState().character;
+    expect(after?.session.familiar).toBeUndefined();
+    expect(after?.session.companionHp?.["find-familiar"]).toBeUndefined();
+
+    undo?.();
+    const restored = useCharacterStore.getState().character;
+    expect(restored?.session.familiar).toEqual({
+      monsterId: "raven",
+      creatureType: "fiend",
+    });
+    expect(restored?.session.companionHp?.["find-familiar"]).toEqual({ current: 2 });
+  });
+
+  it("dismissFamiliar is a no-op (null) with no familiar", () => {
+    const char = mockCharacter();
+    useCharacterStore.getState().setCharacter(char);
+    expect(useCharacterStore.getState().dismissFamiliar()).toBeNull();
+  });
+});

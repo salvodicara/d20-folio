@@ -251,7 +251,7 @@ describe("resolveSpellCastOptions — at-will invocation row", () => {
 // ── 4. Pact of the Chain: slotless Find Familiar cast ─────────────────────────
 
 describe("Pact of the Chain — slotless at-will Find Familiar", () => {
-  it("data wires both grants for find-familiar (CHA), prose keeps the special forms", () => {
+  it("data wires the spell + special-form grants for find-familiar (CHA), prose keeps the forms", () => {
     const inv = SRD_INVOCATIONS.find((i) => i.id === "pact-of-the-chain");
     expect(inv, "pact-of-the-chain exists").toBeDefined();
     const grants = inv?.grants ?? [];
@@ -263,13 +263,25 @@ describe("Pact of the Chain — slotless at-will Find Familiar", () => {
       (g): g is Extract<Grant, { type: "always-prepared-spell" }> =>
         g.type === "always-prepared-spell"
     );
+    const forms = grants.find(
+      (g): g is Extract<Grant, { type: "familiar-forms" }> => g.type === "familiar-forms"
+    );
     expect(atWill?.spellId).toBe("find-familiar");
     expect(atWill?.casterAbility).toBe("CHA");
     expect(prepared?.spellId).toBe("find-familiar");
     expect(prepared?.spellAbility).toBe("CHA");
-    // The special familiar forms + "forgo an attack" remain prose (no stat-block
-    // engine in scope) — they must NOT have produced extra grants.
-    expect(grants).toHaveLength(2);
+    // The seven SRD special forms are now MODELED via the familiar-forms grant
+    // (the form picker offers them); the "forgo an attack" clause stays prose.
+    expect(forms?.monsterIds).toEqual([
+      "imp",
+      "pseudodragon",
+      "quasit",
+      "skeleton",
+      "sphinx-of-wonder",
+      "sprite",
+      "venomous-snake",
+    ]);
+    expect(grants).toHaveLength(3);
     expect(srd("invocation", inv?.id ?? "", "description", "en")).toContain(
       "special forms"
     );

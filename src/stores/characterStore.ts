@@ -38,6 +38,7 @@ import {
   revertBuildFromPrior,
 } from "@/lib/polymorph";
 import { getBeast } from "@/data/beasts";
+import { FIND_FAMILIAR_SPELL_ID, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
 import {
   concentrationSaveDc,
@@ -378,6 +379,36 @@ interface CharacterState {
   dropPolymorphForm: () => (() => void) | null;
   /** Set a summoned companion's current HP (Steel Defender / Eldritch Cannon). */
   setCompanionHp: (featureId: string, current: number) => void;
+  /**
+   * Pick a Beast Master companion's stat-block variant (Beast of the Land / Sea /
+   * Sky), keyed by the granting feature id. Switching variants RESETS that
+   * companion's `companionHp` entry — a different beast is a different HP pool, and
+   * clamping the old current-HP would silently misreport (override-first).
+   */
+  setCompanionVariant: (featureId: string, variantId: string) => void;
+  /**
+   * Summon a Find Familiar of `monsterId` as the chosen `creatureType` (the 2024
+   * type swap). Seeds `companionHp["find-familiar"]` to `maxHp` (the CALLER resolves
+   * the form's max HP from the corpus — the store stays corpus-free) and clears any
+   * `dismissed` flag. Re-casting with a familiar active adopts the new form (RAW
+   * "One Familiar Only"). Returns an undo restoring the prior familiar + HP entry,
+   * or `null` (readonly / no character).
+   */
+  summonFamiliar: (
+    monsterId: string,
+    creatureType: FamiliarCreatureType,
+    maxHp: number
+  ) => (() => void) | null;
+  /** Toggle the familiar's pocket-dimension chip (the Magic-action dismiss/recall
+   *  pair — informational, no action-economy enforcement). No-op with no familiar. */
+  setFamiliarDismissed: (dismissed: boolean) => void;
+  /**
+   * Dismiss the familiar forever: delete `session.familiar` AND its
+   * `companionHp["find-familiar"]` entry. Returns an undo restoring both, or `null`
+   * (readonly / no familiar). Used by "Dismiss forever" and the 0-HP "disappears"
+   * affordance (the player confirms — the app never destroys unconfirmed state).
+   */
+  dismissFamiliar: () => (() => void) | null;
   /**
    * S4 — on rolling Initiative, apply every `initiative-tracker-topup`
    * (Persistent Rage, the maneuver subclass's Relentless, Superior Inspiration, Archdruid,
@@ -1862,6 +1893,87 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         },
       },
     });
+  },
+
+  setCompanionVariant: (featureId, variantId) => {
+    if (get().readonly) return;
+    const { character } = get();
+    if (!character) return;
+    // A different variant is a different beast = a different HP pool; RESET the
+    // companion's HP entry so a stale current can't misreport the new max.
+    const { [featureId]: _dropped, ...restHp } = character.session.companionHp ?? {};
+    void _dropped;
+    set({
+      character: {
+        ...character,
+        session: {
+          ...character.session,
+          companionVariant: {
+            ...(character.session.companionVariant ?? {}),
+            [featureId]: variantId,
+          },
+          companionHp: restHp,
+        },
+      },
+    });
+  },
+
+  summonFamiliar: (monsterId, creatureType, maxHp) => {
+    if (get().readonly) return null;
+    const { character } = get();
+    if (!character) return null;
+    const before = character; // undo = restore the exact prior familiar + HP entry
+    set({
+      character: {
+        ...character,
+        session: {
+          ...character.session,
+          familiar: { monsterId, creatureType },
+          companionHp: {
+            ...(character.session.companionHp ?? {}),
+            [FIND_FAMILIAR_SPELL_ID]: { current: Math.max(1, maxHp) },
+          },
+        },
+      },
+    });
+    return () => set({ character: before });
+  },
+
+  setFamiliarDismissed: (dismissed) => {
+    if (get().readonly) return;
+    const { character } = get();
+    const familiar = character?.session.familiar;
+    if (!character || !familiar) return;
+    const { dismissed: _prev, ...rest } = familiar;
+    void _prev;
+    set({
+      character: {
+        ...character,
+        session: {
+          ...character.session,
+          familiar: dismissed ? { ...rest, dismissed: true } : rest,
+        },
+      },
+    });
+  },
+
+  dismissFamiliar: () => {
+    if (get().readonly) return null;
+    const { character } = get();
+    if (!character?.session.familiar) return null;
+    const before = character; // undo = re-summon the exact prior familiar + HP
+    const { [FIND_FAMILIAR_SPELL_ID]: _hp, ...restHp } =
+      character.session.companionHp ?? {};
+    void _hp;
+    const { familiar: _f, ...restSession } = character.session;
+    void _f;
+    set({
+      character: {
+        ...character,
+        session: { ...restSession, companionHp: restHp },
+      },
+    });
+    return () => set({ character: before });
   },
 
   applyInitiativeTrackerTopUps: () => {

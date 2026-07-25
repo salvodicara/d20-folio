@@ -22,6 +22,7 @@ import type {
   AlignmentId,
 } from "@/types/ids";
 import type { NonEmptyString } from "@/lib/non-empty-string";
+import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 
 // ============================================================
 // SRD Reference Types (stored on character, resolved at render)
@@ -865,6 +866,30 @@ export interface SessionState {
    * feature's `companion` stat block. Optional / absent = full HP.
    */
   companionHp?: Record<string, { current: number }>;
+  /**
+   * Play-time pick of a companion stat-block variant (Beast Master: Beast of the
+   * Land / Sea / Sky), keyed by the granting feature id → the chosen `variantId`.
+   * Realizes the seam `CompanionStatBlock.variants` documents; absent / unknown id
+   * ⇒ the block's default variant (`selectCompanionVariant` already guarantees it).
+   * ADDITIVE-ONLY (absent on every non–Beast Master doc, so the envelope stays
+   * byte-identical).
+   */
+  companionVariant?: Record<string, string>;
+  /**
+   * The active Find Familiar summon. Present ⇔ a familiar exists. `monsterId` is
+   * the chosen form's {@link import("@/data/types").MonsterStatBlock} id (a CR-0
+   * Beast or an unlocked Pact-of-the-Chain special form); `creatureType` is the
+   * 2024 type swap — the familiar "is a Celestial, Fey, or Fiend (your choice)
+   * instead of a Beast" (SRD 5.2.1, Find Familiar). `dismissed` = temporarily sent
+   * to its pocket dimension (Magic action). Current HP rides
+   * `companionHp["find-familiar"]` (max derives from the form's `hp.average` at
+   * render — one source, golden rule 6). ADDITIVE-ONLY.
+   */
+  familiar?: {
+    monsterId: string;
+    creatureType: FamiliarCreatureType;
+    dismissed?: true;
+  };
   /**
    * Override-first hook for manifested weapons (Soulknife Psychic Blades), keyed
    * by the manifested weapon's stable attack-row id. Mirrors a carried weapon's
