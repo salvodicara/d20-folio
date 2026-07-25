@@ -6,8 +6,12 @@ allowBuilds:
 # their patched release, scoped by the "<fixver" key so only the vulnerable
 # instance is touched (an already-patched or higher-major copy is left alone) and
 # pinned to the patched version within the SAME major so no consumer is
-# cross-major re-resolved. Remove an entry once every dependent's own range floats
-# past the patched version on its own.
+# cross-major re-resolved. The "parent>child" keys are the second form: when the
+# vulnerable package has NO patched release its consumer can take, the fix is to
+# move that one PARENT to the release that already depends on a patched child —
+# scoped to the named parent so no other consumer of the child is touched.
+# Remove an entry once every dependent's own range floats past the patched
+# version on its own.
 overrides:
   "websocket-driver@<0.7.5": "0.7.5"
   "form-data@<2.5.6": "2.5.6"
@@ -17,6 +21,7 @@ overrides:
   "uuid@<11.1.1": "11.1.1"
   "js-yaml@<3.15.0": "3.15.0"
   "js-yaml@>=4.0.0 <4.3.0": "4.3.0"
-  "brace-expansion@<2.1.2": "2.1.2"
-  "brace-expansion@>=3.0.0 <5.0.7": "5.0.7"
+  "brace-expansion@>=3.0.0 <5.0.8": "5.0.8"
+  "jake>filelist": "2.0.2"
+  "rimraf>glob": "11.1.0"
   "fast-uri@<3.1.4": "3.1.4"

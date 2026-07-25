@@ -447,6 +447,81 @@ deliberately avoids ("toggle NOT on the header"); that earlier ruling still gove
 header is all that shows when collapsed, so it is the natural affordance (the distinction is now
 recorded in `DESIGN.md`).
 
+## Shipped — Dependabot security remediation (2026-07-25)
+
+`brace-expansion` is now `5.0.8` EVERYWHERE in both trees — zero findings left (GHSA-mh99-v99m-4gvg,
+high — DoS via unbounded expansion length, an out-of-memory process crash; vulnerable `<=5.0.7`,
+patched only in `5.0.8`, which adds the `EXPANSION_MAX_LENGTH` output cap). It took two different
+kinds of override, because the advisory spans EVERY published line:
+
+- **The `5.0.7` copy — a straight version override.** The advisory swallowed the pin the 2026-07-21
+  round had set, so the existing scoped entry was re-pointed in each tree to
+  `"brace-expansion@>=3.0.0 <5.0.8": "5.0.8"` (`pnpm-workspace.yaml` + `functions/package.json`),
+  moving the copy the root dev tooling shares (eslint / typescript-eslint via
+  `@eslint/config-array`, and `vite-plugin-pwa` → `workbox-build` → `glob@11`, all through
+  `minimatch@10.2.5`) and the same one in `functions/` (`eslint` / `typescript-eslint` →
+  `minimatch@10.2.5`).
+- **The `2.1.2` copies — a scoped PARENT override.** No version override can reach these: the fix
+  exists only on 5.x, where the entry point exports a NAMED `expand` instead of the pre-5.x default
+  function export, and `minimatch@5.1.9` (`require('brace-expansion')`) / `minimatch@9.0.9`
+  (`__importDefault`) consume the default — forcing `5.0.8` there throws
+  `TypeError: (0, brace_expansion_1.default) is not a function` on the first `braceExpand` (verified,
+  not assumed). Upstream had already moved one level up, so the parents move instead, each scoped to
+  its single consumer so the blast radius is exactly one edge: `"jake>filelist": "2.0.2"` (filelist
+  1.0.6 → 2.0.2, which depends on `minimatch ^10.2.1`; `jake@10.9.4` is filelist's only consumer in
+  the lock) and `"rimraf>glob": "11.1.0"` at root plus the npm-nested `"rimraf": { "glob": "11.1.0" }`
+  in `functions/` (`rimraf@5.0.10` is `glob@10.5.0`'s only consumer in both locks; `glob@11.1.0` is
+  the copy the root tree already carried for `workbox-build`, so root simply dedupes onto it).
+
+That closes all four chains: root `vite-plugin-pwa → workbox-build → @trickfilm400/rollup-plugin-off-main-thread
+→ ejs → jake → filelist → minimatch`, root `firebase-admin → @google-cloud/firestore → google-gax →
+(gaxios → gcp-metadata → google-auth-library →) rimraf@5 → glob → minimatch`, and the same google-gax
+chain in `functions/` via `@google-cloud/billing`, alongside the eslint chains. The now-dead
+`"brace-expansion@<2.1.2": "2.1.2"` entry was DELETED from `pnpm-workspace.yaml` — no 2.x copy
+survives anywhere, and `2.1.2` is itself inside this advisory's range, so leaving it would have
+pinned a vulnerable version for the next dependent that wandered in.
+
+**Function verified per parent, in OUR trees** (an audit number is not proof a swapped parent still
+works): `require('jake')` loads and `jake.FileList` / `filelist@2.0.2` glob real files including a
+brace pattern (`lib/{ejs,utils}.js` → both files), resolving `filelist → minimatch@10.2.5 →
+brace-expansion@5.0.8`; `rimraf@5.0.10` + `glob@11.1.0` performs both a glob-mode selective delete
+(`x/**/*.{log,tmp}` removes the logs, leaves `keep.txt`) and a recursive root delete, in each tree;
+and in `functions/` the production consumers `google-gax`, `firebase-admin` and `@google-cloud/billing`
+all load clean. The full gate exercises the same paths (`just ci`'s production build runs
+workbox-build's globbing; the functions lint/build/test lane runs green).
+
+**Exposure, stated honestly.** At root every chain was build-time only (eslint config globbing,
+workbox file globbing, and `firebase-admin` is a root devDependency used by `scripts/`) — nothing
+brace-expansion-bearing has ever reached the browser bundle. In `functions/` the 2.1.2 copy was NOT
+build-time: it sat in the PRODUCTION dependency tree (`@google-cloud/billing`/`firebase-admin` →
+`google-gax` → `rimraf` → `glob@10` → `minimatch@9`), i.e. it shipped inside the deployed Cloud
+Function. Even there the risk was library-internal — the brace patterns expanded are authored by
+`google-gax`'s own cleanup code, never user-supplied or network-fed, so there was no
+attacker-controlled path into the unbounded expansion — but "build-time only" would have been the
+wrong claim, and the production copy is now `5.0.8` regardless.
+
+Lockfiles regenerated with the minimal command and the diffs proved to contain ONLY that movement:
+`pnpm-lock.yaml` +15/−138 and `functions/package-lock.json` +40/−216 for the whole commit
+(`git show --numstat`) — of which the version re-point above accounts for 6/6 and 4/4, and the
+parent overrides for the rest. Root: the two override lines plus the orphaned `glob@10` /
+`minimatch@5.1.9` / `minimatch@9.0.9` / `brace-expansion@2.1.2` subtree falling out (`jackspeak@3`,
+`path-scurry@1`, `lru-cache@10`, `@isaacs/cliui@8`, `string-width@5`, `wrap-ansi@8`, the cjs shims);
+`functions/`: exactly `glob` 10.5.0 → 11.1.0 with its own deps (`jackspeak` 3→4, `path-scurry` 1→2,
+`lru-cache` 10→11, `@isaacs/cliui` 8→9) and the removal of the glob-scoped `minimatch@9` /
+`brace-expansion@2.1.2`. Nothing else re-resolved — no rollup/terser/babel/
+browserslist drift — and both were validated by a clean `rm -rf node_modules` + `pnpm install
+--frozen-lockfile` / `npm ci`. Nothing bumped that was not named above: `minimatch` is a single
+10.2.5 everywhere, `rimraf` stays 5.0.10, `jake` 10.9.4, `google-gax` 5.0.7, `firebase-admin` 14.0.0,
+`eslint` 10.4.0 (root) / 10.4.1 (functions).
+
+Verification: `pnpm audit` at root and `npm audit` in `functions/` report ZERO `brace-expansion`
+findings, and `npm audit --omit=dev` in `functions/` reports zero vulnerabilities of any kind (the
+production Cloud-Function tree is clean). `just ci` green; the `functions/` lint + build + test lane
+green. Two unrelated advisories surfaced in the same sweep and stay OPEN, out of scope for this
+remediation: `react-router` GHSA-qwww-vcr4-c8h2 (RSC-mode CSRF, `>=7.12.0 <8.3.0` — patched only in
+8.x, a major bump; this client-side Data-Mode SPA has no RSC/server surface) and, in `functions/`,
+`postcss` GHSA-r28c-9q8g-f849 (source-map path traversal, a vitest dev-tooling transitive).
+
 ## Shipped — Dependabot security remediation (2026-07-24)
 
 Cleared the two open Dependabot alerts, both the same advisory (GHSA-v2hh-gcrm-f6hx, high — `fast-uri`
