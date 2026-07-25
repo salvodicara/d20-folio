@@ -381,6 +381,41 @@
   --amethyst-500: #6b3d96;
   --amethyst-700: #43245d;
   --amethyst-900: #21132d;
+
+  /* The dark HALO every on-art ink pairs with — ONE token, and now ONE mechanism,
+     in BOTH themes. Loose text on the candlelit backdrop is grounded by this halo
+     and by nothing else: light also FLIPS its ink (dark ink vanishes on dark art),
+     dark keeps its own inks and needs only the ground. The halo is inherited from
+     `.on-art-scope` and neutralised at every surface boundary, so it reaches loose
+     text app-wide from two rules instead of being restated per register.
+
+     Why dark needs it at all: the premise "the art is dark, so light ink is safe"
+     is false — our backdrops have large BRIGHT regions, and against them dark's own
+     `--text-muted` measured 1.64:1 on the hub's section counts and its gold rubric
+     1.95:1. A tight dark micro-edge is what the a11y gate credits as the backing.
+
+     Re-struck for the DAYLIGHT plates (the sibling-plate rebuild): the old
+     four-direction 1px offset copies were a hard stroke — right on the night art,
+     but on the honey/amber morning plates every loose label read as OUTLINED "game
+     subtitle" text. The halo is a tight dark micro-edge plus a soft lifted umber
+     shadow, so on-art text reads as gilt lettering catching light, not a sticker
+     with a border. */
+  /* The on-backdrop INK — warm illuminated parchment, the one colour that reads as
+     gilt lettering on the candlelit scene. Light FLIPS its whole loose vocabulary to
+     it (dark ink vanishes on dark art); dark keeps its own inks, but a CONTROL that
+     sits on the backdrop takes this ink in both themes, because a control must be
+     self-backed and legible wherever the scene happens to be bright. */
+  --text-on-backdrop: #f8f1de;
+  /* The GROUND a self-backing on-art control paints for itself. A halo grounds INK;
+     it cannot ground an EDGE, so a chip or a dashed affordance loose on the scene
+     needs a real (translucent) plate under it or its border dissolves across the
+     bright half of the art — the "+ Attach a character" affordance did, in both
+     themes, and the treasury total chip measured 1.46:1 in dark. */
+  --on-art-plate: color-mix(in srgb, #140d04 66%, transparent);
+
+  --on-art-halo:
+    0 0 1px rgba(20, 13, 4, 0.95), 0 0 2px rgba(20, 13, 4, 0.85),
+    0 1px 3px rgba(24, 16, 5, 0.75), 0 2px 10px rgba(28, 19, 6, 0.5);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -955,7 +990,6 @@
      light gold patches (the dark edge separates it) AND the dark art (the bright
      fill pops), and the outline is what clears the a11y gate (bright fg vs the dark
      outline axe credits as the backing). Body = warm white; titles = bright gilt. */
-  --text-on-backdrop: #f8f1de;
   --text-on-backdrop-title: var(--gold-leaf-100);
   /* Error/required ink ON the backdrop: the field's --semantic-danger is the deep
      vermilion-700 ink (vanishes on the dark art exactly like the field text). This
@@ -963,20 +997,6 @@
      the dark scene (relative luminance ≈ 0.49, above the on-art-ink guard's 0.45
      floor) while still unmistakably "danger" next to the parchment body ink. */
   --text-on-backdrop-danger: #f2a99c;
-  /* The dark HALO every on-art ink pairs with — ONE token so the treatment can
-     never drift between the `.on-art` leaf, the `.on-art-scope` flips, and the
-     on-art control recipes. Re-struck for the DAYLIGHT plates (the sibling-plate
-     rebuild): the old four-direction 1px offset copies were a hard stroke —
-     right on the night art it borrowed from dark, but on the honey/amber morning
-     plates every loose label read as OUTLINED "game subtitle" text (the
-     scruffy-stroke failure). The daylight halo is a tight dark micro-edge (the
-     a11y separation the bright ink needs on a sunlit patch) plus a soft lifted
-     umber shadow, so on-art text reads as gilt lettering catching light, not a
-     sticker with a border. Contrast still comes from the dark edge: the 2px
-     core sits at the same near-black depth as before. */
-  --on-art-halo:
-    0 0 1px rgba(20, 13, 4, 0.95), 0 0 2px rgba(20, 13, 4, 0.85),
-    0 1px 3px rgba(24, 16, 5, 0.75), 0 2px 10px rgba(28, 19, 6, 0.5);
 
   /* Daylight sibling plates (DESIGN.md §13 — owner-generated batch 3): light no
      longer borrows the dark candlelit plates — each scene token re-points to the

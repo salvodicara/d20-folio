@@ -990,6 +990,54 @@ describe("the chrome system — L3, state changes light and colour only", () => 
   });
 
   /**
+   * A CONTROL LOOSE ON THE BACKDROP SELF-BACKS.
+   *
+   * The rendered on-art battery measures INK against the real composited ground and
+   * credits the halo that grounds it — but nothing there can see an EDGE. A dashed
+   * affordance or a chip outline dissolving across the bright half of the art leaves
+   * that whole battery green (proven: deleting this recipe does not fail it). So the
+   * recipe is pinned here instead, where the stylesheet is the artifact.
+   */
+  it("gives every on-art control its own ground, not just its ink", () => {
+    const rule = /\.on-art-scope \.party-dm-attach \{([^}]*)\}/.exec(folio)?.[1] ?? "";
+    const chip =
+      /\.on-art-scope \.badge\.muted:not\([^{]*\{([^}]*)\}/.exec(folio)?.[1] ?? "";
+    expect(
+      rule,
+      "MISSING the self-backing recipe for the controls that sit LOOSE on the " +
+        "candlelit scene. A halo grounds INK; it cannot ground an EDGE, so a chip or a " +
+        "dashed affordance on the art paints its own translucent plate — in BOTH " +
+        "themes — or its border dissolves on the bright half of the backdrop."
+    ).not.toBe("");
+    expect(rule).toContain("var(--on-art-plate)");
+    expect(rule).toContain("var(--text-on-backdrop)");
+    expect(
+      chip,
+      "…and the same for the treasury's gp-total cartouche, whose theme-agnostic " +
+        "plate rule carries the surface exclusion so it can never reach a card-bound chip."
+    ).toContain("var(--on-art-plate)");
+    // …and the halo itself is theme-agnostic: the premise "the art is dark, so light
+    // ink is safe" cost dark a whole class of defect (1.64:1 on the hub's counts).
+    expect(
+      /(^|[^\]])\.on-art,\s*\.on-art-scope,/.test(folio) &&
+        /\.site-footer \{ text-shadow: var\(--on-art-halo\); \}/.test(folio),
+      "The on-art halo went back to being a LIGHT-theme device. It is the ONE ground " +
+        "for loose ink in BOTH themes — our backdrops carry large bright regions, and " +
+        "dark's own `--text-muted` measured 1.64:1 against them."
+    ).toBe(true);
+    // A form control does not inherit `text-shadow` from the UA stylesheet, so the
+    // scope has to hand the halo back explicitly or it stops at every on-art button.
+    expect(
+      /\.on-art-scope :is\(button, input, select, textarea\) \{ text-shadow: inherit; \}/.test(
+        folio
+      ),
+      "MISSING the form-control halo hand-back. `<button>` resets `text-shadow`, so " +
+        "the scope's halo stops dead at every on-art control and leaves its label the " +
+        "only ungrounded ink on the page."
+    ).toBe(true);
+  });
+
+  /**
    * …and the other half of the slot: a rung that SETS `--state-veil` on a recipe
    * whose resting rule never composes it is a wash that silently does nothing. Both
    * halves are derived from the stylesheet, so neither can be satisfied by a list.

@@ -2271,16 +2271,35 @@ backdrop` + `--text-on-backdrop-title` + `--text-on-backdrop-danger` for error/r
    loose label read as OUTLINED "game subtitle" text. It is now a tight dark micro-edge (the a11y
    separation the bright ink needs on a sunlit patch) plus a soft lifted umber shadow, so on-art
    text reads as gilt lettering catching light. The bright fill pops on dark patches; the dark edge
-   separates it on the sunlit ones and is what clears the a11y gate. (Dark already uses light
-   loose-text, so `.on-art` is light-only.)
+   separates it on the sunlit ones and is what clears the a11y gate.
+
+   **The halo is not a light-theme device, and it is ONE mechanism.** "The art is dark, so light ink
+   is safe" is false — our backdrops carry large BRIGHT regions, and measured against the real
+   composited pixels dark's own `--text-muted` read **1.64:1** on the campaign hub's section counts,
+   its gold rubric 1.95:1 and the treasury total chip 1.46:1. So `.on-art` / `.on-art-scope` carry
+   the halo in BOTH themes and hand it down by **inheritance** (`text-shadow` inherits), with the
+   surface-hygiene rule taking it back at every card / plate / filled-control boundary; light
+   additionally FLIPS its loose ink, dark keeps its own. Two rules reach every loose register
+   app-wide instead of each register restating the treatment. A `<button>` does not inherit
+   `text-shadow` from the UA stylesheet, so the scope hands it back explicitly.
+
+   **A halo grounds INK; it cannot ground an EDGE.** A chip or a dashed affordance loose on the
+   scene therefore paints its own translucent `--on-art-plate` in both themes — the "+ Attach a
+   character" affordance and the treasury gp-total chip do — or its border dissolves across the
+   bright half of the art. This is the same self-backing law as the gilt coin below, and it is
+   pinned in `chrome-system.guard.test.ts`, because the rendered battery measures ink and cannot
+   see a border.
    - ✅ **GUARDED MANIFEST-WIDE (ON-ART-INK, 2026-06-12).** This used to be the #1 recurring light
      bug ("apply the recipe when you add loose-on-backdrop UI" relied on memory; the member-sheet
      back button + the wizard page-turn captions/facet chips shipped dark-on-dark). It can no longer
      ship unnoticed: **`tests/e2e/on-art-ink.spec.ts`** sweeps EVERY surface in the shared manifest
-     in light theme, finds each visible text element that sits on the RAW backdrop (no opaque
-     background in its ancestor chain up to `<body>`), and FAILS unless its computed ink is
-     light-legible (relative luminance ≥ 0.45 — the on-backdrop inks pass ≥ 0.65, every standard
-     light ink fails ≤ 0.25). Text inside any card/leaf/chip/input is never probed (no false
+     and runs TWO legs. The IDENTITY leg (light) finds each visible text element on the RAW backdrop
+     and fails unless its ink is light-legible (relative luminance ≥ 0.45 — the on-backdrop inks
+     pass ≥ 0.65, every standard light ink fails ≤ 0.25). The CONTRAST leg runs in **both themes**
+     and measures 4.5:1 against the ground the page actually paints: it screenshots the surface with
+     every text transparent, samples the composite under each text box, and credits a tight
+     near-opaque halo as the ground where one is declared. Its stated blind spots — text below the
+     fold, and any EDGE — are recorded in the spec's own header. Text inside any card/leaf/chip/input is never probed (no false
      positives). A red `on-art ink:` test = put the element in the canonical treatment, never a
      one-off colour:
      - loose **text** → the region under `.on-art-scope` (preferred), or the `.on-art` class on the
@@ -2321,6 +2340,7 @@ backdrop` + `--text-on-backdrop-title` + `--text-on-backdrop-danger` for error/r
      rely on the `.on-art-scope` ancestor flip (it restyles loose text per context and never matches
      surfaces). Guarded: `on-art-scope.guard.test.ts` fails on any hardcoded `on-art` under
      `src/components/`.
+
 6. **AA engineered per token, per theme.** The `-ink` variants, the deepened light muted/faint inks
    (tuned to clear AA on the deep field), and the light `--focus-ring` = gold-900 all hold the AA +
    10px floor in both themes. The semantic mapping (action=verdigris, fire=red, …) is theme-invariant.

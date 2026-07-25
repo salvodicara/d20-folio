@@ -278,6 +278,50 @@ svg.icon[stroke],
   border-color: color-mix(in oklab, var(--gold-leaf-700) 55%, transparent);
   box-shadow: inset 0 1px 0 color-mix(in oklab, white 45%, transparent);
 }
+/* ── THE ONE HALO MECHANISM (both themes) ────────────────────────────────────
+   Loose ink on the candlelit backdrop is grounded by ONE dark halo, and the scope
+   hands it down by INHERITANCE — `text-shadow` inherits, so two rules reach every
+   loose descendant app-wide instead of each register restating the treatment. The
+   surface-hygiene rule below takes it back at every card / plate / filled-control
+   boundary, where the surface itself is the ground.
+
+   It is not a light-theme device. The premise the light-only battery shipped on —
+   "the art is dark, so light ink is safe" — is false: the backdrops carry large
+   BRIGHT regions, and measured against them dark's own `--text-muted` read 1.64:1
+   on the hub's section counts and its gold rubric 1.95:1. Light additionally FLIPS
+   its ink (dark ink vanishes on dark art); dark keeps its inks and takes only the
+   ground. Measured by the DARK leg of `tests/e2e/on-art-ink.spec.ts`. ────────── */
+.on-art,
+.on-art-scope,
+/* the two loose registers that live OUTSIDE any scope: an unframed realm masthead
+   (a framed one sits on its own plate) and the site footer's colophon, which sits in
+   the void on every page */
+.page-head:not(.framed),
+.site-footer {
+  text-shadow: var(--on-art-halo);
+}
+/* A FORM CONTROL breaks the chain: the UA stylesheet resets `text-shadow` on
+   `<button>` / `<input>`, so the scope's halo stopped dead at every on-art control
+   and left its label the only ungrounded ink on the page ("+ Attach a character"
+   measured 1.42:1). Hand it back. The surface-hygiene rule below still out-ranks
+   this for a FILLED button, whose own metal is the ground. */
+.on-art-scope :is(button, input, select, textarea) {
+  text-shadow: inherit;
+}
+
+/* ── A CONTROL ON THE BACKDROP SELF-BACKS (DESIGN.md §13.5) ──────────────────
+   The halo grounds INK; it cannot ground an EDGE. A dashed affordance loose on the
+   scene therefore paints its own translucent plate, in BOTH themes, or its border
+   dissolves across the bright half of the art — which is exactly what the "+ Attach
+   a character (optional)" affordance did, at 1.42:1. Its sibling, the treasury's
+   gp-total cartouche, takes the same `--on-art-plate` on its own (surface-excluded)
+   rule below. One ground, one edge, one ink. ── */
+.on-art-scope .party-dm-attach {
+  background-color: var(--on-art-plate);
+  border-color: color-mix(in oklab, var(--text-on-backdrop) 50%, transparent);
+  color: var(--text-on-backdrop);
+}
+
 /* `.on-art` — text that sits directly on the candlelit backdrop (not on a card).
    In light theme the dark field-ink vanished on the prominent 0.55 art; this paints
    such text the warm illuminated-parchment `--text-on-backdrop` + a soft dark halo,
@@ -287,7 +331,6 @@ svg.icon[stroke],
    LEAF text element, never a wrapper, so card text below it is never recoloured. */
 [data-theme="light"] .on-art {
   color: var(--text-on-backdrop);
-  text-shadow: var(--on-art-halo);
 }
 /* ON-ART SCOPE (light) — a region whose LOOSE content sits directly on the
    candlelit backdrop (the creation-wizard column, the campaign hub, the settings
@@ -380,7 +423,6 @@ svg.icon[stroke],
     )
   ) {
   color: var(--text-on-backdrop);
-  text-shadow: var(--on-art-halo);
 }
 [data-theme="light"]
   .on-art-scope
@@ -457,7 +499,6 @@ svg.icon[stroke],
     )
   ) {
   color: var(--text-on-backdrop-title);
-  text-shadow: var(--on-art-halo);
 }
 /* LIGHT FOIL — the gold-foil section titles + the treasury GP-total cartouche must
    read as CRISP struck gold on the candlelit backdrop, not the muddy dark smear the
@@ -477,12 +518,15 @@ svg.icon[stroke],
     -1px -1px 0 rgba(20, 13, 3, 0.88),
     0 1px 1px rgba(255, 247, 216, 0.42);
 }
-/* The plate is for the LOOSE treasury GP-total cartouche only — it must NOT reach a
-   card-bound `.badge.muted` (e.g. the party-encounter monster ×N token badge on
-   `.party-card`), which keeps its plain card-surface badge recipe. Same SURF
-   exclusion (minus `.badge`, so the chip isn't self-excluded) as the ink flip below. */
-[data-theme="light"]
-  .on-art-scope
+/* A CONTROL ON THE BACKDROP SELF-BACKS, IN BOTH THEMES (DESIGN.md §13.5). The halo
+   grounds INK; it cannot ground an EDGE, so this chip paints its own translucent
+   plate or its border dissolves across the bright half of the art — it measured
+   1.46:1 in DARK, where nothing was probing. The plate is for the LOOSE treasury
+   GP-total cartouche only — it must NOT reach a card-bound `.badge.muted` (the
+   party-encounter monster ×N token badge on `.party-card`), which keeps its plain
+   card-surface badge recipe. Same SURF exclusion (minus `.badge`, so the chip isn't
+   self-excluded) as the ink flip below. */
+.on-art-scope
   .badge.muted:not(
     :where(
         .opt-cell,
@@ -538,8 +582,9 @@ svg.icon[stroke],
       [class*="bg-"]
     )
   ) {
-  background: color-mix(in oklab, #1a1206 60%, transparent);
+  background: var(--on-art-plate);
   border-color: color-mix(in oklab, var(--gold-leaf-300) 58%, transparent);
+  color: var(--text-on-backdrop);
   text-shadow: 0 1px 1px rgba(20, 13, 3, 0.5);
 }
 /* Error/required ink loose on the backdrop (the wizard's required-field "*" and
@@ -580,7 +625,6 @@ svg.icon[stroke],
       *
   ) {
   color: var(--text-on-backdrop-danger);
-  text-shadow: var(--on-art-halo);
 }
 /* Facet chips (`.fchip`) loose on the backdrop (the level-up boon's feat-category
    facets): the chip is an unfilled carved outline, so in light theme its dark ink
@@ -622,7 +666,6 @@ svg.icon[stroke],
   ) {
   color: var(--text-on-backdrop);
   border-color: color-mix(in oklab, var(--text-on-backdrop) 45%, transparent);
-  text-shadow: var(--on-art-halo);
 }
 [data-theme="light"]
   .on-art-scope
@@ -763,17 +806,15 @@ svg.icon[stroke],
   ) {
   color: var(--text-on-backdrop);
   border-color: color-mix(in oklab, var(--text-on-backdrop) 45%, transparent);
-  text-shadow: var(--on-art-halo);
 }
 /* Inheritance hygiene — every surface establishes a clean no-outline baseline, so
-   text inside a card (or a card nested under a flipped loose ancestor) can never
-   INHERIT the backdrop outline. This is the ONLY surface rule left: the flip above
-   never MATCHES card text (the `:not(:where(SURF) …)` exclusion), so colour needs no
-   reset — this only neutralises inherited text-shadow at the card boundary, and
-   descendants inherit `none` from here. (Replaces the former flip-then-undo reset
-   layer — deleted as dead code once the flip stopped reaching card text.) */
-[data-theme="light"]
-  .on-art-scope
+   text inside a card (or a card nested under a lit loose ancestor) can never INHERIT
+   the backdrop halo. This is the OTHER half of the one halo mechanism above: the
+   scope hands the halo down to every loose descendant, and this rule takes it back
+   at each surface boundary, where the surface itself is the ground. A FILLED button
+   is a surface too (its label sits on struck metal, not on the scene); the frameless
+   ghost tier is not, and keeps the halo. Theme-agnostic, because the halo is. */
+.on-art-scope
   :is(
     .opt-cell,
     .info-card,
@@ -799,6 +840,7 @@ svg.icon[stroke],
     .vital,
     .input,
     .seg,
+    .btn:not(.ghost),
     [class*="bg-"]
   ) {
   text-shadow: none;
@@ -814,7 +856,6 @@ svg.icon[stroke],
    are always loose; page heads are scoped by `:not(.framed)`). */
 [data-theme="light"] .page-head:not(.framed) :is(.page-title, .page-head-hint) {
   color: var(--text-on-backdrop);
-  text-shadow: var(--on-art-halo);
 }
 .sec-meta {
   font-family: var(--font-numeric);
@@ -17344,7 +17385,6 @@ button.econ-tok-filter:active .econ-disc {
 }
 [data-theme="light"] :is(.site-footer-colophon, .site-footer-ver, .site-footer-link) {
   color: var(--text-on-backdrop);
-  text-shadow: var(--on-art-halo);
 }
 [data-theme="light"] .site-footer-rule {
   background: linear-gradient(

@@ -53,8 +53,45 @@
  * `.btn.ghost.on-art` treatment — see DESIGN.md § On-art ink. The fix for a coin
  * failure is to strike it as a self-backed OPAQUE gilt disc (DESIGN §10).
  *
- * Dark theme needs no probe: its standard ink is already light. Desktop-only:
- * ink colours don't vary by viewport.
+ * ── THE DARK LEG (and why the light-only premise was wrong) ─────────────────
+ * This battery shipped LIGHT-ONLY on the premise "the art is dark, so light ink is
+ * safe". The premise is false: our backdrops carry large BRIGHT regions, and
+ * measured against the real composited pixels dark's own `--text-muted` read
+ * **1.64:1** on the campaign hub's section counts, its gold rubric 1.95:1, and the
+ * treasury's gp-total chip 1.46:1. A whole theme was un-probed for a whole class of
+ * defect.
+ *
+ * So a SECOND probe runs in BOTH themes and measures CONTRAST rather than identity:
+ *
+ *   1. Collect every on-art text element as above (in-viewport only, so its box maps
+ *      to screenshot pixels).
+ *   2. Screenshot the page with ALL text painted transparent — that composite IS the
+ *      ground: the art, the scrim, the grain, every plate, exactly as shipped. The
+ *      probe never restates what it thinks is behind the text; it looks.
+ *   3. Decide the element's GROUND. A tight, near-opaque halo (`--on-art-halo`: an
+ *      innermost stop at ≤2px blur, alpha ≥ 0.8) IS the ground — that is the entire
+ *      point of the treatment, and it is what an auditor credits as the backing. An
+ *      element with no such halo is grounded by the backdrop, at its WORST sampled
+ *      pixel (brightest for light ink, darkest for dark ink).
+ *   4. Assert AA (4.5:1) against that ground.
+ *
+ * WHAT THIS PROBE CANNOT SEE, stated so the next reader does not assume otherwise:
+ *   · **Text outside the viewport.** Boxes must map to screenshot pixels, so anything
+ *     below the fold at 1440×2400 is not measured on that surface.
+ *   · **The halo's own compositing.** A halo is credited at its declared colour; a
+ *     1px 0.95-alpha edge over a bright patch is ~95% of that colour, not 100%.
+ *   · **Sub-pixel glyph coverage.** It measures the ink COLOUR against the ground, not
+ *     the antialiased edge of a hairline serif at 10px.
+ *   · **AN EDGE.** A dashed affordance or a chip outline dissolving across the bright
+ *     half of the art is INVISIBLE to this probe — a halo grounds ink and this probe
+ *     credits it, but nothing here can see a border. Deleting the `--on-art-plate`
+ *     recipe from the two self-backing on-art controls leaves this leg GREEN. That is
+ *     why a control loose on the scene must self-back by RECIPE, and why the plate is
+ *     pinned in `chrome-system.guard.test.ts` rather than measured here.
+ *   · **Anything an ancestor clips or a later paint covers** — it samples the box the
+ *     range reports, not the visible remainder of it.
+ *
+ * Desktop-only: ink colours don't vary by viewport.
  */
 
 import { test, expect } from "@playwright/test";
@@ -270,6 +307,249 @@ async function probeOnArtInk(
     },
     { MIN_LUM: MIN_ON_ART_LUMINANCE, MIN_DISC: MIN_DISC_ALPHA, COINS: GILT_COINS }
   );
+}
+
+/** One measured on-art ink, with the ground the probe actually found. */
+interface Measured {
+  path: string;
+  text: string;
+  color: string;
+  /** "halo" when a tight near-opaque outline grounds the ink; else "art". */
+  ground: string;
+  /** The contrast ratio against that ground. */
+  ratio: number;
+  /** The sampled backdrop luminance range under the text box. */
+  bg: [number, number];
+}
+
+/** AA for normal text. On-art labels are 10–13px, so the large-text 3:1 never applies. */
+const MIN_ON_ART_CONTRAST = 4.5;
+
+/**
+ * Measure every on-art ink against the REAL composited ground.
+ *
+ * The two halves are deliberately different in kind: the ground comes from a
+ * SCREENSHOT (so the art, the scrim, the grain and every plate are included exactly
+ * as shipped, with nothing restated in the probe), and the halo comes from the
+ * COMPUTED STYLE (so a treatment that is declared but visually subtle is still
+ * credited the way an auditor credits it).
+ */
+async function measureOnArtContrast(
+  page: import("@playwright/test").Page
+): Promise<Measured[]> {
+  const cands = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return [];
+    const rgba = (css: string): [number, number, number, number] => {
+      ctx.clearRect(0, 0, 1, 1);
+      ctx.fillStyle = "#000";
+      ctx.fillStyle = css;
+      ctx.fillRect(0, 0, 1, 1);
+      const d = ctx.getImageData(0, 0, 1, 1).data;
+      return [d[0] ?? 0, d[1] ?? 0, d[2] ?? 0, (d[3] ?? 0) / 255];
+    };
+    const fillsBox = (p: CSSStyleDeclaration): boolean =>
+      p.content !== "none" &&
+      (p.position === "absolute" || p.position === "fixed") &&
+      p.top === "0px" &&
+      p.right === "0px" &&
+      p.bottom === "0px" &&
+      p.left === "0px";
+    const opaqueFill = (p: CSSStyleDeclaration): boolean =>
+      p.backgroundImage !== "none" || rgba(p.backgroundColor)[3] >= 0.5;
+    const isSurface = (el: Element): boolean => {
+      const cs = getComputedStyle(el);
+      if (opaqueFill(cs)) return true;
+      if (el === document.body || el === document.documentElement) return false;
+      for (const pseudo of ["::before", "::after"]) {
+        const pcs = getComputedStyle(el, pseudo);
+        if (fillsBox(pcs) && opaqueFill(pcs)) return true;
+      }
+      return false;
+    };
+    const onRawArt = (el: Element): boolean => {
+      for (
+        let n: Element | null = el;
+        n && n !== document.documentElement;
+        n = n.parentElement
+      ) {
+        if (isSurface(n)) return false;
+      }
+      return true;
+    };
+    const compactPath = (el: Element): string => {
+      const bits: string[] = [];
+      for (let n: Element | null = el, i = 0; n && i < 3; n = n.parentElement, i++) {
+        const cls = Array.from(n.classList).slice(0, 3).join(".");
+        bits.unshift(n.tagName.toLowerCase() + (cls ? `.${cls}` : ""));
+      }
+      return bits.join(" > ");
+    };
+    /** The TIGHT innermost halo stop, if the element declares one. */
+    const haloOf = (shadow: string): [number, number, number] | null => {
+      const m = /^(rgba?\([^)]*\))\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s+([\d.]+)px/.exec(
+        shadow
+      );
+      if (!m) return null;
+      const [r, g, b, a] = rgba(m[1] ?? "");
+      if (a < 0.8) return null;
+      if (Math.abs(Number(m[2])) > 1 || Math.abs(Number(m[3])) > 1) return null;
+      if (Number(m[4]) > 2) return null;
+      return [r, g, b];
+    };
+
+    const out: {
+      path: string;
+      text: string;
+      color: string;
+      rgb: [number, number, number];
+      box: { x: number; y: number; w: number; h: number };
+      halo: [number, number, number] | null;
+    }[] = [];
+    const seen = new Set<Element>();
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const tn = walker.currentNode as Text;
+      if (!tn.data.trim()) continue;
+      const el = tn.parentElement;
+      if (!el || seen.has(el)) continue;
+      seen.add(el);
+      if (!el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) {
+        continue;
+      }
+      const range = document.createRange();
+      range.selectNodeContents(tn);
+      const bx = range.getBoundingClientRect();
+      if (bx.width < 1 || bx.height < 1) continue;
+      // In-viewport only: the box has to map to a screenshot pixel.
+      if (bx.top < 0 || bx.bottom > innerHeight || bx.left < 0 || bx.right > innerWidth) {
+        continue;
+      }
+      if (!onRawArt(el)) continue;
+      const cs = getComputedStyle(el);
+      const [r, g, b, a] = rgba(cs.color);
+      if (a < 0.1) continue;
+      out.push({
+        path: compactPath(el),
+        text: tn.data.trim().slice(0, 48),
+        color: cs.color,
+        rgb: [r, g, b],
+        box: { x: bx.x, y: bx.y, w: bx.width, h: bx.height },
+        halo: haloOf(cs.textShadow),
+      });
+    }
+    return out;
+  });
+
+  if (cands.length === 0) return [];
+
+  // The GROUND, straight off the rendered page: every text painted transparent, so
+  // what remains is exactly the composite the ink sits on.
+  await page.addStyleTag({
+    content:
+      "*, *::before, *::after { color: transparent !important; " +
+      "text-shadow: none !important; -webkit-text-fill-color: transparent !important; }",
+  });
+  const shot = (await page.screenshot({ type: "png" })).toString("base64");
+
+  return page.evaluate(
+    async ({ cands: list, uri }) => {
+      const img = new Image();
+      img.src = uri;
+      await img.decode();
+      const c = document.createElement("canvas");
+      c.width = img.width;
+      c.height = img.height;
+      const g = c.getContext("2d", { willReadFrequently: true });
+      if (!g) return [];
+      g.drawImage(img, 0, 0);
+      const dpr = img.width / innerWidth;
+      const lin = (v: number): number => {
+        const s = v / 255;
+        return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+      };
+      const L = (r: number, gg: number, b: number): number =>
+        0.2126 * lin(r) + 0.7152 * lin(gg) + 0.0722 * lin(b);
+      const ratio = (a: number, b: number): number =>
+        (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+
+      return list.map((cd) => {
+        const x = Math.max(0, Math.round(cd.box.x * dpr));
+        const y = Math.max(0, Math.round(cd.box.y * dpr));
+        const w = Math.max(1, Math.min(Math.round(cd.box.w * dpr), c.width - x));
+        const h = Math.max(1, Math.min(Math.round(cd.box.h * dpr), c.height - y));
+        const d = g.getImageData(x, y, w, h).data;
+        let min = 1;
+        let max = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          const l = L(d[i] ?? 0, d[i + 1] ?? 0, d[i + 2] ?? 0);
+          if (l < min) min = l;
+          if (l > max) max = l;
+        }
+        const inkL = L(cd.rgb[0], cd.rgb[1], cd.rgb[2]);
+        const haloL = cd.halo ? L(cd.halo[0], cd.halo[1], cd.halo[2]) : null;
+        const r =
+          haloL !== null
+            ? ratio(inkL, haloL)
+            : Math.min(ratio(inkL, min), ratio(inkL, max));
+        return {
+          path: cd.path,
+          text: cd.text,
+          color: cd.color,
+          ground: haloL !== null ? "halo" : "art",
+          ratio: Math.round(r * 100) / 100,
+          bg: [Math.round(min * 1000) / 1000, Math.round(max * 1000) / 1000] as [
+            number,
+            number,
+          ],
+        };
+      });
+    },
+    { cands, uri: `data:image/png;base64,${shot}` }
+  );
+}
+
+for (const surface of SURFACES) {
+  for (const theme of ["dark", "light"] as const) {
+    test(`on-art contrast: ${surface.slug} [${theme}] — loose ink clears AA on the real ground`, async ({
+      page,
+    }) => {
+      // A taller-than-life viewport so a surface's whole loose vocabulary is in the
+      // frame (the probe only measures what a screenshot pixel can answer for).
+      await page.setViewportSize({ width: DESKTOP.width, height: 2400 });
+      await seedUI(page, theme, surface.edit ? "edit" : "play");
+      await seedLang(page, "en");
+      await page.goto(surface.route, { waitUntil: "domcontentloaded" });
+      await surface.ready(page);
+      if (surface.prepare) await surface.prepare(page);
+      await freezeMotion(page);
+
+      const measured = await measureOnArtContrast(page);
+      const failing = measured
+        .filter((m) => m.ratio < MIN_ON_ART_CONTRAST)
+        .sort((a, b) => a.ratio - b.ratio);
+
+      const summary = failing
+        .map(
+          (m) =>
+            `${m.path}\n  "${m.text}" — ${m.color} on the ${m.ground} ` +
+            `(${m.ratio}:1, backdrop luminance ${m.bg[0]}–${m.bg[1]})`
+        )
+        .join("\n");
+      expect(
+        failing,
+        `Loose ink on the backdrop fails AA against the REAL composited ground in ` +
+          `${theme.toUpperCase()} (< ${MIN_ON_ART_CONTRAST}:1). The backdrops carry ` +
+          `large BRIGHT regions in both themes, so "the art is dark" grounds nothing. ` +
+          `The fix is the canonical treatment, never a one-off colour: put the region ` +
+          `in \`.on-art-scope\` so the ink inherits the one \`--on-art-halo\`, and give ` +
+          `any CONTROL loose on the scene its own \`--on-art-plate\` (a halo grounds ` +
+          `INK; it cannot ground an EDGE). DESIGN.md § On-art ink:\n${summary}`
+      ).toEqual([]);
+    });
+  }
 }
 
 for (const surface of SURFACES) {

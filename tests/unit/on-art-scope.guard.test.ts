@@ -54,8 +54,12 @@ describe("light-theme on-art-scope excludes card text (no outline leak onto card
   it("a single inheritance-hygiene rule zeroes the outline at the surface boundary", () => {
     // Surfaces establish a no-outline baseline so card text can't inherit a flipped
     // loose ancestor's outline. (One boundary rule — not a per-utility undo.)
+    // Bounded on the RULE (`[^{}]`), never on parentheses: the surface list legally
+    // contains a functional pseudo (`.btn:not(.ghost)` — a FILLED button is a surface,
+    // the frameless ghost tier is not), and a `[^)]*` probe cannot cross one. A guard
+    // that reads the artifact must be able to read all of it.
     const hygiene =
-      /\.on-art-scope\s*:is\([^)]*\.info-card[^)]*\[class\*="bg-"\]\s*\)\s*\{\s*text-shadow:\s*none/;
+      /\.on-art-scope\s*:is\([^{}]*?\.info-card[^{}]*?\[class\*="bg-"\]\s*\)\s*\{\s*text-shadow:\s*none/;
     expect(
       hygiene.test(css),
       "MISSING: the `.on-art-scope :is(<surfaces>) { text-shadow: none }` inheritance-hygiene rule."
@@ -134,7 +138,7 @@ describe("ON-ART-INK (owner 2026-06-12) — the canonical scope covers the recur
     ).toBe(true);
   });
 
-  it("the treasury GP-total plate flip (background/border/shadow) ALSO excludes card surfaces", () => {
+  it("the treasury GP-total plate (both themes) ALSO excludes card surfaces", () => {
     // The plate rule adds the self-backed cartouche (dark plate + gilt border + tight
     // shadow) SEPARATELY from the generic ink flip above — it must carry the SAME
     // `.badge.muted:not(:where(<surfaces minus .badge>) …)` exclusion, or it leaks onto
@@ -142,7 +146,7 @@ describe("ON-ART-INK (owner 2026-06-12) — the canonical scope covers the recur
     // badge on `.party-card`, which must keep its plain card-surface badge, not the
     // dark plate meant only for the loose treasury cartouche).
     const plateExcludesSurfaces =
-      /\.on-art-scope\s*\.badge\.muted:not\([^{]*\.party-card[^{]*\{[^}]*background:\s*color-mix\(in oklab, #1a1206/;
+      /\.on-art-scope\s*\.badge\.muted:not\([^{]*\.party-card[^{]*\{[^}]*background:\s*var\(--on-art-plate\)/;
     expect(
       plateExcludesSurfaces.test(css),
       "MISSING: the `.on-art-scope .badge.muted:not(:where(…surfaces…))` exclusion on the " +
