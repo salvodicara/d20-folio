@@ -159,12 +159,26 @@ function decl(body: string, prop: string): string {
  *  `ruleBody` takes the FIRST match, so this also pins that `.beast-ref` has
  *  exactly ONE base rule: a later `[data-theme="light"] .beast-ref { background }`
  *  would otherwise leave every assertion below certifying a ground the browser
- *  no longer paints, silently. */
+ *  no longer paints, silently.
+ *
+ *  The element is `class="beast-ref mon-ref"`, so `.beast-ref` is only HALF the
+ *  cascade. A `.mon-ref { background }` — equal specificity (0,1,0), later in the
+ *  file — would win outright and repaint the plaque while every assertion below
+ *  kept certifying `.beast-ref`'s colour. So the sibling class is pinned too:
+ *  exactly one base rule, and no `background` in it. */
 function plaqueGround(block: string): string {
   expect(
     folioCss.split(".beast-ref {").length - 1,
     "exactly one `.beast-ref {` rule — a later override would shadow the derived ground"
   ).toBe(1);
+  expect(
+    folioCss.split(".mon-ref {").length - 1,
+    "exactly one `.mon-ref {` rule — the plaque carries BOTH classes"
+  ).toBe(1);
+  expect(
+    ruleBody(folioCss, ".mon-ref"),
+    "`.mon-ref` must not paint a background — it would out-cascade `.beast-ref` and silently move the plaque's ground"
+  ).not.toMatch(/(^|[\s;]) *background(-color)?\s*:/);
   return resolveColor(decl(ruleBody(folioCss, ".beast-ref"), "background"), block);
 }
 
@@ -490,17 +504,30 @@ describe("muted/faint text clears WCAG-AA on the DEEPEST recessed surface", () =
   }
 });
 
-describe("special emphasis text clears WCAG-AA on the card surfaces", () => {
+describe("special emphasis text clears WCAG-AA on every ground it inks", () => {
   // --text-special is the BG3 "lit emphasis" register (active/selected titles)
   // and renders on the card tiers — assert it clears 4.5:1 on surface-2 AND the
   // darker/deeper surface-3 in BOTH themes (it sits far above AA by design; the
   // guard pins that a retune can never drop it below the floor).
+  //
+  // AND ON THE PLAQUE. `--text-special` is also the rules-text grammar's
+  // `.rt-value` arm (dice · save DCs · measured distances), so it paints the
+  // carved `.beast-ref`/`.mon-ref` statblock the same way `.rt-dmg` / `.rt-cond`
+  // do — "Hit: 7 (1d8 + 3) Piercing damage" is `.rt-value` then `.rt-dmg` in one
+  // breath. It was pinned on surface-2/3 only, which is exactly the hand-picked-
+  // ground defect the damage ramp shipped: it measures 6.463:1 there today, so
+  // this is a LATENT pass, not a covered one. Pinning the plaque makes the
+  // describe's "every ground it inks" claim true for all five grammar arms.
   for (const theme of ["dark", "light"] as const) {
     const block = themeBlock(theme);
-    for (const surf of ["--bg-surface-2", "--bg-surface-3"] as const) {
-      it(`${theme}: --text-special ≥ ${AA}:1 on ${surf}`, () => {
+    const grounds: Array<[string, string]> = [
+      ["--bg-surface-2", readVar(block, "--bg-surface-2")],
+      ["--bg-surface-3", readVar(block, "--bg-surface-3")],
+      ["the carved plaque", plaqueGround(block)],
+    ];
+    for (const [label, surface] of grounds) {
+      it(`${theme}: --text-special ≥ ${AA}:1 on ${label}`, () => {
         const special = readVar(block, "--text-special");
-        const surface = readVar(block, surf);
         expect(
           contrast(special, surface),
           `--text-special on ${surface}`

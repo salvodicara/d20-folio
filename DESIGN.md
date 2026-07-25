@@ -279,9 +279,14 @@ does. The canonical counter-example: the `--dmg-*-ink` ramp was guarded only aga
 measured 3.378:1 on `compendium-monster-entry [light]`; axe did NOT flag it — see the browser-probe
 paragraph below). The guard now reads the plaque's
 ground straight out of `folio.css` (`tests/unit/verdict-ink-contrast.test.ts`) so the surface list
-follows the stylesheet instead of a comment. The guard is also pinned to `.beast-ref` having exactly
-ONE base rule, so a later `[data-theme="light"] .beast-ref { background }` cannot silently leave it
-certifying a ground the browser no longer paints. `--bg-surface-3` is deliberately excluded: no
+follows the stylesheet instead of a comment. The derived ground is pinned against BOTH halves of the
+plaque's cascade — the element is `class="beast-ref mon-ref"` — so `.beast-ref` must have exactly ONE
+base rule (a later `[data-theme="light"] .beast-ref { background }` cannot silently leave the guard
+certifying a ground the browser no longer paints) and `.mon-ref` must have exactly one base rule
+that declares NO background (equal specificity, later in the file, so it would win outright). All
+five grammar arms are pinned on that ground, `--text-special` (`.rt-value` — dice, save DCs,
+distances) included: it measures 6.463:1 there, a latent pass that was going uncovered while the arm
+was pinned on surface-2/3 alone. `--bg-surface-3` is deliberately excluded: no
 rules-prose container paints it today, and asserting a ground the app never renders is the same
 defect in the mirror (if one ever appears, re-measure dark `--semantic-danger` on `#2a2317` first —
 4.386:1).
@@ -1677,7 +1682,14 @@ formatter with four arms:
   green/red fork, capitalized defined terms only.
 
 All tokens sit at **font-weight 600** on the serif (never the shouted UA 700), so a lifted token
-reads emphasized beside real `**bold**` labels, not louder. The formatter is **opt-in** via
+reads emphasized beside real `**bold**` labels, not louder. **The bestiary was the one surface where
+that was not true**, and fixing the gilt-repaint cascade fixed the weight with it: a bare
+`.mon-entry strong` (0,1,1) also set `font-weight: 700`, so on 300+ monster pages every `.rt-dmg` /
+`.rt-cond` / `.rt-value` / `.rt-adv` / `.rt-dis` span rendered at the shouted 700 while the identical
+sentence on a spell card rendered at 600. Narrowing that rule to
+`.mon-entry strong:not([class])` returns the grammar to 600 there — the entry NAME (`**Bite.**`) is
+the classless `<strong>` and keeps its gilt 700 lead, and the statblock's prose stops shouting.
+The formatter is **opt-in** via
 `InlineMarkdown`'s `highlight` prop and wired only where RULES text renders — the compendium
 description + "At Higher Levels", every picker detail (`CompendiumDetailBody`), the sheet's
 feature/spell/item cards (`UniversalCardDesc`/`Higher`, FeaturesTab), and the level-up reading
@@ -2639,11 +2651,22 @@ trigger each state).
 ### Self-enforcing gates (do not let them rot)
 
 - **A11y surface gate:** `tests/e2e/a11y.spec.ts` iterates SURFACES × dark/light and fails on
-  serious/critical axe violations; the app is axe-clean. **Re-run after ANY light-token change.**
+  serious/critical axe violations (labels, roles, focus traps, nested-interactive) — that part of it
+  works and the app is clean. **It does NOT cover contrast: on THIS app axe's `color-contrast` rule
+  is inert, APP-WIDE.** The parchment backdrop (`body::after`) and the plate pseudo-elements defeat
+  axe's background resolution, so it returns "incomplete" instead of a verdict for essentially every
+  run of prose — measured with axe-core 4.11.4, both themes: `compendium-monster-entry` 121
+  incomplete / 0 violations, `compendium-spell-entry` 84 / 0, `settings` 22 (light) 19 (dark) / 0.
+  There is no surface where a contrast failure could make it fail; it never has, and it never will.
+  **So "re-run the a11y gate after a light-token change" is NOT contrast coverage.** The gates that
+  are: `tests/unit/verdict-ink-contrast.test.ts` (token↔ground AA + the OKLab ΔE separation matrix)
+  and `tests/e2e/statblock-ink-contrast.spec.ts` (the composited, real-Chromium truth — computed
+  colour, resolved opaque ground, token identity). Re-run **those** after ANY ink-token change.
 - **E2E coverage gate:** a guard test maps router surfaces → harness entries; the rule "new
   page/form/prompt → add its screenshot" keeps visual coverage honest.
-- **Contrast unit tests** (e.g. `verdict-ink-contrast`, `bg-recessed`, the seal-ink test) guard the
-  per-hue AA math; keep them green when tuning any domain or `-ink` token.
+- **Contrast unit tests** (`verdict-ink-contrast`, `bg-recessed`, the seal-ink test) guard the
+  per-hue AA math AND the per-theme separation floors; keep them green when tuning any domain or
+  `-ink` token. A new ink that shares the prose grounds belongs in the ΔE matrix's vocabulary.
 - **Pure-modules guard:** keep CI-pure lib modules free of Firebase imports.
 
 > Near-miss contrast figures from static analysis (e.g. a recipe author's inline "~4.45:1" note) are
