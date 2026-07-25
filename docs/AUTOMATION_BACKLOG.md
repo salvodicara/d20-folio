@@ -901,7 +901,7 @@ condition?:"wearing-heavy-armor"}`) — a FLAT subtraction (vs `damage-resistanc
   `while-active` concentration buff (auto-lit on cast via S1, retracts on concentration drop) carrying a
   `damage-rider` with the minimal new **`vsMarkedTarget`** flag (∈ `"marked"` / `"cursed"`) — a
   DISPLAY-ONLY chip on weapon AND spell-attack rows the render edge LABELS "vs marked / cursed target"
-  (`combat.vsMarkedTarget_<token>`). It is NEVER auto-summed into the base damage (dodging the
+  (`combat.attackScope_<token>`). It is NEVER auto-summed into the base damage (dodging the
   over-application: the app models no enemy, so it can't know which hit lands on the marked creature — the
   player applies the +1d6 only on the right hit). REUSES the shipped `while-active` + `damage-rider` +
   chip-labeling machinery wholesale (one optional flag, no parallel rider system). **SPELL-ATTACK rows
