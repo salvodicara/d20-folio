@@ -865,7 +865,7 @@
     "label": "Escape the Horde"
   },
   "ranger-hunter-defensive-tactics.grants.0.options.escape-the-horde.grants.0": {
-    "description": "Opportunity Attacks have Disadvantage against you."
+    "description": "Opportunity Attacks against you have Disadvantage"
   },
   "ranger-hunter-defensive-tactics.grants.0.options.multiattack-defense": {
     "label": "Multiattack Defense"

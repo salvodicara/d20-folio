@@ -390,8 +390,11 @@ export const RANGER_FEATURES: SrdClassFeatureData[] = [
     class: "ranger",
     subclass: "hunter",
     level: 7,
-    // Escape the Horde surfaces as a disadvantage clause on enemies' Opportunity
-    // Attacks; Multiattack Defense is a conditional/triggered effect carried as a
+    // Escape the Horde is an INCOMING-attack clause — Opportunity Attacks made
+    // AGAINST you have Disadvantage — so it rides `incoming-attack-disadvantage`
+    // (Blur's shape): a SELF-side defensive benefit the rail frames as an
+    // Advantage line, never a modifier on the character's OWN attack rolls.
+    // Multiattack Defense is a conditional/triggered effect carried as a
     // granted-action chip (no per-attacker disadvantage-tracking grant kind).
     grants: [
       {
@@ -400,13 +403,7 @@ export const RANGER_FEATURES: SrdClassFeatureData[] = [
         options: [
           {
             id: "escape-the-horde",
-            grants: [
-              {
-                type: "disadvantage-on",
-                rollType: "attack",
-                vs: "opportunity-attacks-against-you",
-              },
-            ],
+            grants: [{ type: "incoming-attack-disadvantage" }],
           },
           {
             id: "multiattack-defense",

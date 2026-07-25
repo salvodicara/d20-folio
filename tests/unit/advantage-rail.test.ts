@@ -77,6 +77,50 @@ describe("Ranger Precise Hunter declares the attack advantage (G16)", () => {
   });
 });
 
+describe("PS-J — Hunter Escape the Horde is an INCOMING-attack clause", () => {
+  // It shipped as `disadvantage-on { rollType: "attack" }` ON THE CHARACTER, so
+  // `PlayTab`'s netted attack gloss marked EVERY swing "Disadv." from Hunter 7.
+  // RAW: the Disadvantage lands on Opportunity Attacks made AGAINST you — Blur's
+  // `incoming-attack-disadvantage` family, which the attack gloss never reads.
+  const HUNTER_7: ScenarioSpec = {
+    name: "Kessa, Hunter",
+    raceId: "human",
+    classId: "ranger",
+    subclassId: "hunter",
+    level: 7,
+    background: "outlander",
+    abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 14, CHA: 10 },
+    grantBundleChoices: { "ranger-hunter-defensive-tactics": "escape-the-horde" },
+  };
+
+  it("declares the option as incoming-attack-disadvantage, never an own-attack clause", () => {
+    const grants = classFeatureIndex.get("ranger-hunter-defensive-tactics")?.grants ?? [];
+    const bundle = grants.find((g) => g.type === "choice-grant-bundle");
+    const option = bundle?.options.find((o) => o.id === "escape-the-horde");
+    expect(option?.grants).toEqual([{ type: "incoming-attack-disadvantage" }]);
+  });
+
+  it("aggregates as a defensive line — and contributes NO attack-roll chip", () => {
+    const doc = buildScenario(HUNTER_7);
+    const aggregate = aggregateCharacterGrants(doc.character, doc.session);
+    expect(
+      deriveAdvantageChips(aggregate).filter((c) => c.rollType === "attack")
+    ).toEqual([]);
+    expect(aggregate.incomingAttackDisadvantages).toHaveLength(1);
+    for (const locale of ["en", "it"] as const) {
+      const [vm] = incomingAttackAdvantageVMs(
+        aggregate.incomingAttackDisadvantages,
+        locale
+      );
+      if (!vm) throw new Error("vm missing");
+      expect(vm.sourceId).toBe("ranger-hunter-defensive-tactics");
+      // The rail row states the SCOPE the engine cannot model (Opportunity
+      // Attacks only) — never a bare polarity verdict.
+      expect(vm.description).toMatch(locale === "en" ? /Opportunity/i : /Opportunità/i);
+    }
+  });
+});
+
 describe("the rail surfaces durable non-attack advantages", () => {
   it("a Barbarian 7 yields DEX-save + initiative advantage chips (not attack)", () => {
     const doc = buildScenario(BARBARIAN_7);

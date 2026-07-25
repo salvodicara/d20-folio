@@ -1247,21 +1247,53 @@ were DEAD duplicates.
 > commit** (golden rule 13); a correctness-only fix that changes a pinned value updates that test in the
 > same commit.
 
-- [ ] **PS-J (WRONG GLOSS SHIPPED) — Hunter _Escape the Horde_ marks EVERY attack the character makes
-      Disadvantaged.** OPEN (found 2026-07-25 by the post-sweep convergence review; pre-existing on
-      `main`, NOT introduced by that wave). `ranger.ts:402-408` models the option as
+- [x] **PS-J (WRONG GLOSS SHIPPED) — Hunter _Escape the Horde_ marked EVERY attack the character makes
+      Disadvantaged.** FIXED 2026-07-25 (found 2026-07-25 by the post-sweep convergence review;
+      pre-existing on `main`, NOT introduced by that wave). `ranger.ts` modeled the option as
       `disadvantage-on { rollType: "attack", vs: "opportunity-attacks-against-you" }` **on the
       character**, but the RAW effect is on attacks made _against_ you (Opportunity Attacks against
       you have Disadvantage). `PlayTab`'s `attackRollState` nets every `rollType: "attack"` clause the
-      character carries, so a Hunter who picks Escape the Horde sees EVERY attack card glossed
-      "Disadvantage" — a wrong modifier taught on every swing, from Hunter level 7 on. The clause belongs in
-      the `incoming-attack-disadvantage` family (the SELF-side defensive mirror — Blur's shape), which
-      the rail renders as a framed defensive line and `attackRollState` correctly ignores. This is the
+      character carries, so a Hunter who picked Escape the Horde saw EVERY attack card glossed
+      "Disadvantage" — a wrong modifier taught on every swing, from Hunter level 7 on. The option now
+      emits `incoming-attack-disadvantage` (the SELF-side defensive mirror — Blur's shape), which the
+      rail renders as a framed defensive line ("Opportunity Attacks against you have Disadvantage") and
+      `attackRollState` correctly ignores; the option's catalogue `description` is unchanged in meaning
+      (the trailing period dropped to match the rail's terse register). Regressions:
+      `tests/unit/attack-scope-clauses.test.tsx` (the rendered attack-card gloss — the fact that was
+      wrong) + `tests/unit/advantage-rail.test.ts` (the data pin + the EN/IT rail line). This was the
       FIRST real violation of the authoring rule PS-G wrote into `docs/MECHANICS.md` (**ONE `vs` slug =
-      ONE scope**): the slug names an incoming-attack scope while sitting in the outgoing-attack
-      family, and nothing today can catch that mismatch — the fix should consider a guard pairing
-      `vs` slugs to the grant family they may appear in. The bundle's other option
-      (`multiattack-defense`) is a `granted-action` chip, so it is unaffected.
+      ONE scope**): the slug named an incoming-attack scope while sitting in the outgoing-attack
+      family. The bundle's other option (`multiattack-defense`) is a `granted-action` chip, so it was
+      unaffected.
+
+      **The family audit (2026-07-25).** Every `rollType: "attack"` adv/dis clause in BOTH roots was
+      swept for a scope narrower than "every attack roll you make":
+
+      | Clause                                              | `vs`                              | Scope                    | Verdict                                        |
+      | --------------------------------------------------- | --------------------------------- | ------------------------ | ---------------------------------------------- |
+      | `ranger-hunter-defensive-tactics` → Escape the Horde | `opportunity-attacks-against-you`  | incoming attacks         | FIXED — re-homed (this row)                     |
+      | `ranger-precise-hunter`                              | `hunters-mark-target`              | per-target               | PS-J2                                          |
+      | `paladin-vengeance-vow-of-enmity` (pack)             | `vow-of-enmity-target`             | per-target               | PS-J3                                          |
+      | `fighter-studied-attacks`                            | `missed-creature`                  | per-target               | PS-J4                                          |
+      | `rogue-assassin-assassinate` (pack)                  | `untaken-turn`                     | per-target               | PS-J5                                          |
+      | `sorcerer-innate-sorcery`                            | `sorcerer-spells`                  | per-roll SOURCE          | PS-J6                                          |
+      | `barbarian-reckless-attack`                          | `strength-attacks`                 | per-roll ABILITY         | PS-J7                                          |
+      | `spell-foresight`                                    | `foresight`                        | every D20 Test           | correct as-is (blanket)                        |
+      | `cleric-…-divine-foreknowledge` (pack)               | `divine-foreknowledge`             | every D20 Test           | correct as-is (blanket)                        |
+      | `CONDITION_GATES` blinded/frightened/poisoned/prone/restrained/invisible | condition id  | blanket while declared   | correct as-is                                  |
+      | `CONDITION_GATES` grappled                           | `grappled`                         | per-target (not grappler)| ALREADY triaged by RA-32 (scoped limiter line) |
+      | `unproficient-armor` (S13)                           | `unproficient-armor`               | STR/DEX attacks          | see PS-J7 (same per-roll-ability shape)        |
+
+- [ ] **PS-J2…PS-J7 (WRONG GLOSS SHIPPED) — narrowing-scope attack clauses still gloss EVERY attack
+      card.** OPEN (2026-07-25). The six rows above whose scope is narrower than the roll being
+      glossed: `attackRollState` reads `rollType` and ignores `vs`, so each is asserted as a blanket
+      verdict on every attack card — Precise Hunter (Ranger 17) and Vow of Enmity (Oath of Vengeance 3,
+      pack — the highest-impact: a popular subclass at level 3) show a permanent false "Adv."; Studied
+      Attacks and Assassinate show one while their own window is open; Innate Sorcery marks WEAPON
+      attacks advantaged; Reckless Attack marks DEX attacks advantaged. Per-target scoping is a
+      DOCUMENTED residual (`docs/MECHANICS.md` → "Non-automatable residuals") and stays one — the fix
+      is never to model enemies, it is to **stop glossing a conditional effect as unconditional**: an
+      effect the app cannot scope must be STATED with its condition, not asserted as a verdict.
 
 - [x] **B1 (CRITICAL, live data) — Rage auto-expires at round 10, not round 100.** FIXED 2026-06-24.
       `barbarian.ts:175` now `maxRounds:100` (RAW: 10 minutes = 100 rounds @ 6 s/round) so the End-Turn

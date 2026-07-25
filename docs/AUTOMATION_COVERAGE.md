@@ -365,13 +365,13 @@ Audited `src/data/classes/ranger.ts` against `dnd2024.wikidot.com/ranger:main`. 
 
 #### Hunter
 
-| Entity                    | Lvl | Status    | Modeled via                                                                                       | Notes                                                     |
-| ------------------------- | --- | --------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Hunter's Lore             | 3   | narrative | —                                                                                                 | Reveal immunities/resist/vuln; no grant kind              |
-| Hunter's Prey             | 3   | automated | `choice-grant-bundle` → `damage-rider` (Colossus Slayer) / `granted-action` (Horde Breaker)       | Re-selectable                                             |
-| Defensive Tactics         | 7   | automated | `choice-grant-bundle` → `disadvantage-on` (Escape Horde) / `granted-action` (Multiattack Defense) | Multiattack Defense is a triggered chip                   |
-| Superior Hunter's Prey    | 11  | narrative | —                                                                                                 | Cleave HM damage to 2nd target; no grant kind (model-gap) |
-| Superior Hunter's Defense | 15  | automated | `granted-action` reaction (situational Resistance)                                                |                                                           |
+| Entity                    | Lvl | Status    | Modeled via                                                                                                        | Notes                                                                                                                                                                                     |
+| ------------------------- | --- | --------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hunter's Lore             | 3   | narrative | —                                                                                                                  | Reveal immunities/resist/vuln; no grant kind                                                                                                                                              |
+| Hunter's Prey             | 3   | automated | `choice-grant-bundle` → `damage-rider` (Colossus Slayer) / `granted-action` (Horde Breaker)                        | Re-selectable                                                                                                                                                                             |
+| Defensive Tactics         | 7   | automated | `choice-grant-bundle` → `incoming-attack-disadvantage` (Escape the Horde) / `granted-action` (Multiattack Defense) | Escape the Horde is an INCOMING-attack clause (Blur's family) — a framed defensive line in the rail, never a modifier on your own attacks (PS-J); Multiattack Defense is a triggered chip |
+| Superior Hunter's Prey    | 11  | narrative | —                                                                                                                  | Cleave HM damage to 2nd target; no grant kind (model-gap)                                                                                                                                 |
+| Superior Hunter's Defense | 15  | automated | `granted-action` reaction (situational Resistance)                                                                 |                                                                                                                                                                                           |
 
 ### class:rogue
 
