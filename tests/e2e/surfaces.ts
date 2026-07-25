@@ -398,6 +398,9 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   // "Fighter level" the old prose-regex leaked (HEAL-SEAM P1). Anchors on the
   // scenario's proper-noun name ("Garran", never translated).
   "fighter-second-wind-chip": { edit: false, ready: readyText(/Garran/) },
+  // The Fiend Warlock's Play tab — the pact-slot register, which no other mock
+  // character can render. `readyText` on the proper noun proves the sheet painted.
+  "warlock-pact-slots": { edit: false, ready: readyText(/Carric/) },
   create: { edit: false, ready: readyCreate },
   // The level-up wizard route (wizard F). The eyebrow carries the character's
   // proper-noun name, so readyByName proves the chrome painted.

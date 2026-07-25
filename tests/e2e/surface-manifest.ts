@@ -92,6 +92,17 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
     slug: "fighter-second-wind-chip",
     route: "/characters/scn-battlemaster-fighter",
   },
+  // The WARLOCK's Play tab — the one character in the app with PACT-magic slots.
+  // `.slot-cell.pact .sc-lvl` has its own light-theme ink, and every mock character
+  // is a full caster, so the whole pact register rendered on NO swept surface: the
+  // state existed at `/characters/scn-magical-cunning-warlock` and no rendered a11y,
+  // locale or ink check ever reached it. (A cascade-resolving unit guard pins the
+  // pact ink's value; this is the surface that proves it PAINTS.) It also brings the
+  // rail's resource-conversion affordance — "Restore Pact Slots" — under the sweep.
+  {
+    slug: "warlock-pact-slots",
+    route: "/characters/scn-magical-cunning-warlock",
+  },
   { slug: "create", route: "/characters/new" }, // creation wizard (re-mounted)
   ...GUIDED_STEP_SLUGS.map((slug): SurfaceRoute => ({ slug, route: "/characters/new" })),
   // The full-screen level-up wizard (wizard F). `level-up` is the Hit Points

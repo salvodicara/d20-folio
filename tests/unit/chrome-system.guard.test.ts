@@ -67,6 +67,35 @@ function selectorParts(list: string): string[] {
   return parts.map((p) => p.trim().replace(/\s+/g, " ")).filter(Boolean);
 }
 
+/**
+ * True only when a border shorthand / colour paints NOTHING.
+ *
+ * The naive test — "does the value mention `transparent`?" — passes
+ * `color-mix(in oklab, var(--seal) 45%, transparent)`, which is a 45%-OPAQUE border.
+ * That is a real border on a read-only facet, and it is what let `.cmp-seal` keep an
+ * edge through an entire unframing phase with this guard green beside it; only the
+ * rendered census caught it. So the colour is isolated and required to BE the
+ * keyword, and a zero width or a `none` style still counts as painting nothing.
+ */
+function paintsNothing(value: string): boolean {
+  // top-level tokens: a `color-mix(a, b)` is ONE token, commas and all
+  const tokens: string[] = [];
+  let depth = 0;
+  let buf = "";
+  for (const ch of value.trim()) {
+    if (ch === "(") depth++;
+    else if (ch === ")") depth--;
+    if (/\s/.test(ch) && depth === 0) {
+      if (buf) tokens.push(buf);
+      buf = "";
+    } else buf += ch;
+  }
+  if (buf) tokens.push(buf);
+  if (tokens.some((t) => t === "none" || /^0(px)?$/.test(t))) return true;
+  const colour = tokens.at(-1) ?? "";
+  return colour === "transparent";
+}
+
 /** The last compound of a selector — the element the rule actually styles. */
 function subjectOf(selector: string): string {
   return selector.split(/\s*[\s>+~]\s*/).pop() ?? "";
@@ -549,7 +578,7 @@ describe("the chrome system — L1, a frame means container or interactive", () 
       )?.[1];
       if (border !== undefined) {
         expect(
-          /transparent/.test(border),
+          paintsNothing(border),
           `\`${sel}\` declares \`border: ${border}\`. Read-only information is ` +
             `type in a column (L1) — the only border it may carry is a transparent ` +
             `one, held so the interactive strike can colour it in without reflow.`
@@ -585,7 +614,7 @@ describe("the chrome system — L1, a frame means container or interactive", () 
         /border(?:-(?:top|right|bottom|left))?(?:-color)?\s*:\s*([^;]+);/.exec(
           decls
         )?.[1];
-      if (border !== undefined && !/transparent/.test(border)) {
+      if (border !== undefined && !paintsNothing(border)) {
         offenders.push(`${sel} → border: ${border.trim()}`);
       }
       if (/box-shadow\s*:[^;]*inset/.test(decls)) {
@@ -820,7 +849,13 @@ describe("the chrome system — L3, state changes light and colour only", () => 
       const sel = (rawSelector ?? "").trim();
       if (!STATE.test(sel)) continue;
       if (EXEMPT.some((re) => re.test(sel))) continue;
-      if (DISCLOSURE_BODY.some(([re]) => re.test(sel))) continue;
+      // A disclosure BODY may resize — but only at rest. Two of these patterns are
+      // PREFIX matches, so `.wiz-entry[data-open] > .wiz-row:hover { padding: … }`
+      // used to be swallowed by the exemption for the row's own open state: a
+      // surface resizing under the cursor, waved through by a rule about revealed
+      // content. Anchor the carve-out to the resting selector.
+      const pointerState = /:hover|:active|:focus/.test(sel);
+      if (!pointerState && DISCLOSURE_BODY.some(([re]) => re.test(sel))) continue;
       const m = GEOMETRY.exec(body ?? "");
       if (!m) continue;
       const decl = (body ?? "").slice(m.index).split(";")[0]?.trim() ?? "";

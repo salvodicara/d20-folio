@@ -90,8 +90,8 @@ interface Census {
  * FAMILIES, not of URLs, which is why the codex takes one `.cmp-seal` tab rather
  * than all eight.
  *
- * TWO KNOWN BLIND SPOTS, recorded rather than closed (they need their own ruling,
- * not a bigger list of routes):
+ * WHAT THIS CENSUS CANNOT SEE — recorded rather than closed (each needs its own
+ * ruling, not a bigger list of routes):
  *   1. **The 20×20 floor.** Anything smaller is skipped as a pip/dot/caret, which
  *      hides 106 framed sub-20px elements on the cockpit alone — the pips and
  *      bars, `.idp-die` (27×19), `.move-num-in` (24×16). They are real edges the

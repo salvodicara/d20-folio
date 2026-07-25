@@ -600,6 +600,18 @@ and the DM verbs are frameless cells (`.hub-cell`). Sessions' `border-bottom` di
 wall-to-wall line the reset had already banned everywhere else — is the hairline. **Census: the hub
 41 → 37 boxes (ceiling 46 → 42) and its running-encounter view 52 → 48 (57 → 53), nesting 3 → 2.**
 
+**Three blind spots the review named, each closed and each mutation-proved.** (1) The L1 UNFRAMED
+check tested "does the border value MENTION `transparent`", so `color-mix(in oklab, var(--seal) 45%,
+transparent)` — a 45%-OPAQUE border — passed it; only the rendered census ever caught `.cmp-seal`.
+The colour is now isolated from the shorthand and must BE the keyword. (2) Two of the four L3
+disclosure exemptions were PREFIX matches, so `.wiz-entry[data-open] > .wiz-row:hover { padding: … }`
+— a surface resizing under the cursor — was waved through by a carve-out about revealed content; the
+carve-out is anchored to the resting selector now. (The third reviewer's ruling stands: a BORDER
+change inside a disclosure body is an L1 question, not an L3 one, so that part of the exemption is
+kept.) (3) The pact-slot register rendered on NO swept surface — every mock character is a full
+caster — so `/characters/scn-magical-cunning-warlock` joins the manifest and brings the whole pact
+vocabulary under a11y, locale and both ink batteries.
+
 **THE MARK's anatomy was one member where the reference has three.** Measured against
 `crop-lvl-panel-topleft.png`, BG3's corner is crossed BLADES with crescent-hook terminals
 overshooting the vertex, a PAIR of long quarter-arcs, and RAYS of markedly different lengths — one
