@@ -137,7 +137,16 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   // The bestiary — the Monsters section list + one full statblock leaf. Both enroll
   // in a11y (axe serious/critical = 0 × both themes) + i18n-sweep automatically.
   { slug: "compendium-monsters", route: "/compendium?type=monster" },
-  { slug: "compendium-monster-entry", route: "/compendium?type=monster&sel=skeleton" },
+  // The leaf is `mimic`, not a prettier name, because of its PROSE: it is the one
+  // SRD statblock that exercises EVERY arm of the rules-text colour grammar at
+  // once — "with Advantage", "have Disadvantage", "the Grappled condition",
+  // Piercing/Bludgeoning/Acid damage, dice + DCs — AND carries a damage-ledger run
+  // (Acid immunity → `.mon-dmg`) and a condition chip (Prone). The previous
+  // `skeleton` leaf had no "Advantage", no "Disadvantage" and no condition name
+  // anywhere in its prose, so the surface was structurally blind to three of the
+  // five inks. `surfaces.ts` asserts every arm actually painted, and
+  // `statblock-ink-contrast.spec.ts` measures each one in real Chromium.
+  { slug: "compendium-monster-entry", route: "/compendium?type=monster&sel=mimic" },
   { slug: "settings-page", route: "/settings" }, // settings page
   { slug: "legal-page", route: "/legal" }, // legal & attribution (linked from the footer)
   // 404 catch-all (C1). The probe path is an unknown route the `path="*"` route

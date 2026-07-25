@@ -533,6 +533,11 @@
   --semantic-danger: var(--vermilion-300);
   --semantic-warning: var(--gold-leaf-300);
   --semantic-info: var(--lapis-300);
+  /* Rules-prose Advantage ink (`.rt-adv`) — the prose-only variant of the success
+     stop (DESIGN.md → the Ink-Variant Rule). On the dark ground the success stop
+     itself already clears AA everywhere prose lands, so dark IS that stop; light
+     needs a deeper one. `.rt-dis` needs no variant in either theme. */
+  --rt-adv-ink: var(--semantic-success);
   /* ONE edit-mode voice (amber/gold) — the EditingPill is the sole visual edit
      indicator. Distinct from --semantic-success (reserved for SaveIndicator). */
   --edit-accent: var(--gold-leaf-300);
@@ -1045,6 +1050,15 @@
      not brown). Used both as a chip ink and as bare text on the field. */
   --semantic-warning: #6a4a0c;
   --semantic-info: var(--lapis-700);
+  /* Rules-prose Advantage ink (`.rt-adv`) — `--semantic-success` (verdigris-700)
+     measures 4.156:1 on the carved `.beast-ref`/`.mon-ref` plaque
+     (`--bg-recessed`), where a monster's traits set "Advantage" as inline prose.
+     The shared stop is NOT retuned (the HP-bar gradient math, badges, borders and
+     `--at-action` all ride it) — the PROSE gets its own deeper ink, which is
+     precisely what the Ink-Variant Rule exists for: verdigris-900 is 7.484:1 on
+     the plaque, 11.87 / 13.10 on the card surfaces. `.rt-dis` needs no variant
+     (`--semantic-danger` is 4.729:1 on that same plaque). */
+  --rt-adv-ink: var(--verdigris-900);
   /* edit-mode voice (light) — deep gold so it reads on vellum (not yellow-on-gold). */
   --edit-accent: var(--gold-leaf-900);
 

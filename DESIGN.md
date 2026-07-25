@@ -276,7 +276,8 @@ pins a hand-picked pair certifies a combination the app may never render while b
 does. The canonical counter-example: the `--dmg-*-ink` ramp was guarded only against
 `--bg-surface-1/2`, so eleven of its thirteen light pigments shipped BELOW AA on the carved
 `.beast-ref`/`.mon-ref` statblock plaque — a full step deeper at `--bg-recessed` (light poison-ink
-measured 3.378:1; axe flagged `compendium-monster-entry [light]`). The guard now reads the plaque's
+measured 3.378:1 on `compendium-monster-entry [light]`; axe did NOT flag it — see the browser-probe
+paragraph below). The guard now reads the plaque's
 ground straight out of `folio.css` (`tests/unit/verdict-ink-contrast.test.ts`) so the surface list
 follows the stylesheet instead of a comment. When an AA floor forces a whole family darker, keep the
 family SEPARABLE: darken minimally in OKLCH at each token's own hue + chroma, and where the floor
@@ -286,11 +287,28 @@ per-FAMILY, so it was re-run on `--cond-*-ink`: six light inks failed on the sam
 3.685:1, blinded 3.756, exhaustion 4.009, prone 4.081, stunned 4.120, charmed 4.453) — `.rt-cond`
 sets condition names as inline prose inside a monster's traits — and are fixed by the same recipe,
 with blinded and stunned separating from invisible / paralyzed by CHROMA (mirroring dark) and the
-family's worst-pair separation held at 0.0133 ΔE. **Open gap on that ground:** light
-`--semantic-success` (`.rt-adv`, "Advantage") measures 4.156:1 on the plaque. It is not a prose-only
-`-ink` token — it aliases the shared palette stop `--verdigris-700` (HP-bar gradient math, badges,
-borders, `--at-action`), so closing it is a palette retune with a cross-surface blast radius, not a
-token nudge; the prose guard therefore still pins that pair on the card surfaces only.
+family's worst-pair separation held at 0.0133 ΔE.
+
+**A shared graphic stop gets a PROSE VARIANT, never a palette retune.** The last ink on that ground
+was light `--semantic-success` (`.rt-adv`, "Advantage") at 4.156:1. It is not a prose-only `-ink`
+token — it aliases `--verdigris-700`, which also drives the HP-bar gradient math, badges, borders and
+`--at-action` — and that is exactly the case this rule answers: the prose gets its own
+`--rt-adv-ink` (light `--verdigris-900`: 7.484:1 on the plaque, 11.87 / 13.10 on the card surfaces;
+dark = the success stop, already clear on every prose ground), and the shared stop is left alone.
+`.rt-dis` needs no variant — `--semantic-danger` measures 4.729:1 on the plaque.
+
+**A token guard cannot see the CASCADE — pair it with a browser probe.** `.mon-entry strong` (0,1,1)
+out-specified the grammar's single-class rules (0,1,0), so the bestiary statblock repainted
+Advantage / Disadvantage / dice / DCs gilt `--accent-text`: three of the grammar's five arms were
+silently DEAD there, and the tokens the unit guard certified were not the colours Chromium painted
+(only `.rt-dmg` / `.rt-cond` survived, because they carry an inline `style` colour). The gilt lead is
+a CLASSLESS `<strong>`, so the rule is now `.mon-entry strong:not([class])`. Two guards, two jobs:
+the token pairing lives in `tests/unit/verdict-ink-contrast.test.ts`; the composited truth (computed
+colour vs the resolved opaque ground, every ink on the plaque, both themes) lives in
+`tests/e2e/statblock-ink-contrast.spec.ts`, whose leaf is `mimic` — the one SRD statblock that fires
+every arm of the grammar plus a `.mon-dmg` ledger run. **axe cannot do this job here:** the parchment
+backdrop and plate pseudo-elements defeat its background resolution, so on that surface axe reports
+~125 `color-contrast` nodes "incomplete" and ZERO violations — the failing `.rt-adv` among them.
 
 **The Token-Only Rule.** Components reference token names only. Literal hex in component code is
 prohibited; the only source of truth for values is `src/index.css`.

@@ -239,11 +239,11 @@ describe("condition-chip ink tokens clear WCAG-AA on the 19% tint", () => {
  * RULES-TEXT colour grammar (`highlightRulesText`, DESIGN.md "Rules-text colour
  * grammar") — its tokens render as INLINE PROSE INK on the raw card surfaces
  * (surface-1 closed cards / surface-2 open cards + the compendium reading
- * pane), not on a hue tint. The `--dmg-*-ink` ramp is already pinned on those
- * grounds above; this pins the grammar's OTHER inks there: every
- * `--cond-*-ink` (`.rt-cond`) and the semantic success/danger pair
- * (`.rt-adv`/`.rt-dis`). `--text-special` (`.rt-value`) is pinned in its own
- * describe below.
+ * pane) and on the carved statblock plaque, not on a hue tint. The `--dmg-*-ink`
+ * ramp is already pinned on those grounds above; this pins the grammar's OTHER
+ * inks there: every `--cond-*-ink` (`.rt-cond`) and the Advantage/Disadvantage
+ * pair (`.rt-adv` → `--rt-adv-ink`, `.rt-dis` → `--semantic-danger`).
+ * `--text-special` (`.rt-value`) is pinned in its own describe below.
  */
 describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
   for (const theme of ["dark", "light"] as const) {
@@ -273,21 +273,25 @@ describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
       });
     }
 
-    it(`${theme}: semantic success/danger ≥ ${AA}:1 as prose ink`, () => {
-      // KNOWN GAP (deliberately not widened to the plaque here): `.rt-adv` lands
-      // on the statblock plaque too, and light `--semantic-success` measures
-      // 4.156:1 there. Unlike a `-ink` ramp this pair is NOT prose-only — it
-      // aliases the shared palette stop `--verdigris-700`, which also paints the
-      // HP bar's gradient math, badges, borders and `--at-action`. Closing it is
-      // a palette retune with a cross-surface blast radius, not a token nudge,
-      // so it is tracked in DESIGN.md's Ink-Variant Rule rather than fixed by
-      // stealth inside an ink commit.
-      // Dark aliases the semantic pair to ramp stops (var(--verdigris-300) /
-      // var(--vermilion-300)); resolve through the ramp when not a literal.
-      for (const name of ["--semantic-success", "--semantic-danger"] as const) {
-        const raw = block.match(new RegExp(`${name}:\\s*var\\((--[a-z-0-9]+)\\)`))?.[1];
-        const ink = raw ? readVar(css, raw) : readVar(block, name);
-        for (const surface of surfaces) {
+    it(`${theme}: Advantage/Disadvantage prose inks ≥ ${AA}:1 on EVERY ground they ink`, () => {
+      // Same every-ground obligation, same derived plaque. `.rt-adv` rides
+      // `--rt-adv-ink` — the success stop's PROSE-deep variant — because the raw
+      // stop (light `--verdigris-700`) measures 4.156:1 here and is shared with
+      // the HP-bar gradient math, badges, borders and `--at-action`: the
+      // Ink-Variant Rule's answer to a shared graphic stop is a prose variant,
+      // not a palette retune. `.rt-dis` still inks `--semantic-danger` directly —
+      // it clears on every prose ground (4.729:1 on the plaque), so it needs no
+      // variant. Tokens are pinned HERE; that the two classes still REFERENCE
+      // them is proved in the browser by `tests/e2e/statblock-ink-contrast.spec.ts`.
+      const plaque = resolveColor(
+        decl(ruleBody(folioCss, ".beast-ref"), "background"),
+        block
+      );
+      // Both aliases chase through the ramp (`--rt-adv-ink` → `--semantic-success`
+      // → `--verdigris-300` in dark), so resolve rather than read a literal.
+      for (const name of ["--rt-adv-ink", "--semantic-danger"] as const) {
+        const ink = resolveColor(rawVar(block, name) ?? name, block);
+        for (const surface of [...surfaces, plaque]) {
           expect(contrast(ink, surface), `${name} on ${surface}`).toBeGreaterThanOrEqual(
             AA
           );

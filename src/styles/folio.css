@@ -9785,7 +9785,9 @@ button.create-need:focus-visible .create-need-chev {
    `.rt-cond` — condition names, inked inline in `--cond-<id>-ink`;
    `.rt-value`— dice · save DC · measured distance/duration, the lit
                 `--text-special` register (BG3's bright-bold numbers);
-   `.rt-adv` / `.rt-dis` — Advantage/Disadvantage, the success/danger inks.
+   `.rt-adv` / `.rt-dis` — Advantage/Disadvantage, the success/danger register
+                (`--rt-adv-ink` is the success stop's prose-deep variant; see
+                DESIGN.md → the Ink-Variant Rule).
    All at 600 on the serif (never the shouted UA 700), so a lifted token reads
    emphasized beside real `**bold**` labels, not louder than them. */
 .rt-value,
@@ -9799,7 +9801,7 @@ button.create-need:focus-visible .create-need-chev {
   color: var(--text-special);
 }
 .rt-adv {
-  color: var(--semantic-success);
+  color: var(--rt-adv-ink);
 }
 .rt-dis {
   color: var(--semantic-danger);
@@ -15737,7 +15739,15 @@ button.econ-tok-filter:active .econ-disc {
   line-height: 1.55;
   color: var(--text-primary);
 }
-.mon-entry strong {
+/* The gilt lead is the entry NAME (`**Bite.**`) — a CLASSLESS `<strong>` from the
+   markdown renderer. The rules-text colour grammar emits `<strong class="rt-*">`
+   too, so a bare `.mon-entry strong` (0,1,1) out-specified the grammar's
+   single-class rules (0,1,0) and repainted Advantage / Disadvantage / dice / DCs
+   gilt — the grammar was silently DEAD on the bestiary, the most prose-dense
+   surface in the app (`.rt-dmg` / `.rt-cond` survived only because they carry an
+   inline `style` colour). `:not([class])` keeps the lead gilt and hands every
+   grammar span back to its own ink. */
+.mon-entry strong:not([class]) {
   color: var(--accent-text);
   font-weight: 700;
 }

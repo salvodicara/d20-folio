@@ -567,8 +567,25 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   // not just the page chrome — painted.
   "compendium-entry": { edit: false, ready: readyText(/fireball|palla di fuoco/i) },
   // The deep-linked statblock leaf — anchor on the entry's own masthead noun so
-  // the surface proves the statblock painted (skeleton shipped in the pilot).
-  "compendium-monster-entry": { edit: false, ready: readyText(/skeleton|scheletro/i) },
+  // the surface proves the statblock painted, THEN on every arm of the rules-text
+  // colour grammar. The leaf is `mimic` (same noun in EN + IT) because it is the
+  // one SRD statblock whose prose fires ALL of them: `.rt-adv` ("with Advantage")
+  // · `.rt-dis` ("have Disadvantage") · `.rt-cond` ("the Grappled condition") ·
+  // `.rt-dmg` (Piercing/Bludgeoning/Acid) · `.rt-value` (dice + DC), plus a
+  // `.mon-dmg` ledger run (Acid immunity). Waiting on the CLASSES, not just the
+  // name, is the point: a fixture whose prose never triggers an arm leaves the
+  // surface green on an ink that fails in production — which is exactly how
+  // `skeleton` (no Advantage, no Disadvantage, no condition name) hid `.rt-adv`
+  // at 4.156:1 on this very surface.
+  "compendium-monster-entry": {
+    edit: false,
+    ready: async (page) => {
+      await readyText(/mimic/i)(page);
+      for (const arm of [".rt-adv", ".rt-dis", ".rt-cond", ".rt-dmg", ".rt-value"]) {
+        await page.locator(`.beast-ref ${arm}`).first().waitFor({ timeout: 15000 });
+      }
+    },
+  },
   // COMPENDIUM-LUX — the facet bar unfolded: same synchronous page, then the
   // prepare opens the Filters disclosure and anchors on the expanded state.
   "compendium-filters": {
