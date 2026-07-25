@@ -16,7 +16,8 @@ step**. Deploys stay owner-gated (golden rule 22), so `main` may run ahead of li
 **6 real users** have been playing since 2026-06-08. The repo went **open-source + split-repo**
 (2026-07-17), the **full-BG3 identity pivot** landed code-complete (asset integration pending), and
 the **DDB-parity feature epic** is now **ACTIVE** (OPENED 2026-07-23) with its **bestiary flagship
-SHIPPED** (2026-07-24; bestiary-first; the competitive map is `docs/POSITIONING.md`). **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
+SHIPPED** (2026-07-24) and the **encounter picker SHIPPED** (2026-07-25; bestiary-first; the
+competitive map is `docs/POSITIONING.md`). **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
 **id-storage + GR7 i18n-leak-eradication campaign** is **CLOSED** (v0.13.0): every SRD-derived value
 is a stable, mostly-branded id; every user-visible string lives in `src/i18n/**` (a new language = a
@@ -52,8 +53,9 @@ tracker) is **shipped and live**. The **2024 core-rules SYSTEM audit (RA-01…RA
 core-rules audit close-out_), and the tracking-doc reconciliation truth-sweep landed with it. The
 forward frontier (detailed under _Next — the forward plan_) is the **ACTIVE DDB-parity feature
 epic** — its **bestiary flagship SHIPPED** (2026-07-24: 330 SRD monsters EN+IT + the compendium
-Monsters section; see _Shipped — the SRD bestiary campaign_), the live head now the **encounter
-picker** + the 2024-DMG difficulty calculator, with the **pack-side MM corpus** advancing along the
+Monsters section; see _Shipped — the SRD bestiary campaign_) and the **encounter picker SHIPPED**
+(2026-07-25: the DM bestiary picker + statblock disclosure), the live head now the **2024-DMG
+difficulty calculator**, with the **pack-side MM corpus** advancing along the
 same manifest (`docs/POSITIONING.md`) — the react-router advisory triage, and the P4 polish tail
 (guided tour, compendium polish).
 
@@ -1037,8 +1039,10 @@ and the commit bloom. Four divider grammars collapsed into one `--hairline`.
 
 > The standing competitive map this epic serves — the ahead/behind frame, the deliberate non-goals,
 > and the moat-vs-opening — is `docs/POSITIONING.md`. **The epic is now ACTIVE** — the bestiary
-> campaign flagship SHIPPED (see _Shipped — the SRD bestiary campaign_ below); the next attack-order
-> step is the encounter picker + the 2024-DMG difficulty calculator.
+> campaign flagship SHIPPED (see _Shipped — the SRD bestiary campaign_ below) and the **encounter
+> picker SHIPPED** (2026-07-25 — the DM's "Add monster" now opens a bestiary picker + DM statblock
+> disclosure; see the bestiary bullet below); the next attack-order step is the 2024-DMG difficulty
+> calculator.
 
 **The owner's charter, captured on ratification (golden rule 4).** A full competitive audit vs
 D&D Beyond (mid-2026 verified state: Project Sigil dead, 2D Maps free-for-all, DDB's 2026 roadmap
@@ -1065,6 +1069,16 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     tier, and the 2024-re-derived beast catalogue behind the shared projection guard. Full
     account: _Shipped — the SRD bestiary campaign_ below; granular per-wave history lives in
     `CHANGELOG.md` + git (this forward-plan doc keeps only the pointer).
+  - **ENCOUNTER PICKER SHIPPED 2026-07-25:** the DM's "Add monster" banner control now opens a
+    `ModalShell` picker (reusing `CompendiumPicker`/`monsterSpec` via a derived add-mode spec) with
+    two tabs — **Bestiary** (search the full corpus, facet by CR/size/type, read the statblock, set
+    a count capped at 20) and **Custom** (the surviving `AddMonsterForm`). A bestiary add pre-fills
+    the group from the statblock (localized name · AC · average HP · blank initiative) and stamps an
+    additive, display-only `EncounterMonster.srdId`, which powers a **DM-only statblock disclosure**
+    on the monster card (a `MonsterStatBlockCard` modal, degrading quietly on a stale id) plus
+    rename-in-place. The whole bestiary surface loads in ONE lazy chunk on first open (zero eager
+    delta — tripwired); a spec-driven `quantityMax` was added to the shared picker footer. NEXT: the
+    2024-DMG XP-budget difficulty calculator.
 - **Companions/Extras:** a persistent companion-statblock surface on the sheet (Find Familiar,
   Primal Companion, Drakewarden, Artificer Steel Defender/Homunculus) — closes a
   rules-completeness hole; reuses the bestiary statblock renderer.
@@ -1096,7 +1110,8 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   2026-07-23: the #32 open-sourcing split COMPLETED 2026-07-17 — before this epic opened — so the
   split-aware authoring the charter references is already the live world (public SRD repo + private
   pack); the old #32 issue was deleted with the split, so THIS charter is the surviving coordination
-  record. `bestiary` is now DONE (2026-07-24); the live attack-order head is `encounter picker`.]
+  record. `bestiary` is now DONE (2026-07-24) and `encounter picker` is DONE (2026-07-25); the live
+  attack-order head is `difficulty calc`.]
 
 ## Shipped epic — BG3-Grade Identity Evolution Epic
 

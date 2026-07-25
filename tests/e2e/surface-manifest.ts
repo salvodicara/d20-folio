@@ -128,6 +128,13 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   // initiative tracker. The prepare seeds the `d20-dev-encounter` flag + reloads so
   // the dev fixture seeds a mid-combat encounter — both states sweep on one route.
   { slug: "campaign-hub-encounter", route: "/campaigns/mock-1" },
+  // The bestiary picker MODAL, open on its Bestiary tab (search + facet strips).
+  // The prepare seeds the encounter, opens the Add-monster modal, and waits for the
+  // monster search box — both themes × EN/IT × desktop/mobile per DESIGN §15.11.
+  { slug: "campaign-encounter-add-monster", route: "/campaigns/mock-1" },
+  // The DM statblock disclosure MODAL for the seeded picker-added monster (monster-1
+  // carries `srdId: goblin-warrior`), open on its statblock leaf.
+  { slug: "campaign-monster-statblock", route: "/campaigns/mock-1" },
   // T4 — the DM's read-only full-sheet view of a party member. `member-mara` is a
   // dev-fixture campaign member whose attached character resolves to a real
   // dev-fixture sheet (College of Lore bard) under dev-bypass.

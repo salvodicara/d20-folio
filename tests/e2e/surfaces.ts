@@ -552,6 +552,72 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
         .catch(() => {});
     },
   },
+  // The bestiary picker modal, open on its Bestiary tab: seed the encounter, tap
+  // "Add monster", then wait for the monster search box (locale-robust placeholder).
+  "campaign-encounter-add-monster": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyText(/coralino/i),
+    prepare: async (page) => {
+      await page.addInitScript(() =>
+        window.localStorage.setItem("d20-dev-encounter", "1")
+      );
+      await page.reload();
+      await page
+        .getByText(/coralino/i)
+        .first()
+        .waitFor({ timeout: 8000 })
+        .catch(() => {});
+      await page
+        .getByRole("button", { name: /add monster|aggiungi mostro/i })
+        .first()
+        .click()
+        .catch(() => {});
+      // The modal's monster picker painted (search box + facet strips).
+      await page
+        .getByPlaceholder(/search monsters|cerca mostri/i)
+        .first()
+        .waitFor({ timeout: 8000 })
+        .catch(() => {});
+    },
+  },
+  // The DM statblock disclosure modal: the seeded monster-1 ("Goblin", srdId
+  // goblin-warrior) — expand its card, tap Statblock, wait for the statblock plaque.
+  "campaign-monster-statblock": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyText(/coralino/i),
+    prepare: async (page) => {
+      await page.addInitScript(() =>
+        window.localStorage.setItem("d20-dev-encounter", "1")
+      );
+      await page.reload();
+      await page
+        .getByText(/coralino/i)
+        .first()
+        .waitFor({ timeout: 8000 })
+        .catch(() => {});
+      // Expand monster-1's DM disclosure (its toggle is labelled by the monster name),
+      // then open the statblock. The Statblock button appears only inside the DM body.
+      const statblock = page
+        .getByRole("button", { name: /^statblock$|blocco statistiche/i })
+        .first();
+      if (!(await statblock.isVisible({ timeout: 2000 }).catch(() => false))) {
+        await page
+          .getByRole("button", { name: /^goblin$/i })
+          .first()
+          .click()
+          .catch(() => {});
+      }
+      await statblock.click().catch(() => {});
+      // The statblock plaque painted inside the modal (the shared card class).
+      await page
+        .locator(".mon-ref, .beast-ref")
+        .first()
+        .waitFor({ timeout: 8000 })
+        .catch(() => {});
+    },
+  },
   // Compendium realm: anchor on the page <h1> by role (the page is synchronous —
   // it reads the bundled SRD, no fetch — so the heading present ⇒ body painted),
   // not the EN "…searchable" header hint.
