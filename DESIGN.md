@@ -2859,7 +2859,9 @@ a11y gate after any token change.
 
 Before writing new CSS or a new component, check what existing primitives already solve it (`OptionGrid`,
 `InlineEditable`, `NumberStepper`, `InfoCard`, `SectionHeader`, `Button`, `IconButton`, `Input`,
-`Textarea`, `ModalHead`, `MonsterStatBlockCard` — the whole 2024 monster statblock) and whether a
+`Textarea`, `ModalHead`, `MonsterStatBlockCard` — the whole 2024 monster statblock;
+`CompanionStatBlockCard` — the shared feature-declared-companion card, Features tab + the Companions
+rail modal, with the Beast Master variant `Segmented`) and whether a
 sibling surface already uses the pattern. Search is bilingual +
 accent-insensitive + **token-based** via `matchesSearch` (pass both the localized label and `name.en`)
 — the query is split into whitespace tokens and every token must appear somewhere in the joined
@@ -2921,18 +2923,20 @@ above).
 
 ### 15.13 Quick Reference — Canonical Primitives
 
-| Need                        | Reach for                                       |
-| --------------------------- | ----------------------------------------------- |
-| Editable field in-place     | `InlineEditable`                                |
-| Numeric input with stepper  | `NumberStepper`                                 |
-| Option grid / card picker   | `OptionGrid` (card mode or list mode)           |
-| Picker with search + filter | `PickerSearch` + `FilterChip` + `PickerRow`     |
-| Info display card           | `InfoCard` / `.info-card`                       |
-| Section heading + ledger    | `.sec-head` pattern (see Treasury surface)      |
-| Modal header                | `ModalHead`                                     |
-| Icon-only button            | `IconButton`                                    |
-| Accent / neutral button     | `Button` (variant prop: accent / neutral / …)   |
-| Bilingual search            | `matchesSearch(query, localized, name.en)`      |
-| Bounded prose preview       | `NoteClamp` (overflow-engaged, in-place expand) |
-| In-wizard choice pool       | `WizardPickList` (the morph-list; §5 above)     |
-| Bounded growing list        | latest-N + "View all" (the Treasury-log recipe) |
+| Need                        | Reach for                                                   |
+| --------------------------- | ----------------------------------------------------------- |
+| Editable field in-place     | `InlineEditable`                                            |
+| Numeric input with stepper  | `NumberStepper`                                             |
+| Option grid / card picker   | `OptionGrid` (card mode or list mode)                       |
+| Picker with search + filter | `PickerSearch` + `FilterChip` + `PickerRow`                 |
+| Info display card           | `InfoCard` / `.info-card`                                   |
+| Section heading + ledger    | `.sec-head` pattern (see Treasury surface)                  |
+| Modal header                | `ModalHead`                                                 |
+| Monster statblock           | `MonsterStatBlockCard` (2024 SRD; the familiar)             |
+| Feature-declared companion  | `CompanionStatBlockCard` (owner-scaled + variant Segmented) |
+| Icon-only button            | `IconButton`                                                |
+| Accent / neutral button     | `Button` (variant prop: accent / neutral / …)               |
+| Bilingual search            | `matchesSearch(query, localized, name.en)`                  |
+| Bounded prose preview       | `NoteClamp` (overflow-engaged, in-place expand)             |
+| In-wizard choice pool       | `WizardPickList` (the morph-list; §5 above)                 |
+| Bounded growing list        | latest-N + "View all" (the Treasury-log recipe)             |

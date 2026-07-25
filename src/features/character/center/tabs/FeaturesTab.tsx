@@ -22,9 +22,9 @@
  * `resolveFeatureRider` / `resolveCompanion`).
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Minus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
 import { registerUndoableToast } from "@/stores/undoStore";
@@ -33,12 +33,7 @@ import { classFeatureIndex } from "@/data/classes";
 import { FEATS_BY_ID } from "@/data/feats";
 import { raceFeatureIndex, raceTraitCatKey } from "@/data/races";
 import { deriveOriginFeats, buildGrantedFeatures } from "@/lib/character-build";
-import {
-  totalLevel,
-  primaryClassId,
-  primaryClassEntry,
-  classEntryLevel,
-} from "@/lib/classes";
+import { primaryClassId, primaryClassEntry, classEntryLevel } from "@/lib/classes";
 import { matchesSearch } from "@/lib/search";
 // (PageHeader removed — the tab bar labels this domain; toolbar is inline below)
 import type { SrdFeatureRef, CustomFeature } from "@/types/character";
@@ -52,12 +47,10 @@ import {
 import { chipText } from "@/lib/views/combat-action-view";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import {
-  effectiveAbilityScores,
-  effectiveSpellAttackBonus,
-  resolveCastingModifier,
-  resolveCompanion,
-} from "@/lib/compute";
-import { formatModifier, localeDistance } from "@/lib/utils";
+  buildCompanionCardViews,
+  type CompanionCardView,
+} from "@/lib/views/companion-row-view";
+import { CompanionStatBlockCard } from "@/components/shared/CompanionStatBlockCard";
 import {
   localizeClassName,
   localizeSubclassName,
@@ -65,7 +58,6 @@ import {
   localizeWeaponMastery,
 } from "@/lib/views/srd-i18n";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
-import { srdKey } from "@/i18n/srd-key";
 import { srdOptionParts } from "@/components/shared/srd-option";
 import type { ActionType, Recovery } from "@/data/types";
 import { Tracker, type TrackerColor } from "@/components/shared/Tracker";
@@ -444,42 +436,22 @@ export function FeaturesTab() {
     }
   }
 
+  // Feature-declared companions — resolved + localized ONCE by the shared presenter
+  // (the SAME views the Companions rail renders, golden rule 6), indexed by the
+  // granting feature id for the per-feature card below.
+  const companionViewMap = useMemo(() => {
+    const map = new Map<string, CompanionCardView>();
+    if (character) {
+      for (const v of buildCompanionCardViews(character, locale, t)) {
+        map.set(v.featureId, v);
+      }
+    }
+    return map;
+  }, [character, locale, t]);
+
   const features = useMemo(() => {
     if (!character) return [];
     const { character: charData } = character;
-
-    // B8 — a summoned companion's AC borrows the OWNER's keyed ability mod (Steel
-    // Defender / Eldritch Cannon = 12/18 + owner INT), which scales with the
-    // CURRENT (effective) score, so a Headband of Intellect raises it (RAW 2024).
-    // Resolve effective scores ONCE and feed `resolveCompanion`, never raw — the
-    // companion's OWN fixed scores stay untouched inside the helper (rule 6).
-    const companionAgg = aggregateCharacterGrants(charData, character.session);
-    const companionEffectiveScores = effectiveAbilityScores(
-      charData.abilityScores,
-      companionAgg.abilityScoreFloors,
-      companionAgg.itemAbilityScoreBonus,
-      companionAgg.itemAbilityScoreCap
-    );
-    // A companion's `attackBonus: "spell-attack"` attack (Steel Defender's
-    // Force-Empowered Rend, the Eldritch Cannon's Force Ballista) hits with the
-    // OWNER's spell attack modifier — the same effective bonus the Spells tab
-    // shows (PB + spellcasting-ability mod + any casting bump, override-first).
-    // Resolve it ONCE from the owner's spellcasting config (null for a non-caster
-    // — `resolveCompanion` then falls back to PB). One seam (rule 6).
-    const sc = charData.spellcasting;
-    const ownerSpellAttackMod = sc
-      ? effectiveSpellAttackBonus(
-          totalLevel(charData),
-          companionEffectiveScores[sc.ability],
-          resolveCastingModifier(
-            companionAgg.spellAttackBonus,
-            charData.classes[0]?.classId
-          ),
-          sc.attackBonusOverride,
-          character.session.exhaustion,
-          charData.proficiencyBonusOverride
-        )
-      : undefined;
 
     // "Declare the least, infer the rest": the Background's Origin feat (and the
     // species `humanOriginFeat`) are DERIVED from the declared `background` /
@@ -635,74 +607,10 @@ export function FeaturesTab() {
         source,
         tracker: trackerMap.get(ref.srdId) ?? null,
         riders,
-        // Summoned companion (Steel Defender / Eldritch Cannon): resolve AC +
-        // max HP from level/INT; pull current HP from session.
-        companion: classFeature?.companion
-          ? (() => {
-              const resolved = resolveCompanion(
-                classFeature.companion,
-                totalLevel(charData),
-                companionEffectiveScores,
-                charData.proficiencyBonusOverride,
-                ownerSpellAttackMod
-              );
-              return {
-                ...resolved,
-                // Each resolved attack carries its concrete to-hit + damage
-                // formula; localize the catalogue name + rider (under the
-                // feature's `<srdId>.companion.attacks.<id>` key, R3) here at the
-                // view edge so the engine output stays i18n-free (rule 7).
-                attacks: resolved.attacks.map((atk) => {
-                  const atkKey = srdKey(ref.srdId, "companion", "attacks", atk.id);
-                  return {
-                    id: atk.id,
-                    name: hasSrd("class-feature", atkKey, "name", locale)
-                      ? localizeSrd("class-feature", atkKey, "name", locale)
-                      : atk.id,
-                    attackBonus: atk.attackBonus,
-                    // Word-free dice + the LOCALIZED damage type (rule 7 — the
-                    // raw token never reaches the DOM): "1d8 + 2 + 3 Force".
-                    damage: `${atk.damageDice} ${t(`srd.damage_${atk.damageType}`)}`,
-                    reachFt: atk.reachFt,
-                    ranged: atk.ranged,
-                    rider: hasSrd("class-feature", atkKey, "rider", locale)
-                      ? localizeSrd("class-feature", atkKey, "rider", locale)
-                      : undefined,
-                  };
-                }),
-                // Companion display name + kind live in the catalogue under the
-                // feature's `<srdId>.companion` key (R3); fall back to the
-                // feature's own name when the companion has no distinct name.
-                label: hasSrd(
-                  "class-feature",
-                  srdKey(ref.srdId, "companion"),
-                  "name",
-                  locale
-                )
-                  ? localizeSrd(
-                      "class-feature",
-                      srdKey(ref.srdId, "companion"),
-                      "name",
-                      locale
-                    )
-                  : featText("name", locale),
-                kind: hasSrd(
-                  "class-feature",
-                  srdKey(ref.srdId, "companion"),
-                  "kind",
-                  locale
-                )
-                  ? localizeSrd(
-                      "class-feature",
-                      srdKey(ref.srdId, "companion"),
-                      "kind",
-                      locale
-                    )
-                  : undefined,
-                current: character.session.companionHp?.[ref.srdId]?.current,
-              };
-            })()
-          : null,
+        // Summoned companion (Steel Defender / Eldritch Cannon / Primal Companion):
+        // the ONE shared presenter resolves + localizes it (the SAME view the rail
+        // renders — golden rule 6), keyed by the granting feature id.
+        companion: companionViewMap.get(ref.srdId) ?? null,
         isCustom: false,
         // Computed = derived from a build choice (idx:-1) OR a stored ref whose
         // id any choice computes. Computed features are read-only/non-deletable.
@@ -720,7 +628,7 @@ export function FeaturesTab() {
       return a._sortKey.level - b._sortKey.level;
     });
     return resolved;
-  }, [character, trackerMap, locale, t]);
+  }, [character, trackerMap, companionViewMap, locale, t]);
 
   const filteredFeatures = useMemo(() => {
     if (!search.trim()) return features;
@@ -745,6 +653,19 @@ export function FeaturesTab() {
       }))
       .filter((section) => section.items.length > 0);
   }, [filteredFeatures, t]);
+
+  // Variant switch (Beast Master: Land/Sea/Sky) — undoable; the store resets the
+  // companion's HP pool (a different beast = a different pool). Play-time only.
+  const handleVariantChange = useCallback(
+    (featureId: string, variantId: string, label: string) => {
+      registerUndoableToast(
+        { message: t("features.variantSwitched", { name: label }) },
+        () => useCharacterStore.getState().setCompanionVariant(featureId, variantId),
+        { turnScoped: false }
+      );
+    },
+    [t]
+  );
 
   if (!character) return null;
 
@@ -982,7 +903,6 @@ export function FeaturesTab() {
               const tracker = feature.tracker;
               const hasUses = tracker ? tracker.total - tracker.used > 0 : false;
               const comp = feature.companion;
-              const compCur = comp ? (comp.current ?? comp.hpMax) : 0;
 
               // ── Gloss sub-line: source · action type · recovery ──
               const glossParts = [feature.source, actionTypeLabel(feature.actionType)];
@@ -1114,103 +1034,21 @@ export function FeaturesTab() {
                     </p>
                   ))}
 
-                  {/* Companion stat block — AC + max HP derived from level/INT;
-                      current HP tracked in session (±buttons in play mode). */}
+                  {/* Companion stat block — the SHARED card (golden rule 6): the
+                      Beast Master variant Segmented + HP steppers wire in play mode;
+                      the SAME component mounts in the Companions rail modal. */}
                   {comp && (
-                    <div className="uc-callout">
-                      <div className="flex items-baseline justify-between">
-                        <span className="font-semibold text-text-primary">
-                          {comp.label}
-                        </span>
-                        {comp.kind && (
-                          <span className="text-[length:var(--text-micro)] italic text-text-secondary">
-                            {comp.kind}
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.68rem] text-text-secondary">
-                        <span>
-                          {t("stats.ac")}{" "}
-                          <span className="font-mono font-semibold text-text-primary">
-                            {comp.ac}
-                          </span>
-                        </span>
-                        {comp.speed && (
-                          <span>
-                            {t("stats.spd")}{" "}
-                            <span className="font-mono font-semibold text-text-primary">
-                              {comp.speed}
-                            </span>
-                          </span>
-                        )}
-                        <span className="inline-flex items-center gap-1">
-                          {t("character.hp")}
-                          {sheetMode === "play" && (
-                            <button
-                              type="button"
-                              onClick={() => setCompanionHp(feature.id, compCur - 1)}
-                              className="flex h-4 w-4 items-center justify-center rounded border border-border text-text-secondary hover:border-danger hover:text-danger"
-                              aria-label={`−1 HP ${comp.label}`}
-                            >
-                              <Icon as={Minus} size="sm" decorative />
-                            </button>
-                          )}
-                          <span className="font-mono font-semibold text-text-primary">
-                            {compCur} / {comp.hpMax}
-                          </span>
-                          {sheetMode === "play" && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setCompanionHp(
-                                  feature.id,
-                                  Math.min(comp.hpMax, compCur + 1)
-                                )
-                              }
-                              className="flex h-4 w-4 items-center justify-center rounded border border-border text-text-secondary hover:border-success hover:text-success"
-                              aria-label={`+1 HP ${comp.label}`}
-                            >
-                              <Icon as={Plus} size="sm" decorative />
-                            </button>
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Companion attacks — the orphaned `comp.attacks` data
-                          (Force-Empowered Rend, Force Ballista) finally rendered:
-                          one row per attack reusing the cockpit weapon-row recipe
-                          (signed to-hit · word-free damage · reach/range). */}
-                      {comp.attacks.length > 0 && (
-                        <ul className="mt-2 space-y-1 border-t border-border/60 pt-2">
-                          {comp.attacks.map((atk) => (
-                            <li key={atk.id} className="text-[0.68rem] leading-snug">
-                              <div className="flex flex-wrap items-baseline gap-x-2">
-                                <span className="font-semibold text-text-primary">
-                                  {atk.name}
-                                </span>
-                                <span className="font-mono text-text-secondary">
-                                  {formatModifier(atk.attackBonus)} {t("srd.toHit")}
-                                </span>
-                                <span className="text-text-tertiary">·</span>
-                                <span className="font-mono text-text-secondary">
-                                  {atk.damage}
-                                </span>
-                                <span className="text-text-tertiary">·</span>
-                                <span className="text-text-secondary">
-                                  {atk.ranged ? t("spells.range") : t("srd.reach")}{" "}
-                                  <span className="font-mono">
-                                    {localeDistance(atk.reachFt, locale)}
-                                  </span>
-                                </span>
-                              </div>
-                              {atk.rider && (
-                                <p className="text-text-tertiary">{atk.rider}</p>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
+                    <CompanionStatBlockCard
+                      view={comp}
+                      interactive={sheetMode === "play"}
+                      onHpChange={setCompanionHp}
+                      onVariantChange={(featureId, variantId) => {
+                        const label =
+                          comp.variants?.find((o) => o.variantId === variantId)?.label ??
+                          variantId;
+                        handleVariantChange(featureId, variantId, label);
+                      }}
+                    />
                   )}
 
                   {/* Live tracker — the folio `Tracker` molecule (pips ≤5 /

@@ -7,6 +7,8 @@
     "feats": "Feats",
     "custom": "Custom",
     "passive": "Passive",
+    "variantLabel": "Form",
+    "variantSwitched": "Switched to {{name}}",
     "alwaysActive": "Always active, no use needed",
     "slotAction": "Action",
     "slotBonus": "Bonus Action",

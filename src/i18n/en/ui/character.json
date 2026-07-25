@@ -100,7 +100,8 @@
       "cycleSkillProf": "Cycle {{skill}} proficiency (none / proficient / expertise)",
       "skillBonusAria": "{{skill}} bonus",
       "auras": "Auras",
-      "activePotions": "Active Potions"
+      "activePotions": "Active Potions",
+      "companions": "Companions"
     },
     "vitals": {
       "label": "Vital statistics",

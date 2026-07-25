@@ -7,6 +7,8 @@
     "feats": "Talenti",
     "custom": "Personalizzati",
     "passive": "Passivo",
+    "variantLabel": "Forma",
+    "variantSwitched": "Passato a {{name}}",
     "alwaysActive": "Sempre attivo: nessun uso richiesto",
     "slotAction": "Azione",
     "slotBonus": "Azione Bonus",

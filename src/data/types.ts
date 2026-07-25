@@ -959,6 +959,16 @@ export interface SrdSpellData {
    */
   grants?: ReadonlyArray<import("@/lib/grants").Grant>;
   /**
+   * A persistent summoned companion's stat block (pack Homunculus Servant). Same
+   * seam as {@link SrdClassFeatureData.companion} (Steel Defender / Primal
+   * Companion): the sheet resolves AC + max HP from the owner's level/ability and
+   * tracks current HP in session, keyed by the SPELL id. The public SRD carries no
+   * such spell, so this field is inert public-side (D11 — the SHAPE is public, the
+   * content is pack); the Companions surface renders it when the spell is
+   * prepared / always-prepared.
+   */
+  companion?: CompanionStatBlock;
+  /**
    * Source book/setting. Non-`"SRD"` tags mark content outside the CC-BY SRD
    * 5.2.1 subset — such entries live in the content pack, never in `src/data`
    * (mirrors `SrdFeatData.source`).

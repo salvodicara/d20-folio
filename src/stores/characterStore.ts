@@ -383,9 +383,10 @@ interface CharacterState {
    * Pick a Beast Master companion's stat-block variant (Beast of the Land / Sea /
    * Sky), keyed by the granting feature id. Switching variants RESETS that
    * companion's `companionHp` entry — a different beast is a different HP pool, and
-   * clamping the old current-HP would silently misreport (override-first).
+   * clamping the old current-HP would silently misreport (override-first). Returns
+   * an undo restoring the prior variant + HP entry, or `null` (readonly / no char).
    */
-  setCompanionVariant: (featureId: string, variantId: string) => void;
+  setCompanionVariant: (featureId: string, variantId: string) => (() => void) | null;
   /**
    * Summon a Find Familiar of `monsterId` as the chosen `creatureType` (the 2024
    * type swap). Seeds `companionHp["find-familiar"]` to `maxHp` (the CALLER resolves
@@ -1896,9 +1897,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
 
   setCompanionVariant: (featureId, variantId) => {
-    if (get().readonly) return;
+    if (get().readonly) return null;
     const { character } = get();
-    if (!character) return;
+    if (!character) return null;
+    const before = character; // undo = restore the prior variant pick + HP pool
     // A different variant is a different beast = a different HP pool; RESET the
     // companion's HP entry so a stale current can't misreport the new max.
     const { [featureId]: _dropped, ...restHp } = character.session.companionHp ?? {};
@@ -1916,6 +1918,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         },
       },
     });
+    return () => set({ character: before });
   },
 
   summonFamiliar: (monsterId, creatureType, maxHp) => {

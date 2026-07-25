@@ -82,6 +82,13 @@ import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { stripInline } from "@/components/shared/parseInline";
 import { cn } from "@/lib/utils";
 import { RailSection } from "../RailSection";
+import { ModalShell } from "@/components/shared/ModalShell";
+import { CompanionStatBlockCard } from "@/components/shared/CompanionStatBlockCard";
+import {
+  buildCompanionRowVMs,
+  buildCompanionCardViews,
+  type CompanionCardView,
+} from "@/lib/views/companion-row-view";
 import { RailNotes } from "./RailNotes";
 import { ResourceConversions } from "./ResourceConversions";
 import { GrantBundleSelector } from "@/components/sheet/GrantBundleSelector";
@@ -139,7 +146,9 @@ export function ResourceRail() {
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
   const combatSelected = useCombatStore((s) => s.selected);
-  const isEdit = useUIStore((s) => s.sheetMode === "edit");
+  const sheetMode = useUIStore((s) => s.sheetMode);
+  const isEdit = sheetMode === "edit";
+  const setCompanionHp = useCharacterStore((s) => s.setCompanionHp);
 
   const trackers = useMemo<ResolvedTracker[]>(
     () => (character ? localizeTrackers(character, locale) : []),
@@ -211,6 +220,24 @@ export function ResourceRail() {
         : [],
     [character, aggregate, locale]
   );
+
+  // Companions (Steel Defender / Eldritch Cannon / Beast Master Primal Companion,
+  // + pack spell-companions) — the persistent-companion surface. Rows (summary) +
+  // the full stat-block views (the modal) both come from the ONE shared presenter,
+  // so the rail agrees with the Features-tab card by construction (golden rule 6).
+  const companionRows = useMemo(
+    () => (character ? buildCompanionRowVMs(character, locale, t) : []),
+    [character, locale, t]
+  );
+  const companionViews = useMemo(() => {
+    const map = new Map<string, CompanionCardView>();
+    if (character) {
+      for (const v of buildCompanionCardViews(character, locale, t))
+        map.set(v.featureId, v);
+    }
+    return map;
+  }, [character, locale, t]);
+  const [openCompanionId, setOpenCompanionId] = useState<string | null>(null);
 
   // S9 — active CONSUMED buff-potion countdowns (Potion of Speed / Giant
   // Strength / …) resolved from the self-sustaining `potion:` effectTimers the
@@ -589,6 +616,106 @@ export function ResourceRail() {
           </div>
         </RailSection>
       )}
+
+      {/* ── Companions — the persistent, play-reachable surface for a
+          feature-declared companion (Steel Defender / Eldritch Cannon / Beast
+          Master Primal Companion). Directly after Active Features: both are "live
+          things my build currently fields". Row = the DM-question facts (name · AC ·
+          HP ± steppers · variant chip); the full stat block is one tap (the modal).
+          Hidden entirely when the character fields none (§4.15). The FAMILIAR row is
+          a separate lazy leaf (its form's stat block joins the monster corpus). ── */}
+      {companionRows.some((r) => r.kind === "grant") && (
+        <RailSection rubric={t("character.hud.companions")}>
+          <ul className="flex flex-col gap-2">
+            {companionRows.map((row) => {
+              if (row.kind !== "grant") return null;
+              const cur = row.current ?? row.hpMax;
+              return (
+                <li key={row.featureId} className="flex items-center gap-2 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setOpenCompanionId(row.featureId)}
+                    className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-left"
+                  >
+                    <span className="text-text-primary">{row.name}</span>
+                    {row.chip && (
+                      <span className="text-[length:var(--text-micro)] italic text-text-secondary">
+                        {row.chip}
+                      </span>
+                    )}
+                    <span className="text-[0.68rem] text-text-secondary">
+                      {t("stats.ac")}{" "}
+                      <span className="font-mono text-text-primary">{row.ac}</span>
+                    </span>
+                  </button>
+                  <span className="inline-flex items-center gap-1 text-[0.68rem] text-text-secondary">
+                    {sheetMode === "play" && (
+                      <button
+                        type="button"
+                        onClick={() => setCompanionHp(row.featureId, cur - 1)}
+                        className="flex h-4 w-4 items-center justify-center rounded border border-border text-text-secondary hover:border-danger hover:text-danger"
+                        aria-label={`−1 HP ${row.name}`}
+                      >
+                        <Icon as={Minus} size="sm" decorative />
+                      </button>
+                    )}
+                    <span className="font-mono font-semibold text-text-primary">
+                      {cur} / {row.hpMax}
+                    </span>
+                    {sheetMode === "play" && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCompanionHp(row.featureId, Math.min(row.hpMax, cur + 1))
+                        }
+                        className="flex h-4 w-4 items-center justify-center rounded border border-border text-text-secondary hover:border-success hover:text-success"
+                        aria-label={`+1 HP ${row.name}`}
+                      >
+                        <Icon as={Plus} size="sm" decorative />
+                      </button>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </RailSection>
+      )}
+
+      {/* The full companion stat block — one tap from a rail row. The SHARED card
+          (golden rule 6): the SAME component the Features tab mounts inline. */}
+      {(() => {
+        const view = openCompanionId ? companionViews.get(openCompanionId) : undefined;
+        return (
+          <ModalShell
+            open={view != null}
+            onClose={() => setOpenCompanionId(null)}
+            title={view?.label ?? ""}
+            size="sm"
+          >
+            {view && (
+              <CompanionStatBlockCard
+                view={view}
+                interactive={sheetMode === "play"}
+                onHpChange={setCompanionHp}
+                onVariantChange={(featureId, variantId) => {
+                  const label =
+                    view.variants?.find((o) => o.variantId === variantId)?.label ??
+                    variantId;
+                  registerUndoableToast(
+                    { message: t("features.variantSwitched", { name: label }) },
+                    () =>
+                      useCharacterStore
+                        .getState()
+                        .setCompanionVariant(featureId, variantId),
+                    { turnScoped: false }
+                  );
+                }}
+              />
+            )}
+          </ModalShell>
+        );
+      })()}
 
       {/* ── Auras — active emanations (PRIM-aura: Wrath of the Sea, Starry Form,
           Nature's Sanctuary). Informational: radius + who it touches + the

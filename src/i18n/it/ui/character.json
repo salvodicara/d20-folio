@@ -100,7 +100,8 @@
       "cycleSkillProf": "Scorri la competenza in {{skill}} (nessuna / competente / esperto)",
       "skillBonusAria": "Bonus a {{skill}}",
       "auras": "Aure",
-      "activePotions": "Pozioni attive"
+      "activePotions": "Pozioni attive",
+      "companions": "Compagni"
     },
     "vitals": {
       "label": "Statistiche vitali",
