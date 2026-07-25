@@ -572,7 +572,6 @@ moat → metal → groove → body
 | Token                 | What                                                               |
 | --------------------- | ------------------------------------------------------------------ |
 | `--plate-face`        | the face gradient (surface-2 → surface-1)                          |
-| `--plate-face-veil`   | its translucent twin, used only where a grain tile sits beneath    |
 | `--plate-dome`        | the one specular pool at (50%, 30%)                                |
 | `--plate-grain`       | the per-theme leather / bookbinding tile (containers ≥ 240px only) |
 | `--edge-metal`        | the quiet tier's frame value                                       |
@@ -580,6 +579,12 @@ moat → metal → groove → body
 | `--edge-groove`       | the darkness inside the frame + its ramp                           |
 | `--edge-seat`         | the moat + the near cast                                           |
 | `--edge-seat-earned`  | the moat + the far cast                                            |
+
+**Eight primitives, and there is no ninth** (`tests/unit/chrome-system.guard.test.ts`). Where a
+grain tile sits under the face — only `.folio-panel::before` — the face is re-mixed inline at
+`--plate-veil-alpha` (dark 62% / light 80%), which is what keeps the grain a low mottle instead of
+a pattern behind text. That is a parameter of the one consumer, not a primitive: CSS simply has no
+per-layer background alpha.
 
 ### Two radii, and there is no third
 

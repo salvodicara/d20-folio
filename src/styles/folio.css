@@ -1135,7 +1135,6 @@ svg.icon[stroke],
 /* primary — gold-leaf brass (the canonical CTA gradient) */
 .btn.primary,
 .btn.brass {
-  /* the gilt-glint host seat (see the glint block below) */
   position: relative;
   overflow: hidden;
   --bc: var(--accent-primary);
@@ -1362,7 +1361,7 @@ svg.icon[stroke],
 /* The confirm dialog's Delete AUTOFOCUSES, so its focus state must read as the
    same deepened-red lit fill (not the base gradient) AND carry the gold halo:
    the embossed shadow alone (higher specificity than the global `:focus-visible`
-   illumination) would otherwise swallow the ring. */
+   focus recipe) would otherwise swallow the ring. */
 .btn.destructive:focus-visible:not(:disabled):not(.loading) {
   background: linear-gradient(
     180deg,
@@ -2342,11 +2341,10 @@ button.pr-dot.lg::before {
 }
 /* The body is a keyboard-focusable scroll region (a11y: it carries tabIndex=0 so
    non-pointer users can reach and arrow-scroll it), NOT an interactive control:
-   draw the crisp a11y ring INSET so it reads inside the modal card, and suppress
-   the global interior focus-wash that would otherwise flood the whole region. */
+   draw the crisp a11y ring INSET so it reads inside the plate rather than around
+   it. */
 .modal-body:focus-visible {
   outline-offset: -2px;
-  box-shadow: none;
 }
 .modal-foot {
   display: flex;
@@ -2723,8 +2721,8 @@ button.pr-dot.lg::before {
   border-radius: var(--r-plate) var(--r-plate) 0 0;
   background: linear-gradient(90deg, var(--accent-primary), var(--accent-primary-bright));
 }
-/* Light parity (T8 / C4): the gold-50 struck highlight inverts on vellum (see the
-   --emboss-sheen note in index.css). Swap to the warm near-white sheen so the
+/* Light parity (T8 / C4): the gold-50 struck highlight inverts on vellum. Swap
+   to the warm near-white sheen so the
    carved emboss reads on light too; the gold-leaf border + the ::before brass
    top-accent already read on vellum (deep gold-700→500 on cream, ~5–9:1), so
    they're unchanged. Dark keeps its gold-50 sheen via the shared rule above. */
@@ -3797,7 +3795,7 @@ button.pr-dot.lg::before {
    washed out to near-invisible on this cream coin (owner-reported). On light the
    glyph stays the DEEP `--accent-text` (gold-leaf-900) — engraved gilt ink on
    struck gold, the count-medallion grammar (≥6:1, background-independent) — and
-   the coin kindles with the `--gilt-glow-sm` halo instead of the dark gold bloom.
+   the coin kindles by deepening its own metal instead of the dark gold bloom.
    Dark hover is unchanged. */
 [data-theme="light"] .rest-medal:hover .rm-coin,
 [data-theme="light"] .rest-medal:focus-visible .rm-coin {
@@ -5791,8 +5789,8 @@ button.trk-pip:active {
 }
 
 /* "Ask the Folio" command-palette trigger (#24). A quiet recessed pill at rest
-   that LIGHTS UP on hover/focus — gilt edge + gold icon + the gold illumination
-   halo on keyboard focus — so the app's global search reads as a premium, clearly
+   that LIGHTS UP on hover/focus — gilt edge + gold icon, and the focus ring alone
+   on keyboard focus — so the app's global search reads as a premium, clearly
    interactive affordance (was a flat grey bordered button). */
 .topbar-ask {
   display: inline-flex;
@@ -6824,15 +6822,6 @@ button.trk-pip:active {
   flex-wrap: wrap;
 }
 
-/* Framed page-head band — the DEFAULT for every top-level hub (Characters,
-   Campaigns, Compendium, Settings, Admin). Owner direction: a tasteful framed
-   header band, CONSISTENT on every page. A subtle accent-tinted gradient on a
-   gilt-tinted edge with a single soft raised drop, so each realm opens on the
-   same premium band. The sheen comes from
-   `--elev-raised` alone (one inset, per-theme) — no doubled emboss inset, so
-   no gold-corner arc in dark. The cockpit identity band (.folio-panel.gilt-frame)
-   shares this material language. A per-band background IMAGE (D&D-Beyond style) is
-   a later, deferred layer that can ride over this gradient when built. */
 /* THE REALM MASTHEAD — the plate on the EARNED tier (2px metal, the far seat) and
    the one MARK-bearing frame on every route that has one. Candlelit /
    morning-light translucency (T3 + the daylight-sibling rebuild): the band sits
@@ -6847,8 +6836,6 @@ button.trk-pip:active {
   padding: var(--sp-5) var(--sp-6);
   margin-bottom: var(--sp-6);
   border: 2px solid var(--edge-metal-earned);
-  /* Square corners — the one-line law (owner, 2026-07-24): the corner ornament
-     seats on a true square crossing of this band's own border. */
   border-radius: var(--r-plate);
   background:
     var(--plate-dome),
@@ -8704,8 +8691,8 @@ button.create-need:focus-visible .create-need-chev {
 }
 /* Compact typed-initiative editor — a NARROW numeric that lives in a fixed encounter
    row track (`w-12`) flush against the combatant portrait. Unlike the full `.input`
-   it draws focus as an INSET ring with NO outward `--illumination` glow halo (that
-   24px halo spilled onto the adjacent avatar) and tight 2px/4px padding, so the field
+   it draws focus as an INSET ring (the outward 24px glow halo it used to carry
+   spilled onto the adjacent avatar) and tight 2px/4px padding, so the field
    can NEVER grow its layout or bleed onto its neighbour in any state. */
 .init-edit-input {
   all: unset;
@@ -9524,8 +9511,9 @@ button.create-need:focus-visible .create-need-chev {
   text-align: center;
   padding: var(--sp-6);
 }
-/* The crest watermark (the same engraved plate the realm mastheads wear),
-   painted through its alpha mask in the theme's own metal. */
+/* The crest watermark — the ONE place the idiom is spent (DESIGN.md §5: a title
+   page is the one honest home for a watermark, because nothing live is set over
+   it). Painted through its alpha mask in the theme's own metal. */
 .cmp-frontis-inner::before {
   content: "";
   position: absolute;
@@ -9542,17 +9530,16 @@ button.create-need:focus-visible .create-need-chev {
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
   mask-position: center;
-  /* The tome leather is a mid-brown (brighter than the masthead band), so the
-     watermark needs a brighter metal + more presence than the masthead's 0.11
-     to read at all — still a whisper, never competing with the seal. */
+  /* The tome leather is a mid-brown, so the watermark needs a bright metal and
+     real presence to read at all — still a whisper, never competing with the
+     seal. */
   background: var(--gold-leaf-300);
   opacity: 0.2;
   pointer-events: none;
 }
 /* Light's `--accent-primary` is a near-black deep umber (#4a380c) — a whisper
    opacity of it on the bright parchment leaf vanished entirely (owner-reported:
-   the crest was invisible in light). Mirror the masthead crest fix: re-ink it in
-   the burnished antique gold (`--accent-primary-deep`, gold-leaf-700) which holds
+   the crest was invisible in light). Re-ink it in the burnished antique gold (`--accent-primary-deep`, gold-leaf-700) which holds
    real chroma against ivory, and lift the opacity so the emblem reads as a quiet
    embossed gilt presence — still a watermark whisper, never competing with the
    seal or the count above it. */
@@ -13629,16 +13616,6 @@ button.party-avatar-btn:focus-visible {
   letter-spacing: 0.01em;
 }
 
-/* ── Folio panel — the rich parchment container for the cockpit rails and any
-   large framed region. A top-lit tile (lighter surface catching light at the top,
-   settling to the base) on a brass edge with the resting drop + a hairline inner
-   top sheen, so a whole column reads as an embossed tome panel, not a flat slab.
-   Pairs with .rail-head rubrics inside.
-   The top sheen comes from `--elev-resting` alone (white 0.85 in light, gold 0.08
-   in dark). It deliberately does NOT add a second `--emboss-sheen` inset on top:
-   that doubled the dark gold highlight, which — on a gilt-framed rounded panel —
-   pooled into a visible "gold corner" arc at the top corners in dark mode only
-   (absent in light, hence inconsistent). One sheen reads clean in both themes. ── */
 /* ── `.folio-panel` — the app's grouping plate (cockpit rails, the identity band,
    settings/campaign panels). THE PLATE MATERIAL on the quiet tier: one domed
    face, one edge assembly, one seat (DESIGN.md §4).
@@ -13672,7 +13649,14 @@ button.party-avatar-btn:focus-visible {
      texture would otherwise leave an 80%-veil panel with the backdrop bleeding
      through it — and light ink on a bled panel fails AA. */
   background-color: var(--bg-surface-1);
-  background-image: var(--plate-dome), var(--plate-face-veil), var(--plate-grain);
+  background-image:
+    var(--plate-dome),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg-surface-2) var(--plate-veil-alpha), transparent),
+      color-mix(in srgb, var(--bg-surface-1) var(--plate-veil-alpha), transparent)
+    ),
+    var(--plate-grain);
   background-size:
     auto,
     auto,
@@ -14012,7 +13996,7 @@ button.party-avatar-btn:focus-visible {
 /* LIGHT ember — the held boon can't bloom on ivory, so the chip saturates to a
    honey-gilt wash and radiates the burnt-umber penumbra below: the page toasts
    around the held boon (grammar "Ember Penumbra"). The inset umber lip + the
-   two-stage umber pool are the large-control ember (the `--gilt-glow` layers). */
+   two-stage umber pool are the large-control ember. */
 [data-theme="light"] .insp-chip.held {
   border-color: var(--gold-leaf-700);
   background: linear-gradient(
@@ -15118,10 +15102,6 @@ button.econ-tok-filter:active .econ-disc {
 }
 .endturn {
   all: unset;
-  /* the gilt-glint host seat — MUST live after this block's `all: unset`
-     (a shared earlier rule was cascade-dead; see the glint block) */
-  position: relative;
-  overflow: hidden;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -17282,7 +17262,7 @@ button.econ-tok-filter:active .econ-disc {
    campaign banners · settings rows/badges/track. All [data-theme="light"], scoped,
    decorative/structural only — body-ink AA unchanged (axe-verified). The recurring
    move: drive every "gold" with --accent-primary-bright (gold-leaf-500), restore
-   the --surface-sheen / --emboss-sheen top-light, and the --gilt-glow halos. ── */
+   the --surface-sheen top-light, and the gilt halos of the time. ── */
 
 /* Framed page-head plaque (roster · campaigns · settings · compendium head) — the
    light band's own gilt gradient stops under the shared dome. The edge, the groove
@@ -18137,7 +18117,7 @@ button.econ-tok-filter:active .econ-disc {
    it too, so on the bright ivory field the picked card darkened to a muddy grey and
    its "glow" was a brown non-bloom. Light re-tints with the BRIGHT `--accent-glow`
    (a warm gilt wash that reads WARMER + brighter than the plain ivory sibling) and
-   routes the halo through `--gilt-glow` so the pick genuinely lights up. The
+   routed its halo through the gilt bloom of the time so the pick lit up. The
    `--frame-selected` gilt frame + wax check are unchanged. */
 [data-theme="light"] .wiz-card[data-chosen] {
   background:
@@ -18325,8 +18305,7 @@ button.econ-tok-filter:active .econ-disc {
    `--accent-primary` (the deep-umber AA-fill on light) into the disc + halo, so on
    cream the "primary action" disc read as a dull olive puck with a brown non-glow.
    Strike it from the bright gold-leaf ramp with a deep gold-900 chevron ENGRAVED on
-   it, and route the halo through `--gilt-glow*` (the `--accent-glow` bloom, DESIGN
-   §10.3) so it kindles on cream and reads as THE primary action. The quiet Back seal
+   it, so it reads as THE primary action on cream. The quiet Back seal
    (ivory-on-ivory) is untouched, keeping the primary/secondary contrast. */
 [data-theme="light"] .wiz-pager-seal.gold {
   color: var(--gold-leaf-900);
@@ -18356,8 +18335,8 @@ button.econ-tok-filter:active .econ-disc {
    DISSOLVED into the machinery (the gilt-coin trap, DESIGN §13.5: a seal is an
    OBJECT and must self-back, never depend on what is painted behind it). Quench
    it to a QUIET OPAQUE disc instead — a material fade, not pure opacity: the
-   enabled gold's bright radial sheen, gilt edge, and `--gilt-glow` are all
-   stripped, leaving a flat muted self-backed material that reads plainly
+   enabled gold's bright radial sheen and gilt edge are stripped, leaving a flat
+   muted self-backed material that reads plainly
    subordinate to the lit CTA yet never lets the backdrop bleed through. Every
    token here theme-flips, so this ONE rule designs both themes deliberately
    (dark's marginal 0.4 ghost is fixed for free, consistently). Specificity

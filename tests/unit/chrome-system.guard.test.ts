@@ -70,10 +70,9 @@ function readToken(block: string, name: string): string {
   return (m?.[1] ?? "").replace(/\s+/g, " ").trim();
 }
 
-/** The material's closed set. Adding a seventh needs an owner ruling. */
+/** The material's closed set — EIGHT. Adding a ninth needs an owner ruling. */
 const PRIMITIVES = [
   "--plate-face",
-  "--plate-face-veil",
   "--plate-dome",
   "--plate-grain",
   "--edge-metal",
@@ -94,7 +93,6 @@ describe("the chrome system — the material's tokens", () => {
       "--edge-groove",
       "--edge-seat",
       "--edge-seat-earned",
-      "--plate-face-veil",
     ] as const;
     // The TRUE `:root` block, not "everything before the light block" — a token
     // that lands in `[data-theme="dark"]` by accident is defined for exactly one
@@ -121,7 +119,7 @@ describe("the chrome system — the material's tokens", () => {
       expect(
         perTh ? new RegExp(`${name}\\s*:`).test(dark) : atRoot,
         `MISSING ${name} ${perTh ? "in the DARK theme block" : "at :root"}. The plate ` +
-          `material is ONE closed set of nine primitives, and a STRUCTURAL one must live ` +
+          `material is ONE closed set of eight primitives, and a STRUCTURAL one must live ` +
           `at :root — dropped into a theme block it defines the material for exactly one ` +
           `theme and silently un-styles the other.`
       ).toBe(true);

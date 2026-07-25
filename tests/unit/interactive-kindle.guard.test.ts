@@ -22,7 +22,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8");
 const indexCss = readFileSync(resolve(here, "../../src/index.css"), "utf8");
 
-describe("interactive kindle grammar (wave 2)", () => {
+describe("interactive kindle grammar", () => {
   it("plays NO specular sweep on any control — a state never emits light", () => {
     // The band, its ink token and its motion gate are all gone. A re-add would
     // reintroduce a moving light source on a surface that is meant to be a

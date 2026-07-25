@@ -278,9 +278,10 @@
      a bronze d20 in a laurel + acanthus wreath, shipped as an ALPHA-MASK WebP
      (white ink, alpha = engraving luminance) and rendered via CSS `mask-image`,
      so the emblem always wears the current theme's accent ink — never a raster
-     colour of its own. Seated as the frontispiece watermark behind every framed
-     masthead on the standard app field (`.page-head-crest`); the art-backed
-     campaign hub omits it (its art is the frontispiece). */
+     colour of its own. ONE consumer: the compendium frontispiece watermark
+     (`.cmp-frontis-inner::before`) — DESIGN.md §5 spends the idiom exactly once,
+     on a title page, because nothing live is set over it. No masthead carries a
+     crest behind its ink. */
   --asset-crest: url("/assets/brand/crest.webp");
 
   /* ── § 01 Palette — mineral pigment ramps (theme-independent) ─────────── */
@@ -677,14 +678,13 @@
   --cur-cp-deep: #6a3818;
 
   /* § 05a THE PLATE MATERIAL, dark strike — the four colour roles (§04a). */
-  /* The face's translucent twin, used ONLY where a grain tile sits beneath it:
-     the veil is what keeps the grain a low mottle instead of a pattern behind
-     text. (CSS has no per-layer background alpha and the tile is opaque.) */
-  --plate-face-veil: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--bg-surface-2) 62%, transparent),
-    color-mix(in srgb, var(--bg-surface-1) 62%, transparent)
-  );
+  /* How much of the face survives where a GRAIN tile sits beneath it — the one
+     parameter of `.folio-panel::before`'s veil layer, which is what keeps the
+     grain a low mottle instead of a pattern behind text. (CSS has no per-layer
+     background alpha and the tile is opaque, so the veil is the face gradient
+     re-mixed at this alpha, inline at its one consumer — not a tenth primitive
+     restating `--plate-face`.) */
+  --plate-veil-alpha: 62%;
   /* The dark pool: 4%, i.e. 1.59× the plate's corner luminance — the ~1.6× the
      material spec sets for dark (§05a above). It shipped at 10% (2.78×, brighter
      than the 2.4× reference itself) and that overshoot took --text-faint to
@@ -1149,11 +1149,7 @@
      cream reads as grime on vellum); the cast is warm umber too, never grey; and
      the dome is wider, softer and stronger — an ivory plate has less room for a
      pool before it bands, so the pool is spread rather than deepened. */
-  --plate-face-veil: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--bg-surface-2) 80%, transparent),
-    color-mix(in srgb, var(--bg-surface-1) 80%, transparent)
-  );
+  --plate-veil-alpha: 80%;
   --plate-dome: radial-gradient(
     ellipse 105% 78% at 50% 26%,
     rgba(255, 253, 247, 0.62),
@@ -1693,7 +1689,6 @@ button:disabled,
 }
 :focus-visible[tabindex="-1"] {
   outline: none;
-  box-shadow: none;
 }
 
 /* § 2.4.1 Bypass Blocks — skip-to-main link (off-screen until focused) */
