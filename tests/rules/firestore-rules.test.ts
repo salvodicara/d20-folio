@@ -406,6 +406,10 @@ describe("firestore.rules — /campaigns access", () => {
         kind: "monster",
         id: "monster-1",
         name: "Goblin",
+        // The picker's additive bestiary reference — pinned here so the existing
+        // DM/admin/member assertions exercise the encounter blob WITH the new
+        // nested key end-to-end (opaque DM-owned map: zero rules diff by construction).
+        srdId: "goblin-warrior",
         ac: 13,
         initiative: 12,
         conditions: [],

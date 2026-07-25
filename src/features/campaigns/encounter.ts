@@ -150,6 +150,8 @@ export interface MonsterInput {
   initiative: number | null;
   /** Optional DM free-text notes (omitted/empty → no `notes` field is stored). */
   notes?: string;
+  /** Optional bestiary reference — set by the picker; omitted → no field stored. */
+  srdId?: string;
 }
 
 /**
@@ -161,6 +163,7 @@ export function addMonster(state: EncounterState, input: MonsterInput): Encounte
   const count = Math.max(1, Math.floor(input.count));
   const maxHp = Math.max(0, Math.round(input.maxHp));
   const notes = input.notes?.trim();
+  const srdId = input.srdId?.trim();
   const monster: EncounterMonster = {
     kind: "monster",
     id: nextMonsterId(state.combatants),
@@ -170,8 +173,10 @@ export function addMonster(state: EncounterState, input: MonsterInput): Encounte
     conditions: [],
     maxHp,
     tokens: Array.from({ length: count }, () => maxHp),
-    // Only store `notes` when non-empty — keep the doc minimal (no empty-string field).
+    // Only store `notes`/`srdId` when non-empty — keep the doc minimal (no
+    // empty-string field, `stripUndefined`-independent).
     ...(notes ? { notes } : {}),
+    ...(srdId ? { srdId } : {}),
   };
   const combatants = [...state.combatants, monster];
   // REINFORCEMENT auto-join: once the order is FROZEN (turns have begun), a monster added
@@ -263,6 +268,19 @@ export function setInitiative(
   return mapCombatant(state, id, (c) =>
     c.kind === "pc" ? c : { ...c, initiative: value === null ? null : Math.round(value) }
   );
+}
+
+/** Rename a MONSTER (the one free user string — golden rule 7). Whitespace-only
+ *  is a no-op (a combatant name is never empty — the non-empty invariant holds by
+ *  construction). A PC is a no-op (its name lives on its character doc). */
+export function setMonsterName(
+  state: EncounterState,
+  id: string,
+  name: string
+): EncounterState {
+  const trimmed = name.trim();
+  if (trimmed === "") return state;
+  return mapCombatant(state, id, (c) => (c.kind === "pc" ? c : { ...c, name: trimmed }));
 }
 
 /** Apply a signed HP delta (damage negative, heal positive) to one MONSTER token,

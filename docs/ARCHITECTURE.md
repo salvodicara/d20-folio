@@ -1051,7 +1051,13 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
 - **The encounter is a pure-REFERENCE read model (no PC stat copy).** `campaign.encounter` carries PC
   combatants as bare references — `EncounterPc = { kind, id, memberUid, characterId, hidden? }` (no
   AC/HP/name/conditions/initiative on the doc; monsters keep their own state since they have no char
-  doc). The in-hub **Party surface** (`features/campaigns/Party.tsx` + `party-encounter.tsx`, ONE live
+  doc). A monster group also carries an
+  OPTIONAL, additive `srdId` — a DISPLAY-ONLY reference to the bestiary statblock the encounter picker
+  seeded it from (`toMonsterInput` copies the localized name + AC + `hp.average` and stamps `srdId`);
+  it powers the DM-only statblock disclosure (resolved at render via `getMonster(srdId)`, degrading
+  quietly on a stale id), never a mechanics source and never overriding the stored ac/maxHp/name (which
+  stay the encounter-owned truth the DM may edit). The in-hub **Party surface**
+  (`features/campaigns/Party.tsx` + `party-encounter.tsx`, ONE live
   view open to ALL members) assembles each PC row LIVE: identity/AC/maxHP/passives derived from the
   member's char doc, current/temp HP + conditions from a live `subscribeCombatState` listener per
   attached member (`usePartyCombatStates`, authorized by the live membership grant), and the INITIATIVE

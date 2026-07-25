@@ -111,6 +111,19 @@ export interface EncounterMonster extends EncounterCombatantBase {
   kind: "monster";
   /** User content — the monster/NPC name the DM types (never an SRD label). */
   name: string;
+  /**
+   * OPTIONAL reference to the bestiary statblock this group was seeded from
+   * (`MonsterStatBlock.id`, e.g. "goblin-warrior") — set by the encounter picker,
+   * absent on hand-typed monsters and every pre-picker doc (additive-only; live
+   * fixtures load unchanged). DISPLAY-ONLY: it powers the DM statblock disclosure,
+   * resolved at render via `getMonster(srdId)` behind the lazy `monster` catalogue
+   * gate; a stale/unknown id degrades to a quiet empty state (the getBeast-undefined
+   * precedent), NEVER an error. It is never a mechanics source and never overrides
+   * the stored ac/maxHp/name (which remain the encounter-owned truth the DM may
+   * edit). `name` stays genuine user content — pre-filled from the localized
+   * monster name at add time, renameable after (golden rule 7).
+   */
+  srdId?: string;
   /** Armor Class (informational; the DM may edit). */
   ac: number;
   /** Typed initiative (no dice — the DM enters it); `null` = not yet entered. */

@@ -15,6 +15,7 @@ import {
   removeCombatant,
   setHidden,
   setInitiative,
+  setMonsterName,
   setMonsterNotes,
   setRevealed,
   applyHp,
@@ -566,6 +567,48 @@ describe("setMonsterNotes — DM free-text; minimal storage; PC is a no-op", () 
   it("a PC is a no-op — only monsters carry notes", () => {
     const state = twoPcs();
     expect(setMonsterNotes(state, "pc-mara", "anything")).toEqual(state);
+  });
+});
+
+// ─── srdId — the additive bestiary reference (picker adds) ─────────────────────
+
+describe("addMonster — srdId bestiary reference (minimal storage; the notes pattern)", () => {
+  it("stores srdId when the picker supplies one", () => {
+    const state = goblins(twoPcs(), { srdId: "goblin-warrior" });
+    expect(monster(state, "monster-1").srdId).toBe("goblin-warrior");
+  });
+
+  it("writes NO srdId key when absent / empty / whitespace-only", () => {
+    for (const srdId of [undefined, "", "  "]) {
+      const state = goblins(twoPcs(), { srdId });
+      expect("srdId" in monster(state, "monster-1")).toBe(false);
+    }
+  });
+});
+
+describe("setMonsterName — rename the one free user string; PC/whitespace no-ops", () => {
+  it("renames a monster and trims surrounding whitespace", () => {
+    let state = goblins(twoPcs(), { srdId: "goblin-warrior" });
+    state = setMonsterName(state, "monster-1", "  Goblin A  ");
+    const m = monster(state, "monster-1");
+    expect(m.name).toBe("Goblin A");
+    // Renaming never touches the bestiary reference.
+    expect(m.srdId).toBe("goblin-warrior");
+  });
+
+  it("whitespace-only is a no-op (same reference — the non-empty invariant holds)", () => {
+    const state = goblins();
+    expect(setMonsterName(state, "monster-1", "   ")).toBe(state);
+  });
+
+  it("an unknown id is a no-op (same reference)", () => {
+    const state = goblins();
+    expect(setMonsterName(state, "monster-99", "Nobody")).toBe(state);
+  });
+
+  it("a PC is a no-op — its name lives on its character doc", () => {
+    const state = twoPcs();
+    expect(setMonsterName(state, "pc-mara", "Renamed")).toEqual(state);
   });
 });
 

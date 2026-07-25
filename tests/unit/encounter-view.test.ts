@@ -250,6 +250,35 @@ describe("addReinforcement — auto-slot a mid-combat monster into the frozen or
       true
     );
   });
+
+  it("a null-initiative bestiary add (the picker) appends LAST in the frozen order, srdId intact", () => {
+    // Every picker add commits initiative:null — a blank sinks to the end of the frozen
+    // order (never orphaned), and the additive srdId survives the passthrough.
+    const before = encounter({
+      order: ["pc-mara", "monster-1", "pc-bren"],
+      currentCombatantId: "pc-mara",
+    });
+    const after = addReinforcement(
+      before,
+      {
+        name: "Goblin Warrior",
+        ac: 13,
+        maxHp: 7,
+        count: 3,
+        initiative: null,
+        srdId: "goblin-warrior",
+      },
+      {
+        "pc-mara": pcLive({ initiative: 18 }),
+        "pc-bren": pcLive({ name: "Bren", initiative: 5 }),
+      }
+    );
+    expect(after.order).toEqual(["pc-mara", "monster-1", "pc-bren", "monster-2"]);
+    const newcomer = after.combatants.find(
+      (c) => c.kind === "monster" && c.id === "monster-2"
+    );
+    expect(newcomer?.kind === "monster" && newcomer.srdId).toBe("goblin-warrior");
+  });
 });
 
 describe("removeCombatant prunes an orphaned PC so it stops blocking Begin-turns (B03)", () => {
