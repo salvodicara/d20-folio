@@ -129,9 +129,20 @@ describe("verdict-chip ink tokens clear WCAG-AA", () => {
     const surfaces = [readVar(block, "--bg-surface-1"), readVar(block, "--bg-surface-2")];
 
     for (const name of INK_TOKENS) {
-      it(`${theme}: --dmg-${name}-ink ≥ ${AA}:1 on card surfaces`, () => {
+      it(`${theme}: --dmg-${name}-ink ≥ ${AA}:1 on EVERY ground it inks`, () => {
         const ink = readVar(block, `--dmg-${name}-ink`);
-        for (const surface of surfaces) {
+        // The card surfaces are NOT the whole story: the ramp also inks the
+        // carved `.beast-ref`/`.mon-ref` statblock plaque (`.mon-dmg` runs +
+        // `.rt-dmg` prose in the monster traits), whose ground is a FULL step
+        // below the cards. Read that ground out of folio.css rather than naming
+        // a token here, so the guard can never certify a surface the app does
+        // not paint — the exact blindness that shipped light poison-ink at
+        // 3.378:1 on `--bg-recessed` (axe: compendium-monster-entry [light]).
+        const plaque = resolveColor(
+          decl(ruleBody(folioCss, ".beast-ref"), "background"),
+          block
+        );
+        for (const surface of [...surfaces, plaque]) {
           expect(
             contrast(ink, surface),
             `${name}-ink on ${surface}`

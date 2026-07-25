@@ -1142,21 +1142,31 @@
   --dmg-slashing: #aa5a5a;
   --dmg-thunder: #506480;
 
-  /* § 11b Damage-type INK (light) — AA-safe ON-TEXT (≥4.5:1 on the cream
-     verdict chip). lightning / acid / radiant / psychic are darkened to clear
-     the floor on vellum; the rest already pass and are kept verbatim. */
-  --dmg-acid-ink: #3c6a1a;
-  --dmg-bludgeoning-ink: #6a4e30;
-  --dmg-cold-ink: #2c688c;
-  --dmg-fire-ink: #a82820;
-  --dmg-force-ink: #6a3898;
-  --dmg-lightning-ink: #6e5a06;
+  /* § 11b Damage-type INK (light) — AA-safe ON-TEXT on EVERY ground the ramp
+     inks, not just the cream card: the deepest is the carved `.beast-ref` /
+     `.mon-ref` statblock plaque, which paints `--bg-recessed` (#cdbb8e) and
+     carries both `.mon-dmg` and `.rt-dmg` runs. Eleven of the thirteen pigments
+     failed AA there (poison 3.38:1 — the axe failure on the compendium monster
+     entry); each is darkened MINIMALLY in OKLCH at its own hue + chroma until it
+     clears the floor on the plaque, so the family keeps its identities. The one
+     exception is radiant: light cannot separate it from lightning by lightness
+     (the plaque's AA floor caps both at the same L), so it mirrors the DARK
+     theme's grammar and separates by CHROMA instead — radiant is the quieter
+     gold beside lightning's saturated yellow, at the same ~0.53 chroma ratio
+     dark uses. necrotic + thunder already cleared and are kept verbatim.
+     Guarded per-ground in `tests/unit/verdict-ink-contrast.test.ts`. */
+  --dmg-acid-ink: #2a5500;
+  --dmg-bludgeoning-ink: #614528;
+  --dmg-cold-ink: #0e5072;
+  --dmg-fire-ink: #97120f;
+  --dmg-force-ink: #643291;
+  --dmg-lightning-ink: #5b4900;
   --dmg-necrotic-ink: #384838;
-  --dmg-piercing-ink: #50565e;
-  --dmg-poison-ink: #4a6818;
-  --dmg-psychic-ink: #823c6e;
-  --dmg-radiant-ink: #6a560f;
-  --dmg-slashing-ink: #884848;
+  --dmg-piercing-ink: #464b53;
+  --dmg-poison-ink: #385300;
+  --dmg-psychic-ink: #773163;
+  --dmg-radiant-ink: #544a2f;
+  --dmg-slashing-ink: #773839;
   --dmg-thunder-ink: #384858;
 
   /* § 13 Conditions (light) — OWN-36 PASS 10: SYMMETRIC with dark. The base

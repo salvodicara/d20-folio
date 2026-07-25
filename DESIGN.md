@@ -270,7 +270,18 @@ text, and is the canonical counter-example.
 fails contrast on gold-tinted light surfaces (the "yellow-on-yellow" failure). Forbidden.
 
 **The Ink-Variant Rule.** A saturated domain hue is the 3:1 graphic (chip border, icon). Its `-ink`
-variant is the >=4.5:1 label text. Never set small text in a raw domain hue.
+variant is the >=4.5:1 label text. Never set small text in a raw domain hue. **">=4.5:1" means on
+EVERY ground the ink actually paints on, not on the card surfaces alone** — a contrast guard that
+pins a hand-picked pair certifies a combination the app may never render while blessing one it
+does. The canonical counter-example: the `--dmg-*-ink` ramp was guarded only against
+`--bg-surface-1/2`, so eleven of its thirteen light pigments shipped BELOW AA on the carved
+`.beast-ref`/`.mon-ref` statblock plaque — a full step deeper at `--bg-recessed` (light poison-ink
+measured 3.378:1; axe flagged `compendium-monster-entry [light]`). The guard now reads the plaque's
+ground straight out of `folio.css` (`tests/unit/verdict-ink-contrast.test.ts`) so the surface list
+follows the stylesheet instead of a comment. When an AA floor forces a whole family darker, keep the
+family SEPARABLE: darken minimally in OKLCH at each token's own hue + chroma, and where the floor
+caps two members at the same lightness, separate them by chroma the way the other theme does
+(light's radiant vs lightning mirror dark's ~0.53 chroma ratio at a shared hue).
 
 **The Token-Only Rule.** Components reference token names only. Literal hex in component code is
 prohibited; the only source of truth for values is `src/index.css`.
