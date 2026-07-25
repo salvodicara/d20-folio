@@ -55,6 +55,31 @@ function hexToRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+/** sRGB → OKLab (Björn Ottosson's matrices). The perceptual space every ink in
+ *  this file was tuned in, so SEPARATION is measured here and nowhere else. */
+function oklab(hex: string): [number, number, number] {
+  const lin = (c: number) => {
+    const s = c / 255;
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  const [r, g, b] = hexToRgb(hex).map(lin) as [number, number, number];
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+
+/** Euclidean OKLab distance — the ΔE this project quotes everywhere. */
+function deltaE(a: string, b: string): number {
+  const [al, aa, ab] = oklab(a);
+  const [bl, ba, bb] = oklab(b);
+  return Math.hypot(al - bl, aa - ba, ab - bb);
+}
+
 function relLuminance([r, g, b]: [number, number, number]): number {
   const lin = (c: number) => {
     const s = c / 255;
@@ -346,6 +371,97 @@ describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
         }
       }
     });
+  }
+});
+
+/**
+ * THE SEPARATION MATRIX — the guard whose absence let the AA re-tune ship a
+ * COLLISION.
+ *
+ * Every describe above pins an ink against a GROUND. None of them pins an ink
+ * against another INK, so the whole AA re-tune (damage ramp, then conditions,
+ * then the adv/dis pair) was verified by eye: `--dmg-lightning-ink` was darkened
+ * to clear the plaque and landed 0.0079 ΔE from the untouched
+ * `--cond-paralyzed-ink` — the global minimum of the light vocabulary, 1.7×
+ * tighter than the worst pair the branch inherited — and the gate stayed green.
+ * Nineteen of the thirty-one tokens came out of that re-tune closer to a
+ * neighbour than they went in.
+ *
+ * WHY THE WHOLE VOCABULARY AND NOT EACH FAMILY: the carved plaque paints damage
+ * inks, condition inks, `--text-special` and the adv/dis pair in the SAME
+ * paragraph (DESIGN.md → the Ink-Variant Rule). A family-local statistic is the
+ * same blindness as a hand-picked ground: it certifies a separation the reader
+ * never experiences. The matrix below is every unordered pair of the 31 inks
+ * that can share one sentence.
+ *
+ * WHAT THE FLOOR IS: the WORST LEGITIMATE pair, per theme — the tightest pair
+ * that predates this work and is documented as acceptable. It is a RATCHET, not
+ * an endorsement: nothing may get tighter than the tightest thing already
+ * shipped. Raising a floor is a deliberate, measured act; lowering one is the
+ * regression this file exists to refuse.
+ */
+const PROSE_INK_TOKENS = [
+  ...INK_TOKENS.map((d) => `--dmg-${d}-ink`),
+  ...CONDITIONS.map((c) => `--cond-${c}-ink`),
+  "--text-special",
+  // `.rt-adv` / `.rt-dis` — both chase through the ramp, so resolve rather than read.
+  "--rt-adv-ink",
+  "--semantic-danger",
+] as const;
+
+/** PAIRS exempt from the floor — twinned BY DESIGN, each with its reason. An
+ *  entry here is a claim that the two inks are meant to read alike; it must be
+ *  true of the BASE tokens, not just convenient for the -ink values. */
+const TWINNED_BY_DESIGN: ReadonlyArray<readonly [string, string, string]> = [
+  [
+    "--dmg-poison-ink",
+    "--cond-poisoned-ink",
+    "same pigment on purpose: `--dmg-poison` and `--cond-poisoned` are the SAME hex in BOTH themes (#6e9628 light / #80a838 dark), so Poison damage and the Poisoned condition are one colour by construction",
+  ],
+];
+
+/** The worst LEGITIMATE pair per theme (measured, then written down). */
+const SEPARATION_FLOOR = {
+  // petrified↔restrained (#383828 / #383830) — two untouched neutral browns a
+  // hair apart, documented in DESIGN.md as the family's worst pair since long
+  // before this branch. Measures 0.01325.
+  light: 0.0132,
+  // piercing↔blinded (#a8b4c0 / #a4bcd0) — the app's tightest pair anywhere,
+  // pre-existing and untouched here. Measures 0.01055. The dark ramp was NOT
+  // re-tuned by this work, so this floor is purely a ratchet on the status quo;
+  // if the dark inks are ever reworked, this is the first pair to open up.
+  dark: 0.0105,
+} as const;
+
+describe("the prose vocabulary stays SEPARABLE (OKLab ΔE matrix)", () => {
+  for (const theme of ["dark", "light"] as const) {
+    const block = themeBlock(theme);
+    const floor = SEPARATION_FLOOR[theme];
+    const ink = (name: string): string =>
+      resolveColor(rawVar(block, name) ?? readVar(block, name), block);
+    const exempt = new Set(TWINNED_BY_DESIGN.map(([a, b]) => `${a}|${b}`));
+
+    it(`${theme}: no two prose inks sit closer than ${floor} ΔE`, () => {
+      const tight: string[] = [];
+      PROSE_INK_TOKENS.forEach((a, i) => {
+        for (const b of PROSE_INK_TOKENS.slice(i + 1)) {
+          if (exempt.has(`${a}|${b}`) || exempt.has(`${b}|${a}`)) continue;
+          const d = deltaE(ink(a), ink(b));
+          if (d < floor)
+            tight.push(`${a} ${ink(a)} ↔ ${b} ${ink(b)} = ${d.toFixed(4)} ΔE`);
+        }
+      });
+      expect(tight, `prose inks below the ${theme} separation floor`).toEqual([]);
+    });
+
+    // A pair listed as "twinned by design" must actually BE twinned upstream —
+    // otherwise the allowlist is just a place to hide a collision.
+    for (const [a, b, reason] of TWINNED_BY_DESIGN) {
+      it(`${theme}: ${a} ↔ ${b} is exempt because ${reason}`, () => {
+        const base = (t: string) => readVar(block, t.replace(/-ink$/, ""));
+        expect(base(a), `${a} and ${b} must share a base hue to be exempt`).toBe(base(b));
+      });
+    }
   }
 });
 

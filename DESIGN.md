@@ -300,13 +300,39 @@ lightning still the brighter yellow above it, and its nearest neighbour anywhere
 vocabulary moves 0.019 → 0.041 ΔE. Light cannot mirror dark's "radiant is the PALER gold" by going
 lighter — on parchment the only direction an ink has is down.
 
-The obligation is per-FAMILY, so it was re-run on `--cond-*-ink`: six light inks failed on the same
-plaque (deafened 3.685:1, blinded 3.756, exhaustion 4.009, prone 4.081, stunned 4.120, charmed 4.453)
-— `.rt-cond` sets condition names as inline prose inside a monster's traits — and are fixed by the
-same recipe; the family's worst-pair separation holds at 0.0133 ΔE (petrified↔restrained, both
-untouched). Deafened is the same lesson at the other end: darkened by LIGHTNESS alone it cleared the
-floor but drifted to 0.020 ΔE of the untouched invisible, so it takes the chroma step its two
+The AA obligation is per-FAMILY, so it was re-run on `--cond-*-ink`: six light inks failed on the
+same plaque (deafened 3.685:1, blinded 3.756, exhaustion 4.009, prone 4.081, stunned 4.120, charmed
+4.453) — `.rt-cond` sets condition names as inline prose inside a monster's traits — and are fixed by
+the same recipe. Deafened is the same lesson at the other end: darkened by LIGHTNESS alone it cleared
+the floor but drifted to 0.020 ΔE of the untouched invisible, so it takes the chroma step its two
 siblings took (0.025 → 0.046 at its own 285° hue) and sits at 0.030.
+
+**The SEPARATION floor is GLOBAL, and it is a number.** A family-local statistic is not the standard
+— the plaque paints every family in one paragraph — so the floor is measured across the WHOLE
+31-token light prose vocabulary (13 damage inks · 15 condition inks · `--text-special` ·
+`--rt-adv-ink` · `--semantic-danger`). **Light's floor is 0.0132 ΔE**: petrified↔restrained
+(`#383828` / `#383830`), two untouched neutral browns and the tightest legitimate pair in the
+vocabulary. **Dark's is 0.0105 ΔE**: piercing↔blinded, tighter still and likewise untouched. Exactly
+one pair is exempt, and only because it is twinned UPSTREAM — `--dmg-poison-ink` ↔
+`--cond-poisoned-ink` (0.0100 ΔE), whose BASE tokens are the same hex in both themes, so Poison
+damage and the Poisoned condition are one colour by construction. Both floors are ratchets on what
+already shipped, not endorsements of it.
+
+That number is ENFORCED, not asserted in prose: `tests/unit/verdict-ink-contrast.test.ts` runs an
+OKLab ΔE matrix over every unordered pair of the vocabulary, per theme, with the twin allowlist
+carrying its reason and a second assertion that the allowlisted pair really does share a base hue.
+Before it existed, every separation claim on this page was checked BY EYE — and the AA re-tune
+shipped its own worst collision: darkening `--dmg-lightning-ink` (#6e5a06 → #5b4900) to clear the
+plaque landed it **0.0079 ΔE** from the untouched `--cond-paralyzed-ink`, a NEW global minimum, 1.7×
+tighter than the worst pair the work inherited — with nineteen of the thirty-one tokens ending up
+closer to a neighbour than they started. Lightning is the token that may not move: the thirteen
+damage inks are a closed cross-theme colour CODE (dark lightning-ink `#f0d040` is an electric yellow)
+that also paints `.mon-dmg` ledger runs and the defence chips, and the only separation available at
+its lightness rotates it into the olive band the ramp already spends on acid/poison/necrotic. So the
+CONDITION ink moved instead, inside the warm gold→amber band its own base occupies:
+`--cond-paralyzed-ink` #5e4806 → **#5f3a00** (L 0.414 → 0.384, chroma HELD 0.082 → 0.083, hue 88° →
+70°) — 0.0435 ΔE from lightning, 0.0380 from its nearest neighbour anywhere, AA 4.612 → 5.304 on the
+plaque. Its chip GRAPHIC (`--cond-paralyzed` #b89818) is untouched, so only the label moved.
 
 **A shared graphic stop gets a PROSE VARIANT, never a palette retune.** The last ink on that ground
 was light `--semantic-success` (`.rt-adv`, "Advantage") at 4.156:1. It is not a prose-only `-ink`

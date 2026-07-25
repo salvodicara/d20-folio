@@ -1168,9 +1168,15 @@
      the darkest ink in the ramp, and it stays gold with lightning the brighter
      yellow above it. (An earlier pass halved radiant's chroma at its own
      lightness instead; that read as un-inked body text on the plaque and closed
-     to 0.025 ΔE of bludgeoning.) Full rationale: DESIGN.md → the Ink-Variant
-     Rule. Guards: `tests/unit/verdict-ink-contrast.test.ts` (token pairs) +
-     `tests/e2e/statblock-ink-contrast.spec.ts` (composited, real Chromium). */
+     to 0.025 ΔE of bludgeoning.)
+     LIGHTNING's own darkening (#6e5a06 → #5b4900) collapsed it onto the
+     untouched `--cond-paralyzed-ink` (0.0622 → 0.0079 ΔE). It is NOT retuned
+     back: the damage ramp is a closed cross-theme colour code and lightning must
+     stay the yellow. The condition ink moved instead — see the § 13 block.
+     Full rationale: DESIGN.md → the Ink-Variant
+     Rule. Guards: `tests/unit/verdict-ink-contrast.test.ts` (token pairs + the
+     ΔE separation matrix) + `tests/e2e/statblock-ink-contrast.spec.ts`
+     (composited, real Chromium). */
   --dmg-acid-ink: #2a5500;
   --dmg-bludgeoning-ink: #614528;
   --dmg-cold-ink: #0e5072;
@@ -1202,11 +1208,24 @@
      AA. Each moved one is darkened minimally in OKLCH at its own hue; blinded and
      stunned separate from invisible / paralyzed by CHROMA (mirroring dark) where
      the floor caps them at one lightness, and deafened does the same beside
-     invisible — darkening by lightness alone had left it 0.020 ΔE away, the only
-     re-tuned ink that came out closer to a neighbour than it went in.
+     invisible — darkening by lightness alone had left it 0.020 ΔE away.
+     PARALYZED is the seventh move and the one the AA pass CREATED: darkening
+     `--dmg-lightning-ink` to #5b4900 landed it 0.0079 ΔE from the untouched
+     paralyzed — the global MINIMUM of the light prose vocabulary. Lightning is
+     the token that may not move: the thirteen damage inks are a closed
+     cross-theme colour CODE (dark lightning-ink #f0d040 is an electric yellow)
+     that also drives `.mon-dmg` ledger runs and the defence chips, and the only
+     separation left at lightning's own lightness rotates it into the olive band
+     the ramp already spends on acid/poison/necrotic. So the CONDITION ink moves
+     instead, inside the warm gold→amber band its own base occupies: #5e4806 →
+     #5f3a00 (L 0.414 → 0.384, chroma HELD 0.082 → 0.083, hue 88° → 70°), which
+     puts it 0.0435 ΔE from lightning and 0.0380 from its nearest neighbour
+     anywhere in the vocabulary, and lifts its AA from 4.612 to 5.304 on the
+     plaque. The chip GRAPHIC (`--cond-paralyzed` #b89818) is untouched.
      Full rationale: DESIGN.md → the Ink-Variant Rule. Guards:
-     `tests/unit/verdict-ink-contrast.test.ts` (token pairs) +
-     `tests/e2e/statblock-ink-contrast.spec.ts` (composited, real Chromium). */
+     `tests/unit/verdict-ink-contrast.test.ts` (token pairs + the ΔE separation
+     matrix) + `tests/e2e/statblock-ink-contrast.spec.ts` (composited, real
+     Chromium). */
   --cond-blinded: #6e8492;
   --cond-blinded-ink: #344f65;
   --cond-charmed: #c04578;
@@ -1224,7 +1243,7 @@
   --cond-invisible: #8294a6;
   --cond-invisible-ink: #3e4c5a;
   --cond-paralyzed: #b89818;
-  --cond-paralyzed-ink: #5e4806;
+  --cond-paralyzed-ink: #5f3a00;
   --cond-petrified: #6e665a;
   --cond-petrified-ink: #383828;
   --cond-poisoned: #6e9628;
