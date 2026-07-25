@@ -17,6 +17,7 @@ import {
   setInitiative,
   setMonsterName,
   setMonsterNotes,
+  setMonsterXp,
   setRevealed,
   applyHp,
   setHp,
@@ -583,6 +584,46 @@ describe("addMonster — srdId bestiary reference (minimal storage; the notes pa
       const state = goblins(twoPcs(), { srdId });
       expect("srdId" in monster(state, "monster-1")).toBe(false);
     }
+  });
+});
+
+describe("addMonster — xp seeding (SRD Step 3; existence-based, the srdId pattern)", () => {
+  it("stores a rounded xp when supplied", () => {
+    const state = goblins(twoPcs(), { xp: 50.4 });
+    expect(monster(state, "monster-1").xp).toBe(50);
+  });
+
+  it("stores a genuine harmless xp:0 (a CR-0 statblock) — existence, not truthiness", () => {
+    const state = goblins(twoPcs(), { xp: 0 });
+    expect(monster(state, "monster-1").xp).toBe(0);
+    expect("xp" in monster(state, "monster-1")).toBe(true);
+  });
+
+  it("writes NO xp key when absent / non-finite / negative", () => {
+    for (const xp of [undefined, NaN, Infinity, -5]) {
+      const state = goblins(twoPcs(), { xp });
+      expect("xp" in monster(state, "monster-1")).toBe(false);
+    }
+  });
+});
+
+describe("setMonsterXp — the lair-toggle seam; rounds/clamps ≥ 0; PC/unknown no-ops", () => {
+  it("sets an integer xp, clamping negatives to 0 and rounding", () => {
+    let state = goblins(twoPcs(), { xp: 50 });
+    state = setMonsterXp(state, "monster-1", 13000);
+    expect(monster(state, "monster-1").xp).toBe(13000);
+    state = setMonsterXp(state, "monster-1", -9.6);
+    expect(monster(state, "monster-1").xp).toBe(0);
+  });
+
+  it("an unknown id is a no-op (same reference)", () => {
+    const state = goblins();
+    expect(setMonsterXp(state, "monster-99", 100)).toBe(state);
+  });
+
+  it("a PC is a no-op — a PC has no XP cost", () => {
+    const state = twoPcs();
+    expect(setMonsterXp(state, "pc-mara", 100)).toEqual(state);
   });
 });
 

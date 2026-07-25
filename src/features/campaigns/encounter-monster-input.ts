@@ -10,6 +10,7 @@
  */
 
 import { localizeSrd } from "@/i18n/resolver";
+import { monsterXp } from "@/lib/monster";
 import type { MonsterStatBlock } from "@/data/types";
 import type { Locale } from "@/lib/locale";
 import type { MonsterInput } from "./encounter";
@@ -18,9 +19,10 @@ import type { MonsterInput } from "./encounter";
  * Pre-fill a picker-added monster group from its statblock: the ACTIVE-locale name
  * (stored as the one free user string — renameable after), the printed AC, the
  * 2024 average HP, the chosen count, a BLANK initiative (no dice — the DM rolls
- * externally, golden rule 21), and the additive `srdId` reference. No `notes`
- * pre-fill: the statblock facts live behind the DM disclosure, so copying prose
- * into `notes` would create a second drifting copy (golden rule 6).
+ * externally, golden rule 21), the additive `srdId` reference, and the per-token
+ * XP via `monsterXp` (SRD Step 3 — the encounter budget readout deducts it). No
+ * `notes` pre-fill: the statblock facts live behind the DM disclosure, so copying
+ * prose into `notes` would create a second drifting copy (golden rule 6).
  */
 export function toMonsterInput(
   m: MonsterStatBlock,
@@ -34,5 +36,6 @@ export function toMonsterInput(
     count,
     initiative: null,
     srdId: m.id,
+    xp: monsterXp(m),
   };
 }

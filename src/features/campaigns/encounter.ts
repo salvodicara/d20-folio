@@ -152,6 +152,10 @@ export interface MonsterInput {
   notes?: string;
   /** Optional bestiary reference — set by the picker; omitted → no field stored. */
   srdId?: string;
+  /** Optional per-token XP (SRD Step 3) — the picker seeds `monsterXp(statblock)`, the
+   *  custom form seeds `xpForCr(chosen CR)`; omitted (unknown) → no field stored, the
+   *  group renders as un-costed. A harmless `xp: 0` IS stored (existence, not truthiness). */
+  xp?: number;
 }
 
 /**
@@ -173,10 +177,16 @@ export function addMonster(state: EncounterState, input: MonsterInput): Encounte
     conditions: [],
     maxHp,
     tokens: Array.from({ length: count }, () => maxHp),
-    // Only store `notes`/`srdId` when non-empty — keep the doc minimal (no
-    // empty-string field, `stripUndefined`-independent).
+    // Only store `notes`/`srdId`/`xp` when meaningful — keep the doc minimal (no
+    // empty-string field, `stripUndefined`-independent). The `xp` guard is
+    // EXISTENCE-based (`!= null` + finite + `≥ 0`), never truthy: a genuine harmless
+    // `xp: 0` (a CR-0 statblock) is a real costed value and MUST be written, so it
+    // renders costed, not un-costed.
     ...(notes ? { notes } : {}),
     ...(srdId ? { srdId } : {}),
+    ...(input.xp != null && Number.isFinite(input.xp) && input.xp >= 0
+      ? { xp: Math.round(input.xp) }
+      : {}),
   };
   const combatants = [...state.combatants, monster];
   // REINFORCEMENT auto-join: once the order is FROZEN (turns have begun), a monster added
@@ -281,6 +291,20 @@ export function setMonsterName(
   const trimmed = name.trim();
   if (trimmed === "") return state;
   return mapCombatant(state, id, (c) => (c.kind === "pc" ? c : { ...c, name: trimmed }));
+}
+
+/** Set a MONSTER's per-token XP (SRD Step 3) — the lair toggle (§D.5) routes through
+ *  this to rewrite the cost between the base and `xpInLair` prints. Clamped to a
+ *  non-negative integer (`Math.max(0, Math.round(xp))`). A PC is a no-op (a PC has no
+ *  XP cost — its threat is its class levels, counted on the budget side). */
+export function setMonsterXp(
+  state: EncounterState,
+  id: string,
+  xp: number
+): EncounterState {
+  return mapCombatant(state, id, (c) =>
+    c.kind === "pc" ? c : { ...c, xp: Math.max(0, Math.round(xp)) }
+  );
 }
 
 /** Apply a signed HP delta (damage negative, heal positive) to one MONSTER token,

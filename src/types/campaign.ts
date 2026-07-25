@@ -149,6 +149,21 @@ export interface EncounterMonster extends EncounterCombatantBase {
    * only ever written/read inside the DM disclosure, so no rules change is needed.
    */
   notes?: string;
+  /**
+   * XP value of ONE token of this group (SRD Step 3 — "every creature has an XP value
+   * in its stat block"), seeded at ADD time: picker path = `monsterXp(statblock)`; custom
+   * path = `xpForCr(chosen CR)`; ABSENT when unknown (a custom monster with no CR, any
+   * pre-feature doc) — the DM budget readout then reports the group as un-costed, never
+   * guesses. A genuine harmless `xp: 0` (a CR-0 statblock) is a valid COSTED value, not
+   * "unknown" (existence, never truthiness, decides).
+   *
+   * ENCOUNTER-OWNED like `ac`/`maxHp`: the statblock is a SEED, not a live source — a
+   * later corpus CR correction does NOT retro-update existing encounter docs (accepted,
+   * identical to the stale-`ac` hazard; there is no reconciliation because no reader
+   * treats the statblock as live). The lair toggle (§D.5) rewrites it between the base
+   * and `xpInLair` prints.
+   */
+  xp?: number;
 }
 
 /**

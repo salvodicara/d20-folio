@@ -9,6 +9,7 @@ import { describe, it, expect } from "vitest";
 import { ensureSrdKind } from "@/i18n";
 import { localizeSrd } from "@/i18n/resolver";
 import { getMonster } from "@/data/monsters";
+import { monsterXp } from "@/lib/monster";
 import { toMonsterInput } from "@/features/campaigns/encounter-monster-input";
 import type { Locale } from "@/lib/locale";
 
@@ -31,6 +32,7 @@ describe("toMonsterInput — pre-fill a monster group from its statblock", () =>
         expect(input.count).toBe(3);
         expect(input.initiative).toBeNull(); // no dice — the DM rolls externally
         expect(input.srdId).toBe(m.id);
+        expect(input.xp).toBe(monsterXp(m)); // SRD Step 3 — seeded per-token XP
         expect(input.notes).toBeUndefined(); // no prose copy (one home per fact)
       });
     }

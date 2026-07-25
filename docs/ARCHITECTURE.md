@@ -1055,7 +1055,9 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
   AC/HP/name/conditions/initiative on the doc; monsters keep their own state since they have no char
   doc). A monster group also carries an
   OPTIONAL, additive `srdId` — a DISPLAY-ONLY reference to the bestiary statblock the encounter picker
-  seeded it from (`toMonsterInput` copies the localized name + AC + `hp.average` and stamps `srdId`);
+  seeded it from (`toMonsterInput` copies the localized name + AC + `hp.average`, stamps `srdId`, and
+  seeds the per-token `xp` via `monsterXp` — a third encounter-owned fact, `ac`/`maxHp`-class, absent on
+  a stat-less custom monster; the lair toggle rewrites it via the `setMonsterXp` reducer);
   it powers the DM-only statblock disclosure (resolved at render via `getMonster(srdId)`, degrading
   quietly on a stale id), never a mechanics source and never overriding the stored ac/maxHp/name (which
   stay the encounter-owned truth the DM may edit). The **2024 encounter difficulty** math is the pure,
