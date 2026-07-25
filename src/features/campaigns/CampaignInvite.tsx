@@ -14,7 +14,7 @@
  * utility pair, so it carries only the essentials: the invite link lives BEHIND a
  * Copy/Share action (no raw read-only link field eating a row) plus the lock-new-joins
  * toggle. It rides {@link SectionPanel} like every other desk card, so all hub sections
- * share one card rubric. Reuses the folio primitives (SectionPanel + InfoCard + Switch +
+ * share one card rubric. Reuses the folio primitives (SectionPanel + Switch +
  * Badge) and the ONE share/copy primitives (CopyButton + shareOrCopy) — no parallel
  * component.
  */
@@ -25,7 +25,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/selection";
 import { CopyButton } from "@/components/shared/CopyButton";
-import { InfoCard } from "@/components/shared/InfoCard";
 import { shareOrCopy } from "@/components/shared/copy-to-clipboard";
 import { useToastStore } from "@/stores/toastStore";
 import { SectionPanel } from "@/features/campaigns/SectionPanel";
@@ -80,7 +79,7 @@ export function CampaignInvite({ canManage }: { canManage: boolean }) {
         ) : undefined
       }
     >
-      <InfoCard className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3">
         {/* The link itself lives BEHIND the actions (compressed): Copy puts it on the
             clipboard, Share opens the native sheet — no raw read-only field. Both go
             inert when joins are locked, so a member can never hand out a dead link. */}
@@ -118,7 +117,7 @@ export function CampaignInvite({ canManage }: { canManage: boolean }) {
             <p className="text-xs text-text-muted">{t("campaignHub.lockJoinsHint")}</p>
           </div>
         )}
-      </InfoCard>
+      </div>
     </SectionPanel>
   );
 }

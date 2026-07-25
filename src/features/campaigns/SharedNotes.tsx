@@ -224,7 +224,7 @@ export function SharedNotes() {
   function renderNote(n: SharedNote): ReactElement {
     return editingId === n.id ? (
       // CN1 — in-place editor: the card becomes title + content fields.
-      <InfoCard as="li" key={n.id} className="flex flex-col gap-3">
+      <li key={n.id} className="hub-row flex flex-col gap-3">
         <Field label={t("campaignHub.noteTitle")}>
           {(props) => (
             <Input
@@ -257,9 +257,9 @@ export function SharedNotes() {
             {t("common.save")}
           </Button>
         </div>
-      </InfoCard>
+      </li>
     ) : (
-      <InfoCard as="li" key={n.id} className="flex items-start justify-between gap-2">
+      <li key={n.id} className="hub-row flex items-start justify-between gap-2">
         <div className="min-w-0">
           {n.dmOnly ? (
             // Shown only on the DM's board (a player never sees the note at all) —
@@ -335,7 +335,7 @@ export function SharedNotes() {
             <Trash2 aria-hidden className="h-4 w-4 text-text-secondary" />
           </Button>
         </div>
-      </InfoCard>
+      </li>
     );
   }
 
@@ -343,10 +343,10 @@ export function SharedNotes() {
   // "View all". Only offer the disclosure when there is more than one note.
   const notesDetail =
     rest.length > 0 ? (
-      <ul className="flex flex-col gap-2">
+      <ul className="hub-rows">
         {visibleRest.map(renderNote)}
         {hiddenCount > 0 || showAll ? (
-          <li>
+          <li className="hub-row">
             <button
               type="button"
               className="rh-action text-text-muted hover:text-accent-text"
@@ -383,9 +383,7 @@ export function SharedNotes() {
         ) : notes.length === 0 ? (
           <p className="text-sm text-text-secondary">{t("campaignHub.notesEmpty")}</p>
         ) : (
-          <ul className="flex flex-col gap-2">
-            {mostRecent ? renderNote(mostRecent) : null}
-          </ul>
+          <ul className="hub-rows">{mostRecent ? renderNote(mostRecent) : null}</ul>
         )}
 
         {showAdd ? (

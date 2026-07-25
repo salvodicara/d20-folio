@@ -130,14 +130,19 @@ const SURFACES: {
   // border and its two-line lip through the unframing phase: it measured 49
   // against this file's ceiling of 23 while the suite only ever visited Spells.
   { slug: "compendium-feature", route: "/compendium?type=feature", ceiling: 23 }, // measured 18
-  { slug: "campaign-hub", route: "/campaigns/mock-1", ceiling: 46 }, // measured 41
+  // The hub's ceiling CAME DOWN: eleven of its fourteen large framed boxes were
+  // non-interactive `.info-card`s, and they NESTED — a framed note row inside a
+  // framed section card. A surface that only GROUPS is not the container you are
+  // acting in (L1), so the sections wear the rail material and their entries and
+  // verb cells are frameless rows on the one hairline. 41 → 37.
+  { slug: "campaign-hub", route: "/campaigns/mock-1", ceiling: 42 }, // measured 37
   // The hub's OTHER half: the dev fixture rests on the party overview, so the
   // running-encounter sub-view (the inline initiative tracker + the DM verbs) was
   // never measured — and it is the denser of the two.
   {
     slug: "campaign-hub-encounter",
     route: "/campaigns/mock-1",
-    ceiling: 57, // measured 52
+    ceiling: 53, // measured 48
     prepare: async (page) => {
       await page.addInitScript(() =>
         window.localStorage.setItem("d20-dev-encounter", "1")

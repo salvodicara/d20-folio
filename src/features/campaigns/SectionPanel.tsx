@@ -15,14 +15,19 @@
  *     two stacked height animators fighting (bug B — the sticky/janky feel).
  *
  * The fixed panel, the disclosure, and the expandable detail all live INSIDE ONE
- * `.info-card` surface (`.section-card`) — owner: the gilt-knob chevron must sit ON
+ * surface (`.folio-panel.section-card`) — owner: the gilt-knob chevron must sit ON
  * the card, never float in the gap BELOW it. The chevron docks at the card's BOTTOM
  * EDGE (a hairline divider above it, inside the surface) and the detail reveals IN
  * PLACE inside the SAME card (the card grows taller) through the single grid-rows
  * reveal — NOT a separate strip floating beneath the card. A section that has NO
  * `detail` (a static header) instead renders its `children` directly, so it keeps
  * whatever surface they bring (Chronicle's book-spread, DM Tools' card grid) — only
- * the collapsible sections are wrapped in the one section card.
+ * the collapsible sections are wrapped in the one section panel.
+ *
+ * THE SECTION IS A RAIL, NOT A FRAME (L1, DESIGN.md §4). It exists to GROUP — it is
+ * not the container the user is acting in — so it wears the plate's material (face,
+ * dome, grain, cast) and no metal. That is what buys back the nesting level the
+ * interactive rows standing on it need: rail → row is ONE framed box, not two.
  *
  * The disclosure is a CLEAN, compact CHEVRON expander docked centred at the card
  * bottom (a hairline divider above it) — NOT on the header (B5/D4 — owner: a toggle
@@ -51,7 +56,6 @@
 import { useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { InfoCard } from "@/components/shared/InfoCard";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
@@ -104,11 +108,11 @@ export function SectionPanel({
   /** Initial detail-open state on the first visit (before a sticky choice exists). */
   defaultOpen?: boolean;
   /** Keep the `.section-card` surface even when `detail` is absent (no disclosure,
-   *  just the frame). For sections whose children are BARE content (Sessions' rows,
-   *  the notes board's empty line): without it a 0/1-item section floated card-less on
-   *  the backdrop while its populated sibling wore the card — the same class of bug
-   *  the Treasury empty-ledger fix closed. Sections that bring their OWN surface
-   *  (Chronicle's book-spread, DM Tools' card grid, Access's InfoCard) omit it. */
+   *  just the rail). For sections whose children are BARE content (Sessions' rows,
+   *  the notes board's empty line): without it a 0/1-item section floated surface-less
+   *  on the backdrop while its populated sibling wore one — the same class of bug the
+   *  Treasury empty-ledger fix closed. Sections that bring their OWN surface
+   *  (Chronicle's book-spread, DM Tools' card grid, Access's card) omit it. */
   framed?: boolean;
   /** Extra classes on the panel root — the hub uses it to span a band full-width
    *  (`lg:col-span-2`) in the two-column dashboard grid. */
@@ -148,12 +152,11 @@ export function SectionPanel({
     <section aria-labelledby={headId} className={cn("section-panel", className)}>
       <SectionHeader as="h2" tight id={headId} title={title} count={count} meta={meta} />
       {detail ? (
-        // ONE card encloses the fixed panel + the disclosure + the expandable detail
+        // ONE rail encloses the fixed panel + the disclosure + the expandable detail
         // (owner: the gilt-knob chevron sits ON the card, never floats below it). The
-        // chevron docks at the card's BOTTOM EDGE; the detail reveals IN PLACE inside
-        // the SAME card (the card grows taller) via the single grid-rows reveal. The
-        // canonical `.info-card` surface comes from the shared <InfoCard>.
-        <InfoCard className="section-card">
+        // chevron docks at the rail's BOTTOM EDGE; the detail reveals IN PLACE inside
+        // the SAME rail (it grows taller) via the single grid-rows reveal.
+        <div className="folio-panel section-card">
           {children}
           {/* The chevron disclosure (B5/D4): a compact, centred, ≥44px tap-target
               chevron docked at the card's bottom edge, above the detail it reveals — no
@@ -181,12 +184,12 @@ export function SectionPanel({
               {detail}
             </div>
           </div>
-        </InfoCard>
+        </div>
       ) : framed ? (
         // No detail to disclose, but the children are bare content — keep the SAME
         // `.section-card` frame (no chevron), so a 0/1-item section never floats
         // card-less beside its carded siblings.
-        <InfoCard className="section-card">{children}</InfoCard>
+        <div className="folio-panel section-card">{children}</div>
       ) : (
         children
       )}

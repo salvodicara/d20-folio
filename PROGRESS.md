@@ -591,6 +591,15 @@ unframed, the selection frame spent once (on the altar, which is not a sibling a
 the 1px settle honoured. Both wizards are in the census for the first time, which is most of why
 none of it was ever caught.
 
+**THE CAMPAIGN HUB stopped framing what only groups.** Eleven of its fourteen large framed boxes
+were non-interactive `.info-card`s, and they NESTED — `li.info-card` inside `.info-card.section-card`
+in Sessions, Shared notes and Party — which is the cockpit-rail law applied in the opposite direction
+on the two pages users move between most. The sections wear `.folio-panel` now (face, dome, grain,
+cast, no metal), their entries are frameless rows on the one hairline (`.hub-rows` / `.hub-row`),
+and the DM verbs are frameless cells (`.hub-cell`). Sessions' `border-bottom` divider — a hard,
+wall-to-wall line the reset had already banned everywhere else — is the hairline. **Census: the hub
+41 → 37 boxes (ceiling 46 → 42) and its running-encounter view 52 → 48 (57 → 53), nesting 3 → 2.**
+
 **Bringing the ladder to a plate surfaced a live severe defect on the deployed app's landing route.**
 `background-image` is a REPLACED property exactly like `box-shadow` — so `.ch-card:hover`, which set
 `background-image: linear-gradient(<wash>, <wash>)`, **discarded the plate's dome and face**: the

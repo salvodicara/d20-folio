@@ -686,7 +686,9 @@ neutral).
 The consequences, stated plainly, because each is a place a border wants to come back:
 
 - **A grouping rail is a material, not a frame.** `.folio-panel` — the cockpit rails, the campaign
-  columns — wears the face, the dome, the grain and the cast, and no metal. It exists to group; it
+  hub's section panels — wears the face, the dome, the grain and the cast, and no metal. The law
+  cuts BOTH ways: a hub section that framed itself _and_ framed the note rows standing on it was
+  claiming twice for a surface that only groups. It exists to group; it
   is not the container the user is acting in. That is also what buys back the nesting level the
   interactive tiles standing on it need. Its one EARNED strike, the `.gilt-frame` identity band,
   re-colours the same (transparent) border, so the tier costs no layout.
@@ -695,7 +697,9 @@ The consequences, stated plainly, because each is a place a border wants to come
   on a shared baseline. A hue may carry the classification; nothing is drawn around it.
 - **A list row is frameless at rest.** Hover is a wash. Selected is a horizontal **wash band**
   about twice the ground, bounded above and below by the one hairline, with the label lit in the
-  special register. No ring, no lift, no drop.
+  special register. No ring, no lift, no drop. The campaign hub's entries and verb cells
+  (`.hub-rows` / `.hub-row` / `.hub-cell`) are this recipe: a label, a hint and a control row,
+  separated from the next by the hairline and nothing else.
 - **A gem is a shape, not a frame.** A seal, a socket, a coin, a portrait well: the fill boundary is
   the edge, and one specular pool at (35%, 28%) is what makes it read struck. **No lip, ever** — an
   inner cream highlight is the banned idiom in every register, gem or plate. **No border either,

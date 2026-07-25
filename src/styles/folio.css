@@ -11952,11 +11952,11 @@ h6.bm-heading {
   margin: 0;
   padding: 0;
 }
-.sess-item {
-  border-bottom: 1px solid var(--border-soft);
-}
-.sess-item:last-child {
-  border-bottom: 0;
+/* A LIST ROW IS FRAMELESS AT REST (L1), and the separator between two rows is THE
+   ONE HAIRLINE — painted and inset, never a `border-bottom`, which is a hard,
+   wall-to-wall, unfading line and reads as the underside of a frame. */
+.sess-item + .sess-item {
+  background: var(--hairline) top center / 100% 1px no-repeat;
 }
 .sess-summary {
   position: relative;
@@ -12129,15 +12129,56 @@ textarea.input.sess-notes-edit {
 .section-panel {
   display: flow-root;
 }
-/* The collapsible MANAGE section's ONE card — the fixed panel, the gilt-knob
-   disclosure, and the expandable detail all live INSIDE a single `.info-card`
-   surface (owner: the chevron sits ON the card, never floats in the gap below it,
-   and the detail grows the card IN PLACE). Reuses the `.info-card` struck-vellum
-   token wholesale; only drops the trailing margin (the hub grid's gap owns the
-   spacing between sections). */
+/* The collapsible MANAGE section's ONE surface — the fixed panel, the gilt-knob
+   disclosure, and the expandable detail all live inside it (owner: the chevron sits
+   ON the card, never floats in the gap below it, and the detail grows the card IN
+   PLACE).
+   A SURFACE THAT ONLY GROUPS IS NOT THE CONTAINER YOU ARE ACTING IN (L1). Eleven of
+   the campaign hub's fourteen large framed boxes were non-interactive `.info-card`s,
+   and they NESTED — a framed note row inside a framed section card inside the page —
+   which is the same law the cockpit's rails obey, applied in the opposite direction
+   on the two pages users move between most. So the section wears `.folio-panel`: the
+   face, the dome, the grain and the cast, and NO metal. That is also what buys back
+   the nesting level the interactive tiles standing on it need. */
 .section-card {
   margin-bottom: 0;
+  padding: var(--sp-3) var(--sp-4);
 }
+/* ── THE HUB ROW — one entry standing ON a section rail (a shared note, a treasury
+   line). The rail groups; the row is the thing you read. So the row is FRAMELESS at
+   rest (L1) and the ONE hairline separates it from the next — which is what takes
+   the note board off the third framed level it used to sit at (page → section card →
+   note card). Hover is a WASH, never a ring; only a row with a real per-row action
+   takes one. ── */
+.hub-rows {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.hub-rows > li + li {
+  background: var(--hairline) top center / 100% 1px no-repeat;
+}
+.hub-row {
+  padding: var(--sp-3) 0;
+}
+/* A grouping CELL on a section rail — the DM verbs' label + hint + control row. A
+   surface that only groups is not the container you are acting in (L1): the Select
+   and the Button inside it are, so the cell is type in a column with the one
+   hairline above it. */
+.hub-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-3) 0 0;
+  background: var(--hairline) top center / 100% 1px no-repeat;
+}
+.hub-rows > li:first-child > .hub-row,
+.hub-rows > .hub-row:first-child {
+  padding-top: 0;
+}
+
 .section-detail-wrap {
   display: grid;
   grid-template-rows: 0fr;

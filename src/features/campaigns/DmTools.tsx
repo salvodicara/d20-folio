@@ -16,7 +16,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { Trash2, Crown, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { InfoCard } from "@/components/shared/InfoCard";
 import { Select } from "@/components/shared/Select";
 import { useAuthStore } from "@/stores/authStore";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -197,7 +196,7 @@ export function DmTools() {
         {/* D29 — hand the DM crown to another member (shown only when there's
             someone to promote). */}
         {otherMembers.length > 0 && (
-          <InfoCard className="flex flex-col gap-1">
+          <div className="hub-cell">
             <span className="text-sm text-text-secondary">
               {t("campaignHub.yieldDm")}
             </span>
@@ -224,13 +223,13 @@ export function DmTools() {
                 {t("campaignHub.yieldDmConfirm")}
               </Button>
             </div>
-          </InfoCard>
+          </div>
         )}
 
         {/* Remove a player from the campaign (shown only when there's someone to
             remove). Their character detaches; they can rejoin unless joins are locked. */}
         {otherMembers.length > 0 && (
-          <InfoCard className="flex flex-col gap-1">
+          <div className="hub-cell">
             <span className="text-sm text-text-secondary">
               {t("campaignHub.removeMember")}
             </span>
@@ -259,10 +258,10 @@ export function DmTools() {
                 {t("campaignHub.removeMemberConfirm")}
               </Button>
             </div>
-          </InfoCard>
+          </div>
         )}
 
-        <InfoCard className="flex flex-col gap-1 sm:col-span-2">
+        <div className="hub-cell sm:col-span-2">
           <span className="text-sm text-text-secondary">
             {t("campaignHub.dangerZone")}
           </span>
@@ -275,7 +274,7 @@ export function DmTools() {
               {t("campaignHub.deleteCampaignConfirm")}
             </Button>
           </div>
-        </InfoCard>
+        </div>
       </div>
     </SectionPanel>
   );
