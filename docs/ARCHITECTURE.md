@@ -1058,7 +1058,12 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
   seeded it from (`toMonsterInput` copies the localized name + AC + `hp.average` and stamps `srdId`);
   it powers the DM-only statblock disclosure (resolved at render via `getMonster(srdId)`, degrading
   quietly on a stale id), never a mechanics source and never overriding the stored ac/maxHp/name (which
-  stay the encounter-owned truth the DM may edit). The in-hub **Party surface**
+  stay the encounter-owned truth the DM may edit). The **2024 encounter difficulty** math is the pure,
+  i18n-free engine `src/lib/encounter-difficulty.ts` (the SRD 5.2.1 "XP Budget per Character" table +
+  `xpBudgetForLevel` / `partyXpBudget` / `encounterXpCost` / `budgetVerdict` — three grades, NO 2014
+  multipliers), fed by `monster.ts → monsterXp` (the ONE `m.xp ?? xpForCr(cr)` fallback chain) and
+  `CR_VALUES` (derived from the XP table); its DM-only budget readout is wired in the Party surface
+  (below). The in-hub **Party surface**
   (`features/campaigns/Party.tsx` + `party-encounter.tsx`, ONE live
   view open to ALL members) assembles each PC row LIVE: identity/AC/maxHP/passives derived from the
   member's char doc, current/temp HP + conditions from a live `subscribeCombatState` listener per

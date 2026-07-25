@@ -6,11 +6,13 @@
 import { describe, it, expect } from "vitest";
 import type { MonsterStatBlock } from "@/data/types";
 import {
+  CR_VALUES,
   diceMean,
   monsterInitiative,
   monsterPassivePerception,
   monsterSaveBonus,
   monsterSkillBonus,
+  monsterXp,
   pbForCr,
   xpForCr,
 } from "@/lib/monster";
@@ -171,5 +173,35 @@ describe("monsterPassivePerception", () => {
   });
   it("uses a stored override verbatim", () => {
     expect(monsterPassivePerception({ ...base, passivePerceptionOverride: 17 })).toBe(17);
+  });
+});
+
+describe("monsterXp — the one fallback chain (golden rule 6)", () => {
+  it("derives from CR when no stored override (CR 5 → 1,800)", () => {
+    expect(monsterXp({ cr: 5 })).toBe(1800);
+  });
+  it("respects a stored override, including a genuine harmless xp:0", () => {
+    expect(monsterXp({ cr: 5, xp: 999 })).toBe(999);
+    // CR 0 with the harmless "XP 0" print — existence-based, never overwritten by the table.
+    expect(monsterXp({ cr: 0, xp: 0 })).toBe(0);
+  });
+  it("falls to the CR table (10) when a CR-0 monster stores no override", () => {
+    expect(monsterXp({ cr: 0 })).toBe(10);
+  });
+});
+
+describe("CR_VALUES — derived from the XP table (golden rule 13)", () => {
+  it("is non-empty and strictly ascending", () => {
+    expect(CR_VALUES.length).toBeGreaterThan(0);
+    for (let i = 1; i < CR_VALUES.length; i++) {
+      expect(CR_VALUES[i]).toBeGreaterThan(CR_VALUES[i - 1] as number);
+    }
+  });
+  it("starts at 0 and ends at 30, and every value is accepted by xpForCr", () => {
+    expect(CR_VALUES[0]).toBe(0);
+    expect(CR_VALUES[CR_VALUES.length - 1]).toBe(30);
+    for (const cr of CR_VALUES) {
+      expect(() => xpForCr(cr)).not.toThrow();
+    }
   });
 });

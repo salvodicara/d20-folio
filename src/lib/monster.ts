@@ -70,6 +70,28 @@ export function xpForCr(cr: number): number {
 }
 
 /**
+ * A monster's effective XP: the deviating stored print when present (the CR-0
+ * "XP 0" entries store `xp: 0`), else the CR table. The `??` is EXISTENCE-based —
+ * never `||` — so a genuine harmless `xp: 0` is honoured, not overwritten by the
+ * table. The ONE place this fallback chain lives (golden rule 6): every consumer
+ * (the statblock card, the encounter picker's cost seeding, the budget readout)
+ * routes through it instead of inlining `m.xp ?? xpForCr(m.cr)`.
+ */
+export function monsterXp(m: Pick<MonsterStatBlock, "cr" | "xp">): number {
+  return m.xp ?? xpForCr(m.cr);
+}
+
+/**
+ * Every legal CR, ascending (0, 1/8, 1/4, 1/2, 1…30) — DERIVED from the XP table
+ * keys (golden rule 13: subjects come from the data, never a hand-list beside it),
+ * so a table edit can never leave a stale CR list. Feeds the custom-monster CR
+ * select (the DM picks a CR to cost a stat-less improv NPC).
+ */
+export const CR_VALUES: ReadonlyArray<number> = Object.keys(XP_BY_CR)
+  .map(Number)
+  .sort((a, b) => a - b);
+
+/**
  * Mean of a compact dice expression: "XdY+Z" / "XdY-Z" / "XdY" → X·(Y+1)/2 + Z ;
  * a bare integer "N" → N (the flat-damage CR-0 grammar). Throws on a malformed
  * expression (the corpus guard already pins hp averages against this).

@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { Locale } from "@/lib/locale";
 
 /**
  * Merge Tailwind classes with clsx and tailwind-merge.
@@ -39,6 +40,15 @@ export function formatCr(cr: number): string {
   if (cr === 0.25) return "1/4";
   if (cr === 0.5) return "1/2";
   return String(cr);
+}
+
+/**
+ * XP formatted per locale, in the app's `it-IT` / `en-US` thousands grouping
+ * (2,300 EN · 2.300 IT). The ONE XP formatter — shared by the statblock card, the
+ * encounter budget readout, and the custom-monster CR-option labels (golden rule 6).
+ */
+export function fmtXp(n: number, locale: Locale): string {
+  return n.toLocaleString(locale === "it" ? "it-IT" : "en-US");
 }
 
 /**

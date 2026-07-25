@@ -27,14 +27,14 @@ import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { srdKey } from "@/i18n/srd-key";
 import { conditionChips } from "@/lib/views/tracker-view";
 import { abilityModifier } from "@/lib/ability";
-import { formatCr, formatModifier, localeDistance } from "@/lib/utils";
+import { fmtXp, formatCr, formatModifier, localeDistance } from "@/lib/utils";
 import {
   monsterInitiative,
   monsterPassivePerception,
   monsterSaveBonus,
   monsterSkillBonus,
+  monsterXp,
   pbForCr,
-  xpForCr,
 } from "@/lib/monster";
 import type {
   AbilityCode,
@@ -67,11 +67,6 @@ function entrySuffix(entry: MonsterEntry, t: TFn): string {
     return ` (${label})`;
   }
   return "";
-}
-
-/** XP formatted per locale, in the app's `it-IT`/`en-US` thousands grouping. */
-function fmtXp(n: number, locale: Locale): string {
-  return n.toLocaleString(locale === "it" ? "it-IT" : "en-US");
 }
 
 /** Damage-type names as ink-tinted runs (`--dmg-<type>-ink`), comma-joined. */
@@ -257,10 +252,10 @@ export function MonsterStatBlockCard({
   const xpPart =
     m.xpInLair != null
       ? t("monster.xpWithLair", {
-          xp: fmtXp(m.xp ?? xpForCr(m.cr), locale),
+          xp: fmtXp(monsterXp(m), locale),
           lairXp: fmtXp(m.xpInLair, locale),
         })
-      : t("monster.xp", { xp: fmtXp(m.xp ?? xpForCr(m.cr), locale) });
+      : t("monster.xp", { xp: fmtXp(monsterXp(m), locale) });
 
   const legendaryHeader = m.legendary ? (
     <>
