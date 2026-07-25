@@ -11,7 +11,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { CompendiumPicker, spellSpec } from "@/features/compendium/picker";
-import { ModalTabSwitcher, CustomSpellForm } from "./CustomCreationForms";
+import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
+import { CustomSpellForm } from "./CustomCreationForms";
 
 interface SpellAddModalProps {
   open: boolean;

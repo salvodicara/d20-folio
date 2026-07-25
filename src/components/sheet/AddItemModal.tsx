@@ -14,8 +14,8 @@
  * "Custom" tab shows the `CustomEquipmentForm`. (The old standalone `EquipmentAddModal`
  * / `MagicItemAddModal` wrappers were deleted — this is now the only add-item entry.)
  *
- * Tab switcher mirrors `ModalTabSwitcher` from CustomCreationForms but with three
- * tabs; the existing two-tab version is kept as-is for callers that still want it.
+ * Tab switcher mirrors the shared `ModalTabSwitcher` but with three tabs; the
+ * two-tab version is kept as-is for callers that still want it.
  */
 
 import { useState } from "react";

@@ -12,7 +12,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { CompendiumPicker, featureSpec } from "@/features/compendium/picker";
-import { ModalTabSwitcher, CustomFeatureForm } from "./CustomCreationForms";
+import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
+import { CustomFeatureForm } from "./CustomCreationForms";
 import type { CustomFeature } from "@/types/character";
 
 interface FeatureAddModalProps {

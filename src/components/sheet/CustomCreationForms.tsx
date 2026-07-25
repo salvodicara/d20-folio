@@ -17,7 +17,6 @@ import { Icon } from "@/components/ui/icon";
 import { Select } from "@/components/shared/Select";
 import { IconPicker } from "@/components/shared/icon-picker";
 import { DEFAULT_ALGO_ICON } from "@/components/shared/icon-registry";
-import { cn } from "@/lib/utils";
 import type {
   CustomSpell,
   CustomEquipment,
@@ -699,45 +698,6 @@ function FormField({
         {required && <span className="ml-0.5 text-error">*</span>}
       </label>
       {children}
-    </div>
-  );
-}
-
-// ─── Tab switcher for modals ─────────────────────────────────────────────────
-
-export function ModalTabSwitcher({
-  activeTab,
-  onTabChange,
-}: {
-  activeTab: "srd" | "custom";
-  onTabChange: (tab: "srd" | "custom") => void;
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="flex border-b border-border-subtle">
-      <button
-        onClick={() => onTabChange("srd")}
-        className={cn(
-          "flex-1 py-2 text-center text-[0.7rem] font-semibold transition-colors",
-          activeTab === "srd"
-            ? "border-b-2 border-accent text-accent"
-            : "text-text-secondary hover:text-text-primary"
-        )}
-      >
-        {t("custom.srdTab")}
-      </button>
-      <button
-        onClick={() => onTabChange("custom")}
-        className={cn(
-          "flex-1 py-2 text-center text-[0.7rem] font-semibold transition-colors",
-          activeTab === "custom"
-            ? "border-b-2 border-accent text-accent"
-            : "text-text-secondary hover:text-text-primary"
-        )}
-      >
-        {t("custom.customTab")}
-      </button>
     </div>
   );
 }
