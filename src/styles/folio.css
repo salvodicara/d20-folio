@@ -2063,10 +2063,12 @@ button.pr-dot.lg::before {
   padding: var(--sp-4);
 }
 .modal {
-  /* A dialog is a plate on the EARNED tier and carries NO ornament: the one
-     ornamented surface on a screen is the surface the user is acting in, and a
-     dialog already commands the screen. `relative` seats the head's hairline;
-     scroll clipping lives on `.modal-body` (its own overflow-y). */
+  /* A dialog is an EARNED hero register and wears the corner goldwork too
+     (`.modal::after`, the ornament vocabulary above `.page-head.framed`): the
+     modal must NOT clip child paint — that would cut the corner knot, which
+     straddles the frame line. Scroll clipping lives on `.modal-body` (its own
+     overflow-y). `relative` seats both the corner overlay and the head's seat
+     divider. */
   position: relative;
   width: 100%;
   max-width: 32rem;
@@ -2082,25 +2084,46 @@ button.pr-dot.lg::before {
 .modal.lg {
   max-width: 46rem;
 }
-/* A head is NOT a separate plate: it is the top of the dialog's one material,
-   ended by the one divider in the system — the HAIRLINE. Inset from the padding
-   edge, tips fading, nodeless. Nothing is drawn over it. */
+/* A head is NOT a separate plate: it is the top of the dialog's one material.
+   Its own seat is the `.sec-rule` idiom — a gilt-touched hairline that FADES AT
+   BOTH TIPS instead of a wall-to-wall border — the border-image bottom slice of
+   a to-right gradient paints exactly that. */
 .modal-head {
   position: relative;
   display: flex;
   align-items: flex-start;
   gap: var(--sp-3);
   padding: var(--sp-5) var(--sp-5) var(--sp-4);
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(
+      to right,
+      transparent,
+      color-mix(in oklab, var(--accent-primary) 45%, var(--border-soft)) 16%,
+      color-mix(in oklab, var(--accent-primary) 45%, var(--border-soft)) 84%,
+      transparent
+    )
+    1;
 }
+/* The ceremonial seat ornament (the winged divider, style-A language): BG3's
+   level-up under-title divider translated into the corner knot's language —
+   rails tapering outward into hairpoints that end in a tiny open under-curl,
+   inner ends stepping up in open-eye S-hook returns (the corner volute's
+   language, small), and the luminous centre — a nested chevron pair over a
+   descending faceted plumb hanging BELOW the rule in a baked radial glow.
+   Nothing floats: every stroke is attached to the rule end to end. The
+   per-theme `--seat-orn` SVG (index.css) straddles the 1px seat (24px tall,
+   the SVG's rule line at y=12 on the border); its baked surface-2 backing
+   occludes the rule behind the fleur, so no notch math. Decor only: no
+   pointer events, no layout. */
 .modal-head::after {
   content: "";
   position: absolute;
-  left: var(--sp-5);
-  right: var(--sp-5);
-  bottom: 0;
-  height: 1px;
+  left: 0;
+  right: 0;
+  bottom: -12px;
+  height: 24px;
   pointer-events: none;
-  background: var(--hairline);
+  background: var(--seat-orn) center / 260px 24px no-repeat;
 }
 /* The rubric is an eyebrow, not a value: body-muted micro-caps, no accent hue
    (gold means value or state, never a label) and no marker. */
@@ -6719,101 +6742,49 @@ button.trk-pip:active {
   }
 }
 
-/* ── THE MARK — mounted on exactly ONE surface per route ─────────────────────
-   The budget is hard: at most one mark-bearing surface per screen, and it is the
-   screen's IDENTITY plate — the reference's second ornament home (the ogee head
-   of a hero/identity panel), and the only surface on any of our routes that is
-   unique, earned-tier, and never a sibling among equals.
-
-     · the framed realm masthead, on every route that renders one;
-     · the cockpit's identity band, on the ONE route that renders no masthead.
-
-   They can never co-occur: the cockpit is the only surface that mounts
-   `.folio-panel.gilt-frame`, and it renders no `PageHeader`. Everything else
-   carries none — not a dialog (it already commands the screen, and the
-   reference's own modals are plain plates), not a sibling panel, not a resting
-   card, not a section heading, not a list row, not a chip.
-
-   The overlay is DECOR ONLY: `pointer-events: none`, no layout, no animation,
-   and it takes no border of its own. It hangs `--mark-drop` past the plate's
-   bottom edge so the cartouche's underside can paint — a background is clipped
-   to its own box — which is also why a mark-bearing host must never carry
-   `overflow: hidden`.
-
-   The run cartouche mounts only at ≥1024px. Ornament coverage is capped at a
-   third of the run it interrupts (measured on the rendered 1184px masthead: 14.4%
-   dark / 15.2% light, corners plus cartouche): below that width the 216px figure
-   would take the run past the cap and start crowding the plate's own ink. The
-   corner terminals alone carry the narrow strike.
-
-   The corner tile is 56px, and that number is load-bearing: the realm masthead is
-   ~112px tall, so two stacked corner figures at 64px would have overlapped into a
-   continuous lattice down the left edge — which is a second rail beside the rail
-   (L2) by accumulation, even though no single member is one. ── */
-/* The two hosts, and the whole of the budget. `.folio-panel`'s `::before` is
-   already the plate's material, so the identity band wears the mark on `::after`;
-   the masthead has both free and takes `::before`. */
-.page-head.framed,
-.folio-panel.gilt-frame {
-  --mark-drop: 15px;
-}
+/* ── Corner goldwork — the worked-gold knot that caps the app's HERO frames:
+   the framed realm masthead, the gilt-framed hero band (cockpit identity), and
+   dialogs. EARNED registers only (Constitution §4.16); resting cards and quiet
+   panels stay unornamented. THE KNOT (the faithful transcription of the
+   owner's BG3 spellbook-reference corner, per-theme in `--frame-ornate`,
+   index.css): the rail swells crossing the vertex in a fine whisker overshoot,
+   ONE wave-volute comma-curl rising outward on the diagonal — crown breaking
+   over, beak curling back down over an open eye — a small weld diamond
+   seating the crossing, and a two-tone-struck ray-glint fan radiating from the
+   knot into the panel. THE ONE-LINE LAW: the ornament contributes no run
+   lines; the host's own 1px/2px border is THE frame line, and every ornament
+   stroke is attached to that line — nothing floats, ever. The pseudo is decor
+   only: pointer-events none, no layout, no animation; its ink is paint-only
+   overflow (no scrollbars), so hero hosts must NOT clip child paint (`.modal`
+   carries no `overflow: hidden` for this reason — scroll clipping lives on
+   `.modal-body`). z-index 0 keeps it above each host's material pseudo
+   (`::before` at z -1 on `.folio-panel`); the goldwork rides the frame line
+   itself, clear of the hosts' padded content. ── */
 .page-head.framed::before,
-.folio-panel.gilt-frame::after {
+.folio-panel.gilt-frame::after,
+.modal::after {
   content: "";
   position: absolute;
-  /* the plate's OUTER edge on three sides (6px of bleed: the corner's crescent
-     TERMINALS overshoot the vertex, the way the reference's do — a rail arriving and
-     curling, never a second line), dropped past the foot on the fourth */
-  inset: -6px -6px calc(-6px - var(--mark-drop));
-  z-index: 1;
+  /* The fitting rule (owner, 2026-07-17 — "rilegatura"): each 64px corner
+     tile draws its rail centerline 20% (12.8px) in from the tile's outer
+     edge; insetting the paint box by -(0.2 × 64px + 0.5px) seats that
+     centerline exactly on the host's 1px border stroke and the weld diamond's
+     center on the stroke's corner vertex — at EVERY host size. */
+  inset: calc(-1 * (0.2 * 64px + 0.5px));
   pointer-events: none;
-  background-image: var(--mark-tl), var(--mark-tr), var(--mark-bl), var(--mark-br);
-  background-repeat: no-repeat;
-  background-position:
-    left top,
-    right top,
-    left bottom var(--mark-drop),
-    right bottom var(--mark-drop);
-  background-size:
-    56px 56px,
-    56px 56px,
-    56px 56px,
-    56px 56px;
+  z-index: 0;
+  /* Four FIXED-SIZE per-corner layers (the per-theme `--frame-ornate` list:
+     tl/tr/bl/br, each `64px 64px no-repeat` in its corner) — NEVER
+     border-image, and NEVER a layout border on this pseudo. A transparent
+     64px border + border-image carrier forces a 128px minimum pseudo box, so
+     any shorter host (masthead ~112px, cockpit band ~98px) keeps `top` and
+     drops `bottom` (over-constrained abspos), hanging the bottom corners well
+     below the plate; border-image's proportional tile-shrink on small boxes
+     also mis-seats the centerline (the outset stays fixed while the tile
+     scales). Fixed-size corner backgrounds register 0px at every host size
+     by construction. */
+  background: var(--frame-ornate);
 }
-@media (min-width: 1024px) {
-  .page-head.framed::before,
-  .folio-panel.gilt-frame::after {
-    background-image:
-      var(--mark-tl), var(--mark-tr), var(--mark-bl), var(--mark-br), var(--mark-run);
-    background-position:
-      left top,
-      right top,
-      left bottom var(--mark-drop),
-      right bottom var(--mark-drop),
-      center bottom;
-    background-size:
-      56px 56px,
-      56px 56px,
-      56px 56px,
-      56px 56px,
-      216px 40px;
-  }
-}
-/* `--mark-drop` seats the cartouche's own centreline exactly on the host rail's
-   centreline. The derivation has ONE subtlety, and getting it wrong is why the
-   shipped cartouche floated 2px ABOVE the rule it was supposed to interrupt: an
-   absolutely-positioned child's `inset` resolves against its ancestor's PADDING box,
-   not its border box — so the overlay's foot is `bleed + drop` below
-   (plate-bottom − border), not below plate-bottom.
-
-     foot        = plate_bottom − border + bleed + drop
-     tile y = 20 = foot − 20
-     rail centre = plate_bottom − border/2
-     ⇒ drop = 20 + border/2 − bleed = 20 + 1 − 6 = 15
-
-   Measured on the rendered masthead, not derived and trusted: the rail paints
-   `#6b562f` at tile y 19–21, and the cartouche's rail chips are authored to exactly
-   that band. */
 
 /* The masthead is deliberately STATIC on navigation (owner, 2026-07-10): no
    mount animation on the band or its content. Realm switches must read as
@@ -13717,14 +13688,14 @@ button.party-avatar-btn:focus-visible {
 }
 
 /* ═══════════════════════════ THE ORNAMENT VOCABULARY ═══════════════════════════
-   DESIGN.md §5. Ornament is EARNED, never decorative: ONE ornamented surface per
-   screen, and it is the surface the user is acting in. Section rubrics, rail
-   heads, list rows, chips and dividers carry NONE — a heading is type and space,
-   a divider is the one hairline. The ornament that remains is the MARK on the
-   screen's single identity plate (mounted at `.page-head.framed::before` /
-   `.folio-panel.gilt-frame::after`, above), and the selection metals
-   (`--metal-silver`/`--metal-bronze`) driving `--frame-selected` on the wizard
-   hero altar and the chosen plaque. */
+   DESIGN.md §5. Ornament is EARNED, never decorative: section rubrics, rail
+   heads, list rows, chips and quiet dividers carry NONE — a heading is type and
+   space, a divider is the one hairline. What remains is the corner goldwork
+   (mounted at `.page-head.framed::before` / `.folio-panel.gilt-frame::after` /
+   `.modal::after`, above) on the app's three EARNED hero registers, the
+   ceremonial seat divider on dialog heads (`.modal-head::after`, above), and
+   the selection metals (`--metal-silver`/`--metal-bronze`) driving
+   `--frame-selected` on the wizard hero altar and the chosen plaque. */
 
 /* ── Gilt frame — the EARNED tier of the one edge, on the cockpit identity band.
    The tiers differ ONLY in light, never in geometry: 2px of the earned metal and

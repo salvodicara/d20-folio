@@ -658,10 +658,11 @@ inside a container is separated by **whitespace and typography** — type scale,
 and the accent as the one colour role. Maximum framed nesting: **2** (container → plaque).
 
 **L2 · An ornament is the line's OWN LOCAL FORM — never a second rail beside it.** For the length
-of the mark the rule wears a different shape; it is never drawn over, beside or near a rail that is
-also painted there. The corner terminal contributes no run line at all (the host's border is the
-only line at that corner); the cartouche's leaves weave over and under a rail that passes through
-unbroken. Two lines one pixel apart, at different lengths and weights, is the defect this law names.
+of the ornament the rule wears a different shape; it is never drawn over, beside or near a rail
+that is also painted there. The corner knot's rail swell crosses the vertex and tapers back to a
+hairline that dissolves into the host's own border stroke; it contributes no run line of its own
+(the host's border is the only line at that corner). Two lines one pixel apart, at different
+lengths and weights, is the defect this law names.
 
 **L3 · State changes light and colour only. Geometry is frozen.** No state may change a radius, a
 border width, a size or a position.
@@ -1851,25 +1852,18 @@ that earns it.
 ### The ornament vocabulary
 
 Ornament is **earned by information, never spent on decoration**. The whole grammar is three
-rules, and the budget is **one mark-bearing surface per screen**.
+rules, and the budget is **exactly three earned hero registers**.
 
-**L2 · An ornament is the line's OWN LOCAL FORM — never a second rail beside it.** For the
-length of the mark the rule wears a different shape: the corner terminal radiates inward from the
-corner arc and contributes no run line at all, and the cartouche's leaves weave over and under a
-rail that passes through unbroken. There is no surface anywhere in the reference where a rule and
-an ornament are painted on top of each other; a head that drew both — a full-width border-image
-rule under a 260px winged fleur that carried its own 260px rail, one pixel apart, at different
-lengths and weights — is what the owner saw and named.
+**L2 · An ornament is the line's OWN LOCAL FORM — never a second rail beside it.** The corner
+knot's rail SWELL crosses the vertex and tapers back to a hairline that dissolves into the host's
+own border stroke — it contributes no run line of its own. There is no surface anywhere in the
+chrome where a rule and an ornament are painted on top of each other as two competing lines.
 
-**The budget: AT MOST ONE ornamented surface per screen, and it is the screen's IDENTITY plate.**
-It goes on the framed realm masthead (`.page-head.framed::before`); on the cockpit, where no
-masthead renders, the identity band takes it instead (`.folio-panel.gilt-frame::after`) — and they
-can never co-occur, because the cockpit is the only surface that mounts `.folio-panel.gilt-frame`
-and it renders no `PageHeader`. The identity plate is the reference's own second ornament home (the
-ogee head of a hero/identity panel), and the only surface on any route that is unique, earned-tier,
-and never a sibling among equals. **A dialog carries none**: it already commands the screen, and the
-reference's own modals are plain plates with a title and a whisper hairline. Neither does a sibling
-panel, a resting card, a section heading, a list row, a chip or a secondary button.
+**The budget: EXACTLY THREE earned hero registers wear the corner knot (Constitution §4.16):**
+the framed realm masthead (`.page-head.framed::before`), the gilt-framed hero band
+(`.folio-panel.gilt-frame::after` — cockpit identity), and dialogs (`.modal::after`). Nothing else
+carries it — not a sibling panel, not a resting card, not a section heading, not a list row, not a
+chip.
 
 **States change light and colour, never geometry, and never emit.** There is no glow, no bloom,
 no aura, no hover sweep and no focus halo anywhere in the chrome: light on this material means
@@ -1878,13 +1872,12 @@ depth, and a second light source would have to come from somewhere. Focus is the
 
 The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index.css`):
 
-- **THE HAIRLINE (`--hairline`) — the one divider in the application.** Modal heads, card feet,
-  section rubrics, list groups, the compendium entry head, the colophon: all of them are this
-  line. It fades at both tips, carries **no node**, and is **inset from its container's padding
-  edge** — never wall-to-wall. It is a whisper: clearly subordinate to ink, never a second frame.
-  `--hairline-ink` is its single parameter — the light sibling and the econ-typed section heads
-  re-tint that and nothing else. There is no second divider grammar: no filled band, no
-  asymmetric thread, no centre node, no ceremonial figure.
+- **THE HAIRLINE (`--hairline`) — the divider everywhere but ONE earned ceremony seat.** Modal
+  heads' own bottom edge, card feet, section rubrics, list groups, the compendium entry head, the
+  colophon: all of them are this line. It fades at both tips, carries **no node**, and is **inset
+  from its container's padding edge** — never wall-to-wall. It is a whisper: clearly subordinate to
+  ink, never a second frame. `--hairline-ink` is its single parameter — the light sibling and the
+  econ-typed section heads re-tint that and nothing else.
 - **THE SECTION RUBRIC IS TYPE AND SPACE.** A heading inside a container is a title, the
   hairline, and an optional count and meta — no marker, no accent bar, no medallion. A read-only
   count is plain numerals in the rubric row (L1: a number you cannot act on is not an object);
@@ -1899,30 +1892,28 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
   bullet; a marker is ink colour; a pip is a square facet. The one surviving `rotate(45deg)` in
   the chrome is the `<select>` caret — a chevron drawn from two borders, the standard
   form-control idiom, guard-pinned as the only one.
-- **THE MARK (`--mark-tl/tr/bl/br` + `--mark-run`) — the one ornament.** Two figures of one vector
-  family, both drawn as the LINE'S OWN LOCAL FORM, never as a second rail beside it:
-  - **the corner terminal — a THREE-MEMBER unit** (56×56), measured off the reference's own corner
-    rather than invented: **crossed blades** whose crescent-hook terminals overshoot the vertex
-    (each hook begins AT the knot, so nothing in the figure floats free of it), a **pair of long
-    quarter-arcs** at different radii and different chords so they cross rather than sit
-    concentric, and **rays of markedly different lengths** — one running nearly the width of the
-    figure, the shortest a third of it. The unevenness is the point: a symmetric fan of near-equal
-    spokes reads at 8× as a whisk, not as astral drafting.
-    Every stroke is hair-thin and **monoline** — the variation is LENGTH, never weight. It
-    contributes no run line at all: the host's own border is the only line at that corner.
-  - **the run cartouche — wings around a LUMINOUS CENTRE.** A symmetric interlace at the exact
-    midpoint of the bottom run. Pointed **leaves**, not strokes: a leaf is a closed lens between
-    two arcs, so it tapers to a true point at both ends, which is what makes struck goldwork read
-    struck. Two leaves per side weave over and under the rail — the weave is VISIBLE because the
-    rail is re-struck over the leaf at four crossings, in its own metal and its own 2px band, so
-    the leaf plainly passes behind it. They converge on a **V-fleur**: two barbed prongs rising
-    from one node with a tapering tail descending past the rail, struck in the brightest metal the
-    tile carries. The centre is the brightest point on the rule (the reference's mid-edge event is
-    the brightest thing on its own rule, and a centre dimmer than its wings gives the figure no
-    event at all). The rail passes through unbroken — one line, wearing
-    a different form for the length of the mark. It mounts only at ≥1024px: ornament coverage is
-    capped at a third of the run, and below that width the 216px figure would breach the cap and
-    crowd the plate's ink.
+- **THE CORNER KNOT (`--frame-ornate`) — the one earned ornament, a faithful transcription of the
+  owner's BG3 spellbook-reference corner.** Anatomy, per corner (defs `g#e`/`g#v`/`g#k`/`g#f`): the
+  rail **SWELL** crosses the vertex in a fine whisker overshoot (`g#e`, a Q-curve — never a
+  straight rail; used TWICE in `g#k`, once diagonal-mirrored to the vertical rail); ONE
+  **wave-volute** comma-curl rising outward on the diagonal over an OPEN eye (`g#v`); a small
+  **weld diamond** seating the crossing; and a **five-ray glint fan** radiating into the panel
+  (`g#f`). No mid-rail leaves: each corner is ONE compact terminal that concludes cleanly — the
+  swell tapers to a 1px hairline that dissolves into the host's own border stroke, so the edge
+  between opposing terminals is bare border and nothing else.
+
+  **Mechanism:** fixed-size per-corner SVG background layers (tl/tr/bl/br, each a 64×64 tile drawn
+  1:1 and anchored `left top` / `right top` / `left bottom` / `right bottom` at `64px 64px
+no-repeat`) painted on a decorative overlay pseudo, inset `calc(-1 * (0.2 * 64px + 0.5px))` —
+  each tile draws its rail centerline at 20% (12.8px) of the tile, so the -13.3px inset seats the
+  swells exactly on the host's 1px/2px border stroke and the weld diamond's center on the stroke's
+  corner vertex, at EVERY host size. **Never `border-image`** (its proportional tile-shrink
+  mis-seats the centreline) and **never a layout border on the pseudo** (a transparent 64px border
+  forces a 128px minimum box). Decor only: `pointer-events: none`, no layout, no animation; the
+  overlay's ink is paint-only overflow, so **a knot-bearing host must never carry `overflow:
+hidden`**. All three registers render at the plate radius (`--r-plate`, 10px) — the knot's rail
+  swell has enough clearance from the vertex to seat cleanly on the rounded arc; verified in real
+  Chromium at 1× and 4×, all three registers, both themes.
 
   **The metal is dimensional, not line-art.** Every struck member carries a light/shade pair, and
   the geometry is authored once, **mirrored** per corner, and **toned after the mirror, in screen
@@ -1932,32 +1923,24 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
   logic, the umber shadow wall **above**-left and the warm-cream understroke **below**-right,
   because on vellum a figure is pressed into the page rather than lit off it.
 
-  **Mechanism:** fixed-size per-corner SVG background layers on a decorative overlay pseudo. The
-  overlay bleeds **6px** past the plate on three sides so the crescent terminals can overshoot the
-  vertex, and `--mark-drop` seats the cartouche's centreline on the rail — **20 + border/2 − bleed**,
-  which is 15px. The subtlety worth knowing: an absolutely-positioned child's `inset` resolves
-  against its ancestor's PADDING box, not its border box — derive `--mark-drop` against the border
-  box and the cartouche floats 2px above the rule it exists to interrupt.
-  **Never `border-image`** (its proportional tile-shrink mis-seats the centreline) and **never a
-  layout border on the pseudo** (a transparent 48px border forces a 96px minimum box). Decor only:
-  `pointer-events: none`, no layout, no animation. The overlay hangs `--mark-drop` past the plate's
-  foot so the cartouche's underside can paint — a background is clipped to its own box — which is
-  why **a mark-bearing host must never carry `overflow: hidden`**.
+  Pinned by `tests/unit/ornament-vocabulary.guard.test.ts`: the defs set is exactly `{e, v, k, f}`
+  (a fifth group is a mid-rail leaf creeping back in), the fan carries exactly five rays, the knot
+  uses the swell twice plus the volute plus a 4-point weld diamond, and the mirrored tile's PAINT
+  passes never carry a `matrix(…)` transform — only the geometry group does, proving the mirror
+  happens once and the toning happens after, in screen space.
 
-  **Measured on the rendered 1184px masthead** (the mark diffed against the same plate with the
-  overlay hidden, so only the mark's own pixels are read):
-
-  |       | corner peak    | CARTOUCHE-CENTRE peak | coverage of the run |
-  | ----- | -------------- | --------------------- | ------------------- |
-  | dark  | 5.81× the rule | **6.65×**             | 14.4% (cap 34%)     |
-  | light | 9.50× the rule | **10.93×**            | 15.2% (cap 34%)     |
-
-  The relationship that matters is the one in bold: **the peak is on the cartouche's centre, not on
-  a corner.** It used to be the other way round in both themes (dark 6.35× corner vs 5.67× centre),
-  which is the measurement of "the figure has no event". Pinned by
-  `ornament-vocabulary.guard.test.ts`, which composites the tile's own fills rather than trusting a
-  colour name.
-
+- **THE CEREMONIAL SEAT ORNAMENT (`--seat-orn`) — the winged divider, the one centre-node
+  exception.** Dialog heads seat BG3's level-up under-title divider translated into the corner
+  knot's language: two long rails tapering to hairpoints OUTWARD, each outer tip ending in a tiny
+  open under-curl, each inner end rising in a small open-eye S-hook return (the corner volute's
+  language, small), and the luminous centre — a nested chevron pair over a descending faceted
+  plumb point that hangs BELOW the rule, seated in a baked radial glow. Nothing floats: every
+  stroke is attached to the rule end to end. Drawn 1:1 at 260×24px, mounted on `.modal-head::after`
+  straddling the head's own 1px seat (`.modal-head`'s bottom border is the `.sec-rule` idiom — a
+  gilt-touched hairline fading at both tips via a to-right gradient `border-image`); the fleur's
+  backing diamond is baked in the theme's `--bg-surface-2` so the rule passes BEHIND it with zero
+  notch math. Same mirror-then-tone strike; dark strikes gold, light letterpresses gold (never
+  bronze).
 - **SELECTION is the frame metal, and it is spent ONCE.** The `--frame-selected` silver-over-bronze
   gradient (from the per-theme `--metal-silver` / `--metal-bronze` pair) marks the **wizard hero
   altar** — the single enthroned result of a step, never a sibling among equals. Everything a user
@@ -2241,7 +2224,7 @@ setting (there is **no in-app animations toggle** — removed 2026-06-07), writt
      the **groove** and the **cast** (warm umber, never black or grey — those read as grime on
      vellum); the **state ladder's three veils** (the same hue at different alphas, matched to the
      same perceptual step: 10%/16% on dark, 17%/28% on light, because the same alpha is ΔL\* 5.9 on
-     near-black and ΔL\* 3.4 on ivory); and the **MARK's toning**, which inverts to letterpress logic
+     near-black and ΔL\* 3.4 on ivory); and the **corner knot's toning**, which inverts to letterpress logic
      — the shadow wall above-left and the cream understroke below-right, because on vellum a struck
      figure is pressed INTO the page rather than lit off it. The gold itself never changes: bronze is
      banned in both themes. Everything else — all geometry, all structure, every recipe — is shared,

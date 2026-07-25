@@ -16,23 +16,22 @@ const index = indexCss.replace(/\/\*[\s\S]*?\*\//g, "");
  * facts so a later wave cannot quietly grow a second one back:
  *
  *   L2 · AN ORNAMENT IS THE LINE'S OWN LOCAL FORM — never a second rail beside
- *        it. For the length of the mark the rule wears a different shape: the
- *        corner terminal contributes no run line at all, and the cartouche's
- *        leaves weave over and under a rail that passes through unbroken. The
- *        reference has no surface anywhere where a rule and an ornament are
- *        painted on top of each other — and a head that drew both (a full-width
- *        rule under a fleur carrying its own rail, one pixel apart) was the one
- *        defect the owner named.
+ *        it. The corner knot's rail SWELL crosses the vertex and tapers back to
+ *        a hairline that dissolves into the host's own border stroke; it
+ *        contributes no run line of its own. There is no surface anywhere where
+ *        a rule and an ornament are painted on top of each other as TWO lines.
  *
- *   ONE DIVIDER. `--hairline` is every separator in the application: modal
- *        heads, card feet, section rubrics, list groups, the compendium entry
- *        head, the colophon. Tips fading, NODELESS, inset from the padding
- *        edge. There is no second divider grammar and no node on any of them.
+ *   THE ORNAMENT BUDGET. EXACTLY THREE earned hero registers wear the corner
+ *        knot (Constitution §4.16): the framed realm masthead, the gilt-framed
+ *        hero band (cockpit identity), and dialogs. Everything else — a
+ *        resting card, a sibling panel, a section heading, a list row, a chip —
+ *        carries none, ever.
  *
- *   THE ORNAMENT BUDGET. At most ONE mark-bearing surface per screen, and it
- *        must be the surface the user is acting in. A dialog carries none (it
- *        already commands the screen); a resting card, a sibling panel, a
- *        section heading, a list row and a chip carry none, ever.
+ *   ONE CENTRE-NODE EXCEPTION. `--hairline` is every OTHER divider in the
+ *        application (card feet, section rubrics, list groups, the compendium
+ *        entry head, the colophon) — tips fading, NODELESS. The dialog head is
+ *        the one earned ceremony seat: its own fading rule carries the
+ *        ceremonial seat ornament (the winged divider) at its centre.
  *
  *   NO LIGHT EMISSION. Glows, blooms, sweeps and auras are not part of the
  *        vocabulary: this chrome is a lit MATERIAL, and light on it means
@@ -43,289 +42,241 @@ const index = indexCss.replace(/\/\*[\s\S]*?\*\//g, "");
  *        never a label.
  */
 describe("the ornament vocabulary", () => {
-  it("spends the ornament budget on exactly TWO hosts, which can never co-occur", () => {
-    // At most ONE mark-bearing surface per screen, and it is the screen's
-    // IDENTITY plate: the framed realm masthead on every route that renders one,
-    // and the cockpit's identity band on the ONE route that renders none. They
-    // can never both appear — the cockpit is the only surface that mounts
-    // `.folio-panel.gilt-frame`, and it renders no `PageHeader`.
-    const HOSTS = ["\\.page-head\\.framed::before", "\\.folio-panel\\.gilt-frame::after"];
+  it("spends the ornament budget on exactly THREE earned hero registers", () => {
+    // The framed realm masthead, the gilt-framed hero band (cockpit identity),
+    // and dialogs — the app's three EARNED hero registers (Constitution §4.16).
+    const HOSTS = [
+      "\\.page-head\\.framed::before",
+      "\\.folio-panel\\.gilt-frame::after",
+      "\\.modal::after",
+    ];
     for (const host of HOSTS) {
       expect(
-        new RegExp(`${host}[^{]*\\{[^}]*var\\(--mark-tl\\)`).test(folio),
-        `MISSING the mark on \`${host}\`. The budget is ONE ornamented surface per ` +
-          `screen and it is the identity plate — the reference's own second ornament ` +
-          `home (the ogee head of a hero/identity panel).`
+        new RegExp(`${host}[^{]*\\{[^}]*var\\(--frame-ornate\\)`).test(folio),
+        `MISSING the corner knot on \`${host}\`. Exactly three earned hero registers ` +
+          `wear it: the framed masthead, the gilt-framed hero band, and dialogs.`
       ).toBe(true);
     }
-    // Every OTHER surface carries none. A dialog in particular carries none,
-    // ever: it already commands the screen, and the reference's own modals are
-    // plain plates with a title and a whisper.
+    // Every OTHER surface carries none — a resting card, a sibling panel, a
+    // section heading, a list row and a chip, ever.
     for (const forbidden of [
-      /\.modal::after\s*\{/,
-      /\.modal::before\s*\{/,
       /\.ch-card::before\s*\{/,
       /\.info-card::(before|after)\s*\{/,
       /\.tome-leaf-surface::after\s*\{/,
     ]) {
       expect(folio).not.toMatch(forbidden);
     }
-    // …and nothing else in the stylesheet consumes a mark layer. At-rule
-    // preludes are unwrapped first, so a media-query strike is judged by the
-    // SELECTOR inside it rather than by `@media (…)`.
-    const flat = folio.replace(/@media[^{]*\{/g, "");
-    const consumers = [...flat.matchAll(/([^{}]+)\{[^}]*var\(--mark-(?:tl|run)\)/g)].map(
+    // …and nothing else in the stylesheet consumes the corner knot.
+    const consumers = [...folio.matchAll(/([^{}]+)\{[^}]*var\(--frame-ornate\)/g)].map(
       (m) => (m[1] ?? "").trim().replace(/\s+/g, " ")
     );
-    expect(consumers.length, "the mark must be mounted somewhere").toBeGreaterThan(0);
+    expect(consumers.length, "the corner knot must be mounted somewhere").toBeGreaterThan(
+      0
+    );
     for (const subject of consumers) {
       expect(
         subject,
-        `\`${subject}\` mounts the MARK. Only the two identity plates may — a sibling ` +
-          `panel, a resting card, a section heading, a list row and a chip carry ` +
-          `none, ever.`
-      ).toBe(".page-head.framed::before, .folio-panel.gilt-frame::after");
+        `\`${subject}\` mounts the corner knot. Only the three earned hero registers ` +
+          `may — a sibling panel, a resting card, a section heading, a list row and a ` +
+          `chip carry none, ever.`
+      ).toBe(".page-head.framed::before, .folio-panel.gilt-frame::after, .modal::after");
     }
   });
 
-  it("draws the mark as the LINE'S OWN FORM — never a second rail, never floating", () => {
-    // THE CORNER TERMINAL contributes no run line at all: the host's own border
-    // is the only line at the corner. The knot this chrome used to carry re-drew
-    // ~30px of that rail from a square vertex, which is the two-line defect L2
-    // exists to forbid — so the fan is pure rays, anchored ON the corner arc.
+  it("draws the corner knot as the LINE'S OWN FORM — never a second rail, never floating", () => {
     for (const theme of ["dark", "light"] as const) {
       const start = indexCss.indexOf(`[data-theme="${theme}"]`);
       const block = indexCss.slice(start, indexCss.indexOf("\n}", start));
-      for (const name of [
-        "--mark-tl",
-        "--mark-tr",
-        "--mark-bl",
-        "--mark-br",
-        "--mark-run",
-      ]) {
+      for (const name of ["--frame-ornate", "--seat-orn"]) {
         expect(
           new RegExp(`${name}:`).test(block),
-          `MISSING ${name} in the ${theme} theme. The mark is GOLD in both themes ` +
+          `MISSING ${name} in the ${theme} theme. The knot is GOLD in both themes ` +
             `(bronze is banned) — a mark that exists in one theme only is a mark the ` +
             `daylight sibling was never designed for.`
         ).toBe(true);
       }
-      const tl =
-        /--mark-tl: url\("data:image\/svg\+xml,([^"]*)"\)/.exec(block)?.[1] ?? "";
-      const svg = decodeURIComponent(tl);
-      // Rays are TRIANGLES from one origin — no rect, no line, no long straight
-      // path that could read as a rail beside the host's own.
-      expect(svg).not.toMatch(/<(rect|line|polyline)\b/);
-      // …and the geometry is authored ONCE and MIRRORED, with the toning applied
-      // AFTER the mirror so the bevel's light stays top-left on all four corners.
+      // `--frame-ornate` is a list of FOUR fixed-size per-corner background
+      // layers (tl/tr/bl/br), each a 64×64 tile anchored at its own corner.
+      const decl = /--frame-ornate:\s*([\s\S]*?);\n/.exec(block)?.[1] ?? "";
+      const urls = [...decl.matchAll(/url\("([^"]*)"\)/g)].map((m) => m[1] ?? "");
       expect(
-        /<use href="#a"\/>/.test(svg) && /translate\([-\d.]+ [-\d.]+\)/.test(svg),
-        "The corner tile must mirror an unfilled master and tone it in SCREEN space " +
-          "(a translated shade group + a translated glint group around the body)."
-      ).toBe(true);
-      // Three tonal passes: the metal is DIMENSIONAL, not line-art.
-      expect(
-        (svg.match(/<g /g) ?? []).length,
-        "Every struck member carries a light/shade pair: a shade group, the body, " +
-          "and a glint group. Line-art gold is not this material."
-      ).toBeGreaterThanOrEqual(3);
+        urls.length,
+        "`--frame-ornate` must carry exactly four corner tiles (tl/tr/bl/br)"
+      ).toBe(4);
+      for (const corner of ["left top", "right top", "left bottom", "right bottom"]) {
+        expect(decl).toContain(`${corner} / 64px 64px no-repeat`);
+      }
 
-      // ── THE CORNER IS A THREE-MEMBER UNIT, MEASURED OFF THE REFERENCE ─────
-      // What shipped first was ONE member — a symmetric fan of seven near-equal
-      // rays — which at 8× read as a whisk rather than as astral drafting. The
-      // reference's corner (`crop-lvl-panel-topleft.png`) is three: crossed BLADES
-      // with crescent-hook terminals overshooting the vertex, a PAIR of long
-      // quarter-arcs, and RAYS of markedly different lengths. Both facts below are
-      // DERIVED from the tile's own path data, not restated as a shape count.
-      const master = /<g id="a"[^>]*>([\s\S]*?)<\/g>/.exec(svg)?.[1] ?? "";
-      const paths = [...master.matchAll(/<path d="([^"]*)"\/>/g)].map((m) => m[1] ?? "");
-      expect(paths.length, "the corner master must hold the figure").toBeGreaterThan(6);
+      // The tl tile is the UNMIRRORED master — the source of truth for the
+      // knot's own anatomy: the rail SWELL (g#e, a Q-curve — never a straight
+      // rail), the wave-volute (g#v, an open-eye Q-curve), the KNOT (g#k —
+      // the swell used TWICE plus the volute plus a weld diamond), and the
+      // five-ray glint FAN (g#f). No mid-rail leaves survive: these four are
+      // the WHOLE defs set.
+      const tl = decodeURIComponent(urls[0] ?? "");
+      const groupIds = [...tl.matchAll(/<g id='([a-zA-Z]+)'/g)].map((m) => m[1]);
+      expect(
+        groupIds,
+        `the tl tile's defs must be EXACTLY {e, v, k, f} — a fifth group is a ` +
+          `mid-rail leaf or scatter member creeping back in`
+      ).toEqual(["e", "v", "k", "f"]);
 
-      // A RAY is the straight tapering sliver `M x y L x y L x y Z`; an ARC / BLADE /
-      // HOOK is a closed lens between two quadratics. Both kinds must be present —
-      // a tile of only rays is the whisk, a tile of only curves has no fan.
-      const rays = paths.filter((d) => !d.includes("Q"));
-      const curved = paths.filter((d) => d.includes("Q"));
+      const swell = /<g id='e'>(.*?)<\/g>/.exec(tl)?.[1] ?? "";
       expect(
-        rays.length,
-        "the corner has no RAYS left — the fan is one of its three members"
-      ).toBeGreaterThanOrEqual(3);
+        swell,
+        "the rail swell (g#e) must be a Q-curve, never a straight rail"
+      ).toMatch(/Q/);
       expect(
-        curved.length,
-        "the corner is a fan of rays and nothing else. The reference's corner also " +
-          "carries a PAIR of long quarter-arcs and crescent-hook terminals — the " +
-          "members that give it scale and make it read as drafting, not a whisk."
-      ).toBeGreaterThanOrEqual(4);
+        swell,
+        "the rail swell must contribute no straight run line of its own"
+      ).not.toMatch(/<(rect|line|polyline)\b/);
 
-      // …and the rays' lengths are MARKEDLY different. Seven near-equal spokes is
-      // the exact figure this replaced, so the spread is the assertion.
-      const lengths = rays
-        .map((d) => {
-          const n = [...d.matchAll(/(-?[\d.]+) (-?[\d.]+)/g)].map((m) => [
-            Number(m[1]),
-            Number(m[2]),
-          ]);
-          if (n.length < 2) return 0;
-          const [ox, oy] = n[0] as [number, number];
-          const [tx, ty] = n[1] as [number, number];
-          return Math.hypot(tx - ox, ty - oy);
-        })
-        .filter((v) => v > 0)
-        .sort((x, y) => x - y);
-      const spread = (lengths.at(-1) ?? 0) / (lengths[0] ?? 1);
+      const volute = /<g id='v'>(.*?)<\/g>/.exec(tl)?.[1] ?? "";
+      expect(volute, "the wave-volute (g#v) must be a Q-curve open eye").toMatch(/Q/);
+
+      const knot = /<g id='k'>(.*?)<\/g>/.exec(tl)?.[1] ?? "";
       expect(
-        spread,
-        `The corner's rays are near-equal (longest / shortest = ${spread.toFixed(2)}). ` +
-          `The reference's are not: one runs nearly the panel's width and the shortest ` +
-          `a third of it, and that unevenness is what stops the fan reading as a whisk.`
-      ).toBeGreaterThan(1.9);
+        (knot.match(/<use href='#e'/g) ?? []).length,
+        "the knot must use the rail swell TWICE — once on each rail axis"
+      ).toBe(2);
+      expect(knot, "the knot must carry the wave-volute").toContain("<use href='#v'/>");
+      expect(
+        knot,
+        "the knot must seat a weld DIAMOND (a 4-point closed polygon) at the crossing"
+      ).toMatch(/<path d='M[-\d. ]+L[-\d. ]+L[-\d. ]+L[-\d. ]+Z'\/>/);
+
+      const fan = /<g id='f'>(.*?)<\/g>/.exec(tl)?.[1] ?? "";
+      const fanRays = [...fan.matchAll(/<path/g)];
+      expect(
+        fanRays.length,
+        "the glint fan (g#f) must carry exactly FIVE rays radiating into the panel"
+      ).toBe(5);
+
+      // TWO-TONE STRIKE: the metal is dimensional, not line-art. Each struck
+      // member (knot, fan) paints at least three passes — shade, glint, body.
+      for (const target of ["k", "f"]) {
+        const passes = [...tl.matchAll(new RegExp(`<use href='#${target}'`, "g"))];
+        expect(
+          passes.length,
+          `#${target} must paint at least three passes (shade/glint/body) — ` +
+            `dimensional metal, never a flat line-art fill`
+        ).toBeGreaterThanOrEqual(3);
+      }
+
+      // MIRROR FIRST, TONE AFTER, IN SCREEN SPACE: the tr tile mirrors the
+      // UNFILLED master (g#K/g#F via one matrix each) and its PAINT passes
+      // (the actual `<use>` fills) carry only `translate(…)` — never a
+      // `matrix(…)` — so the bevel's light stays top-left on every corner
+      // instead of rotating with the mirrored figure.
+      const tr = decodeURIComponent(urls[1] ?? "");
+      expect(tr, "tr must mirror the knot via one matrix into g#K").toMatch(
+        /<g id='K'><use href='#k' transform='matrix\(/
+      );
+      expect(tr, "tr must mirror the fan via one matrix into g#F").toMatch(
+        /<g id='F'><use href='#f' transform='matrix\(/
+      );
+      const paintPasses = tr.slice(tr.indexOf("</defs>"));
+      expect(
+        paintPasses,
+        "tr's PAINT passes (outside <defs>) must never carry a matrix — mirroring " +
+          "happens once, in the defs; toning happens after, in screen space"
+      ).not.toMatch(/<use href='#[KF]'[^>]*matrix\(/);
     }
   });
 
-  /**
-   * THE CARTOUCHE'S CENTRE IS THE BRIGHTEST POINT ON THE RULE.
-   *
-   * The reference's mid-edge event (`crop-lvl-winged-divider.png`) is a LUMINOUS
-   * V-fleur — the brightest thing on its rule by a wide margin — with the rail
-   * stopping and returning in scrolls either side of it. Ours shipped inverted: two
-   * dim leaf-slivers with a centre chevron DIMMER than its own wings, so the eye
-   * landed on the wings and the figure had no event at all.
-   *
-   * The check composites the tile's OWN fills — body over shade, then the glint at
-   * its declared opacity — and compares the two members' relative luminance. It
-   * cannot see whether the figure is beautiful; it can see which member the eye
-   * lands on, which is the thing that was wrong.
-   */
-  it("strikes the run cartouche's CENTRE brighter than its wings", () => {
+  it("seats the ceremonial divider (the winged fleur) at the dialog head's centre", () => {
     for (const theme of ["dark", "light"] as const) {
       const start = indexCss.indexOf(`[data-theme="${theme}"]`);
       const block = indexCss.slice(start, indexCss.indexOf("\n}", start));
-      const raw =
-        /--mark-run: url\("data:image\/svg\+xml,([^"]*)"\)/.exec(block)?.[1] ?? "";
+      const raw = /--seat-orn: url\("([^"]*)"\)/.exec(block)?.[1] ?? "";
       const svg = decodeURIComponent(raw);
-      const lum = (hex: string): number => {
-        const n = parseInt(hex.slice(1), 16);
-        const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
-          const c = v / 255;
-          return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-        });
-        return 0.2126 * (ch[0] ?? 0) + 0.7152 * (ch[1] ?? 0) + 0.0722 * (ch[2] ?? 0);
-      };
-      /** The composite a `use` group paints: its fill, veiled by the glint above it. */
-      const composite = (fill: string, glint: string, alpha: number): number =>
-        lum(fill) * (1 - alpha) + lum(glint) * alpha;
-      // Every `<g fill="#…" …><use href="#X"/></g>` pass, in paint order.
-      const passes = [
-        ...svg.matchAll(
-          /<g([^>]*?)fill="(#[0-9a-f]{6})"([^>]*?)><use href="#([wgcf])"\/><\/g>/g
-        ),
-      ].map((m) => {
-        const attrs = `${m[1] ?? ""}${m[3] ?? ""}`;
-        return {
-          fill: m[2] ?? "",
-          target: m[4] ?? "",
-          alpha: Number(/opacity="([\d.]+)"/.exec(attrs)?.[1] ?? 1),
-          // The SHADE and the GLINT are the translated passes; the BODY is the one
-          // struck in place. Reading "the first opaque pass" picks the shade and
-          // makes the whole comparison a comparison of two blacks — which is how the
-          // first draft of this check passed a mutation that brightened the wings.
-          shifted: /transform="translate\(/.test(attrs),
-        };
-      });
-      const body = (t: string) =>
-        passes.find((p) => p.target === t && p.alpha === 1 && !p.shifted);
-      const glint = (t: string) => passes.find((p) => p.target === t && p.alpha < 1);
-      const wing = body("g");
-      const wingGlint = glint("g");
-      const fleur = body("f");
-      const fleurGlint = glint("f");
-      expect(
-        Boolean(wing && fleur && wingGlint && fleurGlint),
-        `${theme}: the run tile must strike its WINGS and its CENTRE as separate ` +
-          `passes — that is the only way one can be brighter than the other.`
-      ).toBe(true);
-      const wingL = composite(
-        wing?.fill ?? "#000",
-        wingGlint?.fill ?? "#000",
-        wingGlint?.alpha ?? 0
+      expect(svg, "the seat ornament must be drawn 1:1 at 260×24").toMatch(
+        /width='260' height='24'/
       );
-      const fleurL = composite(
-        fleur?.fill ?? "#000",
-        fleurGlint?.fill ?? "#000",
-        fleurGlint?.alpha ?? 0
-      );
+      // The backing diamond's glow: a radial gradient behind a blurred plumb
+      // point, so the fleur reads as a baked lit facet, never a floating icon.
+      expect(svg).toMatch(/<radialGradient id='gl'>/);
+      expect(svg).toMatch(/<feGaussianBlur/);
+      expect(svg).toMatch(/<circle cx='130' cy='13.5' r='13' fill='url\(#gl\)'\/>/);
+      // The closure `g#s` combines the two rail-return scrolls (`g#u`, used
+      // once per side) with the fleur's own chevron-and-plumb strokes.
+      const closure = /<g id='s'>(.*?)<\/g>/.exec(svg)?.[1] ?? "";
       expect(
-        fleurL / Math.max(wingL, 0.0001),
-        `${theme}: the cartouche's CENTRE (${fleurL.toFixed(3)}) is not clearly ` +
-          `brighter than its wings (${wingL.toFixed(3)}). The reference's mid-edge ` +
-          `event is the brightest thing on its rule; ours read as two slivers with a ` +
-          `dimmer chevron between them, so the figure had no event at all.`
-      ).toBeGreaterThan(1.6);
+        (closure.match(/<use href='#u'/g) ?? []).length,
+        "the closure must mirror the rail-return scroll once per side"
+      ).toBe(2);
     }
+    // Mounted on the dialog head's centre, at its authored size, and nowhere
+    // consuming the hairline instead.
+    const after = /\.modal-head::after \{([^}]*)\}/.exec(folio)?.[1] ?? "";
+    expect(after, "the seat ornament must mount on .modal-head::after").toContain(
+      "background: var(--seat-orn) center / 260px 24px no-repeat;"
+    );
+    expect(after).not.toContain("var(--hairline)");
   });
 
-  it("mounts the mark as decor only — no border-image, no layout, no animation", () => {
+  it("mounts the corner knot as decor only — no border-image, no layout, no animation", () => {
     const rule =
-      /\.page-head\.framed::before,\s*\.folio-panel\.gilt-frame::after \{([^}]*)\}/.exec(
+      /\.page-head\.framed::before,\s*\.folio-panel\.gilt-frame::after,\s*\.modal::after \{([^}]*)\}/.exec(
         folio
       )?.[1] ?? "";
-    expect(rule, "the mark overlay rule must exist").not.toBe("");
+    expect(rule, "the corner-knot overlay rule must exist").not.toBe("");
     expect(rule).toContain("pointer-events: none;");
     // `border-image` mis-seats the centreline (its tiles shrink proportionally),
     // and a layout border on the pseudo would force a minimum box the size of the
     // tile. Neither is ever the mechanism.
-    expect(folio).not.toMatch(/border-image[^;]*--mark/);
+    expect(folio).not.toMatch(/border-image[^;]*--frame-ornate/);
     expect(rule).not.toMatch(/border(-\w+)?\s*:/);
     expect(rule).not.toMatch(/(animation|transition)\s*:/);
-    // The overlay hangs past the plate's foot so the cartouche's underside can
-    // paint (a background is clipped to its own box) — so a mark-bearing host
-    // must never clip.
-    expect(rule).toMatch(/var\(--mark-drop\)/);
-    for (const host of ["\\.page-head\\.framed", "\\.folio-panel\\.gilt-frame"]) {
+    // The fitting rule: each 64px tile's rail centerline sits 20% in from the
+    // tile's outer edge, so the paint box insets by -(0.2 × 64px + 0.5px) to
+    // seat it exactly on the host's own border stroke.
+    expect(rule).toMatch(/inset:\s*calc\(-1 \* \(0\.2 \* 64px \+ 0\.5px\)\);/);
+    for (const host of [
+      "\\.page-head\\.framed",
+      "\\.folio-panel\\.gilt-frame",
+      "\\.modal",
+    ]) {
       const body = new RegExp(`${host} \\{([^}]*)\\}`).exec(folio)?.[1] ?? "";
       expect(
         /overflow[^;]*:\s*(hidden|clip)/.test(body),
-        `A mark-bearing host must not clip: the corner ink and the cartouche's ` +
-          `underside are paint-only overflow.`
+        `A knot-bearing host must not clip: the corner ink is paint-only overflow.`
       ).toBe(false);
     }
   });
 
-  it("draws NO ornament over a line — no head figure, no divider node", () => {
-    // The reported defect: a dialog head that drew a full-width border-image
-    // rule AND a 260px winged-fleur SVG with its own rail, one pixel apart, at
-    // different lengths and weights. Both the ornament and the second rule are
-    // gone; the head ends in the one hairline.
-    expect(index).not.toMatch(/--seat-orn/);
-    expect(folio).not.toMatch(/--seat-orn/);
-    const head = folio.match(/\.modal-head::after \{([^}]*)\}/)?.[1] ?? "";
-    expect(head, "the modal head must end in the ONE hairline").toContain(
-      "background: var(--hairline);"
-    );
-    expect(folio).not.toMatch(/\.modal-head \{[^}]*border-image/);
-    expect(folio).not.toMatch(/\.modal-head \{[^}]*border-bottom/);
-  });
-
-  it("has exactly ONE divider recipe, and it is nodeless", () => {
+  it("has exactly ONE divider recipe, nodeless everywhere but the ONE earned ceremony seat", () => {
     // The one painted gradient, derived from the one ink parameter.
     expect(index).toMatch(
       /--hairline:\s*linear-gradient\(\s*90deg,\s*transparent,\s*var\(--hairline-ink\) 10%,\s*var\(--hairline-ink\) 90%,\s*transparent\s*\);/
     );
-    // Every divider in the app consumes it rather than re-declaring a gradient.
+    // Every OTHER divider in the app consumes it rather than re-declaring a
+    // gradient — the dialog head is the one named exception (below).
     for (const consumer of [
       /\.sec-rule \{[^}]*background: var\(--hairline\);/,
-      /\.modal-head::after \{[^}]*background: var\(--hairline\);/,
       /\.ch-foot::before \{[^}]*background: var\(--hairline\);/,
       /\.cmp-entry-head::after \{[^}]*background: var\(--hairline\);/,
       /\.colophon-hero-rule \{[^}]*background: var\(--hairline\);/,
     ]) {
       expect(consumer.test(folio), `MISSING hairline consumer: ${consumer}`).toBe(true);
     }
-    // NODELESS — no divider anywhere carries a centre mark.
+    // NODELESS — no OTHER divider anywhere carries a centre mark.
     expect(folio).not.toMatch(/\.sec-rule::(before|after)/);
     expect(folio).not.toMatch(/\.bm-rule::after/);
     expect(folio).not.toMatch(/\.colophon-hero-rule::after/);
     expect(folio).not.toMatch(/\.site-footer-diamond/);
+    // The ONE exception: the dialog head's own bottom edge is the SAME
+    // fading-both-tips shape as `.sec-rule` (a to-right gradient through the
+    // border), and it alone carries the ceremonial seat ornament at its
+    // centre — the one earned ceremony seat (DESIGN.md §5), not a return of
+    // scatter ornament.
+    const head = folio.match(/\.modal-head \{([^}]*)\}/)?.[1] ?? "";
+    expect(head, "the dialog head's own border must fade at both tips").toMatch(
+      /border-image:\s*linear-gradient\(\s*to right,\s*transparent,/
+    );
+    expect(folio).not.toMatch(
+      /\.modal-head::after \{[^}]*background: var\(--hairline\);/
+    );
   });
 
   it("has ZERO rotated-diamond ornaments — a heading is type and space", () => {

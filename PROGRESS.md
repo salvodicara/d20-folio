@@ -312,6 +312,36 @@ footprint barely changes read→edit — both fail on the old fixed box). DESIGN
 | 3 — Chronicle           | Markdown chronicle + version history, Treasury, SharedNotes, Sessions       | ✅ Shipped (v0.15.x) — Chronicle (markdown + version history), Treasury, SharedNotes, Sessions all live. (The AI assistant / AI session recaps once scoped here were **DROPPED** — owner 2026-07-06; see _Open decisions_.)                                                                                                                                                                                |
 | 4 — Polish & Completion | PDF export, command palette, compendium, a11y, perf, onboarding             | 🔄 PDF export (faithful from-scratch recreation of the official 2024 sheet layout — the two-page sheet plus an appended **resource ledger** page listing every consumable pool (class resources + magic-item charges: name · pips-or-count · recovery cadence, paginating when long), EN/IT, copyright-clean), glossary tooltips, perf budget, Cmd+K palette shipped. Guided tour + compendium polish open |
 
+## Shipped — corner-ornament revert to the owner-approved style-A knot (2026-07-25)
+
+**Owner-ordered revert.** The chrome reset's phase 6/9 "MARK" (`--mark-tl/tr/bl/br` — long
+straight-ray corner scratches — plus `--mark-run`, the 216×40 run cartouche on the masthead's
+lower rule) was rejected on sight: _"wtf is this?! these things in the corner are just
+horrible!"_ Reverted to the LAST state the owner approved, commit `c66f2e1` ("conclude the
+style-A corner terminal" — _"okay, adesso ci sta"_): `--frame-ornate`, the wave-volute knot +
+rail-swell + weld-diamond + five-ray glint fan, mounted as four fixed-size 64px per-corner
+background layers on **all three** earned hero registers (the framed masthead, the gilt cockpit
+identity band, AND dialogs — `.modal::after` rejoins the mount list); the run cartouche is gone
+entirely (it postdates the approved state and was never part of it). The ceremonial seat divider
+(`--seat-orn`, the 260×24 winged fleur on dialog heads) is restored alongside its fading
+`border-image` seat rule — the ONE centre-node exception in an otherwise nodeless-hairline
+divider grammar.
+
+**Seating verified, not assumed.** At `c66f2e1` the three ornamented registers were SQUARE
+(`border-radius: 0`) so the knot could seat on a true crossing; the chrome reset's later,
+independently-justified radius unification (phase 3 — "the reference's corners are rounded
+~10–12px ALWAYS, including the ornamented ones") made them rounded again. Checked in real
+Chromium at 1× and 4×, both themes, all three registers: the knot's rail swell has enough
+clearance from the vertex to seat cleanly on the 10px arc — **rounded corners are kept**, no
+override needed.
+
+`ornament-vocabulary.guard.test.ts` re-pinned non-vacuously against the restored anatomy (the
+`{e, v, k, f}` defs set, the five-ray fan, the mirror-then-tone screen-space toning) and
+mutation-proved; `DESIGN.md` §5 rewritten to describe the restored vocabulary as current, with no
+run-cartouche or `--mark-*` mentions left standing. Net CSS footprint: **-10,631 bytes source /
+-209 bytes gzip / -10.38 KiB PWA precache** — removing the rejected mark system is net-negative,
+as expected; no budget ceiling moved.
+
 ## Shipped — the SRD bestiary campaign (2026-07-24)
 
 The **DDB-parity epic's flagship** (the first attack-order step) shipped: the FULL SRD 5.2.1
