@@ -380,6 +380,111 @@ describe("the ornament vocabulary", () => {
     expect(folio).not.toMatch(/pager-bloom/);
   });
 
+  /**
+   * …and the same law, DERIVED — because the check above reads deleted token NAMES,
+   * and a bloom written as a literal is invisible to it. One was: the level-up
+   * commit screen's 2.4rem number carried
+   * `text-shadow: 0 0 18px color-mix(in oklab, var(--accent-glow) 38%, transparent)`
+   * through the whole sweep that "removed all 22 glow terms", because it named none
+   * of them. FLAT TYPE is not a list of retired tokens; it is a property of the
+   * shipped stylesheet, so it is measured off the stylesheet.
+   *
+   * A zero-offset blurred `text-shadow` is the UNDERGLOW signature: a shadow with no
+   * offset is not a ground under the ink, it is light coming out of it. `6px` is the
+   * floor because the one legitimate ground, `--on-art-halo`, tops out at a 3px
+   * blur — it is a tight backing for loose ink on the art, and it needs no exemption
+   * here, which is the point. Custom properties are resolved first, so a glow cannot
+   * hide one hop away in a token.
+   *
+   * WHAT IT CANNOT SEE:
+   *   · A glow routed through `filter: drop-shadow(…)` — a different property with
+   *     the same effect (`.magic-mark svg` uses exactly that form).
+   *   · `box-shadow` emission. Fifty-three shipped recipes light an OBJECT that way
+   *     (gilt CTAs, the lit economy sockets, focus wells, the caster statcard), which
+   *     is a far larger question than FLAT TYPE and needs its own wave and its own
+   *     owner ruling — widening this probe to catch it would just turn it red.
+   */
+  it("emits NO light: derived — no literal underglow on any type", () => {
+    /** Every custom-property value in either file, so a glow cannot hide in a token. */
+    const tokens = new Map<string, string[]>();
+    for (const css of [index, folio]) {
+      for (const m of css.matchAll(/(--[\w-]+)\s*:\s*([^;{}]+);/g)) {
+        const name = m[1] ?? "";
+        if (!tokens.has(name)) tokens.set(name, []);
+        tokens.get(name)?.push((m[2] ?? "").trim());
+      }
+    }
+    expect(
+      tokens.size,
+      "no custom properties found — did the token files move?"
+    ).toBeGreaterThan(50);
+    const expand = (value: string, depth = 0): string =>
+      depth > 4
+        ? value
+        : value.replace(/var\((--[\w-]+)(?:,[^()]*)?\)/g, (all, n: string) =>
+            (tokens.get(n) ?? [all]).map((v) => expand(v, depth + 1)).join(" , ")
+          );
+    /** Split a shadow value into LAYERS on top-level commas (a `color-mix()` is one). */
+    const layersOf = (value: string): string[] => {
+      const out: string[] = [];
+      let depth = 0;
+      let buf = "";
+      for (const ch of value) {
+        if (ch === "(") depth++;
+        else if (ch === ")") depth--;
+        if (ch === "," && depth === 0) {
+          out.push(buf);
+          buf = "";
+        } else buf += ch;
+      }
+      out.push(buf);
+      return out;
+    };
+    /**
+     * The ONE exemption, allowlisted by SELECTOR and never by value: `.magic-mark`
+     * is the 14px ✦ magic-source MARKER — a glyph standing in for an icon (its `svg`
+     * twin kindles identically via `drop-shadow`), not a title, a label or a number.
+     */
+    const EXEMPT = /\.magic-mark/;
+    /** `0 0 <blur>` with unitless zeroes, the form the stylesheet actually writes. */
+    const UNDERGLOW = /(?:^|\s)(-?[\d.]+)(?:px)?\s+(-?[\d.]+)(?:px)?\s+([\d.]+)px/;
+
+    const offenders: string[] = [];
+    let scanned = 0;
+    for (const [name, css] of [
+      ["index.css", index],
+      ["folio.css", folio],
+    ] as const) {
+      for (const rule of css.replace(/\s+/g, " ").matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const sel = (rule[1] ?? "").trim();
+        for (const decl of (rule[2] ?? "").matchAll(
+          /(?:^|;)\s*text-shadow\s*:\s*([^;]+)/g
+        )) {
+          scanned++;
+          if (EXEMPT.test(sel)) continue;
+          for (const layer of layersOf(expand(decl[1] ?? ""))) {
+            const g = UNDERGLOW.exec(layer.trim());
+            if (!g) continue;
+            if (Number(g[1]) !== 0 || Number(g[2]) !== 0 || Number(g[3]) < 6) continue;
+            offenders.push(`${name}  ${sel.slice(0, 70)} → ${layer.trim().slice(0, 60)}`);
+          }
+        }
+      }
+    }
+    expect(
+      scanned,
+      "no `text-shadow` declarations found at all — this probe has stopped reading " +
+        "the stylesheet, and an empty scan is a green light that means nothing."
+    ).toBeGreaterThan(4);
+    expect(
+      offenders,
+      `A zero-offset blurred \`text-shadow\` is an UNDERGLOW, and type is FLAT ` +
+        `(DESIGN.md §5): the chrome is a lit MATERIAL, so light on it means depth, ` +
+        `never emphasis. Carry the ceremony with scale, the display face and the ` +
+        `struck ornament around the type:\n  ${offenders.join("\n  ")}`
+    ).toEqual([]);
+  });
+
   it("keeps type FLAT and un-watermarked — no engraving, no crest behind ink", () => {
     expect(index).not.toMatch(/--engrave-title/);
     expect(folio).not.toMatch(/--engrave-title/);

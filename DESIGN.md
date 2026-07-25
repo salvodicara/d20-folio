@@ -1907,7 +1907,7 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
     quarter-arcs** at different radii and different chords so they cross rather than sit
     concentric, and **rays of markedly different lengths** — one running nearly the width of the
     figure, the shortest a third of it. The unevenness is the point: a symmetric fan of near-equal
-    spokes reads at 8× as a whisk, not as astral drafting, and that is what the first strike was.
+    spokes reads at 8× as a whisk, not as astral drafting.
     Every stroke is hair-thin and **monoline** — the variation is LENGTH, never weight. It
     contributes no run line at all: the host's own border is the only line at that corner.
   - **the run cartouche — wings around a LUMINOUS CENTRE.** A symmetric interlace at the exact
@@ -1918,8 +1918,8 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
     the leaf plainly passes behind it. They converge on a **V-fleur**: two barbed prongs rising
     from one node with a tapering tail descending past the rail, struck in the brightest metal the
     tile carries. The centre is the brightest point on the rule (the reference's mid-edge event is
-    the brightest thing on its own rule; ours shipped inverted, a centre chevron dimmer than its
-    wings, so the figure had no event at all). The rail passes through unbroken — one line, wearing
+    the brightest thing on its own rule, and a centre dimmer than its wings gives the figure no
+    event at all). The rail passes through unbroken — one line, wearing
     a different form for the length of the mark. It mounts only at ≥1024px: ornament coverage is
     capped at a third of the run, and below that width the 216px figure would breach the cap and
     crowd the plate's ink.
@@ -1936,8 +1936,8 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
   overlay bleeds **6px** past the plate on three sides so the crescent terminals can overshoot the
   vertex, and `--mark-drop` seats the cartouche's centreline on the rail — **20 + border/2 − bleed**,
   which is 15px. The subtlety worth knowing: an absolutely-positioned child's `inset` resolves
-  against its ancestor's PADDING box, not its border box, and getting that wrong is what left the
-  shipped cartouche floating 2px above the rule it was supposed to interrupt.
+  against its ancestor's PADDING box, not its border box — derive `--mark-drop` against the border
+  box and the cartouche floats 2px above the rule it exists to interrupt.
   **Never `border-image`** (its proportional tile-shrink mis-seats the centreline) and **never a
   layout border on the pseudo** (a transparent 48px border forces a 96px minimum box). Decor only:
   `pointer-events: none`, no layout, no animation. The overlay hangs `--mark-drop` past the plate's
@@ -1966,7 +1966,11 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
   selectable surface in the app. At-rest surfaces are never decorated with selection ornament.
 - **TYPE IS FLAT.** No engraving, no letterpress, no underglow, no gradient on any title. A
   section heading takes the body colour one size up, not an accent hue. **Gold means a value or a
-  state — never a label.**
+  state — never a label.** Pinned by a DERIVED sweep (`ornament-vocabulary.guard.test.ts`, "emits NO
+  light: derived"): no `text-shadow` layer anywhere may be a zero-offset blur of ≥6px, custom
+  properties resolved, one selector-anchored exemption (the ✦ magic-source marker, a glyph standing
+  in for an icon). The token-name check beside it could not see a literal, which is how a 2.4rem
+  commit number kept an 18px bloom through the sweep that "removed all 22 glow terms".
 - **THE WATERMARK is spent exactly once**, on the compendium frontispiece
   (`.cmp-frontis-inner::before`): a title page is the one place the idiom is honest, because
   nothing live is set over it. No masthead carries a crest behind its ink.

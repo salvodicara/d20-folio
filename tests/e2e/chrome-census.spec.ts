@@ -146,7 +146,7 @@ const SURFACE_CELLS: {
   // (509 rows). This is the cell that would have caught the seal keeping its
   // border and its two-line lip through the unframing phase: it measured 49
   // against this file's ceiling of 23 while the suite only ever visited Spells.
-  { slug: "compendium-feature", route: "/compendium?type=feature", ceiling: 23 }, // measured 18
+  { slug: "compendium-feature", route: "/compendium?type=feature", ceiling: 23 }, // measured 17
   // The hub's ceiling CAME DOWN: eleven of its fourteen large framed boxes were
   // non-interactive `.info-card`s, and they NESTED — a framed note row inside a
   // framed section card. A surface that only GROUPS is not the container you are

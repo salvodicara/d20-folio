@@ -701,6 +701,28 @@ this wave added or amended was audited for the same omission; the rendered censu
 contrast battery each gained one, because a CEILING over a derived set reads a broken probe as the
 tidiest screen in the app.
 
+**And "all 22 glow terms are gone" was not true.** `.wiz-done-level` — the 2.4rem number on the
+level-up commit screen, the largest gilt type in the app — carried
+`text-shadow: 0 0 18px color-mix(in oklab, var(--accent-glow) 38%, transparent)` straight through
+the sweep, because the sweep deleted glow TOKENS and this bloom was written as a literal. It is
+deleted, and the check that missed it now DERIVES: no `text-shadow` layer anywhere may be a
+zero-offset blur of ≥6px, with custom properties resolved so a glow cannot hide one hop away in a
+token, and one selector-anchored exemption (the ✦ magic-source marker, a glyph standing in for an
+icon — its `svg` twin kindles identically through `drop-shadow`). The 3px-blur `--on-art-halo`
+needs no exemption, which is the point of the threshold. What the probe still cannot see is stated
+in its own header: a glow routed through `filter: drop-shadow`, and `box-shadow` emission —
+**fifty-three** shipped recipes light an OBJECT that way (gilt CTAs, the lit economy sockets, focus
+wells, the caster statcard), which is a far larger question than FLAT TYPE and wants its own wave
+and its own owner ruling.
+
+**Budget, RE-MEASURED (the recorded figure had the wrong sign).** Commit `0d10f34` recorded
+"CSS 73,768 → 74,340 B gzipped for the whole of this wave". Measured with full production builds of
+the merge base and of the branch head and `gzip -9` on the emitted stylesheet: **base `8f10927`
+512,073 B raw / 73,907 B gzipped → head 509,517 B raw / 73,619 B gzipped — the wave SHRANK the CSS
+by 288 B gzipped (2,556 B raw)**. Nothing was ever broken by it (no ceiling was raised and
+`bundle-budget` is green either way); the number was simply not reproducible, and a budget figure
+that cannot be re-derived is worse than none.
+
 **Phase 8 closed the review, and the class the review named: our guards kept sampling the one place
 the work was done.** Two of the four defects were that pattern. `.cmp-seal` — the mark eight of the
 ten codex tabs lead every row with (509 rows on Features, 400 on Magic Items) — survived the

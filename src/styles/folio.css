@@ -20107,8 +20107,11 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   font-size: 2.4rem;
   font-weight: 700;
   line-height: 1.05;
+  /* No underglow. The commit number is the largest gilt type in the app and it
+     carried an 18px bloom — a literal `text-shadow`, so the token sweep that
+     deleted `--gilt-glow` and friends never saw it. Type is FLAT; the ceremony is
+     carried by scale, by the display face and by the struck ornament around it. */
   color: var(--accent-text);
-  text-shadow: 0 0 18px color-mix(in oklab, var(--accent-glow) 38%, transparent);
 }
 .wiz-done-identity {
   margin: 0;
