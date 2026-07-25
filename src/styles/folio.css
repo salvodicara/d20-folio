@@ -169,6 +169,18 @@ svg.icon[stroke],
   height: 1px;
   background: var(--hairline);
 }
+/* THE DIVIDER UTILITY — the one hairline wherever markup needs a separator on an
+   element it does not otherwise style. `.rule-above` / `.rule-below` are the only
+   sanctioned way to separate two groups inside a container: never a `border-top`,
+   which is a hard, wall-to-wall, unfading line and reads as the underside of a
+   frame. Whitespace comes first; this is for the two-groups-of-different-kind
+   case (DESIGN.md §5, "THE HAIRLINE"). */
+.rule-above {
+  background: var(--hairline) top center / 100% 1px no-repeat;
+}
+.rule-below {
+  background: var(--hairline) bottom center / 100% 1px no-repeat;
+}
 /* ── Header-as-disclosure (owner-ratified 2026-07-24) — the opt-in SectionHeader
    toggle for on-demand reference sections (the Play tab's collapsed-by-default
    combat playbook + rules reference). The WHOLE rubric row is the click target
@@ -865,21 +877,21 @@ svg.icon[stroke],
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3) 0;
-  border-bottom: 1px solid var(--border-soft);
+  /* The one divider (P3) between two setting rows — a whisper, never a rule. */
+  background: var(--hairline) bottom center / 100% 1px no-repeat;
 }
 .set-row:last-child {
-  border-bottom: none;
+  background: none;
 }
+/* The leading icon is a GLYPH, not a tile: a mark in the row's first alignment
+   column. A box around it would be the third framed level on this page. */
 .set-row .sr-icon {
   width: 30px;
   height: 30px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  border-radius: var(--r-chip);
   color: var(--text-muted);
-  background: var(--bg-surface-1);
-  border: 1px solid var(--border-soft);
 }
 .set-row .sr-icon .icon {
   width: 16px;
@@ -1376,9 +1388,15 @@ svg.icon[stroke],
     0 2px 0 var(--vermilion-700);
 }
 /* ghost */
+/* THE GHOST IS THE FRAMELESS TIER. Three button registers and no fourth: the
+   primary CTA (the one enamelled plaque per screen), the secondary PLAQUE (quiet
+   metal, a filled face), and the ghost — gold ink alone, no frame, because a
+   tertiary affordance is a word you can press, not an object. The 1px border is
+   kept TRANSPARENT and coloured on hover, so the metal arrives as light and
+   nothing ever resizes (L3). */
 .btn.ghost {
   background: transparent;
-  border: 1px solid var(--border-medium);
+  border: 1px solid transparent;
   color: var(--accent-text);
 }
 .btn.ghost:hover:not(:disabled):not(.loading) {
@@ -1387,7 +1405,6 @@ svg.icon[stroke],
 }
 .btn.ghost.subtle {
   color: var(--text-secondary);
-  border-color: var(--border-soft);
 }
 /* GHOST CONTROLS ON THE ART — a ghost button that sits directly on the candlelit
    backdrop (the login auth-error retry, the read-only member-sheet back button),
@@ -2041,6 +2058,10 @@ button.toolbar-chip:focus-visible {
 }
 
 /* spell-level seal (gem badge) — pass style="--sl: var(--sl-3)" */
+/* A GEM IS A SHAPE, NOT A FRAME. Four hundred of these stand in one compendium
+   index; a border around each was four hundred boxes carrying no information the
+   fill did not already carry. The facet's own dome — one pool at (35%, 28%), the
+   plate material's law at jewel scale — is what makes it read struck. */
 .lvl-seal {
   display: grid;
   place-items: center;
@@ -2053,26 +2074,23 @@ button.toolbar-chip:focus-visible {
   /* luminance-aware per-hue digit ink (≥4.5:1 on this seal's actual body) —
      the single dark --text-inverse failed AA on the mid/dark hues (red "1"). */
   color: var(--sl-ink, var(--text-inverse));
-  border: 1px solid color-mix(in oklab, var(--sl) 55%, black);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--sl) 72%, white),
     color-mix(in oklab, var(--sl) 88%, black) 96%
   );
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.4),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.4);
 }
 /* OWN-36 — in light, the bright gem GLOWS its own colour (a coloured halo reads on
    cream where a halo on near-black would just blend); pairs a brighter top facet so
    the jewel catches light. Dark (the "perfect" theme) is untouched — its gem already
    pops against the near-black field. */
+/* In light the gem GLOWS its own colour outward (a coloured halo reads on cream
+   where one on near-black would just blend). Outward only — the inner lips are the
+   banned cream highlight, and the facet's dome already does that job. */
 [data-theme="light"] .lvl-seal {
   box-shadow:
     0 0 8px color-mix(in oklab, var(--sl) 52%, transparent),
-    0 1px 2px color-mix(in oklab, var(--sl) 38%, transparent),
-    inset 0 1px 1px rgba(255, 255, 255, 0.6),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.28);
+    0 1px 2px color-mix(in oklab, var(--sl) 38%, transparent);
 }
 .lvl-seal.cantrip {
   font-size: 10px;
@@ -3000,6 +3018,10 @@ button.pr-dot.lg::before {
    channel — a specular top edge, a drop shadow for elevation, and a gilt aura, so
    the active choice reads premium + obvious (the carved well + raised tile is the
    folio's signature depth idiom). Light has its own struck-leaf variant below. */
+/* The SELECTED segment is a struck gold-leaf tile in the carved channel. The
+   channel is the framed object; the segment is LIGHT inside it — a gold face and
+   a drop, with no lip of its own (the cream inner line is the banned idiom, and
+   this control is inside a well, not on one). */
 .seg button[aria-pressed="true"] {
   background: linear-gradient(
     180deg,
@@ -3008,9 +3030,7 @@ button.pr-dot.lg::before {
     var(--accent-primary) 100%
   );
   color: var(--text-inverse);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 1px 3px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 /* OWN-36 / WV5 — in light, light's `--accent-primary` is a deep brown, so the active
    segment read gold→brown. Make it a struck GOLD-LEAF tile like the cockpit active tab:
@@ -3025,7 +3045,6 @@ button.pr-dot.lg::before {
     var(--gold-leaf-500) 100%
   );
   color: var(--accent-text);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 250, 0.85);
 }
 /* ── SELECT (carved input shell + chevron) — every dropdown ── */
 .select {
@@ -3594,18 +3613,26 @@ button.pr-dot.lg::before {
 /* Name row: name + save indicator inline (Google Drive-style — the quiet dot
    sits at the same baseline as the name, not stacked below it). */
 /* Save status slot — quiet inline indicator BESIDE the character name (not below). */
+/* A STAT READOUT IS TYPE (L1). AC · SPD · PB · INIT are numbers you read, not
+   objects you act on, and they already sit on a plate — so they take the value in
+   the numeric face over a micro-caps label, aligned on one baseline row, and
+   nothing is drawn around them. The transparent border and the padding stay so the
+   INTERACTIVE strikes below (`button.vital`, the HP readout) can wear the plaque
+   metal without moving a single glyph (L3). */
 .vital {
   display: flex;
   flex-direction: column;
   align-items: center;
   min-width: 46px;
   padding: 4px 8px;
-  /* COCKPIT-LUX — carved tile (gradient + emboss) instead of a flat surface-2
-     slab, so the hero-bar vitals share the wizard's carved-plaque material. */
-  border: 1px solid var(--border-medium);
+  border: 1px solid transparent;
   border-radius: var(--r-chip);
+}
+/* …and a vital you CAN press is a plaque: it earns the quiet metal, because a
+   frame means interactive. */
+button.vital {
+  border-color: var(--border-medium);
   background: linear-gradient(180deg, var(--bg-surface-3), var(--bg-surface-2));
-  box-shadow: var(--elev-resting);
 }
 .vital .v-num {
   font-family: var(--font-numeric);
@@ -3644,12 +3671,8 @@ button.pr-dot.lg::before {
   max-width: 100%;
   text-align: center;
 }
-/* Caster vitals (DC/Atk) read as quiet info tiles, not buttons: a soft accent
-   tint on the number only — the full gold border falsely implied tappability
-   (only AC is interactive, and only in edit mode). */
-.vital.caster {
-  border-color: color-mix(in oklab, var(--accent-primary) 30%, var(--border-soft));
-}
+/* Caster vitals (DC/Atk) are read-only, so they are type like every other
+   readout — the accent lives on the NUMBER, which is the value it belongs to. */
 .vital.caster .v-num {
   color: var(--accent-text);
 }
@@ -3932,10 +3955,7 @@ button.pr-dot.lg::before {
   min-width: 0;
   min-height: 0;
   gap: 5px;
-  padding: 3px 8px;
-  background: var(--bg-surface-2);
-  border-color: var(--border-soft);
-  box-shadow: none;
+  padding: 3px 8px 3px 0;
 }
 .vital[data-density="chip"] .v-lbl {
   margin-top: 0;
@@ -4744,20 +4764,20 @@ textarea.input.rail-notes-area {
   flex-wrap: wrap;
   gap: 6px;
 }
+/* A slot row is a level LABEL and its pips — read-only, on the rail's material.
+   The pips are the object; the box around them was never one. `.pact` keeps its
+   distinction in the label's ink rather than in a border colour. */
 .slot-cell {
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 7px;
-  background: var(--bg-surface-1);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--r-chip);
+  padding: 4px 7px 4px 0;
 }
 .slot-cell.depleted {
   opacity: 0.45;
 }
-.slot-cell.pact {
-  border-color: color-mix(in oklab, var(--lapis-300) 50%, var(--border-soft));
+.slot-cell.pact .sc-lvl {
+  color: var(--lapis-300);
 }
 .sc-lvl {
   font-family: var(--font-numeric);
@@ -4861,7 +4881,6 @@ button.sc-pip:disabled {
   letter-spacing: 0.04em;
   color: var(--accent-text);
   background: color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-2));
-  border: 1px solid var(--border-accent);
 }
 /* Light parity (T8 sweep): the 12% gold mix reads ΔL* ≈ 3.8 on vellum vs ~9.8 in
    dark — the concentration pill barely separates from the bar. Deepen to 18%
@@ -4930,6 +4949,9 @@ button.sc-pip:disabled {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* A resource's die size and its recovery mark are FACTS about the tracker row
+   (L1): the hue says which rest returns it, the type says how big the die is, and
+   nothing is drawn around either. */
 .trk-die {
   flex-shrink: 0;
   font-family: var(--font-numeric);
@@ -4937,9 +4959,7 @@ button.sc-pip:disabled {
   font-size: var(--text-micro);
   font-weight: 700;
   color: var(--accent-text);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 50%, transparent);
-  border-radius: var(--r-chip);
-  padding: 0 4px;
+  padding: 0 2px;
 }
 .trk-rec {
   flex-shrink: 0;
@@ -4947,17 +4967,13 @@ button.sc-pip:disabled {
   font-size: var(--text-micro);
   font-weight: 700;
   color: var(--semantic-success);
-  border: 1px solid var(--semantic-success);
-  border-radius: var(--r-chip);
-  padding: 0 4px;
+  padding: 0 2px;
 }
 .trk-rec[data-r="long"] {
   color: var(--lapis-300);
-  border-color: var(--lapis-300);
 }
 [data-theme="light"] .trk-rec[data-r="long"] {
   color: var(--lapis-700);
-  border-color: var(--lapis-700);
 }
 .trk-pips {
   margin-left: auto;
@@ -5071,10 +5087,10 @@ button.trk-pip:active {
      saturated base hue. Splits the Conditions-B palette the same way the
      verdict chip splits --oc / --oc-ink, so every condition reads as text. */
   color: var(--co-ink, var(--co));
-  /* tint lifted 14%→19% so each muted condition hue reads intentional (not
-     borderline-neutral) at a glance on the dark surface (Conditions-B intent). */
+  /* The hue-tinted ground IS the chip; the saturated ring around it was a frame
+     on a read-only token (L1). Tint lifted 14%→19% so each muted condition hue
+     reads intentional (not borderline-neutral) at a glance on the dark surface. */
   background: color-mix(in oklab, var(--co) 19%, var(--bg-surface-2));
-  border: 1px solid var(--co);
 }
 [data-theme="light"] .co-chip {
   background: color-mix(in oklab, var(--co) 22%, var(--bg-surface-2));
@@ -5914,8 +5930,12 @@ button.trk-pip:active {
    avatar ring brightens to accent instead — one rule covers both platforms since
    the account cluster persists on mobile. Both themes (the tokens are theme-aware;
    the hub-tab treatment they mirror already passes AA). */
+/* The "you are here" mark is PAINT, not an edge: a 2px gold underline drawn in
+   the trigger's own bottom gutter, so the account cluster never becomes a third
+   framed box inside the topbar's button. */
 .acct-trigger[data-current="true"] {
-  border-bottom: 2px solid var(--accent-primary);
+  background: linear-gradient(var(--accent-primary), var(--accent-primary)) bottom left /
+    100% 2px no-repeat;
 }
 .acct-trigger[data-current="true"] .acct-trigger-name {
   color: var(--accent-text);
@@ -9470,11 +9490,19 @@ button.create-need:focus-visible .create-need-chev {
   pointer-events: none;
   z-index: 1;
 }
+/* The bound spine showing between the pages: the ONE divider run vertically, not
+   a border — the reading leaf is not a box inside the tome's box. */
 .cmp-body[data-spread] > .cmp-read {
   position: relative;
-  border-left: 1px solid
-    color-mix(in oklab, var(--accent-primary) 30%, var(--border-soft));
-  padding-left: 6px;
+  background: linear-gradient(
+      180deg,
+      transparent,
+      var(--hairline-ink) 6%,
+      var(--hairline-ink) 94%,
+      transparent
+    )
+    left top / 1px 100% no-repeat;
+  padding-left: 7px;
 }
 .cmp-body[data-spread] > .cmp-read::before {
   content: "";
@@ -9948,32 +9976,24 @@ button.create-need:focus-visible .create-need-chev {
    a right-aligned verdict chip, and a gilt hover wash with a catch-light. It
    composes the SAME PickerRow markup, so the page and the cockpit pickers read as
    one elevated family — consistency by construction (the OWN-5 reuse mandate). ── */
+/* AT REST A LIST ROW HAS NO FRAME (L1) — the reference's own lists are type on
+   the panel, and a row only becomes an object when the pointer or the selection
+   reaches it. The 1px border stays TRANSPARENT so the row box never resizes when
+   it does (L3, and the `contain-intrinsic-size` estimate below depends on it). */
 [data-variant="codex"] .pick-row {
   gap: var(--sp-3);
   padding: 9px 12px;
   border-radius: var(--r-plate);
-  border-color: var(--border-soft);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--bg-surface-2) 64%, transparent),
-    color-mix(in oklab, var(--bg-surface-1) 50%, transparent)
-  );
-  box-shadow: var(--elev-resting);
+  border-color: transparent;
+  background: none;
 }
 [data-variant="codex"] .pick-row + .pick-row {
   margin-top: 6px;
 }
+/* Hover is a WASH, and only a wash: the row warms toward candle-gold. No border
+   appears, nothing lifts, nothing casts — the reference's rows change light. */
 [data-variant="codex"] .pick-row:hover:not(:disabled) {
-  border-color: color-mix(in oklab, var(--accent-primary) 50%, var(--border-medium));
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-glow) 9%, var(--bg-surface-2)),
-    var(--bg-surface-2)
-  );
-  box-shadow: var(--elev-raised);
-}
-[data-theme="light"] [data-variant="codex"] .pick-row:hover:not(:disabled) {
-  box-shadow: var(--elev-raised);
+  background: color-mix(in oklab, var(--accent-glow) 10%, var(--bg-surface-2));
 }
 /* OWN-19 — INSIDE the Compendium tome, the entry rows read as warm illuminated
    LEAVES of the codex rather than neutral cards floating on it: a faint gilt
@@ -9983,12 +10003,7 @@ button.create-need:focus-visible .create-need-chev {
    ink). SCOPED to `.cmp-tome` so the cockpit add-pickers (same `codex` variant) keep
    their floating-card treatment — the page is a tome; the pickers are not. */
 .cmp-tome [data-variant="codex"] .pick-row {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-glow) 9%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--accent-glow) 4%, var(--bg-surface-1))
-  );
-  border-color: color-mix(in oklab, var(--accent-primary) 24%, var(--border-soft));
+  background: none;
 }
 /* The leading seal sits a touch larger + recessed into its socket on a codex row. */
 [data-variant="codex"] .pick-row .lvl-seal {
@@ -10038,9 +10053,11 @@ button.create-need:focus-visible .create-need-chev {
   height: 16px;
 }
 
-/* The right-aligned verdict chip on a codex row — the at-a-glance classifier
-   (spell school · item rarity · feat category). The `.fchip`-grade facet radius +
-   mono, but read-only (a span): a quiet tome-leaf tag, pigmented via `--vd`. */
+/* The right-aligned classifier on a codex row (spell school · item rarity · feat
+   category). It is READ-ONLY, so it is type: micro-caps set in its own hue, in the
+   row's trailing alignment column. It used to be a bordered, tinted chip — four
+   hundred of them stacked down one index, which is what a list of boxes looks
+   like when nothing in it can be pressed. */
 .cmp-verdict {
   flex-shrink: 0;
   font-family: var(--font-numeric);
@@ -10048,16 +10065,13 @@ button.create-need:focus-visible .create-need-chev {
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: var(--r-chip);
-  /* OWN-18 / COMPENDIUM-LUX — the chip carries NO separate ink token: its text
-     derives from the ONE `--vd` hue, composited toward the theme's
-     `--text-primary` (near-white in dark, near-black in light) so every chip is
-     legible while keeping its colour identity; the border + tint still carry
-     the raw hue. AA-guarded per school hue in verdict-ink-contrast. */
+  padding: 3px 0;
+  /* The ink derives from the ONE `--vd` hue, composited toward the theme's
+     `--text-primary` (near-white in dark, near-black in light) so every
+     classifier is legible while keeping its colour identity. Now that the tint is
+     gone it sits on the bare leaf — the ground the AA grid in
+     verdict-ink-contrast.test.ts measures it on. */
   color: color-mix(in oklab, var(--vd, var(--text-secondary)) 62%, var(--text-primary));
-  border: 1px solid color-mix(in oklab, var(--vd, var(--border-medium)) 50%, transparent);
-  background: color-mix(in oklab, var(--vd, var(--border-medium)) 12%, transparent);
   white-space: nowrap;
 }
 /* Light theme — the same one-hue derivation, struck deeper: the hue mixes 55%
@@ -10065,16 +10079,6 @@ button.create-need:focus-visible .create-need-chev {
    colour identity; the border + tint still carry the raw hue. */
 [data-theme="light"] .cmp-verdict {
   color: color-mix(in oklab, var(--vd, var(--text-secondary)) 55%, var(--text-primary));
-  border-color: color-mix(
-    in oklab,
-    var(--vd, var(--border-medium)) 65%,
-    var(--border-strong)
-  );
-  background: color-mix(
-    in oklab,
-    var(--vd, var(--border-medium)) 18%,
-    var(--bg-surface-2)
-  );
 }
 
 /* Empty leaf — an honest, on-brand blank (not "nothing here"). COMPENDIUM-LUX:
@@ -10307,20 +10311,8 @@ button.create-need:focus-visible .create-need-chev {
 /* COMPENDIUM-LUX — dark rows read as warm gilt LEAVES, not dark slabs: the
    tome's umber ground demands a stronger wash than the base recipe (which is
    tuned for light's vellum). Hover deepens it one notch further. */
-[data-theme="dark"] .cmp-tome [data-variant="codex"] .pick-row {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-glow) 13%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--accent-glow) 7%, var(--bg-surface-1))
-  );
-  border-color: color-mix(in oklab, var(--accent-primary) 30%, var(--border-soft));
-}
 [data-theme="dark"] .cmp-tome [data-variant="codex"] .pick-row:hover:not(:disabled) {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-glow) 18%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--accent-glow) 10%, var(--bg-surface-2))
-  );
+  background: color-mix(in oklab, var(--accent-glow) 14%, var(--bg-surface-2));
 }
 
 /* COMPENDIUM-LUX perf — off-screen codex rows skip style/layout/paint entirely
@@ -10668,15 +10660,31 @@ button.create-need:focus-visible .create-need-chev {
 .uc-stack {
   display: grid;
 }
+/* THE ACTION ROW IS A LIST ROW, NOT A CARD (L1). At rest it carries no frame at
+   all: a stack of contiguous rows on the rail's material, separated by the one
+   hairline, exactly as the reference's reaction and spell lists are. What used to
+   be a per-row box is now type in alignment columns — seal · name/gloss · verdict
+   · CTA — and only the CTA, the one thing a pointer commits through, wears metal.
+
+   The slot-colour SPINE is paint, not an edge: a 3px stripe painted in the row's
+   own gutter. Contiguous rows fuse it into one continuous coloured column down the
+   list (the reference's panel spine), which is the read it was always after — a
+   border would have made each row a box to get the same pixels. */
 .uc {
   --at-c: var(--at-action);
-  /* The left border is a pure GRAPHIC, so it uses the flashy `-vivid` hue (light:
+  /* The spine is a pure GRAPHIC, so it uses the flashy `-vivid` hue (light:
      bright/sgargiante · dark: = base); --at-c stays the AA text/fill hue for the
      CTA button + any chip text on this card. */
   --at-c-vivid: var(--at-action-vivid);
+  --uc-spine: 3px;
   position: relative;
-  border-left: 3px solid var(--at-c-vivid);
-  transition: border-left-width var(--m-fast) var(--ease-settle);
+  padding-left: var(--uc-spine);
+  background-image: linear-gradient(
+    90deg,
+    var(--at-c-vivid) 0 var(--uc-spine),
+    transparent var(--uc-spine)
+  );
+  background-repeat: no-repeat;
 }
 .uc[data-slot="bonus"] {
   --at-c: var(--at-bonus);
@@ -10711,14 +10719,21 @@ button.create-need:focus-visible .create-need-chev {
      or combat CTA). Non-expandable rows without a button show the default cursor
      so they don't falsely imply interactivity. */
   cursor: default;
-  background: transparent;
+  background-color: transparent;
   border: none;
-  border-bottom: 1px solid var(--border-soft);
+  /* The row separator is THE hairline (P3) — a nodeless whisper inset from the
+     row's own padding edge, never a wall-to-wall hard rule. It is painted, not
+     bordered, so a row is not a box: `background-color` carries the state wash
+     above it and this image rides on top, both on one element. */
+  background-image: var(--hairline);
+  background-repeat: no-repeat;
+  background-position: bottom center;
+  background-size: calc(100% - 2 * var(--sp-3)) 1px;
   padding: var(--sp-2) var(--sp-3);
-  transition: background var(--m-fast) var(--ease-standard);
+  transition: background-color var(--m-fast) var(--ease-standard);
 }
 .uc:last-child .uc-head {
-  border-bottom: none;
+  background-image: none;
 }
 /* Pointer only when the chevron button (expand toggle) is present — the
    ::before overlay spans the row, making the whole header a click target.
@@ -10731,7 +10746,7 @@ button.uc-chevron {
   cursor: pointer;
 }
 .uc-head:hover {
-  background: color-mix(in oklab, var(--accent-primary) 5%, transparent);
+  background-color: color-mix(in oklab, var(--accent-primary) 5%, transparent);
 }
 .uc-seal {
   grid-column: 1;
@@ -10744,28 +10759,32 @@ button.uc-chevron {
   border-radius: var(--r-plate);
   flex-shrink: 0;
 }
+/* A GEM IS A SHAPE, NOT A FRAME. The seal's edge is its own fill boundary — it
+   needs no border to be an object, and the cream inner lip it used to catch light
+   with is the one idiom the material bans outright. What makes it read as a struck
+   jewel is the same thing that makes a plate read as domed: ONE specular pool,
+   here at (35%, 28%) of the facet. */
 .uc-seal.lvl {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 16px;
   color: var(--sl-ink, var(--text-inverse));
-  border: 1px solid color-mix(in oklab, var(--sl) 55%, black);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--sl) 72%, white),
     color-mix(in oklab, var(--sl) 88%, black) 96%
   );
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.4),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.4);
 }
 .uc-seal.lvl.cantrip {
   font-size: 10px;
 }
+/* The kind seal is a line GLYPH, and a glyph is ink. The reference frames an
+   icon slot when the icon is painted ART filling the tile; a stroked mark on a
+   tinted square is a box drawn around a letterform. The tint stays — hue is how
+   the column codes kind — and the frame goes (L1: read-only). */
 .uc-seal.kind {
   color: var(--ic, var(--accent-primary-bright));
   background: color-mix(in oklab, var(--ic, var(--accent-primary)) 12%, transparent);
-  border: 1px solid color-mix(in oklab, var(--ic, var(--accent-primary)) 38%, transparent);
 }
 .uc-seal.kind .icon {
   width: 17px;
@@ -10942,13 +10961,12 @@ button.uc-chevron {
   /* margin: 0 neutralizes .glossary-term's -6px hit-slop when the chip IS the
      breakdown-tip trigger (a button carrying both classes). */
   margin: 0;
-  border-radius: var(--r-plate);
-  /* Border keeps the saturated chip hue (3:1 graphic). TEXT uses the AA-safe
-     -ink variant (≥4.5:1 on the faint-tinted chip surface) — the saturated hue
-     was tuned for chips, not body text and failed AA for several outcomes. */
-  border: 1px solid var(--oc, var(--text-secondary));
+  /* THE OUTCOME IS A VALUE, AND A VALUE IS TYPE (L1). It used to be a bordered,
+     tinted chip: a box drawn around a number you cannot act on, twenty of them on
+     one screen. Now the hue carries the outcome and nothing is drawn around it —
+     the AA-safe `-ink` variant, because this ink sits on the bare row ground and
+     no longer on a tint of its own hue. */
   color: var(--oc-ink, var(--oc, var(--text-secondary)));
-  background: color-mix(in oklab, var(--oc, var(--text-muted)) 13%, transparent);
 }
 /* The chip-as-breakdown-trigger (heal provenance — `verdictBreakdown`): a
    button carrying .glossary-term (dotted-gold underline = the established tap
@@ -11266,14 +11284,23 @@ button.uc-chevron::before {
 .uc.is-open .uc-chevron .icon {
   transform: rotate(180deg);
 }
+/* The open row's head is the top of the reading spread, so it takes the wash
+   that runs through the detail below it — and drops its own hairline, because the
+   separator between a head and its own body would be a second rule. No frame, no
+   drop: an accordion opening is a change of light, not of substance. */
 .uc.is-open .uc-head {
-  background: var(--bg-surface-2);
-  box-shadow: var(--elev-resting);
-  border-bottom: none;
-  border-radius: var(--r-chip) var(--r-chip) 0 0;
+  background-color: var(--bg-surface-2);
+  background-image: none;
 }
 .uc.is-open {
-  border-left-width: 4px;
+  /* State changes light and colour, never geometry (L3): the open row's spine
+     BRIGHTENS, it does not thicken. (It used to grow 3px → 4px, which reflowed
+     every glyph in the row by a pixel on every expand.) */
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--at-c-vivid) 78%, white) 0 var(--uc-spine),
+    transparent var(--uc-spine)
+  );
 }
 /* Unprepared (dim) state — convey via explicit AA-clearing colors + italic +
    the desaturated left border, NEVER opacity. (opacity multiplies an already
@@ -11293,9 +11320,12 @@ button.uc-chevron::before {
 .uc.is-dim:hover .uc-name {
   color: var(--text-primary);
 }
+/* SELECTED / LIVE is the reference's list-row grammar exactly: a horizontal WASH
+   band roughly twice the ground, bounded by the hairline, with brighter label ink
+   (`.uc-name` → --text-special, below). No ring, no frame, no glow — a row that
+   grew a border on becoming current would be geometry answering state (L3). */
 .uc.is-active .uc-head {
-  background: color-mix(in oklab, var(--accent-primary) 9%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent-primary) 40%, transparent);
+  background-color: color-mix(in oklab, var(--accent-primary) 14%, transparent);
 }
 /* The gold-tint active blend lowers contrast — bump the mono gloss to
    --text-secondary so the active card's sub-line clears WCAG-AA (8.5:1). */
@@ -11409,10 +11439,11 @@ button.uc-chevron::before {
   color: var(--text-secondary);
 }
 .uc-higher,
+/* An "at higher levels" note is read-only prose (L1): a warm wash marks it as an
+   aside, and nothing is drawn around it. */
 .uc-callout {
   padding: 9px 11px;
   background: color-mix(in oklab, var(--accent-primary) 9%, transparent);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 28%, transparent);
   border-radius: var(--r-chip);
 }
 
@@ -11548,11 +11579,16 @@ button.uc-chevron::before {
     flex-direction: column;
     gap: var(--sp-2);
     padding-left: var(--sp-4);
-    border-left: 1px solid var(--border-soft);
+    /* The one divider, run vertically: the same fading, nodeless whisper. */
+    background: linear-gradient(
+        180deg,
+        transparent,
+        var(--hairline-ink) 10%,
+        var(--hairline-ink) 90%,
+        transparent
+      )
+      left top / 1px 100% no-repeat;
   }
-}
-[data-theme="light"] .chronicle-rail {
-  border-left-color: color-mix(in oklab, var(--accent-text) 22%, var(--border-soft));
 }
 .chronicle-rail-head {
   margin: 0 0 var(--sp-1);
@@ -12120,7 +12156,9 @@ textarea.input.sess-notes-edit {
 }
 .uc-tags {
   display: flex;
-  gap: 5px;
+  /* Unframed type needs SPACE to group, where a box needed only 5px of air: the
+     column gap is what now separates one tag from the next. */
+  gap: 2px 14px;
   flex-wrap: wrap;
 }
 .uc-tag {
@@ -12129,11 +12167,10 @@ textarea.input.sess-notes-edit {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 2px 7px;
+  /* Read-only tags are type in a row, spaced (the `.uc-tags` gap) rather than
+     boxed. The keyline padding stays as optical breathing room only. */
+  padding: 2px 0;
   color: var(--text-secondary);
-  background: var(--bg-surface-3);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--r-chip);
 }
 
 /* combat-mode additions: CTA column + slot pips */
@@ -12547,22 +12584,20 @@ textarea.input.sess-notes-edit {
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
+/* The raw score, set beside the hero modifier. The TILE is the framed object
+   here — it is the thing you press — and a framed box inside it for a number you
+   cannot press is the third nesting level L1 forbids. So the score is type: the
+   same numeral, one register quieter than the modifier, holding the same column. */
 .sc-gem {
-  /* The carved score gem, now a badge SET BESIDE the modifier (was a stacked row).
-     Reads as "score" against the hero modifier — a DDB-style stat block. */
   font-family: var(--font-numeric);
   font-size: 13px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   width: 34px;
   height: 26px;
   flex: none;
   display: grid;
   place-items: center;
-  background: var(--bg-recessed);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-chip);
-  box-shadow: var(--elev-recessed);
 }
 .sc-caster-rubric {
   /* pinned eyebrow at the very top of the face — its own slot so it never
@@ -12593,7 +12628,9 @@ textarea.input.sess-notes-edit {
   gap: 5px;
   margin-top: 4px;
   padding-top: 5px;
-  border-top: 1px solid var(--border-soft);
+  /* The one divider (P3): a nodeless whisper inset from the tile's padding edge,
+     never a hard wall-to-wall rule. */
+  background: var(--hairline) top center / calc(100% - 10px) 1px no-repeat;
   width: 100%;
   justify-content: center;
   flex-wrap: wrap; /* let the save sub-text wrap instead of clipping when narrow */
@@ -12784,12 +12821,19 @@ textarea.input.sess-notes-edit {
   grid-template-columns: minmax(0, 1.4fr) auto;
   gap: var(--sp-3);
   align-items: center;
-  padding: var(--sp-2) var(--sp-3);
-  border-left: 3px solid var(--tr-c);
-  border-bottom: 1px solid var(--border-soft);
+  padding: var(--sp-2) var(--sp-3) var(--sp-2) calc(var(--sp-3) + 3px);
+  background-image:
+    linear-gradient(90deg, var(--tr-c) 0 3px, transparent 3px), var(--hairline);
+  background-repeat: no-repeat, no-repeat;
+  background-position:
+    left top,
+    bottom center;
+  background-size:
+    auto,
+    calc(100% - 2 * var(--sp-3)) 1px;
 }
 .tr-row:last-child {
-  border-bottom: none;
+  background-image: linear-gradient(90deg, var(--tr-c) 0 3px, transparent 3px);
 }
 .tr-row[data-color="verdigris"] {
   --tr-c: var(--verdigris-300);
@@ -12846,9 +12890,7 @@ textarea.input.sess-notes-edit {
   font-size: var(--text-micro);
   font-weight: 700;
   color: var(--accent-text);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 55%, transparent);
-  border-radius: var(--r-chip);
-  padding: 1px 5px;
+  padding: 1px 2px;
 }
 .tr-recovery {
   font-family: var(--font-numeric);
@@ -13439,31 +13481,20 @@ button.party-avatar-btn:focus-visible {
   box-shadow: var(--elev-resting);
   overflow: hidden;
 }
-/* The 2px gold crown-line — the SAME graphic cue the DM combatant card wears. */
-.dm-banner-row::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 2px;
-  background: var(--accent-primary);
-  opacity: 0.7;
-}
 .dm-banner-identity {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
 }
+/* The GM mark is a glyph in the banner's first alignment column, not a tile. */
 .dm-banner-glyph {
   display: grid;
   place-items: center;
   width: 28px;
   height: 28px;
   flex: none;
-  border-radius: var(--r-chip);
   color: var(--accent-text);
-  background: color-mix(in oklab, var(--accent-primary) 18%, transparent);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 40%, transparent);
 }
 .dm-banner-name {
   min-width: 0;
@@ -13630,11 +13661,24 @@ button.party-avatar-btn:focus-visible {
    over the host's own inset shadows — one groove, drawn once, on the layer above
    the material. The host keeps the metal and the seat. Graceful: a missing grain
    file leaves the veil over the page — the glow-through still reads. ── */
+/* THE RAIL IS A MATERIAL, NOT A FRAME. A frame means "the container the user is
+   acting in" or "interactive" (L1) — a surface that exists only to GROUP is
+   neither. The reference's spellbook column is exactly this: a material with a
+   frame only at the screen's outer boundary, and everything standing on it —
+   headings, rows, tiles — is type and space. So the rail wears the face, the dome,
+   the grain and the cast, and wears NO metal and NO groove (with no frame there is
+   nothing for darkness to sit inside of). That is also what buys back the nesting
+   level the interactive tiles standing on the rail need: rail → tile is one framed
+   box, not two.
+
+   The 1px border survives TRANSPARENT so the box metrics are frozen across the
+   whole ladder — `.gilt-frame`, the one EARNED band built on this element,
+   re-colours and re-widths that same border instead of re-laying-out the panel. */
 .folio-panel {
   position: relative;
   isolation: isolate;
   background: none;
-  border: 1px solid var(--edge-metal);
+  border: 1px solid transparent;
   border-radius: var(--r-plate);
   box-shadow: var(--edge-seat);
 }
@@ -13662,7 +13706,6 @@ button.party-avatar-btn:focus-visible {
     auto,
     512px 512px;
   background-repeat: no-repeat, no-repeat, repeat;
-  box-shadow: var(--edge-groove);
 }
 
 /* ═══════════════════════════ THE ORNAMENT VOCABULARY ═══════════════════════════
@@ -13687,9 +13730,13 @@ button.party-avatar-btn:focus-visible {
 }
 /* The material pseudo sits INSIDE the band's 2px metal, so its radius is the
    plate's less the border. (The band inherits `--r-plate` from `.folio-panel`;
-   only the inner edge differs, because only the border width does.) */
+   only the inner edge differs, because only the border width does.) The GROOVE
+   lives here too, and only here: darkness immediately inside a frame belongs to
+   the one strike of this element that carries metal — a frameless rail with a
+   groove would be painting the shadow of a border that isn't there. */
 .folio-panel.gilt-frame::before {
   border-radius: calc(var(--r-plate) - 2px);
+  box-shadow: var(--edge-groove);
 }
 
 /* ── THE MARK — currently UNMOUNTED. ─────────────────────────────────────────
@@ -13970,22 +14017,24 @@ button.party-avatar-btn:focus-visible {
    Live-user fix: the old static chips read as labels; the socket + verb-cue
    pair makes the hold→spend loop self-evident without a manual. The premium
    gold-leaf held treatment (owner taste verdict) is unchanged. */
+/* The boon readouts are read-only rows on the rail (L1) — the HELD strike below
+   is a change of LIGHT (a kindled wash), which is what "you are holding one" has
+   always meant here. The transparent border keeps the held strike from moving a
+   glyph (L3). */
 .insp-chip {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 3px 8px;
   padding: 5px 8px 5px 10px;
-  border: 1px solid var(--border-medium);
+  border: 1px solid transparent;
   border-radius: var(--r-chip);
-  background: var(--bg-surface-2);
   transition:
     border-color var(--m-fast) var(--ease-standard),
     background var(--m-fast) var(--ease-standard),
     box-shadow var(--m-fast) var(--ease-standard);
 }
 .insp-chip.held {
-  border-color: color-mix(in oklab, var(--accent-primary) 55%, var(--border-accent));
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--accent-glow) 26%, var(--bg-surface-2)),
@@ -15656,21 +15705,22 @@ button.econ-tok-filter:active .econ-disc {
 /* D4 ── Action log rows (.log-row): replaces raw Tailwind flex rows with the
    folio `.info-card` recipe — 3px left border carrying the action-type colour,
    type glyph + body (text left, timestamp right). Premium, never just dots. */
+/* A log entry is a LIST ROW: type on the rail, its type-colour carried by a
+   painted 3px spine that fuses into one column down the log (L1). */
 .log-row {
   display: flex;
   align-items: flex-start;
   gap: var(--sp-2);
-  padding: 5px 8px;
-  border-left: 3px solid var(--border-medium);
-  border-radius: 0 var(--r-chip) var(--r-chip) 0;
-  background: var(--bg-surface-1);
-  transition: background var(--m-fast);
+  padding: 5px 8px 5px 11px;
+  background-image: linear-gradient(90deg, var(--border-medium) 0 3px, transparent 3px);
+  background-repeat: no-repeat;
+  transition: background-color var(--m-fast);
 }
 .log-row + .log-row {
   margin-top: 2px;
 }
 .log-row:hover {
-  background: color-mix(in oklab, var(--bg-surface-2) 60%, var(--bg-surface-1));
+  background-color: color-mix(in oklab, var(--bg-surface-2) 60%, var(--bg-surface-1));
 }
 .log-glyph {
   flex-shrink: 0;
@@ -16577,26 +16627,21 @@ button.econ-tok-filter:active .econ-disc {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  padding: 2px 7px;
-  border-radius: var(--r-plate);
-  /* Ink-on-colored-frame (the folio badge/condition/damage convention): saturated
-     `--step-c` text on a 12% tint of the same hue failed AA. Keep the colored
-     border + tint; the readable ink carries the label. */
+  padding: 2px 0;
+  /* A keyword in a rules walkthrough is a WORD, not an object: the hue carries
+     which branch it belongs to and nothing is drawn around it (L1). The ink stays
+     `--text-primary` so it clears AA on the card ground it now sits directly on. */
   color: var(--text-primary);
-  border: 1px solid color-mix(in oklab, var(--step-c) 55%, transparent);
-  background: color-mix(in oklab, var(--step-c) 12%, transparent);
 }
 /* YES / NO outcome chips — verdigris (success) vs vermilion (stop). */
 .algo-kw.branch {
   align-self: center;
 }
 .algo-kw.branch[data-branch="yes"] {
-  border-color: color-mix(in oklab, var(--at-action-vivid) 60%, transparent);
-  background: color-mix(in oklab, var(--at-action-vivid) 16%, transparent);
+  color: var(--at-action);
 }
 .algo-kw.branch[data-branch="no"] {
-  border-color: color-mix(in oklab, var(--at-reaction-vivid) 60%, transparent);
-  background: color-mix(in oklab, var(--at-reaction-vivid) 16%, transparent);
+  color: var(--at-reaction);
 }
 
 /* the THEN list — outcome bullets under the condition. */
@@ -17205,9 +17250,7 @@ button.econ-tok-filter:active .econ-disc {
     var(--gold-leaf-500)
   );
   color: var(--accent-text);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 0 6px color-mix(in oklab, var(--gold-leaf-500) 45%, transparent);
+  box-shadow: 0 0 6px color-mix(in oklab, var(--gold-leaf-500) 45%, transparent);
 }
 /* Domain-pigment active tile (the `<Segmented accent>` prop) — the SAME struck-tile
    lift as the gold default, in the passed pigment (the level-up per-step accent). Sits
@@ -17306,17 +17349,12 @@ button.econ-tok-filter:active .econ-disc {
 
 /* Combat action panel + ability badge + gilt section eyebrows. */
 [data-theme="light"] .uc-head {
-  border-bottom-color: var(--border-medium);
+  --hairline-ink: color-mix(in oklab, var(--accent-primary) 42%, transparent);
 }
 [data-theme="light"] .uc-stack {
   background:
     var(--surface-sheen),
     linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-}
-[data-theme="light"] .sc-gem {
-  background: var(--input-fill);
-  border-color: var(--border-strong);
-  box-shadow: var(--elev-recessed);
 }
 [data-theme="light"] .rail-head,
 [data-theme="light"] .sc-caster-rubric {
@@ -17368,27 +17406,8 @@ button.econ-tok-filter:active .econ-disc {
   );
   color: var(--accent-text);
 }
-[data-theme="light"] .cmp-tome [data-variant="codex"] .pick-row {
-  background: linear-gradient(
-    180deg,
-    var(--bg-surface-2),
-    color-mix(in oklab, var(--accent-primary) 7%, var(--bg-surface-1))
-  );
-  border-color: color-mix(in oklab, var(--accent-primary) 34%, var(--border-soft));
-  box-shadow: var(--elev-resting);
-}
 [data-theme="light"] .cmp-tome [data-variant="codex"] .pick-row:hover:not(:disabled) {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-primary-bright) 14%, var(--bg-surface-2)),
-    var(--bg-surface-2)
-  );
-  border-color: color-mix(
-    in oklab,
-    var(--accent-primary-bright) 55%,
-    var(--border-medium)
-  );
-  box-shadow: var(--elev-raised);
+  background: color-mix(in oklab, var(--accent-primary-bright) 13%, var(--bg-surface-2));
 }
 
 /* COMPENDIUM-LUX — the OPEN entry's index row (the spread's seated selection):
@@ -17412,28 +17431,17 @@ button.econ-tok-filter:active .econ-disc {
   .cmp-tome
   [data-variant="codex"]
   .pick-row[data-current]:hover:not(:disabled) {
-  border-color: color-mix(in oklab, var(--accent-primary) 78%, var(--border-medium));
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-primary) 26%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--accent-primary) 12%, var(--bg-surface-2))
-  );
-  box-shadow: var(--elev-resting);
+  /* SELECTED is the reference's list-row grammar, and only that: a horizontal
+     WASH band about twice the ground, bounded above and below by the one
+     hairline, with the title lit in the special register (below). No frame
+     appears — the index shows which page the book is open to by LIGHT. */
+  background:
+    var(--hairline) top center / calc(100% - 24px) 1px no-repeat,
+    var(--hairline) bottom center / calc(100% - 24px) 1px no-repeat,
+    color-mix(in oklab, var(--accent-primary) 22%, var(--bg-surface-2));
 }
 [data-variant="codex"] .pick-row[data-current] .pick-name {
   color: var(--text-special);
-}
-[data-theme="light"] .cmp-verdict {
-  background: color-mix(
-    in oklab,
-    var(--vd, var(--border-medium)) 30%,
-    var(--bg-surface-2)
-  );
-  border-color: color-mix(
-    in oklab,
-    var(--vd, var(--border-medium)) 85%,
-    var(--border-strong)
-  );
 }
 [data-theme="light"] .cmp-seal {
   border-color: color-mix(
@@ -17488,17 +17496,7 @@ button.econ-tok-filter:active .econ-disc {
   );
   border-color: color-mix(in oklab, var(--border-strong) 88%, var(--accent-primary));
 }
-[data-theme="light"] .set-row {
-  border-bottom-color: color-mix(
-    in oklab,
-    var(--border-medium) 70%,
-    var(--accent-primary)
-  );
-}
 [data-theme="light"] .set-row .sr-icon {
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-recessed));
-  border-color: color-mix(in oklab, var(--border-medium) 65%, var(--accent-primary));
-  box-shadow: 0 1px 2px color-mix(in oklab, var(--carve-shade) 35%, transparent);
   color: var(--accent-text);
 }
 [data-theme="light"] .sw[aria-checked="true"],

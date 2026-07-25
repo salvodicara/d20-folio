@@ -181,7 +181,7 @@ export function SettingsPage() {
         {/* ── Sign out ──────────────────────────────────────────────────────── */}
         {/* Quiet register: signing out is SAFE and reversible — the filled
             danger dress is reserved for destructive acts (register rule). */}
-        <div className="mt-10 border-t border-dashed border-border-subtle pt-6">
+        <div className="rule-above mt-10 pt-6">
           <Button
             variant="secondary"
             onClick={() => void signOut()}

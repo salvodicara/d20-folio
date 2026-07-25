@@ -548,6 +548,66 @@ The system is the opposite of flat, and it is ONE material. Every container in t
 **plate**: a domed face, an edge assembly, and a seat. Nothing is composed from a second depth
 grammar, and no surface invents its own.
 
+### The three laws
+
+Everything in §4 and §5 is derived from three sentences. They are the whole chrome, and violating
+one is never a local decision.
+
+**L1 · A frame means _container_ or _interactive_. Nothing else is framed.** Static information
+inside a container is separated by **whitespace and typography** — type scale, alignment columns,
+and the accent as the one colour role. Maximum framed nesting: **2** (container → plaque).
+
+**L2 · An ornament REPLACES the line.** It is never drawn over it, beside it, or near it. Wherever
+a mark appears the rule terminates, the mark occupies the interval, and the rule resumes.
+
+**L3 · State changes light and colour only. Geometry is frozen.** No state may change a radius, a
+border width, a size or a position.
+
+### What may be framed — the decision tree
+
+```
+Is it the page's top-level container for a region?     → PLATE + EDGE (quiet tier), radius 10
+Can the user click / focus / select it?                → PLAQUE
+Is it read-only information?                           → NO FRAME. Type + space.
+Is it already inside two frames?                       → NO FRAME, unconditionally.
+```
+
+**Density argues for FEWER frames, not more.** The reference's panels are sparse and ours are dense
+by mandate (Constitution §2.3, §4.15) — but its sparseness is what _permits_ it to frame so little,
+and our density is what _requires_ it: in a crowded layout every extra frame costs more, not less.
+So we copy its framing discipline, not its whitespace, and carry density on the three devices that
+scale down where whitespace cannot — **type scale + weight**, **alignment columns**, and **the
+accent as the only colour role** (gold marks values and live state; everything structural is
+neutral).
+
+The consequences, stated plainly, because each is a place a border wants to come back:
+
+- **A grouping rail is a material, not a frame.** `.folio-panel` — the cockpit rails, the campaign
+  columns — wears the face, the dome, the grain and the cast, and no metal. It exists to group; it
+  is not the container the user is acting in. That is also what buys back the nesting level the
+  interactive tiles standing on it need. Its one EARNED strike, the `.gilt-frame` identity band,
+  re-colours the same (transparent) border, so the tier costs no layout.
+- **A read-only facet is type in a column.** Chips, tags, verdicts, seals, die sizes, raw scores,
+  keywords, counts, stat readouts: the value in the numeric face over a micro-caps label, aligned
+  on a shared baseline. A hue may carry the classification; nothing is drawn around it.
+- **A list row is frameless at rest.** Hover is a wash. Selected is a horizontal **wash band**
+  about twice the ground, bounded above and below by the one hairline, with the label lit in the
+  special register. No ring, no lift, no drop.
+- **A gem is a shape, not a frame.** A seal, a coin, a socket, a portrait well: the fill boundary is
+  the edge, and one specular pool at (35%, 28%) is what makes it read struck. No border, no lip.
+- **A separator is the one hairline**, painted and inset — never a `border-top`, which is a hard,
+  wall-to-wall, unfading line and reads as the underside of a frame. Markup that needs a divider on
+  an element it does not otherwise style takes `.rule-above` / `.rule-below`.
+- **A transparent border is the geometry-freezing idiom.** Where an element has an interactive or
+  selected strike that shows metal, the resting strike declares `1px solid transparent` so the
+  colour arrives without a single glyph moving (L3).
+
+**Budgeted at CI, on the rendered page.** `tests/e2e/chrome-census.spec.ts` walks the app's densest
+routes in both themes and fails on nesting > 2 or on a per-surface framed-box ceiling. A frame there
+means a _visible_ edge (a drawn side with a non-transparent colour, or an inset shadow); a
+declared-transparent border, a painted stripe or underline, the hairline, and anything under 20×20
+are not boxes the user reads. Raising a ceiling is the last resort, never the fix.
+
 ### The plate — four tonal events, one dome
 
 A plate is exactly four tonal events, in this order, and nothing else:
@@ -612,10 +672,11 @@ border.
 
 ### Two tiers, differing ONLY in light
 
-| tier       | used by                                                        | metal | seat                 |
-| ---------- | -------------------------------------------------------------- | ----- | -------------------- |
-| **quiet**  | cards, panels, rails, rows, plaques                            | 1px   | `--edge-seat`        |
-| **earned** | dialogs, the identity band, the realm masthead, the codex leaf | 2px   | `--edge-seat-earned` |
+| tier        | used by                                                        | metal | seat                 |
+| ----------- | -------------------------------------------------------------- | ----- | -------------------- |
+| **no tier** | grouping rails (`.folio-panel`), list rows, read-only facets   | none  | `--edge-seat` (rail) |
+| **quiet**   | cards, plaques, tiles, controls                                | 1px   | `--edge-seat`        |
+| **earned**  | dialogs, the identity band, the realm masthead, the codex leaf | 2px   | `--edge-seat-earned` |
 
 Frame thickness scales with the plate, not with the pixel grid. The tiers **never** differ in
 radius, size or position — that is the state law (§5, L3) applied to the register ladder.
@@ -624,6 +685,12 @@ radius, size or position — that is the state law (§5, L3) applied to the regi
 
 **The No-Flat-Fill Rule.** A surface is never a flat colour. It is the plate material, or it is not
 a surface at all — it is type on its parent's plate.
+
+**The Frame-Is-A-Claim Rule.** A frame says "this is an object you can act on, or the container you
+are acting in". Drawing one around anything else spends the claim and it stops meaning anything —
+which is how one route came to render 273 framed boxes and another 1313. If you cannot name what a
+box is _for_, delete it and let type and space do the work (L1; `chrome-system.guard.test.ts` +
+`tests/e2e/chrome-census.spec.ts`).
 
 **The No-Second-Grammar Rule.** `box-shadow` is a REPLACED property, so a rule that sets it on a
 plate without composing the plate's own tokens back in silently strips the material — and a rule
@@ -1638,6 +1705,9 @@ The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index
   count is plain numerals in the rubric row (L1: a number you cannot act on is not an object);
   the disclosure knob is the only framed thing in that row, because it is the only thing a
   pointer can act on.
+- **THE DIVIDER UTILITY.** `.rule-above` / `.rule-below` paint the hairline on an element markup
+  does not otherwise style. They are the ONLY sanctioned separator in markup: a `border-t`
+  Tailwind utility is a hard, wall-to-wall, unfading line, which is the underside of a frame.
 - **NO ROTATED-DIAMOND FAMILY.** The 18 lapidary lozenges that shipped as rubric markers, rail
   heads, list bullets, divider nodes, charge pips and menu markers are gone. A bullet is a
   bullet; a marker is ink colour; a pip is a square facet. The one surviving `rotate(45deg)` in

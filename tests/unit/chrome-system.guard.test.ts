@@ -214,8 +214,14 @@ describe("the chrome system — the material's tokens", () => {
       [".ch-card", "\\.ch-card \\{"],
       [".info-card", "\\.info-card \\{"],
       [".party-card", "\\.party-card \\{"],
-      [".folio-panel", "\\.folio-panel \\{"],
     ];
+    // The rail is a MATERIAL, not a plate: it keeps the seat (it is still an
+    // object laid on the page) and gives up the metal entirely.
+    expect(
+      /\.folio-panel \{[^}]*var\(--edge-seat\)/.test(folio),
+      "MISSING the seat on `.folio-panel` — a frameless rail still sits in its own " +
+        "moat and casts; that is what keeps it an object on the page."
+    ).toBe(true);
     for (const [label, open] of QUIET) {
       expect(
         new RegExp(`${open}[^}]*var\\(--edge-seat\\)`).test(folio),
@@ -415,5 +421,175 @@ describe("the chrome system — the material's tokens", () => {
         `tier's seat back in — a bare \`none\` does NOT excuse it (only the documented ` +
         `EXEMPT selectors opt out):\n  ${offenders.join("\n  ")}`
     ).toEqual([]);
+  });
+});
+
+/**
+ * L1 · A FRAME MEANS CONTAINER OR INTERACTIVE. NOTHING ELSE IS FRAMED.
+ *
+ * The chrome used to draw a box around every fact on the page: 273 framed boxes
+ * on one cockpit route, 1313 on one compendium route, three levels deep. The
+ * reference's densest screen carries four framed box TYPES and two levels. What
+ * carries a dense layout instead is type scale, alignment columns, whitespace and
+ * the accent as the one colour role — all of which scale DOWN where whitespace
+ * does not, which is why our density argues for fewer frames, not more.
+ *
+ * This block pins the classes of surface that gave their frames up, because every
+ * one of them is a tempting place to put a border back:
+ *
+ *   · READ-ONLY FACETS — a chip, a tag, a verdict, a seal, a die size, a raw
+ *     score, a keyword: information you cannot act on. It is type, in a column.
+ *   · LIST ROWS — frameless at rest; the selected row is a WASH bounded by the
+ *     hairline, never a ring (the reference's own list grammar).
+ *   · THE RAIL — a surface that exists only to GROUP is not a frame, and that is
+ *     what buys back the nesting level the interactive tiles standing on it need.
+ *   · SEPARATORS — one grammar. A `border-top`/`border-bottom` used as a divider
+ *     is a hard, wall-to-wall, unfading line: the underside of a frame. The one
+ *     divider is `--hairline`, painted, inset, nodeless.
+ */
+describe("the chrome system — L1, a frame means container or interactive", () => {
+  /** The first `{…}` body of the rule whose selector is exactly `sel`. Read off
+   *  the RAW stylesheet, line-anchored, so a preceding comment can't hide it. */
+  function ruleBody(sel: string): string {
+    const m = new RegExp(`^${sel} \\{$([^{}]*)^\\}$`, "m").exec(folioCss);
+    expect(m, `rule \`${sel}\` present in folio.css`).not.toBeNull();
+    return m?.[1] ?? "";
+  }
+
+  /**
+   * The recipes L1 unframed, by selector. Each is READ-ONLY information sitting
+   * inside a surface that is already a frame — so none of them may declare a
+   * visible border or an inset shadow of its own.
+   */
+  const UNFRAMED = [
+    "\\.vital", // the identity band's stat readouts (the BUTTON strike re-frames)
+    '\\.vital\\[data-density="chip"\\]', // the party/roster compact strike
+    "\\.uc-tag", // an action row's damage/property tags
+    "\\.uc-verdict", // an action row's at-a-glance outcome
+    "\\.uc-seal\\.kind", // the row's kind glyph
+    "\\.uc-seal\\.lvl", // the row's level gem
+    "\\.lvl-seal", // the compendium/picker level gem (×421 on one index)
+    "\\.cmp-verdict", // the codex row's school/rarity classifier
+    "\\.uc-callout", // the "at higher levels" aside
+    "\\.algo-kw", // a rules-walkthrough keyword
+    "\\.trk-die", // a tracker's die size
+    "\\.trk-rec", // a tracker's recovery mark
+    "\\.tr-die", // the treasury row's die
+    "\\.sc-gem", // the ability tile's raw score
+    "\\.slot-cell", // a spell-slot level row
+    "\\.co-chip", // a condition token
+    "\\.conc-pill", // the concentration token
+    "\\.insp-chip", // the inspiration readouts
+    "\\.set-row \\.sr-icon", // a settings row's leading glyph
+    "\\.dm-banner-glyph", // the GM mark
+  ] as const;
+
+  it("draws no border and no inset around read-only information", () => {
+    for (const sel of UNFRAMED) {
+      const body = ruleBody(sel);
+      // A `1px solid transparent` keep-the-box-metrics border is the ONE allowed
+      // form: it paints nothing, and it is what lets the interactive strike of
+      // the same element colour in its metal without moving a glyph (L3).
+      const border = /border(?:-(?:top|right|bottom|left))?\s*:\s*([^;]+);/.exec(
+        body
+      )?.[1];
+      if (border !== undefined) {
+        expect(
+          /transparent/.test(border),
+          `\`${sel}\` declares \`border: ${border}\`. Read-only information is ` +
+            `type in a column (L1) — the only border it may carry is a transparent ` +
+            `one, held so the interactive strike can colour it in without reflow.`
+        ).toBe(true);
+      }
+      expect(
+        /box-shadow\s*:[^;]*inset/.test(body),
+        `\`${sel}\` carves itself an inset. A recessed well IS a frame — it is the ` +
+          `same "this is an object" claim, made with light instead of a line.`
+      ).toBe(false);
+    }
+  });
+
+  it("keeps the rail a material — no metal, and the groove only where metal is", () => {
+    const rail = ruleBody("\\.folio-panel");
+    expect(
+      /border:\s*1px solid transparent;/.test(rail),
+      "`.folio-panel` must carry a TRANSPARENT 1px border. A grouping rail is a " +
+        "material, not a frame (L1) — and the transparent border is what lets " +
+        "`.gilt-frame`, the one earned strike of this element, re-colour and " +
+        "re-width the same edge without re-laying-out the panel."
+    ).toBe(true);
+    expect(
+      /var\(--edge-metal/.test(rail),
+      "`.folio-panel` binds the edge metal again. The rail groups; it is not the " +
+        "container the user is acting in, and its frame is what pushed every tile " +
+        "standing on it to a third framed level."
+    ).toBe(false);
+    // Darkness immediately inside a frame belongs to the strike that HAS a frame.
+    expect(
+      /\.folio-panel::before \{[^}]*var\(--edge-groove\)/.test(folio),
+      "The frameless rail paints a groove — the shadow of a border that is not there."
+    ).toBe(false);
+    expect(
+      /\.folio-panel\.gilt-frame::before \{[^}]*var\(--edge-groove\)/.test(folio),
+      "MISSING the groove on the EARNED band. It is the one strike of `.folio-panel` " +
+        "that carries metal, so it is the one that has an inside to darken."
+    ).toBe(true);
+  });
+
+  it("leaves a list row frameless at rest and marks selection with a wash", () => {
+    const rest = ruleBody('\\[data-variant="codex"\\] \\.pick-row');
+    expect(
+      /border-color:\s*transparent;/.test(rest),
+      "A codex row must be frameless at rest (L1): the reference's lists are type " +
+        "on the panel, and a row becomes an object only under the pointer or the " +
+        "selection. The border-color stays declared-transparent so nothing resizes."
+    ).toBe(true);
+    expect(
+      /box-shadow\s*:/.test(rest),
+      "A resting list row casts a shadow — that is a card, not a row."
+    ).toBe(false);
+    // …and the SELECTED row is a wash bounded by the one hairline, not a ring.
+    const current = /\.pick-row\[data-current\]:hover:not\(:disabled\) \{([^}]*)\}/.exec(
+      folio
+    )?.[1];
+    expect(current, "the seated-selection rule must exist").toBeTruthy();
+    expect(
+      /var\(--hairline\)/.test(current ?? ""),
+      "The open entry's row must be a WASH bounded by the one hairline (the " +
+        "reference's list-row grammar), not a bordered tile."
+    ).toBe(true);
+    expect(
+      /border-color:\s*(?!transparent)/.test(current ?? ""),
+      "The seated row grows a frame. Selection is light and colour, never a border."
+    ).toBe(false);
+    // The action row's separator is the hairline, painted, not a border.
+    const head = ruleBody("\\.uc-head");
+    expect(
+      /background-image:\s*var\(--hairline\)/.test(head),
+      "The action row's separator must be the ONE hairline (P3), painted and inset " +
+        "from the row's padding edge — a `border-bottom` is a hard wall-to-wall rule."
+    ).toBe(true);
+    expect(
+      /border-bottom:\s*1px solid var\(--border/.test(head),
+      "The action row is bordered again."
+    ).toBe(false);
+  });
+
+  it("ships the one divider utility, and the ghost tier is frameless", () => {
+    for (const util of ["\\.rule-above", "\\.rule-below"]) {
+      expect(
+        new RegExp(`${util} \\{[^}]*var\\(--hairline\\)`).test(folio),
+        `MISSING the \`${util}\` divider utility. Markup that needs a separator on ` +
+          `an element it does not otherwise style must reach for the ONE hairline, ` +
+          `never a raw \`border-top\`.`
+      ).toBe(true);
+    }
+    const ghost = ruleBody("\\.btn\\.ghost");
+    expect(
+      /border:\s*1px solid transparent;/.test(ghost),
+      "The ghost is the FRAMELESS button tier — gold ink alone, because a tertiary " +
+        "affordance is a word you can press, not an object. Its 1px border is held " +
+        "transparent so hover can colour the metal in without resizing (L3)."
+    ).toBe(true);
   });
 });

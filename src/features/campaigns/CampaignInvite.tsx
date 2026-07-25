@@ -104,7 +104,7 @@ export function CampaignInvite({ canManage }: { canManage: boolean }) {
         {/* The kill switch lives WITH the link (golden rule 6). DM/admin only — a member
             sees the (possibly locked) link actions + badge, never the control. */}
         {canManage && (
-          <div className="flex flex-col gap-1 border-t border-border-subtle pt-3">
+          <div className="rule-above flex flex-col gap-1 pt-3">
             <div className="flex items-center justify-between gap-3">
               <label htmlFor="invite-lock-joins" className="text-sm text-text-secondary">
                 {t("campaignHub.lockJoins")}

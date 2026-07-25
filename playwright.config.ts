@@ -70,6 +70,9 @@ export default defineConfig({
       // `page.setViewportSize(...)` for EVERY navigation, making the project's
       // viewport irrelevant — the mobile pass would be a byte-identical duplicate
       // of the chromium pass (and chromium still runs them):
+      //   • chrome-census — pins 1440×2400 for every nav (the framed-box budget is a
+      //                    full-page count, so a 390px project would re-run the
+      //                    identical cells).
       //   • on-art-ink   — pins DESKTOP for every nav (ink colour is width-invariant).
       //   • visual-full  — pins each variant's own viewport; its variant matrix
       //                    ALREADY enumerates both desktop AND mobile cells, so the
@@ -82,6 +85,7 @@ export default defineConfig({
       // chromium run cannot.  See docs/CONTRIBUTING.md → "The gate split".
       testIgnore: [
         /portrait-export-journey\.spec\.ts/,
+        /chrome-census\.spec\.ts/,
         /on-art-ink\.spec\.ts/,
         /visual-full\.spec\.ts/,
       ],

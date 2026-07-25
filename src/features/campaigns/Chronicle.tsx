@@ -188,7 +188,7 @@ export function Chronicle({
                 </div>
               ) : null}
               <ChronicleChapterBody chapter={activeChapterData} activeKey={activeIdx} />
-              <div className="flex items-center justify-between gap-3 border-t border-border-soft pt-2">
+              <div className="rule-above flex items-center justify-between gap-3 pt-2">
                 {/* A small mono byline (the app's caption vocabulary — `--text-micro`,
                     like a forum "posted by" line): smaller than the serif prose above
                     and clearly metadata, not part of the story. */}
