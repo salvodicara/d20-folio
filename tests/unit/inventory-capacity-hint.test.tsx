@@ -11,9 +11,10 @@
  * it had the same defect and rides the same fix.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
+import i18n from "@/i18n";
 import { InventoryTab } from "@/features/character/center/tabs/InventoryTab";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -39,6 +40,9 @@ describe("Inventory toolbar chips — on-demand hints (no native title)", () => 
     useCharacterStore.setState({ character: null, loading: false, error: null });
     useUIStore.setState({ sheetMode: "play" });
     useToastStore.setState({ toasts: [], timers: {} });
+  });
+  afterEach(async () => {
+    await i18n.changeLanguage("en");
   });
 
   it("the capacity chip is a real trigger, and NO chip hides its hint in a title attribute", () => {
@@ -67,11 +71,6 @@ describe("Inventory toolbar chips — on-demand hints (no native title)", () => 
     const reading = `${enc.carried} lb / ${enc.capacity} lb`;
     const chip = screen.getByRole("button", { name: `Carrying Capacity: ${reading}` });
     expect(chip).toHaveTextContent(reading);
-    // …and a chip that already names itself is NOT made to stutter: the
-    // attunement chip's own text ("Attuned 2 / 3") IS its accessible name.
-    expect(
-      screen.getByRole("button", { name: /^Attuned \d+ \/ \d+$/ })
-    ).toBeInTheDocument();
     // Nothing is disclosed until the player asks (progressive disclosure).
     expect(screen.queryByText(/push, drag, or lift/i)).toBeNull();
     fireEvent.click(chip);
@@ -81,5 +80,27 @@ describe("Inventory toolbar chips — on-demand hints (no native title)", () => 
     expect(body.textContent).toContain(`${enc.pushDragLift} lb`);
     // It is the branded folio popover, not a bespoke widget.
     expect(body.closest(".popover")).not.toBeNull();
+  });
+
+  // A chip whose own text already names it must NOT be made to stutter its
+  // rubric ("Attuned: Attuned 2 / 3" · "Sintonizzato: Sintonizzati 2 / 3"). The
+  // caller DECLARES that (`namesItself`) — inferring it by looking for the rubric
+  // inside the text passed in English and broke in Italian, where the rubric
+  // inflects ("Sintonizzato" vs the count's "Sintonizzati").
+  it.each(["en", "it"] as const)("names each chip once, in %s", async (locale) => {
+    await i18n.changeLanguage(locale);
+    load();
+    const { container } = renderTab();
+    // Toolbar order: the attunement chip, then the capacity chip.
+    const [attunement, capacity] = [...container.querySelectorAll("button.toolbar-chip")];
+    if (!attunement || !capacity) throw new Error("toolbar chips missing");
+    // Names itself → NO aria-label at all, so the accessible name IS the reading.
+    expect(attunement.getAttribute("aria-label")).toBeNull();
+    expect(attunement.textContent.trim()).toBeTruthy();
+    // Numbers only → the rubric is prefixed, and the reading survives in the name.
+    const reading = capacity.textContent.trim();
+    const name = capacity.getAttribute("aria-label");
+    expect(name).not.toBeNull();
+    expect(name?.endsWith(`: ${reading}`)).toBe(true);
   });
 });

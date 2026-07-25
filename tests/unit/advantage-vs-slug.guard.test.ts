@@ -73,8 +73,20 @@ const POLARITY_OPENER =
   /^(?:[^:]{1,40}: )?(?:(?:Advantage|Disadvantage) on |(?:Vantaggio|Svantaggio) (?:ai|agli|alle|nei|nelle) )/;
 
 /** Walk `<root>/{en,it}/srd/*.json` collecting every `*.grants.*` description. */
-function grantDescriptions(): Array<{ file: string; key: string; text: string }> {
-  const out: Array<{ file: string; key: string; text: string }> = [];
+function grantDescriptions(): Array<{
+  root: string;
+  locale: string;
+  file: string;
+  key: string;
+  text: string;
+}> {
+  const out: Array<{
+    root: string;
+    locale: string;
+    file: string;
+    key: string;
+    text: string;
+  }> = [];
   for (const root of I18N_ROOTS) {
     for (const locale of ["en", "it"]) {
       const dir = join(root, locale, "srd");
@@ -89,7 +101,7 @@ function grantDescriptions(): Array<{ file: string; key: string; text: string }>
             continue;
           const text = (entry as Record<string, unknown>).description;
           if (typeof text === "string")
-            out.push({ file: `${locale}/srd/${name}`, key, text });
+            out.push({ root, locale, file: `${locale}/srd/${name}`, key, text });
         }
       }
     }
@@ -108,6 +120,55 @@ describe("grant descriptions never restate their own polarity (rail register loc
     expect(
       offenders,
       `grant descriptions restating their polarity (the rail row already says Adv./Disadv.):\n${offenders.join("\n")}`
+    ).toEqual([]);
+  });
+});
+
+/**
+ * The rail collapses two rows when their LOCALIZED text matches
+ * (`advantageChipVMs`), so a pair of grants that reads alike in one locale MUST
+ * read alike in the other. Otherwise the collapse is locale-dependent: Mantle of
+ * Spell Resistance + Scarab of Protection share one EN string ("Saving throws
+ * against spells") and used to differ by one article in IT, so an attuned
+ * character saw ONE row in EN and TWO indistinguishable rows in IT — post-sweep G
+ * resurrected in a single locale.
+ */
+function localeSplitGroups(from: "en" | "it", to: "en" | "it"): string[] {
+  const pairs = new Map<string, Partial<Record<string, string>>>();
+  for (const d of grantDescriptions()) {
+    const id = `${d.root.includes("content-pack") ? "pack" : "src"}:${d.key}`;
+    const slot = pairs.get(id) ?? {};
+    slot[d.locale] = d.text.trim();
+    pairs.set(id, slot);
+  }
+  // `<from>` text → the distinct `<to>` texts written for it.
+  const groups = new Map<string, Map<string, string[]>>();
+  for (const [id, texts] of pairs) {
+    const a = texts[from];
+    const b = texts[to];
+    if (a == null || b == null) continue;
+    const bucket = groups.get(a) ?? new Map<string, string[]>();
+    bucket.set(b, [...(bucket.get(b) ?? []), id]);
+    groups.set(a, bucket);
+  }
+  return [...groups]
+    .filter(([, bucket]) => bucket.size > 1)
+    .map(
+      ([a, bucket]) =>
+        `${from.toUpperCase()} "${a}" splits in ${to.toUpperCase()}:\n` +
+        [...bucket].map(([b, ids]) => `    "${b}" — ${ids.join(", ")}`).join("\n")
+    );
+}
+
+describe("one grant description in one locale = one in the other (dedup lock)", () => {
+  it.each([
+    ["en", "it"],
+    ["it", "en"],
+  ] as const)("%s descriptions that agree also agree in %s", (from, to) => {
+    const offenders = localeSplitGroups(from, to);
+    expect(
+      offenders,
+      `grant descriptions that collapse on the rail in one locale but not the other:\n${offenders.join("\n")}`
     ).toEqual([]);
   });
 });

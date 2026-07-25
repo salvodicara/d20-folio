@@ -68,6 +68,7 @@ function ChipHint({
   text,
   hint,
   danger,
+  namesItself,
 }: {
   /** The popover heading — an EXISTING canonical label key, never a new string. */
   rubric: string;
@@ -77,6 +78,16 @@ function ChipHint({
   hint: string;
   /** Over-limit (capacity exceeded / attunement over cap) — the crimson chip. */
   danger?: boolean;
+  /**
+   * `true` when `text` ALREADY names the chip in EVERY locale (the attunement
+   * count reads "Attuned 2 / 3" · "Sintonizzati 2 / 3"), so its contents are the
+   * accessible name as written. The CALLER declares it because only the caller
+   * knows the shape of its i18n string: inferring it by looking for the rubric
+   * inside the text works in English and breaks on any locale that inflects
+   * (IT rubric "Sintonizzato" vs the count's "Sintonizzati" → "Sintonizzato:
+   * Sintonizzati 2 / 3", the very stutter this avoids).
+   */
+  namesItself?: boolean;
 }) {
   return (
     <Popover>
@@ -91,9 +102,8 @@ function ChipHint({
           // says WHICH numbers ("Carrying Capacity: 45 lb / 120 lb") and still
           // CONTAINS the visible text (WCAG 2.5.3) — a bare rubric would replace
           // the reading and a screen reader would never hear the data. A chip
-          // that already names itself ("Attuned 2 / 3") keeps its contents as the
-          // name rather than stuttering the rubric twice.
-          aria-label={text.includes(rubric) ? undefined : `${rubric}: ${text}`}
+          // that already names itself keeps its contents as the name.
+          aria-label={namesItself ? undefined : `${rubric}: ${text}`}
         >
           {text}
         </button>
@@ -437,6 +447,9 @@ export function InventoryTab() {
               })}
               hint={t("equipment.attunementHint")}
               danger={attunement.bonded > attunement.cap}
+              // `attunementCount` opens with the rubric in BOTH locales
+              // ("Attuned 2 / 3" · "Sintonizzati 2 / 3").
+              namesItself
             />
           )}
           {/* Honest blank: nothing carried → no chip (formatWeight renders 0 as
