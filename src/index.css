@@ -229,7 +229,8 @@
      (No theme selector is written literally in this comment: two guards locate a
      theme block with `indexOf`, so a prose mention of one moves their cursor.)
      Enforced by `chrome-system.guard.test.ts` → "never lets a state rule silently
-     strip a plate's FACE", which derives the plate list from the stylesheet. ── */
+     strip a plate's FACE", which derives its subject list from the stylesheet: a
+     recipe is in scope when it names `var(--plate-face)` OR opens the slot. ── */
   --veil-hover: linear-gradient(var(--state-wash-hover), var(--state-wash-hover));
   --veil-pressed: linear-gradient(var(--state-wash-pressed), var(--state-wash-pressed));
   --veil-selected: linear-gradient(

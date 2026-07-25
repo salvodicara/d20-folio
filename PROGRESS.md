@@ -689,6 +689,18 @@ four statcard combinations** and on the level chip in light. All six compose the
 (browser-verified: the veil paints and the face survives on dark/light × plain/caster, hover and
 pressed, and the pressed rest tile keeps its gradient).
 
+**The guard missed all six, and its sibling was worse.** The plate check derived its subject list
+from `var(--plate-face)` alone, and all four cascade strips author their face INLINE — so it saw
+none of them. It derives from **either** signal now (the material token OR the ladder's own slot),
+which reports exactly those six and nothing else. Its sibling derived a set, filtered by it, and
+never asserted the set was non-empty: renaming `--state-veil` throughout `folio.css` — which makes
+every plate's composition and every rung in the app inert — left the file **19/19 green**, because
+the derived set and its filter emptied together. That is verbatim the failure rule 13's derivation
+clause names, shipped in the same wave as the clause. Both halves carry a floor now, and every guard
+this wave added or amended was audited for the same omission; the rendered census and the on-art
+contrast battery each gained one, because a CEILING over a derived set reads a broken probe as the
+tidiest screen in the app.
+
 **Phase 8 closed the review, and the class the review named: our guards kept sampling the one place
 the work was done.** Two of the four defects were that pattern. `.cmp-seal` — the mark eight of the
 ten codex tabs lead every row with (509 rows on Features, 400 on Magic Items) — survived the

@@ -527,6 +527,18 @@ describe("the chrome system — L1, a frame means container or interactive", () 
    * The recipes L1 unframed, by selector. Each is READ-ONLY information sitting
    * inside a surface that is already a frame — so none of them may declare a
    * visible border or an inset shadow of its own.
+   *
+   * WHY THIS ONE IS HAND-MAINTAINED, in a file whose other probes derive their
+   * inputs (golden rule 13): READ-ONLY-NESS IS NOT IN THE STYLESHEET. "Can the user
+   * act on this?" is a fact about the component that renders the recipe, not about
+   * any declaration in the rule — `.uc-tag` and `.opt-cell` are indistinguishable in
+   * CSS, and one is a label while the other is a control. So the classification is
+   * an editorial judgement, recorded here once per recipe with the reason inline.
+   * What IS derived is the same law measured on the rendered page: the framed-box
+   * census (`tests/e2e/chrome-census.spec.ts`) counts every visible border on every
+   * swept surface and budgets it, which is what caught `.cmp-seal` while this list
+   * was green — the list and the census are companions, and neither replaces the
+   * other. Adding a row here is cheap; forgetting to is what the census is for.
    */
   const UNFRAMED = [
     "\\.vital", // the identity band's stat readouts (the BUTTON strike re-frames)
@@ -969,21 +981,30 @@ describe("the chrome system — L3, state changes light and colour only", () => 
    * Three shipped rules carried it, and the box-shadow guard beside them was green.
    *
    * So the ladder reaches a plate through `--state-veil`, a slot the plate composes
-   * at rest, and this check DERIVES its subject list from the stylesheet — every
-   * selector that declares `var(--plate-face)` — rather than restating a list a new
-   * plate could be added outside of.
+   * at rest, and this check DERIVES its subject list from the stylesheet rather than
+   * restating a list a new plate could be added outside of. The subject is a recipe
+   * that composes A FACE — either by naming the material (`var(--plate-face)`) or by
+   * opening the ladder's slot (`background-image: var(--state-veil), …`) over a face
+   * it authors inline. The first derivation read only `--plate-face`, and the four
+   * inline-face recipes it could not see (`.statcard-face`, `.rest-card`,
+   * `.lvl-chip`, `.wiz-kept`) were carrying SIX live strips between them: two
+   * `:active` rungs that replaced the face with the bare wash, and four
+   * variant/theme overrides whose `background` SHORTHAND reset `background-image`
+   * and dropped the slot — which made a shipped hover rung a no-op on three of the
+   * four statcard combinations.
    *
-   * WHAT IT CANNOT SEE: a plate whose face is authored INLINE (a literal
-   * `linear-gradient(180deg, var(--bg-surface-2), …)` rather than `--plate-face`) is
-   * not in the derived set, so its own state rules are unchecked — the fix for that
-   * is to put the recipe on the material, not to widen the pattern.
+   * WHAT IT CANNOT SEE: a face composed through an intermediate custom property
+   * (`--face: linear-gradient(…); background-image: var(--face)`) names neither
+   * token, so it is outside the derivation — the fix for that is to put the recipe
+   * on the material, not to widen the pattern a third time.
    */
   it("never lets a state rule silently strip a plate's FACE", () => {
     const rules = [...folio.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
-    /** Every selector that declares the plate material — derived, never listed. */
+    /** Every selector that composes a FACE — derived, never listed. */
     const plateSubjects = new Set<string>();
     for (const [, sel, body] of rules) {
-      if (!/var\(--plate-face\)/.test(body ?? "")) continue;
+      if (!/var\(--plate-face\)|background-image:\s*var\(--state-veil\)/.test(body ?? ""))
+        continue;
       for (const part of selectorParts(sel ?? "")) plateSubjects.add(subjectOf(part));
     }
     expect(
@@ -1121,6 +1142,12 @@ describe("the chrome system — L3, state changes light and colour only", () => 
    * …and the other half of the slot: a rung that SETS `--state-veil` on a recipe
    * whose resting rule never composes it is a wash that silently does nothing. Both
    * halves are derived from the stylesheet, so neither can be satisfied by a list.
+   *
+   * Both halves therefore also carry the FLOOR (golden rule 13). This check shipped
+   * without one and was mutation-proved worthless: renaming `--state-veil` to
+   * `--state-veilX` throughout `folio.css` — which makes every plate's composition
+   * and every ladder rung in the app inert — emptied the derived set and its filter
+   * together, and the whole file stayed green.
    */
   it("never lets a veil rung fire on a recipe that does not compose the slot", () => {
     const rules = [...folio.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
@@ -1129,6 +1156,11 @@ describe("the chrome system — L3, state changes light and colour only", () => 
       if (!/background-image:\s*var\(--state-veil\)/.test(body ?? "")) continue;
       for (const part of selectorParts(sel ?? "")) composers.add(subjectOf(part));
     }
+    expect(
+      composers.size,
+      "the derived veil-composing set must not be empty — did `--state-veil` get " +
+        "renamed? An empty set makes this check, and the ladder it guards, vacuous."
+    ).toBeGreaterThan(4);
     const offenders: string[] = [];
     for (const [, sel, body] of rules) {
       if (

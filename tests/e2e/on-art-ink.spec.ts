@@ -527,6 +527,17 @@ for (const surface of SURFACES) {
       await freezeMotion(page);
 
       const measured = await measureOnArtContrast(page);
+      // THE FLOOR (golden rule 13). `failing` is a FILTER over a derived set, so an
+      // empty derivation and a clean surface are the same green — a probe that stops
+      // finding on-art text (a walker that throws, a readiness signal that fires
+      // before the art paints, a scope that gets renamed) would report perfection.
+      expect(
+        measured.length,
+        `The on-art probe found NO loose ink at all on ${surface.slug} [${theme}]. ` +
+          `Every surface in this battery is one that puts text on the candlelit ` +
+          `backdrop — zero measurements means the probe stopped reading the page, ` +
+          `not that the page is clean.`
+      ).toBeGreaterThan(0);
       const failing = measured
         .filter((m) => m.ratio < MIN_ON_ART_CONTRAST)
         .sort((a, b) => a.ratio - b.ratio);

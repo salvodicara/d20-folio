@@ -303,6 +303,17 @@ for (const { slug, route, ceiling, readyAs, prepare } of SURFACE_CELLS) {
       const { total, maxDepth, deepest, byClass } = await census(page);
       const inventory = byClass.map(([k, n]) => `${k} ×${n}`).join("\n  ");
 
+      // THE FLOOR (golden rule 13). Both assertions below are CEILINGS over a
+      // derived set, so a census that found nothing — a route that 404s, a readiness
+      // signal that fires before paint, a probe that throws inside `page.evaluate` —
+      // scores zero and reads as the tidiest screen in the app.
+      expect(
+        total,
+        `The census found NO framed boxes on ${slug} [${theme}]. Every surface here ` +
+          `renders at least a panel and a control, so zero means the page did not ` +
+          `paint or the probe stopped reading it — not that the screen is clean.`
+      ).toBeGreaterThan(0);
+
       expect(
         maxDepth,
         `FRAMED NESTING went ${maxDepth} deep on ${slug} [${theme}]. A frame means ` +
