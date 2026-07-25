@@ -2724,6 +2724,14 @@ trigger each state).
 
 ### Self-enforcing gates (do not let them rot)
 
+**Every gate below obeys golden rule 13's derivation clause: a guard takes its subjects, grounds and
+cases from the artifact — the stylesheet, the DOM, the manifest, the data — and states, in the
+guard, what it cannot see.** Every real chrome defect this project has found was hidden behind a
+green guard that sampled a hand-picked case instead: contrast pinned on 2 of 3 grounds, a census on
+the one tab already swept, an on-art battery on one theme, an "unframed" check a 45%-opaque
+`color-mix(…, transparent)` could pass. When you extend a gate, extend what it DERIVES, not the list
+beside it.
+
 - **A11y surface gate:** `tests/e2e/a11y.spec.ts` iterates SURFACES × dark/light and fails on
   serious/critical axe violations (labels, roles, focus traps, nested-interactive) — that part of it
   works and the app is clean. **It does NOT cover contrast: on THIS app axe's `color-contrast` rule

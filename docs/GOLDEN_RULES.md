@@ -178,6 +178,24 @@ renumber it into the 1–4 sequence. -->
     existing unit's file; a new file only for a genuinely new unit. `pnpm lint --max-warnings 0`
     always passes — no `eslint-disable`, no `any`, no `!`. Detail: `docs/CONTRIBUTING.md` → "Smart
     test integration".
+
+    **A guard DERIVES its inputs from the artifact, and states what it CANNOT see.** Nearly every
+    real defect this project has found was hidden behind a GREEN guard, and always the same way:
+    the guard sampled a hand-picked case instead of deriving its inputs from the thing it guards.
+    Contrast pinned on 2 of the 3 grounds the ink actually paints on; a dome composited for 1 of 3
+    ink tiers; an axe fixture using the one monster whose prose fires no grammar; a census sampling
+    the one compendium tab that was already swept; a geometry sweep covering hover but not
+    disclosure; an on-art battery running only its light leg; an "unframed" check fooled by
+    `color-mix(…, transparent)`; a new probe asserting contrast where the defect was identity. Each
+    of those guards agreed with itself and shipped the bug. So: **a guard's subjects, grounds and
+    cases come from the STYLESHEET, the DOM, the manifest or the data** — never from a list
+    maintained beside it; where a hand-written list is genuinely unavoidable (an allowlist of
+    documented exemptions), it is small, each entry carries its reason, and the DERIVED set it
+    filters is asserted non-empty so a renamed token cannot silently empty the sweep. And **whoever
+    adds a guard writes, in the guard, what it cannot see** — the blind spot is part of the
+    artifact, and an unstated blind spot is read by the next person as coverage. Every guard is
+    proved by MUTATION: reintroduce the defect, watch it fail, revert. (owner, 2026-07-25)
+
 14. **Every check runs once, in its one lane.** pre-commit is FAST (~5 s: changeset doc-guard +
     lint-staged + fast unit lane); pre-push is the FULL authoritative gate (typecheck ∥ lint ∥
     coverage, then build); deploy runs the full Playwright e2e matrix (LOCAL-primary

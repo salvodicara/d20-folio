@@ -600,6 +600,18 @@ and the DM verbs are frameless cells (`.hub-cell`). Sessions' `border-bottom` di
 wall-to-wall line the reset had already banned everywhere else — is the hairline. **Census: the hub
 41 → 37 boxes (ceiling 46 → 42) and its running-encounter view 52 → 48 (57 → 53), nesting 3 → 2.**
 
+**And the class behind all of it is a golden rule now.** Rule 13 gains a derivation clause
+(`docs/GOLDEN_RULES.md`, amended rather than added — it is a facet of "the cheapest test that pins
+the fact", and the count stays at 27): **a guard DERIVES its inputs from the artifact and states
+what it CANNOT see.** Every real defect this project has found was hidden behind a green guard that
+sampled a hand-picked case instead — contrast on 2 of 3 grounds, a dome for 1 of 3 ink tiers, an axe
+fixture on the one monster whose prose fires no grammar, a census on the one tab already swept, a
+geometry sweep without disclosure, an on-art battery with one leg, an "unframed" check a 45%-opaque
+`color-mix(…, transparent)` passes, a probe asserting contrast where the defect was identity. The
+guards added in this phase all obey it: the plate list is read out of the stylesheet, the on-art
+ground out of a screenshot, the mark's anatomy out of its own path data — and each carries its blind
+spots in its own header. `DESIGN.md` §14 and `docs/CONTRIBUTING.md` point at the rule.
+
 **Three blind spots the review named, each closed and each mutation-proved.** (1) The L1 UNFRAMED
 check tested "does the border value MENTION `transparent`", so `color-mix(in oklab, var(--seal) 45%,
 transparent)` — a 45%-OPAQUE border — passed it; only the rendered census ever caught `.cmp-seal`.

@@ -139,6 +139,12 @@ the app project so the shared detectors typecheck identically in both.)
 The gate stays fast only if the tests are written at the right altitude. A standing policy (golden
 rule 13, `docs/GOLDEN_RULES.md`) — apply it to every new and touched test:
 
+- **A GUARD DERIVES ITS INPUTS, AND SAYS WHAT IT CANNOT SEE** (golden rule 13). A guard whose
+  subjects come from a list maintained beside it is a guard that agrees with itself: derive them
+  from the stylesheet, the DOM, the manifest or the data, assert the derived set is non-empty, keep
+  any unavoidable exemption list short and reasoned — and write the blind spot into the guard,
+  because an unstated one is read as coverage. Prove it by mutation before you commit it.
+
 - **Prefer a pure-function unit test over a full-tree render mount for an ENGINE fact.** A sort order,
   a predicate, a cap, a FIFO rule, a computed value — assert it against the function that PRODUCES it
   (`sortActions`, `togglePick`, `eligibleNewClasses`, …), not by mounting a page and reading the DOM.
