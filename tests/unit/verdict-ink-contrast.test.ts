@@ -88,6 +88,61 @@ const INK_TOKENS = [
 
 const AA = 4.5;
 
+const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8");
+
+/** Raw value of a `--name: …;` decl in `block` (or undefined). Unlike `readVar`,
+ *  it returns the RAW rhs (a hex OR a `var(--other)` alias), not just a hex. */
+function rawVar(block: string, name: string): string | undefined {
+  const m = block.match(new RegExp(`${name}\\s*:\\s*([^;]+);`));
+  return m?.[1]?.trim();
+}
+
+/** Resolve a CSS color value to a concrete hex, chasing `var()` aliases through
+ *  the theme block first, then the `:root` palette. Depth-capped. */
+function resolveColor(value: string, block: string, depth = 0): string {
+  const v = value.trim();
+  if (v.startsWith("#")) return v;
+  const m = v.match(/var\(\s*(--[\w-]+)\s*\)/);
+  if (m?.[1] && depth < 8) {
+    const alias = rawVar(block, m[1]) ?? rawVar(css, m[1]);
+    if (alias) return resolveColor(alias, block, depth + 1);
+  }
+  throw new Error(`cannot resolve color: ${value}`);
+}
+
+/** The first-occurrence base rule body for `selector` (flat — no nested braces). */
+function ruleBody(cssText: string, selector: string): string {
+  const start = cssText.indexOf(`${selector} {`);
+  expect(start, `${selector} rule present`).toBeGreaterThan(-1);
+  const open = cssText.indexOf("{", start);
+  const close = cssText.indexOf("}", open);
+  return cssText.slice(open + 1, close);
+}
+
+/** A declaration's value (`prop: value;`) from a rule body. */
+function decl(body: string, prop: string): string {
+  const m = body.match(new RegExp(`(?:^|\\n)\\s*${prop}\\s*:\\s*([^;]+);`));
+  if (!m?.[1]) throw new Error(`no ${prop} declaration`);
+  return m[1].trim();
+}
+
+/** The carved `.beast-ref`/`.mon-ref` statblock plaque's ground, resolved per
+ *  theme out of folio.css — a FULL step below the cards, and the deepest ground
+ *  any rules-prose ink paints on. Derived rather than named so the guard cannot
+ *  certify a surface the app does not paint.
+ *
+ *  `ruleBody` takes the FIRST match, so this also pins that `.beast-ref` has
+ *  exactly ONE base rule: a later `[data-theme="light"] .beast-ref { background }`
+ *  would otherwise leave every assertion below certifying a ground the browser
+ *  no longer paints, silently. */
+function plaqueGround(block: string): string {
+  expect(
+    folioCss.split(".beast-ref {").length - 1,
+    "exactly one `.beast-ref {` rule — a later override would shadow the derived ground"
+  ).toBe(1);
+  return resolveColor(decl(ruleBody(folioCss, ".beast-ref"), "background"), block);
+}
+
 /** Mix two hexes in sRGB at `pct`% of `a` over `b` (matches CSS color-mix close
  *  enough for a luminance guard — the chip tint is `mix(--co pct%, surface)`). */
 function mix(a: string, b: string, pct: number): string {
@@ -123,26 +178,27 @@ const SPELL_LEVELS = ["c", "1", "2", "3", "4", "5", "6", "7", "8", "9"] as const
 describe("verdict-chip ink tokens clear WCAG-AA", () => {
   for (const theme of ["dark", "light"] as const) {
     const block = themeBlock(theme);
-    // The verdict chip renders on the card surface (surface-1 collapsed,
-    // surface-2 when open). The 13% colour tint barely shifts luminance, so we
-    // verify against BOTH base surfaces — the worst case for each theme.
-    const surfaces = [readVar(block, "--bg-surface-1"), readVar(block, "--bg-surface-2")];
+    // Every ground the ramp actually paints: the card surfaces (surface-1
+    // collapsed, surface-2 when open — the 13% colour tint barely shifts
+    // luminance, so the bases are the worst case) PLUS the carved
+    // `.beast-ref`/`.mon-ref` statblock plaque, which carries `.mon-dmg` runs and
+    // `.rt-dmg` prose and sits a full step below the cards. The plaque is the
+    // blindness that shipped light poison-ink at 3.378:1 on `--bg-recessed`.
+    // `--bg-surface-3` is deliberately NOT here: no rules-prose container paints
+    // it (the `.tooltip` / `.lvl-pick` / `.abil-tile` users carry no ink ramp),
+    // and asserting a ground the app never renders is the same defect in the
+    // mirror. If one ever does, the pair to re-measure first is dark
+    // `--semantic-danger` on `#2a2317` (4.386:1).
+    const surfaces = [
+      readVar(block, "--bg-surface-1"),
+      readVar(block, "--bg-surface-2"),
+      plaqueGround(block),
+    ];
 
     for (const name of INK_TOKENS) {
-      it(`${theme}: --dmg-${name}-ink ≥ ${AA}:1 on EVERY ground it inks`, () => {
+      it(`${theme}: --dmg-${name}-ink ≥ ${AA}:1 on the cards + the carved plaque`, () => {
         const ink = readVar(block, `--dmg-${name}-ink`);
-        // The card surfaces are NOT the whole story: the ramp also inks the
-        // carved `.beast-ref`/`.mon-ref` statblock plaque (`.mon-dmg` runs +
-        // `.rt-dmg` prose in the monster traits), whose ground is a FULL step
-        // below the cards. Read that ground out of folio.css rather than naming
-        // a token here, so the guard can never certify a surface the app does
-        // not paint — the exact blindness that shipped light poison-ink at
-        // 3.378:1 on `--bg-recessed` (axe: compendium-monster-entry [light]).
-        const plaque = resolveColor(
-          decl(ruleBody(folioCss, ".beast-ref"), "background"),
-          block
-        );
-        for (const surface of [...surfaces, plaque]) {
+        for (const surface of surfaces) {
           expect(
             contrast(ink, surface),
             `${name}-ink on ${surface}`
@@ -248,23 +304,21 @@ describe("condition-chip ink tokens clear WCAG-AA on the 19% tint", () => {
 describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
   for (const theme of ["dark", "light"] as const) {
     const block = themeBlock(theme);
-    const surfaces = [readVar(block, "--bg-surface-1"), readVar(block, "--bg-surface-2")];
+    // The same three grounds the damage ramp is pinned on above, for the same
+    // reason: `.rt-cond` is inline PROSE, so "…the Frightened condition" in a
+    // monster trait lands on the carved plaque (the blindness that shipped light
+    // deafened-ink at 3.685:1). The `.co-chip` tint is guarded in its own
+    // describe — it mixes from surface-2, so it is ground-independent.
+    const surfaces = [
+      readVar(block, "--bg-surface-1"),
+      readVar(block, "--bg-surface-2"),
+      plaqueGround(block),
+    ];
 
     for (const cond of CONDITIONS) {
-      it(`${theme}: --cond-${cond}-ink ≥ ${AA}:1 on EVERY ground it inks`, () => {
+      it(`${theme}: --cond-${cond}-ink ≥ ${AA}:1 on the cards + the carved plaque`, () => {
         const ink = readVar(block, `--cond-${cond}-ink`);
-        // Same every-ground obligation as the damage ramp above: `.rt-cond` is
-        // inline PROSE, so it also lands on the carved `.beast-ref`/`.mon-ref`
-        // statblock plaque (a monster trait reads "…the Frightened condition"),
-        // a full step below the cards. Read that ground out of folio.css rather
-        // than naming a token — the blindness that shipped light deafened-ink at
-        // 3.685:1 on `--bg-recessed`. The `.co-chip` tint is guarded separately
-        // above (it mixes from surface-2, so it is ground-independent).
-        const plaque = resolveColor(
-          decl(ruleBody(folioCss, ".beast-ref"), "background"),
-          block
-        );
-        for (const surface of [...surfaces, plaque]) {
+        for (const surface of surfaces) {
           expect(
             contrast(ink, surface),
             `${cond}-ink on ${surface}`
@@ -273,25 +327,19 @@ describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
       });
     }
 
-    it(`${theme}: Advantage/Disadvantage prose inks ≥ ${AA}:1 on EVERY ground they ink`, () => {
-      // Same every-ground obligation, same derived plaque. `.rt-adv` rides
-      // `--rt-adv-ink` — the success stop's PROSE-deep variant — because the raw
-      // stop (light `--verdigris-700`) measures 4.156:1 here and is shared with
-      // the HP-bar gradient math, badges, borders and `--at-action`: the
-      // Ink-Variant Rule's answer to a shared graphic stop is a prose variant,
-      // not a palette retune. `.rt-dis` still inks `--semantic-danger` directly —
-      // it clears on every prose ground (4.729:1 on the plaque), so it needs no
-      // variant. Tokens are pinned HERE; that the two classes still REFERENCE
-      // them is proved in the browser by `tests/e2e/statblock-ink-contrast.spec.ts`.
-      const plaque = resolveColor(
-        decl(ruleBody(folioCss, ".beast-ref"), "background"),
-        block
-      );
-      // Both aliases chase through the ramp (`--rt-adv-ink` → `--semantic-success`
-      // → `--verdigris-300` in dark), so resolve rather than read a literal.
+    it(`${theme}: Advantage/Disadvantage inks ≥ ${AA}:1 on the cards + the carved plaque`, () => {
+      // `.rt-adv` rides `--rt-adv-ink`, the success stop's PROSE-deep variant
+      // (the raw stop is shared with the HP-bar gradient math, badges, borders
+      // and `--at-action`, so it is varied, not retuned — DESIGN.md → the
+      // Ink-Variant Rule). `.rt-dis` inks `--semantic-danger` directly; it clears
+      // everywhere, so it needs no variant. Tokens are pinned HERE; that the two
+      // CLASSES still reference them is proved in the browser by
+      // `tests/e2e/statblock-ink-contrast.spec.ts`. Both chase through the ramp
+      // (`--rt-adv-ink` → `--semantic-success` → `--verdigris-300` in dark), so
+      // resolve rather than read a literal.
       for (const name of ["--rt-adv-ink", "--semantic-danger"] as const) {
         const ink = resolveColor(rawVar(block, name) ?? name, block);
-        for (const surface of [...surfaces, plaque]) {
+        for (const surface of surfaces) {
           expect(contrast(ink, surface), `${name} on ${surface}`).toBeGreaterThanOrEqual(
             AA
           );
@@ -555,45 +603,8 @@ describe("spell-level seal digit ink clears WCAG-AA on the seal body", () => {
 // `background` tokens it references against EACH theme block, and asserts the
 // text clears AA on the chip's darkest stop in BOTH themes. Reverting the ink to
 // `var(--text-secondary)` (or darkening the socket) re-fails this test — the
-// regression the original static guard was blind to.
-const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8");
-
-/** Raw value of a `--name: …;` decl in `block` (or undefined). Unlike `readVar`,
- *  it returns the RAW rhs (a hex OR a `var(--other)` alias), not just a hex. */
-function rawVar(block: string, name: string): string | undefined {
-  const m = block.match(new RegExp(`${name}\\s*:\\s*([^;]+);`));
-  return m?.[1]?.trim();
-}
-
-/** Resolve a CSS color value to a concrete hex, chasing `var()` aliases through
- *  the theme block first, then the `:root` palette. Depth-capped. */
-function resolveColor(value: string, block: string, depth = 0): string {
-  const v = value.trim();
-  if (v.startsWith("#")) return v;
-  const m = v.match(/var\(\s*(--[\w-]+)\s*\)/);
-  if (m?.[1] && depth < 8) {
-    const alias = rawVar(block, m[1]) ?? rawVar(css, m[1]);
-    if (alias) return resolveColor(alias, block, depth + 1);
-  }
-  throw new Error(`cannot resolve color: ${value}`);
-}
-
-/** The first-occurrence base rule body for `selector` (flat — no nested braces). */
-function ruleBody(cssText: string, selector: string): string {
-  const start = cssText.indexOf(`${selector} {`);
-  expect(start, `${selector} rule present`).toBeGreaterThan(-1);
-  const open = cssText.indexOf("{", start);
-  const close = cssText.indexOf("}", open);
-  return cssText.slice(open + 1, close);
-}
-
-/** A declaration's value (`prop: value;`) from a rule body. */
-function decl(body: string, prop: string): string {
-  const m = body.match(new RegExp(`(?:^|\\n)\\s*${prop}\\s*:\\s*([^;]+);`));
-  if (!m?.[1]) throw new Error(`no ${prop} declaration`);
-  return m[1].trim();
-}
-
+// regression the original static guard was blind to. (The CSS-reading helpers it
+// uses live at the top of the file, beside the colour math.)
 describe("combat top-bar dest-chip ink clears WCAG-AA on the carved socket", () => {
   const chip = ruleBody(folioCss, ".cp-dest-chip");
   const colorValue = decl(chip, "color");

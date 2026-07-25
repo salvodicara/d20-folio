@@ -1156,19 +1156,21 @@
   --dmg-slashing: #aa5a5a;
   --dmg-thunder: #506480;
 
-  /* § 11b Damage-type INK (light) — AA-safe ON-TEXT on EVERY ground the ramp
-     inks, not just the cream card: the deepest is the carved `.beast-ref` /
-     `.mon-ref` statblock plaque, which paints `--bg-recessed` (#cdbb8e) and
-     carries both `.mon-dmg` and `.rt-dmg` runs. Eleven of the thirteen pigments
-     failed AA there (poison 3.38:1 — the axe failure on the compendium monster
-     entry); each is darkened MINIMALLY in OKLCH at its own hue + chroma until it
-     clears the floor on the plaque, so the family keeps its identities. The one
-     exception is radiant: light cannot separate it from lightning by lightness
-     (the plaque's AA floor caps both at the same L), so it mirrors the DARK
-     theme's grammar and separates by CHROMA instead — radiant is the quieter
-     gold beside lightning's saturated yellow, at the same ~0.53 chroma ratio
-     dark uses. necrotic + thunder already cleared and are kept verbatim.
-     Guarded per-ground in `tests/unit/verdict-ink-contrast.test.ts`. */
+  /* § 11b Damage-type INK (light) — the AA-safe ON-TEXT variants. Every value
+     clears 4.5:1 on the DEEPEST ground the ramp paints (the carved
+     `.beast-ref`/`.mon-ref` plaque, `--bg-recessed` #cdbb8e), not just the cream
+     card; eleven of the thirteen were darkened MINIMALLY in OKLCH at their own
+     hue + chroma to get there, necrotic + thunder already cleared.
+     RADIANT is the exception and the trade is real: the floor caps it and
+     lightning at the SAME lightness on their shared ~92° hue, and light cannot
+     mirror dark's "radiant is the paler gold" by going lighter — so radiant goes
+     DEEPER (L 0.461 → 0.368) at near its own chroma (0.088 → 0.075). It is now
+     the darkest ink in the ramp, and it stays gold with lightning the brighter
+     yellow above it. (An earlier pass halved radiant's chroma at its own
+     lightness instead; that read as un-inked body text on the plaque and closed
+     to 0.025 ΔE of bludgeoning.) Full rationale: DESIGN.md → the Ink-Variant
+     Rule. Guards: `tests/unit/verdict-ink-contrast.test.ts` (token pairs) +
+     `tests/e2e/statblock-ink-contrast.spec.ts` (composited, real Chromium). */
   --dmg-acid-ink: #2a5500;
   --dmg-bludgeoning-ink: #614528;
   --dmg-cold-ink: #0e5072;
@@ -1179,7 +1181,7 @@
   --dmg-piercing-ink: #464b53;
   --dmg-poison-ink: #385300;
   --dmg-psychic-ink: #773163;
-  --dmg-radiant-ink: #544a2f;
+  --dmg-radiant-ink: #4c3e00;
   --dmg-slashing-ink: #773839;
   --dmg-thunder-ink: #384858;
 
@@ -1196,24 +1198,21 @@
 
      RE-TUNED (a11y): the ink is NOT only a chip label — `.rt-cond` sets condition
      names as INLINE PROSE, so it also paints the carved `.beast-ref`/`.mon-ref`
-     statblock plaque (`--bg-recessed`, #cdbb8e), a full step below the cards. Six
-     inks failed AA there (deafened 3.685:1, blinded 3.756, exhaustion 4.009,
-     prone 4.081, stunned 4.120, charmed 4.453) — the same blindness the
-     `--dmg-*-ink` ramp had. Each is darkened MINIMALLY in OKLCH at its own hue
-     (drift ≤1°) until it clears the floor on the plaque. Two of them cannot
-     separate from a neighbour by lightness once the floor caps them, so they
-     separate by CHROMA the way the dark ramp already does: blinded rises to the
-     bluer slate beside invisible's grey-blue, and stunned drops to the quieter
-     yellow beside paralyzed's saturated gold (dark: stunned C 0.114 < paralyzed
-     0.126 — mirrored). Family worst-pair separation is unchanged (0.0133 ΔE,
-     petrified↔restrained, both untouched); every moved pair sits at ≥0.018.
-     Guarded per-ground in `tests/unit/verdict-ink-contrast.test.ts`. */
+     plaque (`--bg-recessed`), a full step below the cards, where six inks failed
+     AA. Each moved one is darkened minimally in OKLCH at its own hue; blinded and
+     stunned separate from invisible / paralyzed by CHROMA (mirroring dark) where
+     the floor caps them at one lightness, and deafened does the same beside
+     invisible — darkening by lightness alone had left it 0.020 ΔE away, the only
+     re-tuned ink that came out closer to a neighbour than it went in.
+     Full rationale: DESIGN.md → the Ink-Variant Rule. Guards:
+     `tests/unit/verdict-ink-contrast.test.ts` (token pairs) +
+     `tests/e2e/statblock-ink-contrast.spec.ts` (composited, real Chromium). */
   --cond-blinded: #6e8492;
   --cond-blinded-ink: #344f65;
   --cond-charmed: #c04578;
   --cond-charmed-ink: #872657;
   --cond-deafened: #7e7e8e;
-  --cond-deafened-ink: #4b4b5a;
+  --cond-deafened-ink: #4a4965;
   --cond-exhaustion: #c06820;
   --cond-exhaustion-ink: #72400c;
   --cond-frightened: #7a52b0;

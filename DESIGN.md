@@ -279,15 +279,34 @@ does. The canonical counter-example: the `--dmg-*-ink` ramp was guarded only aga
 measured 3.378:1 on `compendium-monster-entry [light]`; axe did NOT flag it — see the browser-probe
 paragraph below). The guard now reads the plaque's
 ground straight out of `folio.css` (`tests/unit/verdict-ink-contrast.test.ts`) so the surface list
-follows the stylesheet instead of a comment. When an AA floor forces a whole family darker, keep the
-family SEPARABLE: darken minimally in OKLCH at each token's own hue + chroma, and where the floor
-caps two members at the same lightness, separate them by chroma the way the other theme does
-(light's radiant vs lightning mirror dark's ~0.53 chroma ratio at a shared hue). The obligation is
-per-FAMILY, so it was re-run on `--cond-*-ink`: six light inks failed on the same plaque (deafened
-3.685:1, blinded 3.756, exhaustion 4.009, prone 4.081, stunned 4.120, charmed 4.453) — `.rt-cond`
-sets condition names as inline prose inside a monster's traits — and are fixed by the same recipe,
-with blinded and stunned separating from invisible / paralyzed by CHROMA (mirroring dark) and the
-family's worst-pair separation held at 0.0133 ΔE.
+follows the stylesheet instead of a comment. The guard is also pinned to `.beast-ref` having exactly
+ONE base rule, so a later `[data-theme="light"] .beast-ref { background }` cannot silently leave it
+certifying a ground the browser no longer paints. `--bg-surface-3` is deliberately excluded: no
+rules-prose container paints it today, and asserting a ground the app never renders is the same
+defect in the mirror (if one ever appears, re-measure dark `--semantic-danger` on `#2a2317` first —
+4.386:1).
+
+When an AA floor forces a whole family darker, keep the family SEPARABLE — and measure separation
+against the WHOLE prose vocabulary, not just the token's own ramp: damage inks, condition inks,
+`--text-special` and the adv/dis pair all share one paragraph on the plaque. Darken minimally in
+OKLCH at each token's own hue + chroma; where the floor caps two members at the same lightness,
+separate them by chroma the way the other theme does (light's blinded/stunned mirror dark's
+chroma order beside invisible/paralyzed). **Chroma is not a free axis** — halve it and the ink stops
+reading as inked at all. Light radiant is the case that proves it: it and lightning are capped at the
+same lightness on their shared ~92° hue, a first pass separated them by halving radiant's chroma
+(0.088 → 0.043), and at 13px on the plaque that read as plain bold body text while closing to 0.025
+ΔE of bludgeoning. It now goes DEEPER instead (L 0.461 → 0.368, chroma held at 0.075): still gold,
+lightning still the brighter yellow above it, and its nearest neighbour anywhere in the prose
+vocabulary moves 0.019 → 0.041 ΔE. Light cannot mirror dark's "radiant is the PALER gold" by going
+lighter — on parchment the only direction an ink has is down.
+
+The obligation is per-FAMILY, so it was re-run on `--cond-*-ink`: six light inks failed on the same
+plaque (deafened 3.685:1, blinded 3.756, exhaustion 4.009, prone 4.081, stunned 4.120, charmed 4.453)
+— `.rt-cond` sets condition names as inline prose inside a monster's traits — and are fixed by the
+same recipe; the family's worst-pair separation holds at 0.0133 ΔE (petrified↔restrained, both
+untouched). Deafened is the same lesson at the other end: darkened by LIGHTNESS alone it cleared the
+floor but drifted to 0.020 ΔE of the untouched invisible, so it takes the chroma step its two
+siblings took (0.025 → 0.046 at its own 285° hue) and sits at 0.030.
 
 **A shared graphic stop gets a PROSE VARIANT, never a palette retune.** The last ink on that ground
 was light `--semantic-success` (`.rt-adv`, "Advantage") at 4.156:1. It is not a prose-only `-ink`
