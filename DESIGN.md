@@ -557,8 +557,11 @@ one is never a local decision.
 inside a container is separated by **whitespace and typography** — type scale, alignment columns,
 and the accent as the one colour role. Maximum framed nesting: **2** (container → plaque).
 
-**L2 · An ornament REPLACES the line.** It is never drawn over it, beside it, or near it. Wherever
-a mark appears the rule terminates, the mark occupies the interval, and the rule resumes.
+**L2 · An ornament is the line's OWN LOCAL FORM — never a second rail beside it.** For the length
+of the mark the rule wears a different shape; it is never drawn over, beside or near a rail that is
+also painted there. The corner terminal contributes no run line at all (the host's border is the
+only line at that corner); the cartouche's leaves weave over and under a rail that passes through
+unbroken. Two lines one pixel apart, at different lengths and weights, is the defect this law names.
 
 **L3 · State changes light and colour only. Geometry is frozen.** No state may change a radius, a
 border width, a size or a position.
@@ -593,8 +596,14 @@ The consequences, stated plainly, because each is a place a border wants to come
 - **A list row is frameless at rest.** Hover is a wash. Selected is a horizontal **wash band**
   about twice the ground, bounded above and below by the one hairline, with the label lit in the
   special register. No ring, no lift, no drop.
-- **A gem is a shape, not a frame.** A seal, a coin, a socket, a portrait well: the fill boundary is
-  the edge, and one specular pool at (35%, 28%) is what makes it read struck. No border, no lip.
+- **A gem is a shape, not a frame.** A seal, a socket, a coin, a portrait well: the fill boundary is
+  the edge, and one specular pool at (35%, 28%) is what makes it read struck. **No lip, ever** — an
+  inner cream highlight is the banned idiom in every register, gem or plate. **No border either,
+  wherever the gem's own fill IS the object**: every seal (`.lvl-seal`, `.uc-seal`, `.cmp-seal`,
+  `.cmp-frontis-seal`) is edgeless. The two exceptions are the two cases where what sits inside the
+  shape is NOT the gem's fill, and both keep exactly one setting edge: the **portrait well**, which
+  clips a photograph (`.ch-portrait`), and the **champlevé economy coin** (`.econ-disc`), whose
+  reeded milled rim is the owner-picked strike itself (2026-07-03) rather than chrome around it.
 - **A separator is the one hairline**, painted and inset — never a `border-top`, which is a hard,
   wall-to-wall, unfading line and reads as the underside of a frame. Markup that needs a divider on
   an element it does not otherwise style takes `.rule-above` / `.rule-below`.
@@ -654,7 +663,8 @@ The reference has no square-cornered panel and no third radius: its panels, plaq
 sit at ~10–12px, **including the ornamented ones** — an ornamented corner is rounded too, with the
 mark radiating inside the curve. This reverses the square-corner ruling (`border-radius: 0` on the
 masthead, the identity band and dialogs) that was made to give a corner knot a "true crossing" to
-seat on: the one-line law that ruling served is **kept and strengthened** as L2 (§5), but the
+seat on: the one-line law that ruling served is **kept and restated** as L2 (§5) — an ornament is
+the line's own local form, so a mark needs no vertex to "cross" — but the
 squareness it justified has no support in the reference, and a mark's registration is solved by
 sitting _inside_ the radius rather than by flattening the corner.
 
@@ -1705,12 +1715,13 @@ that earns it.
 Ornament is **earned by information, never spent on decoration**. The whole grammar is three
 rules, and the budget is **one mark-bearing surface per screen**.
 
-**L2 · An ornament REPLACES the line.** It is never drawn over it, beside it, or near it.
-Wherever a mark appears the rule terminates, the mark occupies the interval, and the rule
-resumes. There is no surface anywhere in the reference where a rule and an ornament are painted
-on top of each other; a head that drew both — a full-width border-image rule under a 260px
-winged fleur that carried its own 260px rail, one pixel apart, at different lengths and weights —
-is what the owner saw and named.
+**L2 · An ornament is the line's OWN LOCAL FORM — never a second rail beside it.** For the
+length of the mark the rule wears a different shape: the corner terminal radiates inward from the
+corner arc and contributes no run line at all, and the cartouche's leaves weave over and under a
+rail that passes through unbroken. There is no surface anywhere in the reference where a rule and
+an ornament are painted on top of each other; a head that drew both — a full-width border-image
+rule under a 260px winged fleur that carried its own 260px rail, one pixel apart, at different
+lengths and weights — is what the owner saw and named.
 
 **The budget: AT MOST ONE ornamented surface per screen, and it is the screen's IDENTITY plate.**
 It goes on the framed realm masthead (`.page-head.framed::before`); on the cockpit, where no

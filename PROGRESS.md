@@ -555,7 +555,8 @@ phase plan are recorded in `DESIGN.md` (§4 "The plate material", §5 "The ornam
 
 1. **A frame means _container_ or _interactive_. Nothing else is framed.** Static information
    inside a container is separated by whitespace and typography. Maximum framed nesting: 2.
-2. **An ornament REPLACES the line.** It is never drawn over it, beside it, or near it.
+2. **An ornament is the line's own LOCAL FORM** — never a second rail beside it, never drawn over
+   or near one.
 3. **State changes light and colour only. Geometry is frozen.**
 
 **All nine phases have landed.** The chrome is one system: six primitives, two tiers, two radii,
@@ -569,7 +570,7 @@ build modes):
 | 2     | The material primitives — PLATE (one specular dome) · EDGE (**moat → metal → groove → body**; there is no cream lip) · HAIRLINE · INK, replacing `--elev-*` on every plate. **8 tokens**, the closed set pinned by `chrome-system.guard.test.ts`                                                                                                                                                                                                                                                               | **DONE** |
 | 3     | Radius + geometry unification — 6 radii → 2 (10px plates, 0 chips); the square-corner ruling reversed (the reference's corners are rounded ~10–12px ALWAYS, including the ornamented ones)                                                                                                                                                                                                                                                                                                                     | **DONE** |
 | 4     | **UNFRAMING** (L1) — every read-only facet, list row and grouping rail gives its frame up; **nesting 3 → 2 on every surface**                                                                                                                                                                                                                                                                                                                                                                                  | **DONE** |
-| 5     | The state grammar (L3) — **one ladder in tokens** (`index.css` §04b), consumed by cards, tiles, rows, tabs, chips, option cells, wizard entries and every button register; every geometry-changing state deleted                                                                                                                                                                                                                                                                                               | **DONE** |
+| 5     | The state grammar (L3) — **one ladder in tokens** (`index.css` §04b), consumed by cards, tiles, rows, tabs, chips, option cells, wizard entries and every button register; every geometry-changing pointer/focus/selection state deleted (a disclosure still resizes the content it reveals)                                                                                                                                                                                                                   | **DONE** |
 | 6     | **The MARK** — the corner terminal (a glint fan of seven hair-thin tapering rays, anchored ON the corner arc and radiating inward, contributing no run line) + the run cartouche (pointed leaves weaving over and under the rail, converging on a descending chevron at the exact midpoint), mounted on exactly ONE surface per route — the screen's identity plate. Dimensional metal, gold in BOTH themes, mirrored geometry toned in screen space, fixed-size SVG background layers on a decor-only overlay | **DONE** |
 | 7     | Light sibling re-derived against the finished dark system + the guard suite extended to pin phases 4–6 (eleven mutation proofs) + the budget measured                                                                                                                                                                                                                                                                                                                                                          | **DONE** |
 | 8     | **CONVERGENCE REVIEW** — the four defects the independent review found, and the guard-coverage class behind two of them (a guard that samples only where the work was done)                                                                                                                                                                                                                                                                                                                                    | **DONE** |
@@ -638,7 +639,7 @@ rest · a theme strike re-framing the held boon · the mark spreading to a dialo
 returning as the mechanism · the light veil copied from dark · (e2e) a read-only chip family
 re-framing, caught by the budget · (e2e) nesting going three deep again, caught by the nesting law.
 
-**Budget.** CSS 74,086 → 74,766 B gzipped (+680 B, +0.9%) for the three phases together: phase 4's
+**Budget.** CSS 74,086 → 74,766 B gzipped (+680 B, +0.9%) for phases 4–7 together: phase 4's
 unframing releases −777 B, and the MARK spends ~1.45 KB gz (4.6 KB of raw SVG per theme, against the
 10.6 KB the deleted corner knot carried). Precache is unchanged in kind — no new binary asset ships;
 the mark is inline data-URI SVG. `bundle-budget` passes with no ceiling raise.
@@ -694,13 +695,18 @@ families now consume them instead of each inventing its own hover: the roster ca
 tile, the rest cards, every `.btn` register, the filter chips, the codex tabs, the cockpit tab
 strip, the wizard option cells and the wizard entries. The wash is ONE translucent veil composited
 over the plate's own face, which is what lets fifty controls share a grammar rather than fifty
-gradients. **Every geometry-changing state is gone:** the open action row's spine brightens instead
-of thickening 3px → 4px, the quiet edit hot-spot reveals its frame entirely in `box-shadow` (no
-layout size, so no glyph moves — the technique the flowing text variant already used), two
-`:focus-visible` strikes gave their `border-radius` back to the element, and the dying HP readout
-stopped re-gapping its own value line. A sweep in `chrome-system.guard.test.ts` now fails ANY state
-rule that declares a geometry property, with two documented exemptions (a `::before`/`::after` mark
-appearing inside a checked control, and the flowing edit field restating its zero footprint).
+gradients. **Every geometry-changing POINTER, FOCUS and SELECTION state is gone:** the open action
+row's spine brightens instead of thickening 3px → 4px, the quiet edit hot-spot reveals its frame
+entirely in `box-shadow` (no layout size, so no glyph moves — the technique the flowing text variant
+already used), two `:focus-visible` strikes gave their `border-radius` back to the element, and the
+dying HP readout stopped re-gapping its own value line. **DISCLOSURE states are the stated
+exception** and still resize — not the disclosure's frame, which the sweep holds frozen, but the
+content it REVEALS: the compendium search unfurling from a lens into a field, the wizard entry's
+open row becoming the hero altar, the session entry's body, the action row's detail panel. A sweep
+in `chrome-system.guard.test.ts` fails ANY state rule that declares a geometry property — pointer,
+focus, selection AND disclosure — with two documented exemptions (a `::before`/`::after` mark
+appearing inside a checked control, and the flowing edit field restating its zero footprint) plus
+those four disclosure BODIES, each named with its reason.
 
 **Phase 4 unframed the app.** A frame now means "the container the user is acting in" or
 "interactive", and nothing else is framed — every read-only facet (chips, tags, verdicts, seals, die

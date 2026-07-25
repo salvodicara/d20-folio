@@ -15,11 +15,14 @@ const index = indexCss.replace(/\/\*[\s\S]*?\*\//g, "");
  * and the vocabulary is deliberately tiny. This guard pins the load-bearing
  * facts so a later wave cannot quietly grow a second one back:
  *
- *   L2 · AN ORNAMENT REPLACES THE LINE. It is never drawn over it, beside it,
- *        or near it. Wherever a mark appears, the rule terminates, the mark
- *        occupies the interval, the rule resumes. The reference has no surface
- *        anywhere where a rule and an ornament are painted on top of each
- *        other — and a head that drew both was the one defect the owner named.
+ *   L2 · AN ORNAMENT IS THE LINE'S OWN LOCAL FORM — never a second rail beside
+ *        it. For the length of the mark the rule wears a different shape: the
+ *        corner terminal contributes no run line at all, and the cartouche's
+ *        leaves weave over and under a rail that passes through unbroken. The
+ *        reference has no surface anywhere where a rule and an ornament are
+ *        painted on top of each other — and a head that drew both (a full-width
+ *        rule under a fleur carrying its own rail, one pixel apart) was the one
+ *        defect the owner named.
  *
  *   ONE DIVIDER. `--hairline` is every separator in the application: modal
  *        heads, card feet, section rubrics, list groups, the compendium entry

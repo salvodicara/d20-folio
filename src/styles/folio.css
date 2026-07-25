@@ -8030,10 +8030,13 @@ button.create-need:focus-visible .create-need-chev {
       transparent 70%
     ),
     var(--portrait-well);
+  /* ONE setting edge, and no lip. The well CLIPS art (`.ch-portrait img`), so it
+     keeps a frame — what is inside it is a photograph, not the gem's own fill,
+     and the reference frames a painted portrait exactly this way. What comes off
+     is the DOUBLING: a second `0 0 0 1px` ring outside the border, and the cream
+     `inset 0 1px 0` highlight, which is the one idiom the material bans outright
+     (DESIGN.md §4 — inside a frame is darkness; the dome does the brightening). */
   border: 1px solid var(--accent-primary-deep);
-  box-shadow:
-    0 0 0 1px var(--border-soft),
-    inset 0 1px 0 rgba(245, 230, 180, 0.12);
 }
 /* Per-class roster placeholder tints (folio_design home.html) — the class's
    domain pigment over the neutral well. CharacterCard sets data-class. */
@@ -9711,29 +9714,30 @@ button.create-need:focus-visible .create-need-chev {
   margin-bottom: var(--sp-2);
   border-radius: var(--r-plate);
   color: var(--accent-text);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, transparent);
+  /* A GEM IS A SHAPE, NOT A FRAME (DESIGN.md §4) — the frontispiece mark is the
+     codex seal at masthead scale, so it wears the same law: the fill boundary is
+     the edge, the dome at (35%, 28%) is what makes it read struck, and the border
+     plus the two-line cream/shade lip it used to carry are gone. Only the outward
+     halo stays; that is the leaf's own candle, not an inner highlight. */
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--accent-glow) 22%, var(--bg-surface-2)),
     color-mix(in oklab, var(--accent-glow) 10%, var(--bg-surface-1)) 96%
   );
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.12),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.22),
-    0 0 18px color-mix(in oklab, var(--accent-glow) 22%, transparent);
+  box-shadow: 0 0 18px color-mix(in oklab, var(--accent-glow) 22%, transparent);
 }
 /* LIGHT ember — a saturated honey tile over its ember (grammar "Ember Penumbra"),
    the seal glyph struck in burnished gilt. Replaces the dark-adapted faint wash. */
 [data-theme="light"] .cmp-frontis-seal {
   color: var(--gold-leaf-700);
-  border-color: var(--ember-edge);
   background: radial-gradient(
     circle at 35% 28%,
     color-mix(in oklab, var(--gold-leaf-300) 58%, #fdf6df),
     color-mix(in oklab, var(--gold-leaf-300) 32%, #f6ead0) 96%
   );
+  /* Outward only — the ember's cast. The `inset 0 1px 1px` cream line that used
+     to sit here is the banned lip, and the honey tile's own dome does that job. */
   box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.65),
     0 3px 10px rgba(var(--ember-umber), 0.48),
     0 8px 22px rgba(var(--ember-umber), 0.28);
 }
@@ -10742,11 +10746,6 @@ button.create-need:focus-visible .create-need-chev {
   border-color: var(--state-metal-selected);
   color: var(--accent-text);
 }
-/* Light: the 14%-over-transparent active tint reads as a faint gray wash on the
-   cream field, so a selected facet (compendium filters, add-modal facets) barely
-   stands out. Lift it to a solid gilt fill over the surface + a stronger gold edge
-   so the active chip reads as gilt-selected at a glance (light-theme craft rule). */
-
 .fchip[aria-pressed="true"] .fc-count {
   color: var(--accent-text);
 }
