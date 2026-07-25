@@ -167,7 +167,8 @@
     "encounterCustomTab": "Custom monster",
     "encounterStatblock": "Statblock",
     "encounterStatblockMissing": "This creature's statblock is not in your bestiary.",
-    "encounterAddedToast": "{{name}} ×{{count}} added to the encounter",
+    "encounterAddedToast_one": "{{name}} ×{{count}} added to the encounter",
+    "encounterAddedToast_other": "{{name}} ×{{count}} added to the encounter",
     "hpBand": {
       "healthy": "Healthy",
       "nearDeath": "Near Death"

@@ -167,7 +167,8 @@
     "encounterCustomTab": "Mostro personalizzato",
     "encounterStatblock": "Blocco statistiche",
     "encounterStatblockMissing": "Il blocco statistiche di questa creatura non è nel tuo bestiario.",
-    "encounterAddedToast": "{{name}} ×{{count}} aggiunto allo scontro",
+    "encounterAddedToast_one": "{{name}} ×{{count}} aggiunto allo scontro",
+    "encounterAddedToast_other": "{{name}} ×{{count}} aggiunti allo scontro",
     "hpBand": {
       "healthy": "In forze",
       "nearDeath": "In fin di vita"
