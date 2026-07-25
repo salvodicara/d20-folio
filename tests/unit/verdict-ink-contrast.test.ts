@@ -251,9 +251,20 @@ describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
     const surfaces = [readVar(block, "--bg-surface-1"), readVar(block, "--bg-surface-2")];
 
     for (const cond of CONDITIONS) {
-      it(`${theme}: --cond-${cond}-ink ≥ ${AA}:1 as prose ink`, () => {
+      it(`${theme}: --cond-${cond}-ink ≥ ${AA}:1 on EVERY ground it inks`, () => {
         const ink = readVar(block, `--cond-${cond}-ink`);
-        for (const surface of surfaces) {
+        // Same every-ground obligation as the damage ramp above: `.rt-cond` is
+        // inline PROSE, so it also lands on the carved `.beast-ref`/`.mon-ref`
+        // statblock plaque (a monster trait reads "…the Frightened condition"),
+        // a full step below the cards. Read that ground out of folio.css rather
+        // than naming a token — the blindness that shipped light deafened-ink at
+        // 3.685:1 on `--bg-recessed`. The `.co-chip` tint is guarded separately
+        // above (it mixes from surface-2, so it is ground-independent).
+        const plaque = resolveColor(
+          decl(ruleBody(folioCss, ".beast-ref"), "background"),
+          block
+        );
+        for (const surface of [...surfaces, plaque]) {
           expect(
             contrast(ink, surface),
             `${cond}-ink on ${surface}`
@@ -263,6 +274,14 @@ describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
     }
 
     it(`${theme}: semantic success/danger ≥ ${AA}:1 as prose ink`, () => {
+      // KNOWN GAP (deliberately not widened to the plaque here): `.rt-adv` lands
+      // on the statblock plaque too, and light `--semantic-success` measures
+      // 4.156:1 there. Unlike a `-ink` ramp this pair is NOT prose-only — it
+      // aliases the shared palette stop `--verdigris-700`, which also paints the
+      // HP bar's gradient math, badges, borders and `--at-action`. Closing it is
+      // a palette retune with a cross-surface blast radius, not a token nudge,
+      // so it is tracked in DESIGN.md's Ink-Variant Rule rather than fixed by
+      // stealth inside an ink commit.
       // Dark aliases the semantic pair to ramp stops (var(--verdigris-300) /
       // var(--vermilion-300)); resolve through the ramp when not a literal.
       for (const name of ["--semantic-success", "--semantic-danger"] as const) {

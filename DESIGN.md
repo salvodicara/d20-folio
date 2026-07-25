@@ -281,7 +281,16 @@ ground straight out of `folio.css` (`tests/unit/verdict-ink-contrast.test.ts`) s
 follows the stylesheet instead of a comment. When an AA floor forces a whole family darker, keep the
 family SEPARABLE: darken minimally in OKLCH at each token's own hue + chroma, and where the floor
 caps two members at the same lightness, separate them by chroma the way the other theme does
-(light's radiant vs lightning mirror dark's ~0.53 chroma ratio at a shared hue).
+(light's radiant vs lightning mirror dark's ~0.53 chroma ratio at a shared hue). The obligation is
+per-FAMILY, so it was re-run on `--cond-*-ink`: six light inks failed on the same plaque (deafened
+3.685:1, blinded 3.756, exhaustion 4.009, prone 4.081, stunned 4.120, charmed 4.453) — `.rt-cond`
+sets condition names as inline prose inside a monster's traits — and are fixed by the same recipe,
+with blinded and stunned separating from invisible / paralyzed by CHROMA (mirroring dark) and the
+family's worst-pair separation held at 0.0133 ΔE. **Open gap on that ground:** light
+`--semantic-success` (`.rt-adv`, "Advantage") measures 4.156:1 on the plaque. It is not a prose-only
+`-ink` token — it aliases the shared palette stop `--verdigris-700` (HP-bar gradient math, badges,
+borders, `--at-action`), so closing it is a palette retune with a cross-surface blast radius, not a
+token nudge; the prose guard therefore still pins that pair on the card surfaces only.
 
 **The Token-Only Rule.** Components reference token names only. Literal hex in component code is
 prohibited; the only source of truth for values is `src/index.css`.
