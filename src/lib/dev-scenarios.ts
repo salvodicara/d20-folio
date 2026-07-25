@@ -760,13 +760,10 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
   //  10" — its DECLARED ammo (`ammunitionId`), NOT the Sling's bullets: the two
   //  both print "; Bullet", so the pre-fix prose-parse fired the firearm off the
   //  sling stock. Visit `/characters/scn-ra-14-ammo`.
-  // PS-J — the attack-scope clause family, both public halves on one sheet. A
-  // Hunter 17 who picked Escape the Horde carries (a) Precise Hunter's Advantage
-  // against the Hunter's-Mark target and (b) Escape the Horde's Disadvantage on
-  // Opportunity Attacks AGAINST him. Both used to net onto EVERY attack card as a
-  // bare "Adv."/"Disadv."; now the longsword card reads "Adv. vs marked target"
-  // and the rail's Advantages section carries the Opportunity-Attack line.
-  // Visit `/characters/scn-psj-hunter-17`.
+  // PS-J — Precise Hunter's per-target Advantage, alone on the sheet (the
+  // Defensive Tactics bundle deliberately UNPICKED so nothing nets against it).
+  // The longsword card used to read a bare "Adv." on every swing from Ranger 17;
+  // it now reads "Adv. vs marked target". Visit `/characters/scn-psj-hunter-17`.
   "psj-hunter-17": {
     name: "Kessa, Hunter",
     raceId: "human",
@@ -776,9 +773,26 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     background: "outlander",
     abilityScores: { STR: 16, DEX: 18, CON: 14, INT: 10, WIS: 16, CHA: 10 },
     weapons: [{ srdId: "longsword", quantity: 1 }],
+    exercises:
+      "PS-J attack-scope clauses: Precise Hunter's per-target Advantage STATES its scope on the attack card ('Adv. vs marked target') instead of asserting a blanket verdict on every swing.",
+  },
+  // PS-J — Hunter Defensive Tactics → Escape the Horde, the INCOMING-attack half.
+  // The Disadvantage lands on Opportunity Attacks made AGAINST the Hunter, so the
+  // attack cards must be clean (they used to all read "Disadv." from level 7) and
+  // the fact lives as a framed line in the rail's Advantages section.
+  // Visit `/characters/scn-psj-hunter-7`.
+  "psj-hunter-7": {
+    name: "Kessa, Hunter",
+    raceId: "human",
+    classId: "ranger",
+    subclassId: "hunter",
+    level: 7,
+    background: "outlander",
+    abilityScores: { STR: 16, DEX: 18, CON: 14, INT: 10, WIS: 16, CHA: 10 },
+    weapons: [{ srdId: "longsword", quantity: 1 }],
     grantBundleChoices: { "ranger-hunter-defensive-tactics": "escape-the-horde" },
     exercises:
-      "PS-J attack-scope clauses: Precise Hunter's per-target Advantage STATES its scope on the attack card ('Adv. vs marked target') instead of glossing every swing, and Escape the Horde renders as an incoming-attack line in the rail's Advantages section instead of marking the Hunter's own attacks Disadvantaged.",
+      "PS-J incoming-attack direction: Escape the Horde renders as 'Opportunity Attacks against you have Disadvantage' in the rail's Advantages section, and the Hunter's own attack cards carry NO modifier.",
   },
   "ra-14-ammo": {
     name: "Aria, Fletcher",

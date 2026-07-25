@@ -386,6 +386,25 @@ sweeps + the RA-35 status-quo residual lock in `content-pack/`. Housekeeping: **
 verified the three tracking docs against the merged code; the forward frontier is now the DDB-parity
 bestiary epic, the react-router advisory triage, and parked backups/observability/legal.
 
+## Shipped — the attack-scope clause family (PS-J, 2026-07-25)
+
+The Play tab's attack cards used to net EVERY `rollType: "attack"` advantage/disadvantage clause a
+character carries into one blanket "Adv." / "Disadv." verdict, ignoring how far the clause actually
+reaches. Seven clauses were wrong under that rule and are now fixed, ledgered as **PS-J…PS-J7** in
+`docs/AUTOMATION_BACKLOG.md`: Hunter _Escape the Horde_ (an INCOMING-attack clause — Opportunity
+Attacks against you — that marked the Hunter's own swings Disadvantaged from level 7, now Blur's
+`incoming-attack-disadvantage` family), Paladin _Vow of Enmity_ (a permanent false Advantage from
+Oath of Vengeance level 3 — now the 1-minute Channel Divinity activation it is in RAW), _Precise
+Hunter_, _Studied Attacks_, _Assassinate_, _Reckless Attack_ and _Innate Sorcery_. Per-target
+scoping stays the documented residual it always was: the fix is that a clause the sheet cannot
+resolve now STATES its scope on the card ("Adv. vs marked target") in the same grammar the
+marked-target damage riders already use, and only a clause true of every attack roll still reads as
+a bare verdict. Every attack clause must now declare that scope, so the defect class is
+unrepresentable rather than merely guarded. The sweep also closed a guard blind spot — the
+IT-name prose scan never read the sub-keyed catalogue rows (grant / action / trait blurbs) the
+action card and the rail actually render, which is how two "Canalizzare Divinità" action summaries
+shipped beside the canonical "Incanalare Divinità". UNDEPLOYED on `main` (golden rule 22).
+
 ## Shipped — post-sweep defect wave (2026-07-24)
 
 A fresh Chromium sweep of the shipped sheet found **eleven** defects; **eight** are fixed and
