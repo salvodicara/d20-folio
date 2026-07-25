@@ -9,6 +9,23 @@
     "damageConversion": "Tipo di danno",
     "saveDc": "La tua CD del TS",
     "reactionResistance": "Resistenza",
-    "reactionResistanceValue": "Reazione per concedere Resistenza al danno subito"
+    "reactionResistanceValue": "Reazione per concedere Resistenza al danno subito",
+    "summon": "Evoca famiglio",
+    "changeForm": "Cambia forma",
+    "summoned": "Famiglio evocato: {{name}}",
+    "eyebrow": "Famiglio",
+    "pickTitle": "Scegli una forma",
+    "typeChoice": "Tipo di creatura",
+    "dismissedChip": "Nella sacca dimensionale",
+    "dismissTemp": "Congeda (sacca dimensionale)",
+    "recall": "Richiama",
+    "dismissForever": "Congeda per sempre",
+    "vanished": "Scompare a 0 punti ferita",
+    "unknownForm": "Forma sconosciuta: scegli di nuovo",
+    "rules": "Regole del famiglio",
+    "ruleTelepathy": "Telepatia entro 30 metri",
+    "ruleSenses": "Azione bonus: vedi e senti attraverso di esso fino al tuo prossimo turno",
+    "ruleTouch": "Può veicolare i tuoi incantesimi a contatto (sua Reazione, entro 30 metri)",
+    "ruleNoAttack": "Non può attaccare"
   }
 }

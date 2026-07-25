@@ -9,21 +9,13 @@
  * `prerequisite` string stays the engine FACT the eligibility gate parses.
  */
 
-import type { ReactNode } from "react";
 import { Eye } from "lucide-react";
 import { SRD_INVOCATIONS } from "@/data/invocations";
 import { Icon } from "@/components/ui/icon";
-import { InfoCard } from "@/components/shared/InfoCard";
+import { FamiliarEnhancementsCard } from "@/components/shared/FamiliarEnhancementsCard";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
-import { aggregateCharacterGrants } from "@/lib/aggregate-character";
-import { resolveFamiliarEnhancements } from "@/lib/compute";
-import { buildSpellsViewModel } from "@/lib/views/spells-view";
-import { primaryClassId } from "@/lib/classes";
-import { localeDistance } from "@/lib/utils";
 import type { Locale } from "@/lib/locale";
 import type { SrdEldritchInvocation } from "@/data/invocations";
-import type { CharacterDoc } from "@/types/character";
-import type { TFn } from "../types";
 import type { CompendiumPickerSpec } from "../types";
 import { CmpSeal } from "../CmpSeal";
 import { descriptionSearch, nameCorpus } from "./shared";
@@ -34,79 +26,6 @@ const CHAIN_MASTER_ID = "investment-of-the-chain-master";
 /** Resolve a localized SRD string for an invocation field. */
 const invText = (i: SrdEldritchInvocation, field: string, locale: Locale) =>
   localizeSrd("invocation", i.id, field, locale);
-
-/**
- * LEG 3 — the merged familiar enhancements callout for Investment of the Chain
- * Master, rendered in the detail `extras` slot when the character actually has
- * the invocation (so the owner's spell save DC is real). Pure render of the
- * already-tested `resolveFamiliarEnhancements` view; display-only — the engine
- * never commands the familiar or spends the Reaction (override-first). Returns
- * `null` in browse mode (no character) or when the buff isn't present.
- */
-function familiarEnhancementsExtras(
-  character: CharacterDoc,
-  t: TFn,
-  locale: Locale
-): ReactNode {
-  // The owner's effective spell save DC — reuse the spells-view presenter so the
-  // familiar's "Your Save DC" line can't drift from the sheet (golden rule 6).
-  const ownerSaveDc =
-    buildSpellsViewModel(character, primaryClassId(character.character), locale, false)
-      .castSummary?.saveDC ?? 0;
-  const view = resolveFamiliarEnhancements(
-    aggregateCharacterGrants(character.character, character.session).familiarEnhancements,
-    ownerSaveDc
-  );
-  if (!view.present) return null;
-
-  const rows: { label: string; value: string }[] = [];
-  if (view.extraSpeedFt != null && view.extraSpeedModes.length > 0) {
-    rows.push({
-      label: view.extraSpeedModes.map((m) => t(`familiar.speedMode_${m}`)).join(" / "),
-      value: localeDistance(view.extraSpeedFt, locale),
-    });
-  }
-  if (view.bonusActionAttack) {
-    rows.push({
-      label: t("familiar.bonusActionAttack"),
-      value: t("familiar.bonusActionAttackValue"),
-    });
-  }
-  if (view.damageTypeConversion.length > 0) {
-    rows.push({
-      label: t("familiar.damageConversion"),
-      value: view.damageTypeConversion.map((dt) => t(`srd.damage_${dt}`)).join(" / "),
-    });
-  }
-  if (view.saveDc != null) {
-    rows.push({ label: t("familiar.saveDc"), value: String(view.saveDc) });
-  }
-  if (view.reactionResistance) {
-    rows.push({
-      label: t("familiar.reactionResistance"),
-      value: t("familiar.reactionResistanceValue"),
-    });
-  }
-
-  return (
-    <InfoCard>
-      <div className="mb-2 text-[length:var(--text-micro)] font-bold uppercase tracking-wider text-text-secondary">
-        {t("familiar.section")}
-      </div>
-      <div className="flex flex-col gap-1">
-        {rows.map((r) => (
-          <div
-            key={r.label}
-            className="flex items-baseline justify-between gap-3 text-[0.72rem] text-text-primary"
-          >
-            <span className="text-text-secondary">{r.label}</span>
-            <span className="font-mono">{r.value}</span>
-          </div>
-        ))}
-      </div>
-    </InfoCard>
-  );
-}
 
 export const invocationSpec: CompendiumPickerSpec<SrdEldritchInvocation> = {
   id: "invocation",
@@ -159,8 +78,8 @@ export const invocationSpec: CompendiumPickerSpec<SrdEldritchInvocation> = {
     // Master AND only in character context (id branch — golden rule 7; the
     // owner-save-DC line needs a real character, so browse mode skips it).
     extras:
-      i.id === CHAIN_MASTER_ID && character
-        ? (familiarEnhancementsExtras(character, t, locale) ?? undefined)
-        : undefined,
+      i.id === CHAIN_MASTER_ID && character ? (
+        <FamiliarEnhancementsCard character={character} locale={locale} />
+      ) : undefined,
   }),
 };

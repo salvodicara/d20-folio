@@ -895,7 +895,7 @@
     "material": "A small feather or piece of down"
   },
   "find-familiar": {
-    "description": "You gain the service of a familiar, a spirit that takes an animal form you choose. The familiar appears in an unoccupied space within range. It acts independently of you but obeys your commands. In combat, it rolls its own initiative and acts on its own turn. It can't attack, but it can take other actions as normal. When the familiar drops to 0 hit points, it disappears. You can communicate telepathically with it while it is within 100 feet, and as an action, you can see through its eyes and hear through its ears.",
+    "description": "You gain a familiar — a spirit that takes an animal form you choose: any Beast with a Challenge Rating of 0. It has the chosen form's statistics but is a Celestial, Fey, or Fiend (your choice) instead of a Beast. It rolls its own Initiative, acts on its own turn, and obeys your commands but can't attack. You have telepathy with it within 100 feet, and as a Bonus Action you can see and hear through its senses until the start of your next turn; it can also deliver your touch spells (using its Reaction, within 100 feet). At 0 Hit Points it disappears (recast this spell to return it). As a Magic action you can send it to a pocket dimension or recall it. Casting this spell while a familiar is present makes it take a new eligible form — you can have only one familiar at a time.",
     "duration": "Instantaneous",
     "name": "Find Familiar",
     "range": "10 feet"

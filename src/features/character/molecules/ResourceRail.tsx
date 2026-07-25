@@ -13,7 +13,7 @@
  * Turn" loop and HP mutation are Phase 4 — not in this rail.
  */
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, lazy, Suspense } from "react";
 import { primaryClassId, totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import { Plus, Minus, X, Skull, Sparkles } from "lucide-react";
@@ -99,6 +99,7 @@ import {
   ARMOR_PROFICIENCY_POOL,
 } from "@/lib/proficiency-tokens";
 import { localizeSrd } from "@/i18n/resolver";
+import { ensureSrdKind } from "@/i18n";
 import type { AbilityCode, DamageType, ConditionId } from "@/data/types";
 import type { SessionDefenseKind } from "@/types/character";
 import type { TFunction } from "i18next";
@@ -140,6 +141,16 @@ const SPELL_LEVEL_VAR: Record<number, string> = {
   8: "var(--sl-8)",
   9: "var(--sl-9)",
 };
+
+// The familiar rail row + its stat-block modal join the monster corpus, so they
+// ride a LAZY leaf mounted ONLY when a familiar exists — the eager rail (and every
+// familiar-less character) gains ZERO corpus bytes (the eager-partition sweep pins
+// this; the campaign encounter-bestiary recipe verbatim).
+const FamiliarPanel = lazy(() =>
+  Promise.all([import("../companions/FamiliarPanel"), ensureSrdKind("monster")]).then(
+    ([m]) => ({ default: m.FamiliarPanel })
+  )
+);
 
 export function ResourceRail() {
   const { t } = useTranslation();
@@ -624,7 +635,7 @@ export function ResourceRail() {
           HP ± steppers · variant chip); the full stat block is one tap (the modal).
           Hidden entirely when the character fields none (§4.15). The FAMILIAR row is
           a separate lazy leaf (its form's stat block joins the monster corpus). ── */}
-      {companionRows.some((r) => r.kind === "grant") && (
+      {companionRows.length > 0 && (
         <RailSection rubric={t("character.hud.companions")}>
           <ul className="flex flex-col gap-2">
             {companionRows.map((row) => {
@@ -678,6 +689,19 @@ export function ResourceRail() {
                 </li>
               );
             })}
+            {/* The familiar row — a LAZY leaf (its form's stat block joins the
+                monster corpus), mounted only when a familiar exists so a familiar-
+                less character downloads zero corpus bytes. One-row skeleton under
+                Suspense (never a blank flicker). */}
+            {session.familiar && (
+              <Suspense
+                fallback={
+                  <li className="h-5 animate-pulse rounded bg-surface-2" aria-hidden />
+                }
+              >
+                <FamiliarPanel />
+              </Suspense>
+            )}
           </ul>
         </RailSection>
       )}

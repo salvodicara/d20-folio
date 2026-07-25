@@ -895,7 +895,7 @@
     "material": "Una piccola piuma o un fiocco di piumino"
   },
   "find-familiar": {
-    "description": "Ottieni il servizio di un famiglio, uno spirito che assume una forma animale a tua scelta. Il famiglio appare in uno spazio non occupato entro gittata. Agisce indipendentemente da te ma obbedisce ai tuoi comandi. In combattimento, tira la sua iniziativa e agisce nel suo turno. Non può attaccare, ma può effettuare altre azioni normalmente. Quando scende a 0 punti ferita, scompare. Puoi comunicare telepaticamente con esso entro 30 metri, e come azione puoi vedere attraverso i suoi occhi e sentire attraverso le sue orecchie.",
+    "description": "Ottieni un famiglio, uno spirito che assume una forma animale a tua scelta: una qualsiasi Bestia con Grado di Sfida 0. Ha le statistiche della forma scelta, ma è un Celestiale, una Fata o un Immondo (a tua scelta) invece di una Bestia. Tira la propria Iniziativa, agisce nel suo turno e ti obbedisce, ma non può attaccare. Hai telepatia con esso entro 30 metri e, come Azione Bonus, puoi vedere e sentire attraverso i suoi sensi fino all'inizio del tuo prossimo turno; può inoltre veicolare i tuoi incantesimi a contatto (con la sua Reazione, entro 30 metri). A 0 punti ferita scompare (rilancia questo incantesimo per riaverlo). Come azione Magia puoi mandarlo in una sacca dimensionale o richiamarlo. Lanciare questo incantesimo mentre un famiglio è presente gli fa assumere una nuova forma idonea: puoi avere un solo famiglio alla volta.",
     "duration": "Istantaneo",
     "name": "Trova Famiglio",
     "range": "3 metri"

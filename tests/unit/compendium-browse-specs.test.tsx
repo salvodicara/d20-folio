@@ -288,7 +288,10 @@ describe("invocationSpec.detail — familiar enhancements callout (Chain warlock
       mode: "add",
     };
     const detail = invocationSpec.detail(chainMaster, ctxChar, { added: false });
-    expect(detail.extras).toBeUndefined();
+    // The shared FamiliarEnhancementsCard self-gates: it mounts (chain-master id +
+    // a character) but renders EMPTY when no familiar-enhancement grant is present.
+    const { container } = render(<div>{detail.extras}</div>);
+    expect(container.textContent).toBe("");
   });
 });
 

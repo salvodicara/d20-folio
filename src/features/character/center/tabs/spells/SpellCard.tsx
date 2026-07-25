@@ -35,6 +35,7 @@ import {
 import type { SpellCardVM } from "@/lib/views/spells-view";
 import type { CustomSpell } from "@/types/character";
 import { POLYMORPH_SPELL_IDS } from "@/lib/polymorph";
+import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
 import { CustomSpellEditForm } from "./CustomSpellEditForm";
 import {
   buildVerdict,
@@ -51,6 +52,8 @@ export interface SpellCardCallbacks {
   onCastRitual: (vm: SpellCardVM) => void;
   /** S7 — open the Beast-form picker for a Polymorph / True Polymorph spell. */
   onTransform: (vm: SpellCardVM) => void;
+  /** Open the Find Familiar form picker (Summon familiar / Change form). */
+  onSummonFamiliar: (vm: SpellCardVM) => void;
   onTogglePrepared: (idx: number) => void;
   onDelete: (idx: number) => void;
   onUpdateField: (idx: number, field: string, value: string | null) => void;
@@ -67,6 +70,9 @@ export interface SpellCardProps extends SpellCardCallbacks {
   /** Remaining slots at this spell's level (cast-disabled / library gate). */
   slotsRemaining: number;
   expanded: boolean;
+  /** True when a familiar is already summoned — flips the Find Familiar CTA to
+   *  "Change form" (RAW One Familiar Only: re-cast adopts a new form). */
+  familiarSummoned: boolean;
 }
 
 export const SpellCard = memo(function SpellCard({
@@ -74,10 +80,12 @@ export const SpellCard = memo(function SpellCard({
   isEdit,
   slotsRemaining,
   expanded,
+  familiarSummoned,
   onToggle,
   onCast,
   onCastRitual,
   onTransform,
+  onSummonFamiliar,
   onTogglePrepared,
   onDelete,
   onUpdateField,
@@ -89,6 +97,10 @@ export const SpellCard = memo(function SpellCard({
   // opens the Beast-form picker (self-swap or read-only reference card).
   const canTransform =
     !isCustom && vm.data != null && POLYMORPH_SPELL_IDS.includes(vm.data.id);
+  // Find Familiar carries a "Summon familiar" / "Change form" affordance that opens
+  // the lazy form picker (the corpus-joining leaf).
+  const canSummonFamiliar =
+    !isCustom && vm.data != null && vm.data.id === FIND_FAMILIAR_SPELL_ID;
 
   const gloss = buildGloss(vm, t);
   const verdict = buildVerdict(vm, t);
@@ -245,6 +257,11 @@ export const SpellCard = memo(function SpellCard({
             {canTransform && (
               <Button size="sm" variant="secondary" onClick={() => onTransform(vm)}>
                 {t("polymorph.transform")}
+              </Button>
+            )}
+            {canSummonFamiliar && (
+              <Button size="sm" variant="secondary" onClick={() => onSummonFamiliar(vm)}>
+                {familiarSummoned ? t("familiar.changeForm") : t("familiar.summon")}
               </Button>
             )}
             {vm.canRitual && (

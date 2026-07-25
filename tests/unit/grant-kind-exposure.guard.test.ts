@@ -470,14 +470,13 @@ const EXPOSURE: Record<string, Exposure> = {
   // ── Shipped (S6 play affordances): formerly OPEN, now consumed ──
   "familiar-enhancement": {
     via: "resolveFamiliarEnhancements",
-    consumer: "src/features/compendium/picker/specs/invocation.tsx",
+    consumer: "src/components/shared/FamiliarEnhancementsCard.tsx",
   },
-  // Pact of the Chain's special forms widen the Find Familiar pool; the resolver
-  // `resolveFamiliarForms` joins the aggregate's `familiarFormIds` to the corpus
-  // (lazy) and the form picker renders them (see lib/familiar.ts).
+  // Pact of the Chain's special forms widen the Find Familiar pool; the form picker
+  // renders the pool via `resolveFamiliarForms` (the lazy corpus join).
   "familiar-forms": {
-    via: "familiarFormIds",
-    consumer: "src/lib/familiar.ts",
+    via: "resolveFamiliarForms",
+    consumer: "src/features/character/companions/familiar-picker.tsx",
   },
   // ATTACK-PIPS — War Magic became an INTERACTION: the provider reads
   // `resolveReplaceAttackWithCast` to route a mid-Attack-action cantrip cast onto

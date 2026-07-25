@@ -9,6 +9,23 @@
     "damageConversion": "Damage type",
     "saveDc": "Your Save DC",
     "reactionResistance": "Resistance",
-    "reactionResistanceValue": "Reaction to grant Resistance to damage taken"
+    "reactionResistanceValue": "Reaction to grant Resistance to damage taken",
+    "summon": "Summon familiar",
+    "changeForm": "Change form",
+    "summoned": "Familiar summoned: {{name}}",
+    "eyebrow": "Familiar",
+    "pickTitle": "Choose a form",
+    "typeChoice": "Creature type",
+    "dismissedChip": "In pocket dimension",
+    "dismissTemp": "Dismiss (pocket dimension)",
+    "recall": "Recall",
+    "dismissForever": "Dismiss forever",
+    "vanished": "Disappears at 0 HP",
+    "unknownForm": "Unknown form: choose again",
+    "rules": "Familiar rules",
+    "ruleTelepathy": "Telepathy within 100 feet",
+    "ruleSenses": "Bonus Action: see and hear through it until your next turn",
+    "ruleTouch": "It can deliver your touch spells (its Reaction, within 100 ft)",
+    "ruleNoAttack": "It can't attack"
   }
 }

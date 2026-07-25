@@ -128,24 +128,27 @@ describe("eager-partition tripwires", () => {
       "src/features/character/companions/familiar-picker.tsx",
       "src/features/character/companions/FamiliarPanel.tsx",
     ]);
+    // A file reaches the corpus if it imports the corpus directly, the monster spec,
+    // OR `@/lib/familiar` (the resolver that imports the corpus) — but NOT
+    // `@/lib/familiar-ids` (the eager-safe id/type module every eager consumer uses).
+    const REACHES_CORPUS =
+      /from\s+["']@\/data\/monsters|picker\/specs\/monster|from\s+["']@\/lib\/familiar["']/;
     const files = [
       ...sourceFilesUnder("src/lib"),
       ...sourceFilesUnder("src/features/character"),
     ];
     expect(files.length).toBeGreaterThan(50); // derived set non-empty (a moved dir can't empty it)
-    // Every SEAM file that EXISTS must actually import the corpus — a stale seam
+    // Every SEAM file that EXISTS must actually reach the corpus — a stale seam
     // entry (a renamed/removed leaf) can't quietly widen the allowlist.
     for (const seam of SEAM) {
       if (!existsSync(join(REPO_ROOT, seam))) continue;
-      expect(read(seam), `${seam}: seam file must import the corpus`).toMatch(
-        /from\s+["']@\/data\/monsters/
+      expect(read(seam), `${seam}: seam file must reach the corpus`).toMatch(
+        REACHES_CORPUS
       );
     }
     for (const f of files) {
       if (SEAM.has(f)) continue;
-      const src = read(f);
-      expect(src, f).not.toMatch(/from\s+["']@\/data\/monsters/);
-      expect(src, f).not.toMatch(/picker\/specs\/monster/);
+      expect(read(f), f).not.toMatch(REACHES_CORPUS);
     }
   });
 });

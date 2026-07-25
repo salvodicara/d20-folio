@@ -17,7 +17,7 @@
  * Ritual cast spends no slot. Upcasting routes through the CastLevelModal.
  */
 
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { primaryClassId } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import { Sparkles, Plus } from "lucide-react";
@@ -36,6 +36,8 @@ import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { SpellAddModal } from "@/components/sheet/SpellAddModal";
 import { BeastFormPicker } from "@/components/sheet/BeastFormPicker";
 import { resolvePolymorphForms } from "@/lib/polymorph";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { ensureSrdKind } from "@/i18n";
 import {
   CastLevelModal,
   type CastLevelOption,
@@ -62,6 +64,16 @@ import {
 } from "./spells/SpellCastSummary";
 import { SpellCard, type SpellCardCallbacks } from "./spells/SpellCard";
 
+// The Find Familiar form picker joins the monster corpus, so it rides a LAZY leaf
+// mounted only when the affordance is tapped — the Spells tab gains zero corpus
+// bytes until then (the encounter-bestiary recipe; the eager-partition sweep pins it).
+const FamiliarFormPicker = lazy(() =>
+  Promise.all([
+    import("../../companions/familiar-picker"),
+    ensureSrdKind("monster"),
+  ]).then(([m]) => ({ default: m.FamiliarFormPicker }))
+);
+
 export function SpellsTab() {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
@@ -84,6 +96,8 @@ export function SpellsTab() {
   const [spellModalOpen, setSpellModalOpen] = useState(false);
   /** S7 — when non-null, the Beast-form picker is open for this Polymorph spell id. */
   const [transformSpellId, setTransformSpellId] = useState<string | null>(null);
+  /** When true, the Find Familiar form picker is open. */
+  const [familiarPickerOpen, setFamiliarPickerOpen] = useState(false);
   /** When non-null, the cast-level picker modal is open for this spell. */
   const [castRequest, setCastRequest] = useState<{
     name: string;
@@ -112,6 +126,15 @@ export function SpellsTab() {
   /** Resolved class id ("" when character is not loaded). */
   const classId = useMemo(
     () => (character ? primaryClassId(character.character) : ""),
+    [character]
+  );
+
+  /** The Find Familiar eligible special-form ids (Pact of the Chain widens them). */
+  const familiarFormIds = useMemo(
+    () =>
+      character
+        ? aggregateCharacterGrants(character.character, character.session).familiarFormIds
+        : new Set<string>(),
     [character]
   );
 
@@ -776,6 +799,12 @@ export function SpellsTab() {
     });
   }, [dropPolymorphForm, t]);
 
+  // Find Familiar — open the lazy form picker (the corpus-joining leaf). The commit
+  // (summon / change form) + its undo live inside the picker.
+  const handleSummonFamiliar = useCallback(() => {
+    setFamiliarPickerOpen(true);
+  }, []);
+
   // ── stable per-card callbacks (#59 F4) ───────────────────────────────────────
   // Keep the LATEST handlers in a ref and expose STABLE wrappers, so a search
   // keystroke never changes a card's callback props (the memo bail precondition).
@@ -783,6 +812,7 @@ export function SpellsTab() {
     handleCast,
     handleCastRitual,
     handleTransform,
+    handleSummonFamiliar,
     togglePrepared,
     handleDeleteSpell,
     updateSpellField,
@@ -793,6 +823,7 @@ export function SpellsTab() {
       handleCast,
       handleCastRitual,
       handleTransform,
+      handleSummonFamiliar,
       togglePrepared,
       handleDeleteSpell,
       updateSpellField,
@@ -805,6 +836,7 @@ export function SpellsTab() {
       onCast: (vm) => void handlersRef.current.handleCast(vm),
       onCastRitual: (vm) => void handlersRef.current.handleCastRitual(vm),
       onTransform: (vm) => handlersRef.current.handleTransform(vm),
+      onSummonFamiliar: () => handlersRef.current.handleSummonFamiliar(),
       onTogglePrepared: (idx) => handlersRef.current.togglePrepared(idx),
       onDelete: (idx) => handlersRef.current.handleDeleteSpell(idx),
       onUpdateField: (idx, field, value) =>
@@ -905,6 +937,16 @@ export function SpellsTab() {
         onClose={() => setTransformSpellId(null)}
       />
 
+      {familiarPickerOpen && (
+        <Suspense fallback={null}>
+          <FamiliarFormPicker
+            formIds={familiarFormIds}
+            currentType={character.session.familiar?.creatureType}
+            onClose={() => setFamiliarPickerOpen(false)}
+          />
+        </Suspense>
+      )}
+
       {character.session.polymorphForm && (
         <div className="polymorph-banner" role="status">
           <span>
@@ -994,6 +1036,7 @@ export function SpellsTab() {
                   isEdit={isEdit}
                   slotsRemaining={slotsRemaining}
                   expanded={expandedSpellId === vm.key}
+                  familiarSummoned={character.session.familiar != null}
                   {...cardCallbacks}
                 />
               ))}

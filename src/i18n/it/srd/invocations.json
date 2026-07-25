@@ -117,7 +117,7 @@
     "name": "Arma del Patto"
   },
   "pact-of-the-chain": {
-    "description": "Apprendi l'incantesimo Trova Famiglio e puoi lanciarlo come azione Magia senza spendere uno slot incantesimo.\nQuando lanci l'incantesimo, scegli una delle forme normali per il tuo famiglio oppure una delle seguenti forme speciali: Diavoletto, Pseudodrago, Quasit, Scheletro, Sfinge della Meraviglia, Folletto o Serpente Velenoso (vedi l'appendice B per il blocco delle statistiche del famiglio).\nInoltre, quando compi l'azione di Attacco, puoi rinunciare a uno dei tuoi attacchi per permettere al tuo famiglio di effettuare un attacco con la sua Reazione.",
+    "description": "Apprendi l'incantesimo Trova Famiglio e puoi lanciarlo come azione Magia senza spendere uno slot incantesimo.\nQuando lanci l'incantesimo, scegli una delle forme normali per il tuo famiglio oppure una delle seguenti forme speciali: Imp, Pseudodrago, Quasit, Scheletro, Sfinge della meraviglia, Spiritello o Serpente velenoso (vedi l'appendice B per il blocco delle statistiche del famiglio).\nInoltre, quando compi l'azione di Attacco, puoi rinunciare a uno dei tuoi attacchi per permettere al tuo famiglio di effettuare un attacco con la sua Reazione.",
     "name": "Patto della Catena"
   },
   "pact-of-the-tome": {
