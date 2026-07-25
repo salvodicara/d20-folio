@@ -15,3 +15,7 @@ Familiar spell text was re-sourced to the 2024 rules (eligible forms, the type s
 Bonus-Action shared senses, touch delivery, pocket dimension). The form picker and
 stat block load lazily, so a character without a familiar downloads zero bestiary
 bytes.
+
+Note (rule 25): one live team character — the Wizard 3 Diviner fixture (`briox-wizard`)
+— has Find Familiar prepared, so its owner gains the Summon-familiar affordance the
+moment this deploys. Additive-only: no stored data changes until they summon.

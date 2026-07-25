@@ -46,6 +46,13 @@ export function FamiliarFormPicker({
   const { language: locale } = useLocale();
   // A default MUST exist (a disabled CTA for a mostly-flavor choice is friction —
   // golden rule 20); "fey" is the default on first summon, the prior pick on a re-form.
+  //
+  // RAW ambiguity (chosen deliberately): the type swap ("a Celestial, Fey, or Fiend
+  // instead of a Beast") applies to EVERY chosen form, including the Pact-of-the-Chain
+  // special forms that are already non-Beasts (Imp = Fiend, Sprite = Fey, Skeleton =
+  // Undead). Whether the swap re-types a non-Beast special form is genuinely under-
+  // specified in the SRD; we take the simplest consistent reading — the player's
+  // Celestial/Fey/Fiend choice always wins — so the picker offers the swap uniformly.
   const [creatureType, setCreatureType] = useState<FamiliarCreatureType>(
     currentType ?? "fey"
   );
