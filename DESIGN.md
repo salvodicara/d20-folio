@@ -2148,10 +2148,10 @@ would flag that are **intended**. Filing them as defects violates the identity g
 11. **`·` middot separators / engraved mono letter-spacing on invite codes** — idiomatic folio.
 12. **The earned ornament vocabulary** — the ONE nodeless tip-fading `--hairline` divider, the
     silver-over-bronze `--frame-selected` selection frame, the jewelry-thin scrollbars, and the
-    **border-locked corner mark** on the screen's single mark-bearing frame (§5, "The ornament
-    vocabulary"). Ornament is EARNED by information: one ornamented surface per screen, and it is
-    the surface the user is acting in. "Add a flourish here too" is rejected exactly as firmly as
-    "strip the flourishes".
+    **corner knot** on its EXACTLY THREE earned hero registers — the masthead, the cockpit identity
+    band, and dialogs (§5, "The ornament vocabulary"). Ornament is EARNED by information: no fourth
+    register, ever. "Add a flourish here too" is rejected exactly as firmly as "strip the
+    flourishes".
 13. **The settling motion grammar** — entrances / presses / expansions ease INTO place on
     `--ease-settle` with no overshoot (BG3's "settles, never travels", §9); overshoot survives only
     on `--ease-pop`, reserved for warning/urgent pops. "Add bounce / a snappier spring" is rejected.
