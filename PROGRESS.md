@@ -571,6 +571,14 @@ The phases (each one worktree, one merge, green on both build modes):
 | 6     | The MARK — the corner terminal redrawn as the glint fan alone, seated inside the radius, plus the run cartouche; mounted on exactly one surface per route. The only ADDITIVE phase; owner preview                                                                                                  | open     |
 | 7     | Light sibling re-derived against the finished dark system + guards + budget                                                                                                                                                                                                                        | open     |
 
+**Phase 2** replaced both depth grammars on every plate with the one material: the dome ships in
+BOTH themes (it was `none` in dark, so the flagship theme's plates were the only undomed ones), the
+cream inner lip is gone system-wide, and `.folio-panel`'s two 30-line per-theme material blocks
+collapse into one rule whose whole light delta is four colour roles in tokens. The dome's ink cost
+is paid by `--text-muted` `#988b6e` → `#ae9f7e` (measured 4.62:1 on the worst domed composite,
+against 3.58:1 for the old value), and `verdict-ink-contrast.test.ts` now composites the dome term
+so the floor is computed against the plate the app actually paints.
+
 **Phase 1 removed ~95 painted layers and added one** (the hairline): the double separator, the
 compendium leaf's double gilt frame, the third parchment-texture copy, the ornament on dialogs, all
 18 rotated diamonds, the count medallion, the class-pigment crown, the engraved titling, the crest

@@ -217,19 +217,26 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
 
   it("#13 — morning-light translucency: the light panel material consumes panel-light at the light --panel-alpha", () => {
     // The light sibling of dark's candlelit T3: light defines its own gentler
-    // --panel-alpha and the light .folio-panel sandwich lays the owner-P8 cream
-    // grain under the ivory gradient at that alpha.
+    // --panel-alpha, and the ONE `.folio-panel::before` material rule renders at
+    // that alpha over the owner-P8 cream grain. The theme delta lives entirely in
+    // `--plate-grain` (one recipe, two strikes) — so pin the light token AND the
+    // shared rule that spends it.
     expect(
       /\[data-theme="light"\][^{]*\{[^}]*--panel-alpha: 0\.9[0-9]/.test(indexCss),
       "MISSING: a light-theme --panel-alpha (the morning-light translucency value)."
     ).toBe(true);
-    const sandwich =
-      /\[data-theme="light"\] \.folio-panel::before \{[^}]*opacity: var\(--panel-alpha\)[^}]*var\(--asset-panel-light\)/;
+    const lightBlock = indexCss.slice(indexCss.indexOf('[data-theme="light"] {'));
     expect(
-      sandwich.test(css),
-      "MISSING: `[data-theme=light] .folio-panel::before` rendering the panel-light " +
-        "sandwich at var(--panel-alpha) — the light material story (owner P8) regresses " +
-        "to a flat opaque gradient without it."
+      /--plate-grain: image-set\(var\(--asset-panel-light\)/.test(lightBlock),
+      "MISSING: the light `--plate-grain` strike (`--asset-panel-light`) — without it " +
+        "the light panel silently reads dark's leather, or no grain at all."
+    ).toBe(true);
+    const material =
+      /\.folio-panel::before \{[^}]*opacity: var\(--panel-alpha\)[^}]*var\(--plate-grain\)/;
+    expect(
+      material.test(css),
+      "MISSING: `.folio-panel::before` rendering the grain at var(--panel-alpha) — the " +
+        "material story (owner P8) regresses to a flat opaque gradient without it."
     ).toBe(true);
   });
 });

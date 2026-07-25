@@ -359,6 +359,32 @@ describe("candlelit translucency composite floor (dark --panel-alpha)", () => {
   const WORST_ART_REGION = "#be8031";
   const AA_FLOOR = 4.5;
 
+  // THE DOME TERM. Every plate is domed by ONE elliptical specular pool at
+  // (50%, 30%) — `--plate-dome` (DESIGN.md §4). That pool brightens the very
+  // composite the ink sits on, so the floor MUST be computed with it: without
+  // this term the guard measures a plate the app does not paint, and the dome's
+  // cost lands on users instead of on the gate. Read the pool's peak colour +
+  // alpha straight out of the token so a re-tune can never drift past the floor.
+  const domePeak = (theme: "dark" | "light"): { hex: string; alpha: number } => {
+    const raw = themeBlock(theme).match(/--plate-dome:\s*([^;]+);/)?.[1];
+    if (!raw) throw new Error(`--plate-dome not defined in the ${theme} block`);
+    const stop = /rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([0-9.]+)\s*\)/.exec(raw);
+    if (!stop) throw new Error(`--plate-dome (${theme}) has no rgba() peak stop`);
+    const [r, g, b, a] = [stop[1], stop[2], stop[3], stop[4]].map(Number) as [
+      number,
+      number,
+      number,
+      number,
+    ];
+    const hex = `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+    return { hex, alpha: a };
+  };
+  /** Composite the dome's peak over a plate tone — the brightest point of a plate. */
+  const domed = (tone: string, theme: "dark" | "light"): string => {
+    const { hex, alpha } = domePeak(theme);
+    return mix(hex, tone, alpha * 100);
+  };
+
   const block = themeBlock("dark");
   const readNum = (name: string): number => {
     const m = block.match(new RegExp(`${name}\\s*:\\s*([0-9.]+)`));
@@ -371,20 +397,24 @@ describe("candlelit translucency composite floor (dark --panel-alpha)", () => {
   // body::after paints the art at --app-bg-art-opacity over the page field.
   const backdrop = mix(WORST_ART_REGION, bgPage, artOpacity * 100);
 
-  it("dark: --text-muted ≥ 4.5:1 on the folio-panel's brightest composite", () => {
-    // Rail rubrics (.rail-head h5) are text-muted directly on the panel field.
-    const comp = mix(readVar(block, "--bg-surface-2"), backdrop, alpha * 100);
+  it("dark: --text-muted ≥ 4.5:1 at the DOME's peak on the folio-panel composite", () => {
+    // Rail rubrics (.rail-head h5) are text-muted directly on the panel field —
+    // and the panel is domed, so the worst point is the pool's peak.
+    const comp = domed(
+      mix(readVar(block, "--bg-surface-2"), backdrop, alpha * 100),
+      "dark"
+    );
     expect(
       contrast(readVar(block, "--text-muted"), comp),
-      `text-muted on panel composite ${comp} (alpha ${alpha})`
+      `text-muted on the DOMED panel composite ${comp} (alpha ${alpha})`
     ).toBeGreaterThanOrEqual(AA_FLOOR);
   });
 
-  it("dark: --text-muted ≥ 4.5:1 on the game-rail composite", () => {
-    const comp = mix(bgPage, backdrop, alpha * 100);
+  it("dark: --text-muted ≥ 4.5:1 at the DOME's peak on the game-rail composite", () => {
+    const comp = domed(mix(bgPage, backdrop, alpha * 100), "dark");
     expect(
       contrast(readVar(block, "--text-muted"), comp),
-      `text-muted on rail composite ${comp} (alpha ${alpha})`
+      `text-muted on the DOMED rail composite ${comp} (alpha ${alpha})`
     ).toBeGreaterThanOrEqual(AA_FLOOR);
   });
 
@@ -392,7 +422,7 @@ describe("candlelit translucency composite floor (dark --panel-alpha)", () => {
     // --accent-primary is var(--gold-leaf-500); resolve the palette literal.
     const accent = readVar(css, "--gold-leaf-500");
     const brightStop = mix(accent, readVar(block, "--bg-surface-1"), 13);
-    const comp = mix(brightStop, backdrop, alpha * 100);
+    const comp = domed(mix(brightStop, backdrop, alpha * 100), "dark");
     expect(
       contrast(readVar(block, "--text-secondary"), comp),
       `text-secondary on framed-head composite ${comp} (alpha ${alpha})`

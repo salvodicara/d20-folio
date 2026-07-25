@@ -2264,10 +2264,10 @@ button.pr-dot.lg::before {
   position: relative;
   width: 100%;
   max-width: 32rem;
-  background: var(--bg-surface-2);
-  border: 1px solid var(--border-accent);
+  background: var(--plate-dome), var(--plate-face);
+  border: 2px solid var(--edge-metal-earned);
   border-radius: 0;
-  box-shadow: var(--elev-modal);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 .modal.sm {
   max-width: 24rem;
@@ -6829,43 +6829,46 @@ button.trk-pip:active {
    no gold-corner arc in dark. The cockpit identity band (.folio-panel.gilt-frame)
    shares this material language. A per-band background IMAGE (D&D-Beyond style) is
    a later, deferred layer that can ride over this gradient when built. */
-/* Candlelit / morning-light translucency (T3 + the daylight-sibling rebuild) —
-   the framed band is a page-level surface sitting directly on the page field,
-   so every gradient stop renders at the per-theme `--panel-alpha` (dark 0.9 ·
-   light 0.94): the scene glows through the header like the panels. No texture
-   layer here, so plain gradient alpha does it (no pseudo needed). The band
-   carries title (--text-primary) + hint (--text-secondary) ink only — the
-   composite-floor guard pins the hint on the brightest (gold-tinted) stop.
-   One unscoped rule — the theme delta lives entirely in the tokens. */
+/* THE REALM MASTHEAD — the plate on the EARNED tier (2px metal, the far seat) and
+   the one MARK-bearing frame on every route that has one. Candlelit /
+   morning-light translucency (T3 + the daylight-sibling rebuild): the band sits
+   directly on the page field, so its gradient stops render at the per-theme
+   `--panel-alpha` (dark 0.9 · light 0.94) and the scene glows through the header
+   like the panels do. No grain here, so plain gradient alpha does it — no pseudo
+   needed. The band carries title (--text-primary) + hint (--text-secondary) ink
+   only; the composite-floor guard pins the hint on the brightest (gold-tinted)
+   stop. ONE unscoped rule — the theme delta lives entirely in the tokens. */
 .page-head.framed {
   position: relative;
   padding: var(--sp-5) var(--sp-6);
   margin-bottom: var(--sp-6);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium));
+  border: 2px solid var(--edge-metal-earned);
   /* Square corners — the one-line law (owner, 2026-07-24): the corner ornament
-     seats on a true square crossing of this band's own 1px border. */
+     seats on a true square crossing of this band's own border. */
   border-radius: 0;
-  background: linear-gradient(
-    135deg,
-    color-mix(
-      in srgb,
-      color-mix(in oklab, var(--accent-glow) 13%, var(--bg-surface-1))
-        calc(var(--panel-alpha, 1) * 100%),
-      transparent
-    ),
-    color-mix(
+  background:
+    var(--plate-dome),
+    linear-gradient(
+      135deg,
+      color-mix(
         in srgb,
-        var(--bg-surface-1) calc(var(--panel-alpha, 1) * 100%),
+        color-mix(in oklab, var(--accent-glow) 13%, var(--bg-surface-1))
+          calc(var(--panel-alpha, 1) * 100%),
+        transparent
+      ),
+      color-mix(
+          in srgb,
+          var(--bg-surface-1) calc(var(--panel-alpha, 1) * 100%),
+          transparent
+        )
+        56%,
+      color-mix(
+        in srgb,
+        var(--bg-surface-2) calc(var(--panel-alpha, 1) * 100%),
         transparent
       )
-      56%,
-    color-mix(
-      in srgb,
-      var(--bg-surface-2) calc(var(--panel-alpha, 1) * 100%),
-      transparent
-    )
-  );
-  box-shadow: var(--elev-raised);
+    );
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 @media (max-width: 640px) {
   .page-head.framed {
@@ -7795,15 +7798,18 @@ button.create-need:focus-visible .create-need-chev {
   gap: var(--sp-4);
 }
 
+/* The roster tile — THE PLATE on the quiet tier (DESIGN.md §4): a domed face,
+   1px of metal in its moat, one groove, one cast. Four shadow terms, where the
+   two elevation-plus-plate grammars used to resolve to ten. */
 .ch-card {
   position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  border: 1px solid var(--border-medium);
+  background: var(--plate-dome), var(--plate-face);
+  border: 1px solid var(--edge-metal);
   border-radius: var(--radius-xl);
-  box-shadow: var(--elev-raised);
+  box-shadow: var(--edge-groove), var(--edge-seat);
   overflow: hidden;
   transition:
     transform var(--m-fast) var(--ease-settle),
@@ -7813,8 +7819,8 @@ button.create-need:focus-visible .create-need-chev {
 }
 .ch-card:hover {
   transform: translateY(-2px);
-  border-color: var(--border-accent);
-  box-shadow: var(--elev-floating);
+  border-color: var(--edge-metal-earned);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 /* Pressed feedback on tap — matches the sibling .rest-card press vocabulary
    (tapping a roster card to open the sheet was the only nav tile with no
@@ -7826,10 +7832,12 @@ button.create-need:focus-visible .create-need-chev {
 [data-motion="reduced"] .ch-card:active {
   transform: none;
 }
+/* Focus is the RING. The card keeps its material — a state never costs a surface
+   its substance (box-shadow is REPLACED, not merged). */
 .ch-card:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: var(--elev-floating);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 .ch-card.retired {
   opacity: 0.62;
@@ -7837,7 +7845,7 @@ button.create-need:focus-visible .create-need-chev {
 .ch-card.retired:hover {
   opacity: 0.82;
   transform: none;
-  box-shadow: var(--elev-raised);
+  box-shadow: var(--edge-groove), var(--edge-seat);
 }
 /* (H8) Carry the class domain pigment to the card itself (same ramp as the
    portrait well) so it can crown the tile with a faint accent. Additive — the
@@ -8166,15 +8174,11 @@ button.create-need:focus-visible .create-need-chev {
    In selection mode each card becomes a toggle (the stretched `.ch-open` button),
    a brass `.cb` checkbox mirrors its state in the corner, and a floating action bar
    carries the bulk actions (Delete now; the list is data-driven for more later). */
+/* SELECTED — light and colour only: the edge metal goes full accent and the plate
+   takes the earned seat. No inner ring (that was a second frame), no geometry. */
 .ch-card[data-selected] {
-  border-color: var(--border-accent);
-  box-shadow:
-    var(--elev-floating),
-    inset 0 0 0 1px color-mix(in oklab, var(--accent-primary) 55%, transparent);
-}
-/* Brighten the domain-pigment crown on a selected card so the whole tile reads "on". */
-.ch-card[data-selected]::before {
-  opacity: 1;
+  border-color: var(--accent-primary);
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 /* The selection checkbox is the shared `.cb` atom, only RE-POSITIONED here as a
    click-through corner overlay (the card body is the real toggle). */
@@ -9226,41 +9230,32 @@ button.create-need:focus-visible .create-need-chev {
    WebP (owner-supplied), toned per theme — see `.cmp-tome` below.
    ════════════════════════════════════════════════════════════════════════════ */
 
-/* ── The shared "tome-leaf" MATERIAL — a gilt-framed parchment sheet: the
-   aged-scroll WebP COVERS the panel as one continuous sheet on a gold-leaf edge
-   with the raised drop, an inked inner-margin rule set in from the edge, and a
-   DARK-theme override that swaps in the dedicated dark-vellum plate at full
-   strength (DESIGN.md §13). LIGHT reads the warm vellum full-strength under
-   dark ink; DARK tones it to an even candlelit umber. Composed by BOTH
-   `.cmp-tome` (the compendium codex panel) and `.colophon` (the legal leaf) —
-   only truly layout-specific properties (sizing/padding, the light-theme
-   texture booster, its z-index stacking) stay on those classes. ── */
+/* ── The shared "tome-leaf" MATERIAL — the codex plate on the EARNED tier. The
+   aged-scroll WebP covers the leaf as ONE continuous sheet (its own grain IS the
+   material — there is no second texture pass and no inner margin rule; a second
+   concentric gilt line on one plate is a double frame) under the dome, on 2px of
+   the earned metal, in the far seat. LIGHT reads the warm vellum full-strength
+   under dark ink; DARK swaps in the pre-graded candlelit-umber vellum plate via
+   the `--tome-leaf` indirection. Composed by BOTH `.cmp-tome` (the compendium
+   codex panel) and `.colophon` (the legal leaf) — only truly layout-specific
+   properties (sizing/padding, z-index stacking) stay on those classes. ── */
 .tome-leaf-surface {
   position: relative;
-  /* The leaf photo is theme-scoped (DESIGN.md §13): light reads the warm aged
-     scroll, dark swaps in the pre-graded dark vellum below — one recipe, one
-     indirection, no duplicated structure. */
   --tome-leaf: var(--asset-parchment);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
+  border: 2px solid var(--edge-metal-earned);
   border-radius: var(--radius-2xl);
-  /* OWN-23 — the aged-scroll image carries the grain now, so the old CSS fibre overlay
-     is gone (owner: it muddied the photo). OWN-19/22 — the image COVERS the panel as one
-     continuous sheet (was tiled at 340px → a hard seam mid-page that read as wallpaper),
-     over the per-theme surface tint. */
   background:
-    image-set(var(--tome-leaf) type("image/webp")),
+    var(--plate-dome), image-set(var(--tome-leaf) type("image/webp")),
     linear-gradient(176deg, var(--bg-surface-2), var(--bg-surface-1) 64%);
-  background-size: cover, auto;
+  background-size: auto, cover, auto;
   background-position:
     center,
+    center,
     0 0;
-  background-repeat: no-repeat, no-repeat;
-  background-blend-mode: soft-light, normal;
-  box-shadow: var(--elev-raised);
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-blend-mode: normal, soft-light, normal;
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
   overflow: hidden;
-}
-[data-theme="light"] .tome-leaf-surface {
-  box-shadow: var(--elev-raised);
 }
 /* OWN-23 / BG3-identity materials (DESIGN.md §13) — DARK theme reads the leaf as an
    ancient scroll by candlelight: the surface is the DEDICATED dark-vellum plate
@@ -9272,21 +9267,21 @@ button.create-need:focus-visible .create-need-chev {
 [data-theme="dark"] .tome-leaf-surface {
   --tome-leaf: var(--asset-vellum-dark);
   background:
-    image-set(var(--tome-leaf) type("image/webp")),
+    var(--plate-dome), image-set(var(--tome-leaf) type("image/webp")),
     linear-gradient(
       180deg,
       color-mix(in oklab, var(--gold-leaf-900) 30%, var(--bg-surface-1)),
       color-mix(in oklab, var(--gold-leaf-900) 26%, var(--bg-surface-1))
     );
-  background-size: cover, auto;
+  background-size: auto, cover, auto;
   background-position:
     center,
+    center,
     0 0;
-  background-repeat: no-repeat, no-repeat;
-  background-blend-mode: normal, normal;
-  box-shadow:
-    var(--elev-raised),
-    inset 0 0 70px 24px color-mix(in oklab, #000 62%, var(--gold-leaf-900));
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  /* The dark plate is pre-graded, so it needs no toning on top (`normal`). */
+  background-blend-mode: normal, normal, normal;
+  box-shadow: var(--edge-groove), var(--edge-seat-earned);
 }
 
 /* ── `.cmp-tome` — the compendium codex panel, composing `.tome-leaf-surface`
@@ -13106,20 +13101,14 @@ button.tr-pip:active {
   color: var(--accent-text);
 }
 
+/* The universal card — THE PLATE, quiet tier. */
 .info-card {
-  /* Embossed parchment tile: a faint top-lit gradient (surface catching light at
-     the top → settling to base) over a defined brass edge + the resting drop, so
-     the card reads as a struck tome panel rather than a flat fill. */
-  background: linear-gradient(
-    180deg,
-    var(--bg-surface-2),
-    color-mix(in oklab, var(--bg-surface-2) 82%, var(--bg-surface-1))
-  );
-  border: 1px solid var(--border-medium);
+  background: var(--plate-dome), var(--plate-face);
+  border: 1px solid var(--edge-metal);
   border-radius: var(--radius-lg);
   padding: var(--sp-3) var(--sp-4);
   margin-bottom: var(--sp-4);
-  box-shadow: var(--elev-resting);
+  box-shadow: var(--edge-groove), var(--edge-seat);
 }
 .info-card.flush {
   padding: 0 var(--sp-3);
@@ -13161,10 +13150,10 @@ button.tr-pip:active {
   gap: 10px;
   min-width: 0;
   padding: 14px;
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  border: 1px solid var(--border-medium);
+  background: var(--plate-dome), var(--plate-face);
+  border: 1px solid var(--edge-metal);
   border-radius: var(--radius-lg);
-  box-shadow: var(--elev-resting);
+  box-shadow: var(--edge-groove), var(--edge-seat);
   overflow: hidden;
 }
 .party-card[data-role="dm"] {
@@ -13176,21 +13165,19 @@ button.tr-pip:active {
    shared by the PC member card AND the monster InfoCard so they stay identical. Static —
    no animation (a pulse would read AI-generated; less is more). */
 .combat-current {
-  border-color: color-mix(in oklab, var(--accent-primary) 55%, var(--border-medium));
+  border-color: var(--accent-primary);
   box-shadow:
     0 0 0 2px var(--accent-primary),
-    0 0 0 5px color-mix(in oklab, var(--accent-glow) 20%, transparent),
-    0 6px 18px -6px color-mix(in oklab, var(--accent-primary) 45%, transparent),
-    var(--elev-raised);
+    var(--edge-groove),
+    var(--edge-seat-earned);
 }
 [data-theme="light"] .combat-current {
   /* Light needs a deeper ring for AA contrast on the pale card (impeccable §2.4). */
-  border-color: color-mix(in oklab, var(--accent-primary) 70%, #140d04);
+  border-color: color-mix(in oklab, var(--accent-primary) 82%, #140d04);
   box-shadow:
     0 0 0 2px color-mix(in oklab, var(--accent-primary) 82%, #140d04),
-    0 0 0 5px color-mix(in oklab, var(--accent-primary) 26%, transparent),
-    0 6px 16px -6px color-mix(in oklab, var(--accent-primary) 38%, transparent),
-    var(--elev-raised);
+    var(--edge-groove),
+    var(--edge-seat-earned);
 }
 /* A 2px gold crown-line on the DM tile (a graphic cue, never a flat fill). */
 .party-card[data-role="dm"]::before {
@@ -13648,115 +13635,42 @@ button.party-avatar-btn:focus-visible {
    that doubled the dark gold highlight, which — on a gilt-framed rounded panel —
    pooled into a visible "gold corner" arc at the top corners in dark mode only
    (absent in light, hence inconsistent). One sheen reads clean in both themes. ── */
+/* ── `.folio-panel` — the app's grouping plate (cockpit rails, the identity band,
+   settings/campaign panels). THE PLATE MATERIAL on the quiet tier: one domed
+   face, one edge assembly, one seat (DESIGN.md §4).
+
+   The material rides a `::before` rather than the element, for one reason: the
+   panel is TRANSLUCENT (`--panel-alpha`) so the atmospheric backdrop glows
+   through it, and it also carries a GRAIN tile — CSS has no per-layer background
+   alpha and the tile is opaque, so texture and glow-through can only coexist on
+   their own layer. Three layers, top to bottom: the DOME, the face VEIL (which
+   is what keeps the grain a low mottle instead of a pattern behind text), and the
+   grain itself. The GROOVE rides the pseudo too, because a negative-z child paints
+   over the host's own inset shadows — one groove, drawn once, on the layer above
+   the material. The host keeps the metal and the seat. Graceful: a missing grain
+   file leaves the veil over the page — the glow-through still reads. ── */
 .folio-panel {
-  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--elev-resting);
-}
-/* BG3-identity material (DESIGN.md §13) — DARK theme lays the seam-blended
-   panel-leather grain UNDER a translucent copy of the surface gradient: the
-   gradient stays the panel's tone (and quiets the grain behind text) while the
-   leather's veins show as low mottle on large empty areas. A soft-light blend
-   (the light-theme `.cmp-tome` idiom) does nothing here — over the near-black
-   dark surfaces soft-light collapses to no-op — hence the layer sandwich instead.
-   Tiled at 512px so the repeat period stays below the panel width.
-   CANDLELIT TRANSLUCENCY (T3): the whole sandwich renders on a `::before` at
-   `--panel-alpha` (0.92) instead of on the element, so the candlelit backdrop
-   glows through the panel UNIFORMLY — texture and glow-through coexist (a
-   per-layer alpha can't do this: the leather image layer is opaque, and CSS has
-   no per-layer opacity). The panel isolates (stacking context) so the negative-z
-   pseudo sits above the page backdrop but below all content; `--elev-resting`'s
-   inset hairlines would be occluded by the pseudo, so the pseudo re-carries them.
-   Graceful: a missing leather file leaves the translucent gradient sandwich —
-   the glow-through still reads. Light theme keeps the plain OPAQUE gradient;
-   its material lands in Phase 2. */
-[data-theme="dark"] .folio-panel {
   position: relative;
   isolation: isolate;
   background: none;
+  border: 1px solid var(--edge-metal);
+  border-radius: var(--r-plate);
+  box-shadow: var(--edge-seat);
 }
-[data-theme="dark"] .folio-panel::before {
+.folio-panel::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
   border-radius: calc(var(--radius-xl) - 1px);
   opacity: var(--panel-alpha);
-  /* Smoke vignette (full-BG3 push): the panel darkens toward its lower edges the
-     way BG3's plates recede into candle-shadow — a top-lit material, not a flat
-     sheet. Darkening only (the composite-floor guard pins the BRIGHTEST stop,
-     which is unchanged) and light text at the edges only GAINS contrast. */
-  background:
-    radial-gradient(130% 115% at 50% -8%, transparent 58%, rgba(0, 0, 0, 0.32) 100%),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--bg-surface-2) 62%, transparent),
-      color-mix(in srgb, var(--bg-surface-1) 62%, transparent)
-    ),
-    image-set(var(--asset-panel-leather) type("image/webp")),
-    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
+  background: var(--plate-dome), var(--plate-face-veil), var(--plate-grain);
   background-size:
     auto,
     auto,
-    512px 512px,
-    auto;
-  background-repeat: no-repeat, no-repeat, repeat, no-repeat;
-  /* The dark --elev-resting inset pair (top sheen + bottom edge), re-carried
-     here because the pseudo paints over the element's own inset shadows. */
-  box-shadow:
-    inset 0 1px 0 rgba(245, 230, 180, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.55);
-}
-/* LIGHT material (daylight-sibling rebuild) — the SAME sandwich mechanism with
-   the owner P8 pale cream bookbinding grain (`--asset-panel-light`, DESIGN.md
-   §13): a translucent copy of the ivory surface gradient quiets the grain
-   behind text while its fibre shows as low mottle on empty panel areas, and
-   the whole pseudo renders at the light `--panel-alpha` (0.94 — the
-   MORNING-LIGHT translucency, gentler than dark's 0.9 so the ivory stays
-   unmistakably bright) so the daylight scene breathes through the panel like
-   the candle glow does in dark. The gradient share is higher than dark's 62%
-   (the cream grain band sits BELOW the ivory surfaces, so a low share would
-   darken the panel): 80% keeps the panel reading bright ivory with a quiet
-   tactile grain. Graceful: a missing texture file leaves the translucent
-   gradient sandwich. */
-[data-theme="light"] .folio-panel {
-  position: relative;
-  isolation: isolate;
-  background: none;
-}
-[data-theme="light"] .folio-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: calc(var(--radius-xl) - 1px);
-  opacity: var(--panel-alpha);
-  /* Morning-shade vignette — the light sibling of dark's smoke (full-BG3 push):
-     a whisper of warm umber pooling at the panel's lower edges so the ivory
-     plate reads sunlit-from-above, DESIGNED not adapted (a black vignette would
-     read as grime on vellum). Faint by intent: the ivory must stay bright. */
-  background:
-    radial-gradient(130% 115% at 50% -8%, transparent 62%, rgba(74, 58, 36, 0.1) 100%),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--bg-surface-2) 80%, transparent),
-      color-mix(in srgb, var(--bg-surface-1) 80%, transparent)
-    ),
-    image-set(var(--asset-panel-light) type("image/webp")),
-    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  background-size:
-    auto,
-    auto,
-    512px 512px,
-    auto;
-  background-repeat: no-repeat, no-repeat, repeat, no-repeat;
-  /* The light --elev-resting inset pair (struck-metal top sheen + umber bottom
-     edge), re-carried here because the pseudo paints over the element's own
-     inset shadows. */
-  box-shadow:
-    inset 0 1px 0 rgba(255, 253, 247, 0.92),
-    inset 0 -1px 0 rgba(46, 30, 6, 0.22);
+    512px 512px;
+  background-repeat: no-repeat, no-repeat, repeat;
+  box-shadow: var(--edge-groove);
 }
 
 /* ═══════════════════════════ THE ORNAMENT VOCABULARY ═══════════════════════════
@@ -13768,29 +13682,22 @@ button.party-avatar-btn:focus-visible {
    (`--metal-silver`/`--metal-bronze`) driving `--frame-selected` on the wizard
    hero altar and the chosen plaque. */
 
-/* ── Gilt frame — the HERO-surface accent (cockpit identity band, modal heads,
-   campaign hero). Tints the host panel's edge to gold leaf; it composes with
-   .folio-panel, which provides the fill + emboss + cast shadow. The edge keeps
-   the SAME muted gilt tint as the hub `.page-head.framed` band (accent 34% over
-   a neutral edge), so the cockpit identity band and every hub header read as one
-   material. ── */
+/* ── Gilt frame — the EARNED tier of the one edge, on the cockpit identity band.
+   The tiers differ ONLY in light, never in geometry: 2px of the earned metal and
+   the far seat, over the same material. ── */
 .gilt-frame {
   position: relative;
-  border-color: color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium));
+  border-width: 2px;
+  border-color: var(--edge-metal-earned);
+}
+.folio-panel.gilt-frame {
+  box-shadow: var(--edge-seat-earned);
 }
 /* The ornamented gilt band goes SQUARE (the one-line law, owner 2026-07-24) so
-   the corner ornament seats on a true crossing of the band's own border; the
-   dark material pseudo follows (it re-carries the panel fill at radius-xl-1). */
+   the corner ornament seats on a true crossing of the band's own border. */
 .folio-panel.gilt-frame,
-[data-theme="dark"] .folio-panel.gilt-frame::before {
+.folio-panel.gilt-frame::before {
   border-radius: 0;
-}
-/* D47 full-pass — the gilt-framed hero bands (cockpit identity, every hub header,
-   campaign hero, modal heads) GLOW in light theme: a soft gold aura around the gilt
-   edge so the most prominent gilded surface reads candlelit + magical, not flat
-   cream. Decorative shadow only (text lives on opaque content), so AA is untouched. */
-[data-theme="light"] .folio-panel.gilt-frame {
-  box-shadow: var(--elev-resting);
 }
 
 /* ── Corner goldwork — the worked-gold knot that caps the app's two MARK-bearing
@@ -14312,12 +14219,6 @@ button.party-avatar-btn:focus-visible {
    are gilt cream, not plain white — see the § 01 LIGHT block), so the panel/card
    gradients read as gold-on-gold vellum without per-recipe tints. The framed
    panels just take a gold-touched edge so the gild reads as a gilded frame. */
-[data-theme="light"] .folio-panel {
-  border-color: color-mix(in oklab, var(--border-medium) 68%, var(--accent-primary));
-}
-[data-theme="light"] .info-card {
-  border-color: color-mix(in oklab, var(--border-medium) 76%, var(--accent-primary));
-}
 
 /* ── Mobile bottom-nav (C2) — the phone realm switcher. A fixed carved brass bar
    in the thumb zone; the active realm gilds with a gold top edge + tinted fill.
@@ -16631,11 +16532,11 @@ button.econ-tok-filter:active .econ-disc {
 }
 /* default falls back to the --at-action-vivid base set above. */
 
-/* The 3px slot-coloured LEFT border must beat the theme-scoped
-   `[data-theme="light"] .info-card { border-color }` rule (specificity 0,2,0),
-   which otherwise repaints all four sides grey-gold and swallowed the slot hue.
-   `[data-theme] .algo-card[data-slot]` is 0,3,0 → it wins in every theme, and
-   only re-tints the LEFT edge (the other three keep the card's themed frame). */
+/* The 3px slot-coloured LEFT border must out-specify any theme-scoped
+   `.info-card { border-color }` rule, which would otherwise repaint all four
+   sides and swallow the slot hue. `[data-theme] .algo-card[data-slot]` is 0,3,0
+   → it wins in every theme, and only re-tints the LEFT edge (the other three
+   keep the plate's own metal). */
 [data-theme] .algo-card[data-slot] {
   border-left-color: var(--step-c);
 }
@@ -17367,17 +17268,12 @@ button.econ-tok-filter:active .econ-disc {
   --hairline-ink: color-mix(in oklab, var(--accent-primary-bright) 55%, transparent);
 }
 
-/* — Surfaces LIFT: the existing top-lit `--surface-sheen` overlay rides over the
-     same body gradient (so the tile reads as raised vellum catching candlelight),
-     and the hero/caster tiles kindle a warm `--gilt-glow` aura like dark's pop. — */
-[data-theme="light"] .ch-card {
-  background:
-    var(--surface-sheen),
-    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-}
-[data-theme="light"] .ch-card:hover {
-  box-shadow: var(--elev-floating);
-}
+/* — Surfaces LIFT: the top-lit `--surface-sheen` overlay rides over the same body
+     gradient, so a tile reads as raised vellum catching daylight. The PLATES
+     (`.ch-card`, `.info-card`, `.page-head.framed`, `.folio-panel`, `.modal`,
+     `.tome-leaf-surface`) are NOT re-specified here: they wear the one plate
+     material, and the whole light delta lives in `--plate-dome` /
+     `--plate-grain` / `--edge-groove` / `--edge-seat` / `--edge-metal`. — */
 [data-theme="light"] .statcard-face {
   background:
     var(--surface-sheen),
@@ -17393,15 +17289,6 @@ button.econ-tok-filter:active .econ-disc {
     );
   box-shadow: var(--elev-raised);
 }
-[data-theme="light"] .folio-panel.gilt-frame {
-  background:
-    var(--surface-sheen),
-    linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--gold-leaf-50) 18%, var(--bg-surface-2)),
-      var(--bg-surface-1)
-    );
-}
 
 /* ─── OWN-15 ROUND 2 — the rest of the light/dark parity audit ───────────────
    Framed page-head bands · card crowns · chips · carved channels · the compendium
@@ -17411,16 +17298,18 @@ button.econ-tok-filter:active .econ-disc {
    move: drive every "gold" with --accent-primary-bright (gold-leaf-500), restore
    the --surface-sheen / --emboss-sheen top-light, and the --gilt-glow halos. ── */
 
-/* Framed page-head plaque (roster · campaigns · settings · compendium head). */
+/* Framed page-head plaque (roster · campaigns · settings · compendium head) — the
+   light band's own gilt gradient stops under the shared dome. The edge, the groove
+   and the seat come from the one material. */
 [data-theme="light"] .page-head.framed {
-  background: linear-gradient(
-    135deg,
-    color-mix(in oklab, var(--accent-primary) 19%, var(--bg-surface-2)),
-    var(--bg-surface-1) 54%,
-    var(--bg-surface-2)
-  );
-  border-color: color-mix(in oklab, var(--accent-primary) 46%, var(--border-medium));
-  box-shadow: var(--elev-raised);
+  background:
+    var(--plate-dome),
+    linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--accent-primary) 19%, var(--bg-surface-2)),
+      var(--bg-surface-1) 54%,
+      var(--bg-surface-2)
+    );
 }
 
 /* Portrait well — warm gold aura + carved top edge. */
@@ -17645,12 +17534,6 @@ button.econ-tok-filter:active .econ-disc {
   border-color: color-mix(in oklab, var(--border-medium) 65%, var(--accent-primary));
   box-shadow: 0 1px 2px color-mix(in oklab, var(--carve-shade) 35%, transparent);
   color: var(--accent-text);
-}
-[data-theme="light"] .info-card {
-  border-color: color-mix(in oklab, var(--border-medium) 60%, var(--accent-primary));
-  box-shadow:
-    var(--elev-resting),
-    0 0 0 1px color-mix(in oklab, var(--accent-primary) 14%, transparent);
 }
 [data-theme="light"] .sw[aria-checked="true"],
 [data-theme="light"] .sw[data-state="checked"] {

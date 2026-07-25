@@ -545,31 +545,74 @@ routes through the ONE shared renderer (`parseInline` / `InlineMarkdown` — the
 native `title` tooltips use `stripInline`. Raw asterisks on screen are a routing bug, never a
 content fix.
 
-## 4. Elevation
+## 4. The plate material
 
-The system is the opposite of flat. Depth is the identity: every surface is either carved (inset
-shadow, receding into the page) or embossed (raised, with an inner top highlight). Six theme-tuned
-recipes carry it, each a stack of inset highlight + inset shadow + brass lip + contained drop. Inputs
-and pip sockets recede; cards, buttons, and modals rise. Surfaces are never flat at rest, and the
-material reads as struck brass and pigment on parchment.
+The system is the opposite of flat, and it is ONE material. Every container in the app is a
+**plate**: a domed face, an edge assembly, and a seat. Nothing is composed from a second depth
+grammar, and no surface invents its own.
 
-### Shadow Vocabulary
+### The plate — four tonal events, one dome
 
-- **Recessed** (`--elev-recessed`): carved channel for inputs, pip sockets, inset wells. Inset
-  shadow + inset top line + a faint bottom highlight.
-- **Resting** (`--elev-resting`): the default raised tile (cards, list rows). Inset top sheen, inset
-  bottom shadow, brass lip, soft 3-6px drop.
-- **Raised** (`--elev-raised`): hover and emphasized tiles; a deeper 6-14px drop with a 3px brass lip.
-- **Floating** (`--elev-floating`): popovers and floating chrome; 14-32px drop.
-- **Modal** (`--elev-modal`): dialogs; a 30-70px drop for clear separation from the scrim.
+A plate is exactly four tonal events, in this order, and nothing else:
+
+```
+moat → metal → groove → body
+```
+
+- **The MOAT** — a 1px dark ring OUTSIDE the frame. A plate sits in its own shadow groove, which is
+  what makes it read as an object laid ON the page rather than a region cut out of it.
+- **The METAL** — the border itself, ONE warm value on all four runs. The frame is not strongly
+  directional: a hard lit/shaded split reads as a web bevel, not as metal.
+- **The GROOVE** — darkness immediately INSIDE the frame, ramping into the body. **There is no cream
+  inner lip.** Inside a frame is darkness; the plate brightens AWAY from its edge because of the
+  dome, not because of a highlight. The 1px near-white line under a top border is banned outright —
+  four independent systems used to contribute one, and the light masthead resolved three of them on
+  a single 1px edge.
+- **The BODY** — the face gradient under **the DOME**: ONE elliptical specular pool at (50%, 30%),
+  falling to nothing by the edges. Its falloff **is** the vignette and **is** the basin. There is no
+  second darkening layer anywhere in the system.
+
+| Token                 | What                                                               |
+| --------------------- | ------------------------------------------------------------------ |
+| `--plate-face`        | the face gradient (surface-2 → surface-1)                          |
+| `--plate-face-veil`   | its translucent twin, used only where a grain tile sits beneath    |
+| `--plate-dome`        | the one specular pool at (50%, 30%)                                |
+| `--plate-grain`       | the per-theme leather / bookbinding tile (containers ≥ 240px only) |
+| `--edge-metal`        | the quiet tier's frame value                                       |
+| `--edge-metal-earned` | the earned tier's frame value                                      |
+| `--edge-groove`       | the darkness inside the frame + its ramp                           |
+| `--edge-seat`         | the moat + the near cast                                           |
+| `--edge-seat-earned`  | the moat + the far cast                                            |
+
+### Two tiers, differing ONLY in light
+
+| tier       | used by                                                        | metal | seat                 |
+| ---------- | -------------------------------------------------------------- | ----- | -------------------- |
+| **quiet**  | cards, panels, rails, rows, plaques                            | 1px   | `--edge-seat`        |
+| **earned** | dialogs, the identity band, the realm masthead, the codex leaf | 2px   | `--edge-seat-earned` |
+
+Frame thickness scales with the plate, not with the pixel grid. The tiers **never** differ in
+radius, size or position — that is the state law (§5, L3) applied to the register ladder.
 
 ### Named Rules
 
-**The No-Flat-Fill Rule.** A surface is never a flat color. It is a carved channel or an embossed tile.
-If a panel looks like a flat rectangle, the elevation token is missing.
+**The No-Flat-Fill Rule.** A surface is never a flat colour. It is the plate material, or it is not
+a surface at all — it is type on its parent's plate.
 
-**The Carved-In / Embossed-Out Rule.** Anything the user types or spends into recedes (inputs, pips);
-anything they read or act on rises (cards, buttons). Depth direction encodes interaction.
+**The No-Second-Grammar Rule.** `box-shadow` is a REPLACED property, so a rule that sets it on a
+plate without composing the plate's own tokens back in silently strips the material — and a rule
+that composes BOTH an `--edge-*` and an `--elev-*` term is the literal lasagna: two
+independently-authored bevels doing the same job in the same place. Both are guard-failures
+(`tests/unit/chrome-system.guard.test.ts`). The legacy `--elev-*` stack survives ONLY on the small
+controls the state-grammar pass has yet to reach; it may never touch a plate.
+
+**The Dome Costs Ink, and the Ink Is Paid For.** A dark plate is translucent over painted
+candlelight, so the dome brightens the very composite the ink sits on. `--text-muted` is `#ae9f7e`
+for exactly that reason: on the worst measured composite — surface-2 at `--panel-alpha` over the
+brightest glyph-scale backdrop region — a 10% dome leaves it at **4.62:1**, and the old `#988b6e`
+at 3.58:1 (FAIL). The floor is computed WITH the dome term in
+`tests/unit/verdict-ink-contrast.test.ts`; the headroom is 0.12, so the dome cannot be raised
+without re-deriving the ink first.
 
 ## 5. Components
 
@@ -1625,8 +1668,8 @@ hold >10:1 (the honey plate can only darken the composite, which only helps dark
 
 - **Do** carry the committed parchment + gold-leaf skeuomorphic identity in both themes; warmth comes
   from surfaces, serif type, gold accents, and carved depth, not a tinted near-white body.
-- **Do** give every surface a carved (`--elev-recessed`) or embossed (`--elev-resting`+) recipe; never
-  ship a flat fill.
+- **Do** build every container from the ONE plate material (§4) — a domed face, one edge assembly,
+  one seat, in one of the two tiers; never ship a flat fill and never invent a second depth grammar.
 - **Do** set gold text in `--accent-text` (deep gold) and domain-colored labels in their `-ink`
   variant; keep the raw saturated hue for borders and icons only.
 - **Do** use mono for numbers/labels/counts (`.tnum`), display serif for names/titles, body serif for
@@ -1790,7 +1833,7 @@ on interactive elements.
 | Masthead mount              | **NONE — deliberately static** (owner, 2026-07-10). The framed mastheads (roster, campaigns, compendium, settings, admin, legal) play NO mount animation: on a realm switch the band and its ink land in exactly the same place with zero motion, and only the words change — the content swap IS the navigation signal. Any animation here reads as the page "refreshing" on every switch (the 2026-07-09/10 masthead-jump bug); a source-level unit guard (`page-header.test.tsx`) pins that no `.page-head*` rule carries an `animation:`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Progressive disclosure      | card height + opacity on `--ease-settle`/`--m-normal`; chevron rotates; content fades in                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | HUD resource feedback       | pip/socket fills/empties; the HP bar animates fill; **critical HP pulses (reduced-motion-safe)**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Action commit               | `[Use]` = physical press (translateY + `--elev-recessed`) on `--ease-settle`; slot fills + a gold glint; **undo** reverses on exits                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Action commit               | `[Use]` = physical press (translateY + `--elev-recessed`) on `--ease-settle`; the slot fills; **undo** reverses on exits                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Concentration               | the `focus-mark` (concentric rings) pulse — distinct from the `✦` magic-mark                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Missing initiative          | the un-rolled init chip (`.vital-init[data-urgent]`) earns a gold `--accent-primary` ring + the shared `save-pulse` opacity breath while in combat and the d20 is unentered — reduced-motion-safe; clears the instant a roll lands. The glow is shown for EVERY chip the viewer may write (`urgent = canEdit && unrolled`): a player sees only their own, a DM/admin sees the whole table light up — making it discoverable they can roll for all (the write is rules-authorized cross-member); a BLANK monster typed-init chip (the DM cleared it during gathering) wears the same cue, so the Begin-turns "rolled/total" gate's missing entry is findable at a glance. The shared `InitVital` roll-to-total tile lives in its OWN light leaf module (`src/features/campaigns/init-vital.tsx`) so the always-eager `CombatPip` topbar widget imports it SYNCHRONOUSLY — its loud-tier popover renders at final size on open (no `React.lazy`/`Suspense` empty-then-jump flicker), with the rolled-for character named in the popover rubric (`Initiative · {name}`). The edit input **seeds from the current committed roll ONLY when that roll belongs to the CURRENT fight epoch** (`rollBelongsToEpoch`/`rollForEpoch`, `src/lib/combat-state.ts`) — a NEW encounter (epoch bump) makes a prior-fight roll read as un-rolled, so the input starts EMPTY across the sheet, the tracker and the pip (one gate, D9 — owner 2026-07-03); WITHIN a fight it still pre-fills on re-open (selected on focus → overtype to re-roll), an **unchanged blur re-commits the same roll** (never a destructive reset), and only an **explicit clear** empties it (owner 2026-06-30) |
 | Turn hand-off (encounter)   | End Turn is OPTIMISTIC: on click the sheet publishes the advanced encounter status (`advanceGlobalCombat`/`optimisticPipAfterAdvance`, `turn-state.ts`) so the band flips to its not-your-turn `waiting` state in the SAME tick — the Action / Bonus / Movement coins dim + go inert (the **Reaction coin stays LIVE** — RAW off-turn reactions) and the `[End Turn]` button quiets (grayscale, non-interactive) on `--ease-settle`, the own-turn controls vanish, and the topbar pip flips gold→quiet — instead of waiting on the `runTransaction` server round-trip (the "End Turn feels dead" bug, owner 2026-07-03). The real snapshot reconciles; solo play is unchanged (no encounter → no `waiting`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
