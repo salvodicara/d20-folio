@@ -540,7 +540,7 @@ The pivot's work packages:
   convention"); `_identity-shots` and `_polish-shots` stay SEPARATE by design (theme-surface vs
   full-surface sweeps), not folded.
 
-## Active epic — The chrome reset (owner-ratified 2026-07-24)
+## Shipped epic — The chrome reset (owner-ratified 2026-07-24; phases 0–7 DONE)
 
 **The owner's verdict, verbatim:** the accreted chrome is _"a lasagna — layers, not a design"_. The
 ruling: **ONE design vision, copy BG3 as faithfully as possible, re-question everything, nothing
@@ -558,7 +558,9 @@ phase plan are recorded in `DESIGN.md` (§4 "The plate material", §5 "The ornam
 2. **An ornament REPLACES the line.** It is never drawn over it, beside it, or near it.
 3. **State changes light and colour only. Geometry is frozen.**
 
-The phases (each one worktree, one merge, green on both build modes):
+**All eight phases have landed.** The chrome is one system: six primitives, two tiers, two radii,
+one divider, one state ladder, one mark. The phases (each one worktree, one merge, green on both
+build modes):
 
 | Phase | Scope                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Status   |
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
@@ -569,7 +571,44 @@ The phases (each one worktree, one merge, green on both build modes):
 | 4     | **UNFRAMING** (L1) — every read-only facet, list row and grouping rail gives its frame up; **nesting 3 → 2 on every surface**                                                                                                                                                                                                                                                                                                                                                                                  | **DONE** |
 | 5     | The state grammar (L3) — **one ladder in tokens** (`index.css` §04b), consumed by cards, tiles, rows, tabs, chips, option cells, wizard entries and every button register; every geometry-changing state deleted                                                                                                                                                                                                                                                                                               | **DONE** |
 | 6     | **The MARK** — the corner terminal (a glint fan of seven hair-thin tapering rays, anchored ON the corner arc and radiating inward, contributing no run line) + the run cartouche (pointed leaves weaving over and under the rail, converging on a descending chevron at the exact midpoint), mounted on exactly ONE surface per route — the screen's identity plate. Dimensional metal, gold in BOTH themes, mirrored geometry toned in screen space, fixed-size SVG background layers on a decor-only overlay | **DONE** |
-| 7     | Light sibling re-derived against the finished dark system + guards + budget                                                                                                                                                                                                                                                                                                                                                                                                                                    | open     |
+| 7     | Light sibling re-derived against the finished dark system + the guard suite extended to pin phases 4–6 (eleven mutation proofs) + the budget measured                                                                                                                                                                                                                                                                                                                                                          | **DONE** |
+
+**Phase 7 re-derived the light sibling against the finished system, and pinned all of it.** What
+light now re-derives rather than inherits, each for a stated reason: the dome (wider and softer — an
+ivory plate bands sooner), the groove and the cast (warm umber, never black or grey), the state
+ladder's **three veils** (the same hue at different alphas matched to the same perceptual step —
+hover 10% dark / 17% light, selected 16% / 28%, because the same alpha is ΔL\* 5.9 on near-black and
+only ΔL\* 3.4 on ivory), and the MARK's toning (letterpress inversion; the gold itself never
+changes). Three light-only leftovers that phases 4–6 had orphaned came out with it: the condition
+token's hue halo and the selected segment's gold glow (nothing in this chrome emits), and the held
+boon's gold ring plus its inset, which had quietly re-framed a read-only readout the base rule had
+already unframed.
+
+**The guard suite.** `chrome-system.guard.test.ts` grew three blocks — **L1** (the twenty unframed
+recipes carry no visible border and no inset; the rail carries no metal and its groove lives only on
+the earned band; a list row is frameless at rest and its selection is a hairline-bounded wash; the
+divider utilities exist and the ghost tier is frameless), **the theme sweep** (no
+`[data-theme=…]` strike may put a frame back on a recipe L1 unframed — the hole the light audit
+found), and **L3** (the ladder's metals at `:root`, its veils per theme and provably NOT
+byte-identical across them, every family consuming it, and a sweep that fails any state rule
+declaring a geometry property). `ornament-vocabulary.guard.test.ts` was rewritten for the shipped
+mark: exactly two hosts and no third consumer anywhere in the stylesheet, the tiles present in BOTH
+themes, no `rect`/`line`/`polyline` in a corner tile (a ray is a triangle, never a rail), the
+mirror-then-tone construction, three tonal passes, and the mechanism ban (`border-image`, a layout
+border on the pseudo, any animation, any `overflow: hidden` on a host). And
+`tests/e2e/chrome-census.spec.ts` is new: it walks five routes in both themes on the RENDERED page
+and fails on nesting > 2 or a per-surface framed-box ceiling set at measured + 5.
+
+**Eleven mutation proofs**, each applied, caught, and reverted: re-framing the rail · re-framing a
+read-only chip · a state rule that resizes · a family leaving the ladder · a list row re-framing at
+rest · a theme strike re-framing the held boon · the mark spreading to a dialog · `border-image`
+returning as the mechanism · the light veil copied from dark · (e2e) a read-only chip family
+re-framing, caught by the budget · (e2e) nesting going three deep again, caught by the nesting law.
+
+**Budget.** CSS 74,086 → 74,766 B gzipped (+680 B, +0.9%) for the three phases together: phase 4's
+unframing releases −777 B, and the MARK spends ~1.45 KB gz (4.6 KB of raw SVG per theme, against the
+10.6 KB the deleted corner knot carried). Precache is unchanged in kind — no new binary asset ships;
+the mark is inline data-URI SVG. `bundle-budget` passes with no ceiling raise.
 
 **Phase 6 gave the wow back, once.** The MARK is two members of one vector family, both drawn as
 the LINE'S OWN LOCAL FORM rather than as a second rail beside it — the corner terminal (seven

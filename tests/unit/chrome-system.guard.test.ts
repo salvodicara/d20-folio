@@ -509,6 +509,45 @@ describe("the chrome system — L1, a frame means container or interactive", () 
     }
   });
 
+  it("…and no THEME strike quietly puts the frame back", () => {
+    /**
+     * The base rule is only half the surface. A `[data-theme="light"]` (or dark)
+     * override of the same recipe is where a border comes BACK — it did: the
+     * held-boon readout kept a gold ring and an inset in light long after the
+     * base gave both up, and a frameless condition token grew a hue halo to
+     * stand in for the border it had lost. A theme strike re-tunes COLOUR for a
+     * different room; it does not re-open a question the law already closed.
+     */
+    const offenders: string[] = [];
+    for (const [, rawSelector, body] of folio.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const sel = (rawSelector ?? "").trim().replace(/\s+/g, " ");
+      if (!/^\[data-theme="(dark|light)"\]/.test(sel)) continue;
+      // Only the recipes L1 unframed, matched on the selector's SUBJECT.
+      const subject = sel.split(/\s+/).pop() ?? "";
+      const hit = UNFRAMED.find((u) =>
+        new RegExp(`${u.replace(/\\\\/g, "\\")}(?![\\w-])`).test(subject)
+      );
+      if (!hit) continue;
+      const decls = body ?? "";
+      const border =
+        /border(?:-(?:top|right|bottom|left))?(?:-color)?\s*:\s*([^;]+);/.exec(
+          decls
+        )?.[1];
+      if (border !== undefined && !/transparent/.test(border)) {
+        offenders.push(`${sel} → border: ${border.trim()}`);
+      }
+      if (/box-shadow\s*:[^;]*inset/.test(decls)) {
+        offenders.push(`${sel} → an inset shadow`);
+      }
+    }
+    expect(
+      offenders,
+      `A THEME strike re-framed a read-only recipe. Light is a different ROOM, not ` +
+        `a different rulebook — it re-derives colour, never the question of whether ` +
+        `something is an object:\n  ${offenders.join("\n  ")}`
+    ).toEqual([]);
+  });
+
   it("keeps the rail a material — no metal, and the groove only where metal is", () => {
     const rail = ruleBody("\\.folio-panel");
     expect(
@@ -611,16 +650,21 @@ describe("the chrome system — L1, a frame means container or interactive", () 
  * face, never a second gradient authored per component.
  */
 describe("the chrome system — L3, state changes light and colour only", () => {
-  const LADDER = [
+  /** The metals resolve through per-theme tokens, so they live at :root once. */
+  const LADDER_ROOT = [
     "--state-metal-hover",
     "--state-metal-selected",
     "--state-metal-disabled",
+  ] as const;
+  /** The VEILS cannot be shared — see the assertion below. */
+  const LADDER_THEMED = [
     "--state-wash-hover",
     "--state-wash-selected",
+    "--state-wash-pressed",
   ] as const;
 
-  it("defines the ladder once, at :root, with a per-theme pressed veil", () => {
-    for (const name of LADDER) {
+  it("defines the ladder's metals once and re-derives its veils per theme", () => {
+    for (const name of LADDER_ROOT) {
       expect(
         new RegExp(`${name}\\s*:`).test(indexCss),
         `MISSING ${name}. The state ladder is a CLOSED set of rungs — a component ` +
@@ -628,8 +672,30 @@ describe("the chrome system — L3, state changes light and colour only", () => 
           `different ideas of what "selected" looks like.`
       ).toBe(true);
     }
-    // The pressed veil is the one rung that cannot be shared: dark presses INTO
-    // shadow, light presses into warm umber. A grey press on ivory reads as dirt.
+    // A VEIL IS NOT AN INVERSION. The same alpha is a different STEP on near-black
+    // than it is on ivory — 10% of the warm gold lifts the dark plate by ΔL* 5.9
+    // and the ivory one by ΔL* 3.4 — so the two themes carry different alphas of
+    // the SAME hue, tuned to the same perceptual step. A shared veil is how a light
+    // theme becomes an adaptation of the dark one instead of its sibling.
+    for (const theme of ["dark", "light"] as const) {
+      for (const name of LADDER_THEMED) {
+        expect(
+          new RegExp(`${name}\\s*:`).test(themeBlock(theme)),
+          `MISSING the ${theme.toUpperCase()} strike of ${name}. Each theme derives ` +
+            `its own veil against its own plate.`
+        ).toBe(true);
+      }
+    }
+    // …and they are genuinely DIFFERENT, not copied across.
+    for (const name of LADDER_THEMED) {
+      expect(
+        readToken(themeBlock("dark"), name),
+        `${name} is byte-identical in both themes — that is an inversion, not a ` +
+          `sibling. Re-derive it against the light plate.`
+      ).not.toBe(readToken(themeBlock("light"), name));
+    }
+    // Dark presses INTO shadow; light presses into warm umber. A grey press on
+    // ivory reads as dirt on vellum.
     expect(readToken(themeBlock("dark"), "--state-wash-pressed")).toMatch(
       /rgba\(0, 0, 0/
     );

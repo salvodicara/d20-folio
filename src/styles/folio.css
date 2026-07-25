@@ -5094,12 +5094,11 @@ button.trk-pip:active {
      reads intentional (not borderline-neutral) at a glance on the dark surface. */
   background: color-mix(in oklab, var(--co) 19%, var(--bg-surface-2));
 }
+/* The condition token is a tinted ground and its ink, in both themes — light just
+   needs a denser tint for the same read on ivory. The halo that used to stand in
+   for the deleted border is gone with it: nothing in this chrome emits. */
 [data-theme="light"] .co-chip {
   background: color-mix(in oklab, var(--co) 22%, var(--bg-surface-2));
-  /* OWN-36 PASS 10 — a soft hue-matched halo (same gem/pip treatment) so the now
-     vivid `--cond-*` border reads "glowing like dark" on cream, not a flat line.
-     Label stays the AA-deep `--co-ink`, so legibility is untouched. */
-  box-shadow: 0 0 7px color-mix(in oklab, var(--co) 22%, transparent);
 }
 .co-chip .co-x {
   all: unset;
@@ -10715,11 +10714,7 @@ button.create-need:focus-visible .create-need-chev {
    cream field, so a selected facet (compendium filters, add-modal facets) barely
    stands out. Lift it to a solid gilt fill over the surface + a stronger gold edge
    so the active chip reads as gilt-selected at a glance (light-theme craft rule). */
-/* Light needs a slightly denser veil for the same read: 16% of the deep gold over
-   ivory is a fainter step than 16% over near-black. Same rung, re-struck. */
-[data-theme="light"] .fchip[aria-pressed="true"] {
-  background: color-mix(in oklab, var(--accent-primary) 24%, var(--bg-surface-1));
-}
+
 .fchip[aria-pressed="true"] .fc-count {
   color: var(--accent-text);
 }
@@ -14132,15 +14127,17 @@ button.party-avatar-btn:focus-visible {
    honey-gilt wash and radiates the burnt-umber penumbra below: the page toasts
    around the held boon (grammar "Ember Penumbra"). The inset umber lip + the
    two-stage umber pool are the large-control ember. */
+/* The HELD boon in daylight: the ivory page toasts around it (the "Ember
+   Penumbra" grammar) — a honey-gilt wash and the burnt-umber penumbra below. It
+   is a change of LIGHT on a read-only readout, so it takes no frame and carves no
+   inset: the wash and the penumbra carry the whole state. */
 [data-theme="light"] .insp-chip.held {
-  border-color: var(--gold-leaf-700);
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--gold-leaf-300) 54%, #fdf6df),
     color-mix(in oklab, var(--gold-leaf-300) 30%, #f6ead0)
   );
   box-shadow:
-    inset 0 -1px 0 rgba(var(--ember-umber), 0.3),
     0 1px 2px rgba(var(--ember-seat), 0.34),
     0 4px 12px rgba(var(--ember-umber), 0.5),
     0 9px 26px rgba(var(--ember-umber), 0.3);
@@ -17339,7 +17336,6 @@ button.econ-tok-filter:active .econ-disc {
     var(--gold-leaf-500)
   );
   color: var(--accent-text);
-  box-shadow: 0 0 6px color-mix(in oklab, var(--gold-leaf-500) 45%, transparent);
 }
 /* Domain-pigment active tile (the `<Segmented accent>` prop) — the SAME struck-tile
    lift as the gold default, in the passed pigment (the level-up per-step accent). Sits

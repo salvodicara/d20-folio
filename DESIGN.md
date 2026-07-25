@@ -684,8 +684,14 @@ consumes them, so fifty controls share one grammar instead of fifty bespoke hove
 | **disabled** | `--state-metal-disabled` | flat                                             | `--text-muted`  |
 
 The **wash** is the whole mechanism: ONE translucent veil composited over the plate's own face,
-never a second gradient authored per component. `--state-wash-pressed` is the one rung that cannot
-be shared — dark presses into shadow, light into warm umber; a grey press on ivory reads as dirt.
+never a second gradient authored per component.
+
+**A veil is not an inversion.** All three washes are re-derived per theme, because the same alpha is
+a different STEP on near-black than it is on ivory: 10% of the warm gold lifts the dark plate by
+ΔL\* 5.9 and the ivory one by only ΔL\* 3.4. The two themes therefore carry different alphas of the
+**same hue**, matched to the same perceptual step — hover ≈ ΔL\* 6 (dark 10%, light 17%), selected
+≈ ΔL\* 9.5 (dark 16%, light 28%). Pressed is the one rung whose colour also differs: dark presses
+into shadow, light into warm umber, because a grey press on ivory reads as dirt on vellum.
 
 **Geometry is frozen.** No state may change a radius, a border width, a size, a padding or a
 position. Three techniques cover every case that used to: a border held `transparent` at rest and
@@ -1902,7 +1908,7 @@ all seven laws. On conflict with a "modern-minimal" instinct, the committed-skeu
    sheen, full-color borders, real umber cast shadows. If a light surface reads flatter or cheaper
    than its dark twin, it FAILS. (Detail in §10.)
 5. **Density with air (the D&D Beyond bar).** Pack the useful-at-a-glance info, but with deliberate
-   rhythm: the spacing scale, clear sectioning (diamond rubric + the one divider rule, §5 "The
+   rhythm: the spacing scale, clear sectioning (type + space + the one hairline, §5 "The
    ornament vocabulary"), no clutter, no buggy
    overflow at ANY width (test 360 → 2560). Progressive disclosure for the rest — on demand, never by
    default.
@@ -2048,6 +2054,17 @@ setting (there is **no in-app animations toggle** — removed 2026-06-07), writt
    remap, so future themes drop in cheaply. Light's depth is engineered, not adapted: light inverts
    shadow direction (a warm-umber groove instead of a black one), and ships its
    own `--gilt-gradient` and `--surface-sheen`.
+   - **What light RE-DERIVES rather than inherits**, and the reason each one cannot be shared:
+     the plate's **dome** (a wider, softer pool — an ivory plate bands sooner than a near-black one);
+     the **groove** and the **cast** (warm umber, never black or grey — those read as grime on
+     vellum); the **state ladder's three veils** (the same hue at different alphas, matched to the
+     same perceptual step: 10%/16% on dark, 17%/28% on light, because the same alpha is ΔL\* 5.9 on
+     near-black and ΔL\* 3.4 on ivory); and the **MARK's toning**, which inverts to letterpress logic
+     — the shadow wall above-left and the cream understroke below-right, because on vellum a struck
+     figure is pressed INTO the page rather than lit off it. The gold itself never changes: bronze is
+     banned in both themes. Everything else — all geometry, all structure, every recipe — is shared,
+     and that is the whole delta. Guard-pinned in `tests/unit/chrome-system.guard.test.ts`, which
+     fails if a themed token is byte-identical across the two.
    - **EMBER PENUMBRA — light's lit-magic grammar (owner-ratified 2026-07-11).** On dark, magic is
      luminance: a gold bloom on near-black. The bright vellum field has no headroom above ivory for a
      literal bloom, so a lit gilt control reads as **HEAT** instead — a saturated struck-gilt fill over

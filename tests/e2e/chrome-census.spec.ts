@@ -73,11 +73,14 @@ interface Census {
  * range as every other surface".
  */
 const SURFACES: { slug: string; route: string; ceiling: number }[] = [
-  { slug: "roster", route: "/characters", ceiling: 16 },
-  { slug: "cockpit", route: "/characters/mock-1", ceiling: 95 },
-  { slug: "compendium", route: "/compendium", ceiling: 30 },
-  { slug: "campaign-hub", route: "/campaigns/mock-1", ceiling: 52 },
-  { slug: "settings", route: "/settings", ceiling: 20 },
+  // Measured, both themes, then + 5 of headroom — tight enough that a re-framed
+  // CLASS (a chip family, a row frame, a re-framed rail) cannot fit under it, and
+  // loose enough that one new control on a page is not a gate failure.
+  { slug: "roster", route: "/characters", ceiling: 13 }, // measured 8
+  { slug: "cockpit", route: "/characters/mock-1", ceiling: 88 }, // measured 83
+  { slug: "compendium", route: "/compendium", ceiling: 23 }, // measured 18
+  { slug: "campaign-hub", route: "/campaigns/mock-1", ceiling: 46 }, // measured 41
+  { slug: "settings", route: "/settings", ceiling: 15 }, // measured 10
 ];
 
 /** The whole census runs in ONE evaluate so the sweep stays fast. */
