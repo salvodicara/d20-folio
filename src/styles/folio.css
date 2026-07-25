@@ -333,14 +333,18 @@ svg.icon[stroke],
 }
 
 /* THE WIZARD COLUMN IS LOOSE BY CONSTRUCTION, so its own vocabulary opts in once
-   here rather than at ~60 JSX sites. This is NOT the blanket coming back: there is
-   no surface allowlist and no exclusion — every class listed is a wizard-only
-   SEMANTIC register that renders in the wizard's open column, never inside one of
-   its plaques (a plaque's text has its own classes). The rendered probe in
-   `on-art-ink.spec.ts` is what holds it to that in both directions: it fails if any
-   of these ever appears on a surface, and it fails if any loose ink loses its
-   ground. `.field-label` / `.text-error` are shared classes, so they are reached
-   through `.wiz` and stay untouched in every modal and card elsewhere.
+   here rather than at ~60 JSX sites. Every class listed is a wizard-only SEMANTIC
+   register that renders in the wizard's open column; `.field-label` / `.text-error`
+   are shared classes reached through `.wiz`, so they stay untouched in every modal
+   and card elsewhere. The rendered probe in `on-art-ink.spec.ts` is what holds this
+   to both directions: it fails if any of these appears ungrounded on the art, and it
+   fails if any of them takes the backdrop ink ON a surface.
+
+   These registers are LOOSE, but they are not loose EVERYWHERE: plates stand inside
+   the wizard column too (the hero altar, the ASI panel, an open feat entry), and the
+   ones they host are grounded by the plate. That qualifier is stated positively —
+   and DERIVABLY — in "THE TREATMENT STOPS AT A SURFACE" below; it is not carried
+   here, because a rule that names its own exceptions is the blanket again.
 
    `.wiz-pager-cap` is deliberately NOT here. The page-turn caption only floats free
    on the ≥1360px gutter layout — below it the pager folds into opaque pills — and
@@ -388,6 +392,177 @@ svg.icon[stroke],
 [data-theme="light"] .wiz .text-error {
   color: var(--text-on-backdrop-danger);
 }
+
+/* ── THE TREATMENT STOPS AT A SURFACE ───────────────────────────────────────────
+   A register standing on a PLATE is grounded BY THE PLATE. Handing it the backdrop
+   ink there paints cream on ivory: measured in real Chromium at 1.04:1 on
+   `.wiz-hero .wiz-asks-head` (the enthroned altar's caption) and 1.02:1 on
+   `.wiz-asi .wiz-pick-label` (the level-up boon panel) — verbatim the ghosting the
+   region rewrite above exists to eliminate, re-created one layer up because the
+   region rule carries no surface qualifier.
+
+   THIS IS NOT THE EXCLUSION LIST COMING BACK. That list answered "which classes are
+   surfaces?" BY HAND, so it rotted the first time a surface was rebuilt on a class
+   nobody remembered to add. This one is DERIVED and machine-checked: a surface is a
+   rule that paints one of the two canonical materials — `--plate-face` for a plate,
+   `--panel-alpha` for the daylight-sibling panel (DESIGN.md §13) — and
+   `wizard-css.guard.test.ts` re-derives that set from this stylesheet and fails if
+   any member is missing here, or if any register the region rule names is. Add a
+   plate and the guard tells you; the guard cannot see CONTAINMENT (a fact about the
+   rendered ancestor chain), so `on-art-ink.spec.ts` walks both wizards and measures.
+
+   The ink is RESTORED, never invented — each group hands the register back its own
+   declared colour, so a caption on a plate reads exactly as it does on any other
+   surface. Dark needs only the ground removed; it never flipped the ink. */
+:is(
+    .modal,
+    .ch-card,
+    .info-card,
+    .party-card,
+    .folio-panel,
+    .lvl-card,
+    .lvl-pick,
+    .wiz-path,
+    .wiz-fork-tab,
+    .wiz-hero,
+    .wiz-card,
+    .wiz-entry,
+    .wiz-summary,
+    .wiz-equip-item,
+    .wiz-equip-gold,
+    .wiz-budget,
+    .wiz-abil,
+    .wiz-asi-tile,
+    .wiz-asi,
+    .wiz-done
+  )
+  :is(
+    .wiz-pick-label,
+    .wiz-count,
+    .wiz-asks-head,
+    .wiz-asks-quiet,
+    .wiz-rubric,
+    .field-label,
+    .field-help,
+    .choice-class-em,
+    .wiz-equip-coin,
+    .wiz-pick-filter,
+    .text-error
+  ) {
+  text-shadow: none;
+}
+[data-theme="light"]
+  :is(
+    .modal,
+    .ch-card,
+    .info-card,
+    .party-card,
+    .folio-panel,
+    .lvl-card,
+    .lvl-pick,
+    .wiz-path,
+    .wiz-fork-tab,
+    .wiz-hero,
+    .wiz-card,
+    .wiz-entry,
+    .wiz-summary,
+    .wiz-equip-item,
+    .wiz-equip-gold,
+    .wiz-budget,
+    .wiz-abil,
+    .wiz-asi-tile,
+    .wiz-asi,
+    .wiz-done
+  )
+  :is(
+    .wiz-pick-label,
+    .wiz-count,
+    .wiz-asks-head,
+    .wiz-asks-quiet,
+    .wiz-rubric,
+    .field-label
+  ) {
+  color: var(--text-muted);
+}
+[data-theme="light"]
+  :is(
+    .modal,
+    .ch-card,
+    .info-card,
+    .party-card,
+    .folio-panel,
+    .lvl-card,
+    .lvl-pick,
+    .wiz-path,
+    .wiz-fork-tab,
+    .wiz-hero,
+    .wiz-card,
+    .wiz-entry,
+    .wiz-summary,
+    .wiz-equip-item,
+    .wiz-equip-gold,
+    .wiz-budget,
+    .wiz-abil,
+    .wiz-asi-tile,
+    .wiz-asi,
+    .wiz-done
+  )
+  .field-help {
+  color: var(--text-faint);
+}
+[data-theme="light"]
+  :is(
+    .modal,
+    .ch-card,
+    .info-card,
+    .party-card,
+    .folio-panel,
+    .lvl-card,
+    .lvl-pick,
+    .wiz-path,
+    .wiz-fork-tab,
+    .wiz-hero,
+    .wiz-card,
+    .wiz-entry,
+    .wiz-summary,
+    .wiz-equip-item,
+    .wiz-equip-gold,
+    .wiz-budget,
+    .wiz-abil,
+    .wiz-asi-tile,
+    .wiz-asi,
+    .wiz-done
+  )
+  :is(.choice-class-em, .wiz-equip-coin, .wiz-pick-filter) {
+  color: var(--accent-text);
+}
+[data-theme="light"]
+  :is(
+    .modal,
+    .ch-card,
+    .info-card,
+    .party-card,
+    .folio-panel,
+    .lvl-card,
+    .lvl-pick,
+    .wiz-path,
+    .wiz-fork-tab,
+    .wiz-hero,
+    .wiz-card,
+    .wiz-entry,
+    .wiz-summary,
+    .wiz-equip-item,
+    .wiz-equip-gold,
+    .wiz-budget,
+    .wiz-abil,
+    .wiz-asi-tile,
+    .wiz-asi,
+    .wiz-done
+  )
+  .text-error {
+  color: var(--semantic-danger);
+}
+
 /* LIGHT FOIL — the gold-foil section titles + the treasury GP-total cartouche must
    read as CRISP struck gold on the candlelit backdrop, not the muddy dark smear the
    generic loose-text `--on-art-halo` leaves on them (light-craft audit). That shared

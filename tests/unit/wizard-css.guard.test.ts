@@ -210,6 +210,9 @@ describe("wizard pager cluster (fb3 mobile navigation)", () => {
   });
 });
 
+/** The wizard's on-art REGION rule — its capture group is the register list. */
+const REGION = /\.wiz\s*:is\(([^)]*)\)\s*\{\s*text-shadow: var\(--on-art-halo\)/;
+
 describe("the wizard column takes the on-art treatment, and its PLAQUES do not", () => {
   // The SURF exclusion these tests used to pin is gone. It was a hand-written list
   // of surface classes subtracted from a blanket flip, and it is what put cream ink
@@ -218,7 +221,6 @@ describe("the wizard column takes the on-art treatment, and its PLAQUES do not",
   // open-column registers take the treatment from one region rule — and the plaque
   // classes these tests were protecting are simply not in it, which is a fact the
   // rule states positively instead of subtracting.
-  const REGION = /\.wiz\s*:is\(([^)]*)\)\s*\{\s*text-shadow: var\(--on-art-halo\)/;
 
   it("the open-column registers are named in the region rule", () => {
     const listed = REGION.exec(css)?.[1] ?? "";
@@ -243,7 +245,12 @@ describe("the wizard column takes the on-art treatment, and its PLAQUES do not",
     }
   });
 
-  it("no PLAQUE class is in it — a surface grounds its own text", () => {
+  it("no PLAQUE class is in it — but that is only HALF the axis (see below)", () => {
+    // Membership in the register list was the only thing this file ever checked,
+    // and it is the wrong axis on its own: `.wiz-hero` was never IN the list, and
+    // the altar ghosted anyway, because the defect is `.wiz-hero` as an ANCESTOR.
+    // Kept because a plaque class appearing here would still be a defect; the
+    // ancestor case is the describe block that follows.
     const listed = REGION.exec(css)?.[1] ?? "";
     for (const cls of [
       ".lvl-pick",
@@ -259,6 +266,187 @@ describe("the wizard column takes the on-art treatment, and its PLAQUES do not",
           `exact defect the old exclusion list existed to prevent and then failed to.`
       ).toBe(false);
     }
+  });
+});
+
+/**
+ * THE ANCESTOR AXIS — a surface stops the treatment.
+ *
+ * The register-list assertion above passed while the level-up hero altar shipped
+ * cream ink on ivory: `.wiz-hero` is not in the list and never was, but it is a
+ * PLATE that stands inside the loose column and hosts `.wiz-asks-head`, so the
+ * region rule reached the caption THROUGH it (measured 1.04:1 light; the boon
+ * panel's `.wiz-asi .wiz-pick-label` measured 1.02:1). The hand-written CSS
+ * exclusion the region rewrite deleted had also moved into a hand-written PROBE
+ * exclusion — `.wiz` sat in `on-art-ink.spec.ts`'s OPT_IN, so the rendered leak leg
+ * skipped the whole wizard and saw none of it.
+ *
+ * So this block checks the axis that actually failed, and it DERIVES both sides:
+ *   · a SURFACE is any rule painting one of the two canonical materials
+ *     (`--plate-face`, `--panel-alpha`) — the stylesheet's own definition, not a
+ *     list someone maintains;
+ *   · a REGISTER is whatever the region rule names.
+ * Add a plate, or add a register, and the stop rules must follow or this goes red.
+ *
+ * WHAT IT CANNOT SEE: CONTAINMENT. Whether a given register ever actually renders
+ * inside a given surface is a fact about the rendered tree, not about any selector.
+ * That is `on-art-ink.spec.ts`'s job — and the OPT_IN assertion here is what keeps
+ * it able to do it.
+ */
+describe("the treatment stops at a SURFACE (the ancestor axis)", () => {
+  /** Every rule in the stylesheet, as `{ sel, body }`. */
+  const RULES = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, sel, body]) => ({
+    sel: (sel ?? "").replace(/\/\*[\s\S]*?\*\//g, " ").trim(),
+    body: body ?? "",
+  }));
+
+  /** The class names a `:is(…)` group lists. */
+  const classesIn = (group: string): string[] => [
+    ...new Set([...group.matchAll(/\.[a-z0-9-]+/g)].map((m) => m[0])),
+  ];
+
+  /**
+   * The app's SURFACES, derived from the two canonical materials. A rule that
+   * paints one of them IS a surface; its leading class is the surface's name.
+   */
+  const SURFACES = [
+    ...new Set(
+      RULES.filter((r) => /var\(--plate-face\)|var\(--panel-alpha\)/.test(r.body))
+        .map((r) => /^\.[a-z0-9-]+/.exec(r.sel.split(/[\s,>]+/)[0] ?? "")?.[0] ?? "")
+        .filter(Boolean)
+    ),
+  ].sort();
+
+  /** The rules that state the stop: `<surface list> <register list> { … }`. */
+  const STOPS = RULES.filter(
+    (r) => /:is\([^)]*\.wiz-hero[^)]*\)/.test(r.sel) && /\.modal/.test(r.sel)
+  );
+
+  it("the surface list is DERIVED — every material-painting rule is in every stop rule", () => {
+    expect(
+      SURFACES.length,
+      "Derived NO surfaces from folio.css. The materials are `--plate-face` (plate) " +
+        "and `--panel-alpha` (the daylight-sibling panel); if they were renamed, this " +
+        "derivation — and the law it checks — is reading nothing."
+    ).toBeGreaterThan(5);
+    expect(
+      STOPS.length,
+      "MISSING the `THE TREATMENT STOPS AT A SURFACE` rules in folio.css. Without " +
+        "them the wizard's region rule reaches every register standing on a plate, " +
+        "and light theme paints cream ink on ivory (measured 1.02–1.04:1)."
+    ).toBeGreaterThan(0);
+    for (const stop of STOPS) {
+      const listed = classesIn(/:is\(([^)]*)\)/.exec(stop.sel)?.[1] ?? "");
+      const missing = SURFACES.filter((s) => !listed.includes(s));
+      expect(
+        missing,
+        `A rule that paints the plate/panel material is NOT in this stop rule's ` +
+          `surface list, so the on-art treatment reaches straight through it:\n  ` +
+          `${stop.sel.slice(0, 120)}…\nAdd ${missing.join(", ")} — or, if it is not ` +
+          `a surface, stop painting it with the surface material.`
+      ).toEqual([]);
+    }
+  });
+
+  it("every register the region rule names is STOPPED — ground in both themes, ink in light", () => {
+    const registers = classesIn(REGION.exec(css)?.[1] ?? "");
+    expect(registers.length).toBeGreaterThan(5);
+    // `.text-error` rides the same column through its own pair of rules.
+    const grounded = registers.concat(".text-error");
+
+    const groundStop = STOPS.find((r) => /text-shadow: none/.test(r.body));
+    expect(
+      groundStop,
+      "MISSING the `{ text-shadow: none }` stop rule — no plate takes the halo off " +
+        "the register it hosts."
+    ).toBeDefined();
+    const groundedBy = classesIn(
+      [...(groundStop?.sel ?? "").matchAll(/:is\(([^)]*)\)/g)].at(-1)?.[1] ?? ""
+    );
+    expect(
+      grounded.filter((c) => !groundedBy.includes(c)),
+      "This register keeps the on-art HALO when it stands on a plate — a dark outline " +
+        "painted around ink that already has a plate behind it. Add it to the " +
+        "`{ text-shadow: none }` stop rule."
+    ).toEqual([]);
+
+    // Light is the direction that ghosts: the ink flips to the backdrop parchment,
+    // which on an ivory plate is cream-on-cream. Every register light flips must be
+    // handed its own ink back on a surface.
+    const flipped = [
+      ...new Set(
+        RULES.filter(
+          (r) => /^\[data-theme="light"\] \.wiz\s/.test(r.sel) && /color:/.test(r.body)
+        ).flatMap((r) => classesIn(r.sel).filter((c) => c !== ".wiz"))
+      ),
+    ];
+    expect(flipped.length).toBeGreaterThan(5);
+    const restored = new Set(
+      STOPS.filter((r) => /^\[data-theme="light"\]/.test(r.sel)).flatMap((r) =>
+        classesIn([...r.sel.matchAll(/:is\(([^)]*)\)/g)].at(-1)?.[1] ?? "").concat(
+          // A single-class subject (`… .field-help {`) has no trailing :is().
+          classesIn(r.sel.split(")").at(-1) ?? "")
+        )
+      )
+    );
+    expect(
+      flipped.filter((c) => !restored.has(c)),
+      "This register takes light's BACKDROP ink and never gets its own back on a " +
+        "surface — cream on ivory. Add it to a `[data-theme=light] <surfaces> … " +
+        "{ color: … }` stop rule, restoring the colour its own base rule declares."
+    ).toEqual([]);
+  });
+
+  it("no rule hands a register the treatment UNDER a surface ancestor", () => {
+    const registers = classesIn(REGION.exec(css)?.[1] ?? "");
+    const offenders = RULES.filter(
+      (r) =>
+        /text-shadow: var\(--on-art-halo\)|color: var\(--text-on-backdrop/.test(r.body) &&
+        SURFACES.some((s) => new RegExp(`\\${s}\\b[^,{]*\\s`).test(r.sel)) &&
+        registers.some((c) => r.sel.includes(c))
+    ).map((r) => r.sel.slice(0, 110));
+    expect(
+      offenders,
+      "A rule gives an on-art register the backdrop treatment with a SURFACE in its " +
+        "ancestor chain. A plate grounds its own text; this repaints it as if the " +
+        "plate were not there:\n  " +
+        offenders.join("\n  ")
+    ).toEqual([]);
+  });
+
+  it("the rendered probe is NOT blindfolded — no region may sit in its OPT_IN", () => {
+    // The unit side cannot see containment; the e2e probe can. This is the assertion
+    // that keeps it looking. `.wiz` in OPT_IN skipped the entire wizard and is how
+    // the altar shipped ghosted with 250 green cells.
+    const spec = readFileSync(
+      resolve(here, "../../tests/e2e/on-art-ink.spec.ts"),
+      "utf8"
+    );
+    const optIn = /const OPT_IN = "([^"]*)"/.exec(spec)?.[1] ?? "";
+    expect(
+      optIn,
+      'Could not read `const OPT_IN = "…"` out of on-art-ink.spec.ts — this guard ' +
+        "is reading nothing (golden rule 13)."
+    ).not.toBe("");
+    const entries = optIn.split(",").map((s) => s.trim());
+    const root =
+      /(\.[a-z0-9-]+)\s*:is\([^)]*\)\s*\{\s*text-shadow: var\(--on-art-halo\)/.exec(
+        css
+      )?.[1];
+    expect(root, "Could not derive the region rule's scope root from folio.css.").toBe(
+      ".wiz"
+    );
+    const banned = entries.filter(
+      (e) => e === root || e === ".on-art-scope" || SURFACES.includes(e)
+    );
+    expect(
+      banned,
+      `${banned.join(", ")} is a REGION (or a surface), not a self-backing object. ` +
+        `Listing it in the leak probe's OPT_IN exempts everything inside it — which ` +
+        `is how the hand-written CSS exclusion list came back as a hand-written PROBE ` +
+        `exclusion, and how the hero altar's cream-on-ivory caption shipped green. ` +
+        `Name the individual self-backing controls instead.`
+    ).toEqual([]);
   });
 });
 

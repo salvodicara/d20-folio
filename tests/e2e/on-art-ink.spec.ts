@@ -591,12 +591,13 @@ for (const surface of SURFACES) {
  * So the assertion is rendered, and it is the inverse of the battery above: if the
  * text is on a surface, it may carry neither the on-art ground nor the on-art ink.
  *
+ * The wizard used to be exempt here ("it takes its ground from ONE region rule rather
+ * than ~60 markup opt-ins"), on the theory that the rule lists only OPEN-COLUMN
+ * registers so a plaque could never take them. It can: plates stand IN the open
+ * column (the hero altar, the ASI panel, an open feat entry) and host those very
+ * registers, and the exemption hid it. The wizard is walked like everything else now.
+ *
  * WHAT IT CANNOT SEE:
- *   · Inside `.wiz`. The creation/level-up column is loose by construction and takes
- *     its ground from ONE region rule rather than ~60 markup opt-ins, so the wizard
- *     is skipped here. What protects it instead is that the rule lists only the
- *     wizard's OPEN-COLUMN registers — a plaque's own text has different classes —
- *     and the census + contrast legs cover the plaques themselves.
  *   · A surface it cannot recognise. "Is this on a surface" is read off the rendered
  *     ancestor chain (an opaque fill, or a full-box painted pseudo), which is exactly
  *     the fact no CSS selector can express — but a plate that paints itself some
@@ -650,11 +651,20 @@ for (const surface of SURFACES) {
           return false;
         };
         /**
-         * The opt-ins. An element that says "I am on the art" — and anything it
-         * hands its inherited ground down to — is an OBJECT that backs itself and
-         * may stand anywhere; `.wiz` is the one region-level opt-in left.
+         * The opt-ins. Every entry is a LEAF that says "I am on the art" — an OBJECT
+         * that backs itself and may therefore stand anywhere, including on a plate.
+         *
+         * NO REGION MAY BE LISTED HERE. `.wiz` used to be, on the stated grounds that
+         * the wizard has "~60 markup opt-ins" — and that skipped the ENTIRE wizard,
+         * which is how the positive region rewrite shipped cream-on-ivory captions on
+         * the level-up hero altar (1.04:1) and the boon panel (1.02:1): the
+         * hand-written CSS exclusion list had simply moved into a hand-written PROBE
+         * exclusion. The stated cost was false too — removing it flagged 3 cells out
+         * of 100, every one of them real. `.fchip` is here because it is genuinely
+         * the other kind: a self-backing control. `wizard-css.guard.test.ts` reads
+         * this list and fails if the region rule's scope root reappears in it.
          */
-        const OPT_IN = ".on-art, .on-art-title, .on-art-chip, .party-dm-attach, .wiz";
+        const OPT_IN = ".on-art, .on-art-title, .on-art-chip, .party-dm-attach, .fchip";
         // The engine resolves the halo for us, so the probe never guesses a string.
         const ref = document.createElement("span");
         ref.style.textShadow = "var(--on-art-halo)";
