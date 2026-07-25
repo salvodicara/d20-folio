@@ -351,9 +351,21 @@ a CLASSLESS `<strong>`, so the rule is now `.mon-entry strong:not([class])`. Two
 the token pairing lives in `tests/unit/verdict-ink-contrast.test.ts`; the composited truth (computed
 colour vs the resolved opaque ground, every ink on the plaque, both themes) lives in
 `tests/e2e/statblock-ink-contrast.spec.ts`, whose leaf is `mimic` — the one SRD statblock that fires
-every arm of the grammar plus a `.mon-dmg` ledger run. **axe cannot do this job here:** the parchment
-backdrop and plate pseudo-elements defeat its background resolution, so on that surface axe reports
-~125 `color-contrast` nodes "incomplete" and ZERO violations — the failing `.rt-adv` among them.
+every arm of the grammar plus a `.mon-dmg` ledger run.
+
+**A RATIO is not an IDENTITY, and a colour is not a GROUND.** The browser probe only does the job
+above if it asserts both. A contrast ratio cannot see the gilt repaint at all — `--accent-text`
+measures 6.875:1 on the plaque, so re-injecting `.mon-entry strong { color: var(--accent-text) }`
+left the probe at ZERO failures: comfortably AA, comfortably the wrong colour. So each token-driven
+arm's computed colour must EQUAL the token it is declared to ride (`.rt-adv` → `--rt-adv-ink`,
+`.rt-dis` → `--semantic-danger`, `.rt-value` → `--text-special`), and NO arm may equal the gilt lead.
+Likewise the ancestor walk that finds "the pixel behind the glyphs" must prove it is one: a
+translucent ancestor is not a ground (the ratio would be measured against a colour nothing paints)
+and no painted ancestor at all is worse (it used to fall through to black, which every dark ink
+passes against). Both now fail loudly, naming the node. Each of these three is mutation-proven.
+**axe cannot do any of this here:** the parchment backdrop and plate pseudo-elements defeat its
+background resolution, so on that surface axe reports 121 `color-contrast` nodes "incomplete" and
+ZERO violations — the failing `.rt-adv` among them.
 
 **The Token-Only Rule.** Components reference token names only. Literal hex in component code is
 prohibited; the only source of truth for values is `src/index.css`.
