@@ -776,6 +776,26 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "PS-J attack-scope clauses: Precise Hunter's per-target Advantage STATES its scope on the attack card ('Adv. vs marked target') instead of asserting a blanket verdict on every swing.",
   },
+  // PS-J — the COMPOSITION case: a scoped clause netted against the verdict. A
+  // Barbarian knocked Prone (blanket Disadvantage on attacks) who then attacks
+  // recklessly (Advantage on Strength attacks) has BOTH on a greataxe swing, so
+  // RAW it is a straight roll. The card used to print "Disadv. · Adv. on Strength
+  // attacks" — two mutually exclusive claims about one roll.
+  // Visit `/characters/scn-psj-reckless-prone`.
+  "psj-reckless-prone": {
+    name: "Vokka, Berserker",
+    raceId: "human",
+    classId: "barbarian",
+    subclassId: "berserker",
+    level: 3,
+    background: "soldier",
+    abilityScores: { STR: 18, DEX: 14, CON: 16, INT: 8, WIS: 12, CHA: 10 },
+    weapons: [{ srdId: "greataxe", quantity: 1 }],
+    activeFeatures: ["barbarian-reckless-attack"],
+    conditions: ["prone"],
+    exercises:
+      "PS-J composition: Prone's blanket attack Disadvantage and Reckless Attack's Strength-scoped Advantage cancel, so the greataxe card reads 'Disadv. · Straight roll on Strength attacks' — one true statement per roll, never both claims at once. The turn-limiter banner states the same blanket verdict.",
+  },
   // PS-J — Hunter Defensive Tactics → Escape the Horde, the INCOMING-attack half.
   // The Disadvantage lands on Opportunity Attacks made AGAINST the Hunter, so the
   // attack cards must be clean (they used to all read "Disadv." from level 7) and
