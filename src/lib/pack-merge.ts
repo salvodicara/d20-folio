@@ -43,6 +43,27 @@ export function mergePackRecord<T>(
 }
 
 /**
+ * Compose an id-keyed record where a pack entry REPLACES the public one of the
+ * same key (and adds its own keys).
+ *
+ * This is the deliberate OPPOSITE of {@link mergePackRecord}'s throw-on-collision,
+ * and it exists for exactly one shape of data: where the public entry is a
+ * licensing FALLBACK — the SRD-only projection of something the FULL game does
+ * better — and the pack ships the whole-game twin (golden rule D11: the split is
+ * licensing, never scope). The quickbuild presets are the case: the public
+ * preset for a Bard must reach for an SRD background, while the composed build
+ * should hand the player the Entertainer. An ADDITIVE record (a catalogue of
+ * distinct entities) must keep using `mergePackRecord`, whose throw is what
+ * makes a pack/public id clash a build failure instead of a silent shadow.
+ */
+export function overlayPackRecord<T>(
+  base: Readonly<Record<string, T>>,
+  pack: Readonly<Record<string, T>>
+): Record<string, T> {
+  return { ...base, ...pack };
+}
+
+/**
  * Compose one SRD i18n catalogue: public shard + pack ADDITIONS (new ids —
  * collision throws) + overlay PATCHES (field-level restores over EXISTING
  * entries — a patch aimed at a missing entry throws).

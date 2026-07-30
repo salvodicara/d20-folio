@@ -23,6 +23,7 @@ import type {
   SrdSubclassInfo,
 } from "@/data/types";
 import type { SrdManeuver } from "@/data/maneuvers";
+import type { QuickbuildPreset } from "@/data/quickbuild";
 import type { NamedEntry } from "@/data/srd-names";
 import type { ScenarioSpec } from "@/lib/dev-scenarios";
 import type {
@@ -48,6 +49,8 @@ export const packMonsters: MonsterStatBlock[] = [];
 export const packClassTables: SrdClassTable[] = [];
 export const packClassFeatures: SrdClassFeatureData[] = [];
 export const packSubclasses: Readonly<Record<string, readonly SrdSubclassInfo[]>> = {};
+/** Quickbuild presets for the pack's own classes (none without the pack). */
+export const packQuickbuildPresets: Readonly<Record<string, QuickbuildPreset>> = {};
 
 export const packClassNames: readonly BiText[] = [];
 export const packSubclassNames: readonly NamedEntry[] = [];
