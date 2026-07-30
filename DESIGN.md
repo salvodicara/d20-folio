@@ -2496,7 +2496,10 @@ boxes, no zebra, no cards. A row is `dot · name … numeral` — the proficienc
 gilt point (expertise: kindled), the numeral right-aligned tabular. Group headers are quiet
 serif with the (+N) inline. Boxes are reserved for WELLS (things you put things in), PLATES
 (rooms) — and the ABILITY MEDALLIONS, whose carved brass tiles the owner ruled STAY at gate 2
-("the boxes looked cool — don't change stuff that looked cool").
+("the boxes looked cool — don't change stuff that looked cool"). The same ruling covers the
+masthead VITALS (owner, 2026-07-30, "there used to be boxes/cards around these, those were
+cool"): the AC/INIT/SPD/PB carved tiles keep their v0.22.0 boxes; elevation refines them,
+never flattens them.
 
 ### 16.8 Composition
 
