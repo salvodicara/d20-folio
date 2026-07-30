@@ -1276,6 +1276,7 @@ function ActionGroup({
   return (
     <section className="agroup" data-slot={slot}>
       <div className="ag-head">
+        <span className="ag-diamond" aria-hidden />
         <h3 className="ag-title">{title}</h3>
         <span className="ag-rule" aria-hidden />
       </div>

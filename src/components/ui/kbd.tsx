@@ -1,14 +1,9 @@
 /**
- * Kbd — the ONE keyboard-key recipe: a key NAME, set in the numeric face.
- *
- * A key hint is read-only information, and read-only information is type (L1) —
- * so it carries no frame. It also always sits INSIDE something else (the topbar's
- * Ask button, the palette foot, a tooltip), and a box here was the third framed
- * level on every screen in the app: topbar → button → keycap.
+ * Kbd — the ONE keyboard-key chip recipe (a hairline mono pill).
  *
  * Shared by every place that names a key: the topbar ⌘K hint, the palette footer
  * legend + its `?` chip, the EditingPill's ⌘E tip, the encounter turn tooltips, and
- * the shortcuts sheet. One element so a tweak lands everywhere at once.
+ * the shortcuts sheet. One element so a tweak to the chip lands everywhere at once.
  */
 
 import type { ComponentPropsWithoutRef } from "react";
@@ -18,7 +13,7 @@ export function Kbd({ className, ...props }: ComponentPropsWithoutRef<"kbd">) {
   return (
     <kbd
       className={cn(
-        "px-1 py-0.5 font-mono text-xs tracking-wide text-text-muted",
+        "rounded-md border border-border-subtle px-1.5 py-0.5 font-mono text-xs",
         className
       )}
       {...props}

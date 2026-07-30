@@ -56,16 +56,12 @@ describe("SectionPanel", () => {
     // No visible text — only the chevron knob (the worded label is aria-only).
     expect(toggle.textContent).toBe("");
     expect(toggle.querySelector(".section-disclosure-knob")).not.toBeNull();
-    // PLACEMENT — ONE surface encloses the fixed panel + the disclosure + the detail
-    // (the chevron sits ON it, never floats below it). The fixed body, the chevron, and
-    // the detail-wrap all share the same `.section-card` ancestor. That surface is the
-    // grouping RAIL, not a framed card: a surface that only groups is not the container
-    // the user is acting in (L1, DESIGN.md §4), and its frame is what pushed the note
-    // rows standing on it to a third framed level.
+    // PLACEMENT — ONE card encloses the fixed panel + the disclosure + the detail (the
+    // chevron sits ON the card, never floats below it). The fixed body, the chevron, and
+    // the detail-wrap all share the same `.section-card` ancestor.
     const card = container.querySelector(".section-card");
     expect(card).not.toBeNull();
-    expect(card).toHaveClass("folio-panel");
-    expect(card).not.toHaveClass("info-card");
+    expect(card).toHaveClass("info-card");
     expect(screen.getByText("always-on coins").closest(".section-card")).toBe(card);
     expect(toggle.closest(".section-card")).toBe(card);
     expect(wrap?.closest(".section-card")).toBe(card);

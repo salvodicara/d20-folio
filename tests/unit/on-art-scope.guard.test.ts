@@ -1,27 +1,21 @@
 /// <reference types="node" />
 /**
- * Guard: the on-art treatment is OPT-IN, and it cannot go back to being a blanket.
+ * Guard: the light-theme `.on-art-scope` flip must EXCLUDE card/surface text.
  *
- * **The regression this pins (owner-reported, three times now):** loose text on the
- * candlelit backdrop takes a bright-ink + dark-outline treatment. Text on a CARD must
- * not. The mechanism used to be a blanket — a list of ink registers matched anywhere
- * inside `.on-art-scope`, minus a hand-written list of surface classes — and this
- * file used to assert that the exclusion list still contained the string
- * `.info-card`. That assertion is why the third instance shipped: the campaign hub's
- * sections were rebuilt on `.folio-panel.section-card` / `.hub-row` / `.hub-cell`,
- * no component in them used `.info-card` any more, the string was still in the CSS,
- * and 43 elements took cream ink and a dark halo inside an opaque ivory panel while
- * this guard stayed green. A regex over a list is not a check; it is the list again.
+ * **The regression this pins (owner-reported, twice):** loose text on the candlelit
+ * backdrop gets a bright-ink + dark-outline treatment via `.on-art-scope`. Text that
+ * sits on a CARD must NOT get it. The CORRECT design (owner: "card text should never
+ * be considered on the backdrop in the FIRST place") is to make the flip selector
+ * never MATCH surface text — via `:not(:where(<surfaces>) *, :where(<surfaces>))` —
+ * rather than flip everything and undo it on cards (the old fragile reset layer that
+ * a dead-code sweep silently stripped, re-leaking the outline onto the Account email
+ * + DM Tools card).
  *
- * So the treatment is a CLASS the leaf opts into (`.on-art` / `.on-art-title`, or
- * `--on-art-plate` for an object that backs itself), nothing reaches into a surface,
- * and the real check is RENDERED: `tests/e2e/on-art-ink.spec.ts` measures both
- * directions on the real page — loose ink must clear AA on the real composited
- * ground, and on-art ink must never appear ON a surface.
- *
- * WHAT IS LEFT HERE is what the rendered probe cannot see: that the blanket idiom
- * does not come back, that the halo stays ONE token, and the handful of per-recipe
- * mechanisms whose absence a screenshot would not obviously betray.
+ * This guard asserts the two invariants of that design: (1) the flip carries the
+ * surface EXCLUSION, and (2) the single inheritance-hygiene rule zeroes the outline
+ * at the surface boundary. It checks the mechanism, not exact selector text, so a
+ * legitimate refactor of the surface list still passes — but deleting the exclusion
+ * (the thing that prevents the leak) fails CI.
  */
 import { describe, expect, it } from "vitest";
 import { resolve } from "node:path";
@@ -32,6 +26,43 @@ const FOLIO_CSS = resolve(SRC_ROOT, "styles/folio.css");
 /** Collapse every whitespace run to one space so multi-line selectors match. */
 const css = readSrc(FOLIO_CSS).replace(/\s+/g, " ");
 
+describe("light-theme on-art-scope excludes card text (no outline leak onto cards)", () => {
+  it("the backdrop-ink flip EXCLUDES surface text (`…:is(…text-text-secondary…):not(:where(…info-card…))`)", () => {
+    // The flip that paints the bright ink + outline must carry the surface exclusion,
+    // so card text is never matched in the first place. This is the leak-preventer.
+    const flipExcludesSurfaces =
+      /\.on-art-scope\s*:is\([^)]*\.text-text-secondary[^)]*\)\s*:not\(\s*:where\([^)]*\.info-card[^)]*\[class\*="bg-"\]/;
+    expect(
+      flipExcludesSurfaces.test(css),
+      "MISSING: the `.on-art-scope :is(…text-text-secondary…):not(:where(…surfaces…) …)` exclusion. " +
+        "Without it the backdrop-text outline leaks onto card text in light theme. " +
+        "Card text must NEVER be matched by the flip — exclude surfaces, don't reset them. " +
+        "See light-on-backdrop-text memory."
+    ).toBe(true);
+  });
+
+  it("the title-ink flip ALSO excludes surface text (`…:is(…sec-title…):not(:where(…))`)", () => {
+    const titleFlipExcludes =
+      /\.on-art-scope\s*:is\([^)]*\.sec-title[^)]*\)\s*:not\(\s*:where\([^)]*\.info-card/;
+    expect(
+      titleFlipExcludes.test(css),
+      "MISSING: the surface exclusion on the gilt-title flip (.field-label/.sec-title/…). " +
+        "Both on-art-scope flips must exclude surfaces, or label/title card text leaks."
+    ).toBe(true);
+  });
+
+  it("a single inheritance-hygiene rule zeroes the outline at the surface boundary", () => {
+    // Surfaces establish a no-outline baseline so card text can't inherit a flipped
+    // loose ancestor's outline. (One boundary rule — not a per-utility undo.)
+    const hygiene =
+      /\.on-art-scope\s*:is\([^)]*\.info-card[^)]*\[class\*="bg-"\]\s*\)\s*\{\s*text-shadow:\s*none/;
+    expect(
+      hygiene.test(css),
+      "MISSING: the `.on-art-scope :is(<surfaces>) { text-shadow: none }` inheritance-hygiene rule."
+    ).toBe(true);
+  });
+});
+
 describe("ON-ART-INK (owner 2026-06-12) — the canonical scope covers the recurring offenders", () => {
   // The owner's recurring light-theme defect class: components rendered DIRECTLY
   // on the dark backdrop art inherit the standard dark ink and vanish. These pin
@@ -40,29 +71,83 @@ describe("ON-ART-INK (owner 2026-06-12) — the canonical scope covers the recur
   // RunicEmptyState hero). The LIVE gate is tests/e2e/on-art-ink.spec.ts (a
   // manifest-wide luminance probe); these are its cheap unit-side mechanism pins.
 
+  it("the RunicEmptyState text family is in the flips (es-title/blurb/note body; es-eyebrow + title em gilt)", () => {
+    const bodyFlip =
+      /\.on-art-scope\s*:is\([^)]*\.es-title,\s*\.es-blurb,\s*\.es-note[^)]*\):not\(/;
+    const titleFlip =
+      /\.on-art-scope\s*:is\([^)]*\.es-eyebrow,\s*\.es-title em[^)]*\):not\(/;
+    expect(
+      bodyFlip.test(css) && titleFlip.test(css),
+      "MISSING: the `.es-*` empty-state vocabulary in the on-art-scope flips. Without it " +
+        "the 404/no-access/empty heroes are dark-on-dark on the raw backdrop in light theme."
+    ).toBe(true);
+  });
+
+  it("an UNPRESSED `.fchip` loose in the scope takes the parchment ink (pressed = its own gilt surface)", () => {
+    const rule =
+      /\.on-art-scope\s*\.fchip:not\(\[aria-pressed="true"\]\):not\(\s*:where\([^{]*\{[^}]*color:\s*var\(--text-on-backdrop\)/;
+    expect(
+      rule.test(css),
+      "MISSING: `[data-theme=light] .on-art-scope .fchip:not([aria-pressed=true]):not(…surfaces…) " +
+        "{ color: var(--text-on-backdrop) }`. Without it the level-up boon facet chips " +
+        "(Origin Feat / Dark Gift / …) are invisible on the art in light theme."
+    ).toBe(true);
+  });
+
   it("the wide-gutter page-turn captions flip — and ONLY at the gutter breakpoint (mobile pills keep their ink)", () => {
     // The caption floats on the art only on the ≥1360px gutter layout; below it
     // the pager folds into opaque blurred pills where cream ink would wash out.
-    // The GROUND is theme-agnostic (dark's gold caption measured 1.52:1 on the
-    // bright half of the art); only the INK flip is light's. Both must stay inside
-    // the gutter media query — below it the pager folds into opaque pills where
-    // cream ink would wash out.
     const mediaScoped =
-      /@media \(min-width: 1360px\)\s*\{[\s\S]{0,900}?\[data-theme="light"\]\s*\.on-art-scope\s*\.wiz-pager-cap\s*\{[^}]*color:\s*var\(--text-on-backdrop\)/;
-    const groundScoped =
-      /@media \(min-width: 1360px\)\s*\{[\s\S]{0,900}?\.on-art-scope\s*\.wiz-pager-cap\s*\{\s*text-shadow:\s*var\(--on-art-halo\)/;
-    expect(
-      groundScoped.test(css),
-      "MISSING: the media-scoped `.on-art-scope .wiz-pager-cap` HALO (both themes). " +
-        "A `<button>` does not pass the scope's halo down, and at the gutter width " +
-        "these captions sit on the scene with nothing behind them."
-    ).toBe(true);
+      /@media \(min-width: 1360px\)\s*\{\s*\[data-theme="light"\]\s*\.on-art-scope\s*\.wiz-pager-cap\s*\{[^}]*color:\s*var\(--text-on-backdrop\)/;
     expect(
       mediaScoped.test(css),
       "MISSING: the media-scoped `[data-theme=light] .on-art-scope .wiz-pager-cap` flip " +
         "(@media min-width:1360px). Without it the wizard's Exit/Continue captions are " +
         "unreadable on the art in light theme — and WITHOUT the media scope they'd " +
         "paint cream-on-cream on the mobile pager pills."
+    ).toBe(true);
+  });
+
+  it("`.text-error` loose in the scope takes the on-backdrop danger ink", () => {
+    const rule =
+      /\.on-art-scope\s*\.text-error:not\([^{]*\{[^}]*color:\s*var\(--text-on-backdrop-danger\)/;
+    expect(
+      rule.test(css),
+      "MISSING: `[data-theme=light] .on-art-scope .text-error:not(…surfaces…) " +
+        "{ color: var(--text-on-backdrop-danger) }`. Without it the wizard's required-field " +
+        "asterisk / inline errors are deep-vermilion-on-dark-art in light theme."
+    ).toBe(true);
+  });
+
+  it("transparent loose chips/buttons flip — the DMPC attach button + `.badge.muted` take the parchment ink", () => {
+    // The campaign hub's `.party-dm-attach` dashed button + the treasury `.badge.muted`
+    // ("X gp total") chip both paint a transparent background, so they read dark-on-dark
+    // on the candlelit backdrop in light theme. `.badge` is a SURFACE in the text flips,
+    // so a transparent muted chip needs this explicit flip. (Live gate: on-art-ink.spec.)
+    const rule =
+      /\.on-art-scope\s*:is\(\.party-dm-attach,\s*\.badge\.muted\):not\([^{]*\{[^}]*color:\s*var\(--text-on-backdrop\)/;
+    expect(
+      rule.test(css),
+      "MISSING: `[data-theme=light] .on-art-scope :is(.party-dm-attach, .badge.muted):not(…surfaces…) " +
+        "{ color: var(--text-on-backdrop) }`. Without it the campaign-hub DMPC attach button + the " +
+        "treasury 'X gp total' chip are dark-on-dark on the atmospheric backdrop in light theme."
+    ).toBe(true);
+  });
+
+  it("the treasury GP-total plate flip (background/border/shadow) ALSO excludes card surfaces", () => {
+    // The plate rule adds the self-backed cartouche (dark plate + gilt border + tight
+    // shadow) SEPARATELY from the generic ink flip above — it must carry the SAME
+    // `.badge.muted:not(:where(<surfaces minus .badge>) …)` exclusion, or it leaks onto
+    // every card-bound `.badge.muted` (e.g. the party-encounter monster `×N` token
+    // badge on `.party-card`, which must keep its plain card-surface badge, not the
+    // dark plate meant only for the loose treasury cartouche).
+    const plateExcludesSurfaces =
+      /\.on-art-scope\s*\.badge\.muted:not\([^{]*\.party-card[^{]*\{[^}]*background:\s*color-mix\(in oklab, #1a1206/;
+    expect(
+      plateExcludesSurfaces.test(css),
+      "MISSING: the `.on-art-scope .badge.muted:not(:where(…surfaces…))` exclusion on the " +
+        "treasury plate rule. Without it the GP-total cartouche's dark plate + gilt border " +
+        "leaks onto the party-encounter monster ×N badge (a card-bound .badge.muted)."
     ).toBe(true);
   });
 
@@ -91,44 +176,33 @@ describe("ON-ART-INK (owner 2026-06-12) — the canonical scope covers the recur
   });
 });
 
-describe("a shared component may only opt IN to on-art conditionally", () => {
-  it("no `src/components/**` file stamps an on-art class unconditionally", () => {
-    // **The regression this pins (owner-reported, 2026-06-10):** the savant "added to
-    // your spellbook" hint hardcoded `className="on-art …"` inside a SHARED picker.
-    // On the creation wizard (genuinely on the art) it read fine — but the same
-    // component renders inside the LevelUpModal, a plain light card, where the
-    // white-ink + dark-outline treatment leaked.
-    //
-    // The rule is NOT "a shared component may never say `on-art`" any more: the
-    // treatment is opt-in now, so `SectionHeader`, `RunicEmptyState` and friends carry
-    // it behind an `onArt` prop, which is exactly how a shared component is supposed
-    // to express "my caller mounts me on the art". What stays banned is stamping it
-    // UNCONDITIONALLY — a bare literal in a className with nothing gating it.
+describe("shared components never hardcode the `.on-art` leaf class (owner-reported leak)", () => {
+  it("no `src/components/**` file stamps `on-art` — context (`.on-art-scope`) decides, not the leaf", () => {
+    // **The regression this pins (owner-reported, 2026-06-10):** the savant
+    // "added to your spellbook" hint hardcoded `className="on-art …"` inside a
+    // SHARED picker. On the creation wizard (genuinely on the candlelit art) that
+    // read fine — but the same component renders inside the LevelUpModal, a plain
+    // light card, where the white-ink + dark-outline backdrop treatment leaked.
+    // `.on-art` is for CONTEXT-FIXED surfaces only (login hero, creation steps —
+    // places that are on the art by construction). A shared component must rely
+    // on the `.on-art-scope` flip, which restyles loose text per ancestor context
+    // and never matches card surfaces.
     const componentsDir = resolve(SRC_ROOT, "components");
     const offenders: string[] = [];
     for (const p of srcFiles({ under: componentsDir, exts: [".ts", ".tsx"] })) {
+      // Comments may legitimately DISCUSS `.on-art` (e.g. explaining why a
+      // shared component must not use it) — strip them; pin only real code.
       const src = readSrc(p)
         .replace(/\/\*[\s\S]*?\*\//g, "")
         .replace(/\/\/.*$/gm, "")
         .replaceAll("on-art-scope", "");
-      for (const m of src.matchAll(
-        /["'`][^"'`]*\bon-art(?:-title|-chip)?\b[^"'`]*["'`]/g
-      )) {
-        // Gated forms — `onArt && "on-art"`, `cn(..., onArt && "on-art-title")` — are
-        // the sanctioned shape; a literal that is not preceded by a gate is not.
-        const before = src.slice(Math.max(0, m.index - 40), m.index);
-        if (/&&\s*$/.test(before)) continue;
-        if (/\?\s*$/.test(before)) continue;
-        offenders.push(`${p} → ${m[0]}`);
-      }
+      if (/\bon-art\b/.test(src)) offenders.push(p);
     }
     expect(
       offenders,
-      "An on-art class is stamped UNCONDITIONALLY in a shared component. It renders " +
-        "in card contexts too (LevelUpModal, sheet sections), where the backdrop ink " +
-        "and dark halo are a leak. Gate it on an `onArt` prop so the CALLER — which " +
-        "is the only thing that knows where the component is mounted — decides:\n  " +
-        offenders.join("\n  ")
+      "Hardcoded `on-art` in a SHARED component — it renders in card contexts too " +
+        "(LevelUpModal, sheet sections) where the backdrop ink + dark outline is a leak. " +
+        "Remove the class; the `.on-art-scope` ancestor flip restyles it on art contexts."
     ).toEqual([]);
   });
 });
@@ -162,81 +236,6 @@ describe("light-theme edit-mode frame GLOWS (Img #30)", () => {
       editGlow.test(css),
       "MISSING: the `[data-theme=light] .content[data-mode=edit]::before` override using " +
         "var(--accent-primary). Without it light-theme edit mode is not obvious (no glow)."
-    ).toBe(true);
-  });
-});
-
-describe("the on-art treatment cannot go back to being a blanket", () => {
-  it("no `.on-art-scope` rule carries a surface-exclusion list", () => {
-    // THE DEFECT IDIOM, banned by shape rather than by name: a selector that matches
-    // broadly inside the scope and then subtracts a hand-written list of surface
-    // classes. It cannot be derived (whether text is on a surface is a fact about the
-    // rendered ancestor chain, not about any class), so it rots silently the first
-    // time a surface is built out of a class nobody remembered to add.
-    //
-    // Judged per RULE, on the SELECTOR only — a probe that scans the flattened
-    // stylesheet for `:not( :where(` and then looks "nearby" for a surface name reads
-    // straight across rule boundaries and reports selectors that carry no exclusion
-    // at all (it did: two innocent `.fchip` rules).
-    const offenders = [...css.matchAll(/([^{}]+)\{[^{}]*\}/g)]
-      .map(([, sel]) => (sel ?? "").trim())
-      .filter(
-        (sel) =>
-          sel.includes(".on-art-scope") &&
-          /:not\(\s*:where\(/.test(sel) &&
-          /\.info-card|\.party-card|\[class\*="bg-"\]/.test(sel)
-      )
-      .map((sel) => sel.slice(0, 90));
-    expect(
-      offenders,
-      "A `.on-art-scope … :not(:where(<surface list>))` rule is back. That is the " +
-        "mechanism that put cream ink on the campaign hub's ivory panels: the list " +
-        "cannot be derived, so it rots the moment a new surface class appears. Put " +
-        "`.on-art` / `.on-art-title` on the leaf that genuinely sits on the art " +
-        "instead — and let `on-art-ink.spec.ts` prove both directions on the rendered " +
-        "page:\n  " +
-        offenders.join("\n  ")
-    ).toEqual([]);
-  });
-
-  it("the two opt-in tiers exist, and light re-derives both inks", () => {
-    expect(
-      /\.on-art,\s*\.on-art-title \{ text-shadow: var\(--on-art-halo\); \}/.test(css),
-      "MISSING the shared GROUND on the two opt-in tiers. The halo is theme-agnostic " +
-        "(our backdrops carry bright regions in both rooms); only the INK is light's."
-    ).toBe(true);
-    expect(
-      /\[data-theme="light"\] \.on-art \{ color: var\(--text-on-backdrop\); \}/.test(css),
-      "MISSING light's parchment BODY ink on `.on-art`."
-    ).toBe(true);
-    expect(
-      /\[data-theme="light"\] \.on-art-title \{ color: var\(--text-on-backdrop-title\); \}/.test(
-        css
-      ),
-      "MISSING light's gilt TITLE ink on `.on-art-title`."
-    ).toBe(true);
-  });
-
-  it("a self-backing control re-derives its plate PER THEME, never one scrim for both", () => {
-    // `--on-art-plate` was theme-agnostic near-black, so on the cream hub the DM
-    // attach affordance was the only near-black object on the page, between two
-    // ivory panels. An object on the scene backs itself in the room it stands in.
-    for (const token of ["--on-art-plate", "--on-art-plate-ink", "--on-art-plate-halo"]) {
-      expect(
-        (
-          readSrc(resolve(SRC_ROOT, "index.css")).match(new RegExp(`${token}:`, "g")) ??
-          []
-        ).length,
-        `${token} must be defined TWICE — once as the dark strike, once for daylight.`
-      ).toBeGreaterThanOrEqual(2);
-    }
-    expect(
-      /\.party-dm-attach \{[^}]*background-color: var\(--on-art-plate\)[^}]*color: var\(--on-art-plate-ink\)/.test(
-        css
-      ),
-      "The DM attach affordance must paint the per-theme plate + its per-theme ink. " +
-        "A halo grounds INK and cannot ground the dashed EDGE, so this control backs " +
-        "itself — in BOTH rooms."
     ).toBe(true);
   });
 });

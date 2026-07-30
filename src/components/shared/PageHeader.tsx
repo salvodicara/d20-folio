@@ -41,6 +41,16 @@ export interface PageHeaderProps {
    * cockpit surfaces that embed a PageHeader can opt out with `framed={false}`.
    */
   framed?: boolean;
+  /**
+   * Seat the engraved brand crest (DESIGN.md §13, `--asset-crest`) as a faint
+   * watermark behind the band — the folio's frontispiece emblem. OFF by default
+   * and requires `framed`. The placement principle: the standard-field framed
+   * mastheads (DESIGN.md §13) carry the crest; an art-backed masthead — the
+   * campaign hub, whose backdrop is the campaign's own art — does NOT, because
+   * its art is the frontispiece. Inner cockpit `PageHeader`s (which pass
+   * `framed={false}`) never carry it.
+   */
+  crest?: boolean;
 }
 
 export function PageHeader({
@@ -50,10 +60,13 @@ export function PageHeader({
   titleId,
   as = "h2",
   framed = true,
+  crest = false,
 }: PageHeaderProps) {
   const Heading = as;
+  const withCrest = framed && crest;
   return (
-    <header className={cn("page-head", framed && "framed")}>
+    <header className={cn("page-head", framed && "framed", withCrest && "has-crest")}>
+      {withCrest && <span className="page-head-crest" aria-hidden />}
       <div className="page-head-titles">
         <Heading className="page-title" id={titleId}>
           {title}

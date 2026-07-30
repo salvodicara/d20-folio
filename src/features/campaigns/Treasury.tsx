@@ -208,11 +208,8 @@ export function Treasury() {
     <SectionPanel
       sectionId="treasury"
       title={t("campaignHub.treasury")}
-      // The one LOOSE muted badge in the app: it rides the section rubric, on the
-      // art, so it opts in to the self-backing plate. A card-bound `.badge.muted`
-      // (the party encounter's monster xN token) keeps the plain card recipe.
       meta={
-        <Badge variant="muted" size="sm" className="on-art-chip">
+        <Badge variant="muted" size="sm">
           {t("campaignHub.totalGp", { gp: treasuryTotalGp(treasury) })}
         </Badge>
       }

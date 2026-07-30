@@ -76,6 +76,7 @@ export function LegalPage() {
       <PageHeader
         as="h1"
         framed
+        crest
         title={t("legal.title")}
         hint={t("legal.subtitle")}
         actions={

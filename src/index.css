@@ -108,135 +108,14 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --measure: 72ch;
 
-  /* ── § 04 Radius — TWO values, and there is no third ──────────────────────
-     A plate is 10px. A chip is square. That is the whole system.
-
-     The reference has no square-cornered panel and no third radius: its panels,
-     plaques and modals all sit at ~10–12px, INCLUDING the ornamented ones — an
-     ornamented corner is rounded too, with the mark radiating inside the curve.
-     (This reverses the 2026-07-24 square-corner ruling, which was made to give a
-     corner knot a "true crossing" to seat on. The one-line law it served is kept
-     and strengthened as L2; the squareness it justified has no support in the
-     reference, and the mark's registration is solved by sitting inside the
-     radius rather than by flattening the corner.)
-
-     `--r-chip: 0` is what a chip, a grid cell, a pip and a read-only facet take —
-     square, exactly as the reference's cells are. `--radius-pill` survives for
-     the ONE true pill in the app, the settings switch track; a circular
-     medallion (a coin, a seal, a portrait well) is a SHAPE, not a third radius,
-     and the reference frames its portraits and its hotbar hub the same way.
-     The Tailwind `--radius-*` bridge at the bottom of this file re-points every
-     `rounded-*` utility at the same two values, so markup and stylesheet can
-     never drift into a third. ── */
-  --r-plate: 10px;
-  --r-chip: 0;
-  --radius-pill: 999px; /* reserved: the settings switch track only */
-
-  /* ── § 04a THE PLATE MATERIAL — the one material every container is made of.
-     Measured off the reference, not invented (DESIGN.md §4 "The plate material").
-
-     A plate is FOUR tonal events in this order, and nothing else:
-       moat → metal → groove → body.
-     The MOAT is a 1px dark ring OUTSIDE the frame (the reference's plates sit in
-     their own shadow groove — darker than the scene, so a plate reads as an
-     object laid ON the page, not a region cut out of it). The METAL is the
-     border itself, ONE warm value on all four runs (the reference's frame is
-     top-lit by ~30% at most — inside our rendering noise, and deliberately not
-     modelled: a hard lit/shaded split reads as a web bevel, not as metal). The
-     GROOVE is darkness immediately INSIDE the frame. There is NO cream inner
-     lip: the reference puts darkness inside a frame and the plate brightens
-     AWAY from the edge because of the dome, not because of a highlight. That
-     one idiom — the 1px cream line under a top border — is the single most
-     common thing this chrome used to do, and it is banned outright.
-
-     THE DOME is the plate's whole convexity: ONE elliptical specular pool at
-     (50%, 30%), falling to nothing by the edges. Its falloff IS the vignette and
-     IS the basin — there is no second darkening layer anywhere. The reference's
-     pool peaks at 2.4× its corner luminance; DARK ships 1.59× because our dark
-     plates are TRANSLUCENT over painted candlelight and the ink budget is real.
-     That 1.6× is the ceiling the INK TIERS buy, not a taste call: the dark plate
-     carries THREE ink registers (secondary → muted → faint) and the faintest one
-     has to clear 4.5:1 at the pool's peak. Measured on the worst domed composite
-     (surface-2 at --panel-alpha over the brightest backdrop region, then domed):
-     the pool costs --text-faint ~0.10 of contrast per 1% of alpha, so a 10% pool
-     leaves NO room for a third register (its minimum passing ink lands on top of
-     --text-muted) while 4% keeps all three, each a visible L* step apart. Raising
-     this alpha means deleting an ink tier — re-derive BOTH tokens first (the
-     floor is pinned in tests/unit/verdict-ink-contrast.test.ts, which composites
-     the dome over the opaque plate, the panel and the rail).
-
-     TWO TIERS, differing ONLY in light — never in geometry:
-       · quiet  — cards, panels, rows, plaques: 1px metal, the near seat.
-       · earned — dialogs, the identity band, the realm masthead, the codex leaf:
-                  2px metal, the far seat.
-     ── */
-  --plate-face: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  --edge-metal: var(--border-strong);
-  --edge-metal-earned: var(--border-accent);
-
-  /* ── § 04b THE STATE LADDER — five rungs, and there is no sixth.
-     L3: STATE CHANGES LIGHT AND COLOUR ONLY. GEOMETRY IS FROZEN. Nothing a
-     pointer, a keyboard or a selection does may change a radius, a border width,
-     a size, a padding or a position — the reference's tabs, plaques and rows are
-     pixel-identical across every state and differ only in how they are lit. A
-     surface that resizes under the cursor is a web affordance; a surface that
-     brightens is a material.
-
-       rest      → the tier's own metal, the plate's own face
-       hover     → the metal warms toward gold, a candle WASH crosses the face
-       pressed   → the wash darkens (light: whitens) and the plate takes 1px in
-       selected  → the metal is the accent, the wash is the accent, the ink lifts
-       disabled  → the face flattens and desaturates, the label goes muted
-                   (`.btn:disabled` — a recipe, not a metal, so it has no token)
-
-     The WASH is the whole mechanism: one translucent veil composited over the
-     plate's own face, never a second gradient authored per component. That is
-     what makes fifty controls share one ladder instead of fifty bespoke hovers.
-
-     The only motion the ladder licenses is the reference's own 1px settle on a
-     CARD (transform, `[data-motion]`-gated) — a card lifts toward the light, it
-     does not grow. ── */
-  --state-metal-hover: var(--border-accent);
-  --state-metal-selected: var(--accent-primary);
-  /* The three WASHES are per-theme, because a veil is not an inversion. The same
-     alpha is a different STEP on near-black than it is on ivory: 10% of the warm
-     gold lifts the dark plate by ΔL* 5.9 and the ivory one by ΔL* 3.4. The two
-     themes therefore carry different alphas of the SAME hue, tuned to the same
-     perceptual step — hover ≈ ΔL* 6, selected ≈ ΔL* 9.5 — which is what makes the
-     ladder feel identical in a room it was separately designed for. */
-
-  /* ── THE VEIL SLOT — how a wash reaches a PLATE without destroying it.
-     `background-image` is a REPLACED property, exactly like `box-shadow`: a state
-     rule that sets it on a plate discards the plate's own dome and face, and the
-     surface goes TRANSLUCENT under the pointer (the roster tile did, on the app's
-     landing route, with the candlelit art showing straight through the card and its
-     muted ink stranded on the scene).
-
-     So a plate composes ONE veil layer at rest — `background-image: var(--state-veil),
-     var(--plate-dome), var(--plate-face)` with `--state-veil: none` declared on the
-     plate itself (so a plate nested inside a lit one starts clean) — and every rung
-     of the ladder sets THAT, never the background. A state can then no longer cost a
-     surface its substance, and the wash is literally what §04b says it is: one
-     translucent veil composited over the plate's own face.
-
-     AND THE SLOT SURVIVES THE CASCADE: a variant or theme rule that re-cuts the same
-     face — the caster statcard, the light strike of the level chip — must re-compose
-     `var(--state-veil)` at the head of ITS stack, and must use the `background-image`
-     longhand. The `background` SHORTHAND resets `background-image`, so an override
-     written that way drops the slot and turns every rung below it into a no-op —
-     which is exactly what made the statcard's hover wash paint on one of its four
-     theme × variant combinations and no others.
-     (No theme selector is written literally in this comment: two guards locate a
-     theme block with `indexOf`, so a prose mention of one moves their cursor.)
-     Enforced by `chrome-system.guard.test.ts` → "never lets a state rule silently
-     strip a plate's FACE", which derives its subject list from the stylesheet: a
-     recipe is in scope when it names `var(--plate-face)` OR opens the slot. ── */
-  --veil-hover: linear-gradient(var(--state-wash-hover), var(--state-wash-hover));
-  --veil-pressed: linear-gradient(var(--state-wash-pressed), var(--state-wash-pressed));
-  --veil-selected: linear-gradient(
-    var(--state-wash-selected),
-    var(--state-wash-selected)
-  );
+  /* ── § 04 Radius — Lapidary (chips are facets, NOT pills) ─────────────── */
+  --radius-sm: 0;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-xl: 8px;
+  --radius-2xl: 12px;
+  --radius-full: 4px; /* chips @ 4px facet — the ONLY true pill is the §21 switch track (999px) */
+  --radius-pill: 999px; /* reserved: switch track only */
 
   /* ── § 06 Motion — The settling grammar (BG3 identity: motion SETTLES, never
      travels — short cubic-out fades with tiny translates; spring/bounce is
@@ -296,36 +175,39 @@
      wasted; the cockpit is full-bleed and opts out by not using .page-shell. */
   --page-max: 76rem; /* ~1216px */
   /* Owner-generated atmospheric SCENE PLATES (DESIGN.md §13) — PER-THEME art,
-     same world ("Daylight Sibling Plates", owner-ratified): each scene plate
-     ships a candlelit night original (dark) and a daylight twin of
+     same world ("Daylight Sibling Plates", owner-ratified): each of the three
+     scene plates ships a candlelit night original (dark) and a daylight twin of
      the SAME room (light), so switching theme reads as the same place at a
      different hour. The tokens default to the DARK plates here; the light theme
-     block re-points them all to their daylight siblings — and because CSS only
+     block re-points all three to their daylight siblings — and because CSS only
      fetches the value a rule actually applies, each theme downloads ONLY its
      own plates. Were a file ever missing the layer paints
      nothing and the gilt-gradient fallback baked into each consuming recipe
      shows instead.
        --asset-home-hero          the app-wide backdrop (arcane study)
        --asset-login              the sign-in splash (glowing grimoire altar)
-       --asset-campaign-backdrop  the campaign default (war-table hall)
-       --asset-compendium-scene   the compendium realm (the Grand Library)
-       --asset-roster-scene       the roster realm (the Hall of Heroes)
-       --asset-creation-scene     the wizards' realm (the Ritual of Making) */
+       --asset-campaign-backdrop  the campaign default (war-table hall) */
   --asset-home-hero: url("/assets/backgrounds/home-hero.webp");
   --asset-login: url("/assets/backgrounds/login.webp");
   --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop.webp");
+  /* Realm scenes (post-v0.22.0 feature layer, kept through the visual rollback):
+       --asset-compendium-scene   the compendium realm (the Grand Library)
+       --asset-roster-scene       the roster realm (the Hall of Heroes)
+       --asset-creation-scene     the wizards' realm (the Ritual of Making) */
   --asset-compendium-scene: url("/assets/backgrounds/compendium-scene.webp");
   --asset-roster-scene: url("/assets/backgrounds/roster-scene.webp");
   --asset-creation-scene: url("/assets/backgrounds/creation-scene.webp");
 
   /* Compendium "ancient tome" parchment (DESIGN.md #5). A real aged-scroll WebP
-     (OWN-23 — owner-supplied, cropped off its table + watermark) IS the surface:
-     the `.tome-leaf-surface` recipe covers the leaf with it in ONE pass. Light
-     theme shows the warm vellum full-strength (dark ink on parchment); dark
-     theme reads its own pre-graded candlelit-umber plate
-     (`--asset-vellum-dark`) through the same indirection, so light ink stays
-     legible. */
+     (OWN-23 — owner-supplied, cropped off its table + watermark) IS the surface now:
+     the `.cmp-tome` recipe covers the tome with it. Light theme shows the warm vellum
+     full-strength (dark ink on parchment); dark theme tones it to an even candlelit
+     umber and reads the same photo as faint texture-only over a warm-dark base, so
+     light ink stays legible. One opacity knob (`--parchment-strength`) tunes the light
+     theme's texture booster; dark sets its own. (The old CSS `--parchment-grain`
+     fibre fallback was retired once the photo shipped — it muddied the image.) */
   --asset-parchment: url("/assets/textures/parchment.webp");
+  --parchment-strength: 0.5;
 
   /* BG3-identity panel/tome materials (DESIGN.md §13) — owner-generated,
      seam-blended tileable WebPs, one per theme. `panel-leather` is the near-black
@@ -342,10 +224,9 @@
      a bronze d20 in a laurel + acanthus wreath, shipped as an ALPHA-MASK WebP
      (white ink, alpha = engraving luminance) and rendered via CSS `mask-image`,
      so the emblem always wears the current theme's accent ink — never a raster
-     colour of its own. ONE consumer: the compendium frontispiece watermark
-     (`.cmp-frontis-inner::before`) — DESIGN.md §5 spends the idiom exactly once,
-     on a title page, because nothing live is set over it. No masthead carries a
-     crest behind its ink. */
+     colour of its own. Seated as the frontispiece watermark behind every framed
+     masthead on the standard app field (`.page-head-crest`); the art-backed
+     campaign hub omits it (its art is the frontispiece). */
   --asset-crest: url("/assets/brand/crest.webp");
 
   /* ── § 01 Palette — mineral pigment ramps (theme-independent) ─────────── */
@@ -357,13 +238,6 @@
   --gold-leaf-500: #b8923d;
   --gold-leaf-700: #7a5f24;
   --gold-leaf-900: #3d2f12;
-  /* Engraving ink for theme-INVARIANT gilt jewelry (the compendium CR seal): a
-     fixed warm near-black struck into a fixed light-gold gem in BOTH themes, so
-     the seal reads as one piece of gold jewelry regardless of theme. Theme-
-     independent by design — never re-resolve it per `[data-theme]` (owner-directed
-     2026-07-24: the per-theme accent pair went bronze-on-bronze in light). Clears
-     AA on the gem's dark end (verdict-ink-contrast guard). */
-  --gilt-ink: #1a1610;
 
   --lapis-50: #d8e3f4;
   --lapis-100: #a8bce0;
@@ -392,51 +266,6 @@
   --amethyst-500: #6b3d96;
   --amethyst-700: #43245d;
   --amethyst-900: #21132d;
-
-  /* The dark HALO every on-art ink pairs with — ONE token, and now ONE mechanism,
-     in BOTH themes. Loose text on the candlelit backdrop is grounded by this halo
-     and by nothing else: light also FLIPS its ink (dark ink vanishes on dark art),
-     dark keeps its own inks and needs only the ground. The halo is inherited from
-     `.on-art-scope` and neutralised at every surface boundary, so it reaches loose
-     text app-wide from two rules instead of being restated per register.
-
-     Why dark needs it at all: the premise "the art is dark, so light ink is safe"
-     is false — our backdrops have large BRIGHT regions, and against them dark's own
-     `--text-muted` measured 1.64:1 on the hub's section counts and its gold rubric
-     1.95:1. A tight dark micro-edge is what the a11y gate credits as the backing.
-
-     Re-struck for the DAYLIGHT plates (the sibling-plate rebuild): the old
-     four-direction 1px offset copies were a hard stroke — right on the night art,
-     but on the honey/amber morning plates every loose label read as OUTLINED "game
-     subtitle" text. The halo is a tight dark micro-edge plus a soft lifted umber
-     shadow, so on-art text reads as gilt lettering catching light, not a sticker
-     with a border. */
-  /* The on-backdrop INK — warm illuminated parchment, the one colour that reads as
-     gilt lettering on the candlelit scene. Light FLIPS its whole loose vocabulary to
-     it (dark ink vanishes on dark art); dark keeps its own inks, but a CONTROL that
-     sits on the backdrop takes this ink in both themes, because a control must be
-     self-backed and legible wherever the scene happens to be bright. */
-  --text-on-backdrop: #f8f1de;
-  /* The GROUND a self-backing on-art control paints for itself. A halo grounds INK;
-     it cannot ground an EDGE, so a chip or a dashed affordance loose on the scene
-     needs a real (translucent) plate under it or its border dissolves across the
-     bright half of the art — the "+ Attach a character" affordance did, in both
-     themes, and the treasury total chip measured 1.46:1 in dark. */
-  --on-art-plate: color-mix(in srgb, #140d04 66%, transparent);
-  /* …and the INK + GROUND that plate carries. Both are per-theme, because the plate
-     is: DARK backs a translucent near-black scrim and writes parchment on it, LIGHT
-     backs a warm parchment scrim and writes the page's own deep ink. The light
-     values are NOT a nicety — the near-black plate was theme-agnostic, so on the
-     cream hub it was the only near-black object on the page, sitting between two
-     ivory panels. An object on the scene backs itself in the room it is standing
-     in. The halo goes with the dark plate only: a dark outline behind DEEP ink on
-     parchment is a smudge, not a ground. */
-  --on-art-plate-ink: var(--text-on-backdrop);
-  --on-art-plate-halo: var(--on-art-halo);
-
-  --on-art-halo:
-    0 0 1px rgba(20, 13, 4, 0.95), 0 0 2px rgba(20, 13, 4, 0.85),
-    0 1px 3px rgba(24, 16, 5, 0.75), 0 2px 10px rgba(28, 19, 6, 0.5);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -494,18 +323,10 @@
      defines its own gentler value (morning-light translucency — see the light
      block). */
   --panel-alpha: 0.9;
-  /* The candlelit backdrop's presence in dark. RAISED 0.55 → 0.9 (the
-     atmosphere mandate, owner 2026-07-23: "Really want the woooow effect …
-     The images I provided you look amazing, let's not sacrifice them"): the
-     owner plates are DESIGNED with calm near-black centres where panels and
-     text sit, so their painterly edges can carry near-full presence — the
-     login splash always rendered its plate native, and the app field now
-     matches that confidence. 0.9 mirrors --panel-alpha (the world at 0.9
-     through panels at 0.9); the composite floor holds ≥ 4.7:1 (guard reads
-     the real value). CUSTOM uploads are carved back to the proven 0.55
-     taming via [data-app-bg-custom] (see the body::after painter notes) —
-     an arbitrary DM image has no calm-centre discipline. */
-  --app-bg-art-opacity: 0.9;
+  /* The candlelit backdrop's presence in dark (was the body::after 0.55
+     fallback; now explicit — mirrors the light block's token — so the
+     composite-floor guard reads the real value). */
+  --app-bg-art-opacity: 0.55;
 
   --text-primary: #f0e4cb;
   /* The SPECIAL emphasis tier (BG3 identity epic, 2026-07-02) — BG3's warm-cream
@@ -515,28 +336,14 @@
      surface-3 (trivially AA; the point is the distinct register). */
   --text-special: #fff2b3;
   --text-secondary: #c4b89e;
-  /* THE THREE DARK INK REGISTERS, and the dome they are budgeted against.
-     A dark plate is TRANSLUCENT over painted candlelight and the specular pool
-     brightens the very composite the ink sits on, so all three registers are
-     derived on the worst ground the app actually paints: surface-2 at
-     --panel-alpha over the brightest glyph-scale backdrop region (#be8031 at
-     --app-bg-art-opacity) = rgb(43,33,19), then domed at the pool's peak.
-
-     At the shipped 4% dome that ground is rgb(51,41,25) and the ladder measures
-     secondary 7.25 · muted 5.46 · faint 4.64 — three registers, each a visible
-     L* step apart (secondary−muted 9.1, muted−faint 5.0), all clear of 4.5.
-     (At the 10% dome the branch briefly shipped, the same ladder was 6.13 · 4.62
-     · 3.64 — the faint register FAILED AA, and its minimum passing value landed
-     on top of --text-muted. The dome, not the ink, was the thing out of spec.) */
-  --text-muted: #ae9f7e;
-  /* The faintest register — help text, placeholders, slot labels, timestamps, at
-     the 8–11px sizes it is actually used for. #9a8c6e (its value before the dome)
-     measures 4.30:1 on the domed panel composite and FAILS; #a09272 measures
-     4.64:1 there, 5.26:1 on a domed opaque plate and 4.58:1 on the darkest case a
-     domed surface-3 can make — while staying 5.0 L* below --text-muted, so the
-     third register is still a register. Decoration-only faint should use
-     --border-strong, never this. */
-  --text-faint: #a09272;
+  /* nudged lighter one step (#8b7e64 → #988b6e) so muted labels clear AA (4.5:1)
+     even on the darkest --bg-surface-3 recessed cards (was ~3.9:1) without
+     flattening the hierarchy below --text-secondary. */
+  --text-muted: #988b6e;
+  /* text-faint raised to meet ~4.5:1 at the 8-11px sizes it is actually used for
+     (placeholders, .es-note, slot labels, fchip counts) — was #5a5141 (~2.3:1, FAIL).
+     Decoration-only faint should use --border-strong, never this. */
+  --text-faint: #9a8c6e;
   --text-inverse: #1a1610;
 
   --border-soft: #241e15;
@@ -576,28 +383,13 @@
   --cp-dest-bg: #191309;
   --cp-dest-ink: #c4b89e;
 
-  /* § 07 Focus — crisp ring color (dark: gold-300 ≈ 7-9:1; clears WCAG 1.4.11 3:1).
-     The ring IS the whole focus grammar: no interior wash, no bloom. A halo is a
-     light-emission effect, and light on this chrome means a lit material, never a
-     state; the 2px ring alone clears WCAG 1.4.11. */
+  /* § 07 Focus — crisp ring color (dark: gold-300 ≈ 7-9:1; clears WCAG 1.4.11 3:1). */
   --focus-ring: var(--gold-leaf-300);
-
-  /* § HAIRLINE — the ONE divider in the system (P3).
-     Every separator in the application is this line: modal heads, card feet,
-     section rubrics, list groups, the compendium entry head, the colophon. It
-     fades at both tips, carries NO node, and is inset from its container's
-     padding edge — never wall-to-wall. A whisper: clearly subordinate to ink,
-     never a second frame. `--hairline-ink` is the one parameter (the light
-     sibling and the econ-typed section heads re-tint it); `--hairline` is the
-     painted gradient every consumer uses. */
-  --hairline-ink: color-mix(in oklab, var(--accent-primary) 30%, transparent);
-  --hairline: linear-gradient(
-    90deg,
-    transparent,
-    var(--hairline-ink) 10%,
-    var(--hairline-ink) 90%,
-    transparent
-  );
+  /* Focus interior WASH (BG3 identity epic, 2026-07-02): BG3 focuses a control by
+     washing its INTERIOR with warm light (#fddda6 at 23–60% alpha), not by ring
+     alone. Additive warmth layered under the a11y ring (the shared :focus-visible
+     recipe) — never a replacement for it. */
+  --focus-wash: rgba(253, 221, 166, 0.25);
 
   /* § Ornament metals (BG3 identity T5 — DESIGN.md §5 "The ornament vocabulary").
      The SELECTED frame is silver-over-bronze (BG3's #c0b8b0 → #685644 → #c0b8b0,
@@ -606,19 +398,47 @@
      the chosen plaque. */
   --metal-silver: #c4baa9;
   --metal-bronze: #6e5a3c;
+  /* The gilt-glint sheen ink (wave 2 — the one-shot hover sweep on the
+     struck-gold tier, folio.css): a white haze over the deep dark gold. */
+  --glint-ink: rgba(255, 255, 255, 0.32);
+
+  /* § Reliquary goldwork (the full-BG3 identity push, owner-ratified 2026-07-16 —
+     DESIGN.md §5 "The ornament vocabulary"). The worked-gold CORNER ornament that
+     caps the app's hero frames (framed masthead, gilt-framed hero band, dialogs):
+     one per-theme SVG — a small faceted corner gem + ONE short tapered hairline
+     arm per edge ending in a diamond finial (the discreet-weight rule, owner
+     2026-07-17: the old echo hairline + mid-arm diamond are DELETED — ornament
+     ink never shares air with content ink) — consumed via `border-image` on an
+     overlay pseudo (the
+     `.page-head.framed::before` / `.gilt-frame::after` / `.modal::after` recipe,
+     folio.css), OUTSET so the arms lie on the host's border stroke and the gem
+     caps the corner vertex like a bookbinding fitting (owner, 2026-07-17). Data-URI because CSS custom properties cannot reach inside an
+     SVG url: each theme bakes its own metal. TWO-TONE STRIKE (wave 2, F2): the
+     metal is dimensional, not line-art — the arm/finial GEOMETRY (unfilled defs:
+     a=arm set, h=+diagonal mirror+gem silhouette, q/f=the four corners) is
+     mirrored FIRST and toned AFTER, so the light stays top-left on every corner
+     (toning inside the mirrored unit would flip the bevel upside-down on the
+     bottom corners). Dark = raised struck gold: a near-black under-shadow seat
+     (+1.5,+2) below-right + a faint gold-200 top-edge glint (-1,-1.5) under the
+     gold-300 body; the gem is truly faceted (gold-200 lit top facet / gold-500
+     shaded lower / gold-700 core), placed per-corner UNFLIPPED via use x/y.
+     Edges stay EMPTY: goldwork marks the corner, the 1px border remains the
+     quiet run. */
+  --frame-ornate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500'><defs><g id='a'><path d='M58 37.2 132 39 132 41 58 42.8Z' opacity='.92'/><path d='M138 35 143 40 138 45 133 40Z' opacity='.8'/></g><g id='h'><use href='%23a'/><use href='%23a' transform='matrix(0 1 1 0 0 0)'/><path d='M40 25 55 40 40 55 25 40Z'/></g><g id='q'><use href='%23h'/><use href='%23h' transform='matrix(-1 0 0 1 500 0)'/></g><g id='f'><use href='%23q'/><use href='%23q' transform='matrix(1 0 0 -1 0 500)'/></g><g id='g'><path d='M40 25 55 40 25 40Z' fill='%23f0d791'/><path d='M25 40 55 40 40 55Z' fill='%23b8923d'/><path d='M40 33 47 40 40 47 33 40Z' fill='%237a5f24'/></g></defs><use href='%23f' fill='%23000' opacity='.5' transform='translate(1.5 2)'/><use href='%23f' fill='%23f0d791' opacity='.32' transform='translate(-1 -1.5)'/><use href='%23f' fill='%23d4ac4d'/><use href='%23g'/><use href='%23g' x='420'/><use href='%23g' y='420'/><use href='%23g' x='420' y='420'/></svg>");
+  /* Engraved ceremonial titling (same push): the struck-plate ink for the
+     Cinzel register — a tight dark seat below the glyphs + a faint warm gold
+     underglow, so page/modal titles read struck into the plate instead of flat
+     ink. NEVER gradient text (§7 hard ban holds). */
+  --engrave-title:
+    0 1px 0 rgba(0, 0, 0, 0.6), 0 2px 5px rgba(0, 0, 0, 0.4),
+    0 -1px 14px rgba(212, 172, 77, 0.14);
 
   --semantic-success: var(--verdigris-300);
   --semantic-danger: var(--vermilion-300);
   --semantic-warning: var(--gold-leaf-300);
   --semantic-info: var(--lapis-300);
-  /* Rules-prose Advantage ink (`.rt-adv`) — the prose-only variant of the success
-     stop (DESIGN.md → the Ink-Variant Rule). On the dark ground the success stop
-     itself already clears AA everywhere prose lands, so dark IS that stop; light
-     needs a deeper one. `.rt-dis` needs no variant in either theme. */
-  --rt-adv-ink: var(--semantic-success);
   /* ONE edit-mode voice (amber/gold) — the EditingPill is the sole visual edit
-     indicator. Distinct from --semantic-success (the SaveIndicator's green + the
-     encounter budget readout's "Low" verdict chip). */
+     indicator. Distinct from --semantic-success (reserved for SaveIndicator). */
   --edit-accent: var(--gold-leaf-300);
 
   /* § 09 Action-type slots + magic marker */
@@ -792,90 +612,6 @@
   --cur-cp: #c87c44;
   --cur-cp-deep: #6a3818;
 
-  /* § 05a THE PLATE MATERIAL, dark strike — the four colour roles (§04a). */
-  /* How much of the face survives where a GRAIN tile sits beneath it — the one
-     parameter of `.folio-panel::before`'s veil layer, which is what keeps the
-     grain a low mottle instead of a pattern behind text. (CSS has no per-layer
-     background alpha and the tile is opaque, so the veil is the face gradient
-     re-mixed at this alpha, inline at its one consumer — not a tenth primitive
-     restating `--plate-face`.) */
-  --plate-veil-alpha: 62%;
-  /* The dark pool: 4%, i.e. 1.59× the plate's corner luminance — the ~1.6× the
-     material spec sets for dark (§05a above). It shipped at 10% (2.78×, brighter
-     than the 2.4× reference itself) and that overshoot took --text-faint to
-     3.64:1 on the panel composite. 4% is the strongest pool three ink registers
-     can pay for. */
-  --plate-dome: radial-gradient(
-    ellipse 82% 62% at 50% 30%,
-    rgba(245, 230, 180, 0.04),
-    rgba(245, 230, 180, 0) 74%
-  );
-  --plate-grain: image-set(var(--asset-panel-leather) type("image/webp"));
-  --edge-groove:
-    inset 0 0 0 1px rgba(0, 0, 0, 0.5), inset 0 0 20px 2px rgba(0, 0, 0, 0.4);
-  --edge-seat: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 10px 24px rgba(0, 0, 0, 0.5);
-  --edge-seat-earned: 0 0 0 1px rgba(0, 0, 0, 0.75), 0 26px 60px rgba(0, 0, 0, 0.72);
-
-  /* § Reliquary goldwork (the full-BG3 identity push, owner-ratified 2026-07-16;
-     the STYLE-A corner knot, owner-picked 2026-07-24 — DESIGN.md §5 "The
-     ornament vocabulary"; pattern homework in the ornaments-v2 research corpus).
-     The worked-gold frame that binds the app's hero surfaces (framed masthead,
-     gilt-framed hero band, dialogs), a faithful transcription of the owner's
-     BG3 spellbook-reference corner. Anatomy, per corner (defs g#e/g#v/g#k/g#f):
-     the rail SWELL crosses the vertex in a fine whisker overshoot (g#e, tips on
-     the rail axis — attached; used twice in g#k, once diagonal-mirrored to the
-     vertical rail); ONE wave-volute comma-curl rising outward on the diagonal
-     over an OPEN eye (g#v); a small weld DIAMOND seating the crossing; and a
-     five-ray glint FAN radiating into the panel (g#f). NO mid-rail leaves —
-     each corner is ONE compact terminal that CONCLUDES cleanly: the swell
-     tapers to a 1px hairline (≈x=30) that dissolves into the host's own border
-     stroke, and the edge between opposing terminals is bare border (owner,
-     2026-07-24: the earlier sickle-leaf pair read as scattered "dirt" mid-edge
-     on the short hosts). MECHANISM: NOT border-image — the token is a list of
-     FOUR fixed-size per-corner SVG background layers (tl/tr/bl/br, each a 64×64
-     tile drawn 1:1, anchored left top / right top / left bottom / right bottom
-     at 64px 64px no-repeat) painted on the `.page-head.framed::before` /
-     `.gilt-frame::after` / `.modal::after` overlay pseudo, inset
-     -13.3px so each tile's 20%-mark rail centerline (12.8px) seats on the
-     host's 1px border stroke at EVERY host size (the fixed-size layers register
-     0±1px by construction, guard-pinned). Data-URI because CSS custom properties
-     cannot reach inside an SVG url: each theme bakes its own metal. TWO-TONE
-     STRIKE (kept): the geometry (g#e/g#v/g#k, g#f) is mirrored per-corner
-     UNFILLED first (tl unmirrored; tr/bl/br via one matrix each into g#K/g#F)
-     and toned AFTER in screen space (knot shade +1,+1.4 / glint -.6,-.9 / body;
-     fan +.6,+.85 / -.35,-.5 / body), so the bevel light stays top-left on every
-     corner. Dark = raised struck gold on the gold-300 body. */
-  --frame-ornate:
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g></defs><use href='%23f' fill='%23000' opacity='.35' transform='translate(.6 .85)'/><use href='%23f' fill='%23f0d791' opacity='.45' transform='translate(-.35 -.5)'/><use href='%23f' fill='%23d4ac4d' opacity='.62'/><use href='%23k' fill='%23000' opacity='.5' transform='translate(1 1.4)'/><use href='%23k' fill='%23f0d791' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23k' fill='%23d4ac4d'/></svg>")
-      left top / 64px 64px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(-1 0 0 1 64 0)'/></g><g id='F'><use href='%23f' transform='matrix(-1 0 0 1 64 0)'/></g></defs><use href='%23F' fill='%23000' opacity='.35' transform='translate(.6 .85)'/><use href='%23F' fill='%23f0d791' opacity='.45' transform='translate(-.35 -.5)'/><use href='%23F' fill='%23d4ac4d' opacity='.62'/><use href='%23K' fill='%23000' opacity='.5' transform='translate(1 1.4)'/><use href='%23K' fill='%23f0d791' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%23d4ac4d'/></svg>")
-      right top / 64px 64px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(1 0 0 -1 0 64)'/></g><g id='F'><use href='%23f' transform='matrix(1 0 0 -1 0 64)'/></g></defs><use href='%23F' fill='%23000' opacity='.35' transform='translate(.6 .85)'/><use href='%23F' fill='%23f0d791' opacity='.45' transform='translate(-.35 -.5)'/><use href='%23F' fill='%23d4ac4d' opacity='.62'/><use href='%23K' fill='%23000' opacity='.5' transform='translate(1 1.4)'/><use href='%23K' fill='%23f0d791' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%23d4ac4d'/></svg>")
-      left bottom / 64px 64px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(-1 0 0 -1 64 64)'/></g><g id='F'><use href='%23f' transform='matrix(-1 0 0 -1 64 64)'/></g></defs><use href='%23F' fill='%23000' opacity='.35' transform='translate(.6 .85)'/><use href='%23F' fill='%23f0d791' opacity='.45' transform='translate(-.35 -.5)'/><use href='%23F' fill='%23d4ac4d' opacity='.62'/><use href='%23K' fill='%23000' opacity='.5' transform='translate(1 1.4)'/><use href='%23K' fill='%23f0d791' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%23d4ac4d'/></svg>")
-      right bottom / 64px 64px no-repeat;
-  /* The ceremonial seat ornament (the winged divider, style-A language): BG3's
-     level-up under-title divider drawn 1:1 at 260×24 px — two long rails
-     tapering to hairpoints OUTWARD, each outer tip ending in a tiny OPEN
-     under-curl, each inner end rising in a small OPEN-EYE S-HOOK return (the
-     corner volute, small), and a luminous descending V-FLEUR at centre (two
-     nested chevron wings over a faceted plumb point that hangs BELOW the rule,
-     seated in a soft baked glow). Nothing floats — every stroke is attached to
-     the rule end to end. The fleur's
-     backing diamond is baked in the theme's surface-2 so the host's seat rule
-     passes BEHIND it (p25's occlusion) with zero notch math. Consumed by
-     `.modal-head::after` (folio.css). Same mirror-then-tone strike: the closure
-     (id='s') is toned by the shade/glint/body trio; the plumb-point facets are
-     per-theme lit/shade halves. */
-  --seat-orn: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='24'><defs><radialGradient id='gl'><stop offset='0' stop-color='%23f0d791' stop-opacity='.38'/><stop offset='1' stop-color='%23f0d791' stop-opacity='0'/></radialGradient><filter id='pb'><feGaussianBlur stdDeviation='1.1'/></filter><g id='u'><path d='M104.5 11.28Q60 11.22 16 11.65Q10 11.8 6.8 12Q4.7 12.95 5.7 13.75Q6.9 14.25 7.8 13.45Q6.7 13.5 6.3 13Q6.1 12.55 7.4 12.28Q10 12.3 16 12.42Q60 12.78 104.5 12.68Z'/><path d='M102.6 12.55Q106.8 11.7 107.8 9.9Q108.4 8.4 107.2 7.4Q105.8 6.6 104.6 7.5Q105.7 7.7 106.2 8.7Q106.5 9.7 105.4 10.6Q104.2 11.4 102.2 11.7Z'/></g><g id='s'><use href='%23u'/><use href='%23u' transform='matrix(-1 0 0 1 260 0)'/><path d='M121.8 6.4L130 10.5L138.2 6.4L138.2 8.5L130 12.6L121.8 8.5Z'/><path d='M125.3 2.8L130 5.8L134.7 2.8L134.7 4.6L130 7.6L125.3 4.6Z'/><path d='M130 13.2L132.2 16.6L130 22.8L127.8 16.6Z'/></g></defs><circle cx='130' cy='13.5' r='13' fill='url(%23gl)'/><path d='M130 5L136.4 13.2L130 21L123.6 13.2Z' fill='%231d1810' filter='url(%23pb)'/><use href='%23s' fill='%23000' opacity='.5' transform='translate(.5 .8)'/><use href='%23s' fill='%23f0d791' opacity='.32' transform='translate(-.4 -.6)'/><use href='%23s' fill='%23d4ac4d'/><path d='M130 13.2L127.8 16.6L130 22.8Z' fill='%23f0d791'/><path d='M130 13.2L132.2 16.6L130 22.8Z' fill='%238a6b2a'/><path d='M125.3 2.8L130 5.8L134.7 2.8L134.7 4.6L130 7.6L125.3 4.6Z' fill='%23f0d791' opacity='.8'/></svg>");
-
-  /* The state ladder's veils, dark strike (§04b): warm gold over near-black.
-     hover ΔL* 5.9 · selected ΔL* 9.4 · pressed goes INTO the candlelight, so
-     the veil is shadow. */
-  --state-wash-hover: color-mix(in oklab, var(--gold-leaf-500) 10%, transparent);
-  --state-wash-selected: color-mix(in oklab, var(--gold-leaf-500) 16%, transparent);
-  --state-wash-pressed: rgba(0, 0, 0, 0.16);
-
   /* § 05 Elevation — Carved + Embossed (dark) */
   --elev-flat: none;
   --elev-recessed:
@@ -899,6 +635,12 @@
      an edge. This is the gold twin (a deep gold-umber between gold-700 and the
      page); per-hue twins land in a later unit. */
   --glow-stroke-gold: #5e4a1e;
+
+  /* § 07 Focus — gold-leaf illumination (halo), grounded by a 1px --glow-stroke-gold
+     outer stroke (the BG3 stroke-twin pattern — the bloom sits ON an edge). */
+  --illumination:
+    0 0 0 1px var(--glow-stroke-gold), 0 0 24px rgba(184, 146, 61, 0.2),
+    0 0 1px rgba(212, 172, 77, 0.55);
 
   /* Vellum grain + atmosphere — a warm gold pool top-left, a cool lapis pool
      bottom-right, and a soft vignette that lets the page field recede at the edges
@@ -1027,27 +769,35 @@
      light gold patches (the dark edge separates it) AND the dark art (the bright
      fill pops), and the outline is what clears the a11y gate (bright fg vs the dark
      outline axe credits as the backing). Body = warm white; titles = bright gilt. */
+  --text-on-backdrop: #f8f1de;
   --text-on-backdrop-title: var(--gold-leaf-100);
-  /* The self-backing plate, daylight strike — a warm parchment scrim with the page's
-     own deep ink on it, so a control loose on the light scene reads as an object in
-     THIS room rather than as a hole punched into it. */
-  --on-art-plate: color-mix(in srgb, #fbf3dc 88%, transparent);
-  --on-art-plate-ink: var(--text-primary);
-  --on-art-plate-halo: none;
   /* Error/required ink ON the backdrop: the field's --semantic-danger is the deep
      vermilion-700 ink (vanishes on the dark art exactly like the field text). This
      is its on-backdrop sibling — a lifted warm vermilion, bright enough to read on
      the dark scene (relative luminance ≈ 0.49, above the on-art-ink guard's 0.45
      floor) while still unmistakably "danger" next to the parchment body ink. */
   --text-on-backdrop-danger: #f2a99c;
+  /* The dark HALO every on-art ink pairs with — ONE token so the treatment can
+     never drift between the `.on-art` leaf, the `.on-art-scope` flips, and the
+     on-art control recipes. Re-struck for the DAYLIGHT plates (the sibling-plate
+     rebuild): the old four-direction 1px offset copies were a hard stroke —
+     right on the night art it borrowed from dark, but on the honey/amber morning
+     plates every loose label read as OUTLINED "game subtitle" text (the
+     scruffy-stroke failure). The daylight halo is a tight dark micro-edge (the
+     a11y separation the bright ink needs on a sunlit patch) plus a soft lifted
+     umber shadow, so on-art text reads as gilt lettering catching light, not a
+     sticker with a border. Contrast still comes from the dark edge: the 2px
+     core sits at the same near-black depth as before. */
+  --on-art-halo:
+    0 0 1px rgba(20, 13, 4, 0.95), 0 0 2px rgba(20, 13, 4, 0.85),
+    0 1px 3px rgba(24, 16, 5, 0.75), 0 2px 10px rgba(28, 19, 6, 0.5);
 
   /* Daylight sibling plates (DESIGN.md §13 — owner-generated batch 3): light no
      longer borrows the dark candlelit plates — each scene token re-points to the
      SAME room painted at morning (P9 daylight study / P11 dawn grimoire / P10
-     daylight war table / P19 sunlit Grand Library / P21 morning Hall of Heroes /
-     P23 morning scriptorium), pre-graded into the honey/amber band the
-     deep-parchment field hosts. Per-theme loading falls out of the cascade: a
-     light user's browser only ever fetches these plates. */
+     daylight war table), pre-graded into the honey/amber band the deep-parchment
+     field hosts. Per-theme loading falls out of the cascade: a light user's
+     browser only ever fetches these three. */
   --asset-home-hero: url("/assets/backgrounds/home-hero-light.webp");
   --asset-login: url("/assets/backgrounds/login-light.webp");
   --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop-light.webp");
@@ -1055,16 +805,11 @@
   --asset-roster-scene: url("/assets/backgrounds/roster-scene-light.webp");
   --asset-creation-scene: url("/assets/backgrounds/creation-scene-light.webp");
 
-  /* OWN-36 (parity of PERCEPTION) + the atmosphere mandate (owner 2026-07-23):
-     the daylight plates carry the same wow as dark's candlelit ones. RAISED
-     0.55 → 0.75 alongside dark's 0.9 — light plates on the bright parchment
-     field read stronger per unit opacity than dark plates on near-black, so
-     0.75 is the perceptual sibling of dark's 0.9 (0.8 was judged in situ: the
-     war-table hub's loose Party rubric started competing with the busy gold
-     midground). Deep espresso inks on the ivory composite stay >10:1; the
-     lower-band mask dissolve is unchanged. CUSTOM uploads carve back to 0.55
-     via [data-app-bg-custom] (see the painter notes). */
-  --app-bg-art-opacity: 0.75;
+  /* OWN-36 — the atmospheric backdrop sits at the SAME prominence as the dark
+     theme (0.55) so the background art is as visible + amazing in light as in
+     dark (owner mandate). The warm parchment field hosts it; content cards float
+     over it. */
+  --app-bg-art-opacity: 0.55;
 
   /* MORNING-LIGHT TRANSLUCENCY — the daylight sibling of dark's candlelit
      translucency (T3): the same page-level surfaces (the `.folio-panel`
@@ -1120,6 +865,21 @@
 
   /* § 07 Focus — light theme uses deep gold-900 (≈10:1 on vellum); gold-500 was only ~2.1:1, FAIL. */
   --focus-ring: var(--gold-leaf-900);
+  /* Focus interior wash, light sibling (see the dark note): dark's #fddda6 cream
+     is invisible on cream surfaces, so light washes with STRUCK GOLD (gold-300)
+     — a visible warm gilt tint under dark text (AA untouched at 35% alpha). */
+  --focus-wash: rgba(212, 172, 77, 0.35);
+
+  /* Struck-metal top sheen for carved/embossed surfaces (T8 #62 / C4). The dark
+     recipes hard-code an `inset 0 1px 0 color-mix(--gold-leaf-50 …)` highlight:
+     on near-black surfaces a cream-gold sheen lifts ΔL* ≈ +26 (reads carved), but
+     on light vellum that same mineral sits ~1 step BELOW the surface (ΔL* ≈ −1.5)
+     so the emboss inverts and disappears — the core of "light feels cheaper". A
+     warm near-white catching light is the only highlight that reads on vellum
+     (lifts ΔL* ≈ +5 on surface-1 / +2.5 on surface-2, near the light-surface
+     ceiling). Defined LIGHT-ONLY: dark consumers fall back to their own gold-50
+     literal via `var(--emboss-sheen, …)`, so dark output is byte-identical. */
+  --emboss-sheen: rgba(255, 253, 247, 0.9);
 
   /* § Ornament metals, light strike (see the dark note): the silvery tips must
      read as metal ON cream, so light's "silver" is a deep pewter and the bronze
@@ -1127,6 +887,25 @@
      alternation, value-inverted for the vellum ground. */
   --metal-silver: #837a6a;
   --metal-bronze: #99793f;
+  /* Glint ink, light strike: stronger warm-white so the sweep reads as sun
+     on the already-bright gold-leaf band, not haze. */
+  --glint-ink: rgba(255, 253, 244, 0.5);
+
+  /* § Reliquary goldwork, light strike (see the dark note): the corner ornament
+     is engraved burnished bronze on the ivory bands — the SAME register as the
+     masthead crest's light ink (`--accent-primary-deep`), never a pale gold that
+     would wash out on cream. Slightly higher run opacity than dark (dark ink on
+     light ground needs less luminance but more presence). TWO-TONE, INVERTED to
+     the letterpress logic (like light's --engrave-title): the members are
+     pressed INTO the vellum, so the pair flips — a warm-cream understroke
+     (+1.5,+2) below-right (light catching the groove's far wall) + a faint
+     umber upper shadow wall (-1,-1.5) under the bronze-700 body; the gem is an
+     INTAGLIO facet pair (gold-900 shaded top wall / lit #99793f lower wall /
+     near-black pit core), placed per-corner unflipped. */
+  --frame-ornate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500'><defs><g id='a'><path d='M58 37.2 132 39 132 41 58 42.8Z' opacity='.95'/><path d='M138 35 143 40 138 45 133 40Z' opacity='.85'/></g><g id='h'><use href='%23a'/><use href='%23a' transform='matrix(0 1 1 0 0 0)'/><path d='M40 25 55 40 40 55 25 40Z'/></g><g id='q'><use href='%23h'/><use href='%23h' transform='matrix(-1 0 0 1 500 0)'/></g><g id='f'><use href='%23q'/><use href='%23q' transform='matrix(1 0 0 -1 0 500)'/></g><g id='g'><path d='M40 25 55 40 25 40Z' fill='%233d2f12'/><path d='M25 40 55 40 40 55Z' fill='%2399793f'/><path d='M40 33 47 40 40 47 33 40Z' fill='%23241a08'/></g></defs><use href='%23f' fill='%23fff8e2' opacity='.6' transform='translate(1.5 2)'/><use href='%23f' fill='%233d2f12' opacity='.32' transform='translate(-1 -1.5)'/><use href='%23f' fill='%237a5f24'/><use href='%23g'/><use href='%23g' x='420'/><use href='%23g' y='420'/><use href='%23g' x='420' y='420'/></svg>");
+  /* Engraved ceremonial titling, light strike: letterpress into vellum — a
+     bright warm understroke below the dark glyphs + a whisper of umber lift. */
+  --engrave-title: 0 1px 0 rgba(255, 252, 240, 0.85), 0 2px 3px rgba(74, 56, 12, 0.16);
 
   --semantic-success: var(--verdigris-700);
   --semantic-danger: var(--vermilion-700);
@@ -1135,15 +914,6 @@
      not brown). Used both as a chip ink and as bare text on the field. */
   --semantic-warning: #6a4a0c;
   --semantic-info: var(--lapis-700);
-  /* Rules-prose Advantage ink (`.rt-adv`) — `--semantic-success` (verdigris-700)
-     measures 4.156:1 on the carved `.beast-ref`/`.mon-ref` plaque
-     (`--bg-recessed`), where a monster's traits set "Advantage" as inline prose.
-     The shared stop is NOT retuned (the HP-bar gradient math, badges, borders and
-     `--at-action` all ride it) — the PROSE gets its own deeper ink, which is
-     precisely what the Ink-Variant Rule exists for: verdigris-900 is 7.484:1 on
-     the plaque, 11.87 / 13.10 on the card surfaces. `.rt-dis` needs no variant
-     (`--semantic-danger` is 4.729:1 on that same plaque). */
-  --rt-adv-ink: var(--verdigris-900);
   /* edit-mode voice (light) — deep gold so it reads on vellum (not yellow-on-gold). */
   --edit-accent: var(--gold-leaf-900);
 
@@ -1241,84 +1011,40 @@
   --dmg-slashing: #aa5a5a;
   --dmg-thunder: #506480;
 
-  /* § 11b Damage-type INK (light) — the AA-safe ON-TEXT variants. Every value
-     clears 4.5:1 on the DEEPEST ground the ramp paints (the carved
-     `.beast-ref`/`.mon-ref` plaque, `--bg-recessed` #cdbb8e), not just the cream
-     card; eleven of the thirteen were darkened MINIMALLY in OKLCH at their own
-     hue + chroma to get there, necrotic + thunder already cleared.
-     RADIANT is the exception and the trade is real: the floor caps it and
-     lightning at the SAME lightness on their shared ~92° hue, and light cannot
-     mirror dark's "radiant is the paler gold" by going lighter — so radiant goes
-     DEEPER (L 0.461 → 0.368) at near its own chroma (0.088 → 0.075). It is now
-     the darkest ink in the ramp, and it stays gold with lightning the brighter
-     yellow above it. (An earlier pass halved radiant's chroma at its own
-     lightness instead; that read as un-inked body text on the plaque and closed
-     to 0.025 ΔE of bludgeoning.)
-     LIGHTNING's own darkening (#6e5a06 → #5b4900) collapsed it onto the
-     untouched `--cond-paralyzed-ink` (0.0622 → 0.0079 ΔE). It is NOT retuned
-     back: the damage ramp is a closed cross-theme colour code and lightning must
-     stay the yellow. The condition ink moved instead — see the § 13 block.
-     Full rationale: DESIGN.md → the Ink-Variant
-     Rule. Guards: `tests/unit/verdict-ink-contrast.test.ts` (token pairs + the
-     ΔE separation matrix) + `tests/e2e/statblock-ink-contrast.spec.ts`
-     (composited, real Chromium). */
-  --dmg-acid-ink: #2a5500;
-  --dmg-bludgeoning-ink: #614528;
-  --dmg-cold-ink: #0e5072;
-  --dmg-fire-ink: #97120f;
-  --dmg-force-ink: #643291;
-  --dmg-lightning-ink: #5b4900;
+  /* § 11b Damage-type INK (light) — AA-safe ON-TEXT (≥4.5:1 on the cream
+     verdict chip). lightning / acid / radiant / psychic are darkened to clear
+     the floor on vellum; the rest already pass and are kept verbatim. */
+  --dmg-acid-ink: #3c6a1a;
+  --dmg-bludgeoning-ink: #6a4e30;
+  --dmg-cold-ink: #2c688c;
+  --dmg-fire-ink: #a82820;
+  --dmg-force-ink: #6a3898;
+  --dmg-lightning-ink: #6e5a06;
   --dmg-necrotic-ink: #384838;
-  --dmg-piercing-ink: #464b53;
-  --dmg-poison-ink: #385300;
-  --dmg-psychic-ink: #773163;
-  --dmg-radiant-ink: #4c3e00;
-  --dmg-slashing-ink: #773839;
+  --dmg-piercing-ink: #50565e;
+  --dmg-poison-ink: #4a6818;
+  --dmg-psychic-ink: #823c6e;
+  --dmg-radiant-ink: #6a560f;
+  --dmg-slashing-ink: #884848;
   --dmg-thunder-ink: #384858;
 
   /* § 13 Conditions (light) — OWN-36 PASS 10: SYMMETRIC with dark. The base
      `--cond-*` is the VIVID border/graphic hue (condColor() feeds it only to the
      chip border + tint, never to text), and `--cond-*-ink` is the AA-deep LABEL.
      Dark lightens its ink for the dark ground; light darkens it for cream — same
-     two-token contract, mirrored. The `-ink` values below were byte-identical to
-     the label colour each chip rendered before that pass (base-deep for most,
-     the special deeper ink for the cool/olive/amber ones), so AA was UNCHANGED
-     by it — six have since moved, see RE-TUNED below; only the border + tint +
-     halo brighten so the chips read bright + glowing like dark instead of flat
-     deep.
-
-     RE-TUNED (a11y): the ink is NOT only a chip label — `.rt-cond` sets condition
-     names as INLINE PROSE, so it also paints the carved `.beast-ref`/`.mon-ref`
-     plaque (`--bg-recessed`), a full step below the cards, where six inks failed
-     AA. Each moved one is darkened minimally in OKLCH at its own hue; blinded and
-     stunned separate from invisible / paralyzed by CHROMA (mirroring dark) where
-     the floor caps them at one lightness, and deafened does the same beside
-     invisible — darkening by lightness alone had left it 0.020 ΔE away.
-     PARALYZED is the seventh move and the one the AA pass CREATED: darkening
-     `--dmg-lightning-ink` to #5b4900 landed it 0.0079 ΔE from the untouched
-     paralyzed — the global MINIMUM of the light prose vocabulary. Lightning is
-     the token that may not move: the thirteen damage inks are a closed
-     cross-theme colour CODE (dark lightning-ink #f0d040 is an electric yellow)
-     that also drives `.mon-dmg` ledger runs and the defence chips, and the only
-     separation left at lightning's own lightness rotates it into the olive band
-     the ramp already spends on acid/poison/necrotic. So the CONDITION ink moves
-     instead, inside the warm gold→amber band its own base occupies: #5e4806 →
-     #5f3a00 (L 0.414 → 0.384, chroma HELD 0.082 → 0.083, hue 88° → 70°), which
-     puts it 0.0435 ΔE from lightning and 0.0380 from its nearest neighbour
-     anywhere in the vocabulary, and lifts its AA from 4.612 to 5.304 on the
-     plaque. The chip GRAPHIC (`--cond-paralyzed` #b89818) is untouched.
-     Full rationale: DESIGN.md → the Ink-Variant Rule. Guards:
-     `tests/unit/verdict-ink-contrast.test.ts` (token pairs + the ΔE separation
-     matrix) + `tests/e2e/statblock-ink-contrast.spec.ts` (composited, real
-     Chromium). */
+     two-token contract, mirrored. The `-ink` values below are byte-identical to
+     the label colour each chip rendered before this pass (base-deep for most,
+     the special deeper ink for the cool/olive/amber ones), so AA is UNCHANGED;
+     only the border + tint + halo brighten so the chips read bright + glowing
+     like dark instead of flat deep. */
   --cond-blinded: #6e8492;
-  --cond-blinded-ink: #344f65;
+  --cond-blinded-ink: #4a5a68;
   --cond-charmed: #c04578;
-  --cond-charmed-ink: #872657;
+  --cond-charmed-ink: #882858;
   --cond-deafened: #7e7e8e;
-  --cond-deafened-ink: #4a4965;
+  --cond-deafened-ink: #585868;
   --cond-exhaustion: #c06820;
-  --cond-exhaustion-ink: #72400c;
+  --cond-exhaustion-ink: #7a4818;
   --cond-frightened: #7a52b0;
   --cond-frightened-ink: #4a3088;
   --cond-grappled: #8a6438;
@@ -1328,17 +1054,17 @@
   --cond-invisible: #8294a6;
   --cond-invisible-ink: #3e4c5a;
   --cond-paralyzed: #b89818;
-  --cond-paralyzed-ink: #5f3a00;
+  --cond-paralyzed-ink: #5e4806;
   --cond-petrified: #6e665a;
   --cond-petrified-ink: #383828;
   --cond-poisoned: #6e9628;
   --cond-poisoned-ink: #3a5410;
   --cond-prone: #8a6e4e;
-  --cond-prone-ink: #5b4937;
+  --cond-prone-ink: #605040;
   --cond-restrained: #6e6e62;
   --cond-restrained-ink: #383830;
   --cond-stunned: #c0a020;
-  --cond-stunned-ink: #594b1f;
+  --cond-stunned-ink: #645008;
   --cond-unconscious: #4a4a60;
   --cond-unconscious-ink: #1c1c2c;
 
@@ -1361,57 +1087,6 @@
   --cur-sp-deep: #2a3038;
   --cur-cp: #784028;
   --cur-cp-deep: #4a1c08;
-
-  /* § 05a THE PLATE MATERIAL, light strike — not an inversion, a different room.
-     The two themes share ALL geometry and ALL structure; they differ in exactly
-     four colour roles. The groove is WARM UMBER, never black (a black groove on
-     cream reads as grime on vellum); the cast is warm umber too, never grey; and
-     the dome is wider, softer and stronger — an ivory plate has less room for a
-     pool before it bands, so the pool is spread rather than deepened. */
-  --plate-veil-alpha: 80%;
-  --plate-dome: radial-gradient(
-    ellipse 105% 78% at 50% 26%,
-    rgba(255, 253, 247, 0.62),
-    rgba(255, 253, 247, 0) 100%
-  );
-  --plate-grain: image-set(var(--asset-panel-light) type("image/webp"));
-  --edge-groove:
-    inset 0 0 0 1px rgba(74, 56, 20, 0.16), inset 0 0 20px 2px rgba(74, 56, 20, 0.1);
-  --edge-seat: 0 0 0 1px rgba(46, 30, 6, 0.18), 0 8px 20px rgba(46, 30, 6, 0.22);
-  --edge-seat-earned: 0 0 0 1px rgba(46, 30, 6, 0.24), 0 22px 48px rgba(46, 30, 6, 0.32);
-
-  /* § Reliquary goldwork, light strike (same style-A knot + four-corner-layer
-     mechanism as the dark note above — same geometry, inverted tone): the frame
-     is GOLD on the ivory bands (owner, 2026-07-24 — "they can be gold too in
-     light theme"; supersedes the engraved-bronze treatment): a deep antique-gold
-     body (#94741f — true gold hue, dark enough to hold on cream) letterpressed
-     INTO the vellum — a warm-cream understroke (+1,+1.4) below-right (light
-     catching the groove's far wall) + a faint umber upper shadow wall (-.6,-.9).
-     The two-tone strike is inverted from dark's (glint below-right, shadow
-     above-left) so the goldwork reads pressed-in, not raised. */
-  --frame-ornate:
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g></defs><use href='%23f' fill='%23fff8e2' opacity='.5' transform='translate(.6 .85)'/><use href='%23f' fill='%233d2f12' opacity='.28' transform='translate(-.35 -.5)'/><use href='%23f' fill='%2394741f' opacity='.66'/><use href='%23k' fill='%23fff8e2' opacity='.6' transform='translate(1 1.4)'/><use href='%23k' fill='%233d2f12' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23k' fill='%2394741f'/></svg>")
-      left top / 64px 64px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(-1 0 0 1 64 0)'/></g><g id='F'><use href='%23f' transform='matrix(-1 0 0 1 64 0)'/></g></defs><use href='%23F' fill='%23fff8e2' opacity='.5' transform='translate(.6 .85)'/><use href='%23F' fill='%233d2f12' opacity='.28' transform='translate(-.35 -.5)'/><use href='%23F' fill='%2394741f' opacity='.66'/><use href='%23K' fill='%23fff8e2' opacity='.6' transform='translate(1 1.4)'/><use href='%23K' fill='%233d2f12' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%2394741f'/></svg>")
-      right top / 64px 64px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(1 0 0 -1 0 64)'/></g><g id='F'><use href='%23f' transform='matrix(1 0 0 -1 0 64)'/></g></defs><use href='%23F' fill='%23fff8e2' opacity='.5' transform='translate(.6 .85)'/><use href='%23F' fill='%233d2f12' opacity='.28' transform='translate(-.35 -.5)'/><use href='%23F' fill='%2394741f' opacity='.66'/><use href='%23K' fill='%23fff8e2' opacity='.6' transform='translate(1 1.4)'/><use href='%23K' fill='%233d2f12' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%2394741f'/></svg>")
-      left bottom / 64px 64px no-repeat,
-    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><defs><g id='e'><path d='M30 12.3Q20 12.18 14.5 12.22Q11.4 12.25 9.8 12.74Q11.7 13.4 16 13.42Q24 13.35 30 13.3Z'/></g><g id='v'><path d='M11.41 12.18Q7.53 10.63 6.21 7.76Q5.67 5.2 7.69 4.04Q9.86 3.58 11.17 5.13Q10.24 4.35 8.93 4.51Q7.3 4.9 7.7 7.42Q8.31 10.01 12.18 11.41Z'/></g><g id='k'><use href='%23e'/><use href='%23e' transform='matrix(0 1 1 0 0 0)'/><use href='%23v'/><path d='M12.8 10.9L14.7 12.8L12.8 14.7L10.9 12.8Z'/></g><g id='f'><path d='M17.06 14.56L29.44 18.21L17.29 13.88Z'/><path d='M16.46 15.61L30.41 24.24L16.85 15Z'/><path d='M15.8 16.31L29.42 29.42L16.31 15.8Z'/><path d='M15 16.85L24.24 30.41L15.61 16.46Z'/><path d='M13.88 17.29L18.21 29.44L14.56 17.06Z'/></g><g id='K'><use href='%23k' transform='matrix(-1 0 0 -1 64 64)'/></g><g id='F'><use href='%23f' transform='matrix(-1 0 0 -1 64 64)'/></g></defs><use href='%23F' fill='%23fff8e2' opacity='.5' transform='translate(.6 .85)'/><use href='%23F' fill='%233d2f12' opacity='.28' transform='translate(-.35 -.5)'/><use href='%23F' fill='%2394741f' opacity='.66'/><use href='%23K' fill='%23fff8e2' opacity='.6' transform='translate(1 1.4)'/><use href='%23K' fill='%233d2f12' opacity='.32' transform='translate(-.6 -.9)'/><use href='%23K' fill='%2394741f'/></svg>")
-      right bottom / 64px 64px no-repeat;
-  /* The ceremonial seat ornament, light strike (see the dark note): the same
-     winged-fleur divider pressed into the vellum in GOLD — backing diamond
-     baked in light's surface-2 ivory, letterpress understroke/umber pair,
-     intaglio plumb-point facets, amber glow. */
-  --seat-orn: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='24'><defs><radialGradient id='gl'><stop offset='0' stop-color='%23b8923d' stop-opacity='.3'/><stop offset='1' stop-color='%23b8923d' stop-opacity='0'/></radialGradient><filter id='pb'><feGaussianBlur stdDeviation='1.1'/></filter><g id='u'><path d='M104.5 11.28Q60 11.22 16 11.65Q10 11.8 6.8 12Q4.7 12.95 5.7 13.75Q6.9 14.25 7.8 13.45Q6.7 13.5 6.3 13Q6.1 12.55 7.4 12.28Q10 12.3 16 12.42Q60 12.78 104.5 12.68Z'/><path d='M102.6 12.55Q106.8 11.7 107.8 9.9Q108.4 8.4 107.2 7.4Q105.8 6.6 104.6 7.5Q105.7 7.7 106.2 8.7Q106.5 9.7 105.4 10.6Q104.2 11.4 102.2 11.7Z'/></g><g id='s'><use href='%23u'/><use href='%23u' transform='matrix(-1 0 0 1 260 0)'/><path d='M121.8 6.4L130 10.5L138.2 6.4L138.2 8.5L130 12.6L121.8 8.5Z'/><path d='M125.3 2.8L130 5.8L134.7 2.8L134.7 4.6L130 7.6L125.3 4.6Z'/><path d='M130 13.2L132.2 16.6L130 22.8L127.8 16.6Z'/></g></defs><circle cx='130' cy='13.5' r='13' fill='url(%23gl)'/><path d='M130 5L136.4 13.2L130 21L123.6 13.2Z' fill='%23fdf6df' filter='url(%23pb)'/><use href='%23s' fill='%23fff8e2' opacity='.6' transform='translate(.5 .8)'/><use href='%23s' fill='%233d2f12' opacity='.32' transform='translate(-.4 -.6)'/><use href='%23s' fill='%2394741f'/><path d='M130 13.2L127.8 16.6L130 22.8Z' fill='%23e2c06b'/><path d='M130 13.2L132.2 16.6L130 22.8Z' fill='%2354400f'/><path d='M125.3 2.8L130 5.8L134.7 2.8L134.7 4.6L130 7.6L125.3 4.6Z' fill='%23e2c06b' opacity='.8'/></svg>");
-
-  /* The state ladder's veils, LIGHT strike (§04b) — the same honey-gold hue,
-     re-derived for a plate that starts at L* 96 instead of L* 10. Matched to
-     dark's perceptual steps, not to its alphas: hover ΔL* 6.1 at 17% (dark 5.9 at
-     10%) · selected ΔL* 9.5 at 28% (dark 9.4 at 16%). Pressed is the plate taking
-     the room's shade — warm umber, never grey. */
-  --state-wash-hover: color-mix(in oklab, var(--gold-leaf-500) 17%, transparent);
-  --state-wash-selected: color-mix(in oklab, var(--gold-leaf-500) 28%, transparent);
-  --state-wash-pressed: rgba(74, 56, 20, 0.1);
 
   /* § 05 Elevation — Carved + Embossed (light). Strengthened against the deeper
      vellum field: the prior drops (5–8% umber) vanished on near-white surfaces, so
@@ -1451,6 +1126,16 @@
   --elev-modal:
     inset 0 1px 0 rgba(255, 253, 247, 1), inset 0 -1px 0 rgba(46, 30, 6, 0.24),
     0 8px 18px rgba(46, 30, 6, 0.3), 0 44px 92px rgba(46, 30, 6, 0.5);
+
+  /* The lit-ornament halo (selected tiles · active tabs · the section diamond ·
+     the codex open-page row) rides the same ember grammar as `--gilt-glow`: a tight
+     struck-gold core (the ornament still catches gilt) over a warm burnt-umber pool
+     that toasts the ground BELOW it, so a selected surface reads as a hot object on
+     the parchment, not a bright smudge. The gold core stays for the fine diamonds/
+     rules where a downward-only pool would read as a stray drop-shadow. */
+  --illumination:
+    0 0 8px rgba(198, 156, 64, 0.42), 0 0 3px rgba(198, 156, 64, 0.3),
+    0 3px 10px rgba(var(--ember-umber), 0.4), 0 0 1.5px rgba(140, 104, 32, 0.9);
 
   /* D47 light gilt + surface gradients — light lacked the dark theme's gradients, so
      every surface read flat/creamy. These give light its own dimensional materials:
@@ -1530,6 +1215,17 @@
   --ember-edge: #6b5219;
   --ember-seat: 74, 44, 8;
 
+  /* The signature gilt AURA is now ember: every light consumer of `--gilt-glow`
+     (gilt-frame hero bands, raised brass tabs, portrait wells, caster tiles, the
+     d20 hero) toasts its ground below instead of ringing a symmetric bright halo. */
+  --gilt-glow:
+    0 0 0 1px color-mix(in oklab, var(--accent-glow) 40%, transparent),
+    0 4px 12px rgba(var(--ember-umber), 0.5), 0 9px 26px rgba(var(--ember-umber), 0.3);
+  /* A tighter sibling ember for smaller gilded atoms (seal, primary CTA, rest coin). */
+  --gilt-glow-sm:
+    0 0 0 1px color-mix(in oklab, var(--accent-glow) 36%, transparent),
+    0 2px 6px rgba(var(--ember-umber), 0.5), 0 5px 14px rgba(var(--ember-umber), 0.28);
+
   /* Home-hero scrim (light) — a warm vellum wash over the art (content zone left)
      fading into the page field, AA-preserving on the gilt-cream theme. */
   --scrim-home:
@@ -1608,16 +1304,11 @@
   --font-title: var(--font-title);
   --font-mono: var(--font-numeric);
 
-  /* Radius — the Tailwind bridge for the TWO values (§04). Every `rounded-*`
-     utility in the markup resolves to a plate (10px) or a chip (0); there is no
-     third value, and leaving any of these unset would let Tailwind's own
-     defaults (0.375rem, 0.5rem, …) quietly re-introduce one. `rounded-full`
-     stays a CIRCLE — a shape, not a radius. */
+  /* Radius — lapidary facets */
   --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 10px;
-  --radius-xl: 10px;
-  --radius-2xl: 10px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-xl: 8px;
 
   /* Breakpoint — the rail-drop threshold as a NAMED Tailwind variant (`rail:` /
      `max-rail:`), bridging the canonical --bp-rail width (1180px, above) into
@@ -1747,17 +1438,6 @@ body::after {
   transform: scale(var(--app-bg-art-scale, 1));
   pointer-events: none;
 }
-/* CUSTOM-upload presence carve-out (the atmosphere mandate, owner 2026-07-23):
-   the raised per-theme presence (dark 0.9 / light 0.75) is earned by the owner
-   plates' designed calm centres. A DM's custom banner is ANY image — no
-   calm-centre discipline — so while one is the backdrop (`data-app-bg-custom`
-   on <html>, set by useCampaignBackdrop) BOTH themes carve the presence back
-   to the proven 0.55 taming; light additionally keeps its glaze + harmonizer
-   veil below. Declared after both theme blocks so it wins the cascade tie. */
-[data-app-bg-custom] {
-  --app-bg-art-opacity: 0.55;
-}
-
 /* Daylight sibling plates — the light backdrop is now the theme's OWN daylight
    plate (P9 daylight study via the light `--asset-home-hero`), pre-graded into
    the honey band the deep-parchment field hosts, so the old colour-lift filter
@@ -1832,26 +1512,6 @@ body::after {
   }
 }
 
-/* The backdrop crossfade (the atmosphere mandate — src/lib/backdrop-transition.ts).
-   During a route's backdrop swap a GHOST div paints the OLD scene (computed
-   state copied inline: image, focal, zoom, veil filter, mask) and fades out on
-   the standard ease, dissolving scene-into-scene; `data-bg-swap` drops the
-   painter one z-plane so the NEW scene sits under the fading ghost (tree order
-   keeps it above the ::before vellum grain at the same plane). Opacity-only,
-   spawned only under data-motion="auto" (the module short-circuits reduced). */
-.bg-ghost {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-size: cover;
-  background-repeat: no-repeat;
-  pointer-events: none;
-  transition: opacity 480ms var(--ease-standard, ease-out);
-}
-[data-bg-swap] body::after {
-  z-index: -2;
-}
-
 ::selection {
   background: color-mix(in oklab, var(--accent-primary) 30%, transparent);
   color: var(--text-primary);
@@ -1885,7 +1545,7 @@ body::after {
   min-height: 36px;
   min-width: 36px;
   border: 3px solid transparent;
-  border-radius: var(--r-chip);
+  border-radius: 5px;
   background: color-mix(in oklab, var(--text-muted) 40%, transparent);
   background-clip: padding-box;
 }
@@ -1925,22 +1585,32 @@ button:disabled,
   cursor: not-allowed;
 }
 
-/* § 07 Focus — the RING, and only the ring. A 2px `--focus-ring` at offset 2 on
-   every interactive element (AA-safe in both themes; the old
-   --accent-primary-bright resolved to gold-500 in light = ~2.1:1, FAIL). No
-   interior wash, no bloom: focus is state, and state on this chrome changes
-   light and colour — never emission. The ring alone clears WCAG 1.4.11.
-   Suppressed on programmatically-focused non-interactive containers
-   ([tabindex='-1']) so roving-focus wrappers (e.g. the roster list region)
-   never paint a giant frame around the page.
-   No border-radius here — the ring follows each element's own radius, and every
-   component-level :focus-visible owns its own. */
+/* § 07 Focus — gold halo on every interactive element.
+   Uses the theme-aware --focus-ring (AA-safe in both themes; the old
+   --accent-primary-bright resolved to gold-500 in light = ~2.1:1, FAIL).
+   The illumination halo is suppressed on programmatically-focused
+   non-interactive containers ([tabindex='-1']) so roving-focus wrappers
+   (e.g. the roster list region) never paint a giant frame around the page. */
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
+  /* BG3 focus grammar: the crisp a11y ring PLUS a warm interior wash — the
+     oversized inset spread floods the element's interior with --focus-wash
+     (respecting its radius) under the content. Additive warmth only; component
+     recipes that own their focus box-shadow (.input, .btn.destructive, …)
+     keep their bespoke treatment. */
+  box-shadow:
+    inset 0 0 0 999px var(--focus-wash),
+    var(--illumination);
+  /* No border-radius here — the global rule forced --radius-md onto EVERY
+     focused element, rounding/clipping the gold halo on elements that aren't
+     meant to be rounded (table rows, inline links, full-bleed items). The halo
+     (box-shadow) already follows each element's own border-radius, and every
+     component-level :focus-visible owns its radius (.input, .statcard, etc.). */
 }
 :focus-visible[tabindex="-1"] {
   outline: none;
+  box-shadow: none;
 }
 
 /* § 2.4.1 Bypass Blocks — skip-to-main link (off-screen until focused) */
@@ -1959,7 +1629,7 @@ button:disabled,
   background: var(--bg-surface-2);
   color: var(--text-primary);
   border: 1px solid var(--border-accent);
-  border-radius: var(--r-chip);
+  border-radius: var(--radius-md);
   box-shadow: var(--elev-raised);
   font: 600 var(--text-sm) / 1 var(--font-numeric);
   text-transform: uppercase;
@@ -1974,7 +1644,7 @@ button:disabled,
   opacity: 1;
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: var(--elev-raised);
+  box-shadow: var(--illumination), var(--elev-raised);
 }
 
 /* numeric alignment helper used on every stat number — tabular for column
@@ -2010,4 +1680,24 @@ button:disabled,
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
   scroll-behavior: auto !important;
+}
+
+/* The backdrop crossfade (the atmosphere mandate — src/lib/backdrop-transition.ts).
+   During a route's backdrop swap a GHOST div paints the OLD scene (computed
+   state copied inline: image, focal, zoom, veil filter, mask) and fades out on
+   the standard ease, dissolving scene-into-scene; `data-bg-swap` drops the
+   painter one z-plane so the NEW scene sits under the fading ghost (tree order
+   keeps it above the ::before vellum grain at the same plane). Opacity-only,
+   spawned only under data-motion="auto" (the module short-circuits reduced). */
+.bg-ghost {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-size: cover;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  transition: opacity 480ms var(--ease-standard, ease-out);
+}
+[data-bg-swap] body::after {
+  z-index: -2;
 }

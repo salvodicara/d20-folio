@@ -155,7 +155,7 @@ export function CompendiumPage() {
       id="main"
       className="page-shell flex min-h-[30rem] py-8 h-[calc(100svh-var(--topbar-h)-var(--m-nav-h)-var(--safe-bottom)-var(--pwa-banner-h,0px))] flex-col overflow-hidden md:h-[calc(100svh-var(--topbar-h)-var(--pwa-banner-h,0px))]"
     >
-      <PageHeader as="h1" title={t("nav.compendium")} hint={t("compendium.hint")} />
+      <PageHeader as="h1" crest title={t("nav.compendium")} hint={t("compendium.hint")} />
       {spec && (
         // Remount when the type OR a seeded `?q=` changes → fresh facets + search.
         // The open entry (`?sel=`) is LIVE state, not a seed: it must NOT remount

@@ -8,6 +8,28 @@
 > - **The open gap frontier** (per-seam, per-entity) → `docs/AUTOMATION_BACKLOG.md`.
 > - **How it works today** (incl. the architecture invariants the R1–R8 campaign locked in) → `docs/ARCHITECTURE.md`.
 
+## Active epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
+
+The post-v0.22.0 **chrome-reset visual identity was REJECTED by the owner** (2026-07-30: the
+corner knots, the missing borders, the plate/veil material, the compendium treatment — "the
+deployed v0.22.0 looks much better") and **surgically rolled back**: `index.css` + `folio.css` +
+the ornament-bearing components are the v0.22.0 vocabulary again, while every post-v0.22.0
+FEATURE (bestiary statblock, encounter picker, header-as-disclosure, realm scenes + backdrop
+crossfade, all a11y/i18n fixes) survives through the delimited feature-layer appendix
+(`DESIGN.md` → "Post-v0.22.0 feature layer"). The forward plan (all gates BLOCKING on owner
+screenshots — overrides golden rule 25 for this epic):
+
+1. **Phase 1 — DONE-pending-gate**: the visual rollback (this wave). GATE 1 = owner rules on
+   restored-baseline screenshots.
+2. **Phase 2**: study a gathered BG3 UI reference corpus (`~/Workspace/bg3-ui-study/`, never
+   committed) → extract MEASURED construction rules (frame anatomy, corner geometry, stroke
+   weights, proportions, palette, typography) → write the grammar spec into `DESIGN.md` → build
+   ONE hero surface (the character sheet) in the new grammar, both themes. GATE 2 = side-by-side
+   ratification. Rules: grammar-faithful ORIGINALS only (no traced Larian art in the public
+   repo), NO from-scratch SVG invention — every ornament derives from the measured corpus.
+3. **Phase 3**: roll the ratified grammar out per surface group — Sheet → Compendium → Campaign
+   → Wizards → Shell — one worktree + one blocking gate each, `impeccable`-reviewed.
+
 ## Current state
 
 **Released on `main` at v0.22.0** — the same version **deployed to production**

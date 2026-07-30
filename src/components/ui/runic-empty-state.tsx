@@ -33,14 +33,6 @@ export interface RunicEmptyStateProps {
   /** Override the sigil accent color (raw CSS color/token). */
   color?: string;
   className?: string;
-  /**
-   * The empty state sits DIRECTLY ON THE BACKDROP ART — the 404 page, the crash net,
-   * the roster with no characters yet — rather than inside a panel. Its eyebrow,
-   * title, blurb and note then take the on-art treatment (see `.on-art` in
-   * `folio.css`). Opt-in, because the same component is the empty line INSIDE a
-   * card on half the surfaces in the app, and nothing in CSS can tell the two apart.
-   */
-  onArt?: boolean;
 }
 
 /** Wrap the first case-insensitive occurrence of `emphasis` in `title` in an
@@ -70,7 +62,6 @@ export function RunicEmptyState({
   size = "md",
   color,
   className,
-  onArt,
 }: RunicEmptyStateProps) {
   const style: CSSProperties | undefined = color
     ? { ["--es-c" as string]: color }
@@ -80,19 +71,17 @@ export function RunicEmptyState({
       <div className="runic">
         <span className="runic-ring" aria-hidden="true" />
         <span className="runic-ring inner" aria-hidden="true" />
+        <span className="runic-gem top" aria-hidden="true" />
+        <span className="runic-gem bot" aria-hidden="true" />
         <span className="runic-glyph">
           <Icon as={glyph} size="lg" decorative />
         </span>
       </div>
-      {eyebrow ? (
-        <span className={cn("es-eyebrow", onArt && "on-art-title")}>{eyebrow}</span>
-      ) : null}
-      <h2 className={cn("es-title", onArt && "on-art")}>
-        {renderTitle(title, titleEmphasis)}
-      </h2>
-      {blurb ? <p className={cn("es-blurb", onArt && "on-art")}>{blurb}</p> : null}
+      {eyebrow ? <span className="es-eyebrow">{eyebrow}</span> : null}
+      <h2 className="es-title">{renderTitle(title, titleEmphasis)}</h2>
+      {blurb ? <p className="es-blurb">{blurb}</p> : null}
       {actions ? <div className="es-cta-row">{actions}</div> : null}
-      {note ? <span className={cn("es-note", onArt && "on-art")}>{note}</span> : null}
+      {note ? <span className="es-note">{note}</span> : null}
     </div>
   );
 }

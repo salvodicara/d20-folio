@@ -193,7 +193,7 @@ disagree, the CSS is authoritative.
 - Parchment/vellum surfaces with carved (inset) and embossed (raised) depth, never flat fills.
 - Gold-leaf as the single brand voice; semantic and domain pigments do the rest of the talking.
 - Serif display for names/titles/numbers, serif body for reading, mono for every label and count.
-- TWO radii, and there is no third: a plate is 10px, a chip is square (§4). A circle is a shape, not a radius; the settings switch track is the one true pill.
+- Lapidary geometry: sharp-to-small radii (0 to 12px); chips are 4px facets, not pills.
 - Full light + dark parity, each AA-tuned, driven by `[data-theme]` on `<html>`.
 - Motion is brass-and-spring: snappy, slightly overshooting, and fully reduced-motion-safe.
 
@@ -205,9 +205,8 @@ five saturated pigment ramps assigned to roles per theme.
 ### Primary
 
 - **Gold Leaf** (`accent-primary`: `#b8923d` dark / `#4a380c` light — a rich antique gold tuned AA-safe
-  on the deep light field): the single brand voice. Used for primary actions, current selection, the
-  focus ring, emphasis, and the edit-mode voice. Gold means a VALUE or a STATE — never a label, and
-  never decoration. Its rarity is the point.
+  on the deep light field): the single brand voice. Used for primary actions, current selection, focus
+  illumination, emphasis, and the edit-mode voice. Its rarity is the point; it is never decoration.
 - **Deep Gold Ink** (`accent-text`: `#d4ac4d` dark / `#3d2f12` light): the AA-safe variant for gold
   _text_ (rubrics, eyebrows, labels) on gold-tinted surfaces. Distinct from the mid gold UI-fill.
 
@@ -270,107 +269,7 @@ text, and is the canonical counter-example.
 fails contrast on gold-tinted light surfaces (the "yellow-on-yellow" failure). Forbidden.
 
 **The Ink-Variant Rule.** A saturated domain hue is the 3:1 graphic (chip border, icon). Its `-ink`
-variant is the >=4.5:1 label text. Never set small text in a raw domain hue. **">=4.5:1" means on
-EVERY ground the ink actually paints on, not on the card surfaces alone** — a contrast guard that
-pins a hand-picked pair certifies a combination the app may never render while blessing one it
-does. The canonical counter-example: the `--dmg-*-ink` ramp was guarded only against
-`--bg-surface-1/2`, so eleven of its thirteen light pigments shipped BELOW AA on the carved
-`.beast-ref`/`.mon-ref` statblock plaque — a full step deeper at `--bg-recessed` (light poison-ink
-measured 3.378:1 on `compendium-monster-entry [light]`; axe did NOT flag it — see the browser-probe
-paragraph below). The guard now reads the plaque's
-ground straight out of `folio.css` (`tests/unit/verdict-ink-contrast.test.ts`) so the surface list
-follows the stylesheet instead of a comment. The derived ground is pinned against BOTH halves of the
-plaque's cascade — the element is `class="beast-ref mon-ref"` — so `.beast-ref` must have exactly ONE
-base rule (a later `[data-theme="light"] .beast-ref { background }` cannot silently leave the guard
-certifying a ground the browser no longer paints) and `.mon-ref` must have exactly one base rule
-that declares NO background (equal specificity, later in the file, so it would win outright). All
-five grammar arms are pinned on that ground, `--text-special` (`.rt-value` — dice, save DCs,
-distances) included: it measures 6.463:1 there, a latent pass that was going uncovered while the arm
-was pinned on surface-2/3 alone. `--bg-surface-3` is deliberately excluded: no
-rules-prose container paints it today, and asserting a ground the app never renders is the same
-defect in the mirror (if one ever appears, re-measure dark `--semantic-danger` on `#2a2317` first —
-4.386:1).
-
-When an AA floor forces a whole family darker, keep the family SEPARABLE — and measure separation
-against the WHOLE prose vocabulary, not just the token's own ramp: damage inks, condition inks,
-`--text-special` and the adv/dis pair all share one paragraph on the plaque. Darken minimally in
-OKLCH at each token's own hue + chroma; where the floor caps two members at the same lightness,
-separate them by chroma the way the other theme does (light's blinded/stunned mirror dark's
-chroma order beside invisible/paralyzed). **Chroma is not a free axis** — halve it and the ink stops
-reading as inked at all. Light radiant is the case that proves it: it and lightning are capped at the
-same lightness on their shared ~92° hue, a first pass separated them by halving radiant's chroma
-(0.088 → 0.043), and at 13px on the plaque that read as plain bold body text while closing to 0.025
-ΔE of bludgeoning. It now goes DEEPER instead (L 0.461 → 0.368, chroma held at 0.075): still gold,
-lightning still the brighter yellow above it, and its nearest neighbour anywhere in the prose
-vocabulary moves 0.019 → 0.041 ΔE. Light cannot mirror dark's "radiant is the PALER gold" by going
-lighter — on parchment the only direction an ink has is down.
-
-The AA obligation is per-FAMILY, so it was re-run on `--cond-*-ink`: six light inks failed on the
-same plaque (deafened 3.685:1, blinded 3.756, exhaustion 4.009, prone 4.081, stunned 4.120, charmed
-4.453) — `.rt-cond` sets condition names as inline prose inside a monster's traits — and are fixed by
-the same recipe. Deafened is the same lesson at the other end: darkened by LIGHTNESS alone it cleared
-the floor but drifted to 0.020 ΔE of the untouched invisible, so it takes the chroma step its two
-siblings took (0.025 → 0.046 at its own 285° hue) and sits at 0.030.
-
-**The SEPARATION floor is GLOBAL, and it is a number.** A family-local statistic is not the standard
-— the plaque paints every family in one paragraph — so the floor is measured across the WHOLE
-31-token light prose vocabulary (13 damage inks · 15 condition inks · `--text-special` ·
-`--rt-adv-ink` · `--semantic-danger`). **Light's floor is 0.0132 ΔE**: petrified↔restrained
-(`#383828` / `#383830`), two untouched neutral browns and the tightest legitimate pair in the
-vocabulary. **Dark's is 0.0105 ΔE**: piercing↔blinded, tighter still and likewise untouched. Exactly
-one pair is exempt, and only because it is twinned UPSTREAM — `--dmg-poison-ink` ↔
-`--cond-poisoned-ink` (0.0100 ΔE), whose BASE tokens are the same hex in both themes, so Poison
-damage and the Poisoned condition are one colour by construction. Both floors are ratchets on what
-already shipped, not endorsements of it.
-
-That number is ENFORCED, not asserted in prose: `tests/unit/verdict-ink-contrast.test.ts` runs an
-OKLab ΔE matrix over every unordered pair of the vocabulary, per theme, with the twin allowlist
-carrying its reason and a second assertion that the allowlisted pair really does share a base hue.
-Before it existed, every separation claim on this page was checked BY EYE — and the AA re-tune
-shipped its own worst collision: darkening `--dmg-lightning-ink` (#6e5a06 → #5b4900) to clear the
-plaque landed it **0.0079 ΔE** from the untouched `--cond-paralyzed-ink`, a NEW global minimum, 1.7×
-tighter than the worst pair the work inherited — with nineteen of the thirty-one tokens ending up
-closer to a neighbour than they started. Lightning is the token that may not move: the thirteen
-damage inks are a closed cross-theme colour CODE (dark lightning-ink `#f0d040` is an electric yellow)
-that also paints `.mon-dmg` ledger runs and the defence chips, and the only separation available at
-its lightness rotates it into the olive band the ramp already spends on acid/poison/necrotic. So the
-CONDITION ink moved instead, inside the warm gold→amber band its own base occupies:
-`--cond-paralyzed-ink` #5e4806 → **#5f3a00** (L 0.414 → 0.384, chroma HELD 0.082 → 0.083, hue 88° →
-70°) — 0.0435 ΔE from lightning, 0.0380 from its nearest neighbour anywhere, AA 4.612 → 5.304 on the
-plaque. Its chip GRAPHIC (`--cond-paralyzed` #b89818) is untouched, so only the label moved.
-
-**A shared graphic stop gets a PROSE VARIANT, never a palette retune.** The last ink on that ground
-was light `--semantic-success` (`.rt-adv`, "Advantage") at 4.156:1. It is not a prose-only `-ink`
-token — it aliases `--verdigris-700`, which also drives the HP-bar gradient math, badges, borders and
-`--at-action` — and that is exactly the case this rule answers: the prose gets its own
-`--rt-adv-ink` (light `--verdigris-900`: 7.484:1 on the plaque, 11.87 / 13.10 on the card surfaces;
-dark = the success stop, already clear on every prose ground), and the shared stop is left alone.
-`.rt-dis` needs no variant — `--semantic-danger` measures 4.729:1 on the plaque.
-
-**A token guard cannot see the CASCADE — pair it with a browser probe.** `.mon-entry strong` (0,1,1)
-out-specified the grammar's single-class rules (0,1,0), so the bestiary statblock repainted
-Advantage / Disadvantage / dice / DCs gilt `--accent-text`: three of the grammar's five arms were
-silently DEAD there, and the tokens the unit guard certified were not the colours Chromium painted
-(only `.rt-dmg` / `.rt-cond` survived, because they carry an inline `style` colour). The gilt lead is
-a CLASSLESS `<strong>`, so the rule is now `.mon-entry strong:not([class])`. Two guards, two jobs:
-the token pairing lives in `tests/unit/verdict-ink-contrast.test.ts`; the composited truth (computed
-colour vs the resolved opaque ground, every ink on the plaque, both themes) lives in
-`tests/e2e/statblock-ink-contrast.spec.ts`, whose leaf is `mimic` — the one SRD statblock that fires
-every arm of the grammar plus a `.mon-dmg` ledger run.
-
-**A RATIO is not an IDENTITY, and a colour is not a GROUND.** The browser probe only does the job
-above if it asserts both. A contrast ratio cannot see the gilt repaint at all — `--accent-text`
-measures 6.875:1 on the plaque, so re-injecting `.mon-entry strong { color: var(--accent-text) }`
-left the probe at ZERO failures: comfortably AA, comfortably the wrong colour. So each token-driven
-arm's computed colour must EQUAL the token it is declared to ride (`.rt-adv` → `--rt-adv-ink`,
-`.rt-dis` → `--semantic-danger`, `.rt-value` → `--text-special`), and NO arm may equal the gilt lead.
-Likewise the ancestor walk that finds "the pixel behind the glyphs" must prove it is one: a
-translucent ancestor is not a ground (the ratio would be measured against a colour nothing paints)
-and no painted ancestor at all is worse (it used to fall through to black, which every dark ink
-passes against). Both now fail loudly, naming the node. Each of these three is mutation-proven.
-**axe cannot do any of this here:** the parchment backdrop and plate pseudo-elements defeat its
-background resolution, so on that surface axe reports 121 `color-contrast` nodes "incomplete" and
-ZERO violations — the failing `.rt-adv` among them.
+variant is the >=4.5:1 label text. Never set small text in a raw domain hue.
 
 **The Token-Only Rule.** Components reference token names only. Literal hex in component code is
 prohibited; the only source of truth for values is `src/index.css`.
@@ -385,13 +284,16 @@ and domain hues (lapis, spell levels, damage types, …) are MEANT to be colored
 fullscreen/blocking surfaces — the portrait lightbox). BG3 ships exactly these two modal-scrim
 weights (identity epic, 2026-07-02). Never a literal black alpha behind an overlay.
 
-**No Emission.** The chrome does not glow. There is no focus halo, no selection aura, no hover
-sweep, no commit bloom, and no interior focus wash: light on this material means DEPTH — the
-plate's own dome and its seat — and a second light source would have to come from somewhere.
-**Keyboard focus is the ring, alone:** `2px solid --focus-ring` at `offset 2`, which clears WCAG
-1.4.11 on its own. The `--focus-wash` interior tint was deleted with the rest of the emission
-systems in the chrome reset. `--glow-stroke-gold` survives only as the deep grounding tone the gold
-semantic palette derives from.
+**The Focus Wash.** Keyboard focus = the crisp gold a11y ring PLUS a warm interior wash
+(`--focus-wash`: `#fddda6` @ 25% dark / struck-gold @ 35% light), layered in the shared
+`:focus-visible` recipe. BG3 focuses controls by washing their interior with warm light at 23–60%
+alpha (identity epic, 2026-07-02). The wash is additive warmth; the ring is the a11y contract and
+never drops.
+
+**The Grounded Glow.** A glow never floats free of an edge: every halo carries a 1px deep muted
+stroke-twin of its hue — `--glow-stroke-gold` (`#5e4a1e`) grounds the gold `--illumination` today;
+per-hue twins follow. BG3's stroke-twin pattern pairs each glow with a dark grounding stroke
+(identity epic, 2026-07-02).
 
 ## 3. Typography
 
@@ -642,257 +544,32 @@ routes through the ONE shared renderer (`parseInline` / `InlineMarkdown` — the
 native `title` tooltips use `stripInline`. Raw asterisks on screen are a routing bug, never a
 content fix.
 
-## 4. The plate material
+## 4. Elevation
 
-The system is the opposite of flat, and it is ONE material. Every container in the app is a
-**plate**: a domed face, an edge assembly, and a seat. Nothing is composed from a second depth
-grammar, and no surface invents its own.
+The system is the opposite of flat. Depth is the identity: every surface is either carved (inset
+shadow, receding into the page) or embossed (raised, with an inner top highlight). Six theme-tuned
+recipes carry it, each a stack of inset highlight + inset shadow + brass lip + contained drop. Inputs
+and pip sockets recede; cards, buttons, and modals rise. Surfaces are never flat at rest, and the
+material reads as struck brass and pigment on parchment.
 
-### The three laws
+### Shadow Vocabulary
 
-Everything in §4 and §5 is derived from three sentences. They are the whole chrome, and violating
-one is never a local decision.
-
-**L1 · A frame means _container_ or _interactive_. Nothing else is framed.** Static information
-inside a container is separated by **whitespace and typography** — type scale, alignment columns,
-and the accent as the one colour role. Maximum framed nesting: **2** (container → plaque).
-
-**L2 · An ornament is the line's OWN LOCAL FORM — never a second rail beside it.** For the length
-of the ornament the rule wears a different shape; it is never drawn over, beside or near a rail
-that is also painted there. The corner knot's rail swell crosses the vertex and tapers back to a
-hairline that dissolves into the host's own border stroke; it contributes no run line of its own
-(the host's border is the only line at that corner). Two lines one pixel apart, at different
-lengths and weights, is the defect this law names.
-
-**L3 · State changes light and colour only. Geometry is frozen.** No state may change a radius, a
-border width, a size or a position.
-
-### What may be framed — the decision tree
-
-```
-Is it the page's top-level container for a region?     → PLATE + EDGE (quiet tier), radius 10
-Can the user click / focus / select it?                → PLAQUE
-Is it read-only information?                           → NO FRAME. Type + space.
-Is it already inside two frames?                       → NO FRAME, unconditionally.
-```
-
-**Density argues for FEWER frames, not more.** The reference's panels are sparse and ours are dense
-by mandate (Constitution §2.3, §4.15) — but its sparseness is what _permits_ it to frame so little,
-and our density is what _requires_ it: in a crowded layout every extra frame costs more, not less.
-So we copy its framing discipline, not its whitespace, and carry density on the three devices that
-scale down where whitespace cannot — **type scale + weight**, **alignment columns**, and **the
-accent as the only colour role** (gold marks values and live state; everything structural is
-neutral).
-
-The consequences, stated plainly, because each is a place a border wants to come back:
-
-- **A grouping rail is a material, not a frame.** `.folio-panel` — the cockpit rails, the campaign
-  hub's section panels — wears the face, the dome, the grain and the cast, and no metal. The law
-  cuts BOTH ways: a hub section that framed itself _and_ framed the note rows standing on it was
-  claiming twice for a surface that only groups. It exists to group; it
-  is not the container the user is acting in. That is also what buys back the nesting level the
-  interactive tiles standing on it need. Its one EARNED strike, the `.gilt-frame` identity band,
-  re-colours the same (transparent) border, so the tier costs no layout.
-- **A read-only facet is type in a column.** Chips, tags, verdicts, seals, die sizes, raw scores,
-  keywords, counts, stat readouts: the value in the numeric face over a micro-caps label, aligned
-  on a shared baseline. A hue may carry the classification; nothing is drawn around it.
-- **A list row is frameless at rest.** Hover is a wash. Selected is a horizontal **wash band**
-  about twice the ground, bounded above and below by the one hairline, with the label lit in the
-  special register. No ring, no lift, no drop. The campaign hub's entries and verb cells
-  (`.hub-rows` / `.hub-row` / `.hub-cell`) are this recipe: a label, a hint and a control row,
-  separated from the next by the hairline and nothing else.
-- **A gem is a shape, not a frame.** A seal, a socket, a coin, a portrait well: the fill boundary is
-  the edge, and one specular pool at (35%, 28%) is what makes it read struck. **No lip, ever** — an
-  inner cream highlight is the banned idiom in every register, gem or plate. **No border either,
-  wherever the gem's own fill IS the object**: every seal (`.lvl-seal`, `.uc-seal`, `.cmp-seal`,
-  `.cmp-frontis-seal`) is edgeless. The two exceptions are the two cases where what sits inside the
-  shape is NOT the gem's fill, and both keep exactly one setting edge: the **portrait well**, which
-  clips a photograph (`.ch-portrait`), and the **champlevé economy coin** (`.econ-disc`), whose
-  reeded milled rim is the owner-picked strike itself (2026-07-03) rather than chrome around it.
-- **A separator is the one hairline**, painted and inset — never a `border-top`, which is a hard,
-  wall-to-wall, unfading line and reads as the underside of a frame. Markup that needs a divider on
-  an element it does not otherwise style takes `.rule-above`.
-- **A transparent border is the geometry-freezing idiom.** Where an element has an interactive or
-  selected strike that shows metal, the resting strike declares `1px solid transparent` so the
-  colour arrives without a single glyph moving (L3).
-
-**Budgeted at CI, on the rendered page.** `tests/e2e/chrome-census.spec.ts` walks the app's densest
-routes in both themes and fails on nesting > 2 or on a per-surface framed-box ceiling. A frame there
-means a _visible_ edge (a drawn side with a non-transparent colour, or an inset shadow); a
-declared-transparent border, a painted stripe or underline, the hairline, and anything under 20×20
-are not boxes the user reads. Raising a ceiling is the last resort, never the fix.
-
-### The plate — four tonal events, one dome
-
-A plate is exactly four tonal events, in this order, and nothing else:
-
-```
-moat → metal → groove → body
-```
-
-- **The MOAT** — a 1px dark ring OUTSIDE the frame. A plate sits in its own shadow groove, which is
-  what makes it read as an object laid ON the page rather than a region cut out of it.
-- **The METAL** — the border itself, ONE warm value on all four runs. The frame is not strongly
-  directional: a hard lit/shaded split reads as a web bevel, not as metal.
-- **The GROOVE** — darkness immediately INSIDE the frame, ramping into the body. **There is no cream
-  inner lip.** Inside a frame is darkness; the plate brightens AWAY from its edge because of the
-  dome, not because of a highlight. The 1px near-white line under a top border is banned outright —
-  four independent systems used to contribute one, and the light masthead resolved three of them on
-  a single 1px edge.
-- **The BODY** — the face gradient under **the DOME**: ONE elliptical specular pool at (50%, 30%),
-  falling to nothing by the edges. Its falloff **is** the vignette and **is** the basin. There is no
-  second darkening layer anywhere in the system.
-
-| Token                 | What                                                               |
-| --------------------- | ------------------------------------------------------------------ |
-| `--plate-face`        | the face gradient (surface-2 → surface-1)                          |
-| `--plate-dome`        | the one specular pool at (50%, 30%)                                |
-| `--plate-grain`       | the per-theme leather / bookbinding tile (containers ≥ 240px only) |
-| `--edge-metal`        | the quiet tier's frame value                                       |
-| `--edge-metal-earned` | the earned tier's frame value                                      |
-| `--edge-groove`       | the darkness inside the frame + its ramp                           |
-| `--edge-seat`         | the moat + the near cast                                           |
-| `--edge-seat-earned`  | the moat + the far cast                                            |
-
-**Eight primitives, and there is no ninth** (`tests/unit/chrome-system.guard.test.ts`). Where a
-grain tile sits under the face — only `.folio-panel::before` — the face is re-mixed inline at
-`--plate-veil-alpha` (dark 62% / light 80%), which is what keeps the grain a low mottle instead of
-a pattern behind text. That is a parameter of the one consumer, not a primitive: CSS simply has no
-per-layer background alpha.
-
-### Two radii, and there is no third
-
-A plate is **10px**. A chip is **square**. That is the whole geometry.
-
-The reference has no square-cornered panel and no third radius: its panels, plaques and modals all
-sit at ~10–12px, **including the ornamented ones** — an ornamented corner is rounded too, with the
-mark radiating inside the curve. This reverses the square-corner ruling (`border-radius: 0` on the
-masthead, the identity band and dialogs) that was made to give a corner knot a "true crossing" to
-seat on: the one-line law that ruling served is **kept and restated** as L2 (§5) — an ornament is
-the line's own local form, so a mark needs no vertex to "cross" — but the
-squareness it justified has no support in the reference, and a mark's registration is solved by
-sitting _inside_ the radius rather than by flattening the corner.
-
-- `--r-plate: 10px` — every container and every plaque, at every size.
-- `--r-chip: 0` — every chip, grid cell, pip and read-only facet.
-- A **circle** (`50%`) is a shape, not a radius: coins, seals, sockets, orbs and portrait wells. The
-  reference frames its portraits and its hotbar hub the same way.
-- `--radius-pill` survives for the ONE true pill in the app, the settings switch track.
-
-The Tailwind `@theme` bridge at the foot of `src/index.css` re-points every `rounded-*` utility at
-the same two values, so markup and stylesheet can never drift into a third. Guard-pinned in
-`tests/unit/chrome-system.guard.test.ts`: every `border-radius` in the chrome must resolve to one of
-the two, a circle, the one pill, or a calc off the plate value for an inner edge inside its own
-border.
-
-### The state ladder — five rungs, and there is no sixth
-
-L3 in practice. The rungs live as tokens in `src/index.css` §04b and every interactive family
-consumes them, so fifty controls share one grammar instead of fifty bespoke hovers.
-
-| rung         | metal                       | face                                             | ink             |
-| ------------ | --------------------------- | ------------------------------------------------ | --------------- |
-| **rest**     | the tier's own              | the plate's own                                  | the register's  |
-| **hover**    | `--state-metal-hover`       | `+ --state-wash-hover` (candle veil)             | lifts one step  |
-| **pressed**  | unchanged                   | `+ --state-wash-pressed` (per theme)             | unchanged       |
-| **selected** | `--state-metal-selected`    | `+ --state-wash-selected`, or the signature face | `--accent-text` |
-| **disabled** | the tier's own, desaturated | flat (`filter: saturate(.4)`, no struck light)   | `--text-muted`  |
-
-The **wash** is the whole mechanism: ONE translucent veil composited over the plate's own face,
-never a second gradient authored per component. It reaches a plate through **the veil slot**:
-`background-image` is a REPLACED property exactly like `box-shadow`, so a rung that writes the wash
-straight onto the background **discards the plate's dome and face** and the surface goes translucent
-under the pointer. Every plate therefore composes the slot at rest and every rung sets only that:
-
-```css
-.plate {
-  --state-veil: none;
-  background-image: var(--state-veil), var(--plate-dome), var(--plate-face);
-}
-.plate:hover {
-  --state-veil: var(--veil-hover);
-} /* --veil-pressed · --veil-selected */
-```
-
-**A veil is not an inversion.** All three washes are re-derived per theme, because the same alpha is
-a different STEP on near-black than it is on ivory: 10% of the warm gold lifts the dark plate by
-ΔL\* 5.9 and the ivory one by only ΔL\* 3.4. The two themes therefore carry different alphas of the
-**same hue**, matched to the same perceptual step — hover ≈ ΔL\* 6 (dark 10%, light 17%), selected
-≈ ΔL\* 9.5 (dark 16%, light 28%). Pressed is the one rung whose colour also differs: dark presses
-into shadow, light into warm umber, because a grey press on ivory reads as dirt on vellum.
-
-**Geometry is frozen.** No state may change a radius, a border width, a size, a padding or a
-position. Three techniques cover every case that used to: a border held `transparent` at rest and
-coloured in by the state; a frame revealed **entirely in `box-shadow`** (a shadow adds no layout
-size, so the reveal moves nothing — the inline-edit hot-spot recipe); and a radius declared on the
-element rather than on its `:focus-visible` strike. The one motion the ladder licenses is the
-reference's own **1px settle on a CARD** (`transform`, `[data-motion]`-gated) — a card lifts toward
-the light, it does not grow.
-
-Focus is the **2px `--focus-ring` at offset 2, alone**. No interior wash, no bloom, no halo: light
-on this material means depth, and a second light source would have to come from somewhere.
-
-Pinned by `tests/unit/chrome-system.guard.test.ts` — the ladder's existence, the per-theme pressed
-veil, every family's consumption of it, and a sweep that fails any state rule declaring a geometry
-property.
-
-### Two tiers, differing ONLY in light
-
-| tier        | used by                                                        | metal | seat                 |
-| ----------- | -------------------------------------------------------------- | ----- | -------------------- |
-| **no tier** | grouping rails (`.folio-panel`), list rows, read-only facets   | none  | `--edge-seat` (rail) |
-| **quiet**   | cards, plaques, tiles, controls                                | 1px   | `--edge-seat`        |
-| **earned**  | dialogs, the identity band, the realm masthead, the codex leaf | 2px   | `--edge-seat-earned` |
-
-Frame thickness scales with the plate, not with the pixel grid. The tiers **never** differ in
-radius, size or position — that is the state law (§5, L3) applied to the register ladder.
+- **Recessed** (`--elev-recessed`): carved channel for inputs, pip sockets, inset wells. Inset
+  shadow + inset top line + a faint bottom highlight.
+- **Resting** (`--elev-resting`): the default raised tile (cards, list rows). Inset top sheen, inset
+  bottom shadow, brass lip, soft 3-6px drop.
+- **Raised** (`--elev-raised`): hover and emphasized tiles; a deeper 6-14px drop with a 3px brass lip.
+- **Floating** (`--elev-floating`): popovers and floating chrome; 14-32px drop.
+- **Modal** (`--elev-modal`): dialogs; a 30-70px drop for clear separation from the scrim.
+- **Illumination** (`--illumination`): the gold-leaf halo, applied on focus and emphasis, theme-tuned.
 
 ### Named Rules
 
-**The No-Flat-Fill Rule.** A surface is never a flat colour. It is the plate material, or it is not
-a surface at all — it is type on its parent's plate.
+**The No-Flat-Fill Rule.** A surface is never a flat color. It is a carved channel or an embossed tile.
+If a panel looks like a flat rectangle, the elevation token is missing.
 
-**The Frame-Is-A-Claim Rule.** A frame says "this is an object you can act on, or the container you
-are acting in". Drawing one around anything else spends the claim and it stops meaning anything —
-which is how one route came to render 273 framed boxes and another 1313. If you cannot name what a
-box is _for_, delete it and let type and space do the work (L1; `chrome-system.guard.test.ts` +
-`tests/e2e/chrome-census.spec.ts`).
-
-**The No-Second-Grammar Rule.** `box-shadow` and `background-image` are both REPLACED properties, so
-a rule that sets either on a plate without composing the plate's own tokens back in silently strips
-the material — the shadow case costs the plate its seat, the background case costs it its **face and
-dome**, and a surface that loses its face goes translucent, with the candlelit backdrop showing
-through it and its ink stranded on the scene. A rule that composes BOTH an `--edge-*` and an
-`--elev-*` term is the literal lasagna: two independently-authored bevels doing the same job in the
-same place. All three are guard-failures (`tests/unit/chrome-system.guard.test.ts`), and the
-background case is what the ladder's **veil slot** exists to make unreachable. The legacy `--elev-*` stack survives ONLY on the small
-controls the state-grammar pass has yet to reach; it may never touch a plate.
-
-**The Dome Costs Ink, and the Ink Buys the Dome's Alpha.** A dark plate is translucent over painted
-candlelight, so the dome brightens the very composite the ink sits on. The dark plate carries
-**three ink registers** — `--text-secondary` → `--text-muted` → `--text-faint` — and the faintest
-one has to clear 4.5:1 at the pool's peak, so the pool's alpha is **derived from the ink ladder,
-not chosen**. On the worst measured composite (surface-2 at `--panel-alpha` over the brightest
-glyph-scale backdrop region, then domed):
-
-| dark dome    | peak / corner | `--text-secondary` | `--text-muted` | `--text-faint` |
-| ------------ | ------------- | ------------------ | -------------- | -------------- |
-| 4% (shipped) | 1.59×         | 7.25               | 5.46           | **4.64**       |
-| 10%          | 2.78×         | 6.13               | 4.62           | **3.64 ✗**     |
-
-At 10% the faint register fails AA, and its minimum passing value (`#ac9d7b`) lands on top of
-`--text-muted` — i.e. a 10% pool has no room for a third register at all. 4% is the strongest pool
-three registers can pay for, and it is also the ~1.6× the material spec sets for dark (§4 above;
-the reference itself peaks at 2.4×). `--text-muted` is `#ae9f7e` and `--text-faint` is `#a09272`
-for the same reason — the pre-dome pair `#988b6e` / `#9a8c6e` measured 3.58 / 4.30 (FAIL). The
-floor is a GRID in `tests/unit/verdict-ink-contrast.test.ts` — every domed ground (opaque plate,
-panel composite, rail composite, nested surface-3) × both small-prose registers, plus a minimum
-L\* separation between the three, so the floor can never be met by collapsing a tier.
-**Raising the dome means deleting an ink register: re-derive the ladder first.**
-
-Light needs no compensation — its pool is near-white over near-ivory (a 1.04× lift) under
-near-black ink, ≥14:1 on every plate. Light ships `--text-muted` and `--text-faint` at the same
-value (`#291e0a`): two registers, a standing daylight-sibling call, not a dome cost.
+**The Carved-In / Embossed-Out Rule.** Anything the user types or spends into recedes (inputs, pips);
+anything they read or act on rises (cards, buttons). Depth direction encodes interaction.
 
 ## 5. Components
 
@@ -901,7 +578,7 @@ applies) loading and error states. Affordances are consistent across every surfa
 
 ### Buttons
 
-- **Shape:** the plate radius (`--r-plate`); icon-only buttons are 32px square (28px sm, 40px lg).
+- **Shape:** 2px radius (`--radius-md`); icon-only buttons are 32px square (28px sm, 40px lg).
 - **Primary (brass):** display font, 12px, a four-stop gold-leaf gradient with a metallic bevel (inset
   top sheen, bottom inset, brass lip, contained drop). Label is `--text-inverse` in dark and
   `--accent-text` (deep gold) on a lighter gold band in light. It rests quiet and warm, then
@@ -910,16 +587,15 @@ applies) loading and error states. Affordances are consistent across every surfa
   `--bg-surface-3` and `translateY(-1px)`, active depresses 1px into the page.
 - **Ghost / Destructive / Dashed:** transparent ghost for low-emphasis; destructive carries the
   vermilion voice; dashed for add-affordances.
-- **Hover / Focus:** hover brightens the edge metal and lifts the face; focus is the 2px
-  `--focus-ring` outline at offset 2 and nothing else (no interior wash, no halo — the ring alone
-  clears WCAG 1.4.11). Loading swaps the label for a centered brass spinner (a steady full ring
-  under reduced motion, never a frozen arc).
+- **Hover / Focus:** brass-eased background + transform; focus paints the gold `--illumination` halo
+  plus a 2px `--focus-ring` outline. Loading swaps the label for a centered brass spinner (a steady
+  full ring under reduced motion, never a frozen arc).
 
 ### Chips / Badges
 
 - **Style:** one atom parameterized by `--bd-c` (the hue). Background is a 14% tint of the hue over the
   surface; border is the full `--bd-c`; label is `--bd-ink` (the AA-safe variant) for domain colors.
-  Mono uppercase, 11px, square (`--r-chip`).
+  Mono uppercase, 11px, 4px facet radius.
 - **Variants:** `emphasized` (22% tint + glow), `solid` (gradient fill, inverse text), `outline`
   (transparent), `muted` (neutral). Any domain-colored badge must pass `--bd-ink`.
 
@@ -1010,8 +686,8 @@ masthead is pure identity + vitals, the vitals strip aligned clean against the n
 - **Collision story — lanes, not layers:** the fob owns the bottom-right column (right 20px, clear
   of scrollbars); `body:has(.fob) .toast-region` slides the desktop toast lane LEFT of the coin
   column, so a stack of toasts can never rise over the coins. Both themes designed: struck dark
-  coins in dark; struck-gold coins with the deep-gilt ink in light (the Rest-coin light-hover
-  grammar).
+  coins with the gold bloom in dark; struck-gold coins with the deep-gilt ink + `--gilt-glow-sm`
+  kindle in light (the Rest-coin light-hover grammar).
 
 **THE SIGNET — the mobile home** (`MobileSignet`, `src/features/character/MobileSignet.tsx`;
 owner-ratified 2026-07-11 — the fob collapsed to ONE coin, the fob family's compact sibling). One
@@ -1083,13 +759,10 @@ in-the-moment affordance, one keyboard path — and CTAs never reverse.**
 
 ### Cards / Containers
 
-A card IS a plate (§4). It is built from the one material and never from a second depth grammar —
-an `--elev-*` term on a card is a guard failure (`tests/unit/chrome-system.guard.test.ts`).
-
-- **Corner Style:** `--r-plate` (10px) — every container, every plaque, every size. The reference has no square-cornered panel, and its ornamented corners are rounded too.
-- **Background:** `var(--plate-dome), var(--plate-face)` — the domed face, quiet tier.
-- **Edge + Shadow:** `1px solid var(--edge-metal)` with `box-shadow: var(--edge-groove), var(--edge-seat)` — moat → metal → groove → body, four tonal events and no more. Hover changes light and colour (and at most a 1–2px lift), never the assembly.
-- **Border:** 1px `--border-soft` dividers between stacked rows (a divider inside a card is the `--hairline`; `--border-soft` is only for structural row splits).
+- **Corner Style:** 8px (`--radius-xl`) for cards; 12px (`--radius-2xl`) for the largest containers.
+- **Background:** `--bg-surface-1`; carried on an embossed (`--elev-resting`) tile.
+- **Shadow Strategy:** resting at rest, raised on hover; see Elevation. Never flat.
+- **Border:** 1px `--border-soft` dividers between stacked rows.
 - **Internal Padding:** `--sp-2`/`--sp-3` (8/12px) on dense rows; larger containers use the 4px scale.
 
 ### Universal Card (signature component)
@@ -1198,7 +871,7 @@ is geometry-identical EN vs IT.
 ### Inputs / Fields
 
 - **Style:** mono 13px in a carved channel: a recessed gradient fill (`--bg-recessed`) with
-  `--elev-recessed` inset shadow and a near-black `--border-strong` edge; the chip radius. Inputs push into
+  `--elev-recessed` inset shadow and a near-black `--border-strong` edge; 2px radius. Inputs push into
   the page.
 - **Focus:** border shifts to `--accent-primary-bright` with a 1px ring and a 24px gold glow stacked on
   the inset shadow.
@@ -1210,8 +883,8 @@ is geometry-identical EN vs IT.
 ### Navigation
 
 - **Style:** a persistent left nav rail on `--bg-page` with a hairline `--border-soft` edge; section
-  heads are plain mono labels — type and space, no marker.
-- **States:** default / hover / active with the gold voice on the active item; focus is the ring.
+  heads carry the gold diamond motif (`.rh-diamond`) shared with content dividers. Mono labels.
+- **States:** default / hover / active with the gold voice on the active item; focus paints the halo.
 - **Mobile:** the rail is replaced (not shrunk) by a bottom nav + drawer below `--bp-mobile` (720px);
   the game rail drops below `--bp-rail` (1180px). `--safe-bottom` keeps fixed bottom chrome clear of
   notch insets. (Full mobile recomposition in §11.)
@@ -1230,7 +903,7 @@ anchored to nowhere). The three anchors:
   with the SAME gold grammar as a hub tab: a 2px accent underline + the name in accent ink on
   desktop; the avatar ring brightens to accent when the trigger is avatar-only (mobile). The
   account menu marks the current row (`aria-current="page"`), one grammar shared with the palette's
-  Section rows (gilt ink — light and colour, no marker).
+  Section rows (gilt ink + a leading gold diamond).
 - **The colophon leaf** (`/legal`) → the footer's "Legal & attribution" link (gilt-current).
 
 **The mobile bottom nav stays exactly 3 realms (D6).** It is a realm _switcher_, not a location bar:
@@ -1307,8 +980,8 @@ routes are `React.lazy` + Suspense, so at that instant the page is still the emp
    a jump and is removed; the pip navigates to `/campaigns/<id>` plainly).
 2. **A realm switch is rock-solid** (owner, 2026-07-10). Switching between the three
    realm indexes (`/characters`, `/campaigns`, `/compendium`) always lands at the
-   top: no per-realm scroll memory, no post-mount restore jump — the framed masthead
-   and its ink land in exactly the same place every time, and no mount
+   top: no per-realm scroll memory, no post-mount restore jump — the framed masthead,
+   its crest, and its ink land in exactly the same place every time, and no mount
    animation plays on them (the masthead is static; the content change IS the
    navigation signal). The realm tabs still return to the index's last query
    (`realm-memory` → the compendium's `?type`); Back (POP) still restores exactly.
@@ -1372,18 +1045,16 @@ campaign hub if it adopts tabbed IA — never re-roll a second tab look.
 
 ### Modals (`ModalShell`) + command palette
 
-- **`ModalShell`:** centered, the plate material on the earned tier (`--r-plate`, 2px
-  `--edge-metal-earned`, `--edge-seat-earned`), scrim behind, at `--z-modal`; a Cinzel-titled head
-  ended by the one `--hairline`, **and no ornament** (§5: a dialog already commands the screen);
-  body scrolls; footer actions right-aligned (primary = Pressed-Brass). Always commit/cancel; a
-  modal never relocates the realm. **One trap owner:** it must trap focus, handle Escape, and set
-  initial focus (WCAG 2.1.2 / 2.4.3).
+- **`ModalShell`:** centered, `--bg-surface-2`, `--elev-modal`, `--radius-xl`, scrim behind, at
+  `--z-modal`; a diamond-rubric Cinzel-titled head; body scrolls; footer actions right-aligned
+  (primary = Pressed-Brass). Always commit/cancel; a modal never relocates the realm. **One trap
+  owner:** it must trap focus, handle Escape, and set initial focus (WCAG 2.1.2 / 2.4.3).
   - **Scrollable body is keyboard-reachable.** The shared `.modal-body`/`DialogBody` is a
     `max-height: 64vh; overflow-y: auto` scroll region, so it carries an unconditional `tabIndex=0`
     (in `ModalBody`, `src/components/ui/modal-head.tsx`) — otherwise a non-pointer user cannot reach
     it to arrow-scroll (axe `scrollable-region-focusable`, serious). Because a large region is not an
-    interactive control, `.modal-body:focus-visible` draws the crisp ring INSET
-    (`outline-offset: -2px`) so it reads inside the plate rather than around it.
+    interactive control, `.modal-body:focus-visible` draws the crisp ring INSET and suppresses the
+    global interior focus-wash that would otherwise flood the whole body.
 - **Command palette ("Ask the Folio"):** a floating panel (`--bg-surface-2` + `--elev-floating`,
   `--z-overlay`, scrim) with a carved search field and keyboard-navigable result rows (hover/selected
   → `--bg-surface-3` + a left `--accent-primary` marker), section eyebrows, and `aria-current` on the
@@ -1408,14 +1079,6 @@ campaign hub if it adopts tabbed IA — never re-roll a second tab look.
   whose term carries a real rule (Finesse, Thrown, Versatile, Sap, Vex, …) wraps in a GlossaryTip —
   detail-on-demand inside an already-disclosed detail surface, so collapsed rows stay quiet. The
   chip keeps its per-weapon numbers ("Da Lancio (Gittata 6/18 m)"); the rubric strips them.
-- **Never a native `title=` for a value's explanation** (2026-07-24). Chromium paints the native
-  tooltip outside the page and touch has no gesture for it at all, so an explanation parked there is
-  unreachable on the owner's phone — it is not progressive disclosure, it is a hidden string. Any
-  number/chip whose meaning must be discoverable uses this popover family instead: `GlossaryTip`
-  (a term), `BreakdownTip` (a composed value), or the same `Popover` + `.glossary-pop` pair inline
-  (the Inventory toolbar chips — carrying capacity + attunement — are the reference: a
-  `button.toolbar-chip` trigger with `data-over` carrying the over-limit state, since Radix owns
-  `data-state` on a trigger).
 
 ### Health + resource bars
 
@@ -1569,11 +1232,6 @@ The ONE F-family picker for every in-wizard choice pool (`WizardPickList` in
 `src/features/wizard/pick-list.tsx`; its large-feat-pool sibling `feat-list.tsx`; spells in
 `spell-list.tsx`). It implements the Picker Doctrine (Constitution §2.7) as one recipe:
 
-- **The entry is a PLATE, and its three states are the ladder:** collapsed is the quiet tier;
-  reading warms the metal to the hover rung and takes the earned seat; chosen is
-  `--state-metal-selected` over the selected veil. No bloom marks any of them — the entry is an
-  object you can act on, so it is framed, and everything read-only inside it (the socket, the
-  check, the hit die) is type and shape (L1).
 - **Three states, one geometry:** every entry keeps ONE header and ONE body through
   collapsed · reading · chosen. A tap unfolds the reading spread (free browsing — an exploratory
   tap never burns a pick); an explicit **Choose / Learn** commits; the committed row swaps the
@@ -1594,12 +1252,11 @@ The ONE F-family picker for every in-wizard choice pool (`WizardPickList` in
 - **Illegal options are absent, not greyed:** the presenter (`lib/views/feat-pick-view.ts` et al.)
   filters out unmet-prerequisite and already-taken options; the only disabled-row note is a
   blocking reason ("Already taken"). Met preconditions are never announced.
-- **The commit moment is marked by the REGISTER LADDER:** the wizard's final commit control — the
+- **The commit moment is marked (the Create ceremony):** the wizard's final commit control — the
   creation "Create Character" and the level-up confirm — is the ONE `WizardNav` next button that
-  takes `commit`, and its gold coin steps from the quiet seat to the **earned** one
-  (`.wiz-pager-btn.commit`). Light, never geometry, never emission: this chrome has no bloom
-  anywhere, so the biggest moment in the app is marked the same way every other earned register is.
-  Both wizards share the one recipe.
+  takes `commit`, whose gold seal emits a single gold-leaf **bloom** on press (an expanding, fading
+  radial halo on `--ease-settle`, ~400ms; reduced motion collapses it to the existing press). No new
+  colours, no confetti; both wizards share the one recipe (`.wiz-pager-btn.commit`).
 
 ### Compendium codex — the two-leaf spread (COMPENDIUM-LUX)
 
@@ -1636,11 +1293,10 @@ the index depth on Back. The recipe's parts:
   (§2 "One hue vocabulary per fact"); rarity/category chips keep their existing tones.
 - **The frontispiece** (`.cmp-frontis`, reading leaf at rest): the brand crest as a whisper
   watermark behind the active type's gold seal, name, live count, and the one next action — a
-  quiet facing page, never louder than the content it awaits. This is the app's ONLY watermark:
-  a title page is the one place the idiom is honest, because nothing live is set over it.
-- **Seated selection:** the open entry's index row wears the active-tab idiom (brighter edge metal
-  - a seated wash + `--text-special` title) with `aria-current` — the index always shows which page
-    the book is open to.
+  quiet facing page, never louder than the content it awaits.
+- **Seated selection:** the open entry's index row wears the active-tab idiom (accent edge +
+  seated illumination + `--text-special` title) with `aria-current` — the index always shows which
+  page the book is open to.
 - **Leaf chrome by model:** the phone leaf leads with a labelled Back; the spread's recto closes
   with a quiet corner ✕ (the index never left, so "Back" would lie). Esc mirrors both.
 - **Keyboard roam:** ↓ from the search field drops into the first result, ↑/↓ roam the rows, ↑
@@ -1659,8 +1315,9 @@ of centring one measure in dead parchment:
 
 - **The engraved plaque** (`.colophon-hero` + `.colophon-statement`): the required SRD 5.2.1 /
   CC-BY-4.0 attribution, reproduced VERBATIM as a quotable `<blockquote>`, is the ceremonial
-  centrepiece — a centred chapter-head HAIRLINE + the display-italic rubric, then a full-width
-  engraved plate (one gilt frame; recessed gilt wash) whose
+  centrepiece — a centred chapter-head ornament (the site-footer's diamond-on-fading-rule
+  grammar) + the display-italic rubric, then a full-width engraved plate (double gilt frame:
+  outer edge + inset hairline, the tome's own inked-margin grammar; recessed gilt wash) whose
   inscription centres at a capped ~80ch measure via `max()` padding — the OBJECT spans, the
   text keeps its measure. The register rule holds: the page's one elevated treatment is spent
   on the one legally load-bearing block.
@@ -1709,14 +1366,7 @@ formatter with four arms:
   green/red fork, capitalized defined terms only.
 
 All tokens sit at **font-weight 600** on the serif (never the shouted UA 700), so a lifted token
-reads emphasized beside real `**bold**` labels, not louder. **The bestiary was the one surface where
-that was not true**, and fixing the gilt-repaint cascade fixed the weight with it: a bare
-`.mon-entry strong` (0,1,1) also set `font-weight: 700`, so on 300+ monster pages every `.rt-dmg` /
-`.rt-cond` / `.rt-value` / `.rt-adv` / `.rt-dis` span rendered at the shouted 700 while the identical
-sentence on a spell card rendered at 600. Narrowing that rule to
-`.mon-entry strong:not([class])` returns the grammar to 600 there — the entry NAME (`**Bite.**`) is
-the classless `<strong>` and keeps its gilt 700 lead, and the statblock's prose stops shouting.
-The formatter is **opt-in** via
+reads emphasized beside real `**bold**` labels, not louder. The formatter is **opt-in** via
 `InlineMarkdown`'s `highlight` prop and wired only where RULES text renders — the compendium
 description + "At Higher Levels", every picker detail (`CompendiumDetailBody`), the sheet's
 feature/spell/item cards (`UniversalCardDesc`/`Higher`, FeaturesTab), and the level-up reading
@@ -1729,15 +1379,10 @@ four arms above, three false-positive gates earn their place: a measured number 
 decimal/thousand separators as one token (IT "1,5 metri", EN "1,000 feet"); "invisible" inks only as
 the capitalized defined term or in creature/condition context (objects wear "an invisible barrier"
 without the condition); and Advantage/Disadvantage also ink their lowercase verb-phrase forms ("has
-advantage" / "con vantaggio"), gated so only the adv/dis word lifts. **The verb gate is per-locale
-and must be counted against the real corpus, not translated from English's:** IT's gate covered
-`ha/hai/hanno/avere/con` and missed `dispone di` (×64) and `subisce/subiscono` (×24), so 88 of the
-~115 verb-phrase occurrences in `src/i18n/it/srd/*.json` shipped un-inked while the same EN prose
-inked — a bilingual-parity break invisible to every EN test. All locale words live in
+advantage" / "con vantaggio"), gated so only the adv/dis word lifts. All locale words live in
 `src/i18n/rules-prose.ts` (typed over `DamageType` × `Locale`); it edits ZERO SRD strings and never
 touches `parseInline`. Contract pinned in `tests/unit/highlight-rules-text.test.tsx`;
-ink-on-prose-ground AA pinned in `tests/unit/verdict-ink-contrast.test.ts` (tokens) and
-`tests/e2e/statblock-ink-contrast.spec.ts` (composited, real Chromium).
+ink-on-prose-ground AA pinned in `tests/unit/verdict-ink-contrast.test.ts`.
 
 ### Bounded prose + bounded lists (the overflow recipes)
 
@@ -1752,14 +1397,18 @@ canonical recipes, never re-rolled:
 - **Lists → latest-N + "View all"** (the Treasury-log recipe; e.g. `Sessions.tsx`): show the
   newest N entries at a glance, the archive behind one "View all" toggle. New entries prepend so
   they are always visible; recency stays scannable without an unbounded page.
-- **Section COUNT → plain numerals** (`.sec-count`, `SectionHeader count={n}`): a NUMERIC section
-  count (sessions, notes, chapters) is TYPE, not an object — L1: a number you cannot act on is not
-  framed. It sets in the numeric face at the muted ink, docked BESIDE the title in
-  `SectionHeader`'s `.has-count` grid so the hairline still fans out to the container edge after
-  it. **Counts only** — a string TOTAL/hint ("120 gp", "168 mo in totale") stays on `meta`, which
-  keeps the far-right `.sec-meta` slot (the two are mutually exclusive per header).
+- **Section COUNT → struck gilt MEDALLION** (`.sec-count`, `SectionHeader count={n}`): a NUMERIC
+  section count (sessions, notes, chapters) renders as an "illuminated premium" coin docked BESIDE the
+  title — in `SectionHeader`'s 4-column `.has-count` grid it sits in **column 3, between the title and
+  the fading rule** (NOT a bare number floating in a thin far-right box, which read weak on parchment).
+  The coin is a deliberately-designed object in BOTH themes: a saturated gilt radial fill from
+  `--accent-primary-bright` (bright gold on dark, rich gold-500 on light), a full-colour gold border, a
+  top emboss + gold glow, and an **engraved inner ring** (`::before`); the numerals take `--accent-text`
+  (gold-leaf-300 on dark, deep gold-leaf-900 on light) → gilt-on-dark / dark-gold-on-gilt, never a flat
+  box. **Counts only** — a string TOTAL/hint ("120 gp", "168 mo in totale") stays on `meta`, which keeps
+  the far-right `.sec-meta` slot (the two are mutually exclusive per header).
 - **Hub section → `SectionPanel` with a CHEVRON disclosure** (`src/features/campaigns/SectionPanel.tsx`):
-  a static `SectionHeader` rubric (title · count · hairline — never a control) over an
+  a static `SectionHeader` rubric (diamond · title · count medallion · rule — never a control) over an
   always-rendered fixed panel (the at-a-glance signal), and the bulky secondary list folded behind a
   **compact, centred chevron expander**. A collapsible section is **ONE card** (`.section-card` — the same
   `.info-card` struck-vellum surface, trailing margin dropped) that ENCLOSES the fixed panel + the
@@ -1773,10 +1422,11 @@ canonical recipes, never re-rolled:
   chevron: a 0/1-item Sessions/Notes otherwise floated card-less on the backdrop while its populated
   sibling wore the card (the Treasury empty-ledger bug class; pinned in `section-panel.test.tsx`). The
   control (`.section-disclosure`: ≥44px tap target) is **icon-only, with no
-  visible label** — the header count already carries the number — just a refined gilt `knob`
-  (`.section-disclosure-knob`), the one INTERACTIVE object in a rubric row and therefore the one
-  framed one: a struck gilt disc, OPAQUE in light so its deep-gold chevron self-backs on the
-  candlelit backdrop. It brightens on hover/focus and rotates a satisfying 180° when open. The per-section worded
+  visible label** — the header count medallion already carries the number — just a refined gilt `knob`
+  struck from the SAME illuminated-premium coin material as `.sec-count` (`.section-disclosure-knob`: a
+  saturated `--accent-primary-bright` radial fill, full-colour gold border, top emboss + gold glow, and
+  an engraved `::before` ring; the `--accent-text` chevron reads on BOTH themes where the old worded pill
+  failed) that brightens on hover/focus and rotates a satisfying 180° when open. The per-section worded
   intent ("Show transactions (12)" / "Hide transactions") rides as the button's `aria-label` (a11y only)
   — never visible text (owner explicitly rejected worded disclosure pills: "just an intuitive chevron in
   the box"). The disclosure is on the CARD, never the header (owner: a toggle on the header "is NOT
@@ -1785,22 +1435,6 @@ canonical recipes, never re-rolled:
   EVERY desk card rides this one chrome — Chronicle, Sessions, Shared-notes, Treasury, **Access**
   (the compressed invite + lock), and **DM Tools** — via the optional `className` prop (the full-width
   bands pass `lg:col-span-2`); no parallel section component exists.
-- **On-demand reference section → `SectionHeader disclosure` (HEADER is the toggle)** (owner-ratified
-  2026-07-24): DISTINCT from the hub's fixed-panel model above. For a section whose WHOLE body is
-  optional reference — the Play (Combat) tab's two foot blocks, the **combat playbook**
-  (`CombatAlgorithm`) and the **SRD rules reference** (`SituationalRules`), wrapped in the shared
-  `ReferenceSection` — the section reads as JUST its quiet folio header row when collapsed, and clicking
-  the header **blooms the whole body in place** (the whole flowchart / the whole 2×2 topic grid — no
-  per-topic sub-accordions). `SectionHeader`'s opt-in `disclosure` prop makes the entire `.sec-head` row
-  the click target (a stretched-overlay `.sec-toggle::before`, the UniversalCard whole-row idiom) with a
-  gilt `--accent-text` chevron that rotates 180° on open; `aria-expanded`/`aria-controls` wire the
-  `.section-detail-wrap` reveal (the SAME `grid-template-rows: 0fr → 1fr` recipe, reduced-motion
-  instant). Collapsed by default (a missing key = closed — no first-run special casing); the open/closed
-  choice is **remembered per user** in `uiStore.playRefSections` (persisted, survives tab switches +
-  reloads) and the ⌘K palette can drive the same slice to open a section on demand. Why the header (not
-  the hub's bottom chevron): these sections have NO always-visible fixed panel to sit above — the header
-  IS all that shows when closed, so the header is the natural affordance. The hub's "toggle NOT on the
-  header" ruling still governs `SectionPanel`, whose header sits over a permanent fixed panel.
 - **Campaign-hub MANAGE band → read-frequency dashboard** (`CampaignHubPage.tsx`, `.campaign-hub-grid`):
   below the always-open full-width PLAY band (the Party), the MANAGE sections sit in a two-column grid
   (`grid-cols-1 lg:grid-cols-2`, `gap-x-6 gap-y-12`, `items-start`) read top-to-bottom in vertical
@@ -1830,133 +1464,97 @@ player is making or live state they must read — never spent on decoration (Con
 golden rule 19, docs/GOLDEN_RULES.md). Adding a premium register to a surface requires naming the information
 that earns it.
 
-- **Monster statblock → `MonsterStatBlockCard`** (`src/components/shared/MonsterStatBlockCard.tsx`,
-  `.mon-*` recipes): the bestiary's shared read surface (the compendium Monsters leaf + the future
-  encounter/companion uses). Regrows the polymorph reference card's carved-vellum plaque family
-  (`.beast-ref`) into the full 2024 reading order — defence line · a ruled SCORE·MOD·SAVE ability
-  `<table>` · merged ledger lines (skills, the one 2024 Immunities line = inked damage runs + shared
-  `.co-chip` condition chips, senses, languages, the CR·XP·PB line) · gilt-ruled Traits/Actions/…/
-  Legendary sections whose prose lights through `highlightRulesText`. Struck at the **InfoCard tier**
-  of the register ladder — a reference document, not a decision surface, so **no altar/cartouche**.
-  Token-driven only: both themes re-theme with no light override (the `.beast-ref` precedent). Every
-  printed number derives (`src/lib/monster.ts`), never stored; the display strings resolve through
-  the lazy `monster` catalogue + the closed-set chrome seams. The compendium row's **CR seal** is the
-  ONE deliberate exception to the re-theme rule: it is **theme-INVARIANT gilt jewelry** — the
-  `.lvl-seal.cr-seal` modifier pins the gem + numeral to fixed gilt tokens (a light-gold
-  `--gold-leaf-500` gem + the near-black `--gilt-ink` engraving, identical in both themes), so the CR
-  reads as the same struck gold coin everywhere (owner-directed 2026-07-24: the per-theme
-  `--accent-primary`/`--text-inverse` pair went bronze-on-bronze in light). `--gilt-ink` is the
-  theme-independent engraving ink for gilt jewelry; the ink-contrast battery pins the pair ≥ 4.5:1 on
-  the gem's dark end and locks it byte-identical across themes.
+### The ornament vocabulary (BG3 identity T5)
 
-### The ornament vocabulary
+The app's one ornament grammar, adapted from BG3's menu language into the committed **lapidary**
+identity (sharp facets, 0–4px radii): everything is **geometric** — faceted diamond nodes and
+gems, tapered hairlines — never organic foliage; everything is vector (SVG data-URIs / pure CSS),
+theme-tintable, crisp at 1x and 2x. The grammar's placement rules:
 
-Ornament is **earned by information, never spent on decoration**. The whole grammar is three
-rules, and the budget is **exactly three earned hero registers**.
+- **Ornament marks the START of a rubric, a rail-head, slot/charge pips — and, since the
+  full-BG3 push (owner-ratified 2026-07-16), the CORNERS of the earned hero frames.** A faceted
+  diamond leads a section head, caps a rail, or sits in a socket; straight runs, divider centres,
+  and scrollbar ends stay QUIET. A border is a plain hairline; a divider fades to nothing at its
+  tips. Panel corners stay quiet EXCEPT on the three reliquary registers (below) — resting cards
+  and ordinary panels never take corner goldwork. (The old free-floating corner diamonds, selection
+  crests, divider-centre nodes, and scrollbar ends stay removed — the reliquary corners are a
+  designed frame treatment on earned surfaces, not a return of scatter ornament.)
+- **Ornament marks STATE.** Selection is the `--frame-selected` silver-over-bronze gradient frame
+  (BG3's silvery-over-bronze adapted to the gold-leaf ramp via the per-theme
+  `--metal-silver`/`--metal-bronze` pair) on the wizard hero altar + the chosen plaque, and the
+  seated illumination + accent edge on the active compendium ribbon tab. At-rest surfaces are
+  never decorated with selection ornament.
 
-**L2 · An ornament is the line's OWN LOCAL FORM — never a second rail beside it.** The corner
-knot's rail SWELL crosses the vertex and tapers back to a hairline that dissolves into the host's
-own border stroke — it contributes no run line of its own. There is no surface anywhere in the
-chrome where a rule and an ornament are painted on top of each other as two competing lines.
+The pieces and their ONE home (`src/styles/folio.css`; the metal tokens in `src/index.css`):
 
-**The budget: EXACTLY THREE earned hero registers wear the corner knot (Constitution §4.16):**
-the framed realm masthead (`.page-head.framed::before`), the gilt-framed hero band
-(`.folio-panel.gilt-frame::after` — cockpit identity), and dialogs (`.modal::after`). Nothing else
-carries it — not a sibling panel, not a resting card, not a section heading, not a list row, not a
-chip.
-
-**States change light and colour, never geometry, and never emit.** There is no glow, no bloom,
-no aura, no hover sweep and no focus halo anywhere in the chrome: light on this material means
-depth, and a second light source would have to come from somewhere. Focus is the 2px
-`--focus-ring` at offset 2, alone — it clears WCAG 1.4.11 on its own.
-
-The pieces, and their ONE home (`src/styles/folio.css`; the metals in `src/index.css`):
-
-- **THE HAIRLINE (`--hairline`) — the divider everywhere but ONE earned ceremony seat.** Modal
-  heads' own bottom edge, card feet, section rubrics, list groups, the compendium entry head, the
-  colophon: all of them are this line. It fades at both tips, carries **no node**, and is **inset
-  from its container's padding edge** — never wall-to-wall. It is a whisper: clearly subordinate to
-  ink, never a second frame. `--hairline-ink` is its single parameter — the light sibling and the
-  econ-typed section heads re-tint that and nothing else.
-- **THE SECTION RUBRIC IS TYPE AND SPACE.** A heading inside a container is a title, the
-  hairline, and an optional count and meta — no marker, no accent bar, no medallion. A read-only
-  count is plain numerals in the rubric row (L1: a number you cannot act on is not an object);
-  the disclosure knob is the only framed thing in that row, because it is the only thing a
-  pointer can act on.
-- **THE DIVIDER UTILITY.** `.rule-above` paints the hairline on an element markup does not
-  otherwise style. It is the ONLY sanctioned separator in markup: a `border-t` Tailwind utility is
-  a hard, wall-to-wall, unfading line, which is the underside of a frame. There is no
-  `.rule-below`: every separator in the app is "above the group that follows".
-- **NO ROTATED-DIAMOND FAMILY.** The 18 lapidary lozenges that shipped as rubric markers, rail
-  heads, list bullets, divider nodes, charge pips and menu markers are gone. A bullet is a
-  bullet; a marker is ink colour; a pip is a square facet. The one surviving `rotate(45deg)` in
-  the chrome is the `<select>` caret — a chevron drawn from two borders, the standard
-  form-control idiom, guard-pinned as the only one.
-- **THE CORNER KNOT (`--frame-ornate`) — the one earned ornament, a faithful transcription of the
-  owner's BG3 spellbook-reference corner.** Anatomy, per corner (defs `g#e`/`g#v`/`g#k`/`g#f`): the
-  rail **SWELL** crosses the vertex in a fine whisker overshoot (`g#e`, a Q-curve — never a
-  straight rail; used TWICE in `g#k`, once diagonal-mirrored to the vertical rail); ONE
-  **wave-volute** comma-curl rising outward on the diagonal over an OPEN eye (`g#v`); a small
-  **weld diamond** seating the crossing; and a **five-ray glint fan** radiating into the panel
-  (`g#f`). No mid-rail leaves: each corner is ONE compact terminal that concludes cleanly — the
-  swell tapers to a 1px hairline that dissolves into the host's own border stroke, so the edge
-  between opposing terminals is bare border and nothing else.
-
-  **Mechanism:** fixed-size per-corner SVG background layers (tl/tr/bl/br, each a 64×64 tile drawn
-  1:1 and anchored `left top` / `right top` / `left bottom` / `right bottom` at `64px 64px
-no-repeat`) painted on a decorative overlay pseudo, inset `calc(-1 * (0.2 * 64px + 0.5px))` —
-  each tile draws its rail centerline at 20% (12.8px) of the tile, so the -13.3px inset seats the
-  swells exactly on the host's 1px/2px border stroke and the weld diamond's center on the stroke's
-  corner vertex, at EVERY host size. **Never `border-image`** (its proportional tile-shrink
-  mis-seats the centreline) and **never a layout border on the pseudo** (a transparent 64px border
-  forces a 128px minimum box). Decor only: `pointer-events: none`, no layout, no animation; the
-  overlay's ink is paint-only overflow, so **a knot-bearing host must never carry `overflow:
-hidden`**. All three registers render at the plate radius (`--r-plate`, 10px) — the knot's rail
-  swell has enough clearance from the vertex to seat cleanly on the rounded arc; verified in real
-  Chromium at 1× and 4×, all three registers, both themes.
-
-  **The metal is dimensional, not line-art.** Every struck member carries a light/shade pair, and
-  the geometry is authored once, **mirrored** per corner, and **toned after the mirror, in screen
-  space** — so the bevel's light stays top-left on all four corners instead of rotating with the
-  figure. Dark: a gold-300 body on a near-black under-shadow below-right with a gold-200 glint
-  above-left. Light: the **same gold** — bronze is banned in both themes — struck by letterpress
-  logic, the umber shadow wall **above**-left and the warm-cream understroke **below**-right,
-  because on vellum a figure is pressed into the page rather than lit off it.
-
-  Pinned by `tests/unit/ornament-vocabulary.guard.test.ts`: the defs set is exactly `{e, v, k, f}`
-  (a fifth group is a mid-rail leaf creeping back in), the fan carries exactly five rays, the knot
-  uses the swell twice plus the volute plus a 4-point weld diamond, and the mirrored tile's PAINT
-  passes never carry a `matrix(…)` transform — only the geometry group does, proving the mirror
-  happens once and the toning happens after, in screen space.
-
-- **THE CEREMONIAL SEAT ORNAMENT (`--seat-orn`) — the winged divider, the one centre-node
-  exception.** Dialog heads seat BG3's level-up under-title divider translated into the corner
-  knot's language: two long rails tapering to hairpoints OUTWARD, each outer tip ending in a tiny
-  open under-curl, each inner end rising in a small open-eye S-hook return (the corner volute's
-  language, small), and the luminous centre — a nested chevron pair over a descending faceted
-  plumb point that hangs BELOW the rule, seated in a baked radial glow. Nothing floats: every
-  stroke is attached to the rule end to end. Drawn 1:1 at 260×24px, mounted on `.modal-head::after`
-  straddling the head's own 1px seat (`.modal-head`'s bottom border is the `.sec-rule` idiom — a
-  gilt-touched hairline fading at both tips via a to-right gradient `border-image`); the fleur's
-  backing diamond is baked in the theme's `--bg-surface-2` so the rule passes BEHIND it with zero
-  notch math. Same mirror-then-tone strike; dark strikes gold, light letterpresses gold (never
-  bronze).
-- **SELECTION is the frame metal, and it is spent ONCE.** The `--frame-selected` silver-over-bronze
-  gradient (from the per-theme `--metal-silver` / `--metal-bronze` pair) marks the **wizard hero
-  altar** — the single enthroned result of a step, never a sibling among equals. Everything a user
-  _selects among_ — the chosen class plaque, the chosen path, the chosen ASI, the picked entry —
-  takes the state ladder's own `--state-metal-selected` + `--state-wash-selected`, like every other
-  selectable surface in the app. At-rest surfaces are never decorated with selection ornament.
-- **TYPE IS FLAT.** No engraving, no letterpress, no underglow, no gradient on any title. A
-  section heading takes the body colour one size up, not an accent hue. **Gold means a value or a
-  state — never a label.** Pinned by a DERIVED sweep (`ornament-vocabulary.guard.test.ts`, "emits NO
-  light: derived"): no `text-shadow` layer anywhere may be a zero-offset blur of ≥6px, custom
-  properties resolved, one selector-anchored exemption (the ✦ magic-source marker, a glyph standing
-  in for an icon). The token-name check beside it could not see a literal, which is how a 2.4rem
-  commit number kept an 18px bloom through the sweep that "removed all 22 glow terms".
-- **THE WATERMARK is spent exactly once**, on the compendium frontispiece
-  (`.cmp-frontis-inner::before`): a title page is the one place the idiom is honest, because
-  nothing live is set over it. No masthead carries a crest behind its ink.
+- **Reliquary corners (the Gilded Reliquary grammar — the full-BG3 push, owner-ratified
+  2026-07-16; two-tone strike + discreet-weight refinement wave 2, 2026-07-17).** The worked-gold
+  corner caps on the app's HERO frames: a small faceted corner gem seated on the border corner and
+  ONE short tapered hairline arm along each edge ending in a diamond finial — BG3's mitred-corner
+  menu framing struck in the lapidary vocabulary, at BG3's actual quietness. **The discreet-weight
+  rule (owner, 2026-07-17 — "should be a bit more discreet … is it normal they oppress the
+  text?"):** the ornament must NEVER compete with content ink — the corner unit stays a small
+  jewel (gem ≈ 7px, arm reach ≈ 33px at the desktop 48px render), and the old second "echo"
+  hairline + mid-arm diamond are DELETED (they reached within ~14px of the title's cap height —
+  frame and content ink must never share air). The two-tone strike carries the wow at the small
+  size: a small jewel that reads as worked metal beats a large flat one. EXACTLY three earned
+  registers wear it (Constitution §4.16):
+  the framed realm masthead (`.page-head.framed::before`), the gilt-framed hero band
+  (`.folio-panel.gilt-frame::after` — cockpit identity), and dialogs (`.modal::after`).
+  Mechanism: ONE per-theme 500×500 SVG (`--frame-ornate`, `src/index.css`) rendered through
+  `border-image: var(--frame-ornate) 40% / 48px / calc(48px * 0.2 + 0.5px)` on an overlay
+  pseudo — corner slices carry the ornament, edge slices are EMPTY so the element's own 1px
+  border remains the quiet run, and `border-image` proportionally shrinks corners on small boxes
+  (phone mastheads, `sm` modals). **The fitting rule (owner, 2026-07-17 — "rilegatura"):** the
+  goldwork sits ON the frame like a bookbinding corner fitting, never floating inside the panel.
+  The SVG's arm/gem centerline lies at 20% of the corner tile, so the border-image OUTSET of
+  `20% × 48px + 0.5px` seats the arms exactly on the host's 1px border stroke and the gem's
+  center on the stroke's corner vertex — the diamond caps the corner where the two arms merge;
+  the host's `--radius-xl` (8px) rounding tucks under the gem. Outset ink is paint-only overflow
+  (no scrollbars), but it CAN be clipped by the host's own child-paint clipping — hero hosts
+  therefore carry no `overflow: hidden` (`.modal` scroll-clips on `.modal-body`; the masthead
+  crest self-clips via `mask-size` on an `inset: 0` element; the full-bleed `.modal-head`
+  gradient band rounds its own top corners to the card radius so no child paint overruns the
+  corner arc).
+  **The metal is DIMENSIONAL, not line-art (the two-tone strike):** every member carries a
+  light/shade pair, built the same way the panel embossing works. Dark = raised struck gold —
+  the gold-300 body sits on a near-black under-shadow seat offset below-right (+1.5,+2 SVG units
+  ≈ half a screen px) with a faint gold-200 top-edge glint above-left; the corner gem is truly
+  faceted (gold-200 lit top facet / gold-500 shaded lower facet / gold-700 core). Light INVERTS
+  to the letterpress logic (like `--engrave-title`): members are pressed INTO the vellum — a
+  warm-cream understroke below-right (the groove's lit far wall) + a faint umber upper shadow
+  wall under the bronze-700 body; the gem is an intaglio pair (gold-900 shaded top wall / lit
+  bronze lower wall / near-black pit core). Construction rule (guard-pinned in
+  `ornament-vocabulary.guard.test.ts`): the geometry is mirrored to the four corners UNFILLED
+  first and toned AFTER (offset tone layers over the whole four-corner closure), and the gem
+  facet group is placed per-corner unflipped via `use x/y` — toning inside the mirrored unit
+  would flip the bevel light upside-down on the bottom corners. Decor only:
+  `pointer-events: none`, no layout, no animation. ⚠️ The SVG data-URIs carry explicit
+  `width`/`height` attributes — an SVG with no intrinsic size defaults to 300×150 and
+  border-image slices sample phantom regions; the slice is a PERCENTAGE for the same reason.
+- **Engraved ceremonial titling** (same push) — the Cinzel register reads STRUCK into the plate
+  via the per-theme `--engrave-title` text-shadow (`src/index.css`): dark = a tight shade seat +
+  faint warm gold underglow; light = a letterpress bright understroke + umber lift. Applied to
+  `.page-title`, `.modal-title`, and the cockpit identity h1 (`.folio-panel.gilt-frame h1`) —
+  NEVER gradient text (§7 hard ban holds), and the light on-art rules (higher specificity) still
+  win where a title sits loose on the backdrop.
+- **The modal-head seat rule** (same push) — `.modal-head`'s bottom border is the `.sec-rule`
+  idiom instead of a wall-to-wall line: a gilt-touched hairline that fades at both tips
+  (a to-right gradient through `border-image … 1` on the 1px bottom border).
+- **Panel smoke / morning shade** (same push) — the `.folio-panel` material pseudo carries an
+  edge vignette as its top background layer: dark pools candle-smoke black toward the lower edges
+  (top-lit, recedes into shadow); light pools a whisper of warm umber (sunlit-from-above vellum,
+  designed not adapted — a black vignette would read as grime). Darkening only, so the
+  composite-contrast floor (brightest stop) is untouched and light ink at edges only gains
+  contrast.
+- **Section rubric** — the leading `.sec-diamond` (an 8px faceted diamond, deep gilt on cards,
+  bright gilt on the candlelit backdrop) marks the head; the `.sec-rule` hairline fades at BOTH
+  tips and is **nodeless**, parameterized by `--rule-c` (light theme and econ-typed headers only
+  re-tint the parameter). The leading diamond IS the divider's marker; tab-seat rules
+  (`.cmp-ribbon-rule`) and the disclosure docking hairline stay nodeless too.
+- **The diamond-marker family** — the rail-head node (`.rh-diamond`), the spell-slot / charge
+  gem pips, the scene-break diamond, and the footer node: the same faceted-diamond mark struck at
+  different scales, geometric and theme-tintable, always leading or seated in what it marks.
 - **Scrollbar** — jewelry-thin, app-wide (`src/index.css` §Scrollbars): transparent track and a
   ghost thumb (`--text-muted` at 40%, a 4px core in a 10px rail) warming to gold on grab; the
   scroll buttons are hidden. Firefox gets `scrollbar-width: thin` + `scrollbar-color` behind the
@@ -1968,23 +1566,16 @@ hidden`**. All three registers render at the plate radius (`--r-plate`, 10px) �
   removing the viewport scrollbar — otherwise the thumb blinked out on ⌘K-palette/dialog open
   and back on close (the lock still holds; its wheel/touch blockers are JS, not the overflow).
 
-Pinned by `tests/unit/ornament-vocabulary.guard.test.ts`.
-
 ### Surface hierarchy (never skip the ramp)
 
-| Layer           | Token                                 | Used for                                                |
-| --------------- | ------------------------------------- | ------------------------------------------------------- |
-| Page            | `--bg-page` + `--vellum-grain`        | the app background (fixed)                              |
-| Panel / rail    | `--bg-surface-1`                      | left HUD, right HUD, topbar                             |
-| Content surface | `--bg-surface-2`                      | center panel, cards, modal body                         |
-| Raised inset    | `--bg-surface-3`                      | nested headers, portrait well, hover                    |
-| Recessed        | `--bg-recessed` / `--input-fill`      | carved channels: inputs, HP/resource sockets, pip wells |
-| Overlay         | surface-2 + `--elev-floating` + scrim | popovers, palette (NOT dialogs — see below)             |
-
-**Dialogs are not in the overlay row.** A dialog is a PLATE on the earned tier: the one material,
-2px `--edge-metal-earned`, `--edge-groove` + `--edge-seat-earned`, over a `--scrim-dim` backdrop.
-`--elev-*` never touches it. The overlay row covers only the light chrome that still rides the
-legacy elevation stack — popovers, menus and the command palette.
+| Layer           | Token                                       | Used for                                                |
+| --------------- | ------------------------------------------- | ------------------------------------------------------- |
+| Page            | `--bg-page` + `--vellum-grain`              | the app background (fixed)                              |
+| Panel / rail    | `--bg-surface-1`                            | left HUD, right HUD, topbar                             |
+| Content surface | `--bg-surface-2`                            | center panel, cards, modal body                         |
+| Raised inset    | `--bg-surface-3`                            | nested headers, portrait well, hover                    |
+| Recessed        | `--bg-recessed` / `--input-fill`            | carved channels: inputs, HP/resource sockets, pip wells |
+| Overlay         | surface-2 + `--elev-floating/modal` + scrim | popovers, palette, dialogs                              |
 
 A card on a rail (surface-1) is surface-2; a control inside a card is recessed. This one ordering
 holds on every screen.
@@ -2015,8 +1606,8 @@ hold >10:1 (the honey plate can only darken the composite, which only helps dark
 
 - **Do** carry the committed parchment + gold-leaf skeuomorphic identity in both themes; warmth comes
   from surfaces, serif type, gold accents, and carved depth, not a tinted near-white body.
-- **Do** build every container from the ONE plate material (§4) — a domed face, one edge assembly,
-  one seat, in one of the two tiers; never ship a flat fill and never invent a second depth grammar.
+- **Do** give every surface a carved (`--elev-recessed`) or embossed (`--elev-resting`+) recipe; never
+  ship a flat fill.
 - **Do** set gold text in `--accent-text` (deep gold) and domain-colored labels in their `-ink`
   variant; keep the raw saturated hue for borders and icons only.
 - **Do** use mono for numbers/labels/counts (`.tnum`), display serif for names/titles, body serif for
@@ -2059,9 +1650,10 @@ all seven laws. On conflict with a "modern-minimal" instinct, the committed-skeu
 **wins** — deepen the tome, never flatten it.
 
 1. **Material depth, not flat fills.** Every panel/card/control reads as a struck tile on parchment:
-   the plate material (§4) — one domed face, one edge assembly, one seat — over the field. No surface
-   is a plain rectangle of flat color. Earned surfaces (cockpit identity band, home hero, campaign
-   banner, dialogs) wear the **earned tier** of that one edge, never a second frame system.
+   layered carved/embossed elevation (`--elev-*`), a top sheen (`--emboss-sheen`), a real cast shadow
+   over the field. No surface is a plain rectangle of flat color. Hero surfaces (cockpit identity
+   band, home hero, campaign banner, modal heads) carry a **gilt frame** (a gold-leaf edge, §5 —
+   `.folio-panel.gilt-frame`), not just a 1px border.
 2. **Gold-leaf is gilding, not just text color.** Use gold as a _material_: gradient gilt on seals,
    active states, section heads, and frames, with an inner highlight + deeper edge. Reserve thin gold
    _outlines_ for quiet chrome. Never let gold read as flat mustard.
@@ -2073,7 +1665,7 @@ all seven laws. On conflict with a "modern-minimal" instinct, the committed-skeu
    sheen, full-color borders, real umber cast shadows. If a light surface reads flatter or cheaper
    than its dark twin, it FAILS. (Detail in §10.)
 5. **Density with air (the D&D Beyond bar).** Pack the useful-at-a-glance info, but with deliberate
-   rhythm: the spacing scale, clear sectioning (type + space + the one hairline, §5 "The
+   rhythm: the spacing scale, clear sectioning (diamond rubric + the one divider rule, §5 "The
    ornament vocabulary"), no clutter, no buggy
    overflow at ANY width (test 360 → 2560). Progressive disclosure for the rest — on demand, never by
    default.
@@ -2128,13 +1720,11 @@ would flag that are **intended**. Filing them as defects violates the identity g
    ceremonial surfaces, Alegreya headings + body prose, Source Serif 4 tabular-lining numbers and
    uppercase labels) — the deliberate "Gilded Plate" type system (owner-ratified 2026-07-02), not
    "old/heavy."
-3. **Square avatars + TWO radii (a 10px plate, a square chip)** — the locked geometry, re-derived
-   from the reference in the chrome reset. The round-avatar / pill-chip "fix" is explicitly
-   rejected, and so is a third radius.
-4. **The single 999px pill = the settings switch track** — the one sanctioned pill. A circular
-   medallion (a coin, a seal, a portrait well) is `50%`: a SHAPE, not a radius.
-5. **The gold focus RING** (`--focus-ring`, 2px at offset 2, alone) — the deliberate pick. No
-   interior wash, no halo: a state changes light and colour, never emits.
+3. **Lapidary square avatars + sharp/small radii (0–4px) + chips as 4px facets** — the locked
+   lapidary geometry. The round-avatar / pill-chip "fix" is explicitly rejected.
+4. **The single 999px pill = the settings switch track** — the one sanctioned pill.
+5. **Gold-halo focus rings** (`--illumination` + `--focus-ring`) — the deliberate "Gold Halo" pick,
+   not "too much glow."
 6. **Gold-on-gold defenses** (`--accent-text` deep-gold for all gold text; the brand mark shifting to
    the deep ramp under light) — these are _correct_ Rule 1/2 compliance, not findings.
 7. **Skeuomorphic "lit" states** — the gilded End-Turn climax, the editing-pill amber gradient +
@@ -2146,12 +1736,15 @@ would flag that are **intended**. Filing them as defects violates the identity g
    sanctioned exception to the token-only rule.
 10. **DmTools showing unbuilt tools as muted Phase-2 badges** — correct stub-signalling, not a defect.
 11. **`·` middot separators / engraved mono letter-spacing on invite codes** — idiomatic folio.
-12. **The earned ornament vocabulary** — the ONE nodeless tip-fading `--hairline` divider, the
-    silver-over-bronze `--frame-selected` selection frame, the jewelry-thin scrollbars, and the
-    **corner knot** on its EXACTLY THREE earned hero registers — the masthead, the cockpit identity
-    band, and dialogs (§5, "The ornament vocabulary"). Ornament is EARNED by information: no fourth
-    register, ever. "Add a flourish here too" is rejected exactly as firmly as "strip the
-    flourishes".
+12. **The geometric ornament vocabulary** — the leading section-rubric diamond over its nodeless
+    tip-fading `.sec-rule` divider, the diamond-marker family (rail-head node, slot/charge gem
+    pips, scene-break, footer node), the silver-over-bronze `--frame-selected` selection frame,
+    the jewelry-thin scrollbars, and — since the full-BG3 push (owner-ratified 2026-07-16) — the
+    **reliquary corner goldwork** on the three earned hero frames (framed masthead, gilt hero
+    band, dialogs), the **engraved ceremonial titling**, the tapered modal-head seat rule, and the
+    panel smoke/morning-shade vignettes (§5, "The ornament vocabulary"). Ornament marks STATE,
+    leads a rubric / rail-head / slot pip, and caps an EARNED hero frame's corners; "strip the
+    flourishes" is rejected.
 13. **The settling motion grammar** — entrances / presses / expansions ease INTO place on
     `--ease-settle` with no overshoot (BG3's "settles, never travels", §9); overshoot survives only
     on `--ease-pop`, reserved for warning/urgent pops. "Add bounce / a snappier spring" is rejected.
@@ -2176,21 +1769,20 @@ on interactive elements.
 - **Durations:** `--m-instant` 90ms (toggles, pips) · `--m-fast` 160 (hover/focus) · `--m-normal` 240
   (card expand, slot commit, tab switch) · `--m-slow` 380 (modal in) · `--m-page` 540 (route).
 
-| Interaction                 | Behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| Hover — "warm to the touch" | Interactive hover KINDLES toward candle-gold (opt-cell, tabstrip, secondary btn, pick-row, cmp-tab): the edge metal brightens and the face lifts a few percent, never a plain neutral fill. NO specular sweep, ever — a moving band of light across a face is emission, and this chrome is a material lit from one place. Guard: `interactive-kindle.guard.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Masthead mount              | **NONE — deliberately static** (owner, 2026-07-10). The framed mastheads (roster, campaigns, compendium, settings, admin, legal) play NO mount animation: on a realm switch the band and its ink land in exactly the same place with zero motion, and only the words change — the content swap IS the navigation signal. Any animation here reads as the page "refreshing" on every switch (the 2026-07-09/10 masthead-jump bug); a source-level unit guard (`page-header.test.tsx`) pins that no `.page-head*` rule carries an `animation:`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Progressive disclosure      | card height + opacity on `--ease-settle`/`--m-normal`; chevron rotates; content fades in                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| HUD resource feedback       | pip/socket fills/empties; the HP bar animates fill; **critical HP pulses (reduced-motion-safe)**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Action commit               | `[Use]` = physical press (translateY + `--elev-recessed`) on `--ease-settle`; the slot fills; **undo** reverses on exits                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Concentration               | the `focus-mark` (concentric rings) pulse — distinct from the `✦` magic-mark                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Missing initiative          | the un-rolled init chip (`.vital-init[data-urgent]`) earns a gold `--accent-primary` ring + the shared `save-pulse` opacity breath while in combat and the d20 is unentered — reduced-motion-safe; clears the instant a roll lands. The glow is shown for EVERY chip the viewer may write (`urgent = canEdit && unrolled`): a player sees only their own, a DM/admin sees the whole table light up — making it discoverable they can roll for all (the write is rules-authorized cross-member); a BLANK monster typed-init chip (the DM cleared it during gathering) wears the same cue, so the Begin-turns "rolled/total" gate's missing entry is findable at a glance. The shared `InitVital` roll-to-total tile lives in its OWN light leaf module (`src/features/campaigns/init-vital.tsx`) so the always-eager `CombatPip` topbar widget imports it SYNCHRONOUSLY — its loud-tier popover renders at final size on open (no `React.lazy`/`Suspense` empty-then-jump flicker), with the rolled-for character named in the popover rubric (`Initiative · {name}`). The edit input **seeds from the current committed roll ONLY when that roll belongs to the CURRENT fight epoch** (`rollBelongsToEpoch`/`rollForEpoch`, `src/lib/combat-state.ts`) — a NEW encounter (epoch bump) makes a prior-fight roll read as un-rolled, so the input starts EMPTY across the sheet, the tracker and the pip (one gate, D9 — owner 2026-07-03); WITHIN a fight it still pre-fills on re-open (selected on focus → overtype to re-roll), an **unchanged blur re-commits the same roll** (never a destructive reset), and only an **explicit clear** empties it (owner 2026-06-30) |
-| Turn hand-off (encounter)   | End Turn is OPTIMISTIC: on click the sheet publishes the advanced encounter status (`advanceGlobalCombat`/`optimisticPipAfterAdvance`, `turn-state.ts`) so the band flips to its not-your-turn `waiting` state in the SAME tick — the Action / Bonus / Movement coins dim + go inert (the **Reaction coin stays LIVE** — RAW off-turn reactions) and the `[End Turn]` button quiets (grayscale, non-interactive) on `--ease-settle`, the own-turn controls vanish, and the topbar pip flips gold→quiet — instead of waiting on the `runTransaction` server round-trip (the "End Turn feels dead" bug, owner 2026-07-03). The real snapshot reconciles; solo play is unchanged (no encounter → no `waiting`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Backdrop swap (route)       | A realm/hub change CROSSFADES the app-wide backdrop instead of hard-cutting (`transitionBackdrop`, `src/lib/backdrop-transition.ts`): the old scene's computed painter state (image · focal · zoom · veil · mask) is snapshotted onto a fixed `.bg-ghost` at the painter's z-plane, the new plate lands beneath (`[data-bg-swap]` drops the painter one plane), and the ghost fades opacity-only, 480ms `--ease-standard` — scene dissolves into scene. Unmount+mount var writes in one task COALESCE (microtask flush) so the ghost always shows the PRE-navigation scene, never the intermediate default. Gated on the `data-motion` mirror: reduced keeps the hard cut (no ghost is ever spawned). Verified frame-by-frame in real Chromium; orchestration pinned by `tests/unit/backdrop-transition.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Search / command palette    | open = scale + fade `--ease-settle`; top-anchored so results grow downward only; type filters instantly; rows keyboard-navigable; close on Esc/scrim                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Toasts / undo               | slide + fade (`UndoToasts`) on `--ease-settle`; warning/error variants enter on `--ease-pop` (the one sanctioned overshoot); the 5s undo window                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Login hero                  | The splash is deliberately **STATIC** at its composed framing (owner 2026-07-07 — the old pointer-parallax drift was removed: input-coupled decorative motion reads as the page dragging under the cursor, off the calm identity). "Alive" is carried by the one-shot `brand-intro` reveal + the ambient loops (halo breathe, constellation orbit, gleam sweep), all reduced-motion-safe                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Loading                     | ONE idiom — the **gilt d20 `FolioLoader`**, a solid 3D icosahedron that tumbles like a thrown roll (canvas: 20 lit facets, frame-rate-independent, static under reduced-motion). Used for EVERY content wait (auth · lazy routes · sheet · roster · campaigns); the **die is delayed ~250ms** so warm/sub-second loads show nothing, while the WRAPPER mounts immediately (the "content settling" marker — reserves the region height + keeps the SiteFooter hidden until the page composes; see Navigation feel §7). The die fades in on `--m-normal`, so a near-miss load reads as a shimmer, never a blink. Cold start = the matching inline gilt-d20 boot splash (index.html, removed on mount). NO skeletons; data fills from the warm cache                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |     |
+| Interaction               | Behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Gilt glint (hover)        | The STRUCK-GOLD tier only (`.btn.primary` / `.btn.brass` / `.endturn` — the earned metal CTAs, never the quiet tiers) plays ONE quiet specular sweep on hover: a narrow diagonal `--glint-ink` band on an overlay `::before`, transform-only (GPU, no layout), 900ms on `--ease-standard` (the deliberate BG3 pass; the why-this-easing forensics live in the folio.css comment). One-shot by construction: the transition lives only on the hover rule, so un-hover resets instantly + invisibly and re-hover replays. Gated on `[data-motion="auto"]` — under reduced motion the band never moves. Guard: `interactive-kindle.guard.test.ts`. Companion rule — "warm to the touch": interactive hover KINDLES toward candle-gold (opt-cell, tabstrip, secondary btn, pick-row, cmp-tab), never a plain neutral fill                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Masthead mount            | **NONE — deliberately static** (owner, 2026-07-10). The framed mastheads (roster, campaigns, compendium, settings, admin, legal) play NO mount animation: on a realm switch the band, crest, and ink land in exactly the same place with zero motion, and only the words change — the content swap IS the navigation signal. Any animation here reads as the page "refreshing" on every switch (the 2026-07-09/10 masthead-jump bug); a source-level unit guard (`page-header-crest.test.tsx`) pins that no `.page-head*` rule carries an `animation:`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Progressive disclosure    | card height + opacity on `--ease-settle`/`--m-normal`; chevron rotates; content fades in                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| HUD resource feedback     | pip/socket fills/empties + a brief `--illumination` pulse; the HP bar animates fill; **critical HP pulses (reduced-motion-safe)**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Action commit             | `[Use]` = physical press (translateY + `--elev-recessed`) on `--ease-settle`; slot fills + a gold glint; **undo** reverses on exits                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Concentration             | the `focus-mark` (concentric rings) pulse — distinct from the `✦` magic-mark                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Missing initiative        | the un-rolled init chip (`.vital-init[data-urgent]`) earns a gold `--accent-primary` ring + the shared `save-pulse` opacity breath while in combat and the d20 is unentered — reduced-motion-safe; clears the instant a roll lands. The glow is shown for EVERY chip the viewer may write (`urgent = canEdit && unrolled`): a player sees only their own, a DM/admin sees the whole table light up — making it discoverable they can roll for all (the write is rules-authorized cross-member); a BLANK monster typed-init chip (the DM cleared it during gathering) wears the same cue, so the Begin-turns "rolled/total" gate's missing entry is findable at a glance. The shared `InitVital` roll-to-total tile lives in its OWN light leaf module (`src/features/campaigns/init-vital.tsx`) so the always-eager `CombatPip` topbar widget imports it SYNCHRONOUSLY — its loud-tier popover renders at final size on open (no `React.lazy`/`Suspense` empty-then-jump flicker), with the rolled-for character named in the popover rubric (`Initiative · {name}`). The edit input **seeds from the current committed roll ONLY when that roll belongs to the CURRENT fight epoch** (`rollBelongsToEpoch`/`rollForEpoch`, `src/lib/combat-state.ts`) — a NEW encounter (epoch bump) makes a prior-fight roll read as un-rolled, so the input starts EMPTY across the sheet, the tracker and the pip (one gate, D9 — owner 2026-07-03); WITHIN a fight it still pre-fills on re-open (selected on focus → overtype to re-roll), an **unchanged blur re-commits the same roll** (never a destructive reset), and only an **explicit clear** empties it (owner 2026-06-30) |
+| Turn hand-off (encounter) | End Turn is OPTIMISTIC: on click the sheet publishes the advanced encounter status (`advanceGlobalCombat`/`optimisticPipAfterAdvance`, `turn-state.ts`) so the band flips to its not-your-turn `waiting` state in the SAME tick — the Action / Bonus / Movement coins dim + go inert (the **Reaction coin stays LIVE** — RAW off-turn reactions) and the `[End Turn]` button quiets (grayscale, non-interactive) on `--ease-settle`, the own-turn controls vanish, and the topbar pip flips gold→quiet — instead of waiting on the `runTransaction` server round-trip (the "End Turn feels dead" bug, owner 2026-07-03). The real snapshot reconciles; solo play is unchanged (no encounter → no `waiting`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Search / command palette  | open = scale + fade `--ease-settle`; top-anchored so results grow downward only; type filters instantly; rows keyboard-navigable; close on Esc/scrim                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Toasts / undo             | slide + fade (`UndoToasts`) on `--ease-settle`; warning/error variants enter on `--ease-pop` (the one sanctioned overshoot); the 5s undo window                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Login hero                | The splash is deliberately **STATIC** at its composed framing (owner 2026-07-07 — the old pointer-parallax drift was removed: input-coupled decorative motion reads as the page dragging under the cursor, off the calm identity). "Alive" is carried by the one-shot `brand-intro` reveal + the ambient loops (halo breathe, constellation orbit, gleam sweep), all reduced-motion-safe                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Loading                   | ONE idiom — the **gilt d20 `FolioLoader`**, a solid 3D icosahedron that tumbles like a thrown roll (canvas: 20 lit facets, frame-rate-independent, static under reduced-motion). Used for EVERY content wait (auth · lazy routes · sheet · roster · campaigns); the **die is delayed ~250ms** so warm/sub-second loads show nothing, while the WRAPPER mounts immediately (the "content settling" marker — reserves the region height + keeps the SiteFooter hidden until the page composes; see Navigation feel §7). The die fades in on `--m-normal`, so a near-miss load reads as a shimmer, never a blink. Cold start = the matching inline gilt-d20 boot splash (index.html, removed on mount). NO skeletons; data fills from the warm cache                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |     |
 
 **Global kill-switch.** `[data-motion]` is a pure mirror of the OS `prefers-reduced-motion`
 setting (there is **no in-app animations toggle** — removed 2026-06-07), written to `<html>` by the
@@ -2217,19 +1809,8 @@ setting (there is **no in-app animations toggle** — removed 2026-06-07), writt
    theme switch swaps the hour, never the world.
 3. **Theming is a derivation architecture.** Dark is the base grammar; each theme is a palette-key
    remap, so future themes drop in cheaply. Light's depth is engineered, not adapted: light inverts
-   shadow direction (a warm-umber groove instead of a black one), and ships its
-   own `--gilt-gradient` and `--surface-sheen`.
-   - **What light RE-DERIVES rather than inherits**, and the reason each one cannot be shared:
-     the plate's **dome** (a wider, softer pool — an ivory plate bands sooner than a near-black one);
-     the **groove** and the **cast** (warm umber, never black or grey — those read as grime on
-     vellum); the **state ladder's three veils** (the same hue at different alphas, matched to the
-     same perceptual step: 10%/16% on dark, 17%/28% on light, because the same alpha is ΔL\* 5.9 on
-     near-black and ΔL\* 3.4 on ivory); and the **corner knot's toning**, which inverts to letterpress logic
-     — the shadow wall above-left and the cream understroke below-right, because on vellum a struck
-     figure is pressed INTO the page rather than lit off it. The gold itself never changes: bronze is
-     banned in both themes. Everything else — all geometry, all structure, every recipe — is shared,
-     and that is the whole delta. Guard-pinned in `tests/unit/chrome-system.guard.test.ts`, which
-     fails if a themed token is byte-identical across the two.
+   shadow direction (warm-umber insets + a warm-near-white `--emboss-sheen` highlight), and ships its
+   own `--gilt-gradient`, `--surface-sheen`, `--gilt-glow`, and `--illumination`.
    - **EMBER PENUMBRA — light's lit-magic grammar (owner-ratified 2026-07-11).** On dark, magic is
      luminance: a gold bloom on near-black. The bright vellum field has no headroom above ivory for a
      literal bloom, so a lit gilt control reads as **HEAT** instead — a saturated struck-gilt fill over
@@ -2239,8 +1820,10 @@ setting (there is **no in-app animations toggle** — removed 2026-06-07), writt
      alpha via `rgba(var(--ember-umber), α)`) is the pooled tone, with two companions —
      **`--ember-edge`** (the deep struck-gilt border ringing a solid-gold small control) and
      **`--ember-seat`** (the near-black seat-shadow triplet directly under a struck control); the hot
-     gilt fill stops ride the `--gold-leaf-200`/`-400` ramp steps. It is carried per-recipe by the
-     emblematic controls (Heroic-Inspiration chip/coin, the kindled attack + primary CTA
+     gilt fill stops ride the `--gold-leaf-200`/`-400` ramp steps. The light `--gilt-glow` /
+     `--gilt-glow-sm` aura tokens and `--illumination` carry it, so every light surface that consumes
+     them (hero bands, portrait wells, caster tiles, seals, selected tiles) toasts by construction,
+     alongside the emblematic controls (Heroic-Inspiration chip/coin, the kindled attack + primary CTA
      family, the LEVEL chip, the Rest moon, dashed add-affordances, compendium seal/empty leaf, slot &
      tracker pips, the scorched crest). Scale rule: large controls take the two-stage penumbra, small
      controls (pill/coin/pip scale, where a tinted wash vanishes) go FULL solid gilt + a tight ember.
@@ -2251,9 +1834,12 @@ setting (there is **no in-app animations toggle** — removed 2026-06-07), writt
      is AA-constrained: on light it is a deep umber (`#4a380c`) so small gold UI-text clears 4.5:1 on
      the bare deep-parchment field. A deep umber **cannot glow** on cream, so every halo/drop-shadow
      routes through the dedicated **`--accent-glow`** token instead — a BRIGHT struck gold
-     (light `--gold-leaf-300`, dark `--gold-leaf-500`). The magic-mark drop-shadow blooms
-     `--accent-glow`, so gilt accents (the identity medallion, total chips, the `✦` magic mark) read
-     struck instead of smearing brown.
+     (light `--gold-leaf-300`, dark `--gold-leaf-500`). On light the `--gilt-glow` / `--gilt-glow-sm`
+     aura tokens now spend `--accent-glow` only on the tight struck-gold hairline and pool the
+     `--ember-umber` heat below (the ember grammar above); the magic-mark drop-shadow still blooms
+     `--accent-glow`, so gilt accents (section diamonds, the identity medallion, total chips, the `✦`
+     magic mark) read struck instead of smearing brown. On dark both tokens resolve to bright gold and
+     `--gilt-glow*` are undefined (dark surfaces glow via their own recipes), so dark output is unchanged.
      **CONVENTION (light-polish pass, 2026-07-10):** every base-rule (non-light-scoped)
      selected/lit surface TINT (`color-mix(… N%, var(--bg-…))`) and outer BLOOM
      (`0 0 Npx color-mix(… N%, transparent)`) mixes from `--accent-glow`, never
@@ -2265,8 +1851,8 @@ setting (there is **no in-app animations toggle** — removed 2026-06-07), writt
      convention by construction. Deliberate deep tints live only inside
      `[data-theme="light"]` rules. The gilt-SELECTED light family (facet
      chip · wizard path plaque · wizard fork tab) shares one band: a struck
-     `--accent-primary-bright` gradient + full-strength gold edge; the light long-rest CTA wears
-     the same bright-gilt band as
+     `--accent-primary-bright` gradient + full-strength gold edge (+ `--gilt-glow-sm` on
+     plaque-scale elements); the light long-rest CTA wears the same bright-gilt band as
      every light primary (`.btn.primary`) instead of the umber `--rc` slab (guard #10).
 4. **The two-token vivid/ink contract.** Gems, pips, economy discs, and color chips are **bright +
    glowing in BOTH themes**. Each domain hue ships two tokens: the **vivid base** `--x` is the 3:1
@@ -2277,106 +1863,31 @@ setting (there is **no in-app animations toggle** — removed 2026-06-07), writt
 5. **Text on the atmospheric backdrop.** Where text sits directly on the prominent atmospheric art
    (not on a card), light uses the BG3/DDB pattern — **bright ink + a dark halo** (`--text-on-
 backdrop` + `--text-on-backdrop-title` + `--text-on-backdrop-danger` for error/required ink, the
-   halo = the single `--on-art-halo` token, via the opt-in `.on-art` / `.on-art-title` classes). The halo
+   halo = the single `--on-art-halo` token, via the `.on-art` / `.on-art-scope` recipes). The halo
    was RE-STRUCK for the daylight sibling plates: the original four-direction 1px offset copies were
    a hard stroke — right on the borrowed night art, but on the honey/amber morning plates every
    loose label read as OUTLINED "game subtitle" text. It is now a tight dark micro-edge (the a11y
    separation the bright ink needs on a sunlit patch) plus a soft lifted umber shadow, so on-art
    text reads as gilt lettering catching light. The bright fill pops on dark patches; the dark edge
-   separates it on the sunlit ones and is what clears the a11y gate.
-
-   **The halo is not a light-theme device.** "The art is dark, so light ink is safe" is false — our
-   backdrops carry large BRIGHT regions, and measured against the real composited pixels dark's own
-   `--text-muted` read **1.64:1** on the campaign hub's section counts, its gold rubric 1.95:1 and
-   the treasury total chip 1.46:1. So the GROUND is theme-agnostic and the INK flip is light's:
-   `.on-art, .on-art-title { text-shadow: var(--on-art-halo) }` is one unprefixed rule, and only the
-   two `color` declarations under it are light's.
-
-   **THE TREATMENT IS OPT-IN, AND THAT IS THE WHOLE MECHANISM.** It used to be a BLANKET: a list of
-   ink registers matched anywhere inside `.on-art-scope`, minus a hand-written list of surface
-   classes (`SURF`). That list is not maintainable, because "is this text on a surface" is a fact
-   about the rendered ancestor chain and no CSS selector can express it. It rotted the first time a
-   surface was rebuilt out of classes nobody added: the campaign hub's sections moved to
-   `.folio-panel.section-card` / `.hub-row` / `.hub-cell`, and Sessions, Shared notes, Access, DM
-   tools and Danger zone took **cream ink and a dark halo inside an opaque ivory panel** — 43
-   elements in light theme, on the owner's own campaign prose. The unit guard beside it asserted only
-   that the STRING `.info-card` still appeared in the exclusion, so it stayed green while no
-   component in those sections used that class any more. So:
-   - `.on-art` — body ink on the leaf that genuinely sits on the art;
-   - `.on-art-title` — the same ground with light's gilt title ink;
-   - `.on-art-chip` / `--on-art-plate` — an OBJECT that backs itself (below).
-     A surface needs no exclusion, no reset and no allowlist, because nothing reaches into it. Shared
-     components (`SectionHeader`, `Section`, `RunicEmptyState`) expose an **`onArt` prop**: the caller
-     is the only thing that knows where it mounted the component. The one region-level opt-in that
-     remains is the wizard column (`.wiz`), which is loose by construction and names its OPEN-COLUMN
-     registers positively.
-
-   **AND THE TREATMENT STOPS AT A SURFACE (2026-07-25).** The region rule above shipped with the
-   claim that "a plaque's text has different classes and is not in the list" — and it is false.
-   PLATES stand inside the loose column (the enthroned hero altar, the level-up ASI/boon panel, an
-   open feat entry) and they host those exact registers, so the region rule reached them THROUGH the
-   plate and light theme painted cream on ivory again: `.wiz-hero .wiz-asks-head` measured
-   **1.04:1** and `.wiz-asi .wiz-pick-label` **1.02:1** in real Chromium. So `folio.css` carries one
-   positive counter-law — a register standing on a SURFACE takes `text-shadow: none` and gets its
-   own declared ink back — and the surface list is **derived, not maintained**: a surface is a rule
-   that paints one of the two canonical materials (`--plate-face`, `--panel-alpha`),
-   `wizard-css.guard.test.ts` re-derives that set from `folio.css` and fails if any member (or any
-   register) is missing from the counter-law. The guard cannot see CONTAINMENT — that is a fact
-   about the rendered tree — so the rendered probe carries it, which is why:
-
-   **NO REGION MAY SIT IN THE LEAK PROBE'S `OPT_IN`.** `.wiz` did, "because the wizard has ~60
-   markup opt-ins", and it skipped the ENTIRE wizard: the hand-written CSS exclusion list the
-   rewrite deleted had simply moved into a hand-written PROBE exclusion, and the ghosted altar
-   shipped with 250 green cells. The stated cost was false too — removing `.wiz` flagged 3 cells out
-   of 100, every one of them real. Only self-backing LEAF objects belong in that list; the guard
-   reads it and fails on the region rule's scope root or on any derived surface.
-
-   **The halo goes on the LEAF, never on a wrapper.** Inheriting it from `.on-art-scope` is one rule
-   instead of two and it is the obvious thing to try — but an auditor reads a container's
-   `text-shadow` as an opaque BACKGROUND for everything inside it, so a scope-level halo made axe
-   resolve a `#73613c` ground behind every descendant and manufactured serious `color-contrast`
-   violations on eight clean light surfaces. Putting it on every `<span>` inside a control is worse
-   again: it paints a dark halo behind dark ink that was never part of the on-art vocabulary. A
-   `<button>` therefore keeps the UA's `text-shadow` reset, which is correct — a control on the
-   scene is an OBJECT and grounds itself (below). The ONE label that genuinely floats free, the
-   wizard's gutter page-turn caption, takes the ground by name at the width where it floats.
-
-   **A halo grounds INK; it cannot ground an EDGE.** A chip or a dashed affordance loose on the
-   scene therefore paints its own translucent `--on-art-plate` — the "+ Attach a character"
-   affordance and the treasury gp-total chip do — or its border dissolves across the bright half of
-   the art. The plate is **per-theme**, and so are the ink and the ground it carries
-   (`--on-art-plate-ink`, `--on-art-plate-halo`): dark backs a near-black scrim and writes parchment
-   on it, light backs a warm parchment scrim and writes the page's own deep ink, with no halo (a
-   dark outline behind deep ink on parchment is a smudge). One theme-agnostic scrim made the attach
-   affordance the only near-black object on the cream hub, sitting between two ivory panels. This is the same self-backing law as the gilt coin below, and
-   it is pinned in `chrome-system.guard.test.ts`, because the rendered battery measures ink and
-   cannot see a border (deleting the recipe leaves that battery green — proven).
+   separates it on the sunlit ones and is what clears the a11y gate. (Dark already uses light
+   loose-text, so `.on-art` is light-only.)
    - ✅ **GUARDED MANIFEST-WIDE (ON-ART-INK, 2026-06-12).** This used to be the #1 recurring light
      bug ("apply the recipe when you add loose-on-backdrop UI" relied on memory; the member-sheet
      back button + the wizard page-turn captions/facet chips shipped dark-on-dark). It can no longer
      ship unnoticed: **`tests/e2e/on-art-ink.spec.ts`** sweeps EVERY surface in the shared manifest
-     and runs TWO legs. The IDENTITY leg (light) finds each visible text element on the RAW backdrop
-     and fails unless its ink is light-legible (relative luminance ≥ 0.45 — the on-backdrop inks
-     pass ≥ 0.65, every standard light ink fails ≤ 0.25). The CONTRAST leg runs in **both themes**
-     and measures 4.5:1 against the ground the page actually paints: it screenshots the surface with
-     every text transparent, samples the composite under each text box, and credits a tight
-     near-opaque halo as the ground where one is declared. Its stated blind spots — text below the
-     fold, and any EDGE — are recorded in the spec's own header. Text inside any card/leaf/chip/input is never probed (no false
+     in light theme, finds each visible text element that sits on the RAW backdrop (no opaque
+     background in its ancestor chain up to `<body>`), and FAILS unless its computed ink is
+     light-legible (relative luminance ≥ 0.45 — the on-backdrop inks pass ≥ 0.65, every standard
+     light ink fails ≤ 0.25). Text inside any card/leaf/chip/input is never probed (no false
      positives). A red `on-art ink:` test = put the element in the canonical treatment, never a
      one-off colour:
-     - loose **text** → `.on-art` (body) or `.on-art-title` (gilt) on the **leaf** element, never a
-       wrapper; a shared component takes the `onArt` prop instead of stamping the class;
-     - a **ghost button** → the explicit `.btn.ghost.on-art` leaf (login hero, member-sheet back,
-       the region crash net). There is no automatic arm any more;
-     - **facet chips** (`.fchip`) and the wizard **page-turn captions** keep their own scoped
-       recipes — the caption's ground and ink flip must arrive TOGETHER, inside the ≥1360px gutter
-       query, or axe reads the halo as a `#73613c` opaque ground behind unflipped gilt ink and
-       reports 2.17:1 on seven wizard surfaces.
-   - ✅ **AND THE OTHER DIRECTION IS MEASURED TOO (2026-07-25).** `on-art-ink.spec.ts` gains a LEAK
-     leg in both themes: text whose rendered ancestor chain paints a surface may carry neither the
-     on-art ground nor the on-art ink. Nothing measured over-reach before, which is how 43 cream-on-
-     ivory elements shipped on the hub while every leg here was green. Mutation-proved: re-applying
-     the treatment to `.section-card .sess-prose` turns it red on both hub cells.
+     - loose **text** → the region under `.on-art-scope` (preferred), or the `.on-art` class on the
+       **leaf** element (context-fixed surfaces only — never a wrapper);
+     - a **ghost button** → automatic inside `.on-art-scope` (one recipe, surface-excluded), or the
+       explicit `.btn.ghost.on-art` leaf (login hero);
+     - **facet chips** (`.fchip`), the wizard **page-turn captions**, **`.text-error`**, and the
+       **RunicEmptyState** family are already in the scope vocabulary (mechanism pins in
+       `on-art-scope.guard.test.ts`).
      - **A gilt OBJECT is SELF-BACKED — never background-dependent (gilt-coin rule, 2026-06-30).**
        A struck "coin" (the section count **medallion** `.sec-count`, the disclosure **knob**, any
        seal) is a premium gilt register (§ register ladder) and must read on a card OR on the raw
@@ -2401,14 +1912,13 @@ backdrop` + `--text-on-backdrop-title` + `--text-on-backdrop-danger` for error/r
        surface is `body::after` itself — it IS the raw art this guard protects — so `<body>`/`<html>`
        pseudos are excluded. This closed a FALSE POSITIVE (every rail number inside a `.folio-panel`
        read as "on raw art" though the panel plainly backs it).
-   - ⚠️ **The INVERSE leak — never stamp an on-art class UNCONDITIONALLY in a shared component**
-     (`src/components/**`). A shared leaf renders in BOTH contexts: on the creation art it reads
-     fine, but inside a modal/card the bright ink + dark halo leaks onto the plain surface (owner-
-     reported: the savant spellbook hint inside the level-up modal, 2026-06-10). The caller decides,
-     through an `onArt` prop — a gated `onArt && "on-art"` is the sanctioned shape, a bare literal is
-     not. Guarded: `on-art-scope.guard.test.ts` fails on any ungated `on-art` under
+   - ⚠️ **The INVERSE leak — never hardcode `.on-art` in a SHARED component** (`src/components/**`).
+     A shared leaf renders in BOTH contexts: on the creation art it would read fine, but inside a
+     modal/card the white-ink + dark-outline backdrop treatment leaks onto the plain surface (owner-
+     reported: the savant spellbook hint inside the level-up modal, 2026-06-10). Context decides —
+     rely on the `.on-art-scope` ancestor flip (it restyles loose text per context and never matches
+     surfaces). Guarded: `on-art-scope.guard.test.ts` fails on any hardcoded `on-art` under
      `src/components/`.
-
 6. **AA engineered per token, per theme.** The `-ink` variants, the deepened light muted/faint inks
    (tuned to clear AA on the deep field), and the light `--focus-ring` = gold-900 all hold the AA +
    10px floor in both themes. The semantic mapping (action=verdigris, fire=red, …) is theme-invariant.
@@ -2444,7 +1954,7 @@ test.ts` READS the live `.cp-dest-chip` declaration out of `folio.css`, resolves
      the selected `.wiz-card[data-chosen]` / `.lvl-pick.selected` all mixed/haloed with the deep
      `--accent-primary`, so on cream they read flat/olive/GREYER-than-unselected. Each now tints from
      the bright gold-leaf ramp (`--ec-vivid` / `--lvl-accent-bright`) and haloes through
-     `--accent-glow` — selection ALWAYS outshines non-selection; the coin sits in its
+     `--accent-glow` (`--gilt-glow*`) — selection ALWAYS outshines non-selection; the coin sits in its
      teal/blue/red socket; the forward disc reads as THE primary action.
    - **Error/404 field + medallion.** The fullscreen crash net (`.crash-field`) grounds on a designed
      field with an edge vignette instead of a flat mustard slab; the `RunicEmptyState` medallion gets a
@@ -2458,9 +1968,9 @@ test.ts` READS the live `.cp-dest-chip` declaration out of `folio.css`, resolves
      NOT a change to the owner-ratified 0.55 art opacity.
    - **On-field inks + foil.** The light muted/faint/secondary inks are deepened one crisp step (loose
      labels on the bare deep-parchment field read crisp; every AA pin only gains headroom). The on-art
-     gold-foil section titles (`.sec-title.on-art-title`) take a tight crisp outline + warm sheen
+     gold-foil section titles (`.on-art-scope .sec-title`) take a tight crisp outline + warm sheen
      instead of the body-tuned soft-blur halo that smudged, and the treasury GP-total cartouche
-     (`.badge.muted.on-art-chip`) self-backs on a warm plate + gilt edge so its gold reads struck, not
+     (`.on-art-scope .badge.muted`) self-backs on a warm plate + gilt edge so its gold reads struck, not
      outlined-and-floating.
 
 > **Do not re-wire the intentionally-orphaned `--surface-sheen` / `--gilt-gradient`** as a blanket
@@ -2604,11 +2114,9 @@ visually-transparent minimum first and re-baseline the ceiling only for delibera
   chrome plates (glowing-grimoire login, war-table campaign default, engraved crest), P7 the
   ornament reference board, P8 the light panel material, P9–P11 the daylight sibling plates
   (daylight study / daylight war table / dawn grimoire login), and Batch 4 (the full-BG3 push,
-  `~/Documents/d20-folio-bg3-asset-prompts.md`) — P12–P23 shipped so far: the v2 repaints of all
-  three scene-plate pairs (study pair, login pair, war-table campaign pair) at BG3 main-menu
-  richness (same rooms, richly painted edges, calm centres preserved), plus the NEW realm
-  scenes — the compendium's Grand Library pair (P18–P19), the roster's Hall of Heroes pair
-  (P20–P21), and the wizards' Ritual of Making scriptorium pair (P22–P23).
+  `~/Documents/d20-folio-bg3-asset-prompts.md`) — P12–P14 shipped so far: the v2 repaints of the
+  study pair + dark login at BG3 main-menu richness (same rooms, richly painted edges, calm
+  centres preserved).
 - **North star.** The D&D-Beyond-splash / BG3-menu grammar stated above — warm amber + one lapis
   accent, a calm dark centre, edges that recede. Every new plate holds to it.
 - **Daylight Sibling Plates (owner-ratified, the light-theme art direction).** Each of the three
@@ -2626,27 +2134,21 @@ visually-transparent minimum first and re-baseline the ceiling only for delibera
   folder as the **drawing reference** for the in-code ornament vocabulary — it is never shipped in the
   bundle; the ornaments are hand-authored in code/SVG, and the board only guides their look.
 
-| Asset (exact path)                                                              | Size / format        | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ------------------------------------------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `public/assets/backgrounds/home-hero.webp`                                      | 1672×941, < 320 KB   | App-wide atmospheric backdrop (`--asset-home-hero`), behind every page — the DARK plate of the pair. The Batch-4 v2 candlelit-study plate (owner-generated P12, full-BG3 push 2026-07-17): richly painted edges at BG3 main-menu confidence — a three-flame brass candelabrum with warm gold bloom left, gold-tooled bookshelves + suspended orrery right, armillary sphere and grimoires below, one lapis inkwell accent — while the middle half stays dead-calm warm near-black (centre mean `#0d0602`, σ4 — panels and text sit there). Ships ~80 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `public/assets/backgrounds/home-hero-light.webp`                                | 1672×941, < 320 KB   | The **daylight sibling** of `home-hero.webp` (owner-generated P13, Batch-4 v2 2026-07-17) — the LIGHT theme's app-wide backdrop via the light `--asset-home-hero`. Unmistakably the same v2 study at morning: the candelabrum unlit by a high sun-flooded window, the same shelves/orrery/armillary richly painted, golden shafts full of dust motes, the middle half a calm honey mid-tone (centre mean `#bb843d`, σ23 — never near-white, ivory cards still pop), one lapis inkwell remnant. Renders native at the same 0.55 prominence, dissolving into the field at its foot. Ships ~113 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `public/assets/backgrounds/login.webp`                                          | 1672×941, < 320 KB   | Sign-in splash — the DARK plate of the pair, via `--asset-login`. The Batch-4 v2 grimoire-altar plate (owner-generated P14, full-BG3 push 2026-07-17): the ancient open grimoire RIGHT-of-centre is genuinely the light source of the whole painting — golden magical bloom off the pages, one lapis energy wisp curling into the dark, a single candle at the far right, carved stone + chains + a lapis banner in Rembrandt chiaroscuro behind — while the ENTIRE LEFT THIRD stays deliberate calm near-black negative space (mean `#060402`, σ2) for the sign-in lockup. Desktop (≥1024px) seats the brand column in that void under the LEFT-anchored scrim wash that fades before the book; narrow crops (<1024px) centre book + lockup + scrim (`.login-splash`, folio.css). Ships ~78 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                             |
-| `public/assets/backgrounds/login-light.webp`                                    | 1672×941, < 320 KB   | The **dawn sibling** of `login.webp` (owner-generated P15, Batch-4 v2 2026-07-23) — the LIGHT login splash via the light `--asset-login`. Unmistakably the same v2 altar at first light: the open grimoire RIGHT-of-centre still genuinely radiant with its own golden magic (the magic persists into morning), one lapis energy wisp curling through sun shafts full of dust motes, carved colonnade + censer chains + an ivy-framed window with in-scene sun-wheel goldwork richly painted at BG3 confidence — while the LEFT THIRD stays calm softly-shadowed umber for the sign-in column. The light scrims are warm-umber morning washes (folio.css) — they steady the calm void for the bright-ink copy without impersonating night. Ships ~93 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                     |
-| `public/assets/backgrounds/campaign-backdrop.webp`                              | 1672×941, < 120 KB   | The campaign default art (DESIGN Law 6) — the DARK plate of the pair, via `--asset-campaign-backdrop`: the campaign HUB backdrop (`--app-bg-art`) AND the campaign LIST-card banner (`.cmp-banner`, **16:9** — the asset's native ratio, shown whole) when the DM hasn't set custom art. The Batch-4 v2 war-table plate (owner-generated P16, 2026-07-23): a candlelit war table under a blank aged map holding the calm low-contrast centre (panels overlay it), edges at BG3 main-menu richness — armillary astrolabe + glowing lantern at the LEFT (the v2 prompt seats them there; v1 had the astrolabe right), candelabra + brass vessels in the shadows, one lapis banner blurred behind, the table runner graded to warm dark bronze (twin-matched with the light sibling). Ships ~96 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                             |
-| `public/assets/backgrounds/campaign-backdrop-light.webp`                        | 1672×941, < 320 KB   | The **daylight sibling** of `campaign-backdrop.webp` (owner-generated P17, Batch-4 v2 2026-07-23) — the LIGHT campaign default via the light `--asset-campaign-backdrop` (hub backdrop + list-card banner alike; the card's decode base flips to the plate's own honey tone `#856337`). Unmistakably the same v2 hall at breakfast: morning sun through leaded ivy-framed windows, the same blank map + astrolabe + lantern at the LEFT, the lapis banner behind, the runner graded to the same warm bronze as its dark twin, wood and parchment in the honey band. Ships ~173 KB at q75 + sharp_yuv (budget raised 120 → 320 KB to match the other scene plates for the deliberate v2 richness). **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `public/assets/backgrounds/compendium-scene.webp`                               | 1672×941, < 320 KB   | The **compendium realm scene** (the Grand Library) — the DARK plate of the pair, via `--asset-compendium-scene`: swapped in for the app-wide study backdrop while the codex is mounted (`useRealmBackdrop`, the per-route seam below). The Batch-4 Grand Library plate (owner-generated P18, 2026-07-23): a candlelit library nave — gold-tooled damask, shelf stacks and candle clusters at the richly painted edges, one lapis accent glowing mid-right, an unlit deep-blue banner drape (twin-consistent with the light sibling) — while the centre aisle stays calm warm near-black (centre mean `#190f05`) where the `.cmp-tome` spread sits. One stray AI signature clone-patched out top-right. Ships ~85 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `public/assets/backgrounds/compendium-scene-light.webp`                         | 1672×941, < 320 KB   | The **daylight sibling** of `compendium-scene.webp` (owner-generated P19, Batch-4 2026-07-23) — the LIGHT compendium scene via the light `--asset-compendium-scene`. Unmistakably the same Grand Library at morning: a sun-shafted aisle, shelves / rolling ladder / orrery / globe table crisp at the edges, both candles unlit (their flames retouched out), and the deep centre arcade melted to tone-on-tone honey bokeh by a masked soft-focus (fine-detail 2.7 — the P13 calm discipline) so the tome always fronts the sharpest plane. The optional centre contrast-compression grade was judged unnecessary in situ: the codex spread covers the busy centre at every matrix dim (desktop + mobile, both themes; the bottom-edge parquet and the tiny centre window slot sit under the tome at every current crop). Ships ~75 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                    |
-| `public/assets/backgrounds/roster-scene.webp`                                   | 1672×941, < 320 KB   | The **roster realm scene** (the Hall of Heroes) — the DARK plate of the pair, via `--asset-roster-scene`: swapped in for the app-wide study backdrop while the roster is mounted (`useRealmBackdrop`, the per-route seam below). The Batch-4 Hall of Heroes plate (owner-generated P20, 2026-07-23): a candlelit trophy hall — EMPTY armor suits (dark voids under every helm) and axe stands hugging both walls, a warm lit hearth at the far right edge under a faceless gold filigree medallion, exactly one saturated lapis pennant (gold fleur device) among near-neutral dark heraldry — while the centre band stays calm near-black warm umber (mean `#160c02`, two soft in-band sconce embers) where the character cards + toolbar sit. One dim AI signature median-smudged out top-right (feathered mask — the hard rectangle seamed under a brightness boost). Ships ~82 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                       |
-| `public/assets/backgrounds/roster-scene-light.webp`                             | 1672×941, < 320 KB   | The **daylight sibling** of `roster-scene.webp` (owner-generated P21, Batch-4 2026-07-23) — the LIGHT roster scene via the light `--asset-roster-scene`. Unmistakably the same Hall at morning (every anchor coincides: alcove suit, leaning round shield, suit rows, hearth + the same faceless medallion, the same lapis pennant device): sun shafts from the clerestory night conceals, the centre squarely in the honey band (mean `#b17e3c`), four extra blue banners re-tinted to parchment so exactly one lapis pennant remains, the pseudo-glyph runner border dissolved. The optional centre calm-down blur (raw-plate centre sigma ~36 vs P13's ~23) was judged unnecessary in situ: with the real UI composited the 0.55 backdrop opacity over the parchment field melts the lower-centre mosaic to one soft honey tone — cards, toolbar, and the runic empty state all hold the calm-centre law at every matrix dim (dark/light × desktop/mobile, populated + empty). Ships ~175 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                             |
-| `public/assets/backgrounds/creation-scene.webp`                                 | 1672×941, < 320 KB   | The **wizards' realm scene** (the Ritual of Making — creation AND level-up) — the DARK plate of the pair, via `--asset-creation-scene`: swapped in for the app-wide study backdrop while either wizard is mounted (`WizardFrame`, the one chrome both wizards share, mounts it once via `useRealmBackdrop` — the per-route seam below). The Batch-4 scriptorium plate (owner-generated P22, 2026-07-23): a candlelit scriptorium — a great blank-paged ledger on its desk right-of-centre with the glowing lapis inkwell + standing quill beside it (the login plate's tool-of-making grammar), armillary sphere at the right edge, star-chart banners top-right, candles + altar at the left, an abstract gold ritual circle faint on the floor lower-left — while the calm zone (x~17–62%, full mid-band height) stays warm near-black (mean `#140c03`, σ8.2 — P12-calibration calm) where the wizard column sits. Ships ~95 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                           |
-| `public/assets/backgrounds/creation-scene-light.webp`                           | 1672×941, < 320 KB   | The **daylight sibling** of `creation-scene.webp` (owner-generated P23, Batch-4 2026-07-23) — the LIGHT wizards' scene via the light `--asset-creation-scene`. Unmistakably the same scriptorium at morning — every object recurs in place (desk + blank ledger + clasp, inkwell + quill, armillary, chart banners, candelabra, lantern, the floor circle identical ring for ring) with every candle genuinely unlit: a sun-shafted colonnade, the centre in the honey band (centre mean `#cc9244`, right beside the accepted P13 calibration), the floor circle still faintly magical by day. Both plates ship ungraded: the optional dossier ops (P22 calm-margin widening + blue taming, P23 centre compression + honey pull-down) were judged unnecessary in situ — with the real UI composited the wizard column sits on the calm corridor at every matrix dim (dark/light × desktop/mobile, creation + level-up), the ledger fills only the empty right gutter as atmosphere, the mobile centre-top cover slice (image x~35–65%) stays calm, and the gutter pager captions hold the on-art register over the desk wood. Ships ~153 KB at q75 + sharp_yuv. **Shipped.** |
-| `public/assets/textures/parchment.webp`                                         | ~1600×1000, < 180 KB | Compendium "ancient tome" cover (`--asset-parchment`) — the LIGHT-theme leaf. A weathered aged scroll in the deep **#6b5a36 → #b8975a** band. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `public/assets/textures/panel-leather.webp`                                     | 1024×1024, < 150 KB  | Seam-blended tileable dark leather grain (`--asset-panel-leather`), in the **#0b0908 → #1d1810** band. **DARK theme only:** laid under a translucent copy of the `.folio-panel` surface gradient (512px tile) — quiet mottle on empty panel areas; the whole sandwich renders on the panel's `::before` at `--panel-alpha` (§5 candlelit translucency) so the backdrop glows through the material. Its **light sibling** is `panel-light.webp` (next row). Ships ~31 KB. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `public/assets/textures/panel-light.webp`                                       | 1024×1024, < 150 KB  | The **LIGHT-theme sibling of `panel-leather.webp`** (owner-generated P8): seamless tileable pale cream bookbinding leather grain, colour-graded into the **#e9ddc4 → #cdb488** band (mean ~#ddcaa5 · per-channel remap of the source's actual range into the band; verified seamless by a 512-offset wrap test — the wrap discontinuity 3.4/255 is smaller than the texture's own interior drift). Sits **under the light `.folio-panel` surface the same way dark does** — the same 512px-tile sandwich under the panel `::before`, at the light `--panel-alpha` 0.94 (morning-light translucency, §5) with an 80% gradient share (the grain band sits below the ivory surfaces, so a lower share would darken the panel). Wired by the daylight-sibling rebuild. Ships ~25 KB at q80. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                         |
-| `public/assets/textures/vellum-dark.webp`                                       | 1024×1024, < 150 KB  | Seam-blended dark vellum (`--asset-vellum-dark`), colour-graded into the **#241c12 → #3a2d21** candlelit-umber band (mean ~#2d2216). **DARK theme only:** IS the `.cmp-tome` surface via the `--tome-leaf` indirection (light keeps `parchment.webp`). Ships ~19 KB. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `public/assets/brand/crest.webp`                                                | 349×384, < 40 KB     | The engraved brand crest (owner-generated P6): a bronze d20 in a laurel + acanthus wreath, shipped as an **alpha mask** (white ink, alpha = engraving luminance) and painted through CSS `mask-image` with the theme's gold as ink (`--asset-crest`), so ONE file wears each theme's own metal. Spent EXACTLY ONCE, on the **compendium frontispiece** (`.cmp-frontis-inner::before`) — a title page is the one place a watermark is honest, because nothing live is set over it. No masthead carries a crest behind its ink. Ships ~30 KB. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `public/favicon.svg` + `public/favicon.ico` (16/32/48)                          | SVG + ICO            | **Browser-tab favicon** — a favicon-optimised redraw of the gilt d20: the die FILLS the canvas edge-to-edge (no umber tile / brown padding) on a transparent ground, with an **enlarged central "20" face** so the numeral is bold. "20" reads cleanly at 32–48 px (retina tabs); at legacy 16 px it softens to a bold mark on an unmistakable d20 silhouette. `.svg` for modern browsers, `.ico` the legacy fallback. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `public/icons/{icon-192,icon-512,icon-512-maskable,apple-touch-icon}.{svg,png}` | SVG source + PNG     | PWA / home-screen install icons — the same gilt d20 on a full-bleed **umber** crest tile (OS rounds it); `-192`/`-512` rounded, `apple-touch` + `-maskable` full-bleed (die kept inside the maskable 80% safe zone). Hand-authored SVG sources rasterised to PNG (headless-Chromium render); the `.png` set is what the manifest ships. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Asset (exact path)                                                              | Size / format        | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `public/assets/backgrounds/home-hero.webp`                                      | 1672×941, < 320 KB   | App-wide atmospheric backdrop (`--asset-home-hero`), behind every page — the DARK plate of the pair. The Batch-4 v2 candlelit-study plate (owner-generated P12, full-BG3 push 2026-07-17): richly painted edges at BG3 main-menu confidence — a three-flame brass candelabrum with warm gold bloom left, gold-tooled bookshelves + suspended orrery right, armillary sphere and grimoires below, one lapis inkwell accent — while the middle half stays dead-calm warm near-black (centre mean `#0d0602`, σ4 — panels and text sit there). Ships ~80 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `public/assets/backgrounds/home-hero-light.webp`                                | 1672×941, < 320 KB   | The **daylight sibling** of `home-hero.webp` (owner-generated P13, Batch-4 v2 2026-07-17) — the LIGHT theme's app-wide backdrop via the light `--asset-home-hero`. Unmistakably the same v2 study at morning: the candelabrum unlit by a high sun-flooded window, the same shelves/orrery/armillary richly painted, golden shafts full of dust motes, the middle half a calm honey mid-tone (centre mean `#bb843d`, σ23 — never near-white, ivory cards still pop), one lapis inkwell remnant. Renders native at the same 0.55 prominence, dissolving into the field at its foot. Ships ~113 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `public/assets/backgrounds/login.webp`                                          | 1672×941, < 320 KB   | Sign-in splash — the DARK plate of the pair, via `--asset-login`. The Batch-4 v2 grimoire-altar plate (owner-generated P14, full-BG3 push 2026-07-17): the ancient open grimoire RIGHT-of-centre is genuinely the light source of the whole painting — golden magical bloom off the pages, one lapis energy wisp curling into the dark, a single candle at the far right, carved stone + chains + a lapis banner in Rembrandt chiaroscuro behind — while the ENTIRE LEFT THIRD stays deliberate calm near-black negative space (mean `#060402`, σ2) for the sign-in lockup. Desktop (≥1024px) seats the brand column in that void under the LEFT-anchored scrim wash that fades before the book; narrow crops (<1024px) centre book + lockup + scrim (`.login-splash`, folio.css). Ships ~78 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                                  |
+| `public/assets/backgrounds/login-light.webp`                                    | 1672×941, < 320 KB   | The **dawn sibling** of `login.webp` (owner-generated P11) — the LIGHT login splash via the light `--asset-login`. The same altar and book at first light: pale golden rays and dust motes entering the chamber, the pages still glowing with their own magic (deliberately dawn-dim — the magic persists into morning), lapis energy curling, the LEFT THIRD calm and softly shadowed for the sign-in column. The light scrims are warm-umber morning washes (folio.css) — they steady the calm void for the bright-ink copy without impersonating night. Ships ~108 KB at q85. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `public/assets/backgrounds/campaign-backdrop.webp`                              | 1672×941, < 120 KB   | The campaign default art (DESIGN Law 6) — the DARK plate of the pair, via `--asset-campaign-backdrop`: the campaign HUB backdrop (`--app-bg-art`) AND the campaign LIST-card banner (`.cmp-banner`, **16:9** — the asset's native ratio, shown whole) when the DM hasn't set custom art. The owner-generated plate (P5): a candlelit war table under a blank aged map holding a calm low-contrast centre (panels overlay it), brass astrolabe + lantern at the edges, one lapis banner blurred behind. Ships ~72 KB at q85. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `public/assets/backgrounds/campaign-backdrop-light.webp`                        | 1672×941, < 120 KB   | The **daylight sibling** of `campaign-backdrop.webp` (owner-generated P10) — the LIGHT campaign default via the light `--asset-campaign-backdrop` (hub backdrop + list-card banner alike; the card's decode base flips to the plate's own honey tone `#856337`). The same war table at breakfast: morning light through the hall windows, the same blank map + brass instruments, the lapis banner behind, wood tones in the #6b5636–#8a6f4a band. Ships ~84 KB at q85. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `public/assets/textures/parchment.webp`                                         | ~1600×1000, < 180 KB | Compendium "ancient tome" cover (`--asset-parchment`) — the LIGHT-theme leaf. A weathered aged scroll in the deep **#6b5a36 → #b8975a** band. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `public/assets/textures/panel-leather.webp`                                     | 1024×1024, < 150 KB  | Seam-blended tileable dark leather grain (`--asset-panel-leather`), in the **#0b0908 → #1d1810** band. **DARK theme only:** laid under a translucent copy of the `.folio-panel` surface gradient (512px tile) — quiet mottle on empty panel areas; the whole sandwich renders on the panel's `::before` at `--panel-alpha` (§5 candlelit translucency) so the backdrop glows through the material. Its **light sibling** is `panel-light.webp` (next row). Ships ~31 KB. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `public/assets/textures/panel-light.webp`                                       | 1024×1024, < 150 KB  | The **LIGHT-theme sibling of `panel-leather.webp`** (owner-generated P8): seamless tileable pale cream bookbinding leather grain, colour-graded into the **#e9ddc4 → #cdb488** band (mean ~#ddcaa5 · per-channel remap of the source's actual range into the band; verified seamless by a 512-offset wrap test — the wrap discontinuity 3.4/255 is smaller than the texture's own interior drift). Sits **under the light `.folio-panel` surface the same way dark does** — the same 512px-tile sandwich under the panel `::before`, at the light `--panel-alpha` 0.94 (morning-light translucency, §5) with an 80% gradient share (the grain band sits below the ivory surfaces, so a lower share would darken the panel). Wired by the daylight-sibling rebuild. Ships ~25 KB at q80. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                              |
+| `public/assets/textures/vellum-dark.webp`                                       | 1024×1024, < 150 KB  | Seam-blended dark vellum (`--asset-vellum-dark`), colour-graded into the **#241c12 → #3a2d21** candlelit-umber band (mean ~#2d2216). **DARK theme only:** IS the `.cmp-tome` surface via the `--tome-leaf` indirection (light keeps `parchment.webp`). Ships ~19 KB. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `public/assets/brand/crest.webp`                                                | 349×384, < 40 KB     | The engraved brand crest (owner-generated P6): a bronze d20 in a laurel + acanthus wreath, shipped as an **alpha mask** (white ink, alpha = engraving luminance) and painted through CSS `mask-image` with the theme's gold as ink (`--asset-crest` → `.page-head-crest`), so ONE file wears each theme's own metal. Seated as the folio's **frontispiece watermark**: every framed realm masthead that sits on the standard app field — roster, campaigns list, compendium, settings, admin, legal — carries it via the `PageHeader` `crest` prop. Dark inks it in the bright accent at **0.11**; light inks it in the **burnished antique gold** (`--accent-primary-deep`, gold-leaf-700) at **0.2** — light's `--accent-primary` is a near-black umber that vanished at a whisper opacity on ivory (owner: "basically not visible in light theme"), so the light emblem is re-inked in real chroma and lifted until it reads clearly at a glance while staying subtler than any text on the band. The art-backed campaign hub is the ONE exception: its backdrop is the campaign's own art, so that art is the frontispiece and it omits the crest. Ships ~30 KB. **Shipped.** |
+| `public/favicon.svg` + `public/favicon.ico` (16/32/48)                          | SVG + ICO            | **Browser-tab favicon** — a favicon-optimised redraw of the gilt d20: the die FILLS the canvas edge-to-edge (no umber tile / brown padding) on a transparent ground, with an **enlarged central "20" face** so the numeral is bold. "20" reads cleanly at 32–48 px (retina tabs); at legacy 16 px it softens to a bold mark on an unmistakable d20 silhouette. `.svg` for modern browsers, `.ico` the legacy fallback. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `public/icons/{icon-192,icon-512,icon-512-maskable,apple-touch-icon}.{svg,png}` | SVG source + PNG     | PWA / home-screen install icons — the same gilt d20 on a full-bleed **umber** crest tile (OS rounds it); `-192`/`-512` rounded, `apple-touch` + `-maskable` full-bleed (die kept inside the maskable 80% safe zone). Hand-authored SVG sources rasterised to PNG (headless-Chromium render); the `.png` set is what the manifest ships. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 **Brand mark = in-code SVG, not an AI raster** (`D20Mark` in `brand-mark.tsx`, gilt variant,
 theme-aware, used in the header + login). The d20 face geometry is **solved in
@@ -2663,20 +2165,10 @@ lockups, or icons.)
 
 **Two owner knobs in `src/index.css`:**
 
-- `--app-bg-art-opacity` — backdrop prominence. Per the atmosphere mandate (owner, 2026-07-23 —
-  "Really want the woooow effect … The images I provided you look amazing, let's not sacrifice
-  them") the bundled plates render at **dark `0.9` / light `0.75`** — near-full presence, the
-  confidence the login splash always had. The raise is EARNED by the plates' designed calm
-  near-black/honey centres (panels and text sit there; the painterly edges carry the wow): the
-  dark composite floor holds ≥ 4.7:1 at 0.9 (guard-computed from the real token), and light's
-  deep espresso inks on the ivory composite stay >10:1. The values are a perceptual pair, not a
-  numeric one (OWN-36's parity of perception): light plates on the bright parchment field read
-  stronger per unit opacity, so 0.75 is 0.9's daylight sibling (0.8 was judged in situ — the
-  war-table hub's loose rubrics started competing with the busy gold midground). **Custom DM
-  uploads carve back to `0.55`** via `[data-app-bg-custom]` in both themes — an arbitrary image
-  has no calm-centre discipline, so it keeps the proven taming (+ light's veil below). Each theme
-  renders its OWN sibling plate natively; light keeps only its lower-band mask dissolve into the
-  field.
+- `--app-bg-art-opacity` — backdrop prominence. Per the binding OWN-36 light mandate it is **`0.55`
+  in BOTH themes** (the atmospheric art is as visible in light as in dark). Each theme renders its
+  OWN sibling plate natively — the old light-theme `saturate/contrast` lift (a compensation for
+  borrowing the dark plate) is retired; light keeps only its lower-band mask dissolve into the field.
 - `--app-bg-art: none` on `:root` — disables app-wide art entirely.
 
 **User-uploaded campaign art never breaks the light chrome (the custom-art veil).** A DM's banner is
@@ -2687,8 +2179,8 @@ two-part veil to `body::after` (index.css): a **parchment glaze** (a uniform tra
 world, plus a **gentle harmonizer filter** (`saturate(.82) contrast(.94)`) so oversaturated uploads
 sit back as atmosphere. Legibility never depends on the upload — loose on-backdrop text is the
 guarded `.on-art` register, and the glaze only narrows the art's dynamic range. The bundled plates
-render native (no veil); dark needs no veil (custom uploads carve the presence back to 0.55 over
-the near-black field — the carve-out above — which tames any image) and is otherwise untouched.
+render native (no veil); dark needs none (0.55 over the near-black field tames any upload) and is
+untouched.
 
 **Per-route backdrop override (the campaign hub).** The same `--app-bg-art` variable is the ONE
 backdrop seam — a route may swap it instead of building a second band. The **campaign hub**
@@ -2698,32 +2190,9 @@ band, so the Party/combat sit in the fold. The campaign's art — the DM's custo
 else `campaign-backdrop.webp` — is fed to `--app-bg-art` on the document root for as long as the hub
 is mounted (restored on unmount), so the global `body::after` painter renders it atmospherically
 under the app's own scrim/grain (craft law 3 — atmosphere under content, never a competing band). The
-hub content keeps its `.on-art-scope` wrapper (the scope still carries the per-recipe treatments —
-the facet chips, the pager caption, the selection colours — it no longer blankets ink registers), and
-every loose-on-backdrop element (section labels, the
+hub content keeps its `.on-art-scope` wrapper so every loose-on-backdrop element (section labels, the
 DMPC "attach" button, the treasury "total" chip) stays legible in light theme (guarded by
 `on-art-ink.spec.ts`).
-
-**Realm scene plates ride the same seam (`useRealmBackdrop`).** A realm whose backdrop is a fixed
-per-theme PAIR (no custom art, no crop) uses the tiny shared hook `src/hooks/useRealmBackdrop.ts`:
-mount points `--app-bg-art` at the realm's token — always a css-var REFERENCE (e.g.
-`"var(--asset-compendium-scene)"`), never a URL, so the theme cascade keeps resolving the right
-sibling plate and each theme still downloads only its own file — and unmount clears it back to the
-app-wide study. Every swap on this seam (the realm hook AND the campaign hub's
-`useCampaignBackdrop`) rides the backdrop crossfade — `transitionBackdrop`
-(`src/lib/backdrop-transition.ts`): scene dissolves into scene instead of hard-cutting, reduced
-motion keeps the cut (mechanism in §9's motion table, "Backdrop swap"). Current realm scenes: the
-**compendium** (`CompendiumPage` → `--asset-compendium-scene`, the Grand Library pair above — the
-codex spread sits over the plate's calm centre aisle in both themes, desktop and mobile), the
-**roster** (`RosterPage` → `--asset-roster-scene`, the Hall of Heroes pair — the character cards +
-toolbar sit over the hall's calm centre band; the page's existing `.on-art` / `.on-art-title`
-loose-element chrome stays correct over the new plates), and the **wizards** (`WizardFrame` →
-`--asset-creation-scene`, the Ritual of Making scriptorium pair — ONE mount in the shared frame
-covers both creation and level-up, and the frame's `.wiz on-art-scope` chrome already carries the
-on-art register; no focal bias is set — the default `center top` seats the calm corridor under the
-wizard column on every current crop). The
-campaign hub deliberately keeps its own `useCampaignBackdrop` (custom banners + crop focal/zoom +
-the custom-art veil are its concerns, not a fixed plate's).
 
 **One 16:9 shape across crop · card · backdrop focal.** Custom campaign art is framed by a single
 **16:9** crop (the `campaign-backdrop.webp` asset's native ratio) — the SAME shape the realm-list card
@@ -2769,31 +2238,12 @@ trigger each state).
 
 ### Self-enforcing gates (do not let them rot)
 
-**Every gate below obeys golden rule 13's derivation clause: a guard takes its subjects, grounds and
-cases from the artifact — the stylesheet, the DOM, the manifest, the data — and states, in the
-guard, what it cannot see.** Every real chrome defect this project has found was hidden behind a
-green guard that sampled a hand-picked case instead: contrast pinned on 2 of 3 grounds, a census on
-the one tab already swept, an on-art battery on one theme, an "unframed" check a 45%-opaque
-`color-mix(…, transparent)` could pass. When you extend a gate, extend what it DERIVES, not the list
-beside it.
-
 - **A11y surface gate:** `tests/e2e/a11y.spec.ts` iterates SURFACES × dark/light and fails on
-  serious/critical axe violations (labels, roles, focus traps, nested-interactive) — that part of it
-  works and the app is clean. **It does NOT cover contrast: on THIS app axe's `color-contrast` rule
-  is inert, APP-WIDE.** The parchment backdrop (`body::after`) and the plate pseudo-elements defeat
-  axe's background resolution, so it returns "incomplete" instead of a verdict for essentially every
-  run of prose — measured with axe-core 4.11.4, both themes: `compendium-monster-entry` 121
-  incomplete / 0 violations, `compendium-spell-entry` 84 / 0, `settings` 22 (light) 19 (dark) / 0.
-  There is no surface where a contrast failure could make it fail; it never has, and it never will.
-  **So "re-run the a11y gate after a light-token change" is NOT contrast coverage.** The gates that
-  are: `tests/unit/verdict-ink-contrast.test.ts` (token↔ground AA + the OKLab ΔE separation matrix)
-  and `tests/e2e/statblock-ink-contrast.spec.ts` (the composited, real-Chromium truth — computed
-  colour, resolved opaque ground, token identity). Re-run **those** after ANY ink-token change.
+  serious/critical axe violations; the app is axe-clean. **Re-run after ANY light-token change.**
 - **E2E coverage gate:** a guard test maps router surfaces → harness entries; the rule "new
   page/form/prompt → add its screenshot" keeps visual coverage honest.
-- **Contrast unit tests** (`verdict-ink-contrast`, `bg-recessed`, the seal-ink test) guard the
-  per-hue AA math AND the per-theme separation floors; keep them green when tuning any domain or
-  `-ink` token. A new ink that shares the prose grounds belongs in the ΔE matrix's vocabulary.
+- **Contrast unit tests** (e.g. `verdict-ink-contrast`, `bg-recessed`, the seal-ink test) guard the
+  per-hue AA math; keep them green when tuning any domain or `-ink` token.
 - **Pure-modules guard:** keep CI-pure lib modules free of Firebase imports.
 
 > Near-miss contrast figures from static analysis (e.g. a recipe author's inline "~4.45:1" note) are
@@ -2859,10 +2309,7 @@ a11y gate after any token change.
 
 Before writing new CSS or a new component, check what existing primitives already solve it (`OptionGrid`,
 `InlineEditable`, `NumberStepper`, `InfoCard`, `SectionHeader`, `Button`, `IconButton`, `Input`,
-`Textarea`, `ModalHead`, `MonsterStatBlockCard` — the whole 2024 monster statblock;
-`CompanionStatBlockCard` — the shared feature-declared-companion card, Features tab + the Companions
-rail modal, with the Beast Master variant `Segmented`) and whether a
-sibling surface already uses the pattern. Search is bilingual +
+`Textarea`, `ModalHead`) and whether a sibling surface already uses the pattern. Search is bilingual +
 accent-insensitive + **token-based** via `matchesSearch` (pass both the localized label and `name.en`)
 — the query is split into whitespace tokens and every token must appear somewhere in the joined
 candidate corpus, so word order and interstitial words ("di"/"of") never break a match ("pozione
@@ -2923,20 +2370,45 @@ above).
 
 ### 15.13 Quick Reference — Canonical Primitives
 
-| Need                        | Reach for                                                   |
-| --------------------------- | ----------------------------------------------------------- |
-| Editable field in-place     | `InlineEditable`                                            |
-| Numeric input with stepper  | `NumberStepper`                                             |
-| Option grid / card picker   | `OptionGrid` (card mode or list mode)                       |
-| Picker with search + filter | `PickerSearch` + `FilterChip` + `PickerRow`                 |
-| Info display card           | `InfoCard` / `.info-card`                                   |
-| Section heading + ledger    | `.sec-head` pattern (see Treasury surface)                  |
-| Modal header                | `ModalHead`                                                 |
-| Monster statblock           | `MonsterStatBlockCard` (2024 SRD; the familiar)             |
-| Feature-declared companion  | `CompanionStatBlockCard` (owner-scaled + variant Segmented) |
-| Icon-only button            | `IconButton`                                                |
-| Accent / neutral button     | `Button` (variant prop: accent / neutral / …)               |
-| Bilingual search            | `matchesSearch(query, localized, name.en)`                  |
-| Bounded prose preview       | `NoteClamp` (overflow-engaged, in-place expand)             |
-| In-wizard choice pool       | `WizardPickList` (the morph-list; §5 above)                 |
-| Bounded growing list        | latest-N + "View all" (the Treasury-log recipe)             |
+| Need                        | Reach for                                       |
+| --------------------------- | ----------------------------------------------- |
+| Editable field in-place     | `InlineEditable`                                |
+| Numeric input with stepper  | `NumberStepper`                                 |
+| Option grid / card picker   | `OptionGrid` (card mode or list mode)           |
+| Picker with search + filter | `PickerSearch` + `FilterChip` + `PickerRow`     |
+| Info display card           | `InfoCard` / `.info-card`                       |
+| Section heading + ledger    | `.sec-head` pattern (see Treasury surface)      |
+| Modal header                | `ModalHead`                                     |
+| Monster statblock           | `MonsterStatBlockCard` (2024 SRD; the familiar) |
+| Feature-declared companion  | `CompanionStatBlockCard` (owner-scaled + variant `Segmented`) |
+| Icon-only button            | `IconButton`                                    |
+| Accent / neutral button     | `Button` (variant prop: accent / neutral / …)   |
+| Bilingual search            | `matchesSearch(query, localized, name.en)`      |
+| Bounded prose preview       | `NoteClamp` (overflow-engaged, in-place expand) |
+| In-wizard choice pool       | `WizardPickList` (the morph-list; §5 above)     |
+| Bounded growing list        | latest-N + "View all" (the Treasury-log recipe) |
+
+## Post-v0.22.0 feature layer (visual-rollback appendix, 2026-07-30)
+
+The chrome-reset visual identity (plate/veil/edge material system, the hairline
+divider grammar, the corner knots, the MARK) was **rejected by the owner and rolled
+back**: `src/index.css` + `src/styles/folio.css` are the v0.22.0 vocabulary again
+(diamonds · crest watermark · gilt glow · illumination · engraved titling). The
+features that shipped after v0.22.0 keep their chrome through a delimited appendix
+at the end of `folio.css` ("POST-v0.22.0 FEATURE LAYER"), re-expressed on v0.22.0
+tokens:
+
+- **Header-as-disclosure** (`SectionHeader.disclosure` → `.sec-toggle`) — the Play
+  tab's collapsed-by-default reference sections (owner-ratified 2026-07-24).
+- **Monster statblock plaque** (`.mon-*`, `.lvl-seal.cr-seal`) — the bestiary read
+  surface (compendium Monsters + encounter statblocks).
+- **Realm scenes** — `--asset-compendium-scene` / `--asset-roster-scene` /
+  `--asset-creation-scene` (per-theme pairs) via `useRealmBackdrop`, plus the
+  backdrop crossfade (`.bg-ghost`, `src/lib/backdrop-transition.ts`). Text mounted
+  directly on a scene grounds through the v0.22.0 `.on-art-scope` machinery — the
+  leaf-class opt-in props were removed with the reset.
+- **`.rule-above`** — the thin top hairline used by feature-layer consumers.
+
+The next visual identity (the BG3 corpus-studied grammar) replaces this section
+wholesale when it ships; until then the appendix is the ONLY sanctioned place for
+post-v0.22.0 chrome.

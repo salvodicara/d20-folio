@@ -76,19 +76,6 @@ export interface SectionHeaderProps extends Omit<
   id?: string;
   /** Opt-in header-as-disclosure — makes the whole rubric row an accordion toggle. */
   disclosure?: SectionDisclosure;
-  /**
-   * The header sits DIRECTLY ON THE BACKDROP ART, not on a card — the campaign hub's
-   * section rubrics, the settings page's. Its title and count then take the on-art
-   * treatment (the ground in both themes, the gilt/parchment flip in light).
-   *
-   * It is a PROP and not a scope because "am I on the art?" is a fact about where
-   * the caller mounts this header, and nothing in CSS can read it. The mechanism it
-   * replaces tried: a blanket flip inside `.on-art-scope`, excluded from a
-   * hand-written list of surface classes. The list rotted the first time a section
-   * was rebuilt on a class nobody remembered to add, and put cream ink on the hub's
-   * ivory panels.
-   */
-  onArt?: boolean;
 }
 
 export function SectionHeader({
@@ -101,7 +88,6 @@ export function SectionHeader({
   className,
   id,
   disclosure,
-  onArt,
   ...rest
 }: SectionHeaderProps) {
   return (
@@ -115,22 +101,14 @@ export function SectionHeader({
       )}
       {...rest}
     >
-      <Heading
-        className={cn(
-          "sec-title",
-          onArt && "on-art-title",
-          icon && "flex items-center gap-1.5"
-        )}
-        id={id}
-      >
+      <span className="sec-diamond" aria-hidden />
+      <Heading className={cn("sec-title", icon && "flex items-center gap-1.5")} id={id}>
         {icon}
         {title}
       </Heading>
-      {count != null ? (
-        <span className={cn("sec-count", onArt && "on-art")}>{count}</span>
-      ) : null}
+      {count != null ? <span className="sec-count">{count}</span> : null}
       <span className="sec-rule" aria-hidden />
-      {meta ? <span className={cn("sec-meta", onArt && "on-art")}>{meta}</span> : null}
+      {meta ? <span className="sec-meta">{meta}</span> : null}
       {disclosure ? (
         // The whole header row is the toggle: this button's `::before` stretches
         // over the `.sec-head` (position: relative) so clicking the rubric blooms

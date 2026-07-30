@@ -21,7 +21,9 @@ export function SiteFooter() {
   return (
     <footer className="site-footer" role="contentinfo">
       <div className="site-footer-inner">
-        <span className="site-footer-rule" aria-hidden />
+        <span className="site-footer-rule" aria-hidden>
+          <span className="site-footer-diamond" />
+        </span>
         {/* The colophon sits on the backdrop art on EVERY route — there is no card
             under it anywhere in the app — so it opts in to the on-art ground; the
             brand and the "you are here" link keep their own gold via the footer

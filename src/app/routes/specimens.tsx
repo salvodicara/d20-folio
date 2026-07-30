@@ -38,6 +38,7 @@ export function SpecimensPage(): ReactNode {
         style={{ padding: "var(--sp-6)", display: "grid", gap: "var(--sp-4)" }}
       >
         <div className="rail-head" style={{ marginBottom: 0 }}>
+          <span className="rh-diamond" aria-hidden="true" />
           <h5>The Gilded Plate — Cinzel · Alegreya · Source Serif 4</h5>
           <span className="rh-rule" aria-hidden="true" />
         </div>
@@ -149,7 +150,7 @@ export function SpecimensPage(): ReactNode {
                 placeItems: "center",
                 width: "9rem",
                 height: "2.5rem",
-                borderRadius: "var(--r-chip)",
+                borderRadius: "var(--radius-md)",
                 border: "1px solid var(--border-medium)",
                 /* Each scrim tier laid over a light gold base (stand-in for the
                    content it would dim) so 46% vs 75% read side by side. */

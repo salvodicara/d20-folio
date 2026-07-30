@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { Trash2, Crown, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InfoCard } from "@/components/shared/InfoCard";
 import { Select } from "@/components/shared/Select";
 import { useAuthStore } from "@/stores/authStore";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -187,7 +188,6 @@ export function DmTools() {
       sectionId="dm"
       className="lg:col-span-2"
       title={t("campaignHub.dmTools")}
-      framed
     >
       {/* ROLE + DANGER only, laid out 2-up on desktop (one column on mobile). The party
           overview + encounter tracker live in the Party section; the invite link + its
@@ -197,7 +197,7 @@ export function DmTools() {
         {/* D29 — hand the DM crown to another member (shown only when there's
             someone to promote). */}
         {otherMembers.length > 0 && (
-          <div className="hub-cell">
+          <InfoCard className="flex flex-col gap-1">
             <span className="text-sm text-text-secondary">
               {t("campaignHub.yieldDm")}
             </span>
@@ -224,13 +224,13 @@ export function DmTools() {
                 {t("campaignHub.yieldDmConfirm")}
               </Button>
             </div>
-          </div>
+          </InfoCard>
         )}
 
         {/* Remove a player from the campaign (shown only when there's someone to
             remove). Their character detaches; they can rejoin unless joins are locked. */}
         {otherMembers.length > 0 && (
-          <div className="hub-cell">
+          <InfoCard className="flex flex-col gap-1">
             <span className="text-sm text-text-secondary">
               {t("campaignHub.removeMember")}
             </span>
@@ -259,10 +259,10 @@ export function DmTools() {
                 {t("campaignHub.removeMemberConfirm")}
               </Button>
             </div>
-          </div>
+          </InfoCard>
         )}
 
-        <div className="hub-cell sm:col-span-2">
+        <InfoCard className="flex flex-col gap-1 sm:col-span-2">
           <span className="text-sm text-text-secondary">
             {t("campaignHub.dangerZone")}
           </span>
@@ -275,7 +275,7 @@ export function DmTools() {
               {t("campaignHub.deleteCampaignConfirm")}
             </Button>
           </div>
-        </div>
+        </InfoCard>
       </div>
     </SectionPanel>
   );

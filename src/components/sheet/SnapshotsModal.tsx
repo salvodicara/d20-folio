@@ -73,7 +73,7 @@ function classLevelSummary(
 const ROW_STYLE: CSSProperties = {
   background: "var(--bg-surface-3)",
   border: "1px solid var(--border-soft)",
-  borderRadius: "var(--r-plate)",
+  borderRadius: "var(--radius-lg)",
 };
 
 export function SnapshotsModal({

@@ -14,7 +14,7 @@
  * utility pair, so it carries only the essentials: the invite link lives BEHIND a
  * Copy/Share action (no raw read-only link field eating a row) plus the lock-new-joins
  * toggle. It rides {@link SectionPanel} like every other desk card, so all hub sections
- * share one card rubric. Reuses the folio primitives (SectionPanel + Switch +
+ * share one card rubric. Reuses the folio primitives (SectionPanel + InfoCard + Switch +
  * Badge) and the ONE share/copy primitives (CopyButton + shareOrCopy) — no parallel
  * component.
  */
@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/selection";
 import { CopyButton } from "@/components/shared/CopyButton";
+import { InfoCard } from "@/components/shared/InfoCard";
 import { shareOrCopy } from "@/components/shared/copy-to-clipboard";
 import { useToastStore } from "@/stores/toastStore";
 import { SectionPanel } from "@/features/campaigns/SectionPanel";
@@ -67,7 +68,6 @@ export function CampaignInvite({ canManage }: { canManage: boolean }) {
     <SectionPanel
       sectionId="invite"
       title={t("campaignHub.access")}
-      framed
       meta={
         joinsLocked ? (
           <Badge
@@ -80,7 +80,7 @@ export function CampaignInvite({ canManage }: { canManage: boolean }) {
         ) : undefined
       }
     >
-      <div className="flex flex-col gap-3">
+      <InfoCard className="flex flex-col gap-3">
         {/* The link itself lives BEHIND the actions (compressed): Copy puts it on the
             clipboard, Share opens the native sheet — no raw read-only field. Both go
             inert when joins are locked, so a member can never hand out a dead link. */}
@@ -104,7 +104,7 @@ export function CampaignInvite({ canManage }: { canManage: boolean }) {
         {/* The kill switch lives WITH the link (golden rule 6). DM/admin only — a member
             sees the (possibly locked) link actions + badge, never the control. */}
         {canManage && (
-          <div className="rule-above flex flex-col gap-1 pt-3">
+          <div className="flex flex-col gap-1 border-t border-border-subtle pt-3">
             <div className="flex items-center justify-between gap-3">
               <label htmlFor="invite-lock-joins" className="text-sm text-text-secondary">
                 {t("campaignHub.lockJoins")}
@@ -118,7 +118,7 @@ export function CampaignInvite({ canManage }: { canManage: boolean }) {
             <p className="text-xs text-text-muted">{t("campaignHub.lockJoinsHint")}</p>
           </div>
         )}
-      </div>
+      </InfoCard>
     </SectionPanel>
   );
 }

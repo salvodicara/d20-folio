@@ -90,14 +90,14 @@ export function SettingsPage() {
 
   return (
     <main id="main" className="page-shell py-8">
-      <PageHeader as="h1" title={t("nav.settings")} hint={t("settings.hint")} />
+      <PageHeader as="h1" crest title={t("nav.settings")} hint={t("settings.hint")} />
 
       {/* The framed header spans the shared page-shell width (consistent with every
           other hub); the settings form itself sits in a centered, readable column
           under it. */}
       <div className="on-art-scope mx-auto max-w-3xl">
         {/* ── Appearance: theme · language ──────────────────────────────────── */}
-        <Section title={t("settings.appearance")} onArt>
+        <Section title={t("settings.appearance")}>
           {/* Seated in the SAME .info-card recipe as the Account card below, so the
               appearance rows read as a composed tile instead of floating bare on the
               page (the two .set-rows divide inside the one card). */}
@@ -139,7 +139,7 @@ export function SettingsPage() {
         </Section>
 
         {/* ── Account: the signed-in identity ───────────────────────────────── */}
-        <Section title={t("common.account")} onArt>
+        <Section title={t("common.account")}>
           <InfoCard className="flex items-center gap-3">
             {/* One avatar primitive (#45/#92): Google photo or the per-seed tinted
                 initial — consistent with the topbar + roster + admin. */}
@@ -166,7 +166,7 @@ export function SettingsPage() {
 
         {/* ── Admin: link only (the re-home is a later slice) ───────────────── */}
         {isAdmin ? (
-          <Section title={t("nav.admin")} onArt>
+          <Section title={t("nav.admin")}>
             <Button
               variant="secondary"
               onClick={() => void navigate("/admin")}
@@ -181,7 +181,7 @@ export function SettingsPage() {
         {/* ── Sign out ──────────────────────────────────────────────────────── */}
         {/* Quiet register: signing out is SAFE and reversible — the filled
             danger dress is reserved for destructive acts (register rule). */}
-        <div className="rule-above mt-10 pt-6">
+        <div className="mt-10 border-t border-dashed border-border-subtle pt-6">
           <Button
             variant="secondary"
             onClick={() => void signOut()}

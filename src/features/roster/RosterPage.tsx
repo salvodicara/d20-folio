@@ -123,6 +123,7 @@ export function RosterPage() {
           wordmark already lives in the topbar, so no page-level "d20 Folio" eyebrow. */}
       <PageHeader
         as="h1"
+        crest
         title={t("roster.title")}
         hint={t("roster.hint")}
         // The header CTAs are "add a character" (Create/Import) — orthogonal to the

@@ -25,7 +25,6 @@ export function NotFoundPage() {
   return (
     <main id="main" className="page-shell on-art-scope py-8">
       <RunicEmptyState
-        onArt
         glyph={Compass}
         eyebrow={t("notFound.eyebrow")}
         title={t("notFound.title")}

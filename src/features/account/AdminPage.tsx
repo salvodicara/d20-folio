@@ -297,6 +297,7 @@ export function AdminPage() {
     <main id="main" className="page-shell on-art-scope py-8">
       <PageHeader
         as="h1"
+        crest
         title={t("admin.title")}
         hint={t("admin.subtitle")}
         actions={

@@ -63,10 +63,7 @@ export function ErrorFallback({
           : "crash-field min-h-screen bg-bg-primary"
       )}
     >
-      {/* Only the REGION net floats on the backdrop art; the FULLSCREEN net paints
-          its own opaque `crash-field` and must keep the page's own ink. */}
       <RunicEmptyState
-        onArt={variant === "region"}
         glyph={TriangleAlert}
         color="var(--semantic-danger)"
         eyebrow={t("errorBoundary.eyebrow")}
@@ -84,11 +81,7 @@ export function ErrorFallback({
                 reporter PRE-FILLED with this crash (route · error · stack head), so
                 reporting it is one tap. The dialog is mounted at the app root —
                 outside both error nets — so it survives this very crash. */}
-            <Button
-              variant="ghost"
-              className={cn(variant === "region" && "on-art")}
-              onClick={() => reportCrash(error)}
-            >
+            <Button variant="ghost" onClick={() => reportCrash(error)}>
               <Icon as={Bug} size="sm" decorative />
               {t("errorBoundary.report")}
             </Button>
@@ -96,9 +89,7 @@ export function ErrorFallback({
         }
         note={
           <details className="mx-auto max-w-md text-left">
-            <summary className={cn(variant === "region" && "on-art", "cursor-pointer")}>
-              {t("errorBoundary.details")}
-            </summary>
+            <summary className="cursor-pointer">{t("errorBoundary.details")}</summary>
             <pre className="mt-2 overflow-auto whitespace-pre-wrap break-words">
               {error.message}
             </pre>

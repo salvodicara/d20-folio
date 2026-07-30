@@ -77,7 +77,7 @@ export function ActionLog({ maxEntries = 50 }: { maxEntries?: number }) {
     return (
       <section>
         <SectionHeader tight title={t("actionLog.title")} />
-        <div className="p-4 text-center">
+        <div className="rounded-md border border-border-medium bg-[var(--bg-recessed)] p-4 text-center shadow-[var(--elev-recessed)]">
           <ScrollText className="mx-auto mb-2 h-5 w-5 text-text-secondary opacity-50" />
           <p className="text-xs text-text-secondary">{t("actionLog.empty")}</p>
         </div>
@@ -88,30 +88,32 @@ export function ActionLog({ maxEntries = 50 }: { maxEntries?: number }) {
   return (
     <section>
       <SectionHeader tight title={t("actionLog.title")} count={entries.length} />
-      {/* role="log" + tabIndex so keyboard users can focus and scroll the feed
-          (axe scrollable-region-focusable); aria-label names the region. */}
-      <div
-        ref={scrollRef}
-        className="max-h-[200px] overflow-y-auto p-2"
-        role="log"
-        tabIndex={0}
-        aria-label={t("actionLog.title")}
-      >
-        {entries.map((entry) => (
-          <LogEntryRow key={entry.id} entry={entry} render={renderRow} />
-        ))}
-      </div>
-      {/* Clear lives INSIDE the surface it clears (a header is a rubric, never
-          a control — the SectionHeader doctrine), as a quiet footer verb. */}
-      <div className="rule-above flex justify-end px-2 py-1">
-        <button
-          onClick={clearLog}
-          className="flex min-h-6 items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[length:var(--text-micro)] uppercase tracking-[0.08em] text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-error"
-          title={t("actionLog.clearTitle")}
+      <div className="rounded-md border border-border-medium bg-[var(--bg-recessed)] shadow-[var(--elev-recessed)]">
+        {/* role="log" + tabIndex so keyboard users can focus and scroll the feed
+            (axe scrollable-region-focusable); aria-label names the region. */}
+        <div
+          ref={scrollRef}
+          className="max-h-[200px] overflow-y-auto p-2"
+          role="log"
+          tabIndex={0}
+          aria-label={t("actionLog.title")}
         >
-          <Trash2 className="h-3 w-3" />
-          {t("actionLog.clear")}
-        </button>
+          {entries.map((entry) => (
+            <LogEntryRow key={entry.id} entry={entry} render={renderRow} />
+          ))}
+        </div>
+        {/* Clear lives INSIDE the surface it clears (a header is a rubric, never
+            a control — the SectionHeader doctrine), as a quiet footer verb. */}
+        <div className="flex justify-end border-t border-border-subtle px-2 py-1">
+          <button
+            onClick={clearLog}
+            className="flex min-h-6 items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[length:var(--text-micro)] uppercase tracking-[0.08em] text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-error"
+            title={t("actionLog.clearTitle")}
+          >
+            <Trash2 className="h-3 w-3" />
+            {t("actionLog.clear")}
+          </button>
+        </div>
       </div>
     </section>
   );

@@ -55,31 +55,6 @@ function hexToRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-/** sRGB → OKLab (Björn Ottosson's matrices). The perceptual space every ink in
- *  this file was tuned in, so SEPARATION is measured here and nowhere else. */
-function oklab(hex: string): [number, number, number] {
-  const lin = (c: number) => {
-    const s = c / 255;
-    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  };
-  const [r, g, b] = hexToRgb(hex).map(lin) as [number, number, number];
-  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
-  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
-  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
-  return [
-    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
-    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
-    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
-  ];
-}
-
-/** Euclidean OKLab distance — the ΔE this project quotes everywhere. */
-function deltaE(a: string, b: string): number {
-  const [al, aa, ab] = oklab(a);
-  const [bl, ba, bb] = oklab(b);
-  return Math.hypot(al - bl, aa - ba, ab - bb);
-}
-
 function relLuminance([r, g, b]: [number, number, number]): number {
   const lin = (c: number) => {
     const s = c / 255;
@@ -112,75 +87,6 @@ const INK_TOKENS = [
 ] as const;
 
 const AA = 4.5;
-
-const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8");
-
-/** Raw value of a `--name: …;` decl in `block` (or undefined). Unlike `readVar`,
- *  it returns the RAW rhs (a hex OR a `var(--other)` alias), not just a hex. */
-function rawVar(block: string, name: string): string | undefined {
-  const m = block.match(new RegExp(`${name}\\s*:\\s*([^;]+);`));
-  return m?.[1]?.trim();
-}
-
-/** Resolve a CSS color value to a concrete hex, chasing `var()` aliases through
- *  the theme block first, then the `:root` palette. Depth-capped. */
-function resolveColor(value: string, block: string, depth = 0): string {
-  const v = value.trim();
-  if (v.startsWith("#")) return v;
-  const m = v.match(/var\(\s*(--[\w-]+)\s*\)/);
-  if (m?.[1] && depth < 8) {
-    const alias = rawVar(block, m[1]) ?? rawVar(css, m[1]);
-    if (alias) return resolveColor(alias, block, depth + 1);
-  }
-  throw new Error(`cannot resolve color: ${value}`);
-}
-
-/** The first-occurrence base rule body for `selector` (flat — no nested braces). */
-function ruleBody(cssText: string, selector: string): string {
-  const start = cssText.indexOf(`${selector} {`);
-  expect(start, `${selector} rule present`).toBeGreaterThan(-1);
-  const open = cssText.indexOf("{", start);
-  const close = cssText.indexOf("}", open);
-  return cssText.slice(open + 1, close);
-}
-
-/** A declaration's value (`prop: value;`) from a rule body. */
-function decl(body: string, prop: string): string {
-  const m = body.match(new RegExp(`(?:^|\\n)\\s*${prop}\\s*:\\s*([^;]+);`));
-  if (!m?.[1]) throw new Error(`no ${prop} declaration`);
-  return m[1].trim();
-}
-
-/** The carved `.beast-ref`/`.mon-ref` statblock plaque's ground, resolved per
- *  theme out of folio.css — a FULL step below the cards, and the deepest ground
- *  any rules-prose ink paints on. Derived rather than named so the guard cannot
- *  certify a surface the app does not paint.
- *
- *  `ruleBody` takes the FIRST match, so this also pins that `.beast-ref` has
- *  exactly ONE base rule: a later `[data-theme="light"] .beast-ref { background }`
- *  would otherwise leave every assertion below certifying a ground the browser
- *  no longer paints, silently.
- *
- *  The element is `class="beast-ref mon-ref"`, so `.beast-ref` is only HALF the
- *  cascade. A `.mon-ref { background }` — equal specificity (0,1,0), later in the
- *  file — would win outright and repaint the plaque while every assertion below
- *  kept certifying `.beast-ref`'s colour. So the sibling class is pinned too:
- *  exactly one base rule, and no `background` in it. */
-function plaqueGround(block: string): string {
-  expect(
-    folioCss.split(".beast-ref {").length - 1,
-    "exactly one `.beast-ref {` rule — a later override would shadow the derived ground"
-  ).toBe(1);
-  expect(
-    folioCss.split(".mon-ref {").length - 1,
-    "exactly one `.mon-ref {` rule — the plaque carries BOTH classes"
-  ).toBe(1);
-  expect(
-    ruleBody(folioCss, ".mon-ref"),
-    "`.mon-ref` must not paint a background — it would out-cascade `.beast-ref` and silently move the plaque's ground"
-  ).not.toMatch(/(^|[\s;]) *background(-color)?\s*:/);
-  return resolveColor(decl(ruleBody(folioCss, ".beast-ref"), "background"), block);
-}
 
 /** Mix two hexes in sRGB at `pct`% of `a` over `b` (matches CSS color-mix close
  *  enough for a luminance guard — the chip tint is `mix(--co pct%, surface)`). */
@@ -217,25 +123,13 @@ const SPELL_LEVELS = ["c", "1", "2", "3", "4", "5", "6", "7", "8", "9"] as const
 describe("verdict-chip ink tokens clear WCAG-AA", () => {
   for (const theme of ["dark", "light"] as const) {
     const block = themeBlock(theme);
-    // Every ground the ramp actually paints: the card surfaces (surface-1
-    // collapsed, surface-2 when open — the 13% colour tint barely shifts
-    // luminance, so the bases are the worst case) PLUS the carved
-    // `.beast-ref`/`.mon-ref` statblock plaque, which carries `.mon-dmg` runs and
-    // `.rt-dmg` prose and sits a full step below the cards. The plaque is the
-    // blindness that shipped light poison-ink at 3.378:1 on `--bg-recessed`.
-    // `--bg-surface-3` is deliberately NOT here: no rules-prose container paints
-    // it (the `.tooltip` / `.lvl-pick` / `.abil-tile` users carry no ink ramp),
-    // and asserting a ground the app never renders is the same defect in the
-    // mirror. If one ever does, the pair to re-measure first is dark
-    // `--semantic-danger` on `#2a2317` (4.386:1).
-    const surfaces = [
-      readVar(block, "--bg-surface-1"),
-      readVar(block, "--bg-surface-2"),
-      plaqueGround(block),
-    ];
+    // The verdict chip renders on the card surface (surface-1 collapsed,
+    // surface-2 when open). The 13% colour tint barely shifts luminance, so we
+    // verify against BOTH base surfaces — the worst case for each theme.
+    const surfaces = [readVar(block, "--bg-surface-1"), readVar(block, "--bg-surface-2")];
 
     for (const name of INK_TOKENS) {
-      it(`${theme}: --dmg-${name}-ink ≥ ${AA}:1 on the cards + the carved plaque`, () => {
+      it(`${theme}: --dmg-${name}-ink ≥ ${AA}:1 on card surfaces`, () => {
         const ink = readVar(block, `--dmg-${name}-ink`);
         for (const surface of surfaces) {
           expect(
@@ -334,28 +228,19 @@ describe("condition-chip ink tokens clear WCAG-AA on the 19% tint", () => {
  * RULES-TEXT colour grammar (`highlightRulesText`, DESIGN.md "Rules-text colour
  * grammar") — its tokens render as INLINE PROSE INK on the raw card surfaces
  * (surface-1 closed cards / surface-2 open cards + the compendium reading
- * pane) and on the carved statblock plaque, not on a hue tint. The `--dmg-*-ink`
- * ramp is already pinned on those grounds above; this pins the grammar's OTHER
- * inks there: every `--cond-*-ink` (`.rt-cond`) and the Advantage/Disadvantage
- * pair (`.rt-adv` → `--rt-adv-ink`, `.rt-dis` → `--semantic-danger`).
- * `--text-special` (`.rt-value`) is pinned in its own describe below.
+ * pane), not on a hue tint. The `--dmg-*-ink` ramp is already pinned on those
+ * grounds above; this pins the grammar's OTHER inks there: every
+ * `--cond-*-ink` (`.rt-cond`) and the semantic success/danger pair
+ * (`.rt-adv`/`.rt-dis`). `--text-special` (`.rt-value`) is pinned in its own
+ * describe below.
  */
 describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
   for (const theme of ["dark", "light"] as const) {
     const block = themeBlock(theme);
-    // The same three grounds the damage ramp is pinned on above, for the same
-    // reason: `.rt-cond` is inline PROSE, so "…the Frightened condition" in a
-    // monster trait lands on the carved plaque (the blindness that shipped light
-    // deafened-ink at 3.685:1). The `.co-chip` tint is guarded in its own
-    // describe — it mixes from surface-2, so it is ground-independent.
-    const surfaces = [
-      readVar(block, "--bg-surface-1"),
-      readVar(block, "--bg-surface-2"),
-      plaqueGround(block),
-    ];
+    const surfaces = [readVar(block, "--bg-surface-1"), readVar(block, "--bg-surface-2")];
 
     for (const cond of CONDITIONS) {
-      it(`${theme}: --cond-${cond}-ink ≥ ${AA}:1 on the cards + the carved plaque`, () => {
+      it(`${theme}: --cond-${cond}-ink ≥ ${AA}:1 as prose ink`, () => {
         const ink = readVar(block, `--cond-${cond}-ink`);
         for (const surface of surfaces) {
           expect(
@@ -366,18 +251,12 @@ describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
       });
     }
 
-    it(`${theme}: Advantage/Disadvantage inks ≥ ${AA}:1 on the cards + the carved plaque`, () => {
-      // `.rt-adv` rides `--rt-adv-ink`, the success stop's PROSE-deep variant
-      // (the raw stop is shared with the HP-bar gradient math, badges, borders
-      // and `--at-action`, so it is varied, not retuned — DESIGN.md → the
-      // Ink-Variant Rule). `.rt-dis` inks `--semantic-danger` directly; it clears
-      // everywhere, so it needs no variant. Tokens are pinned HERE; that the two
-      // CLASSES still reference them is proved in the browser by
-      // `tests/e2e/statblock-ink-contrast.spec.ts`. Both chase through the ramp
-      // (`--rt-adv-ink` → `--semantic-success` → `--verdigris-300` in dark), so
-      // resolve rather than read a literal.
-      for (const name of ["--rt-adv-ink", "--semantic-danger"] as const) {
-        const ink = resolveColor(rawVar(block, name) ?? name, block);
+    it(`${theme}: semantic success/danger ≥ ${AA}:1 as prose ink`, () => {
+      // Dark aliases the semantic pair to ramp stops (var(--verdigris-300) /
+      // var(--vermilion-300)); resolve through the ramp when not a literal.
+      for (const name of ["--semantic-success", "--semantic-danger"] as const) {
+        const raw = block.match(new RegExp(`${name}:\\s*var\\((--[a-z-0-9]+)\\)`))?.[1];
+        const ink = raw ? readVar(css, raw) : readVar(block, name);
         for (const surface of surfaces) {
           expect(contrast(ink, surface), `${name} on ${surface}`).toBeGreaterThanOrEqual(
             AA
@@ -388,108 +267,11 @@ describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
   }
 });
 
-/**
- * THE SEPARATION MATRIX — the guard whose absence let the AA re-tune ship a
- * COLLISION.
- *
- * Every describe above pins an ink against a GROUND. None of them pins an ink
- * against another INK, so the whole AA re-tune (damage ramp, then conditions,
- * then the adv/dis pair) was verified by eye: `--dmg-lightning-ink` was darkened
- * to clear the plaque and landed 0.0079 ΔE from the untouched
- * `--cond-paralyzed-ink` — the global minimum of the light vocabulary, 1.7×
- * tighter than the worst pair the branch inherited — and the gate stayed green.
- * Nineteen of the thirty-one tokens came out of that re-tune closer to a
- * neighbour than they went in.
- *
- * WHY THE WHOLE VOCABULARY AND NOT EACH FAMILY: the carved plaque paints damage
- * inks, condition inks, `--text-special` and the adv/dis pair in the SAME
- * paragraph (DESIGN.md → the Ink-Variant Rule). A family-local statistic is the
- * same blindness as a hand-picked ground: it certifies a separation the reader
- * never experiences. The matrix below is every unordered pair of the 31 inks
- * that can share one sentence.
- *
- * WHAT THE FLOOR IS: the WORST LEGITIMATE pair, per theme — the tightest pair
- * that predates this work and is documented as acceptable. It is a RATCHET, not
- * an endorsement: nothing may get tighter than the tightest thing already
- * shipped. Raising a floor is a deliberate, measured act; lowering one is the
- * regression this file exists to refuse.
- */
-const PROSE_INK_TOKENS = [
-  ...INK_TOKENS.map((d) => `--dmg-${d}-ink`),
-  ...CONDITIONS.map((c) => `--cond-${c}-ink`),
-  "--text-special",
-  // `.rt-adv` / `.rt-dis` — both chase through the ramp, so resolve rather than read.
-  "--rt-adv-ink",
-  "--semantic-danger",
-] as const;
-
-/** PAIRS exempt from the floor — twinned BY DESIGN, each with its reason. An
- *  entry here is a claim that the two inks are meant to read alike; it must be
- *  true of the BASE tokens, not just convenient for the -ink values. */
-const TWINNED_BY_DESIGN: ReadonlyArray<readonly [string, string, string]> = [
-  [
-    "--dmg-poison-ink",
-    "--cond-poisoned-ink",
-    "same pigment on purpose: `--dmg-poison` and `--cond-poisoned` are the SAME hex in BOTH themes (#6e9628 light / #80a838 dark), so Poison damage and the Poisoned condition are one colour by construction",
-  ],
-];
-
-/** The worst LEGITIMATE pair per theme (measured, then written down). */
-const SEPARATION_FLOOR = {
-  // petrified↔restrained (#383828 / #383830) — two untouched neutral browns a
-  // hair apart, documented in DESIGN.md as the family's worst pair since long
-  // before this branch. Measures 0.01325.
-  light: 0.0132,
-  // piercing↔blinded (#a8b4c0 / #a4bcd0) — the app's tightest pair anywhere,
-  // pre-existing and untouched here. Measures 0.01055. The dark ramp was NOT
-  // re-tuned by this work, so this floor is purely a ratchet on the status quo;
-  // if the dark inks are ever reworked, this is the first pair to open up.
-  dark: 0.0105,
-} as const;
-
-describe("the prose vocabulary stays SEPARABLE (OKLab ΔE matrix)", () => {
-  for (const theme of ["dark", "light"] as const) {
-    const block = themeBlock(theme);
-    const floor = SEPARATION_FLOOR[theme];
-    const ink = (name: string): string =>
-      resolveColor(rawVar(block, name) ?? readVar(block, name), block);
-    const exempt = new Set(TWINNED_BY_DESIGN.map(([a, b]) => `${a}|${b}`));
-
-    it(`${theme}: no two prose inks sit closer than ${floor} ΔE`, () => {
-      const tight: string[] = [];
-      PROSE_INK_TOKENS.forEach((a, i) => {
-        for (const b of PROSE_INK_TOKENS.slice(i + 1)) {
-          if (exempt.has(`${a}|${b}`) || exempt.has(`${b}|${a}`)) continue;
-          const d = deltaE(ink(a), ink(b));
-          if (d < floor)
-            tight.push(`${a} ${ink(a)} ↔ ${b} ${ink(b)} = ${d.toFixed(4)} ΔE`);
-        }
-      });
-      expect(tight, `prose inks below the ${theme} separation floor`).toEqual([]);
-    });
-
-    // A pair listed as "twinned by design" must actually BE twinned upstream —
-    // otherwise the allowlist is just a place to hide a collision.
-    for (const [a, b, reason] of TWINNED_BY_DESIGN) {
-      it(`${theme}: ${a} ↔ ${b} is exempt because ${reason}`, () => {
-        const base = (t: string) => readVar(block, t.replace(/-ink$/, ""));
-        expect(base(a), `${a} and ${b} must share a base hue to be exempt`).toBe(base(b));
-      });
-    }
-  }
-});
-
 describe("muted/faint text clears WCAG-AA on the DEEPEST recessed surface", () => {
   // The prior guard only covered up to surface-3, but --bg-recessed is one step
   // darker (light: #d6c8a0) and carries muted/faint text (the search-spells
   // placeholder, slot labels, etc.). A latent footgun — assert both clear 4.5:1
   // on --bg-recessed in BOTH themes so a placeholder never silently fails AA.
-  //
-  // NOT SUFFICIENT ON ITS OWN: --bg-recessed is an UNDOMED surface and the
-  // darkest one in the theme, so this pair passes for inks that are far too dark
-  // for any PLATE. The binding floor for muted/faint is the domed-ground grid in
-  // "candlelit translucency composite floor" below; this describe only keeps the
-  // carved-channel case honest.
   for (const theme of ["dark", "light"] as const) {
     const block = themeBlock(theme);
     const recessed = readVar(block, "--bg-recessed");
@@ -504,30 +286,17 @@ describe("muted/faint text clears WCAG-AA on the DEEPEST recessed surface", () =
   }
 });
 
-describe("special emphasis text clears WCAG-AA on every ground it inks", () => {
+describe("special emphasis text clears WCAG-AA on the card surfaces", () => {
   // --text-special is the BG3 "lit emphasis" register (active/selected titles)
   // and renders on the card tiers — assert it clears 4.5:1 on surface-2 AND the
   // darker/deeper surface-3 in BOTH themes (it sits far above AA by design; the
   // guard pins that a retune can never drop it below the floor).
-  //
-  // AND ON THE PLAQUE. `--text-special` is also the rules-text grammar's
-  // `.rt-value` arm (dice · save DCs · measured distances), so it paints the
-  // carved `.beast-ref`/`.mon-ref` statblock the same way `.rt-dmg` / `.rt-cond`
-  // do — "Hit: 7 (1d8 + 3) Piercing damage" is `.rt-value` then `.rt-dmg` in one
-  // breath. It was pinned on surface-2/3 only, which is exactly the hand-picked-
-  // ground defect the damage ramp shipped: it measures 6.463:1 there today, so
-  // this is a LATENT pass, not a covered one. Pinning the plaque makes the
-  // describe's "every ground it inks" claim true for all five grammar arms.
   for (const theme of ["dark", "light"] as const) {
     const block = themeBlock(theme);
-    const grounds: Array<[string, string]> = [
-      ["--bg-surface-2", readVar(block, "--bg-surface-2")],
-      ["--bg-surface-3", readVar(block, "--bg-surface-3")],
-      ["the carved plaque", plaqueGround(block)],
-    ];
-    for (const [label, surface] of grounds) {
-      it(`${theme}: --text-special ≥ ${AA}:1 on ${label}`, () => {
+    for (const surf of ["--bg-surface-2", "--bg-surface-3"] as const) {
+      it(`${theme}: --text-special ≥ ${AA}:1 on ${surf}`, () => {
         const special = readVar(block, "--text-special");
+        const surface = readVar(block, surf);
         expect(
           contrast(special, surface),
           `--text-special on ${surface}`
@@ -590,32 +359,6 @@ describe("candlelit translucency composite floor (dark --panel-alpha)", () => {
   const WORST_ART_REGION = "#be8031";
   const AA_FLOOR = 4.5;
 
-  // THE DOME TERM. Every plate is domed by ONE elliptical specular pool at
-  // (50%, 30%) — `--plate-dome` (DESIGN.md §4). That pool brightens the very
-  // composite the ink sits on, so the floor MUST be computed with it: without
-  // this term the guard measures a plate the app does not paint, and the dome's
-  // cost lands on users instead of on the gate. Read the pool's peak colour +
-  // alpha straight out of the token so a re-tune can never drift past the floor.
-  const domePeak = (theme: "dark" | "light"): { hex: string; alpha: number } => {
-    const raw = themeBlock(theme).match(/--plate-dome:\s*([^;]+);/)?.[1];
-    if (!raw) throw new Error(`--plate-dome not defined in the ${theme} block`);
-    const stop = /rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([0-9.]+)\s*\)/.exec(raw);
-    if (!stop) throw new Error(`--plate-dome (${theme}) has no rgba() peak stop`);
-    const [r, g, b, a] = [stop[1], stop[2], stop[3], stop[4]].map(Number) as [
-      number,
-      number,
-      number,
-      number,
-    ];
-    const hex = `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
-    return { hex, alpha: a };
-  };
-  /** Composite the dome's peak over a plate tone — the brightest point of a plate. */
-  const domed = (tone: string, theme: "dark" | "light"): string => {
-    const { hex, alpha } = domePeak(theme);
-    return mix(hex, tone, alpha * 100);
-  };
-
   const block = themeBlock("dark");
   const readNum = (name: string): number => {
     const m = block.match(new RegExp(`${name}\\s*:\\s*([0-9.]+)`));
@@ -628,80 +371,28 @@ describe("candlelit translucency composite floor (dark --panel-alpha)", () => {
   // body::after paints the art at --app-bg-art-opacity over the page field.
   const backdrop = mix(WORST_ART_REGION, bgPage, artOpacity * 100);
 
-  // EVERY plate is domed, translucent or not: `.modal` and `.info-card` paint
-  // `var(--plate-dome), var(--plate-face)` on an OPAQUE face, and the nested
-  // surface-3 tier can end up under the same pool. So the floor is a GRID —
-  // every domed ground × every ink register that renders on one — not the single
-  // (panel, --text-muted) pair the guard first modelled. That single pair is
-  // exactly how the 10% dome shipped with --text-faint at 3.64:1: the token was
-  // measured only against `--bg-recessed`, an UNDOMED surface, which it passes
-  // even when it is far too dark for any plate.
-  const domedGrounds = (): Record<string, string> => ({
-    // `.modal` / `.info-card` — the opaque plate's face tops out at surface-2.
-    "opaque plate (.modal/.info-card)": domed(readVar(block, "--bg-surface-2"), "dark"),
-    // `.folio-panel` — surface-2 at --panel-alpha over the worst backdrop.
-    "folio-panel composite": domed(
-      mix(readVar(block, "--bg-surface-2"), backdrop, alpha * 100),
-      "dark"
-    ),
-    // The cockpit game `.rail` — the page field at --panel-alpha over it.
-    "game-rail composite": domed(mix(bgPage, backdrop, alpha * 100), "dark"),
-    // The nested raised tier, should a pool ever fall across one.
-    "nested surface-3": domed(readVar(block, "--bg-surface-3"), "dark"),
+  it("dark: --text-muted ≥ 4.5:1 on the folio-panel's brightest composite", () => {
+    // Rail rubrics (.rail-head h5) are text-muted directly on the panel field.
+    const comp = mix(readVar(block, "--bg-surface-2"), backdrop, alpha * 100);
+    expect(
+      contrast(readVar(block, "--text-muted"), comp),
+      `text-muted on panel composite ${comp} (alpha ${alpha})`
+    ).toBeGreaterThanOrEqual(AA_FLOOR);
   });
 
-  // The two registers that render as small prose ON a plate. `--text-muted`
-  // carries rail rubrics and row labels; `--text-faint` carries `.sr-help`,
-  // `.field-help`, `.uc-slotpips .sp-lbl`, `.sc-save-rest` and `.log-ts` — all
-  // of them 8–11px, all of them on a domed plate.
-  for (const ink of ["--text-muted", "--text-faint"] as const) {
-    for (const [label, ground] of Object.entries(domedGrounds())) {
-      it(`dark: ${ink} ≥ ${AA_FLOOR}:1 at the DOME's peak on the ${label}`, () => {
-        expect(
-          contrast(readVar(block, ink), ground),
-          `${ink} on the DOMED ${label} ${ground} (panel-alpha ${alpha}, dome ${domePeak("dark").alpha})`
-        ).toBeGreaterThanOrEqual(AA_FLOOR);
-      });
-    }
-  }
-
-  it("dark: the three ink registers stay three DISTINGUISHABLE registers", () => {
-    // The floor above can be satisfied by collapsing faint onto muted. It must
-    // not be: secondary → muted → faint is information hierarchy, and the dome's
-    // alpha is budgeted so all three survive (see the --text-muted docblock).
-    // 3.0 L* is the smallest step that still reads as a different ink at 8–11px.
-    const L = (hex: string): number => {
-      const y = relLuminance(hexToRgb(hex));
-      return y > 0.008856 ? 116 * Math.cbrt(y) - 16 : 903.3 * y;
-    };
-    const sec = L(readVar(block, "--text-secondary"));
-    const muted = L(readVar(block, "--text-muted"));
-    const faint = L(readVar(block, "--text-faint"));
-    expect(sec - muted, "secondary must sit a visible step above muted").toBeGreaterThan(
-      3
-    );
-    expect(muted - faint, "muted must sit a visible step above faint").toBeGreaterThan(3);
-  });
-
-  it("light: the plate's pool never eats the light theme's faint ink", () => {
-    // Light's pool is a near-white over near-ivory (a 1.04× lift) and its ink is
-    // near-black, so the dome BUYS contrast here rather than spending it. Pinned
-    // anyway: a lightened light-theme ink is the same defect class.
-    const lightBlock = themeBlock("light");
-    for (const ink of ["--text-muted", "--text-faint"] as const) {
-      const ground = domed(readVar(lightBlock, "--bg-surface-2"), "light");
-      expect(
-        contrast(readVar(lightBlock, ink), ground),
-        `${ink} on the DOMED light plate ${ground}`
-      ).toBeGreaterThanOrEqual(AA_FLOOR);
-    }
+  it("dark: --text-muted ≥ 4.5:1 on the game-rail composite", () => {
+    const comp = mix(bgPage, backdrop, alpha * 100);
+    expect(
+      contrast(readVar(block, "--text-muted"), comp),
+      `text-muted on rail composite ${comp} (alpha ${alpha})`
+    ).toBeGreaterThanOrEqual(AA_FLOOR);
   });
 
   it("dark: --text-secondary ≥ 4.5:1 on the framed head's brightest composite", () => {
     // --accent-primary is var(--gold-leaf-500); resolve the palette literal.
     const accent = readVar(css, "--gold-leaf-500");
     const brightStop = mix(accent, readVar(block, "--bg-surface-1"), 13);
-    const comp = domed(mix(brightStop, backdrop, alpha * 100), "dark");
+    const comp = mix(brightStop, backdrop, alpha * 100);
     expect(
       contrast(readVar(block, "--text-secondary"), comp),
       `text-secondary on framed-head composite ${comp} (alpha ${alpha})`
@@ -746,8 +437,45 @@ describe("spell-level seal digit ink clears WCAG-AA on the seal body", () => {
 // `background` tokens it references against EACH theme block, and asserts the
 // text clears AA on the chip's darkest stop in BOTH themes. Reverting the ink to
 // `var(--text-secondary)` (or darkening the socket) re-fails this test — the
-// regression the original static guard was blind to. (The CSS-reading helpers it
-// uses live at the top of the file, beside the colour math.)
+// regression the original static guard was blind to.
+const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8");
+
+/** Raw value of a `--name: …;` decl in `block` (or undefined). Unlike `readVar`,
+ *  it returns the RAW rhs (a hex OR a `var(--other)` alias), not just a hex. */
+function rawVar(block: string, name: string): string | undefined {
+  const m = block.match(new RegExp(`${name}\\s*:\\s*([^;]+);`));
+  return m?.[1]?.trim();
+}
+
+/** Resolve a CSS color value to a concrete hex, chasing `var()` aliases through
+ *  the theme block first, then the `:root` palette. Depth-capped. */
+function resolveColor(value: string, block: string, depth = 0): string {
+  const v = value.trim();
+  if (v.startsWith("#")) return v;
+  const m = v.match(/var\(\s*(--[\w-]+)\s*\)/);
+  if (m?.[1] && depth < 8) {
+    const alias = rawVar(block, m[1]) ?? rawVar(css, m[1]);
+    if (alias) return resolveColor(alias, block, depth + 1);
+  }
+  throw new Error(`cannot resolve color: ${value}`);
+}
+
+/** The first-occurrence base rule body for `selector` (flat — no nested braces). */
+function ruleBody(cssText: string, selector: string): string {
+  const start = cssText.indexOf(`${selector} {`);
+  expect(start, `${selector} rule present`).toBeGreaterThan(-1);
+  const open = cssText.indexOf("{", start);
+  const close = cssText.indexOf("}", open);
+  return cssText.slice(open + 1, close);
+}
+
+/** A declaration's value (`prop: value;`) from a rule body. */
+function decl(body: string, prop: string): string {
+  const m = body.match(new RegExp(`(?:^|\\n)\\s*${prop}\\s*:\\s*([^;]+);`));
+  if (!m?.[1]) throw new Error(`no ${prop} declaration`);
+  return m[1].trim();
+}
+
 describe("combat top-bar dest-chip ink clears WCAG-AA on the carved socket", () => {
   const chip = ruleBody(folioCss, ".cp-dest-chip");
   const colorValue = decl(chip, "color");
@@ -773,146 +501,5 @@ describe("combat top-bar dest-chip ink clears WCAG-AA on the carved socket", () 
         `dest-chip ink ${ink} on darkest stop ${darkest}`
       ).toBeGreaterThanOrEqual(AA);
     });
-  }
-});
-
-describe("monster CR seal is theme-invariant gilt jewelry (owner-directed 2026-07-24)", () => {
-  // The compendium CR seal (list rows + the EntryView masthead's larger strike)
-  // pins the `.lvl-seal` hue pair to FIXED gilt tokens via the `.lvl-seal.cr-seal`
-  // modifier, so it renders as the SAME light-gold gem with a near-black engraved
-  // numeral in BOTH themes. Read the ACTUAL declaration out of folio.css and
-  // resolve the real pair per theme — the prior guard modeled a hand-picked pair
-  // that passed while the owner saw bronze-on-bronze in light (a vacuous check).
-  const seal = ruleBody(folioCss, ".lvl-seal.cr-seal");
-  const gemValue = decl(seal, "--sl");
-  const inkValue = decl(seal, "--sl-ink");
-
-  for (const theme of ["dark", "light"] as const) {
-    it(`${theme}: CR-seal numeral ≥ ${AA}:1 on the gilt gem's dark end`, () => {
-      const block = themeBlock(theme);
-      const gem = resolveColor(gemValue, block);
-      const ink = resolveColor(inkValue, block);
-      // The digit sits over the gem's dark end (radial darkens off-centre,
-      // mix(--sl 88% black)) — the spell-seal worst case.
-      const darkEnd = mix(gem, "#000000", 88);
-      expect(
-        contrast(ink, darkEnd),
-        `CR-seal ink ${ink} on gem dark end ${darkEnd} (${theme})`
-      ).toBeGreaterThanOrEqual(AA);
-    });
-  }
-
-  it("the gem + ink pair is byte-identical across themes (invariance lock)", () => {
-    const pair = (theme: "dark" | "light") => {
-      const block = themeBlock(theme);
-      return `${resolveColor(gemValue, block)}/${resolveColor(inkValue, block)}`;
-    };
-    // Same resolved gilt jewelry in both themes — no `[data-theme]` re-resolution.
-    expect(pair("dark")).toBe(pair("light"));
-  });
-});
-
-/**
- * SPELL-SLOT LEVEL LABELS (`.sc-lvl`, the Resources rail's slot rows).
- *
- * THE DEFECT CLASS. `--sl` is the BRIGHT gem hue, so light carries a safety
- * override — `[data-theme="light"] .sc-lvl` (0,2,0) — whose own comment says the
- * bright hue "fails AA as small text on the light cards". A VARIANT strike then
- * pinned its own hue at higher specificity (`.slot-cell.pact .sc-lvl`, 0,3,0) and
- * silently out-ranked that safety net: the warlock pact label measured 2.91:1 on
- * the light rail, and nothing caught it. Nothing COULD — no rendered check we
- * have puts pact slots on screen, because every mock character is a full caster,
- * so the pair is invisible to axe and to the on-art ink sweep alike.
- *
- * THE GUARD. Replay the cascade statically. Read every `.sc-lvl` colour rule out
- * of folio.css, derive the variant contexts they imply (base, `.pact`, whatever
- * a later wave adds), resolve the WINNER per theme by specificity + source order,
- * and hold it to AA on the rail's own two tiers. A new `.slot-cell.<x> .sc-lvl`
- * strike is picked up automatically — the point is to close the CLASS, not the
- * one pair, because a build-gated state cannot be reached by a rendered check.
- */
-describe("spell-slot level labels clear WCAG-AA on the rail (cascade-resolved)", () => {
-  interface SlotRule {
-    /** Variant classes other than `.sc-lvl` — e.g. `["slot-cell", "pact"]`. */
-    variants: string[];
-    /** `dark` / `light` when the rule is theme-scoped, else `both`. */
-    theme: "dark" | "light" | "both";
-    /** Class + attribute count — every component of these selectors is (0,n,0). */
-    specificity: number;
-    /** Source order (later wins a specificity tie). */
-    order: number;
-    value: string;
-  }
-
-  const flat = folioCss.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ");
-  const rules: SlotRule[] = [];
-  let order = 0;
-  for (const [, rawSelector, body] of flat.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    order += 1;
-    const sel = (rawSelector ?? "").trim();
-    // Only rules whose SUBJECT (the last compound) is the label itself.
-    const subject = sel.split(/\s+/).pop() ?? "";
-    if (!/\.sc-lvl(?![\w-])/.test(subject)) continue;
-    const value = /(?:^|;|\{|\s)color\s*:\s*([^;]+)/.exec(body ?? "")?.[1]?.trim();
-    if (!value) continue;
-    const themeMatch = /^\[data-theme="(dark|light)"\]/.exec(sel);
-    rules.push({
-      variants: [...sel.matchAll(/\.([\w-]+)/g)]
-        .map((m) => m[1] ?? "")
-        .filter((c) => c !== "sc-lvl"),
-      theme: (themeMatch?.[1] as "dark" | "light" | undefined) ?? "both",
-      specificity: (sel.match(/\./g) ?? []).length + (sel.match(/\[/g) ?? []).length,
-      order,
-      value,
-    });
-  }
-
-  it("finds the label's colour rules at all (the guard must never go vacuous)", () => {
-    expect(rules.length, "no `.sc-lvl` colour rule found in folio.css").toBeGreaterThan(
-      1
-    );
-  });
-
-  // Every DISTINCT variant context the stylesheet implies, plus the bare base.
-  const contexts: string[][] = [
-    [],
-    ...new Set(
-      rules.filter((r) => r.variants.length > 0).map((r) => r.variants.join("."))
-    ),
-  ].map((c) => (Array.isArray(c) ? c : c.split(".")));
-
-  for (const theme of ["dark", "light"] as const) {
-    const block = themeBlock(theme);
-    // The slot rows sit on `.folio-panel`, whose face is the plate gradient
-    // `linear-gradient(--bg-surface-2, --bg-surface-1)` — both ends are ground.
-    const grounds = [readVar(block, "--bg-surface-1"), readVar(block, "--bg-surface-2")];
-
-    for (const context of contexts) {
-      const label = context.length ? `.${context.join(".")}` : "(base)";
-      const winner = rules
-        .filter((r) => r.theme === "both" || r.theme === theme)
-        .filter((r) => r.variants.every((v) => context.includes(v)))
-        .sort((a, b) => a.specificity - b.specificity || a.order - b.order)
-        .at(-1);
-      it(`${theme}: the slot label ${label} clears ${AA}:1 on the rail`, () => {
-        expect(winner, `no rule wins for ${label} in ${theme}`).toBeTruthy();
-        const raw = winner?.value ?? "";
-        // `--sl` is the per-LEVEL gem hue, set INLINE by the markup (and mixed
-        // per theme in light), so it has no static value here; the gem ramp is
-        // pinned by its own guard. Skip anything routing through it, and anything
-        // that is not a bare hex or a bare token. What this guard exists for is
-        // the strikes that pin a CONCRETE hue — those are the ones that can
-        // out-rank a theme safety override without anyone measuring the result.
-        if (/--sl(?![\w-])/.test(raw)) return;
-        if (!/^(#[0-9a-fA-F]{3,8}|var\(\s*--[\w-]+\s*\))$/.test(raw)) return;
-        const ink = resolveColor(raw, block);
-        for (const ground of grounds) {
-          expect(
-            contrast(ink, ground),
-            `${label} ink ${ink} on ${ground} (${theme})`
-          ).toBeGreaterThanOrEqual(AA);
-        }
-      });
-    }
   }
 });

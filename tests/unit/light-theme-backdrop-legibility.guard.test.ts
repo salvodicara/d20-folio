@@ -14,12 +14,11 @@
  *        through; it now reuses the OPAQUE `.info-card` surface (`.info-card.tip`).
  *   #6 — the 10-step guided rail ran wider than a narrow viewport and forced a
  *        PAGE-level horizontal scroll; the wizard-F orbs WRAP so they never do.
- *   #7 — the disclosure KNOB — the one INTERACTIVE object in a section rubric —
- *        shipped a TRANSLUCENT gilt fill that let the candlelit backdrop bleed
- *        through, so its deep-gold glyph read BROWN on the campaign-hub art
- *        (recurring, owner 2026-06-30). In light it must strike a genuinely
- *        OPAQUE struck disc (opaque `--gold-leaf` background-color base) so the
- *        ink self-backs.
+ *   #7 — the section count MEDALLION (`.sec-count`) + disclosure KNOB shipped a
+ *        TRANSLUCENT gilt fill that let the candlelit backdrop bleed through, so the
+ *        deep-gold numeral read BROWN on the campaign-hub art (recurring, owner
+ *        2026-06-30). In light they must strike a genuinely OPAQUE struck disc
+ *        (opaque `--gold-leaf` background-color base) so the ink self-backs.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -33,46 +32,31 @@ const css = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8").re
 );
 
 describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", () => {
-  it("#3 — a ghost button on the art reads in light theme (`.btn.ghost.on-art`)", () => {
-    // ONE recipe, ONE way in. It used to have two: the explicit `.btn.ghost.on-art`
-    // leaf AND an automatic arm for any ghost inside `.on-art-scope` minus a
-    // hand-written surface list. The automatic arm is deleted — that list is the
-    // mechanism that put cream ink on the campaign hub's ivory panels — so a ghost
-    // that stands on the scene says so, and its callers are the login retry, the
-    // read-only member-sheet back button and the region crash net.
+  it("#3 — ghost buttons on the art read in light theme (leaf `.on-art` AND `.on-art-scope`)", () => {
+    // ONE recipe, two ways in (ON-ART-INK, 2026-06-12): the explicit
+    // `.btn.ghost.on-art` leaf (login retry) and AUTOMATICALLY for a ghost
+    // button loose inside the canonical `.on-art-scope` (the read-only
+    // member-sheet back button) — with the surface exclusion so a card-bound
+    // ghost is never touched. Pins both arms + the gilt ink.
     const rule =
-      /\[data-theme="light"\] \.btn\.ghost\.on-art \{[^}]*color: var\(--text-on-backdrop-title\)/;
+      /\[data-theme="light"\]\s*:is\(\s*\.btn\.ghost\.on-art,\s*\.on-art-scope\s*\.btn\.ghost:not\(\s*:where\([^)]*\.info-card[^)]*\[class\*="bg-"\][^{]*\{[^}]*color:\s*var\(--text-on-backdrop-title\)/;
     expect(
       rule.test(css),
-      "MISSING: `[data-theme=light] .btn.ghost.on-art { color: var(--text-on-backdrop-title) }`. " +
-        "Without it a ghost button on the dark art (login retry, member-sheet back) is " +
-        "invisible in light theme."
+      "MISSING: `[data-theme=light] :is(.btn.ghost.on-art, .on-art-scope .btn.ghost:not(:where(…surfaces…) *)) " +
+        "{ color: var(--text-on-backdrop-title) }`. Without it ghost buttons on the dark art " +
+        "(login retry, member-sheet back) are invisible in light theme."
     ).toBe(true);
-    // …and the deleted arm stays deleted.
-    expect(
-      /\.on-art-scope\s+\.btn\.ghost:not\(/.test(css),
-      "The automatic `.on-art-scope .btn.ghost:not(:where(<surfaces>))` arm is back. " +
-        "That surface list cannot be derived and rots silently; put `.on-art` on the " +
-        "button instead."
-    ).toBe(false);
   });
 
-  it("#4 — `.field-help` takes the backdrop treatment in the wizard column", () => {
-    // The subclass-unlock hint sits in the wizard's open column, on the art. It used
-    // to be reached by a blanket register flip minus a surface list; it is now named
-    // in the one region rule, which lists the open-column vocabulary POSITIVELY.
+  it("#4 — `.field-help` is in the on-art-scope backdrop-ink flip", () => {
+    // The flip's loose-text :is(...) group must include .field-help so the
+    // subclass-unlock hint takes the cream on-backdrop ink in light theme.
+    const rule =
+      /\.on-art-scope\s*:is\([^)]*\.field-help[^)]*\)\s*:not\(\s*:where\([^)]*\.info-card/;
     expect(
-      /\.wiz\s*:is\([^)]*\.field-help[^)]*\)\s*\{\s*text-shadow: var\(--on-art-halo\)/.test(
-        css
-      ),
-      "`.field-help` lost its GROUND in the wizard column."
-    ).toBe(true);
-    expect(
-      /\[data-theme="light"\]\s*\.wiz\s*:is\([^)]*\.field-help[^)]*\)\s*\{\s*color: var\(--text-on-backdrop\)/.test(
-        css
-      ),
-      "`.field-help` lost light's parchment INK in the wizard column — the " +
-        "'unlocks at level N' hint goes back to dark-on-dark on the candlelit art."
+      rule.test(css),
+      "MISSING: `.field-help` in the `.on-art-scope :is(…):not(:where(…surfaces…))` flip. " +
+        "Without it the 'Si sblocca al livello N' hint is unreadable on the backdrop in light theme."
     ).toBe(true);
   });
 
@@ -96,33 +80,19 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
     ).toBe(true);
   });
 
-  it("#7 — the light disclosure knob strikes an OPAQUE gilt disc", () => {
-    // The deep-gold glyph self-backs ONLY if the knob paints an opaque struck base;
-    // a translucent fill lets the candlelit backdrop bleed through (the brown coin).
+  it("#7 — light gilt coins (count medallion + disclosure knob) strike an OPAQUE disc", () => {
+    // The deep-gold numeral self-backs ONLY if the coin paints an opaque struck base;
+    // a translucent fill lets the candlelit backdrop bleed through (the brown medallion).
+    // Pin the MECHANISM: a `[data-theme=light]` rule grouping `.sec-count` +
+    // `.section-disclosure-knob` that sets an OPAQUE `--gold-leaf` background-color base.
     const rule =
-      /\[data-theme="light"\]\s*\.section-disclosure-knob\s*\{[^}]*background-color:\s*var\(--gold-leaf-/;
+      /\[data-theme="light"\]\s*:is\(\s*\.sec-count\s*,\s*\.section-disclosure-knob\s*\)\s*\{[^}]*background-color:\s*var\(--gold-leaf-/;
     expect(
       rule.test(css),
-      "MISSING: `[data-theme=light] .section-disclosure-knob { background-color: " +
-        "var(--gold-leaf-…) }`. Without an opaque struck disc the deep-gold glyph reads " +
-        "BROWN on the candlelit campaign-hub backdrop."
+      "MISSING: `[data-theme=light] :is(.sec-count, .section-disclosure-knob) " +
+        "{ background-color: var(--gold-leaf-…) }`. Without an opaque struck disc the " +
+        "deep-gold count numeral reads BROWN on the candlelit campaign-hub backdrop."
     ).toBe(true);
-  });
-
-  it("#7b — a read-only section COUNT is type, never a framed medallion", () => {
-    // L1: a number you cannot act on is not an object. The count reads as plain
-    // numerals in the rubric row; the only framed thing in that row is the
-    // disclosure knob, which is interactive.
-    const rule = /\.sec-count \{([^}]*)\}/.exec(css)?.[1] ?? "";
-    expect(rule, "`.sec-count` must exist").not.toBe("");
-    for (const banned of ["border:", "box-shadow:", "background:", "background-color:"]) {
-      expect(
-        rule.includes(banned),
-        `\`.sec-count\` must carry NO \`${banned}\` — a read-only count is type on the ` +
-          "parent plate, not a struck coin with its own frame, fill and glow."
-      ).toBe(false);
-    }
-    expect(css).not.toMatch(/\.sec-count::before/);
   });
 
   it("#8 — the settings row inks are CARD inks, never the on-backdrop flip (light-polish pass)", () => {
@@ -232,26 +202,19 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
 
   it("#13 — morning-light translucency: the light panel material consumes panel-light at the light --panel-alpha", () => {
     // The light sibling of dark's candlelit T3: light defines its own gentler
-    // --panel-alpha, and the ONE `.folio-panel::before` material rule renders at
-    // that alpha over the owner-P8 cream grain. The theme delta lives entirely in
-    // `--plate-grain` (one recipe, two strikes) — so pin the light token AND the
-    // shared rule that spends it.
+    // --panel-alpha and the light .folio-panel sandwich lays the owner-P8 cream
+    // grain under the ivory gradient at that alpha.
     expect(
       /\[data-theme="light"\][^{]*\{[^}]*--panel-alpha: 0\.9[0-9]/.test(indexCss),
       "MISSING: a light-theme --panel-alpha (the morning-light translucency value)."
     ).toBe(true);
-    const lightBlock = indexCss.slice(indexCss.indexOf('[data-theme="light"] {'));
+    const sandwich =
+      /\[data-theme="light"\] \.folio-panel::before \{[^}]*opacity: var\(--panel-alpha\)[^}]*var\(--asset-panel-light\)/;
     expect(
-      /--plate-grain: image-set\(var\(--asset-panel-light\)/.test(lightBlock),
-      "MISSING: the light `--plate-grain` strike (`--asset-panel-light`) — without it " +
-        "the light panel silently reads dark's leather, or no grain at all."
-    ).toBe(true);
-    const material =
-      /\.folio-panel::before \{[^}]*opacity: var\(--panel-alpha\)[^}]*background-image:[^;]*var\(--plate-grain\)/;
-    expect(
-      material.test(css),
-      "MISSING: `.folio-panel::before` rendering the grain at var(--panel-alpha) — the " +
-        "material story (owner P8) regresses to a flat opaque gradient without it."
+      sandwich.test(css),
+      "MISSING: `[data-theme=light] .folio-panel::before` rendering the panel-light " +
+        "sandwich at var(--panel-alpha) — the light material story (owner P8) regresses " +
+        "to a flat opaque gradient without it."
     ).toBe(true);
   });
 });
@@ -283,21 +246,19 @@ describe("light ember-penumbra grammar guards (owner-ratified 2026-07-11)", () =
     ).toBe(true);
   });
 
-  it("no surface wears an aura — the ember is a GROUND tone, never a halo", () => {
-    // `--gilt-glow` / `--gilt-glow-sm` were a third outer-drop system layered on
-    // top of the elevation stack, and a glow: light emission standing in for
-    // depth. The cast belongs to the plate's seat, and the ember survives only
-    // where it tones a ground. A re-add resurrects the doubled drop.
+  it("the shared gilt-aura tokens pool the ember below (not a symmetric bright halo)", () => {
+    // `--gilt-glow` / `--gilt-glow-sm` are the light-only aura tokens every lit surface
+    // (hero bands, portrait wells, caster tiles, seals) rides. Post-rollout they MUST
+    // carry the umber ember pool; a revert to the old accent-glow-only symmetric bloom
+    // would silently un-ember every one of those surfaces at once.
     for (const token of ["--gilt-glow", "--gilt-glow-sm"] as const) {
+      const rule = new RegExp(`${token}:[^;]*rgba\\(var\\(--ember-umber\\)`);
       expect(
-        indexCss.includes(token),
-        `\`${token}\` must stay deleted — a plate's separation comes from its own ` +
-          "seat (one moat + one cast), never from a second halo system."
-      ).toBe(false);
+        rule.test(indexCss),
+        `MISSING: \`${token}\` must pool \`rgba(var(--ember-umber), …)\` below the control ` +
+          "— without it every light gilt surface reverts to the dim/symmetric pre-ember glow."
+      ).toBe(true);
     }
-    // The ember TONE itself stays — it is what makes the light theme a different
-    // room rather than an inversion.
-    expect(indexCss).toMatch(/--ember-umber:/);
   });
 
   it("the held Heroic-Inspiration chip radiates the ember penumbra in light", () => {
@@ -313,13 +274,8 @@ describe("light ember-penumbra grammar guards (owner-ratified 2026-07-11)", () =
   it("the awaiting-level chip is a solid struck-gilt pill over its ember in light", () => {
     // At pill scale a tinted wash vanishes on ivory, so the light chip goes FULL gilt
     // (a solid gold gradient) + the engraved deep-gold caps + the ember pool below.
-    // The gilt is written as the `background-image` LONGHAND, behind the state
-    // ladder's veil slot: the shorthand resets `background-image` and would drop
-    // `--state-veil`, which is what made the chip's hover rung a no-op in light. The
-    // fact pinned here is the ENAMEL, so the slot ahead of it is optional in the
-    // pattern and the gilt gradient itself is not.
     const strict =
-      /\[data-theme="light"\] \.lvl-chip \{[^}]*background-image:\s*(?:var\(--state-veil\),\s*)?linear-gradient[^}]*color:\s*var\(--accent-text\)[^}]*rgba\(var\(--ember-umber\)/;
+      /\[data-theme="light"\] \.lvl-chip \{[^}]*background:\s*linear-gradient[^}]*color:\s*var\(--accent-text\)[^}]*rgba\(var\(--ember-umber\)/;
     expect(
       strict.test(css),
       "MISSING: `[data-theme=light] .lvl-chip` as a solid gilt gradient pill with the " +
