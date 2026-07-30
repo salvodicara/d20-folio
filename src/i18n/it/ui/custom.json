@@ -40,7 +40,7 @@
     "createEquipmentBtn": "Crea Equipaggiamento",
     "createFeatureBtn": "Crea Privilegio",
     "srdTab": "Database SRD",
-    "customTab": "Crea Personalizzato",
+    "customTab": "Personalizzati",
     "label": "Personalizzato",
     "librarySearch": "Cerca nel tuo homebrew salvato…",
     "libraryAdd": "Aggiungi {{name}} dalla tua libreria",

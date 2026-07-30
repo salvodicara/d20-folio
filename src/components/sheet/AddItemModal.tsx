@@ -50,7 +50,7 @@ export function AddItemModal({ open, onClose }: AddItemModalProps) {
   const tabs = [
     { id: "equipment" as const, label: t("equipment.tabEquipment") },
     { id: "magic" as const, label: t("equipment.tabMagicItems") },
-    { id: "custom" as const, label: t("equipment.tabCustom") },
+    { id: "custom" as const, label: t("custom.customTab") },
   ];
 
   const modalTitle = detailTitle ?? tabs.find((tab) => tab.id === activeTab)?.label ?? "";

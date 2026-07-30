@@ -40,7 +40,7 @@
     "createEquipmentBtn": "Create Equipment",
     "createFeatureBtn": "Create Feature",
     "srdTab": "SRD Database",
-    "customTab": "Create Custom",
+    "customTab": "Custom",
     "label": "Custom",
     "librarySearch": "Search your saved homebrew…",
     "libraryAdd": "Add {{name}} from your library",
