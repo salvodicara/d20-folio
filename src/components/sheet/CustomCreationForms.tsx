@@ -5,11 +5,12 @@
  * that don't exist in the SRD. Used within the Add modals' Custom tab.
  *
  * CUSTOM IS THE LIBRARY: every commit here lands on the character AND upserts the
- * same homebrew into the account-level library (`libraryStore.saveToLibrary`, keyed by
- * kind + name), so it is offerable to every other character with no save gesture. The
- * upsert is silent — the creation itself is the feedback; a second toast would just
- * narrate bookkeeping. It no-ops while the library is unhydrated (signed out), so a
- * creation never fails because of it.
+ * same homebrew into the account-level library ({@link keepInLibrary}, keyed by kind +
+ * name), so it is offerable to every other character with no save gesture. A SUCCESSFUL
+ * keep is silent — the creation itself is the feedback; a second toast would just
+ * narrate bookkeeping — but a keep REFUSED by the free-tier cap says so, since the
+ * player would otherwise believe their homebrew was filed away. An unhydrated library
+ * (signed out) stays silent and the creation still lands.
  */
 
 import { useState } from "react";
@@ -17,6 +18,8 @@ import { useTranslation } from "react-i18next";
 import { Plus, Check } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useLibraryStore } from "@/stores/libraryStore";
+import { useToastStore } from "@/stores/toastStore";
+import { FREE_TIER_LIMITS } from "@/lib/limits";
 import { useLocale } from "@/hooks/useLocale";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -25,6 +28,8 @@ import { Icon } from "@/components/ui/icon";
 import { Select } from "@/components/shared/Select";
 import { IconPicker } from "@/components/shared/icon-picker";
 import { DEFAULT_ALGO_ICON } from "@/components/shared/icon-registry";
+import type { TFunction } from "i18next";
+import type { LibraryDraft } from "@/lib/library";
 import type {
   CustomSpell,
   CustomEquipment,
@@ -33,6 +38,22 @@ import type {
 } from "@/types/character";
 import { ALL_DAMAGE_TYPES, ALL_SPELL_SCHOOLS } from "@/data/types";
 import type { SpellSchool, DamageType } from "@/data/types";
+
+/**
+ * Keep a freshly created homebrew in the account library, and SAY SO when the
+ * free-tier cap refused it (the item still lands on the sheet — only the reusable
+ * template is lost). Every create path routes through here, so the one deliberate act
+ * gets one honest outcome; the per-keystroke edit seams stay silent by design
+ * (`libraryStore.syncFromCharacter`).
+ */
+function keepInLibrary(draft: LibraryDraft, t: TFunction): void {
+  const outcome = useLibraryStore.getState().saveToLibrary(draft);
+  if (outcome !== "full") return;
+  useToastStore.getState().showToast({
+    message: t("custom.libraryFull", { max: FREE_TIER_LIMITS.libraryEntries }),
+    duration: 6000,
+  });
+}
 
 // ─── Custom Spell Form ───────────────────────────────────────────────────────
 
@@ -88,7 +109,7 @@ export function CustomSpellForm({ onCreated }: CustomSpellFormProps) {
         spells: [...character.character.spells, newSpell],
       },
     });
-    useLibraryStore.getState().saveToLibrary({ kind: "spell", item: newSpell });
+    keepInLibrary({ kind: "spell", item: newSpell }, t);
 
     onCreated();
   }
@@ -280,7 +301,7 @@ export function CustomEquipmentForm({ onCreated }: CustomEquipmentFormProps) {
           weapons: [...character.character.weapons, weapon],
         },
       });
-      useLibraryStore.getState().saveToLibrary({ kind: "weapon", item: weapon });
+      keepInLibrary({ kind: "weapon", item: weapon }, t);
     } else if (isArmor) {
       const parsedAc = parseInt(acBonus, 10);
       const armor: CustomEquipment = {
@@ -299,7 +320,7 @@ export function CustomEquipmentForm({ onCreated }: CustomEquipmentFormProps) {
           equipment: [...character.character.equipment, armor],
         },
       });
-      useLibraryStore.getState().saveToLibrary({ kind: "equipment", item: armor });
+      keepInLibrary({ kind: "equipment", item: armor }, t);
     } else {
       const equipment: CustomEquipment = {
         custom: true,
@@ -320,7 +341,7 @@ export function CustomEquipmentForm({ onCreated }: CustomEquipmentFormProps) {
           equipment: [...character.character.equipment, equipment],
         },
       });
-      useLibraryStore.getState().saveToLibrary({ kind: "equipment", item: equipment });
+      keepInLibrary({ kind: "equipment", item: equipment }, t);
     }
 
     onCreated();
@@ -594,13 +615,17 @@ export function CustomFeatureForm({
       ? character.character.features.map((f, i) => (i === editIndex ? built : f))
       : [...character.character.features, built];
 
-    store.setCharacter({
-      ...character,
-      character: { ...character.character, features },
-    });
-    // Covers BOTH legs: a fresh feature is kept, and an EDIT upserts by title so the
-    // library entry follows the correction (U6).
-    useLibraryStore.getState().saveToLibrary({ kind: "feature", item: built });
+    const nextData = { ...character.character, features };
+    store.setCharacter({ ...character, character: nextData });
+    if (isEditing) {
+      // The EDIT leg goes through the rename-aware seam: a retitled feature MOVES its
+      // library entry (identity is (kind, title)) instead of stranding the old one.
+      useLibraryStore
+        .getState()
+        .syncFromCharacter(nextData, "feature", editIndex, editFeature.title);
+    } else {
+      keepInLibrary({ kind: "feature", item: built }, t);
+    }
 
     onCreated();
   }

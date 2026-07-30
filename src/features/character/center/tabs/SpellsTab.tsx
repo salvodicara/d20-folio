@@ -173,12 +173,15 @@ export function SpellsTab() {
       if (!ref) return;
       const stored =
         typeof value === "string" ? value || undefined : (value ?? undefined);
+      // Identity is (kind, name), so a RENAME must move the library entry rather than
+      // strand the old-named one — capture the name as it read before this edit.
+      const previousName = "custom" in ref ? ref.name : undefined;
       spells[spellIdx] = { ...ref, [field]: stored };
       const next = { ...character.character, spells };
       store.setCharacter({ ...character, character: next });
       // Custom IS the library: an edited homebrew spell updates its entry (no-op for
       // an SRD ref). The library write itself is debounced in the persistence seam.
-      useLibraryStore.getState().syncFromCharacter(next, "spell", spellIdx);
+      useLibraryStore.getState().syncFromCharacter(next, "spell", spellIdx, previousName);
     },
     [character]
   );

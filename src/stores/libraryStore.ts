@@ -29,6 +29,8 @@ import { create } from "zustand";
 import { FREE_TIER_LIMITS } from "@/lib/limits";
 import {
   customDraftAt,
+  isEntryNamed,
+  libraryEntryName,
   toLibraryEntry,
   upsertEntry,
   type LibraryDraft,
@@ -60,8 +62,19 @@ interface LibraryState {
   /**
    * Mirror the character's item at `(kind, idx)` into the library — the shape every
    * sheet-side EDIT seam uses. A no-op for an SRD row, so a caller never branches.
+   *
+   * `previousName` is the item's identity field as it read BEFORE this edit. Identity
+   * is (kind, name), so a rename would otherwise upsert a second entry and strand the
+   * old-named one forever: when it changed, the stale entry is removed in the same
+   * motion — a rename MOVES the template, never duplicates it. Pass it from every seam
+   * that can touch the name/title; omit it where the field can't change.
    */
-  syncFromCharacter: (data: CharacterData, kind: LibraryKind, idx: number) => void;
+  syncFromCharacter: (
+    data: CharacterData,
+    kind: LibraryKind,
+    idx: number,
+    previousName?: string
+  ) => void;
   /** Delete one entry by id. */
   removeFromLibrary: (id: string) => void;
 }
@@ -88,9 +101,23 @@ export const useLibraryStore = create<LibraryState>()((set, get) => ({
     return replaced ? "updated" : "saved";
   },
 
-  syncFromCharacter: (data, kind, idx) => {
+  syncFromCharacter: (data, kind, idx, previousName) => {
     const draft = customDraftAt(data, kind, idx);
-    if (draft) get().saveToLibrary(draft);
+    if (!draft) return;
+    // The outcome is DELIBERATELY ignored here: this is a per-keystroke edit seam, so
+    // a cap/limbo notice would fire on every character typed. The create seams (which
+    // fire once, on a deliberate act) are where "full" is spoken —
+    // `CustomCreationForms`.
+    const outcome = get().saveToLibrary(draft);
+    // Only MOVE the entry once the new name actually landed; if the upsert was refused
+    // (cap reached / library not hydrated) dropping the old one would lose it outright.
+    if (outcome !== "saved" && outcome !== "updated") return;
+    if (previousName === undefined) return;
+    const stale = get().entries.find((e) => isEntryNamed(e, kind, previousName));
+    // The lookup IS the rename check: when the name did not change, the entry found
+    // under `previousName` is the one just upserted, so there is nothing to move.
+    if (!stale || isEntryNamed(stale, kind, libraryEntryName(draft))) return;
+    get().removeFromLibrary(stale.id);
   },
 
   removeFromLibrary: (id) => {

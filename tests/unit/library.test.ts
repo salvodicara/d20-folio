@@ -13,6 +13,7 @@ import { describe, expect, it } from "vitest";
 import {
   customDraftAt,
   entryToCharacterItem,
+  isEntryNamed,
   libraryEntryName,
   toLibraryEntry,
   upsertEntry,
@@ -242,6 +243,24 @@ describe("upsertEntry — same (kind, name) replaces in place", () => {
     );
     expect(replacedSame.replaced).toBe(true);
     expect(replacedSame.entries).toHaveLength(FREE_TIER_LIMITS.libraryEntries);
+  });
+});
+
+describe("isEntryNamed — the identity a rename has to move", () => {
+  const spell = toLibraryEntry({ kind: "spell", item: SPELL }, NOW);
+  const feature = toLibraryEntry({ kind: "feature", item: FEATURE }, NOW);
+
+  it("matches the SAME (kind, name) that upsertEntry matches on", () => {
+    expect(isEntryNamed(spell, "spell", "Hearthfire Bolt")).toBe(true);
+    expect(isEntryNamed(spell, "spell", "  hearthfire BOLT ")).toBe(true);
+    // A feature is named by its title, like everywhere else.
+    expect(isEntryNamed(feature, "feature", "Oath of the Long Road")).toBe(true);
+  });
+
+  it("never matches another kind or another name", () => {
+    expect(isEntryNamed(spell, "equipment", "Hearthfire Bolt")).toBe(false);
+    expect(isEntryNamed(spell, "spell", "Hearthfire Bolts")).toBe(false);
+    expect(isEntryNamed(feature, "feature", "Oath of the Short Road")).toBe(false);
   });
 });
 

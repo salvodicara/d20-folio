@@ -46,6 +46,7 @@
     "libraryAdd": "Add {{name}} from your library",
     "libraryAutoHint": "Anything you create is kept in your custom list, ready for any character.",
     "libraryDelete": "Delete {{name}} from your custom list",
-    "libraryDeleteMessage": "It leaves your custom list. Characters already using it keep their copy."
+    "libraryDeleteMessage": "It leaves your custom list. Characters already using it keep their copy.",
+    "libraryFull": "Added to the sheet. Your custom list is full ({{max}}), so it wasn't kept there."
   }
 }

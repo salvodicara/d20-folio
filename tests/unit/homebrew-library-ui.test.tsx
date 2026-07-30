@@ -13,8 +13,10 @@
  *     STICKS (nothing re-adds an entry on a re-render);
  *  4. SEARCH — filters the rows.
  *
- * Plus the two AUTO-UPSERT seams that fill the library in the first place: a create
- * form commit, and a sheet-side edit of an existing homebrew row.
+ * Plus the AUTO-UPSERT seams that fill the library in the first place: a create form
+ * commit, a sheet-side edit of an existing homebrew row, the RENAME that must MOVE an
+ * entry rather than strand a ghost under the old name, and the at-cap outcomes (a
+ * refused CREATE says so; a refused per-keystroke EDIT stays silent).
  *
  * The store's write seam is injected, so a spy stands in for `library-io`: these tests
  * exercise the surface, never Firestore.
@@ -36,6 +38,7 @@ import { useConfirmStore } from "@/stores/confirmStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUIStore } from "@/stores/uiStore";
+import { FREE_TIER_LIMITS } from "@/lib/limits";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterDoc, CustomEquipment, CustomSpell } from "@/types/character";
 
@@ -297,5 +300,117 @@ describe("custom IS the library — the auto-upsert seams", () => {
     });
     expect(useLibraryStore.getState().entries).toEqual([]);
     expect(persistMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("a rename MOVES the entry, never duplicates it", () => {
+  it("drops the old-named entry when a homebrew row is renamed on the sheet", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.equipment = [{ ...CUSTOM_GEAR }];
+    loadCharacter(doc);
+    seedLibrary([entry({ kind: "equipment", item: CUSTOM_GEAR })]);
+    useUIStore.setState({ sheetMode: "edit" });
+
+    render(<InventoryTab />);
+    fireEvent.click(screen.getByRole("button", { name: /Expand: Ember Wand/i }));
+    const card = screen.getByText("Ember Wand").closest("article");
+    expect(card).not.toBeNull();
+    if (!card) return;
+    const nameField = within(card).getByPlaceholderText("Name");
+    fireEvent.blur(nameField, { target: { value: "Cinder Wand" } });
+
+    // ONE entry, under the NEW name: the ghost under the old name is gone.
+    expect(useLibraryStore.getState().entries.map(libraryEntryName)).toEqual([
+      "Cinder Wand",
+    ]);
+  });
+
+  it("leaves the entry alone when an edit does NOT touch the name", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.equipment = [{ ...CUSTOM_GEAR }];
+    loadCharacter(doc);
+    seedLibrary([entry({ kind: "equipment", item: CUSTOM_GEAR })]);
+    const originalId = useLibraryStore.getState().entries[0]?.id;
+    useUIStore.setState({ sheetMode: "edit" });
+
+    render(<InventoryTab />);
+    fireEvent.click(screen.getByRole("button", { name: /Expand: Ember Wand/i }));
+    const card = screen.getByText("Ember Wand").closest("article");
+    expect(card).not.toBeNull();
+    if (!card) return;
+    fireEvent.blur(within(card).getByPlaceholderText(/description/i), {
+      target: { value: "Rewound with copper wire." },
+    });
+
+    const entries = useLibraryStore.getState().entries;
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.id).toBe(originalId);
+    expect(libraryEntryName(entries[0] as LibraryEntry)).toBe("Ember Wand");
+  });
+});
+
+describe("at the free-tier cap", () => {
+  /** A full library of equipment entries (the item modal's kind). */
+  function seedFullLibrary(): void {
+    seedLibrary(
+      Array.from({ length: FREE_TIER_LIMITS.libraryEntries }, (_, i) =>
+        entry({ kind: "equipment", item: { ...CUSTOM_GEAR, name: `Kept ${i}` } })
+      )
+    );
+  }
+
+  it("a CREATE still lands on the sheet, and SAYS the library could not keep it", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.equipment = [];
+    loadCharacter(doc);
+    seedFullLibrary();
+
+    const dialog = openCustomTab();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: /Create Custom Equipment/i })
+    );
+    fireEvent.change(within(dialog).getByPlaceholderText(/Item name/i), {
+      target: { value: "Tinder Pouch" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: /^Create Equipment$/i }));
+
+    // The sheet always wins: the item is there…
+    const landed = useCharacterStore.getState().character?.character.equipment ?? [];
+    expect(landed.map((i) => ("custom" in i ? i.name : i.srdId))).toEqual([
+      "Tinder Pouch",
+    ]);
+    // …and the refusal is spoken, not swallowed.
+    expect(useLibraryStore.getState().entries).toHaveLength(
+      FREE_TIER_LIMITS.libraryEntries
+    );
+    expect(useToastStore.getState().toasts.at(-1)?.message).toMatch(
+      /your custom list is full \(100\)/i
+    );
+  });
+
+  it("a refused per-keystroke EDIT stays silent and keeps the old entry", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.equipment = [{ ...CUSTOM_GEAR, name: "Kept 0" }];
+    loadCharacter(doc);
+    seedFullLibrary();
+    useUIStore.setState({ sheetMode: "edit" });
+
+    render(<InventoryTab />);
+    fireEvent.click(screen.getByRole("button", { name: /Expand: Kept 0/i }));
+    const card = screen.getByText("Kept 0").closest("article");
+    expect(card).not.toBeNull();
+    if (!card) return;
+    // A RENAME at the cap is an APPEND the cap refuses…
+    fireEvent.blur(within(card).getByPlaceholderText("Name"), {
+      target: { value: "Kept Nowhere" },
+    });
+
+    const names = useLibraryStore.getState().entries.map(libraryEntryName);
+    expect(names).toHaveLength(FREE_TIER_LIMITS.libraryEntries);
+    // …so the OLD entry must survive — dropping it would lose the template outright.
+    expect(names).toContain("Kept 0");
+    expect(names).not.toContain("Kept Nowhere");
+    // No toast on a per-keystroke seam.
+    expect(useToastStore.getState().toasts).toHaveLength(0);
   });
 });

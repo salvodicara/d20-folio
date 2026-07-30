@@ -1355,9 +1355,19 @@ read/write): one listener, one write, zero queries.
 gesture and no manager surface: every Custom form commit — and every sheet-side edit of a
 custom row — UPSERTS that homebrew into the library by (kind, name), silently (the
 creation is its own feedback). The only curation is the Custom tab's per-row trash, and a
-deletion STICKS — nothing re-adds an entry but a real create/edit. Because the sheet item
-carries no entry id (adding one would be a live-data schema change), a RENAME upserts
-under the new name and leaves the old entry for the player to bin.
+deletion STICKS — nothing re-adds an entry but a real create/edit.
+
+Two consequences of that identity being (kind, name) rather than an id (the sheet item
+carries none, and adding one would be a live-data schema change):
+
+- a RENAME must MOVE the entry — each edit seam passes the PRE-edit name to
+  `syncFromCharacter`, which removes the old-named entry once the new one lands, so a
+  rename can never strand a ghost. It only moves after a SUCCESSFUL upsert: at the cap
+  the append is refused, and dropping the old entry would lose the template outright.
+- the free-tier CAP can refuse a keep. A CREATE says so (`keepInLibrary` in
+  `CustomCreationForms` — the item still lands on the sheet, only the reusable template
+  is lost); the per-keystroke EDIT seam deliberately ignores the outcome, because a
+  notice there would fire on every character typed.
 
 The layering mirrors combat-state exactly:
 

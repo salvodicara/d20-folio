@@ -98,9 +98,30 @@ export function customDraftAt(
   }
 }
 
+/** The identity form of a name: whitespace-trimmed, case-folded. */
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
 /** The (kind, name) identity two entries are "the same homebrew" by. */
 function identityKey(entry: LibraryDraft): string {
-  return `${entry.kind}:${libraryEntryName(entry).trim().toLowerCase()}`;
+  return `${entry.kind}:${normalizeName(libraryEntryName(entry))}`;
+}
+
+/**
+ * Is `entry` the homebrew `(kind, name)` denotes — the SAME identity
+ * {@link upsertEntry} matches on? The rename seam reads it to find the entry a
+ * renamed sheet item USED to be, so a rename MOVES its template instead of
+ * stranding a ghost under the old name.
+ */
+export function isEntryNamed(
+  entry: LibraryEntry,
+  kind: LibraryKind,
+  name: string
+): boolean {
+  return (
+    entry.kind === kind && normalizeName(libraryEntryName(entry)) === normalizeName(name)
+  );
 }
 
 /**

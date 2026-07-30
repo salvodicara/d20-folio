@@ -46,6 +46,7 @@
     "libraryAdd": "Aggiungi {{name}} dalla tua libreria",
     "libraryAutoHint": "Tutto ciò che crei resta nel tuo elenco personalizzato, pronto per ogni personaggio.",
     "libraryDelete": "Elimina {{name}} dal tuo elenco personalizzato",
-    "libraryDeleteMessage": "Esce dal tuo elenco personalizzato. I personaggi che lo usano già mantengono la loro copia."
+    "libraryDeleteMessage": "Esce dal tuo elenco personalizzato. I personaggi che lo usano già mantengono la loro copia.",
+    "libraryFull": "Aggiunto alla scheda. Il tuo elenco personalizzato è pieno ({{max}}), quindi non è stato conservato."
   }
 }
