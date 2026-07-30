@@ -62,7 +62,7 @@ describe("FamiliarPanel — the rail row", () => {
     withFamiliar("bat", "fey");
     render(
       <ul>
-        <FamiliarPanel />
+        <FamiliarPanel formIds={new Set<string>()} />
       </ul>
     );
     expect(screen.getByText("Familiar")).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe("FamiliarPanel — the rail row", () => {
     });
     const { container } = render(
       <ul>
-        <FamiliarPanel />
+        <FamiliarPanel formIds={new Set<string>()} />
       </ul>
     );
     expect(container.querySelector("li")).toBeNull();
@@ -90,7 +90,7 @@ describe("FamiliarPanel — the rail row", () => {
     withFamiliar("nonexistent-pack-form", "fiend");
     render(
       <ul>
-        <FamiliarPanel />
+        <FamiliarPanel formIds={new Set<string>()} />
       </ul>
     );
     expect(screen.getByText(/Unknown form/i)).toBeInTheDocument();

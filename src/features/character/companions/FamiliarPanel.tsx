@@ -15,18 +15,16 @@
  * destroys unconfirmed state).
  */
 
-import { Suspense, lazy, useMemo, useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Minus } from "lucide-react";
-import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { MonsterStatBlockCard } from "@/components/shared/MonsterStatBlockCard";
 import { monsterIdentity } from "@/components/shared/monster-identity";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { FamiliarEnhancementsCard } from "@/components/shared/FamiliarEnhancementsCard";
+import { CompanionHpStepper } from "@/components/shared/CompanionHpStepper";
 import { getMonster } from "@/data/monsters";
-import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -44,7 +42,13 @@ const FamiliarFormPicker = lazy(() =>
   }))
 );
 
-export function FamiliarPanel() {
+export interface FamiliarPanelProps {
+  /** The eligible special-form ids from the owner's aggregate (`familiarFormIds`) —
+   *  passed down by the mount, which already holds it (never re-aggregated here). */
+  formIds: ReadonlySet<string>;
+}
+
+export function FamiliarPanel({ formIds }: FamiliarPanelProps) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
@@ -54,13 +58,6 @@ export function FamiliarPanel() {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const familiar = character?.session.familiar;
-  const formIds = useMemo(
-    () =>
-      character
-        ? aggregateCharacterGrants(character.character, character.session).familiarFormIds
-        : new Set<string>(),
-    [character]
-  );
 
   if (!character || !familiar) return null;
 
@@ -131,33 +128,14 @@ export function FamiliarPanel() {
             </button>
           </span>
         ) : form ? (
-          <span className="inline-flex items-center gap-1 text-[0.68rem] text-text-secondary">
-            {play && (
-              <button
-                type="button"
-                onClick={() => setCompanionHp(FIND_FAMILIAR_SPELL_ID, cur - 1)}
-                className="flex h-4 w-4 items-center justify-center rounded border border-border text-text-secondary hover:border-danger hover:text-danger"
-                aria-label={`−1 HP ${name ?? ""}`}
-              >
-                <Icon as={Minus} size="sm" decorative />
-              </button>
-            )}
-            <span className="font-mono font-semibold text-text-primary">
-              {cur} / {maxHp}
-            </span>
-            {play && (
-              <button
-                type="button"
-                onClick={() =>
-                  setCompanionHp(FIND_FAMILIAR_SPELL_ID, Math.min(maxHp, cur + 1))
-                }
-                className="flex h-4 w-4 items-center justify-center rounded border border-border text-text-secondary hover:border-success hover:text-success"
-                aria-label={`+1 HP ${name ?? ""}`}
-              >
-                <Icon as={Plus} size="sm" decorative />
-              </button>
-            )}
-          </span>
+          <CompanionHpStepper
+            label={name ?? ""}
+            current={cur}
+            max={maxHp}
+            onChange={
+              play ? (next) => setCompanionHp(FIND_FAMILIAR_SPELL_ID, next) : undefined
+            }
+          />
         ) : (
           <button
             type="button"

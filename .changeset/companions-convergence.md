@@ -8,7 +8,7 @@ rail section at rest, the familiar stat-block modal, the familiar form picker
 the new `sessionFamiliar` scenario field), and the grant-companion stat-block
 modal (pack Battle Smith) — bringing the surfaces under the a11y + locale
 sweeps. The rail derives its companion rows AND modal views from ONE presenter
-pass (`companionRowsFromViews` over the shared card views), the spent
+pass over the shared card views, the spent
 `_companions-shots` throwaway harness is removed (the four standing harnesses
 are the cap), the engine changeset's "all undoable" claim is corrected
 (`setFamiliarDismissed` is a symmetric toggle), and the IT familiar rules line

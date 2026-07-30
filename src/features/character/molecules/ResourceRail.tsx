@@ -84,11 +84,8 @@ import { cn } from "@/lib/utils";
 import { RailSection } from "../RailSection";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { CompanionStatBlockCard } from "@/components/shared/CompanionStatBlockCard";
-import {
-  buildCompanionCardViews,
-  companionRowsFromViews,
-  type CompanionCardView,
-} from "@/lib/views/companion-row-view";
+import { CompanionHpStepper } from "@/components/shared/CompanionHpStepper";
+import { buildCompanionCardViews } from "@/lib/views/companion-row-view";
 import { RailNotes } from "./RailNotes";
 import { ResourceConversions } from "./ResourceConversions";
 import { GrantBundleSelector } from "@/components/sheet/GrantBundleSelector";
@@ -234,22 +231,14 @@ export function ResourceRail() {
 
   // Companions (Steel Defender / Eldritch Cannon / Beast Master Primal Companion,
   // + pack spell-companions) — the persistent-companion surface. ONE presenter
-  // pass builds the card views (the modal); the summary rows and the id→view map
-  // both derive from it, so the rail agrees with the Features-tab card by
-  // construction (golden rule 6) and the aggregate/resolve work runs once.
+  // pass builds the card views the rail rows AND the tap-open modal both read, so
+  // the rail agrees with the Features-tab card by construction (golden rule 6) and
+  // the aggregate/resolve work runs once. The FAMILIAR is a separate contract —
+  // read straight off `session.familiar` into the lazy leaf below.
   const companionCardViews = useMemo(
     () => (character ? buildCompanionCardViews(character, locale, t) : []),
     [character, locale, t]
   );
-  const companionRows = useMemo(
-    () => companionRowsFromViews(companionCardViews, character?.session.familiar),
-    [companionCardViews, character?.session.familiar]
-  );
-  const companionViews = useMemo(() => {
-    const map = new Map<string, CompanionCardView>();
-    for (const v of companionCardViews) map.set(v.featureId, v);
-    return map;
-  }, [companionCardViews]);
   const [openCompanionId, setOpenCompanionId] = useState<string | null>(null);
 
   // S9 — active CONSUMED buff-potion countdowns (Potion of Speed / Giant
@@ -637,57 +626,42 @@ export function ResourceRail() {
           HP ± steppers · variant chip); the full stat block is one tap (the modal).
           Hidden entirely when the character fields none (§4.15). The FAMILIAR row is
           a separate lazy leaf (its form's stat block joins the monster corpus). ── */}
-      {companionRows.length > 0 && (
+      {(companionCardViews.length > 0 || session.familiar) && (
         <RailSection rubric={t("character.hud.companions")}>
           <ul className="flex flex-col gap-2">
-            {companionRows.map((row) => {
-              if (row.kind !== "grant") return null;
-              const cur = row.current ?? row.hpMax;
+            {companionCardViews.map((v) => {
+              // The active variant label (Beast Master) — a quiet chip; absent otherwise.
+              const chip = v.variants?.find(
+                (o) => o.variantId === v.selectedVariantId
+              )?.label;
               return (
-                <li key={row.featureId} className="flex items-center gap-2 text-sm">
+                <li key={v.featureId} className="flex items-center gap-2 text-sm">
                   <button
                     type="button"
-                    onClick={() => setOpenCompanionId(row.featureId)}
+                    onClick={() => setOpenCompanionId(v.featureId)}
                     className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-left"
                   >
-                    <span className="text-text-primary">{row.name}</span>
-                    {row.chip && (
+                    <span className="text-text-primary">{v.label}</span>
+                    {chip && (
                       <span className="text-[length:var(--text-micro)] italic text-text-secondary">
-                        {row.chip}
+                        {chip}
                       </span>
                     )}
                     <span className="text-[0.68rem] text-text-secondary">
                       {t("stats.ac")}{" "}
-                      <span className="font-mono text-text-primary">{row.ac}</span>
+                      <span className="font-mono text-text-primary">{v.ac}</span>
                     </span>
                   </button>
-                  <span className="inline-flex items-center gap-1 text-[0.68rem] text-text-secondary">
-                    {sheetMode === "play" && (
-                      <button
-                        type="button"
-                        onClick={() => setCompanionHp(row.featureId, cur - 1)}
-                        className="flex h-4 w-4 items-center justify-center rounded border border-border text-text-secondary hover:border-danger hover:text-danger"
-                        aria-label={`−1 HP ${row.name}`}
-                      >
-                        <Icon as={Minus} size="sm" decorative />
-                      </button>
-                    )}
-                    <span className="font-mono font-semibold text-text-primary">
-                      {cur} / {row.hpMax}
-                    </span>
-                    {sheetMode === "play" && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCompanionHp(row.featureId, Math.min(row.hpMax, cur + 1))
-                        }
-                        className="flex h-4 w-4 items-center justify-center rounded border border-border text-text-secondary hover:border-success hover:text-success"
-                        aria-label={`+1 HP ${row.name}`}
-                      >
-                        <Icon as={Plus} size="sm" decorative />
-                      </button>
-                    )}
-                  </span>
+                  <CompanionHpStepper
+                    label={v.label}
+                    current={v.current ?? v.hpMax}
+                    max={v.hpMax}
+                    onChange={
+                      sheetMode === "play"
+                        ? (next) => setCompanionHp(v.featureId, next)
+                        : undefined
+                    }
+                  />
                 </li>
               );
             })}
@@ -701,7 +675,7 @@ export function ResourceRail() {
                   <li className="h-5 animate-pulse rounded bg-surface-2" aria-hidden />
                 }
               >
-                <FamiliarPanel />
+                <FamiliarPanel formIds={aggregate.familiarFormIds} />
               </Suspense>
             )}
           </ul>
@@ -711,7 +685,7 @@ export function ResourceRail() {
       {/* The full companion stat block — one tap from a rail row. The SHARED card
           (golden rule 6): the SAME component the Features tab mounts inline. */}
       {(() => {
-        const view = openCompanionId ? companionViews.get(openCompanionId) : undefined;
+        const view = companionCardViews.find((v) => v.featureId === openCompanionId);
         return (
           <ModalShell
             open={view != null}

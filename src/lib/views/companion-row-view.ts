@@ -11,8 +11,9 @@
  * through the catalogue seams (`localizeSrd`/`hasSrd`) + the `srd.damage_*` chrome —
  * the only engine-side layer allowed to localize (docs/ARCHITECTURE.md). No React,
  * store, or Firebase. The FAMILIAR is a separate contract (its own stat block lives
- * on the monster corpus, rendered by `MonsterStatBlockCard` in the lazy leaf) — the
- * row VM carries a `familiar` descriptor the eager rail turns into a lazy mount.
+ * on the monster corpus, rendered by `MonsterStatBlockCard` in the lazy leaf) — it
+ * never passes through this presenter; the rail reads `session.familiar` directly
+ * and mounts that lazy leaf.
  */
 
 import type { CharacterDoc, SessionState } from "@/types/character";
@@ -72,27 +73,6 @@ export interface CompanionCardView {
   /** The currently-active variant id (drives the Segmented + the resolved facts). */
   selectedVariantId?: string;
 }
-
-/** A rail-row summary — one discriminated VM per companion kind. */
-export type CompanionRowVM =
-  | {
-      kind: "grant";
-      featureId: string;
-      name: string;
-      ac: number;
-      hpMax: number;
-      current?: number;
-      /** The active variant label (Beast Master) — a quiet chip; omitted otherwise. */
-      chip?: string;
-    }
-  | {
-      kind: "familiar";
-      /** The chosen form's monster id (resolved to a stat block inside the lazy leaf). */
-      monsterId: string;
-      /** The 2024 type swap. */
-      creatureType: "celestial" | "fey" | "fiend";
-      dismissed: boolean;
-    };
 
 type Ns = "class-feature" | "spell";
 
@@ -179,12 +159,17 @@ function buildOne(
   };
 }
 
-/** Shared owner context for resolving companion AC / spell-attack / PB. */
+/**
+ * Shared owner context for resolving companion AC / spell-attack / PB. The
+ * aggregate rides along so the ONE `aggregateCharacterGrants` pass also serves the
+ * spell-companion leg's always-prepared list (never a second aggregation).
+ */
 function ownerContext(doc: CharacterDoc): {
   level: number;
   scores: Record<AbilityCode, number>;
   pbOverride: number | null | undefined;
   spellAttackMod: number | undefined;
+  agg: ReturnType<typeof aggregateCharacterGrants>;
 } {
   const charData = doc.character;
   const agg = aggregateCharacterGrants(charData, doc.session);
@@ -210,6 +195,7 @@ function ownerContext(doc: CharacterDoc): {
     scores,
     pbOverride: charData.proficiencyBonusOverride,
     spellAttackMod,
+    agg,
   };
 }
 
@@ -224,7 +210,7 @@ export function buildCompanionCardViews(
   locale: Locale,
   t: Translate
 ): CompanionCardView[] {
-  const { level, scores, pbOverride, spellAttackMod } = ownerContext(doc);
+  const { level, scores, pbOverride, spellAttackMod, agg } = ownerContext(doc);
   const charData = doc.character;
   const views: CompanionCardView[] = [];
 
@@ -257,7 +243,6 @@ export function buildCompanionCardViews(
   //     Public SRD carries none, so this leg is inert public-side (D11: shape public,
   //     content pack). A spell counts as "on the character" when it is prepared/known
   //     (a stored ref) OR always-prepared (a grant).
-  const agg = aggregateCharacterGrants(charData, doc.session);
   const spellIds = new Set<string>(agg.alwaysPrepared);
   for (const ref of charData.spells) {
     if ("srdId" in ref) spellIds.add(ref.srdId);
@@ -282,53 +267,4 @@ export function buildCompanionCardViews(
   }
 
   return views;
-}
-
-/**
- * The rail-row summaries, derived from ALREADY-BUILT card views — grant rows are a
- * plain `.map`, then the Find Familiar summon (when present) appends a `familiar`
- * descriptor the eager rail turns into a lazy `FamiliarPanel` mount (the form's
- * stat block joins the monster corpus only inside that leaf). Split out so a
- * caller that needs BOTH the rows and the full views (the rail: summary rows +
- * the tap-open modal) runs the enumerate/resolve/aggregate pass exactly ONCE.
- */
-export function companionRowsFromViews(
-  views: readonly CompanionCardView[],
-  familiar: SessionState["familiar"]
-): CompanionRowVM[] {
-  const rows: CompanionRowVM[] = views.map((v) => ({
-    kind: "grant" as const,
-    featureId: v.featureId,
-    name: v.label,
-    ac: v.ac,
-    hpMax: v.hpMax,
-    current: v.current,
-    chip: v.variants?.find((o) => o.variantId === v.selectedVariantId)?.label,
-  }));
-
-  if (familiar) {
-    rows.push({
-      kind: "familiar",
-      monsterId: familiar.monsterId,
-      creatureType: familiar.creatureType,
-      dismissed: familiar.dismissed === true,
-    });
-  }
-
-  return rows;
-}
-
-/**
- * The rail-row summaries — one per fielded companion (the one-shot convenience:
- * {@link buildCompanionCardViews} + {@link companionRowsFromViews}).
- */
-export function buildCompanionRowVMs(
-  doc: CharacterDoc,
-  locale: Locale,
-  t: Translate
-): CompanionRowVM[] {
-  return companionRowsFromViews(
-    buildCompanionCardViews(doc, locale, t),
-    doc.session.familiar
-  );
 }

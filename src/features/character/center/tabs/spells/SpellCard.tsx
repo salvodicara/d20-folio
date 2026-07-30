@@ -53,7 +53,7 @@ export interface SpellCardCallbacks {
   /** S7 — open the Beast-form picker for a Polymorph / True Polymorph spell. */
   onTransform: (vm: SpellCardVM) => void;
   /** Open the Find Familiar form picker (Summon familiar / Change form). */
-  onSummonFamiliar: (vm: SpellCardVM) => void;
+  onSummonFamiliar: () => void;
   onTogglePrepared: (idx: number) => void;
   onDelete: (idx: number) => void;
   onUpdateField: (idx: number, field: string, value: string | null) => void;
@@ -260,7 +260,7 @@ export const SpellCard = memo(function SpellCard({
               </Button>
             )}
             {canSummonFamiliar && (
-              <Button size="sm" variant="secondary" onClick={() => onSummonFamiliar(vm)}>
+              <Button size="sm" variant="secondary" onClick={onSummonFamiliar}>
                 {familiarSummoned ? t("familiar.changeForm") : t("familiar.summon")}
               </Button>
             )}

@@ -17,9 +17,8 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { Plus, Minus } from "lucide-react";
-import { Icon } from "@/components/ui/icon";
 import { Segmented } from "@/components/ui/segmented";
+import { CompanionHpStepper } from "./CompanionHpStepper";
 import { useLocale } from "@/hooks/useLocale";
 import { formatModifier, localeDistance } from "@/lib/utils";
 import type { CompanionCardView } from "@/lib/views/companion-row-view";
@@ -95,29 +94,16 @@ export function CompanionStatBlockCard({
         )}
         <span className="inline-flex items-center gap-1">
           {t("character.hp")}
-          {interactive && onHpChange && (
-            <button
-              type="button"
-              onClick={() => onHpChange(view.featureId, cur - 1)}
-              className="flex h-4 w-4 items-center justify-center rounded border border-border text-text-secondary hover:border-danger hover:text-danger"
-              aria-label={`−1 HP ${view.label}`}
-            >
-              <Icon as={Minus} size="sm" decorative />
-            </button>
-          )}
-          <span className="font-mono font-semibold text-text-primary">
-            {cur} / {view.hpMax}
-          </span>
-          {interactive && onHpChange && (
-            <button
-              type="button"
-              onClick={() => onHpChange(view.featureId, Math.min(view.hpMax, cur + 1))}
-              className="flex h-4 w-4 items-center justify-center rounded border border-border text-text-secondary hover:border-success hover:text-success"
-              aria-label={`+1 HP ${view.label}`}
-            >
-              <Icon as={Plus} size="sm" decorative />
-            </button>
-          )}
+          <CompanionHpStepper
+            label={view.label}
+            current={cur}
+            max={view.hpMax}
+            onChange={
+              interactive && onHpChange
+                ? (next) => onHpChange(view.featureId, next)
+                : undefined
+            }
+          />
         </span>
       </div>
 
