@@ -112,8 +112,8 @@ import {
 } from "@/data/quickbuild";
 import {
   appliedQuickbuildState,
-  quickbuildDraft,
   sameAppliedQuickbuild,
+  type AppliedQuickbuild,
 } from "@/lib/quickbuild";
 import { cryptoRng, rollQuickbuildFlavor } from "@/lib/quickbuild-random";
 import { FeatureChoicesSection } from "@/components/sheet/FeatureChoicesSection";
@@ -222,11 +222,15 @@ function mergeStartingEquipment(
  * Quick Start arrives complete, on the wizard's default class, and every
  * control edits it from there (`data/quickbuild.ts`).
  */
+const INITIAL = appliedQuickbuildState(
+  DEFAULT_QUICKBUILD_CLASS,
+  DEFAULT_QUICKBUILD_PRESET
+);
 const INITIAL_BUILD = {
   classId: DEFAULT_QUICKBUILD_CLASS,
   preset: DEFAULT_QUICKBUILD_PRESET,
+  state: INITIAL,
 };
-const INITIAL = appliedQuickbuildState(INITIAL_BUILD.classId, INITIAL_BUILD.preset);
 
 export function CreationWizard() {
   const { t } = useTranslation();
@@ -300,6 +304,7 @@ export function CreationWizard() {
   const [applied, setApplied] = useState<{
     classId: string;
     preset: QuickbuildPreset;
+    state: AppliedQuickbuild;
   }>(INITIAL_BUILD);
   const [hpMode, setHpMode] = useState<"average" | "rolled">("average");
   const [rolledHp, setRolledHp] = useState<number | null>(null);
@@ -951,29 +956,26 @@ export function CreationWizard() {
   // by field against what `applyPreset` writes (`appliedQuickbuildState`), so it
   // can never drift from the thing it measures — the NAME and the other
   // untouched fields are deliberately outside that yardstick.
-  const sculpted = !sameAppliedQuickbuild(
-    appliedQuickbuildState(applied.classId, applied.preset),
-    {
-      classId: selectedClass,
-      subclassId: selectedSubclass,
-      level,
-      raceId: selectedRace,
-      backgroundId: selectedBackground,
-      usePointBuy,
-      abilityScores,
-      bgAsiMode,
-      bgAsiChoices,
-      classSkills: selectedClassSkills,
-      cantrips: selectedCantrips,
-      spells: selectedSpells,
-      languagePicks,
-      lineageChoices,
-      humanFeat,
-      choicePicks: activeCreationChoicePicks,
-      classEquipLabel: effClassEquipLabel,
-      bgEquipLabel: effBgEquipLabel,
-    }
-  );
+  const sculpted = !sameAppliedQuickbuild(applied.state, {
+    classId: selectedClass,
+    subclassId: selectedSubclass,
+    level,
+    raceId: selectedRace,
+    backgroundId: selectedBackground,
+    usePointBuy,
+    abilityScores,
+    bgAsiMode,
+    bgAsiChoices,
+    classSkills: selectedClassSkills,
+    cantrips: selectedCantrips,
+    spells: selectedSpells,
+    languagePicks,
+    lineageChoices,
+    humanFeat,
+    choicePicks: activeCreationChoicePicks,
+    classEquipLabel: effClassEquipLabel,
+    bgEquipLabel: effBgEquipLabel,
+  });
 
   // ── Leave-creation guard (A1) ───────────────────────────────────────────────
   // A half-built character is unsaved local state — but only once the player has
@@ -1166,34 +1168,35 @@ export function CreationWizard() {
   }
 
   /**
-   * Apply a whole build in one go — the ONE state seam both quickbuild legs use
-   * (the class's ready-made preset, and a Randomize reroll of it). The preset
-   * STATES most of the build; the draft carries only what has to be COMPUTED
-   * (the standard-array scores, the boosts, the slot-filled picks).
+   * Apply a whole build in one go — the ONE state seam both preset legs use
+   * (a class's ready-made build, and a Randomize reroll of it). Every field
+   * comes from `appliedQuickbuildState`, the same object the sculpted-yardstick
+   * compares against, so the two can never fall out of step; it is kept beside
+   * the preset so no render has to recompute it.
    */
   function applyPreset(classId: string, preset: QuickbuildPreset) {
-    const draft = quickbuildDraft(classId, preset);
-    setSelectedClass(classId);
-    setSelectedSubclass("");
-    setLevel(1);
-    setSelectedRace(preset.raceId);
-    setSelectedBackground(preset.backgroundId);
-    setUsePointBuy(true);
-    setAbilityScores(draft.abilityScores);
-    setBgAsiMode("+2/+1");
-    setBgAsiChoices(draft.bgAsiChoices);
-    setSelectedClassSkills([...preset.classSkills]);
-    setSelectedCantrips([...(preset.cantrips ?? [])]);
-    setSelectedSpells([...(preset.spells ?? [])]);
-    setLanguagePicks(draft.languagePicks);
-    setLineageChoices({ ...(preset.lineage ?? {}) });
-    setHumanFeat(preset.humanFeat ?? "");
-    setCreationChoicePicks(draft.choicePicks);
-    setClassEquipLabel("A");
-    setBgEquipLabel("A");
+    const state = appliedQuickbuildState(classId, preset);
+    setSelectedClass(state.classId);
+    setSelectedSubclass(state.subclassId);
+    setLevel(state.level);
+    setSelectedRace(state.raceId);
+    setSelectedBackground(state.backgroundId);
+    setUsePointBuy(state.usePointBuy);
+    setAbilityScores(state.abilityScores);
+    setBgAsiMode(state.bgAsiMode);
+    setBgAsiChoices(state.bgAsiChoices);
+    setSelectedClassSkills([...state.classSkills]);
+    setSelectedCantrips([...state.cantrips]);
+    setSelectedSpells([...state.spells]);
+    setLanguagePicks(state.languagePicks);
+    setLineageChoices({ ...state.lineageChoices });
+    setHumanFeat(state.humanFeat);
+    setCreationChoicePicks(state.choicePicks);
+    setClassEquipLabel(state.classEquipLabel);
+    setBgEquipLabel(state.bgEquipLabel);
     // The NAME is never part of a build: a preset or a reroll must never wipe
     // what the player typed (owner: "name is sacred").
-    setApplied({ classId, preset });
+    setApplied({ classId, preset, state });
   }
 
   /**
@@ -1657,7 +1660,6 @@ export function CreationWizard() {
                 variant="secondary"
                 size="sm"
                 onClick={randomizeQuickbuild}
-                aria-label={t("create.randomizeAria")}
                 title={t("create.randomizeHint")}
               >
                 <Icon as={Shuffle} size="sm" decorative />

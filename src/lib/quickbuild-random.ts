@@ -39,9 +39,16 @@ import { SRD_TOOLS_2024 } from "@/lib/tools";
 /** A source of `0 ≤ x < 1`. Injected so a roll is reproducible under test. */
 export type Rng = () => number;
 
-/** One element, uniformly. Callers pass a non-empty pool; an empty one yields `undefined`. */
-function pick<T>(rng: Rng, pool: readonly T[]): T | undefined {
-  return pool[Math.floor(rng() * pool.length)];
+/**
+ * One element, uniformly. Every pool here is a composed catalogue (species,
+ * backgrounds, a slot's own options), so an EMPTY one is a data bug, not a case
+ * to default around: a fallback would quietly hand back another character's
+ * species. Assert at the boundary instead (golden rule 2).
+ */
+function pick<T>(rng: Rng, pool: readonly T[]): T {
+  const chosen = pool[Math.floor(rng() * pool.length)];
+  if (chosen === undefined) throw new Error("quickbuild: cannot draw from an empty pool");
+  return chosen;
 }
 
 /**
@@ -78,39 +85,39 @@ export function rollQuickbuildFlavor(
   rng: Rng
 ): QuickbuildPreset {
   const table = classTables.find((c) => c.id === classId);
-  const primary = base.abilityOrder[0];
+  // The class's primary ability — the preset guard pins `abilityOrder` as a
+  // permutation of all six codes, so the first entry always exists.
+  const [primary] = base.abilityOrder;
+  if (primary === undefined) throw new Error("quickbuild: preset has no ability order");
 
   // ── Species + its creation-time lineage ────────────────────────────────────
-  const race = pick(rng, SRD_RACES) ?? SRD_RACES[0];
+  const race = pick(rng, SRD_RACES);
   const lineage: Record<string, string> = {};
-  for (const trait of race?.traits ?? []) {
+  for (const trait of race.traits) {
     for (const grant of trait.grants ?? []) {
       if (grant.type !== "choice-grant-bundle" || grant.choiceFrequency !== "creation") {
         continue;
       }
-      const option = pick(rng, grant.options);
-      if (option) lineage[grant.bundleKey] = option.id;
+      lineage[grant.bundleKey] = pick(rng, grant.options).id;
     }
   }
 
   // ── Background: RAW keeps the +2 on the class's primary ability, so only the
-  // backgrounds offering that ability are eligible. (Should a class's primary
-  // appear in no background's trio, the whole roster stays eligible and the +2
-  // lands on the best ability that background does offer — still legal.)
-  const eligible = SRD_BACKGROUNDS.filter((b) =>
-    b.abilityOptions.includes(primary as AbilityCode)
+  // backgrounds offering that ability are eligible. Every ability appears in
+  // some background's trio, so this pool is never empty.
+  const background = pick(
+    rng,
+    SRD_BACKGROUNDS.filter((b) => b.abilityOptions.includes(primary))
   );
-  const background =
-    pick(rng, eligible.length > 0 ? eligible : SRD_BACKGROUNDS) ?? SRD_BACKGROUNDS[0];
-  const backgroundId = background?.id ?? base.backgroundId;
+  const backgroundId = background.id;
   // +2 then +1, following the class's own priority through what the background
   // allows — a rolled character is flavour-random, never build-random.
-  const boostable = base.abilityOrder.filter((code) =>
-    (background?.abilityOptions ?? []).includes(code)
+  const [primaryBoost, secondaryBoost] = base.abilityOrder.filter((code) =>
+    background.abilityOptions.includes(code)
   );
   const boost: readonly [AbilityCode, AbilityCode] = [
-    boostable[0] ?? base.boost[0],
-    boostable[1] ?? base.boost[1],
+    primaryBoost ?? base.boost[0],
+    secondaryBoost ?? base.boost[1],
   ];
 
   // ── Class skills (the background's are already granted, so never re-picked) ─
@@ -151,9 +158,9 @@ export function rollQuickbuildFlavor(
   );
 
   // ── The Human "Versatile" origin feat (never the one the background grants) ─
-  const bgFeat = background?.feat ?? "";
+  const bgFeat = background.feat;
   const humanFeat =
-    race?.id === "human"
+    race.id === "human"
       ? pick(
           rng,
           SRD_FEATS.filter((f) => f.category === "origin" && f.id !== bgFeat).map(
@@ -241,7 +248,7 @@ export function rollQuickbuildFlavor(
   };
 
   return {
-    raceId: race?.id ?? base.raceId,
+    raceId: race.id,
     backgroundId,
     abilityOrder: base.abilityOrder,
     boost,

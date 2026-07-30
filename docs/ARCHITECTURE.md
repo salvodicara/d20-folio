@@ -95,8 +95,8 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   `background-equipment.ts`, `magic-items/index.ts`, `maneuvers.ts`, `beasts/index.ts`,
   `monsters/index.ts` (the lazy bestiary corpus — `packMonsters` appends via `mergePack`),
   `classes.ts` (pack classes append; pack subclasses extend their public class table),
-  `quickbuild.ts` (the per-class creation presets — a pack class brings its own through
-  `packQuickbuildPresets`, keyed by class id via `mergePackRecord`),
+  `quickbuild.ts` (the per-class creation presets — the ONE record where a pack entry REPLACES
+  the public one, keyed by class id via `overlayPackRecord`; see below),
   `srd-names.ts` (the eager name index — the pack side is `content-pack/data/names.ts`,
   literal names only, so the roster chunk never drags the pack corpora). Consumers only ever read
   the aggregates — never a `@pack` deep path — so the seam stays single.

@@ -79,19 +79,12 @@ describe("mergeCatalogue", () => {
 });
 
 describe("overlayPackRecord", () => {
-  it("lets a pack entry REPLACE the public one of the same key", () => {
-    const merged = overlayPackRecord({ a: "public", b: "public" }, { a: "pack" });
-    expect(merged).toEqual({ a: "pack", b: "public" });
-  });
-
-  it("adds pack-only keys and copies the public record", () => {
-    const base = { a: "public" };
-    const merged = overlayPackRecord(base, { z: "pack" });
-    expect(merged).toEqual({ a: "public", z: "pack" });
+  it("lets a pack entry REPLACE the public one, and adds its own keys", () => {
+    // The deliberate opposite of mergePackRecord's throw: the public entry is a
+    // licensing fallback the pack's full-game twin supersedes.
+    const base = { a: "public", b: "public" };
+    const merged = overlayPackRecord(base, { a: "pack", z: "pack" });
+    expect(merged).toEqual({ a: "pack", b: "public", z: "pack" });
     expect(merged).not.toBe(base);
-  });
-
-  it("returns the public record's content when the pack adds nothing", () => {
-    expect(overlayPackRecord({ a: "public" }, {})).toEqual({ a: "public" });
   });
 });

@@ -76,10 +76,10 @@ function createButton(): HTMLButtonElement {
   return btns[btns.length - 1] as HTMLButtonElement;
 }
 
-/** The Randomize control — matched on its aria-label, which the Quick Start
- *  path card's gloss ("…or randomize it") would otherwise collide with. */
+/** The Randomize control. Matched on its EXACT name: the Quick Start path
+ *  card's gloss ("…or randomize it") collides with a loose pattern. */
 function randomizeButton(): HTMLElement {
-  return screen.getByRole("button", { name: /^Randomize:/ });
+  return screen.getByRole("button", { name: "Randomize" });
 }
 
 function selectValue(name: RegExp): string {
@@ -307,9 +307,7 @@ describe("CreationWizard — Quick Start opens complete", () => {
         "true"
       );
       // Guided never offers the reroll — it is the deliberate path.
-      expect(
-        screen.queryByRole("button", { name: /^Randomize:/ })
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Randomize" })).not.toBeInTheDocument();
 
       fireEvent.click(screen.getByRole("button", { name: /Quick Start/i }));
       expect(screen.getByPlaceholderText(/enter name/i)).toHaveValue("Thornwake");

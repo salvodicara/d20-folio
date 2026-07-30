@@ -116,7 +116,7 @@ export interface AppliedQuickbuild {
   backgroundId: string;
   usePointBuy: boolean;
   abilityScores: Record<AbilityCode, number>;
-  bgAsiMode: string;
+  bgAsiMode: "+2/+1" | "+1/+1/+1";
   bgAsiChoices: Partial<Record<AbilityCode, number>>;
   classSkills: readonly string[];
   cantrips: readonly string[];
@@ -158,10 +158,11 @@ export function appliedQuickbuildState(
 }
 
 /** Order-insensitive deep key: two states that differ only in PICK ORDER are the
- *  same build (removing and re-adding a skill is not an edit). */
+ *  same build (removing and re-adding a skill is not an edit). Every array in
+ *  `AppliedQuickbuild` holds strings, so a plain sort orders them. */
 function canonical(value: unknown): unknown {
   if (Array.isArray(value)) {
-    return (value as readonly unknown[]).map(canonical).sort(compareCanonical);
+    return (value as readonly unknown[]).map(canonical).sort();
   }
   if (value && typeof value === "object") {
     return Object.fromEntries(
@@ -171,11 +172,6 @@ function canonical(value: unknown): unknown {
     );
   }
   return value;
-}
-
-function compareCanonical(a: unknown, b: unknown): number {
-  const [x, y] = [JSON.stringify(a), JSON.stringify(b)];
-  return x < y ? -1 : x > y ? 1 : 0;
 }
 
 /** True when the live state is still exactly the applied build. */

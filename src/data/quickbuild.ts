@@ -67,20 +67,7 @@ export interface QuickbuildPreset {
 /** The class the creation page opens on (the wizard's default). */
 export const DEFAULT_QUICKBUILD_CLASS = "fighter";
 
-const FIGHTER_PRESET: QuickbuildPreset = {
-  raceId: "human",
-  backgroundId: "soldier",
-  abilityOrder: ["STR", "CON", "DEX", "WIS", "CHA", "INT"],
-  boost: ["STR", "CON"],
-  classSkills: ["perception", "survival"],
-  languages: ["dwarvish", "orc"],
-  // Human Versatile — Alert, the follow-up-free origin feat (the Soldier
-  // already grants Savage Attacker; origin feats never repeat).
-  humanFeat: "alert",
-  choices: { tool: ["dice-set"] },
-};
-
-const SRD_QUICKBUILD_PRESETS: Readonly<Record<string, QuickbuildPreset>> = {
+const SRD_QUICKBUILD_PRESETS = {
   barbarian: {
     raceId: "goliath",
     backgroundId: "soldier",
@@ -131,7 +118,18 @@ const SRD_QUICKBUILD_PRESETS: Readonly<Record<string, QuickbuildPreset>> = {
     // Magic Initiate (Wizard), from the Sage.
     choices: { spell: ["light", "mage-hand", "detect-magic"] },
   },
-  fighter: FIGHTER_PRESET,
+  fighter: {
+    raceId: "human",
+    backgroundId: "soldier",
+    abilityOrder: ["STR", "CON", "DEX", "WIS", "CHA", "INT"],
+    boost: ["STR", "CON"],
+    classSkills: ["perception", "survival"],
+    languages: ["dwarvish", "orc"],
+    // Human Versatile — Alert, the follow-up-free origin feat (the Soldier
+    // already grants Savage Attacker; origin feats never repeat).
+    humanFeat: "alert",
+    choices: { tool: ["dice-set"] },
+  },
   monk: {
     raceId: "elf",
     backgroundId: "criminal",
@@ -216,7 +214,7 @@ const SRD_QUICKBUILD_PRESETS: Readonly<Record<string, QuickbuildPreset>> = {
     // Magic Initiate (Wizard), from the Sage.
     choices: { spell: ["minor-illusion", "prestidigitation", "detect-magic"] },
   },
-};
+} satisfies Record<string, QuickbuildPreset>;
 
 /**
  * Every composed class's quickbuild preset, keyed by class id.
@@ -229,15 +227,14 @@ const SRD_QUICKBUILD_PRESETS: Readonly<Record<string, QuickbuildPreset>> = {
  * scope).
  */
 export const QUICKBUILD_PRESETS: Readonly<Record<string, QuickbuildPreset>> =
-  overlayPackRecord(SRD_QUICKBUILD_PRESETS, packQuickbuildPresets);
+  overlayPackRecord<QuickbuildPreset>(SRD_QUICKBUILD_PRESETS, packQuickbuildPresets);
 
 /**
  * The build the creation page OPENS with, so Quick Start is never a blank form.
- *
- * The `??` is a TYPE bridge, not a runtime fallback: `fighter` is a key of the
- * public record, so the composed lookup always resolves — and if the pack ever
- * overrides the Fighter, this picks up that twin. `quickbuild-presets.guard`
- * pins the two to the same object so they can never drift.
+ * Read straight off the public record (whose `satisfies` keeps the key total),
+ * and pinned by the preset guard to BE the composed entry — so a future pack
+ * override of the Fighter fails loudly there instead of being silently ignored
+ * here.
  */
 export const DEFAULT_QUICKBUILD_PRESET: QuickbuildPreset =
-  QUICKBUILD_PRESETS[DEFAULT_QUICKBUILD_CLASS] ?? FIGHTER_PRESET;
+  SRD_QUICKBUILD_PRESETS[DEFAULT_QUICKBUILD_CLASS];
