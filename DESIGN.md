@@ -2459,14 +2459,14 @@ Dividers and frames are never decorated — the LINE ITSELF performs:
 
 ### 16.4 Frames by register
 
-| Register                  | Frame construction                                                                            |
-| ------------------------- | --------------------------------------------------------------------------------------------- |
-| Utility row / facet chip  | hairline + 45° chamfered corner facets (the measured entry-frame cut), radius 0–2px           |
-| Read card / tooltip plate | rounded 8–10px near-black plate, thin TWO-TONE metal lip, soft outer glow ≤12px               |
-| Portrait / image well     | rounded-rect two-tone metal frame, no ornament                                                |
-| Item/spell well           | square leather well; rarity/school speaks as an INNER glow + coloured frame, never a badge    |
-| Ceremony plate            | cathedral arch (ogee shoulders), split head/body by a curl-ended rule, detached corner thorns |
-| Hero masthead             | the standing crest + engraved titling stay (v0.22.0 continuity), re-metaled in bronze         |
+| Register                  | Frame construction                                                                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Utility row / facet chip  | hairline + 45° chamfered corner facets (the measured entry-frame cut), radius 0–2px                                                                                            |
+| Read card / tooltip plate | rounded 8–10px near-black plate, thin TWO-TONE metal lip, soft outer glow ≤12px                                                                                                |
+| Portrait / image well     | rounded-rect two-tone metal frame, no ornament                                                                                                                                 |
+| Item/spell well           | square leather well; rarity/school speaks as an INNER glow + coloured frame, never a badge                                                                                     |
+| Ceremony plate            | cathedral arch (ogee shoulders), split head/body by a curl-ended rule, detached corner thorns                                                                                  |
+| Hero masthead             | the standing crest + engraved titling stay (v0.22.0 continuity), on the wb line ramp + the four BINDING-CORNER fittings (the CC0 spandrel silhouette mask, border-ink painted) |
 
 ### 16.5 State is light on the material
 
