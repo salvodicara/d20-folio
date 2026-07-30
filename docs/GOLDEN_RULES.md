@@ -93,7 +93,9 @@ renumber it into the 1–4 sequence. -->
     QUEUE; it never abandons a half-done unit — finish the unit you're in (rule 4), but never OPEN
     new-capability work over an unstable board. The constructive twin of rule 22's "never break the
     deployed app": rule 22 forbids introducing regressions, rule 27 makes clearing the existing ones
-    outrank the next feature (owner, 2026-07-07).
+    outrank the next feature (owner, 2026-07-07). Reinforced on the GA trajectory: "everything has
+    to be perfect and premium — we can't afford any bug or weird UI/UX" — the bar covers premium
+    craft and UX strangeness, not only functional defects (owner, 2026-07-31).
 
 ### Architecture & data
 

@@ -4,7 +4,8 @@
 > opening we are built for. This is the **why / where**; `PROGRESS.md`'s _"Active epic — The
 > DDB-parity frontier"_ is the **what / when**.
 >
-> Verified **2026-07-21**. Re-verify the _Landscape_ and _Where we're behind_ sections whenever
+> Verified **2026-07-21**; posture amended **2026-07-31** (the GA trajectory — see _Can this ever
+> be monetized?_). Re-verify the _Landscape_ and _Where we're behind_ sections whenever
 > D&D Beyond ships a major change.
 
 ## The lane, in one breath
@@ -60,10 +61,18 @@ frontier"_), sequenced **bestiary-first**:
   level**: DDB's standalone encounter tool is stuck on 2014 per-count multiplier math and four
   tiers, while we implement the 2024 procedure exactly — no multipliers, three grades. The pack-side
   MM statblock corpus advances along the same manifest.
-- **No homebrew authoring** — the planned ladder (account library → campaign sharing → monster
-  editor → species/feats/subclasses) ends at **homebrew classes**, declared the _horizon flagship_
-  because it is D&D Beyond's #1 refused community ask, and our grants seam can actually do it well.
-- **No public share links yet** — model decided (`shared: true` flag + unguessable doc id).
+- **Homebrew — the ladder's first rung SHIPPED (2026-07-30):** the account-level library (rung (a)
+  — every per-character custom spell/feature/equipment silently kept as a reusable account doc,
+  "custom IS the library"). The remaining rungs stand: campaign sharing → monster editor →
+  species/feats/subclasses → **homebrew classes**, the declared _horizon flagship_ because it is
+  D&D Beyond's #1 refused community ask, and our grants seam can actually do it well.
+- **Quickbuild parity SHIPPED (2026-07-30)** — DDB shipped "Quickbuilder" March 2026; Quick Start
+  now opens on a complete, legal, class-recommended build (only the name left to type) **plus the
+  seeded Randomize reroll DDB does not have** — matched, then exceeded.
+- **No public share links yet** — scope owner-settled 2026-07-31: **characters only** — the
+  `shared: true` flag + unguessable doc id, anonymous read-only viewing (no account needed) via the
+  Web Share API native sheet + copy-link fallback; **campaigns deliberately have NO share model**
+  (industry standard — a table shares via each player's own character).
 - **The permanent, un-closeable cap: official non-SRD content.** DDB is the only legal home for the
   ~75%+ of subclasses/species/feats/spells/adventures that are _not_ in SRD 5.2.1. A CC-BY app is
   permanently bounded to the SRD subset. **We do not try to close this** (see _The moat_).
@@ -100,9 +109,18 @@ monetized or redistributed — personal + friends use only.** The public/private
 what keeps this door open without forcing a choice now. A commercial build would also have to avoid
 the D&D / WotC trademarks (brand as its own thing; "5e / SRD-compatible" wording only).
 
-**Current posture — "Option A" (owner, 2026-07-21):** build a genuine _masterpiece_ for the owner +
-friends + whoever finds the public repo; stay free and zero-budget; keep the pack private forever.
-Monetization is a possible someday, never a driving goal.
+**The ratified trajectory (owner, 2026-07-31): the destination is GA.** "Option A" (owner,
+2026-07-21) — build a genuine _masterpiece_ for the owner + friends + whoever finds the public repo;
+stay free and zero-budget; keep the pack private forever — is the **current phase**, not the end
+state. At some point the SRD-clean public build goes **generally available and competes with
+D&D Beyond head-on**, so it is crucial we are **objectively better** — on correctness, craft, trust,
+and price. The content moat is neutralized on both sides of the split: the **private pack**
+(personal, forever-private) closes it for the owner's table, and the **homebrew ladder is the
+public answer** — users author what licensing forbids us to ship. The bar is absolute: everything
+perfect and premium — no bug or weird UI/UX can be afforded (golden rule 27). The **pre-GA
+checklist** (parked now, blocking GA later) lives in `PROGRESS.md` → the DDB-parity charter's
+2026-07-31 owner amendment. Monetization remains a possible someday, never a driving goal, and the
+boundary above stands unchanged: only ever the SRD-clean public build.
 
 ## Sources
 

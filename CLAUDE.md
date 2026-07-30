@@ -27,10 +27,11 @@ mechanical-automation long-tail (seams S1–S13) and the 2024 core-rules SYSTEM-
 audit (the rule-16 on-ramp) closed with this wave. The forward frontier is (1) the ACTIVE DDB-parity
 feature epic — its bestiary flagship SHIPPED (330 SRD monsters EN+IT + the compendium Monsters
 section, 2026-07-24), then the encounter picker, the 2024-DMG difficulty calculator, companions, and
-the account-level homebrew library (rung (a), 2026-07-30) — the live head is now quickbuild
-(`PROGRESS.md` → "Active epic"; competitive map: `docs/POSITIONING.md`),
-(2) the react-router advisory triage,
-and (3) parked backups/observability/legal (the light
+the account-level homebrew library + quickbuild (both 2026-07-30) — the live head is now share
+links (`PROGRESS.md` → "Active epic"; competitive map: `docs/POSITIONING.md` — **GA is the
+ratified destination**, owner 2026-07-31), and
+(2) the **pre-GA checklist** — backups · observability · legal pages · auth breadth beyond Google ·
+the react-router advisory triage — parked now, blocking GA later (the light
 theme is at FULL parity: the depth-parity
 rebuild shipped 2026-07-09, the owner-ratified "Daylight Sibling Plates" art direction shipped
 2026-07-10, and the owner-ratified "Ember Penumbra" lit-magic grammar shipped 2026-07-11 — per-theme

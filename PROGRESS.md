@@ -426,7 +426,9 @@ was executed** the moment the pack was workable — the 17-spell material-cost f
 sweeps + the RA-35 status-quo residual lock in `content-pack/`. Housekeeping: **`fast-uri` patched**
 (the Dependabot advisory, entry below). The tracking-doc reconciliation truth-sweep (this wave)
 verified the three tracking docs against the merged code; the forward frontier is now the DDB-parity
-bestiary epic, the react-router advisory triage, and parked backups/observability/legal.
+bestiary epic, the react-router advisory triage, and parked backups/observability/legal [since
+named part of the **pre-GA checklist** — owner amendment 2026-07-31 in _Active epic — The
+DDB-parity frontier_].
 
 ## Shipped — the attack-scope clause family (PS-J, 2026-07-25)
 
@@ -1171,6 +1173,17 @@ and the commit bloom. Four divider grammars collapsed into one `--hairline`.
 > disclosure; see the bestiary bullet below); the next attack-order step is the 2024-DMG difficulty
 > calculator.
 
+**Owner amendment (2026-07-31) — GA is the ratified destination.** "At some point we want to
+become GA and compete with DnD Beyond" (owner, verbatim intent): **general availability of the
+SRD-clean public build** is where this epic ultimately lands, and **"objectively better" than
+D&D Beyond is the acceptance bar** — with any content gap overcome, as usual, by the private
+content pack (personal) and the homebrews (the public answer). The mandate is premium and
+zero-defect — "everything has to be perfect and premium; we can't afford any bug or weird UI/UX" —
+reinforcing golden rule 27. The **pre-GA checklist** — parked NOW, blocking GA LATER: **backups ·
+observability · legal pages · auth breadth beyond Google · the react-router advisory triage**
+(backups + observability sit in _Open decisions_; auth breadth is the DEFERRED bullet below; the
+advisory in the Dependabot remediation records). Posture home: `docs/POSITIONING.md`.
+
 **The owner's charter, captured on ratification (golden rule 4).** A full competitive audit vs
 D&D Beyond (mid-2026 verified state: Project Sigil dead, 2D Maps free-for-all, DDB's 2026 roadmap
 rebuilding toward "rules as data" — the architecture this app already has; DDB's weaknesses =
@@ -1256,9 +1269,18 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   CLASSES declared the horizon flagship on the grants seam (DDB's #1 refused community ask),
   scheduled only once (c) proves the authoring UX. Homebrew is user data, never repo data — no #32
   impact.
-- **Public share links: LIVE model** — a `shared: true` flag on the character doc + the
-  unguessable doc id as the URL; rules allow anonymous read-only when flagged; revoke = flip the
-  flag; noindex; reuses the MemberSheetView read-only rendering.
+- **Public share links (owner-refined 2026-07-31): CHARACTERS ONLY, industry standard.** The
+  decided LIVE model stands — a `shared: true` flag on the character doc + the unguessable doc id
+  as the URL; rules allow anonymous read-only when flagged; revoke = flip the flag; noindex;
+  reuses the MemberSheetView read-only rendering. Owner requirements folded in (2026-07-31): the
+  share affordance uses the state-of-the-art sharing surface — the **Web Share API native sheet on
+  mobile** (WhatsApp/Telegram/iMessage for free) with **copy-link as the universal fallback**;
+  viewers need **NO account** (that is the point — friends off the app see the sheet read-only);
+  DB/auth stay maximally simple (one flag, one rules line, zero auth changes). **Campaigns
+  deliberately have NO share model** (industry standard — DDB/Roll20 campaigns are private member
+  spaces): a table shares a campaign by each player sharing their own character, which keeps
+  consent per-owner and adds zero rules surface; an opt-in campaign-surface design is noted as the
+  someday upgrade path ONLY if real demand appears — explicitly not built on speculation.
 - **Quickbuild: SHIPPED (2026-07-30) — as "creation opens complete".** There is no separate
   quickbuild screen: the chooser keeps its two cards (Quick Start · Guided, Guided untouched) and
   **Quick Start now arrives finished** on the default class's ready-made build — species and its
