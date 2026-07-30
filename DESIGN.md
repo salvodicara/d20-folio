@@ -2403,8 +2403,7 @@ above).
 The corpus's own metal is a bronze/copper ramp, but the owner ruled at gate 2 that the folio
 KEEPS ITS GOLD ("wasn't gold nicer?"): the grammar's line/ornament vars ride the app's
 struck-gold family instead — `--wb-line-900 #624d1f` (engraved recess) · `--wb-line-700
-#8a6d2f` (the standing line) · `--wb-line-500 = --gold-leaf-500` (lit edge) ·
-`--wb-line-300 #d4af5e` (the kindled highlight). What the study KEEPS from the measured
+#8a6d2f` (the standing line) · `--wb-line-500 = --gold-leaf-500` (lit edge). What the study KEEPS from the measured
 metal is its BEHAVIOUR, not its hue:
 
 - Every metal edge is TWO-TONE: lit toward the top-left, recessed toward the bottom-right —
@@ -2453,8 +2452,8 @@ Dividers and frames are never decorated — the LINE ITSELF performs:
 | Register                  | Frame construction                                                                            |
 | ------------------------- | --------------------------------------------------------------------------------------------- |
 | Utility row / facet chip  | hairline + 45° chamfered corner facets (the measured entry-frame cut), radius 0–2px           |
-| Read card / tooltip plate | rounded 8–10px near-black plate, thin TWO-TONE bronze lip, soft outer glow ≤12px              |
-| Portrait / image well     | rounded-rect two-tone bronze frame, no ornament                                               |
+| Read card / tooltip plate | rounded 8–10px near-black plate, thin TWO-TONE metal lip, soft outer glow ≤12px               |
+| Portrait / image well     | rounded-rect two-tone metal frame, no ornament                                                |
 | Item/spell well           | square leather well; rarity/school speaks as an INNER glow + coloured frame, never a badge    |
 | Ceremony plate            | cathedral arch (ogee shoulders), split head/body by a curl-ended rule, detached corner thorns |
 | Hero masthead             | the standing crest + engraved titling stay (v0.22.0 continuity), re-metaled in bronze         |
@@ -2475,7 +2474,7 @@ Hover KINDLES (same material, brighter grain + stronger rim-light); pressed sett
   **Source Serif** numerals.
 - The measured hierarchy is SENTENCE-CASE serif titles at generous size with a MUTED-BRONZE
   role subtitle under them ("Athletics / Strength Skill" construction) — adopt for entry/read
-  surfaces: title `--text-lg` Alegreya, subtitle `--text-sm` in `--wb-bronze-500`, sections
+  surfaces: title `--text-lg` Alegreya, subtitle `--text-sm` in `--wb-line-700`, sections
   separated by SPACING, not rules. Smallcaps tracked labels retreat to data eyebrows only.
 - Numbers are the loudest thing on a data surface (the measured AC-plaque / modifier weight):
   big light-weight numerals, labels quiet.
@@ -2499,7 +2498,7 @@ lives INSIDE plates, not between them.
 ### 16.9 Light theme
 
 The daylight sibling doctrine holds (§10): same construction, re-lit — parchment field, the
-bronze ramp DEEPENS one step for contrast (lines draw with `--wb-bronze-900/700`), plates go
+line ramp DEEPENS one step for contrast (lines draw with `--wb-line-900/700`), plates go
 translucent ivory, the dome and pools stay. Every 16.x rule must land in BOTH themes in the
 same motion, AA-verified.
 
