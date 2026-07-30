@@ -22,6 +22,7 @@ import { primaryClassId } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import { Sparkles, Plus } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useLibraryStore } from "@/stores/libraryStore";
 import { useUIStore } from "@/stores/uiStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
@@ -173,7 +174,11 @@ export function SpellsTab() {
       const stored =
         typeof value === "string" ? value || undefined : (value ?? undefined);
       spells[spellIdx] = { ...ref, [field]: stored };
-      store.setCharacter({ ...character, character: { ...character.character, spells } });
+      const next = { ...character.character, spells };
+      store.setCharacter({ ...character, character: next });
+      // Custom IS the library: an edited homebrew spell updates its entry (no-op for
+      // an SRD ref). The library write itself is debounced in the persistence seam.
+      useLibraryStore.getState().syncFromCharacter(next, "spell", spellIdx);
     },
     [character]
   );
@@ -187,7 +192,9 @@ export function SpellsTab() {
       if (!ref || !("custom" in ref)) return;
       const prev = ref.components;
       spells[spellIdx] = { ...ref, components: { ...prev, [key]: value } };
-      store.setCharacter({ ...character, character: { ...character.character, spells } });
+      const next = { ...character.character, spells };
+      store.setCharacter({ ...character, character: next });
+      useLibraryStore.getState().syncFromCharacter(next, "spell", spellIdx);
     },
     [character]
   );

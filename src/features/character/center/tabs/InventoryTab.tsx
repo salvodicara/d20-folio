@@ -21,6 +21,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Backpack } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useLibraryStore } from "@/stores/libraryStore";
 import { useUIStore } from "@/stores/uiStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
@@ -291,10 +292,11 @@ export function InventoryTab() {
       const ref = weaponsCopy[idx];
       if (!ref) return;
       weaponsCopy[idx] = { ...ref, [field]: value === "" ? undefined : value };
-      store.setCharacter({
-        ...char,
-        character: { ...char.character, weapons: weaponsCopy },
-      });
+      const next = { ...char.character, weapons: weaponsCopy };
+      store.setCharacter({ ...char, character: next });
+      // Custom IS the library: an edited homebrew weapon updates its entry (no-op for
+      // an SRD ref). The library write itself is debounced in the persistence seam.
+      useLibraryStore.getState().syncFromCharacter(next, "weapon", idx);
     },
     []
   );
@@ -308,10 +310,9 @@ export function InventoryTab() {
       const ref = equipCopy[idx];
       if (!ref) return;
       equipCopy[idx] = { ...ref, [field]: value === "" ? undefined : value };
-      store.setCharacter({
-        ...char,
-        character: { ...char.character, equipment: equipCopy },
-      });
+      const next = { ...char.character, equipment: equipCopy };
+      store.setCharacter({ ...char, character: next });
+      useLibraryStore.getState().syncFromCharacter(next, "equipment", idx);
     },
     []
   );

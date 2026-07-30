@@ -1,17 +1,21 @@
 /**
  * Library Store — the in-memory home of the account-level homebrew library.
  *
- * Holds the live `LibraryEntry[]` and the two mutations every surface goes through:
- * {@link LibraryState.saveToLibrary} from a custom item's card,
- * {@link LibraryState.removeFromLibrary} from the settings manager. Both apply
+ * CUSTOM IS THE LIBRARY: nothing is curated by hand. {@link LibraryState.saveToLibrary}
+ * (and its `(kind, idx)` convenience {@link LibraryState.syncFromCharacter}) is called
+ * by the CREATE forms and by every sheet-side custom EDIT seam, upserting by kind +
+ * name; {@link LibraryState.removeFromLibrary} is the Custom tab's trash — the only
+ * deletion, and it STICKS (only a real create/edit ever re-adds an entry). Both apply
  * OPTIMISTICALLY and then hand the whole list to the injected persistence seam, so the
- * picker and the manager always read one list.
+ * Custom tab always reads one list.
  *
  * PERSISTENCE IS INJECTED (`persist`), never imported — the same seam
  * `characterStore.combatPersistence` uses, and for the same reason: `hooks/useLibrary`
  * owns the uid and the `library-io` import, so THIS store (and therefore every card
  * that renders a save affordance) stays Firebase-free and unit-testable with the API
- * key unset. `null` = memory-only (signed out / DEV_BYPASS).
+ * key unset. `null` = memory-only (signed out / DEV_BYPASS). The seam DEBOUNCES the
+ * Firestore write (`library-io.createLibraryWriter`): per-keystroke edit seams update
+ * this store immediately and flush once, ~2 s later.
  *
  * Mutations refuse to run until `loaded` is true: the write is a FULL-DOC overwrite,
  * so writing from an unhydrated store would erase the user's library.
@@ -24,11 +28,14 @@
 import { create } from "zustand";
 import { FREE_TIER_LIMITS } from "@/lib/limits";
 import {
+  customDraftAt,
   toLibraryEntry,
   upsertEntry,
   type LibraryDraft,
   type LibraryEntry,
+  type LibraryKind,
 } from "@/lib/library";
+import type { CharacterData } from "@/types/character";
 
 /** What a save attempt did — the caller maps it to a toast. */
 export type SaveToLibraryOutcome = "saved" | "updated" | "full" | "unavailable";
@@ -48,8 +55,13 @@ interface LibraryState {
   hydrate: (entries: LibraryEntry[], persist: LibraryPersistence | null) => void;
   /** Drop the library on sign-out / uid change so no entry leaks across accounts. */
   reset: () => void;
-  /** Promote a character's custom item to a reusable entry (upsert by kind + name). */
+  /** Promote a homebrew item to a reusable entry (upsert by kind + name). */
   saveToLibrary: (draft: LibraryDraft) => SaveToLibraryOutcome;
+  /**
+   * Mirror the character's item at `(kind, idx)` into the library — the shape every
+   * sheet-side EDIT seam uses. A no-op for an SRD row, so a caller never branches.
+   */
+  syncFromCharacter: (data: CharacterData, kind: LibraryKind, idx: number) => void;
   /** Delete one entry by id. */
   removeFromLibrary: (id: string) => void;
 }
@@ -74,6 +86,11 @@ export const useLibraryStore = create<LibraryState>()((set, get) => ({
     set({ entries: next });
     persist?.(next);
     return replaced ? "updated" : "saved";
+  },
+
+  syncFromCharacter: (data, kind, idx) => {
+    const draft = customDraftAt(data, kind, idx);
+    if (draft) get().saveToLibrary(draft);
   },
 
   removeFromLibrary: (id) => {

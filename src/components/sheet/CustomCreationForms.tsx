@@ -2,13 +2,21 @@
  * Custom Homebrew Creation Forms
  *
  * Inline forms for creating custom spells, equipment, and features
- * that don't exist in the SRD. Used within the Add modals.
+ * that don't exist in the SRD. Used within the Add modals' Custom tab.
+ *
+ * CUSTOM IS THE LIBRARY: every commit here lands on the character AND upserts the
+ * same homebrew into the account-level library (`libraryStore.saveToLibrary`, keyed by
+ * kind + name), so it is offerable to every other character with no save gesture. The
+ * upsert is silent — the creation itself is the feedback; a second toast would just
+ * narrate bookkeeping. It no-ops while the library is unhydrated (signed out), so a
+ * creation never fails because of it.
  */
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Check } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useLibraryStore } from "@/stores/libraryStore";
 import { useLocale } from "@/hooks/useLocale";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -80,6 +88,7 @@ export function CustomSpellForm({ onCreated }: CustomSpellFormProps) {
         spells: [...character.character.spells, newSpell],
       },
     });
+    useLibraryStore.getState().saveToLibrary({ kind: "spell", item: newSpell });
 
     onCreated();
   }
@@ -271,6 +280,7 @@ export function CustomEquipmentForm({ onCreated }: CustomEquipmentFormProps) {
           weapons: [...character.character.weapons, weapon],
         },
       });
+      useLibraryStore.getState().saveToLibrary({ kind: "weapon", item: weapon });
     } else if (isArmor) {
       const parsedAc = parseInt(acBonus, 10);
       const armor: CustomEquipment = {
@@ -289,6 +299,7 @@ export function CustomEquipmentForm({ onCreated }: CustomEquipmentFormProps) {
           equipment: [...character.character.equipment, armor],
         },
       });
+      useLibraryStore.getState().saveToLibrary({ kind: "equipment", item: armor });
     } else {
       const equipment: CustomEquipment = {
         custom: true,
@@ -309,6 +320,7 @@ export function CustomEquipmentForm({ onCreated }: CustomEquipmentFormProps) {
           equipment: [...character.character.equipment, equipment],
         },
       });
+      useLibraryStore.getState().saveToLibrary({ kind: "equipment", item: equipment });
     }
 
     onCreated();
@@ -586,6 +598,9 @@ export function CustomFeatureForm({
       ...character,
       character: { ...character.character, features },
     });
+    // Covers BOTH legs: a fresh feature is kept, and an EDIT upserts by title so the
+    // library entry follows the correction (U6).
+    useLibraryStore.getState().saveToLibrary({ kind: "feature", item: built });
 
     onCreated();
   }

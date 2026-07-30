@@ -11,6 +11,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  customDraftAt,
   entryToCharacterItem,
   libraryEntryName,
   toLibraryEntry,
@@ -156,6 +157,31 @@ describe("toLibraryEntry — a saved entry is a template, not a sheet row", () =
     entry.item.title = "renamed";
     expect(FEATURE.contentBlocks).toHaveLength(1);
     expect(FEATURE.title).toBe("Oath of the Long Road");
+  });
+});
+
+describe("customDraftAt — only a HOMEBREW row is library material", () => {
+  const data = {
+    spells: [SPELL, { srdId: "fireball" }],
+    features: [FEATURE],
+    equipment: [EQUIPMENT],
+    weapons: [WEAPON],
+  } as unknown as Parameters<typeof customDraftAt>[0];
+
+  it("returns the stored item, tagged with its kind", () => {
+    expect(customDraftAt(data, "spell", 0)).toEqual({ kind: "spell", item: SPELL });
+    expect(customDraftAt(data, "feature", 0)).toEqual({ kind: "feature", item: FEATURE });
+    expect(customDraftAt(data, "equipment", 0)).toEqual({
+      kind: "equipment",
+      item: EQUIPMENT,
+    });
+    expect(customDraftAt(data, "weapon", 0)).toEqual({ kind: "weapon", item: WEAPON });
+  });
+
+  it("returns null for an SRD reference and for a gone index", () => {
+    expect(customDraftAt(data, "spell", 1)).toBeNull();
+    expect(customDraftAt(data, "spell", 9)).toBeNull();
+    expect(customDraftAt(data, "weapon", 3)).toBeNull();
   });
 });
 

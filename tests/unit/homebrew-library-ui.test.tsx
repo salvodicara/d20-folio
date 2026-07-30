@@ -13,6 +13,9 @@
  *     STICKS (nothing re-adds an entry on a re-render);
  *  4. SEARCH — filters the rows.
  *
+ * Plus the two AUTO-UPSERT seams that fill the library in the first place: a create
+ * form commit, and a sheet-side edit of an existing homebrew row.
+ *
  * The store's write seam is injected, so a spy stands in for `library-io`: these tests
  * exercise the surface, never Firestore.
  */
@@ -21,6 +24,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent, within, act } from "@testing-library/react";
 
 import { AddItemModal } from "@/components/sheet/AddItemModal";
+import { InventoryTab } from "@/features/character/center/tabs/InventoryTab";
 import {
   libraryEntryName,
   toLibraryEntry,
@@ -219,6 +223,79 @@ describe("the Custom tab — delete", () => {
       await Promise.resolve();
     });
     expect(useLibraryStore.getState().entries).toHaveLength(1);
+    expect(persistMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("custom IS the library — the auto-upsert seams", () => {
+  it("a CREATE lands on the sheet AND is kept in the library, with no second toast", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.equipment = [];
+    loadCharacter(doc);
+    seedLibrary([]); // empty → the tab opens on the create form
+    const dialog = openCustomTab();
+
+    fireEvent.change(within(dialog).getByPlaceholderText(/Item name/i), {
+      target: { value: "Tinder Pouch" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: /^Create Equipment$/i }));
+
+    // On the sheet…
+    const landed = useCharacterStore.getState().character?.character.equipment ?? [];
+    expect(landed.map((i) => ("custom" in i ? i.name : i.srdId))).toEqual([
+      "Tinder Pouch",
+    ]);
+    // …and kept, as a stripped template.
+    const entries = useLibraryStore.getState().entries;
+    expect(entries.map(libraryEntryName)).toEqual(["Tinder Pouch"]);
+    const kept = entries[0]?.item as CustomEquipment;
+    expect(kept.quantity).toBeUndefined();
+    expect(kept.equipped).toBeUndefined();
+    expect(persistMock).toHaveBeenCalled();
+    // The creation itself is the feedback — no library toast narrating bookkeeping.
+    expect(useToastStore.getState().toasts).toHaveLength(0);
+  });
+
+  it("an EDIT on the sheet updates the kept entry IN PLACE (same id)", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.equipment = [{ ...CUSTOM_GEAR }];
+    loadCharacter(doc);
+    seedLibrary([entry({ kind: "equipment", item: CUSTOM_GEAR })]);
+    const originalId = useLibraryStore.getState().entries[0]?.id;
+    useUIStore.setState({ sheetMode: "edit" });
+
+    render(<InventoryTab />);
+    fireEvent.click(screen.getByRole("button", { name: /Expand: Ember Wand/i }));
+    const card = screen.getByText("Ember Wand").closest("article");
+    expect(card).not.toBeNull();
+    if (!card) return;
+    const description = within(card).getByPlaceholderText(/description/i);
+    fireEvent.blur(description, { target: { value: "Rewound with copper wire." } });
+
+    const entries = useLibraryStore.getState().entries;
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.id).toBe(originalId);
+    expect((entries[0]?.item as CustomEquipment).description).toBe(
+      "Rewound with copper wire."
+    );
+  });
+
+  it("an SRD row's edit never touches the library", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.equipment = [{ srdId: "crowbar", quantity: 1 }];
+    loadCharacter(doc);
+    seedLibrary([]);
+    useUIStore.setState({ sheetMode: "edit" });
+
+    render(<InventoryTab />);
+    fireEvent.click(screen.getByRole("button", { name: /Expand: Crowbar/i }));
+    const card = screen.getByText("Crowbar").closest("article");
+    expect(card).not.toBeNull();
+    if (!card) return;
+    fireEvent.blur(within(card).getByPlaceholderText(/notes/i), {
+      target: { value: "bent" },
+    });
+    expect(useLibraryStore.getState().entries).toEqual([]);
     expect(persistMock).not.toHaveBeenCalled();
   });
 });

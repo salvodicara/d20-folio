@@ -80,3 +80,48 @@ export async function writeLibrary(
   if (DEV_BYPASS_AUTH) return;
   await setDoc(libraryRef(uid), stripUndefined({ entries }) as Record<string, unknown>);
 }
+
+/**
+ * How long the writer coalesces before it flushes. Mirrors the character auto-save
+ * debounce: the sheet-side custom EDIT seams fire per keystroke / per stepper tap, and
+ * each write rewrites the WHOLE library doc — one flush per edit BURST, not per key.
+ */
+export const LIBRARY_WRITE_DEBOUNCE_MS = 2000;
+
+/**
+ * A DEBOUNCED library writer for one uid: `persist` records the latest list and arms
+ * a single trailing flush; `flush` writes any pending list NOW (the caller's teardown
+ * calls it, so a sign-out / unmount never drops the last edit).
+ *
+ * Only the FLUSH is delayed — `libraryStore` has already applied the change in memory,
+ * so every surface reads the new list immediately (free-tier discipline, golden rule
+ * 24: debounced writes, never a write per keystroke).
+ */
+export function createLibraryWriter(
+  uid: string,
+  delayMs: number = LIBRARY_WRITE_DEBOUNCE_MS,
+  onError: (err: unknown) => void = (err) => console.error("Library write failed", err)
+): { persist: (entries: readonly LibraryEntry[]) => void; flush: () => void } {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let pending: readonly LibraryEntry[] | null = null;
+
+  const flush = (): void => {
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    if (pending === null) return;
+    const entries = pending;
+    pending = null;
+    void writeLibrary(uid, entries).catch(onError);
+  };
+
+  return {
+    persist: (entries) => {
+      pending = entries;
+      if (timer !== null) clearTimeout(timer);
+      timer = setTimeout(flush, delayMs);
+    },
+    flush,
+  };
+}

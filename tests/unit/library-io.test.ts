@@ -7,10 +7,12 @@
  *     throw and silently lose the save.
  *  2. READ — a malformed stored entry is DROPPED, never crashes the surfaces: the
  *     rules validate only authorization + the cap, so shape tolerance lives here.
+ *  3. DEBOUNCE — custom IS the library, so per-keystroke sheet edits upsert; the
+ *     writer must coalesce a burst into ONE whole-doc write (and flush on teardown).
  *
  * `firebase/firestore` + `@/lib/firebase` are mocked, so no emulator and no API key.
  */
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const setDocMock = vi.hoisted(() =>
   vi.fn<(ref: unknown, data: unknown) => Promise<void>>(() => Promise.resolve())
@@ -32,7 +34,12 @@ vi.mock("firebase/firestore", () => ({
   },
 }));
 
-import { libraryRef, subscribeLibrary, writeLibrary } from "@/lib/library-io";
+import {
+  createLibraryWriter,
+  libraryRef,
+  subscribeLibrary,
+  writeLibrary,
+} from "@/lib/library-io";
 import type { LibraryEntry } from "@/lib/library";
 
 const ENTRY: LibraryEntry = {
@@ -88,5 +95,46 @@ describe("library-io", () => {
 
   it("reads a doc with no `entries` field as empty", () => {
     expect(emit({})).toEqual([]);
+  });
+});
+
+describe("createLibraryWriter — one write per edit burst", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("coalesces a burst into ONE write, carrying the LAST list", () => {
+    vi.useFakeTimers();
+    setDocMock.mockClear();
+    const { persist } = createLibraryWriter("u1", 2000);
+    persist([ENTRY]);
+    persist([ENTRY, { ...ENTRY, id: "e2" }]);
+    persist([{ ...ENTRY, id: "e3" }]);
+    // Nothing has hit Firestore yet — the store already shows every change.
+    vi.advanceTimersByTime(1999);
+    expect(setDocMock).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(setDocMock).toHaveBeenCalledTimes(1);
+    const payload = setDocMock.mock.calls.at(-1)?.[1] as {
+      entries: Array<{ id: string }>;
+    };
+    expect(payload.entries.map((e) => e.id)).toEqual(["e3"]);
+  });
+
+  it("flush() writes the pending list immediately, and is a no-op when nothing pends", () => {
+    vi.useFakeTimers();
+    setDocMock.mockClear();
+    const { persist, flush } = createLibraryWriter("u1", 2000);
+    flush();
+    expect(setDocMock).not.toHaveBeenCalled();
+
+    persist([ENTRY]);
+    flush();
+    expect(setDocMock).toHaveBeenCalledTimes(1);
+
+    // The armed timer was cancelled by the flush — no second write later.
+    vi.advanceTimersByTime(5000);
+    expect(setDocMock).toHaveBeenCalledTimes(1);
   });
 });

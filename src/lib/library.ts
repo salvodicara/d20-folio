@@ -20,6 +20,7 @@
  * `tests/unit/pure-modules-guard.test.ts`).
  */
 import type {
+  CharacterData,
   CustomEquipment,
   CustomFeature,
   CustomSpell,
@@ -63,6 +64,38 @@ export type LibraryEntry = LibraryDraft & { id: string; savedAt: number };
  */
 export function libraryEntryName(entry: LibraryDraft): string {
   return entry.kind === "feature" ? entry.item.title : entry.item.name;
+}
+
+/**
+ * The stored HOMEBREW item at `(kind, idx)` on a character, as a draft — or `null`
+ * when that row is an SRD reference (or the index is gone). The one place the four
+ * arrays are mapped to their kinds, so every auto-upsert seam (the create forms, the
+ * sheet-side edit handlers) mirrors exactly what is stored, never a stale copy held
+ * in a prop.
+ */
+export function customDraftAt(
+  data: CharacterData,
+  kind: LibraryKind,
+  idx: number
+): LibraryDraft | null {
+  switch (kind) {
+    case "spell": {
+      const ref = data.spells[idx];
+      return ref && "custom" in ref ? { kind: "spell", item: ref } : null;
+    }
+    case "feature": {
+      const ref = data.features[idx];
+      return ref && "custom" in ref ? { kind: "feature", item: ref } : null;
+    }
+    case "equipment": {
+      const ref = data.equipment[idx];
+      return ref && "custom" in ref ? { kind: "equipment", item: ref } : null;
+    }
+    case "weapon": {
+      const ref = data.weapons[idx];
+      return ref && "custom" in ref ? { kind: "weapon", item: ref } : null;
+    }
+  }
 }
 
 /** The (kind, name) identity two entries are "the same homebrew" by. */
