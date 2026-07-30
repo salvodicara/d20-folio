@@ -51,7 +51,7 @@ const INK_CLASSES = ["rt-adv", "rt-dis", "rt-cond", "rt-dmg", "rt-value", "mon-d
  *  they have no single token to pin — they are covered by the `--accent-text`
  *  prohibition below. */
 const ARM_TOKEN: Readonly<Record<string, string>> = {
-  "rt-adv": "--rt-adv-ink",
+  "rt-adv": "--semantic-success",
   "rt-dis": "--semantic-danger",
   "rt-value": "--text-special",
 };

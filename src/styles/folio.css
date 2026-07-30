@@ -20888,3 +20888,11 @@ body:has(.fob) .toast-region {
   --sl: var(--gold-leaf-500);
   --sl-ink: var(--gilt-ink);
 }
+/* Light: the statblock plaque hosts the FULL damage/condition ink vocabulary
+   (statblock-ink-contrast spec), and the carved-vellum recess (#cdbb8e) sinks
+   acid/piercing/bludgeoning/advantage below AA. Seat THIS plaque one step
+   lighter — still under the card tier, so the carve keeps reading — and the
+   whole ink family clears 4.5:1 by measurement (worst arm: acid at 4.76). */
+[data-theme="light"] .mon-ref {
+  --bg-recessed: #e9ddc0;
+}
