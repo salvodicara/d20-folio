@@ -4,12 +4,14 @@
  * THE MODEL: custom IS the library. There is no save gesture and no manager page;
  * the tab is the whole surface, so these thin render tests pin its four jobs:
  *
- *  1. LIST — only the modal's kinds, landing an entry through the character store's
- *     commit path (with the create-form defaults re-seeded), then closing the modal;
+ *  1. LIST → DETAIL → ADD — only the modal's kinds; tapping a row opens the shared
+ *     picker detail (the SRD flow), whose footer lands the entry through the character
+ *     store's commit path (create-form defaults re-seeded) and closes the modal;
  *  2. CREATE — an EMPTY library opens straight on the create form (a blank list is a
  *     dead end) with the one line that says creations are kept; a non-empty one
  *     swaps list ↔ form through the Create bar and Back;
- *  3. EDIT / DELETE — the row's action cluster (add · edit · delete) is the whole CRUD:
+ *  3. EDIT / DELETE — the row's cluster (edit · delete) plus the detail's Add are the
+ *     whole CRUD:
  *     the pencil reopens the SAME form prefilled and commits an id-keyed update that
  *     never touches the character; the trash is the ONLY delete, behind the house
  *     confirm, and it STICKS (nothing re-adds an entry on a re-render);
@@ -42,7 +44,12 @@ import { useToastStore } from "@/stores/toastStore";
 import { useUIStore } from "@/stores/uiStore";
 import { FREE_TIER_LIMITS } from "@/lib/limits";
 import { MOCK_CHARACTER } from "@/lib/mock";
-import type { CharacterDoc, CustomEquipment, CustomSpell } from "@/types/character";
+import type {
+  CharacterDoc,
+  CustomEquipment,
+  CustomSpell,
+  CustomWeapon,
+} from "@/types/character";
 
 const NOW = 1_700_000_000_000;
 
@@ -53,6 +60,17 @@ const CUSTOM_GEAR: CustomEquipment = {
   equipped: true,
   quantity: 2,
   notes: "found in the barrow",
+};
+
+const CUSTOM_WEAPON: CustomWeapon = {
+  custom: true,
+  name: "Bramble Spear",
+  quantity: 4,
+  damageDie: "1d8",
+  damageType: "slashing",
+  attackStat: "STR",
+  properties: "Thrown (20/60)",
+  description: "A blackthorn haft, iron-shod.",
 };
 
 const CUSTOM_SPELL: CustomSpell = {
@@ -115,8 +133,11 @@ describe("the Custom tab — the list half", () => {
     expect(within(dialog).getByText("Ember Wand")).toBeInTheDocument();
     expect(within(dialog).queryByText("Hearthfire Bolt")).toBeNull();
 
+    // The SRD flow: TAP the row → the detail → Add from its footer.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Ember Wand" }));
+    expect(within(dialog).getByText("A charred rowan wand.")).toBeInTheDocument();
     fireEvent.click(
-      within(dialog).getByRole("button", { name: /Add Ember Wand to the sheet/i })
+      within(dialog).getByRole("button", { name: /Add to Character|Add to character/i })
     );
     const landed = useCharacterStore.getState().character?.character.equipment ?? [];
     expect(landed).toHaveLength(1);
@@ -142,6 +163,51 @@ describe("the Custom tab — the list half", () => {
     fireEvent.change(search, { target: { value: "bramble" } });
     expect(within(dialog).getByText("Bramble Cloak")).toBeInTheDocument();
     expect(within(dialog).queryByText("Ember Wand")).toBeNull();
+  });
+});
+
+describe("the Custom tab — the detail leg (the SRD flow)", () => {
+  it("shows the entry's key facts, and Back returns to the list", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.weapons = [];
+    loadCharacter(doc);
+    seedLibrary([entry({ kind: "weapon", item: CUSTOM_WEAPON })]);
+    const dialog = openCustomTab();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Bramble Spear" }));
+    // The shared picker detail scaffold: the kind eyebrow, the meta grid, the prose.
+    expect(within(dialog).getByText("Damage Die")).toBeInTheDocument();
+    expect(within(dialog).getByText("1d8 Slashing")).toBeInTheDocument();
+    expect(within(dialog).getByText("Attack Stat")).toBeInTheDocument();
+    expect(within(dialog).getByText("Properties")).toBeInTheDocument();
+    expect(within(dialog).getByText("Thrown (20/60)")).toBeInTheDocument();
+    expect(within(dialog).getByText("A blackthorn haft, iron-shod.")).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: /^Back$/i }));
+    expect(
+      within(dialog).getByRole("button", { name: "Bramble Spear" })
+    ).toBeInTheDocument();
+    expect(useCharacterStore.getState().character?.character.weapons).toEqual([]);
+  });
+
+  it("its footer Add lands the entry on the character's own array", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.weapons = [];
+    loadCharacter(doc);
+    seedLibrary([entry({ kind: "weapon", item: CUSTOM_WEAPON })]);
+    const onClose = vi.fn();
+    const dialog = openCustomTab(onClose);
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Bramble Spear" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: /Add to Character/i }));
+
+    const landed = useCharacterStore.getState().character?.character.weapons ?? [];
+    expect(landed.map((w) => ("custom" in w ? w.name : w.srdId))).toEqual([
+      "Bramble Spear",
+    ]);
+    // Landing re-seeds the create-form default, never the saved copy's count.
+    expect(landed[0]?.quantity).toBe(1);
+    expect(onClose).toHaveBeenCalled();
   });
 });
 
@@ -418,7 +484,7 @@ describe("at the free-tier cap", () => {
 });
 
 describe("the row action cluster", () => {
-  it("offers add · edit · delete, in that order, each naming its action", () => {
+  it("is the row itself plus edit · delete — no add glyph (Add lives in the detail)", () => {
     loadCharacter();
     seedLibrary([entry({ kind: "equipment", item: CUSTOM_GEAR })]);
     const dialog = openCustomTab();
@@ -429,10 +495,24 @@ describe("the row action cluster", () => {
       .getAllByRole("button")
       .map((b) => b.getAttribute("aria-label"));
     expect(labels).toEqual([
-      "Add Ember Wand to the sheet",
+      "Ember Wand", // the row itself — tapping it opens the detail
       "Edit Ember Wand",
       "Delete Ember Wand from your custom list",
     ]);
+  });
+
+  it("the management glyphs never trigger the row's tap", () => {
+    loadCharacter();
+    seedLibrary([entry({ kind: "equipment", item: CUSTOM_GEAR })]);
+    const dialog = openCustomTab();
+    // Pencil → the FORM leg (not the detail leg).
+    fireEvent.click(within(dialog).getByRole("button", { name: "Edit Ember Wand" }));
+    expect(
+      within(dialog).getByRole("button", { name: /Save changes/i })
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("button", { name: /Add to Character|Add to character/i })
+    ).toBeNull();
   });
 });
 

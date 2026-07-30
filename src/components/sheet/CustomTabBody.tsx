@@ -8,11 +8,15 @@
  * kind + name), so this tab shows their whole homebrew of the matching kind(s), ready
  * to drop onto THIS character. The tab therefore carries both halves:
  *
- *  - LIST — search + one row per entry: the name/meta reading on the left, and ALL
- *    THREE actions as one right-edge icon cluster, top-aligned with the name line —
- *    add-to-sheet · edit · delete (the delete behind the house confirm). The cluster
- *    sits at the far right, never beside the name: a `+` adjacent to "Emberfang Blade"
- *    reads as a magic-item suffix, not a control (owner, 2026-07-30).
+ *  - LIST — search + one `PickerRow` per entry, EXACTLY as the SRD tabs of these same
+ *    modals behave: TAP the row → the entry's DETAIL leg → Add from its footer. Only
+ *    the two MANAGEMENT actions (which have no SRD counterpart) sit in a right-edge
+ *    `IconButton` cluster, top-aligned on the name line: edit · delete. They are
+ *    SIBLINGS of the row button, never nested in it, so a tap on either can't reach
+ *    the row (the `UniversalCard` head pattern, axe-clean).
+ *  - DETAIL — the entry read-only through the SHARED `CompendiumDetailBody` the SRD
+ *    legs wear (eyebrow · meta grid · description) with the standard
+ *    `PickerDetailFooter` Add + Back. Same body-swap mechanism as the form legs.
  *  - CREATE / EDIT — the EXISTING `CustomSpellForm` / `CustomEquipmentForm` /
  *    `CustomFeatureForm`, rendered by the modal through `renderForm`, with a Back
  *    affordance that returns WITHOUT saving. The pencil renders the same form
@@ -36,11 +40,21 @@ import { ArrowLeft, PencilLine, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { IconButton } from "@/components/ui/icon-button";
-import { PickerSearch } from "@/components/sheet/picker-parts";
+import {
+  PickerDetailFooter,
+  PickerRow,
+  PickerSearch,
+} from "@/components/sheet/picker-parts";
+import {
+  CompendiumDetailBody,
+  type PickerDetailView,
+} from "@/features/compendium/picker";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { matchesSearch } from "@/lib/search";
+import { castingTimeI18nKey } from "@/lib/utils";
+import { localizeTrackerRecovery } from "@/lib/views/tracker-view";
 import {
   entryToCharacterItem,
   LIBRARY_KIND_LABEL_KEY,
@@ -118,6 +132,7 @@ export function CustomTabBody({
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<LibraryEntry | null>(null);
+  const [viewing, setViewing] = useState<LibraryEntry | null>(null);
 
   /** Everything of this modal's kind(s) — the "is my library empty here" set. */
   const mine = useMemo(
@@ -130,13 +145,14 @@ export function CustomTabBody({
   }, [mine, search]);
 
   /**
-   * The one-line reading under the name: the kind (only when this modal lands
-   * more than one kind — a spell modal's rows are all spells), plus its
-   * cheapest fact.
+   * The one-line reading under the name: the kind, plus its cheapest fact. A row
+   * drops the kind when this modal lands only one (a spell modal's rows are all
+   * spells); the detail eyebrow always names it.
    */
-  function meta(entry: LibraryEntry): string {
-    const parts: Array<string | undefined> =
-      kinds.length > 1 ? [t(LIBRARY_KIND_LABEL_KEY[entry.kind])] : [];
+  function meta(entry: LibraryEntry, withKind = kinds.length > 1): string {
+    const parts: Array<string | undefined> = withKind
+      ? [t(LIBRARY_KIND_LABEL_KEY[entry.kind])]
+      : [];
     switch (entry.kind) {
       case "spell":
         parts.push(
@@ -169,6 +185,113 @@ export function CustomTabBody({
     if (ok) removeFromLibrary(entry.id);
   }
 
+  /**
+   * The entry's facts as the SHARED picker detail shape — so a homebrew reads in the
+   * SAME scaffold (eyebrow · meta grid · description) as every SRD entry in these
+   * modals, for free. Labels are the existing keys each field already uses elsewhere.
+   */
+  function detailView(entry: LibraryEntry): PickerDetailView {
+    const grid: NonNullable<PickerDetailView["meta"]> = [];
+    let description: string | undefined;
+    switch (entry.kind) {
+      case "spell": {
+        const spell = entry.item;
+        grid.push(
+          {
+            label: t("spells.castingTime"),
+            // Same normalization the spell card applies to a CUSTOM spell's stored
+            // casting time (the create form writes one of these tokens).
+            value: t(`srd.castingTime_${castingTimeI18nKey(spell.castingTime)}`),
+          },
+          { label: t("spells.range"), value: spell.range },
+          { label: t("spells.duration"), value: spell.duration },
+          {
+            label: t("spells.components"),
+            value: [
+              spell.components.v && "V",
+              spell.components.s && "S",
+              spell.components.m && "M",
+            ]
+              .filter(Boolean)
+              .join(", "),
+            term: "components",
+          }
+        );
+        if (spell.concentration)
+          grid.push({
+            label: t("spells.concentration"),
+            value: t("common.yes"),
+            term: "concentration",
+          });
+        description = spell.description;
+        break;
+      }
+      case "weapon": {
+        const weapon = entry.item;
+        grid.push(
+          {
+            label: t("custom.damageDie"),
+            value: `${weapon.damageDie} ${t(`srd.damage_${weapon.damageType}`)}`,
+          },
+          {
+            label: t("custom.attackStat"),
+            value: t(`abilities.${weapon.attackStat}_short`),
+          }
+        );
+        if (weapon.properties)
+          grid.push({ label: t("custom.properties"), value: weapon.properties });
+        description = weapon.description;
+        break;
+      }
+      case "equipment": {
+        const item = entry.item;
+        if (item.armorCategory)
+          grid.push({
+            label: t("custom.armorCategory"),
+            // The SRD category family every other surface uses (equipment spec).
+            value: t(`srd.armorCategory_${item.armorCategory}`),
+          });
+        if (item.acBonus != null)
+          grid.push({ label: t("custom.acBonus"), value: String(item.acBonus) });
+        if (item.charges)
+          grid.push({
+            label: t("equipment.charges"),
+            value: `${item.charges.current} / ${item.charges.max}`,
+          });
+        if (item.tracked || item.isConsumable)
+          grid.push({ label: t("equipment.trackUses"), value: t("common.yes") });
+        if (item.isConsumable)
+          grid.push({ label: t("equipment.autoRemove"), value: t("common.yes") });
+        if (item.potionFormula)
+          grid.push({ label: t("custom.healingFormula"), value: item.potionFormula });
+        description = item.description;
+        break;
+      }
+      case "feature": {
+        const feature = entry.item;
+        grid.push({ label: t("custom.source"), value: feature.source });
+        const tracker = feature.trackers?.[0];
+        if (tracker) {
+          grid.push({ label: t("custom.totalUses"), value: tracker.total });
+          // The ONE place a Recovery token becomes a word (golden rule 6).
+          const recovery = localizeTrackerRecovery(tracker.recovery, t);
+          if (recovery) grid.push({ label: t("custom.recovery"), value: recovery });
+        }
+        // A feature's content IS its blocks: the text ones read as the description.
+        description = feature.contentBlocks
+          .map((block) => block.text)
+          .filter(Boolean)
+          .join("\n\n");
+        break;
+      }
+    }
+    return {
+      eyebrow: meta(entry, true),
+      meta: grid,
+      description: description || undefined,
+    };
+  }
+
   /** The form leg: a Back bar (or the first-run hint) above the modal's own form. */
   function formLeg(back: (() => void) | null, form: ReactNode) {
     return (
@@ -186,6 +309,25 @@ export function CustomTabBody({
           </p>
         )}
         {form}
+      </div>
+    );
+  }
+
+  // DETAIL — the SRD flow, for homebrew: the tapped row opens the shared read
+  // scaffold, and the standard footer commits the add (each modal's close-on-add
+  // behaviour) or goes Back to the list.
+  if (viewing) {
+    return (
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <CompendiumDetailBody view={detailView(viewing)} />
+        <PickerDetailFooter
+          alreadyAdded={false}
+          onAdd={() => {
+            addEntryToCharacter(viewing);
+            onAdded();
+          }}
+          onBack={() => setViewing(null)}
+        />
       </div>
     );
   }
@@ -234,21 +376,21 @@ export function CustomTabBody({
                 // two-line row (it used to float mid-row), and `flex-1` on the
                 // reading keeps the cluster pinned to the far right edge — a `+`
                 // sitting next to the name reads as a magic-item suffix.
-                <li key={entry.id} className="flex items-start gap-3 px-1">
-                  <span className="pick-body">
-                    <span className="pick-name">{name}</span>
-                    <span className="pick-meta">{meta(entry)}</span>
+                <li key={entry.id} className="flex items-start gap-1">
+                  {/* The row IS the reading leaf, exactly like an SRD row: tapping it
+                      opens the detail, where Add lives. */}
+                  <span className="min-w-0 flex-1">
+                    <PickerRow
+                      name={name}
+                      meta={meta(entry)}
+                      ariaLabel={name}
+                      onClick={() => setViewing(entry)}
+                    />
                   </span>
+                  {/* MANAGEMENT only (no SRD counterpart), seated on the name line as
+                      SIBLINGS of the row button — never nested, so neither glyph can
+                      trigger the row's tap. */}
                   <span className="flex shrink-0 items-start gap-0.5">
-                    <IconButton
-                      aria-label={t("custom.libraryAdd", { name })}
-                      onClick={() => {
-                        addEntryToCharacter(entry);
-                        onAdded();
-                      }}
-                    >
-                      <Icon as={Plus} size="sm" decorative />
-                    </IconButton>
                     <IconButton
                       aria-label={t("common.editNamed", { name })}
                       onClick={() => setEditing(entry)}

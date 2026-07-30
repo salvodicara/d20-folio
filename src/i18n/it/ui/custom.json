@@ -43,7 +43,6 @@
     "customTab": "Personalizzati",
     "label": "Personalizzato",
     "librarySearch": "Cerca nel tuo homebrew salvato…",
-    "libraryAdd": "Aggiungi {{name}} alla scheda",
     "libraryAutoHint": "Tutto ciò che crei resta nel tuo elenco personalizzato, pronto per ogni personaggio.",
     "libraryDelete": "Elimina {{name}} dal tuo elenco personalizzato",
     "libraryDeleteMessage": "Esce dal tuo elenco personalizzato. I personaggi che lo usano già mantengono la loro copia.",

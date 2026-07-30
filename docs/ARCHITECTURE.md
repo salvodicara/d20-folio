@@ -1406,11 +1406,15 @@ The layering mirrors combat-state exactly:
 
 Consumers: the create forms + the four sheet-side edit seams (the upsert half), and the
 shared `CustomTabBody` behind the **Custom** tab of all three Add-X modals, which carries
-the whole CRUD. Each row reads name + meta on the left and ALL THREE actions as one
-right-edge `IconButton` cluster top-aligned with the name line — add-to-sheet · edit ·
-delete. (The cluster is pinned to the far right and every glyph names its action: a bare
-`+` beside "Emberfang Blade" was read as a magic-item suffix, not a control — owner,
-2026-07-30.) The modal supplies its form through `renderForm(edit?)`, so the SAME
+the whole CRUD, and it behaves EXACTLY like the SRD tab beside it (owner, 2026-07-30):
+each entry is a `PickerRow` whose tap opens a DETAIL leg — the shared
+`CompendiumDetailBody` scaffold the SRD legs wear (eyebrow · meta grid · description,
+built per kind from the entry) under the standard `PickerDetailFooter`, whose Add commits
+and whose Back returns to the list. There is no add glyph on the row: only the two
+MANAGEMENT actions with no SRD counterpart (edit · delete) sit in a right-edge
+`IconButton` cluster top-aligned on the name line, as SIBLINGS of the row button (never
+nested — the `UniversalCard` head pattern, axe-clean). The modal supplies its form
+through `renderForm(edit?)`, so the SAME
 `CustomSpellForm` / `CustomEquipmentForm` / `CustomFeatureForm` serves three jobs — blank
 behind the "Create …" bar (and directly, while the library is empty), and PREFILLED for
 the pencil via their one optional `libraryEdit` prop (`{ item, onSave }`), whose CTA reads
