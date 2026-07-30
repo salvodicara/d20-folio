@@ -10,9 +10,6 @@
     "themeHelp": "Choose a fixed theme or follow your system.",
     "languageHelp": "All rules text follows the SRD translation.",
     "noIdentity": "Signed in",
-    "openAdmin": "Open admin tools",
-    "library": "Homebrew library",
-    "libraryDeleteTitle": "Delete {{name}} from your library?",
-    "libraryDeleteMessage": "The library entry is removed. Characters that already use it keep their copy."
+    "openAdmin": "Open admin tools"
   }
 }

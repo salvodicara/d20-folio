@@ -1,7 +1,7 @@
 /**
  * AddItemModal — unified "Add Item" picker that covers all item categories in
- * one flow: SRD Equipment (weapons / armor / gear / tools / packs), Magic Items,
- * the player's own homebrew Library, and Custom authoring.
+ * one flow: SRD Equipment (weapons / armor / gear / tools / packs), Magic Items, and
+ * Custom (the player's own item library — list + create).
  *
  * Design rationale (E14/E15): magic items ARE equipment in D&D 2024 — they are
  * just items with special properties. Surfacing them as a separate top-level
@@ -11,10 +11,10 @@
  * Approach: thin wrapper that composes the `EquipmentAddBody` (SRD Equipment tab)
  * and `MagicItemAddBody` (Magic Items tab) browse views as inner panels — the heavy
  * browser + filter logic lives in each dedicated file and is NOT duplicated. The
- * "Library" tab is the shared `LibraryPickerBody` over the two item kinds (equipment
- * + weapon), and "Custom" shows the `CustomEquipmentForm`. (The old standalone
- * `EquipmentAddModal` / `MagicItemAddModal` wrappers were deleted — this is now the
- * only add-item entry.)
+ * "Custom" tab is the shared `CustomTabBody` over the two item kinds (equipment +
+ * weapon): the saved homebrew list plus the `CustomEquipmentForm` behind it. (The old
+ * standalone `EquipmentAddModal` / `MagicItemAddModal` wrappers were deleted — this is
+ * now the only add-item entry.)
  *
  * The tab strip is the shared `ModalTabSwitcher` (its private three-tab copy was
  * deleted when the switcher went N-tab — golden rule 6).
@@ -27,9 +27,9 @@ import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
 import { CustomEquipmentForm } from "./CustomCreationForms";
 import { EquipmentAddBody } from "./EquipmentAddModal";
 import { MagicItemAddBody } from "./MagicItemAddModal";
-import { LibraryPickerBody } from "./LibraryPickerBody";
+import { CustomTabBody } from "./CustomTabBody";
 
-type ItemTab = "equipment" | "magic" | "library" | "custom";
+type ItemTab = "equipment" | "magic" | "custom";
 
 interface AddItemModalProps {
   open: boolean;
@@ -37,7 +37,7 @@ interface AddItemModalProps {
 }
 
 /** Both item kinds land here — a saved weapon and a saved gear/armor entry alike. */
-const LIBRARY_KINDS = ["equipment", "weapon"] as const;
+const KINDS = ["equipment", "weapon"] as const;
 
 export function AddItemModal({ open, onClose }: AddItemModalProps) {
   const { t } = useTranslation();
@@ -50,7 +50,6 @@ export function AddItemModal({ open, onClose }: AddItemModalProps) {
   const tabs = [
     { id: "equipment" as const, label: t("equipment.tabEquipment") },
     { id: "magic" as const, label: t("equipment.tabMagicItems") },
-    { id: "library" as const, label: t("custom.libraryTab") },
     { id: "custom" as const, label: t("equipment.tabCustom") },
   ];
 
@@ -80,13 +79,13 @@ export function AddItemModal({ open, onClose }: AddItemModalProps) {
         {activeTab === "magic" && (
           <MagicItemAddBody onClose={onClose} onDetailTitle={setDetailTitle} />
         )}
-        {activeTab === "library" && (
-          <LibraryPickerBody kinds={LIBRARY_KINDS} onAdded={onClose} />
-        )}
         {activeTab === "custom" && (
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <CustomEquipmentForm onCreated={onClose} />
-          </div>
+          <CustomTabBody
+            kinds={KINDS}
+            createLabel={t("custom.createEquipment")}
+            createForm={<CustomEquipmentForm onCreated={onClose} />}
+            onAdded={onClose}
+          />
         )}
       </div>
     </ModalShell>

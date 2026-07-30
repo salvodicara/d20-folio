@@ -4,8 +4,8 @@
  * defaulting to the character's class + a class-scoped level facet, the
  * above-level soft warning, the mechanics detail block, the `{ srdId }` commit)
  * lives in `featureSpec` (`features/compendium/picker/specs/feature`). This file
- * owns only the `ModalShell` chrome + the SRD / Library / Custom tab switcher (the
- * pools first, authoring last).
+ * owns only the `ModalShell` chrome + the SRD / Custom tab switcher (the Custom tab
+ * is the player's own feature library — list + create; see `CustomTabBody`).
  */
 
 import { useState } from "react";
@@ -14,7 +14,7 @@ import { ModalShell } from "@/components/shared/ModalShell";
 import { CompendiumPicker, featureSpec } from "@/features/compendium/picker";
 import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
 import { CustomFeatureForm } from "./CustomCreationForms";
-import { LibraryPickerBody } from "./LibraryPickerBody";
+import { CustomTabBody } from "./CustomTabBody";
 import type { CustomFeature } from "@/types/character";
 
 interface FeatureAddModalProps {
@@ -29,7 +29,7 @@ interface FeatureAddModalProps {
   editIndex?: number;
 }
 
-const LIBRARY_KINDS = ["feature"] as const;
+const KINDS = ["feature"] as const;
 
 export function FeatureAddModal({
   open,
@@ -38,7 +38,7 @@ export function FeatureAddModal({
   editIndex,
 }: FeatureAddModalProps) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<"srd" | "library" | "custom">("srd");
+  const [activeTab, setActiveTab] = useState<"srd" | "custom">("srd");
   const [detailTitle, setDetailTitle] = useState<string | null>(null);
   const editing = editFeature != null && editIndex != null;
 
@@ -65,14 +65,16 @@ export function FeatureAddModal({
             }}
             tabs={[
               { id: "srd", label: t("custom.srdTab") },
-              { id: "library", label: t("custom.libraryTab") },
               { id: "custom", label: t("custom.customTab") },
             ]}
           />
           {activeTab === "custom" ? (
-            <CustomFeatureForm onCreated={onClose} />
-          ) : activeTab === "library" ? (
-            <LibraryPickerBody kinds={LIBRARY_KINDS} onAdded={onClose} />
+            <CustomTabBody
+              kinds={KINDS}
+              createLabel={t("custom.createFeature")}
+              createForm={<CustomFeatureForm onCreated={onClose} />}
+              onAdded={onClose}
+            />
           ) : (
             <CompendiumPicker
               spec={featureSpec}

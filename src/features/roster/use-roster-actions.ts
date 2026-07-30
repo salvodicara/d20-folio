@@ -185,7 +185,7 @@ export function useRosterActions(character: RosterCharacterDoc): RosterActions {
   const remove = useCallback(async () => {
     if (!uid) return;
     const ok = await useConfirmStore.getState().confirm({
-      title: t("roster.deleteTitle", { name }),
+      title: t("common.deleteTitle", { name }),
       message: t("roster.deleteMessage", { name }),
       confirmLabel: t("roster.deleteConfirm"),
       tone: "danger",

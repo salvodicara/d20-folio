@@ -77,6 +77,7 @@
     "decrease": "Diminuisci",
     "increase": "Aumenta",
     "accountSettings": "Account e impostazioni",
-    "searchMissHint": "Prova con un altro termine di ricerca."
+    "searchMissHint": "Prova con un altro termine di ricerca.",
+    "deleteTitle": "Eliminare {{name}}?"
   }
 }

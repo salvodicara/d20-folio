@@ -25,7 +25,6 @@ import { weaponSealIcon } from "@/components/shared/item-icons";
 import { UniversalCard, UniversalCardDesc } from "@/components/shared/UniversalCard";
 import { WeaponFacts, type WeaponExtraFact } from "@/components/shared/WeaponFacts";
 import { RiderSummary } from "@/components/shared/ActionRiders";
-import { SaveToLibraryButton } from "@/components/sheet/SaveToLibraryButton";
 import { formatModifier, formatWeight } from "@/lib/utils";
 import { chipText } from "@/lib/views/combat-action-view";
 import type { Locale } from "@/lib/locale";
@@ -175,27 +174,21 @@ export const WeaponCard = memo(function WeaponCard({
       srSummary={srSummary}
       editAction={
         isEdit ? (
-          <span className="flex items-center gap-1.5">
-            {/* Homebrew only: keep this weapon in the account-level library. */}
-            {vm.isCustom && (
-              <SaveToLibraryButton kind="weapon" idx={vm.idx} name={vm.name} />
-            )}
-            <Button
-              size="sm"
-              variant="ghost"
-              iconOnly
-              className="icon-danger"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(vm);
-              }}
-            >
-              <Icon as={Trash2} size="sm" decorative />
-              <span className="sr-only">
-                {t("common.delete")} {vm.name}
-              </span>
-            </Button>
-          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            iconOnly
+            className="icon-danger"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(vm);
+            }}
+          >
+            <Icon as={Trash2} size="sm" decorative />
+            <span className="sr-only">
+              {t("common.delete")} {vm.name}
+            </span>
+          </Button>
         ) : undefined
       }
     >

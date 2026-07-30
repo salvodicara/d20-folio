@@ -36,7 +36,6 @@
     "restored": "Restored {{name}}",
     "restoreFailed": "Couldn't restore {{name}}",
     "delete": "Delete",
-    "deleteTitle": "Delete {{name}}?",
     "deleteMessage": "This permanently deletes {{name}} and everything it owns: its portrait, snapshots, and play state. This can't be undone.",
     "deleteConfirm": "Delete",
     "deleted": "Deleted {{name}}",

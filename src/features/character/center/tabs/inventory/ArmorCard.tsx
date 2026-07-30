@@ -18,7 +18,6 @@ import {
   UniversalCardFacts,
   UniversalCardDesc,
 } from "@/components/shared/UniversalCard";
-import { SaveToLibraryButton } from "@/components/sheet/SaveToLibraryButton";
 import { formatWeight } from "@/lib/utils";
 import { chipText } from "@/lib/views/combat-action-view";
 import { formatArmorAcValue } from "@/lib/armor-display";
@@ -165,10 +164,6 @@ export const ArmorCard = memo(function ArmorCard({
               {vm.attuned && <Icon as={Sparkles} size="sm" decorative />}
               {vm.attuned ? t("equipment.attuned") : t("equipment.attune")}
             </Button>
-          )}
-          {/* Homebrew only: keep this armor in the account-level library. */}
-          {isEdit && vm.isCustom && (
-            <SaveToLibraryButton kind="equipment" idx={vm.idx} name={vm.name} />
           )}
           {isEdit && (
             <Button

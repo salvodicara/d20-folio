@@ -36,7 +36,6 @@
     "restored": "{{name}} ripristinato",
     "restoreFailed": "Impossibile ripristinare {{name}}",
     "delete": "Elimina",
-    "deleteTitle": "Eliminare {{name}}?",
     "deleteMessage": "Questa azione elimina definitivamente {{name}} e tutto ciò che gli appartiene: ritratto, istantanee e stato di gioco. L'operazione non può essere annullata.",
     "deleteConfirm": "Elimina",
     "deleted": "{{name}} eliminato",
