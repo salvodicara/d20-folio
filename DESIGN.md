@@ -2431,9 +2431,9 @@ metal is its BEHAVIOUR, not its hue:
 3. **Parchment** (the reading register — compendium tome, book spreads): the `#e0d0b0/#d0c0a0`
    vellum band (already the app's tome family). Accent on parchment registers may use the
    measured wax-vermilion `#a04030/#b05040` (book-tab red) — SPARINGLY, one seal per surface.
-4. **Input material**: fields/steppers wear the RIVETED border — a dark slate well whose frame
-   is a row of small rectangular studs (stitched leather / riveted metal), chamfered corners.
-   Inputs are the one material that reads "machinery", so they can never be mistaken for cards.
+4. **Input material — STRUCK (owner-rejected on sight, Compendium gate 2026-07-30).**
+   The corpus's riveted/stud-border input treatment was built and vetoed ("decisamente
+   non mi piace"); inputs KEEP the app's standard carved-well recipe. Do not re-propose.
 
 ### 16.3 The line IS the ornament
 

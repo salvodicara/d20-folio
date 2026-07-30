@@ -21049,30 +21049,6 @@ body:has(.fob) .toast-region {
       50% 20px / 100% 1px no-repeat;
 }
 
-/* §16.2.4 — the INPUT is the one MACHINERY material: the frame is a row of
-   small rectangular studs (measured rhythm from the corpus input plate: stud
-   4px, pitch 9px, 1.5px proud), pure geometry in the input's own frame ink —
-   never mistakable for a card. Focus closes the solid bright frame over the
-   studs (the machine engages), riding the existing focus rule untouched. */
-.wb .input {
-  --wb-stud: color-mix(in oklab, var(--border-strong) 90%, var(--carve-shade));
-  border-color: transparent;
-  background:
-    repeating-linear-gradient(90deg, var(--wb-stud) 0 4px, transparent 4px 9px) left top /
-      100% 1.5px no-repeat,
-    repeating-linear-gradient(90deg, var(--wb-stud) 0 4px, transparent 4px 9px) left
-      bottom / 100% 1.5px no-repeat,
-    repeating-linear-gradient(180deg, var(--wb-stud) 0 4px, transparent 4px 9px) left
-      top / 1.5px 100% no-repeat,
-    repeating-linear-gradient(180deg, var(--wb-stud) 0 4px, transparent 4px 9px) right
-      top / 1.5px 100% no-repeat,
-    linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--input-fill) 90%, var(--carve-shade)),
-      var(--input-fill)
-    );
-}
-
 /* §16.5 — the primary tabs speak with light, not boxes: the strip is a quiet
    recess, the chosen tab kindles and carries the bottom-lip pool. */
 .wb .tabstrip {
