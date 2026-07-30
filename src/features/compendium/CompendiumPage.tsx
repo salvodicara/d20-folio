@@ -153,7 +153,7 @@ export function CompendiumPage() {
     // escape hatch: the page falls back to scrolling instead of crushing the list.
     <main
       id="main"
-      className="page-shell flex min-h-[30rem] py-8 h-[calc(100svh-var(--topbar-h)-var(--m-nav-h)-var(--safe-bottom)-var(--pwa-banner-h,0px))] flex-col overflow-hidden md:h-[calc(100svh-var(--topbar-h)-var(--pwa-banner-h,0px))]"
+      className="wb page-shell flex min-h-[30rem] py-8 h-[calc(100svh-var(--topbar-h)-var(--m-nav-h)-var(--safe-bottom)-var(--pwa-banner-h,0px))] flex-col overflow-hidden md:h-[calc(100svh-var(--topbar-h)-var(--pwa-banner-h,0px))]"
     >
       <PageHeader as="h1" crest title={t("nav.compendium")} hint={t("compendium.hint")} />
       {spec && (

@@ -20986,6 +20986,7 @@ body:has(.fob) .toast-region {
    necessity, not a style choice: the fitting draws the corner; a rounded host
    line would curve out from under it and read as a second line). The border
    COLOUR stays the app's standard mix — untouched. */
+.wb .page-head.framed,
 .wb .folio-panel.gilt-frame {
   border-radius: 0;
 }
@@ -21000,6 +21001,7 @@ body:has(.fob) .toast-region {
    outer rules lie pixel-coincident ON the host's 1px border (verified by
    row measurement: top y88=y88, left x96=x96; the inner rule runs +3px — the
    double-line of a real binding corner). */
+.wb .page-head.framed::before,
 .wb .folio-panel.gilt-frame::after {
   inset: -1px;
   border: 0;
