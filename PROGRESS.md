@@ -23,6 +23,14 @@ blocking on owner screenshots):
 
 1. **Phase 1 — DONE, GATE 1 PASSED** (owner-approved 2026-07-30): the visual rollback (this
    wave), merged on this approval.
+   1b. **Phase 2 first merge — DIVIDER RATIFIED** (owner, 2026-07-30, "adesso è perfetto"):
+   the `.wb` grammar scope on the cockpit (struck gold, leather plates, the carved
+   medallion tiles kept, ledger voice) + the RICALCO ornament pipeline proven end-to-end —
+   a CC0 engraved center-loop divider, its internal rule removed by vector surgery, resting
+   seamlessly ON the app's own separator. Owner-ratified METHOD for the whole epic:
+   screenshots → discussion → merge only on explicit agreement; goal = "wow, curato,
+   professionale", copy BG3 as much as legally possible and sometimes better, and ONE
+   unified design vision across every surface (never progressively-added layers).
 2. **Phase 2**: study a gathered BG3 UI reference corpus (`~/Workspace/bg3-ui-study/`, never
    committed) → extract MEASURED construction rules (frame anatomy, corner geometry, stroke
    weights, proportions, palette, typography) → write the grammar spec into `DESIGN.md` → build
