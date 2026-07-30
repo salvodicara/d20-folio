@@ -1410,7 +1410,11 @@ the whole CRUD, and it behaves EXACTLY like the SRD tab beside it (owner, 2026-0
 each entry is a `PickerRow` whose tap opens a DETAIL leg — the shared
 `CompendiumDetailBody` scaffold the SRD legs wear (eyebrow · meta grid · description,
 built per kind from the entry) under the standard `PickerDetailFooter`, whose Add commits
-and whose Back returns to the list. It reports the open entry through the same
+and whose Back returns to the list — including its D55 quantity stepper for the two
+quantity-bearing kinds (equipment · weapon), and none for a spell or feature, mirroring
+which SRD legs offer one. (The stepper now lives INSIDE that shared footer, built from a
+`quantity={{ value, onChange, … }}` prop, so the SRD picker and the Custom tab render the
+one control.) It reports the open entry through the same
 `onDetailTitle` seam `CompendiumPicker` drives, so the modal title names the homebrew
 while its detail is read and reverts on Back — a modal's head behaves identically
 whichever tab is reading. There is no add glyph on the row: only the two

@@ -199,27 +199,30 @@ export function upsertEntry(
  * Materialize a library entry as the character item to append — a DEEP COPY (the
  * stored entry is never aliased into a sheet), re-seeded with the SAME landing
  * defaults the Custom creation forms produce, so an item added from the library
- * behaves exactly like one just authored: `prepared` for a spell, `equipped` +
- * `quantity: 1` for equipment, `quantity: 1` for a weapon (the type requires it),
- * a feature verbatim.
+ * behaves exactly like one just authored: `prepared` for a spell, `equipped` for
+ * equipment, a feature verbatim.
+ *
+ * `quantity` is the count the picker's stepper offered (the SRD add-time convention,
+ * D55) — honoured by the two quantity-bearing kinds, ignored by spells and features
+ * exactly as their SRD legs ignore it.
  *
  * Returns the kind-tagged {@link LibraryDraft} rather than a bare item so the
  * caller's `switch` narrows `item` to the exact type of the array it appends to —
  * one call site, zero casts.
  */
-export function entryToCharacterItem(entry: LibraryEntry): LibraryDraft {
+export function entryToCharacterItem(entry: LibraryEntry, quantity = 1): LibraryDraft {
   switch (entry.kind) {
     case "spell":
       return { kind: "spell", item: { ...structuredClone(entry.item), prepared: true } };
     case "equipment":
       return {
         kind: "equipment",
-        item: { ...structuredClone(entry.item), equipped: true, quantity: 1 },
+        item: { ...structuredClone(entry.item), equipped: true, quantity },
       };
     case "weapon":
       return {
         kind: "weapon",
-        item: { ...structuredClone(entry.item), quantity: 1 },
+        item: { ...structuredClone(entry.item), quantity },
       };
     case "feature":
       return { kind: "feature", item: structuredClone(entry.item) };

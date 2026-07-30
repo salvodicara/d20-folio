@@ -74,13 +74,14 @@ export interface LibraryEditRequest {
   onSave: (draft: LibraryDraft) => void;
 }
 
-/** Append one library entry to the character array its kind belongs to. */
-function addEntryToCharacter(entry: LibraryEntry): void {
+/** Append one library entry to the character array its kind belongs to, `quantity`
+ *  copies deep (the two quantity-bearing kinds; the others ignore it). */
+function addEntryToCharacter(entry: LibraryEntry, quantity: number): void {
   const store = useCharacterStore.getState();
   const doc = store.character;
   if (!doc) return;
   const data = doc.character;
-  const landed = entryToCharacterItem(entry);
+  const landed = entryToCharacterItem(entry, quantity);
   // The switch narrows `landed.item` to the exact type of the array it joins.
   switch (landed.kind) {
     case "spell":
@@ -140,6 +141,8 @@ export function CustomTabBody({
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<LibraryEntry | null>(null);
   const [viewing, setViewing] = useState<LibraryEntry | null>(null);
+  // D55 — the add-time count for the open detail, reset per entry like the SRD leg's.
+  const [quantity, setQuantity] = useState(1);
 
   // Keep the host modal title in sync with the open detail — mirrors the SRD leg's
   // own effect (`CompendiumPicker`), including the revert on Back / tab change.
@@ -330,16 +333,21 @@ export function CustomTabBody({
   // scaffold, and the standard footer commits the add (each modal's close-on-add
   // behaviour) or goes Back to the list.
   if (viewing) {
+    // The quantity-bearing kinds get the SAME stepper the SRD equipment/magic-item
+    // legs show (the shared footer builds it); a spell or feature gets none, exactly
+    // as its own SRD leg gets none.
+    const counts = viewing.kind === "equipment" || viewing.kind === "weapon";
     return (
       <div className="flex flex-1 flex-col overflow-hidden">
         <CompendiumDetailBody view={detailView(viewing)} />
         <PickerDetailFooter
           alreadyAdded={false}
           onAdd={() => {
-            addEntryToCharacter(viewing);
+            addEntryToCharacter(viewing, counts ? quantity : 1);
             onAdded();
           }}
           onBack={() => setViewing(null)}
+          quantity={counts ? { value: quantity, onChange: setQuantity } : undefined}
         />
       </div>
     );
@@ -397,7 +405,10 @@ export function CustomTabBody({
                       name={name}
                       meta={meta(entry)}
                       ariaLabel={name}
-                      onClick={() => setViewing(entry)}
+                      onClick={() => {
+                        setQuantity(1);
+                        setViewing(entry);
+                      }}
                     />
                   </span>
                   {/* MANAGEMENT only (no SRD counterpart), seated on the name line as

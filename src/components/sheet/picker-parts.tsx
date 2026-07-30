@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
+import { NumberStepper } from "@/components/ui/input";
 import { SearchField } from "@/components/shared/SearchField";
 
 /**
@@ -134,32 +135,54 @@ export function PickerRow({
 }
 
 /**
- * The detail-view action bar shared by all four add-modals: a primary "Add"
- * (folio Button, not a raw `bg-accent` button) that flips to an "already added"
- * note, with an optional secondary "Back" beside it. Standardizes the footer that
- * had drifted into three different markups.
+ * The detail-view action bar shared by every add-modal detail leg — SRD and
+ * homebrew alike: a primary "Add" (folio Button, not a raw `bg-accent` button) that
+ * flips to an "already added" note, an optional secondary "Back" beside it, and the
+ * D55 add-time quantity stepper above them.
+ *
+ * The stepper is BUILT HERE (label + `NumberStepper`) rather than passed in as a
+ * node: it is the same control on every quantity-bearing type, so a caller only says
+ * `quantity={{ value, onChange, … }}` and the whole footer — including the "hide it
+ * once the item is already added" rule — stays one implementation.
  */
 export function PickerDetailFooter({
   alreadyAdded,
   onAdd,
   onBack,
   addLabel,
-  quantityControl,
+  quantity,
 }: {
   alreadyAdded: boolean;
   onAdd: () => void;
   /** When provided, renders a secondary Back button beside Add. */
   onBack?: () => void;
   addLabel?: ReactNode;
-  /** D55 — optional add-time quantity control, shown above the buttons. */
-  quantityControl?: ReactNode;
+  /** D55 — omit for a type with no quantity concept (spells, features, feats). */
+  quantity?: {
+    value: number;
+    onChange: (value: number) => void;
+    /** Bundle-aware bounds (ammunition steps 20 → 40); all default to 1 / 9999. */
+    min?: number;
+    max?: number;
+    step?: number;
+  };
 }) {
   const { t } = useTranslation();
   return (
     <div className="border-t border-border px-4 py-3">
-      {quantityControl && !alreadyAdded && (
+      {quantity && !alreadyAdded && (
         <div className="mb-3 flex items-center justify-between gap-3">
-          {quantityControl}
+          <span className="text-sm font-medium text-text-secondary">
+            {t("equipment.quantity")}
+          </span>
+          <NumberStepper
+            value={quantity.value}
+            onChange={quantity.onChange}
+            min={quantity.min ?? 1}
+            max={quantity.max ?? 9999}
+            step={quantity.step ?? 1}
+            ariaLabel={t("equipment.quantity")}
+          />
         </div>
       )}
       <div className="flex gap-2">

@@ -14,7 +14,6 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { NumberStepper } from "@/components/ui/input";
 import { PickerSearch, PickerDetailFooter } from "@/components/sheet/picker-parts";
 import { useCompendiumPicker, type PickerMode } from "./useCompendiumPicker";
 import { CompendiumDetailBody } from "./detail";
@@ -64,22 +63,16 @@ export function CompendiumPicker<T>({
             }}
             onBack={() => picker.clearSelection()}
             addLabel={spec.addLabel?.(ctx)}
-            quantityControl={
-              picker.supportsQuantity ? (
-                <>
-                  <span className="text-sm font-medium text-text-secondary">
-                    {t("equipment.quantity")}
-                  </span>
-                  <NumberStepper
-                    value={picker.quantity}
-                    onChange={picker.setQuantity}
-                    min={picker.quantityStep}
-                    max={picker.quantityMax}
-                    step={picker.quantityStep}
-                    ariaLabel={t("equipment.quantity")}
-                  />
-                </>
-              ) : undefined
+            quantity={
+              picker.supportsQuantity
+                ? {
+                    value: picker.quantity,
+                    onChange: picker.setQuantity,
+                    min: picker.quantityStep,
+                    max: picker.quantityMax,
+                    step: picker.quantityStep,
+                  }
+                : undefined
             }
           />
         ) : (

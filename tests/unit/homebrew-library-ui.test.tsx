@@ -30,6 +30,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent, within, act } from "@testing-library/react";
 
 import { AddItemModal } from "@/components/sheet/AddItemModal";
+import { SpellAddModal } from "@/components/sheet/SpellAddModal";
 import { InventoryTab } from "@/features/character/center/tabs/InventoryTab";
 import {
   libraryEntryName,
@@ -204,6 +205,37 @@ describe("the Custom tab — the detail leg (the SRD flow)", () => {
 
     fireEvent.click(within(dialog).getByRole("button", { name: /^Back$/i }));
     expect(screen.getByRole("dialog", { name: "Custom" })).toBeInTheDocument();
+  });
+
+  it("carries the SRD quantity stepper for an item, and lands the count", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.weapons = [];
+    loadCharacter(doc);
+    seedLibrary([entry({ kind: "weapon", item: CUSTOM_WEAPON })]);
+    const dialog = openCustomTab();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Bramble Spear" }));
+    const plus = within(dialog).getByRole("button", { name: /increase/i });
+    fireEvent.click(plus);
+    fireEvent.click(plus);
+    fireEvent.click(within(dialog).getByRole("button", { name: /Add to Character/i }));
+
+    const landed = useCharacterStore.getState().character?.character.weapons ?? [];
+    expect(landed).toHaveLength(1);
+    expect(landed[0]?.quantity).toBe(3);
+  });
+
+  it("offers NO stepper for a spell — its SRD leg has none either", () => {
+    loadCharacter();
+    seedLibrary([entry({ kind: "spell", item: CUSTOM_SPELL })]);
+    render(<SpellAddModal open onClose={() => {}} />);
+    const dialog = screen.getAllByRole("dialog").at(-1);
+    expect(dialog).toBeDefined();
+    if (!dialog) return;
+    fireEvent.click(within(dialog).getByRole("button", { name: "Custom" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Hearthfire Bolt" }));
+    expect(within(dialog).getByText("Casting Time")).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /increase/i })).toBeNull();
   });
 
   it("its footer Add lands the entry on the character's own array", () => {
