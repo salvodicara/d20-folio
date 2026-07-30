@@ -96,6 +96,36 @@ describe("EncounterStatblockModal — DM statblock disclosure (§C.3)", () => {
     expect(screen.getAllByText(new RegExp(canonical, "i")).length).toBeGreaterThan(0);
   });
 
+  it("every scroll region it renders is keyboard-reachable", () => {
+    // The statblock is long, read-only prose: a scrollable region with NO
+    // focusable child, which a non-pointer user cannot reach to arrow-scroll
+    // (axe `scrollable-region-focusable`, serious — it failed the a11y gate in
+    // BOTH themes). The SUBJECTS ARE DERIVED from the rendered DOM, not named
+    // here: any scroll container this modal grows must carry the tab stop.
+    // Blind spot: jsdom computes no layout, so this pins the CONTRACT (a
+    // scrolling utility ⇒ focusable), not whether content actually overflows;
+    // `tests/e2e/a11y.spec.ts` measures the real page.
+    const { baseElement } = render(
+      <EncounterStatblockModal
+        srdId="goblin-warrior"
+        combatantName="Goblin A"
+        combatantId="monster-1"
+        onClose={vi.fn()}
+      />
+    );
+    const scrollers = [
+      ...baseElement.querySelectorAll<HTMLElement>(
+        '[class*="overflow-y-auto"], [class*="overflow-auto"]'
+      ),
+    ];
+    expect(scrollers.length, "the modal renders a scroll region").toBeGreaterThan(0);
+    expect(
+      scrollers
+        .filter((el) => el.getAttribute("tabindex") !== "0")
+        .map((el) => el.className)
+    ).toEqual([]);
+  });
+
   it("a stale/unknown id degrades to the quiet empty state, never throwing", () => {
     expect(() =>
       render(

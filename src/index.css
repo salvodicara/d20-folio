@@ -1013,10 +1013,15 @@
 
   /* § 11b Damage-type INK (light) — AA-safe ON-TEXT (≥4.5:1 on the cream
      verdict chip). lightning / acid / radiant / psychic are darkened to clear
-     the floor on vellum; the rest already pass and are kept verbatim. */
+     the floor on vellum; the rest already pass and are kept verbatim. The ramp's
+     DEEPEST ground is the statblock plaque (`.mon-ref`'s carved #e9ddc0), which
+     is where cold last sank below the floor (4.49:1 as a damage-ledger run);
+     every arm is now pinned on that ground too (verdict-ink-contrast). */
   --dmg-acid-ink: #3c6a1a;
   --dmg-bludgeoning-ink: #6a4e30;
-  --dmg-cold-ink: #2c688c;
+  /* One notch deeper than the #2c688c the chips were tuned on — same hue, now
+     4.77:1 on the plaque (level with acid, the ramp's other worst arm). */
+  --dmg-cold-ink: #2a6486;
   --dmg-fire-ink: #a82820;
   --dmg-force-ink: #6a3898;
   --dmg-lightning-ink: #6e5a06;

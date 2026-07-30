@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
 import { MonsterStatBlockCard } from "@/components/shared/MonsterStatBlockCard";
+import { ModalScrollColumn } from "@/components/ui/modal-head";
 import { Switch } from "@/components/ui/selection";
 import { CompendiumPicker } from "@/features/compendium/picker";
 import { getMonster } from "@/data/monsters";
@@ -128,7 +129,9 @@ export function EncounterStatblockModal({
   const lairXp = m?.xpInLair; // hoisted so the != null narrowing survives into the toggle callback
   return (
     <ModalShell open onClose={onClose} title={combatantName}>
-      <div className="overflow-y-auto p-4">
+      {/* The statblock is long, read-only prose: the shared scroll column carries
+          the keyboard-reachability contract (axe `scrollable-region-focusable`). */}
+      <ModalScrollColumn>
         {m ? (
           <>
             {/* Lair XP (§D.5) — one Switch, ONLY when the statblock prints a lair
@@ -167,7 +170,7 @@ export function EncounterStatblockModal({
             {t("campaignHub.encounterStatblockMissing")}
           </p>
         )}
-      </div>
+      </ModalScrollColumn>
     </ModalShell>
   );
 }

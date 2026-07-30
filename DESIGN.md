@@ -1064,7 +1064,11 @@ campaign hub if it adopts tabbed IA — never re-roll a second tab look.
     (in `ModalBody`, `src/components/ui/modal-head.tsx`) — otherwise a non-pointer user cannot reach
     it to arrow-scroll (axe `scrollable-region-focusable`, serious). Because a large region is not an
     interactive control, `.modal-body:focus-visible` draws the crisp ring INSET and suppresses the
-    global interior focus-wash that would otherwise flood the whole body.
+    global interior focus-wash that would otherwise flood the whole body. `ModalShell` is a TALL
+    flex card, so its bodies grow with `flex-1` instead of that fixed max-height: the same contract
+    lives in the sibling **`ModalScrollColumn`** (same file) — the ONE recipe every `ModalShell`
+    scroll region takes, never re-rolled per surface. A read-only body (a monster statblock) is
+    exactly the case that fails without it: a scrollable region with no focusable child.
 - **Command palette ("Ask the Folio"):** a floating panel (`--bg-surface-2` + `--elev-floating`,
   `--z-overlay`, scrim) with a carved search field and keyboard-navigable result rows (hover/selected
   → `--bg-surface-3` + a left `--accent-primary` marker), section eyebrows, and `aria-current` on the
@@ -1392,7 +1396,11 @@ without the condition); and Advantage/Disadvantage also ink their lowercase verb
 advantage" / "con vantaggio"), gated so only the adv/dis word lifts. All locale words live in
 `src/i18n/rules-prose.ts` (typed over `DamageType` × `Locale`); it edits ZERO SRD strings and never
 touches `parseInline`. Contract pinned in `tests/unit/highlight-rules-text.test.tsx`;
-ink-on-prose-ground AA pinned in `tests/unit/verdict-ink-contrast.test.ts`.
+ink-on-prose-ground AA pinned in `tests/unit/verdict-ink-contrast.test.ts` — on the card tiers AND
+on the monster statblock plaque, the DEEPEST ground the grammar paints on (`.mon-ref` re-seats
+`--bg-recessed` for itself in light; the guard resolves that declaration out of `folio.css` and
+sweeps the whole DERIVED ramp on it, because a statblock leaf only ever prints the one or two
+damage types its monster carries).
 
 ### Bounded prose + bounded lists (the overflow recipes)
 

@@ -8,6 +8,7 @@
 
 import { AlertTriangle } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
+import { ModalScrollColumn } from "@/components/ui/modal-head";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { InlineMarkdown } from "@/components/shared/InlineMarkdown";
 import { highlightRulesText } from "@/components/shared/highlightRulesText";
@@ -26,15 +27,9 @@ export function CompendiumDetailBody({
   locale?: Locale;
 }) {
   return (
-    // `overscroll-contain` — momentum stays inside the read column (no page chain).
-    // `tabIndex={0}` — a long, interaction-free body (e.g. a monster statblock) makes
-    // this a scrollable region with no focusable child; keyboard users need to focus
-    // it to arrow-scroll (WCAG scrollable-region-focusable). Harmless where the body
-    // already carries focusable content.
-    <div
-      tabIndex={0}
-      className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-accent"
-    >
+    // The read column the host's flex card scrolls inside — `ModalScrollColumn`
+    // owns the scroll + keyboard-reachability contract (see its docblock).
+    <ModalScrollColumn>
       {view.eyebrow && (
         <div className="mb-3 flex flex-wrap items-center gap-2 text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">
           {view.eyebrow}
@@ -86,6 +81,6 @@ export function CompendiumDetailBody({
       )}
 
       {view.extras}
-    </div>
+    </ModalScrollColumn>
   );
 }

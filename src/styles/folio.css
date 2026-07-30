@@ -20874,7 +20874,9 @@ body:has(.fob) .toast-region {
    (statblock-ink-contrast spec), and the carved-vellum recess (#cdbb8e) sinks
    acid/piercing/bludgeoning/advantage below AA. Seat THIS plaque one step
    lighter — still under the card tier, so the carve keeps reading — and the
-   whole ink family clears 4.5:1 by measurement (worst arm: acid at 4.76). */
+   whole ink family clears 4.5:1 (worst arms: acid 4.76, cold 4.77).
+   THIS declaration is the ground `tests/unit/verdict-ink-contrast.test.ts`
+   resolves and sweeps the WHOLE ramp on — re-seat it and the guard follows. */
 [data-theme="light"] .mon-ref {
   --bg-recessed: #e9ddc0;
 }

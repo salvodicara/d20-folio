@@ -70,23 +70,27 @@ function contrast(fg: string, bg: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-const INK_TOKENS = [
-  "acid",
-  "bludgeoning",
-  "cold",
-  "fire",
-  "force",
-  "lightning",
-  "necrotic",
-  "piercing",
-  "poison",
-  "psychic",
-  "radiant",
-  "slashing",
-  "thunder",
-] as const;
+/** Every `--dmg-<type>-ink` a theme block DECLARES — derived, never a list kept
+ *  beside the guard. The hand-list this replaces was fine; the GROUNDS it was
+ *  swept on were not, and a derived subject set is what lets a new ground (below)
+ *  widen the sweep by itself instead of by memory. */
+function inkTypes(block: string): string[] {
+  return [...block.matchAll(/--dmg-([a-z]+)-ink\s*:/g)].map((m) => m[1] as string).sort();
+}
+
+const INK_TOKENS = inkTypes(themeBlock("dark"));
 
 const AA = 4.5;
+
+describe("the damage-ink ramp is fully derived + symmetric across themes", () => {
+  it("the dark block declares a non-empty ramp", () => {
+    // A renamed token must EMPTY-fail here rather than silently shrink every sweep.
+    expect(INK_TOKENS.length).toBeGreaterThan(10);
+  });
+  it("light declares the same ramp as dark", () => {
+    expect(inkTypes(themeBlock("light"))).toEqual(INK_TOKENS);
+  });
+});
 
 /** Mix two hexes in sRGB at `pct`% of `a` over `b` (matches CSS color-mix close
  *  enough for a luminance guard — the chip tint is `mix(--co pct%, surface)`). */
@@ -500,6 +504,112 @@ describe("combat top-bar dest-chip ink clears WCAG-AA on the carved socket", () 
         contrast(ink, darkest),
         `dest-chip ink ${ink} on darkest stop ${darkest}`
       ).toBeGreaterThanOrEqual(AA);
+    });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The MONSTER STATBLOCK PLAQUE (`.mon-ref`) — the deepest ground the rules-text
+// ink vocabulary paints on, and the one the sweeps above never covered.
+//
+// Every guard here pinned the inks on the CARD tiers (surface-1/2). The plaque
+// is a carved recess BELOW them, and it re-seats `--bg-recessed` for itself
+// (folio.css light override). The ramp is per-fact, so a leaf shows only the
+// damage types ITS monster carries: the real-Chromium `statblock-ink-contrast`
+// spec measures the mimic, whose ledger prints Acid alone — so `cold` shipped at
+// 4.49:1 on the plaque (the Imp's "Resistances Cold") behind two green gates.
+// Neither gate was wrong about what it measured; both sampled the ink family
+// instead of deriving it.
+//
+// So: the SUBJECTS are every `--dmg-*-ink` / `--cond-*-ink` the stylesheet
+// declares, and the GROUND is whatever `--bg-recessed` resolves to UNDER
+// `.mon-ref`, read out of folio.css — add a damage type or re-seat the plaque
+// and this widens/follows by itself.
+//
+// BLIND SPOTS (what this cannot see): (1) the CASCADE beyond the one property it
+// resolves — a higher-specificity rule repainting an ARM is invisible to token
+// pairing; `statblock-ink-contrast` owns identity-in-the-browser. (2)
+// TRANSLUCENCY — it assumes the plaque ground is the opaque pixel behind the
+// glyphs; the same spec proves that. (3) Inks carried by an inline `style` from
+// DATA rather than a token. (4) Non-ink chrome on the plaque (rules, seals,
+// borders) — graphic contrast is not swept here. (5) OTHER recessed surfaces:
+// this pins the plaque's own ground only, not every `--bg-recessed` consumer
+// (the base light recess #cdbb8e does NOT clear AA for the whole grammar — which
+// is exactly why the plaque re-seats itself).
+describe("the statblock plaque grounds every rules-text ink at AA", () => {
+  const folioNoComments = folioCss.replace(/\/\*[\s\S]*?\*\//g, "");
+
+  /** The plaque's ACTUAL ground in `theme`, resolved the way the cascade does:
+   *  a `[data-theme]`-scoped `.mon-ref` redefinition of `--bg-recessed` wins over
+   *  an unscoped `.mon-ref` one, which wins over the theme block's base. (A union
+   *  would be wrong — the override REPLACES the recess under the plaque; nothing
+   *  paints the base tier there.) */
+  function plaqueGround(theme: "dark" | "light"): string {
+    const block = themeBlock(theme);
+    let scopedValue: string | undefined;
+    let bareValue: string | undefined;
+    for (const [, selector = "", body = ""] of folioNoComments.matchAll(
+      /([^{}]*\.mon-ref[^{}]*)\{([^{}]*)\}/g
+    )) {
+      const scoped = /\[data-theme="(dark|light)"\]/.exec(selector)?.[1];
+      if (scoped && scoped !== theme) continue;
+      const value = /--bg-recessed\s*:\s*([^;]+);/.exec(body)?.[1];
+      if (!value) continue;
+      if (scoped) scopedValue = value;
+      else bareValue = value;
+    }
+    const winner = scopedValue ?? bareValue;
+    return winner ? resolveColor(winner, block) : readVar(block, "--bg-recessed");
+  }
+
+  for (const theme of ["dark", "light"] as const) {
+    const block = themeBlock(theme);
+    const grounds = [plaqueGround(theme)];
+
+    it(`${theme}: the plaque's ground is derived, not assumed`, () => {
+      // A renamed `.mon-ref` / `--bg-recessed` must fail here, not silently
+      // collapse the sweep onto a ground the plaque no longer paints.
+      expect(grounds[0], "a resolved plaque ground").toMatch(/^#[0-9a-fA-F]{6}$/);
+      expect(INK_TOKENS.length, "a non-empty damage ramp").toBeGreaterThan(10);
+      expect(CONDITIONS.length, "a non-empty condition ramp").toBeGreaterThan(10);
+    });
+
+    for (const name of INK_TOKENS) {
+      it(`${theme}: --dmg-${name}-ink ≥ ${AA}:1 on the statblock plaque`, () => {
+        const ink = readVar(block, `--dmg-${name}-ink`);
+        for (const ground of grounds)
+          expect(
+            contrast(ink, ground),
+            `${name}-ink ${ink} on plaque ${ground}`
+          ).toBeGreaterThanOrEqual(AA);
+      });
+    }
+
+    for (const cond of CONDITIONS) {
+      it(`${theme}: --cond-${cond}-ink ≥ ${AA}:1 on the statblock plaque`, () => {
+        const ink = readVar(block, `--cond-${cond}-ink`);
+        for (const ground of grounds)
+          expect(
+            contrast(ink, ground),
+            `${cond}-ink ${ink} on plaque ${ground}`
+          ).toBeGreaterThanOrEqual(AA);
+      });
+    }
+
+    it(`${theme}: the adv/dis + value registers ≥ ${AA}:1 on the statblock plaque`, () => {
+      // `.rt-adv` / `.rt-dis` / `.rt-value` — the grammar's token-driven arms.
+      for (const name of [
+        "--semantic-success",
+        "--semantic-danger",
+        "--text-special",
+      ] as const) {
+        const ink = resolveColor(rawVar(block, name) ?? "", block);
+        for (const ground of grounds)
+          expect(
+            contrast(ink, ground),
+            `${name} ${ink} on plaque ${ground}`
+          ).toBeGreaterThanOrEqual(AA);
+      }
     });
   }
 });

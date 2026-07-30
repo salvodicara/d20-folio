@@ -13,6 +13,8 @@
  *     • `onClose` omitted   → a `Dialog.Close` (DialogContent leans on Radix).
  * - `ModalBody` — the `.modal-body` scroll region; forwards native props (e.g. the
  *   command palette routes its ↑↓/Enter `onKeyDown` here).
+ * - `ModalScrollColumn` — the same scroll region for `ModalShell`'s tall flex card
+ *   (`flex-1` instead of `.modal-body`'s fixed max-height).
  * - `ModalFoot` — the `.modal-foot` action row.
  */
 
@@ -100,6 +102,38 @@ export function ModalBody({
     // non-scrolling body costing one extra tab stop is harmless. Callers may
     // still override it via `...rest` (e.g. a body that manages its own focus).
     <div className={cn("modal-body", className)} tabIndex={0} {...rest}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * ModalScrollColumn — `ModalShell`'s scroll region. `ModalShell` is a tall flex
+ * CARD (`h-[88vh] flex-col`), so its body grows with `flex-1` rather than
+ * `.modal-body`'s fixed `max-height: 64vh` — same a11y contract, different
+ * layout, hence a sibling part and not a copy at each call site.
+ *
+ * `tabIndex={0}` is that contract: a long, interaction-free body (a monster
+ * statblock) is a scrollable region with NO focusable child, so a non-pointer
+ * user cannot reach it to arrow-scroll (WCAG 2.1 / axe
+ * `scrollable-region-focusable`, serious). Unconditional, like `ModalBody`'s —
+ * one harmless tab stop beats a rule that fires whenever content happens to
+ * overflow. `overscroll-contain` keeps momentum out of the page chain.
+ */
+export function ModalScrollColumn({
+  className,
+  children,
+  ...rest
+}: ComponentPropsWithoutRef<"div">) {
+  return (
+    <div
+      tabIndex={0}
+      className={cn(
+        "flex-1 overflow-y-auto overscroll-contain p-4 focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-accent",
+        className
+      )}
+      {...rest}
+    >
       {children}
     </div>
   );

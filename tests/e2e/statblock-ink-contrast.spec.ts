@@ -35,6 +35,14 @@
  * The leaf is `mimic`: the one SRD statblock whose prose fires every arm of the
  * rules-text grammar (`.rt-adv` · `.rt-dis` · `.rt-cond` · `.rt-dmg` ·
  * `.rt-value`) AND carries a damage-ledger run (`.mon-dmg`, Acid immunity).
+ *
+ * BLIND SPOT — ONE LEAF IS ONE FACT PER RAMP. The damage and condition inks are
+ * PER-FACT: this leaf prints Acid, so Acid is the only `--dmg-*-ink` this spec
+ * can measure, and `cold` shipped at 4.49:1 on the plaque (the Imp's
+ * "Resistances Cold") with this spec green. The ramps as a WHOLE are pinned on
+ * the plaque's derived ground by `tests/unit/verdict-ink-contrast.test.ts`; this
+ * spec owns what token pairing cannot see — the cascade, the identity, and the
+ * composited ground.
  */
 
 import { test, expect } from "@playwright/test";
