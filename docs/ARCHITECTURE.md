@@ -1566,7 +1566,10 @@ no per-page route file.
 it — the Binder's Fob ✎ coin on desktop, the header `EditingPill` on compact viewports (one home per
 viewport, `useBinderFobHome`); every inline override (`InlineEditable`) and bulk-edit flow gates on it.
 It is driven three
-ways — the toggle, **Esc** (exits edit, armed only while editing), and a **⌘E / Ctrl+E accelerator**
+ways — the toggle, **Esc** (exits edit, armed only while editing, and only as the CONSUMER OF LAST
+RESORT: it skips a press a layer above already claimed via `preventDefault` — a Radix dialog/popover,
+`useDismissOnOutside`, an `InlineEditable` cancel — so closing a modal never also leaves edit mode;
+`DESIGN.md` → "Esc belongs to the TOPMOST layer"), and a **⌘E / Ctrl+E accelerator**
 (`useEditModeShortcut`, route-scoped to the cockpit; inert while focus is in an input or on a read-only
 member-sheet viewer, so the keyboard can never enter edit on someone else's sheet).
 

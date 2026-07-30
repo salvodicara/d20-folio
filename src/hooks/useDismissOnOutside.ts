@@ -16,7 +16,8 @@ import { useEffect, useRef, type RefObject } from "react";
  *  - **`pointerdown`.** Covers mouse + touch + pen in one listener (the old
  *    `mousedown` missed touch).
  *
- * Plus Escape-to-close, and zero listeners while `active` is false. The latest
+ * Plus Escape-to-close (which CLAIMS the key — see below), and zero listeners
+ * while `active` is false. The latest
  * `onDismiss` is read through a ref so callers may pass an inline closure without
  * re-subscribing the listeners every render.
  *
@@ -41,7 +42,14 @@ export function useDismissOnOutside(
       if (el && !el.contains(e.target as Node)) onDismissRef.current();
     };
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onDismissRef.current();
+      if (e.key !== "Escape") return;
+      // CLAIM the key for this layer — Esc belongs to the topmost layer, so a
+      // listener BELOW (the sheet's Esc-to-leave-edit-mode) must stand down
+      // instead of also firing on the same press. Radix's DismissableLayer marks
+      // its own dismissals the same way; `defaultPrevented` is the one signal
+      // every layer speaks.
+      e.preventDefault();
+      onDismissRef.current();
     };
     document.addEventListener("pointerdown", onPointerDown, true);
     document.addEventListener("keydown", onKeyDown);

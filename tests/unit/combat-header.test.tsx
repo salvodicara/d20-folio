@@ -10,7 +10,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { useState } from "react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import i18n from "@/i18n";
 
 // CombatHeader pulls in LevelUpModal → @/lib/firestore → Firebase. Stub Firebase
@@ -20,6 +21,7 @@ vi.mock("@/lib/firebase", () => ({ db: {} }));
 
 import { MemoryRouter } from "react-router";
 import { CombatHeader } from "@/features/character/center/CombatHeader";
+import { ModalShell } from "@/components/shared/ModalShell";
 
 /** The header navigates to the level-up ROUTE now — give it a router context. */
 function renderHeader() {
@@ -568,5 +570,74 @@ describe("CombatHeader — the masthead is pure identity + vitals (management li
     expect(screen.getByText("Lyra Voss")).toBeInTheDocument();
     expect(screen.getByText("AC")).toBeInTheDocument();
     expect(container.querySelector(".rest-medal")).not.toBeNull();
+  });
+});
+
+describe("CombatHeader — Esc-to-leave-edit yields to the topmost layer", () => {
+  /** Edit mode + a controlled modal sibling, exactly as the cockpit mounts them. */
+  function HeaderWithModal() {
+    const [open, setOpen] = useState(true);
+    return (
+      <MemoryRouter>
+        <CombatHeader />
+        <ModalShell open={open} onClose={() => setOpen(false)} title="Add Spell">
+          <div className="modal-body">
+            <button type="button">Pick</button>
+          </div>
+        </ModalShell>
+      </MemoryRouter>
+    );
+  }
+
+  function escape(): void {
+    fireEvent.keyDown(document.body, { key: "Escape" });
+  }
+
+  it("Esc with NO layer open still leaves edit mode (the shortcut itself)", () => {
+    load();
+    useUIStore.setState({ sheetMode: "edit" });
+    renderHeader();
+    escape();
+    expect(useUIStore.getState().sheetMode).toBe("play");
+  });
+
+  it("Esc that closes a modal does NOT also drop the sheet out of edit mode", async () => {
+    load();
+    useUIStore.setState({ sheetMode: "edit" });
+    render(<HeaderWithModal />);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    escape();
+    // The modal (the topmost layer) owns that Esc — it closes…
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    // …and the edit chrome survives behind it.
+    expect(useUIStore.getState().sheetMode).toBe("edit");
+    expect(screen.getByRole("button", { name: "AC" })).toBeInTheDocument();
+  });
+
+  it("Esc that dismisses the portrait menu does NOT also leave edit mode", () => {
+    load();
+    useCharacterStore.setState((s) =>
+      s.character
+        ? { character: { ...s.character, portraitUrl: "https://example.test/p.png" } }
+        : s
+    );
+    useUIStore.setState({ sheetMode: "edit" });
+    renderHeader();
+    fireEvent.click(screen.getByRole("button", { name: /edit portrait/i }));
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    escape();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(useUIStore.getState().sheetMode).toBe("edit");
+  });
+
+  it("Esc that cancels an inline vital edit does NOT also leave edit mode", () => {
+    load();
+    useUIStore.setState({ sheetMode: "edit" });
+    renderHeader();
+    fireEvent.click(screen.getByRole("button", { name: "AC" }));
+    fireEvent.keyDown(screen.getByLabelText("AC"), { key: "Escape" });
+    // The editor collapses back to its button — and the sheet stays in edit mode.
+    expect(screen.getByRole("button", { name: "AC" })).toBeInTheDocument();
+    expect(useUIStore.getState().sheetMode).toBe("edit");
   });
 });

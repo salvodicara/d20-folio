@@ -188,6 +188,37 @@ test.describe("Edit Mode", () => {
     await page.keyboard.press("Escape");
     await expect(content).not.toHaveAttribute("data-mode", "edit");
   });
+
+  // Esc belongs to the TOPMOST layer (DESIGN.md → "Esc belongs to the TOPMOST
+  // layer"). The leave-edit-mode listener is the consumer of LAST RESORT: before
+  // the guard, one Esc on an open add-modal fired BOTH intents — the modal closed
+  // and the edit chrome silently vanished behind it.
+  test("Esc dismissing a modal does NOT also drop the sheet out of edit mode", async ({
+    page,
+  }) => {
+    const content = page.locator(".content");
+    await page.goto("/characters/mock-1?tab=inventory");
+    await expect(page.getByText(/Rapier/i).first()).toBeVisible();
+    await enterEditMode(page);
+    await expect(content).toHaveAttribute("data-mode", "edit");
+
+    await page
+      .getByRole("button", { name: /add|new/i })
+      .first()
+      .click();
+    const modal = page.getByRole("dialog");
+    await expect(modal).toBeVisible();
+
+    // One Esc: the modal (the topmost layer) takes it and closes…
+    await page.keyboard.press("Escape");
+    await expect(modal).toHaveCount(0);
+    // …and the sheet is STILL in edit mode.
+    await expect(content).toHaveAttribute("data-mode", "edit");
+
+    // With no layer above, the next Esc leaves edit mode as always.
+    await page.keyboard.press("Escape");
+    await expect(content).not.toHaveAttribute("data-mode", "edit");
+  });
 });
 
 /**

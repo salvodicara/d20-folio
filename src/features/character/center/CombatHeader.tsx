@@ -168,12 +168,22 @@ export function CombatHeader() {
   );
 
   // Esc exits edit mode (parity with the pre-rewrite sheet; the pill's hint
-  // surfaces the shortcut). Only armed while editing, so it never swallows Esc
-  // from modals/popovers in play mode.
+  // surfaces the shortcut) — the CONSUMER OF LAST RESORT: leaving edit mode is
+  // what Esc means only when no layer above owns it. Every layer marks the key
+  // consumed when it handles it (Radix's DismissableLayer preventDefaults on
+  // dismissal from a document CAPTURE listener, so it always runs before this
+  // window one; our hand-rolled layers — `useDismissOnOutside`, `InlineEditable`
+  // — do the same), so `defaultPrevented` is the honest "already handled" signal.
+  // The `[role="dialog"]` fallback covers a dialog that KEEPS Esc (holds focus
+  // without dismissing). Same recipe as compendium `EntryView`. Without this,
+  // Esc on an open Add-Item / Add-Spell modal closed the modal AND silently
+  // dropped the sheet out of edit mode behind it.
   useEffect(() => {
     if (sheetMode !== "edit") return;
     function onKey(e: KeyboardEvent): void {
-      if (e.key === "Escape") setSheetMode("play");
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (e.target instanceof HTMLElement && e.target.closest("[role='dialog']")) return;
+      setSheetMode("play");
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

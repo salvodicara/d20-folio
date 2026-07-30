@@ -947,11 +947,21 @@ still fires them), and `aria-keyshortcuts` attributes stay (AT-facing, not a vis
 | Global         | `g` then `1` / `2` / `3` | Go to Characters / Campaigns / Compendium (POSITIONAL)    |
 | Global         | `g` then `s` / `a`       | Go to Settings / Admin (`a` admin-only, else silent)      |
 | Global         | Esc                      | Close / dismiss the topmost layer                         |
-| Cockpit        | ⌘E / Ctrl+E · Esc        | Toggle edit · leave edit                                  |
+| Cockpit        | ⌘E / Ctrl+E · Esc        | Toggle edit · leave edit (last resort — see below)        |
 | Cockpit        | ←/→ · Home/End           | Move through sheet tabs (while the tab strip is focused)  |
 | Encounter (DM) | ← / →                    | Previous / next turn                                      |
 | Palette        | ↑↓ · Home/End · ↵ · Esc  | Move · jump to ends · open · close                        |
 | Compendium     | Esc                      | Close the open entry back to its list                     |
+
+**Esc belongs to the TOPMOST layer — one press, one intent.** A layer that handles Esc CLAIMS it
+(`e.preventDefault()`): Radix's `DismissableLayer` does this natively (from a document CAPTURE
+listener, so it always runs first), and our hand-rolled layers do the same — `useDismissOnOutside`
+(every popover / menu / picker) and `InlineEditable` (Esc cancels THAT edit). The page-level Esc
+consumers are therefore CONSUMERS OF LAST RESORT: the cockpit's leave-edit-mode listener and the
+compendium's close-the-entry listener both skip an already-`defaultPrevented` press (plus a
+`[role="dialog"]` target guard for a dialog that keeps Esc without dismissing). Without that, one
+Esc fired two intents — closing an Add-Item / Add-Spell modal ALSO dropped the sheet out of edit
+mode behind it.
 
 **The limits (what deliberately gets NO shortcut):** nothing that MUTATES game state gets a
 global / single-key binding (End Turn, Rest, HP / resource changes, Level Up, Sign Out are
