@@ -70,26 +70,37 @@ function contrast(fg: string, bg: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-/** Every `--dmg-<type>-ink` a theme block DECLARES — derived, never a list kept
- *  beside the guard. The hand-list this replaces was fine; the GROUNDS it was
- *  swept on were not, and a derived subject set is what lets a new ground (below)
- *  widen the sweep by itself instead of by memory. */
-function inkTypes(block: string): string[] {
-  return [...block.matchAll(/--dmg-([a-z]+)-ink\s*:/g)].map((m) => m[1] as string).sort();
+/** Every `--<ramp>-<type>-ink` a theme block DECLARES — derived, never a list
+ *  kept beside the guard. BOTH ink ramps (damage types, conditions) come from
+ *  here, so adding a type widens every sweep below by itself instead of by
+ *  memory. The hand-lists this replaces were complete; the GROUNDS they were
+ *  swept on were not, and only a derived subject set lets a new ground (the
+ *  statblock plaque, at the bottom of this file) inherit the whole family. */
+function rampTypes(block: string, ramp: "dmg" | "cond"): string[] {
+  return [...block.matchAll(new RegExp(`--${ramp}-([a-z]+)-ink\\s*:`, "g"))]
+    .map((m) => m[1] as string)
+    .sort();
 }
 
-const INK_TOKENS = inkTypes(themeBlock("dark"));
+const INK_TOKENS = rampTypes(themeBlock("dark"), "dmg");
+const CONDITIONS = rampTypes(themeBlock("dark"), "cond");
 
 const AA = 4.5;
 
-describe("the damage-ink ramp is fully derived + symmetric across themes", () => {
-  it("the dark block declares a non-empty ramp", () => {
-    // A renamed token must EMPTY-fail here rather than silently shrink every sweep.
-    expect(INK_TOKENS.length).toBeGreaterThan(10);
-  });
-  it("light declares the same ramp as dark", () => {
-    expect(inkTypes(themeBlock("light"))).toEqual(INK_TOKENS);
-  });
+describe("both ink ramps are fully derived + symmetric across themes", () => {
+  for (const [ramp, dark] of [
+    ["dmg", INK_TOKENS],
+    ["cond", CONDITIONS],
+  ] as const) {
+    it(`the dark block declares a non-empty --${ramp}-*-ink ramp`, () => {
+      // A renamed token must EMPTY-fail here rather than silently shrink every
+      // sweep that reads this set — the floor IS the guard on the derivation.
+      expect(dark.length).toBeGreaterThan(10);
+    });
+    it(`light declares the same --${ramp}-*-ink ramp as dark`, () => {
+      expect(rampTypes(themeBlock("light"), ramp)).toEqual(dark);
+    });
+  }
 });
 
 /** Mix two hexes in sRGB at `pct`% of `a` over `b` (matches CSS color-mix close
@@ -103,24 +114,6 @@ function mix(a: string, b: string, pct: number): string {
   const bl = Math.round(ab * f + bb * (1 - f));
   return `#${[r, g, bl].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
 }
-
-const CONDITIONS = [
-  "blinded",
-  "charmed",
-  "deafened",
-  "exhaustion",
-  "frightened",
-  "grappled",
-  "incapacitated",
-  "invisible",
-  "paralyzed",
-  "petrified",
-  "poisoned",
-  "prone",
-  "restrained",
-  "stunned",
-  "unconscious",
-] as const;
 
 const SPELL_LEVELS = ["c", "1", "2", "3", "4", "5", "6", "7", "8", "9"] as const;
 
@@ -213,13 +206,8 @@ describe("condition-chip ink tokens clear WCAG-AA on the 19% tint", () => {
 
     for (const cond of CONDITIONS) {
       it(`${theme}: --cond-${cond}-ink ≥ ${AA}:1 on its chip tint`, () => {
-        // Falls back to the base hue where no -ink is defined.
-        let ink: string;
-        try {
-          ink = readVar(block, `--cond-${cond}-ink`);
-        } catch {
-          ink = readVar(block, `--cond-${cond}`);
-        }
+        // No -ink fallback: `CONDITIONS` is derived FROM the `-ink` declarations.
+        const ink = readVar(block, `--cond-${cond}-ink`);
         const base = readVar(block, `--cond-${cond}`);
         const tint = mix(base, surface2, tintPct);
         expect(contrast(ink, tint), `${cond}-ink on ${tint}`).toBeGreaterThanOrEqual(AA);
@@ -521,10 +509,12 @@ describe("combat top-bar dest-chip ink clears WCAG-AA on the carved socket", () 
 // Neither gate was wrong about what it measured; both sampled the ink family
 // instead of deriving it.
 //
-// So: the SUBJECTS are every `--dmg-*-ink` / `--cond-*-ink` the stylesheet
-// declares, and the GROUND is whatever `--bg-recessed` resolves to UNDER
-// `.mon-ref`, read out of folio.css — add a damage type or re-seat the plaque
-// and this widens/follows by itself.
+// So: the SUBJECTS are `rampTypes()`'s two derived families — every
+// `--dmg-*-ink` and every `--cond-*-ink` the theme block declares, floored
+// non-empty at the top of this file — and the GROUND is whatever
+// `--bg-recessed` resolves to UNDER `.mon-ref`, read out of folio.css. Add a
+// damage type or a condition, or re-seat the plaque, and this widens/follows by
+// itself.
 //
 // BLIND SPOTS (what this cannot see): (1) the CASCADE beyond the one property it
 // resolves — a higher-specificity rule repainting an ARM is invisible to token
@@ -564,12 +554,12 @@ describe("the statblock plaque grounds every rules-text ink at AA", () => {
 
   for (const theme of ["dark", "light"] as const) {
     const block = themeBlock(theme);
-    const grounds = [plaqueGround(theme)];
+    const ground = plaqueGround(theme);
 
     it(`${theme}: the plaque's ground is derived, not assumed`, () => {
       // A renamed `.mon-ref` / `--bg-recessed` must fail here, not silently
       // collapse the sweep onto a ground the plaque no longer paints.
-      expect(grounds[0], "a resolved plaque ground").toMatch(/^#[0-9a-fA-F]{6}$/);
+      expect(ground, "a resolved plaque ground").toMatch(/^#[0-9a-fA-F]{6}$/);
       expect(INK_TOKENS.length, "a non-empty damage ramp").toBeGreaterThan(10);
       expect(CONDITIONS.length, "a non-empty condition ramp").toBeGreaterThan(10);
     });
@@ -577,22 +567,20 @@ describe("the statblock plaque grounds every rules-text ink at AA", () => {
     for (const name of INK_TOKENS) {
       it(`${theme}: --dmg-${name}-ink ≥ ${AA}:1 on the statblock plaque`, () => {
         const ink = readVar(block, `--dmg-${name}-ink`);
-        for (const ground of grounds)
-          expect(
-            contrast(ink, ground),
-            `${name}-ink ${ink} on plaque ${ground}`
-          ).toBeGreaterThanOrEqual(AA);
+        expect(
+          contrast(ink, ground),
+          `${name}-ink ${ink} on plaque ${ground}`
+        ).toBeGreaterThanOrEqual(AA);
       });
     }
 
     for (const cond of CONDITIONS) {
       it(`${theme}: --cond-${cond}-ink ≥ ${AA}:1 on the statblock plaque`, () => {
         const ink = readVar(block, `--cond-${cond}-ink`);
-        for (const ground of grounds)
-          expect(
-            contrast(ink, ground),
-            `${cond}-ink ${ink} on plaque ${ground}`
-          ).toBeGreaterThanOrEqual(AA);
+        expect(
+          contrast(ink, ground),
+          `${cond}-ink ${ink} on plaque ${ground}`
+        ).toBeGreaterThanOrEqual(AA);
       });
     }
 
@@ -604,11 +592,10 @@ describe("the statblock plaque grounds every rules-text ink at AA", () => {
         "--text-special",
       ] as const) {
         const ink = resolveColor(rawVar(block, name) ?? "", block);
-        for (const ground of grounds)
-          expect(
-            contrast(ink, ground),
-            `${name} ${ink} on plaque ${ground}`
-          ).toBeGreaterThanOrEqual(AA);
+        expect(
+          contrast(ink, ground),
+          `${name} ${ink} on plaque ${ground}`
+        ).toBeGreaterThanOrEqual(AA);
       }
     });
   }

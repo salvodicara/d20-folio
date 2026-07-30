@@ -1066,9 +1066,12 @@ campaign hub if it adopts tabbed IA — never re-roll a second tab look.
     interactive control, `.modal-body:focus-visible` draws the crisp ring INSET and suppresses the
     global interior focus-wash that would otherwise flood the whole body. `ModalShell` is a TALL
     flex card, so its bodies grow with `flex-1` instead of that fixed max-height: the same contract
-    lives in the sibling **`ModalScrollColumn`** (same file) — the ONE recipe every `ModalShell`
-    scroll region takes, never re-rolled per surface. A read-only body (a monster statblock) is
-    exactly the case that fails without it: a scrollable region with no focusable child.
+    lives in the sibling **`ModalScrollColumn`** (same file) — the ONE recipe every READ-ONLY
+    `ModalShell` scroll body takes, never re-rolled per surface. A read-only body (a monster
+    statblock) is exactly the case that fails without it: a scrollable region with no focusable
+    child. Scroll columns whose content is interactive (result lists, form bodies, the beast-form
+    picker) already satisfy the rule through their own controls and stay as they are — adopting the
+    recipe there would only add a redundant tab stop.
 - **Command palette ("Ask the Folio"):** a floating panel (`--bg-surface-2` + `--elev-floating`,
   `--z-overlay`, scrim) with a carved search field and keyboard-navigable result rows (hover/selected
   → `--bg-surface-3` + a left `--accent-primary` marker), section eyebrows, and `aria-current` on the
