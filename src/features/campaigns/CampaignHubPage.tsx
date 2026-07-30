@@ -210,7 +210,7 @@ function CampaignHub({ campaignId }: { campaignId: string }) {
     // shows its empty state) — the gate can never wedge on a denied chronicle.
     if (!error) return <FolioLoader variant="region" />;
     return (
-      <main id="main" className="page-shell py-8">
+      <main id="main" className="wb page-shell py-8">
         <RunicEmptyState
           glyph={AlertTriangle}
           title={t("campaignHub.notFound")}
@@ -230,7 +230,7 @@ function CampaignHub({ campaignId }: { campaignId: string }) {
   const members = campaignMemberCount(campaign);
 
   return (
-    <main id="main" className="page-shell py-8">
+    <main id="main" className="wb page-shell py-8">
       {/* SLIM hub header (owner 2026-06-30) — the big 3:1 hero band was retired so
           the Party/combat sit in the fold; the campaign's art is now the page's
           atmospheric `--app-bg-art` backdrop (above). This is the SAME framed

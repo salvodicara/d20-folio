@@ -121,7 +121,7 @@ export function CampaignsListPage() {
   );
 
   return (
-    <main id="main" className="page-shell py-8">
+    <main id="main" className="wb page-shell py-8">
       <PageHeader
         as="h1"
         crest
