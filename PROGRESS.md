@@ -475,6 +475,18 @@ deliberately avoids ("toggle NOT on the header"); that earlier ruling still gove
 header is all that shows when collapsed, so it is the natural affordance (the distinction is now
 recorded in `DESIGN.md`).
 
+## Shipped — Dependabot security remediation (2026-07-30)
+
+Cleared the `functions/` `postcss` alert (GHSA-r28c-9q8g-f849, high — source-map path traversal
+in `sourceMappingURL` auto-loading, `<=8.5.17`): `npm update postcss` in the standalone
+`functions/` package re-resolved the vitest dev-tooling transitive to `8.5.25` (patched line
+`>=8.5.18`); the root pnpm tree was already on `8.5.20` and was never affected. The `functions/`
+lint + build lane green. The two remaining open alerts are the SAME advisory
+(GHSA-qwww-vcr4-c8h2, react-router RSC-mode CSRF, patched only in 8.x): already triaged
+NON-EXPLOITABLE for this client-side Data-Mode SPA (no RSC/SSR/server-action surface — see the
+2026-07-25 remediation record); they stay open until the react-router 8.x major bump on the
+roadmap frontier retires them for good.
+
 ## Shipped — Dependabot security remediation (2026-07-25)
 
 `brace-expansion` is now `5.0.8` EVERYWHERE in both trees — zero findings left (GHSA-mh99-v99m-4gvg,
