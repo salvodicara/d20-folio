@@ -26,8 +26,22 @@ import type {
   CustomWeapon,
 } from "@/types/character";
 
+/** The four homebrew kinds, in display order — the union below derives from it. */
+export const LIBRARY_KINDS = ["spell", "feature", "equipment", "weapon"] as const;
+
 /** Which of the four homebrew types an entry carries. */
-export type LibraryKind = "spell" | "feature" | "equipment" | "weapon";
+export type LibraryKind = (typeof LIBRARY_KINDS)[number];
+
+/**
+ * Each kind's section word as an i18n KEY (the sheet's existing labels, never a
+ * new key) — localization stays at the render boundary; this module stays pure.
+ */
+export const LIBRARY_KIND_LABEL_KEY: Record<LibraryKind, string> = {
+  spell: "nav.spells",
+  feature: "nav.features",
+  equipment: "equipment.title",
+  weapon: "equipment.weapons",
+};
 
 /**
  * A kind→item pairing: what a SAVE carries before it gets its stored identity.

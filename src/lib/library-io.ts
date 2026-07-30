@@ -21,9 +21,7 @@ import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { stripUndefined } from "@/lib/strip-undefined";
-import type { LibraryEntry, LibraryKind } from "@/lib/library";
-
-const LIBRARY_KINDS: readonly LibraryKind[] = ["spell", "feature", "equipment", "weapon"];
+import { LIBRARY_KINDS, type LibraryEntry, type LibraryKind } from "@/lib/library";
 
 /** Ref to the user's single homebrew-library document. */
 export function libraryRef(uid: string) {

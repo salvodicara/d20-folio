@@ -41,7 +41,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { IconButton } from "@/components/ui/icon-button";
-import { libraryEntryName, type LibraryKind } from "@/lib/library";
+import { LIBRARY_KIND_LABEL_KEY, LIBRARY_KINDS, libraryEntryName } from "@/lib/library";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -82,14 +82,6 @@ function SettingRow({
   );
 }
 
-/** Kind → the sheet's own section word (existing keys) + the manager's sort order. */
-const LIBRARY_KIND_ORDER: readonly LibraryKind[] = [
-  "spell",
-  "feature",
-  "equipment",
-  "weapon",
-];
-
 /**
  * The account-level homebrew library manager: every saved entry, grouped by kind
  * (the rows sort by kind then name, each labelled with its kind) with a delete
@@ -105,22 +97,8 @@ function LibrarySection() {
   const entries = useLibraryStore((s) => s.entries);
   const removeFromLibrary = useLibraryStore((s) => s.removeFromLibrary);
 
-  function kindLabel(kind: LibraryKind): string {
-    switch (kind) {
-      case "spell":
-        return t("nav.spells");
-      case "feature":
-        return t("nav.features");
-      case "equipment":
-        return t("equipment.title");
-      case "weapon":
-        return t("equipment.weapons");
-    }
-  }
-
   const rows = [...entries].sort((a, b) => {
-    const byKind =
-      LIBRARY_KIND_ORDER.indexOf(a.kind) - LIBRARY_KIND_ORDER.indexOf(b.kind);
+    const byKind = LIBRARY_KINDS.indexOf(a.kind) - LIBRARY_KINDS.indexOf(b.kind);
     return byKind !== 0 ? byKind : libraryEntryName(a).localeCompare(libraryEntryName(b));
   });
 
@@ -149,7 +127,7 @@ function LibrarySection() {
                 key={entry.id}
                 icon={BookMarked}
                 name={name}
-                help={kindLabel(entry.kind)}
+                help={t(LIBRARY_KIND_LABEL_KEY[entry.kind])}
                 control={
                   <IconButton
                     aria-label={`${t("common.delete")} ${name}`}

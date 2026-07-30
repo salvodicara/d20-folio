@@ -26,6 +26,7 @@ import { useLibraryStore } from "@/stores/libraryStore";
 import { matchesSearch } from "@/lib/search";
 import {
   entryToCharacterItem,
+  LIBRARY_KIND_LABEL_KEY,
   libraryEntryName,
   type LibraryEntry,
   type LibraryKind,
@@ -80,23 +81,9 @@ export function LibraryPickerBody({
   const entries = useLibraryStore((s) => s.entries);
   const [search, setSearch] = useState("");
 
-  /** The kind's own section word — the sheet's existing labels, never a new key. */
-  function kindLabel(kind: LibraryKind): string {
-    switch (kind) {
-      case "spell":
-        return t("nav.spells");
-      case "feature":
-        return t("nav.features");
-      case "equipment":
-        return t("equipment.title");
-      case "weapon":
-        return t("equipment.weapons");
-    }
-  }
-
   /** The one-line reading under the name: the kind, plus its cheapest fact. */
   function meta(entry: LibraryEntry): string {
-    const parts: Array<string | undefined> = [kindLabel(entry.kind)];
+    const parts: Array<string | undefined> = [t(LIBRARY_KIND_LABEL_KEY[entry.kind])];
     switch (entry.kind) {
       case "spell":
         parts.push(
