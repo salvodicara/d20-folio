@@ -1206,6 +1206,20 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     rename-in-place. The whole bestiary surface loads in ONE lazy chunk on first open (zero eager
     delta — tripwired); a spec-driven `quantityMax` was added to the shared picker footer. The
     2024-DMG XP-budget difficulty calculator that followed it also SHIPPED (2026-07-25).
+  - **⚠ SEAM DEBT — MUST FIX BEFORE MM WAVE 2: pack monsters are double-shipped into the EAGER
+    closure.** Surfaced 2026-07-30 by A/B-ing the wave-1 pilot (10 statblocks EN+IT) on one app SHA
+    with only the pack varying. `src/data/monsters/index.ts` is lazy (the `srd-monsters` chunk) and
+    its docblock forbids eager importers — but it composes `packMonsters` from the `@pack` BARREL
+    (`content-pack/index.ts`), which eager code also reaches, so Rolldown lands the pack's monster
+    data in the eager `cockpit-engine` chunk AS WELL AS the two lazy `monsters-*` catalogues. Same
+    mechanism that bit `packQuickbuildPresets`. Measured cost of the 10-monster pilot: eager closure
+    **776.64 → 777.88 KB gz** (`cockpit-engine` 386.4 → 387.7) against the **779** ceiling — **1.12
+    KB gz of headroom left**, ~0.124 KB gz per monster. The manifest's remaining **163** MM
+    statblocks would add **~20 KB gz eager and blow the ceiling by ~19**, so wave 2 cannot ship on
+    this seam. THE FIX: give pack monsters their own lazy sub-entry mirroring the public
+    `srd-monsters` pattern (a dedicated pack monsters module the lazy corpus imports, never the
+    whole barrel), so the corpus is fetched only when the bestiary opens. Precache is NOT the
+    problem (+20.42 KiB, ceiling stepped to 9055 in the same wave) — the eager leak is.
 - **Companions/Extras — SHIPPED (2026-07-25):** a persistent, play-reachable
   companion surface. A "Companions" section in the resources rail (after Active
   Features) fields every companion: the Artificer constructs + the Beast Master

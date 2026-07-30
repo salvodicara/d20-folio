@@ -218,19 +218,32 @@ const EAGER_CEILING_KB = 779; // baseline 727.1 → ~+7% (near budget — see AR
 // randomizer and the wave's bilingual strings grew EXISTING lazy chunks. Recorded 9022.6
 // KiB (300 entries). [Both raises landed with only the ARCHITECTURE.md cell updated —
 // these two lines are the back-fill that puts the two trails back in step.]
-// +22 KiB 2026-07-30 (baseline reconciliation): 9033 → 9055. NOT a growth event, a
-// CORRECTION. The 9033 ceiling was never reproducible from the tree that set it: a fresh
-// composed build of d5371bb — the quickbuild commit whose line above records 9022.6 KiB /
-// 300 entries — measures 9043.09 KiB / 301 entries today, so the ceiling shipped ~20 KiB
-// BELOW its own tree and the next full build was always going to trip it. Re-measured on
-// the composed lane (pack sibling 9b88eba5) across three SHAs: d5371bb 9043.09, pre-rebase
-// main 0b94148 9044.03, this branch head 9044.06 — all 301 entries, the same manifest
-// shape (only content-hash renames), no new image/font/public asset, eager closure
-// unchanged. Verified NOT pack-driven: rolling the pack back one commit (8ecfb6c0)
-// reproduces 9043.09 exactly, and building against the pack's MM-2025 bestiary pilot
-// (9c29f498 — 10 statblocks EN+IT) measures 9044.06, a ZERO delta, i.e. the pilot's data
-// is not yet reachable from the composed chunk graph. Ceiling = the measured 9044.06
+// +22 KiB 2026-07-30 (MM-2025 bestiary pilot, wave 1 — pack 978f48ba/9c29f498): 9033 →
+// 9055 for the pilot's 10 statblocks EN+IT. A/B on ONE app SHA with ONLY the pack varying
+// (pre-pilot 9b88eba5 vs pilot 9c29f498, both as `content-pack` symlink targets):
+//   precache  9023.64 KiB / 300 entries  →  9044.06 KiB / 301 entries   (+20.42, +1 entry)
+//   eager gz     776.64 KB / 14 chunks   →     777.88 KB / 14 chunks    (+1.24)
+//   entry gz          61.81              →          61.82               (+0.01)
+// The pre-pilot figure lands on the quickbuild line's recorded 9022.6 KiB, so that
+// baseline was CORRECT and this is a genuine growth event. Ceiling = the measured 9044.06
 // +~11 KiB never-exact-fit headroom.
+// METHOD NOTE (a confound that cost a wrong first attribution): a task worktree's
+// `content-pack` may be a symlink to a SCRATCHPAD pack worktree, not the shared sibling
+// checkout. `git -C <sibling> checkout <sha>` then bisects nothing — every build keeps
+// reading the symlink target. Always `readlink content-pack` first and vary THAT.
+//
+// ⚠ SEAM DEBT — pack monsters are DOUBLE-SHIPPED, and the eager ceiling is nearly out of
+// room. `src/data/monsters/index.ts` is lazy (the `srd-monsters` chunk) and its docblock
+// forbids eager importers, but it composes `packMonsters` from the `@pack` BARREL
+// (`content-pack/index.ts`), which eager code also reaches — so Rolldown lands the pack's
+// monster data in the EAGER `cockpit-engine` chunk AND in the two lazy `monsters-*`
+// chunks. Measured: the pilot's ids appear in `cockpit-engine` [eager, 386.4 → 387.7 KB
+// gz] as well as both lazy catalogues; eager closure is now 777.88 KB gz against the 779
+// ceiling — 1.12 KB gz of headroom for 10 monsters, i.e. ~0.124 KB gz each. The manifest's
+// remaining 163 MM statblocks would add ~20 KB gz eager and blow the ceiling by ~19.
+// MUST FIX BEFORE MM WAVE 2: give pack monsters their own lazy sub-entry mirroring the
+// public `srd-monsters` pattern, so the corpus never enters the eager closure. Ledgered in
+// PROGRESS.md → the DDB-parity epic's Bestiary bullet.
 const PRECACHE_CEILING_KIB = 9055;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
