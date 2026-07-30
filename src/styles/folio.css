@@ -20866,3 +20866,241 @@ body:has(.fob) .toast-region {
 [data-theme="light"] .mon-ref {
   --bg-recessed: #e9ddc0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WORKED BRONZE (DESIGN.md §16) — the corpus-studied grammar, scoped `.wb`.
+   The hero surface (the character cockpit) adopts it first; each later surface
+   opts in by taking the scope class. Inside the scope the standard tokens
+   re-point (gold → aged bronze) so every existing recipe re-metals for free;
+   the rules below then re-draw the constructions §16 names. All inks
+   AA-measured: --wb-ink-bronze 7.39:1 on the leather plate, the light ink
+   6.69:1 on ivory.
+   ═══════════════════════════════════════════════════════════════════════ */
+.wb {
+  --wb-bronze-900: #503020;
+  --wb-bronze-700: #6e4a28;
+  --wb-bronze-500: #a07040;
+  --wb-bronze-300: #c09050;
+  --wb-ink-bronze: #cf9a55;
+  --wb-plate: #171310;
+  --wb-plate-deep: #100d08;
+  --accent-primary: var(--wb-bronze-500);
+  --accent-primary-bright: var(--wb-bronze-300);
+  --accent-text: var(--wb-ink-bronze);
+  --border-accent: color-mix(in oklab, var(--wb-bronze-700) 85%, transparent);
+}
+[data-theme="light"] .wb {
+  --wb-ink-bronze: #6b4a24;
+  --accent-primary: var(--wb-bronze-700);
+  --accent-primary-bright: var(--wb-bronze-500);
+}
+
+/* §16.2 — the leather plate: near-black warm, ONE dome of light behind the
+   head zone, a two-tone lip (lit top, recessed bottom). */
+.wb .folio-panel {
+  background:
+    radial-gradient(120% 55% at 50% 18%, rgba(207, 154, 85, 0.08), transparent 62%),
+    linear-gradient(180deg, var(--wb-plate), var(--wb-plate-deep));
+  border: 1px solid var(--wb-bronze-900);
+  box-shadow:
+    inset 0 1px 0 rgba(207, 154, 85, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+    0 12px 28px rgba(0, 0, 0, 0.45);
+}
+[data-theme="light"] .wb .folio-panel {
+  background:
+    radial-gradient(120% 55% at 50% 18%, rgba(110, 74, 40, 0.06), transparent 62%),
+    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
+  border-color: color-mix(in oklab, var(--wb-bronze-700) 55%, var(--bg-surface-1));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 235, 0.7),
+    inset 0 -1px 0 rgba(80, 48, 32, 0.18),
+    0 10px 24px rgba(80, 48, 32, 0.18);
+}
+
+/* §16.3 — the rubric's rule PERFORMS: a hairline fading at both ends with the
+   woven knot swelling at centre — an ORIGINAL drawing (two tapered ribbon
+   strands crossing) following the measured construction, never a copy. */
+.wb .rail-head {
+  display: block;
+}
+.wb .rail-head .rh-diamond,
+.wb .rail-head .rh-rule {
+  display: none;
+}
+.wb .rail-head::after {
+  content: "";
+  display: block;
+  height: 14px;
+  margin-top: var(--sp-1);
+  background: linear-gradient(
+      to right,
+      transparent,
+      var(--wb-bronze-700) 18%,
+      var(--wb-bronze-700) 82%,
+      transparent
+    )
+    center / 100% 1px no-repeat;
+}
+/* The weave is SPENT ONCE per plate (§16.3) — it rides only the plate's first
+   rubric; every later rubric keeps the plain fading hairline. */
+.wb .folio-panel > section:first-child .rail-head::after {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 14'%3E%3Cpath fill='%23a07040' d='M2 7 C 40 7 52 2.6 70 2.6 C 88 2.6 100 7 138 7 C 100 7.9 88 4.1 70 4.1 C 52 4.1 40 7.9 2 7 Z'/%3E%3Cpath fill='%238a5c34' d='M14 7 C 45 7 55 11.4 70 11.4 C 85 11.4 95 7 126 7 C 95 6.2 85 9.8 70 9.8 C 55 9.8 45 6.2 14 7 Z'/%3E%3C/svg%3E")
+      center / auto 14px no-repeat,
+    linear-gradient(
+        to right,
+        transparent,
+        var(--wb-bronze-700) 18%,
+        var(--wb-bronze-700) 82%,
+        transparent
+      )
+      center / 100% 1px no-repeat;
+}
+/* The rubric voice (§16.6): sentence-case serif, the tracked-mono eyebrow
+   retreats. The rubric row keeps its flex for trailing meta. */
+.wb .rail-head .rh-rubric {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-primary);
+}
+
+/* §16.7 — the ability medallion sheds its brass tile: a KINDLE-WELL on the
+   plate (no drawn box); hover kindles the material, the caster card carries
+   the bottom-lip pool (§16.1). */
+.wb .statcard-face {
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    rgba(207, 154, 85, 0.05),
+    transparent 70%
+  );
+  border-color: transparent;
+  box-shadow: none;
+}
+.wb .statcard:hover .statcard-face {
+  transform: none;
+  border-color: transparent;
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    rgba(207, 154, 85, 0.11),
+    transparent 75%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(207, 154, 85, 0.26),
+    inset 0 -10px 16px -12px rgba(192, 144, 80, 0.5);
+}
+.wb .statcard:active .statcard-face {
+  transform: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(207, 154, 85, 0.2),
+    inset 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.wb .statcard.caster .statcard-face {
+  box-shadow: inset 0 -12px 18px -12px rgba(192, 144, 80, 0.55);
+}
+.wb .sc-label {
+  color: var(--wb-ink-bronze);
+}
+.wb .sc-mod {
+  font-weight: 500;
+  font-size: clamp(28px, 40cqw, 46px);
+}
+.wb .sc-gem {
+  background: transparent;
+  border: 1px solid var(--wb-bronze-900);
+  box-shadow: none;
+  color: var(--text-secondary);
+}
+[data-theme="light"] .wb .statcard-face {
+  background: radial-gradient(
+    140% 110% at 50% 0%,
+    rgba(110, 74, 40, 0.035),
+    transparent 75%
+  );
+}
+[data-theme="light"] .wb .statcard:hover .statcard-face {
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    rgba(110, 74, 40, 0.1),
+    transparent 75%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(110, 74, 40, 0.3),
+    inset 0 -10px 16px -12px rgba(110, 74, 40, 0.35);
+}
+[data-theme="light"] .wb .statcard.caster .statcard-face {
+  box-shadow: inset 0 -12px 18px -12px rgba(110, 74, 40, 0.4);
+}
+
+/* §16.6 — the vitals speak the ledger voice: quiet bronze labels, the numeral
+   is the loudest thing on the row. */
+.wb .vital .v-lbl {
+  color: var(--wb-ink-bronze);
+}
+/* The caster medallion joins the boxless grammar: its mark is the POOL (§16.1)
+   + the bronze eyebrow, never a second drawn box. */
+.wb .statcard.caster .statcard-face {
+  border-color: transparent;
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    rgba(207, 154, 85, 0.09),
+    transparent 72%
+  );
+}
+[data-theme="light"] .wb .statcard.caster .statcard-face {
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    rgba(110, 74, 40, 0.08),
+    transparent 72%
+  );
+}
+/* §16.3 — inside the scope a stamp may not float on a line: the diamonds
+   retire; the fading rules stay (they already ARE the grammar's hairline). */
+.wb .sec-head .sec-diamond,
+.wb .ag-head .ag-diamond {
+  display: none;
+}
+
+/* §16.7 — the masthead vitals join the boxless ledger: the numeral stands on
+   the plate; hover kindles the well. */
+.wb .vital {
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+}
+.wb .vital .v-num,
+.wb .vital .v-num-tip {
+  font-size: 17px;
+}
+/* §16.5 — the primary tabs speak with light, not boxes: the strip is a quiet
+   recess, the chosen tab kindles and carries the bottom-lip pool. */
+.wb .tabstrip {
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+.wb .tabstrip [role="tab"] {
+  color: var(--text-secondary);
+}
+.wb .tabstrip [role="tab"]:hover:not([aria-selected="true"]) {
+  color: var(--text-primary);
+  background: rgba(207, 154, 85, 0.07);
+}
+.wb .tabstrip [role="tab"][aria-selected="true"] {
+  color: var(--wb-ink-bronze);
+  background: none;
+  box-shadow: inset 0 -10px 14px -12px rgba(192, 144, 80, 0.55);
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--wb-bronze-500);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+[data-theme="light"] .wb .tabstrip [role="tab"]:hover:not([aria-selected="true"]) {
+  background: rgba(110, 74, 40, 0.07);
+}
+[data-theme="light"] .wb .tabstrip [role="tab"][aria-selected="true"] {
+  box-shadow: inset 0 -10px 14px -12px rgba(110, 74, 40, 0.35);
+  border-bottom-color: var(--wb-bronze-700);
+}

@@ -2370,23 +2370,130 @@ above).
 
 ### 15.13 Quick Reference — Canonical Primitives
 
-| Need                        | Reach for                                       |
-| --------------------------- | ----------------------------------------------- |
-| Editable field in-place     | `InlineEditable`                                |
-| Numeric input with stepper  | `NumberStepper`                                 |
-| Option grid / card picker   | `OptionGrid` (card mode or list mode)           |
-| Picker with search + filter | `PickerSearch` + `FilterChip` + `PickerRow`     |
-| Info display card           | `InfoCard` / `.info-card`                       |
-| Section heading + ledger    | `.sec-head` pattern (see Treasury surface)      |
-| Modal header                | `ModalHead`                                     |
-| Monster statblock           | `MonsterStatBlockCard` (2024 SRD; the familiar) |
+| Need                        | Reach for                                                     |
+| --------------------------- | ------------------------------------------------------------- |
+| Editable field in-place     | `InlineEditable`                                              |
+| Numeric input with stepper  | `NumberStepper`                                               |
+| Option grid / card picker   | `OptionGrid` (card mode or list mode)                         |
+| Picker with search + filter | `PickerSearch` + `FilterChip` + `PickerRow`                   |
+| Info display card           | `InfoCard` / `.info-card`                                     |
+| Section heading + ledger    | `.sec-head` pattern (see Treasury surface)                    |
+| Modal header                | `ModalHead`                                                   |
+| Monster statblock           | `MonsterStatBlockCard` (2024 SRD; the familiar)               |
 | Feature-declared companion  | `CompanionStatBlockCard` (owner-scaled + variant `Segmented`) |
-| Icon-only button            | `IconButton`                                    |
-| Accent / neutral button     | `Button` (variant prop: accent / neutral / …)   |
-| Bilingual search            | `matchesSearch(query, localized, name.en)`      |
-| Bounded prose preview       | `NoteClamp` (overflow-engaged, in-place expand) |
-| In-wizard choice pool       | `WizardPickList` (the morph-list; §5 above)     |
-| Bounded growing list        | latest-N + "View all" (the Treasury-log recipe) |
+| Icon-only button            | `IconButton`                                                  |
+| Accent / neutral button     | `Button` (variant prop: accent / neutral / …)                 |
+| Bilingual search            | `matchesSearch(query, localized, name.en)`                    |
+| Bounded prose preview       | `NoteClamp` (overflow-engaged, in-place expand)               |
+| In-wizard choice pool       | `WizardPickList` (the morph-list; §5 above)                   |
+| Bounded growing list        | latest-N + "View all" (the Treasury-log recipe)               |
+
+## 16. WORKED BRONZE — the corpus-studied identity grammar (owner epic, 2026-07-30)
+
+> The successor visual identity, extracted by MEASUREMENT from a local reference corpus of
+> Baldur's Gate 3 menu surfaces (45 curated screenshots + the owner's own game-file UI textures,
+> `~/Workspace/bg3-ui-study/` — study references only, never committed, never redistributed).
+> Every rule below is a CONSTRUCTION rule: our assets are drawn ORIGINAL from these rules, never
+> copied. Rollout is per-surface behind the `.wb` grammar scope (the cockpit first); a surface
+> that adopts the scope obeys THIS section wherever it contradicts §1–§15. Gate: rule 25 —
+> nothing merges unseen.
+
+### 16.1 The metal is old bronze, not bright gold
+
+The measured metal ramp runs `#503020 → #604020 → #705030 → #906030 → #a07040 → #b08040 →
+#c09050` — a low-saturation aged bronze/copper, darker and browner than the current
+`--gold-leaf-500 #b8923d` family. Tokens (the `.wb` scope re-points the standard consumers):
+
+- `--wb-bronze-900 #503020` (engraved recess) · `--wb-bronze-700 #705030` (the standing line)
+- `--wb-bronze-500 #a07040` (lit edge) · `--wb-bronze-300 #c09050` (the kindled highlight)
+- Every metal edge is TWO-TONE: lit toward the top-left, recessed toward the bottom-right —
+  a drawn bevel, never a flat stroke. On interactive/earned pieces the light POOLS AT THE
+  BOTTOM LIP (the measured XP-capsule underglow — continuity with the Ember Penumbra doctrine).
+
+### 16.2 Three plate materials, one input material
+
+1. **Leather** (the default working plate): near-black warm (`#101010–#201010` band), faint
+   veined grain, a single soft dome of light behind the header zone (measured: a wide radial
+   lightening, centred ~50% x / ~25% y, ≤8% lift). Translucent over the realm scene.
+2. **Slate** (the ceremony register ONLY — level-up commit, death, the roll overlay): a COOLER
+   gray-violet plate carrying a faint engraved astrolabe geometry (concentric circles + radial
+   spokes at ≤4% contrast) with a centre vignette. Cool-vs-warm is what marks a moment.
+3. **Parchment** (the reading register — compendium tome, book spreads): the `#e0d0b0/#d0c0a0`
+   vellum band (already the app's tome family). Accent on parchment registers may use the
+   measured wax-vermilion `#a04030/#b05040` (book-tab red) — SPARINGLY, one seal per surface.
+4. **Input material**: fields/steppers wear the RIVETED border — a dark slate well whose frame
+   is a row of small rectangular studs (stitched leather / riveted metal), chamfered corners.
+   Inputs are the one material that reads "machinery", so they can never be mistaken for cards.
+
+### 16.3 The line IS the ornament
+
+Dividers and frames are never decorated — the LINE ITSELF performs:
+
+- A divider is a hairline that SWELLS toward the centre and WEAVES — two strands crossing in an
+  interlaced knot (measured centre motif: strand width ~3× the hairline, total motif ≤120px wide,
+  the strands taper to points) — then dies back to a hairline and TAPERS at both ends.
+- Terminals may CURL into a small hook/finial (the measured capsule-end flourish) — one curl,
+  ≤12px, never a compound flourish.
+- The ONLY detached ornament in the language: the ceremony register's four corner THORNS —
+  thin curved barbed strokes floating OUTSIDE the plate edge, mirrored ×4 (the roll-frame
+  construction). No other register may float ornament off its line.
+- BANNED forever (the owner-rejected wave): compass/sparkle corner knots, double-rail
+  separators, stamped diamonds as line decoration, any ornament that is not a modulation of a
+  line the layout already needed.
+
+### 16.4 Frames by register
+
+| Register                  | Frame construction                                                                            |
+| ------------------------- | --------------------------------------------------------------------------------------------- |
+| Utility row / facet chip  | hairline + 45° chamfered corner facets (the measured entry-frame cut), radius 0–2px           |
+| Read card / tooltip plate | rounded 8–10px near-black plate, thin TWO-TONE bronze lip, soft outer glow ≤12px              |
+| Portrait / image well     | rounded-rect two-tone bronze frame, no ornament                                               |
+| Item/spell well           | square leather well; rarity/school speaks as an INNER glow + coloured frame, never a badge    |
+| Ceremony plate            | cathedral arch (ogee shoulders), split head/body by a curl-ended rule, detached corner thorns |
+| Hero masthead             | the standing crest + engraved titling stay (v0.22.0 continuity), re-metaled in bronze         |
+
+### 16.5 State is light on the material
+
+Hover KINDLES (same material, brighter grain + stronger rim-light); pressed settles (light wash
+
+- soft settled shadow — the measured active-row wash); selected holds the kindled state + the
+  bottom-lip pool; disabled is the same material with the light taken away. State NEVER swaps hue,
+  never adds borders, never changes geometry. (This keeps §9's motion doctrine; transitions stay
+  150–250ms.)
+
+### 16.6 Typography — the ledger voice
+
+- Faces stay: **Cinzel** (ceremonial caps titling — mastheads, commit moments), **Alegreya**
+  (headings + prose; BG3 itself ships Alegreya, so the body voice is already native),
+  **Source Serif** numerals.
+- The measured hierarchy is SENTENCE-CASE serif titles at generous size with a MUTED-BRONZE
+  role subtitle under them ("Athletics / Strength Skill" construction) — adopt for entry/read
+  surfaces: title `--text-lg` Alegreya, subtitle `--text-sm` in `--wb-bronze-500`, sections
+  separated by SPACING, not rules. Smallcaps tracked labels retreat to data eyebrows only.
+- Numbers are the loudest thing on a data surface (the measured AC-plaque / modifier weight):
+  big light-weight numerals, labels quiet.
+
+### 16.7 The boxless ledger
+
+Data lists (skills, saves, senses, proficiencies) are TYPOGRAPHIC LEDGERS on the plate: no row
+boxes, no zebra, no cards. A row is `dot · name … numeral` — the proficiency dot is a filled
+bronze point (expertise: kindled), the numeral right-aligned tabular. Group headers are quiet
+serif with the (+N) inline. Boxes are reserved for WELLS (things you put things in) and PLATES
+(rooms). This is the register that kills the rejected "rounded ability cards".
+
+### 16.8 Composition
+
+Symmetry is the default posture (the measured paperdoll layout): generous dark negative space,
+mirrored slot columns, the subject centred. Top-level navigation may wear COIN tabs — circular
+medallions seated on a woven band (the measured nav construction) — the active coin lit. Density
+lives INSIDE plates, not between them.
+
+### 16.9 Light theme
+
+The daylight sibling doctrine holds (§10): same construction, re-lit — parchment field, the
+bronze ramp DEEPENS one step for contrast (lines draw with `--wb-bronze-900/700`), plates go
+translucent ivory, the dome and pools stay. Every 16.x rule must land in BOTH themes in the
+same motion, AA-verified.
 
 ## Post-v0.22.0 feature layer (visual-rollback appendix, 2026-07-30)
 

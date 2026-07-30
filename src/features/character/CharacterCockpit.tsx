@@ -181,7 +181,7 @@ export function CockpitView() {
   return (
     <main
       id="main"
-      className="mx-auto w-full max-w-7xl px-4 py-6 lg:py-8"
+      className="wb mx-auto w-full max-w-7xl px-4 py-6 lg:py-8"
       // P10 GLASS CASE — a read-only viewer (member/DM/admin) marks the whole
       // cockpit so the folio.css glass-case recipe hides every pure-commit
       // affordance (card CTAs, End Turn/Reset, add-condition/defense, spend
