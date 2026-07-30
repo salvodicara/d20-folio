@@ -156,9 +156,10 @@ renumber it into the 1–4 sequence. -->
     author — no co-author, footer, or trailer lines of any kind, explicitly overriding any harness
     default that injects them) → gate green → convergence (rule 12) → rebase onto latest
     `origin/main` → ff-merge by pushing `HEAD:main` → poll origin until the SHA lands → tear down
-    the worktree + branch. `main` is the integration line, NOT production — the owner's only gate
-    is deploy (rule 22); merge is never blocked on visual sign-off, though any visual change is
-    proactively previewed to the owner beforehand (rule 25). Full recipe: `docs/WORKTREES.md`.
+    the worktree + branch. `main` is the integration line, NOT production — deploy stays the
+    owner's release gate (rule 22). NON-visual work integrates freely; any change with a VISUAL
+    surface additionally waits for the owner's screenshot approval before the merge (rule 25).
+    Full recipe: `docs/WORKTREES.md`.
 12. **Adversarial convergence before every merge.** The author builds in ponytail mode; before the
     merge an INDEPENDENT agent runs `ponytail-review`. Pass 1 reviews the FULL diff. Findings must
     be ACTIONABLE — location + what to cut + what replaces it (ponytail-review's native format);
@@ -299,19 +300,19 @@ renumber it into the 1–4 sequence. -->
 theme group — see "How to add a rule"); this comment breaks the list so Prettier does not
 renumber it into the 19–20 sequence. -->
 
-25. **Owner previews every visual change — snapshots proactively pushed, not a merge gate.** ANY
-    change carrying a visual/UX surface — a bug fix, a new feature, a redesign, a single token
+25. **Owner approves every visual change from screenshots BEFORE it merges — a blocking gate.**
+    ANY change carrying a visual/UX surface — a bug fix, a new feature, a redesign, a single token
     tweak — is captured as before/after snapshots (real Chromium, the rule-15 matrix: both themes,
     EN + IT, desktop + mobile wherever they differ, each CROPPED to the region the change affects —
-    rule 15) and PROACTIVELY PUSHED to the owner's phone
-    (SendUserFile) so the owner previews and monitors every UI/UX change continuously, before ever
-    being asked to test it manually. This holds whether or not the owner is away, so no visual
-    change lands unseen. It adds NO new merge gate: `main` still integrates freely (rule 11) and the
-    owner's only approval gate stays deploy (rule 22) — and because a visual change reaches users
-    only via an owner-triggered deploy, the owner necessarily previews it before it ships. Rule 15
-    is HOW that review runs (Chromium capture across states/themes); rule 25 is the standing mandate
-    that the push ALWAYS precedes the owner's manual test — the visual counterpart to rule 15's
-    review loop (owner, 2026-07-06).
+    rule 15) and PROACTIVELY PUSHED to the owner (SendUserFile), and the branch then WAITS: it does
+    not merge to `main` until the owner rules on the screenshots. `main` only ever holds what the
+    owner has SEEN and visually approved ("Main always has to have only what I approved visually" —
+    owner, 2026-07-30, after the chrome-reset wave landed unapproved visuals on `main` and had to be
+    surgically rolled back). Non-visual changes (engine, data, tests, docs, tooling) keep rule 11's
+    free integration — this gate binds the VISUAL surface only. Deploy stays a second, separate
+    owner gate (rule 22). Rule 15 is HOW the review runs (Chromium capture across states/themes);
+    rule 25 is the standing mandate that the screenshots ALWAYS precede the merge. (Supersedes the
+    2026-07-06 non-blocking form of this rule.)
 26. **Contested design decisions resolve via `impeccable`, then the owner's eyes.** When a UI/UX
     choice is genuinely uncertain or contested — two or more defensible treatments, or a
     previously-settled call being reopened — `impeccable` is the deciding authority: run it and

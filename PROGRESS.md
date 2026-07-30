@@ -16,11 +16,13 @@ deployed v0.22.0 looks much better") and **surgically rolled back**: `index.css`
 the ornament-bearing components are the v0.22.0 vocabulary again, while every post-v0.22.0
 FEATURE (bestiary statblock, encounter picker, header-as-disclosure, realm scenes + backdrop
 crossfade, all a11y/i18n fixes) survives through the delimited feature-layer appendix
-(`DESIGN.md` → "Post-v0.22.0 feature layer"). The forward plan (all gates BLOCKING on owner
-screenshots — overrides golden rule 25 for this epic):
+(`DESIGN.md` → "Post-v0.22.0 feature layer"). This wave also RE-CUT **golden rule 25**: the
+owner's screenshot approval is now a BLOCKING pre-merge gate for every visual change — `main`
+only ever holds visually-approved work (owner, 2026-07-30). The forward plan (every gate
+blocking on owner screenshots):
 
-1. **Phase 1 — DONE-pending-gate**: the visual rollback (this wave). GATE 1 = owner rules on
-   restored-baseline screenshots.
+1. **Phase 1 — DONE, GATE 1 PASSED** (owner-approved 2026-07-30): the visual rollback (this
+   wave), merged on this approval.
 2. **Phase 2**: study a gathered BG3 UI reference corpus (`~/Workspace/bg3-ui-study/`, never
    committed) → extract MEASURED construction rules (frame anatomy, corner geometry, stroke
    weights, proportions, palette, typography) → write the grammar spec into `DESIGN.md` → build
