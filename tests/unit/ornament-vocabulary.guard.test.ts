@@ -33,45 +33,35 @@ describe("ornament vocabulary (T5)", () => {
     );
   });
 
-  it("strikes the reliquary hero frame + engraved titling in BOTH themes", () => {
-    // The Gilded Reliquary chrome is per-theme (dark strikes gilt, light strikes
-    // burnished bronze), so each token MUST be defined twice — once in :root, once
-    // in the [data-theme="light"] scope. `css-token-defined.guard` only proves a
-    // token is defined SOMEWHERE, so a dropped light copy would slip past it and
-    // silently paint the light theme with no frame / flat title. This pins the pair.
-    expect(indexCss.match(/--frame-ornate:/g)?.length).toBe(2);
+  it("wires the binding corners + engraved titling in BOTH themes", () => {
+    // The binding-corner fitting (the CC0 spandrel silhouette) ships as FOUR
+    // external mask assets — one per orientation — painted with the hero
+    // frame's own border ink mix, so fitting and frame share one colour by
+    // construction in every theme (2026-07-31; replaced the reliquary
+    // border-image diamonds). The engraved titling stays per-theme.
+    for (const k of ["tl", "tr", "bl", "br"]) {
+      expect(folioCss).toContain(`url("/assets/ornaments/corner-${k}.svg")`);
+    }
+    expect(folioCss).toMatch(/mask-image:[\s\S]*?corner-tl\.svg[\s\S]*?corner-br\.svg/);
     expect(indexCss.match(/--engrave-title:/g)?.length).toBe(2);
-    // The wave-2 TWO-TONE strike (F2): each theme's SVG tones the goldwork AFTER
-    // the four-corner mirroring — the unfilled geometry closure (id='f') is struck
-    // by ≥2 offset tone layers (shade/understroke + top glint), so the bevel light
-    // stays top-left on every corner (toning inside the mirrored unit would flip
-    // it upside-down on the bottom corners) — and the gem is a true facet group
-    // (id='g') placed per-corner UNFLIPPED via use x/y. 2 per theme = 4 total.
-    expect(
-      indexCss.match(
-        /use href='%23f' fill='%23[0-9a-f]+' opacity='[^']+' transform='translate\(/g
-      )?.length
-    ).toBe(4);
-    expect(indexCss.match(/use href='%23g' x='420' y='420'/g)?.length).toBe(2);
-    // ...and both are actually wired (border-image on the hero overlay + the
-    // engraved title text-shadow), so a defined-but-unused token can't fake it.
-    expect(folioCss).toMatch(/border-image:\s*var\(--frame-ornate\)/);
     expect(folioCss).toMatch(/text-shadow:\s*var\(--engrave-title\)/);
   });
 
-  it("seats the goldwork ON the frame like a bookbinding fitting (owner, 2026-07-17)", () => {
-    // The SVG's arm/gem centerline lies at 20% of the corner tile; the
-    // border-image OUTSET of `20% of the 48px tile + 0.5px` puts the arms on the
-    // host's 1px border stroke and the gem's center on the corner vertex — the
-    // regression this pins is the ornament drifting back INSIDE the panel.
-    expect(folioCss).toMatch(
-      /border-image:\s*var\(--frame-ornate\) 40% \/ 48px \/ calc\(48px \* 0\.2 \+ 0\.5px\)/
+  it("seats the fitting ON the frame like a bookbinding corner (owner, 2026-07-31)", () => {
+    // The mask tile's origin IS the fitting's outer-rule outer edge, and the
+    // overlay sits at inset -1px, so the fitting's rules lie pixel-coincident
+    // ON the host's 1px border — the regression this pins is the fitting
+    // drifting back INSIDE the panel (or the seat geometry changing without
+    // the doc trail). Position: the four corners; span: the 48px wing.
+    const fitting = folioCss.match(
+      /\.page-head\.framed::before,\n\.folio-panel\.gilt-frame::after,\n\.modal::after \{[\s\S]*?\n\}/
+    )?.[0];
+    expect(fitting).toBeTruthy();
+    expect(fitting).toContain("inset: -1px");
+    expect(fitting).toMatch(
+      /mask-position:\s*left top,\s*right top,\s*left bottom,\s*right bottom/
     );
-    // Outset ink is clipped by a host's child-paint clipping, so the hero hosts
-    // must NOT overflow-hide: `.modal` scroll-clips on `.modal-body`, and the
-    // masthead crest self-clips via mask-size on an `inset: 0` element. Each
-    // slice anchor must actually exist — a renamed selector would make indexOf
-    // return -1 and the slice a vacuously-passing tail fragment.
+    expect(fitting).toMatch(/mask-size: 48px 48px/);
     const modalStart = folioCss.indexOf("\n.modal {");
     const modalEnd = folioCss.indexOf(".modal.sm");
     expect(modalStart).toBeGreaterThan(-1);

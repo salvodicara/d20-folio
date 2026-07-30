@@ -1522,8 +1522,9 @@ The pieces and their ONE home (`src/styles/folio.css`; the metal tokens in `src/
   registers wear it (Constitution §4.16):
   the framed realm masthead (`.page-head.framed::before`), the gilt-framed hero band
   (`.folio-panel.gilt-frame::after` — cockpit identity), and dialogs (`.modal::after`).
-  Mechanism: ONE per-theme 500×500 SVG (`--frame-ornate`, `src/index.css`) rendered through
-  `border-image: var(--frame-ornate) 40% / 48px / calc(48px * 0.2 + 0.5px)` on an overlay
+  Mechanism: the binding-corner spandrel silhouette (CC0-derived,
+  `public/assets/ornaments/corner-*.svg`) rendered as four CSS mask layers painted with the
+  hero-frame border's own ink mix, on an overlay
   pseudo — corner slices carry the ornament, edge slices are EMPTY so the element's own 1px
   border remains the quiet run, and `border-image` proportionally shrinks corners on small boxes
   (phone mastheads, `sm` modals). **The fitting rule (owner, 2026-07-17 — "rilegatura"):** the

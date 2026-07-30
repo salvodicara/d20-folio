@@ -424,7 +424,6 @@
      shaded lower / gold-700 core), placed per-corner UNFLIPPED via use x/y.
      Edges stay EMPTY: goldwork marks the corner, the 1px border remains the
      quiet run. */
-  --frame-ornate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500'><defs><g id='a'><path d='M58 37.2 132 39 132 41 58 42.8Z' opacity='.92'/><path d='M138 35 143 40 138 45 133 40Z' opacity='.8'/></g><g id='h'><use href='%23a'/><use href='%23a' transform='matrix(0 1 1 0 0 0)'/><path d='M40 25 55 40 40 55 25 40Z'/></g><g id='q'><use href='%23h'/><use href='%23h' transform='matrix(-1 0 0 1 500 0)'/></g><g id='f'><use href='%23q'/><use href='%23q' transform='matrix(1 0 0 -1 0 500)'/></g><g id='g'><path d='M40 25 55 40 25 40Z' fill='%23f0d791'/><path d='M25 40 55 40 40 55Z' fill='%23b8923d'/><path d='M40 33 47 40 40 47 33 40Z' fill='%237a5f24'/></g></defs><use href='%23f' fill='%23000' opacity='.5' transform='translate(1.5 2)'/><use href='%23f' fill='%23f0d791' opacity='.32' transform='translate(-1 -1.5)'/><use href='%23f' fill='%23d4ac4d'/><use href='%23g'/><use href='%23g' x='420'/><use href='%23g' y='420'/><use href='%23g' x='420' y='420'/></svg>");
   /* Engraved ceremonial titling (same push): the struck-plate ink for the
      Cinzel register — a tight dark seat below the glyphs + a faint warm gold
      underglow, so page/modal titles read struck into the plate instead of flat
@@ -902,7 +901,6 @@
      umber upper shadow wall (-1,-1.5) under the bronze-700 body; the gem is an
      INTAGLIO facet pair (gold-900 shaded top wall / lit #99793f lower wall /
      near-black pit core), placed per-corner unflipped. */
-  --frame-ornate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500'><defs><g id='a'><path d='M58 37.2 132 39 132 41 58 42.8Z' opacity='.95'/><path d='M138 35 143 40 138 45 133 40Z' opacity='.85'/></g><g id='h'><use href='%23a'/><use href='%23a' transform='matrix(0 1 1 0 0 0)'/><path d='M40 25 55 40 40 55 25 40Z'/></g><g id='q'><use href='%23h'/><use href='%23h' transform='matrix(-1 0 0 1 500 0)'/></g><g id='f'><use href='%23q'/><use href='%23q' transform='matrix(1 0 0 -1 0 500)'/></g><g id='g'><path d='M40 25 55 40 25 40Z' fill='%233d2f12'/><path d='M25 40 55 40 40 55Z' fill='%2399793f'/><path d='M40 33 47 40 40 47 33 40Z' fill='%23241a08'/></g></defs><use href='%23f' fill='%23fff8e2' opacity='.6' transform='translate(1.5 2)'/><use href='%23f' fill='%233d2f12' opacity='.32' transform='translate(-1 -1.5)'/><use href='%23f' fill='%237a5f24'/><use href='%23g'/><use href='%23g' x='420'/><use href='%23g' y='420'/><use href='%23g' x='420' y='420'/></svg>");
   /* Engraved ceremonial titling, light strike: letterpress into vellum — a
      bright warm understroke below the dark glyphs + a whisper of umber lift. */
   --engrave-title: 0 1px 0 rgba(255, 252, 240, 0.85), 0 2px 3px rgba(74, 56, 12, 0.16);

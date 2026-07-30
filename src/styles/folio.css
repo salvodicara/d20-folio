@@ -9609,7 +9609,8 @@ button.create-need:focus-visible .create-need-chev {
 .cmp-ribbon-shell[data-fade="lr"]::after {
   opacity: 1;
 }
-.cmp-tab {
+.cmp-tab,
+.wb .tabstrip [role="tab"] {
   all: unset;
   cursor: pointer;
   box-sizing: border-box;
@@ -9634,13 +9635,15 @@ button.create-need:focus-visible .create-need-chev {
     color var(--m-fast),
     transform var(--m-fast);
 }
-.cmp-tab .icon {
+.cmp-tab .icon,
+.wb .tabstrip [role="tab"] .icon {
   width: 14px;
   height: 14px;
   color: var(--text-muted);
   transition: color var(--m-fast);
 }
-.cmp-tab:hover {
+.cmp-tab:hover,
+.wb .tabstrip [role="tab"]:hover {
   color: var(--text-primary);
   border-color: var(--border-strong);
   background: var(--bg-surface-2);
@@ -9649,18 +9652,22 @@ button.create-need:focus-visible .create-need-chev {
    ivory) — the one resting tab state with no visible hover. Kindle it with the
    tabstrip's warm accent wash (light's --accent-primary is the deep gold-brown
    ink, so ~9% reads as a soft candle-warmth on cream), same voice both themes. */
-[data-theme="light"] .cmp-tab:hover {
+[data-theme="light"] .cmp-tab:hover,
+[data-theme="light"] .wb .tabstrip [role="tab"]:hover {
   background: color-mix(in oklab, var(--accent-primary) 9%, var(--bg-surface-2));
   border-color: color-mix(in oklab, var(--accent-primary) 35%, var(--border-strong));
 }
-.cmp-tab:hover .icon {
+.cmp-tab:hover .icon,
+.wb .tabstrip [role="tab"]:hover .icon {
   color: var(--accent-text);
 }
-.cmp-tab:focus-visible {
+.cmp-tab:focus-visible,
+.wb .tabstrip [role="tab"]:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
-.cmp-tab[aria-selected="true"] {
+.cmp-tab[aria-selected="true"],
+.wb .tabstrip [role="tab"][aria-selected="true"] {
   color: var(--accent-text);
   border-color: color-mix(in oklab, var(--accent-primary) 60%, var(--border-strong));
   border-bottom-color: transparent;
@@ -9671,10 +9678,12 @@ button.create-need:focus-visible .create-need-chev {
   );
   box-shadow: var(--illumination);
 }
-.cmp-tab[aria-selected="true"] .icon {
+.cmp-tab[aria-selected="true"] .icon,
+.wb .tabstrip [role="tab"][aria-selected="true"] .icon {
   color: var(--accent-text);
 }
-[data-theme="light"] .cmp-tab[aria-selected="true"] {
+[data-theme="light"] .cmp-tab[aria-selected="true"],
+[data-theme="light"] .wb .tabstrip [role="tab"][aria-selected="true"] {
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--accent-primary) 26%, var(--bg-surface-2)),
@@ -9683,7 +9692,8 @@ button.create-need:focus-visible .create-need-chev {
 }
 /* The ribbon seats on a gold rule that the active tab "bites" into — the bound-page
    divider. The body panel below picks up from here. */
-.cmp-ribbon-rule {
+.cmp-ribbon-rule,
+.wb .wb-ribbon-rule {
   height: 1px;
   margin: -1px var(--sp-4) 0;
   background: linear-gradient(
@@ -14119,42 +14129,45 @@ button.party-avatar-btn:focus-visible {
   box-shadow: var(--elev-resting), var(--gilt-glow);
 }
 
-/* ── Reliquary corners (the full-BG3 identity push, owner-ratified 2026-07-16) —
-   the worked goldwork that caps the app's HERO frames: the framed realm masthead,
-   the gilt-framed hero band (cockpit identity), and dialogs. EARNED registers only
-   (Constitution §4.16 — each carries the surface's identity or a decision in
-   progress); resting cards and quiet panels stay unornamented. Mechanism: the
-   per-theme `--frame-ornate` SVG (index.css) rendered through `border-image` on
-   an overlay pseudo — corners carry the ornament, edge slices are EMPTY so the
-   element's own 1px border remains the quiet run (the ornament-vocabulary rule
-   "goldwork marks, runs stay quiet" holds at the corner scale). The goldwork SITS
-   ON the frame like a bookbinding corner fitting (owner, 2026-07-17): the SVG's
-   arm/gem centerline lies at 20% of the corner tile, so a border-image OUTSET of
-   `20% of 48px + 0.5px` seats the arms exactly on the host's 1px border stroke
-   and the corner gem's center on the stroke's corner vertex — the diamond caps
-   the corner where the two arms merge, never floating inside the panel. Outset
-   ink is paint-only overflow (no scrollbars), so hero hosts must NOT clip child
-   paint (`.modal` / `.has-crest` carry no overflow: hidden for this reason).
-   The pseudo is decor only: pointer-events none, no layout, no animation;
-   border-image proportionally shrinks the corners on small boxes (phone
-   mastheads, sm modals) so goldwork never collides. z-index 0 keeps it above
-   each host's material pseudo (`::before` at z -1); the goldwork rides the
-   frame line itself, clear of the hosts' padded (≥16px) content. */
+/* ── (The 2026-07-16 reliquary-diamond corners were RETIRED 2026-07-31 — the
+   binding-corner spandrel fitting below is the one corner treatment; see the
+   provenance comment at its rule.) ── */
+/* — THE BINDING CORNERS (global, owner-directed 2026-07-31: "dovunque c'è
+   quel bordo all'angolo, il pennacchio") — the corner fitting is the SILHOUETTE
+   of a human-engraved frame-corner spandrel (Openclipart #282416, CC0; vertex
+   knot removed by vector surgery; derivation + provenance in the study
+   library), mounted as a CSS MASK painted with the hero-frame border's own ink
+   mix — fitting and frame line share one colour BY CONSTRUCTION in every
+   theme. Tile origin = the outer rule's outer edge; inset -1px seats it
+   pixel-coincident ON the host's 1px border. Hosts keep SQUARE corners under
+   the fitting (geometric necessity: a rounded line would curve out from under
+   the straight fitting and read as a second line). */
+.page-head.framed,
+.folio-panel.gilt-frame,
+.modal {
+  border-radius: 0;
+}
 .page-head.framed::before,
 .folio-panel.gilt-frame::after,
 .modal::after {
   content: "";
   position: absolute;
-  inset: 0;
   pointer-events: none;
   z-index: 0;
-  border: 48px solid transparent;
-  /* 40% slice of the 500×500 SVG = the 200-unit corner tiles (percentage, and the
-     SVG carries explicit width/height: an SVG without intrinsic size defaults to
-     300×150 and numeric slices sample phantom regions). Outset: 48px × 0.2 puts
-     the tile's 20% centerline on the pseudo's edge (the host padding box); +0.5px
-     more centers it on the host's 1px border stroke. */
-  border-image: var(--frame-ornate) 40% / 48px / calc(48px * 0.2 + 0.5px);
+  inset: -1px;
+  border: 0;
+  border-image: none;
+  background: color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium));
+  mask-image:
+    url("/assets/ornaments/corner-tl.svg"), url("/assets/ornaments/corner-tr.svg"),
+    url("/assets/ornaments/corner-bl.svg"), url("/assets/ornaments/corner-br.svg");
+  mask-position:
+    left top,
+    right top,
+    left bottom,
+    right bottom;
+  mask-size: 48px 48px;
+  mask-repeat: no-repeat;
 }
 
 /* Engraved ceremonial titling (same push): the Cinzel register reads STRUCK into
@@ -20995,43 +21008,6 @@ body:has(.fob) .toast-region {
   display: none;
 }
 
-/* Under the corner fitting the hero frame's corner is SQUARE (geometric
-   necessity, not a style choice: the fitting draws the corner; a rounded host
-   line would curve out from under it and read as a second line). The border
-   COLOUR stays the app's standard mix — untouched. */
-.wb .page-head.framed,
-.wb .folio-panel.gilt-frame {
-  border-radius: 0;
-}
-
-/* §16.4 — the BINDING CORNER (owner model: the medieval book corner): the
-   corner fitting is the SILHOUETTE of a human-engraved frame-corner spandrel
-   (Openclipart #282416, CC0; its vertex knot subpath removed by vector surgery;
-   derived files + provenance in the study library), mounted as a CSS MASK and
-   painted with the gilt-frame border's OWN ink mix — fitting and frame line
-   share one colour BY CONSTRUCTION in every theme. The tile's origin IS the
-   outer-rule outer edge, and the pseudo sits at inset -1px, so the fitting's
-   outer rules lie pixel-coincident ON the host's 1px border (verified by
-   row measurement: top y88=y88, left x96=x96; the inner rule runs +3px — the
-   double-line of a real binding corner). */
-.wb .page-head.framed::before,
-.wb .folio-panel.gilt-frame::after {
-  inset: -1px;
-  border: 0;
-  border-image: none;
-  background: color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium));
-  mask-image:
-    url("/assets/ornaments/corner-tl.svg"), url("/assets/ornaments/corner-tr.svg"),
-    url("/assets/ornaments/corner-bl.svg"), url("/assets/ornaments/corner-br.svg");
-  mask-position:
-    left top,
-    right top,
-    left bottom,
-    right bottom;
-  mask-size: 48px 48px;
-  mask-repeat: no-repeat;
-}
-
 /* §16.3 — the entry title's divider joins the knot grammar: the SAME shared
    construction above; only the seat differs (the knot block hangs so its line
    lands where the entry's own hairline ran). */
@@ -21039,32 +21015,12 @@ body:has(.fob) .toast-region {
   bottom: -4px;
 }
 
-/* §16.5 — the primary tabs speak with light, not boxes: the strip is a quiet
-   recess, the chosen tab kindles and carries the bottom-lip pool. */
+/* §16.5 — the cockpit's primary tabs are BOOK TABS: the same bound-page
+   linguette construction the Compendium wears (one definition — the cockpit
+   selectors twin the .cmp-tab rules), biting the ribbon rule below. The strip
+   itself sheds its carved box: the tabs and the rule ARE the furniture. */
 .wb .tabstrip {
   background: none;
   border-color: transparent;
   box-shadow: none;
-}
-.wb .tabstrip [role="tab"] {
-  color: var(--text-secondary);
-}
-.wb .tabstrip [role="tab"]:hover:not([aria-selected="true"]) {
-  color: var(--text-primary);
-  background: rgba(212, 175, 94, 0.07);
-}
-.wb .tabstrip [role="tab"][aria-selected="true"] {
-  color: var(--wb-ink-gilt);
-  background: none;
-  box-shadow: inset 0 -10px 14px -12px rgba(200, 162, 84, 0.55);
-  border: 1px solid transparent;
-  border-bottom: 1px solid var(--wb-line-500);
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-}
-[data-theme="light"] .wb .tabstrip [role="tab"]:hover:not([aria-selected="true"]) {
-  background: rgba(107, 84, 36, 0.07);
-}
-[data-theme="light"] .wb .tabstrip [role="tab"][aria-selected="true"] {
-  box-shadow: inset 0 -10px 14px -12px rgba(107, 84, 36, 0.35);
-  border-bottom-color: var(--wb-line-700);
 }

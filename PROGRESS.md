@@ -314,6 +314,14 @@ footprint barely changes read→edit — both fail on the old fixed box). DESIGN
   an IT player reads "CA 11 + DES" / "CA 13 + DES (max 2)". Regression: the armor-AC row+detail
   cases in `compendium-browse-specs.test.tsx` (real i18next, EN + IT).
 
+## Queued — Admin panel rework (owner request, 2026-07-31)
+
+The users list will grow: the admin panel needs (1) a POWERFUL user search ("trovare subito
+gli utenti") and (2) progressive disclosure instead of the full in-place list — the
+campaigns hub's expandable-section pattern, applied coherently. Requirements to grill when
+the unit opens (sort/filter axes, per-user actions surface, pagination vs disclosure
+threshold). Owner: "non possiamo mostrare tutta la lista utenti in place".
+
 ## Open decisions (owner)
 
 - **AI assistant — DROPPED (owner, 2026-07-06).** The long-carried "Phase-3 multi-provider AI

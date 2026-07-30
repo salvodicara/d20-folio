@@ -72,7 +72,7 @@ describe("interactive kindle grammar (wave 2)", () => {
 
   it("keeps the light-theme compendium tab hover perceptible (its own strike)", () => {
     expect(folioCss).toMatch(
-      /\[data-theme="light"\] \.cmp-tab:hover\s*\{[^}]*var\(--accent-primary\)/
+      /\[data-theme="light"\] \.cmp-tab:hover[^{]*\{[^}]*var\(--accent-primary\)/
     );
   });
 });
