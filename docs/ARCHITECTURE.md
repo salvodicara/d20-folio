@@ -1347,9 +1347,17 @@ singleton sits ONE per-user document — `users/{uid}/library/index`, holding a 
 `{ entries: LibraryEntry[] }` — that promotes the four per-character homebrew types
 (`CustomSpell` / `CustomFeature` / `CustomEquipment` / `CustomWeapon`) to reusable templates.
 ONE doc rather than a collection because the whole library is always read together (the
-add-modal Library tab, the settings manager) and is hard-capped at
-`FREE_TIER_LIMITS.libraryEntries` (100, mirrored in `firestore.rules` as the only shape
-assertion, alongside owner-only read/write): one listener, one write, zero queries.
+add-modals' Custom tab) and is hard-capped at `FREE_TIER_LIMITS.libraryEntries` (100,
+mirrored in `firestore.rules` as the only shape assertion, alongside owner-only
+read/write): one listener, one write, zero queries.
+
+**CUSTOM IS THE LIBRARY (owner-ratified 2026-07-30).** There is no "save to library"
+gesture and no manager surface: every Custom form commit — and every sheet-side edit of a
+custom row — UPSERTS that homebrew into the library by (kind, name), silently (the
+creation is its own feedback). The only curation is the Custom tab's per-row trash, and a
+deletion STICKS — nothing re-adds an entry but a real create/edit. Because the sheet item
+carries no entry id (adding one would be a live-data schema change), a RENAME upserts
+under the new name and leaves the old entry for the player to bin.
 
 The layering mirrors combat-state exactly:
 
@@ -1358,26 +1366,35 @@ The layering mirrors combat-state exactly:
   `id`/`savedAt`), `toLibraryEntry` (deep-copy + per-kind strip of every PLAY value —
   prepared/equipped/quantity/tracked/attuned/notes/tags/overrides, charges wound back to
   full), `upsertEntry` (same (kind, name) replaces IN PLACE, keeping the original id +
-  position) and `entryToCharacterItem` (a deep copy re-seeded with the SAME defaults the
-  Custom creation forms produce). An entry is a TEMPLATE, never a copy of one character's row.
+  position), `entryToCharacterItem` (a deep copy re-seeded with the SAME defaults the
+  Custom creation forms produce) and `customDraftAt` (the ONE map from the four character
+  arrays to their kinds, so an edit seam mirrors what is stored). An entry is a TEMPLATE,
+  never a copy of one character's row.
 - **IO** — `src/lib/library-io.ts`: the only library seam touching `firebase/firestore` —
   defensive read (`parseEntries` drops anything malformed), full-doc `setDoc` OVERWRITE
-  through `stripUndefined` (offline-queueable), no-op under `DEV_BYPASS_AUTH`.
-- **State** — `src/stores/libraryStore.ts` holds the live list and the two optimistic
-  mutations, emitting OUTCOMES (`saved`/`updated`/`full`/`unavailable`) rather than strings.
-  Its write seam is **injected** (`LibraryPersistence`), the `characterStore.combatPersistence`
-  pattern — that is what keeps the store, and therefore every cockpit card that renders a save
-  affordance, Firebase-free (pinned by the pure-modules guard). A mutation refuses to run
-  until `loaded`, because the write is a full-doc overwrite.
-- **Listener** — `src/hooks/useLibrary.ts`, mounted ONCE by `AppShell` (a save happens on the
-  character sheet while the pickers and the settings manager read elsewhere), tearing down on
-  unmount / uid change and resetting the store so no entry survives a sign-out.
+  through `stripUndefined` (offline-queueable), no-op under `DEV_BYPASS_AUTH`, and
+  `createLibraryWriter` — the DEBOUNCED writer (`LIBRARY_WRITE_DEBOUNCE_MS` = 2 s, the
+  character auto-save cadence) that coalesces a per-keystroke edit burst into ONE
+  whole-doc write and is flushed on teardown.
+- **State** — `src/stores/libraryStore.ts` holds the live list and its mutations
+  (`saveToLibrary` / its `(kind, idx)` convenience `syncFromCharacter` /
+  `removeFromLibrary`), emitting OUTCOMES (`saved`/`updated`/`full`/`unavailable`) rather
+  than strings. Its write seam is **injected** (`LibraryPersistence`), the
+  `characterStore.combatPersistence` pattern — that is what keeps the store, and therefore
+  every create form and edit handler that upserts through it, Firebase-free (pinned by the
+  pure-modules guard). A mutation refuses to run until `loaded`, because the write is a
+  full-doc overwrite.
+- **Listener** — `src/hooks/useLibrary.ts`, mounted ONCE by `AppShell` (an upsert can fire
+  from any add-modal, the spells tab or the inventory tab), tearing down on unmount / uid
+  change — flushing the writer first — and resetting the store so no entry survives a
+  sign-out.
 
-Consumers: the shared `SaveToLibraryButton` on each custom row's existing edit-action cluster,
-the shared `LibraryPickerBody` behind the "My Library" tab of all three Add-X modals (its
-commit routes through `characterStore.setCharacter`, the same path the Custom forms use), and
-the `/settings` manager. Campaign SHARING of a library is the ladder's next rung
-(`PROGRESS.md`).
+Consumers: the create forms + the four sheet-side edit seams (the upsert half), and the
+shared `CustomTabBody` behind the **Custom** tab of all three Add-X modals — the list of
+kept homebrew (add-to-sheet row + trash) with the modal's existing create form behind a
+"Create …" bar, opening straight on that form while the library is empty. Its add commit
+routes through `characterStore.setCharacter`, the same path the create forms use. Campaign
+SHARING of a library is the ladder's next rung (`PROGRESS.md`).
 
 ### Non-nullability invariant — an empty character name is UNREPRESENTABLE
 

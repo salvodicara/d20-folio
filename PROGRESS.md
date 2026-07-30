@@ -1224,14 +1224,18 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   the shipped public `SrdSpellData.companion` seam pack-side (D11). The lazy leaf
   keeps the eager bundle at zero corpus delta (tripwired).
 - **Homebrew — the full ladder:** (a) an account-level library promoting the per-character
-  CustomSpell/Feature/Equipment/Weapon types to reusable account docs — **SHIPPED (2026-07-30)**:
-  ONE `users/{uid}/library/index` doc (capped at `FREE_TIER_LIMITS.libraryEntries` = 100, mirrored
-  in `firestore.rules`), a pure model that saves TEMPLATES (`src/lib/library.ts` — per-kind strip of
-  every play value, upsert-in-place by (kind, name), landing defaults re-seeded from the Custom
-  forms), a bookmark affordance inside each custom card's existing edit cluster, a shared "My
-  Library" tab in all three Add-X modals, and a `/settings` manager; the ONE listener lives in
-  `AppShell` and INJECTS the store's write seam (`combatPersistence` pattern), so the store + cards
-  stay Firebase-free (`docs/ARCHITECTURE.md` → "The account-level homebrew library"); (b) campaign
+  CustomSpell/Feature/Equipment/Weapon types to reusable account docs — **SHIPPED (2026-07-30)**
+  on the owner-ratified **"custom IS the library"** model: ONE `users/{uid}/library/index` doc
+  (capped at `FREE_TIER_LIMITS.libraryEntries` = 100, mirrored in `firestore.rules`) that fills
+  itself — every Custom form commit and every sheet-side edit of a custom row UPSERTS by
+  (kind, name), silently, with the Firestore flush debounced ~2 s. NO save gesture and NO manager
+  page: each Add-X modal's **Custom** tab IS the surface — your kept homebrew (row = add to sheet,
+  trash = the only delete, and it sticks) with the existing create form behind a "Create …" bar,
+  opening straight on that form while the library is empty. The pure model
+  (`src/lib/library.ts`) keeps TEMPLATES (per-kind strip of every play value, upsert-in-place,
+  landing defaults re-seeded from the Custom forms); the ONE listener lives in `AppShell` and
+  INJECTS the store's write seam (`combatPersistence` pattern), so the store + every card stay
+  Firebase-free (`docs/ARCHITECTURE.md` → "The account-level homebrew library"); (b) campaign
   sharing of that library — the ladder's NEXT rung; (c) authoring types staged after the bestiary —
   monster editor first, then species/feats/subclasses/backgrounds as declarative Grants; (d) homebrew
   CLASSES declared the horizon flagship on the grants seam (DDB's #1 refused community ask),
