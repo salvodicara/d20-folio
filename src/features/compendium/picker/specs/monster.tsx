@@ -184,7 +184,7 @@ export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
     return {
       // The CR seal — one THEME-INVARIANT gilt gem (the `.cr-seal` modifier pins
       // the `.lvl-seal` hue pair to fixed gilt tokens: a light-gold gem + the
-      // near-black `--gilt-ink` numeral, identical in both themes — owner-directed,
+      // near-black engraved numeral, identical in both themes — owner-directed,
       // so the seal never re-resolves to a dark bronze gem in light). Reused larger
       // on the EntryView masthead (`.cmp-entry-seal`); the folio seal contract.
       // Longer strings (fractions) step the digit down so "1/8" stays inside.
