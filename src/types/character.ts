@@ -470,8 +470,16 @@ export interface CharacterDoc {
    * null = no crop set (fall back to object-cover for display).
    */
   portraitCrop: PortraitCrop | null;
-  /** If shared, links to /shared/{shareId} */
-  shareId: string | null;
+  /**
+   * PUBLIC SHARE LINK — `true` while the owner has this character shared. The
+   * unguessable document path IS the link (`/view/{uid}/{charId}`), the flag is the
+   * whole grant, and revoking is flipping it off (`firestore.rules` → `allow get`).
+   * Firestore-doc metadata, NOT part of the portable v3 codec envelope: an
+   * export/import never carries it, so importing someone's shared JSON can never
+   * silently publish the copy. DERIVED at the read boundary (`readDocMeta`) — a doc
+   * written before the feature has no field and reads as `false`.
+   */
+  shared: boolean;
   /** Character lifecycle status */
   status: "active" | "retired" | "dead" | "archived";
 

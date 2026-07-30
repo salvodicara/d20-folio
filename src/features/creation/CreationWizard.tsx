@@ -873,7 +873,7 @@ export function CreationWizard() {
       const docId = await createCharacter(user.uid, {
         portraitUrl: null,
         portraitCrop: null,
-        shareId: null,
+        shared: false,
         status: "active",
         character: finalCharacter,
         session,

@@ -1365,7 +1365,7 @@ export function parseCharacter(jsonString: string): ImportResult | ImportError {
       status: parseStatus(parsed.status),
       portraitUrl: null,
       portraitCrop,
-      shareId: null,
+      shared: false,
     },
     portraitBase64: typeof meta.portrait === "string" ? meta.portrait : null,
     portraitCrop,

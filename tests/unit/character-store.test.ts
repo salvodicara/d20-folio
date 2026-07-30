@@ -21,7 +21,7 @@ function mockCharacter(overrides?: Partial<CharacterDoc>): CharacterDoc {
     updatedAt: new Date("2026-01-01"),
     portraitUrl: null,
     portraitCrop: null,
-    shareId: null,
+    shared: false,
     status: "active",
     character: {
       name: assertNonEmptyString("Test Hero"),

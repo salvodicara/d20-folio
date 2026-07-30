@@ -1498,6 +1498,40 @@ item is an independent copy of it, the one-way relationship the delete confirm a
 teaches. The add commit routes through `characterStore.setCharacter`, the same path the
 create forms use. Campaign SHARING of a library is the ladder's next rung (`PROGRESS.md`).
 
+### Public share links — one boolean, one rules line, zero new infrastructure
+
+A player shares a CHARACTER (never a campaign — see the deliberate non-goal in
+`docs/POSITIONING.md`) by flipping ONE field on the character document: `shared: true`. There is no
+share collection, no mirror copy, no token table, no expiry, no server. The model in full:
+
+- **The secret is the path.** The link is `/view/{uid}/{charId}` — literally the document's Firestore
+  address. The auto-generated doc id is the unguessable half (the same "the unguessable id IS the
+  grant" model the campaign invite code already uses), so nothing has to be minted, stored, or
+  rotated.
+- **The grant.** `firestore.rules` gives the character document one extra arm:
+  `allow get: if resource.data.get("shared", false) == true` — with NO auth predicate, because the
+  entire point is a viewer with no account. It is `get`, deliberately never `read`: rules are not
+  filters, so a `read` grant would also satisfy an anonymous
+  `where("shared","==",true)` LIST over a known uid, i.e. an enumeration of everything that user has
+  ever shared. The subcollections (`snapshots`, `combat/state`) keep their own auth-requiring rules,
+  so the public view reads the parent document ONLY — which is also why it shows the BUILT character
+  and never live play state.
+- **Revoke is the same field.** Flipping `shared` back to `false` denies the very next read; there is
+  no cache to invalidate and no second surface to keep in sync. Pinned by the emulator rules suite
+  (`tests/rules/firestore-rules.test.ts` → "public share links"), which drives a genuinely
+  UNAUTHENTICATED context — a second signed-in uid would prove a different rule entirely.
+- **The flag is DOC metadata, never codec payload.** `shared` lives beside `status`/`portraitUrl` on
+  `CharacterDoc`, outside the `{ schema, build, state }` envelope, so an export cannot publish it and
+  an import cannot inherit it (pinned in `tests/unit/character-io.test.ts`). It is derived at the read
+  boundary (`readDocMeta`: `data.shared === true`), so every document written before the feature reads
+  as `false` with no migration. The auto-save writes only `{ character, session }`, so a sheet edit can
+  never clobber the flag.
+- **Portraits already work anonymously.** `portraitUrl` is a `getDownloadURL()` token URL, which
+  bypasses `storage.rules` by construction — so `storage.rules` needs no change and gains no public
+  arm.
+- **Cost.** An anonymous view is one billed document read. At this scale that is free-tier noise, and
+  SAFE-01 (the £1 kill switch) is the standing backstop.
+
 ### Non-nullability invariant — an empty character name is UNREPRESENTABLE
 
 A character's `name` (and the party-member snapshot + roster-cache + roster-projection name) is a

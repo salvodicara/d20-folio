@@ -71,7 +71,6 @@ describe("import → unified-codec write → SRD-free roster read (full persiste
       updatedAt: new Date(0),
       portraitUrl: null,
       portraitCrop: null,
-      shareId: null,
       status: "active",
     });
     // A valid cache (non-empty name) always yields a doc — narrow off `null`.

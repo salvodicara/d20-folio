@@ -206,7 +206,7 @@ function makeChar(
     updatedAt: new Date(),
     portraitUrl: null,
     portraitCrop: null,
-    shareId: null,
+    shared: false,
     status: "active",
     character: {
       name: assertNonEmptyString("Tester"),

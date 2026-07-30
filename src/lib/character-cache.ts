@@ -172,7 +172,7 @@ export interface RosterCharacter {
  */
 export interface RosterCharacterDoc extends Pick<
   CharacterDoc,
-  "id" | "createdAt" | "updatedAt" | "portraitUrl" | "portraitCrop" | "shareId" | "status"
+  "id" | "createdAt" | "updatedAt" | "portraitUrl" | "portraitCrop" | "status"
 > {
   character: RosterCharacter;
   session: SessionState;
@@ -200,7 +200,7 @@ export function cacheToRosterDoc(
   data: Record<string, unknown>,
   meta: Pick<
     CharacterDoc,
-    "createdAt" | "updatedAt" | "portraitUrl" | "portraitCrop" | "shareId" | "status"
+    "createdAt" | "updatedAt" | "portraitUrl" | "portraitCrop" | "status"
   >
 ): RosterCharacterDoc | null {
   const cache = readCache(data.cache);
@@ -295,7 +295,6 @@ export function rosterProjectionFromDoc(doc: CharacterDoc): RosterCharacterDoc {
     updatedAt: doc.updatedAt,
     portraitUrl: doc.portraitUrl,
     portraitCrop: doc.portraitCrop,
-    shareId: doc.shareId,
     status: doc.status,
     character: cacheToRosterCharacter(cache),
     session: doc.session,

@@ -75,6 +75,14 @@ service cloud.firestore {
     // is effective IMMEDIATELY (the next request reads the live campaign doc).
     // WRITE stays owner-only — neither a peer nor a DM ever writes a member's
     // character doc.
+    //
+    // PUBLIC SHARE LINKS (owner-settled 2026-07-31) — CHARACTERS ONLY. A shared
+    // character carries `shared: true`, and its URL IS its document path
+    // (`/view/{uid}/{charId}`): the auto-generated Firestore id is the unguessable
+    // secret, exactly like the campaign invite code. An ANONYMOUS visitor may then
+    // GET that one document — no account, no auth (that is the whole point: a
+    // friend off the app opens the link and reads the sheet). Revoking is flipping
+    // the flag off; the very next read is denied.
     match /users/{uid}/characters/{charId} {
       // The campaign this character claims attachment to. Only evaluated AFTER the
       // has-a-claim guard below; a dangling claim (campaign deleted) errors the
@@ -82,11 +90,26 @@ service cloud.firestore {
       function attachedCampaign() {
         return get(/databases/$(database)/documents/campaigns/$(resource.data.attachedCampaignId)).data;
       }
+      // get(...,false) so a doc WITHOUT the field (every never-shared character)
+      // reads as "not shared" instead of erroring.
+      function isPubliclyShared() {
+        return resource.data.get("shared", false) == true;
+      }
       allow read:  if (isNotBlocked() && request.auth.uid == uid)
         || isAdmin()
         || (isNotBlocked()
             && resource.data.get("attachedCampaignId", "") != ""
             && request.auth.uid in attachedCampaign().members);
+      // Deliberately `get`, NOT `read`. Firestore rules are not filters, so a
+      // `read` grant would also satisfy a LIST — an anonymous
+      // `where("shared","==",true)` query over a known uid's collection, i.e. an
+      // enumeration surface for everything that user has ever shared. `get` grants
+      // exactly the single-document read the link needs; `list` stays
+      // owner/admin/co-member. The subcollections are NOT covered either:
+      // `snapshots` and `combat/state` keep their own owner-scoped rules below,
+      // both of which require auth — so the public view reads the parent doc ONLY
+      // (which is also why it shows the built character, never live play state).
+      allow get:   if isPubliclyShared();
       allow write: if isNotBlocked() && request.auth.uid == uid;
     }
 
@@ -330,13 +353,6 @@ service cloud.firestore {
     match /campaigns/{campId}/{subcol}/{docId} {
       allow read, write: if subcol != 'dmNotes' && isNotBlocked()
         && request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campId)).data.members;
-    }
-
-    // Shared characters (public read-only links)
-    match /shared/{shareId} {
-      allow read:          if true; // Public — anyone with the link
-      allow create:        if isNotBlocked() && request.resource.data.ownerUid == request.auth.uid;
-      allow update, delete: if isNotBlocked() && request.auth.uid == resource.data.ownerUid;
     }
 
     // Bug / feature reports (OWN-37). A signed-in, non-blocked user CREATES a

@@ -43,12 +43,12 @@ describe("stripUndefined — Firestore write payload sanitizer", () => {
       stripUndefined({
         proficiencyBonusOverride: null,
         initiativeBonusOverride: null,
-        shareId: null,
+        shared: false,
       })
     ).toEqual({
       proficiencyBonusOverride: null,
       initiativeBonusOverride: null,
-      shareId: null,
+      shared: false,
     });
   });
 
@@ -74,7 +74,7 @@ describe("stripUndefined — Firestore write payload sanitizer", () => {
       portraitUrl: null,
       portraitCrop: null,
       status: "active",
-      shareId: null,
+      shared: false,
       character: {
         name: "Lyra Voss",
         classes: [{ classId: "bard", level: 1 }], // L1 — no subclass yet

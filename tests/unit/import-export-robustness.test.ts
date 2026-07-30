@@ -262,7 +262,6 @@ describe("full persistence path (import → store → roster read)", () => {
           updatedAt: new Date(0),
           portraitUrl: null,
           portraitCrop: null,
-          shareId: null,
           status: "active",
         }
       );

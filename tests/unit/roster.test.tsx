@@ -383,7 +383,6 @@ describe("CharacterCard", () => {
         updatedAt: new Date(0),
         portraitUrl: null,
         portraitCrop: null,
-        shareId: null,
         status: "active",
       }
     );
@@ -431,7 +430,6 @@ describe("CharacterCard", () => {
         updatedAt: new Date(0),
         portraitUrl: null,
         portraitCrop: null,
-        shareId: null,
         status: "active",
       }
     );

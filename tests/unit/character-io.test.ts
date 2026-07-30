@@ -48,7 +48,7 @@ function mockCharacter(overrides?: Partial<CharacterDoc>): CharacterDoc {
     updatedAt: new Date("2026-01-01"),
     portraitUrl: null,
     portraitCrop: null,
-    shareId: null,
+    shared: false,
     status: "active",
     character: {
       name: assertNonEmptyString("Test Hero"),
@@ -306,8 +306,20 @@ describe("character-io — import", () => {
   it("clears the portrait URL and Firestore-only fields on import", () => {
     const res = reimport(mockCharacter());
     expect(res.doc.portraitUrl).toBeNull();
-    expect(res.doc.shareId).toBeNull();
+    expect(res.doc.shared).toBe(false);
     expect(res.doc.status).toBe("active");
+  });
+
+  it("the public-share flag NEVER rides the portable file — neither out nor back in", () => {
+    // The share grant is Firestore-DOC metadata, deliberately outside the v3
+    // envelope: exporting a shared character must not publish the flag in the JSON,
+    // and importing anyone's file must never silently publish the resulting copy.
+    const json = serializeCharacter(mockCharacter({ shared: true }));
+    expect(json).not.toMatch(/"shared"/);
+    const res = parseCharacter(json);
+    expect(res.success).toBe(true);
+    if (!res.success) return;
+    expect(res.doc.shared).toBe(false);
   });
 
   it("rejects invalid JSON", () => {

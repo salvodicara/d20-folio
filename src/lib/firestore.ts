@@ -54,7 +54,7 @@ function readDocMeta(
   data: Record<string, unknown>
 ): Pick<
   CharacterDoc,
-  "id" | "createdAt" | "updatedAt" | "portraitUrl" | "portraitCrop" | "shareId" | "status"
+  "id" | "createdAt" | "updatedAt" | "portraitUrl" | "portraitCrop" | "shared" | "status"
 > {
   return {
     id,
@@ -68,7 +68,8 @@ function readDocMeta(
         : (data.updatedAt as Date),
     portraitUrl: typeof data.portraitUrl === "string" ? data.portraitUrl : null,
     portraitCrop: (data.portraitCrop as CharacterDoc["portraitCrop"]) ?? null,
-    shareId: typeof data.shareId === "string" ? data.shareId : null,
+    // A doc written before public share links carries no field → not shared.
+    shared: data.shared === true,
     status:
       data.status === "retired" || data.status === "dead" || data.status === "archived"
         ? data.status

@@ -114,7 +114,7 @@ describe("useRosterActions — clone", () => {
         status: "active",
         portraitUrl: null,
         portraitCrop: null,
-        shareId: null,
+        shared: false,
         session: fullDoc.session, // verbatim from the re-read full doc — faithful
       })
     );

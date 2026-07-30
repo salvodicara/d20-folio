@@ -781,6 +781,96 @@ describe("firestore.rules — character reads: owner + admin + LIVE campaign mem
   });
 });
 
+describe("firestore.rules — public share links: ANONYMOUS get of a shared character", () => {
+  // The whole point of the feature is a viewer with NO ACCOUNT, so every test here
+  // drives `testEnv.unauthenticatedContext()`. A second SIGNED-IN uid would prove a
+  // different rule entirely (the outsider arm above already covers that) and would
+  // sail past an `isAuth()` the anonymous grant must never require — the topology
+  // mistake this block exists to avoid.
+  //
+  // BLIND SPOT: rules tests prove the grant, not the client. That an anonymous
+  // BROWSER actually renders the sheet is pinned separately by the route render
+  // test (tests/unit/shared-character-view.test.tsx), and portrait images are not
+  // covered here at all — they are served by tokenized Storage download URLs, which
+  // bypass storage.rules by construction.
+  const SHARED = ["users", "member", "characters", "char-shared"] as const;
+  const PRIVATE = ["users", "member", "characters", "char-unshared"] as const;
+
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, ...SHARED), {
+        status: "active",
+        shared: true,
+        build: { name: "Mara Quickfingers" },
+        state: {},
+        cache: {},
+      });
+      // No `shared` field at all — the shape every already-live character has.
+      await setDoc(doc(db, ...PRIVATE), {
+        status: "active",
+        build: { name: "Secret" },
+        state: {},
+        cache: {},
+      });
+      await setDoc(doc(db, ...SHARED, "snapshots", "snap1"), { build: {}, state: {} });
+      await setDoc(doc(db, ...SHARED, "combat", "state"), {
+        hp: { current: 10, temp: 0 },
+        conditions: [] as string[],
+      });
+    });
+  });
+
+  it("an ANONYMOUS visitor may get a character flagged shared", async () => {
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(getDoc(doc(anon, ...SHARED)));
+  });
+
+  it("an ANONYMOUS visitor may NOT get an unshared character", async () => {
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(anon, ...PRIVATE)));
+  });
+
+  it("REVOKE: flipping the flag off denies the very next anonymous read", async () => {
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertSucceeds(getDoc(doc(anon, ...SHARED)));
+    // The owner revokes through the ordinary owner write path — no second surface.
+    const owner = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(updateDoc(doc(owner, ...SHARED), { shared: false }));
+    await assertFails(getDoc(doc(anon, ...SHARED)));
+  });
+
+  it("an ANONYMOUS visitor may NOT write a shared character (read-only, always)", async () => {
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertFails(updateDoc(doc(anon, ...SHARED), { status: "dead" }));
+    await assertFails(deleteDoc(doc(anon, ...SHARED)));
+    // Nor may it share someone else's character by setting the flag itself.
+    await assertFails(updateDoc(doc(anon, ...PRIVATE), { shared: true }));
+  });
+
+  it("an ANONYMOUS visitor may NOT read the shared character's SUBCOLLECTIONS", async () => {
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(anon, ...SHARED, "snapshots", "snap1")));
+    await assertFails(getDoc(doc(anon, ...SHARED, "combat", "state")));
+    await assertFails(getDocs(collection(anon, ...SHARED, "snapshots")));
+  });
+
+  it("the share grant is GET-only — it can never be turned into an enumeration LIST", async () => {
+    // Rules are not filters: had the grant been `read`, this scoped query would
+    // have handed an anonymous caller every character a known uid has ever shared.
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertFails(
+      getDocs(
+        query(
+          collection(anon, "users", "member", "characters"),
+          where("shared", "==", true)
+        )
+      )
+    );
+    await assertFails(getDocs(collection(anon, "users", "member", "characters")));
+  });
+});
+
 describe("firestore.rules — combat/state subdoc: LIVE-derived member READ + DM WRITE", () => {
   // The subdoc grants derive from the parent char's `attachedCampaignId` pointer +
   // the campaign doc, exactly like the char-doc read above: READ = any current

@@ -30,7 +30,7 @@ export const MOCK_CHARACTER: CharacterDoc = {
   updatedAt: new Date("2026-05-25"),
   portraitUrl: null,
   portraitCrop: null,
-  shareId: null,
+  shared: false,
   status: "active",
 
   character: {

@@ -107,7 +107,7 @@ const META = {
   updatedAt: new Date(0),
   portraitUrl: null,
   portraitCrop: null,
-  shareId: null,
+  shared: false,
   status: "active" as const,
 };
 

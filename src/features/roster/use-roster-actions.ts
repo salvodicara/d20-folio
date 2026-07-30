@@ -141,7 +141,7 @@ export function useRosterActions(character: RosterCharacterDoc): RosterActions {
         // No share link, and a fresh character has no snapshots of its own.
         // Campaign membership is NOT copied — it lives on the campaign doc keyed
         // by character id, and a clone is a brand-new id no campaign references.
-        shareId: null,
+        shared: false,
       });
       rosterToast(t("roster.cloned", { name }));
     } catch {
