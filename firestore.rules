@@ -140,6 +140,19 @@ service cloud.firestore {
       allow read, write: if isNotBlocked() && request.auth.uid == uid;
     }
 
+    // The account-level homebrew library (`library/index` — ONE doc holding the whole
+    // `entries` list; see src/lib/library-io.ts). OWNER-ONLY, plus the free-tier cap
+    // mirrored from FREE_TIER_LIMITS.libraryEntries so a direct write can't bypass it.
+    // That cap is the ONLY shape assertion: the entries carry the four homebrew item
+    // types (dozens of optional fields) and the client parses them defensively on read,
+    // so field-locking them here would reproduce the combat-state outage class above.
+    match /users/{uid}/library/{docId} {
+      allow read: if isNotBlocked() && request.auth.uid == uid;
+      allow write: if isNotBlocked() && request.auth.uid == uid
+        && request.resource.data.entries is list
+        && request.resource.data.entries.size() <= 100;
+    }
+
     // Campaigns — the enforced access matrix is exercised by
     // tests/rules/firestore-rules.test.ts (member/non-member/blocked/admin/A13/
     // list-scoped/subcollection/member-mutation). Free-tier: one doc per campaign.

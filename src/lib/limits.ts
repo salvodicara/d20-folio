@@ -19,4 +19,8 @@ export const FREE_TIER_LIMITS = {
    *  Snapshots auto-generate on every level-up, so this list is the one that grows
    *  unattended — it must self-bound. */
   snapshotsPerCharacter: 50,
+  /** Max homebrew-library entries a single user can keep (`users/{uid}/library/index`).
+   *  The library is ONE document rewritten whole on every save, so the cap bounds the
+   *  doc size as well as the collection — `firestore.rules` mirrors it. */
+  libraryEntries: 100,
 } as const;

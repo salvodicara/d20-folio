@@ -1315,3 +1315,81 @@ describe("firestore.rules — /bug_reports access (OWN-37)", () => {
     await assertSucceeds(deleteDoc(doc(admin, "bug_reports", "r3")));
   });
 });
+
+/** One library entry, shaped like the client's own write (src/lib/library.ts). */
+function libraryEntry(name: string) {
+  return {
+    id: `entry-${name}`,
+    savedAt: 1_700_000_000_000,
+    kind: "spell",
+    item: {
+      custom: true,
+      name,
+      level: 1,
+      school: "evocation",
+      castingTime: "action",
+      range: "60 feet",
+      components: { v: true, s: true, m: false },
+      duration: "Instantaneous",
+      concentration: false,
+      description: "Homebrew.",
+    },
+  };
+}
+
+describe("firestore.rules — the account-level homebrew library (users/{uid}/library)", () => {
+  it("the OWNER can read and write their own library", async () => {
+    const db = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(
+      setDoc(doc(db, "users", "member", "library", "index"), {
+        entries: [libraryEntry("Ember Bolt")],
+      })
+    );
+    await assertSucceeds(getDoc(doc(db, "users", "member", "library", "index")));
+  });
+
+  it("an empty library (the first save's precursor) is a valid write", async () => {
+    const db = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(
+      setDoc(doc(db, "users", "member", "library", "index"), { entries: [] })
+    );
+  });
+
+  it("a STRANGER can neither read nor write another user's library", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "users", "member", "library", "index"), {
+        entries: [libraryEntry("Ember Bolt")],
+      });
+    });
+    const db = testEnv.authenticatedContext("outsider").firestore();
+    await assertFails(getDoc(doc(db, "users", "member", "library", "index")));
+    await assertFails(
+      setDoc(doc(db, "users", "member", "library", "index"), { entries: [] })
+    );
+  });
+
+  it("a BLOCKED user is denied their OWN library (isNotBlocked gate)", async () => {
+    const db = testEnv.authenticatedContext("blocked").firestore();
+    await assertFails(getDoc(doc(db, "users", "blocked", "library", "index")));
+    await assertFails(
+      setDoc(doc(db, "users", "blocked", "library", "index"), { entries: [] })
+    );
+  });
+
+  it("rejects an OVERSIZE list and a non-list `entries` (the free-tier cap)", async () => {
+    const db = testEnv.authenticatedContext("member").firestore();
+    // The cap mirrors FREE_TIER_LIMITS.libraryEntries (100): 100 passes, 101 fails.
+    const atCap = Array.from({ length: 100 }, (_, i) => libraryEntry(`S${i}`));
+    await assertSucceeds(
+      setDoc(doc(db, "users", "member", "library", "index"), { entries: atCap })
+    );
+    await assertFails(
+      setDoc(doc(db, "users", "member", "library", "index"), {
+        entries: [...atCap, libraryEntry("overflow")],
+      })
+    );
+    await assertFails(
+      setDoc(doc(db, "users", "member", "library", "index"), { entries: "nope" })
+    );
+  });
+});

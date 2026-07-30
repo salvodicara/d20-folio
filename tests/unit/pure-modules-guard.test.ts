@@ -63,6 +63,9 @@ const PURE_MODULES = [
   "src/lib/maneuver-pick.ts",
   "src/lib/resolve-spell-ability.ts",
   "src/lib/expanded-spells.ts",
+  // The homebrew-library MODEL (strip / upsert / landing rules). Its IO twin
+  // `library-io.ts` owns the Firestore seam, so the model stays CI-pure.
+  "src/lib/library.ts",
   // R2 — the presenter layer (lib/views). Pure: engine output + locale → view-model.
   "src/lib/views/sheet-view.ts",
   "src/lib/views/combat-action-view.ts",
