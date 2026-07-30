@@ -77,7 +77,11 @@ export function SrdTagPicker({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Close + clear the dropdown on outside pointerdown / Escape (shared, capture-phase).
+  // Close + clear the dropdown on outside pointerdown / Escape (shared,
+  // capture-phase). This hook is the picker's SOLE Escape owner — it claims the
+  // key while open, so the cockpit's Esc-to-leave-edit-mode stands down
+  // (DESIGN.md → "Esc belongs to the TOPMOST layer"); a CLOSED picker owns
+  // nothing and lets Esc through, which is the intended fall-through.
   useDismissOnOutside(open, containerRef, () => {
     setOpen(false);
     setSearch("");
@@ -154,10 +158,12 @@ export function SrdTagPicker({
       const lastCustom = customLabels[customLabels.length - 1];
       if (lastId !== undefined) removeId(lastId);
       else if (lastCustom !== undefined) removeCustom(lastCustom);
-    } else if (e.key === "Escape") {
-      setOpen(false);
-      setSearch("");
     }
+    // No Escape branch: `useDismissOnOutside` above already runs the SAME
+    // close+clear (and claims the key) whenever there is anything to dismiss —
+    // `search` is only ever set alongside `open`, so an open-less draft cannot
+    // exist. A second copy here would fire on a CLOSED, idle picker too and
+    // wrongly swallow the Esc that leaves edit mode.
   }
 
   return (

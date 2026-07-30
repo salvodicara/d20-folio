@@ -48,6 +48,12 @@ export function useDismissOnOutside(
       // instead of also firing on the same press. Radix's DismissableLayer marks
       // its own dismissals the same way; `defaultPrevented` is the one signal
       // every layer speaks.
+      // ponytail: this hook CLAIMS Esc but does not CHECK `defaultPrevented`, so
+      // two stacked popovers both dismiss on one press (outer + inner) instead of
+      // peeling one tier. Left as-is deliberately: honoring the flag would make
+      // the OUTER (first-registered) listener win and strand the inner popover
+      // open — the wrong tier — so a real fix needs a LIFO layer stack, not a
+      // one-line guard. No stacked pair ships today.
       e.preventDefault();
       onDismissRef.current();
     };

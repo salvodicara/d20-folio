@@ -22,6 +22,10 @@ vi.mock("@/lib/firebase", () => ({ db: {} }));
 import { MemoryRouter } from "react-router";
 import { CombatHeader } from "@/features/character/center/CombatHeader";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { SrdTagPicker } from "@/components/shared/SrdTagPicker";
+import { toolOptions } from "@/components/shared/srd-option";
+import { effectiveToolTokens } from "@/lib/views/sheet-view";
+import { emptyAggregate } from "@/lib/grants";
 
 /** The header navigates to the level-up ROUTE now — give it a router context. */
 function renderHeader() {
@@ -639,5 +643,54 @@ describe("CombatHeader — Esc-to-leave-edit yields to the topmost layer", () =>
     // The editor collapses back to its button — and the sheet stays in edit mode.
     expect(screen.getByRole("button", { name: "AC" })).toBeInTheDocument();
     expect(useUIStore.getState().sheetMode).toBe("edit");
+  });
+
+  /** The Bio tab's tag pickers sit inline on the sheet, in edit mode, beside the
+   *  header — the arrangement that made their Esc leak into `sheetMode`. */
+  function HeaderWithTagPicker() {
+    const [ids, setIds] = useState<string[]>([]);
+    return (
+      <MemoryRouter>
+        <CombatHeader />
+        <SrdTagPicker
+          options={toolOptions()}
+          effective={effectiveToolTokens(ids, [], emptyAggregate(), "en")}
+          valueIds={ids}
+          customLabels={[]}
+          onChangeIds={setIds}
+          onChangeCustom={() => {}}
+          label="Tools"
+        />
+      </MemoryRouter>
+    );
+  }
+
+  it("Esc on an OPEN tag picker clears its search and does NOT leave edit mode", () => {
+    load();
+    useUIStore.setState({ sheetMode: "edit" });
+    render(<HeaderWithTagPicker />);
+    const input = screen.getByLabelText("Tools");
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "her" } });
+    // Pressed WHERE THE FOCUS IS — the picker's own element handler is on the
+    // input, so a body-level press would not exercise this path at all.
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(input).toHaveValue("");
+    expect(useUIStore.getState().sheetMode).toBe("edit");
+  });
+
+  it("Esc on a CLOSED, idle tag picker owns nothing — it still leaves edit mode", () => {
+    load();
+    useUIStore.setState({ sheetMode: "edit" });
+    render(<HeaderWithTagPicker />);
+    // Focus alone opens the dropdown, so close it first: that Esc is the picker's…
+    const input = screen.getByLabelText("Tools");
+    fireEvent.focus(input);
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(useUIStore.getState().sheetMode).toBe("edit");
+    // …and the next one, with nothing left to dismiss, falls through as it should
+    // (a picker that claimed Esc unconditionally would trap the shortcut here).
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(useUIStore.getState().sheetMode).toBe("play");
   });
 });

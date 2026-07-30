@@ -188,8 +188,7 @@ function InlineNumber({
         e.preventDefault();
         commit();
       } else if (e.key === "Escape") {
-        // CLAIM the key: Esc here means "cancel THIS edit", so a listener below
-        // (the sheet's Esc-to-leave-edit-mode) must stand down on the same press.
+        // CLAIM the key (DESIGN.md → "Esc belongs to the TOPMOST layer").
         e.preventDefault();
         setEditing(false);
       }
@@ -310,8 +309,7 @@ function InlineText({
         e.preventDefault();
         commit();
       } else if (e.key === "Escape") {
-        // CLAIM the key: Esc here means "cancel THIS edit", so a listener below
-        // (the sheet's Esc-to-leave-edit-mode) must stand down on the same press.
+        // CLAIM the key (DESIGN.md → "Esc belongs to the TOPMOST layer").
         e.preventDefault();
         setEditing(false);
       }
