@@ -118,8 +118,11 @@
     "titleBgAsi": "Boost Your Abilities",
     "titleAbilities": "Assign Your Abilities",
     "quickStart": "Quick Start",
-    "rebuildTitle": "Rebuild as a {{class}}?",
+    "rebuildTitle": "Rebuild as {{class}}?",
     "rebuildMessage": "Your tweaks will be replaced by that class's ready-made build. Your name stays.",
-    "rebuildConfirm": "Rebuild"
+    "rebuildConfirm": "Rebuild",
+    "rerollTitle": "Reroll this build?",
+    "rerollMessage": "Your tweaks will be replaced by a fresh draw. Your name stays.",
+    "rerollConfirm": "Reroll"
   }
 }

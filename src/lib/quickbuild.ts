@@ -13,6 +13,8 @@
  * Pure module — no React, no locale reads.
  */
 import { SRD_BACKGROUNDS } from "@/data/backgrounds";
+import { classTables } from "@/data/classes";
+import { skillNameToId } from "@/lib/skills";
 import type { AbilityCode } from "@/data/types";
 import type { QuickbuildPreset } from "@/data/quickbuild";
 import { creationChoiceSlots, ORIGIN_LANGUAGE_SLOT_ID } from "@/lib/creation-choices";
@@ -99,6 +101,52 @@ export function quickbuildDraft(
       spell: deal(slots.spell, (s) => s.count, choices.spell),
     },
   };
+}
+
+/**
+ * The two picks a BACKGROUND owns, re-seeded for a different one.
+ *
+ * Swapping the background on a ready-made build used to empty both sections —
+ * legal (a new background has its own three eligible abilities, and its skill
+ * grants change what the class may still pick) but silent, and thousands of
+ * pixels away from the control the player just touched. So when the sheet is
+ * still the build it was handed, the swap RE-SEEDS instead of emptying: the
+ * +2/+1 follow the class's own priority through the new background's trio, and
+ * the class skills keep every pick the new background does not already grant,
+ * refilled from the class pool in table order. A sculpted sheet still clears —
+ * there is nothing conventional left to preserve there.
+ */
+export function reseedForBackground(
+  classId: string,
+  abilityOrder: readonly AbilityCode[],
+  keptSkills: readonly string[],
+  backgroundId: string
+): { bgAsiChoices: Partial<Record<AbilityCode, number>>; classSkills: string[] } {
+  const background = SRD_BACKGROUNDS.find((b) => b.id === backgroundId);
+  const table = classTables.find((c) => c.id === classId);
+  if (!background || !table) return { bgAsiChoices: {}, classSkills: [] };
+
+  const [primary, secondary] = abilityOrder.filter((code) =>
+    background.abilityOptions.includes(code)
+  );
+  const bgAsiChoices: Partial<Record<AbilityCode, number>> = {};
+  if (primary) bgAsiChoices[primary] = 2;
+  if (secondary) bgAsiChoices[secondary] = 1;
+
+  const granted = new Set(
+    background.skillProficiencies
+      .map(skillNameToId)
+      .filter((id): id is string => id !== null)
+  );
+  const pool = table.skillChoices.from
+    .map(skillNameToId)
+    .filter((id): id is string => id !== null && !granted.has(id));
+  const classSkills = keptSkills.filter((id) => pool.includes(id));
+  for (const id of pool) {
+    if (classSkills.length >= table.skillChoices.count) break;
+    if (!classSkills.includes(id)) classSkills.push(id);
+  }
+  return { bgAsiChoices, classSkills: classSkills.slice(0, table.skillChoices.count) };
 }
 
 /**

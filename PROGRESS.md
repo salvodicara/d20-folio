@@ -1285,6 +1285,16 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   golden rule 21 is about rolls of the GAME, and none are generated here). Pinned by a seeded property
   battery over every composed class × 8 seeds (`quickbuild-random.test.ts`) plus the render test's
   reroll case. Guided never offers it.
+- **Quickbuild follow-ups (ledgered 2026-07-30, from the wave's impeccable audit — SHIP-WITH-FIXES,
+  19/20; every MUST + the cheap INCLUDEs landed in the wave):**
+  - The Human Versatile feat pool renders ~28 rows inline once a Human is on the sheet; collapse it
+    behind a disclosure that keeps only the CHOSEN feat visible.
+  - The quick page's "what's left" explainer renders static rows there (the guided rail deep-links
+    each one): give the one-page surface section anchors so a row scrolls to the control that fixes
+    it — it is a very long page.
+  - An xl+ sticky preview rail: the preview card currently closes the single centred column, so it
+    scrolls away from the controls that change it.
+  - Randomize's hint copy ("draws everything else again") could read warmer.
 - **Compendium completeness:** species/backgrounds/subclasses/conditions/rules-glossary sections
   (+ Monsters when the bestiary lands) — this DEFINES the open Phase-4 "compendium polish" scope.
 - **XP:** an optional per-character XP counter with a threshold-reached → Level-up nudge;

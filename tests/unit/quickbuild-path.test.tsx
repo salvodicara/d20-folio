@@ -88,6 +88,15 @@ function selectValue(name: RegExp): string {
   return el.value;
 }
 
+/** Any species option the sheet is NOT currently on. */
+function otherSpecies(): string {
+  const el = screen.getByRole("combobox", { name: /species/i });
+  if (!(el instanceof HTMLSelectElement)) throw new Error("expected a <select>");
+  const other = [...el.options].map((o) => o.value).find((v) => v !== el.value);
+  if (other === undefined) throw new Error("no alternative species to choose");
+  return other;
+}
+
 /** Pick a class on the one-page sheet (the plaque grid IS the class control). */
 function pickClass(classId: string) {
   const label = presClassName(classId, "en");
@@ -338,6 +347,115 @@ describe("CreationWizard — Quick Start opens complete", () => {
       });
       expect(createButton()).toBeDisabled();
       expect(screen.getByRole("status")).toBeInTheDocument();
+    },
+    SUITE_TIMEOUT
+  );
+
+  it(
+    "rerolls the class the GUIDED path picked, not the one Quick Start opened on",
+    async () => {
+      await renderPage();
+      // Choose the class on the other path…
+      fireEvent.click(screen.getByRole("button", { name: /Guided/ }));
+      pickClass("wizard");
+      fireEvent.click(screen.getByRole("button", { name: /Quick Start/i }));
+      expect(screen.getByRole("option", { name: /^Wizard/ })).toHaveAttribute(
+        "aria-selected",
+        "true"
+      );
+
+      // …and Randomize must keep IT. (It used to reroll the class the page
+      // opened on, silently throwing the guided pick away.)
+      fireEvent.click(randomizeButton());
+      act(() => {
+        useConfirmStore.getState().respond(true);
+      });
+      await act(async () => {});
+      expect(screen.getByRole("option", { name: /^Wizard/ })).toHaveAttribute(
+        "aria-selected",
+        "true"
+      );
+      expect(createButton()).toBeDisabled(); // only the name is missing
+      expect(screen.getByRole("status")).toHaveTextContent(/name/i);
+    },
+    SUITE_TIMEOUT
+  );
+
+  it(
+    "asks before rerolling a SCULPTED sheet, and honours both answers",
+    async () => {
+      await renderPage();
+      pickClass("bard");
+      fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
+        target: { value: "Mirabel" },
+      });
+      // Pristine: the reroll just happens.
+      fireEvent.click(randomizeButton());
+      expect(useConfirmStore.getState().open).toBe(false);
+
+      // Sculpted: the same doctrine as a class rebuild — ask first. The species
+      // is moved to whatever the roll did NOT leave selected, so the edit is a
+      // real change in both build modes (the SRD-only pool is small enough that
+      // a fixed id can BE the rolled one).
+      const sculptedSpecies = otherSpecies();
+      fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
+        target: { value: sculptedSpecies },
+      });
+      fireEvent.click(randomizeButton());
+      expect(useConfirmStore.getState().open).toBe(true);
+      act(() => {
+        useConfirmStore.getState().respond(false);
+      });
+      await act(async () => {});
+      expect(selectValue(/species/i)).toBe(sculptedSpecies);
+
+      fireEvent.click(randomizeButton());
+      act(() => {
+        useConfirmStore.getState().respond(true);
+      });
+      await act(async () => {});
+      // The draw replaced the tweak, and the name is still the player's.
+      expect(screen.getByPlaceholderText(/enter name/i)).toHaveValue("Mirabel");
+      expect(screen.getByRole("option", { name: /^Bard/ })).toHaveAttribute(
+        "aria-selected",
+        "true"
+      );
+    },
+    SUITE_TIMEOUT
+  );
+
+  it(
+    "re-seeds the picks a background owns when an untouched sheet swaps it",
+    async () => {
+      await renderPage();
+      // The default build is a Fighter of Soldier stock, complete but unnamed.
+      fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
+        target: { value: "Borin" },
+      });
+      expect(createButton()).not.toBeDisabled();
+
+      // Swapping the background used to EMPTY the boosts and the class skills
+      // thousands of pixels below, with no signal. Untouched, it re-seeds them
+      // for the new background instead — neither is ever named as missing.
+      // (Asks the new background BRINGS, like the Acolyte's Magic Initiate, are
+      // a different matter: those are new decisions, and the gate says so.)
+      fireEvent.change(screen.getByRole("combobox", { name: /background/i }), {
+        target: { value: "acolyte" },
+      });
+      expect(screen.getByText(/all spent/i)).toBeInTheDocument();
+      expect(screen.queryByText(/background ability boosts/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/choose your class skills/i)).not.toBeInTheDocument();
+
+      // Once the player has sculpted something, the swap still clears — there
+      // is no conventional build left to preserve.
+      fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
+        target: { value: "orc" },
+      });
+      fireEvent.change(screen.getByRole("combobox", { name: /background/i }), {
+        target: { value: "criminal" },
+      });
+      expect(screen.getByText(/background ability boosts/i)).toBeInTheDocument();
+      expect(screen.getByText(/choose your class skills/i)).toBeInTheDocument();
     },
     SUITE_TIMEOUT
   );

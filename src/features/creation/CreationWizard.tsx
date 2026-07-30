@@ -9,15 +9,17 @@
  * presentational components live under `features/creation/steps/`. The wizard
  * makes ZERO direct `[locale]` / BiText reads.
  *
- * Two modes:
- * - Quick Start (default): all fields visible at once, live preview card on right.
+ * Two paths, ONE build (switching between them keeps every pick):
+ * - Quick Start (default): the whole character on one page, arriving PREFILLED
+ *   from the class's ready-made build (`data/quickbuild.ts`) with a Randomize
+ *   reroll; the live preview card closes the single centred column.
  * - Guided Wizard: step-by-step for new players (Class → Race → Background → … → Review).
  */
 
 import { useState, useMemo, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useBlocker } from "react-router";
-import { useConfirmStore } from "@/stores/confirmStore";
+import { useConfirmStore, type ConfirmOptions } from "@/stores/confirmStore";
 import { formatSpeed } from "@/lib/utils";
 import { Input, NumberStepper } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -112,6 +114,7 @@ import {
 } from "@/data/quickbuild";
 import {
   appliedQuickbuildState,
+  reseedForBackground,
   sameAppliedQuickbuild,
   type AppliedQuickbuild,
 } from "@/lib/quickbuild";
@@ -226,11 +229,6 @@ const INITIAL = appliedQuickbuildState(
   DEFAULT_QUICKBUILD_CLASS,
   DEFAULT_QUICKBUILD_PRESET
 );
-const INITIAL_BUILD = {
-  classId: DEFAULT_QUICKBUILD_CLASS,
-  preset: DEFAULT_QUICKBUILD_PRESET,
-  state: INITIAL,
-};
 
 export function CreationWizard() {
   const { t } = useTranslation();
@@ -299,13 +297,9 @@ export function CreationWizard() {
   // the class package and the background package.
   const [classEquipLabel, setClassEquipLabel] = useState("A");
   const [bgEquipLabel, setBgEquipLabel] = useState("A");
-  // The build the page last PREFILLED — Randomize rerolls it, and it is the
-  // yardstick for "has the player sculpted anything since?".
-  const [applied, setApplied] = useState<{
-    classId: string;
-    preset: QuickbuildPreset;
-    state: AppliedQuickbuild;
-  }>(INITIAL_BUILD);
+  // The build the page last PREFILLED — the yardstick for "has the player
+  // sculpted anything since?".
+  const [applied, setApplied] = useState<AppliedQuickbuild>(INITIAL);
   const [hpMode, setHpMode] = useState<"average" | "rolled">("average");
   const [rolledHp, setRolledHp] = useState<number | null>(null);
 
@@ -956,7 +950,7 @@ export function CreationWizard() {
   // by field against what `applyPreset` writes (`appliedQuickbuildState`), so it
   // can never drift from the thing it measures — the NAME and the other
   // untouched fields are deliberately outside that yardstick.
-  const sculpted = !sameAppliedQuickbuild(applied.state, {
+  const sculpted = !sameAppliedQuickbuild(applied, {
     classId: selectedClass,
     subclassId: selectedSubclass,
     level,
@@ -1196,48 +1190,88 @@ export function CreationWizard() {
     setBgEquipLabel(state.bgEquipLabel);
     // The NAME is never part of a build: a preset or a reroll must never wipe
     // what the player typed (owner: "name is sacred").
-    setApplied({ classId, preset, state });
+    setApplied(state);
   }
 
   /**
-   * The quick page's CLASS control: choosing a class rebuilds the sheet from
-   * that class's ready-made preset. A pristine sheet is replaced silently —
-   * that is the whole promise — but hand edits are the player's work, so a
-   * SCULPTED sheet asks first. The typed name never enters it either way.
+   * The BACKGROUND control (both paths). A new background brings its own three
+   * eligible abilities and its own skill grants, so the prior +2/+1 and class
+   * skills cannot simply carry over (golden rule 20 — no reachable invalid
+   * state). Emptying them is legal but silent, and those sections sit far below
+   * the select: so a sheet that is still the build it was handed gets them
+   * RE-SEEDED for the new background instead, and only a sculpted one clears.
    */
+  function changeBackground(backgroundId: string) {
+    setSelectedBackground(backgroundId);
+    const preset = QUICKBUILD_PRESETS[selectedClass];
+    if (sculpted || !preset) {
+      setSelectedClassSkills([]);
+      setBgAsiChoices({});
+      return;
+    }
+    const seeded = reseedForBackground(
+      selectedClass,
+      preset.abilityOrder,
+      selectedClassSkills,
+      backgroundId
+    );
+    setSelectedClassSkills(seeded.classSkills);
+    setBgAsiChoices(seeded.bgAsiChoices);
+  }
+
+  /**
+   * Replace the whole build — the two destructive acts on this page (choosing a
+   * different class, rerolling the flavour) share ONE doctrine: a sheet that is
+   * still the build it was handed is replaced silently, and a SCULPTED one asks
+   * first. The typed name is never part of either.
+   */
+  function replaceBuild(prompt: ConfirmOptions, apply: () => void) {
+    if (!sculpted) {
+      apply();
+      return;
+    }
+    void useConfirmStore
+      .getState()
+      .confirm({ cancelLabel: t("common.cancel"), ...prompt })
+      .then((ok) => {
+        if (ok) apply();
+      });
+  }
+
+  /** The quick page's CLASS control: rebuild the sheet from that class's build. */
   function requestClassPrefill(classId: string) {
     const preset = QUICKBUILD_PRESETS[classId];
     // Every composed class carries a preset (quickbuild-presets.guard) — a
     // missing one is a data bug, never a path a player can reach.
     if (!preset) return;
-    if (sculpted) {
-      void useConfirmStore
-        .getState()
-        .confirm({
-          title: t("create.rebuildTitle", { class: presClassName(classId, locale) }),
-          message: t("create.rebuildMessage"),
-          confirmLabel: t("create.rebuildConfirm"),
-          cancelLabel: t("common.cancel"),
-        })
-        .then((ok) => {
-          if (ok) applyPreset(classId, preset);
-        });
-      return;
-    }
-    applyPreset(classId, preset);
+    replaceBuild(
+      {
+        title: t("create.rebuildTitle", { class: presClassName(classId, locale) }),
+        message: t("create.rebuildMessage"),
+        confirmLabel: t("create.rebuildConfirm"),
+      },
+      () => applyPreset(classId, preset)
+    );
   }
 
   /**
-   * RANDOMIZE: keep the class (and its ability priority — a rolled character
-   * must still be playable) and draw the rest of the sheet afresh from the
-   * composed pools. The roll produces a preset, so it lands through the very
-   * same seam, complete by construction. Not dice (golden rule 21): this draws
-   * a character at creation, never a roll of the game.
+   * RANDOMIZE: keep the class currently on the sheet — whichever path chose it —
+   * and draw the rest afresh from the composed pools. The roll produces a
+   * preset, so it lands through the very same seam, complete by construction.
+   * Not dice (golden rule 21): this draws a character at creation, never a roll
+   * of the game.
    */
   function randomizeQuickbuild() {
-    applyPreset(
-      applied.classId,
-      rollQuickbuildFlavor(applied.classId, applied.preset, cryptoRng)
+    const preset = QUICKBUILD_PRESETS[selectedClass];
+    if (!preset) return;
+    replaceBuild(
+      {
+        title: t("create.rerollTitle"),
+        message: t("create.rerollMessage"),
+        confirmLabel: t("create.rerollConfirm"),
+      },
+      () =>
+        applyPreset(selectedClass, rollQuickbuildFlavor(selectedClass, preset, cryptoRng))
     );
   }
 
@@ -1652,7 +1686,7 @@ export function CreationWizard() {
 
             {/* Randomize — offered once a quickbuild landed here: keep the class
                 you chose, draw the rest of the sheet again. */}
-            <div className="-mt-3 flex items-center justify-end gap-3">
+            <div className="wiz-reroll -mt-3 flex items-center justify-end gap-3">
               <p className="on-art text-xs text-text-muted">
                 {t("create.randomizeHint")}
               </p>
@@ -1730,13 +1764,7 @@ export function CreationWizard() {
                 <Select
                   aria-label={t("create.backgroundLabel")}
                   value={selectedBackground}
-                  onChange={(e) => {
-                    setSelectedBackground(e.target.value);
-                    setSelectedClassSkills([]);
-                    // A new background has its own 3 eligible abilities — clear
-                    // any prior ASI picks so a now-ineligible choice can't linger.
-                    setBgAsiChoices({});
-                  }}
+                  onChange={(e) => changeBackground(e.target.value)}
                 >
                   {bgOptionVMs.map((b) => (
                     <option key={b.id} value={b.id}>
@@ -2009,13 +2037,7 @@ export function CreationWizard() {
                       gloss={b.meta}
                       eyebrow={featLabelForBackground(b.id, locale)}
                       chosen={b.id === selectedBackground}
-                      onClick={() => {
-                        setSelectedBackground(b.id);
-                        setSelectedClassSkills([]);
-                        // New background ⇒ new eligible abilities; drop stale
-                        // ASI picks (golden rule 20 — no reachable invalid state).
-                        setBgAsiChoices({});
-                      }}
+                      onClick={() => changeBackground(b.id)}
                     />
                   ))}
                 </PlaqueGrid>

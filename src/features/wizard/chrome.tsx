@@ -216,6 +216,9 @@ export function WizardPaths({ mode, onMode }: { mode: Mode; onMode: (m: Mode) =>
         type="button"
         className="wiz-path"
         aria-pressed={mode === "quick"}
+        // Docked at ≥721px the gloss is hidden for the plaque's single-row
+        // shape — the promise still reaches pointer + AT here.
+        title={t("wizard.quickGloss")}
         onClick={() => onMode("quick")}
       >
         <span className="wiz-path-glyph">
@@ -228,6 +231,7 @@ export function WizardPaths({ mode, onMode }: { mode: Mode; onMode: (m: Mode) =>
         type="button"
         className="wiz-path"
         aria-pressed={mode === "guided"}
+        title={t("wizard.guidedGloss")}
         onClick={() => onMode("guided")}
       >
         <span className="wiz-path-glyph">

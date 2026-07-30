@@ -120,6 +120,9 @@
     "quickStart": "Avvio Rapido",
     "rebuildTitle": "Ricostruire come {{class}}?",
     "rebuildMessage": "Le tue modifiche saranno sostituite dalla build pronta di quella classe. Il nome resta.",
-    "rebuildConfirm": "Ricostruisci"
+    "rebuildConfirm": "Ricostruisci",
+    "rerollTitle": "Sorteggiare di nuovo?",
+    "rerollMessage": "Le tue modifiche saranno sostituite da un nuovo sorteggio. Il nome resta.",
+    "rerollConfirm": "Sorteggia"
   }
 }

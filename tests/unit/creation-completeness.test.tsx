@@ -118,15 +118,21 @@ describe("CreationWizard — B01 completeness gate", () => {
       // A level-1 caster arrives with its spells picked — nothing outstanding.
       expect(createButton()).not.toBeDisabled();
 
-      // Raising the level asks for spells the level-1 build never picked, and
-      // the explainer says so. (A 0-spell caster used to be creatable — the bug
-      // this pins.)
-      fireEvent.change(screen.getByRole("spinbutton", { name: /level/i }), {
-        target: { value: "3" },
-      });
-      const needs = screen.getByRole("status");
-      expect(within(needs).getByText(/choose your starting spells/i)).toBeInTheDocument();
+      // Unlearn one: read-then-choose, so the row unfolds and the explicit act
+      // releases the pick. (A 0-spell caster used to be creatable — the bug
+      // this pins.) The first match is the class list's own row.
+      const [cantripRow] = screen.getAllByRole("button", { name: /Sacred Flame/ });
+      fireEvent.click(cantripRow as HTMLElement);
+      fireEvent.click(screen.getByRole("button", { name: "Remove" }));
       expect(createButton()).toBeDisabled();
+      expect(
+        within(screen.getByRole("status")).getByText(/choose your starting spells/i)
+      ).toBeInTheDocument();
+
+      // Learn it back and the gate opens again.
+      fireEvent.click(screen.getByRole("button", { name: /Learn Sacred Flame/ }));
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      expect(createButton()).not.toBeDisabled();
     },
     SUITE_TIMEOUT
   );

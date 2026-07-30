@@ -75,11 +75,15 @@ const ENTRY_CEILING_KB = 62; // baseline 53.7 → +15% (2026-07-10: +1 for the g
 // restores deterministic headroom while keeping the guard's teeth (chunk families unchanged vs
 // main). Frontier #1 (lazy SRD) remains the real lever.
 // 2026-07-30: raised 776 → 779 (+3 KB) for the quickbuild wave (creation opens on a
-// ready-made build + the seeded randomizer). NOT a lazy-chunk leak: the eager closure
-// is the SAME 14 chunk families and carries none of the new modules — the preset
-// record, the applicator, the randomizer and the wizard all ride the lazy creation
-// chunk (verified by tracing the closure for their string literals); what grew is
-// shared-module churn around them. Measured 776.5; +2.5 KB never-exact-fit headroom.
+// ready-made build + the seeded randomizer). NOT a lazy-chunk leak — the eager closure
+// is the SAME 14 chunk families — but the split is worth stating exactly, traced by
+// grepping dist for each module's own string literals: the PUBLIC preset record lands
+// in the lazy `srd-content` chunk, and the applicator, the yardstick and the randomizer
+// in the lazy `CreationWizard` chunk. The PACK preset record does NOT: it reaches the
+// bundle through the `@pack` barrel, which eager modules already import, so it rides
+// the eager `cockpit-engine` chunk — ~8 presets of bare ids, a fraction of the raise,
+// and prising it out would mean restructuring the barrel for ~1 KB. The rest is
+// shared-module churn. Measured 776.5; +2.5 KB never-exact-fit headroom.
 // 2026-07-17: raised 756 → 773 (+17 KB) for the content-pack licensing partition:
 // the SAME EN catalogue bytes now ship as public + pack JSON chunk pairs (per-chunk
 // gzip compresses the split corpora slightly worse than the former monoliths) plus

@@ -51,6 +51,13 @@ function pick<T>(rng: Rng, pool: readonly T[]): T {
   return chosen;
 }
 
+/** The same posture as `pick`: a draw that came up short is a data bug, not a
+ *  case to default around (golden rule 2). */
+function required<T>(value: T | undefined, what: string): T {
+  if (value === undefined) throw new Error(`quickbuild: no ${what} to draw`);
+  return value;
+}
+
 /**
  * `n` elements WITHOUT repetition (a partial Fisher–Yates over a copy). When the
  * pool is smaller than `n` it yields the whole pool — the caller's slot then
@@ -112,12 +119,14 @@ export function rollQuickbuildFlavor(
   const backgroundId = background.id;
   // +2 then +1, following the class's own priority through what the background
   // allows — a rolled character is flavour-random, never build-random.
+  // A background offers three abilities and `abilityOrder` is a permutation of
+  // all six (the preset guard pins that), so this always yields three.
   const [primaryBoost, secondaryBoost] = base.abilityOrder.filter((code) =>
     background.abilityOptions.includes(code)
   );
   const boost: readonly [AbilityCode, AbilityCode] = [
-    primaryBoost ?? base.boost[0],
-    secondaryBoost ?? base.boost[1],
+    required(primaryBoost, "boostable ability"),
+    required(secondaryBoost, "second boostable ability"),
   ];
 
   // ── Class skills (the background's are already granted, so never re-picked) ─
@@ -149,12 +158,13 @@ export function rollQuickbuildFlavor(
   );
 
   // ── Origin languages ───────────────────────────────────────────────────────
-  const [languageSlot] = ORIGIN_LANGUAGE_SLOTS;
-  const languagePool = languageSlot ? listAvailableForLanguageSlot(languageSlot) : [];
+  const languageSlot = required(ORIGIN_LANGUAGE_SLOTS[0], "origin language slot");
+  // Short-drawing here would leave the character under-languaged, and a default
+  // would hide it — so the draw is asserted, never patched.
   const [firstLanguage, secondLanguage] = sample(
     rng,
-    languagePool,
-    languageSlot?.amount ?? 2
+    listAvailableForLanguageSlot(languageSlot),
+    languageSlot.amount
   );
 
   // ── The Human "Versatile" origin feat (never the one the background grants) ─
@@ -253,7 +263,10 @@ export function rollQuickbuildFlavor(
     abilityOrder: base.abilityOrder,
     boost,
     classSkills,
-    languages: [firstLanguage ?? base.languages[0], secondLanguage ?? base.languages[1]],
+    languages: [
+      required(firstLanguage, "origin language"),
+      required(secondLanguage, "second origin language"),
+    ],
     ...(cantrips.length > 0 ? { cantrips } : {}),
     ...(spells.length > 0 ? { spells } : {}),
     ...(Object.keys(lineage).length > 0 ? { lineage } : {}),

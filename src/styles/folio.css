@@ -18131,6 +18131,8 @@ button.econ-tok-filter:active .econ-disc {
   .wiz-path-name {
     font-size: 0.88rem;
   }
+  /* The docked plaque is a single 190px row (glyph + name) — its promise rides
+     the button's tooltip instead (see the `title` in wizard/chrome.tsx). */
   .wiz-path-gloss {
     display: none;
   }
@@ -20311,6 +20313,12 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   .wiz {
     padding: var(--sp-3) var(--sp-3) var(--sp-6);
   }
+  /* Touch floor (PRODUCT_CONSTITUTION §2.6): the creation page's Randomize is a
+     primary act on a phone, so it takes the full 44px rather than the `sm`
+     desk-side height. */
+  .wiz-reroll .btn {
+    min-height: 44px;
+  }
   .wiz-paths {
     flex-direction: row;
   }
@@ -20319,8 +20327,12 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
     flex: 1;
     padding: var(--sp-2) var(--sp-2);
   }
+  /* Stacked, the plaques have the room to SAY what each path is (the docked
+     desktop pair uses a tooltip instead). */
   .wiz-path-gloss {
-    display: none;
+    font-size: 0.68rem;
+    line-height: 1.25;
+    text-wrap: balance;
   }
   .wiz-orbs {
     max-width: 100%;
