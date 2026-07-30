@@ -96,6 +96,9 @@ const LIBRARY_KIND_ORDER: readonly LibraryKind[] = [
  * glyph. The list itself lives in `libraryStore`, fed by the shell's ONE listener —
  * this section only reads and dispatches, like every other row on the page. Saving
  * happens on the item's own card in the cockpit; this is where entries are pruned.
+ *
+ * No `onArt` on its `Section`: the flag is being retired with the visual rollback on
+ * `main` (`Section` drops the prop there), so this section is authored without it.
  */
 function LibrarySection() {
   const { t } = useTranslation();
@@ -132,7 +135,7 @@ function LibrarySection() {
   }
 
   return (
-    <Section title={t("settings.library")} onArt>
+    <Section title={t("settings.library")}>
       <InfoCard>
         {rows.length === 0 ? (
           <p className="py-1 text-[0.72rem] italic text-text-secondary">
