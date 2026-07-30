@@ -6,7 +6,11 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "path";
 import { runI18nChecks } from "./scripts/i18n/check-i18n.ts";
-import { fsAllowRoots, packAliasTarget } from "./scripts/content-pack-mode.ts";
+import {
+  fsAllowRoots,
+  packAliasTarget,
+  packMonstersAliasTarget,
+} from "./scripts/content-pack-mode.ts";
 
 // i18n build-time LEAK-LOCK (`docs/ARCHITECTURE.md` → i18n-completeness lock 6): fail `vite build` RED on
 // ANY untranslated string. Runs the ONE shared detector set (`scripts/i18n/` —
@@ -228,6 +232,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // The pack's ONE lazy sub-entry — the bestiary corpus, kept OFF the
+      // eager-reachable `@pack` barrel (docs/ARCHITECTURE.md → the content-pack
+      // seam). MUST precede "@pack": string aliases match by prefix.
+      "@pack/monsters": packMonstersAliasTarget(),
       // The content-pack seam (docs/ARCHITECTURE.md): the private pack when
       // present/enabled, else the typed-empty stub (the SRD-only build).
       "@pack": packAliasTarget(),

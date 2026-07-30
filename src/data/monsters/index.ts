@@ -9,10 +9,17 @@
  * through the lazy compendium specs barrel (+ the encounter-bestiary seam), so it
  * never joins the eager startup closure (the bundle-budget ratchet is the guard,
  * `vite.config.ts` → the `srd-monsters` chunk).
+ *
+ * That lock is why the pack half arrives through `@pack/monsters` — the pack's ONE
+ * sub-entry — and NOT the `@pack` barrel: the barrel is eager-reachable (the
+ * always-eager Grant engine reads `packFeats`/`packSpells`/… through it), so
+ * Rolldown puts anything it re-exports in the EAGER chunk no matter which
+ * `manualChunks` bucket the source module claims. See docs/ARCHITECTURE.md →
+ * "The content-pack seam".
  */
 import type { CreatureType, MonsterStatBlock } from "@/data/types";
 import { mergePack } from "@/lib/pack-merge";
-import { packMonsters } from "@pack";
+import { packMonsters } from "@pack/monsters";
 import { SRD_MONSTERS_A_B } from "./a-b";
 import { SRD_MONSTERS_C_D } from "./c-d";
 import { SRD_MONSTERS_E_G } from "./e-g";

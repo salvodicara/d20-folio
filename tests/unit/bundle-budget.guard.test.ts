@@ -84,6 +84,9 @@ const ENTRY_CEILING_KB = 62; // baseline 53.7 → +15% (2026-07-10: +1 for the g
 // the eager `cockpit-engine` chunk — ~8 presets of bare ids, a fraction of the raise,
 // and prising it out would mean restructuring the barrel for ~1 KB. The rest is
 // shared-module churn. Measured 776.5; +2.5 KB never-exact-fit headroom.
+// [2026-07-31 addendum: the `@pack/monsters` sub-entry below is now the cheap pattern for
+// prising a corpus off the barrel. The presets STAY on it deliberately — a fixed ~8 rows
+// of bare ids that do not scale; the bestiary is the one that does.]
 // 2026-07-17: raised 756 → 773 (+17 KB) for the content-pack licensing partition:
 // the SAME EN catalogue bytes now ship as public + pack JSON chunk pairs (per-chunk
 // gzip compresses the split corpora slightly worse than the former monoliths) plus
@@ -232,18 +235,34 @@ const EAGER_CEILING_KB = 779; // baseline 727.1 → ~+7% (near budget — see AR
 // checkout. `git -C <sibling> checkout <sha>` then bisects nothing — every build keeps
 // reading the symlink target. Always `readlink content-pack` first and vary THAT.
 //
-// ⚠ SEAM DEBT — pack monsters are DOUBLE-SHIPPED, and the eager ceiling is nearly out of
-// room. `src/data/monsters/index.ts` is lazy (the `srd-monsters` chunk) and its docblock
-// forbids eager importers, but it composes `packMonsters` from the `@pack` BARREL
-// (`content-pack/index.ts`), which eager code also reaches — so Rolldown lands the pack's
-// monster data in the EAGER `cockpit-engine` chunk AND in the two lazy `monsters-*`
-// chunks. Measured: the pilot's ids appear in `cockpit-engine` [eager, 386.4 → 387.7 KB
-// gz] as well as both lazy catalogues; eager closure is now 777.88 KB gz against the 779
-// ceiling — 1.12 KB gz of headroom for 10 monsters, i.e. ~0.124 KB gz each. The manifest's
-// remaining 163 MM statblocks would add ~20 KB gz eager and blow the ceiling by ~19.
-// MUST FIX BEFORE MM WAVE 2: give pack monsters their own lazy sub-entry mirroring the
-// public `srd-monsters` pattern, so the corpus never enters the eager closure. Ledgered in
-// PROGRESS.md → the DDB-parity epic's Bestiary bullet.
+// ✅ SEAM DEBT CLOSED 2026-07-31 — pack monsters were DOUBLE-SHIPPED into the eager closure.
+// The defect: `src/data/monsters/index.ts` is lazy (the `srd-monsters` chunk) and its
+// docblock forbids eager importers, but it composed `packMonsters` from the `@pack` BARREL
+// (`content-pack/index.ts`) — which the always-eager Grant engine also reaches — and
+// Rolldown places whatever that barrel re-exports in the EAGER chunk no matter which
+// `manualChunks` bucket the source module claims. So the pack corpus sat in the eager
+// `cockpit-engine` chunk while the lazy `srd-monsters` chunk merely imported it back.
+// The fix: `packMonsters` now arrives through the pack's ONE sub-entry alias,
+// `@pack/monsters` (`scripts/content-pack-mode.ts` → `packMonstersAliasTarget()`, mirrored
+// in the vite/vitest alias maps + the three tsconfig `paths`), and is REMOVED from the
+// barrel — so the corpus is reachable only from the lazy aggregate. SRD-only resolves the
+// sub-entry to the same typed-empty stub. docs/ARCHITECTURE.md → "The content-pack seam".
+// Measured on ONE app SHA with ONE pinned pack worktree, only the seam varying (composed):
+//   eager gz        777.87 KB / 14 chunks  →  776.50 KB / 14 chunks   (−1.37)
+//   cockpit-engine      387.7 KB gz        →      386.3 KB gz         (−1.4)
+//   entry gz              61.81            →        61.81             (unchanged)
+//   precache        9044.06 KiB / 301      →  9044.04 KiB / 301       (−0.02: the corpus
+//     MOVED chunks rather than being written to disk twice, so the precache is flat)
+//   the wave-1 pilot's statblock ids in an EAGER chunk:  YES → NO — they now appear only in
+//     the lazy `srd-monsters` data chunk + the two lazy `monsters-*` catalogues. (Probe them
+//     by grepping dist for ids read out of the pack's own corpus; PI names stay out of this
+//     public repo — content-pack-partition.guard.test.ts enforces that.)
+// The SRD-only lane measures 627.87 KB gz eager / 7850.02 KiB precache (282 entries) —
+// smaller, under the same shared ceilings.
+// The ceilings are NOT lowered for this (they are ratchets, not trackers): the freed
+// ~1.4 KB is recorded slack, and EAGER_CEILING_KB stays the regression guard — putting
+// `packMonsters` back on the barrel returns the whole corpus to the eager closure, which at
+// MM wave-2 size (the manifest's remaining 163 statblocks, ~20 KB gz) trips it loudly.
 const PRECACHE_CEILING_KIB = 9055;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 

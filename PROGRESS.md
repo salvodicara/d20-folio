@@ -623,8 +623,9 @@ SRD 5.2.1 (CC-BY-4.0) content (every entry `source: "SRD"`, guard-enforced by
 `tests/unit/content-pack-partition.guard.test.ts` — PI-term denylist + source invariant); everything
 else (825 entries: the Artificer, all non-SRD subclasses/feats/spells/species/backgrounds/magic
 items, the 20 maneuvers, the team fixtures, the pack dev scenarios and pack-only test suites) lives
-in the private `content-pack/`, composed back via the ONE `@pack` build-time alias so the composed
-app matches the pre-split product (the pack overlay restores the 18 PHB creator names — published
+in the private `content-pack/`, composed back via the `@pack` build-time alias (plus its ONE
+sub-entry `@pack/monsters`, which keeps the unbounded bestiary corpus off the eager-reachable
+barrel) so the composed app matches the pre-split product (the pack overlay restores the 18 PHB creator names — published
 publicly under their SRD 5.2.1 names — plus the full Elven Lineage / Pact of the Chain prose and
 the pack's own heritage-feat category label; the engine's feat-category/scope vocabulary was renamed to the generic
 `heritage` — not persisted in any live doc, verified). Both build modes gate green: `just ci`
@@ -1219,20 +1220,31 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     rename-in-place. The whole bestiary surface loads in ONE lazy chunk on first open (zero eager
     delta — tripwired); a spec-driven `quantityMax` was added to the shared picker footer. The
     2024-DMG XP-budget difficulty calculator that followed it also SHIPPED (2026-07-25).
-  - **⚠ SEAM DEBT — MUST FIX BEFORE MM WAVE 2: pack monsters are double-shipped into the EAGER
-    closure.** Surfaced 2026-07-30 by A/B-ing the wave-1 pilot (10 statblocks EN+IT) on one app SHA
-    with only the pack varying. `src/data/monsters/index.ts` is lazy (the `srd-monsters` chunk) and
-    its docblock forbids eager importers — but it composes `packMonsters` from the `@pack` BARREL
-    (`content-pack/index.ts`), which eager code also reaches, so Rolldown lands the pack's monster
-    data in the eager `cockpit-engine` chunk AS WELL AS the two lazy `monsters-*` catalogues. Same
-    mechanism that bit `packQuickbuildPresets`. Measured cost of the 10-monster pilot: eager closure
-    **776.64 → 777.88 KB gz** (`cockpit-engine` 386.4 → 387.7) against the **779** ceiling — **1.12
-    KB gz of headroom left**, ~0.124 KB gz per monster. The manifest's remaining **163** MM
-    statblocks would add **~20 KB gz eager and blow the ceiling by ~19**, so wave 2 cannot ship on
-    this seam. THE FIX: give pack monsters their own lazy sub-entry mirroring the public
-    `srd-monsters` pattern (a dedicated pack monsters module the lazy corpus imports, never the
-    whole barrel), so the corpus is fetched only when the bestiary opens. Precache is NOT the
-    problem (+20.42 KiB, ceiling stepped to 9055 in the same wave) — the eager leak is.
+  - **✅ SEAM DEBT CLOSED (2026-07-31) — the MM wave-2 blocker is gone; pack monsters are no longer
+    double-shipped into the EAGER closure.** The defect (surfaced 2026-07-30 by A/B-ing the wave-1
+    pilot on one app SHA with only the pack varying): `src/data/monsters/index.ts` is lazy (the
+    `srd-monsters` chunk) and its docblock forbids eager importers — but it composed `packMonsters`
+    from the `@pack` BARREL (`content-pack/index.ts`), which the always-eager Grant engine also
+    reaches, and Rolldown places whatever that barrel re-exports in the eager `cockpit-engine`
+    chunk no matter which `manualChunks` bucket the source module claims. Same mechanism that bit
+    `packQuickbuildPresets`. THE FIX: the bestiary is now the pack's ONE lazy **sub-entry** —
+    `@pack/monsters` (`scripts/content-pack-mode.ts` → `packMonstersAliasTarget()`, mirrored in the
+    vite/vitest alias maps and the three tsconfig `paths`; SRD-only resolves it to the same
+    typed-empty stub) — and `packMonsters` is REMOVED from the barrel, so the corpus is reachable
+    only from the lazy aggregate and is fetched only when the bestiary opens. Zero tombstones, and
+    the "consumers read aggregates, never a `@pack` deep path" doctrine holds — the importer IS the
+    merge point. Measured, same app SHA + one pinned pack worktree, only the seam varying: eager
+    **777.87 → 776.50 KB gz** across the same 14 chunks (`cockpit-engine` 387.7 → 386.3), entry
+    **61.81 → 61.81** (unchanged), precache **9044.06 → 9044.04 KiB / 301 entries** (flat — the
+    corpus moved chunks rather than being written to disk twice), and the wave-1 pilot's statblock
+    ids are now ABSENT from every eager chunk, appearing only in the lazy `srd-monsters` data
+    chunk + the two lazy `monsters-*` catalogues. SRD-only lane: 627.87 KB gz
+    eager / 7850.02 KiB precache (282 entries), under the same shared ceilings. Ceilings were NOT
+    lowered (they are ratchets, not trackers) — the freed ~1.4 KB is recorded slack, and
+    `EAGER_CEILING_KB` remains the regression guard: putting `packMonsters` back on the barrel
+    returns the corpus to the eager closure, which at wave-2 size (~163 statblocks, ~20 KB gz)
+    trips it loudly. Full record: `tests/unit/bundle-budget.guard.test.ts` + docs/ARCHITECTURE.md →
+    "The content-pack seam". **MM wave 2 is unblocked.**
 - **Companions/Extras — SHIPPED (2026-07-25):** a persistent, play-reachable
   companion surface. A "Companions" section in the resources rail (after Active
   Features) fields every companion: the Artificer constructs + the Beast Master

@@ -2,7 +2,11 @@
 import { defineConfig } from "vitest/config";
 import path from "path";
 import { JSDOM_TS_TESTS, PACK_JSDOM_TS_TESTS } from "./tests/lanes";
-import { contentPackEnabled, packAliasTarget } from "./scripts/content-pack-mode";
+import {
+  contentPackEnabled,
+  packAliasTarget,
+  packMonstersAliasTarget,
+} from "./scripts/content-pack-mode";
 
 // Mirror the vite `define` so components reading the build-time version (the
 // footer colophon) and the bug-report debug context don't hit a ReferenceError
@@ -14,6 +18,9 @@ const define = {
 
 const alias = {
   "@": path.resolve(__dirname, "./src"),
+  // The pack's lazy monster sub-entry — mirrors vite.config.ts, and MUST stay
+  // ahead of "@pack" (string aliases match by prefix).
+  "@pack/monsters": packMonstersAliasTarget(),
   // The content-pack seam — mirrors vite.config.ts.
   "@pack": packAliasTarget(),
   // Root-anchored test-helper aliases: the pack's suites live in a separate

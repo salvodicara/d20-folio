@@ -38,9 +38,13 @@
        aliases the pack's test suites import public-root helpers through (the
        pack lives in a separate repo composed via a symlink, so physical
        relative escapes resolve against the wrong root — mirrored in
-       vitest.config.ts). */
+       vitest.config.ts). `@pack/monsters` is the pack's ONE sub-entry — the
+       bestiary corpus, served off its own alias so it never rides the
+       eager-reachable barrel (docs/ARCHITECTURE.md → the content-pack seam);
+       SRD-only falls back to the SAME typed-empty stub. */
     "paths": {
       "@/*": ["./src/*"],
+      "@pack/monsters": ["./content-pack/data/monsters.ts", "./src/data/pack-empty.ts"],
       "@pack": ["./content-pack/index.ts", "./src/data/pack-empty.ts"],
       "@tests/*": ["./tests/*"],
       "@scripts/*": ["./scripts/*"]

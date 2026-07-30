@@ -7,6 +7,12 @@
  * arrays, an identity overlay, no fixtures, no scenarios. Same named exports
  * (and shapes — `src/data/pack-types.ts`) as `content-pack/index.ts`.
  * See docs/ARCHITECTURE.md → "The content-pack seam".
+ *
+ * This stub also serves the pack's ONE sub-entry alias, `@pack/monsters` (which
+ * in pack mode resolves to `content-pack/data/monsters.ts`, deliberately OFF the
+ * eager-reachable barrel) — so `packMonsters` below is the stub's twin for BOTH
+ * aliases. One empty stub, no second file to keep in step; the extra empty
+ * exports tree-shake away.
  */
 import type {
   BackgroundEquipmentOption,
