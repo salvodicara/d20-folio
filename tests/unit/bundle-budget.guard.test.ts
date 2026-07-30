@@ -194,7 +194,7 @@ const EAGER_CEILING_KB = 776; // baseline 727.1 → ~+6% (near budget — see AR
 // ~771.4 KB gz, the corpus rides the `srd-monsters`/`monsters` lazy chunks). Measured 8934.23 KiB
 // (285 entries) on the COMPOSED lane — the larger of the two; the SRD-only lane is smaller under
 // the same shared ceiling. +~10 KiB deterministic headroom (never exact-fit).
-// +11 KiB 2026-07-30 (the account-level homebrew library) — the feature's own code, all
+// +22 KiB 2026-07-30 (the account-level homebrew library) — the feature's own code, all
 // LAZY: the Custom tab (list · detail · the three prefilled form legs) rides the cockpit
 // chunk, and the listener/store/model/IO ride a 1.1 KB gz `libraryStore` chunk behind the
 // lazy `LibraryMount` (the `GlobalCombatMount` pattern), so the ENTRY and EAGER closure
