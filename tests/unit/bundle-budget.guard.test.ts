@@ -211,7 +211,27 @@ const EAGER_CEILING_KB = 779; // baseline 727.1 → ~+7% (near budget — see AR
 // are UNCHANGED — 61.8 KB gz / 775.6 KB gz across the same 14 chunks. Only the precache
 // (which counts every chunk, eager or not) grows. Measured 8978.07 KiB (296 entries) on
 // the composed lane, +~11 KiB never-exact-fit headroom.
-const PRECACHE_CEILING_KIB = 9033;
+// +20 KiB 2026-07-30 (binding corners): 8989 → 9020 — the four hero-frame corner-fitting
+// SVG masks externalized to `public/assets/ornaments/` (the eager CSS sheds the inline
+// data-URIs; the fittings precache for offline-first). Recorded 9009.5 KiB (300 entries).
+// +13 KiB 2026-07-30 (the quickbuild wave): 9020 → 9033 — the preset record, applicator,
+// randomizer and the wave's bilingual strings grew EXISTING lazy chunks. Recorded 9022.6
+// KiB (300 entries). [Both raises landed with only the ARCHITECTURE.md cell updated —
+// these two lines are the back-fill that puts the two trails back in step.]
+// +22 KiB 2026-07-30 (baseline reconciliation): 9033 → 9055. NOT a growth event, a
+// CORRECTION. The 9033 ceiling was never reproducible from the tree that set it: a fresh
+// composed build of d5371bb — the quickbuild commit whose line above records 9022.6 KiB /
+// 300 entries — measures 9043.09 KiB / 301 entries today, so the ceiling shipped ~20 KiB
+// BELOW its own tree and the next full build was always going to trip it. Re-measured on
+// the composed lane (pack sibling 9b88eba5) across three SHAs: d5371bb 9043.09, pre-rebase
+// main 0b94148 9044.03, this branch head 9044.06 — all 301 entries, the same manifest
+// shape (only content-hash renames), no new image/font/public asset, eager closure
+// unchanged. Verified NOT pack-driven: rolling the pack back one commit (8ecfb6c0)
+// reproduces 9043.09 exactly, and building against the pack's MM-2025 bestiary pilot
+// (9c29f498 — 10 statblocks EN+IT) measures 9044.06, a ZERO delta, i.e. the pilot's data
+// is not yet reachable from the composed chunk graph. Ceiling = the measured 9044.06
+// +~11 KiB never-exact-fit headroom.
+const PRECACHE_CEILING_KIB = 9055;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
