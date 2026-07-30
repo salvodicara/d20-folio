@@ -20961,7 +20961,8 @@ body:has(.fob) .toast-region {
    Geometry: motif pinned top at 24px, the old rule's baseline falls at 85.35%
    -> the 1px separator tops at 20px; the outer curls dip BELOW it (the weave)
    and the crossing strands COVER it, exactly as engraved. */
-.wb .folio-panel > section:first-child .rail-head::after {
+.wb .folio-panel > section:first-child .rail-head::after,
+.wb .cmp-entry-head::after {
   height: 25px;
   background:
     var(--wb-knot) 50% 0 / auto 24px no-repeat,
@@ -21029,24 +21030,11 @@ body:has(.fob) .toast-region {
   mask-repeat: no-repeat;
 }
 
-/* §16.3 — the entry title's divider joins the knot grammar: same motif, same
-   baseline construction as the cockpit rubric (the knot rests ON the line); the
-   line re-inks to the shared knot ink so both surfaces speak one stroke. */
+/* §16.3 — the entry title's divider joins the knot grammar: the SAME shared
+   construction above; only the seat differs (the knot block hangs so its line
+   lands where the entry's own hairline ran). */
 .wb .cmp-entry-head::after {
-  left: var(--sp-4);
-  right: var(--sp-4);
   bottom: -4px;
-  height: 25px;
-  background:
-    var(--wb-knot) 50% 0 / auto 24px no-repeat,
-    linear-gradient(
-        to right,
-        transparent,
-        var(--wb-knot-ink) 18%,
-        var(--wb-knot-ink) 82%,
-        transparent
-      )
-      50% 20px / 100% 1px no-repeat;
 }
 
 /* §16.5 — the primary tabs speak with light, not boxes: the strip is a quiet
