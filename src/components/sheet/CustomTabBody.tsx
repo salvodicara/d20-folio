@@ -8,13 +8,18 @@
  * kind + name), so this tab shows their whole homebrew of the matching kind(s), ready
  * to drop onto THIS character. The tab therefore carries both halves:
  *
- *  - LIST — search + one row per entry: the row IS the add-to-sheet button, with a
- *    trash glyph beside it (the ONLY place an entry is deleted, behind the house
- *    confirm). A "Create …" bar swaps the body to the create form.
- *  - CREATE — the EXISTING `CustomSpellForm` / `CustomEquipmentForm` /
- *    `CustomFeatureForm`, passed in by the modal, with a Back affordance. An EMPTY
- *    library skips the list entirely and opens on the form (with a one-line hint that
- *    whatever you create is kept) — a blank list would be a dead end.
+ *  - LIST — search + one row per entry: the name/meta reading on the left, and ALL
+ *    THREE actions as one right-edge icon cluster, top-aligned with the name line —
+ *    add-to-sheet · edit · delete (the delete behind the house confirm). The cluster
+ *    sits at the far right, never beside the name: a `+` adjacent to "Emberfang Blade"
+ *    reads as a magic-item suffix, not a control (owner, 2026-07-30).
+ *  - CREATE / EDIT — the EXISTING `CustomSpellForm` / `CustomEquipmentForm` /
+ *    `CustomFeatureForm`, rendered by the modal through `renderForm`, with a Back
+ *    affordance that returns WITHOUT saving. The pencil renders the same form
+ *    PRE-FILLED and commits an id-keyed `updateEntry` — the template changes, the
+ *    character's copies do not. An EMPTY library skips the list entirely and opens on
+ *    the create form (with a one-line hint that whatever you create is kept) — a blank
+ *    list would be a dead end.
  *
  * Deliberately NOT a `CompendiumPicker` spec: a library is ≤
  * `FREE_TIER_LIMITS.libraryEntries` user entries with nothing to facet or read, so it
@@ -27,11 +32,11 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, PencilLine, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { IconButton } from "@/components/ui/icon-button";
-import { PickerRow, PickerSearch } from "@/components/sheet/picker-parts";
+import { PickerSearch } from "@/components/sheet/picker-parts";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { useLibraryStore } from "@/stores/libraryStore";
@@ -40,9 +45,20 @@ import {
   entryToCharacterItem,
   LIBRARY_KIND_LABEL_KEY,
   libraryEntryName,
+  type LibraryDraft,
   type LibraryEntry,
   type LibraryKind,
 } from "@/lib/library";
+
+/**
+ * What the tab hands its modal when the pencil opens an entry: the entry to prefill
+ * from (discriminated, so the modal narrows to its own form's item type without a
+ * cast) and the commit that saves the rebuilt draft back to THAT entry.
+ */
+export interface LibraryEditRequest {
+  entry: LibraryEntry;
+  onSave: (draft: LibraryDraft) => void;
+}
 
 /** Append one library entry to the character array its kind belongs to. */
 function addEntryToCharacter(entry: LibraryEntry): void {
@@ -83,23 +99,25 @@ function addEntryToCharacter(entry: LibraryEntry): void {
 export function CustomTabBody({
   kinds,
   createLabel,
-  createForm,
+  renderForm,
   onAdded,
 }: {
   /** Which entry kinds this modal lists + lands (the item modal takes two). */
   kinds: readonly LibraryKind[];
   /** Label of the bar that swaps to the create form (an existing `custom.*` key). */
   createLabel: string;
-  /** The modal's own Custom creation form — rendered in place of the list. */
-  createForm: ReactNode;
+  /** The modal's own Custom form: blank to create, or prefilled to edit an entry. */
+  renderForm: (edit?: LibraryEditRequest) => ReactNode;
   /** Called after a successful add — each modal's existing close behaviour. */
   onAdded: () => void;
 }) {
   const { t } = useTranslation();
   const entries = useLibraryStore((s) => s.entries);
   const removeFromLibrary = useLibraryStore((s) => s.removeFromLibrary);
+  const updateEntry = useLibraryStore((s) => s.updateEntry);
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<LibraryEntry | null>(null);
 
   /** Everything of this modal's kind(s) — the "is my library empty here" set. */
   const mine = useMemo(
@@ -151,26 +169,48 @@ export function CustomTabBody({
     if (ok) removeFromLibrary(entry.id);
   }
 
-  // Nothing of this kind kept yet → the tab IS the create form (a blank list would
-  // be a dead end), with the one line that explains where creations go.
-  if (creating || mine.length === 0) {
+  /** The form leg: a Back bar (or the first-run hint) above the modal's own form. */
+  function formLeg(back: (() => void) | null, form: ReactNode) {
     return (
       <div className="flex flex-1 flex-col overflow-hidden">
-        {mine.length === 0 ? (
-          <p className="border-b border-border-subtle px-4 py-2 text-[0.72rem] italic text-text-secondary">
-            {t("custom.libraryAutoHint")}
-          </p>
-        ) : (
+        {back ? (
           <div className="border-b border-border-subtle px-4 py-2">
-            <Button size="sm" variant="ghost" onClick={() => setCreating(false)}>
+            <Button size="sm" variant="ghost" onClick={back}>
               <Icon as={ArrowLeft} size="sm" decorative />
               {t("common.back")}
             </Button>
           </div>
+        ) : (
+          <p className="border-b border-border-subtle px-4 py-2 text-[0.72rem] italic text-text-secondary">
+            {t("custom.libraryAutoHint")}
+          </p>
         )}
-        {createForm}
+        {form}
       </div>
     );
+  }
+
+  // EDIT — the same form, prefilled. Saving rewrites THIS entry (id-keyed, so a rename
+  // keeps its identity) and returns to the list. The character's copies are untouched
+  // BY DESIGN: an entry is a template, and a sheet item is an independent copy of it
+  // (the same one-way relationship the delete confirm teaches).
+  if (editing) {
+    return formLeg(
+      () => setEditing(null),
+      renderForm({
+        entry: editing,
+        onSave: (draft) => {
+          updateEntry(editing.id, draft);
+          setEditing(null);
+        },
+      })
+    );
+  }
+
+  // Nothing of this kind kept yet → the tab IS the create form (a blank list would
+  // be a dead end), with the one line that explains where creations go.
+  if (creating || mine.length === 0) {
+    return formLeg(mine.length === 0 ? null : () => setCreating(false), renderForm());
   }
 
   return (
@@ -186,33 +226,47 @@ export function CustomTabBody({
             {t("common.noResults")}
           </p>
         ) : (
-          <div className="flex flex-col gap-1.5">
-            {rows.map((entry) => (
-              <div key={entry.id} className="flex items-center gap-1">
-                <div className="min-w-0 flex-1">
-                  <PickerRow
-                    name={libraryEntryName(entry)}
-                    meta={meta(entry)}
-                    ariaLabel={t("custom.libraryAdd", { name: libraryEntryName(entry) })}
-                    trailing={<Icon as={Plus} size="sm" decorative />}
-                    onClick={() => {
-                      addEntryToCharacter(entry);
-                      onAdded();
-                    }}
-                  />
-                </div>
-                <IconButton
-                  aria-label={t("custom.libraryDelete", {
-                    name: libraryEntryName(entry),
-                  })}
-                  className="hover:text-error"
-                  onClick={() => void handleDelete(entry)}
-                >
-                  <Icon as={Trash2} size="sm" decorative />
-                </IconButton>
-              </div>
-            ))}
-          </div>
+          <ul className="flex flex-col gap-1.5">
+            {rows.map((entry) => {
+              const name = libraryEntryName(entry);
+              return (
+                // `items-start` seats the action cluster on the NAME line of a
+                // two-line row (it used to float mid-row), and `flex-1` on the
+                // reading keeps the cluster pinned to the far right edge — a `+`
+                // sitting next to the name reads as a magic-item suffix.
+                <li key={entry.id} className="flex items-start gap-3 px-1">
+                  <span className="pick-body">
+                    <span className="pick-name">{name}</span>
+                    <span className="pick-meta">{meta(entry)}</span>
+                  </span>
+                  <span className="flex shrink-0 items-start gap-0.5">
+                    <IconButton
+                      aria-label={t("custom.libraryAdd", { name })}
+                      onClick={() => {
+                        addEntryToCharacter(entry);
+                        onAdded();
+                      }}
+                    >
+                      <Icon as={Plus} size="sm" decorative />
+                    </IconButton>
+                    <IconButton
+                      aria-label={t("common.editNamed", { name })}
+                      onClick={() => setEditing(entry)}
+                    >
+                      <Icon as={PencilLine} size="sm" decorative />
+                    </IconButton>
+                    <IconButton
+                      aria-label={t("custom.libraryDelete", { name })}
+                      className="hover:text-error"
+                      onClick={() => void handleDelete(entry)}
+                    >
+                      <Icon as={Trash2} size="sm" decorative />
+                    </IconButton>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
       <div className="border-t border-border px-4 py-3">

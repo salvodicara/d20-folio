@@ -9,8 +9,10 @@
  *  2. CREATE — an EMPTY library opens straight on the create form (a blank list is a
  *     dead end) with the one line that says creations are kept; a non-empty one
  *     swaps list ↔ form through the Create bar and Back;
- *  3. DELETE — the row's trash is the ONLY delete, behind the house confirm, and it
- *     STICKS (nothing re-adds an entry on a re-render);
+ *  3. EDIT / DELETE — the row's action cluster (add · edit · delete) is the whole CRUD:
+ *     the pencil reopens the SAME form prefilled and commits an id-keyed update that
+ *     never touches the character; the trash is the ONLY delete, behind the house
+ *     confirm, and it STICKS (nothing re-adds an entry on a re-render);
  *  4. SEARCH — filters the rows.
  *
  * Plus the AUTO-UPSERT seams that fill the library in the first place: a create form
@@ -114,7 +116,7 @@ describe("the Custom tab — the list half", () => {
     expect(within(dialog).queryByText("Hearthfire Bolt")).toBeNull();
 
     fireEvent.click(
-      within(dialog).getByRole("button", { name: /Add Ember Wand from your library/i })
+      within(dialog).getByRole("button", { name: /Add Ember Wand to the sheet/i })
     );
     const landed = useCharacterStore.getState().character?.character.equipment ?? [];
     expect(landed).toHaveLength(1);
@@ -412,5 +414,88 @@ describe("at the free-tier cap", () => {
     expect(names).not.toContain("Kept Nowhere");
     // No toast on a per-keystroke seam.
     expect(useToastStore.getState().toasts).toHaveLength(0);
+  });
+});
+
+describe("the row action cluster", () => {
+  it("offers add · edit · delete, in that order, each naming its action", () => {
+    loadCharacter();
+    seedLibrary([entry({ kind: "equipment", item: CUSTOM_GEAR })]);
+    const dialog = openCustomTab();
+    const row = within(dialog).getByText("Ember Wand").closest("li");
+    expect(row).not.toBeNull();
+    if (!row) return;
+    const labels = within(row)
+      .getAllByRole("button")
+      .map((b) => b.getAttribute("aria-label"));
+    expect(labels).toEqual([
+      "Add Ember Wand to the sheet",
+      "Edit Ember Wand",
+      "Delete Ember Wand from your custom list",
+    ]);
+  });
+});
+
+describe("edit-in-place — the pencil completes CRUD", () => {
+  it("reopens the SAME form prefilled and updates the entry, keeping its id", () => {
+    loadCharacter();
+    seedLibrary([entry({ kind: "equipment", item: CUSTOM_GEAR })]);
+    const originalId = useLibraryStore.getState().entries[0]?.id;
+    const dialog = openCustomTab();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Edit Ember Wand" }));
+    // Prefilled from the entry…
+    const nameField = within(dialog).getByPlaceholderText(/Item name/i);
+    expect(nameField).toHaveValue("Ember Wand");
+    // …and the CTA is a SAVE, not a create.
+    expect(
+      within(dialog).queryByRole("button", { name: /^Create Equipment$/i })
+    ).toBeNull();
+
+    fireEvent.change(nameField, { target: { value: "Cinder Wand" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: /Save changes/i }));
+
+    const entries = useLibraryStore.getState().entries;
+    expect(entries).toHaveLength(1);
+    // A RENAME through the pencil is id-keyed: same entry, new name, no ghost.
+    expect(entries[0]?.id).toBe(originalId);
+    expect(libraryEntryName(entries[0] as LibraryEntry)).toBe("Cinder Wand");
+    expect(persistMock).toHaveBeenCalled();
+    // Back on the list, showing the new name.
+    expect(within(dialog).getByText("Cinder Wand")).toBeInTheDocument();
+  });
+
+  it("never touches the character's own items", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    doc.character.equipment = [{ ...CUSTOM_GEAR }];
+    loadCharacter(doc);
+    seedLibrary([entry({ kind: "equipment", item: CUSTOM_GEAR })]);
+    const before = useCharacterStore.getState().character?.character.equipment;
+    const dialog = openCustomTab();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Edit Ember Wand" }));
+    fireEvent.change(within(dialog).getByPlaceholderText(/Item name/i), {
+      target: { value: "Cinder Wand" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: /Save changes/i }));
+
+    // The sheet copy is independent of the template (one-way, by design).
+    expect(useCharacterStore.getState().character?.character.equipment).toBe(before);
+  });
+
+  it("Back leaves the entry untouched", () => {
+    loadCharacter();
+    seedLibrary([entry({ kind: "equipment", item: CUSTOM_GEAR })]);
+    const dialog = openCustomTab();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Edit Ember Wand" }));
+    fireEvent.change(within(dialog).getByPlaceholderText(/Item name/i), {
+      target: { value: "Discarded" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: /Back/i }));
+
+    expect(useLibraryStore.getState().entries.map(libraryEntryName)).toEqual([
+      "Ember Wand",
+    ]);
+    expect(persistMock).not.toHaveBeenCalled();
   });
 });

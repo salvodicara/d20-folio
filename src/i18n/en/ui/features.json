@@ -27,7 +27,6 @@
     "usesRemaining": "Uses remaining",
     "tagResource": "Resource",
     "delete": "Delete {{name}}",
-    "editCustom": "Edit {{name}}",
     "noMatch": "No features match your search."
   }
 }

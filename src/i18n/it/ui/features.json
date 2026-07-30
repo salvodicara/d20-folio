@@ -27,7 +27,6 @@
     "usesRemaining": "Usi rimasti",
     "tagResource": "Risorsa",
     "delete": "Elimina {{name}}",
-    "editCustom": "Modifica {{name}}",
     "noMatch": "Nessun privilegio corrisponde alla ricerca."
   }
 }

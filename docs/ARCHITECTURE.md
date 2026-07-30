@@ -1360,10 +1360,14 @@ deletion STICKS — nothing re-adds an entry but a real create/edit.
 Two consequences of that identity being (kind, name) rather than an id (the sheet item
 carries none, and adding one would be a live-data schema change):
 
-- a RENAME must MOVE the entry — each edit seam passes the PRE-edit name to
+- a RENAME must MOVE the entry — each SHEET-side edit seam passes the PRE-edit name to
   `syncFromCharacter`, which removes the old-named entry once the new one lands, so a
   rename can never strand a ghost. It only moves after a SUCCESSFUL upsert: at the cap
   the append is refused, and dropping the old entry would lose the template outright.
+  The Custom tab's own pencil needs none of that: it knows WHICH entry it opened, so it
+  commits through `updateEntry(id, draft)` — id-keyed, position-preserving, and it
+  absorbs a rename onto another kept entry's name (two rows under one identity would
+  leave the second unreachable by every name-keyed upsert).
 - the free-tier CAP can refuse a keep. A CREATE says so (`keepInLibrary` in
   `CustomCreationForms` — the item still lands on the sheet, only the reusable template
   is lost); the per-keystroke EDIT seam deliberately ignores the outcome, because a
@@ -1400,11 +1404,20 @@ The layering mirrors combat-state exactly:
   sign-out.
 
 Consumers: the create forms + the four sheet-side edit seams (the upsert half), and the
-shared `CustomTabBody` behind the **Custom** tab of all three Add-X modals — the list of
-kept homebrew (add-to-sheet row + trash) with the modal's existing create form behind a
-"Create …" bar, opening straight on that form while the library is empty. Its add commit
-routes through `characterStore.setCharacter`, the same path the create forms use. Campaign
-SHARING of a library is the ladder's next rung (`PROGRESS.md`).
+shared `CustomTabBody` behind the **Custom** tab of all three Add-X modals, which carries
+the whole CRUD. Each row reads name + meta on the left and ALL THREE actions as one
+right-edge `IconButton` cluster top-aligned with the name line — add-to-sheet · edit ·
+delete. (The cluster is pinned to the far right and every glyph names its action: a bare
+`+` beside "Emberfang Blade" was read as a magic-item suffix, not a control — owner,
+2026-07-30.) The modal supplies its form through `renderForm(edit?)`, so the SAME
+`CustomSpellForm` / `CustomEquipmentForm` / `CustomFeatureForm` serves three jobs — blank
+behind the "Create …" bar (and directly, while the library is empty), and PREFILLED for
+the pencil via their one optional `libraryEdit` prop (`{ item, onSave }`), whose CTA reads
+"Save changes" and whose commit goes to `updateEntry` INSTEAD of the character. A library
+edit deliberately leaves the character's copies alone: an entry is a template and a sheet
+item is an independent copy of it, the one-way relationship the delete confirm already
+teaches. The add commit routes through `characterStore.setCharacter`, the same path the
+create forms use. Campaign SHARING of a library is the ladder's next rung (`PROGRESS.md`).
 
 ### Non-nullability invariant — an empty character name is UNREPRESENTABLE
 

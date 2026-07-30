@@ -46,7 +46,18 @@ export function SpellAddModal({ open, onClose }: SpellAddModalProps) {
         <CustomTabBody
           kinds={KINDS}
           createLabel={t("custom.createSpell")}
-          createForm={<CustomSpellForm onCreated={onClose} />}
+          renderForm={(edit) => (
+            <CustomSpellForm
+              onCreated={onClose}
+              // The kind check NARROWS the entry to a spell — no cast, and a
+              // mismatched kind simply opens the blank create form.
+              libraryEdit={
+                edit?.entry.kind === "spell"
+                  ? { item: edit.entry.item, onSave: edit.onSave }
+                  : undefined
+              }
+            />
+          )}
           onAdded={onClose}
         />
       ) : (

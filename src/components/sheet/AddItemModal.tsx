@@ -27,7 +27,7 @@ import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
 import { CustomEquipmentForm } from "./CustomCreationForms";
 import { EquipmentAddBody } from "./EquipmentAddModal";
 import { MagicItemAddBody } from "./MagicItemAddModal";
-import { CustomTabBody } from "./CustomTabBody";
+import { CustomTabBody, type LibraryEditRequest } from "./CustomTabBody";
 
 type ItemTab = "equipment" | "magic" | "custom";
 
@@ -38,6 +38,19 @@ interface AddItemModalProps {
 
 /** Both item kinds land here — a saved weapon and a saved gear/armor entry alike. */
 const KINDS = ["equipment", "weapon"] as const;
+
+/**
+ * Narrow a tab edit request to THIS modal's form: the item form serves both item
+ * kinds, so the two-arm check hands it a `CustomEquipment | CustomWeapon` with no
+ * cast (a spell/feature entry could never reach here — the tab lists only `KINDS`).
+ */
+function itemEdit(edit?: LibraryEditRequest) {
+  if (!edit) return undefined;
+  const { entry, onSave } = edit;
+  return entry.kind === "equipment" || entry.kind === "weapon"
+    ? { item: entry.item, onSave }
+    : undefined;
+}
 
 export function AddItemModal({ open, onClose }: AddItemModalProps) {
   const { t } = useTranslation();
@@ -83,7 +96,9 @@ export function AddItemModal({ open, onClose }: AddItemModalProps) {
           <CustomTabBody
             kinds={KINDS}
             createLabel={t("custom.createEquipment")}
-            createForm={<CustomEquipmentForm onCreated={onClose} />}
+            renderForm={(edit) => (
+              <CustomEquipmentForm onCreated={onClose} libraryEdit={itemEdit(edit)} />
+            )}
             onAdded={onClose}
           />
         )}

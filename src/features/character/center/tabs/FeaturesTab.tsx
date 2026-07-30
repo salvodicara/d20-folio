@@ -993,7 +993,7 @@ export function FeaturesTab() {
                           >
                             <Icon as={Pencil} size="sm" decorative />
                             <span className="sr-only">
-                              {t("features.editCustom", {
+                              {t("common.editNamed", {
                                 name: feature.name,
                               })}
                             </span>

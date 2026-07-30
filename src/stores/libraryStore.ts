@@ -75,6 +75,13 @@ interface LibraryState {
     idx: number,
     previousName?: string
   ) => void;
+  /**
+   * Edit a KEPT entry in place, by id — the Custom tab's pencil. Id-keyed, not
+   * name-keyed, so the entry survives a rename with its identity intact (the caller
+   * knows exactly which entry it opened). Same strip semantics as every other write
+   * (`toLibraryEntry`), so an edited template can't grow play state.
+   */
+  updateEntry: (id: string, draft: LibraryDraft) => void;
   /** Delete one entry by id. */
   removeFromLibrary: (id: string) => void;
 }
@@ -118,6 +125,23 @@ export const useLibraryStore = create<LibraryState>()((set, get) => ({
     // under `previousName` is the one just upserted, so there is nothing to move.
     if (!stale || isEntryNamed(stale, kind, libraryEntryName(draft))) return;
     get().removeFromLibrary(stale.id);
+  },
+
+  updateEntry: (id, draft) => {
+    const { entries, loaded, persist } = get();
+    if (!loaded || !entries.some((e) => e.id === id)) return;
+    const rewritten = toLibraryEntry(draft, Date.now());
+    const next = entries
+      // The edited entry keeps its id and its place in the list.
+      .map((e) => (e.id === id ? { ...rewritten, id } : e))
+      // A rename ONTO another kept entry's name would leave two rows sharing one
+      // (kind, name) identity — the second unreachable by every name-keyed upsert.
+      // The edit absorbs it.
+      .filter(
+        (e) => e.id === id || !isEntryNamed(e, draft.kind, libraryEntryName(draft))
+      );
+    set({ entries: next });
+    persist?.(next);
   },
 
   removeFromLibrary: (id) => {

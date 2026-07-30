@@ -72,7 +72,16 @@ export function FeatureAddModal({
             <CustomTabBody
               kinds={KINDS}
               createLabel={t("custom.createFeature")}
-              createForm={<CustomFeatureForm onCreated={onClose} />}
+              renderForm={(edit) => (
+                <CustomFeatureForm
+                  onCreated={onClose}
+                  libraryEdit={
+                    edit?.entry.kind === "feature"
+                      ? { item: edit.entry.item, onSave: edit.onSave }
+                      : undefined
+                  }
+                />
+              )}
               onAdded={onClose}
             />
           ) : (

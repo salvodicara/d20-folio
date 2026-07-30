@@ -46,6 +46,17 @@ import type { SpellSchool, DamageType } from "@/data/types";
  * gets one honest outcome; the per-keystroke edit seams stay silent by design
  * (`libraryStore.syncFromCharacter`).
  */
+/**
+ * LIBRARY-EDIT mode (the Custom tab's pencil): the form opens PRE-FILLED from a kept
+ * entry and, on submit, hands the rebuilt draft back instead of touching the character.
+ * One optional prop per form — no forked component, no duplicated field markup. The CTA
+ * flips to "Save changes"; `onSave` also closes the form (the tab returns to its list).
+ */
+export interface LibraryEditProps<TItem> {
+  item: TItem;
+  onSave: (draft: LibraryDraft) => void;
+}
+
 function keepInLibrary(draft: LibraryDraft, t: TFunction): void {
   const outcome = useLibraryStore.getState().saveToLibrary(draft);
   if (outcome !== "full") return;
@@ -59,6 +70,8 @@ function keepInLibrary(draft: LibraryDraft, t: TFunction): void {
 
 interface CustomSpellFormProps {
   onCreated: () => void;
+  /** Library-edit mode — see {@link LibraryEditProps}. */
+  libraryEdit?: LibraryEditProps<CustomSpell>;
 }
 
 // The school + damage-type option lists come from the canonical runtime tuples in
@@ -66,27 +79,29 @@ interface CustomSpellFormProps {
 // union by construction), NOT re-spelled here.
 const SPELL_SCHOOLS: readonly SpellSchool[] = ALL_SPELL_SCHOOLS;
 
-export function CustomSpellForm({ onCreated }: CustomSpellFormProps) {
+export function CustomSpellForm({ onCreated, libraryEdit }: CustomSpellFormProps) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
-  const [name, setName] = useState("");
-  const [level, setLevel] = useState(1);
-  const [school, setSchool] = useState<SpellSchool>("evocation");
-  const [castingTime, setCastingTime] = useState("action");
-  const [range, setRange] = useState(locale === "it" ? "18 metri" : "60 feet");
+  const seed = libraryEdit?.item;
+  const [name, setName] = useState(seed?.name ?? "");
+  const [level, setLevel] = useState(seed?.level ?? 1);
+  const [school, setSchool] = useState<SpellSchool>(seed?.school ?? "evocation");
+  const [castingTime, setCastingTime] = useState(seed?.castingTime ?? "action");
+  const [range, setRange] = useState(
+    seed?.range ?? (locale === "it" ? "18 metri" : "60 feet")
+  );
   // D2 — seed the locale-correct default (was the hardcoded English "Instantaneous"
   // leaking into the IT form), mirroring the locale-aware `range` default above.
-  const [duration, setDuration] = useState(t("spells.instantaneous"));
-  const [concentration, setConcentration] = useState(false);
-  const [description, setDescription] = useState("");
-  const [v, setV] = useState(true);
-  const [s, setS] = useState(true);
-  const [m, setM] = useState(false);
+  const [duration, setDuration] = useState(seed?.duration ?? t("spells.instantaneous"));
+  const [concentration, setConcentration] = useState(seed?.concentration ?? false);
+  const [description, setDescription] = useState(seed?.description ?? "");
+  const [v, setV] = useState(seed?.components.v ?? true);
+  const [s, setS] = useState(seed?.components.s ?? true);
+  const [m, setM] = useState(seed?.components.m ?? false);
 
   function handleCreate() {
-    if (!character || !name.trim()) return;
-    const store = useCharacterStore.getState();
+    if (!name.trim()) return;
 
     const newSpell: CustomSpell = {
       custom: true,
@@ -102,7 +117,12 @@ export function CustomSpellForm({ onCreated }: CustomSpellFormProps) {
       prepared: true,
     };
 
-    store.setCharacter({
+    if (libraryEdit) {
+      libraryEdit.onSave({ kind: "spell", item: newSpell });
+      return;
+    }
+    if (!character) return;
+    useCharacterStore.getState().setCharacter({
       ...character,
       character: {
         ...character.character,
@@ -118,7 +138,7 @@ export function CustomSpellForm({ onCreated }: CustomSpellFormProps) {
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="mb-4 text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">
-          {t("custom.createSpell")}
+          {libraryEdit ? t("custom.editSpell") : t("custom.createSpell")}
         </div>
 
         <div className="flex flex-col gap-3">
@@ -238,8 +258,8 @@ export function CustomSpellForm({ onCreated }: CustomSpellFormProps) {
 
       <div className="border-t border-border px-4 py-3">
         <Button onClick={handleCreate} disabled={!name.trim()} block>
-          <Icon as={Plus} size="sm" decorative />
-          {t("custom.createSpellBtn")}
+          <Icon as={libraryEdit ? Check : Plus} size="sm" decorative />
+          {libraryEdit ? t("common.saveChanges") : t("custom.createSpellBtn")}
         </Button>
       </div>
     </div>
@@ -250,37 +270,56 @@ export function CustomSpellForm({ onCreated }: CustomSpellFormProps) {
 
 interface CustomEquipmentFormProps {
   onCreated: () => void;
+  /** Library-edit mode — see {@link LibraryEditProps}. One form serves both item
+   *  kinds, so the seed is either shape and the saved draft carries the kind. */
+  libraryEdit?: LibraryEditProps<CustomEquipment | CustomWeapon>;
 }
 
 const DAMAGE_TYPES: readonly DamageType[] = ALL_DAMAGE_TYPES;
 
-export function CustomEquipmentForm({ onCreated }: CustomEquipmentFormProps) {
+export function CustomEquipmentForm({
+  onCreated,
+  libraryEdit,
+}: CustomEquipmentFormProps) {
   const { t } = useTranslation();
   const character = useCharacterStore((s) => s.character);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [isWeapon, setIsWeapon] = useState(false);
+  // The seed's SHAPE says which leg the form opens on: a weapon carries a damage die,
+  // armor an AC contribution / category (the same fields the checkboxes below write).
+  const seed = libraryEdit?.item;
+  const seedWeapon = seed && "damageDie" in seed ? seed : undefined;
+  const seedGear = seed && !("damageDie" in seed) ? seed : undefined;
+  const [name, setName] = useState(seed?.name ?? "");
+  const [description, setDescription] = useState(seed?.description ?? "");
+  const [isWeapon, setIsWeapon] = useState(seedWeapon != null);
   const [quantity, setQuantity] = useState(1);
   // "none" | "consumable" | "tracked" — mutually exclusive
   const [trackingMode, setTrackingMode] = useState<"none" | "consumable" | "tracked">(
-    "none"
+    seedGear?.isConsumable ? "consumable" : seedGear?.tracked ? "tracked" : "none"
   );
-  const [isPotion, setIsPotion] = useState(false);
-  const [potionFormula, setPotionFormula] = useState("");
+  const [isPotion, setIsPotion] = useState(seedGear?.isPotion ?? false);
+  const [potionFormula, setPotionFormula] = useState(seedGear?.potionFormula ?? "");
   // Weapon fields
-  const [damageDie, setDamageDie] = useState("1d8");
-  const [damageType, setDamageType] = useState<DamageType>("slashing");
-  const [attackStat, setAttackStat] = useState<"STR" | "DEX">("STR");
-  const [properties, setProperties] = useState("");
+  const [damageDie, setDamageDie] = useState(seedWeapon?.damageDie ?? "1d8");
+  const [damageType, setDamageType] = useState<DamageType>(
+    seedWeapon?.damageType ?? "slashing"
+  );
+  const [attackStat, setAttackStat] = useState<"STR" | "DEX">(
+    seedWeapon?.attackStat ?? "STR"
+  );
+  const [properties, setProperties] = useState(seedWeapon?.properties ?? "");
   // Armor fields (#U6) — custom armor with an AC contribution + category.
-  const [isArmor, setIsArmor] = useState(false);
+  const [isArmor, setIsArmor] = useState(
+    seedGear?.armorCategory != null || seedGear?.acBonus != null
+  );
   const [armorCategory, setArmorCategory] = useState<
     "light" | "medium" | "heavy" | "shield"
-  >("light");
-  const [acBonus, setAcBonus] = useState("");
+  >(seedGear?.armorCategory ?? "light");
+  const [acBonus, setAcBonus] = useState(
+    seedGear?.acBonus != null ? String(seedGear.acBonus) : ""
+  );
 
   function handleCreate() {
-    if (!character || !name.trim()) return;
+    if (!name.trim()) return;
     const store = useCharacterStore.getState();
 
     if (isWeapon) {
@@ -294,6 +333,11 @@ export function CustomEquipmentForm({ onCreated }: CustomEquipmentFormProps) {
         properties,
         description: description.trim() || undefined,
       };
+      if (libraryEdit) {
+        libraryEdit.onSave({ kind: "weapon", item: weapon });
+        return;
+      }
+      if (!character) return;
       store.setCharacter({
         ...character,
         character: {
@@ -313,6 +357,11 @@ export function CustomEquipmentForm({ onCreated }: CustomEquipmentFormProps) {
         armorCategory,
         acBonus: Number.isNaN(parsedAc) ? undefined : parsedAc,
       };
+      if (libraryEdit) {
+        libraryEdit.onSave({ kind: "equipment", item: armor });
+        return;
+      }
+      if (!character) return;
       store.setCharacter({
         ...character,
         character: {
@@ -334,6 +383,11 @@ export function CustomEquipmentForm({ onCreated }: CustomEquipmentFormProps) {
         potionFormula:
           trackingMode === "consumable" && isPotion ? potionFormula : undefined,
       };
+      if (libraryEdit) {
+        libraryEdit.onSave({ kind: "equipment", item: equipment });
+        return;
+      }
+      if (!character) return;
       store.setCharacter({
         ...character,
         character: {
@@ -351,7 +405,7 @@ export function CustomEquipmentForm({ onCreated }: CustomEquipmentFormProps) {
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="mb-4 text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">
-          {t("custom.createEquipment")}
+          {libraryEdit ? t("custom.editEquipment") : t("custom.createEquipment")}
         </div>
 
         <div className="flex flex-col gap-3">
@@ -535,8 +589,8 @@ export function CustomEquipmentForm({ onCreated }: CustomEquipmentFormProps) {
 
       <div className="border-t border-border px-4 py-3">
         <Button onClick={handleCreate} disabled={!name.trim()} block>
-          <Icon as={Plus} size="sm" decorative />
-          {t("custom.createEquipmentBtn")}
+          <Icon as={libraryEdit ? Check : Plus} size="sm" decorative />
+          {libraryEdit ? t("common.saveChanges") : t("custom.createEquipmentBtn")}
         </Button>
       </div>
     </div>
@@ -556,23 +610,27 @@ interface CustomFeatureFormProps {
    */
   editFeature?: CustomFeature;
   editIndex?: number;
+  /** Library-edit mode — see {@link LibraryEditProps}. Distinct from `editFeature`,
+   *  which edits the SHEET's copy; this edits the kept template only. */
+  libraryEdit?: LibraryEditProps<CustomFeature>;
 }
 
 export function CustomFeatureForm({
   onCreated,
   editFeature,
   editIndex,
+  libraryEdit,
 }: CustomFeatureFormProps) {
   const { t } = useTranslation();
   const character = useCharacterStore((s) => s.character);
   const isEditing = editFeature != null && editIndex != null;
-  const initTracker = editFeature?.trackers?.[0];
-  const [title, setTitle] = useState(editFeature?.title ?? "");
-  const [source, setSource] = useState(editFeature?.source ?? "Homebrew");
-  const [emoji, setEmoji] = useState(editFeature?.emoji ?? DEFAULT_ALGO_ICON.id);
-  const [description, setDescription] = useState(
-    editFeature?.contentBlocks[0]?.text ?? ""
-  );
+  // Both edit modes prefill from a feature; only the SHEET one writes an index back.
+  const seed = libraryEdit?.item ?? editFeature;
+  const initTracker = seed?.trackers?.[0];
+  const [title, setTitle] = useState(seed?.title ?? "");
+  const [source, setSource] = useState(seed?.source ?? "Homebrew");
+  const [emoji, setEmoji] = useState(seed?.emoji ?? DEFAULT_ALGO_ICON.id);
+  const [description, setDescription] = useState(seed?.contentBlocks[0]?.text ?? "");
   const [hasTracker, setHasTracker] = useState(initTracker != null);
   const [trackerTotal, setTrackerTotal] = useState(initTracker?.total ?? "1");
   // Default to a real Select option ("long-rest"), not the bare "long" the create
@@ -583,17 +641,17 @@ export function CustomFeatureForm({
   );
 
   function handleSubmit() {
-    if (!character || !title.trim()) return;
+    if (!title.trim()) return;
     const store = useCharacterStore.getState();
 
     const built: CustomFeature = {
       // Preserve any fields the form doesn't edit (e.g. custom actions) on edit.
-      ...editFeature,
+      ...seed,
       custom: true,
       title: title.trim(),
       emoji: emoji || "✨",
       source,
-      tags: editFeature?.tags ?? [],
+      tags: seed?.tags ?? [],
       contentBlocks: [{ text: description, type: "text" }],
       trackers: hasTracker
         ? [
@@ -608,8 +666,14 @@ export function CustomFeatureForm({
             },
           ]
         : [],
-      actions: editFeature?.actions ?? [],
+      actions: seed?.actions ?? [],
     };
+
+    if (libraryEdit) {
+      libraryEdit.onSave({ kind: "feature", item: built });
+      return;
+    }
+    if (!character) return;
 
     const features = isEditing
       ? character.character.features.map((f, i) => (i === editIndex ? built : f))
@@ -634,7 +698,7 @@ export function CustomFeatureForm({
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="mb-4 text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">
-          {isEditing ? t("custom.editFeature") : t("custom.createFeature")}
+          {isEditing || libraryEdit ? t("custom.editFeature") : t("custom.createFeature")}
         </div>
 
         <div className="flex flex-col gap-3">
@@ -712,8 +776,10 @@ export function CustomFeatureForm({
 
       <div className="border-t border-border px-4 py-3">
         <Button onClick={handleSubmit} disabled={!title.trim()} block>
-          <Icon as={isEditing ? Check : Plus} size="sm" decorative />
-          {isEditing ? t("common.saveChanges") : t("custom.createFeatureBtn")}
+          <Icon as={isEditing || libraryEdit ? Check : Plus} size="sm" decorative />
+          {isEditing || libraryEdit
+            ? t("common.saveChanges")
+            : t("custom.createFeatureBtn")}
         </Button>
       </div>
     </div>

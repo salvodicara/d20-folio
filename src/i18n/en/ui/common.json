@@ -78,6 +78,7 @@
     "increase": "Increase",
     "accountSettings": "Account & settings",
     "searchMissHint": "Try a different search term.",
-    "deleteTitle": "Delete {{name}}?"
+    "deleteTitle": "Delete {{name}}?",
+    "editNamed": "Edit {{name}}"
   }
 }

@@ -43,10 +43,12 @@
     "customTab": "Custom",
     "label": "Custom",
     "librarySearch": "Search your saved homebrew…",
-    "libraryAdd": "Add {{name}} from your library",
+    "libraryAdd": "Add {{name}} to the sheet",
     "libraryAutoHint": "Anything you create is kept in your custom list, ready for any character.",
     "libraryDelete": "Delete {{name}} from your custom list",
     "libraryDeleteMessage": "It leaves your custom list. Characters already using it keep their copy.",
-    "libraryFull": "Added to the sheet. Your custom list is full ({{max}}), so it wasn't kept there."
+    "libraryFull": "Added to the sheet. Your custom list is full ({{max}}), so it wasn't kept there.",
+    "editSpell": "Edit Custom Spell",
+    "editEquipment": "Edit Custom Equipment"
   }
 }
