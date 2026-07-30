@@ -81,9 +81,14 @@ export function LibraryPickerBody({
   const entries = useLibraryStore((s) => s.entries);
   const [search, setSearch] = useState("");
 
-  /** The one-line reading under the name: the kind, plus its cheapest fact. */
+  /**
+   * The one-line reading under the name: the kind (only when this modal lands
+   * more than one kind — a spell modal's rows are all spells), plus its
+   * cheapest fact.
+   */
   function meta(entry: LibraryEntry): string {
-    const parts: Array<string | undefined> = [t(LIBRARY_KIND_LABEL_KEY[entry.kind])];
+    const parts: Array<string | undefined> =
+      kinds.length > 1 ? [t(LIBRARY_KIND_LABEL_KEY[entry.kind])] : [];
     switch (entry.kind) {
       case "spell":
         parts.push(
