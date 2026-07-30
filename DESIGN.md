@@ -2398,14 +2398,15 @@ above).
 > that adopts the scope obeys THIS section wherever it contradicts §1–§15. Gate: rule 25 —
 > nothing merges unseen.
 
-### 16.1 The metal is old bronze, not bright gold
+### 16.1 The metal is the folio's own struck gold (owner-ruled, gate 2)
 
-The measured metal ramp runs `#503020 → #604020 → #705030 → #906030 → #a07040 → #b08040 →
-#c09050` — a low-saturation aged bronze/copper, darker and browner than the current
-`--gold-leaf-500 #b8923d` family. Tokens (the `.wb` scope re-points the standard consumers):
+The corpus's own metal is a bronze/copper ramp, but the owner ruled at gate 2 that the folio
+KEEPS ITS GOLD ("wasn't gold nicer?"): the grammar's line/ornament vars ride the app's
+struck-gold family instead — `--wb-line-900 #624d1f` (engraved recess) · `--wb-line-700
+#8a6d2f` (the standing line) · `--wb-line-500 = --gold-leaf-500` (lit edge) ·
+`--wb-line-300 #d4af5e` (the kindled highlight). What the study KEEPS from the measured
+metal is its BEHAVIOUR, not its hue:
 
-- `--wb-bronze-900 #503020` (engraved recess) · `--wb-bronze-700 #705030` (the standing line)
-- `--wb-bronze-500 #a07040` (lit edge) · `--wb-bronze-300 #c09050` (the kindled highlight)
 - Every metal edge is TWO-TONE: lit toward the top-left, recessed toward the bottom-right —
   a drawn bevel, never a flat stroke. On interactive/earned pieces the light POOLS AT THE
   BOTTOM LIP (the measured XP-capsule underglow — continuity with the Ember Penumbra doctrine).
@@ -2440,6 +2441,12 @@ Dividers and frames are never decorated — the LINE ITSELF performs:
 - BANNED forever (the owner-rejected wave): compass/sparkle corner knots, double-rail
   separators, stamped diamonds as line decoration, any ornament that is not a modulation of a
   line the layout already needed.
+- **THE RICALCO PIPELINE (owner-ruled, gate 2): no ornament is ever improvised by the model.**
+  Every ornament asset is TRACED from human-made artwork with a verified public-domain/CC0
+  license (printer's fleurons, engraved dividers, corner flourishes — the library lives at
+  `~/Workspace/bg3-ui-study/pd-ornaments/` with per-file license evidence; only the traced
+  derivative ships, and only from PD/CC0 sources, keeping the MIT repo clean). Model-invented
+  strokes are a stopgap placeholder at most and must be replaced before a surface ships.
 
 ### 16.4 Frames by register
 
@@ -2473,13 +2480,14 @@ Hover KINDLES (same material, brighter grain + stronger rim-light); pressed sett
 - Numbers are the loudest thing on a data surface (the measured AC-plaque / modifier weight):
   big light-weight numerals, labels quiet.
 
-### 16.7 The boxless ledger
+### 16.7 The boxless ledger — for LISTS, never for the medallions
 
 Data lists (skills, saves, senses, proficiencies) are TYPOGRAPHIC LEDGERS on the plate: no row
 boxes, no zebra, no cards. A row is `dot · name … numeral` — the proficiency dot is a filled
-bronze point (expertise: kindled), the numeral right-aligned tabular. Group headers are quiet
-serif with the (+N) inline. Boxes are reserved for WELLS (things you put things in) and PLATES
-(rooms). This is the register that kills the rejected "rounded ability cards".
+gilt point (expertise: kindled), the numeral right-aligned tabular. Group headers are quiet
+serif with the (+N) inline. Boxes are reserved for WELLS (things you put things in), PLATES
+(rooms) — and the ABILITY MEDALLIONS, whose carved brass tiles the owner ruled STAY at gate 2
+("the boxes looked cool — don't change stuff that looked cool").
 
 ### 16.8 Composition
 

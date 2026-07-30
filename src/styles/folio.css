@@ -20877,41 +20877,34 @@ body:has(.fob) .toast-region {
    6.69:1 on ivory.
    ═══════════════════════════════════════════════════════════════════════ */
 .wb {
-  --wb-bronze-900: #503020;
-  --wb-bronze-700: #6e4a28;
-  --wb-bronze-500: #a07040;
-  --wb-bronze-300: #c09050;
-  --wb-ink-bronze: #cf9a55;
+  /* Gate-2 owner ruling: the metal STAYS GOLD — the wb line/ornament vars ride
+     the app's own struck-gold family (deep→bright), never a bronze swap. */
+  --wb-line-900: #624d1f;
+  --wb-line-700: #8a6d2f;
+  --wb-line-500: var(--gold-leaf-500);
+  --wb-line-300: #d4af5e;
+  --wb-ink-gilt: var(--accent-text);
   --wb-plate: #171310;
   --wb-plate-deep: #100d08;
-  --accent-primary: var(--wb-bronze-500);
-  --accent-primary-bright: var(--wb-bronze-300);
-  --accent-text: var(--wb-ink-bronze);
-  --border-accent: color-mix(in oklab, var(--wb-bronze-700) 85%, transparent);
-}
-[data-theme="light"] .wb {
-  --wb-ink-bronze: #6b4a24;
-  --accent-primary: var(--wb-bronze-700);
-  --accent-primary-bright: var(--wb-bronze-500);
 }
 
 /* §16.2 — the leather plate: near-black warm, ONE dome of light behind the
    head zone, a two-tone lip (lit top, recessed bottom). */
 .wb .folio-panel {
   background:
-    radial-gradient(120% 55% at 50% 18%, rgba(207, 154, 85, 0.08), transparent 62%),
+    radial-gradient(120% 55% at 50% 18%, rgba(212, 175, 94, 0.08), transparent 62%),
     linear-gradient(180deg, var(--wb-plate), var(--wb-plate-deep));
-  border: 1px solid var(--wb-bronze-900);
+  border: 1px solid var(--wb-line-900);
   box-shadow:
-    inset 0 1px 0 rgba(207, 154, 85, 0.16),
+    inset 0 1px 0 rgba(212, 175, 94, 0.16),
     inset 0 -1px 0 rgba(0, 0, 0, 0.55),
     0 12px 28px rgba(0, 0, 0, 0.45);
 }
 [data-theme="light"] .wb .folio-panel {
   background:
-    radial-gradient(120% 55% at 50% 18%, rgba(110, 74, 40, 0.06), transparent 62%),
+    radial-gradient(120% 55% at 50% 18%, rgba(107, 84, 36, 0.06), transparent 62%),
     linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  border-color: color-mix(in oklab, var(--wb-bronze-700) 55%, var(--bg-surface-1));
+  border-color: color-mix(in oklab, var(--wb-line-700) 55%, var(--bg-surface-1));
   box-shadow:
     inset 0 1px 0 rgba(255, 250, 235, 0.7),
     inset 0 -1px 0 rgba(80, 48, 32, 0.18),
@@ -20936,8 +20929,8 @@ body:has(.fob) .toast-region {
   background: linear-gradient(
       to right,
       transparent,
-      var(--wb-bronze-700) 18%,
-      var(--wb-bronze-700) 82%,
+      var(--wb-line-700) 18%,
+      var(--wb-line-700) 82%,
       transparent
     )
     center / 100% 1px no-repeat;
@@ -20946,13 +20939,13 @@ body:has(.fob) .toast-region {
    rubric; every later rubric keeps the plain fading hairline. */
 .wb .folio-panel > section:first-child .rail-head::after {
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 14'%3E%3Cpath fill='%23a07040' d='M2 7 C 40 7 52 2.6 70 2.6 C 88 2.6 100 7 138 7 C 100 7.9 88 4.1 70 4.1 C 52 4.1 40 7.9 2 7 Z'/%3E%3Cpath fill='%238a5c34' d='M14 7 C 45 7 55 11.4 70 11.4 C 85 11.4 95 7 126 7 C 95 6.2 85 9.8 70 9.8 C 55 9.8 45 6.2 14 7 Z'/%3E%3C/svg%3E")
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 14'%3E%3Cpath fill='%23b8923d' d='M2 7 C 40 7 52 2.6 70 2.6 C 88 2.6 100 7 138 7 C 100 7.9 88 4.1 70 4.1 C 52 4.1 40 7.9 2 7 Z'/%3E%3Cpath fill='%238a6d2f' d='M14 7 C 45 7 55 11.4 70 11.4 C 85 11.4 95 7 126 7 C 95 6.2 85 9.8 70 9.8 C 55 9.8 45 6.2 14 7 Z'/%3E%3C/svg%3E")
       center / auto 14px no-repeat,
     linear-gradient(
         to right,
         transparent,
-        var(--wb-bronze-700) 18%,
-        var(--wb-bronze-700) 82%,
+        var(--wb-line-700) 18%,
+        var(--wb-line-700) 82%,
         transparent
       )
       center / 100% 1px no-repeat;
@@ -20968,95 +20961,6 @@ body:has(.fob) .toast-region {
   color: var(--text-primary);
 }
 
-/* §16.7 — the ability medallion sheds its brass tile: a KINDLE-WELL on the
-   plate (no drawn box); hover kindles the material, the caster card carries
-   the bottom-lip pool (§16.1). */
-.wb .statcard-face {
-  background: radial-gradient(
-    120% 90% at 50% 0%,
-    rgba(207, 154, 85, 0.05),
-    transparent 70%
-  );
-  border-color: transparent;
-  box-shadow: none;
-}
-.wb .statcard:hover .statcard-face {
-  transform: none;
-  border-color: transparent;
-  background: radial-gradient(
-    120% 90% at 50% 0%,
-    rgba(207, 154, 85, 0.11),
-    transparent 75%
-  );
-  box-shadow:
-    inset 0 0 0 1px rgba(207, 154, 85, 0.26),
-    inset 0 -10px 16px -12px rgba(192, 144, 80, 0.5);
-}
-.wb .statcard:active .statcard-face {
-  transform: none;
-  box-shadow:
-    inset 0 0 0 1px rgba(207, 154, 85, 0.2),
-    inset 0 2px 6px rgba(0, 0, 0, 0.5);
-}
-.wb .statcard.caster .statcard-face {
-  box-shadow: inset 0 -12px 18px -12px rgba(192, 144, 80, 0.55);
-}
-.wb .sc-label {
-  color: var(--wb-ink-bronze);
-}
-.wb .sc-mod {
-  font-weight: 500;
-  font-size: clamp(28px, 40cqw, 46px);
-}
-.wb .sc-gem {
-  background: transparent;
-  border: 1px solid var(--wb-bronze-900);
-  box-shadow: none;
-  color: var(--text-secondary);
-}
-[data-theme="light"] .wb .statcard-face {
-  background: radial-gradient(
-    140% 110% at 50% 0%,
-    rgba(110, 74, 40, 0.035),
-    transparent 75%
-  );
-}
-[data-theme="light"] .wb .statcard:hover .statcard-face {
-  background: radial-gradient(
-    120% 90% at 50% 0%,
-    rgba(110, 74, 40, 0.1),
-    transparent 75%
-  );
-  box-shadow:
-    inset 0 0 0 1px rgba(110, 74, 40, 0.3),
-    inset 0 -10px 16px -12px rgba(110, 74, 40, 0.35);
-}
-[data-theme="light"] .wb .statcard.caster .statcard-face {
-  box-shadow: inset 0 -12px 18px -12px rgba(110, 74, 40, 0.4);
-}
-
-/* §16.6 — the vitals speak the ledger voice: quiet bronze labels, the numeral
-   is the loudest thing on the row. */
-.wb .vital .v-lbl {
-  color: var(--wb-ink-bronze);
-}
-/* The caster medallion joins the boxless grammar: its mark is the POOL (§16.1)
-   + the bronze eyebrow, never a second drawn box. */
-.wb .statcard.caster .statcard-face {
-  border-color: transparent;
-  background: radial-gradient(
-    120% 90% at 50% 0%,
-    rgba(207, 154, 85, 0.09),
-    transparent 72%
-  );
-}
-[data-theme="light"] .wb .statcard.caster .statcard-face {
-  background: radial-gradient(
-    120% 90% at 50% 0%,
-    rgba(110, 74, 40, 0.08),
-    transparent 72%
-  );
-}
 /* §16.3 — inside the scope a stamp may not float on a line: the diamonds
    retire; the fading rules stay (they already ARE the grammar's hairline). */
 .wb .sec-head .sec-diamond,
@@ -21087,20 +20991,20 @@ body:has(.fob) .toast-region {
 }
 .wb .tabstrip [role="tab"]:hover:not([aria-selected="true"]) {
   color: var(--text-primary);
-  background: rgba(207, 154, 85, 0.07);
+  background: rgba(212, 175, 94, 0.07);
 }
 .wb .tabstrip [role="tab"][aria-selected="true"] {
-  color: var(--wb-ink-bronze);
+  color: var(--wb-ink-gilt);
   background: none;
-  box-shadow: inset 0 -10px 14px -12px rgba(192, 144, 80, 0.55);
+  box-shadow: inset 0 -10px 14px -12px rgba(200, 162, 84, 0.55);
   border: 1px solid transparent;
-  border-bottom: 1px solid var(--wb-bronze-500);
+  border-bottom: 1px solid var(--wb-line-500);
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 [data-theme="light"] .wb .tabstrip [role="tab"]:hover:not([aria-selected="true"]) {
-  background: rgba(110, 74, 40, 0.07);
+  background: rgba(107, 84, 36, 0.07);
 }
 [data-theme="light"] .wb .tabstrip [role="tab"][aria-selected="true"] {
-  box-shadow: inset 0 -10px 14px -12px rgba(110, 74, 40, 0.35);
-  border-bottom-color: var(--wb-bronze-700);
+  box-shadow: inset 0 -10px 14px -12px rgba(107, 84, 36, 0.35);
+  border-bottom-color: var(--wb-line-700);
 }
