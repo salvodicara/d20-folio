@@ -1340,6 +1340,45 @@ same campaign and a detach are always allowed. The same predicate
 queries in rules), so this is an app-layer guard plus the verify report; a member still only writes their
 own `memberDetails` entry.
 
+#### The account-level homebrew library (`users/{uid}/library/index`)
+
+Homebrew is **account** data, not character data. Beside the per-character `combat/state`
+singleton sits ONE per-user document — `users/{uid}/library/index`, holding a flat
+`{ entries: LibraryEntry[] }` — that promotes the four per-character homebrew types
+(`CustomSpell` / `CustomFeature` / `CustomEquipment` / `CustomWeapon`) to reusable templates.
+ONE doc rather than a collection because the whole library is always read together (the
+add-modal Library tab, the settings manager) and is hard-capped at
+`FREE_TIER_LIMITS.libraryEntries` (100, mirrored in `firestore.rules` as the only shape
+assertion, alongside owner-only read/write): one listener, one write, zero queries.
+
+The layering mirrors combat-state exactly:
+
+- **Model** — `src/lib/library.ts` (PURE — no Firebase, no i18n, no `Date.now()`):
+  `LibraryDraft` (the kind→item pair every consumer narrows on), `LibraryEntry` (+
+  `id`/`savedAt`), `toLibraryEntry` (deep-copy + per-kind strip of every PLAY value —
+  prepared/equipped/quantity/tracked/attuned/notes/tags/overrides, charges wound back to
+  full), `upsertEntry` (same (kind, name) replaces IN PLACE, keeping the original id +
+  position) and `entryToCharacterItem` (a deep copy re-seeded with the SAME defaults the
+  Custom creation forms produce). An entry is a TEMPLATE, never a copy of one character's row.
+- **IO** — `src/lib/library-io.ts`: the only library seam touching `firebase/firestore` —
+  defensive read (`parseEntries` drops anything malformed), full-doc `setDoc` OVERWRITE
+  through `stripUndefined` (offline-queueable), no-op under `DEV_BYPASS_AUTH`.
+- **State** — `src/stores/libraryStore.ts` holds the live list and the two optimistic
+  mutations, emitting OUTCOMES (`saved`/`updated`/`full`/`unavailable`) rather than strings.
+  Its write seam is **injected** (`LibraryPersistence`), the `characterStore.combatPersistence`
+  pattern — that is what keeps the store, and therefore every cockpit card that renders a save
+  affordance, Firebase-free (pinned by the pure-modules guard). A mutation refuses to run
+  until `loaded`, because the write is a full-doc overwrite.
+- **Listener** — `src/hooks/useLibrary.ts`, mounted ONCE by `AppShell` (a save happens on the
+  character sheet while the pickers and the settings manager read elsewhere), tearing down on
+  unmount / uid change and resetting the store so no entry survives a sign-out.
+
+Consumers: the shared `SaveToLibraryButton` on each custom row's existing edit-action cluster,
+the shared `LibraryPickerBody` behind the "My Library" tab of all three Add-X modals (its
+commit routes through `characterStore.setCharacter`, the same path the Custom forms use), and
+the `/settings` manager. Campaign SHARING of a library is the ladder's next rung
+(`PROGRESS.md`).
+
 ### Non-nullability invariant — an empty character name is UNREPRESENTABLE
 
 A character's `name` (and the party-member snapshot + roster-cache + roster-projection name) is a
@@ -1596,10 +1635,12 @@ degrades to no-portrait, never silent).
 
 Two contracts keep this fast and leak-free under the free-tier NFR:
 
-- **Listener abstraction.** Every Firestore listener (character + campaign + compendium) goes through
-  **one** subscription abstraction (`use*Subscription` hooks) that auto-tears-down on route /
+- **Listener abstraction.** Every Firestore listener (character + campaign + compendium + the
+  account-level homebrew library) goes through **one** subscription abstraction (`use*` hooks —
+  `useCharacterSubscription`, `useCharacters`, `useLibrary`, …) that auto-tears-down on route /
   component unmount, never stays active across an inactive route, and never leaks a background
-  subscription. No feature subscribes to Firestore directly.
+  subscription. No feature subscribes to Firestore directly. The shell-level ones
+  (`useLibrary`) are mounted EXACTLY ONCE, in `AppShell`, so the count stays flat.
 - **Render isolation.** Derived sheet values are memoized (pure cached selectors); the Left/Right HUD
   must **not** re-render on unrelated tab changes; center-panel state changes must not cascade into
   HUD re-renders; tab switching changes view state only (no full-sheet recompute). The React Compiler

@@ -48,8 +48,10 @@ step**. Deploys stay owner-gated (golden rule 22), so `main` may run ahead of li
 **6 real users** have been playing since 2026-06-08. The repo went **open-source + split-repo**
 (2026-07-17), the **full-BG3 identity pivot** landed code-complete (asset integration pending), and
 the **DDB-parity feature epic** is now **ACTIVE** (OPENED 2026-07-23) with its **bestiary flagship
-SHIPPED** (2026-07-24), the **encounter picker SHIPPED** (2026-07-25; bestiary-first), and the
-**2024-DMG XP-budget difficulty calculator SHIPPED** (2026-07-25; the DM-only budget readout); the
+SHIPPED** (2026-07-24), the **encounter picker SHIPPED** (2026-07-25; bestiary-first), the
+**2024-DMG XP-budget difficulty calculator SHIPPED** (2026-07-25; the DM-only budget readout),
+**companions/extras SHIPPED** (2026-07-25) and the **account-level homebrew library SHIPPED**
+(2026-07-30; ladder rung (a)); the live head is **quickbuild**. The
 competitive map is `docs/POSITIONING.md`. **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
 **id-storage + GR7 i18n-leak-eradication campaign** is **CLOSED** (v0.13.0): every SRD-derived value
@@ -398,8 +400,9 @@ re-derived** to 2024 RAW through the ONE shared projection `MonsterStatBlock →
 drifted live-user Polymorph forms and sweeping the **RAW Monstrosity reclassifications** down to the
 final **84 Beast forms** (six 2024-non-Beast animals dropped from Polymorph offers). The pack-side
 D11 twin rides the same manifest (its own entity lives in the pack docs). Granular per-wave history: `CHANGELOG.md` +
-git; the open half of the flagship (encounter picker + the 2024-DMG difficulty calculator) is the
-epic's live head (see _Active epic — The DDB-parity frontier_).
+git; the rest of the flagship — the encounter picker, the 2024-DMG difficulty calculator, companions,
+and the homebrew library — has SHIPPED since (see _Active epic — The DDB-parity frontier_ for the
+live head).
 
 ## Shipped — the 2024 core-rules audit close-out (2026-07-24)
 
@@ -1200,8 +1203,8 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     additive, display-only `EncounterMonster.srdId`, which powers a **DM-only statblock disclosure**
     on the monster card (a `MonsterStatBlockCard` modal, degrading quietly on a stale id) plus
     rename-in-place. The whole bestiary surface loads in ONE lazy chunk on first open (zero eager
-    delta — tripwired); a spec-driven `quantityMax` was added to the shared picker footer. NEXT: the
-    2024-DMG XP-budget difficulty calculator.
+    delta — tripwired); a spec-driven `quantityMax` was added to the shared picker footer. The
+    2024-DMG XP-budget difficulty calculator that followed it also SHIPPED (2026-07-25).
 - **Companions/Extras — SHIPPED (2026-07-25):** a persistent, play-reachable
   companion surface. A "Companions" section in the resources rail (after Active
   Features) fields every companion: the Artificer constructs + the Beast Master
@@ -1221,11 +1224,19 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   the shipped public `SrdSpellData.companion` seam pack-side (D11). The lazy leaf
   keeps the eager bundle at zero corpus delta (tripwired).
 - **Homebrew — the full ladder:** (a) an account-level library promoting the per-character
-  CustomSpell/Feature/Equipment/Weapon types to reusable account docs; (b) campaign sharing of
-  that library; (c) authoring types staged after the bestiary — monster editor first, then
-  species/feats/subclasses/backgrounds as declarative Grants; (d) homebrew CLASSES declared the
-  horizon flagship on the grants seam (DDB's #1 refused community ask), scheduled only once (c)
-  proves the authoring UX. Homebrew is user data, never repo data — no #32 impact.
+  CustomSpell/Feature/Equipment/Weapon types to reusable account docs — **SHIPPED (2026-07-30)**:
+  ONE `users/{uid}/library/index` doc (capped at `FREE_TIER_LIMITS.libraryEntries` = 100, mirrored
+  in `firestore.rules`), a pure model that saves TEMPLATES (`src/lib/library.ts` — per-kind strip of
+  every play value, upsert-in-place by (kind, name), landing defaults re-seeded from the Custom
+  forms), a bookmark affordance inside each custom card's existing edit cluster, a shared "My
+  Library" tab in all three Add-X modals, and a `/settings` manager; the ONE listener lives in
+  `AppShell` and INJECTS the store's write seam (`combatPersistence` pattern), so the store + cards
+  stay Firebase-free (`docs/ARCHITECTURE.md` → "The account-level homebrew library"); (b) campaign
+  sharing of that library — the ladder's NEXT rung; (c) authoring types staged after the bestiary —
+  monster editor first, then species/feats/subclasses/backgrounds as declarative Grants; (d) homebrew
+  CLASSES declared the horizon flagship on the grants seam (DDB's #1 refused community ask),
+  scheduled only once (c) proves the authoring UX. Homebrew is user data, never repo data — no #32
+  impact.
 - **Public share links: LIVE model** — a `shared: true` flag on the character doc + the
   unguessable doc id as the URL; rules allow anonymous read-only when flagged; revoke = flip the
   flag; noindex; reuses the MemberSheetView read-only rendering.
@@ -1248,8 +1259,10 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   2026-07-23: the #32 open-sourcing split COMPLETED 2026-07-17 — before this epic opened — so the
   split-aware authoring the charter references is already the live world (public SRD repo + private
   pack); the old #32 issue was deleted with the split, so THIS charter is the surviving coordination
-  record. `bestiary` is now DONE (2026-07-24), `encounter picker` is DONE (2026-07-25), and `companions`
-  is DONE (2026-07-25); the live attack-order head is `difficulty calc` / `homebrew library`.]
+  record. `bestiary` is DONE (2026-07-24), `encounter picker` DONE (2026-07-25), `difficulty calc`
+  DONE (2026-07-25), `companions` DONE (2026-07-25) and `homebrew library` rung (a) DONE (2026-07-30);
+  the live attack-order head is `quickbuild`, with the pack-side MM corpus the standing parallel
+  content job and homebrew rung (b) — campaign sharing — queued behind it.]
 
 ## Shipped epic — BG3-Grade Identity Evolution Epic
 

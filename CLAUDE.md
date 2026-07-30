@@ -26,7 +26,9 @@ mechanical-automation long-tail (seams S1–S13) and the 2024 core-rules SYSTEM-
 `docs/AUTOMATION_BACKLOG.md`, now a CLOSED audit record) are DONE, and the tracking-doc reconciliation
 audit (the rule-16 on-ramp) closed with this wave. The forward frontier is (1) the ACTIVE DDB-parity
 feature epic — its bestiary flagship SHIPPED (330 SRD monsters EN+IT + the compendium Monsters
-section, 2026-07-24), the live head now the encounter picker (bestiary-first — `docs/POSITIONING.md`),
+section, 2026-07-24), then the encounter picker, the 2024-DMG difficulty calculator, companions, and
+the account-level homebrew library (rung (a), 2026-07-30) — the live head is now quickbuild
+(`PROGRESS.md` → "Active epic"; competitive map: `docs/POSITIONING.md`),
 (2) the react-router advisory triage,
 and (3) parked backups/observability/legal (the light
 theme is at FULL parity: the depth-parity
