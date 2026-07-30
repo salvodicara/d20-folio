@@ -20665,23 +20665,7 @@ body:has(.fob) .toast-region {
    re-expressed on the v0.22.0 token vocabulary (no plate/veil/edge tokens):
    · header-as-disclosure toggle (owner-ratified 2026-07-24)
    · monster statblock plaque + gilt CR seal (bestiary, shipped 2026-07-24)
-   · realm-scene on-art title ground + the rule-above divider
    ═══════════════════════════════════════════════════════════════════════ */
-:root {
-  /* Fixed near-black engraved numeral ink for the theme-invariant gilt CR seal. */
-  --gilt-ink: #1a1610;
-}
-/* Thin top hairline between two groups of different kind (feature-layer consumers). */
-.rule-above {
-  background: linear-gradient(var(--border-medium), var(--border-medium)) top center /
-    100% 1px no-repeat;
-}
-/* A section title mounted DIRECTLY on a realm scene (not on a card) takes the
-   on-art title ground in light (v0.22.0 on-art vocabulary). */
-[data-theme="light"] .on-art-title {
-  color: var(--text-on-backdrop-title);
-  text-shadow: var(--on-art-halo);
-}
 /* ── Header-as-disclosure (owner-ratified 2026-07-24) — the opt-in SectionHeader
    toggle for on-demand reference sections (the Play tab's collapsed-by-default
    combat playbook + rules reference). The WHOLE rubric row is the click target
@@ -20727,9 +20711,6 @@ body:has(.fob) .toast-region {
 .sec-toggle:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-}
-[data-motion="reduced"] .sec-toggle-chevron {
-  transition: none;
 }
 
 /* ── Monster statblock plaque (MonsterStatBlockCard) ────────────────────────────
@@ -20790,12 +20771,7 @@ body:has(.fob) .toast-region {
 }
 /* Ledger line — a labelled fact row (Skills · Immunities · Senses · Languages ·
    Gear); the `.beast-ref-label` gilt eyebrow leads, the value follows inline. */
-.mon-line {
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  line-height: 1.55;
-  color: var(--text-primary);
-}
+.mon-line,
 /* Damage-type run — the type name in its own hue's AA-safe ink (the rules-text
    damage grammar; `--mon-dmg-ink` is set inline to `var(--dmg-<type>-ink)`). */
 .mon-dmg {
@@ -20839,12 +20815,6 @@ body:has(.fob) .toast-region {
   padding-top: var(--sp-3);
   border-top: 1px solid color-mix(in oklab, var(--border-accent) 55%, transparent);
 }
-.mon-entry {
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  line-height: 1.55;
-  color: var(--text-primary);
-}
 /* The gilt lead is the entry NAME (`**Bite.**`) — a CLASSLESS `<strong>` from the
    markdown renderer. The rules-text colour grammar emits `<strong class="rt-*">`
    too, so a bare `.mon-entry strong` (0,1,1) out-specified the grammar's
@@ -20878,7 +20848,7 @@ body:has(.fob) .toast-region {
   font-size: 11px;
 }
 /* THEME-INVARIANT gilt CR seal — pins the `.lvl-seal` hue pair to FIXED gilt
-   tokens (a fixed light-gold gem + the fixed near-black `--gilt-ink` numeral) so
+   tokens (a fixed light-gold gem + a fixed near-black numeral) so
    the compendium CR seal is the SAME gold jewelry with a crisp engraved numeral
    in BOTH themes (owner-directed 2026-07-24). The per-theme `--accent-primary`/
    `--text-inverse` pair re-resolved to a dark umber gem in light — bronze-on-
@@ -20886,7 +20856,7 @@ body:has(.fob) .toast-region {
    to THIS seal only — the spell/other `.lvl-seal` per-hue consumers are untouched. */
 .lvl-seal.cr-seal {
   --sl: var(--gold-leaf-500);
-  --sl-ink: var(--gilt-ink);
+  --sl-ink: #1a1610; /* fixed near-black engraved numeral (theme-invariant) */
 }
 /* Light: the statblock plaque hosts the FULL damage/condition ink vocabulary
    (statblock-ink-contrast spec), and the carved-vellum recess (#cdbb8e) sinks

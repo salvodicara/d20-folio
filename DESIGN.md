@@ -2407,7 +2407,6 @@ tokens:
   backdrop crossfade (`.bg-ghost`, `src/lib/backdrop-transition.ts`). Text mounted
   directly on a scene grounds through the v0.22.0 `.on-art-scope` machinery — the
   leaf-class opt-in props were removed with the reset.
-- **`.rule-above`** — the thin top hairline used by feature-layer consumers.
 
 The next visual identity (the BG3 corpus-studied grammar) replaces this section
 wholesale when it ships; until then the appendix is the ONLY sanctioned place for
