@@ -29,7 +29,7 @@ through `stripUndefined`, DEV_BYPASS no-op) on the `combat-state-io` pattern;
 `stores/libraryStore.ts` holds the live list and the two optimistic mutations,
 emitting outcomes (`saved`/`updated`/`full`/`unavailable`) rather than strings, and
 stays Firebase-free because its write seam is INJECTED (the `combatPersistence`
-pattern) by the single listener in `hooks/useLibrary.ts`, which also refuses to write
+pattern) by the single listener in `features/account/library-mount.ts`, which also refuses to write
 from an unhydrated store. `FREE_TIER_LIMITS.libraryEntries` (100) is mirrored in
 `firestore.rules` — owner-only read/write plus a list + size guard, proved by
 mutation in the emulator rules suite.

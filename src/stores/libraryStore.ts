@@ -10,7 +10,7 @@
  * Custom tab always reads one list.
  *
  * PERSISTENCE IS INJECTED (`persist`), never imported — the same seam
- * `characterStore.combatPersistence` uses, and for the same reason: `hooks/useLibrary`
+ * `characterStore.combatPersistence` uses, and for the same reason: `library-mount`
  * owns the uid and the `library-io` import, so THIS store (and therefore every card
  * that renders a save affordance) stays Firebase-free and unit-testable with the API
  * key unset. `null` = memory-only (signed out / DEV_BYPASS). The seam DEBOUNCES the
@@ -50,10 +50,10 @@ interface LibraryState {
   entries: LibraryEntry[];
   /** True once the library doc (or its confirmed absence) has been read. */
   loaded: boolean;
-  /** Injected by `useLibrary`; `null` = memory-only (signed out / DEV_BYPASS). */
+  /** Injected by `LibraryMount`; `null` = memory-only (signed out / DEV_BYPASS). */
   persist: LibraryPersistence | null;
 
-  /** Hydrate from the live subscription (`useLibrary` only). */
+  /** Hydrate from the live subscription (`LibraryMount` only). */
   hydrate: (entries: LibraryEntry[], persist: LibraryPersistence | null) => void;
   /** Drop the library on sign-out / uid change so no entry leaks across accounts. */
   reset: () => void;

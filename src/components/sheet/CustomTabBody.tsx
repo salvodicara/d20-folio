@@ -45,10 +45,11 @@ import {
   PickerRow,
   PickerSearch,
 } from "@/components/sheet/picker-parts";
-import {
-  CompendiumDetailBody,
-  type PickerDetailView,
-} from "@/features/compendium/picker";
+// LEAF imports (not the picker barrel): the barrel re-exports every concrete spec, so
+// pulling the detail scaffold through it would drag the whole compendium spec set into
+// any chunk this tab lands in.
+import { CompendiumDetailBody } from "@/features/compendium/picker/detail";
+import type { PickerDetailView } from "@/features/compendium/picker/types";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { useLibraryStore } from "@/stores/libraryStore";

@@ -7,7 +7,7 @@ docs: the homebrew-library architecture entry + the DDB-parity attack-order trut
 `docs/ARCHITECTURE.md` gains "The account-level homebrew library
 (`users/{uid}/library/index`)" beside the `combat/state` singleton — the one-doc rationale,
 the model/IO/state/listener layering (including WHY the store's write seam is injected), and
-its consumers; the listener-contract bullet now names `useLibrary` and the shell-mounted-once
+its consumers; the listener-contract bullet now names the shell mount and the mounted-once
 rule.
 
 Tracking-doc reconciliation (golden rule 16 — a doc that disagrees with the code is a bug):

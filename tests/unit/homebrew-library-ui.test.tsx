@@ -91,7 +91,7 @@ function entry(draft: LibraryDraft): LibraryEntry {
   return toLibraryEntry(draft, NOW);
 }
 
-/** The injected write seam — what `useLibrary` supplies in the app. */
+/** The injected write seam — what `LibraryMount` supplies in the app. */
 const persistMock = vi.fn();
 
 function seedLibrary(entries: LibraryEntry[]): void {

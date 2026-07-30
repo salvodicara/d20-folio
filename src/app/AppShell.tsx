@@ -20,7 +20,6 @@ import { CommandPalette } from "./shell/CommandPalette";
 import { ScrollRestorer } from "./ScrollRestorer";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
-import { useLibrary } from "@/hooks/useLibrary";
 import { useUIStore } from "@/stores/uiStore";
 
 // The `?` shortcuts sheet is on-demand chrome — lazy so its Dialog + registry never
@@ -39,6 +38,15 @@ const GlobalCombatMount = lazy(() =>
   import("@/features/campaigns/global-combat").then((m) => ({
     default: m.GlobalCombatMount,
   }))
+);
+
+// The ONE listener on the account-level homebrew library — RENDERLESS and lazy for the
+// SAME reason as the combat mount: a save fires from the character sheet while the
+// Custom tab reads the list elsewhere, so the store must be hydrated app-wide (golden
+// rule 24: exactly one listener), but its store/model/IO graph must not weigh the
+// always-eager entry bundle (P3).
+const LibraryMount = lazy(() =>
+  import("@/features/account/library-mount").then((m) => ({ default: m.LibraryMount }))
 );
 import { ImportCharacterHost } from "@/features/roster/ImportCharacterHost";
 import { MobileBottomNav } from "./shell/MobileBottomNav";
@@ -64,12 +72,6 @@ export function AppShell() {
   // palette), and the `g`-prefixed go-to sequences. Route-scoped accelerators
   // (cockpit ⌘E, encounter ←/→) stay in their own route hooks.
   useGlobalShortcuts({ setPaletteOpen });
-
-  // The ONE listener on the account-level homebrew library (`libraryStore`). It lives
-  // at the shell because a save happens on the CHARACTER sheet while the pickers and
-  // the settings manager read it elsewhere — and a save rewrites the whole doc, so the
-  // list must be hydrated wherever one can happen (golden rule 24: exactly one).
-  useLibrary();
 
   // Warm the likely-next route chunks during idle (F22) so the first navigation to
   // the cockpit / campaigns / compendium is instant instead of a cold fetch.
@@ -102,6 +104,7 @@ export function AppShell() {
           light store the pip + sheet region read). Suspense fallback is nothing. */}
       <Suspense fallback={null}>
         <GlobalCombatMount />
+        <LibraryMount />
       </Suspense>
 
       <Topbar onOpenPalette={() => setPaletteOpen(true)} />
