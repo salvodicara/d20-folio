@@ -35,6 +35,13 @@ export function pointBuyCost(score: number): number {
   return POINT_BUY_COST[score] ?? Infinity;
 }
 
+/**
+ * The two creation paths. `quick` opens ALREADY COMPLETE — the one-page sheet
+ * arrives prefilled with the current class's ready-made build
+ * (`data/quickbuild.ts`), every control still editable; `guided` walks the same
+ * decisions one page at a time. They share one state, so switching path never
+ * loses work.
+ */
 export type Mode = "quick" | "guided";
 
 export type GuidedStep =

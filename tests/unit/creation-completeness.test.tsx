@@ -1,16 +1,15 @@
 /**
- * CreationWizard — B01 completeness gate (class skills + spells).
+ * CreationWizard — B01 completeness gate (class skills · languages · spells).
  *
- * The wizard used to let Quick Start mint a character with ZERO class skills
- * and (for casters) ZERO cantrips/prepared spells: `createRequirements` — the
- * single list that drives both the disabled Create gate and the "what's left"
- * explainer — had no `skills`/`spells` entry, and the guided Spells-step Next
- * only checked cantrips (never the leveled/prepared count). The guided Skills
- * step DID gate skills, so this was purely a quick-mode / free-jump gap plus a
- * loose spells gate.
+ * The wizard must never mint a character with ZERO class skills, ZERO origin
+ * languages, or (for a caster) ZERO cantrips/prepared spells:
+ * `createRequirements` — the single list that drives both the disabled Create
+ * gate and the "what's left" explainer — carries an entry for each, so quick
+ * mode and orb free-jumps honour the same bar the guided rail does.
  *
- * These assertions FAIL on the pre-fix code (Create enabled with 0 skills; the
- * spells requirement never renders) and PASS after it. Firebase/Firestore are
+ * Quick Start now OPENS complete (the class's ready-made build), so each case
+ * here UNDOES the thing under test — the picker's toggle-off path — and watches
+ * the gate close, then re-picks and watches it open. Firebase/Firestore are
  * mocked so nothing loads them at module init.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
@@ -51,6 +50,13 @@ function createButton(): HTMLButtonElement {
   return btns[btns.length - 1] as HTMLButtonElement;
 }
 
+/** Name the character so the gate's OTHER requirement is out of the way. */
+function nameIt() {
+  fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
+    target: { value: "Borin" },
+  });
+}
+
 describe("CreationWizard — B01 completeness gate", () => {
   beforeEach(() => {
     signIn();
@@ -64,41 +70,18 @@ describe("CreationWizard — B01 completeness gate", () => {
     "a non-caster cannot be created until its class skills are chosen",
     async () => {
       await renderPage();
-      // Dwarf (no origin feat / lineage) + Soldier (Savage Attacker carries no
-      // sub-choices) + Fighter (non-caster) isolates the CLASS-skills gate.
-      fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
-        target: { value: "Borin" },
-      });
-      fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
-        target: { value: "dwarf" },
-      });
-      fireEvent.change(screen.getByRole("combobox", { name: /background/i }), {
-        target: { value: "soldier" },
-      });
-      // Everything else a Dwarf/Soldier/Fighter needs: Soldier's "Choose one
-      // kind of Gaming Set" tool pick (Dice Set) and the background ability
-      // boosts (+2 STR / +1 DEX). Fighter has no spells, so class skills are the
-      // LAST thing left.
-      fireEvent.click(await screen.findByRole("button", { name: /Dice Set/ }));
-      fireEvent.click(screen.getByRole("button", { name: /^STR10/ }));
-      fireEvent.click(screen.getByRole("button", { name: /^DEX10/ }));
+      // The default build is a Fighter (no spells), so class skills are the
+      // isolated variable once the name is given.
+      nameIt();
+      expect(createButton()).not.toBeDisabled();
 
-      // Two Fighter class skills are still unpicked → Create is BLOCKED and the
-      // explainer names it. (Pre-fix: Create was ENABLED here — the bug.)
+      // Drop a class skill: the gate closes and the explainer names it.
+      fireEvent.click(screen.getByRole("button", { name: /Perception/ }));
       expect(createButton()).toBeDisabled();
       expect(screen.getByText(/choose your class skills/i)).toBeInTheDocument();
 
-      // Pick the two class skills (Athletics is a Soldier bg skill, so it is
-      // excluded from the class pool — pick two that remain).
+      // Any legal replacement from the class pool opens it again.
       fireEvent.click(screen.getByRole("button", { name: /Acrobatics/ }));
-      fireEvent.click(screen.getByRole("button", { name: /Animal Handling/ }));
-
-      // RA-28 — the origin +2 languages also gate Create; pick two so the skills
-      // requirement is the isolated variable under test.
-      fireEvent.click(screen.getByRole("button", { name: /Draconic/ }));
-      fireEvent.click(screen.getByRole("button", { name: /Dwarvish/ }));
-
-      // The requirement clears and Create unlocks.
       expect(screen.queryByText(/choose your class skills/i)).not.toBeInTheDocument();
       expect(createButton()).not.toBeDisabled();
     },
@@ -109,32 +92,15 @@ describe("CreationWizard — B01 completeness gate", () => {
     "a character cannot be created until its two origin languages are chosen (RA-28)",
     async () => {
       await renderPage();
-      // Same lineage-free / sub-choice-free setup as the class-skills test.
-      fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
-        target: { value: "Borin" },
-      });
-      fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
-        target: { value: "dwarf" },
-      });
-      fireEvent.change(screen.getByRole("combobox", { name: /background/i }), {
-        target: { value: "soldier" },
-      });
-      fireEvent.click(await screen.findByRole("button", { name: /Dice Set/ }));
-      fireEvent.click(screen.getByRole("button", { name: /^STR10/ }));
-      fireEvent.click(screen.getByRole("button", { name: /^DEX10/ }));
-      // Finish the class skills so LANGUAGES is the isolated variable.
-      fireEvent.click(screen.getByRole("button", { name: /Acrobatics/ }));
-      fireEvent.click(screen.getByRole("button", { name: /Animal Handling/ }));
+      nameIt();
+      expect(createButton()).not.toBeDisabled();
 
-      // No languages picked → Create BLOCKED and the explainer names it.
+      // Drop one of the two origin languages the build came with.
+      fireEvent.click(screen.getByRole("button", { name: /Dwarvish/ }));
       expect(createButton()).toBeDisabled();
       expect(screen.getByText(/choose your two languages/i)).toBeInTheDocument();
 
-      // Pick the two origin languages from the standard table.
       fireEvent.click(screen.getByRole("button", { name: /Draconic/ }));
-      fireEvent.click(screen.getByRole("button", { name: /Dwarvish/ }));
-
-      // The requirement clears and Create unlocks.
       expect(screen.queryByText(/choose your two languages/i)).not.toBeInTheDocument();
       expect(createButton()).not.toBeDisabled();
     },
@@ -142,22 +108,41 @@ describe("CreationWizard — B01 completeness gate", () => {
   );
 
   it(
-    "a caster must choose its spells before Create; a non-caster has no spells requirement",
+    "a caster must choose its spells before Create",
     async () => {
       await renderPage();
-      // A caster (Cleric) surfaces the spells requirement in the explainer.
-      // (Pre-fix: no such requirement existed, so a 0-spell caster could be
-      // created.)
+      // Choose the caster while the sheet is still pristine (a rebuild asks
+      // first once the player has sculpted anything).
       fireEvent.click(screen.getByRole("option", { name: /^Cleric/ }));
+      nameIt();
+      // A level-1 caster arrives with its spells picked — nothing outstanding.
+      expect(createButton()).not.toBeDisabled();
+
+      // Raising the level asks for spells the level-1 build never picked, and
+      // the explainer says so. (A 0-spell caster used to be creatable — the bug
+      // this pins.)
+      fireEvent.change(screen.getByRole("spinbutton", { name: /level/i }), {
+        target: { value: "3" },
+      });
       const needs = screen.getByRole("status");
       expect(within(needs).getByText(/choose your starting spells/i)).toBeInTheDocument();
+      expect(createButton()).toBeDisabled();
+    },
+    SUITE_TIMEOUT
+  );
 
-      // Switching to a non-caster removes the spells requirement — it is
-      // conditional on the class actually casting.
-      fireEvent.click(screen.getByRole("option", { name: /^Fighter/ }));
-      expect(
-        within(screen.getByRole("status")).queryByText(/choose your starting spells/i)
-      ).not.toBeInTheDocument();
+  it(
+    "a non-caster never asks for spells, at any level",
+    async () => {
+      await renderPage();
+      nameIt();
+      // The default build is a Fighter; at level 3 it owes a subclass, never
+      // spells — the requirement is conditional on the class actually casting.
+      fireEvent.change(screen.getByRole("spinbutton", { name: /level/i }), {
+        target: { value: "3" },
+      });
+      expect(screen.getByRole("status")).toBeInTheDocument();
+      expect(screen.queryByText(/choose your starting spells/i)).not.toBeInTheDocument();
     },
     SUITE_TIMEOUT
   );

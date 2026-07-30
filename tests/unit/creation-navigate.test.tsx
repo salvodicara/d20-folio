@@ -54,34 +54,11 @@ describe("CreationWizard — create-success navigation", () => {
 
   it("lands on the cockpit at /characters/:id (no /combat segment)", async () => {
     renderWizard();
-    // Quick mode + Fighter are the defaults. Clear the origin-pick gates so the
-    // remaining required choices are the name + the Soldier's tool pick: a
-    // lineage-free Dwarf species (off the default Human, which needs an origin-feat
-    // pick) + a Soldier background (whose Savage Attacker feat carries no
-    // sub-choices, unlike Acolyte's).
+    // The page opens on the default class's ready-made build (a Human Fighter
+    // of Soldier stock), so the ONLY thing between here and Create is a name.
     fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
       target: { value: "Borin" },
     });
-    fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
-      target: { value: "dwarf" },
-    });
-    fireEvent.change(screen.getByRole("combobox", { name: /background/i }), {
-      target: { value: "soldier" },
-    });
-    // Soldier's 2024 tool proficiency is "Choose one kind of Gaming Set" — a
-    // required creation pick now. Pick the Dice Set.
-    fireEvent.click(await screen.findByRole("button", { name: /Dice Set/ }));
-    // D5 — the background ability boosts are required too (+2 STR / +1 DEX).
-    fireEvent.click(screen.getByRole("button", { name: /^STR10/ }));
-    fireEvent.click(screen.getByRole("button", { name: /^DEX10/ }));
-    // B01 — the two Fighter class skills are a create requirement (Athletics /
-    // Intimidation come from Soldier, so they're excluded from the class pool).
-    fireEvent.click(screen.getByRole("button", { name: /Acrobatics/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Animal Handling/ }));
-    // RA-28 — the origin +2 languages are a create requirement (Common + 2 of
-    // your choice from the standard table).
-    fireEvent.click(screen.getByRole("button", { name: /Draconic/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Dwarvish/ }));
     fireEvent.click(screen.getByRole("button", { name: /create character/i }));
 
     await waitFor(() => expect(createMock).toHaveBeenCalledTimes(1));
@@ -113,7 +90,7 @@ describe("CreationWizard — create-success navigation", () => {
     const createdChar = createMock.mock.calls[0]?.[1] as {
       character: { languageIds: string[] };
     };
-    expect(createdChar.character.languageIds).toEqual(["common", "draconic", "dwarvish"]);
+    expect(createdChar.character.languageIds).toEqual(["common", "dwarvish", "orc"]);
   });
 
   // Explicit 15s budget: the heaviest interaction case in the file (a full
@@ -121,33 +98,12 @@ describe("CreationWizard — create-success navigation", () => {
   // default under a loaded parallel full-gate run while green in isolation.
   it("a Monk's tool-proficiency pick yields BOTH the proficiency AND the chosen tool item", async () => {
     renderWizard();
-    // Quick mode shows every step in one form. Switch to Monk (role=option
-    // plaque), pick a non-Human species + a sub-choice-free background.
+    // Switching class rebuilds the sheet from that class's ready-made build —
+    // Monk's includes the level-1 "Artisan's Tools or Musical Instrument" pick.
     fireEvent.click(screen.getByRole("option", { name: /^Monk/ }));
-    fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
-      target: { value: "dwarf" },
-    });
-    fireEvent.change(screen.getByRole("combobox", { name: /background/i }), {
-      target: { value: "soldier" },
-    });
     fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
       target: { value: "Kai" },
     });
-    // The Monk's level-1 "Artisan's Tools or Musical Instrument" choice surfaces
-    // in the FeatureChoicesSection — pick Smith's Tools. The Soldier background's
-    // own "Choose one kind of Gaming Set" choice surfaces alongside it (two tool
-    // choices from two sources coexist) — pick the Dice Set so Create is enabled.
-    fireEvent.click(await screen.findByRole("button", { name: /Smith's Tools/ }));
-    fireEvent.click(await screen.findByRole("button", { name: /Dice Set/ }));
-    // D5 — assign the required background ability boosts (+2 DEX / +1 CON).
-    fireEvent.click(screen.getByRole("button", { name: /^DEX10/ }));
-    fireEvent.click(screen.getByRole("button", { name: /^CON10/ }));
-    // B01 — the two Monk class skills are a create requirement.
-    fireEvent.click(screen.getByRole("button", { name: /Acrobatics/ }));
-    fireEvent.click(screen.getByRole("button", { name: /History/ }));
-    // RA-28 — pick the two origin languages so Create is enabled.
-    fireEvent.click(screen.getByRole("button", { name: /Draconic/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Dwarvish/ }));
     fireEvent.click(screen.getByRole("button", { name: /create character/i }));
 
     await waitFor(() => expect(createMock).toHaveBeenCalledTimes(1));
@@ -157,40 +113,38 @@ describe("CreationWizard — create-success navigation", () => {
     // never double-added (golden rule 6). This is the no-double-add regression:
     // before the single-source fix, the marker-expansion + the old `chosenToolItems`
     // append would have produced smiths-tools ×2.
-    const smithsRows = created.character.equipment.filter(
-      (e) => "srdId" in e && e.srdId === "smiths-tools"
+    const toolRows = created.character.equipment.filter(
+      (e) => "srdId" in e && e.srdId === "calligraphers-supplies"
     );
-    expect(smithsRows).toHaveLength(1);
-    expect(smithsRows[0]?.quantity ?? 1).toBe(1);
-    // (2) BOTH tool CHOICES are recorded as STABLE IDS in `toolChoices`, keyed by
-    // the namespaced source slot — the class (Monk) pick AND the background
-    // (Soldier "Gaming Set") pick — never as a baked free-text string (rules 6 + 7).
+    expect(toolRows).toHaveLength(1);
+    expect(toolRows[0]?.quantity ?? 1).toBe(1);
+    // (2) the tool CHOICE is recorded as a STABLE ID in `toolChoices`, keyed by
+    // the namespaced source slot — never as a baked free-text string (rules 6 + 7).
     expect(created.character.toolChoices?.["class:monk::tool-slot-0"]).toEqual([
-      "smiths-tools",
+      "calligraphers-supplies",
     ]);
-    expect(created.character.toolChoices?.["soldier::tool-slot-0"]).toEqual(["dice-set"]);
     // The MANUAL id list stays EMPTY — a choice pick is never baked there.
     expect(created.character.toolProficiencyIds).toEqual([]);
     // (3) the chosen tool PROFICIENCY DERIVES from the stored ids (single source).
     const agg = evaluateGrants(resolveAllGrantSources(created.character));
-    expect([...agg.toolProficiencies]).toContain("Smith's Tools");
-    expect([...agg.toolProficiencies]).toContain("Dice Set");
+    expect([...agg.toolProficiencies]).toContain("Calligrapher's Supplies");
   }, 15_000);
 
   it("explains EVERY unmet requirement when Create is disabled — not just the name (N-A)", () => {
     renderWizard();
-    // Quick mode defaults: Human Fighter, no name → several blockers at once. The
-    // old UI only ever surfaced "name"; the explainer must list them all.
+    // The page opens complete but unnamed, so the name is the first blocker.
     expect(screen.getByText(/almost ready/i)).toBeInTheDocument();
     expect(screen.getByText(/name your character/i)).toBeInTheDocument();
-    // A Human's origin feat is a blocker too (the bug: it used to show nothing).
-    expect(screen.getByText(/human origin feat/i)).toBeInTheDocument();
+    // Undo a class skill and a SECOND blocker joins it — the old UI only ever
+    // surfaced "name"; the explainer must list them all.
+    fireEvent.click(screen.getByRole("button", { name: /Perception/ }));
+    expect(screen.getByText(/choose your class skills/i)).toBeInTheDocument();
     // Filling one requirement removes only that row; the rest persist.
     fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
       target: { value: "Borin" },
     });
     expect(screen.queryByText(/name your character/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/human origin feat/i)).toBeInTheDocument();
+    expect(screen.getByText(/choose your class skills/i)).toBeInTheDocument();
   });
 
   it("the all-gold equipment option names its purse on the tab", () => {
@@ -206,28 +160,30 @@ describe("CreationWizard — create-success navigation", () => {
 
   it("the HP-mode badge equals the summary card's HP (per-level grants included)", () => {
     renderWizard();
-    // A Dwarf Fighter at L1: d10 max (10) + CON 0 + Dwarven Toughness (+1/level)
-    // = 11. The average badge must say 11 too — never the die-only 10 beside a
-    // summary card reading 11 (one source, golden rule 6).
+    // A Dwarf Fighter at L1 on the default build: d10 max (10) + CON +2 (14
+    // base, +1 from the Soldier boost = 15) + Dwarven Toughness (+1/level) = 13.
+    // The average badge must say 13 too — never the die-only 10 beside a summary
+    // card reading 13 (one source, golden rule 6).
     fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
       target: { value: "dwarf" },
     });
-    expect(screen.getByText("11 HP")).toBeInTheDocument();
+    expect(screen.getByText("13 HP")).toBeInTheDocument();
     expect(screen.queryByText("10 HP")).not.toBeInTheDocument();
   });
 
   it("D5 — the background ability boosts are a create requirement until assigned", () => {
     renderWizard();
-    // Unassigned boosts block Create and are named in the explainer.
+    // The build arrives with its boosts assigned; releasing one blocks Create
+    // and is named in the explainer.
+    fireEvent.click(screen.getByRole("button", { name: /^STR15/ }));
     expect(screen.getByText(/background ability boosts/i)).toBeInTheDocument();
     // §2.7.3 — the disabled trio carries its one-line cause: the background
     // names WHICH three abilities it boosts.
     expect(
-      screen.getByText(/Acolyte boosts Intelligence, Wisdom, or Charisma\./)
+      screen.getByText(/Soldier boosts Strength, Dexterity, or Constitution\./)
     ).toBeInTheDocument();
-    // Assign +2 INT / +1 WIS (Acolyte's eligible trio is INT/WIS/CHA).
-    fireEvent.click(screen.getByRole("button", { name: /^INT10/ }));
-    fireEvent.click(screen.getByRole("button", { name: /^WIS10/ }));
+    // Re-assign the +2 (Soldier's eligible trio is STR/DEX/CON).
+    fireEvent.click(screen.getByRole("button", { name: /^STR15/ }));
     expect(screen.queryByText(/background ability boosts/i)).not.toBeInTheDocument();
   });
 
@@ -248,9 +204,13 @@ describe("CreationWizard — create-success navigation", () => {
 
   it("the origin-feat blocker jumps to the SPELLS step when the open picks are spells", () => {
     renderWizard();
-    // Guided mode; defaults are Fighter + Acolyte, whose Magic Initiate (Cleric)
-    // feat asks spell picks — those pickers live on the Spells step, so the
-    // review explainer's jump must land there (never the background dead-end).
+    // An Acolyte's Magic Initiate (Cleric) feat asks spell picks — those
+    // pickers live on the Spells step, so the review explainer's jump must land
+    // there (never the background dead-end). Switch the background first; its
+    // new feat's picks are unmade, which is exactly the blocker under test.
+    fireEvent.change(screen.getByRole("combobox", { name: /background/i }), {
+      target: { value: "acolyte" },
+    });
     fireEvent.click(screen.getAllByRole("button", { name: /guided/i })[0] as HTMLElement);
     fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
       target: { value: "Borin" },
@@ -269,11 +229,11 @@ describe("CreationWizard — create-success navigation", () => {
     expect(screen.getByText(/your choices/i)).toBeInTheDocument();
     // The background row carries the choice AND its granted feat, attributed.
     const bgRow = screen.getByRole("button", {
-      name: /Acolyte · Magic Initiate \(Cleric\)/,
+      name: /Soldier · Savage Attacker/,
     });
-    // The skills row lists the background-granted proficiencies.
+    // The skills row lists the background-granted proficiencies first.
     expect(
-      screen.getByRole("button", { name: /Insight · Religion/ })
+      screen.getByRole("button", { name: /Athletics · Intimidation/ })
     ).toBeInTheDocument();
     // One tap = back on the owning step.
     fireEvent.click(bgRow);

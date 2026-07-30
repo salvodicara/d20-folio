@@ -50,8 +50,9 @@ step**. Deploys stay owner-gated (golden rule 22), so `main` may run ahead of li
 the **DDB-parity feature epic** is now **ACTIVE** (OPENED 2026-07-23) with its **bestiary flagship
 SHIPPED** (2026-07-24), the **encounter picker SHIPPED** (2026-07-25; bestiary-first), the
 **2024-DMG XP-budget difficulty calculator SHIPPED** (2026-07-25; the DM-only budget readout),
-**companions/extras SHIPPED** (2026-07-25) and the **account-level homebrew library SHIPPED**
-(2026-07-30; ladder rung (a)); the live head is **quickbuild**. The
+**companions/extras SHIPPED** (2026-07-25), the **account-level homebrew library SHIPPED**
+(2026-07-30; ladder rung (a)) and **quickbuild SHIPPED** (2026-07-30 — creation now OPENS on a
+ready-made build, with a Randomize reroll); the live head is **share links**. The
 competitive map is `docs/POSITIONING.md`. **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
 **id-storage + GR7 i18n-leak-eradication campaign** is **CLOSED** (v0.13.0): every SRD-derived value
@@ -1244,9 +1245,46 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
 - **Public share links: LIVE model** — a `shared: true` flag on the character doc + the
   unguessable doc id as the URL; rules allow anonymous read-only when flagged; revoke = flip the
   flag; noindex; reuses the MemberSheetView read-only rendering.
-- **Quickbuild:** a fast-path creation preset (~10-tap playable level 1 — auto standard array,
-  suggested skills/spells/equipment, all editable after) + pregens, on the existing wizard
-  suggestion machinery. DDB shipped "Quickbuilder" March 2026.
+- **Quickbuild: SHIPPED (2026-07-30) — as "creation opens complete".** There is no separate
+  quickbuild screen: the chooser keeps its two cards (Quick Start · Guided, Guided untouched) and
+  **Quick Start now arrives finished** on the default class's ready-made build — species and its
+  lineage, background, the 2024 standard array dealt in the class's ability priority (expressed
+  through the wizard's own point-buy state, since the array costs exactly the 27-point budget), the
+  background's +2/+1, class skills, cantrips/prepared spells, starting gear, origin languages, the
+  Human origin feat, and every follow-up pick a feat or feature asks for. Only the NAME is left to
+  type. Picking another class on that page rebuilds the sheet from ITS preset: silently when nothing
+  has been sculpted, behind the house confirm ("Rebuild as a {class}? Your tweaks will be replaced.")
+  when it has — and the typed name survives both, always. Presets live in `src/data/quickbuild.ts`,
+  the applicator in `src/lib/quickbuild.ts`, and the choice model both share in
+  `src/lib/creation-choices.ts` (lifted out of the wizard, so the pickers the wizard renders and the
+  answers a preset fills are ONE set — a preset can never satisfy a different set of decisions than
+  the Create gate checks). **D11**: the presets are authored against the FULL game — the composed
+  build hands each class the origin it is actually known by (Bard → Entertainer, Druid/Warlock →
+  Hermit, Monk → Wayfarer, Paladin → Noble, Ranger → Guide, Sorcerer → Charlatan, Artificer →
+  Artisan), and every cantrip/spell is the class's OWN printed recommendation from the wikidot 2024
+  class pages ("… are recommended"), with each class's Primary Ability driving the score order. The
+  PUBLIC set is the SRD-legal projection of that (only four SRD backgrounds exist, so several classes
+  fall back on the Acolyte — correct for the SRD-only build, never seen in the composed one): the
+  pack REPLACES those presets per class through the `overlayPackRecord` seam (`src/lib/pack-merge.ts`;
+  additive catalogues keep `mergePackRecord`'s throw-on-collision). Guards:
+  `quickbuild-presets.guard.test.ts` (every preset legal + complete + the 27-point identity, derived
+  from the preset table), `quickbuild-path.test.tsx` (the real wizard driven per composed preset,
+  through `handleCreate` to the written document, plus the edge-case contract: name-sacred,
+  rebuild-confirm both arms, path-switch preservation, level-change grace) and the pack's
+  `quickbuild-override.test.ts`. Separate named PREGENS were NOT built — the presets fill that role.
+  DDB shipped "Quickbuilder" March 2026.
+- **Randomize: SHIPPED (2026-07-30).** Quick Start carries a **Randomize** control (BG3-style,
+  class-first): each tap KEEPS the class and its ability priority — playability is not random — and
+  draws the rest of the sheet again from the composed pools: species + lineage, background + which of
+  its abilities take the +2/+1, class skills, level-1 cantrips/spells, origin languages, the Human
+  origin feat, and every follow-up pick. It is a chaos button by design (no partial preserve, no
+  confirm — one more tap rerolls again) and never touches the typed name. `rollQuickbuildFlavor`
+  (`src/lib/quickbuild-random.ts`) emits a PRESET, so a roll lands through the same applicator and is
+  complete by construction; the randomness is injected (`Rng`), making the roller pure and
+  seed-reproducible, with `crypto.getRandomValues` the only entropy (no `Math.random`, and no dice —
+  golden rule 21 is about rolls of the GAME, and none are generated here). Pinned by a seeded property
+  battery over every composed class × 8 seeds (`quickbuild-random.test.ts`) plus the render test's
+  reroll case. Guided never offers it.
 - **Compendium completeness:** species/backgrounds/subclasses/conditions/rules-glossary sections
   (+ Monsters when the bestiary lands) — this DEFINES the open Phase-4 "compendium polish" scope.
 - **XP:** an optional per-character XP counter with a threshold-reached → Level-up nudge;
@@ -1264,9 +1302,10 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   split-aware authoring the charter references is already the live world (public SRD repo + private
   pack); the old #32 issue was deleted with the split, so THIS charter is the surviving coordination
   record. `bestiary` is DONE (2026-07-24), `encounter picker` DONE (2026-07-25), `difficulty calc`
-  DONE (2026-07-25), `companions` DONE (2026-07-25) and `homebrew library` rung (a) DONE (2026-07-30);
-  the live attack-order head is `quickbuild`, with the pack-side MM corpus the standing parallel
-  content job and homebrew rung (b) — campaign sharing — queued behind it.]
+  DONE (2026-07-25), `companions` DONE (2026-07-25), `homebrew library` rung (a) DONE (2026-07-30)
+  and `quickbuild` DONE (2026-07-30); the live attack-order head is `share links`, with the
+  pack-side MM corpus the standing parallel content job and homebrew rung (b) — campaign sharing —
+  queued behind it.]
 
 ## Shipped epic — BG3-Grade Identity Evolution Epic
 

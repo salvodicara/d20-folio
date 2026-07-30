@@ -520,22 +520,27 @@ leave-confirms are DIRTY-gated (`useBlocker` + `beforeunload`). The old single-s
 
 - its step files + `SpellPicker` + `AbilityScoreGrid` are deleted (superseded; golden rule 10).
 
-**The creation choice model.** What a brand-new character still owes lives OUTSIDE the wizard, in
-`src/lib/creation-choices.ts`: the 2024 origin-language slot (Common + 2, Common excluded because it
-is already seeded) and `creationChoiceSlots(build)` — every pending `choice-*` slot the build's
-sources confer (class grants, background grants, the Human Versatile + background origin feats, and
-the class/subclass features through the starting level, with the level's spell-slot row as
-`SpellChoiceCtx`). The wizard RENDERS those slots; the preset engine FILLS them.
+**The creation choice model + the READY-MADE build.** What a brand-new character still owes lives
+OUTSIDE the wizard, in `src/lib/creation-choices.ts`: the 2024 origin-language slot (Common + 2,
+Common excluded because it is already seeded) and `creationChoiceSlots(build)` — every pending
+`choice-*` slot the build's sources confer (class grants, background grants, the Human Versatile +
+background origin feats, and the class/subclass features through the starting level, with the level's
+spell-slot row as `SpellChoiceCtx`). The wizard RENDERS those slots; the preset engine FILLS them.
 
-A **quickbuild preset** (`src/data/quickbuild.ts`) is one ready-made level-1 build per class, ids
-only: an `abilityOrder` the 2024 standard array is dealt into (that array costs EXACTLY the 27-point
-point-buy budget, so a preset rides the wizard's existing point-buy state — no third abilities
-mechanism), the background +2/+1, skills, spells, languages, lineage/Human feat, and per-kind choice
-picks consumed in SLOT ORDER against the collected slots. `quickbuildDraft` (`src/lib/quickbuild.ts`)
-turns one into creation state. Because both sides read ONE slot seam, a preset can never answer a
-different set of decisions than the Create gate checks (golden rule 6);
-`quickbuild-presets.guard.test.ts` pins legality, completeness and the 27-point identity, all derived
-from the preset table.
+Creation is therefore never a blank form: **Quick Start opens already complete** on the default
+class's ready-made build (`DEFAULT_QUICKBUILD_PRESET`), and picking another class on that page
+rebuilds the sheet from ITS preset — silently when nothing has been sculpted, behind the house
+confirm when it has (`sameAppliedQuickbuild` compares the live state against exactly what
+`applyPreset` wrote, so the yardstick can never drift from the thing it measures). The typed NAME is
+outside that yardstick and is never touched. `quickbuildDraft` (`src/lib/quickbuild.ts`) turns a
+preset (`src/data/quickbuild.ts`) into that state: an `abilityOrder` the 2024 standard array is dealt
+into (that array costs EXACTLY the 27-point point-buy budget, so it rides the wizard's existing
+point-buy state — no third abilities mechanism), the background +2/+1, skills, spells, languages,
+lineage/Human feat, and per-kind choice picks consumed in SLOT ORDER against the collected slots.
+Because both sides read ONE slot seam, a preset can never answer a different set of decisions than
+the Create gate checks (golden rule 6); pinned by `quickbuild-presets.guard.test.ts` (legality +
+completeness + the 27-point identity, all derived from the preset table) and
+`quickbuild-path.test.tsx` (the REAL wizard driven per preset, through to the written document).
 
 The preset record is the one place where the pack **REPLACES** public data instead of adding to it
 (`overlayPackRecord`, `src/lib/pack-merge.ts`): the public set can only reach for the SRD's four
@@ -545,16 +550,16 @@ class the origin it is known by (D11 — the split is licensing, never scope). A
 override seam is pinned public-side by `pack-merge.test.ts` and composed-side by the pack's own
 `quickbuild-override.test.ts`.
 
-**`rollQuickbuildFlavor`** (`src/lib/quickbuild-random.ts`) is the same machinery run backwards: it
-keeps a class and its ability priority (a rolled character must stay playable) and draws species +
-lineage, background + which of its abilities take the +2/+1, class skills, level-1 spells, languages,
-the Human origin feat and every follow-up pick from the COMPOSED pools — emitting a
-`QuickbuildPreset`, so a roll flows through the identical applicator. Randomness is INJECTED (`Rng`),
-which makes the roller a pure, seed-reproducible function; the only entropy is `cryptoRng`
-(`crypto.getRandomValues`, the same source the campaign invite codes use) at the bottom of that
-module. This is not dice (golden rule 21) — nothing here generates a roll of the game. A seeded
-property battery (`quickbuild-random.test.ts`: every composed class × many seeds) pins every draw
-legal and every slot filled.
+**Randomize** (`src/lib/quickbuild-random.ts`) is the same machinery run backwards:
+`rollQuickbuildFlavor` keeps the class and its ability priority (a rolled character must stay
+playable) and draws species + lineage, background + which of its abilities take the +2/+1, class
+skills, level-1 spells, languages, the Human origin feat and every follow-up pick from the COMPOSED
+pools — emitting a `QuickbuildPreset`, so a roll lands through the identical applicator and gate.
+Randomness is INJECTED (`Rng`), which makes the roller a pure, seed-reproducible function; the only
+entropy is `cryptoRng` (`crypto.getRandomValues`, the same source the campaign invite codes use) at
+the bottom of that module. This is not dice (golden rule 21) — nothing here generates a roll of the
+game. A seeded property battery (`quickbuild-random.test.ts`: every composed class × many seeds) pins
+every draw legal and every slot filled.
 
 **2024 multiclassing (#36).** The level-up wizard's Hit Points step carries the CLASS FORK: advance an
 owned class or take the first level of a new one. The facts live on the class tables (`primaryAbility`

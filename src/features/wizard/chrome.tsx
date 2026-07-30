@@ -20,6 +20,7 @@ import { ArrowLeft, ArrowRight, BookOpen, Check, Zap } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
 import { useRealmBackdrop } from "@/hooks/useRealmBackdrop";
+import type { Mode } from "@/features/creation/steps/steps";
 import { cn } from "@/lib/utils";
 
 // ─── Step model ───────────────────────────────────────────────────────────────
@@ -205,16 +206,12 @@ export function WizardForkTab({
 
 // ─── Quick-start / Guided path plaques ────────────────────────────────────────
 
-export function WizardPaths({
-  mode,
-  onMode,
-}: {
-  mode: "quick" | "guided";
-  onMode: (m: "quick" | "guided") => void;
-}) {
+export function WizardPaths({ mode, onMode }: { mode: Mode; onMode: (m: Mode) => void }) {
   const { t } = useTranslation();
   return (
     <div className="wiz-paths" role="group" aria-label={t("create.modeToggle")}>
+      {/* Two paths: a finished character to sculpt, or one built decision by
+          decision. Both land on the same build. */}
       <button
         type="button"
         className="wiz-path"

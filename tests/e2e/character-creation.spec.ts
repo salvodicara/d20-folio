@@ -21,7 +21,7 @@ test.describe("Character Creation Wizard", () => {
 
   test("Quick Start: can fill in character name", async ({ page }) => {
     // Look for Quick Start option
-    const quickStart = page.getByRole("button", { name: /quick/i }).first();
+    const quickStart = page.getByRole("button", { name: /quick start/i }).first();
     if (await quickStart.isVisible({ timeout: 2000 }).catch(() => false)) {
       await quickStart.click();
     }
@@ -34,7 +34,7 @@ test.describe("Character Creation Wizard", () => {
   });
 
   test("Quick Start: can select a class", async ({ page }) => {
-    const quickStart = page.getByRole("button", { name: /quick/i }).first();
+    const quickStart = page.getByRole("button", { name: /quick start/i }).first();
     if (await quickStart.isVisible({ timeout: 2000 }).catch(() => false)) {
       await quickStart.click();
     }
@@ -47,7 +47,7 @@ test.describe("Character Creation Wizard", () => {
   });
 
   test("Quick Start: validates required fields", async ({ page }) => {
-    const quickStart = page.getByRole("button", { name: /quick/i }).first();
+    const quickStart = page.getByRole("button", { name: /quick start/i }).first();
     if (await quickStart.isVisible({ timeout: 2000 }).catch(() => false)) {
       await quickStart.click();
     }

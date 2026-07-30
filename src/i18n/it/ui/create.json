@@ -10,7 +10,8 @@
     "speciesLabel": "Specie",
     "backgroundLabel": "Background",
     "abilityScores": "Punteggi Caratteristica",
-    "quickStart": "Avvio Rapido",
+    "randomize": "Sorteggia",
+    "randomizeHint": "Mantiene la classe e sorteggia di nuovo tutto il resto.",
     "guided": "Guidato",
     "modeToggle": "Modalità di creazione",
     "lineagePlaceholder": "Scegli un lignaggio...",
@@ -115,6 +116,11 @@
     "titleSpells": "Scegli i tuoi Incantesimi",
     "titleEquipment": "Prendi il tuo Equipaggiamento",
     "titleBgAsi": "Potenzia le tue Caratteristiche",
-    "titleAbilities": "Assegna le tue Caratteristiche"
+    "titleAbilities": "Assegna le tue Caratteristiche",
+    "randomizeAria": "Sorteggia: mantiene la classe e sorteggia di nuovo tutto il resto.",
+    "quickStart": "Avvio Rapido",
+    "rebuildTitle": "Ricostruire come {{class}}?",
+    "rebuildMessage": "Le tue modifiche saranno sostituite dalla build pronta di quella classe. Il nome resta.",
+    "rebuildConfirm": "Ricostruisci"
   }
 }

@@ -20,6 +20,9 @@ import { useNavigate, useBlocker } from "react-router";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { formatSpeed } from "@/lib/utils";
 import { Input, NumberStepper } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { Shuffle } from "lucide-react";
 import { Select } from "@/components/shared/Select";
 import { SearchField } from "@/components/shared/SearchField";
 import { matchesSearch } from "@/lib/search";
@@ -43,7 +46,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { asLocale } from "@/lib/locale";
 import { createCharacter } from "@/lib/firestore";
-import { classTables, getFeaturesAtLevel } from "@/data/classes";
+import { classTables } from "@/data/classes";
 import { SRD_RACES } from "@/data/races";
 import { asRaceId } from "@/data/srd-names";
 import { SRD_BACKGROUNDS, getBackgroundEquipmentOptions } from "@/data/backgrounds";
@@ -77,8 +80,6 @@ import {
 } from "@/lib/expanded-spells";
 import {
   resolveGrantSourcesForFeatures,
-  resolveGrantSourcesForClass,
-  resolveGrantSourcesForBackground,
   toolChoiceContextForClass,
   toolChoiceContextForBackground,
 } from "@/lib/resolve-grant-sources";
@@ -90,17 +91,31 @@ import {
   isAllChoicesComplete,
   applyChoicePicks,
   hasAnyChoiceSlots,
-  EMPTY_CHOICE_PICKS,
   type ChoicePicks,
 } from "@/lib/feature-choices";
 import { isSpellChoicesComplete } from "@/lib/feat-spell-choices";
 import {
-  STANDARD_LANGUAGE_IDS,
   isLanguagePicksComplete,
   applyLanguagePicks,
-  type LanguageChoiceSlot,
   type LanguageChoicePicks,
 } from "@/lib/feat-language-choices";
+import {
+  ORIGIN_LANGUAGE_SLOTS,
+  ORIGIN_LANGUAGE_SLOT_ID,
+  creationChoiceSlots,
+} from "@/lib/creation-choices";
+import {
+  DEFAULT_QUICKBUILD_CLASS,
+  DEFAULT_QUICKBUILD_PRESET,
+  QUICKBUILD_PRESETS,
+  type QuickbuildPreset,
+} from "@/data/quickbuild";
+import {
+  appliedQuickbuildState,
+  quickbuildDraft,
+  sameAppliedQuickbuild,
+} from "@/lib/quickbuild";
+import { cryptoRng, rollQuickbuildFlavor } from "@/lib/quickbuild-random";
 import { FeatureChoicesSection } from "@/components/sheet/FeatureChoicesSection";
 import { LanguageChoicePicker } from "@/components/sheet/LanguageChoicePicker";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
@@ -203,22 +218,15 @@ function mergeStartingEquipment(
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 /**
- * RA-28 — the 2024 origin-language pick ("Common plus two languages of your
- * choice from the standard languages table"). ONE hand-built `choice-language`
- * slot fed to the guided/quick `LanguageChoicePicker`; the seed already grants
- * Common, so Common is EXCLUDED from the pool — `applyLanguagePicks` dedupes
- * against the `["common"]` seed, so offering Common would let a "2 of 2" slot
- * silently yield only 1 new language. Module-level so the slot reference is
- * stable across renders.
+ * The build the page OPENS with: creation is never a blank form — the one-page
+ * Quick Start arrives complete, on the wizard's default class, and every
+ * control edits it from there (`data/quickbuild.ts`).
  */
-const ORIGIN_LANGUAGE_SLOT_ID = "origin";
-const ORIGIN_LANGUAGE_SLOTS: readonly LanguageChoiceSlot[] = [
-  {
-    slotId: ORIGIN_LANGUAGE_SLOT_ID,
-    amount: 2,
-    options: STANDARD_LANGUAGE_IDS.filter((id) => id !== "common"),
-  },
-];
+const INITIAL_BUILD = {
+  classId: DEFAULT_QUICKBUILD_CLASS,
+  preset: DEFAULT_QUICKBUILD_PRESET,
+};
+const INITIAL = appliedQuickbuildState(INITIAL_BUILD.classId, INITIAL_BUILD.preset);
 
 export function CreationWizard() {
   const { t } = useTranslation();
@@ -245,119 +253,56 @@ export function CreationWizard() {
 
   // Form state
   const [name, setName] = useState("");
-  const [selectedClass, setSelectedClass] = useState("fighter");
+  const [selectedClass, setSelectedClass] = useState(INITIAL.classId);
   const [level, setLevel] = useState(1);
-  const [selectedRace, setSelectedRace] = useState("human");
-  const [selectedBackground, setSelectedBackground] = useState("acolyte");
+  const [selectedRace, setSelectedRace] = useState(INITIAL.raceId);
+  const [selectedBackground, setSelectedBackground] = useState(INITIAL.backgroundId);
   const [selectedSubclass, setSelectedSubclass] = useState("");
   const [usePointBuy, setUsePointBuy] = useState(true);
-  const [abilityScores, setAbilityScores] = useState<Record<AbilityCode, number>>({
-    STR: 10,
-    DEX: 10,
-    CON: 10,
-    INT: 10,
-    WIS: 10,
-    CHA: 10,
-  });
+  const [abilityScores, setAbilityScores] = useState<Record<AbilityCode, number>>(
+    INITIAL.abilityScores
+  );
   const [bgAsiMode, setBgAsiMode] = useState<"+2/+1" | "+1/+1/+1">("+2/+1");
   const [bgAsiChoices, setBgAsiChoices] = useState<Partial<Record<AbilityCode, number>>>(
-    {}
+    INITIAL.bgAsiChoices
   );
   // RA-28 — the origin +2 language picks (Common is seeded separately).
-  const [languagePicks, setLanguagePicks] = useState<LanguageChoicePicks>({});
-  const [humanFeat, setHumanFeat] = useState("");
+  const [languagePicks, setLanguagePicks] = useState<LanguageChoicePicks>(
+    INITIAL.languagePicks
+  );
+  const [humanFeat, setHumanFeat] = useState(INITIAL.humanFeat);
   // Creation-time lineage choice (Elven / Gnomish lineage); bundleKey → optionId.
-  const [lineageChoices, setLineageChoices] = useState<Record<string, string>>({});
+  const [lineageChoices, setLineageChoices] = useState<Record<string, string>>({
+    ...INITIAL.lineageChoices,
+  });
   // L3 — unified origin-feat choices (Human Versatile + background feat) in one
   // ChoicePicks keyed by SOURCE+kind-namespaced slot id.
-  const [creationChoicePicks, setCreationChoicePicks] =
-    useState<ChoicePicks>(EMPTY_CHOICE_PICKS);
+  const [creationChoicePicks, setCreationChoicePicks] = useState<ChoicePicks>(
+    INITIAL.choicePicks
+  );
   const [alignment, setAlignment] = useState("");
   // The guided background gallery's find-as-you-type filter (60+ plaques).
   const [bgQuery, setBgQuery] = useState("");
-  const [selectedClassSkills, setSelectedClassSkills] = useState<string[]>([]);
-  const [selectedCantrips, setSelectedCantrips] = useState<string[]>([]);
-  const [selectedSpells, setSelectedSpells] = useState<string[]>([]);
+  const [selectedClassSkills, setSelectedClassSkills] = useState<string[]>([
+    ...INITIAL.classSkills,
+  ]);
+  const [selectedCantrips, setSelectedCantrips] = useState<string[]>([
+    ...INITIAL.cantrips,
+  ]);
+  const [selectedSpells, setSelectedSpells] = useState<string[]>([...INITIAL.spells]);
   // The chosen starting-equipment option per source — the 2024 "Choose A or B"
   // fork (default "A", the suggested gear package). TWO independent decisions:
   // the class package and the background package.
   const [classEquipLabel, setClassEquipLabel] = useState("A");
   const [bgEquipLabel, setBgEquipLabel] = useState("A");
+  // The build the page last PREFILLED — Randomize rerolls it, and it is the
+  // yardstick for "has the player sculpted anything since?".
+  const [applied, setApplied] = useState<{
+    classId: string;
+    preset: QuickbuildPreset;
+  }>(INITIAL_BUILD);
   const [hpMode, setHpMode] = useState<"average" | "rolled">("average");
   const [rolledHp, setRolledHp] = useState<number | null>(null);
-
-  // ── Leave-creation guard (A1) ───────────────────────────────────────────────
-  // A half-built character is unsaved local state — but only once the player has
-  // actually INVESTED something (typed a name, made a pick, moved a step). A
-  // pristine wizard never blocks: browser back simply leaves (owner 2026-06-11).
-  // The same blocker guards the in-chrome exit (which navigates) — ONE confirm seam.
-  const dirty =
-    name.trim().length > 0 ||
-    (mode === "guided" && guidedStep !== "class") ||
-    selectedClass !== "fighter" ||
-    selectedRace !== "human" ||
-    selectedBackground !== "acolyte" ||
-    level !== 1 ||
-    selectedSubclass !== "" ||
-    alignment !== "" ||
-    humanFeat !== "" ||
-    selectedClassSkills.length > 0 ||
-    selectedCantrips.length > 0 ||
-    selectedSpells.length > 0 ||
-    Object.keys(lineageChoices).length > 0 ||
-    Object.keys(bgAsiChoices).length > 0 ||
-    (languagePicks[ORIGIN_LANGUAGE_SLOT_ID] ?? []).length > 0;
-  const finishingRef = useRef(false);
-  const blocker = useBlocker(
-    useCallback(
-      ({
-        currentLocation,
-        nextLocation,
-      }: {
-        currentLocation: { pathname: string };
-        nextLocation: { pathname: string };
-      }) =>
-        dirty &&
-        !finishingRef.current &&
-        currentLocation.pathname !== nextLocation.pathname,
-      [dirty]
-    )
-  );
-  // ONE confirm per blocked navigation (a re-render while blocked must never
-  // stack a second dialog or orphan the first resolver).
-  const confirmingRef = useRef(false);
-  useEffect(() => {
-    if (blocker.state !== "blocked" || confirmingRef.current) return;
-    confirmingRef.current = true;
-    let active = true;
-    void useConfirmStore
-      .getState()
-      .confirm({
-        title: t("create.leaveTitle"),
-        message: t("create.leaveMessage"),
-        confirmLabel: t("common.discard"),
-        cancelLabel: t("common.continue"),
-      })
-      .then((ok) => {
-        confirmingRef.current = false;
-        if (!active) return;
-        if (ok) blocker.proceed();
-        else blocker.reset();
-      });
-    return () => {
-      active = false;
-    };
-  }, [blocker, t]);
-  // Browser-level leave (refresh / tab close) — the native prompt, dirty only.
-  useEffect(() => {
-    if (!dirty) return;
-    const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (finishingRef.current) return;
-      e.preventDefault();
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [dirty]);
 
   // A page turn starts at the TOP of the new page (owner 2026-06-11).
   useEffect(() => {
@@ -474,42 +419,22 @@ export function CreationWizard() {
   // compiler auto-memoizes this render path itself (same pattern as the
   // LevelUpModal's inline gates).
   const bgFeatSlug = selectedBgData?.feat ?? "";
-  const creationChoiceSlots = (() => {
-    const refs = [humanFeat, bgFeatSlug]
-      .filter((slug) => !!slug)
-      .map((srdId) => ({ srdId }));
-    const subclassSlug = (selectedSubclass || "").toLowerCase();
-    for (let lvl = 1; lvl <= level; lvl++) {
-      for (const f of getFeaturesAtLevel(selectedClass, lvl)) {
-        if (f.subclass && f.subclass.toLowerCase() !== subclassSlug) continue;
-        refs.push({ srdId: f.id });
-      }
-    }
-    const slotRow = classTable?.levels[level - 1]?.spellSlots ?? [];
-    // Class-level grants (Monk/Bard level-1 tool-proficiency choice) AND the
-    // background's own grants ("Choose one kind of <Musical Instrument / Gaming Set
-    // / Artisan's Tools>" — Entertainer, Artisan, Guard, …) join the feature
-    // sources so every tool-proficiency pick surfaces in the FeatureChoicesSection.
-    const sources = [
-      ...resolveGrantSourcesForClass(selectedClass),
-      ...resolveGrantSourcesForBackground(selectedBackground),
-      ...resolveGrantSourcesForFeatures(refs),
-    ];
-    return collectChoiceSlots(sources, {
-      spellSlotsByClass: { [selectedClass]: slotRow },
-    });
-  })();
-  const activeCreationChoicePicks = pruneChoicePicks(
-    creationChoiceSlots,
-    creationChoicePicks
-  );
+  const creationSlots = creationChoiceSlots({
+    classId: selectedClass,
+    level,
+    subclassId: selectedSubclass,
+    backgroundId: selectedBackground,
+    humanFeat,
+    bgFeat: bgFeatSlug,
+  });
+  const activeCreationChoicePicks = pruneChoicePicks(creationSlots, creationChoicePicks);
   // The Human Versatile feat is PICKED in this wizard — its nested choices
   // (Magic Initiate's spells, Skilled's skills, …) expand INLINE directly
   // under the feat picker, attributed to their cause (owner, 2026-06-10).
   // Everything else (background feat + class features) keeps its home:
   // spell slots in the Spells step, the rest in the catch-all section.
   const { caused: humanFeatSlots, rest: creationRestSlots } =
-    partitionChoiceSlotsBySource(creationChoiceSlots, isHuman ? humanFeat : null);
+    partitionChoiceSlotsBySource(creationSlots, isHuman ? humanFeat : null);
   // Spell choices surface in the Spells step; the Review catch-all shows only the
   // NON-spell origin choices so a choice never appears twice in the same wizard.
   const reviewChoiceSlots = { ...creationRestSlots, spell: [] };
@@ -520,7 +445,7 @@ export function CreationWizard() {
   // drives the create-time merge, so preview and creation never drift (rule 6).
   // Computed inline (no manual `useMemo`): `activeCreationChoicePicks` is a
   // freshly-derived object the React Compiler can't preserve a manual memo over —
-  // it auto-memoizes this render path itself (same pattern as `creationChoiceSlots`).
+  // it auto-memoizes this render path itself (same pattern as `creationSlots`).
   const classToolChoice = toolChoiceContextForClass(
     selectedClass,
     activeCreationChoicePicks.tool
@@ -943,7 +868,7 @@ export function CreationWizard() {
       // the unified choice engine. Jack-of-All-Trades is DERIVED from the feature
       // at render (#57) — never baked into stored `skills`.
       const finalCharacter = applyLanguagePicks(
-        applyChoicePicks(characterData, creationChoiceSlots, activeCreationChoicePicks),
+        applyChoicePicks(characterData, creationSlots, activeCreationChoicePicks),
         languagePicks
       );
       const docId = await createCharacter(user.uid, {
@@ -989,7 +914,7 @@ export function CreationWizard() {
     effBgEquipLabel,
     classToolChoice,
     bgToolChoice,
-    creationChoiceSlots,
+    creationSlots,
     activeCreationChoicePicks,
     lineageChoices,
     languagePicks,
@@ -1022,6 +947,99 @@ export function CreationWizard() {
     lineageBundles.length === 0 ||
     lineageBundles.every((b) => lineageChoices[b.bundleKey] !== undefined);
 
+  // Has the player changed anything since the build was applied? Compared field
+  // by field against what `applyPreset` writes (`appliedQuickbuildState`), so it
+  // can never drift from the thing it measures — the NAME and the other
+  // untouched fields are deliberately outside that yardstick.
+  const sculpted = !sameAppliedQuickbuild(
+    appliedQuickbuildState(applied.classId, applied.preset),
+    {
+      classId: selectedClass,
+      subclassId: selectedSubclass,
+      level,
+      raceId: selectedRace,
+      backgroundId: selectedBackground,
+      usePointBuy,
+      abilityScores,
+      bgAsiMode,
+      bgAsiChoices,
+      classSkills: selectedClassSkills,
+      cantrips: selectedCantrips,
+      spells: selectedSpells,
+      languagePicks,
+      lineageChoices,
+      humanFeat,
+      choicePicks: activeCreationChoicePicks,
+      classEquipLabel: effClassEquipLabel,
+      bgEquipLabel: effBgEquipLabel,
+    }
+  );
+
+  // ── Leave-creation guard (A1) ───────────────────────────────────────────────
+  // A half-built character is unsaved local state — but only once the player has
+  // actually INVESTED something (typed a name, made a pick, moved a step). A
+  // pristine wizard never blocks: browser back simply leaves (owner 2026-06-11).
+  // The same blocker guards the in-chrome exit (which navigates) — ONE confirm seam.
+  // The page ARRIVES with a complete build, so "invested" cannot mean "differs
+  // from empty" any more: it means the player named the character, sculpted the
+  // build away from what was handed to them (`sculpted`), added lore, or walked
+  // into the guided journey.
+  const dirty =
+    name.trim().length > 0 ||
+    (mode === "guided" && guidedStep !== "class") ||
+    alignment !== "" ||
+    sculpted;
+  const finishingRef = useRef(false);
+  const blocker = useBlocker(
+    useCallback(
+      ({
+        currentLocation,
+        nextLocation,
+      }: {
+        currentLocation: { pathname: string };
+        nextLocation: { pathname: string };
+      }) =>
+        dirty &&
+        !finishingRef.current &&
+        currentLocation.pathname !== nextLocation.pathname,
+      [dirty]
+    )
+  );
+  // ONE confirm per blocked navigation (a re-render while blocked must never
+  // stack a second dialog or orphan the first resolver).
+  const confirmingRef = useRef(false);
+  useEffect(() => {
+    if (blocker.state !== "blocked" || confirmingRef.current) return;
+    confirmingRef.current = true;
+    let active = true;
+    void useConfirmStore
+      .getState()
+      .confirm({
+        title: t("create.leaveTitle"),
+        message: t("create.leaveMessage"),
+        confirmLabel: t("common.discard"),
+        cancelLabel: t("common.continue"),
+      })
+      .then((ok) => {
+        confirmingRef.current = false;
+        if (!active) return;
+        if (ok) blocker.proceed();
+        else blocker.reset();
+      });
+    return () => {
+      active = false;
+    };
+  }, [blocker, t]);
+  // Browser-level leave (refresh / tab close) — the native prompt, dirty only.
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (finishingRef.current) return;
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
   // ─── Create requirements (single source of truth) ────────────────────────────
   // ONE list drives BOTH the disabled gate AND the "what's left to finish"
   // explainer, so the button and the message can never disagree.
@@ -1145,6 +1163,79 @@ export function CreationWizard() {
     setSelectedRace(id);
     setHumanFeat("");
     setLineageChoices({});
+  }
+
+  /**
+   * Apply a whole build in one go — the ONE state seam both quickbuild legs use
+   * (the class's ready-made preset, and a Randomize reroll of it). The preset
+   * STATES most of the build; the draft carries only what has to be COMPUTED
+   * (the standard-array scores, the boosts, the slot-filled picks).
+   */
+  function applyPreset(classId: string, preset: QuickbuildPreset) {
+    const draft = quickbuildDraft(classId, preset);
+    setSelectedClass(classId);
+    setSelectedSubclass("");
+    setLevel(1);
+    setSelectedRace(preset.raceId);
+    setSelectedBackground(preset.backgroundId);
+    setUsePointBuy(true);
+    setAbilityScores(draft.abilityScores);
+    setBgAsiMode("+2/+1");
+    setBgAsiChoices(draft.bgAsiChoices);
+    setSelectedClassSkills([...preset.classSkills]);
+    setSelectedCantrips([...(preset.cantrips ?? [])]);
+    setSelectedSpells([...(preset.spells ?? [])]);
+    setLanguagePicks(draft.languagePicks);
+    setLineageChoices({ ...(preset.lineage ?? {}) });
+    setHumanFeat(preset.humanFeat ?? "");
+    setCreationChoicePicks(draft.choicePicks);
+    setClassEquipLabel("A");
+    setBgEquipLabel("A");
+    // The NAME is never part of a build: a preset or a reroll must never wipe
+    // what the player typed (owner: "name is sacred").
+    setApplied({ classId, preset });
+  }
+
+  /**
+   * The quick page's CLASS control: choosing a class rebuilds the sheet from
+   * that class's ready-made preset. A pristine sheet is replaced silently —
+   * that is the whole promise — but hand edits are the player's work, so a
+   * SCULPTED sheet asks first. The typed name never enters it either way.
+   */
+  function requestClassPrefill(classId: string) {
+    const preset = QUICKBUILD_PRESETS[classId];
+    // Every composed class carries a preset (quickbuild-presets.guard) — a
+    // missing one is a data bug, never a path a player can reach.
+    if (!preset) return;
+    if (sculpted) {
+      void useConfirmStore
+        .getState()
+        .confirm({
+          title: t("create.rebuildTitle", { class: presClassName(classId, locale) }),
+          message: t("create.rebuildMessage"),
+          confirmLabel: t("create.rebuildConfirm"),
+          cancelLabel: t("common.cancel"),
+        })
+        .then((ok) => {
+          if (ok) applyPreset(classId, preset);
+        });
+      return;
+    }
+    applyPreset(classId, preset);
+  }
+
+  /**
+   * RANDOMIZE: keep the class (and its ability priority — a rolled character
+   * must still be playable) and draw the rest of the sheet afresh from the
+   * composed pools. The roll produces a preset, so it lands through the very
+   * same seam, complete by construction. Not dice (golden rule 21): this draws
+   * a character at creation, never a roll of the game.
+   */
+  function randomizeQuickbuild() {
+    applyPreset(
+      applied.classId,
+      rollQuickbuildFlavor(applied.classId, applied.preset, cryptoRng)
+    );
   }
 
   // The subclass <Select> — reused in quick mode + class step + review step.
@@ -1461,6 +1552,7 @@ export function CreationWizard() {
       paths={
         <WizardPaths
           mode={mode}
+          // The two paths share ONE build: switching never resets anything.
           onMode={(m) => {
             setMode(m);
             if (m === "guided") setGuidedStep("class");
@@ -1518,7 +1610,7 @@ export function CreationWizard() {
             commit={guidedStep === "review"}
           />
         ) : (
-          // Quick mode shares the same page-turn pager; back exits, the one
+          // Quick Start shares the same page-turn pager; back exits, the one
           // forward action is the create CTA.
           <WizardNav
             backLabel={t("wizard.exit")}
@@ -1533,7 +1625,7 @@ export function CreationWizard() {
       }
     >
       {mode === "quick" ? (
-        // ──── QUICK START — every choice on one page ────────────────────────
+        // ──── QUICK START — a complete character, every choice on one page ───
         <>
           <WizardChrome
             steps={[]}
@@ -1555,9 +1647,27 @@ export function CreationWizard() {
               />
             </FormField>
 
-            {/* Class */}
+            {/* Randomize — offered once a quickbuild landed here: keep the class
+                you chose, draw the rest of the sheet again. */}
+            <div className="-mt-3 flex items-center justify-end gap-3">
+              <p className="on-art text-xs text-text-muted">
+                {t("create.randomizeHint")}
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={randomizeQuickbuild}
+                aria-label={t("create.randomizeAria")}
+                title={t("create.randomizeHint")}
+              >
+                <Icon as={Shuffle} size="sm" decorative />
+                {t("create.randomize")}
+              </Button>
+            </div>
+
+            {/* Class — picking one rebuilds the sheet from its preset. */}
             <FormField label={t("create.classLabel")}>
-              <ClassPlaques selected={selectedClass} onPick={onClassChange} />
+              <ClassPlaques selected={selectedClass} onPick={requestClassPrefill} />
             </FormField>
 
             {/* Level + Subclass row */}

@@ -10,7 +10,8 @@
     "speciesLabel": "Species",
     "backgroundLabel": "Background",
     "abilityScores": "Ability Scores",
-    "quickStart": "Quick Start",
+    "randomize": "Randomize",
+    "randomizeHint": "Keeps your class, draws everything else again.",
     "guided": "Guided",
     "modeToggle": "Creation mode",
     "lineagePlaceholder": "Choose a lineage...",
@@ -115,6 +116,11 @@
     "titleSpells": "Choose Your Spells",
     "titleEquipment": "Take Your Equipment",
     "titleBgAsi": "Boost Your Abilities",
-    "titleAbilities": "Assign Your Abilities"
+    "titleAbilities": "Assign Your Abilities",
+    "randomizeAria": "Randomize: keeps your class and draws everything else again.",
+    "quickStart": "Quick Start",
+    "rebuildTitle": "Rebuild as a {{class}}?",
+    "rebuildMessage": "Your tweaks will be replaced by that class's ready-made build. Your name stays.",
+    "rebuildConfirm": "Rebuild"
   }
 }

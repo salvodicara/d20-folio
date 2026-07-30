@@ -111,6 +111,22 @@ function entryOf(row: HTMLElement): HTMLElement {
   return entry as HTMLElement;
 }
 
+/** Pick a spell row inside ONE feat entry's own asks column — the page can host
+ *  two Magic-Initiate slots at once (the background's and the Human feat's). */
+function spellRowInFeat(fid: string, name: string): HTMLElement {
+  const entry = document.querySelector(`[data-fid="${fid}"]`);
+  if (!entry) throw new Error(`feat entry not found: ${fid}`);
+  const row = within(entry as HTMLElement)
+    .getAllByRole("button")
+    .find((b) => b.classList.contains("wiz-row") && b.textContent.includes(name));
+  if (!row) throw new Error(`spell row not found in ${fid}: ${name}`);
+  return row;
+}
+
+function pickSpellInFeat(fid: string, name: string): void {
+  fireEvent.click(spellRowInFeat(fid, name));
+}
+
 /** Choose a feat through the wizard-F morph list: open the row (read), then
  *  commit via the explicit "Choose <name>" CTA (read-then-choose). */
 function chooseFeat(name: string): void {
@@ -145,16 +161,15 @@ describe("CreationWizard — Cleric / Magic-Initiate feat-choices", () => {
     "a picked feat-choice spell stays visible and shows its selected state",
     async () => {
       await renderPage();
-      // Quick mode is the default. Select Cleric (a gallery plaque = option role).
+      // Select Cleric (a gallery plaque = option role): its ready-made build
+      // comes with the Acolyte, whose Magic Initiate (Cleric) asks 2 cantrips +
+      // 1 level-1 spell. Learn one the class picks do not already own.
       fireEvent.click(screen.getByRole("option", { name: /^Cleric/ }));
-
-      // The Acolyte default background grants Magic Initiate (Cleric): 2 cantrips + 1
-      // L1 spell. Learn "Guidance" (read-then-Learn).
-      pickSpell(/Pick 2 cantrip/i, "Guidance");
+      pickSpell(/Pick 2 cantrip/i, "Mending");
 
       // The row stays visible (regression for "doesn't show what you picked")
       // and wears the gold picked ceremony (`data-picked`).
-      const entry = entryOf(spellRow(/Pick 2 cantrip/i, "Guidance"));
+      const entry = entryOf(spellRow(/Pick 2 cantrip/i, "Mending"));
       expect(entry).toHaveAttribute("data-picked");
 
       // fb3 (owner 2026-06-11): spell asks are COMPACT rows — no inline prose
@@ -165,13 +180,13 @@ describe("CreationWizard — Cleric / Magic-Initiate feat-choices", () => {
       expect(book).not.toBeNull();
       fireEvent.click(book as HTMLElement);
       const dialog = await screen.findByRole("dialog");
-      expect(dialog).toHaveTextContent(/Guidance/);
+      expect(dialog).toHaveTextContent(/Mending/);
     },
     SUITE_TIMEOUT
   );
 
   it(
-    "Cleric (default Acolyte bg) becomes creatable after the required picks",
+    "a Magic-Initiate feat's slots can reach their counts and unblock Create",
     async () => {
       await renderPage();
       // A character name is required to create.
@@ -179,26 +194,26 @@ describe("CreationWizard — Cleric / Magic-Initiate feat-choices", () => {
         target: { value: "Brother Maxim" },
       });
       fireEvent.click(screen.getByRole("option", { name: /^Cleric/ }));
+      // Go Human, whose Versatile origin feat is an OPEN pick…
+      fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
+        target: { value: "human" },
+      });
+      // …and take one whose own slots are unresolved: Magic Initiate (Wizard).
+      chooseFeat("Magic Initiate (Wizard)");
 
-      // Default race is Human → must choose a Human Versatile origin feat.
-      // Pick "Savage Attacker" (no sub-choices) so we isolate the Magic-Initiate
-      // slots. ("Alert" would work too — any pickless origin feat does.)
-      chooseFeat("Savage Attacker");
-
-      // Before resolving the Magic-Initiate picks, Create is disabled and the
-      // origin-feat requirement is the named blocker (the "can't create a
-      // Cleric" bug — the Magic-Initiate slots could never reach their counts).
+      // Before resolving those picks, Create is disabled and the origin-feat
+      // requirement is the named blocker (the "can't create a Cleric" bug — the
+      // Magic-Initiate slots could never reach their counts).
       expect(createButton()).toBeDisabled();
       expect(screen.getByText(/finish your origin feat choices/i)).toBeInTheDocument();
 
-      // Resolve: 2 cleric cantrips + 1 L1 cleric spell.
-      pickSpell(/Pick 2 cantrip/i, "Guidance");
-      pickSpell(/Pick 2 cantrip/i, "Sacred Flame");
-      pickSpell(/Pick 1 spell/i, "Bless");
+      // Resolve: 2 wizard cantrips + 1 L1 wizard spell.
+      pickSpellInFeat("magic-initiate-wizard", "Fire Bolt");
+      pickSpellInFeat("magic-initiate-wizard", "Ray of Frost");
+      pickSpellInFeat("magic-initiate-wizard", "Shield");
 
-      // The Magic-Initiate feat choices are now complete, so the origin-feat
-      // requirement no longer blocks Create. (B01 additionally gates the class
-      // skills + spells, but this test's concern is the feat-choice unblock.)
+      // The feat's choices are complete, so the origin-feat requirement no
+      // longer blocks Create.
       expect(
         screen.queryByText(/finish your origin feat choices/i)
       ).not.toBeInTheDocument();
@@ -211,6 +226,9 @@ describe("CreationWizard — Cleric / Magic-Initiate feat-choices", () => {
     async () => {
       await renderPage();
       fireEvent.click(screen.getByRole("option", { name: /^Cleric/ }));
+      fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
+        target: { value: "human" },
+      });
 
       // Choose Magic Initiate (Wizard) as the Human Versatile origin feat: its
       // nested spell choices open in the entry's OWN asks column (the entry is
@@ -236,19 +254,23 @@ describe("CreationWizard — Cleric / Magic-Initiate feat-choices", () => {
     async () => {
       await renderPage();
       fireEvent.click(screen.getByRole("option", { name: /^Cleric/ }));
+      fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
+        target: { value: "human" },
+      });
+      // Magic Initiate (Wizard)'s own 2-cantrip slot, whose pool is wide enough
+      // to hold a third pick in BOTH build modes.
+      chooseFeat("Magic Initiate (Wizard)");
+      pickSpellInFeat("magic-initiate-wizard", "Fire Bolt");
+      pickSpellInFeat("magic-initiate-wizard", "Ray of Frost");
 
-      // Fill the 2-cantrip slot.
-      pickSpell(/Pick 2 cantrip/i, "Guidance");
-      pickSpell(/Pick 2 cantrip/i, "Sacred Flame");
+      // Pick a THIRD cantrip — instead of being blocked, it drops the OLDEST
+      // (Fire Bolt).
+      pickSpellInFeat("magic-initiate-wizard", "Light");
 
-      // Pick a THIRD cantrip — instead of being blocked, it drops the OLDEST (Guidance).
-      pickSpell(/Pick 2 cantrip/i, "Light");
-
-      // Guidance's row is no longer picked; Light's is.
-      expect(entryOf(spellRow(/Pick 2 cantrip/i, "Guidance"))).not.toHaveAttribute(
-        "data-picked"
-      );
-      expect(entryOf(spellRow(/Pick 2 cantrip/i, "Light"))).toHaveAttribute(
+      expect(
+        entryOf(spellRowInFeat("magic-initiate-wizard", "Fire Bolt"))
+      ).not.toHaveAttribute("data-picked");
+      expect(entryOf(spellRowInFeat("magic-initiate-wizard", "Light"))).toHaveAttribute(
         "data-picked"
       );
     },

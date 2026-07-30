@@ -89,33 +89,24 @@ describe("CreationWizard — a background ASI never saves a score past 20 (B19)"
     "a Manual base 19 receiving a +2 boost is clamped to 20 on save",
     async () => {
       await renderPage();
-      // Dwarf Fighter Soldier — a lineage/feat-free, non-caster path so the only
-      // picks are the tool, the two class skills, and the ability boosts.
+      // The page opens on the default Human Fighter of Soldier stock — a
+      // non-caster whose only outstanding requirement is the name. The boosts
+      // arrive assigned (+2 STR / +1 CON), so this case only has to move STR
+      // out of point-buy range and re-place the +2 on it.
       fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
         target: { value: "Borin" },
       });
-      fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
-        target: { value: "dwarf" },
-      });
-      fireEvent.change(screen.getByRole("combobox", { name: /background/i }), {
-        target: { value: "soldier" },
-      });
-      // Manual ability entry → set STR to 19 (a value point-buy can't reach).
+      // Release the +2 before switching methods, then set STR to 19 by hand (a
+      // value point-buy cannot reach).
+      fireEvent.click(screen.getByRole("button", { name: /^STR15/ }));
       fireEvent.click(screen.getByRole("button", { name: /^Manual$/ }));
       fireEvent.change(screen.getByRole("spinbutton", { name: "Strength" }), {
         target: { value: "19" },
       });
-      // Background ASI (+2/+1). Soldier boosts STR/DEX/CON — assign +2 to STR
-      // (base 19 → would be 21 unclamped) and +1 to DEX.
+      // Background ASI (+2/+1). Soldier boosts STR/DEX/CON — the +1 is still on
+      // CON from the opening build; put the +2 back on STR (base 19 → would be
+      // 21 unclamped).
       fireEvent.click(screen.getByRole("button", { name: /^STR19/ }));
-      fireEvent.click(screen.getByRole("button", { name: /^DEX10/ }));
-      // Remaining requirements: Soldier's tool pick + the two Fighter skills.
-      fireEvent.click(await screen.findByRole("button", { name: /Dice Set/ }));
-      fireEvent.click(screen.getByRole("button", { name: /Acrobatics/ }));
-      fireEvent.click(screen.getByRole("button", { name: /Animal Handling/ }));
-      // RA-28 — the origin +2 languages are a create requirement.
-      fireEvent.click(screen.getByRole("button", { name: /Draconic/ }));
-      fireEvent.click(screen.getByRole("button", { name: /Dwarvish/ }));
 
       fireEvent.click(screen.getByRole("button", { name: /create character/i }));
       await waitFor(() => expect(createMock).toHaveBeenCalledTimes(1));
@@ -123,8 +114,8 @@ describe("CreationWizard — a background ASI never saves a score past 20 (B19)"
       const created = createMock.mock.calls[0]?.[1] as { character: CharacterData };
       // Pre-fix this saved 21 (19 + 2, unclamped). The 2024 cap holds at 20.
       expect(created.character.abilityScores.STR).toBe(20);
-      // The +1 landed normally.
-      expect(created.character.abilityScores.DEX).toBe(11);
+      // The +1 landed normally (CON 14 from the opening build → 15).
+      expect(created.character.abilityScores.CON).toBe(15);
     },
     SUITE_TIMEOUT
   );

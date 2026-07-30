@@ -2,7 +2,6 @@
   "wizard": {
     "progress": "Avanzamento",
     "exit": "Esci",
-    "quickGloss": "Ogni scelta in una sola pagina.",
     "guidedGloss": "Una decisione alla volta.",
     "continueTo": "Continua: {{step}}",
     "removeChoice": "Rimuovi la scelta",
@@ -34,6 +33,7 @@
     "asksDecision": "Il livello {{level}} richiede una decisione",
     "chooseSubclassOf": "Scegli la tua sottoclasse da {{class}}",
     "startingAtLevel": "Si parte dal livello {{level}}",
-    "gain_musicalInstrument": "uno strumento musicale a tua scelta"
+    "gain_musicalInstrument": "uno strumento musicale a tua scelta",
+    "quickGloss": "Un personaggio completo fin dall'inizio: modifica quello che vuoi o sorteggialo."
   }
 }

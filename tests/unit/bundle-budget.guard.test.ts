@@ -74,6 +74,12 @@ const ENTRY_CEILING_KB = 62; // baseline 53.7 → +15% (2026-07-10: +1 for the g
 // knife-edge ceiling), causing nondeterministic gate flips with no underlying regression. +1 KB
 // restores deterministic headroom while keeping the guard's teeth (chunk families unchanged vs
 // main). Frontier #1 (lazy SRD) remains the real lever.
+// 2026-07-30: raised 776 → 779 (+3 KB) for the quickbuild wave (creation opens on a
+// ready-made build + the seeded randomizer). NOT a lazy-chunk leak: the eager closure
+// is the SAME 14 chunk families and carries none of the new modules — the preset
+// record, the applicator, the randomizer and the wizard all ride the lazy creation
+// chunk (verified by tracing the closure for their string literals); what grew is
+// shared-module churn around them. Measured 776.5; +2.5 KB never-exact-fit headroom.
 // 2026-07-17: raised 756 → 773 (+17 KB) for the content-pack licensing partition:
 // the SAME EN catalogue bytes now ship as public + pack JSON chunk pairs (per-chunk
 // gzip compresses the split corpora slightly worse than the former monoliths) plus
@@ -83,7 +89,7 @@ const ENTRY_CEILING_KB = 62; // baseline 53.7 → +15% (2026-07-10: +1 for the g
 // (+3 KB) for the style-A per-corner ornament CSS (~+1 KB gz) atop the bestiary-held
 // 771.4 KB baseline; chunk shape unchanged at 14 chunks. Measured 773.2 KB; +3 KB
 // deterministic headroom (never exact-fit).
-const EAGER_CEILING_KB = 776; // baseline 727.1 → ~+6% (near budget — see ARCHITECTURE P3 frontier #1)
+const EAGER_CEILING_KB = 779; // baseline 727.1 → ~+7% (near budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
 // on demand from the PDF export flow) and correctly precached for offline-first.
@@ -201,7 +207,7 @@ const EAGER_CEILING_KB = 776; // baseline 727.1 → ~+6% (near budget — see AR
 // are UNCHANGED — 61.8 KB gz / 775.6 KB gz across the same 14 chunks. Only the precache
 // (which counts every chunk, eager or not) grows. Measured 8978.07 KiB (296 entries) on
 // the composed lane, +~11 KiB never-exact-fit headroom.
-const PRECACHE_CEILING_KIB = 9020;
+const PRECACHE_CEILING_KIB = 9033;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
