@@ -129,8 +129,12 @@ export function isEntryNamed(
  * every per-character play value so the entry is a reusable template.
  *
  *  - spell — drops `prepared` / `notes` / `tags` (prep state + personal annotations).
- *  - equipment — drops `equipped` / `quantity` / `tracked` / `attuned` / `notes` and
- *    winds any charge pool back to full (a saved wand template is never half-spent).
+ *  - equipment — drops `equipped` / `quantity` / `attuned` / `notes` and winds any
+ *    charge pool back to full (a saved wand template is never half-spent). `tracked`
+ *    STAYS: it is the authored tracking MODE, the same tier as `isConsumable` /
+ *    `isPotion` / `potionFormula` (all kept) — the play value is the `quantity` it
+ *    counts, and that is stripped. Dropping it made the edit round-trip lossy (a
+ *    "track uses" item reopened as untracked and silently lost the mode on save).
  *  - weapon — resets `quantity` to 1 (the type requires it) and drops `notes` /
  *    `tags` / `attackBonusOverride` / `damageOverride` (this character's overrides).
  *  - feature — kept WHOLE: its contentBlocks / trackers / actions ARE the content,
@@ -153,7 +157,6 @@ export function toLibraryEntry(draft: LibraryDraft, now: number): LibraryEntry {
       const item = structuredClone(draft.item);
       delete item.equipped;
       delete item.quantity;
-      delete item.tracked;
       delete item.attuned;
       delete item.notes;
       if (item.charges) item.charges.current = item.charges.max;

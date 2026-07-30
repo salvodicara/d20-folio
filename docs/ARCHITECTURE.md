@@ -1378,8 +1378,9 @@ The layering mirrors combat-state exactly:
 - **Model** — `src/lib/library.ts` (PURE — no Firebase, no i18n, no `Date.now()`):
   `LibraryDraft` (the kind→item pair every consumer narrows on), `LibraryEntry` (+
   `id`/`savedAt`), `toLibraryEntry` (deep-copy + per-kind strip of every PLAY value —
-  prepared/equipped/quantity/tracked/attuned/notes/tags/overrides, charges wound back to
-  full), `upsertEntry` (same (kind, name) replaces IN PLACE, keeping the original id +
+  prepared/equipped/quantity/attuned/notes/tags/overrides, charges wound back to full;
+  an item's authored tracking MODE — `tracked`/`isConsumable`/`isPotion` — is content and
+  stays, or the pencil's round-trip would silently drop it), `upsertEntry` (same (kind, name) replaces IN PLACE, keeping the original id +
   position), `entryToCharacterItem` (a deep copy re-seeded with the SAME defaults the
   Custom creation forms produce) and `customDraftAt` (the ONE map from the four character
   arrays to their kinds, so an edit seam mirrors what is stored). An entry is a TEMPLATE,

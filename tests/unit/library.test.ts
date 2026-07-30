@@ -99,8 +99,11 @@ const STRIP_CASES: ReadonlyArray<{
   {
     draft: { kind: "equipment", item: EQUIPMENT },
     name: "Ember Wand",
-    stripped: ["equipped", "quantity", "tracked", "attuned", "notes"],
-    kept: ["name", "description", "charges"],
+    stripped: ["equipped", "quantity", "attuned", "notes"],
+    // `tracked` is the authored tracking MODE (the tier of isConsumable / isPotion),
+    // not play state — the play value is the `quantity` it counts, which IS stripped.
+    // Keeping it is what makes the pencil's edit round-trip lossless.
+    kept: ["name", "description", "charges", "tracked"],
   },
   {
     draft: { kind: "weapon", item: WEAPON },

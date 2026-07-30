@@ -483,6 +483,29 @@ describe("edit-in-place — the pencil completes CRUD", () => {
     expect(useCharacterStore.getState().character?.character.equipment).toBe(before);
   });
 
+  it("round-trips a TRACKED item: the form reopens on its mode, and Save keeps it", () => {
+    loadCharacter();
+    // The sheet item carries the authored mode + a per-character count; only the
+    // count is play state, so only it is stripped on the way in.
+    seedLibrary([
+      entry({
+        kind: "equipment",
+        item: { ...CUSTOM_GEAR, name: "Healer's Kit", tracked: true, quantity: 7 },
+      }),
+    ]);
+    const dialog = openCustomTab();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Edit Healer's Kit" }));
+
+    // The mode survived the save, so the form opens ON it (not reset to "None").
+    const trackUses = within(dialog).getByRole("checkbox", { name: /Track uses/i });
+    expect(trackUses).toBeChecked();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: /Save changes/i }));
+    const kept = useLibraryStore.getState().entries[0]?.item as CustomEquipment;
+    expect(kept.tracked).toBe(true);
+    expect(kept.quantity).toBeUndefined();
+  });
+
   it("Back leaves the entry untouched", () => {
     loadCharacter();
     seedLibrary([entry({ kind: "equipment", item: CUSTOM_GEAR })]);

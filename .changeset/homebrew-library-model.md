@@ -11,8 +11,8 @@ four per-character types (`CustomSpell` / `CustomFeature` / `CustomEquipment` /
 rests on — a library entry is a TEMPLATE, not a copy of a sheet row:
 
 - `toLibraryEntry` deep-copies and strips every per-character play value per kind
-  (spell: prepared/notes/tags · equipment: equipped/quantity/tracked/attuned/notes
-  with any charge pool wound back to full · weapon: quantity 1, notes/tags and both
+  (spell: prepared/notes/tags · equipment: equipped/quantity/attuned/notes, keeping the
+  authored tracking mode, with any charge pool wound back to full · weapon: quantity 1, notes/tags and both
   overrides dropped · feature: kept whole — its blocks/trackers/actions ARE the
   content).
 - `upsertEntry` replaces the same (kind, name) IN PLACE, keeping the original id and
