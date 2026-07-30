@@ -103,6 +103,27 @@ export function quickbuildDraft(
   };
 }
 
+/** Skill ids a background GRANTS — locked in the picker, never a class pick. */
+export function backgroundSkillIds(backgroundId: string): string[] {
+  const background = SRD_BACKGROUNDS.find((b) => b.id === backgroundId);
+  return (background?.skillProficiencies ?? [])
+    .map(skillNameToId)
+    .filter((id): id is string => id !== null);
+}
+
+/**
+ * The class skills a character may still PICK: the class's own pool minus what
+ * the background already grants. Both the re-seed below and the randomizer draw
+ * from this one derivation, so a rolled build and a hand-swapped background can
+ * never disagree about what is pickable.
+ */
+export function classSkillPool(classId: string, backgroundId: string): string[] {
+  const granted = new Set(backgroundSkillIds(backgroundId));
+  return (classTables.find((c) => c.id === classId)?.skillChoices.from ?? [])
+    .map(skillNameToId)
+    .filter((id): id is string => id !== null && !granted.has(id));
+}
+
 /**
  * The two picks a BACKGROUND owns, re-seeded for a different one.
  *
@@ -133,20 +154,13 @@ export function reseedForBackground(
   if (primary) bgAsiChoices[primary] = 2;
   if (secondary) bgAsiChoices[secondary] = 1;
 
-  const granted = new Set(
-    background.skillProficiencies
-      .map(skillNameToId)
-      .filter((id): id is string => id !== null)
-  );
-  const pool = table.skillChoices.from
-    .map(skillNameToId)
-    .filter((id): id is string => id !== null && !granted.has(id));
+  const pool = classSkillPool(classId, backgroundId);
   const classSkills = keptSkills.filter((id) => pool.includes(id));
   for (const id of pool) {
     if (classSkills.length >= table.skillChoices.count) break;
     if (!classSkills.includes(id)) classSkills.push(id);
   }
-  return { bgAsiChoices, classSkills: classSkills.slice(0, table.skillChoices.count) };
+  return { bgAsiChoices, classSkills };
 }
 
 /**

@@ -29,8 +29,8 @@ import { SRD_RACES } from "@/data/races";
 import { spells as ALL_SPELLS } from "@/data/spells";
 import type { AbilityCode } from "@/data/types";
 import type { QuickbuildPreset } from "@/data/quickbuild";
-import { skillNameToId } from "@/lib/compute";
 import { creationChoiceSlots, ORIGIN_LANGUAGE_SLOTS } from "@/lib/creation-choices";
+import { backgroundSkillIds, classSkillPool } from "@/lib/quickbuild";
 import { listAvailableForLanguageSlot } from "@/lib/feat-language-choices";
 import { listAvailableForSlot } from "@/lib/feat-spell-choices";
 import { ALL_SKILLS } from "@/lib/skills";
@@ -71,14 +71,6 @@ function sample<T>(rng: Rng, pool: readonly T[], n: number): T[] {
     if (taken !== undefined) out.push(taken);
   }
   return out;
-}
-
-/** Skill ids a background grants (locked in the picker — never a class pick). */
-function backgroundSkillIds(backgroundId: string): string[] {
-  const bg = SRD_BACKGROUNDS.find((b) => b.id === backgroundId);
-  return (bg?.skillProficiencies ?? [])
-    .map(skillNameToId)
-    .filter((id): id is string => id !== null);
 }
 
 /**
@@ -131,10 +123,11 @@ export function rollQuickbuildFlavor(
 
   // ── Class skills (the background's are already granted, so never re-picked) ─
   const bgSkills = new Set(backgroundSkillIds(backgroundId));
-  const skillPool = (table?.skillChoices.from ?? [])
-    .map(skillNameToId)
-    .filter((id): id is string => id !== null && !bgSkills.has(id));
-  const classSkills = sample(rng, skillPool, table?.skillChoices.count ?? 0);
+  const classSkills = sample(
+    rng,
+    classSkillPool(classId, backgroundId),
+    table?.skillChoices.count ?? 0
+  );
 
   // ── Spells the class knows at level 1 ──────────────────────────────────────
   const row = table?.levels[0];
