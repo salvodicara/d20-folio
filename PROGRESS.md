@@ -314,6 +314,22 @@ footprint barely changes read→edit — both fail on the old fixed box). DESIGN
   an IT player reads "CA 11 + DES" / "CA 13 + DES (max 2)". Regression: the armor-AC row+detail
   cases in `compendium-browse-specs.test.tsx` (real i18next, EN + IT).
 
+## Queued — UX feedback batch (owner, 2026-07-31)
+
+1. **BUG — tab search toggle flashes**: clicking the search control in a sheet tab while
+   its search is OPEN must CLOSE it; today it flashes (likely blur-close + click-reopen
+   race). Reproduce with a failing test first.
+2. **Command palette must feel mobile-native on mobile**: desktop-only entries and keyboard
+   shortcut hints (⌘K etc.) must not show on mobile; desktop stays untouched — optimum on
+   both platforms.
+3. **Mobile horizontal-stretch doubt (design exploration)**: full-width HP/vitals tiles and
+   roster cards on mobile — is it state of the art? Desktop HP is compact. Owner wants
+   SOTA/industry-standard professional mobile layouts; explore via impeccable + proposals
+   with screenshots.
+4. **Tab selection must not jump (Compendium type tabs + sheet tabs)**: selecting a tab —
+   especially one reached by scrolling — currently causes a jump; the tab must stay exactly
+   where it is. GRILLED with the owner before implementation (see the golden rule below).
+
 ## Queued — Admin panel rework (owner request, 2026-07-31)
 
 The users list will grow: the admin panel needs (1) a POWERFUL user search ("trovare subito

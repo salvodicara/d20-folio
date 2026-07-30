@@ -303,19 +303,28 @@ theme group — see "How to add a rule"); this comment breaks the list so Pretti
 renumber it into the 19–20 sequence. -->
 
 25. **Owner approves every visual change from screenshots BEFORE it merges — a blocking gate.**
-    ANY change carrying a visual/UX surface — a bug fix, a new feature, a redesign, a single token
-    tweak — is captured as before/after snapshots (real Chromium, the rule-15 matrix: both themes,
-    EN + IT, desktop + mobile wherever they differ, each CROPPED to the region the change affects —
-    rule 15) and PROACTIVELY PUSHED to the owner (SendUserFile), and the branch then WAITS: it does
-    not merge to `main` until the owner rules on the screenshots. `main` only ever holds what the
-    owner has SEEN and visually approved ("Main always has to have only what I approved visually" —
-    owner, 2026-07-30, after the chrome-reset wave landed unapproved visuals on `main` and had to be
-    surgically rolled back). Non-visual changes (engine, data, tests, docs, tooling) keep rule 11's
-    free integration — this gate binds the VISUAL surface only. Deploy stays a second, separate
-    owner gate (rule 22). Rule 15 is HOW the review runs (Chromium capture across states/themes);
-    rule 25 is the standing mandate that the screenshots ALWAYS precede the merge. (Supersedes the
-    2026-07-06 non-blocking form of this rule.)
-26. **Contested design decisions resolve via `impeccable`, then the owner's eyes.** When a UI/UX
+ANY change carrying a visual/UX surface — a bug fix, a new feature, a redesign, a single token
+tweak — is captured as before/after snapshots (real Chromium, the rule-15 matrix: both themes,
+EN + IT, desktop + mobile wherever they differ, each CROPPED to the region the change affects —
+rule 15) and PROACTIVELY PUSHED to the owner (SendUserFile), and the branch then WAITS: it does
+not merge to `main` until the owner rules on the screenshots. `main` only ever holds what the
+owner has SEEN and visually approved ("Main always has to have only what I approved visually" —
+owner, 2026-07-30, after the chrome-reset wave landed unapproved visuals on `main` and had to be
+surgically rolled back). Non-visual changes (engine, data, tests, docs, tooling) keep rule 11's
+free integration — this gate binds the VISUAL surface only. Deploy stays a second, separate
+owner gate (rule 22). Rule 15 is HOW the review runs (Chromium capture across states/themes);
+rule 25 is the standing mandate that the screenshots ALWAYS precede the merge. (Supersedes the
+2026-07-06 non-blocking form of this rule.)
+<!-- Rule 28 keeps the next global id (see "How to add a rule"). -->
+
+26. **Ambiguous UI/UX feedback is grilled BEFORE any code.** When the owner reports a UX
+    problem or wish and the intended behaviour is not unambiguous, ASK (the grill-me
+    interview, concrete options) before touching code — never implement a guess of what the
+    owner meant. General rule of thumb, strongest for UI/UX ("if you don't get what I mean,
+    grill me before you touch any code" — owner, 2026-07-31). Companion to rule 26: 26
+    resolves contested DESIGN choices; 28 resolves ambiguous INTENT.
+
+27. **Contested design decisions resolve via `impeccable`, then the owner's eyes.** When a UI/UX
     choice is genuinely uncertain or contested — two or more defensible treatments, or a
     previously-settled call being reopened — `impeccable` is the deciding authority: run it and
     follow its verdict. If impeccable itself cannot break the tie, STOP and present the owner
