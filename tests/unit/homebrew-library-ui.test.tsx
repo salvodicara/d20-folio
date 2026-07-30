@@ -190,6 +190,22 @@ describe("the Custom tab — the detail leg (the SRD flow)", () => {
     expect(useCharacterStore.getState().character?.character.weapons).toEqual([]);
   });
 
+  it("names the open entry in the modal title, and reverts on Back", () => {
+    loadCharacter();
+    seedLibrary([entry({ kind: "weapon", item: CUSTOM_WEAPON })]);
+    const dialog = openCustomTab();
+    // The tab's own label names the dialog while the list is showing…
+    expect(screen.getByRole("dialog", { name: "Custom" })).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Bramble Spear" }));
+    // …and the open homebrew names it while its detail is read — the SAME swap the
+    // SRD leg of this modal performs (intra-modal consistency).
+    expect(screen.getByRole("dialog", { name: "Bramble Spear" })).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: /^Back$/i }));
+    expect(screen.getByRole("dialog", { name: "Custom" })).toBeInTheDocument();
+  });
+
   it("its footer Add lands the entry on the character's own array", () => {
     const doc = structuredClone(MOCK_CHARACTER);
     doc.character.weapons = [];

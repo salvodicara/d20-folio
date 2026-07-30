@@ -59,6 +59,7 @@ export function SpellAddModal({ open, onClose }: SpellAddModalProps) {
             />
           )}
           onAdded={onClose}
+          onDetailTitle={setDetailTitle}
         />
       ) : (
         <CompendiumPicker

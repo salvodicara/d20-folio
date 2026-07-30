@@ -100,6 +100,7 @@ export function AddItemModal({ open, onClose }: AddItemModalProps) {
               <CustomEquipmentForm onCreated={onClose} libraryEdit={itemEdit(edit)} />
             )}
             onAdded={onClose}
+            onDetailTitle={setDetailTitle}
           />
         )}
       </div>

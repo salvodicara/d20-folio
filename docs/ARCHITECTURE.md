@@ -1410,7 +1410,10 @@ the whole CRUD, and it behaves EXACTLY like the SRD tab beside it (owner, 2026-0
 each entry is a `PickerRow` whose tap opens a DETAIL leg — the shared
 `CompendiumDetailBody` scaffold the SRD legs wear (eyebrow · meta grid · description,
 built per kind from the entry) under the standard `PickerDetailFooter`, whose Add commits
-and whose Back returns to the list. There is no add glyph on the row: only the two
+and whose Back returns to the list. It reports the open entry through the same
+`onDetailTitle` seam `CompendiumPicker` drives, so the modal title names the homebrew
+while its detail is read and reverts on Back — a modal's head behaves identically
+whichever tab is reading. There is no add glyph on the row: only the two
 MANAGEMENT actions with no SRD counterpart (edit · delete) sit in a right-edge
 `IconButton` cluster top-aligned on the name line, as SIBLINGS of the row button (never
 nested — the `UniversalCard` head pattern, axe-clean). The modal supplies its form

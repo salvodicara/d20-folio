@@ -34,7 +34,7 @@
  * a deep copy re-seeded with the create-form defaults) to the matching array.
  */
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, PencilLine, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -115,6 +115,7 @@ export function CustomTabBody({
   createLabel,
   renderForm,
   onAdded,
+  onDetailTitle,
 }: {
   /** Which entry kinds this modal lists + lands (the item modal takes two). */
   kinds: readonly LibraryKind[];
@@ -124,6 +125,12 @@ export function CustomTabBody({
   renderForm: (edit?: LibraryEditRequest) => ReactNode;
   /** Called after a successful add — each modal's existing close behaviour. */
   onAdded: () => void;
+  /**
+   * Report the open entry's name so the host `ModalShell` title reflects it — the
+   * SAME seam `CompendiumPicker` drives from the SRD leg, so a modal's title behaves
+   * identically whichever tab is reading (owner, v4 verification).
+   */
+  onDetailTitle?: (title: string | null) => void;
 }) {
   const { t } = useTranslation();
   const entries = useLibraryStore((s) => s.entries);
@@ -133,6 +140,12 @@ export function CustomTabBody({
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<LibraryEntry | null>(null);
   const [viewing, setViewing] = useState<LibraryEntry | null>(null);
+
+  // Keep the host modal title in sync with the open detail — mirrors the SRD leg's
+  // own effect (`CompendiumPicker`), including the revert on Back / tab change.
+  useEffect(() => {
+    onDetailTitle?.(viewing ? libraryEntryName(viewing) : null);
+  }, [viewing, onDetailTitle]);
 
   /** Everything of this modal's kind(s) — the "is my library empty here" set. */
   const mine = useMemo(

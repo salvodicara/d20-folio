@@ -83,6 +83,7 @@ export function FeatureAddModal({
                 />
               )}
               onAdded={onClose}
+              onDetailTitle={setDetailTitle}
             />
           ) : (
             <CompendiumPicker
