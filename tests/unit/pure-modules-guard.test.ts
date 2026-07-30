@@ -66,6 +66,10 @@ const PURE_MODULES = [
   // The homebrew-library MODEL (strip / upsert / landing rules). Its IO twin
   // `library-io.ts` owns the Firestore seam, so the model stays CI-pure.
   "src/lib/library.ts",
+  // …and so does the STORE: its write seam is INJECTED by `hooks/useLibrary`
+  // (the `combatPersistence` pattern), which is why the five cockpit cards that
+  // render a save affordance need no Firebase mock.
+  "src/stores/libraryStore.ts",
   // R2 — the presenter layer (lib/views). Pure: engine output + locale → view-model.
   "src/lib/views/sheet-view.ts",
   "src/lib/views/combat-action-view.ts",

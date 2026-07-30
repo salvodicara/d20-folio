@@ -4,8 +4,8 @@
  * defaulting to the character's class + a class-scoped level facet, the
  * above-level soft warning, the mechanics detail block, the `{ srdId }` commit)
  * lives in `featureSpec` (`features/compendium/picker/specs/feature`). This file
- * owns only the `ModalShell` chrome + the SRD / Custom tab switcher. Behavior is
- * unchanged.
+ * owns only the `ModalShell` chrome + the SRD / Library / Custom tab switcher (the
+ * pools first, authoring last).
  */
 
 import { useState } from "react";
@@ -14,6 +14,7 @@ import { ModalShell } from "@/components/shared/ModalShell";
 import { CompendiumPicker, featureSpec } from "@/features/compendium/picker";
 import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
 import { CustomFeatureForm } from "./CustomCreationForms";
+import { LibraryPickerBody } from "./LibraryPickerBody";
 import type { CustomFeature } from "@/types/character";
 
 interface FeatureAddModalProps {
@@ -28,6 +29,8 @@ interface FeatureAddModalProps {
   editIndex?: number;
 }
 
+const LIBRARY_KINDS = ["feature"] as const;
+
 export function FeatureAddModal({
   open,
   onClose,
@@ -35,7 +38,7 @@ export function FeatureAddModal({
   editIndex,
 }: FeatureAddModalProps) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<"srd" | "custom">("srd");
+  const [activeTab, setActiveTab] = useState<"srd" | "library" | "custom">("srd");
   const [detailTitle, setDetailTitle] = useState<string | null>(null);
   const editing = editFeature != null && editIndex != null;
 
@@ -60,9 +63,16 @@ export function FeatureAddModal({
               setActiveTab(tab);
               setDetailTitle(null);
             }}
+            tabs={[
+              { id: "srd", label: t("custom.srdTab") },
+              { id: "library", label: t("custom.libraryTab") },
+              { id: "custom", label: t("custom.customTab") },
+            ]}
           />
           {activeTab === "custom" ? (
             <CustomFeatureForm onCreated={onClose} />
+          ) : activeTab === "library" ? (
+            <LibraryPickerBody kinds={LIBRARY_KINDS} onAdded={onClose} />
           ) : (
             <CompendiumPicker
               spec={featureSpec}

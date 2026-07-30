@@ -1,55 +1,44 @@
 /**
- * ModalTabSwitcher — the shared SRD / Custom two-tab strip every "Add-X" modal
- * wears (spell · feature · the encounter picker). Generic modal chrome: it owns
- * only the two-button switch, so it lives beside `ModalShell` rather than inside
- * any one modal's body (a consumer's chunk would otherwise drag the others in).
+ * ModalTabSwitcher — the shared tab strip every "Add-X" modal wears (spell ·
+ * feature · item · the encounter picker). Generic modal chrome: it owns only the
+ * button row, so it lives beside `ModalShell` rather than inside any one modal's
+ * body (a consumer's chunk would otherwise drag the others in).
  *
- * `labels` overrides the two tab captions; it defaults to the cockpit's
- * `custom.srdTab` / `custom.customTab`, so the five cockpit Add-X modals read
- * unchanged and a surface with a different first pool (the encounter's Bestiary)
- * passes its own captions.
+ * `tabs` drives it — ANY number of tabs, each `{ id, label }`, the id generic over
+ * the caller's own union so `onTabChange` stays typed. It replaced both the
+ * hardcoded two-tab version and the `AddItemModal`'s private three-tab copy when the
+ * homebrew Library tab made three of the four modals N-tab (golden rule 6 — one
+ * idea, one component).
  */
 
-import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
-export function ModalTabSwitcher({
+export function ModalTabSwitcher<T extends string>({
   activeTab,
   onTabChange,
-  labels,
+  tabs,
 }: {
-  activeTab: "srd" | "custom";
-  onTabChange: (tab: "srd" | "custom") => void;
-  labels?: { srd: string; custom: string };
+  activeTab: T;
+  onTabChange: (tab: T) => void;
+  tabs: ReadonlyArray<{ id: T; label: string }>;
 }) {
-  const { t } = useTranslation();
-  const srdLabel = labels?.srd ?? t("custom.srdTab");
-  const customLabel = labels?.custom ?? t("custom.customTab");
-
   return (
-    <div className="flex border-b border-border-subtle">
-      <button
-        onClick={() => onTabChange("srd")}
-        className={cn(
-          "flex-1 py-2 text-center text-[0.7rem] font-semibold transition-colors",
-          activeTab === "srd"
-            ? "border-b-2 border-accent text-accent"
-            : "text-text-secondary hover:text-text-primary"
-        )}
-      >
-        {srdLabel}
-      </button>
-      <button
-        onClick={() => onTabChange("custom")}
-        className={cn(
-          "flex-1 py-2 text-center text-[0.7rem] font-semibold transition-colors",
-          activeTab === "custom"
-            ? "border-b-2 border-accent text-accent"
-            : "text-text-secondary hover:text-text-primary"
-        )}
-      >
-        {customLabel}
-      </button>
+    <div className="flex shrink-0 border-b border-border-subtle">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onTabChange(tab.id)}
+          className={cn(
+            "flex-1 py-2 text-center text-[0.7rem] font-semibold transition-colors",
+            activeTab === tab.id
+              ? "border-b-2 border-accent text-accent"
+              : "text-text-secondary hover:text-text-primary"
+          )}
+        >
+          {tab.label}
+        </button>
+      ))}
     </div>
   );
 }

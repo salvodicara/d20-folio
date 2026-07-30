@@ -41,6 +41,16 @@
     "createFeatureBtn": "Crea Privilegio",
     "srdTab": "Database SRD",
     "customTab": "Crea Personalizzato",
-    "label": "Personalizzato"
+    "label": "Personalizzato",
+    "libraryTab": "La mia libreria",
+    "librarySearch": "Cerca nel tuo homebrew salvato…",
+    "libraryEmpty": "La tua libreria è ancora vuota. Salva un elemento personalizzato dalla sua scheda.",
+    "libraryAdd": "Aggiungi {{name}} dalla tua libreria",
+    "saveToLibrary": "Salva {{name}} nella tua libreria",
+    "saveToLibraryHint": "Conserva questo homebrew nella tua libreria, pronto per ogni personaggio",
+    "savedToLibrary": "{{name}} salvato nella tua libreria",
+    "libraryUpdated": "{{name}} aggiornato nella tua libreria",
+    "libraryFull": "La tua libreria è piena ({{max}} voci). Eliminane una dalle Impostazioni.",
+    "libraryUnavailable": "La tua libreria è ancora in caricamento. Riprova tra un istante."
   }
 }

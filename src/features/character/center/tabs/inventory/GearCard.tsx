@@ -23,6 +23,7 @@ import {
   UniversalCardDesc,
   type VerdictOutcome,
 } from "@/components/shared/UniversalCard";
+import { SaveToLibraryButton } from "@/components/sheet/SaveToLibraryButton";
 import { consumableActionSlot } from "@/lib/srd-resolve";
 import { formatWeight } from "@/lib/utils";
 import { chipText } from "@/lib/views/combat-action-view";
@@ -200,6 +201,10 @@ export const GearCard = memo(function GearCard({
                 {vm.attuned && <Icon as={Sparkles} size="sm" decorative />}
                 {vm.attuned ? t("equipment.attuned") : t("equipment.attune")}
               </Button>
+            )}
+            {/* Homebrew only: keep this item in the account-level library. */}
+            {isEdit && vm.isCustom && (
+              <SaveToLibraryButton kind="equipment" idx={vm.idx} name={vm.name} />
             )}
             {isEdit && (
               <Button

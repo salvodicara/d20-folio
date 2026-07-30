@@ -36,6 +36,7 @@ import type { SpellCardVM } from "@/lib/views/spells-view";
 import type { CustomSpell } from "@/types/character";
 import { POLYMORPH_SPELL_IDS } from "@/lib/polymorph";
 import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
+import { SaveToLibraryButton } from "@/components/sheet/SaveToLibraryButton";
 import { CustomSpellEditForm } from "./CustomSpellEditForm";
 import {
   buildVerdict,
@@ -199,18 +200,22 @@ export const SpellCard = memo(function SpellCard({
       isEdit={isEdit}
       editAction={
         isEdit ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            iconOnly
-            className="icon-danger"
-            onClick={() => onDelete(vm.idx)}
-          >
-            <Icon as={Trash2} size="sm" decorative />
-            <span className="sr-only">
-              {t("common.delete")} {vm.name}
-            </span>
-          </Button>
+          <>
+            {/* Homebrew only: keep this spell in the account-level library. */}
+            {isCustom && <SaveToLibraryButton kind="spell" idx={vm.idx} name={vm.name} />}
+            <Button
+              size="sm"
+              variant="ghost"
+              iconOnly
+              className="icon-danger"
+              onClick={() => onDelete(vm.idx)}
+            >
+              <Icon as={Trash2} size="sm" decorative />
+              <span className="sr-only">
+                {t("common.delete")} {vm.name}
+              </span>
+            </Button>
+          </>
         ) : undefined
       }
       open={expanded}

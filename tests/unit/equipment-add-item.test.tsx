@@ -3,11 +3,11 @@
  *
  * The Equipment page exposes exactly ONE "Add Item" trigger (BOTH modes — §2.8,
  * loot lands mid-session) which
- * opens the single `AddItemModal` — a three-tab picker (Equipment / Magic Items /
- * Custom) that replaced the old two separate "Add Equipment" + "Add Magic Item"
- * buttons. These tests pin:
+ * opens the single `AddItemModal` — a four-tab picker (Equipment / Magic Items /
+ * My Library / Custom) that replaced the old two separate "Add Equipment" + "Add
+ * Magic Item" buttons. These tests pin:
  *   1. the equipment page surfaces a single add trigger (no second magic-item one),
- *   2. opening it shows the three tabs,
+ *   2. opening it shows the four tabs,
  *   3. the Magic Items tab renders the magic-item browse body (a known SRD item),
  *   4. the page header migrated to the canonical `<PageHeader>` (`.page-head`).
  *
@@ -195,17 +195,20 @@ describe("InventoryTab — unified Add Item", () => {
     expect(within(crowbarCard as HTMLElement).getByText(/5 lb/)).toBeInTheDocument();
   });
 
-  it("opens the unified modal with three tabs and the Magic Items tab renders the magic-item body", () => {
+  it("opens the unified modal with four tabs and the Magic Items tab renders the magic-item body", () => {
     load();
     useUIStore.setState({ sheetMode: "edit" });
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: /Add Item/i }));
 
-    // Three tabs present.
+    // Four tabs present.
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByRole("button", { name: "Equipment" })).toBeInTheDocument();
     expect(
       within(dialog).getByRole("button", { name: "Magic Items" })
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "My Library" })
     ).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Custom" })).toBeInTheDocument();
 

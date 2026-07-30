@@ -20,6 +20,7 @@ import { CommandPalette } from "./shell/CommandPalette";
 import { ScrollRestorer } from "./ScrollRestorer";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
+import { useLibrary } from "@/hooks/useLibrary";
 import { useUIStore } from "@/stores/uiStore";
 
 // The `?` shortcuts sheet is on-demand chrome — lazy so its Dialog + registry never
@@ -63,6 +64,12 @@ export function AppShell() {
   // palette), and the `g`-prefixed go-to sequences. Route-scoped accelerators
   // (cockpit ⌘E, encounter ←/→) stay in their own route hooks.
   useGlobalShortcuts({ setPaletteOpen });
+
+  // The ONE listener on the account-level homebrew library (`libraryStore`). It lives
+  // at the shell because a save happens on the CHARACTER sheet while the pickers and
+  // the settings manager read it elsewhere — and a save rewrites the whole doc, so the
+  // list must be hydrated wherever one can happen (golden rule 24: exactly one).
+  useLibrary();
 
   // Warm the likely-next route chunks during idle (F22) so the first navigation to
   // the cockpit / campaigns / compendium is instant instead of a cold fetch.

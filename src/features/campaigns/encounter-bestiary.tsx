@@ -69,10 +69,10 @@ export function EncounterAddMonsterModal({
           setActiveTab(tab);
           setDetailTitle(null);
         }}
-        labels={{
-          srd: t("campaignHub.encounterBestiaryTab"),
-          custom: t("campaignHub.encounterCustomTab"),
-        }}
+        tabs={[
+          { id: "srd", label: t("campaignHub.encounterBestiaryTab") },
+          { id: "custom", label: t("campaignHub.encounterCustomTab") },
+        ]}
       />
       {/* SRD Step 3 at a glance while picking (§D.1) — the same readout the round bar
           shows, both tabs. */}

@@ -41,6 +41,16 @@
     "createFeatureBtn": "Create Feature",
     "srdTab": "SRD Database",
     "customTab": "Create Custom",
-    "label": "Custom"
+    "label": "Custom",
+    "libraryTab": "My Library",
+    "librarySearch": "Search your saved homebrew…",
+    "libraryEmpty": "Nothing in your library yet. Save a custom item from its card.",
+    "libraryAdd": "Add {{name}} from your library",
+    "saveToLibrary": "Save {{name}} to your library",
+    "saveToLibraryHint": "Keep this homebrew in your library, ready for any character",
+    "savedToLibrary": "{{name}} saved to your library",
+    "libraryUpdated": "{{name}} updated in your library",
+    "libraryFull": "Your library is full ({{max}} entries). Delete one in Settings first.",
+    "libraryUnavailable": "Your library is still loading. Try again in a moment."
   }
 }

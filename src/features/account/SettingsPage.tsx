@@ -25,7 +25,14 @@
 import type { ComponentType, ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ShieldCheck, LogOut, Palette, Languages } from "lucide-react";
+import {
+  ShieldCheck,
+  LogOut,
+  Palette,
+  Languages,
+  BookMarked,
+  Trash2,
+} from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Portrait } from "@/components/shared/Portrait";
 import { Section } from "@/components/shared/Section";
@@ -33,6 +40,10 @@ import { InfoCard } from "@/components/shared/InfoCard";
 import { Segmented } from "@/components/ui/segmented";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { IconButton } from "@/components/ui/icon-button";
+import { libraryEntryName, type LibraryKind } from "@/lib/library";
+import { useConfirmStore } from "@/stores/confirmStore";
+import { useLibraryStore } from "@/stores/libraryStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useLocale } from "@/hooks/useLocale";
@@ -68,6 +79,89 @@ function SettingRow({
       </div>
       <div className="sr-ctrl">{control}</div>
     </div>
+  );
+}
+
+/** Kind → the sheet's own section word (existing keys) + the manager's sort order. */
+const LIBRARY_KIND_ORDER: readonly LibraryKind[] = [
+  "spell",
+  "feature",
+  "equipment",
+  "weapon",
+];
+
+/**
+ * The account-level homebrew library manager: every saved entry, grouped by kind
+ * (the rows sort by kind then name, each labelled with its kind) with a delete
+ * glyph. The list itself lives in `libraryStore`, fed by the shell's ONE listener —
+ * this section only reads and dispatches, like every other row on the page. Saving
+ * happens on the item's own card in the cockpit; this is where entries are pruned.
+ */
+function LibrarySection() {
+  const { t } = useTranslation();
+  const entries = useLibraryStore((s) => s.entries);
+  const removeFromLibrary = useLibraryStore((s) => s.removeFromLibrary);
+
+  function kindLabel(kind: LibraryKind): string {
+    switch (kind) {
+      case "spell":
+        return t("nav.spells");
+      case "feature":
+        return t("nav.features");
+      case "equipment":
+        return t("equipment.title");
+      case "weapon":
+        return t("equipment.weapons");
+    }
+  }
+
+  const rows = [...entries].sort((a, b) => {
+    const byKind =
+      LIBRARY_KIND_ORDER.indexOf(a.kind) - LIBRARY_KIND_ORDER.indexOf(b.kind);
+    return byKind !== 0 ? byKind : libraryEntryName(a).localeCompare(libraryEntryName(b));
+  });
+
+  async function handleDelete(id: string, name: string) {
+    const ok = await useConfirmStore.getState().confirm({
+      title: t("settings.libraryDeleteTitle", { name }),
+      message: t("settings.libraryDeleteMessage"),
+      confirmLabel: t("common.delete"),
+      tone: "danger",
+    });
+    if (ok) removeFromLibrary(id);
+  }
+
+  return (
+    <Section title={t("settings.library")} onArt>
+      <InfoCard>
+        {rows.length === 0 ? (
+          <p className="py-1 text-[0.72rem] italic text-text-secondary">
+            {t("custom.libraryEmpty")}
+          </p>
+        ) : (
+          rows.map((entry) => {
+            const name = libraryEntryName(entry);
+            return (
+              <SettingRow
+                key={entry.id}
+                icon={BookMarked}
+                name={name}
+                help={kindLabel(entry.kind)}
+                control={
+                  <IconButton
+                    aria-label={`${t("common.delete")} ${name}`}
+                    className="hover:text-error"
+                    onClick={() => void handleDelete(entry.id, name)}
+                  >
+                    <Icon as={Trash2} size="sm" decorative />
+                  </IconButton>
+                }
+              />
+            );
+          })
+        )}
+      </InfoCard>
+    </Section>
   );
 }
 
@@ -137,6 +231,9 @@ export function SettingsPage() {
             />
           </InfoCard>
         </Section>
+
+        {/* ── Homebrew library: the account-level entries ───────────────────── */}
+        <LibrarySection />
 
         {/* ── Account: the signed-in identity ───────────────────────────────── */}
         <Section title={t("common.account")}>

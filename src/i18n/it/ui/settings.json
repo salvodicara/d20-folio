@@ -10,6 +10,9 @@
     "themeHelp": "Scegli un tema fisso o segui il sistema.",
     "languageHelp": "Tutto il testo delle regole segue la traduzione dell'SRD.",
     "noIdentity": "Accesso effettuato",
-    "openAdmin": "Apri strumenti di amministrazione"
+    "openAdmin": "Apri strumenti di amministrazione",
+    "library": "Libreria homebrew",
+    "libraryDeleteTitle": "Eliminare {{name}} dalla tua libreria?",
+    "libraryDeleteMessage": "La voce viene rimossa dalla libreria. I personaggi che la usano già mantengono la loro copia."
   }
 }

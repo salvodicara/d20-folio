@@ -27,8 +27,9 @@ pure-modules guard). `lib/library-io.ts` owns the Firestore seam on the
 `users/{uid}/library/index` singleton (defensive read, full-doc `setDoc` overwrite
 through `stripUndefined`, DEV_BYPASS no-op) on the `combat-state-io` pattern;
 `stores/libraryStore.ts` holds the live list and the two optimistic mutations,
-emitting outcomes (`saved`/`updated`/`full`/`unavailable`) rather than strings; the
-single listener lives in `hooks/useLibrary.ts` and refuses to write from an
-unhydrated store. `FREE_TIER_LIMITS.libraryEntries` (100) is mirrored in
+emitting outcomes (`saved`/`updated`/`full`/`unavailable`) rather than strings, and
+stays Firebase-free because its write seam is INJECTED (the `combatPersistence`
+pattern) by the single listener in `hooks/useLibrary.ts`, which also refuses to write
+from an unhydrated store. `FREE_TIER_LIMITS.libraryEntries` (100) is mirrored in
 `firestore.rules` — owner-only read/write plus a list + size guard, proved by
 mutation in the emulator rules suite.

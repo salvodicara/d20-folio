@@ -65,6 +65,7 @@ import { CollapsibleSearch } from "@/components/shared/CollapsibleSearch";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { FeatureAddModal } from "@/components/sheet/FeatureAddModal";
 import { PoolSpendModal, type PoolSpendRequest } from "@/components/sheet/PoolSpendModal";
+import { SaveToLibraryButton } from "@/components/sheet/SaveToLibraryButton";
 import {
   UniversalCard,
   UniversalCardFoot,
@@ -998,6 +999,14 @@ export function FeaturesTab() {
                               })}
                             </span>
                           </Button>
+                        )}
+                        {/* …and kept in the account-level homebrew library. */}
+                        {feature.isCustom && (
+                          <SaveToLibraryButton
+                            kind="feature"
+                            idx={feature.idx}
+                            name={feature.name}
+                          />
                         )}
                         <Button
                           size="sm"
