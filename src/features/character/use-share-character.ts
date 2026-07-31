@@ -9,8 +9,10 @@
  *              iMessage for free), the clipboard everywhere else. ONE tap from the
  *              menu to a sent link — the reason there is no share dialog to walk
  *              through (golden rule 20).
- *   revoke() — the house confirm, then turn it off. The very next read of the link
- *              is denied by `firestore.rules`; there is nothing else to undo.
+ *   revoke() — turn it off, immediately, on one quiet tap. NO confirm: the house
+ *              register keeps those for destructive acts, and this one is instantly
+ *              reversible (Share link puts the SAME link back). The very next read of
+ *              the link is denied by `firestore.rules`; there is nothing to undo.
  *
  * Both mirror the portrait-metadata write precedent (`usePortraitCrop.removePortrait`):
  * persist through `updateCharacter`, then reflect on the store — never the reverse, so
@@ -27,7 +29,6 @@ import { appLink } from "@/lib/app-link";
 import { updateCharacter } from "@/lib/firestore";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
-import { useConfirmStore } from "@/stores/confirmStore";
 import { useToastStore } from "@/stores/toastStore";
 
 /** The public URL of a shared character — its Firestore document path IS the link. */
@@ -40,7 +41,7 @@ export interface ShareCharacterActions {
   shared: boolean;
   /** Turn sharing on (if needed) and hand the link to the native sheet / clipboard. */
   share: () => Promise<void>;
-  /** Confirm, then stop sharing — the link dies on the next read. */
+  /** Stop sharing, immediately — the link dies on the next read. */
   revoke: () => Promise<void>;
 }
 
@@ -90,13 +91,6 @@ export function useShareCharacter(): ShareCharacterActions {
   const revoke = useCallback(async () => {
     if (!character) return;
     const name = character.character.name;
-    const ok = await useConfirmStore.getState().confirm({
-      title: t("share.revokeTitle", { name }),
-      message: t("share.revokeMessage"),
-      confirmLabel: t("share.stopSharing"),
-      tone: "warning",
-    });
-    if (!ok) return;
     if (await setShared(false)) {
       useToastStore.getState().showToast({
         message: t("share.revokedToast", { name }),

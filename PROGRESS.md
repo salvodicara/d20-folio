@@ -1375,7 +1375,9 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   into an enumeration query; the public `/view/:uid/:charId` route reusing `CockpitView` through
   `loadReadonly`, with one quiet page for revoked / deleted / denied / offline and a per-route
   noindex; the sheet's ⋯ menu gaining one-tap **Share link** plus a state-revealing **Stop sharing**
-  behind the house confirm; `ShareButton` as the ONE button-shaped share affordance, adopted by the
+  that revokes on the tap itself (owner gate: no confirm — the register keeps those for destructive
+  acts, and re-sharing restores the same link); `ShareButton` as the ONE button-shaped share
+  affordance, adopted by the
   hub's ACCESS panel and the create-campaign success screen (whose hand-rolled URL builder and raw
   read-only link field are gone), and the campaign card's ⋯ item upgraded from copy-only to the
   native sheet; `ogShell` + the two Hosting rewrites + the designed `public/og-card.jpg`, verified

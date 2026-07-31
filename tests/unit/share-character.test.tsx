@@ -4,8 +4,9 @@
  *
  * Pins: the link IS the document path; "Share link" turns sharing on and hands the
  * link to the platform in ONE tap; "Stop sharing" exists ONLY while the link is live
- * (its presence is the state signal) and goes through the house confirm; a failed
- * write never leaves the sheet claiming a link that works.
+ * (its presence is the state signal) and revokes on that one tap, with NO confirm —
+ * the register keeps those for destructive acts, and this one re-shares to the SAME
+ * link; a failed write never leaves the sheet claiming a link that works.
  *
  * `shareOrCopy` is stubbed to its call: the native-sheet-vs-clipboard branch inside
  * it is pinned by `share-or-copy.test.ts`, so re-driving it here would test the same
@@ -57,11 +58,6 @@ async function pickMenuItem(name: RegExp): Promise<void> {
   fireEvent.click(screen.getByRole("button", { name: /more actions/i }));
   fireEvent.click(screen.getByRole("menuitem", { name }));
   await act(() => Promise.resolve());
-}
-
-/** Answer the pending house confirm, settling the promise the action awaits. */
-function answerConfirm(ok: boolean): void {
-  act(() => useConfirmStore.getState().respond(ok));
 }
 
 describe("character share link — the owner affordance", () => {
@@ -121,17 +117,16 @@ describe("character share link — the owner affordance", () => {
     expect(screen.getByRole("menuitem", { name: /stop sharing/i })).toBeInTheDocument();
   });
 
-  it("revoking asks first, then flips the flag off", async () => {
+  it("revoking is ONE quiet tap — no dialog, flag off, one toast", async () => {
     loadSheet(true);
     render(<SheetExtrasCoin triggerClassName="fob-coin" />);
     await pickMenuItem(/stop sharing/i);
 
-    // The confirm is open and says who can currently see the sheet.
-    expect(useConfirmStore.getState().options?.message).toMatch(/anyone with the link/i);
-    expect(updateCharacterMock).not.toHaveBeenCalled();
-
-    answerConfirm(true);
-    await act(() => Promise.resolve());
+    // Nothing to dismiss: no house confirm was ever opened, and no dialog is on
+    // screen. Sharing again puts the same link back, so asking would be ceremony.
+    expect(useConfirmStore.getState().options).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    // The flip happened on the tap itself.
     expect(updateCharacterMock).toHaveBeenCalledWith("owner-1", "char-1", {
       shared: false,
     });
@@ -139,15 +134,16 @@ describe("character share link — the owner affordance", () => {
     expect(useToastStore.getState().toasts.at(-1)?.message).toMatch(/no longer shared/i);
   });
 
-  it("cancelling the confirm leaves the link live", async () => {
+  it("a failed revoke keeps the link live and says so", async () => {
     loadSheet(true);
+    updateCharacterMock.mockRejectedValue(new Error("offline"));
     render(<SheetExtrasCoin triggerClassName="fob-coin" />);
     await pickMenuItem(/stop sharing/i);
-    answerConfirm(false);
-    await act(() => Promise.resolve());
 
-    expect(updateCharacterMock).not.toHaveBeenCalled();
     expect(useCharacterStore.getState().character?.shared).toBe(true);
+    expect(useToastStore.getState().toasts.at(-1)?.message).toMatch(
+      /couldn't change sharing/i
+    );
   });
 
   it("a failed write never leaves the sheet claiming a link that works", async () => {

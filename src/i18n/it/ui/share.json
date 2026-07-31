@@ -8,8 +8,6 @@
     "enabledToast": "Link copiato. Chiunque lo abbia può ora vedere {{name}}.",
     "revokedToast": "{{name}} non è più condiviso",
     "failed": "Impossibile modificare la condivisione di {{name}}. Riprova.",
-    "revokeTitle": "Interrompere la condivisione di {{name}}?",
-    "revokeMessage": "Chiunque abbia il link può vedere questo personaggio in questo momento. Interrompendola, il link smette subito di funzionare: chi lo ha ricevuto vedrà invece una pagina “non più condiviso”.",
     "unavailableTitle": "Questo personaggio non è più condiviso",
     "unavailableBlurb": "Il link potrebbe essere stato revocato, oppure il personaggio potrebbe essere stato eliminato. Chiedi un nuovo link a chi te l'ha inviato.",
     "unavailableCta": "Vai a d20 Folio"

@@ -1556,10 +1556,13 @@ share collection, no mirror copy, no token table, no expiry, no server. The mode
   items: **Share link** turns sharing on if it is off and goes straight to `shareOrCopy` — the Web
   Share API native sheet where it exists, the clipboard everywhere else — so handing a friend the
   sheet is ONE tap; **Stop sharing** appears ONLY while the link is live (its presence IS the "this
-  character is public right now" signal) and runs the house confirm before flipping the flag. The
-  write mirrors the portrait-metadata precedent: persist through `updateCharacter`, THEN reflect on
-  the store, so a failed write never leaves the sheet offering a link that does not work. Both items
-  live in the shared `SheetExtrasCoin`, so desktop and mobile cannot drift.
+  character is public right now" signal) and flips the flag on that one tap, with NO confirm — the
+  register keeps confirms for DESTRUCTIVE acts, and this one is instantly reversible (Share link puts
+  the same link back), so a dialog would be ceremony over an off switch. The quiet toast is the
+  receipt. The write mirrors the portrait-metadata precedent: persist through `updateCharacter`, THEN
+  reflect on the store, so a failed write never leaves the sheet offering a link that does not work
+  (a failed revoke says so and leaves the link live). Both items live in the shared
+  `SheetExtrasCoin`, so desktop and mobile cannot drift.
 - **noindex.** The route injects `<meta name="robots" content="noindex, nofollow">` while mounted and
   removes it on unmount. A static tag in `index.html` would deindex the whole app, and there is no
   server to vary the response per route; Google renders JS and honours a tag injected this way. The
