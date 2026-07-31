@@ -1362,7 +1362,8 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   affordance, never a second implementation. That is INVITE (a functional join), not anonymous
   viewing: the no-campaign-share-model decision above stands untouched. (2) **Professional link
   previews (Open Graph), two tiers** — a site-wide baseline (`og:*` + `twitter:card` in the HTML
-  shell, EN only, with a designed 1200×630 branded card in `public/`, kept out of the precache),
+  shell, EN only, over designed 1200×630 branded cards in `public/` — one per TYPE (character ·
+  invite · generic, owner gate 2026-07-31), all kept out of the precache),
   and **per-link dynamic tags on the two shared route families** (`/view/**`, `/join/**`) from a
   lightweight Cloud Function behind Hosting rewrites that serves the SPA shell with the entity's
   tags injected — a shared character reads its `shared: true` doc (an unshared or unknown id gets
@@ -1380,8 +1381,8 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   affordance, adopted by the
   hub's ACCESS panel and the create-campaign success screen (whose hand-rolled URL builder and raw
   read-only link field are gone), and the campaign card's ⋯ item upgraded from copy-only to the
-  native sheet; `ogShell` + the two Hosting rewrites + the designed `public/og-card.jpg`, verified
-  by curl under a crawler UA. One rule-27 stability fix fell out of it: every ⋯ overflow item inside
+  native sheet; `ogShell` + the two Hosting rewrites + the three designed cards
+  (`public/og-card{,-character,-campaign}.jpg`), verified by curl under a crawler UA. One rule-27 stability fix fell out of it: every ⋯ overflow item inside
   the mobile Signet was inert, because `useDismissOnOutside` collapsed the chain on a pointerdown
   inside the menu's own Radix portal. Review convergence closed three exposures in `ogShell` and one
   duplication: the shell is now fetched only from an ALLOWLISTED host (a forged `X-Forwarded-Host`
@@ -1391,7 +1392,10 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   chain of timing-out legs and therefore billed time); a `joinsLocked` campaign now unfurls as
   nothing, so the DM's leaked-link kill switch holds against the Admin SDK too; and the generic card
   exists ONLY in `index.html` — no card means the shell is served untouched, so the copy cannot
-  drift. Full design record:
+  drift. The owner gate then asked for two more things, both landed: the revoke confirm is gone (one
+  quiet tap), and the preview image is now TYPE-BASED — a character card, an invite card and the
+  generic app card, three siblings in one folio identity, chosen per route family with the generic
+  one still covering unshared / locked / unknown. Full design record:
   `docs/ARCHITECTURE.md` → "Public share links" + "Link previews (Open Graph)".
 - **Post-view signup CTA — the share-funnel growth loop (CANDIDATE — owner idea 2026-07-31):** the
   public no-account `/view` page (a non-registered friend viewing a shared character) offers a

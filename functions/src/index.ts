@@ -535,9 +535,9 @@ export const ogShell = onRequest(async (req, res) => {
       .status(200)
       .set("Cache-Control", OG_CACHE_CONTROL)
       .set("Content-Type", "text/html; charset=utf-8")
-      // No card ⇒ the shell EXACTLY as built, baseline tags and all. One copy of the
-      // generic card, in `index.html`, so the two can never drift apart.
-      .send(card ? injectOgTags(shell, card) : shell);
+      // No card ⇒ `injectOgTags` hands back the shell EXACTLY as built, baseline tags
+      // and all. One copy of the generic card, in `index.html`, so nothing can drift.
+      .send(injectOgTags(shell, card));
   } catch (e) {
     // The shell itself is unreachable — redirect rather than serve a broken page.
     logger.error("ogShell: could not load the app shell", {

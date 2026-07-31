@@ -82,11 +82,12 @@ export default defineConfig({
       // code (the owner's bug runs ONLY with the SW active). Scoped to that one
       // harness; normal `pnpm dev` and every other E2E are unaffected.
       devOptions: { enabled: process.env.VITE_PWA_DEV === "true", type: "module" },
-      // The OG card (`public/og-card.jpg`) is deliberately NOT here and is a .jpg,
-      // which `globPatterns` below does not match — so the link-preview image never
-      // enters the offline precache. Crawlers fetch it over the network; the app
-      // itself never renders it, so precaching ~95 KiB of it would buy nothing and
-      // the precache ceiling has ~11 KiB of headroom.
+      // The three OG cards (`public/og-card.jpg` + its `-character` / `-campaign`
+      // type siblings) are deliberately NOT here and are .jpg, which `globPatterns`
+      // below does not match — so no link-preview image ever enters the offline
+      // precache. Crawlers fetch them over the network; the app itself never renders
+      // them, so precaching ~350 KiB of them would buy nothing and the precache
+      // ceiling has ~11 KiB of headroom.
       includeAssets: ["icons/*.png"],
       manifest: {
         name: "d20 Folio",

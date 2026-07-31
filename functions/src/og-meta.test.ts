@@ -14,7 +14,7 @@
  * twice (rules suite + the guard), not by this file. The campaign side of the
  * exposure rule (name + the joins lock) lives in `campaignCard`, so it IS covered.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -127,6 +127,7 @@ describe("renderOgTags", () => {
       title: 'Sir "Quote" <script>&',
       description: "d & d",
       url: URL,
+      image: `${SITE}/og-card.jpg`,
     });
     expect(html).toContain("&quot;Quote&quot;");
     expect(html).toContain("&lt;script&gt;");
@@ -136,8 +137,50 @@ describe("renderOgTags", () => {
 
   it("carries the branded card, never a portrait", () => {
     const html = renderOgTags(campaignCard({ name: "Starless Keep" }, URL)!);
-    expect(html).toContain('content="https://d20-folio.web.app/og-card.jpg"');
+    expect(html).toContain('content="https://d20-folio.web.app/og-card-campaign.jpg"');
     expect(html).toContain('name="twitter:card" content="summary_large_image"');
+  });
+});
+
+describe("the type cards — one designed image per route family", () => {
+  const CHARACTER = characterCard({ name: "Mara", classes: [] }, URL)!;
+  const CAMPAIGN = campaignCard({ name: "Starless Keep" }, URL)!;
+  /** The baseline block in the real shell — the generic card, the third variant. */
+  const BASELINE = SHELL.slice(SHELL.indexOf(OG_START), SHELL.indexOf(OG_END));
+
+  it("a shared character unfurls over the CHARACTER card", () => {
+    expect(CHARACTER.image).toBe(`${SITE}/og-card-character.jpg`);
+    expect(renderOgTags(CHARACTER)).toContain(
+      `<meta property="og:image" content="${SITE}/og-card-character.jpg" />`
+    );
+  });
+
+  it("a live invite unfurls over the CAMPAIGN card", () => {
+    expect(CAMPAIGN.image).toBe(`${SITE}/og-card-campaign.jpg`);
+    expect(renderOgTags(CAMPAIGN)).toContain(
+      `<meta property="og:image" content="${SITE}/og-card-campaign.jpg" />`
+    );
+  });
+
+  it("everything else keeps the GENERIC card — three distinct images, no accidents", () => {
+    // The card-less path is served the shell untouched, so the baseline block IS the
+    // generic variant; a copy-paste that pointed two families at one file would make
+    // the type distinction silently vanish.
+    expect(BASELINE).toContain(`${SITE}/og-card.jpg`);
+    expect(BASELINE).not.toContain("og-card-character.jpg");
+    expect(BASELINE).not.toContain("og-card-campaign.jpg");
+    expect(new Set([CHARACTER.image, CAMPAIGN.image, `${SITE}/og-card.jpg`]).size).toBe(
+      3
+    );
+  });
+
+  it("every card image is a file that actually ships in public/", () => {
+    // The tags are only as good as the assets behind them: a renamed or unshipped
+    // card would unfurl as a broken image, which no other test would notice.
+    for (const image of [CHARACTER.image, CAMPAIGN.image, `${SITE}/og-card.jpg`]) {
+      const file = resolve(__dirname, "../../public", image.slice(SITE.length + 1));
+      expect(existsSync(file), `missing ${file}`).toBe(true);
+    }
   });
 });
 
@@ -234,6 +277,14 @@ describe("injectOgTags against the REAL index.html", () => {
     // Everything outside the block survives — it is still the real app shell.
     expect(out).toContain('<div id="root">');
     expect(out).toContain('<script type="module" src="/src/main.tsx">');
+  });
+
+  it("NO card ⇒ the shell byte-for-byte, which IS the generic variant", () => {
+    // The unshared / locked / unknown path. Not "a generic card rebuilt to look like
+    // the baseline" — the baseline itself, so those links are indistinguishable from
+    // every other route and the copy has nowhere to drift to.
+    expect(injectOgTags(SHELL, null)).toBe(SHELL);
+    expect(SHELL).toContain("a living D&D 2024 character sheet");
   });
 
   it("returns a marker-less shell untouched rather than serving a broken page", () => {

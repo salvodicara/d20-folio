@@ -11,6 +11,9 @@
  * Everything here is a pure function so it is unit-tested without an emulator, the
  * convention every other function in this package follows.
  *
+ * Each shared TYPE unfurls over its own designed card image (character / invite),
+ * with the generic app card for everything else — see {@link CARD_CHARACTER}.
+ *
  * WHAT MAY BE EXPOSED — the rule this module enforces:
  *   · a character: ONLY when its document carries `shared: true`, and only its name,
  *     total level and class. An unshared, unknown or malformed id falls back to the
@@ -27,8 +30,16 @@
  *  (production, a preview channel, the local emulator) actually served the page. */
 export const SITE = "https://d20-folio.web.app";
 const BRAND = "d20 Folio";
-/** The branded 1200×630 card. Every preview uses it — portraits are not exposed. */
-const CARD = `${SITE}/og-card.jpg`;
+/**
+ * The branded 1200×630 cards — ONE PER TYPE, which is what every mature link preview
+ * does: the image says what KIND of thing the link is before a word of it is read.
+ * Three designed siblings in the same folio identity, all STATIC art (a portrait is
+ * never exposed): these two, plus the generic app card in `index.html`'s baseline
+ * block — which is exactly what a card-less path is served, so the unshared / locked
+ * / unknown cases stay indistinguishable from any other route.
+ */
+const CARD_CHARACTER = `${SITE}/og-card-character.jpg`;
+const CARD_CAMPAIGN = `${SITE}/og-card-campaign.jpg`;
 
 /** The two shared route families, as parsed off the request path. */
 export type SharePath =
@@ -57,6 +68,8 @@ export interface OgCard {
   title: string;
   description: string;
   url: string;
+  /** The type card this entity unfurls over — set by the builder, never by a caller. */
+  image: string;
 }
 
 /** The `cache` projection a character document carries (see `character-cache.ts`). */
@@ -108,6 +121,7 @@ export function characterCard(cache: CharacterCacheLike, url: string): OgCard | 
     title: line ? `${name} — ${line} · ${BRAND}` : `${name} · ${BRAND}`,
     description: `${name}'s character sheet on ${BRAND}, shared read-only. No account needed.`,
     url,
+    image: CARD_CHARACTER,
   };
 }
 
@@ -134,6 +148,7 @@ export function campaignCard(doc: CampaignDocLike, url: string): OgCard | null {
     title: `Join ${clean} on ${BRAND}`,
     description: `You have been invited to the ${clean} table on ${BRAND} — a free, offline-first D&D 2024 companion.`,
     url,
+    image: CARD_CAMPAIGN,
   };
 }
 
@@ -154,7 +169,7 @@ export function renderOgTags(card: OgCard): string {
     `<meta property="og:site_name" content="${BRAND}" />`,
     `<meta property="og:title" content="${title}" />`,
     `<meta property="og:description" content="${esc(card.description)}" />`,
-    `<meta property="og:image" content="${CARD}" />`,
+    `<meta property="og:image" content="${card.image}" />`,
     `<meta property="og:image:width" content="1200" />`,
     `<meta property="og:image:height" content="630" />`,
     `<meta property="og:image:alt" content="${title}" />`,
@@ -173,11 +188,16 @@ export const OG_END = "<!-- og:end -->";
  * the markers AND the shell's own `<title>` (the injected block carries its own, so
  * leaving the original would give the document two).
  *
- * A shell WITHOUT the markers is returned untouched — a build that lost them must
- * still serve a working page, just with the generic card (the deploy-time guard test
- * is what stops that shipping silently).
+ * NO CARD (`null`) returns the shell EXACTLY as built: the baseline block is the
+ * generic app card, so there is one copy of that copy in the repo and a link that
+ * describes nothing is byte-identical to every other route.
+ *
+ * A shell WITHOUT the markers is likewise returned untouched — a build that lost them
+ * must still serve a working page, just with the generic card (the deploy-time guard
+ * test is what stops that shipping silently).
  */
-export function injectOgTags(shell: string, card: OgCard): string {
+export function injectOgTags(shell: string, card: OgCard | null): string {
+  if (!card) return shell;
   const start = shell.indexOf(OG_START);
   const end = shell.indexOf(OG_END);
   if (start === -1 || end === -1 || end < start) return shell;

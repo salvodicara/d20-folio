@@ -1580,9 +1580,17 @@ per-link previews on its own — every URL would unfurl as the same card. Two ti
 - **The baseline** lives in `index.html`, between the `og:start` / `og:end` markers: `og:*` +
   `twitter:card`, EN only (OG has no clean bilingual story — a crawler carries no session and no
   Accept-Language worth trusting, and an English card is the industry norm), pointing at the designed
-  1200×630 card at `public/og-card.jpg`. That file is a `.jpg`, which `globPatterns` does not match,
-  and it is deliberately absent from `includeAssets` — so the preview image never enters the offline
-  precache (the app never renders it, and the precache ceiling has ~11 KiB of headroom).
+  1200×630 generic card at `public/og-card.jpg`.
+- **One card image per TYPE**, the industry standard: `public/og-card-character.jpg` ("A character
+  lives here") for a live `/view/**`, `public/og-card-campaign.jpg` ("A seat at the table") for a
+  live invite, and the generic app card for everything else — three designed siblings in one folio
+  identity (same plate, gilt lockup, Cinzel/Alegreya voice, per-card scene art), so a reader knows
+  what KIND of link arrived before reading a word of it. The images are STATIC art: a portrait is
+  never exposed, and the card carries no entity detail the title does not already say. `og-meta.ts`
+  is the only place that maps type → image (`OgCard.image`, set by the builders, never by a caller).
+  All three are `.jpg`, which `globPatterns` does not match, and all three are deliberately absent
+  from `includeAssets` — so no preview image ever enters the offline precache (the app never renders
+  them, and the precache ceiling has ~11 KiB of headroom).
 - **Per-link tags** on the two shared route families come from `ogShell`
   (`functions/src/index.ts`, pure half in `functions/src/og-meta.ts`), an `onRequest` function that
   Hosting rewrites `/view/**` and `/join/**` to (`firebase.json`; the rewrite names
@@ -1605,10 +1613,11 @@ per-link previews on its own — every URL would unfurl as the same card. Two ti
   still open — the code IS the campaign's document id, the same secret the join flow already treats
   as the grant. The Admin SDK bypasses `firestore.rules`, so `ogShell` re-checks BOTH the share flag
   and `joinsLocked` (the DM's kill switch for a leaked link) itself. Every other case — unshared,
-  locked, unknown, malformed, lookup failed — is served the shell UNTOUCHED, i.e. the baseline card
-  above, which is why there is exactly one copy of that generic copy in the repo and nothing to drift
-  against. An unshared id is then not even distinguishable from a nonexistent one; the only thing
-  given up is `og:url` echoing the shared path on a link that describes nothing anyway.
+  locked, unknown, malformed, lookup failed — is served the shell UNTOUCHED (`injectOgTags(shell,
+null)` returns it byte-for-byte), i.e. the baseline generic card above, which is why there is
+  exactly one copy of that generic copy in the repo and nothing to drift against. An unshared id is
+  then not even distinguishable from a nonexistent one — not by title, not by card image; the only
+  thing given up is `og:url` echoing the shared path on a link that describes nothing anyway.
 - **Cost + staleness.** The response is CDN-cacheable per URL (`max-age=300, s-maxage=3600`), so the
   function runs on a crawl or a cold first hit, not per pageview — and a returning user never reaches
   it at all, because the service worker answers `/view/**` and `/join/**` navigations from the
