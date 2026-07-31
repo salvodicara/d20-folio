@@ -2348,8 +2348,8 @@ button.pr-dot.lg::before {
 .modal {
   /* relative seats the reliquary corner overlay (`.modal::after`, the ornament
      vocabulary below) — dialogs are an earned hero register. The modal must NOT
-     clip child paint: that would cut the corner goldwork, which straddles the
-     frame line (border-image outset). Scroll clipping lives on `.modal-body`
+     clip child paint: that would cut the corner fitting, which straddles the
+     frame line (the mask overlay sits at inset -1px). Scroll clipping lives on `.modal-body`
      (its own overflow-y). The one full-bleed child is `.modal-head` (gradient
      band): it rounds its OWN top corners to the card radius below, so no child
      paint ever overruns the rounded corner arc. */
@@ -2358,7 +2358,6 @@ button.pr-dot.lg::before {
   max-width: 32rem;
   background: var(--bg-surface-2);
   border: 1px solid var(--border-accent);
-  border-radius: var(--radius-xl);
   box-shadow: var(--elev-modal);
 }
 .modal.sm {
@@ -6988,7 +6987,6 @@ button.trk-pip:active {
   padding: var(--sp-5) var(--sp-6);
   margin-bottom: var(--sp-6);
   border: 1px solid color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium));
-  border-radius: var(--radius-xl);
   background: linear-gradient(
     135deg,
     color-mix(
@@ -9693,7 +9691,7 @@ button.create-need:focus-visible .create-need-chev {
 /* The ribbon seats on a gold rule that the active tab "bites" into — the bound-page
    divider. The body panel below picks up from here. */
 .cmp-ribbon-rule,
-.wb .wb-ribbon-rule {
+.wb-ribbon-rule {
   height: 1px;
   margin: -1px var(--sp-4) 0;
   background: linear-gradient(
@@ -14129,9 +14127,6 @@ button.party-avatar-btn:focus-visible {
   box-shadow: var(--elev-resting), var(--gilt-glow);
 }
 
-/* ── (The 2026-07-16 reliquary-diamond corners were RETIRED 2026-07-31 — the
-   binding-corner spandrel fitting below is the one corner treatment; see the
-   provenance comment at its rule.) ── */
 /* — THE BINDING CORNERS (global, owner-directed 2026-07-31: "dovunque c'è
    quel bordo all'angolo, il pennacchio") — the corner fitting is the SILHOUETTE
    of a human-engraved frame-corner spandrel (Openclipart #282416, CC0; vertex
@@ -14155,8 +14150,6 @@ button.party-avatar-btn:focus-visible {
   pointer-events: none;
   z-index: 0;
   inset: -1px;
-  border: 0;
-  border-image: none;
   background: color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium));
   mask-image:
     url("/assets/ornaments/corner-tl.svg"), url("/assets/ornaments/corner-tr.svg"),
@@ -14269,10 +14262,6 @@ button.party-avatar-btn:focus-visible {
    the selected tab lifts out of it with a gold edge + gold ink, so the active
    section is unmistakable and on-identity (was a near-flat tertiary fill). ── */
 .tabstrip {
-  background: var(--input-fill);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  box-shadow: var(--elev-recessed);
   /* Breathing room when `useActiveTabScroll` reveals a selected off-edge tab. */
   scroll-padding-inline: 16px;
 }
@@ -14311,25 +14300,6 @@ button.party-avatar-btn:focus-visible {
 .tabstrip-shell[data-fade="lr"]::after {
   opacity: 1;
 }
-.tabstrip [role="tab"] {
-  border: 1px solid transparent;
-}
-.tabstrip [role="tab"]:hover:not([aria-selected="true"]) {
-  color: var(--text-primary);
-  background: color-mix(in oklab, var(--accent-primary) 8%, transparent);
-}
-.tabstrip [role="tab"][aria-selected="true"] {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-glow) 24%, var(--bg-surface-2)),
-    color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-1))
-  );
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 48%, var(--border-medium));
-  color: var(--accent-text);
-  box-shadow:
-    inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.18)),
-    var(--elev-resting);
-}
 /* OWN-36 — the ACTIVE tab in light is a struck GOLD-LEAF tile, not a brown-tinted
    fill. Light's `--accent-primary` is a deep brown (#4a380c, needed for text AA), so
    the dark theme's `accent 24% → 12%` recipe reads muddy brown on cream. Gold can't
@@ -14337,20 +14307,6 @@ button.party-avatar-btn:focus-visible {
    rich struck gold → deeper gold base, kept inside the bright-gold band so dark
    espresso ink clears AA, with a crisp gold-700 rim + a tight gilt aura. Reads as a
    lit brass tile lifting out of the carved track — the light answer to dark's gleam. */
-[data-theme="light"] .tabstrip [role="tab"][aria-selected="true"] {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--gold-leaf-300) 55%, white) 0%,
-    var(--gold-leaf-300) 48%,
-    var(--gold-leaf-500) 100%
-  );
-  border-color: var(--gold-leaf-700);
-  color: var(--accent-text);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 250, 0.85),
-    var(--elev-raised),
-    var(--gilt-glow-sm);
-}
 
 /* ── Seal — a struck gold medallion for the identity monogram. A theme-aware
    carved well (the shared --portrait-well radial) under a gilt brass edge, an
@@ -21016,11 +20972,5 @@ body:has(.fob) .toast-region {
 }
 
 /* §16.5 — the cockpit's primary tabs are BOOK TABS: the same bound-page
-   linguette construction the Compendium wears (one definition — the cockpit
-   selectors twin the .cmp-tab rules), biting the ribbon rule below. The strip
-   itself sheds its carved box: the tabs and the rule ARE the furniture. */
-.wb .tabstrip {
-  background: none;
-  border-color: transparent;
-  box-shadow: none;
-}
+   linguette construction the Compendium wears (the cockpit selectors twin the
+   .cmp-tab rules) biting the ribbon rule below. */

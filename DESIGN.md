@@ -1524,69 +1524,11 @@ The pieces and their ONE home (`src/styles/folio.css`; the metal tokens in `src/
   (`.folio-panel.gilt-frame::after` — cockpit identity), and dialogs (`.modal::after`).
   Mechanism: the binding-corner spandrel silhouette (CC0-derived,
   `public/assets/ornaments/corner-*.svg`) rendered as four CSS mask layers painted with the
-  hero-frame border's own ink mix, on an overlay
-  pseudo — corner slices carry the ornament, edge slices are EMPTY so the element's own 1px
-  border remains the quiet run, and `border-image` proportionally shrinks corners on small boxes
-  (phone mastheads, `sm` modals). **The fitting rule (owner, 2026-07-17 — "rilegatura"):** the
-  goldwork sits ON the frame like a bookbinding corner fitting, never floating inside the panel.
-  The SVG's arm/gem centerline lies at 20% of the corner tile, so the border-image OUTSET of
-  `20% × 48px + 0.5px` seats the arms exactly on the host's 1px border stroke and the gem's
-  center on the stroke's corner vertex — the diamond caps the corner where the two arms merge;
-  the host's `--radius-xl` (8px) rounding tucks under the gem. Outset ink is paint-only overflow
-  (no scrollbars), but it CAN be clipped by the host's own child-paint clipping — hero hosts
-  therefore carry no `overflow: hidden` (`.modal` scroll-clips on `.modal-body`; the masthead
-  crest self-clips via `mask-size` on an `inset: 0` element; the full-bleed `.modal-head`
-  gradient band rounds its own top corners to the card radius so no child paint overruns the
-  corner arc).
-  **The metal is DIMENSIONAL, not line-art (the two-tone strike):** every member carries a
-  light/shade pair, built the same way the panel embossing works. Dark = raised struck gold —
-  the gold-300 body sits on a near-black under-shadow seat offset below-right (+1.5,+2 SVG units
-  ≈ half a screen px) with a faint gold-200 top-edge glint above-left; the corner gem is truly
-  faceted (gold-200 lit top facet / gold-500 shaded lower facet / gold-700 core). Light INVERTS
-  to the letterpress logic (like `--engrave-title`): members are pressed INTO the vellum — a
-  warm-cream understroke below-right (the groove's lit far wall) + a faint umber upper shadow
-  wall under the bronze-700 body; the gem is an intaglio pair (gold-900 shaded top wall / lit
-  bronze lower wall / near-black pit core). Construction rule (guard-pinned in
-  `ornament-vocabulary.guard.test.ts`): the geometry is mirrored to the four corners UNFILLED
-  first and toned AFTER (offset tone layers over the whole four-corner closure), and the gem
-  facet group is placed per-corner unflipped via `use x/y` — toning inside the mirrored unit
-  would flip the bevel light upside-down on the bottom corners. Decor only:
-  `pointer-events: none`, no layout, no animation. ⚠️ The SVG data-URIs carry explicit
-  `width`/`height` attributes — an SVG with no intrinsic size defaults to 300×150 and
-  border-image slices sample phantom regions; the slice is a PERCENTAGE for the same reason.
-- **Engraved ceremonial titling** (same push) — the Cinzel register reads STRUCK into the plate
-  via the per-theme `--engrave-title` text-shadow (`src/index.css`): dark = a tight shade seat +
-  faint warm gold underglow; light = a letterpress bright understroke + umber lift. Applied to
-  `.page-title`, `.modal-title`, and the cockpit identity h1 (`.folio-panel.gilt-frame h1`) —
-  NEVER gradient text (§7 hard ban holds), and the light on-art rules (higher specificity) still
-  win where a title sits loose on the backdrop.
-- **The modal-head seat rule** (same push) — `.modal-head`'s bottom border is the `.sec-rule`
-  idiom instead of a wall-to-wall line: a gilt-touched hairline that fades at both tips
-  (a to-right gradient through `border-image … 1` on the 1px bottom border).
-- **Panel smoke / morning shade** (same push) — the `.folio-panel` material pseudo carries an
-  edge vignette as its top background layer: dark pools candle-smoke black toward the lower edges
-  (top-lit, recedes into shadow); light pools a whisper of warm umber (sunlit-from-above vellum,
-  designed not adapted — a black vignette would read as grime). Darkening only, so the
-  composite-contrast floor (brightest stop) is untouched and light ink at edges only gains
-  contrast.
-- **Section rubric** — the leading `.sec-diamond` (an 8px faceted diamond, deep gilt on cards,
-  bright gilt on the candlelit backdrop) marks the head; the `.sec-rule` hairline fades at BOTH
-  tips and is **nodeless**, parameterized by `--rule-c` (light theme and econ-typed headers only
-  re-tint the parameter). The leading diamond IS the divider's marker; tab-seat rules
-  (`.cmp-ribbon-rule`) and the disclosure docking hairline stay nodeless too.
-- **The diamond-marker family** — the rail-head node (`.rh-diamond`), the spell-slot / charge
-  gem pips, the scene-break diamond, and the footer node: the same faceted-diamond mark struck at
-  different scales, geometric and theme-tintable, always leading or seated in what it marks.
-- **Scrollbar** — jewelry-thin, app-wide (`src/index.css` §Scrollbars): transparent track and a
-  ghost thumb (`--text-muted` at 40%, a 4px core in a 10px rail) warming to gold on grab; the
-  scroll buttons are hidden. Firefox gets `scrollbar-width: thin` + `scrollbar-color` behind the
-  `@supports not selector(::-webkit-scrollbar)` fence — an unfenced `scrollbar-width` would
-  DISABLE the whole `::-webkit-scrollbar` recipe in Chromium ≥121. `<html>` OWNS the viewport
-  scrollbar (`overflow-y: auto` + `scrollbar-gutter: stable`): the gutter is the single space
-  reservation, and owning the scroll on `<html>` (rather than letting it propagate up from
-  `<body>`) stops a Radix dialog's react-remove-scroll lock (`body { overflow: hidden }`) from
-  removing the viewport scrollbar — otherwise the thumb blinked out on ⌘K-palette/dialog open
-  and back on close (the lock still holds; its wheel/touch blockers are JS, not the overflow).
+  hero-frame border's own ink mix, on an overlay pseudo at `inset: -1px` — the tile origin
+  is the fitting's outer-rule outer edge, so its rules lie pixel-coincident on the host's
+  1px border; hosts keep SQUARE corners beneath the fitting (a rounded line would curve out
+  from under it). One definition; every hero frame (framed mastheads, gilt bands, dialogs)
+  consumes it.
 
 ### Surface hierarchy (never skip the ramp)
 

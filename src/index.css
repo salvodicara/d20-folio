@@ -402,28 +402,6 @@
      struck-gold tier, folio.css): a white haze over the deep dark gold. */
   --glint-ink: rgba(255, 255, 255, 0.32);
 
-  /* § Reliquary goldwork (the full-BG3 identity push, owner-ratified 2026-07-16 —
-     DESIGN.md §5 "The ornament vocabulary"). The worked-gold CORNER ornament that
-     caps the app's hero frames (framed masthead, gilt-framed hero band, dialogs):
-     one per-theme SVG — a small faceted corner gem + ONE short tapered hairline
-     arm per edge ending in a diamond finial (the discreet-weight rule, owner
-     2026-07-17: the old echo hairline + mid-arm diamond are DELETED — ornament
-     ink never shares air with content ink) — consumed via `border-image` on an
-     overlay pseudo (the
-     `.page-head.framed::before` / `.gilt-frame::after` / `.modal::after` recipe,
-     folio.css), OUTSET so the arms lie on the host's border stroke and the gem
-     caps the corner vertex like a bookbinding fitting (owner, 2026-07-17). Data-URI because CSS custom properties cannot reach inside an
-     SVG url: each theme bakes its own metal. TWO-TONE STRIKE (wave 2, F2): the
-     metal is dimensional, not line-art — the arm/finial GEOMETRY (unfilled defs:
-     a=arm set, h=+diagonal mirror+gem silhouette, q/f=the four corners) is
-     mirrored FIRST and toned AFTER, so the light stays top-left on every corner
-     (toning inside the mirrored unit would flip the bevel upside-down on the
-     bottom corners). Dark = raised struck gold: a near-black under-shadow seat
-     (+1.5,+2) below-right + a faint gold-200 top-edge glint (-1,-1.5) under the
-     gold-300 body; the gem is truly faceted (gold-200 lit top facet / gold-500
-     shaded lower / gold-700 core), placed per-corner UNFLIPPED via use x/y.
-     Edges stay EMPTY: goldwork marks the corner, the 1px border remains the
-     quiet run. */
   /* Engraved ceremonial titling (same push): the struck-plate ink for the
      Cinzel register — a tight dark seat below the glyphs + a faint warm gold
      underglow, so page/modal titles read struck into the plate instead of flat
@@ -890,17 +868,6 @@
      on the already-bright gold-leaf band, not haze. */
   --glint-ink: rgba(255, 253, 244, 0.5);
 
-  /* § Reliquary goldwork, light strike (see the dark note): the corner ornament
-     is engraved burnished bronze on the ivory bands — the SAME register as the
-     masthead crest's light ink (`--accent-primary-deep`), never a pale gold that
-     would wash out on cream. Slightly higher run opacity than dark (dark ink on
-     light ground needs less luminance but more presence). TWO-TONE, INVERTED to
-     the letterpress logic (like light's --engrave-title): the members are
-     pressed INTO the vellum, so the pair flips — a warm-cream understroke
-     (+1.5,+2) below-right (light catching the groove's far wall) + a faint
-     umber upper shadow wall (-1,-1.5) under the bronze-700 body; the gem is an
-     INTAGLIO facet pair (gold-900 shaded top wall / lit #99793f lower wall /
-     near-black pit core), placed per-corner unflipped. */
   /* Engraved ceremonial titling, light strike: letterpress into vellum — a
      bright warm understroke below the dark glyphs + a whisper of umber lift. */
   --engrave-title: 0 1px 0 rgba(255, 252, 240, 0.85), 0 2px 3px rgba(74, 56, 12, 0.16);

@@ -326,6 +326,9 @@ footprint barely changes read→edit — both fail on the old fixed box). DESIGN
    roster cards on mobile — is it state of the art? Desktop HP is compact. Owner wants
    SOTA/industry-standard professional mobile layouts; explore via impeccable + proposals
    with screenshots.
+   4b. **Cockpit tail spacing** (owner, 2026-07-31): the collapsed "Combat Algorithm" /
+   "Rules Reference" sections at the sheet's foot carry huge unjustified margins — bring
+   the rhythm in line with the rest of the app (professional, standard).
 4. **Tab selection must not jump (Compendium type tabs + sheet tabs)**: selecting a tab —
    especially one reached by scrolling — currently causes a jump; the tab must stay exactly
    where it is. GRILLED with the owner before implementation (see the golden rule below).

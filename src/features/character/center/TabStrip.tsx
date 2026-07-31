@@ -19,7 +19,6 @@
 import { useRef, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@/components/ui";
-import { cn } from "@/lib/utils";
 import { useActiveTabScroll } from "@/hooks/useActiveTabScroll";
 import { useOverflowFade } from "@/hooks/useOverflowFade";
 import { useTabs, tabDomId, panelDomId } from "./useTabs";
@@ -80,10 +79,6 @@ export function TabStrip() {
               tabIndex={selected ? 0 : -1}
               onClick={() => selectTab(tab.id)}
               onKeyDown={(e) => onTabKeyDown(e, index)}
-              className={cn(
-                "inline-flex flex-shrink-0 items-center gap-1.5 rounded-sm px-3 py-1.5 text-sm transition-colors",
-                selected ? "font-semibold" : "font-medium text-text-secondary"
-              )}
             >
               <Icon as={tab.icon} size="sm" decorative />
               {t(tab.labelKey, tab.defaultLabel)}
