@@ -1381,12 +1381,15 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   native sheet; `ogShell` + the two Hosting rewrites + the designed `public/og-card.jpg`, verified
   by curl under a crawler UA. One rule-27 stability fix fell out of it: every ⋯ overflow item inside
   the mobile Signet was inert, because `useDismissOnOutside` collapsed the chain on a pointerdown
-  inside the menu's own Radix portal. Review convergence closed two exposures in `ogShell` and one
+  inside the menu's own Radix portal. Review convergence closed three exposures in `ogShell` and one
   duplication: the shell is now fetched only from an ALLOWLISTED host (a forged `X-Forwarded-Host`
   on the function's public `*.run.app` URL could otherwise have it reflect attacker HTML with CDN
-  cache headers); a `joinsLocked` campaign now unfurls as nothing, so the DM's leaked-link kill
-  switch holds against the Admin SDK too; and the generic card exists ONLY in `index.html` — no card
-  means the shell is served untouched, so the copy cannot drift. Full design record:
+  cache headers), and the loopback arm of that allowlist is gated on `FUNCTIONS_EMULATOR` (deployed,
+  `127.0.0.1` is the function's own port — a forged loopback host made it fetch ITSELF, a self-SSRF
+  chain of timing-out legs and therefore billed time); a `joinsLocked` campaign now unfurls as
+  nothing, so the DM's leaked-link kill switch holds against the Admin SDK too; and the generic card
+  exists ONLY in `index.html` — no card means the shell is served untouched, so the copy cannot
+  drift. Full design record:
   `docs/ARCHITECTURE.md` → "Public share links" + "Link previews (Open Graph)".
 - **Post-view signup CTA — the share-funnel growth loop (CANDIDATE — owner idea 2026-07-31):** the
   public no-account `/view` page (a non-registered friend viewing a shared character) offers a

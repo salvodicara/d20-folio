@@ -197,8 +197,8 @@ export function injectOgTags(shell: string, card: OgCard): string {
 }
 
 /**
- * The hosts a shell may be fetched from: production, a Firebase preview channel
- * (`d20-folio--<channel>-<hash>.web.app`), and the local emulator.
+ * The hosts a DEPLOYED shell may be fetched from: production and a Firebase preview
+ * channel (`d20-folio--<channel>-<hash>.web.app`). Nothing else, ever.
  *
  * `ogShell` MUST allow unauthenticated invocation (the Hosting rewrite needs it), so
  * its raw `*.run.app` URL is reachable directly and `x-forwarded-host` is attacker-
@@ -207,20 +207,30 @@ export function injectOgTags(shell: string, card: OgCard): string {
  * CDN cache headers. Anything unrecognised falls back to {@link SITE}.
  */
 const ALLOWED_HOST =
-  /^(?:d20-folio(?:--[a-z0-9-]+)?\.web\.app|d20-folio\.firebaseapp\.com|localhost|127\.\d+\.\d+\.\d+|\[::1\]|0\.0\.0\.0)(?::\d+)?$/i;
+  /^(?:d20-folio(?:--[a-z0-9-]+)?\.web\.app|d20-folio\.firebaseapp\.com)(?::\d+)?$/i;
+
+/**
+ * The loopback carve-out — what makes `firebase emulators:start` verifiable with
+ * curl. EMULATOR-ONLY, and that gate is load-bearing: in the cloud a forged
+ * `127.0.0.1:8080` would resolve to the function's OWN container port, so the shell
+ * fetch re-enters `ogShell`, which fetches itself again — a self-SSRF chain of legs
+ * that each hang to timeout, i.e. a cost/DoS vector on a zero-budget project.
+ */
+const LOOPBACK_HOST = /^(?:localhost|127\.\d+\.\d+\.\d+|\[::1\]|0\.0\.0\.0)(?::\d+)?$/i;
 
 /**
  * The origin to fetch the built shell FROM — the host that actually served this
  * request, so the emulator reads the emulator's `dist/` and a preview channel reads
  * its own. Distinct from {@link SITE}, which is what `og:url` advertises. Hosting
  * fronts the function, so the forwarded headers are the truth ONCE the host is one of
- * ours ({@link ALLOWED_HOST}); the localhost / loopback carve-out is what makes
- * `firebase emulators:start` verifiable with curl.
+ * ours — {@link ALLOWED_HOST} always, {@link LOOPBACK_HOST} only under the emulator.
  */
 export function shellOrigin(headers: Record<string, string | undefined>): string {
   const host = headers["x-forwarded-host"] ?? headers["host"];
-  if (!host || !ALLOWED_HOST.test(host)) return SITE;
-  const local = /^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(host);
+  if (!host) return SITE;
+  // `FUNCTIONS_EMULATOR` is set by the emulator and by nothing in the cloud runtime.
+  const local = process.env.FUNCTIONS_EMULATOR === "true" && LOOPBACK_HOST.test(host);
+  if (!local && !ALLOWED_HOST.test(host)) return SITE;
   const proto = headers["x-forwarded-proto"] ?? (local ? "http" : "https");
   return `${proto}://${host}`;
 }

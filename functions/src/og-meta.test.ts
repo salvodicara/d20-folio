@@ -16,7 +16,7 @@
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   parseSharePath,
   characterCard,
@@ -142,6 +142,9 @@ describe("renderOgTags", () => {
 });
 
 describe("shellOrigin", () => {
+  // The cloud runtime has no FUNCTIONS_EMULATOR, so the default here is production.
+  afterEach(() => vi.unstubAllEnvs());
+
   it("reads the host that actually served the request", () => {
     expect(shellOrigin({ host: "d20-folio.web.app" })).toBe("https://d20-folio.web.app");
     expect(shellOrigin({ host: "d20-folio.firebaseapp.com" })).toBe(
@@ -172,8 +175,19 @@ describe("shellOrigin", () => {
   });
 
   it("speaks http to the local emulator, which is what makes the rewrite curl-able", () => {
+    vi.stubEnv("FUNCTIONS_EMULATOR", "true");
     expect(shellOrigin({ host: "localhost:5000" })).toBe("http://localhost:5000");
     expect(shellOrigin({ host: "127.0.0.1:5000" })).toBe("http://127.0.0.1:5000");
+  });
+
+  it("REFUSES loopback in the cloud — it would be the function's own port (self-SSRF)", () => {
+    // Deployed, `127.0.0.1:8080` IS this container: the shell fetch would re-enter
+    // ogShell, which would fetch itself again — a chain of legs each hanging to
+    // timeout, i.e. billed time on a zero-budget project. The carve-out is the
+    // emulator's alone, so the env var (unset in the cloud runtime) is the gate.
+    for (const host of ["127.0.0.1:8080", "localhost:8080", "[::1]:8080", "0.0.0.0"]) {
+      expect(shellOrigin({ "x-forwarded-host": host, host: "x.run.app" })).toBe(SITE);
+    }
   });
 
   it("falls back to the canonical origin when there is no host at all", () => {

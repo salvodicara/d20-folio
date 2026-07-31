@@ -1587,11 +1587,15 @@ per-link previews on its own — every URL would unfurl as the same card. Two ti
   puts the package in Europe). It fetches the built shell from the host that served the request,
   splices the entity's tags in between the same two markers, and returns it — the SAME shell, so a
   human still gets the ordinary SPA and there is no second rendering path to keep in step. The
-  fetched-from host is ALLOWLISTED (production, a `d20-folio--<channel>-<hash>.web.app` preview
-  channel, the local emulator) and anything else falls back to the canonical origin: the function
+  fetched-from host is ALLOWLISTED (production + a `d20-folio--<channel>-<hash>.web.app` preview
+  channel; the loopback carve-out that makes the emulator curl-able applies ONLY when
+  `FUNCTIONS_EMULATOR` is set) and anything else falls back to the canonical origin: the function
   must allow unauthenticated invocation for the rewrite to work, so its raw `*.run.app` URL is
   reachable directly and a forged `X-Forwarded-Host` would otherwise have it fetch — and reflect,
-  with a 200 and CDN cache headers — an attacker's HTML.
+  with a 200 and CDN cache headers — an attacker's HTML. The emulator gate is part of that: deployed,
+  `127.0.0.1:8080` is the function's OWN container port, so a forged loopback host would make
+  `ogShell` fetch itself, each leg hanging to timeout — self-SSRF, and billed time on a zero-budget
+  project.
 - **What may be exposed, and nothing else.** A character: only when its document carries
   `shared: true`, and then only name, total level and class (read off the SRD-free roster `cache`).
   A campaign: only its NAME, and only for an invite code that resolves to a campaign whose joins are
