@@ -39,7 +39,26 @@ export function useDismissOnOutside(
     if (!active) return;
     const onPointerDown = (e: PointerEvent) => {
       const el = ref.current;
-      if (el && !el.contains(e.target as Node)) onDismissRef.current();
+      if (!el || el.contains(e.target as Node)) return;
+      // A Radix overlay PORTALS its surface to <body>, so a pointer inside a menu
+      // this popover OWNS lands physically OUTSIDE `ref` — and dismissing here
+      // unmounts that menu between pointerdown and click, so the item never fires.
+      // That is exactly why every ⋯ overflow item inside the mobile Signet's chain
+      // was dead (History · Export JSON · Export PDF · Share link): the tap
+      // collapsed the chain instead of acting. A portaled surface manages its own
+      // dismissal (Radix's DismissableLayer), so a pointer inside one counts as
+      // inside.
+      // BLIND SPOT: this recognises POPPER surfaces (popover / dropdown / tooltip
+      // content). A Radix Dialog portal carries no popper wrapper — none is nested
+      // in a dismissable region today, and a modal scrim swallows the pointer anyway.
+      const target = e.target;
+      if (
+        target instanceof Element &&
+        target.closest("[data-radix-popper-content-wrapper]")
+      ) {
+        return;
+      }
+      onDismissRef.current();
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;

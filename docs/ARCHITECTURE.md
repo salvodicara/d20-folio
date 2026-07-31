@@ -1498,6 +1498,16 @@ item is an independent copy of it, the one-way relationship the delete confirm a
 teaches. The add commit routes through `characterStore.setCharacter`, the same path the
 create forms use. Campaign SHARING of a library is the ladder's next rung (`PROGRESS.md`).
 
+### Dismissable layers vs. portaled menus
+
+`useDismissOnOutside` (`src/hooks/useDismissOnOutside.ts`) is the ONE outside-dismiss primitive for
+every hand-rolled popover in the app. It ignores a pointer inside a Radix POPPER surface
+(`[data-radix-popper-content-wrapper]`), because such a surface is portaled to `<body>` and therefore
+lands physically outside its owner's ref: dismissing on it unmounts the menu between `pointerdown` and
+`click`, so the item's handler never runs. That is what made every ⋯ overflow item inside the mobile
+Signet's chain inert. A portaled surface manages its own dismissal (Radix's `DismissableLayer`), so
+nesting one inside a dismissable region is now safe by construction rather than per-consumer care.
+
 ### Public share links — one boolean, one rules line, zero new infrastructure
 
 A player shares a CHARACTER (never a campaign — see the deliberate non-goal in

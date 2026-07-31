@@ -35,6 +35,11 @@ function Harness({
       >
         outside
       </button>
+      {/* A Radix popper surface: physically a sibling (portaled to <body> in the
+          real thing), logically a menu the popover above OWNS. */}
+      <div data-radix-popper-content-wrapper="">
+        <button data-testid="portaled-item">menu item</button>
+      </div>
     </div>
   );
 }
@@ -60,6 +65,17 @@ describe("useDismissOnOutside", () => {
     fireEvent.pointerDown(screen.getByTestId("outside"));
     // Capture phase fires before the child's stopPropagation can suppress it.
     expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it("does NOT dismiss on a pointerdown inside a PORTALED menu it owns (the regression)", () => {
+    // A Radix overlay portals its surface out of the ref, so dismissing here used
+    // to unmount the menu between pointerdown and click — which is why every ⋯
+    // overflow item inside the mobile Signet's chain (History · Export · Share
+    // link) was dead: the tap collapsed the chain instead of acting.
+    const onDismiss = vi.fn();
+    render(<Harness active onDismiss={onDismiss} />);
+    fireEvent.pointerDown(screen.getByTestId("portaled-item"));
+    expect(onDismiss).not.toHaveBeenCalled();
   });
 
   it("dismisses on Escape", () => {
