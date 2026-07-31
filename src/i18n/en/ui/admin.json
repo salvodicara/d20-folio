@@ -63,8 +63,6 @@
     "searchingCharacters": "Searching characters…",
     "matchCharacterAria": "Matched character: {{name}}",
     "matchCampaignAria": "Matched campaign: {{name}}",
-    "showDetail": "Show user detail",
-    "hideDetail": "Hide user detail",
     "showMore": "Show {{count}} more"
   }
 }

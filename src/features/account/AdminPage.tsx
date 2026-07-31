@@ -661,8 +661,17 @@ function UserRow({
           and the block/delete actions live in the chevron-revealed detail —
           the SectionPanel idiom verbatim (one recipe app-wide), so no
           destructive button stands on every row of the ledger at rest. */}
-      <InfoCard className={cn("section-card", u.status === "blocked" && "bg-danger/5")}>
-        <div className="flex items-center gap-3">
+      <InfoCard className={cn(u.status === "blocked" && "bg-danger/5")}>
+        {/* The WHOLE resting row is the accordion toggle (owner: the campaigns
+            knob band wasted a row per user) — an inline chevron at the far
+            edge rotates; the detail blooms below at zero resting cost. */}
+        <button
+          type="button"
+          className="flex w-full items-center gap-3 text-left"
+          aria-expanded={open}
+          aria-controls={detailId}
+          onClick={onToggleOpen}
+        >
           <span className="topbar-avatar grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full text-sm">
             <Portrait
               src={u.photoURL}
@@ -741,25 +750,15 @@ function UserRow({
               )}
             </div>
           </div>
-        </div>
-
-        {/* The chevron disclosure — the campaigns SectionPanel idiom verbatim. */}
-        <button
-          type="button"
-          className="section-disclosure"
-          aria-expanded={open}
-          aria-controls={detailId}
-          aria-label={open ? t("admin.hideDetail") : t("admin.showDetail")}
-          onClick={onToggleOpen}
-        >
-          <span className="section-disclosure-knob">
-            <Icon
-              as={ChevronDown}
-              size="sm"
-              decorative
-              className={cn(open && "rotate-180")}
-            />
-          </span>
+          <Icon
+            as={ChevronDown}
+            size="sm"
+            decorative
+            className={cn(
+              "shrink-0 text-text-secondary transition-transform",
+              open && "rotate-180"
+            )}
+          />
         </button>
         <div className="section-detail-wrap" data-open={open || undefined}>
           <div className="section-detail" id={detailId}>

@@ -63,8 +63,6 @@
     "searchingCharacters": "Ricerca tra i personaggi…",
     "matchCharacterAria": "Personaggio corrispondente: {{name}}",
     "matchCampaignAria": "Campagna corrispondente: {{name}}",
-    "showDetail": "Mostra dettaglio utente",
-    "hideDetail": "Nascondi dettaglio utente",
     "showMore": "Mostra altri {{count}}"
   }
 }
