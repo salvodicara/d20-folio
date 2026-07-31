@@ -1346,6 +1346,23 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   spaces): a table shares a campaign by each player sharing their own character, which keeps
   consent per-owner and adds zero rules surface; an opt-in campaign-surface design is noted as the
   someday upgrade path ONLY if real demand appears — explicitly not built on speculation.
+- **Post-view signup CTA — the share-funnel growth loop (CANDIDATE — owner idea 2026-07-31):** the
+  public no-account `/view` page (a non-registered friend viewing a shared character) offers a
+  tasteful post-view **conversion CTA** — a premium nudge to "create your own character" / sign up.
+  Owner's verbatim intent (2026-07-31): shared link → a non-user views a cool character → prompted to
+  make their own → new user. This is an **acquisition growth loop** — it converts the traffic that
+  share links + advertising generate. _Capturing analysis (orchestrator, 2026-07-31):_
+  - **A candidate rung tightly coupled to share links + the advertising-driven GA sequencing:** it is
+    the **growth-loop close on the share funnel** — the rung that turns share-link reach (and the
+    paid traffic the GA advertising push will buy) into registrations, so it lands only once there is
+    traffic to convert.
+  - **Dependencies:** DEPENDS on share links (shipped/shipping — the `/view` surface is its host) and
+    COMPLEMENTS first-run onboarding (the bullet below) — the CTA hands the newcomer into Quick
+    Start / the Guided wizard that onboarding rung already funnels newcomers through.
+  - **Non-negotiables:** stays **tasteful/premium — a nudge, never a nag** (the Constitution premium
+    bar + golden rule 27), and **non-registered viewing ALWAYS works** — with or without acting on
+    the CTA, the read-only share never gates behind signup (honoring the share model's whole point:
+    friends off the app see the sheet, no account needed).
 - **Quickbuild: SHIPPED (2026-07-30) — as "creation opens complete".** There is no separate
   quickbuild screen: the chooser keeps its two cards (Quick Start · Guided, Guided untouched) and
   **Quick Start now arrives finished** on the default class's ready-made build — species and its
@@ -1451,7 +1468,9 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   → homebrew library → quickbuild → share links → compendium completeness → first-run onboarding
   [the rung added 2026-07-31 — its bullet above; it precedes the homebrew ladder's upper rungs
   (c)–(d), while rung (b) keeps its queued slot below] → XP; **+ (candidate) deterministic combat
-  log — bullet above, suggested near the DM-retention tail, priority the owner's call**. [amendment
+  log — bullet above, suggested near the DM-retention tail, priority the owner's call**; **+
+  (candidate) post-view signup CTA — bullet above, a candidate rung near share links / first-run
+  onboarding (it closes the growth loop on their traffic), priority the owner's call**. [amendment
   2026-07-23: the #32 open-sourcing split COMPLETED 2026-07-17 — before this epic opened — so the
   split-aware authoring the charter references is already the live world (public SRD repo + private
   pack); the old #32 issue was deleted with the split, so THIS charter is the surviving coordination

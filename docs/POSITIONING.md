@@ -73,6 +73,12 @@ frontier"_), sequenced **bestiary-first**:
   `shared: true` flag + unguessable doc id, anonymous read-only viewing (no account needed) via the
   Web Share API native sheet + copy-link fallback; **campaigns deliberately have NO share model**
   (industry standard — a table shares via each player's own character).
+- **Post-view signup CTA (CANDIDATE, owner idea 2026-07-31)** — the **acquisition growth-loop close
+  on the share funnel**: the public no-account `/view` page offers a tasteful, premium post-view
+  nudge to "create your own character" / sign up, converting the traffic share links + advertising
+  generate into new users. Depends on share links (above), complements first-run onboarding, and
+  must stay a nudge (never a nag) while non-registered viewing always works with or without it.
+  Priority is the owner's call — charter in `PROGRESS.md` → _DDB-parity frontier_.
 - **Deterministic combat log (CANDIDATE, owner idea 2026-07-31)** — an auto-generated mechanical
   encounter log (HP math, who-hit-whom, dying, round advancement) event-sourced from the actions
   already flowing through the shipped encounter/initiative tracker, appended to the campaign at
