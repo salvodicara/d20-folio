@@ -10,11 +10,11 @@
  * link.
  */
 
-/** Build the shareable invite link for a campaign code (the code IS the doc id).
- *  SSR/test-safe: uses `window.location.origin` on the client, a bare path otherwise. */
+import { appLink } from "@/lib/app-link";
+
+/** Build the shareable invite link for a campaign code (the code IS the doc id). */
 export function inviteLinkFromCode(code: string): string {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  return `${origin}/join/${code}`;
+  return appLink(`/join/${code}`);
 }
 
 /** Pull the campaign code out of a pasted invite (a full LINK or — back-compat — a

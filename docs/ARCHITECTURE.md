@@ -1541,6 +1541,15 @@ share collection, no mirror copy, no token table, no expiry, no server. The mode
   their own revoked link sees the same honest dead-link page a stranger gets (their owner read arm
   would otherwise hand them the sheet). A dead link — revoked, deleted, denied, or offline — resolves
   to ONE quiet page, never four.
+- **The owner affordance is the sheet's ⋯ menu, with no dialog.** `useShareCharacter`
+  (`src/features/character/use-share-character.ts`) gives the Binder's Fob / Signet overflow two
+  items: **Share link** turns sharing on if it is off and goes straight to `shareOrCopy` — the Web
+  Share API native sheet where it exists, the clipboard everywhere else — so handing a friend the
+  sheet is ONE tap; **Stop sharing** appears ONLY while the link is live (its presence IS the "this
+  character is public right now" signal) and runs the house confirm before flipping the flag. The
+  write mirrors the portrait-metadata precedent: persist through `updateCharacter`, THEN reflect on
+  the store, so a failed write never leaves the sheet offering a link that does not work. Both items
+  live in the shared `SheetExtrasCoin`, so desktop and mobile cannot drift.
 - **noindex.** The route injects `<meta name="robots" content="noindex, nofollow">` while mounted and
   removes it on unmount. A static tag in `index.html` would deindex the whole app, and there is no
   server to vary the response per route; Google renders JS and honours a tag injected this way. The

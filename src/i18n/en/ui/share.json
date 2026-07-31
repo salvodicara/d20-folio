@@ -1,5 +1,15 @@
 {
   "share": {
+    "action": "Share link",
+    "stopSharing": "Stop sharing",
+    "shareTitle": "{{name}} on d20 Folio",
+    "shareText": "My D&D character “{{name}}” on d20 Folio:",
+    "linkCopied": "Share link copied",
+    "enabledToast": "Link copied. Anyone with it can now view {{name}}.",
+    "revokedToast": "{{name}} is no longer shared",
+    "failed": "Couldn't change sharing for {{name}}. Try again.",
+    "revokeTitle": "Stop sharing {{name}}?",
+    "revokeMessage": "Anyone with the link can view this character right now. Stopping breaks the link immediately: anyone you sent it to will see a “no longer shared” page instead.",
     "unavailableTitle": "This character is no longer shared",
     "unavailableBlurb": "The link may have been revoked, or the character may have been deleted. Ask whoever sent it for a fresh link.",
     "unavailableCta": "Go to d20 Folio"
