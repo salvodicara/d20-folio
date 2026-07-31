@@ -619,6 +619,12 @@
     0 0 0 1px var(--glow-stroke-gold), 0 0 24px rgba(184, 146, 61, 0.2),
     0 0 1px rgba(212, 172, 77, 0.55);
 
+  /* § Index-tab construction (DESIGN.md → Tabs) — the ONE seat-line ink and
+     the ONE flat page-head tone (the active tab's fill EQUALS the page band
+     by token identity; the mix resolves per theme via its inner tokens). */
+  --seat-ink: color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
+  --page-tone: #130d07;
+
   /* Vellum grain + atmosphere — a warm gold pool top-left, a cool lapis pool
      bottom-right, and a soft vignette that lets the page field recede at the edges
      so the whole tome reads with depth (not a flat charcoal field). Subtle enough
@@ -657,6 +663,7 @@
    § 01 Palette · LIGHT theme (aged vellum — designed, not adapted)
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-theme="light"] {
+  --page-tone: #faf0cb;
   /* Aged-vellum field, DEEPENED so raised surfaces have headroom to lift. The
      prior page (#efe5c8) sat only ~4 L* below surface-1, so every card read flat
      on the field (the core "light feels cheaper / AI-cream" failure). Dropping the

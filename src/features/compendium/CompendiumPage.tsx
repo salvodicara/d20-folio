@@ -358,9 +358,10 @@ function CompendiumBrowser({
     // grows with the codex and the ribbon + search stay put.
     <>
       {/* Type ribbon — the bound INDEX TABS (Spells · Features · …), PROTRUDING
-          above the tome's top edge (owner, 2026-07-31: "devono sporgere come
-          linguette"); the shell overlaps the tome border 1px so the active tab
-          bites it. Clipped tabs dissolve via the shell's data-fade mask. */}
+          above the tome (owner, 2026-07-31: "devono sporgere come linguette");
+          the seat line lives with the ROW (resting-tab borders + gap gradient),
+          the active tab fuses with the tome's head band, and clipped tabs
+          dissolve via the shell's data-fade mask. */}
       <div className="cmp-ribbon-shell mt-2" data-fade={ribbonFade || undefined}>
         <div
           ref={ribbonRef}
