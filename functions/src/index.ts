@@ -72,6 +72,7 @@ import {
   campaignSvg,
   tryRender,
   makeImageMemo,
+  ogImageKey,
   type ImageMemoEntry,
 } from "./og-image";
 
@@ -599,8 +600,9 @@ const OG_IMAGE_CACHE = "public, max-age=300, s-maxage=900";
 // (that is the nuclear money backstop, never the routine DoS control):
 //   1. `maxInstances` on the route (below) caps concurrent renders regardless of the
 //      CDN key — the app stays UP under a flood instead of fanning out to 100 instances.
-//   2. A warm-instance memo keyed on `req.path` (query-agnostic) folds a junk-query
-//      flood back onto ONE render, re-serving cached bytes + ETag from memory.
+//   2. A warm-instance memo keyed on the PARSED IDENTITY (query-agnostic AND
+//      path-spelling-agnostic) folds a junk-query OR path-fuzzing flood back onto ONE
+//      render, re-serving cached bytes + ETag from memory.
 // TTL tracks `s-maxage` (900s); the cap bounds memory (~64 cards ≈ a few MB of PNG).
 const ogImageMemo = makeImageMemo(64, 900_000);
 
@@ -673,9 +675,14 @@ function fallbackCard(pathname: string): string {
 export const ogImage = onRequest({ maxInstances: 3 }, async (req, res) => {
   let entry: ImageMemoEntry | null = null;
   try {
-    // Memoised per `req.path` (query-agnostic) — a burst on one link rasterises ONCE
-    // and re-serves the same bytes + ETag from memory (see `ogImageMemo` note above).
-    entry = await ogImageMemo(req.path, () => resolveImage(req.path));
+    // Memoised per PARSED IDENTITY (query-agnostic AND path-spelling-agnostic) — a burst
+    // on one link, however its path/query is fuzzed, rasterises ONCE and re-serves the
+    // same bytes + ETag from memory (see `ogImageMemo`/`ogImageKey` notes above). An
+    // unparseable path never reaches the memo: it falls straight to the static card.
+    const target = parseOgImagePath(req.path);
+    entry = target
+      ? await ogImageMemo(ogImageKey(target), () => resolveImage(req.path))
+      : null;
   } catch (e) {
     // A lookup failure is a PREVIEW failure, never a page failure — fall to the static
     // card (handled below by the `null` branch), never a 500 that could leak.

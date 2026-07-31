@@ -25,7 +25,9 @@ import {
   tryRender,
   imageEtag,
   makeImageMemo,
+  ogImageKey,
 } from "./og-image";
+import { parseOgImagePath } from "./og-meta";
 
 /** Read a PNG's declared dimensions from its IHDR (bytes 16–24). */
 function pngSize(buf: Buffer): { w: number; h: number } {
@@ -284,6 +286,32 @@ describe("makeImageMemo — the DoS belt: one render per path, re-served from me
     render.mockClear();
     await produce();
     await produce();
+    expect(render).toHaveBeenCalledTimes(2);
+  });
+
+  it("keys on parsed IDENTITY — path spellings of the same entity raster ONCE", async () => {
+    const render = vi.fn((s: string) => renderSvg(s));
+    const memo = makeImageMemo(64, 900_000);
+    const produce = () => Promise.resolve(tryRender(svg, render));
+
+    // Two DISTINCT raw paths that `parseOgImagePath` reduces to the SAME entity (empty
+    // segments filtered), so the memo key (`ogImageKey` over the parse) is identical.
+    const rawA = "/og/character/u/c.png";
+    const rawB = "/og//character//u//c.png";
+    const keyA = ogImageKey(parseOgImagePath(rawA)!);
+    const keyB = ogImageKey(parseOgImagePath(rawB)!);
+    expect(keyA).toBe(keyB); // both spellings collapse onto one identity key
+
+    await memo(keyA, produce);
+    await memo(keyB, produce);
+    expect(render).toHaveBeenCalledTimes(1); // one raster for both path spellings
+
+    // MUTATION PROOF — keying on the RAW path (the pre-fix behaviour) splits the two
+    // spellings into two keys and rasters twice; it is the identity key that collapses them.
+    render.mockClear();
+    const memoRaw = makeImageMemo(64, 900_000);
+    await memoRaw(rawA, produce);
+    await memoRaw(rawB, produce);
     expect(render).toHaveBeenCalledTimes(2);
   });
 

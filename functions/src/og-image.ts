@@ -33,6 +33,7 @@ import {
   summarizeClasses,
   type CharacterCacheLike,
   type CampaignDocLike,
+  type SharePath,
 } from "./og-meta";
 
 const W = 1200;
@@ -386,43 +387,59 @@ export interface ImageMemoEntry {
 }
 
 /**
+ * The canonical memo key for a parsed image target — the SAME entity collapses onto ONE
+ * key regardless of how its path was spelled. `parseOgImagePath` drops empty segments,
+ * so `/og/character/u/c.png` and `/og//character//u//c.png` parse identically; keying the
+ * memo on this identity (not the raw `req.path`) folds a path-fuzzing flood onto one
+ * render the way the query-agnostic key already folds a `?i=…` flood.
+ */
+export function ogImageKey(target: Exclude<SharePath, null>): string {
+  return target.kind === "character"
+    ? `character:${target.uid}:${target.charId}`
+    : `campaign:${target.code}`;
+}
+
+/**
  * A tiny in-process render memo for the `ogImage` route — the DoS/cost belt.
  *
- * The render is DETERMINISTIC per request PATH (the query string is excluded: Express
- * `req.path` drops it). Firebase Hosting's CDN, however, keys its cache on the FULL URL
- * INCLUDING the query string (docs/hosting/manage-cache — "the CDN cache your content
- * based on … the query string", with no knob to normalise it away), so a `…png?i=1,2,3…`
- * flood is a fresh CDN miss every time and would re-rasterise per hit. This memo folds
- * that whole flood back onto ONE render: every junk-query variant shares the same
- * `req.path` key and re-serves the cached bytes from memory. Paired with the route's
- * `maxInstances` cap, worst-case raster work is bounded regardless of the CDN key.
+ * The render is DETERMINISTIC per parsed IDENTITY — the caller keys it on
+ * {@link ogImageKey} (the `kind` + ids `parseOgImagePath` returns), NOT the raw request
+ * path. That collapses two floods at once: (a) the query string, which Firebase Hosting's
+ * CDN keys its cache on (docs/hosting/manage-cache — "the CDN cache your content based on
+ * … the query string", with no knob to normalise it away), so a `…png?i=1,2,3…` burst is
+ * a fresh CDN miss every hit; and (b) path spellings that parse to the SAME entity
+ * (`/og//character//u//c.png` — empty segments filtered), which would each form a
+ * DISTINCT raw-path key. Both variants share ONE identity key and re-serve the cached
+ * bytes from memory. Paired with the route's `maxInstances` cap, worst-case raster work
+ * is bounded regardless of the CDN key.
  *
  * BOUNDED so it can't grow unbounded (LRU by insertion order, `maxEntries`) and TTL'd
  * (~ the CDN `s-maxage`) so a revoked link can't be re-served past the CDN's own window.
- * `produce` returns `null` for an ungated / failed path; nulls are NOT cached — they
- * redirect to the static card and never rasterise, so there is nothing costly to memo.
- * (No in-flight de-dupe: two concurrent cold hits on one path may both render once
- * before the fill lands — acceptable, and the `maxInstances` cap bounds even that.)
+ * An UNPARSEABLE path never reaches here (the route redirects to the static card before
+ * the memo) and `produce` returns `null` for an ungated / failed lookup; nulls are NOT
+ * cached — they redirect to the static card and never rasterise, so there is nothing
+ * costly to memo. (No in-flight de-dupe: two concurrent cold hits on one key may both
+ * render once before the fill lands — acceptable, and the `maxInstances` cap bounds that.)
  */
 export function makeImageMemo(maxEntries: number, ttlMs: number) {
   const store = new Map<string, ImageMemoEntry>();
   return async function memo(
-    path: string,
+    key: string,
     produce: () => Promise<Buffer | null>,
     now: number = Date.now()
   ): Promise<ImageMemoEntry | null> {
-    const hit = store.get(path);
+    const hit = store.get(key);
     if (hit && hit.expiresAt > now) {
       // LRU touch — re-insert so a live key is evicted last.
-      store.delete(path);
-      store.set(path, hit);
+      store.delete(key);
+      store.set(key, hit);
       return hit;
     }
-    if (hit) store.delete(path); // stale — drop before re-producing
+    if (hit) store.delete(key); // stale — drop before re-producing
     const png = await produce();
     if (!png) return null;
     const entry: ImageMemoEntry = { etag: imageEtag(png), png, expiresAt: now + ttlMs };
-    store.set(path, entry);
+    store.set(key, entry);
     // Bound the map — evict the oldest (first-inserted) key once over the cap.
     if (store.size > maxEntries) {
       const oldest = store.keys().next().value as string;
