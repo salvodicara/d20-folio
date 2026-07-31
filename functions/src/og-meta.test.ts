@@ -144,6 +144,66 @@ describe("campaignCard", () => {
   });
 });
 
+describe("owner-locale meta (the OWNER's stored locale, EN default + fallback)", () => {
+  it("an IT owner gets IT title WORD + description; class label stays as-is", () => {
+    const card = characterCard(
+      { name: "Mara Quickfingers", classes: [{ classId: "rogue", level: 5 }] },
+      URL,
+      CHAR_IMG,
+      "it"
+    );
+    // "Livello" localises; "Rogue" (the class label) is kept as-is by design.
+    expect(card?.title).toBe("Mara Quickfingers — Livello 5 Rogue · d20 Folio");
+    expect(card?.description).toBe(
+      "La scheda di Mara Quickfingers su d20 Folio, condivisa in sola lettura. Nessun account richiesto."
+    );
+  });
+
+  it("EN owner (and the absent-locale default) render the English card", () => {
+    const en = characterCard(
+      { name: "Mara", classes: [{ classId: "rogue", level: 5 }] },
+      URL,
+      CHAR_IMG,
+      "en"
+    );
+    const def = characterCard(
+      { name: "Mara", classes: [{ classId: "rogue", level: 5 }] },
+      URL,
+      CHAR_IMG
+    );
+    expect(en?.title).toBe("Mara — Level 5 Rogue · d20 Folio");
+    expect(def?.title).toBe(en?.title); // default === EN (the fallback on any read failure)
+  });
+
+  it("an IT owner gets the IT invite title + description", () => {
+    const card = campaignCard({ name: "Starless Keep" }, URL, CAMP_IMG, "it");
+    expect(card?.title).toBe("Unisciti a Starless Keep su d20 Folio");
+    expect(card?.description).toBe(
+      "Sei stato invitato al tavolo Starless Keep su d20 Folio — un compagno gratuito e offline-first per D&D 2024."
+    );
+  });
+});
+
+describe("compatibility phrasing — the OG surface states compatibility, never branding", () => {
+  // Owner-ratified (2026-07-31): "for D&D 2024", never a form that reads as an official
+  // "D&D 2024 product". A guard so the nominative phrasing can't regress back.
+  it("the EN static baseline in the REAL index.html reads FOR D&D 2024, not branded", () => {
+    // The nominative/compatibility form is present…
+    expect(SHELL).toContain("a living character sheet for D&D 2024");
+    expect(SHELL).toContain("A modern character sheet manager for D&D 2024");
+    // …and the branding forms are GONE.
+    expect(SHELL).not.toContain("a living D&D 2024 character sheet");
+    expect(SHELL).not.toContain("D&D 2024 character sheet manager");
+    expect(SHELL).not.toContain("your D&D 2024 characters");
+  });
+
+  it("the campaign meta description states compatibility, not a D&D 2024 companion", () => {
+    const card = campaignCard({ name: "Starless Keep" }, URL, CAMP_IMG);
+    expect(card?.description).toContain("companion for D&D 2024");
+    expect(card?.description).not.toContain("D&D 2024 companion");
+  });
+});
+
 describe("renderOgTags", () => {
   it("escapes user text — a character name lands inside an HTML attribute", () => {
     const html = renderOgTags({
@@ -340,7 +400,7 @@ describe("injectOgTags against the REAL index.html", () => {
     // the baseline" — the baseline itself, so those links are indistinguishable from
     // every other route and the copy has nowhere to drift to.
     expect(injectOgTags(SHELL, null)).toBe(SHELL);
-    expect(SHELL).toContain("a living D&D 2024 character sheet");
+    expect(SHELL).toContain("a living character sheet for D&D 2024");
   });
 
   it("returns a marker-less shell untouched rather than serving a broken page", () => {

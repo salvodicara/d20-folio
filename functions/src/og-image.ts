@@ -35,6 +35,7 @@ import {
   type CampaignDocLike,
   type SharePath,
 } from "./og-meta";
+import { ogStrings, type OgLocale } from "./og-i18n";
 
 const W = 1200;
 const H = 630;
@@ -205,7 +206,8 @@ export function characterImageData(
 
 /** Build the character card SVG. Pure — the name is escaped and appears verbatim, so
  *  a test asserts on the string without rasterising. */
-export function characterSvg(data: CharacterImageData): string {
+export function characterSvg(data: CharacterImageData, locale: OgLocale = "en"): string {
+  const s = ogStrings(locale);
   // The name is a CONTENT heading, so it takes Alegreya (real lowercase) — Cinzel is
   // the ceremonial ALL-CAPS titling face, reserved here for the brand + eyebrow + the
   // single-letter initial. A proper name in Cinzel would shout in full caps.
@@ -224,12 +226,12 @@ export function characterSvg(data: CharacterImageData): string {
   // The level / class line, and the AC · HP stat line — each part omitted when unknown
   // so a number is NEVER guessed (a 0 in the cache means "not stamped").
   const levelBits: string[] = [];
-  if (data.level > 0) levelBits.push(`Level ${data.level}`);
+  if (data.level > 0) levelBits.push(`${s.level} ${data.level}`);
   if (data.classLine) levelBits.push(data.classLine);
   const subLine = levelBits.join(" ");
   const statBits: string[] = [];
-  if (data.ac > 0) statBits.push(`AC ${data.ac}`);
-  if (data.hp > 0) statBits.push(`HP ${data.hp}`);
+  if (data.ac > 0) statBits.push(`${s.ac} ${data.ac}`);
+  if (data.hp > 0) statBits.push(`${s.hp} ${data.hp}`);
   const statLine = statBits.join("  ·  ");
 
   const subEl = subLine
@@ -273,7 +275,7 @@ export function characterSvg(data: CharacterImageData): string {
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${GOLD}" stroke-opacity="0.7" stroke-width="4"/>
     <circle cx="${cx}" cy="${cy}" r="${r + 10}" fill="none" stroke="${GOLD_DIM}" stroke-opacity="0.35" stroke-width="1.5"/>
     ${chrome()}
-    <text x="72" y="188" ${T_EYEBROW} font-size="22" letter-spacing="6" fill="${GOLD_DIM}">A SHARED CHARACTER</text>
+    <text x="72" y="188" ${T_EYEBROW} font-size="22" letter-spacing="6" fill="${GOLD_DIM}">${esc(s.sharedCharacter)}</text>
     ${nameEls}
     ${subEl}
     ${statEl}
@@ -303,7 +305,8 @@ export function campaignImageData(
 }
 
 /** Build the invite card SVG. Pure. */
-export function campaignSvg(data: CampaignImageData): string {
+export function campaignSvg(data: CampaignImageData, locale: OgLocale = "en"): string {
+  const s = ogStrings(locale);
   const nameLines = wrapText(data.name, data.name.length > 22 ? 18 : 14, 2);
   const nameSize = nameLines.length > 1 || data.name.length > 14 ? 62 : 78;
   const nameTop = 258;
@@ -315,10 +318,7 @@ export function campaignSvg(data: CampaignImageData): string {
     )
     .join("\n    ");
   const ruleY = nameTop + nameLines.length * (nameSize + 4) + 8;
-  const party =
-    data.members > 0
-      ? `${data.members} ${data.members === 1 ? "adventurer" : "adventurers"} at the table`
-      : "";
+  const party = data.members > 0 ? s.atTheTable(data.members) : "";
   const partyEl = party
     ? `<text x="72" y="${ruleY + 52}" ${T_SUB} font-size="34"` +
       ` fill="${CREAM}">${esc(party)}</text>`
@@ -331,7 +331,7 @@ export function campaignSvg(data: CampaignImageData): string {
     <image href="${artDataUri("og-card-campaign.jpg")}" x="0" y="0" width="${W}" height="${H}"/>
     <rect x="0" y="0" width="${W}" height="${H}" fill="url(#mask)"/>
     ${chrome()}
-    <text x="72" y="192" ${T_EYEBROW} font-size="22" letter-spacing="6" fill="${GOLD_DIM}">AN INVITATION</text>
+    <text x="72" y="192" ${T_EYEBROW} font-size="22" letter-spacing="6" fill="${GOLD_DIM}">${esc(s.invitation)}</text>
     ${nameEls}
     <line x1="72" y1="${ruleY}" x2="560" y2="${ruleY}" stroke="${GOLD_DIM}" stroke-opacity="0.4" stroke-width="1"/>
     ${partyEl}

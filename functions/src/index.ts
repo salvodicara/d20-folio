@@ -75,6 +75,7 @@ import {
   ogImageKey,
   type ImageMemoEntry,
 } from "./og-image";
+import { asOgLocale, type OgLocale } from "./og-i18n";
 
 initializeApp();
 
@@ -506,6 +507,27 @@ async function loadShell(origin: string): Promise<string> {
   return html;
 }
 
+/**
+ * The OWNER's stored UI locale (`users/{uid}.settings.language`) — the locale the
+ * DYNAMIC card + meta render in. The crawler carries no recipient locale and a card is
+ * cached once for everyone, so the OWNER's locale is the only cache-consistent choice:
+ * it is a stable property of the identity, so the render stays deterministic per link
+ * (the memo key can stay locale-free). NEVER throws — an absent/unreadable value falls
+ * to EN so a locale-read failure can never break the preview.
+ */
+async function ownerLocale(uid: string): Promise<OgLocale> {
+  try {
+    const snap = await getFirestore().collection("users").doc(uid).get();
+    return asOgLocale(snap.get("settings.language"));
+  } catch (e) {
+    logger.warn("og: owner locale read failed; rendering EN", {
+      uid,
+      error: e instanceof Error ? e.message : String(e),
+    });
+    return "en";
+  }
+}
+
 /** Resolve the card for a shared path, or null to serve the shell as-built. */
 async function resolveCard(pathname: string, url: string): Promise<OgCard | null> {
   const target = parseSharePath(pathname);
@@ -525,14 +547,24 @@ async function resolveCard(pathname: string, url: string): Promise<OgCard | null
       url,
       // The tag points at the DYNAMIC image route — same id, same gate; that route
       // serves the static character card on any miss/error (indistinguishability holds).
-      characterImageUrl(target.uid, target.charId)
+      characterImageUrl(target.uid, target.charId),
+      // Localise to the character OWNER's locale — the path uid IS the owner.
+      await ownerLocale(target.uid)
     );
   }
   const camp = await db.collection("campaigns").doc(target.code).get();
   if (!camp.exists) return null;
   // `campaignCard` re-checks the joins lock — the DM's kill switch for a leaked link
-  // (the Admin SDK bypasses the rules that enforce it on the join itself).
-  return campaignCard(camp.data() ?? {}, url, campaignImageUrl(target.code));
+  // (the Admin SDK bypasses the rules that enforce it on the join itself). Localise to
+  // the DM's locale (the campaign's owner).
+  const dmUid =
+    typeof camp.get("dmUid") === "string" ? (camp.get("dmUid") as string) : "";
+  return campaignCard(
+    camp.data() ?? {},
+    url,
+    campaignImageUrl(target.code),
+    dmUid ? await ownerLocale(dmUid) : "en"
+  );
 }
 
 export const ogShell = onRequest(async (req, res) => {
@@ -652,12 +684,18 @@ async function resolveImage(pathname: string): Promise<Buffer | null> {
       (snap.get("cache") ?? {}) as Record<string, unknown>,
       portrait
     );
-    return data ? tryRender(characterSvg(data)) : null;
+    // Owner locale = the path uid. Deterministic per identity, so the memo key stays
+    // locale-free (the same link always renders the same locale ⇒ the same bytes).
+    return data ? tryRender(characterSvg(data, await ownerLocale(target.uid))) : null;
   }
   const camp = await db.collection("campaigns").doc(target.code).get();
   if (!camp.exists) return null;
   const data = campaignImageData(camp.data() ?? {});
-  return data ? tryRender(campaignSvg(data)) : null;
+  const dmUid =
+    typeof camp.get("dmUid") === "string" ? (camp.get("dmUid") as string) : "";
+  return data
+    ? tryRender(campaignSvg(data, dmUid ? await ownerLocale(dmUid) : "en"))
+    : null;
 }
 
 /** The static per-type card a failed/ungated image request redirects to. */

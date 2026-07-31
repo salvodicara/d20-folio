@@ -28,6 +28,7 @@ import {
   ogImageKey,
 } from "./og-image";
 import { parseOgImagePath } from "./og-meta";
+import { asOgLocale } from "./og-i18n";
 
 /** Read a PNG's declared dimensions from its IHDR (bytes 16–24). */
 function pngSize(buf: Buffer): { w: number; h: number } {
@@ -194,6 +195,63 @@ describe("the SVG builders put the entity's own facts in the markup", () => {
   });
 });
 
+describe("owner-locale card strings (EN default, IT for an IT owner)", () => {
+  const char = {
+    name: "Mara Quickfingers",
+    level: 5,
+    classLine: "Rogue",
+    ac: 15,
+    hp: 42,
+    portrait: null,
+  };
+
+  it("EN owner (and the default) render the English labels", () => {
+    for (const svg of [characterSvg(char), characterSvg(char, "en")]) {
+      expect(svg).toContain("A SHARED CHARACTER");
+      expect(svg).toContain("Level 5 Rogue");
+      expect(svg).toContain("AC 15");
+      expect(svg).toContain("HP 42");
+    }
+  });
+
+  it("IT owner renders the IT labels — word localises, class label stays as-is", () => {
+    const svg = characterSvg(char, "it");
+    expect(svg).toContain("UN PERSONAGGIO CONDIVISO");
+    expect(svg).toContain("Livello 5 Rogue"); // "Livello" localised, "Rogue" kept
+    expect(svg).toContain("CA 15");
+    expect(svg).toContain("PF 42");
+    // MUTATION PROOF — the EN forms must be ABSENT on the IT card, so it is the locale
+    // (not incidental substring overlap) that swapped the strings.
+    expect(svg).not.toContain("A SHARED CHARACTER");
+    expect(svg).not.toContain("AC 15");
+    expect(svg).not.toContain("HP 42");
+  });
+
+  it("the campaign card localises the eyebrow and the party line", () => {
+    const en = campaignSvg({ name: "Ravenholt", members: 5 });
+    expect(en).toContain("AN INVITATION");
+    expect(en).toContain("5 adventurers at the table");
+
+    const it = campaignSvg({ name: "Ravenholt", members: 5 }, "it");
+    expect(it).toContain("UN INVITO");
+    expect(it).toContain("5 avventurieri al tavolo");
+    expect(campaignSvg({ name: "Ravenholt", members: 1 }, "it")).toContain(
+      "1 avventuriero al tavolo"
+    );
+    // MUTATION PROOF — no EN leakage on the IT invite card.
+    expect(it).not.toContain("AN INVITATION");
+    expect(it).not.toContain("at the table");
+  });
+
+  it("asOgLocale coerces to EN for absent/unknown values — the read-failure fallback", () => {
+    expect(asOgLocale("it")).toBe("it");
+    expect(asOgLocale("en")).toBe("en");
+    expect(asOgLocale(undefined)).toBe("en");
+    expect(asOgLocale("fr")).toBe("en");
+    expect(asOgLocale(null)).toBe("en");
+  });
+});
+
 describe("renderSvg — the real rasteriser yields a valid 1200×630 PNG", () => {
   // A valid JPEG stand-in for a portrait: the bundled card art itself.
   const portrait =
@@ -231,6 +289,16 @@ describe("renderSvg — the real rasteriser yields a valid 1200×630 PNG", () =>
 
   it("renders a campaign card", () => {
     const png = renderSvg(campaignSvg({ name: "The Starless Keep", members: 5 }));
+    expect(pngSize(png)).toEqual({ w: 1200, h: 630 });
+  });
+
+  it("renders an IT-owner character card (the localised strings raster cleanly)", () => {
+    const png = renderSvg(
+      characterSvg(
+        { name: "Thordak", level: 8, classLine: "Paladin", ac: 19, hp: 76, portrait },
+        "it"
+      )
+    );
     expect(pngSize(png)).toEqual({ w: 1200, h: 630 });
   });
 });

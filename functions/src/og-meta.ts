@@ -26,10 +26,11 @@
  * branded card every other route already gets.
  */
 
+import { BRAND, ogStrings, type OgLocale } from "./og-i18n";
+
 /** The canonical public origin — what `og:url` always points at, whichever host
  *  (production, a preview channel, the local emulator) actually served the page. */
 export const SITE = "https://d20-folio.web.app";
-const BRAND = "d20 Folio";
 /**
  * The branded 1200×630 STATIC cards — now the FALLBACK behind the dynamic renderer
  * (`og-image.ts`, served by `index.ts`'s `ogImage` route). A shared link's `og:image`
@@ -119,8 +120,10 @@ export interface CharacterCacheLike {
 /**
  * `classId` → an English label for the preview line. The SRD class ids ARE their
  * lowercased English names, so title-casing is the derivation, not a stored display
- * string (golden rule 7) — and the OG card is EN-only by the owner's decision, so
- * there is no locale to resolve against. BLIND SPOT: a hyphenated homebrew id
+ * string (golden rule 7). The class LABEL stays English even on an IT-owner card (the
+ * surrounding words — "Livello" — localise, the class name does not): the IT SRD names
+ * are not cheaply reachable server-side, and a class name reads as a proper noun
+ * (owner decision, 2026-07-31). BLIND SPOT: a hyphenated homebrew id
  * ("blood-hunter") renders as "Blood Hunter", which is right by luck rather than by
  * lookup; an id that is not its own English name would render wrong.
  */
@@ -166,15 +169,20 @@ export function summarizeClasses(cache: CharacterCacheLike): {
 export function characterCard(
   cache: CharacterCacheLike,
   url: string,
-  imageUrl: string
+  imageUrl: string,
+  // Localised to the OWNER's stored locale (read server-side in `index.ts`); EN is the
+  // default AND the fallback on any locale-read failure, so a card is never blank.
+  locale: OgLocale = "en"
 ): OgCard | null {
   const name = typeof cache.name === "string" ? cache.name.trim() : "";
   if (!name) return null;
+  const s = ogStrings(locale);
   const { level, classLine: classes } = summarizeClasses(cache);
-  const line = level > 0 ? `Level ${level}${classes ? ` ${classes}` : ""}` : classes;
+  // "Livello 8 Paladin/Warlock" — the WORD localises, the class label stays as-is.
+  const line = level > 0 ? `${s.level} ${level}${classes ? ` ${classes}` : ""}` : classes;
   return {
     title: line ? `${name} — ${line} · ${BRAND}` : `${name} · ${BRAND}`,
-    description: `${name}'s character sheet on ${BRAND}, shared read-only. No account needed.`,
+    description: s.sheetDescription(name),
     url,
     image: imageUrl,
   };
@@ -198,14 +206,19 @@ export interface CampaignDocLike {
 export function campaignCard(
   doc: CampaignDocLike,
   url: string,
-  imageUrl: string
+  imageUrl: string,
+  // Localised to the DM/OWNER's stored locale (read server-side in `index.ts`); EN
+  // default + fallback. The phrasing states compatibility ("for D&D 2024"), never that
+  // this is an official product (owner decision, 2026-07-31).
+  locale: OgLocale = "en"
 ): OgCard | null {
   if (doc.joinsLocked === true) return null;
   const clean = typeof doc.name === "string" ? doc.name.trim() : "";
   if (!clean) return null;
+  const s = ogStrings(locale);
   return {
-    title: `Join ${clean} on ${BRAND}`,
-    description: `You have been invited to the ${clean} table on ${BRAND} — a free, offline-first D&D 2024 companion.`,
+    title: s.joinTitle(clean),
+    description: s.inviteDescription(clean),
     url,
     image: imageUrl,
   };

@@ -1,0 +1,5 @@
+---
+"d20-folio": patch
+---
+
+feat(share): OG link previews render in the character/campaign OWNER's locale (EN + IT). The dynamic cards (`og-image.ts`) and the `<meta>` tags (`og-meta.ts`) localise to `users/{uid}.settings.language`, read server-side in `ogShell`/`ogImage` — the only cache-consistent choice, since a crawler carries no recipient locale and a card is cached once for everyone. EN is the default AND the fallback on any locale-read failure (never a 500, never a blank card). A tiny `og-i18n.ts` {en,it} table backs it (the function can't import the app's i18next runtime). The static fallback card stays English always. Class labels stay as-is; the surrounding words ("Livello", "CA", "PF") localise. The render memo key stays locale-free — owner locale is a stable property of the identity, so the same link always renders the same bytes. Compatibility rephrasing across the OG surface: the English baseline now reads "a living character sheet for D&D 2024" (nominative), never a form that reads as an official product.
