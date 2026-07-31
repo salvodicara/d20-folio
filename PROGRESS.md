@@ -1375,9 +1375,10 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   ONE `allow get` arm in `firestore.rules`, deliberately `get` and not `read` so it can never widen
   into an enumeration query; the public `/view/:uid/:charId` route reusing `CockpitView` through
   `loadReadonly`, with one quiet page for revoked / deleted / denied / offline and a per-route
-  noindex; the sheet's ⋯ menu gaining one-tap **Share link** plus a state-revealing **Stop sharing**
-  that revokes on the tap itself (owner gate: no confirm — the register keeps those for destructive
-  acts, and re-sharing restores the same link); `ShareButton` as the ONE button-shaped share
+  noindex; the sheet's ⋯ menu gaining ONE **Share** entry that opens the shared **share popover**
+  (owner gate: the Docs/Notion shape — a visibility switch that IS share-and-revoke, no confirm, and
+  while it is on the link with Copy and the native share sheet; the campaign card's ⋯ opens the same
+  popover without the switch); `ShareButton` as the ONE button-shaped share
   affordance, adopted by the
   hub's ACCESS panel and the create-campaign success screen (whose hand-rolled URL builder and raw
   read-only link field are gone), and the campaign card's ⋯ item upgraded from copy-only to the
@@ -1392,8 +1393,9 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   chain of timing-out legs and therefore billed time); a `joinsLocked` campaign now unfurls as
   nothing, so the DM's leaked-link kill switch holds against the Admin SDK too; and the generic card
   exists ONLY in `index.html` — no card means the shell is served untouched, so the copy cannot
-  drift. The owner gate then asked for two more things, both landed: the revoke confirm is gone (one
-  quiet tap), and the preview image is now TYPE-BASED — a character card, an invite card and the
+  drift. The owner gate then asked for two more things, both landed: sharing collapsed into ONE menu
+  entry + the `SharePopover` (switch · link · Copy · native Share — no confirm, no second item, and
+  the invite reuses it switch-less), and the preview image is now TYPE-BASED — a character card, an invite card and the
   generic app card, three siblings in one folio identity, chosen per route family with the generic
   one still covering unshared / locked / unknown. Full design record:
   `docs/ARCHITECTURE.md` → "Public share links" + "Link previews (Open Graph)".

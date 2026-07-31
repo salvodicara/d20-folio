@@ -1551,18 +1551,30 @@ share collection, no mirror copy, no token table, no expiry, no server. The mode
   their own revoked link sees the same honest dead-link page a stranger gets (their owner read arm
   would otherwise hand them the sheet). A dead link — revoked, deleted, denied, or offline — resolves
   to ONE quiet page, never four.
-- **The owner affordance is the sheet's ⋯ menu, with no dialog.** `useShareCharacter`
-  (`src/features/character/use-share-character.ts`) gives the Binder's Fob / Signet overflow two
-  items: **Share link** turns sharing on if it is off and goes straight to `shareOrCopy` — the Web
-  Share API native sheet where it exists, the clipboard everywhere else — so handing a friend the
-  sheet is ONE tap; **Stop sharing** appears ONLY while the link is live (its presence IS the "this
-  character is public right now" signal) and flips the flag on that one tap, with NO confirm — the
-  register keeps confirms for DESTRUCTIVE acts, and this one is instantly reversible (Share link puts
-  the same link back), so a dialog would be ceremony over an off switch. The quiet toast is the
-  receipt. The write mirrors the portrait-metadata precedent: persist through `updateCharacter`, THEN
-  reflect on the store, so a failed write never leaves the sheet offering a link that does not work
-  (a failed revoke says so and leaves the link live). Both items live in the shared
-  `SheetExtrasCoin`, so desktop and mobile cannot drift.
+- **The owner affordance is ONE ⋯ entry and ONE popover** (owner-ratified 2026-07-31 — the
+  Docs / Notion / Drive shape every reader already knows). The Binder's Fob / Signet overflow carries
+  a single **Share** item, which opens `SharePopover`
+  (`src/components/shared/SharePopover.tsx`) hung off that very coin:
+  - a **visibility switch** — "Anyone with the link can view" — which IS share-and-revoke. Flipping
+    it writes `shared` through `useShareCharacter.setShared`; there is NO confirm, because the switch
+    shows the state, changing it changes the state, and the same gesture undoes it. The house
+    register keeps confirms for DESTRUCTIVE acts, and re-sharing hands back the SAME link (the link
+    is the document path, never a minted token).
+  - the **link**, shown only while the switch is on — a read-only plate, not a field, since there is
+    nothing to type — with **Copy link** (clipboard + a quiet toast) and, only where the platform
+    really has a share sheet, the native **Share** button. On a desktop without `navigator.share`
+    that button would be a second Copy, so it is feature-detected away.
+    The popover's own state IS the feedback: the link appearing and disappearing under the switch.
+    No separate "this character is public right now" signal, no second menu item, no toast on the
+    flip. It sets `onFocusOutside` to `preventDefault` because it opens FROM a menu, whose close
+    returns focus to the trigger — a focus event outside the layer that would otherwise dismiss the
+    popover the instant it appeared; outside CLICK and Escape still dismiss.
+    The write mirrors the portrait-metadata precedent: persist through `updateCharacter`, THEN reflect
+    on the store, so a failed write never leaves the sheet offering a link that does not work (it
+    toasts and the switch stays put). The item and the popover live in the shared `SheetExtrasCoin`, so
+    desktop and mobile cannot drift. The campaign card's ⋯ **Share invite link** opens the SAME
+    component WITHOUT the switch — an invite is a functional join, not a visibility state (its kill
+    switch is the hub's joins lock, beside the link it disables).
 - **noindex.** The route injects `<meta name="robots" content="noindex, nofollow">` while mounted and
   removes it on unmount. A static tag in `index.html` would deindex the whole app, and there is no
   server to vary the response per route; Google renders JS and honours a tag injected this way. The

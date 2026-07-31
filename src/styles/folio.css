@@ -8486,6 +8486,42 @@ button.create-need:focus-visible .create-need-chev {
   }
 }
 
+/* Share popover — the ONE share surface (SharePopover): the visibility switch, the
+   link, then Copy / Share. Only the column rhythm and the link plate live here;
+   the frame, head and rubric are the shared `.popover` / `.pop-head` recipe. */
+.popover.share-pop .pop-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  width: min(20rem, calc(100vw - 2 * var(--sp-4)));
+}
+.share-pop-visibility {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.share-pop-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+/* The link is READ-ONLY chrome, not a field: a quiet carved plate on one line that
+   truncates rather than wrapping a URL across three. */
+.share-pop-link {
+  font-family: var(--font-numeric);
+  font-size: var(--text-micro);
+  color: var(--text-secondary);
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 6px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+}
+
 /* Settings dropdown — the branded popover with the locked 2px gold top-accent. */
 .popover.settings-pop {
   border-top: 2px solid var(--accent-primary);

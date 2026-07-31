@@ -1,15 +1,15 @@
 /**
  * SheetExtrasCoin — the ⋯ document-extras coin shared by the fob family
  * (BinderFob on desktop, MobileSignet on mobile): the labeled overflow
- * (History · Share link · Export JSON · Export PDF) + its `SnapshotsHistory`
+ * (History · Export JSON · Export PDF · Share) + its `SnapshotsHistory`
  * dialog host + the export/share wiring, in ONE place so the two management homes
  * can't drift (golden rule 3 — a fix here flows to both).
  *
- * SHARING is deliberately menu-only, with no dialog to walk through: "Share link"
- * turns sharing on if it is off and goes straight to the native share sheet (or the
- * clipboard), so handing a friend the sheet is ONE tap (golden rule 20). The
- * sharing STATE is the menu itself — "Stop sharing" appears only while the link is
- * live, and it is the item that carries the confirm explaining who can see what.
+ * SHARING is ONE menu entry — "Share" — which opens the shared {@link SharePopover}
+ * hung off this very coin: a visibility switch ("Anyone with the link can view") that
+ * IS share-and-revoke, and, while it is on, the link with Copy and the native share
+ * sheet. No confirm and no second menu item: the switch shows the state, flipping it
+ * changes the state, and the same gesture undoes it (the Docs / Notion shape).
  *
  * On fine pointers (the fob) it wears the branded quiet `HoverTip`; on coarse
  * pointers (the Signet) `tooltip` is omitted and the trigger renders bare.
@@ -17,16 +17,11 @@
 
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  History,
-  Download,
-  FileDown,
-  MoreHorizontal,
-  Share2,
-  Link2Off,
-} from "lucide-react";
+import { History, Download, FileDown, MoreHorizontal, Share2 } from "lucide-react";
 import { CardOverflowMenu } from "@/components/shared/CardOverflowMenu";
+import { SharePopover } from "@/components/shared/SharePopover";
 import { SnapshotsHistory } from "./SnapshotsHistory";
+import { useCharacterStore } from "@/stores/characterStore";
 import { useSheetExport } from "./center/use-sheet-export";
 import { useShareCharacter } from "./use-share-character";
 import { HoverTip } from "./center/HoverTip";
@@ -43,8 +38,10 @@ export function SheetExtrasCoin({
   const { t } = useTranslation();
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const { exportPdf, exportJson } = useSheetExport();
-  const { shared, share, revoke } = useShareCharacter();
+  const { shared, link, setShared } = useShareCharacter();
+  const name = useCharacterStore((s) => s.character?.character.name) ?? "";
   const menu = (
     <CardOverflowMenu
       open={overflowOpen}
@@ -74,31 +71,45 @@ export function SheetExtrasCoin({
         },
         {
           key: "share",
-          label: t("share.action"),
+          label: t("common.share"),
           icon: Share2,
           dividerBefore: true,
-          onSelect: () => void share(),
-        },
-        {
-          // Present ONLY while the link is live — its presence IS the "this
-          // character is public right now" signal.
-          key: "stop-sharing",
-          label: t("share.stopSharing"),
-          icon: Link2Off,
-          hidden: !shared,
-          onSelect: () => void revoke(),
+          // The menu closes and the popover opens off the same coin, so the share
+          // decision lands where the tap did.
+          onSelect: () => setShareOpen(true),
         },
       ]}
     />
   );
+  const anchored = (
+    <SharePopover
+      open={shareOpen}
+      onOpenChange={setShareOpen}
+      link={link}
+      rubric={t("common.share")}
+      copyLabel={t("share.copyLink")}
+      copiedToast={t("share.linkCopied")}
+      shareLabel={t("common.share")}
+      shareTitle={t("share.shareTitle", { name })}
+      shareText={t("share.shareText", { name })}
+      visibility={{
+        label: t("share.visibility"),
+        hint: t("share.visibilityHint"),
+        on: shared,
+        onChange: setShared,
+      }}
+    >
+      {menu}
+    </SharePopover>
+  );
   return (
     <>
       {tooltip != null ? (
-        <HoverTip side="left" show={!overflowOpen} content={tooltip}>
-          <span className="inline-flex">{menu}</span>
+        <HoverTip side="left" show={!overflowOpen && !shareOpen} content={tooltip}>
+          <span className="inline-flex">{anchored}</span>
         </HoverTip>
       ) : (
-        menu
+        anchored
       )}
       <SnapshotsHistory open={historyOpen} onOpenChange={setHistoryOpen} />
     </>

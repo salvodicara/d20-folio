@@ -311,7 +311,7 @@ describe("CampaignsListPage", () => {
   });
 
   // ─── OWN-6: the shared 3-dots overflow menu on the campaign card ─────────────
-  it("shares the invite LINK from the card overflow menu (clipboard is the fallback)", async () => {
+  it("hands the invite LINK over through the shared share popover", async () => {
     listMock.mockResolvedValue([
       campaign({ id: "c1", name: "Lost Mine", inviteCode: "JOINME12" }),
     ]);
@@ -319,9 +319,15 @@ describe("CampaignsListPage", () => {
     await screen.findByText("Lost Mine");
     fireEvent.click(screen.getByRole("button", { name: /more actions/i }));
     fireEvent.click(await screen.findByRole("menuitem", { name: /share invite link/i }));
-    // jsdom has no `navigator.share`, so `shareOrCopy` takes the universal fallback
-    // and the LINK (code embedded) lands on the clipboard. The native-sheet branch
-    // itself is pinned by share-or-copy.test.ts.
+
+    // The SAME popover the sheet's ⋯ Share opens, minus the visibility switch: an
+    // invite is a functional join, not a visibility state.
+    expect(screen.queryByRole("switch")).toBeNull();
+    expect(screen.getByText(/\/join\/JOINME12$/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /copy invite link/i }));
+    // jsdom has no `navigator.share`, so the clipboard is where the link lands. The
+    // native-sheet branch itself is pinned by share-or-copy.test.ts.
     expect(clipboardWriteText()).toHaveBeenCalledWith(
       expect.stringMatching(/\/join\/JOINME12$/)
     );

@@ -1,12 +1,11 @@
 {
   "share": {
-    "action": "Condividi link",
-    "stopSharing": "Interrompi condivisione",
+    "visibility": "Chiunque abbia il link può vedere",
+    "visibilityHint": "Solo chi riceve il link. Vede la scheda in sola lettura, mai il tuo account.",
+    "copyLink": "Copia link",
     "shareTitle": "{{name}} su d20 Folio",
     "shareText": "Il mio personaggio di D&D “{{name}}” su d20 Folio:",
     "linkCopied": "Link di condivisione copiato",
-    "enabledToast": "Link copiato. Chiunque lo abbia può ora vedere {{name}}.",
-    "revokedToast": "{{name}} non è più condiviso",
     "failed": "Impossibile modificare la condivisione di {{name}}. Riprova.",
     "unavailableTitle": "Questo personaggio non è più condiviso",
     "unavailableBlurb": "Il link potrebbe essere stato revocato, oppure il personaggio potrebbe essere stato eliminato. Chiedi un nuovo link a chi te l'ha inviato.",

@@ -150,7 +150,7 @@ export function CreateCampaignModal({
                   title={t("campaigns.shareTitle", { name: name.trim() })}
                   text={t("campaigns.shareText", { name: name.trim() })}
                   copiedToast={t("campaigns.linkCopied")}
-                  label={t("campaigns.shareInvite")}
+                  label={t("common.share")}
                 />
               </div>
             </div>

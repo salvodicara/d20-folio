@@ -1,12 +1,11 @@
 {
   "share": {
-    "action": "Share link",
-    "stopSharing": "Stop sharing",
+    "visibility": "Anyone with the link can view",
+    "visibilityHint": "Only people you send the link to. They get the sheet read-only, and never your account.",
+    "copyLink": "Copy link",
     "shareTitle": "{{name}} on d20 Folio",
     "shareText": "My D&D character “{{name}}” on d20 Folio:",
     "linkCopied": "Share link copied",
-    "enabledToast": "Link copied. Anyone with it can now view {{name}}.",
-    "revokedToast": "{{name}} is no longer shared",
     "failed": "Couldn't change sharing for {{name}}. Try again.",
     "unavailableTitle": "This character is no longer shared",
     "unavailableBlurb": "The link may have been revoked, or the character may have been deleted. Ask whoever sent it for a fresh link.",

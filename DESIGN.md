@@ -2387,6 +2387,7 @@ above).
 | Bounded prose preview       | `NoteClamp` (overflow-engaged, in-place expand)               |
 | In-wizard choice pool       | `WizardPickList` (the morph-list; §5 above)                   |
 | Bounded growing list        | latest-N + "View all" (the Treasury-log recipe)               |
+| Handing out a link          | `SharePopover` (switch · link · Copy · native Share)          |
 
 ## 16. WORKED BRONZE — the corpus-studied identity grammar (owner epic, 2026-07-30)
 

@@ -19,12 +19,12 @@ import {
   type CardMenuItem,
 } from "@/components/shared/CardOverflowMenu";
 import { useCardMenuGuard } from "@/components/shared/use-card-menu-guard";
+import { SharePopover } from "@/components/shared/SharePopover";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
 import { Button } from "@/components/ui/button";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
-import { shareOrCopy } from "@/components/shared/copy-to-clipboard";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -258,21 +258,10 @@ function CampaignCard({
     guardProps,
   } = useCardMenuGuard();
   const canDelete = campaign.dmUid === uid || isAdmin;
+  const [shareOpen, setShareOpen] = useState(false);
 
   // The invite is a LINK; the embedded code is just the doc id (de-dup pass).
   const inviteLink = inviteLinkFromCode(campaign.inviteCode);
-
-  // The SAME one-tap grammar the sheet's ⋯ Share link uses: the native share sheet
-  // where the platform has one, the clipboard everywhere else (golden rule 3 — the
-  // branch lives once, in `shareOrCopy`). This menu used to copy ONLY, so a DM on a
-  // phone could not hand the link straight to WhatsApp.
-  function shareInviteLink(): void {
-    void shareOrCopy(inviteLink, {
-      title: t("campaigns.shareTitle", { name: campaign.name }),
-      text: t("campaigns.shareText", { name: campaign.name }),
-      copiedToast: t("campaigns.linkCopied"),
-    });
-  }
 
   async function deleteThisCampaign(): Promise<void> {
     const ok = await useConfirmStore.getState().confirm({
@@ -303,7 +292,10 @@ function CampaignCard({
       key: "share-link",
       label: t("campaigns.shareInviteLink"),
       icon: Share2,
-      onSelect: shareInviteLink,
+      // The SAME popover the sheet's ⋯ Share opens — minus the visibility switch,
+      // because an invite is a functional JOIN, not a visibility state (the DM's
+      // kill switch for it is the hub's lock, beside the link it disables).
+      onSelect: () => setShareOpen(true),
     },
     {
       key: "delete",
@@ -345,15 +337,29 @@ function CampaignCard({
         onClick={onOpen}
         aria-label={t("campaigns.openHubNamed", { name: campaign.name })}
       />
-      <CardOverflowMenu
-        open={menuOpen}
-        onOpenChange={setMenuOpen}
-        items={menuItems}
-        triggerLabel={t("campaigns.cardMoreActions")}
-        menuLabel={t("campaigns.cardActionsFor", {
-          name: campaign.name,
-        })}
-      />
+      <SharePopover
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        link={inviteLink}
+        rubric={t("campaigns.shareInviteLink")}
+        copyLabel={t("campaigns.copyInviteLink")}
+        copiedToast={t("campaigns.linkCopied")}
+        shareLabel={t("common.share")}
+        shareTitle={t("campaigns.shareTitle", { name: campaign.name })}
+        shareText={t("campaigns.shareText", { name: campaign.name })}
+        side="bottom"
+        align="end"
+      >
+        <CardOverflowMenu
+          open={menuOpen}
+          onOpenChange={setMenuOpen}
+          items={menuItems}
+          triggerLabel={t("campaigns.cardMoreActions")}
+          menuLabel={t("campaigns.cardActionsFor", {
+            name: campaign.name,
+          })}
+        />
+      </SharePopover>
       {/* N4 — a member's cropped custom banner (via the shared PortraitImg) when
           set, else the default art (the `.cmp-banner` CSS background). */}
       <span className="cmp-banner" aria-hidden>

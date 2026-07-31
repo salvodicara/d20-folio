@@ -1,24 +1,26 @@
 /**
- * The owner side of a public character share link — the ⋯ menu affordance and the
- * one write path behind it (`useShareCharacter`).
+ * The owner side of a public character share link — the ⋯ menu's ONE "Share" entry,
+ * the popover behind it, and the single write path underneath (`useShareCharacter`).
  *
- * Pins: the link IS the document path; "Share link" turns sharing on and hands the
- * link to the platform in ONE tap; "Stop sharing" exists ONLY while the link is live
- * (its presence is the state signal) and revokes on that one tap, with NO confirm —
- * the register keeps those for destructive acts, and this one re-shares to the SAME
- * link; a failed write never leaves the sheet claiming a link that works.
+ * Pins the Docs/Notion shape the owner ratified: the popover's visibility SWITCH is
+ * share-and-revoke (instant, no confirm, no second menu item), the link and its
+ * actions exist only while the switch is on, Copy puts the link on the clipboard with
+ * a quiet toast, the native-share button appears only where the platform has a share
+ * sheet, and a failed write never leaves the sheet claiming a link that works.
  *
- * `shareOrCopy` is stubbed to its call: the native-sheet-vs-clipboard branch inside
- * it is pinned by `share-or-copy.test.ts`, so re-driving it here would test the same
- * fact twice. BLIND SPOT: jsdom cannot open a real Web Share sheet, so "the native
- * sheet actually appears on a phone" is not covered anywhere in the unit suite.
+ * `copyWithToast` / `shareOrCopy` are stubbed to their calls: the clipboard and the
+ * native-sheet-vs-clipboard branch inside them are pinned by `share-or-copy.test.ts`,
+ * so re-driving them here would test the same fact twice. BLIND SPOT: jsdom cannot
+ * open a real Web Share sheet, so "the native sheet actually appears on a phone" is
+ * not covered anywhere in the unit suite.
  */
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 
-const { updateCharacterMock, shareOrCopyMock } = vi.hoisted(() => ({
+const { updateCharacterMock, shareOrCopyMock, copyWithToastMock } = vi.hoisted(() => ({
   updateCharacterMock: vi.fn<() => Promise<void>>(),
   shareOrCopyMock: vi.fn<() => Promise<void>>(),
+  copyWithToastMock: vi.fn<() => void>(),
 }));
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
@@ -32,7 +34,7 @@ vi.mock("@/lib/firestore", () => ({
 }));
 vi.mock("@/components/shared/copy-to-clipboard", () => ({
   shareOrCopy: shareOrCopyMock,
-  copyWithToast: vi.fn(),
+  copyWithToast: copyWithToastMock,
 }));
 
 import { SheetExtrasCoin } from "@/features/character/SheetExtrasCoin";
@@ -43,6 +45,8 @@ import { useConfirmStore } from "@/stores/confirmStore";
 import { useToastStore } from "@/stores/toastStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 
+const LINK = `${window.location.origin}/view/owner-1/char-1`;
+
 function loadSheet(shared: boolean): void {
   useCharacterStore.setState({
     character: { ...structuredClone(MOCK_CHARACTER), id: "char-1", shared },
@@ -52,108 +56,124 @@ function loadSheet(shared: boolean): void {
   });
 }
 
-/** Open the ⋯ menu and click one of its items by accessible name, letting the
- *  action's awaited write settle before the assertions run. */
-async function pickMenuItem(name: RegExp): Promise<void> {
+/** Open the ⋯ menu and pick "Share", which is what opens the popover. */
+function openSharePopover(): void {
   fireEvent.click(screen.getByRole("button", { name: /more actions/i }));
-  fireEvent.click(screen.getByRole("menuitem", { name }));
-  await act(() => Promise.resolve());
+  fireEvent.click(screen.getByRole("menuitem", { name: /^share$/i }));
+}
+
+/** Flip the popover's visibility switch, letting the awaited write settle. */
+async function flipVisibility(): Promise<void> {
+  fireEvent.click(screen.getByRole("switch", { name: /anyone with the link can view/i }));
+  // The write is persist-then-reflect, so let both microtask hops settle.
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
 }
 
 describe("character share link — the owner affordance", () => {
   beforeEach(() => {
     updateCharacterMock.mockReset().mockResolvedValue(undefined);
     shareOrCopyMock.mockReset().mockResolvedValue(undefined);
+    copyWithToastMock.mockReset();
     useAuthStore.setState({ user: { uid: "owner-1" } as never });
     useToastStore.setState({ toasts: [] });
     loadSheet(false);
   });
+  afterEach(() => vi.unstubAllGlobals());
 
   it("builds the link from the document path — the unguessable id IS the secret", () => {
-    expect(shareLinkFor("owner-1", "char-1")).toBe(
-      `${window.location.origin}/view/owner-1/char-1`
-    );
+    expect(shareLinkFor("owner-1", "char-1")).toBe(LINK);
   });
 
-  it("one tap turns sharing on AND hands the link to the platform", async () => {
+  it("ONE menu entry opens the share popover — no second 'stop' item to find", () => {
     render(<SheetExtrasCoin triggerClassName="fob-coin" />);
-    await pickMenuItem(/share link/i);
+    fireEvent.click(screen.getByRole("button", { name: /more actions/i }));
+    expect(screen.getByRole("menuitem", { name: /^share$/i })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: /stop sharing/i })).toBeNull();
+  });
+
+  it("the switch OFF is the whole popover — no link to copy that nobody can open", () => {
+    render(<SheetExtrasCoin triggerClassName="fob-coin" />);
+    openSharePopover();
+
+    const toggle = screen.getByRole("switch", {
+      name: /anyone with the link can view/i,
+    });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(screen.queryByText(LINK)).toBeNull();
+    expect(screen.queryByRole("button", { name: /copy link/i })).toBeNull();
+  });
+
+  it("flipping it ON shares, and the link appears with its actions", async () => {
+    render(<SheetExtrasCoin triggerClassName="fob-coin" />);
+    openSharePopover();
+    await flipVisibility();
 
     expect(updateCharacterMock).toHaveBeenCalledWith("owner-1", "char-1", {
       shared: true,
     });
     expect(useCharacterStore.getState().character?.shared).toBe(true);
-    expect(shareOrCopyMock).toHaveBeenCalledWith(
-      `${window.location.origin}/view/owner-1/char-1`,
-      expect.objectContaining({
-        title: expect.stringContaining("Lyra Voss") as string,
-        // The first share is the moment the owner learns what sharing MEANS.
-        copiedToast: expect.stringContaining("Anyone with it can now view") as string,
-      })
-    );
-  });
-
-  it("sharing an ALREADY-shared character re-offers the link without re-writing", async () => {
-    loadSheet(true);
-    render(<SheetExtrasCoin triggerClassName="fob-coin" />);
-    await pickMenuItem(/share link/i);
-
-    expect(updateCharacterMock).not.toHaveBeenCalled();
-    expect(shareOrCopyMock).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ copiedToast: "Share link copied" })
-    );
-  });
-
-  it("'Stop sharing' is present ONLY while the link is live", () => {
-    const { unmount } = render(<SheetExtrasCoin triggerClassName="fob-coin" />);
-    fireEvent.click(screen.getByRole("button", { name: /more actions/i }));
-    expect(screen.queryByRole("menuitem", { name: /stop sharing/i })).toBeNull();
-    unmount();
-
-    loadSheet(true);
-    render(<SheetExtrasCoin triggerClassName="fob-coin" />);
-    fireEvent.click(screen.getByRole("button", { name: /more actions/i }));
-    expect(screen.getByRole("menuitem", { name: /stop sharing/i })).toBeInTheDocument();
-  });
-
-  it("revoking is ONE quiet tap — no dialog, flag off, one toast", async () => {
-    loadSheet(true);
-    render(<SheetExtrasCoin triggerClassName="fob-coin" />);
-    await pickMenuItem(/stop sharing/i);
-
-    // Nothing to dismiss: no house confirm was ever opened, and no dialog is on
-    // screen. Sharing again puts the same link back, so asking would be ceremony.
+    expect(screen.getByText(LINK)).toBeInTheDocument();
+    // No confirm anywhere: the switch IS the control and the popover IS the feedback.
+    // (`queryByRole("dialog")` would match the popover itself — Radix gives its
+    // content that role — so the house confirm store is what gets asserted.)
+    expect(useConfirmStore.getState().open).toBe(false);
     expect(useConfirmStore.getState().options).toBeNull();
-    expect(screen.queryByRole("dialog")).toBeNull();
-    // The flip happened on the tap itself.
+
+    fireEvent.click(screen.getByRole("button", { name: /copy link/i }));
+    expect(copyWithToastMock).toHaveBeenCalledWith(LINK, "Share link copied");
+  });
+
+  it("flipping it OFF revokes, and the link goes with it", async () => {
+    loadSheet(true);
+    render(<SheetExtrasCoin triggerClassName="fob-coin" />);
+    openSharePopover();
+    expect(screen.getByText(LINK)).toBeInTheDocument();
+
+    await flipVisibility();
+
     expect(updateCharacterMock).toHaveBeenCalledWith("owner-1", "char-1", {
       shared: false,
     });
     expect(useCharacterStore.getState().character?.shared).toBe(false);
-    expect(useToastStore.getState().toasts.at(-1)?.message).toMatch(/no longer shared/i);
+    expect(screen.queryByText(LINK)).toBeNull();
+    // Instantly, with nothing to dismiss and nothing to confirm.
+    expect(useConfirmStore.getState().open).toBe(false);
+    expect(useConfirmStore.getState().options).toBeNull();
   });
 
-  it("a failed revoke keeps the link live and says so", async () => {
+  it("the native-share button shows up ONLY where the platform has a share sheet", () => {
+    // jsdom has no `navigator.share`, so Copy would otherwise be offered twice.
     loadSheet(true);
-    updateCharacterMock.mockRejectedValue(new Error("offline"));
-    render(<SheetExtrasCoin triggerClassName="fob-coin" />);
-    await pickMenuItem(/stop sharing/i);
+    const { unmount } = render(<SheetExtrasCoin triggerClassName="fob-coin" />);
+    openSharePopover();
+    expect(screen.queryByRole("button", { name: /^share$/i })).toBeNull();
+    unmount();
 
-    expect(useCharacterStore.getState().character?.shared).toBe(true);
-    expect(useToastStore.getState().toasts.at(-1)?.message).toMatch(
-      /couldn't change sharing/i
+    // A real `Navigator` cannot be spread (it would lose its prototype), so hang the
+    // one method jsdom lacks straight off the live object and take it back after.
+    vi.stubGlobal("navigator", Object.create(navigator, { share: { value: vi.fn() } }));
+    render(<SheetExtrasCoin triggerClassName="fob-coin" />);
+    openSharePopover();
+    fireEvent.click(screen.getByRole("button", { name: /^share$/i }));
+    expect(shareOrCopyMock).toHaveBeenCalledWith(
+      LINK,
+      expect.objectContaining({
+        title: expect.stringContaining("Lyra Voss") as string,
+      })
     );
   });
 
   it("a failed write never leaves the sheet claiming a link that works", async () => {
     updateCharacterMock.mockRejectedValue(new Error("offline"));
     render(<SheetExtrasCoin triggerClassName="fob-coin" />);
-    await pickMenuItem(/share link/i);
+    openSharePopover();
+    await flipVisibility();
 
     expect(useCharacterStore.getState().character?.shared).toBe(false);
-    // No link is offered for a state that was never persisted.
-    expect(shareOrCopyMock).not.toHaveBeenCalled();
+    expect(screen.queryByText(LINK)).toBeNull();
     expect(useToastStore.getState().toasts.at(-1)?.message).toMatch(
       /couldn't change sharing/i
     );

@@ -79,6 +79,7 @@
     "accountSettings": "Account e impostazioni",
     "searchMissHint": "Prova con un altro termine di ricerca.",
     "deleteTitle": "Eliminare {{name}}?",
-    "editNamed": "Modifica {{name}}"
+    "editNamed": "Modifica {{name}}",
+    "share": "Condividi"
   }
 }

@@ -90,7 +90,7 @@ export function CampaignInvite({ canManage }: { canManage: boolean }) {
               title={t("campaigns.shareTitle", { name })}
               text={t("campaigns.shareText", { name })}
               copiedToast={t("campaigns.linkCopied")}
-              label={t("campaigns.shareInvite")}
+              label={t("common.share")}
               disabled={joinsLocked}
             />
           </div>
