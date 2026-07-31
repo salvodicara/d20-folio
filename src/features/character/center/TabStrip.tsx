@@ -64,7 +64,7 @@ export function TabStrip() {
         ref={stripRef}
         role="tablist"
         aria-label={t("character.tabs.label")}
-        className="tabstrip flex items-center gap-1 overflow-x-auto p-1"
+        className="tabstrip flex items-center gap-1 overflow-x-auto"
       >
         {TAB_DEFS.map((tab, index) => {
           const selected = tab.id === activeTab;
@@ -77,7 +77,11 @@ export function TabStrip() {
               aria-selected={selected}
               aria-controls={panelDomId(uid, tab.id)}
               tabIndex={selected ? 0 : -1}
-              onClick={() => selectTab(tab.id)}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={(e) => {
+                e.currentTarget.focus({ preventScroll: true });
+                selectTab(tab.id);
+              }}
               onKeyDown={(e) => onTabKeyDown(e, index)}
             >
               <Icon as={tab.icon} size="sm" decorative />

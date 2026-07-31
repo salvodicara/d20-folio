@@ -219,7 +219,9 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
 
   // The roving highlight for keyboard nav (OWN-28b): Arrow Up/Down move it, Enter
   // activates it. Starts on the first hit; resets whenever the result set changes.
-  const [activeIndex, setActiveIndex] = useState(0);
+  // On touch there is no keyboard to drive the roving highlight: no row is
+  // pre-selected (owner, 2026-07-31 — mobile must feel mobile-native).
+  const [activeIndex, setActiveIndex] = useState(coarsePointer ? -1 : 0);
 
   // OWN-33 — read the recents ONCE when the palette opens (they only change on
   // activate, which closes it), so render stays pure (no per-frame storage read).
@@ -789,11 +791,11 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
-          setActiveIndex(0);
+          setActiveIndex(coarsePointer ? -1 : 0);
         }}
         onClear={() => {
           setQuery("");
-          setActiveIndex(0);
+          setActiveIndex(coarsePointer ? -1 : 0);
         }}
         clearLabel={t("common.clearSearch")}
         placeholder={t("palette.placeholder")}
@@ -877,11 +879,11 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         </div>
       )}
 
-      <div className="palette-foot mt-3 flex items-center justify-end gap-3 border-t border-border-subtle pt-3 text-xs text-text-secondary">
-        {/* The `? Shortcuts` chip — a real button that opens the shortcuts sheet.
+      {!coarsePointer && (
+        <div className="palette-foot mt-3 flex items-center justify-end gap-3 border-t border-border-subtle pt-3 text-xs text-text-secondary">
+          {/* The `? Shortcuts` chip — a real button that opens the shortcuts sheet.
             Left-aligned via `mr-auto` so the ↑↓ / ↵ / Esc legend stays right. Hidden
             on touch (no keyboard to advertise) via the shared coarse-pointer seam. */}
-        {!coarsePointer && (
           <button
             type="button"
             className="palette-foot-chip mr-auto inline-flex items-center gap-1"
@@ -893,20 +895,20 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
             <Kbd>?</Kbd>
             {t("shortcuts.rubric")}
           </button>
-        )}
-        <span className="inline-flex items-center gap-1">
-          <Kbd>↑↓</Kbd>
-          {t("palette.hintNav")}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <Kbd>↵</Kbd>
-          {t("palette.hintGo")}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <Kbd>Esc</Kbd>
-          {t("common.close")}
-        </span>
-      </div>
+          <span className="inline-flex items-center gap-1">
+            <Kbd>↑↓</Kbd>
+            {t("palette.hintNav")}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Kbd>↵</Kbd>
+            {t("palette.hintGo")}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Kbd>Esc</Kbd>
+            {t("common.close")}
+          </span>
+        </div>
+      )}
     </DialogBody>
   );
 }

@@ -33,9 +33,20 @@ export function CollapsibleSearch({ value, onChange, placeholder, className }: P
   const open = focused || value.length > 0;
   const id = useId();
 
-  function openAndFocus() {
-    // Focus in an event handler (not render) — React-Compiler safe.
-    inputRef.current?.focus();
+  function toggle() {
+    // A true toggle (owner bug, 2026-07-31: "if it's open it should close —
+    // right now it flashes"): the flash was pointerdown blurring the input
+    // (collapse) and click refocusing it (reopen). The lens's onPointerDown
+    // preventDefault keeps focus where it is, so `open` is still truthful
+    // here and the branch is deterministic. Closing also clears the query —
+    // a hidden active filter is worse than a cleared one.
+    if (open) {
+      if (value) onChange("");
+      inputRef.current?.blur();
+    } else {
+      // Focus in an event handler (not render) — React-Compiler safe.
+      inputRef.current?.focus();
+    }
   }
 
   return (
@@ -46,7 +57,8 @@ export function CollapsibleSearch({ value, onChange, placeholder, className }: P
         aria-label={placeholder}
         aria-expanded={open}
         aria-controls={id}
-        onClick={openAndFocus}
+        onPointerDown={(e) => e.preventDefault()}
+        onClick={toggle}
       >
         <Icon as={Search} decorative />
       </button>
@@ -71,7 +83,7 @@ export function CollapsibleSearch({ value, onChange, placeholder, className }: P
           aria-label={t("common.clearSearch")}
           onClick={() => {
             onChange("");
-            openAndFocus();
+            inputRef.current?.focus();
           }}
         >
           <span aria-hidden>×</span>

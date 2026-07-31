@@ -9570,7 +9570,8 @@ button.create-need:focus-visible .create-need-chev {
   gap: 5px;
   padding: var(--sp-3) var(--sp-4) 0;
 }
-.cmp-ribbon::-webkit-scrollbar {
+.cmp-ribbon::-webkit-scrollbar,
+.tabstrip::-webkit-scrollbar {
   display: none;
 }
 /* Overflow cue for the mobile ribbon (where it scrolls horizontally, below) — a
@@ -12325,6 +12326,12 @@ textarea.input.sess-notes-edit {
 .section-detail {
   min-height: 0;
   overflow: hidden;
+}
+/* The reveal gap exists only when OPEN — a padding on the collapsed child
+   resists the 0fr compression and left every closed section ~12px of ghost
+   height (the "huge unjustified margins" at the sheet's tail, owner
+   2026-07-31). */
+.section-detail-wrap[data-open] .section-detail {
   padding-top: var(--sp-3);
 }
 
@@ -14264,6 +14271,10 @@ button.party-avatar-btn:focus-visible {
 .tabstrip {
   /* Breathing room when `useActiveTabScroll` reveals a selected off-edge tab. */
   scroll-padding-inline: 16px;
+  /* The strip is bare book-tabs now (owner 2026-07-31): no scrollbar (the
+     shell's edge fades are the overflow cue, as on the compendium ribbon). */
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
 }
 /* Overflow cue — when the strip scrolls (phones; the tightest IT desktop bands),
    a tab hidden past the edge must READ as "more this way", never as the end of

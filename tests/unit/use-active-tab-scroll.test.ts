@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 /**
- * revealActiveTab — the shared ribbon anti-jump seam. It must reveal the ACTIVE tab
- * via a page-safe `scrollIntoView({ block: "nearest", inline: "nearest" })` (block
- * "nearest" = no vertical page scroll; inline "nearest" = the horizontal reveal),
- * and target ONLY the `[aria-selected="true"]` tab. jsdom stubs `scrollIntoView` to
- * a no-op, so this pins the WIRING (which node, which options); the real reveal is
- * proven in Chromium by tests/e2e/no-page-jump.spec.ts.
+ * revealActiveTab — the shared ribbon anti-jump seam. It reveals the ACTIVE tab
+ * by scrolling the CONTAINER ITSELF (`scrollBy`, horizontal only, minimal
+ * nearest-edge delta) — never `scrollIntoView`, which may scroll any scrollable
+ * ancestor including the page (owner-grilled standard, 2026-07-31). This pins
+ * the WIRING (container-only, which delta); the real behaviour is proven in
+ * Chromium by tests/e2e/tab-no-jump.spec.ts.
  */
 import { describe, it, expect, vi } from "vitest";
 import { revealActiveTab } from "@/hooks/useActiveTabScroll";
@@ -45,31 +45,41 @@ function ribbon(
 }
 
 describe("revealActiveTab", () => {
-  it("scrolls a CLIPPED active tab into nearest view on both axes (page-safe options)", () => {
+  it("nudges a right-CLIPPED active tab by the minimal delta — container-only", () => {
     // Active tab sits off the right edge of the [0,100] container.
     const container = ribbon(4, 2, [150, 200]);
-    // jsdom does not define scrollIntoView — install a mock to observe the call.
     const spy = vi.fn();
-    HTMLElement.prototype.scrollIntoView = spy;
+    HTMLElement.prototype.scrollBy = spy;
+    const intoView = vi.fn();
+    HTMLElement.prototype.scrollIntoView = intoView;
     revealActiveTab(container);
+    // The CONTAINER scrolled, by the nearest-edge delta (tab right 200 → edge 100).
     expect(spy).toHaveBeenCalledTimes(1);
-    expect(spy).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
-    // It targeted the selected tab, not a sibling.
-    expect(spy.mock.instances[0]).toBe(container.querySelector('[aria-selected="true"]'));
+    expect(spy.mock.instances[0]).toBe(container);
+    expect(spy.mock.calls[0][0]).toMatchObject({ left: 100 });
+    // …and NOTHING was asked to scroll ancestors.
+    expect(intoView).not.toHaveBeenCalled();
+  });
+
+  it("nudges a left-CLIPPED active tab with a negative delta", () => {
+    const container = ribbon(4, 1, [-30, 20]);
+    const spy = vi.fn();
+    HTMLElement.prototype.scrollBy = spy;
+    revealActiveTab(container);
+    expect(spy.mock.calls[0][0]).toMatchObject({ left: -30 });
   });
 
   it("does NOT nudge an already fully-visible active tab (the member-sheet clip fix)", () => {
     const container = ribbon(4, 0, [4, 44]); // first tab, comfortably in view
     const spy = vi.fn();
-    HTMLElement.prototype.scrollIntoView = spy;
+    HTMLElement.prototype.scrollBy = spy;
     revealActiveTab(container);
     expect(spy).not.toHaveBeenCalled();
   });
 
   it("is a tolerant no-op with no container or no active tab", () => {
-    // jsdom does not define scrollIntoView — install a mock to observe the call.
     const spy = vi.fn();
-    HTMLElement.prototype.scrollIntoView = spy;
+    HTMLElement.prototype.scrollBy = spy;
     expect(() => revealActiveTab(null)).not.toThrow();
     revealActiveTab(document.createElement("div")); // no tabs
     expect(spy).not.toHaveBeenCalled();

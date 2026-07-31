@@ -93,6 +93,10 @@ export function CompendiumPage() {
 
   const setActiveId = useCallback(
     (id: string) => {
+      // Re-selecting the ACTIVE type is a no-op (the standard tab contract,
+      // owner 2026-07-31): it must never close the open entry or clear the
+      // seeded search.
+      if (id === activeId) return;
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
@@ -104,7 +108,7 @@ export function CompendiumPage() {
         { replace: true }
       );
     },
-    [setSearchParams]
+    [setSearchParams, activeId]
   );
 
   // Opening the FIRST entry = PUSH (marked, so closing can be a real history
@@ -157,11 +161,11 @@ export function CompendiumPage() {
     >
       <PageHeader as="h1" crest title={t("nav.compendium")} hint={t("compendium.hint")} />
       {spec && (
-        // Remount when the type OR a seeded `?q=` changes → fresh facets + search.
-        // The open entry (`?sel=`) is LIVE state, not a seed: it must NOT remount
-        // the browser, or the list's query/facets/scroll would be lost on open.
+        // Type/seed changes reset STATE inside the picker hook and remount only
+        // the keyed `.cmp-body` below — never the whole browser: remounting it
+        // also recreated the type ribbon and zeroed its scroll on every
+        // selection (the "tab row jumps", owner-grilled 2026-07-31).
         <CompendiumBrowser
-          key={`${spec.id}:${initialQuery}`}
           spec={spec}
           specs={COMPENDIUM_SPECS}
           activeId={activeId}
@@ -379,7 +383,11 @@ function CompendiumBrowser({
       </div>
       <div className="cmp-ribbon-rule" />
 
-      <div className="cmp-body" data-spread={spread ? "" : undefined}>
+      <div
+        key={`${spec.id}:${initialQuery}`}
+        className="cmp-body"
+        data-spread={spread ? "" : undefined}
+      >
         {/* The index leaf: on the spread it ALWAYS shows (reading never hides
             the list); on the phone model it swaps out behind the open entry. */}
         {(spread || !selected) && index}

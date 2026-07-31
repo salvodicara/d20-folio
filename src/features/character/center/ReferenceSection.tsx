@@ -38,7 +38,7 @@ export function ReferenceSection({
   const bodyId = `${anchorId}-body`;
 
   return (
-    <section className="mt-6" aria-labelledby={anchorId}>
+    <section className="mt-4" aria-labelledby={anchorId}>
       <SectionHeader
         as="h3"
         id={anchorId}

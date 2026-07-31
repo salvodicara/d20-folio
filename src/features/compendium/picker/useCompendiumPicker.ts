@@ -149,6 +149,22 @@ export function useCompendiumPicker<T>(
   // D55 — the add-time quantity for the open detail (reset to 1 on each select).
   const [quantity, setQuantity] = useState(1);
 
+  // Reset per-type state when the SPEC (or a seeded deep-link query) changes —
+  // the render-time derive-from-props pattern, replacing the old remount-by-key
+  // of the whole browser: remounting also recreated the type ribbon and zeroed
+  // its scroll position on every selection (the "tab row jumps" the owner
+  // reported, grilled 2026-07-31). State resets here; the list DOM resets via
+  // the keyed `.cmp-body`; the ribbon persists.
+  const [prevReset, setPrevReset] = useState(`${spec.id}:${opts.initialQuery ?? ""}`);
+  const resetKey = `${spec.id}:${opts.initialQuery ?? ""}`;
+  if (resetKey !== prevReset) {
+    setPrevReset(resetKey);
+    setQuery(opts.initialQuery ?? "");
+    setFilterState(Object.fromEntries(spec.filters.map((g) => [g.id, g.initial])));
+    setLocalSelected(null);
+    setQuantity(1);
+  }
+
   const setFilterValue = useCallback((id: string, v: unknown) => {
     setFilterState((prev) => ({ ...prev, [id]: v }));
   }, []);
