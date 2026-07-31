@@ -3570,6 +3570,15 @@ button.pr-dot.lg::before {
   background: var(--bg-surface-1);
   position: relative;
 }
+/* SYMMETRIC TAIL (owner, 2026-07-31): the column's bottom breath is TabBody's
+   `pb-3` — the exact mirror of `.content`'s `pt-3` above the tab strip. The
+   BETWEEN-section rhythm (`.mb-6` wrappers, `.info-card`'s default trailing
+   margin) must die at the panel edge, not stack beneath that padding, so the
+   last-child spine under each tab root sheds its bottom margin. */
+.content [role="tabpanel"] > * > :last-child,
+.content [role="tabpanel"] > * > :last-child > .info-card:last-child {
+  margin-bottom: 0;
+}
 /* Light theme — a glowing gold FRAME alone barely registers on cream, so edit
    mode also WASHES the whole editing column in warm amber: the zone visibly
    changes colour (obvious at a glance, owner Img #30), not just a faint edge. */
@@ -12317,7 +12326,11 @@ textarea.input.sess-notes-edit {
 .section-detail-wrap {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows var(--m-normal) var(--ease-standard);
+  /* margin-top rides along for the collapsed-tail rule below, so the
+     header→body seam eases in step with the height reveal. */
+  transition:
+    grid-template-rows var(--m-normal) var(--ease-standard),
+    margin-top var(--m-normal) var(--ease-standard);
 }
 .section-detail-wrap[data-open] {
   grid-template-rows: 1fr;
@@ -12332,6 +12345,14 @@ textarea.input.sess-notes-edit {
    2026-07-31). */
 .section-detail-wrap[data-open] .section-detail {
   padding-top: var(--sp-3);
+}
+/* A CLOSED section ends AT its header: the rubric's trailing margin is the
+   open-state header→body seam, so collapsed it must not pad the panel tail
+   (owner, 2026-07-31 — the tail margin equals the head margin, symmetry).
+   The negative margin collapses algebraically with `.sec-head`'s +sp-3 to 0.
+   Scoped to the header+wrap pair — the campaign chevron+wrap is untouched. */
+.sec-head + .section-detail-wrap:not([data-open]) {
+  margin-top: calc(-1 * var(--sp-3));
 }
 
 /* ── Section disclosure (B5/D4) — the campaign SectionPanel's detail toggle: a CLEAN,

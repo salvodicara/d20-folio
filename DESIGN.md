@@ -1053,6 +1053,13 @@ Selecting a tab that sits past the edge REVEALS it by scrolling only the strip's
 (the same anti-jump seam backs the compendium `.cmp-ribbon`). The same one tab primitive serves the
 campaign hub if it adopts tabbed IA — never re-roll a second tab look.
 
+**Symmetric tail (owner, 2026-07-31):** the content column breathes the SAME 12 px at both ends —
+`.content`'s `pt-3` above the strip is mirrored by `TabBody`'s `pb-3` below the last row of every
+tab. Between-section rhythm (`.mb-6` wrappers, `.info-card`'s default trailing margin, a collapsed
+reference section's rubric margin) dies at the panel edge instead of stacking under that padding
+(the folio.css last-child-spine + `.sec-head + .section-detail-wrap` rules). A tab must never end
+in a void: last ink → panel edge = strip → panel edge.
+
 ### Modals (`ModalShell`) + command palette
 
 - **`ModalShell`:** centered, `--bg-surface-2`, `--elev-modal`, `--radius-xl`, scrim behind, at

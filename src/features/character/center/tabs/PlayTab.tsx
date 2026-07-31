@@ -844,7 +844,7 @@ export function PlayTab() {
     (!reactionsVisible || sortedReactions.length === 0);
 
   return (
-    <div className="pb-20">
+    <div>
       {/* Combat command group — the top of the Play scroll surface. The carved,
           gold-accented `.turn` meter (round · initiative · economy tokens ·
           movement · End Turn · concentration banner) IS the deliberate folio

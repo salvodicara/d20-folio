@@ -35,11 +35,11 @@ export function TabBody() {
   return (
     // D50 — a consistent, deliberate gap below the tab strip so each tab's toolbar
     // (the search lens, filter chips, Add buttons) breathes instead of sitting glued
-    // to the tabs. One place → every tab inherits the same top spacing. The matching
-    // `pb-6` gives the LAST list row/group breathing room so no tab (spells, features,
-    // …) ends abruptly flush — kept modest (the shell already adds footer clearance)
-    // so it's consistent without over-padding the shorter tabs.
-    <div className="mt-5 grid min-h-[24rem] min-w-0 pb-6">
+    // to the tabs. One place → every tab inherits the same top spacing. The `pb-3`
+    // is the column's SYMMETRIC tail (owner, 2026-07-31): it mirrors `.content`'s
+    // `pt-3`, so every tab ends the same 12px from the panel edge that the tab
+    // strip starts from — the shell already adds footer clearance below.
+    <div className="mt-5 grid min-h-[24rem] min-w-0 pb-3">
       {TAB_DEFS.map((tab) => {
         const Panel = tab.Panel;
         const active = tab.id === activeTab;
