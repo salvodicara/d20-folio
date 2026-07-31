@@ -487,6 +487,39 @@ pre-events persisted row as a `legacy` event; the engine never emits `legacy`). 
 `combat-log-view.test.ts`, `combat-log-emission.test.ts` (incl. the locale-independence guard), and
 `action-log.test.ts`.
 
+### The Combat Chronicle event seam (campaign encounters)
+
+The DM's in-hub encounter tracker has its OWN events-as-data feed — the table-wide sibling of the solo
+combat log. As the DM books HP / conditions / turns, the pure recorders append a structured
+**`CombatChronicleEvent`** (`src/types/combat-chronicle.ts` — a discriminated union: `hp-damage` /
+`hp-heal` / `down` / `condition-gain` / `condition-loss` / `attack-miss` / `turn-pass`; ids + numbers
+only — combatant ids `pc-<uid>` / `monster-<n>`, condition ids, amounts; NO localized string, golden
+rule 7) to an **ephemeral `EncounterState.events`** array. Because the events live on the encounter
+object, they ride the SAME debounced encounter writer the tracker already uses — accumulating them adds
+**no new write cadence and never a per-action write**; the array is dropped when the encounter clears at
+end.
+
+- **Emit** — the pure recorders in `src/features/campaigns/combat-chronicle.ts` (`recordMonsterHp` /
+  `recordPcHp` / `recordCondition` / `recordMiss` / `recordTurnPass`) compose with the plain encounter
+  reducers at the tracker seams (`party-encounter.tsx`: monster token HP + conditions; the PC HP tile +
+  condition editor, via the DM-only `recordEvent` threaded through the card). Down-crossing is derived in
+  ONE place (a PC crossing to 0, a monster group's last live token dying). Emission is **DM-only** (the
+  seams are DM-gated; firestore.rules keep the whole `encounter` structure DM-write-only), so a player's
+  own HP edit never writes the feed.
+- **Attribution** — a damage event carries an attacker **only** when the DM taps the feed's one-tap picker
+  (`setEventAttacker`), pre-selected to the current combatant, always skippable (`skipEventAttacker`); the
+  app NEVER auto-guesses. Miss / pass are pull-only (`recordMiss` / `recordTurnPass` on the active
+  combatant) — never inferred from an event-less turn.
+- **Localize + close** — ONE presenter `src/lib/views/combat-chronicle-view.ts` resolves each event to its
+  prose line (injected combatant-name + condition-name resolvers → EN/IT re-localizes on a language
+  switch) and `buildChronicleChapter` assembles the kept lines into one round-grouped markdown `##`
+  chapter. At "End encounter" the DM's editable entry (`party-chronicle.tsx → EndEncounterDialog`: title,
+  free-text narrative note, state-inferred outcome, removable lines) appends that chapter via
+  `campaign-io.appendChronicleChapter` — a transaction that concatenates onto the SERVER's current
+  chronicle text (`joinChronicleText`), the **single persisted Chronicle write per fight**. "Skip" saves
+  nothing; either way the encounter then clears. Locked by `combat-chronicle.test.ts`,
+  `combat-chronicle-view.test.ts`, `party-chronicle.test.tsx`, and the `campaign-io` append tests.
+
 ---
 
 ## Character creation + level-up

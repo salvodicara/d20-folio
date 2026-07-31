@@ -427,6 +427,26 @@ threshold). Owner: "non possiamo mostrare tutta la lista utenti in place".
 | 3 — Chronicle           | Markdown chronicle + version history, Treasury, SharedNotes, Sessions       | ✅ Shipped (v0.15.x) — Chronicle (markdown + version history), Treasury, SharedNotes, Sessions all live. (The AI assistant / AI session recaps once scoped here were **DROPPED** — owner 2026-07-06; see _Open decisions_.)                                                                                                                                                                                |
 | 4 — Polish & Completion | PDF export, command palette, compendium, a11y, perf, onboarding             | 🔄 PDF export (faithful from-scratch recreation of the official 2024 sheet layout — the two-page sheet plus an appended **resource ledger** page listing every consumable pool (class resources + magic-item charges: name · pips-or-count · recovery cadence, paginating when long), EN/IT, copyright-clean), glossary tooltips, perf budget, Cmd+K palette shipped. Guided tour + compendium polish open |
 
+## Shipped — the Deterministic Combat Chronicle (2026-07-31)
+
+**The DM's encounter tracker now writes the fight for you** (owner-ratified, hard deadline for the
+owner's live session). As the DM books HP / conditions / turns in the in-hub tracker, a factual
+structured feed (the "Chronicle of the fight") builds itself and, at "End encounter", becomes ONE
+editable Chronicle chapter — removing the mechanical bookkeeping so the DM writes STORY. Deterministic
+(no AI prose beyond templated facts, no dice), table-first, budget-safe.
+
+- **Data seam** — a `CombatChronicleEvent` union (`src/types/combat-chronicle.ts`: `hp-damage` /
+  `hp-heal` / `down` / `condition-gain` / `condition-loss` / `attack-miss` / `turn-pass`; ids + numbers
+  only) on an **ephemeral `EncounterState.events`** that rides the EXISTING debounced encounter writer —
+  NO new write cadence, never a per-action write; the single persisted Chronicle write is the ONE
+  chapter appended at close. Pure recorders in `features/campaigns/combat-chronicle.ts`; the presenter +
+  markdown chapter builder in `lib/views/combat-chronicle-view.ts` (EN + IT).
+- **UX** — the DM-only collapsible live feed + the **one-tap attacker attribution** (pre-picked to the
+  current combatant, always skippable, NEVER auto-guessed), the pull-only "log a miss / a pass" on the
+  active combatant, and the editable end entry (title · free-text narrative · state-inferred outcome ·
+  removable lines) → `appendChronicleChapter` (`features/campaigns/party-chronicle.tsx`).
+- Full detail: `docs/ARCHITECTURE.md → "The Combat Chronicle event seam"`.
+
 ## Shipped — corner-ornament revert to the owner-approved style-A knot (2026-07-25)
 
 **Owner-ordered revert.** The chrome reset's phase 6/9 "MARK" (`--mark-tl/tr/bl/br` — long
