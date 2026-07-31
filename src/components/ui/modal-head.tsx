@@ -153,7 +153,7 @@ export function ModalScrollColumn({
     <DissolvingScroll
       tabIndex={0}
       className={cn(
-        "flex-1 overflow-y-auto overscroll-contain p-4 pb-8 focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-accent",
+        "flex-1 overflow-y-auto overscroll-contain focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-accent",
         className
       )}
       {...rest}

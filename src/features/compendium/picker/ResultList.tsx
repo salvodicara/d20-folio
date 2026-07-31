@@ -72,9 +72,8 @@ export function CompendiumResultList<T>({
     // so adding a spell/item/feat from the sheet matches the browse experience.
     // `overscroll-contain` keeps wheel/touch momentum from chaining to the page.
     <div
-      // pb-8: the tail clearance — at full scroll the LAST row rests above the
-      // modal's binding-corner zone instead of grazing the spandrels.
-      className="scroll-dissolve flex-1 overflow-y-auto overscroll-contain p-2 pb-8"
+      // Padding comes from the frame's-margin law (`.modal .scroll-dissolve`).
+      className="scroll-dissolve flex-1 overflow-y-auto overscroll-contain"
       data-variant="codex"
       data-fade={fade || undefined}
       ref={attachList}
