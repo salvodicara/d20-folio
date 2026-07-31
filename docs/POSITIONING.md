@@ -118,9 +118,11 @@ and price. The content moat is neutralized on both sides of the split: the **pri
 (personal, forever-private) closes it for the owner's table, and the **homebrew ladder is the
 public answer** — users author what licensing forbids us to ship. The bar is absolute: everything
 perfect and premium — no bug or weird UI/UX can be afforded (golden rule 27). The **pre-GA
-checklist** (parked now, blocking GA later) lives in `PROGRESS.md` → the DDB-parity charter's
-2026-07-31 owner amendment. Monetization remains a possible someday, never a driving goal, and the
-boundary above stands unchanged: only ever the SRD-clean public build.
+checklist** (parked now, blocking GA later; fleshed out 2026-07-31) lives in `PROGRESS.md` → the
+DDB-parity charter's 2026-07-31 owner amendment. The monetization **shape** is ratified (owner,
+2026-07-31): **core free forever, self-hosting free, a cheap supporter/premium tier on the hosted
+instance only** — still never a driving goal, and the boundary above stands unchanged: only ever
+the SRD-clean public build.
 
 ## Sources
 

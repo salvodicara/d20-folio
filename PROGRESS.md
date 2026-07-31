@@ -1180,10 +1180,36 @@ SRD-clean public build** is where this epic ultimately lands, and **"objectively
 D&D Beyond is the acceptance bar** — with any content gap overcome, as usual, by the private
 content pack (personal) and the homebrews (the public answer). The mandate is premium and
 zero-defect — "everything has to be perfect and premium; we can't afford any bug or weird UI/UX" —
-reinforcing golden rule 27. The **pre-GA checklist** — parked NOW, blocking GA LATER: **backups ·
-observability · legal pages · auth breadth beyond Google · the react-router advisory triage**
-(backups + observability sit in _Open decisions_; auth breadth is the DEFERRED bullet below; the
-advisory in the Dependabot remediation records). Posture home: `docs/POSITIONING.md`.
+reinforcing golden rule 27. The **monetization shape was ratified** in the same session
+(owner, 2026-07-31): **core free forever · self-hosting free · a cheap supporter/premium tier on
+the HOSTED instance only** — and only ever on the SRD-clean build (the boundary paragraph in
+`docs/POSITIONING.md` governs). The **pre-GA checklist** — parked NOW, blocking GA LATER — was
+fleshed out by the owner on 2026-07-31, each item with its why:
+
+1. **Firebase App Check + abuse-resistant quotas** — the code is public, so strangers can hit our
+   backend directly; the quota must be protected before any advertising.
+2. **The budget posture decision** — replace the £1 SAFE-01 tripwire with a consciously raised cap
+   BEFORE any public push. The analysis on record: the free tier sustains ~100–150 DAU at £0, but
+   the 9 MB PWA precache means only ~40 fresh installs/day ride the free hosting bandwidth — a
+   single successful advertising day trips the kill-switch and takes the app down; £10–20/month
+   carries thousands of DAU. **SAFE-01 stays ARMED until this decision is made.**
+3. **The first-load precache trim** — move the heavy scene art from the precache to
+   cache-on-demand; triples the free daily installs, and is a premium first-load feel besides.
+4. **The license decision** — the recommendation on record: switch future releases to **AGPL-3.0**
+   at (or before) GA — the industry-standard license for open-source end-user web apps with a
+   canonical hosted instance (the Mastodon / Nextcloud / Grafana / Bitwarden-server / Cal.com
+   precedent); keeps the FOSS values, removes the clone-and-sell economics. Plus a **DCO for
+   outside contributors** the moment external PRs start, preserving the sole-author relicensing
+   position.
+5. **Legal pages** — privacy policy + GDPR basics (account deletion already exists), a visible
+   **CC-BY-4.0 SRD attribution** (a license requirement, not a courtesy), and terms.
+6. **Trademark-safe branding** for anything public-facing — "5e / SRD-compatible" wording, never
+   the D&D / WotC marks.
+7. **Auth breadth beyond Google · the react-router advisory triage · backups · observability** —
+   the original checklist items, kept (backups + observability sit in _Open decisions_; auth
+   breadth is the DEFERRED bullet below; the advisory in the Dependabot remediation records).
+
+Posture home: `docs/POSITIONING.md`.
 
 **The owner's charter, captured on ratification (golden rule 4).** A full competitive audit vs
 D&D Beyond (mid-2026 verified state: Project Sigil dead, 2D Maps free-for-all, DDB's 2026 roadmap
@@ -1345,6 +1371,14 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   - Randomize's hint copy ("draws everything else again") could read warmer.
 - **Compendium completeness:** species/backgrounds/subclasses/conditions/rules-glossary sections
   (+ Monsters when the bestiary lands) — this DEFINES the open Phase-4 "compendium polish" scope.
+- **First-run onboarding for D&D newcomers (owner-ratified 2026-07-31 — a NEW epic rung, added for
+  the GA/advertising trajectory; SOTA shape settled):** an **interactive first-run guided tour** —
+  spotlight/coach-mark steps over the REAL UI, dismissible at any point, replayable from settings —
+  plus **teaching empty states** across surfaces, plus a **"New to D&D?" entry path** that funnels
+  newcomers into Quick Start / the Guided wizard and the tooltip + compendium glossary.
+  EXPLICITLY ruled out: **no in-app video tutorials** (they age against the shipping UI, double the
+  bilingual cost, and cost bandwidth) — video, if it ever exists, is marketing-side (e.g. YouTube),
+  outside the app.
 - **XP:** an optional per-character XP counter with a threshold-reached → Level-up nudge;
   milestone (wizard-driven) stays the default; zero change for current users.
 - **Auth breadth: DEFERRED** until the #32 public launch — Google-only stands; queue email-link +
@@ -1355,7 +1389,9 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
 - **Sequencing:** interleaved as the next NEW-FEATURE epic — the RA correctness waves keep rule-27
   priority, the BG3 identity missions continue untouched, and the bestiary campaign opens first,
   coordinating with #32. Attack order: bestiary → encounter picker → difficulty calc → companions
-  → homebrew library → quickbuild → share links → compendium completeness → XP. [amendment
+  → homebrew library → quickbuild → share links → compendium completeness → first-run onboarding
+  [the rung added 2026-07-31 — its bullet above; it precedes the homebrew ladder's upper rungs
+  (c)–(d), while rung (b) keeps its queued slot below] → XP. [amendment
   2026-07-23: the #32 open-sourcing split COMPLETED 2026-07-17 — before this epic opened — so the
   split-aware authoring the charter references is already the live world (public SRD repo + private
   pack); the old #32 issue was deleted with the split, so THIS charter is the surviving coordination

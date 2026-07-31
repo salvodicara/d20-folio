@@ -30,9 +30,11 @@ section, 2026-07-24), then the encounter picker, the 2024-DMG difficulty calcula
 the account-level homebrew library + quickbuild (both 2026-07-30) — the live head is now share
 links (`PROGRESS.md` → "Active epic"; competitive map: `docs/POSITIONING.md` — **GA is the
 ratified destination**, owner 2026-07-31), and
-(2) the **pre-GA checklist** — backups · observability · legal pages · auth breadth beyond Google ·
-the react-router advisory triage — parked now, blocking GA later (the light
-theme is at FULL parity: the depth-parity
+(2) the **pre-GA checklist** — fleshed out by the owner 2026-07-31 (App Check + quotas · the
+budget-posture decision · the precache trim · the AGPL-3.0 license decision · legal pages ·
+trademark-safe branding · auth breadth beyond Google · the react-router advisory triage · backups ·
+observability — `PROGRESS.md` → the charter's 2026-07-31 amendment) — parked now, blocking GA
+later (the light theme is at FULL parity: the depth-parity
 rebuild shipped 2026-07-09, the owner-ratified "Daylight Sibling Plates" art direction shipped
 2026-07-10, and the owner-ratified "Ember Penumbra" lit-magic grammar shipped 2026-07-11 — per-theme
 scene art, the P8 panel material wired, the custom-art veil, the glow-below gilt grammar, no open
