@@ -207,6 +207,8 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   // noise — they advertise keys the user doesn't have. Gated through the shared
   // coarse-pointer seam (the same one that hides the topbar ⌘K chip).
   const coarsePointer = useCoarsePointer();
+  // No pre-selected row on touch — there is no keyboard to drive the highlight.
+  const restIndex = coarsePointer ? -1 : 0;
   const { characters } = useCharacters();
   const uid = useAuthStore((s) => s.user?.uid);
   const theme = useUIStore((s) => s.theme);
@@ -219,9 +221,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
 
   // The roving highlight for keyboard nav (OWN-28b): Arrow Up/Down move it, Enter
   // activates it. Starts on the first hit; resets whenever the result set changes.
-  // On touch there is no keyboard to drive the roving highlight: no row is
-  // pre-selected (owner, 2026-07-31 — mobile must feel mobile-native).
-  const [activeIndex, setActiveIndex] = useState(coarsePointer ? -1 : 0);
+  const [activeIndex, setActiveIndex] = useState(restIndex);
 
   // OWN-33 — read the recents ONCE when the palette opens (they only change on
   // activate, which closes it), so render stays pure (no per-frame storage read).
@@ -791,11 +791,11 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
-          setActiveIndex(coarsePointer ? -1 : 0);
+          setActiveIndex(restIndex);
         }}
         onClear={() => {
           setQuery("");
-          setActiveIndex(coarsePointer ? -1 : 0);
+          setActiveIndex(restIndex);
         }}
         clearLabel={t("common.clearSearch")}
         placeholder={t("palette.placeholder")}
@@ -882,8 +882,8 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       {!coarsePointer && (
         <div className="palette-foot mt-3 flex items-center justify-end gap-3 border-t border-border-subtle pt-3 text-xs text-text-secondary">
           {/* The `? Shortcuts` chip — a real button that opens the shortcuts sheet.
-            Left-aligned via `mr-auto` so the ↑↓ / ↵ / Esc legend stays right. Hidden
-            on touch (no keyboard to advertise) via the shared coarse-pointer seam. */}
+            Left-aligned via `mr-auto` so the ↑↓ / ↵ / Esc legend stays right. The
+            WHOLE footer is touch-hidden (keyboard chrome), chip included. */}
           <button
             type="button"
             className="palette-foot-chip mr-auto inline-flex items-center gap-1"

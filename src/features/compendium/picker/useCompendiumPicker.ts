@@ -118,7 +118,7 @@ export function useCompendiumPicker<T>(
     [t, locale, character, mode]
   );
 
-  // `initialQuery` seeds the search once (e.g. the command palette deep-links to an
+  // `initialQuery` seeds the search (re-seeded by the reset block below) (e.g. the command palette deep-links to an
   // entry via `?q=`); the user can edit/clear it normally afterward.
   const [query, setQuery] = useState(opts.initialQuery ?? "");
   const [filterState, setFilterState] = useState<Record<string, unknown>>(() =>
@@ -155,8 +155,8 @@ export function useCompendiumPicker<T>(
   // its scroll position on every selection (the "tab row jumps" the owner
   // reported, grilled 2026-07-31). State resets here; the list DOM resets via
   // the keyed `.cmp-body`; the ribbon persists.
-  const [prevReset, setPrevReset] = useState(`${spec.id}:${opts.initialQuery ?? ""}`);
   const resetKey = `${spec.id}:${opts.initialQuery ?? ""}`;
+  const [prevReset, setPrevReset] = useState(resetKey);
   if (resetKey !== prevReset) {
     setPrevReset(resetKey);
     setQuery(opts.initialQuery ?? "");

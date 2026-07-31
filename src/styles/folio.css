@@ -9570,8 +9570,7 @@ button.create-need:focus-visible .create-need-chev {
   gap: 5px;
   padding: var(--sp-3) var(--sp-4) 0;
 }
-.cmp-ribbon::-webkit-scrollbar,
-.tabstrip::-webkit-scrollbar {
+.cmp-ribbon::-webkit-scrollbar {
   display: none;
 }
 /* Overflow cue for the mobile ribbon (where it scrolls horizontally, below) — a
@@ -14274,7 +14273,12 @@ button.party-avatar-btn:focus-visible {
   /* The strip is bare book-tabs now (owner 2026-07-31): no scrollbar (the
      shell's edge fades are the overflow cue, as on the compendium ribbon). */
   scrollbar-width: none;
+  /* Swiping the tabs never triggers the browser's history swipe (the ribbon
+     precedent). */
   overscroll-behavior-x: contain;
+}
+.tabstrip::-webkit-scrollbar {
+  display: none;
 }
 /* Overflow cue — when the strip scrolls (phones; the tightest IT desktop bands),
    a tab hidden past the edge must READ as "more this way", never as the end of

@@ -373,7 +373,13 @@ function CompendiumBrowser({
               role="tab"
               aria-selected={s.id === activeId}
               className="cmp-tab"
-              onClick={() => onSelectType(s.id)}
+              // No native focus-scroll on tap: focus is taken manually, scroll-free;
+              // the ribbon hook owns ALL movement.
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={(e) => {
+                e.currentTarget.focus({ preventScroll: true });
+                onSelectType(s.id);
+              }}
             >
               {s.icon && <Icon as={s.icon} decorative />}
               {s.label(t)}

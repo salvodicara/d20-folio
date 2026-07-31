@@ -5,7 +5,8 @@
  * not the strip, not the page. Clicking a CLIPPED tab nudges ONLY the strip,
  * by the minimal nearest-edge delta; the window never scrolls either axis.
  * The regression this pins: scrollIntoView/native focus-scroll moving the
- * page (or re-centering the strip) on tab selection.
+ * page (or re-centering the strip) on tab selection. Companion:
+ * no-page-jump.spec.ts pins the 390px mobile cases of the same contract.
  */
 import { test, expect } from "@playwright/test";
 import { seedUI, seedLang, freezeMotion } from "./surfaces";

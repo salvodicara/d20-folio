@@ -22,6 +22,8 @@
  * `locator.click()` — the latter runs `scrollIntoViewIfNeeded` before every click,
  * which is a test-harness scroll, not the user's. A real user's tap lands where the
  * element already is; that is what we measure.
+ * Companion: tab-no-jump.spec.ts pins the desktop no-jump contract
+ * (container-only minimal reveal, owner-grilled 2026-07-31).
  */
 
 import { test, expect, type Page, type Locator } from "@playwright/test";
