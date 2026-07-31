@@ -121,14 +121,19 @@ import {
   isDown,
   removeCombatant,
   setHidden,
-  setHp,
   setInitiative,
   setMonsterName,
   setMonsterNotes,
   setRevealed,
   toggleCondition,
 } from "@/features/campaigns/encounter";
+import {
+  recordMonsterHp,
+  recordCondition,
+  recordPcHp,
+} from "@/features/campaigns/combat-chronicle";
 import { setEncounterInitiative } from "@/features/campaigns/campaign-io";
+import { reduceHpDelta, defaultCombatState } from "@/lib/combat-state";
 import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
 import type { BudgetVerdict } from "@/lib/encounter-difficulty";
 import {
@@ -499,6 +504,7 @@ export function PcCombatantCard({
   head,
   reorder,
   selfAttach,
+  recordEvent,
 }: {
   state: MemberDocState;
   snapshot: MemberCharacterSnapshot;
@@ -528,6 +534,10 @@ export function PcCombatantCard({
    *  the disclosure body so an attached hero is always swappable/detachable in place.
    *  Present only on my card, and only outside combat (the caller gates it). */
   selfAttach?: ReactNode;
+  /** The DM's encounter reducer (`ApplyFn`) — present ONLY for the DM in combat. When
+   *  set, a DM HP/condition edit on this PC ALSO records a Combat-Chronicle beat (the
+   *  event rides the same debounced encounter write). Absent for a player / at rest. */
+  recordEvent?: ApplyFn;
 }) {
   if (state.status === "ready") {
     return (
@@ -544,6 +554,7 @@ export function PcCombatantCard({
         head={head}
         reorder={reorder}
         selfAttach={selfAttach}
+        recordEvent={recordEvent}
       />
     );
   }
@@ -657,6 +668,7 @@ function PcReadyCard({
   head,
   reorder,
   selfAttach,
+  recordEvent,
 }: {
   doc: CharacterDoc;
   combat: CombatState | null;
@@ -673,6 +685,9 @@ function PcReadyCard({
   reorder?: ReorderRow;
   /** My OWN card's attach/swap/detach picker (see {@link PcCombatantCard}). */
   selfAttach?: ReactNode;
+  /** The DM's encounter reducer — records a Combat-Chronicle beat on a DM HP/condition
+   *  edit (see {@link PcCombatantCard}). Absent for a player / at rest. */
+  recordEvent?: ApplyFn;
 }) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
@@ -756,6 +771,8 @@ function PcReadyCard({
           temp={stats.tempHp}
           canEdit={canEdit}
           write={write}
+          combatantId={`pc-${memberUid}`}
+          recordEvent={recordEvent}
         />
         <StatBadge
           density="chip"
@@ -805,6 +822,8 @@ function PcReadyCard({
           conditions={conditionList}
           deathSaves={deathSaves}
           write={write}
+          combatantId={`pc-${memberUid}`}
+          recordEvent={recordEvent}
         />
       )}
 
@@ -985,6 +1004,8 @@ function HpVital({
   temp,
   canEdit,
   write,
+  combatantId,
+  recordEvent,
 }: {
   uid: string;
   charId: string;
@@ -994,6 +1015,11 @@ function HpVital({
   temp: number;
   canEdit: boolean;
   write: CombatWrite;
+  /** This PC's combatant id (`pc-<uid>`) — the target of a recorded chronicle beat. */
+  combatantId: string;
+  /** The DM's encounter reducer — records a chronicle beat on a DM HP edit; absent
+   *  for a player (who cannot write the encounter). */
+  recordEvent?: ApplyFn;
 }) {
   const { t } = useTranslation();
   const state = hpState(current, max);
@@ -1032,20 +1058,50 @@ function HpVital({
       // The DM books FINAL numbers here (no defense data on this surface), so
       // the popover renders no intake section and the parts are a single
       // untyped amount — summed for safety.
-      onDamage={(parts) =>
-        write(() =>
-          applyHpDelta(
-            uid,
-            charId,
-            base,
-            { kind: "damage", amount: parts.reduce((s, p) => s + p.amount, 0) },
+      onDamage={(parts) => {
+        const amount = parts.reduce((s, p) => s + p.amount, 0);
+        write(() => applyHpDelta(uid, charId, base, { kind: "damage", amount }, max));
+        // Record the chronicle beat in the SAME motion (DM only) — the PC's live HP
+        // lives in its subdoc, so we reduce the pre/post here off the same base the
+        // write uses. Unattributed; the feed's one-tap picker adds the "who".
+        if (recordEvent && amount > 0) {
+          const post = reduceHpDelta(
+            base ?? defaultCombatState(max),
+            { kind: "damage", amount },
             max
-          )
-        )
-      }
-      onHeal={(n) =>
-        write(() => applyHpDelta(uid, charId, base, { kind: "heal", amount: n }, max))
-      }
+          ).hp.current;
+          recordEvent((e) =>
+            recordPcHp(e, {
+              targetId: combatantId,
+              kind: "damage",
+              amount,
+              preCurrent: current,
+              postCurrent: post,
+              max,
+            })
+          );
+        }
+      }}
+      onHeal={(n) => {
+        write(() => applyHpDelta(uid, charId, base, { kind: "heal", amount: n }, max));
+        if (recordEvent && n > 0) {
+          const post = reduceHpDelta(
+            base ?? defaultCombatState(max),
+            { kind: "heal", amount: n },
+            max
+          ).hp.current;
+          recordEvent((e) =>
+            recordPcHp(e, {
+              targetId: combatantId,
+              kind: "heal",
+              amount: n,
+              preCurrent: current,
+              postCurrent: post,
+              max,
+            })
+          );
+        }
+      }}
       onTemp={(n) =>
         write(() => setCombatTempHp(uid, charId, base, Math.max(temp, n), max))
       }
@@ -1088,6 +1144,8 @@ function PcCombatExtras({
   conditions,
   deathSaves,
   write,
+  combatantId,
+  recordEvent,
 }: {
   uid: string;
   charId: string;
@@ -1097,26 +1155,32 @@ function PcCombatExtras({
   conditions: string[];
   deathSaves: { successes: number; failures: number };
   write: CombatWrite;
+  /** This PC's combatant id (`pc-<uid>`) — the target of a recorded chronicle beat. */
+  combatantId: string;
+  /** The DM's encounter reducer — records a chronicle beat on a DM condition edit;
+   *  absent for a player. */
+  recordEvent?: ApplyFn;
 }) {
   return (
     <div className="flex flex-col gap-2.5">
       {/* Conditions — add/remove through the SHARED editor (whole-object writes). */}
       <ConditionEditor
         conditions={conditions}
-        onToggle={(conditionId) =>
+        onToggle={(conditionId) => {
+          const added = !conditions.includes(conditionId);
           write(() =>
             setCombatCondition(
               uid,
               charId,
               base,
-              {
-                kind: conditions.includes(conditionId) ? "remove" : "add",
-                conditionId,
-              },
+              { kind: added ? "add" : "remove", conditionId },
               maxHp
             )
-          )
-        }
+          );
+          if (recordEvent) {
+            recordEvent((e) => recordCondition(e, combatantId, conditionId, added));
+          }
+        }}
       />
 
       {/* Death saves — only while downed; each tick is a transactional +1 that composes
@@ -1643,13 +1707,25 @@ export function MonsterCard({
 
       <MonsterTokens
         monster={monster}
-        onSet={(tokenIndex, v) => apply((e) => setHp(e, monster.id, tokenIndex, v))}
+        onSet={(tokenIndex, v) =>
+          // Record the chronicle beat (damage/heal + any fall) IN the same reducer as
+          // the HP write — one debounced encounter write covers both (no new cadence).
+          // Attribution is left to the feed's one-tap picker (never auto-guessed here).
+          apply((e) => recordMonsterHp(e, monster.id, tokenIndex, v))
+        }
       />
 
       <ConditionEditor
         conditions={monster.conditions}
         onToggle={(conditionId) =>
-          apply((e) => toggleCondition(e, monster.id, conditionId))
+          apply((e) =>
+            recordCondition(
+              toggleCondition(e, monster.id, conditionId),
+              monster.id,
+              conditionId,
+              !monster.conditions.includes(conditionId)
+            )
+          )
         }
       />
 

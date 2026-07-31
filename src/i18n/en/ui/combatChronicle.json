@@ -9,6 +9,7 @@
     "miss": "{{attacker}} misses {{target}}",
     "turnPass": "{{actor}} holds the line",
     "round": "Round {{n}}",
+    "someone": "Someone",
     "outcomeVictory": "The party is victorious",
     "outcomeEnded": "The fight ends",
     "feedTitle": "Chronicle of the fight",
@@ -30,6 +31,7 @@
     "endSave": "Save to Chronicle",
     "endSkip": "Skip",
     "endEmpty": "No beats were logged. Write your account below, or skip.",
-    "savedToast": "Fight saved to the Chronicle"
+    "savedToast": "Fight saved to the Chronicle",
+    "saveFailedToast": "Could not save to the Chronicle. Check your connection and try again."
   }
 }

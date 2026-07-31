@@ -673,7 +673,10 @@ describe("Party combat — DM (editable layer)", () => {
   it("End encounter clears the field and returns to the dashboard", async () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
+    // End now opens the Combat-Chronicle end entry (the deliberate save/skip step that
+    // replaced the confirm prompt); Skip clears the fight without saving a chapter.
     fireEvent.click(screen.getByRole("button", { name: /end encounter/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^skip$/i }));
     await waitFor(() =>
       expect(useCampaignStore.getState().campaign?.encounter).toBeNull()
     );

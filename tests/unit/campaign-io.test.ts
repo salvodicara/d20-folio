@@ -123,6 +123,8 @@ import {
   applyTreasuryDelta,
   attachMemberCharacter,
   commitChronicleEdit,
+  appendChronicleChapter,
+  joinChronicleText,
   createCampaign,
   createCampaignSave,
   joinCampaign,
@@ -1160,5 +1162,36 @@ describe("campaign-io — commitChronicleEdit atomic version snapshot (B18)", ()
     expect(data.text).toBe("first entry");
     // No prior text → no version snapshot (pushVersion skips an empty prior).
     expect(data.versions).toEqual([]);
+  });
+
+  it("appendChronicleChapter concatenates onto the SERVER's current text (never clobbers)", async () => {
+    const { set } = runTxnWith({
+      text: "# Session 1\n\nThe party set out.",
+      lastEditedBy: "userB",
+      versions: [],
+    });
+    await appendChronicleChapter("c1", {
+      chapter: "## Goblin Ambush\n\n- Goblin falls",
+      editedBy: "userA",
+    });
+    const data = set.mock.calls[0]?.[1] as { text: string; versions: unknown[] };
+    // The prior text is PRESERVED and the chapter appended after a blank-line gap.
+    expect(data.text).toBe(
+      "# Session 1\n\nThe party set out.\n\n## Goblin Ambush\n\n- Goblin falls"
+    );
+    // The prior text is captured in history (recoverable).
+    expect((data.versions[0] as { textSnapshot: string }).textSnapshot).toBe(
+      "# Session 1\n\nThe party set out."
+    );
+  });
+});
+
+describe("campaign-io — joinChronicleText (pure)", () => {
+  it("gaps a chapter after existing text", () => {
+    expect(joinChronicleText("prior", "## New")).toBe("prior\n\n## New");
+  });
+  it("returns the chapter alone when the chronicle is empty", () => {
+    expect(joinChronicleText("", "## New")).toBe("## New");
+    expect(joinChronicleText("   \n ", "## New")).toBe("## New");
   });
 });

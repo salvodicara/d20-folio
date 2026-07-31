@@ -1164,6 +1164,57 @@ export async function commitChronicleEdit(
   });
 }
 
+/** Concatenate a new chapter onto the prior chronicle text — a blank-line gap between
+ *  chapters, or the chapter alone when the chronicle is empty. Pure (testable without
+ *  the emulator). */
+export function joinChronicleText(prior: string, chapter: string): string {
+  return prior.trim() ? `${prior.trimEnd()}\n\n${chapter}` : chapter;
+}
+
+/**
+ * APPEND one Combat-Chronicle chapter to the campaign's shared chronicle — the SINGLE
+ * persisted write per finished encounter. A transaction reads the SERVER's CURRENT
+ * text INSIDE the txn and concatenates the chapter onto it (never a whole-object
+ * clobber of a stale client copy — golden rule 6, the app carries the consistency
+ * burden), snapshotting the pre-append text into the capped version history first so
+ * it stays restorable. Idempotent-safe against concurrent edits: a concurrent editor's
+ * paragraph is captured in a version, and the chapter still lands at the end.
+ *
+ * A transaction needs a live round-trip, so an OFFLINE close rejects — the caller
+ * surfaces that honestly and leaves the encounter running so the DM can retry. No-op
+ * under dev bypass.
+ */
+export async function appendChronicleChapter(
+  campaignId: string,
+  append: { chapter: string; editedBy: string }
+): Promise<void> {
+  if (DEV_BYPASS_AUTH) return;
+  const ref = chronicleDoc(campaignId);
+  await runTransaction(db, async (txn) => {
+    const snap = await txn.get(ref);
+    const prior = snap.exists()
+      ? toChronicleDoc(snap.data())
+      : { text: "", lastEditedBy: "", lastEditedAt: new Date(0), versions: [] };
+    const versions = pushVersion(prior.versions, {
+      timestamp: prior.lastEditedAt,
+      editedBy: prior.lastEditedBy,
+      editedByName: "",
+      textSnapshot: prior.text,
+    });
+    const text = joinChronicleText(prior.text, append.chapter);
+    txn.set(
+      ref,
+      {
+        text,
+        lastEditedBy: append.editedBy,
+        versions,
+        lastEditedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  });
+}
+
 // ─── Sessions subcollection (one-shot read on open; NOT a listener) ────────────
 //
 // The session list lives at `/campaigns/{campId}/sessions/{sessId}` (member-gated

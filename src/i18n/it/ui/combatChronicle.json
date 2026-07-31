@@ -9,6 +9,7 @@
     "miss": "{{attacker}} manca {{target}}",
     "turnPass": "{{actor}} tiene la posizione",
     "round": "Round {{n}}",
+    "someone": "Qualcuno",
     "outcomeVictory": "Il gruppo è vittorioso",
     "outcomeEnded": "Lo scontro finisce",
     "feedTitle": "Cronaca dello scontro",
@@ -30,6 +31,7 @@
     "endSave": "Salva nella Cronaca",
     "endSkip": "Salta",
     "endEmpty": "Nessun evento registrato. Scrivi il tuo racconto qui sotto, oppure salta.",
-    "savedToast": "Scontro salvato nella Cronaca"
+    "savedToast": "Scontro salvato nella Cronaca",
+    "saveFailedToast": "Impossibile salvare nella Cronaca. Controlla la connessione e riprova."
   }
 }

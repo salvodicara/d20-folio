@@ -48,7 +48,6 @@ import { useLocale } from "@/hooks/useLocale";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useTurnAdvanceShortcut } from "@/hooks/useTurnAdvanceShortcut";
 import { useAuthStore } from "@/stores/authStore";
-import { useConfirmStore } from "@/stores/confirmStore";
 import { useToastStore } from "@/stores/toastStore";
 import {
   attachMemberCharacter,
@@ -57,7 +56,9 @@ import {
   persistBeginTurns,
   persistStartEncounter,
   persistEndEncounter,
+  appendChronicleChapter,
 } from "@/features/campaigns/campaign-io";
+import { ChronicleFeed, EndEncounterDialog } from "@/features/campaigns/party-chronicle";
 import { useGatheringScrollAnchor } from "@/features/campaigns/gathering-scroll-anchor";
 import { campaignPartySize, useCampaignStore } from "@/features/campaigns/campaignStore";
 import {
@@ -335,16 +336,12 @@ export function Party() {
     });
   }
 
-  async function confirmEnd(): Promise<void> {
-    const ok = await useConfirmStore.getState().confirm({
-      title: t("campaignHub.encounterEndTitle"),
-      message: t("campaignHub.encounterEndMessage"),
-      confirmLabel: t("campaignHub.encounterEnd"),
-      tone: "danger",
-    });
-    if (!ok) return;
+  // End the encounter: optimistic clear (encounter + roll table), then the immediate
+  // atomic write. The deliberate "are you sure" step is now the Combat-Chronicle end
+  // entry (the DM saves or skips the fight's chronicle before it clears — CombatLayer),
+  // so no separate confirm prompt.
+  function endEncounter(): void {
     if (!campaign) return;
-    // Optimistic clear (encounter + roll table), then the immediate atomic write.
     setCampaign({ ...campaign, encounter: null, encounterInit: {} });
     void persistEndEncounter(campaign.id).catch((e: unknown) => {
       console.error("End-encounter write failed", e);
@@ -432,6 +429,10 @@ export function Party() {
     myPhotoURL,
     onAttach: (id) => void attachMyCharacter(id),
     onLightbox: (lb) => setLightbox(lb),
+    // The DM's encounter reducer — a DM HP/condition edit on a PC also records a
+    // Combat-Chronicle beat (rides the same debounced encounter write). Undefined for
+    // a player; a harmless no-op at rest (no live encounter to apply onto).
+    recordEvent: apply,
   };
 
   return (
@@ -450,7 +451,7 @@ export function Party() {
           pcLiveById={pcLiveById}
           dmName={dmName}
           memberDetails={campaign.memberDetails}
-          onEnd={() => void confirmEnd()}
+          onEnd={endEncounter}
         />
       ) : (
         // ── Resting dashboard ── OWNER-2: an explicit flex-col gap stack so there is
@@ -552,6 +553,9 @@ function CombatLayer({
     setPickerOpen(false);
     setPickerTitle(null);
   };
+  // The Combat-Chronicle end entry — the DM's editable "save this fight" step, opened by
+  // the round bar's End action (replaces the old confirm prompt).
+  const [endOpen, setEndOpen] = useState(false);
   // The FULL live turn order INCLUDING hidden (hidden is a display filter, not a turn
   // filter), so the DM and a player step the identical order and a staged ambush still
   // takes its turn.
@@ -721,6 +725,27 @@ function CombatLayer({
     onPrev: () => step("prev"),
   });
 
+  // Save the DM's finished chronicle chapter — the SINGLE persisted Chronicle write per
+  // fight. Resolves → the caller clears the encounter (the dialog unmounts); rejects
+  // (offline) → the dialog stays open + the fight running for a retry.
+  const saveChronicle = (chapter: string): Promise<void> =>
+    appendChronicleChapter(ctx.campaignId, { chapter, editedBy: ctx.currentUid ?? "" })
+      .then(() => {
+        useToastStore.getState().showToast({
+          message: t("combatChronicle.savedToast"),
+          duration: 3000,
+        });
+        onEnd();
+      })
+      .catch((e: unknown) => {
+        console.error("Chronicle append failed", e);
+        useToastStore.getState().showToast({
+          message: t("combatChronicle.saveFailedToast"),
+          duration: 6000,
+        });
+        throw e;
+      });
+
   return (
     <div className="flex flex-col gap-4">
       {/* FIX 1 — the DM control banner heads the combat layer too: identity (every
@@ -798,8 +823,35 @@ function CombatLayer({
         round={encounter.round}
         isDm={isDm}
         budget={budget}
-        onEnd={onEnd}
+        onEnd={() => setEndOpen(true)}
       />
+
+      {/* The Combat Chronicle — DM-only live feed (the events ride the encounter doc,
+          which only the DM writes; exact monster HP must not leak to a player). */}
+      {isDm && apply && (
+        <ChronicleFeed
+          events={encounter.events ?? []}
+          rows={view.rows}
+          currentId={view.currentId}
+          gathering={gathering}
+          apply={apply}
+        />
+      )}
+
+      {/* The editable end entry — Save appends ONE chapter to the Chronicle then clears
+          the fight; Skip clears without saving; Cancel keeps the fight running. */}
+      {endOpen && (
+        <EndEncounterDialog
+          encounter={encounter}
+          rows={view.rows}
+          onSave={saveChronicle}
+          onSkip={() => {
+            setEndOpen(false);
+            onEnd();
+          }}
+          onCancel={() => setEndOpen(false)}
+        />
+      )}
 
       <ul ref={listRef} className="flex flex-col gap-2">
         {displayRows.map((row) => {
@@ -871,6 +923,10 @@ interface MemberCardCtx {
   myPhotoURL: string | null;
   onAttach: (characterId: string) => void;
   onLightbox: (lb: { src: string; name: string }) => void;
+  /** The DM's encounter reducer (`ApplyFn`) — records a Combat-Chronicle beat when the
+   *  DM edits a PC's HP / conditions in combat. Present only for the DM (a no-op at
+   *  rest, absent for a player). */
+  recordEvent?: ApplyFn;
 }
 
 /**
@@ -1004,6 +1060,8 @@ function MemberCard({
         initRoll={encounterRollFor(ctx.encounterInit, uid)}
         reorder={reorder}
         selfAttach={selfAttach}
+        // In combat only — a DM HP/condition edit on this PC records a chronicle beat.
+        recordEvent={inCombat ? ctx.recordEvent : undefined}
         head={{
           role: m.role,
           isCurrent,
