@@ -9563,8 +9563,12 @@ button.create-need:focus-visible .create-need-chev {
 
 /* ── Type ribbon — the bound divider tabs across the head of the tome (Spells ·
    Features · Feats · …). Replaces the old left sidebar's type chip-stack: a row of
-   carved gilt tabs, the active one seated + illuminated like a ribbon bookmark. ── */
-.cmp-ribbon {
+   carved gilt tabs, the active one seated + illuminated like a ribbon bookmark.
+   The cockpit `.tabstrip` is the SAME construction (owner, 2026-07-31 — one
+   ribbon anatomy app-wide): every rule here twins both rows, so they can never
+   diverge again. ── */
+.cmp-ribbon,
+.wb .tabstrip {
   display: flex;
   /* COMPENDIUM-LUX — ONE scrolling row at every width (the old desktop wrap
      spent a whole second row on one orphan tab); the shell's edge fades cue
@@ -9579,19 +9583,27 @@ button.create-need:focus-visible .create-need-chev {
   gap: 5px;
   padding: var(--sp-3) var(--sp-4) 0;
 }
-.cmp-ribbon::-webkit-scrollbar {
+.cmp-ribbon::-webkit-scrollbar,
+.wb .tabstrip::-webkit-scrollbar {
   display: none;
 }
-/* Overflow cue for the mobile ribbon (where it scrolls horizontally, below) — a
-   soft fade of the tome ground over whichever edge still hides a tab, toggled by
-   `data-fade` (l/r/lr) from the shared `useOverflowFade` observer. The same "more
-   this way" recipe the cockpit `.tabstrip-shell` uses, tinted for the tome leaf.
-   Pointer-events off: purely visual, the tabs beneath stay tappable to the edge. */
-.cmp-ribbon-shell {
+/* Overflow cue — a soft fade of the LOCAL ground (`--ribbon-fade`: the tome
+   leaf under the compendium ribbon, the content column under the cockpit
+   strip) over whichever edge still hides a tab, toggled by `data-fade`
+   (l/r/lr) from the shared `useOverflowFade` observer. Pointer-events off:
+   purely visual, the tabs beneath stay tappable to the edge. */
+.cmp-ribbon-shell,
+.tabstrip-shell {
+  --ribbon-fade: var(--bg-surface-2);
   position: relative;
 }
+.tabstrip-shell {
+  --ribbon-fade: var(--bg-surface-1);
+}
 .cmp-ribbon-shell::before,
-.cmp-ribbon-shell::after {
+.cmp-ribbon-shell::after,
+.tabstrip-shell::before,
+.tabstrip-shell::after {
   content: "";
   position: absolute;
   top: 0;
@@ -9602,18 +9614,24 @@ button.create-need:focus-visible .create-need-chev {
   z-index: 1;
   transition: opacity var(--m-fast) var(--ease-standard);
 }
-.cmp-ribbon-shell::before {
+.cmp-ribbon-shell::before,
+.tabstrip-shell::before {
   left: 0;
-  background: linear-gradient(to right, var(--bg-surface-2), transparent);
+  background: linear-gradient(to right, var(--ribbon-fade), transparent);
 }
-.cmp-ribbon-shell::after {
+.cmp-ribbon-shell::after,
+.tabstrip-shell::after {
   right: 0;
-  background: linear-gradient(to left, var(--bg-surface-2), transparent);
+  background: linear-gradient(to left, var(--ribbon-fade), transparent);
 }
 .cmp-ribbon-shell[data-fade="l"]::before,
 .cmp-ribbon-shell[data-fade="lr"]::before,
 .cmp-ribbon-shell[data-fade="r"]::after,
-.cmp-ribbon-shell[data-fade="lr"]::after {
+.cmp-ribbon-shell[data-fade="lr"]::after,
+.tabstrip-shell[data-fade="l"]::before,
+.tabstrip-shell[data-fade="lr"]::before,
+.tabstrip-shell[data-fade="r"]::after,
+.tabstrip-shell[data-fade="lr"]::after {
   opacity: 1;
 }
 .cmp-tab,
@@ -14284,65 +14302,9 @@ button.party-avatar-btn:focus-visible {
   padding-top: var(--sp-3);
 }
 
-/* ── Tab strip — a carved brass track whose ACTIVE tab is a raised, gold-tinted
-   brass tile (the "raised brass tab" metaphor). The track recedes (carved channel);
-   the selected tab lifts out of it with a gold edge + gold ink, so the active
-   section is unmistakable and on-identity (was a near-flat tertiary fill). ── */
-.tabstrip {
-  /* Breathing room when `useActiveTabScroll` reveals a selected off-edge tab. */
-  scroll-padding-inline: 16px;
-  /* The strip is bare book-tabs now (owner 2026-07-31): no scrollbar (the
-     shell's edge fades are the overflow cue, as on the compendium ribbon). */
-  scrollbar-width: none;
-  /* Swiping the tabs never triggers the browser's history swipe (the ribbon
-     precedent). */
-  overscroll-behavior-x: contain;
-}
-.tabstrip::-webkit-scrollbar {
-  display: none;
-}
-/* Overflow cue — when the strip scrolls (phones; the tightest IT desktop bands),
-   a tab hidden past the edge must READ as "more this way", never as the end of
-   the strip. The shell paints a soft fade of the strip's own carved fill over
-   whichever edge still hides content (data-fade = l/r/lr, kept current by the
-   TabStrip scroll/resize observers). Pointer-events off: the cue is purely
-   visual — the tabs beneath stay tappable to the last pixel. */
-.tabstrip-shell {
-  position: relative;
-}
-.tabstrip-shell::before,
-.tabstrip-shell::after {
-  content: "";
-  position: absolute;
-  top: 1px;
-  bottom: 1px;
-  width: 2.25rem;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity var(--m-fast) var(--ease-standard);
-  border-radius: var(--radius-md);
-}
-.tabstrip-shell::before {
-  left: 1px;
-  background: linear-gradient(to right, var(--input-fill), transparent);
-}
-.tabstrip-shell::after {
-  right: 1px;
-  background: linear-gradient(to left, var(--input-fill), transparent);
-}
-.tabstrip-shell[data-fade="l"]::before,
-.tabstrip-shell[data-fade="lr"]::before,
-.tabstrip-shell[data-fade="r"]::after,
-.tabstrip-shell[data-fade="lr"]::after {
-  opacity: 1;
-}
-/* OWN-36 — the ACTIVE tab in light is a struck GOLD-LEAF tile, not a brown-tinted
-   fill. Light's `--accent-primary` is a deep brown (#4a380c, needed for text AA), so
-   the dark theme's `accent 24% → 12%` recipe reads muddy brown on cream. Gold can't
-   halo-glow on ivory, so the gild has to be the MATERIAL: a pale specular highlight →
-   rich struck gold → deeper gold base, kept inside the bright-gold band so dark
-   espresso ink clears AA, with a crisp gold-700 rim + a tight gilt aura. Reads as a
-   lit brass tile lifting out of the carved track — the light answer to dark's gleam. */
+/* ── Tab strip (cockpit) — the SAME bound-divider ribbon as the compendium:
+   row, tabs, seat rule, and edge fades all live in the twinned `.cmp-ribbon*`
+   rules above (owner, 2026-07-31 — one ribbon anatomy app-wide). ── */
 
 /* ── Seal — a struck gold medallion for the identity monogram. A theme-aware
    carved well (the shared --portrait-well radial) under a gilt brass edge, an

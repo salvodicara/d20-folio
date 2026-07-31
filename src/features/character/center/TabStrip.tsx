@@ -64,7 +64,7 @@ export function TabStrip() {
         ref={stripRef}
         role="tablist"
         aria-label={t("character.tabs.label")}
-        className="tabstrip flex items-center gap-1 overflow-x-auto"
+        className="tabstrip"
       >
         {TAB_DEFS.map((tab, index) => {
           const selected = tab.id === activeTab;

@@ -1041,10 +1041,11 @@ routes are `React.lazy` + Suspense, so at that instant the page is still the emp
 
 ### Tabs (the character cockpit modes: Play · Spells · Inventory · Features · Bio)
 
-A `TabStrip` on `--bg-surface-2`; inactive = mono `--text-muted`; **active = `--accent-text` label + a
-gold underline / seated fill + a carved `--elev-recessed` seat** so the selected panel is obvious and
-on-identity. Tab selection is **state, not navigation** — hidden tabs (e.g. Spells for a non-caster)
-are simply absent. When the strip overflows (phones; the tightest IT bands) the `.tabstrip-shell`
+The cockpit `TabStrip` **is the compendium type ribbon** (owner, 2026-07-31 — one ribbon anatomy
+app-wide): the same bound-divider book tabs seated on the gilt seat rule, the active tab biting the
+rule open-bottomed, the same row rhythm and edge fades — every rule in folio.css twins
+`.cmp-ribbon*` and `.wb .tabstrip*`, so the two rows can never diverge. Tab selection is **state,
+not navigation** — hidden tabs (e.g. Spells for a non-caster) are simply absent. When the strip overflows (phones; the tightest IT bands) the `.tabstrip-shell`
 wrapper paints a soft `--input-fill` fade over whichever edge still hides tabs (`data-fade` l/r/lr,
 scroll + resize observed) so a cut tab always reads as "more this way", never as the end of the strip.
 Selecting a tab that sits past the edge REVEALS it by scrolling only the strip's own horizontal track
