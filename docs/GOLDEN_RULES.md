@@ -317,12 +317,19 @@ rule 25 is the standing mandate that the screenshots ALWAYS precede the merge. (
 2026-07-06 non-blocking form of this rule.)
 <!-- Rule 28 keeps the next global id (see "How to add a rule"). -->
 
-26. **Ambiguous UI/UX feedback is grilled BEFORE any code.** When the owner reports a UX
-    problem or wish and the intended behaviour is not unambiguous, ASK (the grill-me
-    interview, concrete options) before touching code — never implement a guess of what the
-    owner meant. General rule of thumb, strongest for UI/UX ("if you don't get what I mean,
-    grill me before you touch any code" — owner, 2026-07-31). Companion to rule 26: 26
-    resolves contested DESIGN choices; 28 resolves ambiguous INTENT.
+26. **Ambiguous UI/UX feedback is grilled BEFORE any code — and design directions are
+    PREVIEWED before they are built.** When the owner reports a UX problem or wish and the
+    intended behaviour is not unambiguous, ASK (the grill-me interview, concrete options)
+    before touching code — never implement a guess of what the owner meant. General rule of
+    thumb, strongest for UI/UX ("if you don't get what I mean, grill me before you touch any
+    code" — owner, 2026-07-31). And once the intent is clear, a design-direction change gets
+    QUICK previews first — injected DOM/CSS mocks in a throwaway Playwright run (source
+    untouched), or sketches when a mock is impractical — and the owner agrees on the previews
+    BEFORE the real implementation starts ("tu mi dai le anteprime velocemente e concordiamo
+    prima che ti imbarchi nel cambiare un sacco di codice" — owner, 2026-07-31). The rule-25
+    screenshot gate then still runs on the REAL build before the merge: previews de-risk the
+    build, they never replace the merge gate. Companion to rule 26: 26 resolves contested
+    DESIGN choices; 28 resolves ambiguous INTENT and de-risks direction.
 
 27. **Contested design decisions resolve via `impeccable`, then the owner's eyes.** When a UI/UX
     choice is genuinely uncertain or contested — two or more defensible treatments, or a

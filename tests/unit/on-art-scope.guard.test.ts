@@ -228,14 +228,15 @@ describe("light-theme edit-mode frame GLOWS (Img #30)", () => {
   it("repaints the edit frame with the luminous --accent-primary, not the dark --edit-accent ink", () => {
     // In light theme `--edit-accent` is the dark gold ink (for AA pill text), which
     // made the edit frame a thin dark line with no glow. The light override must
-    // repaint `.content[data-mode="edit"]::before` with the luminous --accent-primary
-    // so edit mode glows on cream like it does on dark.
+    // repaint the edit frame — hosted on `.sheet-page::before` since the page
+    // construction (the column is transparent) — with the luminous
+    // --accent-primary so edit mode glows on cream like it does on dark.
     const editGlow =
-      /\[data-theme="light"\]\s*\.content\[data-mode="edit"\]::before\s*\{[^}]*var\(--accent-primary\)/;
+      /\[data-theme="light"\]\s*\.content\[data-mode="edit"\]\s*\.sheet-page::before\s*\{[^}]*var\(--accent-primary\)/;
     expect(
       editGlow.test(css),
-      "MISSING: the `[data-theme=light] .content[data-mode=edit]::before` override using " +
-        "var(--accent-primary). Without it light-theme edit mode is not obvious (no glow)."
+      "MISSING: the `[data-theme=light] .content[data-mode=edit] .sheet-page::before` override " +
+        "using var(--accent-primary). Without it light-theme edit mode is not obvious (no glow)."
     ).toBe(true);
   });
 });

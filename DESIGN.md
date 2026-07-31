@@ -1042,13 +1042,21 @@ routes are `React.lazy` + Suspense, so at that instant the page is still the emp
 ### Tabs (the character cockpit modes: Play · Spells · Inventory · Features · Bio)
 
 The cockpit `TabStrip` **is the compendium type ribbon** (owner, 2026-07-31 — one ribbon anatomy
-app-wide): the same bound-divider book tabs seated on the gilt seat rule, the active tab biting the
-rule open-bottomed, the same row rhythm and edge fades — every rule in folio.css twins
-`.cmp-ribbon*` and `.wb .tabstrip*`, so the two rows can never diverge. And the strip sits where the
-ribbon sits: the cockpit's content column composes `.tome-leaf-surface` (the tome's bound-page
-material — gilt frame, inner margin hairline, per-theme vellum), so the sheet's center IS the
-character's page with its index tabs at the head, one sp-3 breath at every seam (above the strip,
-under the seat rule, at the tail). Tab selection is **state,
+app-wide), and both are **PROTRUDING INDEX TABS** (owner: "devono sporgere come linguette" — the
+notebook/rubrica metaphor): the tab row floats on the scene ABOVE the page, overlapping the page's
+top border by 1px so the tabs seat on it. **Stacking truth:** resting tabs are pages BEHIND the
+open one — the page (z1) draws its border in front of their feet; only the ACTIVE tab (z2) rides
+over it. **One piece:** the active tab is a piece of the page — fill = the page material's
+calibrated top tone (`#130d07` dark vellum / `#faf0cb` light scroll), border = the page's own 38%
+ink so the outline reads as ONE continuous stroke, NO halo/box-shadow (a ring would draw a line
+across the fused base), and its feet flare into the page through two concave radial FILLETS (the
+folder-tab curl) in the same ink. Resting tabs are opaque (never translucent over art), a step
+warmer than the ground. The page below composes
+`.tome-leaf-surface` (gilt frame + per-theme vellum — the inner "inked margin" hairline is GONE:
+one frame per surface, no frames-within-frames) and hugs the content with one sp-3 breath on every
+side (the symmetric-tail ruling). Clipped tabs DISSOLVE via a `data-fade`-driven mask on the
+scroller (never a painted rectangle — ground-independent). Every rule twins `.cmp-ribbon*` and
+`.wb .tabstrip*`, so the two rows can never diverge. Tab selection is **state,
 not navigation** — hidden tabs (e.g. Spells for a non-caster) are simply absent. When the strip overflows (phones; the tightest IT bands) the `.tabstrip-shell`
 wrapper paints a soft `--input-fill` fade over whichever edge still hides tabs (`data-fade` l/r/lr,
 scroll + resize observed) so a cut tab always reads as "more this way", never as the end of the strip.

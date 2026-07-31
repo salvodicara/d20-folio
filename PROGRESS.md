@@ -10,6 +10,9 @@
 
 ## Active epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 
+> **Epic-close checklist:** when the whole identity epic lands, REDO the README/GitHub
+> screenshots and any repo-front imagery (owner, 2026-07-31 — they still show the pre-BG3 UI).
+
 The post-v0.22.0 **chrome-reset visual identity was REJECTED by the owner** (2026-07-30: the
 corner knots, the missing borders, the plate/veil material, the compendium treatment — "the
 deployed v0.22.0 looks much better") and **surgically rolled back**: `index.css` + `folio.css` +

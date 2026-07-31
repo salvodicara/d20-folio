@@ -90,7 +90,6 @@ export function TabStrip() {
           );
         })}
       </div>
-      <span className="wb-ribbon-rule" aria-hidden />
     </div>
   );
 }

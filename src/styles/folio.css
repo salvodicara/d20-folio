@@ -3563,15 +3563,20 @@ button.pr-dot.lg::before {
    toggle). When open it gets a quiet brass tint + brighter glyph only. */
 
 /* ─────────────────────────── CONTENT COLUMN ─────────────────────────── */
-/* The column composes `.tome-leaf-surface` (the compendium's bound-page
-   material) so the sheet reads as the character's PAGE — index tabs seated on
-   its head exactly like the tome (owner, 2026-07-31: "linguette di un
-   libro/quaderno"). No own background: the leaf material is the ground. */
+/* The column is a TRANSPARENT stack: the strip's index tabs protrude on the
+   scene, and `.sheet-page` (composing `.tome-leaf-surface`, the tome's
+   bound-leaf material) is the character's PAGE hugging the tab content —
+   the tabs overlap its top border and the active one bites it (owner,
+   2026-07-31: "linguette di un libro/quaderno"). */
 .content {
   display: flex;
   flex-direction: column;
   min-width: 0;
   position: relative;
+}
+.sheet-page {
+  padding: var(--sp-3);
+  min-width: 0;
 }
 /* SYMMETRIC TAIL (owner, 2026-07-31): the column's bottom breath is TabBody's
    `pb-3` — the exact mirror of `.content`'s `pt-3` above the tab strip. The
@@ -3585,7 +3590,7 @@ button.pr-dot.lg::before {
 /* Light theme — a glowing gold FRAME alone barely registers on cream, so edit
    mode also WASHES the whole editing column in warm amber: the zone visibly
    changes colour (obvious at a glance, owner Img #30), not just a faint edge. */
-[data-theme="light"] .content[data-mode="edit"] {
+[data-theme="light"] .content[data-mode="edit"] .sheet-page {
   background: color-mix(in oklab, var(--accent-primary) 14%, var(--bg-surface-1));
 }
 /* Edit-mode cue — a clear but elegant "EDITING" FRAME: a 2px inset amber ring
@@ -3593,7 +3598,7 @@ button.pr-dot.lg::before {
    unmistakable at a glance (the old 2px top-only hairline was too easy to miss)
    while staying premium + causing NO layout shift (pure inset box-shadow). It
    breathes gently under [data-motion="auto"]. */
-.content[data-mode="edit"]::before {
+.content[data-mode="edit"] .sheet-page::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -3604,7 +3609,7 @@ button.pr-dot.lg::before {
     inset 0 0 0 2px color-mix(in oklab, var(--edit-accent) 70%, transparent),
     inset 0 0 24px color-mix(in oklab, var(--edit-accent) 13%, transparent);
 }
-[data-motion="auto"] .content[data-mode="edit"]::before {
+[data-motion="auto"] .content[data-mode="edit"] .sheet-page::before {
   animation: edit-frame-breathe 2.6s var(--ease-standard) infinite;
 }
 @keyframes edit-frame-breathe {
@@ -3625,13 +3630,13 @@ button.pr-dot.lg::before {
    as "off" on cream (owner Img #30). Repaint with the LUMINOUS gilt
    (`--accent-primary`) + a warm, stronger inner aura so it GLOWS on cream like it
    does on dark — a clear, magical "EDITING" frame. */
-[data-theme="light"] .content[data-mode="edit"]::before {
+[data-theme="light"] .content[data-mode="edit"] .sheet-page::before {
   box-shadow:
     inset 0 0 0 3px color-mix(in oklab, var(--accent-primary) 95%, transparent),
     inset 0 0 12px color-mix(in oklab, var(--accent-primary) 34%, transparent),
     inset 0 0 40px color-mix(in oklab, var(--accent-primary) 22%, transparent);
 }
-[data-theme="light"][data-motion="auto"] .content[data-mode="edit"]::before {
+[data-theme="light"][data-motion="auto"] .content[data-mode="edit"] .sheet-page::before {
   animation: edit-frame-breathe-light 2.6s var(--ease-standard) infinite;
 }
 @keyframes edit-frame-breathe-light {
@@ -9494,16 +9499,8 @@ button.create-need:focus-visible .create-need-chev {
   box-shadow: var(--elev-raised);
   overflow: hidden;
 }
-/* A hairline inner gilt rule — the inked margin of the page, set in from the edge,
-   so the leaf reads bound (BG3 codex margin) without a heavy second frame. */
-.tome-leaf-surface::after {
-  content: "";
-  position: absolute;
-  inset: 7px;
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 20%, transparent);
-  border-radius: calc(var(--radius-2xl) - 5px);
-  pointer-events: none;
-}
+/* (The old inner hairline "inked margin" is gone — owner 2026-07-31: one frame
+   per surface, no frames-within-frames.) */
 [data-theme="light"] .tome-leaf-surface {
   box-shadow: var(--elev-raised), var(--gilt-glow);
 }
@@ -9584,55 +9581,105 @@ button.create-need:focus-visible .create-need-chev {
   /* Breathing room when `useActiveTabScroll` reveals a selected off-edge tab. */
   scroll-padding-inline: 16px;
   gap: 5px;
-  padding: var(--sp-3) var(--sp-4) 0;
+  padding: 0 var(--sp-4);
 }
 .cmp-ribbon::-webkit-scrollbar,
 .wb .tabstrip::-webkit-scrollbar {
   display: none;
 }
-/* Overflow cue — a soft fade of the LOCAL ground (`--ribbon-fade`: the tome
-   leaf under the compendium ribbon, the content column under the cockpit
-   strip) over whichever edge still hides a tab, toggled by `data-fade`
-   (l/r/lr) from the shared `useOverflowFade` observer. Pointer-events off:
-   purely visual, the tabs beneath stay tappable to the edge. */
+/* The shell overlaps the page's top border by 1px so the tabs SEAT on it and
+   the active tab (opaque, page-toned) bites it — the index-tab construction.
+   Clipped tabs DISSOLVE (owner: no hard cut): a mask on the scroller melts the
+   tabs themselves at whichever edge still hides content — ground-independent
+   (the strip floats over scene art, page, or parchment alike), driven by the
+   same `data-fade` observer that ran the old painted fades. */
 .cmp-ribbon-shell,
 .tabstrip-shell {
-  --ribbon-fade: var(--bg-surface-2);
   position: relative;
+  margin-bottom: -1px;
 }
-.cmp-ribbon-shell::before,
-.cmp-ribbon-shell::after,
-.tabstrip-shell::before,
-.tabstrip-shell::after {
+/* Stacking truth (owner, 2026-07-31): resting tabs are pages BEHIND the open
+   one, so the page (z1) draws its border IN FRONT of their feet; only the
+   ACTIVE tab (z2) rides over the page — the bite. */
+.cmp-tome,
+.sheet-page {
+  z-index: 1;
+}
+.cmp-tab[aria-selected="true"],
+.wb .tabstrip [role="tab"][aria-selected="true"] {
+  position: relative;
+  z-index: 2;
+}
+/* The junction curls — the active tab's feet flare into the page with two
+   concave fillets (the folder-tab pattern), the arc drawn in the SAME ink as
+   the page border so tab + page read as one continuous stroke. Fill = the
+   calibrated page tone (see the fusion notes on the aria-selected rules). */
+.cmp-tab[aria-selected="true"]::before,
+.cmp-tab[aria-selected="true"]::after,
+.wb .tabstrip [role="tab"][aria-selected="true"]::before,
+.wb .tabstrip [role="tab"][aria-selected="true"]::after {
   content: "";
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 3rem;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 1;
-  transition: opacity var(--m-fast) var(--ease-standard);
+  bottom: -1px;
+  width: 8px;
+  height: 8px;
+  --curl-ink: color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
+  --curl-fill: #130d07;
 }
-.cmp-ribbon-shell::before,
-.tabstrip-shell::before {
-  left: 0;
-  background: linear-gradient(to right, var(--ribbon-fade), transparent);
+[data-theme="light"] .cmp-tab[aria-selected="true"]::before,
+[data-theme="light"] .cmp-tab[aria-selected="true"]::after,
+[data-theme="light"] .wb .tabstrip [role="tab"][aria-selected="true"]::before,
+[data-theme="light"] .wb .tabstrip [role="tab"][aria-selected="true"]::after {
+  --curl-fill: #faf0cb;
 }
-.cmp-ribbon-shell::after,
-.tabstrip-shell::after {
-  right: 0;
-  background: linear-gradient(to left, var(--ribbon-fade), transparent);
+.cmp-tab[aria-selected="true"]::before,
+.wb .tabstrip [role="tab"][aria-selected="true"]::before {
+  left: -8px;
+  background: radial-gradient(
+    circle at 0 0,
+    transparent 6.5px,
+    var(--curl-ink) 6.5px,
+    var(--curl-ink) 7.8px,
+    var(--curl-fill) 7.8px
+  );
 }
-.cmp-ribbon-shell[data-fade="l"]::before,
-.cmp-ribbon-shell[data-fade="lr"]::before,
-.cmp-ribbon-shell[data-fade="r"]::after,
-.cmp-ribbon-shell[data-fade="lr"]::after,
-.tabstrip-shell[data-fade="l"]::before,
-.tabstrip-shell[data-fade="lr"]::before,
-.tabstrip-shell[data-fade="r"]::after,
-.tabstrip-shell[data-fade="lr"]::after {
-  opacity: 1;
+.cmp-tab[aria-selected="true"]::after,
+.wb .tabstrip [role="tab"][aria-selected="true"]::after {
+  right: -8px;
+  background: radial-gradient(
+    circle at 100% 0,
+    transparent 6.5px,
+    var(--curl-ink) 6.5px,
+    var(--curl-ink) 7.8px,
+    var(--curl-fill) 7.8px
+  );
+}
+.cmp-ribbon-shell[data-fade="l"] .cmp-ribbon,
+.tabstrip-shell[data-fade="l"] .tabstrip {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px);
+  mask-image: linear-gradient(90deg, transparent 0, #000 36px);
+}
+.cmp-ribbon-shell[data-fade="r"] .cmp-ribbon,
+.tabstrip-shell[data-fade="r"] .tabstrip {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent 100%);
+}
+.cmp-ribbon-shell[data-fade="lr"] .cmp-ribbon,
+.tabstrip-shell[data-fade="lr"] .tabstrip {
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 36px,
+    #000 calc(100% - 36px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 36px,
+    #000 calc(100% - 36px),
+    transparent 100%
+  );
 }
 .cmp-tab,
 .wb .tabstrip [role="tab"] {
@@ -9653,7 +9700,9 @@ button.create-need:focus-visible .create-need-chev {
   border: 1px solid var(--border-medium);
   border-bottom-color: transparent;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  background: color-mix(in oklab, var(--bg-surface-1) 70%, transparent);
+  /* OPAQUE: the tabs protrude over the scene art — translucency would read as
+     dirt. Resting = the page ground warmed a step toward the leather dark. */
+  background: color-mix(in oklab, var(--bg-surface-1) 92%, var(--gold-leaf-900));
   transition:
     background var(--m-fast),
     border-color var(--m-fast),
@@ -9694,14 +9743,17 @@ button.create-need:focus-visible .create-need-chev {
 .cmp-tab[aria-selected="true"],
 .wb .tabstrip [role="tab"][aria-selected="true"] {
   color: var(--accent-text);
-  border-color: color-mix(in oklab, var(--accent-primary) 60%, var(--border-strong));
+  /* the page's own border ink — the tab's outline continues the page's stroke */
+  border-color: color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
   border-bottom-color: transparent;
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-glow) 20%, var(--bg-surface-2)),
-    var(--bg-surface-2)
-  );
-  box-shadow: var(--illumination);
+  /* THE FUSION: the fill is the page material's own top tone — CALIBRATED on
+     the rendered dark vellum (620px band average under the border, 2026-07-31:
+     srgb 19,13,7) so the active tab and the page below read as ONE object
+     across the bitten border. Recalibrate if `--asset-vellum-dark` changes. */
+  background: #130d07;
+  /* NO box-shadow: the active tab is a PIECE OF THE PAGE (owner, 2026-07-31 —
+     "un pezzo unico"); a halo ring would draw a line across the fused base.
+     Identity = gold ink + the one continuous border stroke. */
 }
 .cmp-tab[aria-selected="true"] .icon,
 .wb .tabstrip [role="tab"][aria-selected="true"] .icon {
@@ -9709,26 +9761,13 @@ button.create-need:focus-visible .create-need-chev {
 }
 [data-theme="light"] .cmp-tab[aria-selected="true"],
 [data-theme="light"] .wb .tabstrip [role="tab"][aria-selected="true"] {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-primary) 26%, var(--bg-surface-2)),
-    var(--bg-surface-2)
-  );
+  /* Light fusion: CALIBRATED on the rendered aged-scroll's top band (620px
+     average under the border, 2026-07-31: srgb 250,240,203). Recalibrate if
+     `--asset-parchment` changes. */
+  background: #faf0cb;
 }
-/* The ribbon seats on a gold rule that the active tab "bites" into — the bound-page
-   divider. The body panel below picks up from here. */
-.cmp-ribbon-rule,
-.wb-ribbon-rule {
-  height: 1px;
-  margin: -1px var(--sp-4) 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in oklab, var(--accent-primary) 50%, var(--border-medium)) 12%,
-    color-mix(in oklab, var(--accent-primary) 50%, var(--border-medium)) 88%,
-    transparent
-  );
-}
+/* The seat is the PAGE's own top border now (the tabs overlap it 1px and the
+   active one bites it) — no separate rule element. */
 
 /* ── The codex body — the index leaf (head · facets · list) and the reading
    leaf. Below the spread breakpoint they SWAP in place (the phone model); from
@@ -17727,36 +17766,14 @@ button.econ-tok-filter:active .econ-disc {
     var(--elev-recessed),
     inset 0 0 0 1px var(--emboss-sheen);
 }
-[data-theme="light"] .cmp-tab {
+[data-theme="light"] .cmp-tab,
+[data-theme="light"] .wb .tabstrip [role="tab"] {
   background: color-mix(in oklab, var(--bg-surface-2) 85%, var(--accent-primary));
   border-color: color-mix(in oklab, var(--accent-primary) 24%, var(--border-medium));
   box-shadow: inset 0 1px 0 var(--emboss-sheen);
 }
-[data-theme="light"] .cmp-tab[aria-selected="true"] {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-primary-bright) 28%, var(--bg-surface-2)),
-    var(--bg-surface-2)
-  );
-  border-color: color-mix(
-    in oklab,
-    var(--accent-primary-bright) 70%,
-    var(--border-strong)
-  );
-  box-shadow:
-    var(--illumination),
-    inset 0 1px 0 var(--emboss-sheen);
-}
-[data-theme="light"] .cmp-ribbon-rule {
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in oklab, var(--accent-primary-bright) 70%, var(--border-medium)) 12%,
-    color-mix(in oklab, var(--accent-primary-bright) 70%, var(--border-medium)) 88%,
-    transparent
-  );
-}
+/* (The legacy light-lux active-tab gradient + halo died with the one-piece
+   construction — the shared aria-selected rules above own the fusion fill.) */
 [data-theme="light"] .fchip[aria-pressed="true"] {
   background: linear-gradient(
     180deg,

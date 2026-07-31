@@ -141,7 +141,12 @@ export function CockpitView() {
         <TabsProvider>
           <PlayRefDeepLink />
           <TabStrip />
-          <TabBody />
+          {/* The character's PAGE — the tome's bound-leaf material hugging the
+              tab content; the strip's index tabs protrude above its top edge
+              and the active one bites into it (owner, 2026-07-31). */}
+          <div className="tome-leaf-surface sheet-page">
+            <TabBody />
+          </div>
         </TabsProvider>
       </TurnEconomyProvider>
     ),
@@ -248,7 +253,7 @@ export function CockpitView() {
           // banner. Forming a stacking context here confines that z:100 to this
           // column, so the topbar (z:100 at root) and the z:99 banner both stay
           // cleanly above the frame as it scrolls beneath them.
-          className="content tome-leaf-surface isolate flex flex-col px-3 pt-3 max-rail:order-3 rail:col-start-2 rail:row-start-1"
+          className="content isolate flex flex-col max-rail:order-3 rail:col-start-2 rail:row-start-1"
         >
           {turnEconomyRegion}
         </div>

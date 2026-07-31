@@ -356,10 +356,12 @@ function CompendiumBrowser({
     // COMPENDIUM-NAV — ONE tome at every width: it FLEXES to fill the
     // viewport-capped `<main>` (its list/detail scroll inside), so the page never
     // grows with the codex and the ribbon + search stay put.
-    <div className="tome-leaf-surface cmp-tome mt-2 flex min-h-0 flex-1 flex-col">
-      {/* Type ribbon — the bound divider tabs (Spells · Features · …), inside a
-          shell that fades whichever edge still hides tabs when it scrolls. */}
-      <div className="cmp-ribbon-shell" data-fade={ribbonFade || undefined}>
+    <>
+      {/* Type ribbon — the bound INDEX TABS (Spells · Features · …), PROTRUDING
+          above the tome's top edge (owner, 2026-07-31: "devono sporgere come
+          linguette"); the shell overlaps the tome border 1px so the active tab
+          bites it. Clipped tabs dissolve via the shell's data-fade mask. */}
+      <div className="cmp-ribbon-shell mt-2" data-fade={ribbonFade || undefined}>
         <div
           ref={ribbonRef}
           className="cmp-ribbon"
@@ -387,19 +389,19 @@ function CompendiumBrowser({
           ))}
         </div>
       </div>
-      <div className="cmp-ribbon-rule" />
-
-      <div
-        key={`${spec.id}:${initialQuery}`}
-        className="cmp-body"
-        data-spread={spread ? "" : undefined}
-      >
-        {/* The index leaf: on the spread it ALWAYS shows (reading never hides
-            the list); on the phone model it swaps out behind the open entry. */}
-        {(spread || !selected) && index}
-        {reading}
+      <div className="tome-leaf-surface cmp-tome flex min-h-0 flex-1 flex-col">
+        <div
+          key={`${spec.id}:${initialQuery}`}
+          className="cmp-body"
+          data-spread={spread ? "" : undefined}
+        >
+          {/* The index leaf: on the spread it ALWAYS shows (reading never hides
+              the list); on the phone model it swaps out behind the open entry. */}
+          {(spread || !selected) && index}
+          {reading}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
