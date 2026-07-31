@@ -1044,7 +1044,11 @@ routes are `React.lazy` + Suspense, so at that instant the page is still the emp
 The cockpit `TabStrip` **is the compendium type ribbon** (owner, 2026-07-31 — one ribbon anatomy
 app-wide): the same bound-divider book tabs seated on the gilt seat rule, the active tab biting the
 rule open-bottomed, the same row rhythm and edge fades — every rule in folio.css twins
-`.cmp-ribbon*` and `.wb .tabstrip*`, so the two rows can never diverge. Tab selection is **state,
+`.cmp-ribbon*` and `.wb .tabstrip*`, so the two rows can never diverge. And the strip sits where the
+ribbon sits: the cockpit's content column composes `.tome-leaf-surface` (the tome's bound-page
+material — gilt frame, inner margin hairline, per-theme vellum), so the sheet's center IS the
+character's page with its index tabs at the head, one sp-3 breath at every seam (above the strip,
+under the seat rule, at the tail). Tab selection is **state,
 not navigation** — hidden tabs (e.g. Spells for a non-caster) are simply absent. When the strip overflows (phones; the tightest IT bands) the `.tabstrip-shell`
 wrapper paints a soft `--input-fill` fade over whichever edge still hides tabs (`data-fade` l/r/lr,
 scroll + resize observed) so a cut tab always reads as "more this way", never as the end of the strip.

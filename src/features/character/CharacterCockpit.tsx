@@ -248,7 +248,7 @@ export function CockpitView() {
           // banner. Forming a stacking context here confines that z:100 to this
           // column, so the topbar (z:100 at root) and the z:99 banner both stay
           // cleanly above the frame as it scrolls beneath them.
-          className="content isolate flex flex-col px-3 pt-3 max-rail:order-3 rail:col-start-2 rail:row-start-1"
+          className="content tome-leaf-surface isolate flex flex-col px-3 pt-3 max-rail:order-3 rail:col-start-2 rail:row-start-1"
         >
           {turnEconomyRegion}
         </div>

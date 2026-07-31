@@ -39,7 +39,7 @@ export function TabBody() {
     // is the column's SYMMETRIC tail (owner, 2026-07-31): it mirrors `.content`'s
     // `pt-3`, so every tab ends the same 12px from the panel edge that the tab
     // strip starts from — the shell already adds footer clearance below.
-    <div className="mt-5 grid min-h-[24rem] min-w-0 pb-3">
+    <div className="mt-3 grid min-h-[24rem] min-w-0 pb-3">
       {TAB_DEFS.map((tab) => {
         const Panel = tab.Panel;
         const active = tab.id === activeTab;

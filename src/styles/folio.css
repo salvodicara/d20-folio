@@ -3563,11 +3563,14 @@ button.pr-dot.lg::before {
    toggle). When open it gets a quiet brass tint + brighter glyph only. */
 
 /* ─────────────────────────── CONTENT COLUMN ─────────────────────────── */
+/* The column composes `.tome-leaf-surface` (the compendium's bound-page
+   material) so the sheet reads as the character's PAGE — index tabs seated on
+   its head exactly like the tome (owner, 2026-07-31: "linguette di un
+   libro/quaderno"). No own background: the leaf material is the ground. */
 .content {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: var(--bg-surface-1);
   position: relative;
 }
 /* SYMMETRIC TAIL (owner, 2026-07-31): the column's bottom breath is TabBody's
@@ -3596,7 +3599,7 @@ button.pr-dot.lg::before {
   inset: 0;
   z-index: var(--z-sticky);
   pointer-events: none;
-  border-radius: 3px;
+  border-radius: var(--radius-2xl);
   box-shadow:
     inset 0 0 0 2px color-mix(in oklab, var(--edit-accent) 70%, transparent),
     inset 0 0 24px color-mix(in oklab, var(--edit-accent) 13%, transparent);
@@ -9596,9 +9599,6 @@ button.create-need:focus-visible .create-need-chev {
 .tabstrip-shell {
   --ribbon-fade: var(--bg-surface-2);
   position: relative;
-}
-.tabstrip-shell {
-  --ribbon-fade: var(--bg-surface-1);
 }
 .cmp-ribbon-shell::before,
 .cmp-ribbon-shell::after,
