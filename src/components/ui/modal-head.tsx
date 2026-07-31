@@ -21,6 +21,8 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
+import { useRef } from "react";
+import { useOverflowFadeY } from "@/hooks/useOverflowFade";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 
@@ -101,7 +103,29 @@ export function ModalBody({
     // least-code correct form: the rule fires on any scrollable region, and a
     // non-scrolling body costing one extra tab stop is harmless. Callers may
     // still override it via `...rest` (e.g. a body that manages its own focus).
-    <div className={cn("modal-body", className)} tabIndex={0} {...rest}>
+    <DissolvingScroll className={cn("modal-body", className)} tabIndex={0} {...rest}>
+      {children}
+    </DissolvingScroll>
+  );
+}
+
+/** Shared scroll wrapper: the vertical edge-dissolve (content melts before the
+ *  modal's binding corners — owner, 2026-07-31) via the same overflow observer
+ *  as the tab ribbons. */
+function DissolvingScroll({
+  className,
+  children,
+  ...rest
+}: ComponentPropsWithoutRef<"div">) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const fade = useOverflowFadeY(ref);
+  return (
+    <div
+      ref={ref}
+      className={cn("scroll-dissolve", className)}
+      data-fade={fade || undefined}
+      {...rest}
+    >
       {children}
     </div>
   );
@@ -126,16 +150,16 @@ export function ModalScrollColumn({
   ...rest
 }: ComponentPropsWithoutRef<"div">) {
   return (
-    <div
+    <DissolvingScroll
       tabIndex={0}
       className={cn(
-        "flex-1 overflow-y-auto overscroll-contain p-4 focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-accent",
+        "flex-1 overflow-y-auto overscroll-contain p-4 pb-8 focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-accent",
         className
       )}
       {...rest}
     >
       {children}
-    </div>
+    </DissolvingScroll>
   );
 }
 

@@ -6,7 +6,9 @@
  * spec supplies leading / name / meta / warning, the picker supplies "added".
  */
 
+import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useOverflowFadeY } from "@/hooks/useOverflowFade";
 import { PickerRow } from "@/components/sheet/picker-parts";
 import type { CompendiumPickerApi } from "./useCompendiumPicker";
 import type { CompendiumPickerSpec } from "./types";
@@ -34,6 +36,21 @@ export function CompendiumResultList<T>({
   // marks its source as a ref, and later `picker.*` reads would trip the
   // Rules-of-React lint if the object itself carried it.
   const { attachListScroll } = picker;
+  // The vertical edge-dissolve (rows melt before the modal's binding corners) —
+  // the same overflow observer as the tab ribbons, on a local ref merged with
+  // the picker's scroll-memory callback ref below.
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const fade = useOverflowFadeY(listRef);
+  // STABLE merged ref: an inline arrow re-attaches on every render, and each
+  // re-attach lets the picker's scroll memory restore its saved position —
+  // resetting the user's scroll on every fade change.
+  const attachList = useCallback(
+    (el: HTMLDivElement | null) => {
+      attachListScroll(el);
+      listRef.current = el;
+    },
+    [attachListScroll]
+  );
   const rows = picker.filtered.map((entry) => (
     <CompendiumResultRow
       key={spec.getId(entry)}
@@ -55,9 +72,12 @@ export function CompendiumResultList<T>({
     // so adding a spell/item/feat from the sheet matches the browse experience.
     // `overscroll-contain` keeps wheel/touch momentum from chaining to the page.
     <div
-      className="flex-1 overflow-y-auto overscroll-contain p-2"
+      // pb-8: the tail clearance — at full scroll the LAST row rests above the
+      // modal's binding-corner zone instead of grazing the spandrels.
+      className="scroll-dissolve flex-1 overflow-y-auto overscroll-contain p-2 pb-8"
       data-variant="codex"
-      ref={attachListScroll}
+      data-fade={fade || undefined}
+      ref={attachList}
     >
       <div className="mb-1 px-2 font-mono text-[length:var(--text-micro)] uppercase tracking-wider text-text-secondary">
         {t("common.items", { count: picker.count })}

@@ -9678,6 +9678,34 @@ button.create-need:focus-visible .create-need-chev {
   -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent 100%);
   mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent 100%);
 }
+/* The VERTICAL twin of the tab dissolve — for the dialogs' scroll regions
+   (owner, 2026-07-31: the binding-corner spandrels must never overlap list
+   rows): content melts before reaching the frame's corners, driven by the
+   same overflow observer (data-fade t/b/tb), and the last row reads fully
+   once the end is reached (the fade lifts when nothing is hidden). */
+.scroll-dissolve[data-fade="b"] {
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 36px), transparent 100%);
+  mask-image: linear-gradient(#000 calc(100% - 36px), transparent 100%);
+}
+.scroll-dissolve[data-fade="t"] {
+  -webkit-mask-image: linear-gradient(transparent 0, #000 36px);
+  mask-image: linear-gradient(transparent 0, #000 36px);
+}
+.scroll-dissolve[data-fade="tb"] {
+  -webkit-mask-image: linear-gradient(
+    transparent 0,
+    #000 36px,
+    #000 calc(100% - 36px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    transparent 0,
+    #000 36px,
+    #000 calc(100% - 36px),
+    transparent 100%
+  );
+}
+
 .cmp-ribbon-shell[data-fade="lr"] .cmp-ribbon,
 .tabstrip-shell[data-fade="lr"] .tabstrip {
   -webkit-mask-image: linear-gradient(
