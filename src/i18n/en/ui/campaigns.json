@@ -23,6 +23,7 @@
     "cardMoreActions": "More actions",
     "cardActionsFor": "Actions for {{name}}",
     "copyInviteLink": "Copy invite link",
+    "shareInviteLink": "Share invite link",
     "openHub": "Open campaign",
     "openHubNamed": "Open {{name}}",
     "createTitle": "Create a campaign",

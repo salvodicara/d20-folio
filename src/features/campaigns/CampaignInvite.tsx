@@ -15,18 +15,17 @@
  * Copy/Share action (no raw read-only link field eating a row) plus the lock-new-joins
  * toggle. It rides {@link SectionPanel} like every other desk card, so all hub sections
  * share one card rubric. Reuses the folio primitives (SectionPanel + InfoCard + Switch +
- * Badge) and the ONE share/copy primitives (CopyButton + shareOrCopy) — no parallel
+ * Badge) and the ONE share/copy affordances (CopyButton + ShareButton) — no parallel
  * component.
  */
 
 import { useTranslation } from "react-i18next";
-import { Lock, Share2 } from "lucide-react";
+import { Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/selection";
 import { CopyButton } from "@/components/shared/CopyButton";
+import { ShareButton } from "@/components/shared/ShareButton";
 import { InfoCard } from "@/components/shared/InfoCard";
-import { shareOrCopy } from "@/components/shared/copy-to-clipboard";
 import { useToastStore } from "@/stores/toastStore";
 import { SectionPanel } from "@/features/campaigns/SectionPanel";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
@@ -42,14 +41,6 @@ export function CampaignInvite({ canManage }: { canManage: boolean }) {
   const inviteLink = inviteLinkFromCode(campaign.inviteCode);
   const name = campaign.name;
   const joinsLocked = campaign.joinsLocked === true;
-
-  function share(): void {
-    void shareOrCopy(inviteLink, {
-      title: t("campaigns.shareTitle", { name }),
-      text: t("campaigns.shareText", { name }),
-      copiedToast: t("campaigns.linkCopied"),
-    });
-  }
 
   // Lock / re-open new member joins — the no-migration kill switch for a leaked invite
   // link (moved here from DM Tools so it sits with the link it disables). Optimistic store
@@ -94,10 +85,14 @@ export function CampaignInvite({ canManage }: { canManage: boolean }) {
               ariaLabel={t("campaigns.copyInviteLink")}
               disabled={joinsLocked}
             />
-            <Button variant="primary" onClick={share} disabled={joinsLocked}>
-              <Share2 aria-hidden className="h-4 w-4" />
-              {t("campaigns.shareInvite")}
-            </Button>
+            <ShareButton
+              value={inviteLink}
+              title={t("campaigns.shareTitle", { name })}
+              text={t("campaigns.shareText", { name })}
+              copiedToast={t("campaigns.linkCopied")}
+              label={t("campaigns.shareInvite")}
+              disabled={joinsLocked}
+            />
           </div>
         </div>
 

@@ -61,7 +61,9 @@ SHIPPED** (2026-07-24), the **encounter picker SHIPPED** (2026-07-25; bestiary-f
 **2024-DMG XP-budget difficulty calculator SHIPPED** (2026-07-25; the DM-only budget readout),
 **companions/extras SHIPPED** (2026-07-25), the **account-level homebrew library SHIPPED**
 (2026-07-30; ladder rung (a)) and **quickbuild SHIPPED** (2026-07-30 — creation now OPENS on a
-ready-made build, with a Randomize reroll); the live head is **share links**. The
+ready-made build, with a Randomize reroll) and **share links SHIPPED** (2026-07-31 — public
+read-only character links, the native share sheet on every link the app hands out, and Open Graph
+previews); the live head is **compendium completeness**. The
 competitive map is `docs/POSITIONING.md`. **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
 **id-storage + GR7 i18n-leak-eradication campaign** is **CLOSED** (v0.13.0): every SRD-derived value
@@ -1343,8 +1345,8 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   CLASSES declared the horizon flagship on the grants seam (DDB's #1 refused community ask),
   scheduled only once (c) proves the authoring UX. Homebrew is user data, never repo data — no #32
   impact.
-- **Public share links (owner-refined 2026-07-31): CHARACTERS ONLY, industry standard.** The
-  decided LIVE model stands — a `shared: true` flag on the character doc + the unguessable doc id
+- **Public share links: SHIPPED 2026-07-31 — CHARACTERS ONLY, industry standard.** The
+  decided LIVE model shipped as decided — a `shared: true` flag on the character doc + the unguessable doc id
   as the URL; rules allow anonymous read-only when flagged; revoke = flip the flag; noindex;
   reuses the MemberSheetView read-only rendering. Owner requirements folded in (2026-07-31): the
   share affordance uses the state-of-the-art sharing surface — the **Web Share API native sheet on
@@ -1355,6 +1357,31 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   spaces): a table shares a campaign by each player sharing their own character, which keeps
   consent per-owner and adds zero rules surface; an opt-in campaign-surface design is noted as the
   someday upgrade path ONLY if real demand appears — explicitly not built on speculation.
+  **Owner amendment, 2026-07-31 (same wave):** (1) the **campaign INVITE link** gets the same
+  premium share treatment — the native share sheet + copy fallback, through the ONE shared share
+  affordance, never a second implementation. That is INVITE (a functional join), not anonymous
+  viewing: the no-campaign-share-model decision above stands untouched. (2) **Professional link
+  previews (Open Graph), two tiers** — a site-wide baseline (`og:*` + `twitter:card` in the HTML
+  shell, EN only, with a designed 1200×630 branded card in `public/`, kept out of the precache),
+  and **per-link dynamic tags on the two shared route families** (`/view/**`, `/join/**`) from a
+  lightweight Cloud Function behind Hosting rewrites that serves the SPA shell with the entity's
+  tags injected — a shared character reads its `shared: true` doc (an unshared or unknown id gets
+  the generic branded tags, never a leak), a campaign invite exposes the campaign NAME and nothing
+  else, for a valid code only. Crawlers must get the tags with NO JavaScript.
+  **All of it shipped in the same wave.** What landed: `CharacterDoc.shared` (replacing the
+  never-implemented `shareId` scaffolding and the unused public `/shared` collection it pointed at);
+  ONE `allow get` arm in `firestore.rules`, deliberately `get` and not `read` so it can never widen
+  into an enumeration query; the public `/view/:uid/:charId` route reusing `CockpitView` through
+  `loadReadonly`, with one quiet page for revoked / deleted / denied / offline and a per-route
+  noindex; the sheet's ⋯ menu gaining one-tap **Share link** plus a state-revealing **Stop sharing**
+  behind the house confirm; `ShareButton` as the ONE button-shaped share affordance, adopted by the
+  hub's ACCESS panel and the create-campaign success screen (whose hand-rolled URL builder and raw
+  read-only link field are gone), and the campaign card's ⋯ item upgraded from copy-only to the
+  native sheet; `ogShell` + the two Hosting rewrites + the designed `public/og-card.jpg`, verified
+  by curl under a crawler UA. One rule-27 stability fix fell out of it: every ⋯ overflow item inside
+  the mobile Signet was inert, because `useDismissOnOutside` collapsed the chain on a pointerdown
+  inside the menu's own Radix portal. Full design record: `docs/ARCHITECTURE.md` → "Public share
+  links" + "Link previews (Open Graph)".
 - **Post-view signup CTA — the share-funnel growth loop (CANDIDATE — owner idea 2026-07-31):** the
   public no-account `/view` page (a non-registered friend viewing a shared character) offers a
   tasteful post-view **conversion CTA** — a premium nudge to "create your own character" / sign up.
@@ -1365,7 +1392,7 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
     the **growth-loop close on the share funnel** — the rung that turns share-link reach (and the
     paid traffic the GA advertising push will buy) into registrations, so it lands only once there is
     traffic to convert.
-  - **Dependencies:** DEPENDS on share links (shipped/shipping — the `/view` surface is its host) and
+  - **Dependencies:** DEPENDS on share links (shipped — the `/view` surface is its host) and
     COMPLEMENTS first-run onboarding (the bullet below) — the CTA hands the newcomer into Quick
     Start / the Guided wizard that onboarding rung already funnels newcomers through.
   - **Non-negotiables:** stays **tasteful/premium — a nudge, never a nag** (the Constitution premium
@@ -1485,9 +1512,9 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   pack); the old #32 issue was deleted with the split, so THIS charter is the surviving coordination
   record. `bestiary` is DONE (2026-07-24), `encounter picker` DONE (2026-07-25), `difficulty calc`
   DONE (2026-07-25), `companions` DONE (2026-07-25), `homebrew library` rung (a) DONE (2026-07-30)
-  and `quickbuild` DONE (2026-07-30); the live attack-order head is `share links`, with the
-  pack-side MM corpus the standing parallel content job and homebrew rung (b) — campaign sharing —
-  queued behind it.]
+  `quickbuild` DONE (2026-07-30) and `share links` DONE (2026-07-31); the live attack-order head is
+  `compendium completeness`, with the pack-side MM corpus the standing parallel content job and
+  homebrew rung (b) — campaign sharing — queued behind it.]
 
 ## Shipped epic — BG3-Grade Identity Evolution Epic
 

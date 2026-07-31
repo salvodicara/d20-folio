@@ -12,6 +12,11 @@ import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 
+/** The stubbed clipboard sink — jsdom has none, and it is also the universal
+ *  fallback `shareOrCopy` takes when the platform has no native share sheet. */
+let writeTextSpy: ReturnType<typeof vi.fn>;
+const clipboardWriteText = () => writeTextSpy;
+
 const {
   navigateSpy,
   listMock,
@@ -90,6 +95,11 @@ function renderPage() {
 
 describe("CampaignsListPage", () => {
   beforeEach(() => {
+    writeTextSpy = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: writeTextSpy },
+      configurable: true,
+    });
     navigateSpy.mockClear();
     listMock.mockReset().mockResolvedValue([]);
     createMock.mockReset().mockResolvedValue("NEWCODE123456");
@@ -249,9 +259,17 @@ describe("CampaignsListPage", () => {
         photoURL: null,
       })
     );
-    // De-dup pass: the success screen surfaces ONE thing — the invite LINK (the code
-    // is embedded in it), not a bare code.
-    expect(await screen.findByDisplayValue(/\/join\/NEWCODE123456$/)).toBeInTheDocument();
+    // The success screen offers the invite LINK the same way the hub's ACCESS panel
+    // does — behind Copy + Share, never a raw read-only field (one grammar for
+    // handing out an invite). Both carry the real link.
+    const copy = await screen.findByRole("button", { name: /copy invite link/i });
+    expect(copy).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: /^share$/i })).toBeInTheDocument();
+    expect(screen.queryByDisplayValue(/\/join\//)).not.toBeInTheDocument();
+    fireEvent.click(copy);
+    expect(clipboardWriteText()).toHaveBeenCalledWith(
+      expect.stringMatching(/\/join\/NEWCODE123456$/)
+    );
   });
 
   it("joins by code (uppercased) and navigates to the hub", async () => {
@@ -293,21 +311,20 @@ describe("CampaignsListPage", () => {
   });
 
   // ─── OWN-6: the shared 3-dots overflow menu on the campaign card ─────────────
-  it("copies the invite LINK from the card overflow menu", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", {
-      value: { writeText },
-      configurable: true,
-    });
+  it("shares the invite LINK from the card overflow menu (clipboard is the fallback)", async () => {
     listMock.mockResolvedValue([
       campaign({ id: "c1", name: "Lost Mine", inviteCode: "JOINME12" }),
     ]);
     renderPage();
     await screen.findByText("Lost Mine");
     fireEvent.click(screen.getByRole("button", { name: /more actions/i }));
-    fireEvent.click(await screen.findByRole("menuitem", { name: /copy invite link/i }));
-    // De-dup pass: the quick-share copies the LINK (code embedded), toast linkCopied.
-    expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/\/join\/JOINME12$/));
+    fireEvent.click(await screen.findByRole("menuitem", { name: /share invite link/i }));
+    // jsdom has no `navigator.share`, so `shareOrCopy` takes the universal fallback
+    // and the LINK (code embedded) lands on the clipboard. The native-sheet branch
+    // itself is pinned by share-or-copy.test.ts.
+    expect(clipboardWriteText()).toHaveBeenCalledWith(
+      expect.stringMatching(/\/join\/JOINME12$/)
+    );
   });
 
   it("lets the DM delete a campaign (confirm → io → refetch)", async () => {
@@ -330,9 +347,9 @@ describe("CampaignsListPage", () => {
     renderPage();
     await screen.findByText("Lost Mine");
     fireEvent.click(screen.getByRole("button", { name: /more actions/i }));
-    // Copy is always available; Delete is gated away.
+    // Sharing is always available; Delete is gated away.
     expect(
-      await screen.findByRole("menuitem", { name: /copy invite link/i })
+      await screen.findByRole("menuitem", { name: /share invite link/i })
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("menuitem", { name: /delete campaign/i })

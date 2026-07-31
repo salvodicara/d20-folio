@@ -1,4 +1,4 @@
-# Cloud Functions runbook — reporting · signup email · billing kill-switch
+# Cloud Functions runbook — reporting · signup email · billing kill-switch · link previews
 
 The Cloud Functions (`functions/`, 2nd-gen, `europe-west1`) wire the app to the
 maintainer and hard-guarantee the zero-budget promise:
@@ -12,6 +12,14 @@ maintainer and hard-guarantee the zero-budget promise:
 - **SAFE-01** — the **billing kill-switch**: a Pub/Sub trigger the £1 Cloud Billing
   budget publishes to; on actual cost overrun it DETACHES billing from the project so
   spend can never run past ~£1. Runbook in [its own section](#safe-01--billing-kill-switch-the-zero-budget-hard-guarantee).
+- **`ogShell`** — the ONLY HTTP (`onRequest`) function here: Hosting rewrites `/view/**`
+  and `/join/**` to it so a link a player shares unfurls with the entity's own Open
+  Graph tags in WhatsApp / Discord / iMessage. It needs **no secret and no setup** —
+  the rewrites in `firebase.json` ship with the hosting deploy, and the function
+  itself deploys with `firebase deploy --only functions`. Design + the exposure rule
+  it enforces: `docs/ARCHITECTURE.md` → "Link previews (Open Graph)". Zero-budget: the
+  response is CDN-cached per URL, so it runs on a crawl or a cold first hit, never per
+  pageview.
 
 A client PWA can't safely hold a GitHub token or SMTP credentials, so the client
 only writes to Firestore; the privileged work happens in Cloud Functions (Admin

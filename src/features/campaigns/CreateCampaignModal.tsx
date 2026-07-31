@@ -3,8 +3,9 @@
  *
  * Two phases in one ModalShell: a name form → a "share this invite link" success
  * view. Calls `createCampaign` (the 2a io boundary) which seeds the A13 invariants
- * and returns the new campaign id (== its invite code). The owner copies the invite
- * LINK to share (the code is embedded in it), then opens the hub. Under dev-bypass
+ * and returns the new campaign id (== its invite code). The owner shares the invite
+ * LINK (the code is embedded in it) through the SAME Copy/Share pair the hub's ACCESS
+ * panel offers, then opens the hub. Under dev-bypass
  * `createCampaign` persists nothing and returns a generated code (the hub seeds a
  * fixture) — see `dev-fixture.ts`.
  *
@@ -18,10 +19,12 @@ import { useNavigate } from "react-router";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { retireTopOverlayThen } from "@/lib/overlay-history";
 import { CopyButton } from "@/components/shared/CopyButton";
+import { ShareButton } from "@/components/shared/ShareButton";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/authStore";
 import { createCampaign } from "@/features/campaigns/campaign-io";
+import { inviteLinkFromCode } from "@/features/campaigns/invite-code";
 
 export function CreateCampaignModal({
   open,
@@ -73,8 +76,8 @@ export function CreateCampaignModal({
   }
 
   // The invite is a LINK; the code is just the doc id embedded in it (de-dup pass).
-  const inviteLink =
-    (typeof window !== "undefined" ? window.location.origin : "") + `/join/${code}`;
+  // Built by the ONE builder every invite surface shares (golden rule 6).
+  const inviteLink = inviteLinkFromCode(code);
 
   function openHub(): void {
     const id = code;
@@ -130,24 +133,24 @@ export function CreateCampaignModal({
         ) : (
           <>
             <p className="text-sm text-text-secondary">{t("campaigns.createdBlurb")}</p>
-            <div className="flex flex-col gap-1">
-              <span className="text-sm text-text-secondary">
-                {t("campaigns.inviteLink")}
-              </span>
-              <p className="mb-1 text-xs text-text-muted">
-                {t("campaigns.inviteLinkHint")}
-              </p>
-              <div className="flex items-center gap-2">
-                <Input
-                  readOnly
-                  value={inviteLink}
-                  aria-label={t("campaigns.inviteLink")}
-                  className="font-mono text-xs"
-                />
+            {/* The link lives BEHIND the actions, exactly as the hub's ACCESS panel
+                presents it — one grammar for handing out an invite, never a raw
+                read-only field on one screen and a share sheet on the other. */}
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-text-muted">{t("campaigns.inviteLinkHint")}</p>
+              <div className="flex flex-wrap gap-2">
                 <CopyButton
                   value={inviteLink}
                   toastMessage={t("campaigns.linkCopied")}
-                  label={t("common.copy")}
+                  label={t("campaigns.copyInviteLink")}
+                  ariaLabel={t("campaigns.copyInviteLink")}
+                />
+                <ShareButton
+                  value={inviteLink}
+                  title={t("campaigns.shareTitle", { name: name.trim() })}
+                  text={t("campaigns.shareText", { name: name.trim() })}
+                  copiedToast={t("campaigns.linkCopied")}
+                  label={t("campaigns.shareInvite")}
                 />
               </div>
             </div>

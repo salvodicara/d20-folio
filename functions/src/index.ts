@@ -24,7 +24,7 @@
  */
 
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { onMessagePublished } from "firebase-functions/v2/pubsub";
 import { defineSecret } from "firebase-functions/params";
 import { setGlobalOptions, logger } from "firebase-functions/v2";
@@ -50,6 +50,16 @@ import {
   type CampaignLike,
 } from "./delete-user-plan";
 import { parseBudgetNotification, decideBudgetKill } from "./budget-kill";
+import {
+  parseSharePath,
+  genericCard,
+  characterCard,
+  campaignCard,
+  injectOgTags,
+  shellOrigin,
+  SITE,
+  type OgCard,
+} from "./og-meta";
 
 initializeApp();
 
@@ -443,3 +453,92 @@ export const onBudgetAlert = onMessagePublished(
     });
   }
 );
+
+// ── ogShell: per-link Open Graph previews for the two shared route families ──
+//
+// A crawler (WhatsApp · Discord · Slack · iMessage · Telegram · X · Google) fetches
+// a shared URL once with NO JavaScript, so a client-rendered SPA cannot have
+// per-link previews on its own: every URL would unfurl as the same generic card.
+// Firebase Hosting rewrites `/view/**` and `/join/**` here (see `firebase.json`);
+// this serves the SAME built `index.html` with the entity's tags spliced in between
+// its `og:start` / `og:end` markers. The page a human then gets is the identical
+// SPA shell — this adds a preview, never a second rendering path.
+//
+// EXPOSURE (enforced in `og-meta.ts`, and re-asserted here at the read): a character
+// only when its document carries `shared: true`, and then only name / level / class;
+// a campaign only its NAME, and only for an invite code that resolves (the code IS
+// the campaign's doc id — the same secret the join flow already treats as the
+// grant). Everything else falls back to the generic branded card: an unshared or
+// unknown id must not even be distinguishable from a nonexistent one.
+//
+// ZERO-BUDGET: the response is CDN-cacheable per URL (`s-maxage`), so in practice
+// this runs on a crawl or a cold first hit, not per pageview — and returning users
+// never reach it at all (the service worker answers those navigations from the
+// precached shell). A revoked link can keep its cached TITLE until `s-maxage`
+// expires; the sheet behind it is denied immediately by `firestore.rules`, so the
+// stale value is a name, never access.
+const OG_CACHE_CONTROL = "public, max-age=300, s-maxage=3600";
+
+/** The built shell, fetched once per warm instance from Hosting's own origin. */
+let shellCache: { origin: string; html: string } | null = null;
+async function loadShell(origin: string): Promise<string> {
+  if (shellCache?.origin === origin) return shellCache.html;
+  const res = await fetch(`${origin}/index.html`);
+  if (!res.ok) throw new Error(`shell fetch failed: ${res.status}`);
+  const html = await res.text();
+  shellCache = { origin, html };
+  return html;
+}
+
+/** Resolve the card for a shared path, or null to serve the generic one. */
+async function resolveCard(pathname: string, url: string): Promise<OgCard | null> {
+  const target = parseSharePath(pathname);
+  if (!target) return null;
+  const db = getFirestore();
+  if (target.kind === "character") {
+    const snap = await db
+      .collection("users")
+      .doc(target.uid)
+      .collection("characters")
+      .doc(target.charId)
+      .get();
+    // The Admin SDK bypasses firestore.rules, so the share grant is re-checked HERE.
+    if (!snap.exists || snap.get("shared") !== true) return null;
+    return characterCard((snap.get("cache") ?? {}) as Record<string, unknown>, url);
+  }
+  const camp = await db.collection("campaigns").doc(target.code).get();
+  if (!camp.exists) return null;
+  return campaignCard(camp.get("name"), url);
+}
+
+export const ogShell = onRequest(async (req, res) => {
+  // Fetch the shell from whoever served this request (prod / preview / emulator);
+  // advertise the CANONICAL origin in og:url regardless.
+  const origin = shellOrigin(req.headers as Record<string, string | undefined>);
+  const url = `${SITE}${req.path}`;
+  let card: OgCard | null = null;
+  try {
+    card = await resolveCard(req.path, url);
+  } catch (e) {
+    // A lookup failure is a PREVIEW failure, never a page failure: fall through to
+    // the generic card so the link still opens.
+    logger.warn("ogShell: entity lookup failed; serving the generic card", {
+      path: req.path,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+  try {
+    const shell = await loadShell(origin);
+    res
+      .status(200)
+      .set("Cache-Control", OG_CACHE_CONTROL)
+      .set("Content-Type", "text/html; charset=utf-8")
+      .send(injectOgTags(shell, card ?? genericCard(url)));
+  } catch (e) {
+    // The shell itself is unreachable — redirect rather than serve a broken page.
+    logger.error("ogShell: could not load the app shell", {
+      error: e instanceof Error ? e.message : String(e),
+    });
+    res.redirect(302, `${origin}/`);
+  }
+});

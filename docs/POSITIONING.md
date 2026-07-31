@@ -69,10 +69,15 @@ frontier"_), sequenced **bestiary-first**:
 - **Quickbuild parity SHIPPED (2026-07-30)** — DDB shipped "Quickbuilder" March 2026; Quick Start
   now opens on a complete, legal, class-recommended build (only the name left to type) **plus the
   seeded Randomize reroll DDB does not have** — matched, then exceeded.
-- **No public share links yet** — scope owner-settled 2026-07-31: **characters only** — the
-  `shared: true` flag + unguessable doc id, anonymous read-only viewing (no account needed) via the
-  Web Share API native sheet + copy-link fallback; **campaigns deliberately have NO share model**
-  (industry standard — a table shares via each player's own character).
+- **Public share links SHIPPED (2026-07-31) — characters only, and we land it better than DDB.** A
+  `shared: true` flag on the character doc turns its unguessable document path into a public
+  read-only sheet: no account, no sign-up wall, the FULL sheet (DDB's public sheet is a stripped
+  view), revoked by flipping the flag. Handing it over is one tap into the phone's native share
+  sheet — WhatsApp / Telegram / iMessage for free — with copy-link as the universal fallback, and the
+  campaign INVITE link now rides the same affordance. Both link families unfurl with real Open Graph
+  previews ("Lyra Voss — Level 11 Bard / Fighter", "Join Starless Keep on d20 Folio") off a
+  rewrite-fronted Cloud Function. **Campaigns deliberately keep NO anonymous share model** (industry
+  standard — a table shares via each player's own character).
 - **Post-view signup CTA (CANDIDATE, owner idea 2026-07-31)** — the **acquisition growth-loop close
   on the share funnel**: the public no-account `/view` page offers a tasteful, premium post-view
   nudge to "create your own character" / sign up, converting the traffic share links + advertising

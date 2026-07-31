@@ -22,6 +22,36 @@
       content="d20 Folio — A modern D&D 2024 character sheet manager"
     />
     <meta name="theme-color" content="#0c0a07" />
+    <!--
+      OPEN GRAPH — the link-preview card. EN only, deliberately: OG has no clean
+      bilingual story (a crawler fetches one document, with no session and no
+      Accept-Language worth trusting), and an English card is the industry norm.
+
+      The block between the og:start / og:end markers is the BASELINE, and it is
+      also the injection target: the `ogShell` Cloud Function (behind the Hosting
+      rewrites for /view/** and /join/**) replaces everything between those two
+      markers with the shared entity's own tags, so a crawler gets the real title
+      with NO JavaScript. Keep the markers exactly as they are — `functions/src/
+      og-meta.ts` matches on them, and its unit tests read THIS file.
+    -->
+    <!-- og:start -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="d20 Folio" />
+    <meta property="og:title" content="d20 Folio — a living D&D 2024 character sheet" />
+    <meta
+      property="og:description"
+      content="Build, level and play your D&D 2024 characters on a sheet that does the math for you. Free, offline-first, and bilingual, with the whole 2024 SRD built in."
+    />
+    <meta property="og:image" content="https://d20-folio.web.app/og-card.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="d20 Folio — a living D&D 2024 character sheet"
+    />
+    <meta property="og:url" content="https://d20-folio.web.app/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- og:end -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />

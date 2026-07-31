@@ -82,7 +82,12 @@ export default defineConfig({
       // code (the owner's bug runs ONLY with the SW active). Scoped to that one
       // harness; normal `pnpm dev` and every other E2E are unaffected.
       devOptions: { enabled: process.env.VITE_PWA_DEV === "true", type: "module" },
-      includeAssets: ["icons/*.png", "og-image.png"],
+      // The OG card (`public/og-card.jpg`) is deliberately NOT here and is a .jpg,
+      // which `globPatterns` below does not match — so the link-preview image never
+      // enters the offline precache. Crawlers fetch it over the network; the app
+      // itself never renders it, so precaching ~95 KiB of it would buy nothing and
+      // the precache ceiling has ~11 KiB of headroom.
+      includeAssets: ["icons/*.png"],
       manifest: {
         name: "d20 Folio",
         short_name: "d20 Folio",

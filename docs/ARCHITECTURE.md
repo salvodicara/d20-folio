@@ -1568,6 +1568,40 @@ share collection, no mirror copy, no token table, no expiry, no server. The mode
   listener (a public viewer has no use for one). At this scale that is free-tier noise, and SAFE-01
   (the £1 kill switch) is the standing backstop.
 
+### Link previews (Open Graph) — a static baseline plus one rewrite-fronted function
+
+A crawler (WhatsApp · Discord · Slack · iMessage · Telegram · X · Google) fetches a URL ONCE, with no
+JavaScript, and reads the `<meta>` tags that come back. A client-rendered SPA therefore cannot have
+per-link previews on its own — every URL would unfurl as the same card. Two tiers:
+
+- **The baseline** lives in `index.html`, between the `og:start` / `og:end` markers: `og:*` +
+  `twitter:card`, EN only (OG has no clean bilingual story — a crawler carries no session and no
+  Accept-Language worth trusting, and an English card is the industry norm), pointing at the designed
+  1200×630 card at `public/og-card.jpg`. That file is a `.jpg`, which `globPatterns` does not match,
+  and it is deliberately absent from `includeAssets` — so the preview image never enters the offline
+  precache (the app never renders it, and the precache ceiling has ~11 KiB of headroom).
+- **Per-link tags** on the two shared route families come from `ogShell`
+  (`functions/src/index.ts`, pure half in `functions/src/og-meta.ts`), an `onRequest` function that
+  Hosting rewrites `/view/**` and `/join/**` to (`firebase.json`; the rewrite names
+  `europe-west1` explicitly, because a rewrite defaults to `us-central1` while `setGlobalOptions`
+  puts the package in Europe). It fetches the built shell from the host that served the request,
+  splices the entity's tags in between the same two markers, and returns it — the SAME shell, so a
+  human still gets the ordinary SPA and there is no second rendering path to keep in step.
+- **What may be exposed, and nothing else.** A character: only when its document carries
+  `shared: true`, and then only name, total level and class (read off the SRD-free roster `cache`).
+  A campaign: only its NAME, and only for an invite code that resolves — the code IS the campaign's
+  document id, the same secret the join flow already treats as the grant. The Admin SDK bypasses
+  `firestore.rules`, so `ogShell` re-checks the share flag itself. Every other case — unshared,
+  unknown, malformed, lookup failed — returns the generic branded card, so an unshared id is not even
+  distinguishable from a nonexistent one.
+- **Cost + staleness.** The response is CDN-cacheable per URL (`max-age=300, s-maxage=3600`), so the
+  function runs on a crawl or a cold first hit, not per pageview — and a returning user never reaches
+  it at all, because the service worker answers `/view/**` and `/join/**` navigations from the
+  precached shell (`navigateFallback`, deliberately NOT denylisted: crawlers register no service
+  worker, so previews are unaffected and humans keep the instant offline shell). A revoked link can
+  keep its cached TITLE until `s-maxage` expires; the sheet behind it is denied on the very next read,
+  so what goes stale is a name, never access.
+
 ### Non-nullability invariant — an empty character name is UNREPRESENTABLE
 
 A character's `name` (and the party-member snapshot + roster-cache + roster-projection name) is a

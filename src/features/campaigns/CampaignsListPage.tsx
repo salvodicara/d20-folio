@@ -11,7 +11,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router";
-import { AlertTriangle, Swords, Copy, Trash2 } from "lucide-react";
+import { AlertTriangle, Swords, Share2, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { PortraitImg } from "@/components/shared/PortraitImg";
 import {
@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
-import { copyWithToast } from "@/components/shared/copy-to-clipboard";
+import { shareOrCopy } from "@/components/shared/copy-to-clipboard";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -262,8 +262,16 @@ function CampaignCard({
   // The invite is a LINK; the embedded code is just the doc id (de-dup pass).
   const inviteLink = inviteLinkFromCode(campaign.inviteCode);
 
-  function copyInviteLink(): void {
-    copyWithToast(inviteLink, t("campaigns.linkCopied"));
+  // The SAME one-tap grammar the sheet's ⋯ Share link uses: the native share sheet
+  // where the platform has one, the clipboard everywhere else (golden rule 3 — the
+  // branch lives once, in `shareOrCopy`). This menu used to copy ONLY, so a DM on a
+  // phone could not hand the link straight to WhatsApp.
+  function shareInviteLink(): void {
+    void shareOrCopy(inviteLink, {
+      title: t("campaigns.shareTitle", { name: campaign.name }),
+      text: t("campaigns.shareText", { name: campaign.name }),
+      copiedToast: t("campaigns.linkCopied"),
+    });
   }
 
   async function deleteThisCampaign(): Promise<void> {
@@ -292,10 +300,10 @@ function CampaignCard({
 
   const menuItems: CardMenuItem[] = [
     {
-      key: "copy-link",
-      label: t("campaigns.copyInviteLink"),
-      icon: Copy,
-      onSelect: copyInviteLink,
+      key: "share-link",
+      label: t("campaigns.shareInviteLink"),
+      icon: Share2,
+      onSelect: shareInviteLink,
     },
     {
       key: "delete",
