@@ -20,10 +20,7 @@ import { join } from "node:path";
 const ROOT = join(__dirname, "..", "..");
 
 /** The primitives themselves — the only homes of a raw overflow-y utility. */
-const SANCTIONED = new Set([
-  "src/components/ui/modal-head.tsx",
-  "src/features/compendium/picker/ResultList.tsx",
-]);
+const SANCTIONED = new Set(["src/components/ui/modal-head.tsx"]);
 
 /** Directories whose components render INSIDE dialogs (or are dialogs). */
 const DIALOG_DIRS = ["src/components/sheet", "src/components/shared"];

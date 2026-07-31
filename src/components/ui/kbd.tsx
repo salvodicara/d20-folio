@@ -2,7 +2,7 @@
  * Kbd — the ONE keyboard-key chip recipe (a hairline mono pill).
  *
  * Shared by every place that names a key: the topbar ⌘K hint, the palette footer
- * legend + its `?` chip, the EditingPill's ⌘E tip, the encounter turn tooltips, and
+ * legend + its `?` chip, the encounter chrome tips, the encounter turn tooltips, and
  * the shortcuts sheet. One element so a tweak to the chip lands everywhere at once.
  */
 

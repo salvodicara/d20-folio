@@ -1417,7 +1417,7 @@ export function EncounterTurnControls({
   const { t } = useTranslation();
   if (!canAdvance) return null;
   // The arrow-key accelerator (owner-7) is now DISCOVERABLE: each button carries the
-  // branded EditingPill tooltip naming ←/→ as a kbd chip + `aria-keyshortcuts`, so the
+  // branded kbd-chip tooltip naming ←/→ as a kbd chip + `aria-keyshortcuts`, so the
   // one shipped-but-invisible power shortcut is suggested like ⌘K (owner's ask).
   return (
     <TooltipProvider delayDuration={200}>
@@ -1454,7 +1454,7 @@ export function EncounterTurnControls({
 }
 
 /** The turn button's tooltip: the verb + its arrow key as a `<kbd>` chip (the
- *  topbar / EditingPill kbd recipe), teaching the ←/→ accelerator. */
+ *  topbar kbd-chip recipe), teaching the ←/→ accelerator. */
 function TurnHint({ label, glyph }: { label: string; glyph: string }) {
   return (
     <span className="flex items-center gap-2">

@@ -2,7 +2,7 @@
  * Cockpit edit-frame wiring (#60): the design-source amber EDITING frame is
  * activated by emitting the `.content` class + setting `data-mode="edit"` on the
  * center content column ONLY in edit mode. The old sticky "Editing" banner is
- * DELETED — the resting edit signifier is now the in-place amber EditingPill (no
+ * DELETED — the resting edit signifier is now the in-place amber edit affordance (no
  * layout shift). This renders the real `CharacterCockpit` (Firebase + the
  * subscription mocked so it stays CI-pure) and asserts the surface attribute +
  * the pill state flip with `uiStore.sheetMode`.

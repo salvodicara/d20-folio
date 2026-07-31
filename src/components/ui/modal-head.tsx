@@ -18,10 +18,15 @@
  * - `ModalFoot` — the `.modal-foot` action row.
  */
 
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import {
+  useCallback,
+  useRef,
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+  type Ref,
+} from "react";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
-import { useRef } from "react";
 import { useOverflowFadeY } from "@/hooks/useOverflowFade";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
@@ -121,13 +126,25 @@ export function ModalBody({
 export function ModalScroll({
   className,
   children,
+  ref: refProp,
   ...rest
-}: ComponentPropsWithoutRef<"div">) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const fade = useOverflowFadeY(ref);
+}: ComponentPropsWithoutRef<"div"> & { ref?: Ref<HTMLDivElement> }) {
+  const inner = useRef<HTMLDivElement | null>(null);
+  const fade = useOverflowFadeY(inner);
+  // Merge the caller's ref (e.g. the picker's scroll memory) with the
+  // observer's — STABLE, so a re-render never re-attaches the caller's ref
+  // (a re-attach lets a scroll-memory ref restore its saved position).
+  const setRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      inner.current = el;
+      if (typeof refProp === "function") refProp(el);
+      else if (refProp) refProp.current = el;
+    },
+    [refProp]
+  );
   return (
     <div
-      ref={ref}
+      ref={setRef}
       className={cn("scroll-dissolve overflow-y-auto overscroll-contain", className)}
       data-fade={fade || undefined}
       {...rest}

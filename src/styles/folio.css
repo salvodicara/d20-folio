@@ -2253,85 +2253,6 @@ button.pr-dot.lg::before {
   inset: calc((var(--touch-min) - 18px) / -2);
 }
 
-/* ─────────────────────────── EDITING PILL (§ header) ─────────────────────────── */
-/* At rest the pill is a QUIET command (same type spec as `.btn.sm`, secondary
-   ink, no box) so the resting band shows no loud chrome; the gold ceremony below
-   is reserved for the editing STATE (ornament marks state, DESIGN.md §5 ornament
-   vocabulary). Used by the campaign encounter chrome (`party-encounter`). */
-.editpill {
-  all: unset;
-  cursor: pointer;
-  box-sizing: border-box;
-  font-family: var(--font-numeric);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 5px 12px;
-  color: var(--text-secondary);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  transition:
-    background var(--m-fast),
-    color var(--m-fast);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-.editpill .icon {
-  width: 12px;
-  height: 12px;
-  color: var(--text-muted);
-  transition: color var(--m-fast);
-}
-.editpill:hover,
-.editpill:focus-visible {
-  background: color-mix(in oklab, var(--accent-primary) 9%, transparent);
-  color: var(--accent-text);
-}
-.editpill:hover .icon,
-.editpill:focus-visible .icon {
-  color: var(--accent-text);
-}
-.editpill:active {
-  transform: translateY(1px);
-}
-/* Edit mode speaks ONE colour — amber/gold (--edit-accent), the folio voice —
-   NOT --semantic-success (that's reserved for the SaveIndicator; a green "DONE"
-   under an amber band read as two unrelated systems for the same state). The
-   pill is now the SOLE visual edit indicator (the full-width banner is gone), so
-   its dot gently breathes to keep "edit mode active" legible at a glance. */
-/* FILLED amber when editing (was a faint 8% tint that read as "off") so the
-   toggle is an obvious lit state, paired with the content edit-frame. */
-.editpill.editing {
-  color: var(--text-inverse);
-  border-color: color-mix(in oklab, var(--edit-accent) 72%, white);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--edit-accent) 86%, white),
-    var(--edit-accent)
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 0 0 1px color-mix(in oklab, var(--edit-accent) 35%, transparent),
-    0 0 11px color-mix(in oklab, var(--edit-accent) 38%, transparent);
-  position: relative;
-}
-.editpill.editing::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-inverse);
-  display: inline-block;
-  margin-right: 6px;
-  vertical-align: middle;
-}
-[data-motion="auto"] .editpill.editing::before {
-  animation: eb-breathe 2.4s var(--ease-standard) infinite;
-}
-
 /* ─────────────────────────── OVERLAYS (modal · popover · tooltip · toast) ─────────────────────────── */
 .scrim {
   position: fixed;
@@ -2349,16 +2270,14 @@ button.pr-dot.lg::before {
   /* relative seats the reliquary corner overlay (`.modal::after`, the ornament
      vocabulary below) — dialogs are an earned hero register. The modal must NOT
      clip child paint: that would cut the corner fitting, which straddles the
-     frame line (the mask overlay sits at inset -1px). Scroll clipping lives on `.modal-body`
-     (its own overflow-y). The one full-bleed child is `.modal-head` (gradient
+     frame line (the mask overlay sits at inset -1px). Scroll clipping lives on the ModalScroll primitive. The one full-bleed child is `.modal-head` (gradient
      band): it rounds its OWN top corners to the card radius below, so no child
      paint ever overruns the rounded corner arc. */
   position: relative;
   width: 100%;
   max-width: 32rem;
-  background: var(--bg-surface-2);
-  border: 1px solid var(--border-accent);
-  box-shadow: var(--elev-modal);
+  /* Material comes from the `.wb .modal` leather-plate twin (every dialog
+     shell stamps `wb` on its portal overlay) + the elevation restore block. */
 }
 .modal.sm {
   max-width: 24rem;
@@ -2438,9 +2357,9 @@ button.pr-dot.lg::before {
   color: var(--accent-text);
 }
 .modal-body {
-  padding: var(--sp-4) var(--sp-5);
+  /* The scroll + padding live on ModalScroll (the primitive) + the
+     frame's-margin law; only the height cap is this class's own. */
   max-height: 64vh;
-  overflow-y: auto;
 }
 /* The body is a keyboard-focusable scroll region (a11y: it carries tabIndex=0 so
    non-pointer users can reach and arrow-scroll it), NOT an interactive control:
@@ -5441,17 +5360,6 @@ button.trk-pip:active {
 /* The full-width edit-banner was removed — edit mode now speaks ONE calm
    indicator (the header EditingPill, amber/gold), so the band no longer
    double-signals the state or shoves the ribbon/content down on every edit.
-   eb-breathe is retained: it drives the pill's gentle dot pulse. */
-@keyframes eb-breathe {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
 /* ─────────────────────────── TOP APP BAR (global shell) ─────────────────────────── */
 .topbar {
   position: sticky;
