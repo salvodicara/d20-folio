@@ -259,11 +259,23 @@ const EAGER_CEILING_KB = 779; // baseline 727.1 → ~+7% (near budget — see AR
 //     public repo — content-pack-partition.guard.test.ts enforces that.)
 // The SRD-only lane measures 627.87 KB gz eager / 7850.02 KiB precache (282 entries) —
 // smaller, under the same shared ceilings.
-// The ceilings are NOT lowered for this (they are ratchets, not trackers): the freed
-// ~1.4 KB is recorded slack, and EAGER_CEILING_KB stays the regression guard — putting
-// `packMonsters` back on the barrel returns the whole corpus to the eager closure, which at
-// MM wave-2 size (the manifest's remaining 163 statblocks, ~20 KB gz) trips it loudly.
-const PRECACHE_CEILING_KIB = 9055;
+// The EAGER ceiling is NOT lowered for this (ratchets, not trackers): the freed ~1.4 KB is
+// recorded slack, and EAGER_CEILING_KB stays the regression guard — putting `packMonsters`
+// back on the barrel returns the whole corpus to the eager closure, which at MM wave-2 size
+// (the manifest's remaining 163 statblocks, ~20 KB gz) trips it loudly.
+//
+// +11 KiB 2026-07-31 (share-links wave — feat/share-links's OWN feature, NOT the pilot):
+// 9055 → 9066. main ALREADY stepped the ceiling to 9055 for the MM bestiary pilot and then
+// closed the seam above, so its composed base is 9044.04 KiB / 301 entries. The overflow on
+// this branch is the share-links feature's OWN new lazy chunks the PWA precaches —
+// SharedCharacterView, SharePopover, the two `share-*` chunks, invite-code, and the anonymous
+// /view read seam:
+//   precache  9044.04 KiB / 301 entries (main, seam-fixed)  →  9055.07 KiB / 307 entries
+//             (+11.01 KiB, +6 entries — all lazy route/component chunks)
+// EAGER (776.50 KB gz) and ENTRY (61.8 KB gz) are UNCHANGED and stay under their ceilings —
+// the feature added only lazy chunks. Measured 9055.07 KiB (307 entries) on the COMPOSED
+// lane; +~11 KiB never-exact-fit headroom → 9066.
+const PRECACHE_CEILING_KIB = 9066;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
