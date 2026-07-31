@@ -14,7 +14,6 @@
 import { describe, it, expect } from "vitest";
 import {
   localizeChronicleEvent,
-  localizeChronicleFeed,
   chronicleNeedsAttribution,
   buildChronicleChapter,
 } from "@/lib/views/combat-chronicle-view";
@@ -125,24 +124,6 @@ describe("chronicleNeedsAttribution — pending damage only", () => {
     expect(chronicleNeedsAttribution({ ...dmg, attackerId: "pc-mara" })).toBe(false);
     expect(chronicleNeedsAttribution({ ...dmg, attackerSkipped: true })).toBe(false);
     expect(chronicleNeedsAttribution(SAMPLES.down)).toBe(false);
-  });
-});
-
-describe("localizeChronicleFeed — render-ready rows", () => {
-  it("carries id/round/kind + the needsAttribution flag", () => {
-    const rows = localizeChronicleFeed(
-      [SAMPLES["hp-damage"], SAMPLES.down],
-      t,
-      resolveName,
-      resolveCondition
-    );
-    expect(rows[0]).toMatchObject({
-      id: "0",
-      round: 1,
-      kind: "hp-damage",
-      needsAttribution: true,
-    });
-    expect(rows[1]?.needsAttribution).toBe(false);
   });
 });
 

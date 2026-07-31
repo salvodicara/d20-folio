@@ -45,7 +45,8 @@ export function chronicleNeedsAttribution(event: CombatChronicleEvent): boolean 
 
 /**
  * Localize one {@link CombatChronicleEvent} to its display LINE. Exhaustive over every
- * `kind` (a new kind is a compile error via the `never`-typed default).
+ * `kind` — the `string` return type makes a missing case a compile error (a fall-through
+ * would return `undefined`), so a new kind cannot silently render blank.
  */
 export function localizeChronicleEvent(
   event: CombatChronicleEvent,
@@ -98,35 +99,8 @@ export function localizeChronicleEvent(
   }
 }
 
-/** A fully render-ready feed row: its localized line + the pending-attribution flag
- *  (so the live feed shows the one-tap picker on exactly the unattributed hits). */
-export interface ChronicleFeedRow {
-  id: string;
-  round: number;
-  text: string;
-  kind: CombatChronicleEvent["kind"];
-  /** This damage event still needs a "who" (the one-tap picker shows). */
-  needsAttribution: boolean;
-}
-
-/** Localize a whole feed to render-ready rows (one presenter call per event). */
-export function localizeChronicleFeed(
-  events: ReadonlyArray<CombatChronicleEvent>,
-  t: TranslateFn,
-  resolveName: ResolveCombatantName,
-  resolveCondition: ResolveConditionName
-): ChronicleFeedRow[] {
-  return events.map((event) => ({
-    id: event.id,
-    round: event.round,
-    kind: event.kind,
-    text: localizeChronicleEvent(event, t, resolveName, resolveCondition),
-    needsAttribution: chronicleNeedsAttribution(event),
-  }));
-}
-
 /** The localized outcome line (`victory` / neutral `ended`). */
-export function chronicleOutcomeLine(outcome: EncounterOutcome, t: TranslateFn): string {
+function chronicleOutcomeLine(outcome: EncounterOutcome, t: TranslateFn): string {
   return t(
     outcome === "victory"
       ? "combatChronicle.outcomeVictory"
