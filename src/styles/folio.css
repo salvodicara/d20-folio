@@ -20932,7 +20932,8 @@ body:has(.fob) .toast-region {
 
 /* §16.2 — the leather plate: near-black warm, ONE dome of light behind the
    head zone, a two-tone lip (lit top, recessed bottom). */
-.wb .folio-panel {
+.wb .folio-panel,
+.wb .modal {
   background:
     radial-gradient(120% 55% at 50% 18%, rgba(212, 175, 94, 0.08), transparent 62%),
     linear-gradient(180deg, var(--wb-plate), var(--wb-plate-deep));
@@ -20942,7 +20943,8 @@ body:has(.fob) .toast-region {
     inset 0 -1px 0 rgba(0, 0, 0, 0.55),
     0 12px 28px rgba(0, 0, 0, 0.45);
 }
-[data-theme="light"] .wb .folio-panel {
+[data-theme="light"] .wb .folio-panel,
+[data-theme="light"] .wb .modal {
   background:
     radial-gradient(120% 55% at 50% 18%, rgba(107, 84, 36, 0.06), transparent 62%),
     linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
@@ -20951,6 +20953,15 @@ body:has(.fob) .toast-region {
     inset 0 1px 0 rgba(255, 250, 235, 0.7),
     inset 0 -1px 0 rgba(80, 48, 32, 0.18),
     0 10px 24px rgba(80, 48, 32, 0.18);
+}
+
+/* Dialogs are the LEATHER working plate (§16.2 — slate is the ceremony
+   register only), FLOATING: the plate material above + the modal's own
+   deeper elevation in both themes (placed after both twins so it wins).
+   The binding corners already ride `.modal::after`. */
+.wb .modal,
+[data-theme="light"] .wb .modal {
+  box-shadow: var(--elev-modal);
 }
 
 /* §16.3 — the rubric's rule PERFORMS: a hairline fading at both ends, and on

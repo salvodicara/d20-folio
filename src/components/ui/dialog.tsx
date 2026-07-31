@@ -89,7 +89,10 @@ export function DialogContent({
   return (
     <RadixDialog.Portal>
       <RadixDialog.Overlay
-        className={cn("scrim", overlayClassName)}
+        // `wb` — the portal mounts on <body>, OUTSIDE every page's grammar root;
+        // scoping the overlay lets every dialog inherit the WORKED-BRONZE
+        // grammar (owner, 2026-07-31: no surface excluded).
+        className={cn("wb scrim", overlayClassName)}
         {...(excludeFromCapture ? { "data-html2canvas-ignore": "true" } : {})}
       >
         <RadixDialog.Content
