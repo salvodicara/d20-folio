@@ -8,9 +8,10 @@
  * (`tests/rules/firestore-rules.test.ts` → "public share links"); this file cannot see
  * it, because the fetch is mocked here by construction.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router";
+import i18n from "@/i18n";
 import type { CharacterDoc } from "@/types/character";
 
 const { getFullCharacterMock, navigateMock, loadReadonlyMock } = vi.hoisted(() => ({
@@ -62,6 +63,29 @@ describe("SharedCharacterView", () => {
     getFullCharacterMock.mockReset();
     navigateMock.mockReset();
     loadReadonlyMock.mockReset();
+  });
+
+  afterEach(async () => {
+    // Some tests switch the UI locale; restore EN so the rest stay deterministic.
+    if (i18n.language !== "en") await i18n.changeLanguage("en");
+  });
+
+  // The public view is client-rendered in the VIEWER's browser, so — unlike the OG
+  // card, which keys off the OWNER's locale — it follows the VIEWER's active locale
+  // (the app's existing navigator/localStorage i18n bootstrap). Proven by flipping the
+  // active locale and asserting the dead-link chrome renders in it.
+  it("renders the dead-link page in the VIEWER's active locale (IT)", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("it");
+    });
+    getFullCharacterMock.mockResolvedValue(doc(false));
+    renderAt("owner-1", "char-1");
+    expect(
+      await screen.findByText("Questo personaggio non è più condiviso")
+    ).toBeInTheDocument();
+    // MUTATION PROOF — the EN string is ABSENT, so it is the viewer locale (not a
+    // hardcoded English fallback) that drives the chrome.
+    expect(screen.queryByText("This character is no longer shared")).toBeNull();
   });
 
   it("renders the read-only sheet for a shared character", async () => {
