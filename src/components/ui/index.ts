@@ -30,7 +30,6 @@ export {
 } from "./input";
 export { Badge, type BadgeProps, type BadgeVariant, type BadgeSize } from "./badge";
 export { MagicMark, FocusMark, type MarkProps, type FocusMarkProps } from "./folio-marks";
-export { EditingPill, type EditingPillProps } from "./editing-pill";
 export { Spinner, type SpinnerProps, type SpinnerSize } from "./spinner";
 export {
   Switch,

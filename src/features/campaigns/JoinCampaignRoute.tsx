@@ -34,7 +34,7 @@ export function JoinCampaignRoute() {
 
   if (error) {
     return (
-      <main id="main" className="mx-auto w-full max-w-3xl px-4 py-12">
+      <main id="main" className="wb page-shell max-w-3xl py-12">
         <RunicEmptyState
           className="on-art-scope"
           glyph={Compass}

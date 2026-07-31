@@ -49,7 +49,7 @@ function AdminSheet({ uid, charId }: { uid: string; charId: string }) {
   // The SAME compact read-only header row MemberSheetView floats on the backdrop art:
   // a ghost back button inline-left, a quiet "Read-only" status chip inline-right.
   return (
-    <div className="flex flex-col">
+    <div className="wb flex flex-col">
       <div className="on-art-scope mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-2 px-4 pt-4">
         <Button variant="ghost" size="sm" onClick={() => void navigate("/admin")}>
           <Icon as={ArrowLeft} size="sm" decorative />

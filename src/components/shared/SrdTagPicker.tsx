@@ -231,7 +231,9 @@ export function SrdTagPicker({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-lg border border-border bg-bg-secondary shadow-lg">
+        <div // The ONE floating-surface recipe (`.popover`) instead of a hand-rolled card.
+          className="popover absolute left-0 top-full mt-1 w-full max-w-none"
+        >
           <div className="max-h-48 overflow-y-auto">
             {filtered.map((opt) => (
               <button

@@ -116,7 +116,7 @@ export function RosterPage() {
   return (
     // tabIndex=-1 so it can be a programmatic focus target (the focus-restore
     // fallback when the Select trigger is gone, e.g. the roster emptied out).
-    <main id="main" tabIndex={-1} className="page-shell py-8">
+    <main id="main" tabIndex={-1} className="wb page-shell py-8">
       {/* The roster uses the SAME canonical <PageHeader> as every other hub
           (Campaigns, Compendium, Settings) so the realms read as one consistent
           surface — title + hint on the left, primary actions on the right. The brand

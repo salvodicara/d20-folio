@@ -72,7 +72,7 @@ export function LegalPage() {
   // because that anchor sits below the fold on tall pages (D4 exception).
   const goBack = useBackWithFallback("/");
   return (
-    <main id="main" className="page-shell py-8">
+    <main id="main" className="wb page-shell py-8">
       <PageHeader
         as="h1"
         framed

@@ -164,7 +164,7 @@ function MemberSheet({
   // opts IN to the on-art gilt treatment in light theme (`.on-art`); the read-only
   // chip is its own carved surface and takes nothing.
   return (
-    <div className="flex flex-col">
+    <div className="wb flex flex-col">
       <div className="on-art-scope mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-2 px-4 pt-4">
         <Button
           variant="ghost"

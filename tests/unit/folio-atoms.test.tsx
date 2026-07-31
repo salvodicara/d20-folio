@@ -21,7 +21,6 @@ import {
   Badge,
   MagicMark,
   FocusMark,
-  EditingPill,
   Switch,
   Checkbox,
   RadioGroup,
@@ -321,32 +320,6 @@ describe("Folio marks", () => {
     const { container } = render(<FocusMark label="Concentrating" />);
     expect(container.querySelectorAll("circle")).toHaveLength(2);
     expect(screen.getByRole("img", { name: "Concentrating" })).toBeInTheDocument();
-  });
-});
-
-// ─── EditingPill ───────────────────────────────────────────────────────────────
-
-describe("EditingPill", () => {
-  it("toggles labels + aria-pressed and fires onToggle", () => {
-    const onToggle = vi.fn();
-    const { rerender } = render(
-      <EditingPill
-        editing={false}
-        onToggle={onToggle}
-        editLabel="Edit"
-        editingLabel="Editing"
-      />
-    );
-    const pill = screen.getByRole("button", { name: "Edit" });
-    expect(pill).toHaveAttribute("aria-pressed", "false");
-    fireEvent.click(pill);
-    expect(onToggle).toHaveBeenCalledOnce();
-    rerender(
-      <EditingPill editing onToggle={onToggle} editLabel="Edit" editingLabel="Editing" />
-    );
-    const editing = screen.getByRole("button", { name: "Editing" });
-    expect(editing).toHaveAttribute("aria-pressed", "true");
-    expect(editing).toHaveClass("editing");
   });
 });
 

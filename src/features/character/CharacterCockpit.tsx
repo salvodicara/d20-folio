@@ -168,7 +168,7 @@ export function CockpitView() {
   // recoverable not-found (the NotFoundPage idiom) instead of a broken blank HUD.
   if (!hasCharacter) {
     return (
-      <main id="main" className="mx-auto w-full max-w-7xl px-4 py-12">
+      <main id="main" className="wb mx-auto w-full max-w-7xl px-4 py-12">
         <RunicEmptyState
           glyph={Compass}
           title={t("character.notFound")}

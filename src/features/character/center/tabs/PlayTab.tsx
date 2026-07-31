@@ -34,6 +34,7 @@ import { CollapsibleSearch } from "@/components/shared/CollapsibleSearch";
 import { HealRollEntry } from "@/components/shared/HealRollEntry";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
+import { InfoCard } from "@/components/shared/InfoCard";
 import { NumberStepper } from "@/components/ui/input";
 import { weaponSealIcon, magicItemSealIcon } from "@/components/shared/item-icons";
 import { getMagicItem } from "@/data/magic-items";
@@ -1105,9 +1106,9 @@ export function PlayTab() {
 
       {/* ── Empty state — one honest message when the filter surfaces nothing ── */}
       {viewEmpty && (
-        <div className="rounded-lg border border-border bg-bg-secondary p-4 text-center text-sm text-text-secondary">
+        <InfoCard className="p-4 text-center text-sm text-text-secondary">
           {t("combat.noActions")}
-        </div>
+        </InfoCard>
       )}
 
       {/* Action Log (low priority, below cards) */}

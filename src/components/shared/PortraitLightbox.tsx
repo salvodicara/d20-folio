@@ -58,7 +58,7 @@ export function PortraitLightbox({ open, src, name, onClose }: Props) {
             A backdrop click closes; the image stops propagation so clicking it does
             not. */}
         <RadixDialog.Content
-          className="fixed inset-0 flex flex-col items-center justify-center bg-[var(--scrim-heavy)] motion-safe:animate-[fadeIn_150ms_ease]"
+          className="wb on-art-scope fixed inset-0 flex flex-col items-center justify-center bg-[var(--scrim-heavy)] motion-safe:animate-[fadeIn_150ms_ease]"
           style={{ zIndex: "var(--z-modal)" }}
           onClick={onClose}
           // The visible caption + the sr-only Title name the dialog; no separate
@@ -76,7 +76,8 @@ export function PortraitLightbox({ open, src, name, onClose }: Props) {
               e.stopPropagation();
               onClose();
             }}
-            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            // The dialogs' own close affordance — one close vocabulary app-wide.
+            className="modal-close absolute right-4 top-4"
             aria-label={t("common.close")}
           >
             <X className="h-5 w-5" />
@@ -87,13 +88,15 @@ export function PortraitLightbox({ open, src, name, onClose }: Props) {
             src={src}
             alt={name}
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[85dvh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
+            // A mounted folio plate, not a floating web card: gilt edge + the modal
+            // elevation tokens instead of rounded-2xl/shadow-2xl.
+            className="max-h-[85dvh] max-w-[90vw] rounded-[var(--radius-lg)] border border-border-accent object-contain shadow-[var(--elev-modal)]"
             draggable={false}
           />
 
           {/* Caption */}
           {name && (
-            <p className="mt-4 font-display text-base font-semibold text-white/80">
+            <p className="mt-4 font-display text-base font-semibold text-text-primary">
               {name}
             </p>
           )}

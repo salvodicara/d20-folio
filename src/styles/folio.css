@@ -4177,22 +4177,6 @@ button.pr-dot.lg::before {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
-/* Level-Up button — same ghost chrome in both play AND edit modes so it never
-   reads as a conflicting "loud CTA" in either state. A subtle verdigris border
-   tint marks it as the "progression" action (distinct from the EditingPill which
-   handles the play/edit toggle). */
-/* SaveIndicator — uses the explicit colorClass from the component; the quiet
-   modifier (when saved = expected state) reduces to a near-invisible icon
-   that doesn't compete with or clash against the primary header CTAs. */
-.save-ind {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-family: var(--font-numeric);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  transition: opacity var(--m-normal) var(--ease-standard);
-}
 /* When saved (ambient/expected state): muted neutral, barely visible — a
    passive signal like Google Drive's quiet cloud-check, not a status badge
    that fights for attention next to Level Up and Edit. */

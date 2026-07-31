@@ -23,7 +23,7 @@ export function NotFoundPage() {
   const navigate = useNavigate();
 
   return (
-    <main id="main" className="page-shell on-art-scope py-8">
+    <main id="main" className="wb page-shell on-art-scope py-8">
       <RunicEmptyState
         glyph={Compass}
         eyebrow={t("notFound.eyebrow")}

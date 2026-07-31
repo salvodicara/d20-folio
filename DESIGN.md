@@ -1074,6 +1074,14 @@ Selecting a tab that sits past the edge REVEALS it by scrolling only the strip's
 (the same anti-jump seam backs the compendium `.cmp-ribbon`). The same one tab primitive serves the
 campaign hub if it adopts tabbed IA — never re-roll a second tab look.
 
+**The grammar reaches every surface (owner, 2026-07-31 — "niente escluso"):** every page root AND
+every PORTAL root carries the `wb` scope — portals (dialogs, popovers, tooltips, toasts) mount on
+`<body>` outside the page roots, so each portal wrapper declares the scope itself (DialogContent,
+ModalShell, PopoverContent, Tooltip, the toast region, the portrait lightbox). Dialogs are the
+LEATHER working plate (`.wb .modal` twins `.wb .folio-panel` — §16.2: slate stays the ceremony
+register) with the modal's own deeper elevation; the lightbox and every floating list speak the
+`.popover`/`.modal-close` vocabulary — no hand-rolled overlay surfaces.
+
 **Symmetric tail (owner, 2026-07-31):** the content column breathes the SAME 12 px at both ends —
 `.content`'s `pt-3` above the strip is mirrored by `TabBody`'s `pb-3` below the last row of every
 tab. Between-section rhythm (`.mb-6` wrappers, `.info-card`'s default trailing margin, a collapsed

@@ -89,7 +89,7 @@ export function SettingsPage() {
   const identityName = displayName ?? email ?? t("settings.noIdentity");
 
   return (
-    <main id="main" className="page-shell py-8">
+    <main id="main" className="wb page-shell py-8">
       <PageHeader as="h1" crest title={t("nav.settings")} hint={t("settings.hint")} />
 
       {/* The framed header spans the shared page-shell width (consistent with every

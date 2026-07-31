@@ -53,7 +53,7 @@ export function PopoverContent({
   return (
     <RadixPopover.Portal>
       <RadixPopover.Content
-        className={cn("popover", className)}
+        className={cn("wb popover", className)}
         sideOffset={sideOffset}
         {...props}
       >

@@ -45,7 +45,7 @@ export function Tooltip({
       <RadixTooltip.Trigger asChild>{children}</RadixTooltip.Trigger>
       <RadixTooltip.Portal>
         <RadixTooltip.Content
-          className={cn("tooltip", className)}
+          className={cn("wb tooltip", className)}
           side={side}
           align={align}
           sideOffset={6}

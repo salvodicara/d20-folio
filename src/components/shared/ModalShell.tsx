@@ -98,8 +98,9 @@ export function ModalShell({
     >
       <RadixDialog.Portal>
         {/* The `.scrim` centres the card (display:grid place-items:center) and
-            carries the backdrop — same structure as `ui/dialog.tsx`. */}
-        <RadixDialog.Overlay className={cn("scrim", scrimClassName)}>
+            carries the backdrop — same structure as `ui/dialog.tsx`, `wb`
+            included: portals mount outside every page's grammar root. */}
+        <RadixDialog.Overlay className={cn("wb scrim", scrimClassName)}>
           <RadixDialog.Content
             className={cn(
               // `.modal` brings the carved frame, gold-gradient head ground, accent

@@ -259,7 +259,7 @@ export function AdminPage() {
     return (
       <main
         id="main"
-        className="flex min-h-[70vh] items-center justify-center px-4 py-12"
+        className="wb page-shell flex min-h-[70vh] items-center justify-center py-12"
       >
         <RunicEmptyState
           glyph={ShieldOff}
@@ -294,7 +294,7 @@ export function AdminPage() {
   const { member: campaignsByUser, dm: dmByUser } = campaignTallies(campaigns);
 
   return (
-    <main id="main" className="page-shell on-art-scope py-8">
+    <main id="main" className="wb page-shell on-art-scope py-8">
       <PageHeader
         as="h1"
         crest

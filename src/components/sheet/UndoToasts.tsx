@@ -30,7 +30,7 @@ export function UndoToasts() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="toast-region" role="status" aria-live="polite">
+    <div className="wb toast-region" role="status" aria-live="polite">
       {toasts.map((toast) => (
         <ToastItem
           key={toast.id}

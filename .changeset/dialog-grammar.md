@@ -2,7 +2,11 @@
 "d20-folio": patch
 ---
 
-Every dialog inherits the WORKED-BRONZE grammar: the shared dialog portal
-carries the `wb` scope (portals mount outside the page roots, so no dialog
-ever received it), and the modal surface twins the leather working plate —
-one definition with the panels, plus the modal's own deeper elevation.
+The grammar reaches every user-visible surface: both dialog shells, popovers,
+tooltips, toasts, and the portrait lightbox carry the `wb` scope on their
+portal roots (portals mount outside every page's grammar root), dialogs
+become the leather working plate (one definition with the panels), and the
+remaining pages (roster, settings, admin, legal, 404, join, viewer wrappers,
+the cockpit not-found branch) join the scope. The portrait lightbox and the
+tag-picker dropdown drop their hand-rolled surfaces for the folio close and
+popover recipes; the dead EditingPill export is gone.
