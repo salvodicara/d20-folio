@@ -54,6 +54,7 @@ import {
   type KeyboardEvent,
   type SVGProps,
 } from "react";
+import { ModalScroll } from "@/components/ui/modal-head";
 import { useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
@@ -815,11 +816,11 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       />
 
       {flat.length > 0 ? (
-        <div
+        <ModalScroll
           id={listboxId}
           role="listbox"
           aria-label={t("palette.title")}
-          className="palette-results mt-3 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto"
+          className="palette-results mt-3 flex min-h-0 flex-1 flex-col gap-3"
         >
           {(() => {
             let gi = -1;
@@ -868,7 +869,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
               </div>
             ));
           })()}
-        </div>
+        </ModalScroll>
       ) : (
         <div className="mt-6 flex flex-1 flex-col items-center justify-center gap-2 py-6 text-center">
           <Icon as={SearchX} size="lg" decorative className="text-text-secondary" />

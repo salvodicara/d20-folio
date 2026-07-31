@@ -20,6 +20,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { ModalScroll } from "@/components/ui/modal-head";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { SearchField } from "@/components/shared/SearchField";
@@ -150,8 +151,8 @@ export function DivineInterventionModal({
             {t("common.noResults")}
           </p>
         ) : (
-          <div
-            className="cl-opts max-h-[50vh] overflow-y-auto"
+          <ModalScroll
+            className="cl-opts max-h-[50vh]"
             role="list"
             aria-label={t("combat.divineInterventionTitle")}
           >
@@ -187,7 +188,7 @@ export function DivineInterventionModal({
                 </button>
               );
             })}
-          </div>
+          </ModalScroll>
         )}
       </div>
     </ModalShell>

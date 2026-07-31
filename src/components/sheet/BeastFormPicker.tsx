@@ -22,6 +22,7 @@
  * creature is always visible without scrolling past the whole list.
  */
 import { useMemo, useState } from "react";
+import { ModalScroll } from "@/components/ui/modal-head";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { Segmented } from "@/components/ui/segmented";
@@ -224,7 +225,7 @@ export function BeastFormPicker({
             </p>
           </div>
         ) : (
-          <div className="cl-opts min-h-0 flex-1 overflow-y-auto" role="list">
+          <ModalScroll className="cl-opts min-h-0 flex-1" role="list">
             {rows.map((r) => (
               <button
                 key={r.beast.id}
@@ -247,7 +248,7 @@ export function BeastFormPicker({
                 </span>
               </button>
             ))}
-          </div>
+          </ModalScroll>
         )}
 
         {mode === "reference" && selected && (

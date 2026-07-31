@@ -11,7 +11,7 @@
  *
  * It keeps its own fixed-height flex API on top of Radix: the `.modal` Content is
  * a flex column at a fixed height so a child results region with
- * `flex-1 overflow-y-auto` scrolls correctly (the plain `Dialog` scrolls its whole
+ * `flex-1 ModalScroll region` scrolls correctly (the plain `Dialog` scrolls its whole
  * `.modal-body` instead) — that's why this primitive stays distinct from `Dialog`.
  * It renders the SAME owner-approved overlay vocabulary (carved `.modal` card,
  * gold-gradient `.modal-head` with a diamond `.modal-rubric` + Cinzel
@@ -105,7 +105,7 @@ export function ModalShell({
             className={cn(
               // `.modal` brings the carved frame, gold-gradient head ground, accent
               // border, modal elevation + lapidary radius; these layout utilities add
-              // the tall flex column the list/detail bodies (`flex-1 overflow-y-auto`)
+              // the tall flex column the list/detail bodies (`ModalScroll` columns)
               // scroll inside — capped so it never exceeds the viewport. `compact`
               // drops the fixed height so short dialogs hug their content.
               "modal flex w-full flex-col max-h-[88vh]",

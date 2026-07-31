@@ -14,6 +14,7 @@
  */
 
 import { useState } from "react";
+import { ModalScroll } from "@/components/ui/modal-head";
 import { useTranslation } from "react-i18next";
 import { Plus, Check } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -136,7 +137,7 @@ export function CustomSpellForm({ onCreated, libraryEdit }: CustomSpellFormProps
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <ModalScroll className="flex-1">
         <div className="mb-4 text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">
           {libraryEdit ? t("custom.editSpell") : t("custom.createSpell")}
         </div>
@@ -254,7 +255,7 @@ export function CustomSpellForm({ onCreated, libraryEdit }: CustomSpellFormProps
             />
           </FormField>
         </div>
-      </div>
+      </ModalScroll>
 
       <div className="border-t border-border px-4 py-3">
         <Button onClick={handleCreate} disabled={!name.trim()} block>
@@ -403,7 +404,7 @@ export function CustomEquipmentForm({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <ModalScroll className="flex-1">
         <div className="mb-4 text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">
           {libraryEdit ? t("custom.editEquipment") : t("custom.createEquipment")}
         </div>
@@ -585,7 +586,7 @@ export function CustomEquipmentForm({
             </>
           )}
         </div>
-      </div>
+      </ModalScroll>
 
       <div className="border-t border-border px-4 py-3">
         <Button onClick={handleCreate} disabled={!name.trim()} block>
@@ -696,7 +697,7 @@ export function CustomFeatureForm({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <ModalScroll className="flex-1">
         <div className="mb-4 text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">
           {isEditing || libraryEdit ? t("custom.editFeature") : t("custom.createFeature")}
         </div>
@@ -772,7 +773,7 @@ export function CustomFeatureForm({
             </div>
           )}
         </div>
-      </div>
+      </ModalScroll>
 
       <div className="border-t border-border px-4 py-3">
         <Button onClick={handleSubmit} disabled={!title.trim()} block>

@@ -35,6 +35,7 @@
  */
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { ModalScroll } from "@/components/ui/modal-head";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, PencilLine, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -384,7 +385,7 @@ export function CustomTabBody({
         onChange={setSearch}
         placeholder={t("custom.librarySearch")}
       />
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <ModalScroll className="flex-1">
         {rows.length === 0 ? (
           <p className="py-6 text-center text-[0.72rem] italic text-text-secondary">
             {t("common.noResults")}
@@ -435,7 +436,7 @@ export function CustomTabBody({
             })}
           </ul>
         )}
-      </div>
+      </ModalScroll>
       <div className="border-t border-border px-4 py-3">
         <Button variant="secondary" block onClick={() => setCreating(true)}>
           <Icon as={Plus} size="sm" decorative />

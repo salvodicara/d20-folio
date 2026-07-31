@@ -14,4 +14,8 @@ margin law: one uniform safe field (sp-6) between content and the frame on
 the sides and at the tail — rows keep a professional distance from the
 binding-corner spandrels — while the scroll edges DISSOLVE (the tab ribbons'
 mask vocabulary, vertical) so mid-scroll rows melt before the frame and the
-fade lifts at the end of the list.
+fade lifts at the end of the list. ONE scroll primitive (`ModalScroll`) now
+owns every dialog's scrolling — seven hand-rolled scrollers (beast form,
+divine intervention, custom-creation forms, homebrew library, familiar
+detail, the command palette) migrated onto it, and a guard test forbids raw
+vertical scrollers in dialog code forever.

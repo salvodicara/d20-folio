@@ -103,16 +103,22 @@ export function ModalBody({
     // least-code correct form: the rule fires on any scrollable region, and a
     // non-scrolling body costing one extra tab stop is harmless. Callers may
     // still override it via `...rest` (e.g. a body that manages its own focus).
-    <DissolvingScroll className={cn("modal-body", className)} tabIndex={0} {...rest}>
+    <ModalScroll className={cn("modal-body", className)} tabIndex={0} {...rest}>
       {children}
-    </DissolvingScroll>
+    </ModalScroll>
   );
 }
 
-/** Shared scroll wrapper: the vertical edge-dissolve (content melts before the
- *  modal's binding corners — owner, 2026-07-31) via the same overflow observer
- *  as the tab ribbons. */
-function DissolvingScroll({
+/**
+ * ModalScroll — THE one dialog scroll primitive (owner, 2026-07-31: every
+ * dialog scrolls the same way, no exceptions). Carries the vertical
+ * edge-dissolve (content melts before the modal's binding corners, same
+ * observer as the tab ribbons) and inherits the frame's-margin law
+ * (`.modal .scroll-dissolve`, folio.css). `ModalBody` and `ModalScrollColumn`
+ * compose it; any bespoke dialog body must use one of the three — the
+ * modal-scroll guard test enforces it.
+ */
+export function ModalScroll({
   className,
   children,
   ...rest
@@ -122,7 +128,7 @@ function DissolvingScroll({
   return (
     <div
       ref={ref}
-      className={cn("scroll-dissolve", className)}
+      className={cn("scroll-dissolve overflow-y-auto overscroll-contain", className)}
       data-fade={fade || undefined}
       {...rest}
     >
@@ -150,16 +156,16 @@ export function ModalScrollColumn({
   ...rest
 }: ComponentPropsWithoutRef<"div">) {
   return (
-    <DissolvingScroll
+    <ModalScroll
       tabIndex={0}
       className={cn(
-        "flex-1 overflow-y-auto overscroll-contain focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-accent",
+        "flex-1 focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-accent",
         className
       )}
       {...rest}
     >
       {children}
-    </DissolvingScroll>
+    </ModalScroll>
   );
 }
 

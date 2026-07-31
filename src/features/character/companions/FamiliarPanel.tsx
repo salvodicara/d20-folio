@@ -16,6 +16,7 @@
  */
 
 import { Suspense, lazy, useState } from "react";
+import { ModalScroll } from "@/components/ui/modal-head";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/shared/ModalShell";
@@ -164,12 +165,12 @@ export function FamiliarPanel({ formIds }: FamiliarPanelProps) {
         size="md"
       >
         {form && (
-          // `min-h-0 flex-1 overflow-y-auto` — the scroll column ModalShell
+          // `min-h-0 flex-1` ModalScroll — the scroll column ModalShell
           // expects from its children (its own frame clips overflow), so the
           // action row below a tall stat block stays reachable on short
           // viewports (the a11y sweep caught the dismiss/change-form buttons
           // unreachable without it).
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+          <ModalScroll className="flex min-h-0 flex-1 flex-col gap-3">
             <MonsterStatBlockCard
               monster={{ ...form, type: familiar.creatureType, typeTags: undefined }}
               locale={locale}
@@ -219,7 +220,7 @@ export function FamiliarPanel({ formIds }: FamiliarPanelProps) {
                 {t("familiar.dismissForever")}
               </Button>
             </div>
-          </div>
+          </ModalScroll>
         )}
       </ModalShell>
 
