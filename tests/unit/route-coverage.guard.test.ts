@@ -127,13 +127,17 @@ function parseRouterRoutes(src: string): string[] {
 const NOT_FOUND_PROBE = "/this-page-does-not-exist";
 
 /** Concretise a route pattern the way the harness navigates it: `:characterId` /
- *  `:campaignId` resolve as `mock-1`; the T4 member-sheet `:memberUid` resolves as
- *  `member-mara` (a dev-fixture campaign member with an attached fixture sheet). */
+ *  `:campaignId` / the share link's `:charId` resolve as `mock-1`; the T4
+ *  member-sheet `:memberUid` resolves as `member-mara` (a dev-fixture campaign
+ *  member with an attached fixture sheet); the share link's owner `:uid` resolves as
+ *  `dev-uid` (bypass reads no owner, so any value navigates). */
 function concretise(route: string): string {
   return route
     .replace(/:characterId/g, "mock-1")
     .replace(/:campaignId/g, "mock-1")
-    .replace(/:memberUid/g, "member-mara");
+    .replace(/:memberUid/g, "member-mara")
+    .replace(/:charId/g, "mock-1")
+    .replace(/:uid/g, "dev-uid");
 }
 
 /** A surface covers a route iff its (already-concrete) `route` equals the

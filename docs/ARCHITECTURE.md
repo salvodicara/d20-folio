@@ -1507,7 +1507,11 @@ share collection, no mirror copy, no token table, no expiry, no server. The mode
 - **The secret is the path.** The link is `/view/{uid}/{charId}` — literally the document's Firestore
   address. The auto-generated doc id is the unguessable half (the same "the unguessable id IS the
   grant" model the campaign invite code already uses), so nothing has to be minted, stored, or
-  rotated.
+  rotated. The route is `/view/:uid/:charId` (`src/features/character/SharedCharacterView.tsx`),
+  mounted in the PUBLIC `AppShell` block beside `/legal` — outside `AuthGuard`, inside the chrome. It
+  carries BOTH ids because a Firestore document is addressed by its full path; resolving a bare
+  character id would need a collection-group query, an index and a broader rules grant, all of which
+  the doc-path URL makes unnecessary.
 - **The grant.** `firestore.rules` gives the character document one extra arm:
   `allow get: if resource.data.get("shared", false) == true` — with NO auth predicate, because the
   entire point is a viewer with no account. It is `get`, deliberately never `read`: rules are not
@@ -1529,8 +1533,21 @@ share collection, no mirror copy, no token table, no expiry, no server. The mode
 - **Portraits already work anonymously.** `portraitUrl` is a `getDownloadURL()` token URL, which
   bypasses `storage.rules` by construction — so `storage.rules` needs no change and gains no public
   arm.
-- **Cost.** An anonymous view is one billed document read. At this scale that is free-tier noise, and
-  SAFE-01 (the £1 kill switch) is the standing backstop.
+- **The view reuses everything.** `SharedCharacterView` owns only the fetch, three states, and the
+  noindex; the sheet itself is the SAME `CockpitView` the owner, the DM viewer and the admin viewer
+  render, loaded through `characterStore.loadReadonly` so the `readonly` flag (glass-case CSS + the
+  store's write guards + the Binder's Fob self-gate) makes it read-only by construction — there is no
+  second, "public" sheet to keep in step. The flag is re-checked CLIENT-side too, so the OWNER opening
+  their own revoked link sees the same honest dead-link page a stranger gets (their owner read arm
+  would otherwise hand them the sheet). A dead link — revoked, deleted, denied, or offline — resolves
+  to ONE quiet page, never four.
+- **noindex.** The route injects `<meta name="robots" content="noindex, nofollow">` while mounted and
+  removes it on unmount. A static tag in `index.html` would deindex the whole app, and there is no
+  server to vary the response per route; Google renders JS and honours a tag injected this way. The
+  belt to that pair of braces is that a share URL is unguessable and linked from nowhere.
+- **Cost.** An anonymous view is one billed document read — a ONE-SHOT `getFullCharacter`, never a
+  listener (a public viewer has no use for one). At this scale that is free-tier noise, and SAFE-01
+  (the £1 kill switch) is the standing backstop.
 
 ### Non-nullability invariant — an empty character name is UNREPRESENTABLE
 

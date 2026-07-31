@@ -90,6 +90,14 @@ const SettingsPage = lazy(() =>
 const LegalPage = lazy(() =>
   import("./routes/legal").then((m) => ({ default: m.LegalPage }))
 );
+// The PUBLIC read-only sheet behind a character share link. Lazy for the same
+// reason the cockpit is: it pulls the whole sheet body + the SRD resolver, which
+// must never weigh on the eager bundle every cold start pays for.
+const SharedCharacterView = lazy(() =>
+  import("@/features/character/SharedCharacterView").then((m) => ({
+    default: m.SharedCharacterView,
+  }))
+);
 // DEV-ONLY living type specimen of the Gilded Plate system (BG3-identity
 // epic) — lazy like every route; the prod branch is a stub so Rolldown drops
 // the chunk from production builds entirely.
@@ -131,6 +139,17 @@ const router = createBrowserRouter(
       <Route element={<AppShell />}>
         <Route errorElement={<RouteErrorBoundary variant="region" />}>
           <Route path="/legal" element={<LegalPage />} />
+          {/* A character share link. PUBLIC by design — the viewer has no account
+              (that is the feature), and the server-side grant is the character
+              doc's own `shared` flag, so this route enforces nothing: a link to an
+              unshared/revoked/deleted character simply resolves to the one quiet
+              "no longer shared" page. Same reasoning as /legal for living inside
+              the shell. Its path carries BOTH ids because a Firestore document is
+              addressed by its full path — there is no way to resolve a bare
+              character id without a collection-group query, an index, and a
+              broader rules grant, all of which the doc-path URL makes unnecessary
+              (`docs/ARCHITECTURE.md` → "Public share links"). */}
+          <Route path="/view/:uid/:charId" element={<SharedCharacterView />} />
         </Route>
       </Route>
 

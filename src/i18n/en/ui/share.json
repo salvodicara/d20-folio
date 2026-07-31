@@ -1,0 +1,7 @@
+{
+  "share": {
+    "unavailableTitle": "This character is no longer shared",
+    "unavailableBlurb": "The link may have been revoked, or the character may have been deleted. Ask whoever sent it for a fresh link.",
+    "unavailableCta": "Go to d20 Folio"
+  }
+}

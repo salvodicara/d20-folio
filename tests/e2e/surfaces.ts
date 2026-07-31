@@ -183,6 +183,15 @@ async function readyByAlert(page: Page): Promise<void> {
   await page.getByRole("alert").first().waitFor({ timeout: 15000 });
 }
 
+/** Wait for a shared `RunicEmptyState` hero to paint, anchored on its title's
+ *  STRUCTURAL class rather than its copy — every empty/dead-end state in the app
+ *  renders through that one primitive, so this is locale-invariant by construction
+ *  (the alternative, matching the translated title, breaks the IT half of the
+ *  matrix the moment the copy changes). */
+async function readyByEmptyState(page: Page): Promise<void> {
+  await page.locator(".es-title").first().waitFor({ timeout: 15000 });
+}
+
 /** The creation wizard (re-mounted) has painted when its mode chooser shows.
  *  Bound widened 10s → 30s after the `create-guided-background [it]` full-suite
  *  flake (2026-06-12, green in isolation): this anchor covers the whole app BOOT
@@ -759,6 +768,14 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   // every other surface (owner 2026-07-07). The realm bottom-nav IS present, so it is
   // NOT shellless and the m-nav assertion applies (see src/app/router.tsx).
   "legal-page": { edit: false, ready: readyByH1 },
+  // The PUBLIC share-link sheet — the read-only cockpit as a stranger with no
+  // account sees it. Same `readyByName` anchor as the owner cockpit (the mock's
+  // proper noun, never translated): the name present ⇒ the sheet body painted, so
+  // the baseline is proof the shared render path works, not just the chrome.
+  "shared-character": { edit: false, ready: readyByName },
+  // Its dead-link twin (the reserved dev id `revoked`): the quiet "no longer
+  // shared" page. Anchored structurally on the shared empty-state hero.
+  "shared-character-revoked": { edit: false, ready: readyByEmptyState },
   // 404 page (C1). Anchored on the "404" eyebrow — identical EN+IT, so the
   // ready text is locale-stable across the matrix.
   "not-found": { edit: false, ready: readyText(/404/) },

@@ -186,6 +186,14 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   { slug: "compendium-monster-entry", route: "/compendium?type=monster&sel=mimic" },
   { slug: "settings-page", route: "/settings" }, // settings page
   { slug: "legal-page", route: "/legal" }, // legal & attribution (linked from the footer)
+  // The PUBLIC share-link sheet + its dead-link twin. Both are genuinely
+  // ACCOUNT-LESS surfaces in production, so they earn their own baselines: the
+  // read-only cockpit rendered for a stranger, and the quiet "no longer shared"
+  // page a revoked link lands on. Under dev-bypass the ids resolve through the
+  // fixture/scenario seam (`resolveDevDoc`), with the reserved id `revoked`
+  // standing for a link that no longer resolves.
+  { slug: "shared-character", route: "/view/dev-uid/mock-1" },
+  { slug: "shared-character-revoked", route: "/view/dev-uid/revoked" },
   // 404 catch-all (C1). The probe path is an unknown route the `path="*"` route
   // resolves to the recoverable NotFoundPage; the route-coverage guard maps the
   // catch-all to this single surface.
