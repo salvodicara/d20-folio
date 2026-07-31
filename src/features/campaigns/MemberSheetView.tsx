@@ -27,7 +27,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useNavigate, useParams } from "react-router";
-import { AlertTriangle, ArrowLeft, Eye } from "lucide-react";
+import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
@@ -156,16 +156,15 @@ function MemberSheet({
     return <FolioLoader variant="region" />;
   }
 
-  // The SAME cockpit body the owner sees — read-only. ONE compact header row
-  // carries both affordances (owner 2026-06-12: never two stacked rows): the
-  // back button inline-left, and a quiet "Read-only" status chip inline-right
-  // (the reused `.toolbar-chip` recipe) whose title carries the full sentence.
-  // The row floats DIRECTLY on the backdrop art (no card), so the ghost back button
-  // opts IN to the on-art gilt treatment in light theme (`.on-art`); the read-only
-  // chip is its own carved surface and takes nothing.
+  // The SAME cockpit body the owner sees — read-only. The header row carries just
+  // the back button now: the read-only marker moved ONTO the sheet header's identity
+  // line (the app-wide `.ro-pill`, inside CombatHeader), so the read-only sheet is
+  // structurally identical to the editable one — no read-only row of its own (owner
+  // 2026-07-31). The row floats DIRECTLY on the backdrop art (no card), so the ghost
+  // back button opts IN to the on-art gilt treatment in light theme (`.on-art`).
   return (
     <div className="wb flex flex-col">
-      <div className="on-art-scope mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-2 px-4 pt-4">
+      <div className="on-art-scope mx-auto flex w-full max-w-7xl flex-wrap items-center gap-2 px-4 pt-4">
         <Button
           variant="ghost"
           size="sm"
@@ -175,10 +174,6 @@ function MemberSheet({
           <Icon as={ArrowLeft} size="sm" decorative />
           {t("dmView.backToCampaign")}
         </Button>
-        <span role="status" className="toolbar-chip">
-          <Icon as={Eye} size="sm" decorative />
-          {t("dmView.readonly")}
-        </span>
       </div>
       <CockpitView />
     </div>

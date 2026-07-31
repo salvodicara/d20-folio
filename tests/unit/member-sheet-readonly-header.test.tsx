@@ -1,11 +1,13 @@
 /**
- * MemberSheetView — the DM read-only viewer's header row (owner 2026-06-12).
+ * MemberSheetView — the DM read-only viewer's header (owner 2026-06-12, 2026-07-31).
  *
- * Regression: the view used to stack TWO rows — a back-button row AND a
- * full-width read-only banner inside the cockpit. It must render ONE compact
- * row: the back button inline-left and a slim read-only status chip (the reused
- * `.toolbar-chip` recipe) inline-right — never a second banner row, and (since
- * post-sweep C) never a native `title=` restating the chip's own label.
+ * Regression history: the view once stacked TWO rows — a back-button row AND a
+ * full-width read-only banner inside the cockpit. Then (2026-07-31) the read-only
+ * marker moved OFF this surface entirely and ONTO the sheet header's identity line
+ * (the app-wide `.ro-pill`, rendered inside CockpitView's CombatHeader), so a
+ * read-only sheet is structurally identical to the editable one. This surface now
+ * owns ONLY the back button; the read-only status is the single `.ro-pill` in the
+ * header, never a `.toolbar-chip` row and never a banner.
  */
 
 import { readFileSync } from "node:fs";
@@ -51,7 +53,7 @@ function renderMemberSheet() {
   );
 }
 
-describe("MemberSheetView — one compact read-only header row", () => {
+describe("MemberSheetView — back button only, read-only marker on the sheet header", () => {
   beforeEach(() => {
     useUIStore.setState({ sheetMode: "play" });
     useCampaignStore.setState({ campaign: makeDevCampaign("CAMP-1"), error: null });
@@ -59,39 +61,43 @@ describe("MemberSheetView — one compact read-only header row", () => {
       character: { ...MOCK_CHARACTER },
       loading: false,
       error: null,
+      // The read-only viewer loads the doc read-only; the header's `.ro-pill` gates
+      // on this flag (production sets it via `loadReadonly`).
+      readonly: true,
     });
   });
 
-  it("renders the back button and the read-only chip in the SAME row (no stacked banner)", () => {
+  it("carries the back button, and the read-only marker rides the sheet header — NOT the back-button row", () => {
     renderMemberSheet();
 
     const back = screen.getByRole("button", { name: /back to campaign/i });
-    // The slim chip says it all itself — a short pill reusing `.toolbar-chip`,
-    // with NO native tooltip behind it (a `title=` here only restated the
-    // visible label, and touch has no gesture for one — post-sweep C).
-    const [chip] = screen
+    // The marker is the app-wide `.ro-pill` inside the sheet header (CombatHeader),
+    // announced via role="status" — never the old `.toolbar-chip` row.
+    const [pill] = screen
       .getAllByRole("status")
       .filter((el) => /read.only/i.test(el.textContent));
-    if (!chip) throw new Error("read-only chip missing");
-    expect(chip).toHaveTextContent("Read-only");
-    expect(chip.hasAttribute("title")).toBe(false);
-    expect(chip.classList.contains("toolbar-chip")).toBe(true);
-
-    // ONE compact row: both affordances share the same flex-row parent.
-    expect(chip.parentElement).toBe(back.parentElement);
+    if (!pill) throw new Error("read-only pill missing");
+    expect(pill).toHaveTextContent(/read.only/i);
+    expect(pill.classList.contains("ro-pill")).toBe(true);
+    expect(pill.classList.contains("toolbar-chip")).toBe(false);
+    // It is NOT a sibling of the back button — it lives on the sheet header, so the
+    // read-only surface is structurally identical to the editable one.
+    expect(pill.parentElement).not.toBe(back.parentElement);
   });
 
-  it("does NOT render the old full-width banner inside the cockpit", () => {
+  it("does NOT render the old full-width banner or a `.toolbar-chip` read-only row", () => {
     renderMemberSheet();
 
     // The superseded banner carried a full sentence as VISIBLE text — it must be
-    // gone, and the chip is the ONLY status region announcing the read-only state.
+    // gone, and the `.ro-pill` is the ONLY status region announcing the read-only
+    // state (never the old `.toolbar-chip` row).
     expect(screen.queryByText(/you're viewing/i)).not.toBeInTheDocument();
     const readonlyStatuses = screen
       .getAllByRole("status")
       .filter((el) => /read.only/i.test(el.textContent));
     expect(readonlyStatuses).toHaveLength(1);
-    expect(readonlyStatuses[0]?.classList.contains("toolbar-chip")).toBe(true);
+    expect(readonlyStatuses[0]?.classList.contains("ro-pill")).toBe(true);
+    expect(document.querySelector(".toolbar-chip")).toBeNull();
   });
 
   // P10 GLASS CASE — the read-only cockpit marks its root so the folio.css

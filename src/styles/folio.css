@@ -3947,6 +3947,44 @@ button.pr-dot.lg::before {
   }
 }
 
+/* The read-only status pill — a QUIET carved chip that rides the identity line in
+   the sheet header (the level chip's owner-only slot, so the two never collide). It
+   marks "this sheet is not yours to edit" as calm chrome, never a banner: an eye
+   glyph + the short label, in the recessed-brass family (NOT the struck-gilt CTA
+   treatment the level chip wears — this is status, not an action). This ONE pill is
+   the app-wide read-only grammar: every read-only surface (the public /view sheet,
+   the DM/member sheet, the admin sheet) renders it HERE, inside the shared header,
+   so a read-only sheet is structurally identical to the editable one (owner
+   2026-07-31 — no more full read-only row). Announced via role="status". */
+.ro-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+  padding: 1px 8px 1px 6px;
+  background: var(--input-fill);
+  border: 1px solid var(--border-medium);
+  border-radius: 999px;
+  box-shadow: var(--elev-recessed);
+  color: var(--text-secondary);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  font-family: var(--font-numeric);
+  text-transform: uppercase;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+.ro-pill svg {
+  width: 11px;
+  height: 11px;
+  opacity: 0.85;
+}
+@media (max-width: 639px) {
+  .ro-pill {
+    margin-left: 8px;
+  }
+}
+
 /* ───────────────────────────────────────────────────────────────────────────
    STAT BADGE — the shared stat tile/chip atom (src/components/shared/StatBadge).
    ONE content format (leading muted icon + uppercase acronym + value); a

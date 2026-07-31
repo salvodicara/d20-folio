@@ -2094,6 +2094,15 @@ seams enforce it, both required:
   widget + movement slider lock (`ThisTurnTracker`). Pinned by
   `member-sheet-readonly-header.test.tsx`.
 
+The read-only sheet carries ONE quiet marker, and it is NOT a row of its own (owner 2026-07-31):
+the `.ro-pill` — an eye glyph + "Read-only" / "Sola lettura", `role="status"` — rides the sheet
+header's identity line, in the Level-Up chip's owner-only slot (the two never coexist), so a
+read-only sheet is **structurally identical** to the editable one. It lives inside `CombatHeader`,
+so every read-only surface renders it in the SAME place through the shared cockpit — the public
+`/view` share sheet (which then owns no chrome at all), the DM/member sheet, and the admin sheet
+(both keeping only their back button). Pinned by `combat-header.test.tsx` (present read-only /
+absent editable) + `member-sheet-readonly-header.test.tsx`.
+
 A new mutating affordance on any cockpit surface MUST either wear one of the recipe classes above or
 gate itself on `useSheetReadonly()` — a live-looking control on a read-only sheet is a defect.
 

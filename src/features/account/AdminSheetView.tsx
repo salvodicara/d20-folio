@@ -15,7 +15,7 @@
 
 import { useTranslation } from "react-i18next";
 import { Navigate, useNavigate, useParams } from "react-router";
-import { ArrowLeft, Eye } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { FolioLoader } from "@/components/shared/FolioLoader";
@@ -46,19 +46,17 @@ function AdminSheet({ uid, charId }: { uid: string; charId: string }) {
 
   if (loading || !character) return <FolioLoader variant="region" />;
 
-  // The SAME compact read-only header row MemberSheetView floats on the backdrop art:
-  // a ghost back button inline-left, a quiet "Read-only" status chip inline-right.
+  // The SAME header row MemberSheetView floats on the backdrop art — just the back
+  // button now: the read-only marker rides the sheet header's identity line (the
+  // app-wide `.ro-pill`, inside CombatHeader), so the read-only sheet is structurally
+  // identical to the editable one — no read-only row of its own (owner 2026-07-31).
   return (
     <div className="wb flex flex-col">
-      <div className="on-art-scope mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-2 px-4 pt-4">
+      <div className="on-art-scope mx-auto flex w-full max-w-7xl flex-wrap items-center gap-2 px-4 pt-4">
         <Button variant="ghost" size="sm" onClick={() => void navigate("/admin")}>
           <Icon as={ArrowLeft} size="sm" decorative />
           {t("admin.backToConsole")}
         </Button>
-        <span role="status" className="toolbar-chip">
-          <Icon as={Eye} size="sm" decorative />
-          {t("dmView.readonly")}
-        </span>
       </div>
       <CockpitView />
     </div>

@@ -475,6 +475,25 @@ describe("CombatHeader — read-only mode (T4: DM views a member's sheet)", () =
     });
   }
 
+  it("renders the read-only pill on the identity line — the ONE app-wide marker, compact chrome not a row", () => {
+    loadReadonly();
+    const { container } = renderHeader();
+    // The marker is the `.ro-pill` (owner 2026-07-31: no stacked read-only row) — a
+    // quiet status pill riding the identity line, announced via role="status".
+    const pill = container.querySelector(".ro-pill");
+    expect(pill).not.toBeNull();
+    expect(pill?.getAttribute("role")).toBe("status");
+    expect(pill?.textContent).toMatch(/read.only/i);
+  });
+
+  it("does NOT render the read-only pill on an editable (owner) sheet", () => {
+    // The default `load()` path leaves `readonly` false — the pill is a read-only-only
+    // affordance, so an owner's editable header never wears it.
+    load();
+    const { container } = renderHeader();
+    expect(container.querySelector(".ro-pill")).toBeNull();
+  });
+
   it("hides EVERY management affordance — the edit control, the Rest medallion, and the Level-Up ceremony", () => {
     loadReadonly();
     const { container } = renderHeader();

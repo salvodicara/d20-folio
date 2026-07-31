@@ -39,6 +39,7 @@ import {
   ChevronsDown,
   ChevronsUp,
   Dices,
+  Eye,
   Footprints,
   Moon,
   Shield,
@@ -476,10 +477,20 @@ export function CombatHeader() {
               required
             />
           </h1>
-          {(identity || levelChip) && (
+          {(identity || levelChip || readonly) && (
             <p className="text-sm text-text-secondary">
               {identity}
               {levelChip}
+              {/* T4 — the ONE app-wide read-only marker: a quiet pill riding the
+                  identity line (the level chip's owner-only slot, so they never
+                  collide), so a read-only sheet reads structurally identical to the
+                  editable one — no stacked read-only row (owner 2026-07-31). */}
+              {readonly && (
+                <span role="status" className="ro-pill">
+                  <Icon as={Eye} size="xs" decorative />
+                  {t("dmView.readonly")}
+                </span>
+              )}
             </p>
           )}
           {/* TB5 — the header is PURE identity + the reference-vitals strip. The

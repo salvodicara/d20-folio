@@ -28,9 +28,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
-import { Eye, Link2Off } from "lucide-react";
+import { Link2Off } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
 import { getFullCharacter } from "@/lib/firestore";
@@ -144,17 +143,10 @@ export function SharedCharacterView() {
     );
   }
 
-  // The SAME compact read-only header row the DM/admin viewers float on the
-  // backdrop art — the one grammar for "this sheet is not yours to edit".
-  return (
-    <div className="flex flex-col">
-      <div className="on-art-scope mx-auto flex w-full max-w-7xl flex-wrap items-center justify-end gap-2 px-4 pt-4">
-        <span role="status" className="toolbar-chip">
-          <Icon as={Eye} size="sm" decorative />
-          {t("dmView.readonly")}
-        </span>
-      </div>
-      <CockpitView />
-    </div>
-  );
+  // Just the sheet — the read-only marker rides the header's identity line (the ONE
+  // app-wide `.ro-pill`, inside CockpitView's CombatHeader), so the public share view
+  // is structurally identical to the editable sheet: no read-only row of its own
+  // (owner 2026-07-31). An anonymous viewer has nowhere to navigate back TO, so this
+  // surface owns no chrome at all.
+  return <CockpitView />;
 }
