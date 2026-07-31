@@ -19,12 +19,18 @@ import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   parseSharePath,
+  parseOgImagePath,
   characterCard,
   campaignCard,
+  characterImageUrl,
+  campaignImageUrl,
   renderOgTags,
   injectOgTags,
   shellOrigin,
   SITE,
+  CARD_GENERIC,
+  CARD_CHARACTER,
+  CARD_CAMPAIGN,
   OG_START,
   OG_END,
 } from "./og-meta";
@@ -32,6 +38,9 @@ import {
 /** The real built-from shell — the artifact the function actually injects into. */
 const SHELL = readFileSync(resolve(__dirname, "../../index.html"), "utf8");
 const URL = "https://d20-folio.web.app/view/u1/c1";
+/** The dynamic image URLs the two card families now point their `og:image` at. */
+const CHAR_IMG = characterImageUrl("u1", "c1");
+const CAMP_IMG = campaignImageUrl("ABC");
 
 describe("parseSharePath", () => {
   it("recognises the two shared route families", () => {
@@ -62,7 +71,8 @@ describe("characterCard", () => {
   it("reads name, TOTAL level and class off the roster cache", () => {
     const card = characterCard(
       { name: "Mara Quickfingers", classes: [{ classId: "rogue", level: 5 }] },
-      URL
+      URL,
+      CHAR_IMG
     );
     expect(card?.title).toBe("Mara Quickfingers — Level 5 Rogue · d20 Folio");
   });
@@ -76,21 +86,29 @@ describe("characterCard", () => {
           { classId: "fighter", level: 2 },
         ],
       },
-      URL
+      URL,
+      CHAR_IMG
     );
     expect(card?.title).toBe("Lyra Voss — Level 11 Bard / Fighter · d20 Folio");
   });
 
+  it("points og:image at the DYNAMIC per-link route, not the static card", () => {
+    const card = characterCard({ name: "Mara", classes: [] }, URL, CHAR_IMG);
+    expect(card?.image).toBe(CHAR_IMG);
+    expect(CHAR_IMG).toBe(`${SITE}/og/character/u1/c1.png`);
+  });
+
   it("degrades on a husk instead of inventing a level or a class", () => {
-    expect(characterCard({ name: "Nameless One", classes: [] }, URL)?.title).toBe(
-      "Nameless One · d20 Folio"
-    );
     expect(
-      characterCard({ name: "Husk", classes: [{ classId: "", level: 3 }] }, URL)?.title
+      characterCard({ name: "Nameless One", classes: [] }, URL, CHAR_IMG)?.title
+    ).toBe("Nameless One · d20 Folio");
+    expect(
+      characterCard({ name: "Husk", classes: [{ classId: "", level: 3 }] }, URL, CHAR_IMG)
+        ?.title
     ).toBe("Husk — Level 3 · d20 Folio");
     // No usable name ⇒ no card at all; the caller then serves the shell as-built.
-    expect(characterCard({ name: "   " }, URL)).toBeNull();
-    expect(characterCard({}, URL)).toBeNull();
+    expect(characterCard({ name: "   " }, URL, CHAR_IMG)).toBeNull();
+    expect(characterCard({}, URL, CHAR_IMG)).toBeNull();
   });
 });
 
@@ -98,25 +116,30 @@ describe("campaignCard", () => {
   it("exposes the campaign NAME and nothing else", () => {
     const card = campaignCard(
       { name: "Starless Keep" },
-      "https://d20-folio.web.app/join/ABC"
+      "https://d20-folio.web.app/join/ABC",
+      CAMP_IMG
     );
     expect(card?.title).toBe("Join Starless Keep on d20 Folio");
     expect(card?.description).toContain("Starless Keep");
+    expect(card?.image).toBe(CAMP_IMG);
+    expect(CAMP_IMG).toBe(`${SITE}/og/campaign/ABC.png`);
   });
 
   it("returns null for a code that resolved to nothing usable", () => {
-    expect(campaignCard({}, URL)).toBeNull();
-    expect(campaignCard({ name: "" }, URL)).toBeNull();
-    expect(campaignCard({ name: 42 }, URL)).toBeNull();
+    expect(campaignCard({}, URL, CAMP_IMG)).toBeNull();
+    expect(campaignCard({ name: "" }, URL, CAMP_IMG)).toBeNull();
+    expect(campaignCard({ name: 42 }, URL, CAMP_IMG)).toBeNull();
   });
 
   it("a LOCKED campaign unfurls as nothing — the leaked-link kill switch holds here too", () => {
     // The Admin SDK bypasses the rules that refuse the join, so the preview must
     // re-check the lock itself: locked reads exactly like a code that never existed.
-    expect(campaignCard({ name: "Starless Keep", joinsLocked: true }, URL)).toBeNull();
+    expect(
+      campaignCard({ name: "Starless Keep", joinsLocked: true }, URL, CAMP_IMG)
+    ).toBeNull();
     // Explicitly unlocked and legacy-absent both still unfurl.
     expect(
-      campaignCard({ name: "Starless Keep", joinsLocked: false }, URL)
+      campaignCard({ name: "Starless Keep", joinsLocked: false }, URL, CAMP_IMG)
     ).not.toBeNull();
   });
 });
@@ -135,51 +158,83 @@ describe("renderOgTags", () => {
     expect(html).toContain("d &amp; d");
   });
 
-  it("carries the branded card, never a portrait", () => {
-    const html = renderOgTags(campaignCard({ name: "Starless Keep" }, URL)!);
-    expect(html).toContain('content="https://d20-folio.web.app/og-card-campaign.jpg"');
+  it("carries the DYNAMIC image URL, and never a portrait in the tag itself", () => {
+    const html = renderOgTags(campaignCard({ name: "Starless Keep" }, URL, CAMP_IMG)!);
+    expect(html).toContain(`content="${CAMP_IMG}"`);
+    // The portrait, if any, is baked into the rendered PNG — never a tag value.
+    expect(html).not.toContain("portrait");
     expect(html).toContain('name="twitter:card" content="summary_large_image"');
   });
 });
 
-describe("the type cards — one designed image per route family", () => {
-  const CHARACTER = characterCard({ name: "Mara", classes: [] }, URL)!;
-  const CAMPAIGN = campaignCard({ name: "Starless Keep" }, URL)!;
-  /** The baseline block in the real shell — the generic card, the third variant. */
+describe("the type routes — one dynamic image per family, static cards as the fallback", () => {
+  const CHARACTER = characterCard({ name: "Mara", classes: [] }, URL, CHAR_IMG)!;
+  const CAMPAIGN = campaignCard({ name: "Starless Keep" }, URL, CAMP_IMG)!;
+  /** The baseline block in the real shell — the generic card, served card-less. */
   const BASELINE = SHELL.slice(SHELL.indexOf(OG_START), SHELL.indexOf(OG_END));
 
-  it("a shared character unfurls over the CHARACTER card", () => {
-    expect(CHARACTER.image).toBe(`${SITE}/og-card-character.jpg`);
+  it("a shared character points og:image at its dynamic PNG route", () => {
+    expect(CHARACTER.image).toBe(CHAR_IMG);
     expect(renderOgTags(CHARACTER)).toContain(
-      `<meta property="og:image" content="${SITE}/og-card-character.jpg" />`
+      `<meta property="og:image" content="${CHAR_IMG}" />`
     );
   });
 
-  it("a live invite unfurls over the CAMPAIGN card", () => {
-    expect(CAMPAIGN.image).toBe(`${SITE}/og-card-campaign.jpg`);
+  it("a live invite points og:image at its dynamic PNG route", () => {
+    expect(CAMPAIGN.image).toBe(CAMP_IMG);
     expect(renderOgTags(CAMPAIGN)).toContain(
-      `<meta property="og:image" content="${SITE}/og-card-campaign.jpg" />`
+      `<meta property="og:image" content="${CAMP_IMG}" />`
     );
   });
 
-  it("everything else keeps the GENERIC card — three distinct images, no accidents", () => {
-    // The card-less path is served the shell untouched, so the baseline block IS the
-    // generic variant; a copy-paste that pointed two families at one file would make
-    // the type distinction silently vanish.
-    expect(BASELINE).toContain(`${SITE}/og-card.jpg`);
-    expect(BASELINE).not.toContain("og-card-character.jpg");
-    expect(BASELINE).not.toContain("og-card-campaign.jpg");
-    expect(new Set([CHARACTER.image, CAMPAIGN.image, `${SITE}/og-card.jpg`]).size).toBe(
-      3
-    );
+  it("the card-less path still keeps the GENERIC static card, and the three routes stay distinct", () => {
+    // Unshared / locked / unknown is served the shell untouched, so the baseline block
+    // IS the generic variant — indistinguishable from any other route.
+    expect(BASELINE).toContain(CARD_GENERIC);
+    expect(new Set([CHARACTER.image, CAMPAIGN.image, CARD_GENERIC]).size).toBe(3);
   });
 
-  it("every card image is a file that actually ships in public/", () => {
-    // The tags are only as good as the assets behind them: a renamed or unshipped
-    // card would unfurl as a broken image, which no other test would notice.
-    for (const image of [CHARACTER.image, CAMPAIGN.image, `${SITE}/og-card.jpg`]) {
+  it("the three STATIC fallback cards are files that actually ship in public/", () => {
+    // Each is what the ogImage route redirects to on an unshared / locked / errored
+    // request; a renamed or unshipped card would break that fallback silently.
+    for (const image of [CARD_CHARACTER, CARD_CAMPAIGN, CARD_GENERIC]) {
       const file = resolve(__dirname, "../../public", image.slice(SITE.length + 1));
       expect(existsSync(file), `missing ${file}`).toBe(true);
+    }
+  });
+});
+
+describe("parseOgImagePath — the dynamic image route's own path parser", () => {
+  it("recognises the two image route families and strips the .png", () => {
+    expect(parseOgImagePath("/og/character/uid-1/char-1.png")).toEqual({
+      kind: "character",
+      uid: "uid-1",
+      charId: "char-1",
+    });
+    expect(parseOgImagePath("/og/campaign/ABC123.png")).toEqual({
+      kind: "campaign",
+      code: "ABC123",
+    });
+  });
+
+  it("decodes percent-encoded ids (the URL builders encode them)", () => {
+    expect(parseOgImagePath("/og/campaign/A%2FB.png")).toEqual({
+      kind: "campaign",
+      code: "A/B",
+    });
+  });
+
+  it("refuses anything else, so a stray path serves the generic static card", () => {
+    for (const path of [
+      "/og",
+      "/og/character",
+      "/og/character/only-one.png",
+      "/og/character/a/b/c.png",
+      "/og/campaign",
+      "/og/campaign/a/b.png",
+      "/view/u/c",
+    ]) {
+      expect(parseOgImagePath(path)).toBeNull();
     }
   });
 });
@@ -263,7 +318,8 @@ describe("injectOgTags against the REAL index.html", () => {
   it("replaces the baseline block with the entity's tags", () => {
     const card = characterCard(
       { name: "Mara Quickfingers", classes: [{ classId: "rogue", level: 5 }] },
-      URL
+      URL,
+      CHAR_IMG
     );
     const out = injectOgTags(SHELL, card!);
     expect(out).toContain(
@@ -289,8 +345,8 @@ describe("injectOgTags against the REAL index.html", () => {
 
   it("returns a marker-less shell untouched rather than serving a broken page", () => {
     const stripped = "<html><head></head><body>hi</body></html>";
-    expect(injectOgTags(stripped, campaignCard({ name: "Starless Keep" }, URL)!)).toBe(
-      stripped
-    );
+    expect(
+      injectOgTags(stripped, campaignCard({ name: "Starless Keep" }, URL, CAMP_IMG)!)
+    ).toBe(stripped);
   });
 });

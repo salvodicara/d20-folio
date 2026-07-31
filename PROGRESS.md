@@ -1397,7 +1397,14 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   entry + the `SharePopover` (switch · link · Copy · native Share — no confirm, no second item, and
   the invite reuses it switch-less), and the preview image is now TYPE-BASED — a character card, an invite card and the
   generic app card, three siblings in one folio identity, chosen per route family with the generic
-  one still covering unshared / locked / unknown. Full design record:
+  one still covering unshared / locked / unknown. Then the owner-ratified upgrade: the preview image
+  is now **rendered per link** (2026-07-31). A second Cloud Function (`ogImage`, `/og/**`) draws a
+  1200×630 PNG on the fly with `@resvg/resvg-js` + bundled folio fonts over the same card art —
+  a shared character shows its portrait (from Storage), name, level, class and AC · HP; an invite
+  shows the campaign name + party size — every number read straight off the roster `cache` (the
+  engine is never re-run server-side), behind the SAME share/lock gate. The three static cards became
+  the FALLBACK: an unshared / locked / unknown link, or any render error, redirects to them, so a
+  broken render can never 500 or leak and the indistinguishability holds. Full design record:
   `docs/ARCHITECTURE.md` → "Public share links" + "Link previews (Open Graph)".
 - **Post-view signup CTA — the share-funnel growth loop (CANDIDATE — owner idea 2026-07-31):** the
   public no-account `/view` page (a non-registered friend viewing a shared character) offers a

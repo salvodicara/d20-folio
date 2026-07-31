@@ -1593,16 +1593,31 @@ per-link previews on its own — every URL would unfurl as the same card. Two ti
   `twitter:card`, EN only (OG has no clean bilingual story — a crawler carries no session and no
   Accept-Language worth trusting, and an English card is the industry norm), pointing at the designed
   1200×630 generic card at `public/og-card.jpg`.
-- **One card image per TYPE**, the industry standard: `public/og-card-character.jpg` ("A character
-  lives here") for a live `/view/**`, `public/og-card-campaign.jpg` ("A seat at the table") for a
-  live invite, and the generic app card for everything else — three designed siblings in one folio
-  identity (same plate, gilt lockup, Cinzel/Alegreya voice, per-card scene art), so a reader knows
-  what KIND of link arrived before reading a word of it. The images are STATIC art: a portrait is
-  never exposed, and the card carries no entity detail the title does not already say. `og-meta.ts`
-  is the only place that maps type → image (`OgCard.image`, set by the builders, never by a caller).
-  All three are `.jpg`, which `globPatterns` does not match, and all three are deliberately absent
-  from `includeAssets` — so no preview image ever enters the offline precache (the app never renders
-  them, and the precache ceiling has ~11 KiB of headroom).
+- **One STATIC card image per TYPE — now the FALLBACK** beneath the dynamic renderer below:
+  `public/og-card-character.jpg` ("A character lives here"), `public/og-card-campaign.jpg` ("A seat
+  at the table"), and the generic app card — three designed siblings in one folio identity (same
+  plate, gilt lockup, Cinzel/Alegreya voice, per-card scene art). These are what a card-less path is
+  served (the generic, spliced into `index.html`) and what the dynamic image route redirects to on an
+  unshared / locked / unknown entity or ANY render error, so the fallback is always a designed card,
+  never a 500. All three are `.jpg`, which `globPatterns` does not match, and all three are
+  deliberately absent from `includeAssets` — so no preview image ever enters the offline precache (the
+  app never renders them, and the precache ceiling has ~11 KiB of headroom).
+- **Per-link IMAGE — the dynamic renderer.** For a shared entity the `og:image` tag points not at the
+  static card but at a second `onRequest` function, `ogImage` (`functions/src/index.ts`; the render in
+  `functions/src/og-image.ts`), which Hosting rewrites `/og/**` to (`/og/character/:uid/:id.png`,
+  `/og/campaign/:code.png`; `europe-west1` named, same reason as `ogShell`). It renders a 1200×630 PNG
+  per link with `@resvg/resvg-js` (SVG string → PNG; no headless browser / native canvas — a ~30–50 ms
+  warm render, chosen for cold-start + container size) over the SAME card art (`functions/cards/*.jpg`,
+  byte-copies of `public/`, drift-guarded in the test) with the static placeholder headline masked
+  and the entity's own facts painted on top in the bundled folio faces (`functions/fonts/` — static
+  Cinzel + Alegreya, fetched by exact family + `font-weight`; system fonts are disabled). A character
+  card shows the portrait (a circular medallion, or a per-seed tinted initial when there is none) with
+  name / total level / class(es) / AC · HP; an invite shows the campaign name + party size. Every
+  drawn number is read STRAIGHT off the roster `cache` the gate already loaded — the engine is NEVER
+  re-run server-side, so a wrong stat is structurally impossible; an unstamped stat (0) is omitted, not
+  guessed. The renderer sits BEHIND the same gate as the tag (below), and `tryRender` folds any
+  rasterise failure to the static-card redirect. `og-meta.ts` owns the image URLs (`characterImageUrl`
+  / `campaignImageUrl`) + the route parser (`parseOgImagePath`).
 - **Per-link tags** on the two shared route families come from `ogShell`
   (`functions/src/index.ts`, pure half in `functions/src/og-meta.ts`), an `onRequest` function that
   Hosting rewrites `/view/**` and `/join/**` to (`firebase.json`; the rewrite names
@@ -1620,23 +1635,27 @@ per-link previews on its own — every URL would unfurl as the same card. Two ti
   `ogShell` fetch itself, each leg hanging to timeout — self-SSRF, and billed time on a zero-budget
   project.
 - **What may be exposed, and nothing else.** A character: only when its document carries
-  `shared: true`, and then only name, total level and class (read off the SRD-free roster `cache`).
-  A campaign: only its NAME, and only for an invite code that resolves to a campaign whose joins are
-  still open — the code IS the campaign's document id, the same secret the join flow already treats
-  as the grant. The Admin SDK bypasses `firestore.rules`, so `ogShell` re-checks BOTH the share flag
-  and `joinsLocked` (the DM's kill switch for a leaked link) itself. Every other case — unshared,
-  locked, unknown, malformed, lookup failed — is served the shell UNTOUCHED (`injectOgTags(shell,
-null)` returns it byte-for-byte), i.e. the baseline generic card above, which is why there is
-  exactly one copy of that generic copy in the repo and nothing to drift against. An unshared id is
-  then not even distinguishable from a nonexistent one — not by title, not by card image; the only
-  thing given up is `og:url` echoing the shared path on a link that describes nothing anyway.
-- **Cost + staleness.** The response is CDN-cacheable per URL (`max-age=300, s-maxage=3600`), so the
-  function runs on a crawl or a cold first hit, not per pageview — and a returning user never reaches
-  it at all, because the service worker answers `/view/**` and `/join/**` navigations from the
-  precached shell (`navigateFallback`, deliberately NOT denylisted: crawlers register no service
-  worker, so previews are unaffected and humans keep the instant offline shell). A revoked link can
-  keep its cached TITLE until `s-maxage` expires; the sheet behind it is denied on the very next read,
-  so what goes stale is a name, never access.
+  `shared: true`, and then only name, total level, class, AC · HP (read off the SRD-free roster
+  `cache`) and — in the rendered image only — its portrait, fetched from Storage (`users/{uid}/
+portraits/{charId}.jpeg`) ONLY for a confirmed-shared doc that records one; a shared character's
+  portrait is fair game, the same grant the sheet itself rides. A campaign: only its NAME + party
+  size, and only for an invite code that resolves to a campaign whose joins are still open — the code
+  IS the campaign's document id, the same secret the join flow already treats as the grant. The Admin
+  SDK bypasses `firestore.rules`, so BOTH `ogShell` (the tag) and `ogImage` (the picture) re-check the
+  share flag and `joinsLocked` (the DM's kill switch for a leaked link) themselves. Every other case —
+  unshared, locked, unknown, malformed, lookup failed — is served the shell UNTOUCHED
+  (`injectOgTags(shell, null)` returns it byte-for-byte, the baseline generic card) and the image route
+  redirects to the static per-type card, so an unshared id is not even distinguishable from a
+  nonexistent one — not by title, not by card image; the only thing given up is `og:url` echoing the
+  shared path on a link that describes nothing anyway.
+- **Cost + staleness.** The shell is CDN-cacheable per URL (`max-age=300, s-maxage=3600`); the dynamic
+  image is tuned SHORTER (`max-age=300, s-maxage=900`) since its content varies per link, plus a
+  content ETag for cheap `304` revalidation. Both run on a crawl or a cold first hit, not per pageview
+  — and a returning user never reaches either, because the service worker answers `/view/**` and
+  `/join/**` navigations from the precached shell (`navigateFallback`, deliberately NOT denylisted:
+  crawlers register no service worker, so previews are unaffected and humans keep the instant offline
+  shell). A revoked link can keep its cached title + rendered card until `s-maxage` expires; the sheet
+  behind it is denied on the very next read, so what goes stale is a name + portrait, never access.
 
 ### Non-nullability invariant — an empty character name is UNREPRESENTABLE
 

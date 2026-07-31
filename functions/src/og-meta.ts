@@ -31,15 +31,30 @@
 export const SITE = "https://d20-folio.web.app";
 const BRAND = "d20 Folio";
 /**
- * The branded 1200×630 cards — ONE PER TYPE, which is what every mature link preview
- * does: the image says what KIND of thing the link is before a word of it is read.
- * Three designed siblings in the same folio identity, all STATIC art (a portrait is
- * never exposed): these two, plus the generic app card in `index.html`'s baseline
- * block — which is exactly what a card-less path is served, so the unshared / locked
- * / unknown cases stay indistinguishable from any other route.
+ * The branded 1200×630 STATIC cards — now the FALLBACK behind the dynamic renderer
+ * (`og-image.ts`, served by `index.ts`'s `ogImage` route). A shared link's `og:image`
+ * points at the DYNAMIC route (name / portrait / stats painted per link); the static
+ * per-type card is what that route serves on an unshared / locked / unknown entity or
+ * ANY render error, so a broken render degrades to the designed card, never a 500.
+ * The generic app card in `index.html`'s baseline block is the third sibling — exactly
+ * what a card-less path (`injectOgTags(null)`) is served, so the unshared / locked /
+ * unknown cases stay indistinguishable from any other route.
  */
-const CARD_CHARACTER = `${SITE}/og-card-character.jpg`;
-const CARD_CAMPAIGN = `${SITE}/og-card-campaign.jpg`;
+export const CARD_GENERIC = `${SITE}/og-card.jpg`;
+export const CARD_CHARACTER = `${SITE}/og-card-character.jpg`;
+export const CARD_CAMPAIGN = `${SITE}/og-card-campaign.jpg`;
+
+/** The DYNAMIC per-link image URLs the `og:image` tag points at — one route per type,
+ *  gated identically to the tag itself (`index.ts`). The crawler reads the shell, then
+ *  fetches this URL and receives the rendered PNG (or the static fallback on any miss).
+ *  Ids are path-encoded: they are Firestore ids / an invite code (opaque), but a `/`
+ *  or `.` must never break the route's own parse. */
+export function characterImageUrl(uid: string, charId: string): string {
+  return `${SITE}/og/character/${encodeURIComponent(uid)}/${encodeURIComponent(charId)}.png`;
+}
+export function campaignImageUrl(code: string): string {
+  return `${SITE}/og/campaign/${encodeURIComponent(code)}.png`;
+}
 
 /** The two shared route families, as parsed off the request path. */
 export type SharePath =
@@ -59,6 +74,29 @@ export function parseSharePath(pathname: string): SharePath {
   }
   if (parts[0] === "join" && parts.length === 2 && parts[1]) {
     return { kind: "campaign", code: parts[1] };
+  }
+  return null;
+}
+
+/**
+ * Which shared entity a DYNAMIC IMAGE request path names — the mirror of
+ * {@link parseSharePath} for the `ogImage` route (`/og/character/:uid/:id.png`,
+ * `/og/campaign/:code.png`). The `.png` suffix is stripped off the final segment.
+ * Anything else is `null`, which the route serves as the generic static card.
+ */
+export function parseOgImagePath(pathname: string): SharePath {
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts[0] !== "og") return null;
+  const strip = (s: string) => decodeURIComponent(s.replace(/\.png$/i, ""));
+  if (parts[1] === "character" && parts.length === 4 && parts[2] && parts[3]) {
+    const charId = strip(parts[3]);
+    return charId
+      ? { kind: "character", uid: decodeURIComponent(parts[2]), charId }
+      : null;
+  }
+  if (parts[1] === "campaign" && parts.length === 3 && parts[2]) {
+    const code = strip(parts[2]);
+    return code ? { kind: "campaign", code } : null;
   }
   return null;
 }
@@ -95,13 +133,15 @@ function classLabel(classId: string): string {
 }
 
 /**
- * "Mara Quickfingers — Level 5 Rogue · d20 Folio" from the roster cache. Multiclass
- * sums the levels and joins the classes; a husk with no usable class degrades to the
- * bare level, and a cache with no usable name is rejected by the caller.
+ * Sum a roster cache's class breakdown to a TOTAL level + a joined class label —
+ * the ONE derivation both the text card ({@link characterCard}) and the rendered
+ * image (`og-image.ts`) read, so a preview's level/class can never disagree between
+ * the tag and the picture. Malformed entries are skipped, never guessed.
  */
-export function characterCard(cache: CharacterCacheLike, url: string): OgCard | null {
-  const name = typeof cache.name === "string" ? cache.name.trim() : "";
-  if (!name) return null;
+export function summarizeClasses(cache: CharacterCacheLike): {
+  level: number;
+  classLine: string;
+} {
   const entries = Array.isArray(cache.classes) ? cache.classes : [];
   let level = 0;
   const labels: string[] = [];
@@ -115,13 +155,28 @@ export function characterCard(cache: CharacterCacheLike, url: string): OgCard | 
       labels.push(classLabel(entry.classId));
     }
   }
-  const classes = labels.join(" / ");
+  return { level, classLine: labels.join(" / ") };
+}
+
+/**
+ * "Mara Quickfingers — Level 5 Rogue · d20 Folio" from the roster cache. Multiclass
+ * sums the levels and joins the classes; a husk with no usable class degrades to the
+ * bare level, and a cache with no usable name is rejected by the caller.
+ */
+export function characterCard(
+  cache: CharacterCacheLike,
+  url: string,
+  imageUrl: string
+): OgCard | null {
+  const name = typeof cache.name === "string" ? cache.name.trim() : "";
+  if (!name) return null;
+  const { level, classLine: classes } = summarizeClasses(cache);
   const line = level > 0 ? `Level ${level}${classes ? ` ${classes}` : ""}` : classes;
   return {
     title: line ? `${name} — ${line} · ${BRAND}` : `${name} · ${BRAND}`,
     description: `${name}'s character sheet on ${BRAND}, shared read-only. No account needed.`,
     url,
-    image: CARD_CHARACTER,
+    image: imageUrl,
   };
 }
 
@@ -140,7 +195,11 @@ export interface CampaignDocLike {
  * is therefore indistinguishable from a code that never existed, which is the same
  * rule the character branch follows.
  */
-export function campaignCard(doc: CampaignDocLike, url: string): OgCard | null {
+export function campaignCard(
+  doc: CampaignDocLike,
+  url: string,
+  imageUrl: string
+): OgCard | null {
   if (doc.joinsLocked === true) return null;
   const clean = typeof doc.name === "string" ? doc.name.trim() : "";
   if (!clean) return null;
@@ -148,7 +207,7 @@ export function campaignCard(doc: CampaignDocLike, url: string): OgCard | null {
     title: `Join ${clean} on ${BRAND}`,
     description: `You have been invited to the ${clean} table on ${BRAND} — a free, offline-first D&D 2024 companion.`,
     url,
-    image: CARD_CAMPAIGN,
+    image: imageUrl,
   };
 }
 

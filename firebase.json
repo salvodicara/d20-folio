@@ -18,6 +18,13 @@
         }
       },
       {
+        "source": "/og/**",
+        "function": {
+          "functionId": "ogImage",
+          "region": "europe-west1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

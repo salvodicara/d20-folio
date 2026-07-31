@@ -52,13 +52,27 @@ import {
 import { parseBudgetNotification, decideBudgetKill } from "./budget-kill";
 import {
   parseSharePath,
+  parseOgImagePath,
   characterCard,
   campaignCard,
+  characterImageUrl,
+  campaignImageUrl,
   injectOgTags,
   shellOrigin,
   SITE,
+  CARD_GENERIC,
+  CARD_CHARACTER,
+  CARD_CAMPAIGN,
   type OgCard,
 } from "./og-meta";
+import {
+  characterImageData,
+  campaignImageData,
+  characterSvg,
+  campaignSvg,
+  tryRender,
+} from "./og-image";
+import { createHash } from "node:crypto";
 
 initializeApp();
 
@@ -504,13 +518,19 @@ async function resolveCard(pathname: string, url: string): Promise<OgCard | null
       .get();
     // The Admin SDK bypasses firestore.rules, so the share grant is re-checked HERE.
     if (!snap.exists || snap.get("shared") !== true) return null;
-    return characterCard((snap.get("cache") ?? {}) as Record<string, unknown>, url);
+    return characterCard(
+      (snap.get("cache") ?? {}) as Record<string, unknown>,
+      url,
+      // The tag points at the DYNAMIC image route — same id, same gate; that route
+      // serves the static character card on any miss/error (indistinguishability holds).
+      characterImageUrl(target.uid, target.charId)
+    );
   }
   const camp = await db.collection("campaigns").doc(target.code).get();
   if (!camp.exists) return null;
   // `campaignCard` re-checks the joins lock — the DM's kill switch for a leaked link
   // (the Admin SDK bypasses the rules that enforce it on the join itself).
-  return campaignCard(camp.data() ?? {}, url);
+  return campaignCard(camp.data() ?? {}, url, campaignImageUrl(target.code));
 }
 
 export const ogShell = onRequest(async (req, res) => {
@@ -545,4 +565,119 @@ export const ogShell = onRequest(async (req, res) => {
     });
     res.redirect(302, `${origin}/`);
   }
+});
+
+// ── ogImage: the DYNAMIC per-link preview PNG the og:image tag points at ──────
+//
+// `ogShell` splices an `og:image` that points HERE (`/og/character/:uid/:id.png`,
+// `/og/campaign/:code.png` — Hosting rewrites `/og/**` to this function). A crawler
+// reads the shell, then fetches that URL and receives a 1200×630 PNG rendered per
+// link (`og-image.ts`): the folio card art with the entity's own name / level / class
+// / AC · HP / portrait painted over the static placeholder.
+//
+// SAME GATE, RE-ASSERTED: a character renders ONLY when its doc carries `shared:true`
+// (the grant the sheet itself rides — so its portrait is fair game); a campaign ONLY
+// when its joins are unlocked. Anything unshared / locked / unknown, and ANY render or
+// lookup failure, REDIRECTS to the static per-type card — so a broken render degrades
+// to the designed fallback, never a 500, and an unshared link is byte-identical to the
+// static card every other route already unfurls. The portrait fetch fires ONLY for a
+// confirmed-shared doc that HAS a portrait.
+//
+// CACHE: content now varies per link, so this is tuned SHORTER than the shell — a
+// revoked link's rendered card can linger at the CDN for ≤ `s-maxage` (~15 min), but
+// it shows only a name + portrait (the same facts the shell's title already cached);
+// the SHEET behind it is denied immediately by `firestore.rules`. An ETag lets a warm
+// CDN/crawler revalidate with a 304 instead of re-downloading the PNG.
+const OG_IMAGE_CACHE = "public, max-age=300, s-maxage=900";
+
+/** A shared character's portrait as a data URI, or null — fetched from Storage ONLY
+ *  for a confirmed-shared doc that records a portrait. A missing/failed read is not an
+ *  error: the card falls back to the per-seed tinted initial. */
+async function fetchPortrait(uid: string, charId: string): Promise<string | null> {
+  try {
+    const [buf] = await getStorage()
+      .bucket()
+      .file(`users/${uid}/portraits/${charId}.jpeg`)
+      .download();
+    return `data:image/jpeg;base64,${buf.toString("base64")}`;
+  } catch (e) {
+    logger.warn("ogImage: portrait read failed; rendering the initial instead", {
+      error: e instanceof Error ? e.message : String(e),
+    });
+    return null;
+  }
+}
+
+/**
+ * Render the PNG for a shared-image path, or `null` to serve the static fallback.
+ * `null` covers every non-render outcome — unshared / locked / unknown id — and
+ * `tryRender` folds a rasterise failure into `null` too, so the caller's ONE branch
+ * (`null` ⇒ redirect to the static card) covers them all.
+ */
+async function resolveImage(pathname: string): Promise<Buffer | null> {
+  const target = parseOgImagePath(pathname);
+  if (!target) return null;
+  const db = getFirestore();
+  if (target.kind === "character") {
+    const snap = await db
+      .collection("users")
+      .doc(target.uid)
+      .collection("characters")
+      .doc(target.charId)
+      .get();
+    // The Admin SDK bypasses firestore.rules, so the share grant is re-checked HERE —
+    // the SAME check `resolveCard` makes for the tag.
+    if (!snap.exists || snap.get("shared") !== true) return null;
+    // Portrait ONLY when the doc records one (avoids a Storage round-trip per husk).
+    const portrait = snap.get("portraitUrl")
+      ? await fetchPortrait(target.uid, target.charId)
+      : null;
+    const data = characterImageData(
+      (snap.get("cache") ?? {}) as Record<string, unknown>,
+      portrait
+    );
+    return data ? tryRender(characterSvg(data)) : null;
+  }
+  const camp = await db.collection("campaigns").doc(target.code).get();
+  if (!camp.exists) return null;
+  const data = campaignImageData(camp.data() ?? {});
+  return data ? tryRender(campaignSvg(data)) : null;
+}
+
+/** The static per-type card a failed/ungated image request redirects to. */
+function fallbackCard(pathname: string): string {
+  const target = parseOgImagePath(pathname);
+  if (target?.kind === "character") return CARD_CHARACTER;
+  if (target?.kind === "campaign") return CARD_CAMPAIGN;
+  return CARD_GENERIC;
+}
+
+export const ogImage = onRequest(async (req, res) => {
+  let png: Buffer | null = null;
+  try {
+    png = await resolveImage(req.path);
+  } catch (e) {
+    // A lookup failure is a PREVIEW failure, never a page failure — fall to the static
+    // card (handled below by the `null` branch), never a 500 that could leak.
+    logger.warn("ogImage: entity lookup failed; serving the static card", {
+      path: req.path,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+  if (!png) {
+    // Unshared / locked / unknown / any error → the designed static per-type card.
+    res.redirect(302, fallbackCard(req.path));
+    return;
+  }
+  const etag = `"${createHash("sha1").update(png).digest("base64")}"`;
+  if (req.headers["if-none-match"] === etag) {
+    res.status(304).set("Cache-Control", OG_IMAGE_CACHE).set("ETag", etag).end();
+    return;
+  }
+  res
+    .status(200)
+    .set("Cache-Control", OG_IMAGE_CACHE)
+    .set("Content-Type", "image/png")
+    .set("ETag", etag)
+    .send(png);
 });
