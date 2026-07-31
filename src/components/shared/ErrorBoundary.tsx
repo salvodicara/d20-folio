@@ -59,8 +59,8 @@ export function ErrorFallback({
       className={cn(
         "flex flex-col items-center justify-center p-6",
         variant === "region"
-          ? "on-art-scope min-h-[60vh]"
-          : "crash-field min-h-screen bg-bg-primary"
+          ? "wb on-art-scope min-h-[60vh]"
+          : "wb crash-field min-h-screen bg-bg-primary"
       )}
     >
       <RunicEmptyState

@@ -118,7 +118,7 @@ export function FolioLoader({
     <div
       className={cn(
         "folio-loader",
-        variant === "fullscreen" ? "fl-fullscreen" : "fl-region"
+        variant === "fullscreen" ? "wb fl-fullscreen" : "wb fl-region"
       )}
       role="status"
       aria-live="polite"

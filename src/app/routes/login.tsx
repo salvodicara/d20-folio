@@ -25,7 +25,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="login-shell relative flex min-h-screen items-center justify-center px-4">
+    <div className="wb login-shell relative flex min-h-screen items-center justify-center px-4">
       {/* #36 — the cinematic sign-in splash (login.webp) full-bleed behind the
           brand lockup, with a centre-weighted scrim so the card-less brand text
           stays readable while the painterly scene fills the frame at the edges.

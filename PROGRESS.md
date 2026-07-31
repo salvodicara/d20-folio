@@ -10,6 +10,12 @@
 
 ## Active epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 
+> **Phase-3 rollout status (2026-07-31):** Sheet ✓ · Compendium ✓ (protruding index tabs, one
+> construction) · Campaigns ✓ · dialogs/portals ✓ (wb-scoped shells, leather plates, the
+> frame's-margin law, ONE scroll primitive + guard) · all page roots ✓ · wizards ✓ (scope only —
+> the ritual register stays) · login/error/loader ✓. Remaining niceties live in the epic notes
+> (mobile layout exploration, admin rework).
+
 > **Epic-close checklist:** when the whole identity epic lands, REDO the README/GitHub
 > screenshots and any repo-front imagery (owner, 2026-07-31 — they still show the pre-BG3 UI).
 
