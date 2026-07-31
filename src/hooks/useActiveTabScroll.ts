@@ -38,7 +38,11 @@ export function revealActiveTab(container: HTMLElement | null): void {
   // scrollIntoView, which may scroll ANY scrollable ancestor (the page's
   // vertical axis included) and whose cross-browser behaviour is exactly the
   // unpredictability the owner reported. Smooth unless motion is reduced.
-  const delta = a.left < c.left ? a.left - c.left : a.right - c.right;
+  // The CSS-declared `scroll-padding-inline` is the reveal gap (scrollBy
+  // ignores it natively): it lands the tab CLEAR of the strip's edge-dissolve
+  // mask, so a just-revealed ACTIVE tab is never half-melted by the fade.
+  const pad = parseFloat(getComputedStyle(container).scrollPaddingInlineStart) || 0;
+  const delta = a.left < c.left ? a.left - c.left - pad : a.right - c.right + pad;
   const reduced =
     document.documentElement.getAttribute("data-motion") === "reduced" ||
     (typeof window.matchMedia === "function" &&

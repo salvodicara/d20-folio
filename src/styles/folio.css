@@ -9488,14 +9488,16 @@ button.create-need:focus-visible .create-need-chev {
      continuous sheet (was tiled at 340px → a hard seam mid-page that read as wallpaper),
      over the per-theme surface tint. */
   background:
+    linear-gradient(180deg, var(--leaf-head, transparent) 0 48px, transparent 128px),
     image-set(var(--tome-leaf) type("image/webp")),
     linear-gradient(176deg, var(--bg-surface-2), var(--bg-surface-1) 64%);
-  background-size: cover, auto;
+  background-size: auto, cover, auto;
   background-position:
+    0 0,
     center,
     0 0;
-  background-repeat: no-repeat, no-repeat;
-  background-blend-mode: soft-light, normal;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-blend-mode: normal, soft-light, normal;
   box-shadow: var(--elev-raised);
   overflow: hidden;
 }
@@ -9514,21 +9516,58 @@ button.create-need:focus-visible .create-need-chev {
 [data-theme="dark"] .tome-leaf-surface {
   --tome-leaf: var(--asset-vellum-dark);
   background:
+    linear-gradient(180deg, var(--leaf-head, transparent) 0 48px, transparent 128px),
     image-set(var(--tome-leaf) type("image/webp")),
     linear-gradient(
       180deg,
       color-mix(in oklab, var(--gold-leaf-900) 30%, var(--bg-surface-1)),
       color-mix(in oklab, var(--gold-leaf-900) 26%, var(--bg-surface-1))
     );
-  background-size: cover, auto;
+  background-size: auto, cover, auto;
   background-position:
+    0 0,
     center,
     0 0;
-  background-repeat: no-repeat, no-repeat;
-  background-blend-mode: normal, normal;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-blend-mode: normal, normal, normal;
   box-shadow:
     var(--elev-raised),
     inset 0 0 70px 24px color-mix(in oklab, #000 62%, var(--gold-leaf-900));
+}
+
+/* The PAGE HOSTS (the tome + the sheet page): their top edge IS the shell's
+   seat line — no own border-top, square head corners (a notebook page under
+   its index tabs). `--leaf-head` paints the FLAT head band in the active
+   tab's exact fill, so tab↔page fusion is an equality, not a calibration
+   against the vellum photo; the band melts into the texture below. The dark
+   vignette is dropped here (flat head band must stay flat to the corners). */
+.cmp-tome,
+.sheet-page {
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  --leaf-head: #130d07;
+}
+[data-theme="light"] .cmp-tome,
+[data-theme="light"] .sheet-page {
+  --leaf-head: #faf0cb;
+}
+/* The page hosts drop the elevation token's INSET sheens (the embossed
+   top-highlight painted a 1px lit row across the page's head — under the
+   active tab it read as a separator, killing the one-piece fusion). Only the
+   OUTER drops remain: a page casts a shadow, it is not embossed. */
+[data-theme="dark"] .cmp-tome,
+[data-theme="dark"] .sheet-page {
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.4),
+    0 6px 14px rgba(0, 0, 0, 0.45);
+}
+[data-theme="light"] .cmp-tome,
+[data-theme="light"] .sheet-page {
+  box-shadow:
+    0 2px 5px rgba(46, 30, 6, 0.24),
+    0 12px 28px rgba(46, 30, 6, 0.34),
+    var(--gilt-glow);
 }
 
 /* ── `.cmp-tome` — the compendium codex panel, composing `.tome-leaf-surface`
@@ -9578,8 +9617,10 @@ button.create-need:focus-visible .create-need-chev {
   scrollbar-width: none;
   /* COMPENDIUM-NAV — swiping the tabs never triggers the browser's history swipe. */
   overscroll-behavior-x: contain;
-  /* Breathing room when `useActiveTabScroll` reveals a selected off-edge tab. */
-  scroll-padding-inline: 16px;
+  /* The reveal gap `useActiveTabScroll` honors: past the 36px edge-dissolve
+     zone, so a just-revealed active tab lands fully solid, never half-melted
+     in the fade. */
+  scroll-padding-inline: 44px;
   gap: 5px;
   padding: 0 var(--sp-4);
 }
@@ -9596,23 +9637,28 @@ button.create-need:focus-visible .create-need-chev {
 .cmp-ribbon-shell,
 .tabstrip-shell {
   position: relative;
-  /* 2px overlap, not 1: the row's height is SUB-PIXEL (font metrics), so a
-     1px overlap left an antialiased fringe of the page border bleeding
-     through the active tab's base (the owner's "linea che taglia", round 2).
-     Two opaque pixels swallow the fringe at every DPR. */
-  margin-bottom: -2px;
-}
-/* Stacking truth (owner, 2026-07-31): resting tabs are pages BEHIND the open
-   one, so the page (z1) draws its border IN FRONT of their feet; only the
-   ACTIVE tab (z2) rides over the page — the bite. */
-.cmp-tome,
-.sheet-page {
+  /* Above the page and its upward shadow blur: when the row overflows, its
+     dissolve MASK makes it a stacking context that traps any per-tab z-index,
+     so the lift must live on the SHELL — one mechanism at every viewport. */
   z-index: 1;
 }
-.cmp-tab[aria-selected="true"],
-.wb .tabstrip [role="tab"][aria-selected="true"] {
-  position: relative;
-  z-index: 2;
+/* THE SEAT LINE — never drawn where it must not exist (the lesson of three
+   failed cover-based rounds: two sibling boxes snap to device pixels
+   independently, so ANY "cover the border" scheme leaks a fringe at
+   fractional layouts). Construction: the line lives as (a) each RESTING
+   tab's own border-bottom (same box as the tab — flawless by construction)
+   and (b) the ROW's background gradient, which fills the gaps and the
+   trailing run — a parent's background can never paint over a child, so
+   crossing the ACTIVE tab (transparent-bottomed, nothing to cover) is
+   impossible by paint order. */
+.cmp-ribbon,
+.wb .tabstrip {
+  background: linear-gradient(
+      to top,
+      color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium)) 0 1px,
+      transparent 1px
+    )
+    no-repeat;
 }
 /* The junction curls — the active tab's feet flare into the page with two
    concave fillets (the folder-tab pattern), the arc drawn in the SAME ink as
@@ -9624,9 +9670,7 @@ button.create-need:focus-visible .create-need-chev {
 .wb .tabstrip [role="tab"][aria-selected="true"]::after {
   content: "";
   position: absolute;
-  /* 1px above the tab's base = exactly the page border row (the tab overlaps
-     the page 2px) — the arcs terminate ON the line they continue. */
-  bottom: 1px;
+  bottom: 0;
   width: 8px;
   height: 8px;
   --curl-ink: color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
@@ -9696,7 +9740,12 @@ button.create-need:focus-visible .create-need-chev {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 13px;
+  /* INTEGER height (not font-derived): a fractional row bottom makes the
+     browser snap the seat line and the tab's cover onto DIFFERENT device
+     pixel rows — the un-killable hairline under the active tab (owner,
+     2026-07-31). An integer edge snaps identically at every DPR. */
+  height: 36px;
+  padding: 0 13px;
   font-family: var(--font-numeric);
   font-size: var(--text-2xs);
   font-weight: 600;
@@ -9704,7 +9753,12 @@ button.create-need:focus-visible .create-need-chev {
   text-transform: uppercase;
   color: var(--text-secondary);
   border: 1px solid var(--border-medium);
-  border-bottom-color: transparent;
+  /* the resting tab's bottom edge IS its segment of the seat line (page ink) */
+  border-bottom-color: color-mix(
+    in oklab,
+    var(--accent-primary) 38%,
+    var(--border-medium)
+  );
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   /* OPAQUE: the tabs protrude over the scene art — translucency would read as
      dirt. Resting = the page ground warmed a step toward the leather dark. */
@@ -9752,10 +9806,9 @@ button.create-need:focus-visible .create-need-chev {
   /* the page's own border ink — the tab's outline continues the page's stroke */
   border-color: color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
   border-bottom-color: transparent;
-  /* THE FUSION: the fill is the page material's own top tone — CALIBRATED on
-     the rendered dark vellum (620px band average under the border, 2026-07-31:
-     srgb 19,13,7) so the active tab and the page below read as ONE object
-     across the bitten border. Recalibrate if `--asset-vellum-dark` changes. */
+  /* THE FUSION: this fill EQUALS the page's `--leaf-head` band by definition
+     (one constant, two uses) — tab and page are the same flat tone across the
+     seat line, an equality, never a calibration against the vellum photo. */
   background: #130d07;
   /* NO box-shadow: the active tab is a PIECE OF THE PAGE (owner, 2026-07-31 —
      "un pezzo unico"); a halo ring would draw a line across the fused base.
@@ -9765,13 +9818,7 @@ button.create-need:focus-visible .create-need-chev {
 .wb .tabstrip [role="tab"][aria-selected="true"] .icon {
   color: var(--accent-text);
 }
-[data-theme="light"] .cmp-tab[aria-selected="true"],
-[data-theme="light"] .wb .tabstrip [role="tab"][aria-selected="true"] {
-  /* Light fusion: CALIBRATED on the rendered aged-scroll's top band (620px
-     average under the border, 2026-07-31: srgb 250,240,203). Recalibrate if
-     `--asset-parchment` changes. */
-  background: #faf0cb;
-}
+
 /* The seat is the PAGE's own top border now (the tabs overlap it 1px and the
    active one bites it) — no separate rule element. */
 
@@ -17777,6 +17824,18 @@ button.econ-tok-filter:active .econ-disc {
   background: color-mix(in oklab, var(--bg-surface-2) 85%, var(--accent-primary));
   border-color: color-mix(in oklab, var(--accent-primary) 24%, var(--border-medium));
   box-shadow: inset 0 1px 0 var(--emboss-sheen);
+}
+/* Light ACTIVE — placed AFTER the light base so the cascade cannot re-paint
+   the fused bottom edge (the base rule's 4-side border-color once resurrected
+   the seat line under the active tab). One piece with the page: the band
+   fill, an open bottom, no embossed sheen. */
+[data-theme="light"] .cmp-tab[aria-selected="true"],
+[data-theme="light"] .wb .tabstrip [role="tab"][aria-selected="true"] {
+  /* equals the light `--leaf-head` band (one constant, two uses) */
+  background: #faf0cb;
+  border-color: color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
+  border-bottom-color: transparent;
+  box-shadow: none;
 }
 /* (The legacy light-lux active-tab gradient + halo died with the one-piece
    construction — the shared aria-selected rules above own the fusion fill.) */

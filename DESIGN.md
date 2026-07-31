@@ -1044,14 +1044,22 @@ routes are `React.lazy` + Suspense, so at that instant the page is still the emp
 The cockpit `TabStrip` **is the compendium type ribbon** (owner, 2026-07-31 — one ribbon anatomy
 app-wide), and both are **PROTRUDING INDEX TABS** (owner: "devono sporgere come linguette" — the
 notebook/rubrica metaphor): the tab row floats on the scene ABOVE the page, overlapping the page's
-top border by 1px so the tabs seat on it. **Stacking truth:** resting tabs are pages BEHIND the
-open one — the page (z1) draws its border in front of their feet; only the ACTIVE tab (z2) rides
-over it. **One piece:** the active tab is a piece of the page — fill = the page material's
-calibrated top tone (`#130d07` dark vellum / `#faf0cb` light scroll), border = the page's own 38%
-ink so the outline reads as ONE continuous stroke, NO halo/box-shadow (a ring would draw a line
-across the fused base), and its feet flare into the page through two concave radial FILLETS (the
-folder-tab curl) in the same ink. Resting tabs are opaque (never translucent over art), a step
-warmer than the ground. The page below composes
+top border. **The seat line is never drawn where it must not exist** (the law learned from three
+failed cover-based rounds — two sibling boxes snap to device pixels independently, so ANY
+"cover the border" scheme leaks a fringe): it lives as each RESTING tab's own `border-bottom`
+(same box — flawless) plus the ROW's background gradient filling the gaps, and a parent's
+background can never paint over a child, so crossing the ACTIVE tab is impossible by paint order.
+The page has NO border-top (the line IS its top edge), square head corners, and NO inset
+elevation sheens (the embossed top-highlight read as a separator — a page casts a shadow, it is
+not embossed); the SHELL sits at z1 above the page's upward shadow blur (a per-tab z gets trapped
+by the dissolve mask's stacking context). **One piece:** the active tab's fill EQUALS the page's
+`--leaf-head` flat head band (`#130d07` dark vellum / `#faf0cb` light scroll — one constant, two
+uses; the band melts into the vellum below), its border is the page's own 38% ink (one continuous
+stroke), no halo, open bottom, feet flaring through two concave radial FILLETS (the folder-tab
+curl). Resting tabs are opaque (never translucent over art), a step warmer than the ground, and
+their tops carry an INTEGER height (36px — a font-derived fractional row edge is what made
+device-pixel snapping non-deterministic). The reveal gap (`scroll-padding-inline: 44px`, honored
+by `useActiveTabScroll`) lands a just-revealed active tab CLEAR of the 36px edge-dissolve zone. The page below composes
 `.tome-leaf-surface` (gilt frame + per-theme vellum — the inner "inked margin" hairline is GONE:
 one frame per surface, no frames-within-frames) and hugs the content with one sp-3 breath on every
 side (the symmetric-tail ruling). Clipped tabs DISSOLVE via a `data-fade`-driven mask on the
