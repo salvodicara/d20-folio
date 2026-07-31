@@ -16,6 +16,10 @@
 > the ritual register stays) · login/error/loader ✓. Remaining niceties live in the epic notes
 > (mobile layout exploration, admin rework).
 
+> **Admin rework SHIPPED (2026-07-31, owner-grilled):** omni-search (users · characters →
+> owner's row · campaigns → DM's row, lazy char index) + campaigns-style disclosure rows
+> (actions inside the detail) + bounded list (25 + show-more). Overview + bug inbox unchanged.
+
 > **Epic-close checklist:** when the whole identity epic lands, REDO the README/GitHub
 > screenshots and any repo-front imagery (owner, 2026-07-31 — they still show the pre-BG3 UI).
 

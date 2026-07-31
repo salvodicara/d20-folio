@@ -19,7 +19,7 @@
  * mark/disable the current admin's own row (you can't block or delete yourself).
  */
 
-import { useState, useEffect } from "react";
+import { useId, useRef, useState, useEffect } from "react";
 import type { ComponentType, SVGProps } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -54,6 +54,12 @@ import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Icon } from "@/components/ui/icon";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
+import { SearchInput } from "@/components/ui";
+import {
+  buildAdminMatches,
+  type AdminCharIndex,
+  type AdminMatchHint,
+} from "./admin-search";
 import {
   listAllUsers,
   setUserStatus,
@@ -70,6 +76,7 @@ import {
 import { getClosedIssueNumbers } from "@/lib/github-issue-state";
 import { reconcileBugReports } from "@/lib/bug-report-reconcile";
 
+const PAGE_SIZE = 25;
 const LAST_VISIT_KEY = "admin_last_visit";
 
 type AdminUser = {
@@ -119,9 +126,22 @@ export function AdminPage() {
   // rate-limit) — the inbox then shows all with a quiet note and deletes nothing.
   const [bugReports, setBugReports] = useState<AdminBugReport[] | null>(null);
   const [bugClosureUnknown, setBugClosureUnknown] = useState(false);
-  // Character drill-down: which row is expanded + the per-user roster cache.
+  // Row expansion (the campaigns-style disclosure): which row is open + the
+  // per-user roster cache its detail lazy-loads.
   const [expandedUid, setExpandedUid] = useState<string | null>(null);
   const [rosters, setRosters] = useState<Record<string, RosterState>>({});
+  // OMNI-SEARCH (owner-grilled): one query over users + characters + campaigns.
+  // The character-name index loads LAZILY on the first real query (one roster
+  // fetch per user, once — zero cost until the admin actually searches).
+  const [query, setQuery] = useState("");
+  const [charIndex, setCharIndex] = useState<AdminCharIndex>(null);
+  // In-flight gate as a ref: no render depends on the transition itself (the
+  // "searching…" note derives from `charIndex === null`), and a state here
+  // would need a sync setState inside the effect (compiler-lint ban).
+  const charIndexInFlight = useRef(false);
+  // Bounded render for large communities: the list shows PAGE_SIZE rows and
+  // grows on demand; search always runs over the FULL set.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   // Delete flow: which row's typed-confirm is open + the in-flight uid.
   const [deleteOpenUid, setDeleteOpenUid] = useState<string | null>(null);
   const [deletingUid, setDeletingUid] = useState<string | null>(null);
@@ -197,6 +217,33 @@ export function AdminPage() {
     localStorage.setItem(LAST_VISIT_KEY, new Date().toISOString());
   }, [isAdmin]);
 
+  // Build the character-name index the first time the admin types a query:
+  // every user's slim roster, fetched once and ALSO seeded into the drill-down
+  // cache (so expanding a row after a search costs nothing extra).
+  useEffect(() => {
+    if (!query.trim() || charIndex || charIndexInFlight.current || users.length === 0)
+      return;
+    let alive = true;
+    charIndexInFlight.current = true;
+    Promise.all(users.map(async (u) => [u.uid, await listUserCharacters(u.uid)] as const))
+      .then((entries) => {
+        if (!alive) return;
+        setCharIndex(Object.fromEntries(entries));
+        setRosters((prev) => {
+          const next = { ...prev };
+          for (const [uid, list] of entries) next[uid] ??= list;
+          return next;
+        });
+      })
+      .catch(() => alive && setCharIndex({}))
+      .finally(() => {
+        charIndexInFlight.current = false;
+      });
+    return () => {
+      alive = false;
+    };
+  }, [query, charIndex, users]);
+
   async function handleToggleBlock(
     uid: string,
     current: "active" | "blocked",
@@ -229,8 +276,8 @@ export function AdminPage() {
     }
   }
 
-  // Toggle a user's character drill-down; lazy-load their roster on first open.
-  function handleToggleCharacters(uid: string) {
+  // Toggle a row's disclosure; lazy-load that user's roster on first open.
+  function handleToggleRow(uid: string) {
     setExpandedUid((cur) => (cur === uid ? null : uid));
     if (rosters[uid]) return; // cached — don't re-fetch
     setRosters((prev) => ({ ...prev, [uid]: "loading" }));
@@ -292,6 +339,10 @@ export function AdminPage() {
   const totalCampaigns = campaigns?.length ?? null;
   // Per-user campaign + DM tallies, folded once from the campaign list.
   const { member: campaignsByUser, dm: dmByUser } = campaignTallies(campaigns);
+  // Omni-search resolution: null = no query (everyone shows). Bounded render.
+  const matches = buildAdminMatches(query, users, campaigns, charIndex);
+  const visibleUsers = matches ? users.filter((u) => matches.has(u.uid)) : users;
+  const shownUsers = visibleUsers.slice(0, visibleCount);
 
   return (
     <main id="main" className="wb page-shell on-art-scope py-8">
@@ -304,7 +355,10 @@ export function AdminPage() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setReloadKey((k) => k + 1)}
+            onClick={() => {
+              setCharIndex(null);
+              setReloadKey((k) => k + 1);
+            }}
             disabled={loading}
           >
             <Icon
@@ -370,17 +424,43 @@ export function AdminPage() {
           </div>
         )}
 
+        {/* The omni-search: users by name/email, characters + campaigns resolve
+            to their owner's / DM's row (admin-search.ts). */}
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <SearchInput
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setVisibleCount(PAGE_SIZE);
+            }}
+            onClear={() => setQuery("")}
+            clearLabel={t("common.clearSearch")}
+            placeholder={t("admin.searchPlaceholder")}
+            className="max-w-md flex-1"
+          />
+          {query.trim() && (
+            <span className="text-xs text-text-secondary">
+              {!charIndex
+                ? t("admin.searchingCharacters")
+                : t("admin.searchMeta", {
+                    shown: visibleUsers.length,
+                    total: users.length,
+                  })}
+            </span>
+          )}
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Spinner size="lg" />
           </div>
-        ) : users.length === 0 ? (
+        ) : visibleUsers.length === 0 ? (
           <p className="py-10 text-center text-sm text-text-muted">
-            {t("admin.noUsers")}
+            {users.length === 0 ? t("admin.noUsers") : t("common.noResults")}
           </p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {users.map((u) => (
+            {shownUsers.map((u) => (
               <UserRow
                 key={u.uid}
                 user={u}
@@ -393,14 +473,15 @@ export function AdminPage() {
                   campaigns: campaignsByUser[u.uid] ?? 0,
                   dm: dmByUser[u.uid] ?? 0,
                 }}
-                charsExpanded={expandedUid === u.uid}
+                open={expandedUid === u.uid}
+                matchHint={matches?.get(u.uid) ?? null}
                 roster={rosters[u.uid]}
                 deleteOpen={deleteOpenUid === u.uid}
                 deleting={deletingUid === u.uid}
                 onToggle={() =>
                   void handleToggleBlock(u.uid, u.status, u.displayName || u.email)
                 }
-                onToggleCharacters={() => handleToggleCharacters(u.uid)}
+                onToggleOpen={() => handleToggleRow(u.uid)}
                 onOpenSheet={(charId) =>
                   void navigate(`/admin/users/${u.uid}/characters/${charId}`)
                 }
@@ -411,6 +492,17 @@ export function AdminPage() {
               />
             ))}
           </ul>
+        )}
+        {!loading && visibleUsers.length > visibleCount && (
+          <div className="mt-4 flex justify-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+            >
+              {t("admin.showMore", { count: visibleUsers.length - visibleCount })}
+            </Button>
+          </div>
         )}
       </Section>
 
@@ -520,12 +612,13 @@ function UserRow({
   isNew,
   now,
   metrics,
-  charsExpanded,
+  open,
+  matchHint,
   roster,
   deleteOpen,
   deleting,
   onToggle,
-  onToggleCharacters,
+  onToggleOpen,
   onOpenSheet,
   onToggleDelete,
   onConfirmDelete,
@@ -536,20 +629,21 @@ function UserRow({
   isNew: boolean;
   now: number;
   metrics: UserMetrics;
-  charsExpanded: boolean;
+  open: boolean;
+  matchHint: AdminMatchHint | null;
   roster: RosterState | undefined;
   deleteOpen: boolean;
   deleting: boolean;
   onToggle: () => void;
-  onToggleCharacters: () => void;
+  onToggleOpen: () => void;
   onOpenSheet: (charId: string) => void;
   onToggleDelete: () => void;
   onConfirmDelete: () => void;
 }) {
   const { t } = useTranslation();
+  const detailId = useId();
   const isYou = u.uid === currentUid;
   const isAdminUser = u.role === "admin";
-  const hasCharacters = metrics.characters === null || metrics.characters > 0;
 
   function formatRelative(d: Date): string {
     const diff = now - d.getTime();
@@ -562,12 +656,13 @@ function UserRow({
 
   return (
     <li>
-      <InfoCard
-        className={cn("flex flex-col gap-3", u.status === "blocked" && "bg-danger/5")}
-      >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          {/* Avatar (#82) — the user's Google photo, or the deterministic tinted
-              initial fallback (no more blank rows). */}
+      {/* The campaigns-style disclosure card (owner-grilled, 2026-07-31): the
+          resting row is pure IDENTITY + metrics; dates, the character roster,
+          and the block/delete actions live in the chevron-revealed detail —
+          the SectionPanel idiom verbatim (one recipe app-wide), so no
+          destructive button stands on every row of the ledger at rest. */}
+      <InfoCard className={cn("section-card", u.status === "blocked" && "bg-danger/5")}>
+        <div className="flex items-center gap-3">
           <span className="topbar-avatar grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full text-sm">
             <Portrait
               src={u.photoURL}
@@ -577,7 +672,6 @@ function UserRow({
             />
           </span>
 
-          {/* Identity + per-user metrics */}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="truncate font-semibold text-text-primary">
@@ -602,7 +696,6 @@ function UserRow({
             </div>
             <div className="truncate font-mono text-xs text-text-muted">{u.email}</div>
 
-            {/* Per-user metric strip — characters, campaigns, and DM-of. */}
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <MetricChip
                 icon={Swords}
@@ -627,103 +720,115 @@ function UserRow({
                   tone="text-accent"
                 />
               )}
-            </div>
-          </div>
-
-          {/* Dates */}
-          <div className="shrink-0 text-xs text-text-muted sm:text-right">
-            <div>{t("admin.joined", { date: formatDate(u.createdAt) })}</div>
-            {/* "Never active" is its OWN sentence per locale — composing
-                "Active {never}" produced "Attivo Mai" in Italian. */}
-            <div>
-              {u.lastActiveAt
-                ? t("admin.active", { when: formatRelative(u.lastActiveAt) })
-                : t("admin.neverActive")}
-            </div>
-          </div>
-
-          {/* Actions: view characters · block/unblock · delete (never on yourself) */}
-          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-stretch">
-            {hasCharacters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onToggleCharacters}
-                aria-expanded={charsExpanded}
-                className="justify-center"
-              >
-                <Icon as={Eye} size="sm" decorative />
-                {t("admin.totalCharacters")}
-                <Icon
-                  as={ChevronDown}
-                  size="sm"
-                  decorative
-                  className={cn("transition-transform", charsExpanded && "rotate-180")}
-                />
-              </Button>
-            )}
-            {!isYou && (
-              <>
-                {/* Block rests in the QUIET danger register (matching Delete below)
-                    — the filled destructive dress belongs to the confirm step, not
-                    to every row of the ledger at rest. Unblock is restorative. */}
-                <Button
-                  variant={u.status === "blocked" ? "secondary" : "ghost"}
-                  size="sm"
-                  loading={toggling}
-                  onClick={onToggle}
-                  className={cn(
-                    "justify-center",
-                    u.status !== "blocked" && "text-danger hover:text-danger"
-                  )}
+              {/* WHY this row matched the omni-search, when it wasn't the
+                  user's own identity — a quiet accent chip. */}
+              {matchHint && (
+                <span
+                  className="admin-stat text-accent"
+                  aria-label={
+                    matchHint.kind === "character"
+                      ? t("admin.matchCharacterAria", { name: matchHint.label })
+                      : t("admin.matchCampaignAria", { name: matchHint.label })
+                  }
                 >
-                  {u.status === "blocked" ? (
-                    <>
-                      <Icon as={Shield} size="sm" decorative />
-                      {t("admin.unblock")}
-                    </>
-                  ) : (
-                    <>
-                      <Icon as={ShieldOff} size="sm" decorative />
-                      {t("admin.block")}
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onToggleDelete}
-                  aria-expanded={deleteOpen}
-                  className="justify-center text-danger hover:text-danger"
-                >
-                  <Icon as={Trash2} size="sm" decorative />
-                  {t("common.delete")}
-                </Button>
-              </>
-            )}
+                  <Icon
+                    as={matchHint.kind === "character" ? Swords : Map}
+                    size="xs"
+                    decorative
+                  />
+                  <span className="cst-lbl">{matchHint.label}</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ── Character drill-down (read-only sheet entry) ─────────────────── */}
-        {charsExpanded && (
-          <CharacterDrillDown roster={roster} onOpenSheet={onOpenSheet} />
-        )}
+        {/* The chevron disclosure — the campaigns SectionPanel idiom verbatim. */}
+        <button
+          type="button"
+          className="section-disclosure"
+          aria-expanded={open}
+          aria-controls={detailId}
+          aria-label={open ? t("admin.hideDetail") : t("admin.showDetail")}
+          onClick={onToggleOpen}
+        >
+          <span className="section-disclosure-knob">
+            <Icon
+              as={ChevronDown}
+              size="sm"
+              decorative
+              className={cn(open && "rotate-180")}
+            />
+          </span>
+        </button>
+        <div className="section-detail-wrap" data-open={open || undefined}>
+          <div className="section-detail" id={detailId}>
+            <div className="flex flex-col gap-3">
+              <div className="text-xs text-text-muted">
+                <span>{t("admin.joined", { date: formatDate(u.createdAt) })}</span>
+                <span className="mx-2">·</span>
+                <span>
+                  {u.lastActiveAt
+                    ? t("admin.active", { when: formatRelative(u.lastActiveAt) })
+                    : t("admin.neverActive")}
+                </span>
+              </div>
 
-        {/* ── Typed-confirm delete ────────────────────────────────────────── */}
-        {deleteOpen && !isYou && (
-          <DeleteConfirm
-            email={u.email}
-            deleting={deleting}
-            onConfirm={onConfirmDelete}
-            onCancel={onToggleDelete}
-          />
-        )}
+              <CharacterDrillDown roster={roster} onOpenSheet={onOpenSheet} />
+
+              {!isYou && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant={u.status === "blocked" ? "secondary" : "ghost"}
+                    size="sm"
+                    loading={toggling}
+                    onClick={onToggle}
+                    className={cn(
+                      "justify-center",
+                      u.status !== "blocked" && "text-danger hover:text-danger"
+                    )}
+                  >
+                    {u.status === "blocked" ? (
+                      <>
+                        <Icon as={Shield} size="sm" decorative />
+                        {t("admin.unblock")}
+                      </>
+                    ) : (
+                      <>
+                        <Icon as={ShieldOff} size="sm" decorative />
+                        {t("admin.block")}
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onToggleDelete}
+                    aria-expanded={deleteOpen}
+                    className="justify-center text-danger hover:text-danger"
+                  >
+                    <Icon as={Trash2} size="sm" decorative />
+                    {t("common.delete")}
+                  </Button>
+                </div>
+              )}
+
+              {deleteOpen && !isYou && (
+                <DeleteConfirm
+                  email={u.email}
+                  deleting={deleting}
+                  onConfirm={onConfirmDelete}
+                  onCancel={onToggleDelete}
+                />
+              )}
+            </div>
+          </div>
+        </div>
       </InfoCard>
     </li>
   );
 }
 
-/** The expanded character roster for one user — each row opens a read-only sheet. */
 function CharacterDrillDown({
   roster,
   onOpenSheet,

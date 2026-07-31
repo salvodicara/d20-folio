@@ -126,8 +126,20 @@ beforeEach(() => {
     .mockReset()
     .mockResolvedValue({ "admin-uid": 3, u2: 5, u3: 0 });
   listCampaignSummariesMock.mockReset().mockResolvedValue([
-    { id: "c1", dmUid: "admin-uid", members: ["admin-uid", "u2"], status: "active" },
-    { id: "c2", dmUid: "u2", members: ["u2", "u3"], status: "active" },
+    {
+      id: "c1",
+      name: "The First Banner",
+      dmUid: "admin-uid",
+      members: ["admin-uid", "u2"],
+      status: "active",
+    },
+    {
+      id: "c2",
+      name: "Second Sons",
+      dmUid: "u2",
+      members: ["u2", "u3"],
+      status: "active",
+    },
   ]);
   listAllUsersMock.mockReset().mockResolvedValue(seedUsers());
   listBugReportsMock.mockReset().mockResolvedValue([]);

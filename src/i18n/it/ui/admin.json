@@ -57,6 +57,14 @@
     "bugReporter": "Autore",
     "bugContext": "Contesto di debug",
     "bugScreenshot": "Screenshot",
-    "bugScreenshotUnavailable": "Impossibile caricare lo screenshot."
+    "bugScreenshotUnavailable": "Impossibile caricare lo screenshot.",
+    "searchPlaceholder": "Cerca utenti, personaggi, campagne…",
+    "searchMeta": "{{shown}} di {{total}} utenti",
+    "searchingCharacters": "Ricerca tra i personaggi…",
+    "matchCharacterAria": "Personaggio corrispondente: {{name}}",
+    "matchCampaignAria": "Campagna corrispondente: {{name}}",
+    "showDetail": "Mostra dettaglio utente",
+    "hideDetail": "Nascondi dettaglio utente",
+    "showMore": "Mostra altri {{count}}"
   }
 }

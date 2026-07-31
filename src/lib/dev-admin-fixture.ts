@@ -32,6 +32,8 @@ export interface DevAdminUser {
  *  campaign total, without pulling treasury / notes / banners. */
 export interface AdminCampaignSummary {
   id: string;
+  /** Display name — the admin omni-search matches campaigns by it. */
+  name: string;
   members: string[];
   dmUid: string;
   status: "active" | "archived";
@@ -281,18 +283,21 @@ export function devCampaignSummaries(): AdminCampaignSummary[] {
   return [
     {
       id: "camp-mistlands",
+      name: "Shadows over the Mistlands",
       dmUid: "mock-uid",
       members: ["mock-uid", "user-aria", "user-lyra"],
       status: "active",
     },
     {
       id: "camp-emberfall",
+      name: "Emberfall Campaign",
       dmUid: "user-aria",
       members: ["user-aria", "user-senna", "user-garrick"],
       status: "active",
     },
     {
       id: "camp-old-reach",
+      name: "The Old Reach",
       dmUid: "user-senna",
       members: ["user-senna"],
       status: "archived",

@@ -748,6 +748,7 @@ export async function listCampaignSummaries(): Promise<AdminCampaignSummary[]> {
     const data = d.data();
     return {
       id: d.id,
+      name: String(data.name ?? ""),
       members: Array.isArray(data.members) ? data.members.map(String) : [],
       dmUid: String(data.dmUid ?? ""),
       status: data.status === "archived" ? "archived" : "active",

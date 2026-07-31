@@ -57,6 +57,14 @@
     "bugReporter": "Reporter",
     "bugContext": "Debug context",
     "bugScreenshot": "Screenshot",
-    "bugScreenshotUnavailable": "The screenshot could not be loaded."
+    "bugScreenshotUnavailable": "The screenshot could not be loaded.",
+    "searchPlaceholder": "Search users, characters, campaigns…",
+    "searchMeta": "{{shown}} of {{total}} users",
+    "searchingCharacters": "Searching characters…",
+    "matchCharacterAria": "Matched character: {{name}}",
+    "matchCampaignAria": "Matched campaign: {{name}}",
+    "showDetail": "Show user detail",
+    "hideDetail": "Hide user detail",
+    "showMore": "Show {{count}} more"
   }
 }
