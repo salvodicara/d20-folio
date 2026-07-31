@@ -1410,15 +1410,48 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   milestone (wizard-driven) stays the default; zero change for current users.
 - **Auth breadth: DEFERRED** until the #32 public launch — Google-only stands; queue email-link +
   Apple when unknown users can arrive.
+- **Deterministic combat log (CANDIDATE — owner idea 2026-07-31):** an **auto-generated,
+  structured mechanical log per encounter**, appended to the campaign. Owner's verbatim intent
+  (2026-07-31): during a session the DM spends too much time transcribing combat bookkeeping (HP
+  math, who hit whom) when they would rather focus on narrative/dialogue summaries — so let the app
+  emit the mechanical record itself. Since encounters, initiative tracking, and campaigns are already
+  built and the deterministic engine already routes every combat action (damage intake, dying,
+  conditions, round advancement), the app can event-source a readable log bounded by the DM's
+  existing encounter start/end. _Capturing analysis (orchestrator, 2026-07-31):_
+  - **On-brand + feasible WITHOUT AI:** fits "the engine is the intelligence"; needs no LLM and no
+    dice (golden rule 21). Scope is the MECHANICAL log ("Lyra hits Goblin for 8, Goblin at 4 HP;
+    Kael falls unconscious; encounter ended"); it explicitly does NOT generate narrative prose (that
+    would need the ruled-out AI — Constitution v1.7, owner-ratified 2026-07-06). It COMPLEMENTS the
+    DM's hand-written story notes by removing the bookkeeping transcription.
+  - **Reframes the parked "Table feed":** same feature class, but the budget landmine (per-action
+    campaign writes) is solved by the encounter boundary — keep the log in the at-table live session
+    state and persist ONE compact summary document at encounter-CLOSE, not a write per action.
+  - **The "who dealt the damage" attribution (settled design, owner + orchestrator 2026-07-31):** the
+    app deliberately does NOT know who attacked whom — targeting is off-app (table-first, not a VTT —
+    constitution §2.9, owner-affirmed), so a damage delta records "the Goblin took 8", not the
+    attacker. NOT solved by inference (crediting the current-turn combatant is a GUESS — reactions /
+    opportunity attacks break it — and the engine records facts, never guesses dressed as truth). IS
+    solved SOTA + deterministic by an OPTIONAL one-tap attacker attribution when the DM applies
+    damage, pre-selected to the current-turn combatant (usually a zero-friction confirm), skippable:
+    the log reads "Lyra strikes the Goblin for 8 (Goblin at 4)" when attributed, "the Goblin takes 8
+    damage" when skipped — never a fabricated attacker. This never-guess rule + the encounter-close
+    single-write persistence are the two non-negotiables of the design.
+  - **Value/positioning:** a DDB-parity-PLUS DM feature (DDB has nothing comparable), leveraging the
+    encounter/initiative single-source already shipped.
+  - **Dependency/caveat:** value scales with how much of combat is driven through the app's tracker —
+    paper-side actions won't appear.
 - **Table feed** (the dice-free game-log analog): **PARKED** — per-action campaign writes are the
   one feature class that genuinely threatens the £1 budget, and the encounter tracker already
-  carries the at-table live state.
+  carries the at-table live state. **Reframed budget-safe by the deterministic-combat-log candidate
+  above** (2026-07-31) — the encounter boundary removes the per-action-write landmine; see that
+  bullet.
 - **Sequencing:** interleaved as the next NEW-FEATURE epic — the RA correctness waves keep rule-27
   priority, the BG3 identity missions continue untouched, and the bestiary campaign opens first,
   coordinating with #32. Attack order: bestiary → encounter picker → difficulty calc → companions
   → homebrew library → quickbuild → share links → compendium completeness → first-run onboarding
   [the rung added 2026-07-31 — its bullet above; it precedes the homebrew ladder's upper rungs
-  (c)–(d), while rung (b) keeps its queued slot below] → XP. [amendment
+  (c)–(d), while rung (b) keeps its queued slot below] → XP; **+ (candidate) deterministic combat
+  log — bullet above, suggested near the DM-retention tail, priority the owner's call**. [amendment
   2026-07-23: the #32 open-sourcing split COMPLETED 2026-07-17 — before this epic opened — so the
   split-aware authoring the charter references is already the live world (public SRD repo + private
   pack); the old #32 issue was deleted with the split, so THIS charter is the surviving coordination

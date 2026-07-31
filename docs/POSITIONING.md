@@ -73,6 +73,13 @@ frontier"_), sequenced **bestiary-first**:
   `shared: true` flag + unguessable doc id, anonymous read-only viewing (no account needed) via the
   Web Share API native sheet + copy-link fallback; **campaigns deliberately have NO share model**
   (industry standard — a table shares via each player's own character).
+- **Deterministic combat log (CANDIDATE, owner idea 2026-07-31)** — an auto-generated mechanical
+  encounter log (HP math, who-hit-whom, dying, round advancement) event-sourced from the actions
+  already flowing through the shipped encounter/initiative tracker, appended to the campaign at
+  encounter-close. Not a gap-closer but a **DDB-parity-PLUS** move (DDB has nothing comparable): it
+  frees the DM from bookkeeping transcription for narrative notes, needs no AI and no dice, and is
+  the budget-safe reframing of the parked "Table feed" (the encounter boundary replaces per-action
+  writes). Priority is the owner's call — charter in `PROGRESS.md` → _DDB-parity frontier_.
 - **The permanent, un-closeable cap: official non-SRD content.** DDB is the only legal home for the
   ~75%+ of subclasses/species/feats/spells/adventures that are _not_ in SRD 5.2.1. A CC-BY app is
   permanently bounded to the SRD subset. **We do not try to close this** (see _The moat_).
