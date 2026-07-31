@@ -27,17 +27,15 @@
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams, Link } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Link2Off } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BrandMark } from "@/components/ui/brand-mark";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
 import { getFullCharacter } from "@/lib/firestore";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { resolveDevDoc } from "@/features/campaigns/useMemberCharacterDocs";
 import { useCharacterStore } from "@/stores/characterStore";
-import { useAuthStore } from "@/stores/authStore";
 import { CockpitView } from "@/features/character/CharacterCockpit";
 import type { CharacterDoc } from "@/types/character";
 
@@ -77,44 +75,10 @@ function useNoIndex(): void {
 
 type LoadState = "loading" | "shared" | "unavailable";
 
-/**
- * The post-view conversion CTA — the ONE place a benefit line is allowed (the
- * decision moment, DESIGN.md §6): inline AFTER the sheet, never a modal / sticky /
- * interstitial nag, so it is dismissed simply by scrolling on. Shown ONLY to an
- * anonymous viewer (a signed-in viewer already has an account). The button is a real
- * `<Link>` to the app's Google auth entry (`/login`), and the quiet wordmark under it
- * is the passive brand loop. Not a focus trap — it is ordinary inline content.
- */
-function ShareConversionCta() {
-  const { t } = useTranslation();
-  return (
-    <section className="share-cta on-art-scope" aria-labelledby="share-cta-title">
-      <div className="share-cta-panel folio-panel">
-        <p id="share-cta-title" className="share-cta-title">
-          {t("share.ctaTitle")}
-        </p>
-        <Button asChild size="lg" className="share-cta-action">
-          <Link to="/login">{t("share.createCta")}</Link>
-        </Button>
-        <p className="share-cta-wordmark">
-          {/* Decorative gilt die (the visible text names the brand); the passive loop. */}
-          <BrandMark variant="gilt" size="sm" showWordmark={false} label="" />
-          <span>{t("share.builtWith")}</span>
-        </p>
-      </div>
-    </section>
-  );
-}
-
 export function SharedCharacterView() {
   const { uid, charId } = useParams<{ uid: string; charId: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  // The conversion CTA + the topbar's anon chrome are gated on the SAME fact — an
-  // anonymous viewer (no signed-in account), matching the topbar's own `!user`
-  // predicate. A logged-in viewer (owner previewing their own link, a DM) sees
-  // neither: they already have an account.
-  const isAnonymous = useAuthStore((s) => !s.user);
   // Only the ASYNC settle writes state (never a setState during the effect — D10 /
   // `react-hooks/set-state-in-effect`); the three render states are DERIVED from it
   // below. Keyed by the link so a settle for a previous URL can never be read as
@@ -179,16 +143,12 @@ export function SharedCharacterView() {
     );
   }
 
-  // The sheet — the read-only marker rides the header's identity line (the ONE
+  // Just the sheet — the read-only marker rides the header's identity line (the ONE
   // app-wide `.ro-pill`, inside CockpitView's CombatHeader), so the public share view
   // is structurally identical to the editable sheet: no read-only row of its own
-  // (owner 2026-07-31). An anonymous viewer then gets the ONE quiet conversion CTA
-  // after the sheet (the passive acquisition loop); a signed-in viewer gets just the
-  // sheet.
-  return (
-    <>
-      <CockpitView />
-      {isAnonymous && <ShareConversionCta />}
-    </>
-  );
+  // (owner 2026-07-31). The SOLE conversion path is the topbar's "Sign in" button; the
+  // marketing card that once sat here was removed as off-tone + redundant with it
+  // (owner 2026-07-31). An anonymous viewer has nowhere to navigate back TO, so this
+  // surface owns no chrome at all.
+  return <CockpitView />;
 }

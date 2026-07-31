@@ -153,27 +153,17 @@ export function Topbar({ onOpenPalette }: TopbarProps) {
       ) : (
         // ANONYMOUS viewer (a public /view or /legal page): the SAME bar, with ONLY
         // the auth-gated right cluster (nav + palette + account) swapped — IN THE SAME
-        // SLOT (`.topbar-anon` mirrors `.topbar-user`'s box) — for the sign-in
-        // affordances (owner gate 2026-07-31). A quiet "Sign in" text link for the
-        // returning viewer, then the primary CTA. Both lead to the app's real Google
-        // auth entry (`/login`, sign-in IS sign-up); routing (not importing `signIn`)
-        // keeps firebase/auth off this eager shell bundle. On mobile the pair collapses
-        // to a SINGLE "Get started" pill. The CTA wears the standard brass `.btn` but is
-        // sized to the topbar's OWN control rhythm (see `.topbar-anon-cta` in folio.css
-        // — text-sm, not the tiny 10px in-card `.btn.sm`), so it reads native to the bar.
+        // SLOT (`.topbar-anon` mirrors `.topbar-user`'s box) — for ONE sign-in button
+        // (owner gate 2026-07-31). Auth is Google-only and sign-in IS sign-up (the first
+        // OAuth creates the account), so a second "create" door would be redundant — one
+        // button, desktop AND mobile. It reuses the app's own auth label (`auth.signIn`,
+        // the LoginPage's), wears the standard brass `.btn` sized to the topbar's control
+        // rhythm (`.topbar-anon-cta` in folio.css — text-sm, not the tiny 10px `.btn.sm`),
+        // and routes to `/login` (the real Google auth entry) — a route, not a `signIn()`
+        // import, so firebase/auth stays off this eager shell bundle.
         <div className="topbar-anon">
-          <Link to="/login" className="topbar-anon-signin">
-            {t("share.signInLink")}
-          </Link>
-          {/* Desktop shows the "Sign in" + this CTA pair; below `sm` the single "Get
-              started" pill replaces both. The show/hide is driven by folio.css media
-              rules, NOT Tailwind `sm:` utilities: `.btn` is unlayered and beats the
-              layered utilities, so a `sm:hidden` on a `.btn` is a no-op. */}
           <Button asChild className="topbar-anon-cta">
-            <Link to="/login">{t("share.createCta")}</Link>
-          </Button>
-          <Button asChild className="topbar-anon-pill">
-            <Link to="/login">{t("share.getStarted")}</Link>
+            <Link to="/login">{t("auth.signIn")}</Link>
           </Button>
         </div>
       )}

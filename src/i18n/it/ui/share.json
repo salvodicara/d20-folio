@@ -9,11 +9,6 @@
     "failed": "Impossibile modificare la condivisione di {{name}}. Riprova.",
     "unavailableTitle": "Questo personaggio non è più condiviso",
     "unavailableBlurb": "Il link potrebbe essere stato revocato, oppure il personaggio potrebbe essere stato eliminato. Chiedi un nuovo link a chi te l'ha inviato.",
-    "unavailableCta": "Vai a d20 Folio",
-    "createCta": "Crea il tuo personaggio",
-    "signInLink": "Accedi",
-    "getStarted": "Inizia",
-    "ctaTitle": "Ti piace questo eroe? Crea il tuo su d20 Folio.",
-    "builtWith": "Creato con d20 Folio"
+    "unavailableCta": "Vai a d20 Folio"
   }
 }

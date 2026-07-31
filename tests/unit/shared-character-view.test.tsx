@@ -40,7 +40,6 @@ vi.mock("react-router", async () => {
 });
 
 import { SharedCharacterView } from "@/features/character/SharedCharacterView";
-import { useAuthStore } from "@/stores/authStore";
 
 /** The only fields this route reads off the doc; the body is stubbed. */
 function doc(shared: boolean): CharacterDoc {
@@ -149,69 +148,5 @@ describe("SharedCharacterView", () => {
     await screen.findByTestId("cockpit");
     unmount();
     expect(loadReadonlyMock).toHaveBeenLastCalledWith(null);
-  });
-});
-
-/**
- * The post-view conversion CTA (this ships the "post-view signup CTA" candidate) —
- * the ONE benefit-line moment allowed on a share surface, and only for an ANONYMOUS
- * viewer. Gated on the same `!user` fact as the topbar's anon chrome; a signed-in
- * viewer (owner previewing, DM) already has an account and sees just the sheet.
- */
-describe("SharedCharacterView — the post-view conversion CTA", () => {
-  beforeEach(() => useAuthStore.setState({ user: null }));
-  afterEach(async () => {
-    useAuthStore.setState({ user: null });
-    if (i18n.language !== "en") await i18n.changeLanguage("en");
-  });
-
-  it("an anonymous viewer gets the CTA after the sheet, routing to the auth entry", async () => {
-    getFullCharacterMock.mockResolvedValue(doc(true));
-    renderAt("owner-1", "char-1");
-    await screen.findByTestId("cockpit");
-    expect(
-      screen.getByText("Like this hero? Create your own on d20 Folio.")
-    ).toBeInTheDocument();
-    // A real link to the existing Google sign-in route (never an invented auth flow).
-    expect(screen.getByRole("link", { name: "Create your character" })).toHaveAttribute(
-      "href",
-      "/login"
-    );
-    // The quiet passive brand loop.
-    expect(screen.getByText("Built with d20 Folio")).toBeInTheDocument();
-  });
-
-  it("MUTATION PROOF — a SIGNED-IN viewer gets just the sheet, no CTA", async () => {
-    useAuthStore.setState({ user: { uid: "someone" } as never });
-    getFullCharacterMock.mockResolvedValue(doc(true));
-    renderAt("owner-1", "char-1");
-    await screen.findByTestId("cockpit");
-    expect(
-      screen.queryByText("Like this hero? Create your own on d20 Folio.")
-    ).toBeNull();
-    expect(screen.queryByRole("link", { name: "Create your character" })).toBeNull();
-  });
-
-  it("never shows the CTA on a dead link — there is no sheet to convert on", async () => {
-    getFullCharacterMock.mockResolvedValue(doc(false));
-    renderAt("owner-1", "char-1");
-    await screen.findByText("This character is no longer shared");
-    expect(screen.queryByRole("link", { name: "Create your character" })).toBeNull();
-  });
-
-  it("follows the VIEWER's active locale (IT) — the invitation is bilingual", async () => {
-    await act(async () => {
-      await i18n.changeLanguage("it");
-    });
-    getFullCharacterMock.mockResolvedValue(doc(true));
-    renderAt("owner-1", "char-1");
-    await screen.findByTestId("cockpit");
-    expect(
-      screen.getByText("Ti piace questo eroe? Crea il tuo su d20 Folio.")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "Crea il tuo personaggio" })
-    ).toBeInTheDocument();
-    expect(screen.getByText("Creato con d20 Folio")).toBeInTheDocument();
   });
 });

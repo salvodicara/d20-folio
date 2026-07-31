@@ -93,21 +93,16 @@ describe("Topbar — ⌘K hint chip is gated off coarse pointers (§3.5)", () =>
 describe("Topbar — anonymous-viewer chrome (public /view + /legal)", () => {
   beforeEach(() => useAuthStore.setState({ user: null }));
 
-  it("shows ONE primary action + a quiet sign-in, all pointing at the auth entry", () => {
+  it("shows ONE sign-in button — the app's own auth label — pointing at /login", () => {
     renderAt("/view/owner-1/char-1");
-    // Desktop primary CTA + the mobile pill both point at the real Google auth entry.
-    expect(screen.getByRole("link", { name: "Create your character" })).toHaveAttribute(
-      "href",
-      "/login"
-    );
-    expect(screen.getByRole("link", { name: "Get started" })).toHaveAttribute(
-      "href",
-      "/login"
-    );
-    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
-      "href",
-      "/login"
-    );
+    // ONE button (auth is Google-only; sign-in IS sign-up), reusing the LoginPage's
+    // `auth.signIn` label, routing to the real Google auth entry.
+    const buttons = screen.getAllByRole("link", { name: "Sign in with Google" });
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]).toHaveAttribute("href", "/login");
+    // The old two-button copy is gone — no second "create" door, no separate pill.
+    expect(screen.queryByRole("link", { name: "Create your character" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Get started" })).toBeNull();
   });
 
   it("drops the auth-gated hub tabs + palette + account cluster — content is the hero", () => {
@@ -121,11 +116,10 @@ describe("Topbar — anonymous-viewer chrome (public /view + /legal)", () => {
     expect(screen.getByRole("link", { name: "d20 Folio" })).toBeInTheDocument();
   });
 
-  it("MUTATION PROOF — a signed-in viewer keeps the account cluster, no CTA", () => {
+  it("MUTATION PROOF — a signed-in viewer keeps the account cluster, no sign-in button", () => {
     useAuthStore.setState({ user: { uid: "u1" } as never });
     renderAt("/view/owner-1/char-1");
     expect(screen.getByTestId("acct")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Create your character" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Get started" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Sign in with Google" })).toBeNull();
   });
 });
