@@ -9596,7 +9596,11 @@ button.create-need:focus-visible .create-need-chev {
 .cmp-ribbon-shell,
 .tabstrip-shell {
   position: relative;
-  margin-bottom: -1px;
+  /* 2px overlap, not 1: the row's height is SUB-PIXEL (font metrics), so a
+     1px overlap left an antialiased fringe of the page border bleeding
+     through the active tab's base (the owner's "linea che taglia", round 2).
+     Two opaque pixels swallow the fringe at every DPR. */
+  margin-bottom: -2px;
 }
 /* Stacking truth (owner, 2026-07-31): resting tabs are pages BEHIND the open
    one, so the page (z1) draws its border IN FRONT of their feet; only the
@@ -9620,7 +9624,9 @@ button.create-need:focus-visible .create-need-chev {
 .wb .tabstrip [role="tab"][aria-selected="true"]::after {
   content: "";
   position: absolute;
-  bottom: -1px;
+  /* 1px above the tab's base = exactly the page border row (the tab overlaps
+     the page 2px) — the arcs terminate ON the line they continue. */
+  bottom: 1px;
   width: 8px;
   height: 8px;
   --curl-ink: color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
