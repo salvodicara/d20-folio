@@ -9,6 +9,7 @@ import type { CreatureType, CurrencyUnit } from "@/data/types";
 import type { PortraitCrop, ClassEntry } from "@/types/character";
 import type { NonEmptyString } from "@/lib/non-empty-string";
 import type { RaceId } from "@/types/ids";
+import type { CombatChronicleEvent } from "@/types/combat-chronicle";
 
 // ============================================================
 // Campaign Document
@@ -289,6 +290,18 @@ export interface EncounterState {
   epoch: number;
   /** Lifecycle marker (only "active" today; ending the encounter clears the field). */
   status: "active";
+  /**
+   * THE COMBAT CHRONICLE feed — the factual, structured log the DM's tracker edits
+   * accumulate over the fight ({@link CombatChronicleEvent}: ids + numbers only, never
+   * a localized string — golden rule 7). EPHEMERAL: it rides the SAME debounced
+   * encounter writer (no new write cadence), survives a reload, and is DROPPED when the
+   * encounter clears at "End encounter", where the DM renders it to ONE Chronicle
+   * chapter (the single persisted Chronicle write per fight). OPTIONAL + additive —
+   * absent/empty means no events logged yet, so every pre-feature encounter doc and the
+   * live fixtures keep loading unchanged. DM-authored only (the emit seams are DM-gated;
+   * firestore.rules keep the whole `encounter` structure DM-write-only).
+   */
+  events?: CombatChronicleEvent[];
 }
 
 export interface CampaignDoc {
