@@ -43,7 +43,7 @@ const H = 630;
 /** The folio palette, lifted from `src/index.css` (the gilt + parchment tokens). */
 const INK = "#08060c"; // near-black panel that masks the static placeholder headline
 const GOLD = "#e7cf8f"; // --gold-300-ish: brand + stat gilt
-const GOLD_DIM = "#b89a52"; // muted gold: eyebrows, rules
+const GOLD_DIM = "#b89a52"; // muted gold: value/footer line, rules
 const PARCHMENT = "#f4ecd6"; // the display-white the big headline uses
 const CREAM = "#d8c89f"; // secondary line (level / class)
 
@@ -77,7 +77,6 @@ const FONT_FILES = [
 // So each register is a family + weight PAIR, emitted as two attributes.
 // Text style tokens: `font-family` + `font-weight`, spliced straight into a <text>.
 const T_BRAND = `font-family="Cinzel" font-weight="600"`; // brand wordmark (caps)
-const T_EYEBROW = `font-family="Cinzel" font-weight="600"`; // section eyebrow (caps)
 const T_INITIAL = `font-family="Cinzel" font-weight="700"`; // medallion initial (one cap)
 const T_NAME = `font-family="Alegreya" font-weight="600"`; // the headline name
 const T_SUB = `font-family="Alegreya" font-weight="500"`; // level / class line
@@ -213,7 +212,10 @@ export function characterSvg(data: CharacterImageData, locale: OgLocale = "en"):
   // single-letter initial. A proper name in Cinzel would shout in full caps.
   const nameLines = wrapText(data.name, data.name.length > 22 ? 20 : 15, 2);
   const nameSize = nameLines.length > 1 || data.name.length > 15 ? 60 : 74;
-  const nameTop = 250;
+  // No dry eyebrow above the name anymore (owner 2026-07-31 — the card SELLS, it does
+  // not classify): the name is the hero, lifted toward the wordmark, with a quiet
+  // value line anchoring the foot.
+  const nameTop = 210;
   const nameEls = nameLines
     .map(
       (ln, i) =>
@@ -246,6 +248,13 @@ export function characterSvg(data: CharacterImageData, locale: OgLocale = "en"):
       ` fill="${GOLD}">${esc(statLine)}</text>`
     : "";
 
+  // The quiet value line at the foot — the conversion hook baked INTO the pixels so
+  // it survives a crawler's crop (the `og:description` may be truncated; the card is
+  // not). Marketing, not classification.
+  const footerEl =
+    `<text x="72" y="574" ${T_SUB} font-size="26" letter-spacing="0.4"` +
+    ` fill="${GOLD_DIM}">${esc(s.characterFooter)}</text>`;
+
   // The portrait / initial medallion on the right, over the darkened art.
   const cx = 930;
   const cy = 315;
@@ -275,10 +284,10 @@ export function characterSvg(data: CharacterImageData, locale: OgLocale = "en"):
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${GOLD}" stroke-opacity="0.7" stroke-width="4"/>
     <circle cx="${cx}" cy="${cy}" r="${r + 10}" fill="none" stroke="${GOLD_DIM}" stroke-opacity="0.35" stroke-width="1.5"/>
     ${chrome()}
-    <text x="72" y="188" ${T_EYEBROW} font-size="22" letter-spacing="6" fill="${GOLD_DIM}">${esc(s.sharedCharacter)}</text>
     ${nameEls}
     ${subEl}
     ${statEl}
+    ${footerEl}
   </svg>`;
 }
 
@@ -309,7 +318,9 @@ export function campaignSvg(data: CampaignImageData, locale: OgLocale = "en"): s
   const s = ogStrings(locale);
   const nameLines = wrapText(data.name, data.name.length > 22 ? 18 : 14, 2);
   const nameSize = nameLines.length > 1 || data.name.length > 14 ? 62 : 78;
-  const nameTop = 258;
+  // No dry "AN INVITATION" eyebrow (owner 2026-07-31): the party NAME is the hook,
+  // lifted toward the wordmark; an aspirational value line anchors the foot.
+  const nameTop = 214;
   const nameEls = nameLines
     .map(
       (ln, i) =>
@@ -323,6 +334,11 @@ export function campaignSvg(data: CampaignImageData, locale: OgLocale = "en"): s
     ? `<text x="72" y="${ruleY + 52}" ${T_SUB} font-size="34"` +
       ` fill="${CREAM}">${esc(party)}</text>`
     : "";
+  // The aspirational value line at the foot — "join us" made to feel exciting, not
+  // administrative, and baked in so it survives a crawler's crop.
+  const footerEl =
+    `<text x="72" y="574" ${T_SUB} font-size="26" letter-spacing="0.4"` +
+    ` fill="${GOLD_DIM}">${esc(s.inviteFooter)}</text>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
     <defs>
@@ -331,10 +347,10 @@ export function campaignSvg(data: CampaignImageData, locale: OgLocale = "en"): s
     <image href="${artDataUri("og-card-campaign.jpg")}" x="0" y="0" width="${W}" height="${H}"/>
     <rect x="0" y="0" width="${W}" height="${H}" fill="url(#mask)"/>
     ${chrome()}
-    <text x="72" y="192" ${T_EYEBROW} font-size="22" letter-spacing="6" fill="${GOLD_DIM}">${esc(s.invitation)}</text>
     ${nameEls}
     <line x1="72" y1="${ruleY}" x2="560" y2="${ruleY}" stroke="${GOLD_DIM}" stroke-opacity="0.4" stroke-width="1"/>
     ${partyEl}
+    ${footerEl}
   </svg>`;
 }
 

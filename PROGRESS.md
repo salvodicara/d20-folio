@@ -1404,8 +1404,14 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   shows the campaign name + party size — every number read straight off the roster `cache` (the
   engine is never re-run server-side), behind the SAME share/lock gate. The three static cards became
   the FALLBACK: an unshared / locked / unknown link, or any render error, redirects to them, so a
-  broken render can never 500 or leak and the indistinguishability holds. Full design record:
-  `docs/ARCHITECTURE.md` → "Public share links" + "Link previews (Open Graph)".
+  broken render can never 500 or leak and the indistinguishability holds. Then the copy became
+  MARKETING (2026-07-31): these cards are the acquisition top-of-funnel, so the dry classification
+  eyebrows ("A SHARED CHARACTER" / "AN INVITATION") were DROPPED — the character's name + stats +
+  portrait carry the card (content-forward), a quiet value line anchors the foot (EN "Free to read ·
+  no account needed" / "A seat awaits you"; IT twins), and the unfurl descriptions sell while staying
+  compatibility-phrased ("for D&D 2024"). Owner-locale + the static English fallback + gating all
+  unchanged. Full design record: `docs/ARCHITECTURE.md` → "Public share links" + "Link previews
+  (Open Graph)".
 - **Post-view signup CTA — the share-funnel growth loop (CANDIDATE — owner idea 2026-07-31):** the
   public no-account `/view` page (a non-registered friend viewing a shared character) offers a
   tasteful post-view **conversion CTA** — a premium nudge to "create your own character" / sign up.

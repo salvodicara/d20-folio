@@ -155,7 +155,7 @@ describe("owner-locale meta (the OWNER's stored locale, EN default + fallback)",
     // "Livello" localises; "Rogue" (the class label) is kept as-is by design.
     expect(card?.title).toBe("Mara Quickfingers — Livello 5 Rogue · d20 Folio");
     expect(card?.description).toBe(
-      "La scheda di Mara Quickfingers su d20 Folio, condivisa in sola lettura. Nessun account richiesto."
+      "Conosci Mara Quickfingers, una scheda vivente su d20 Folio. Lettura gratuita, nessun account. Un compagno per D&D 2024."
     );
   });
 
@@ -179,7 +179,7 @@ describe("owner-locale meta (the OWNER's stored locale, EN default + fallback)",
     const card = campaignCard({ name: "Starless Keep" }, URL, CAMP_IMG, "it");
     expect(card?.title).toBe("Unisciti a Starless Keep su d20 Folio");
     expect(card?.description).toBe(
-      "Sei stato invitato al tavolo Starless Keep su d20 Folio — un compagno gratuito e offline-first per D&D 2024."
+      "Prendi posto al tavolo di Starless Keep su d20 Folio, un compagno gratuito e offline-first per D&D 2024."
     );
   });
 });

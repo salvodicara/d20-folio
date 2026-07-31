@@ -31,12 +31,23 @@ export function asOgLocale(value: unknown): OgLocale {
   return value === "it" ? "it" : "en";
 }
 
-/** Every user-facing string the DYNAMIC OG output needs, per locale. */
+/**
+ * Every user-facing string the DYNAMIC OG output needs, per locale.
+ *
+ * MARKETING, not classification (owner 2026-07-31): these cards are the product's
+ * acquisition top-of-funnel (a friend shares → a non-user wants in), so they SELL.
+ * The old dry eyebrows ("A SHARED CHARACTER" / "AN INVITATION") are gone — the
+ * character's own name + stats + portrait carry the card (content-forward), and a
+ * quiet value-forward FOOTER line carries the hook so it survives a crawler's crop.
+ * The conversion hook ("free, no account needed" / "take a seat") also lives in the
+ * unfurl DESCRIPTION, which stays compatibility-phrased ("for D&D 2024", never a form
+ * that reads as an official product).
+ */
 export interface OgStrings {
-  /** The character card eyebrow (caps). */
-  sharedCharacter: string;
-  /** The invite card eyebrow (caps). */
-  invitation: string;
+  /** The character card footer — the value line / conversion hook (read-free). */
+  characterFooter: string;
+  /** The invite card footer — the aspirational "join us" line. */
+  inviteFooter: string;
   /** The "Level" word prefixing the total level (class names stay as-is). */
   level: string;
   /** Armour-class label on the stat line. */
@@ -55,30 +66,30 @@ export interface OgStrings {
 
 const STRINGS: Record<OgLocale, OgStrings> = {
   en: {
-    sharedCharacter: "A SHARED CHARACTER",
-    invitation: "AN INVITATION",
+    characterFooter: "Free to read · no account needed",
+    inviteFooter: "A seat awaits you",
     level: "Level",
     ac: "AC",
     hp: "HP",
     atTheTable: (n) => `${n} ${n === 1 ? "adventurer" : "adventurers"} at the table`,
     sheetDescription: (name) =>
-      `${name}'s character sheet on ${BRAND}, shared read-only. No account needed.`,
+      `Meet ${name}, a living character sheet on ${BRAND}. Free to read, no account needed. A companion for D&D 2024.`,
     joinTitle: (name) => `Join ${name} on ${BRAND}`,
     inviteDescription: (name) =>
-      `You have been invited to the ${name} table on ${BRAND} — a free, offline-first companion for D&D 2024.`,
+      `Take a seat at the ${name} table on ${BRAND}, a free, offline-first companion for D&D 2024.`,
   },
   it: {
-    sharedCharacter: "UN PERSONAGGIO CONDIVISO",
-    invitation: "UN INVITO",
+    characterFooter: "Lettura gratuita · nessun account",
+    inviteFooter: "Un posto ti attende",
     level: "Livello",
     ac: "CA",
     hp: "PF",
     atTheTable: (n) => `${n} ${n === 1 ? "avventuriero" : "avventurieri"} al tavolo`,
     sheetDescription: (name) =>
-      `La scheda di ${name} su ${BRAND}, condivisa in sola lettura. Nessun account richiesto.`,
+      `Conosci ${name}, una scheda vivente su ${BRAND}. Lettura gratuita, nessun account. Un compagno per D&D 2024.`,
     joinTitle: (name) => `Unisciti a ${name} su ${BRAND}`,
     inviteDescription: (name) =>
-      `Sei stato invitato al tavolo ${name} su ${BRAND} — un compagno gratuito e offline-first per D&D 2024.`,
+      `Prendi posto al tavolo di ${name} su ${BRAND}, un compagno gratuito e offline-first per D&D 2024.`,
   },
 };
 
