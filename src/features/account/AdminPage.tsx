@@ -19,7 +19,7 @@
  * mark/disable the current admin's own row (you can't block or delete yourself).
  */
 
-import { useId, useRef, useState, useEffect } from "react";
+import { useId, useState, useEffect } from "react";
 import type { ComponentType, SVGProps } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -135,10 +135,6 @@ export function AdminPage() {
   // fetch per user, once — zero cost until the admin actually searches).
   const [query, setQuery] = useState("");
   const [charIndex, setCharIndex] = useState<AdminCharIndex>(null);
-  // In-flight gate as a ref: no render depends on the transition itself (the
-  // "searching…" note derives from `charIndex === null`), and a state here
-  // would need a sync setState inside the effect (compiler-lint ban).
-  const charIndexInFlight = useRef(false);
   // Bounded render for large communities: the list shows PAGE_SIZE rows and
   // grows on demand; search always runs over the FULL set.
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -220,14 +216,11 @@ export function AdminPage() {
   // Build the character-name index the first time the admin types a query:
   // every user's slim roster, fetched once and ALSO seeded into the drill-down
   // cache (so expanding a row after a search costs nothing extra).
+  const wantsIndex = query.trim().length > 0;
   useEffect(() => {
-    if (!query.trim() || charIndex || charIndexInFlight.current || users.length === 0)
-      return;
-    let alive = true;
-    charIndexInFlight.current = true;
+    if (!wantsIndex || charIndex || users.length === 0) return;
     Promise.all(users.map(async (u) => [u.uid, await listUserCharacters(u.uid)] as const))
       .then((entries) => {
-        if (!alive) return;
         setCharIndex(Object.fromEntries(entries));
         setRosters((prev) => {
           const next = { ...prev };
@@ -235,14 +228,8 @@ export function AdminPage() {
           return next;
         });
       })
-      .catch(() => alive && setCharIndex({}))
-      .finally(() => {
-        charIndexInFlight.current = false;
-      });
-    return () => {
-      alive = false;
-    };
-  }, [query, charIndex, users]);
+      .catch(() => setCharIndex({}));
+  }, [wantsIndex, charIndex, users]);
 
   async function handleToggleBlock(
     uid: string,

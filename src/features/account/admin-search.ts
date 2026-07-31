@@ -13,13 +13,7 @@
 import { matchesSearch } from "@/lib/search";
 import type { AdminCampaignSummary } from "@/lib/dev-admin-fixture";
 
-/** The one field the matcher needs from a character row (structural — keeps
- *  this module Firebase-free for the pure-modules guard). */
-interface NamedCharacter {
-  name: string;
-}
-
-export interface AdminSearchUser {
+interface AdminSearchUser {
   uid: string;
   email: string;
   displayName: string;
@@ -37,7 +31,8 @@ export interface AdminMatchHint {
  * user/campaign matches still resolve immediately and character matches join
  * when the index lands.
  */
-export type AdminCharIndex = Record<string, NamedCharacter[]> | null;
+/** name is the one field the matcher needs (structural — Firebase-free). */
+export type AdminCharIndex = Record<string, { name: string }[]> | null;
 
 /**
  * Resolve `query` to the set of visible user rows. Returns `null` for an
