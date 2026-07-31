@@ -62,8 +62,9 @@ SHIPPED** (2026-07-24), the **encounter picker SHIPPED** (2026-07-25; bestiary-f
 **companions/extras SHIPPED** (2026-07-25), the **account-level homebrew library SHIPPED**
 (2026-07-30; ladder rung (a)) and **quickbuild SHIPPED** (2026-07-30 — creation now OPENS on a
 ready-made build, with a Randomize reroll) and **share links SHIPPED** (2026-07-31 — public
-read-only character links, the native share sheet on every link the app hands out, and Open Graph
-previews); the live head is **compendium completeness**. The
+read-only character links, the native share sheet on every link the app hands out, invitational Open
+Graph previews, and the anonymous-viewer acquisition chrome + post-view signup CTA on the public
+/view page); the live head is **compendium completeness**. The
 competitive map is `docs/POSITIONING.md`. **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
 **id-storage + GR7 i18n-leak-eradication campaign** is **CLOSED** (v0.13.0): every SRD-derived value
@@ -1412,10 +1413,20 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   "Step into this adventure" (IT twins), replacing "Free to read · no account needed" / "A seat
   awaits you", and the unfurl descriptions open the door ("Have a look at {name}'s hero …", "Take a
   look inside this adventure …") while staying compatibility-phrased ("companion for D&D 2024").
-  Benefits are stated only at the decision moment (the /view sign-up CTA — see the anon-viewer chrome
-  below), never as ambient claims; DESIGN.md §6 records the principle. Owner-locale + the static
-  English fallback + gating all unchanged. Full design record: `docs/ARCHITECTURE.md` → "Public share
-  links" + "Link previews (Open Graph)".
+  Benefits are stated only at the decision moment (the /view sign-up CTA below), never as ambient
+  claims; DESIGN.md §6 records the principle. Owner-locale + the static English fallback + gating all
+  unchanged. **Anonymous-viewer chrome + the post-view signup CTA SHIPPED in the same wave
+  (2026-07-31 — this delivers the captured "post-view signup CTA" candidate):** a logged-out `/view`
+  viewer now gets the SOTA acquisition bar (wordmark left, ONE primary action right, content the
+  hero) — the Topbar drops the auth-gated hub tabs + palette and shows a quiet "Sign in" link + a
+  brass "Create your character" CTA (a single "Get started" pill on mobile), all routing to the real
+  `/login` Google auth entry (a route, so the eager shell stays firebase-free); and after the sheet an
+  inline `.folio-panel` conversion card ("Like this hero? Create your own on d20 Folio.") — the ONE
+  allowed benefit-moment — with a quiet "Built with d20 Folio" wordmark as the passive loop, dismissed
+  by scrolling, never a modal/sticky nag, shown only to `!user` (a signed-in viewer sees just the
+  sheet). The CTA card rides the LAZY SharedCharacterView chunk; the eager entry ceiling stepped
+  62→63 KB for the topbar cluster (docs/ARCHITECTURE.md P3). DESIGN.md → "Anonymous-viewer chrome".
+  Full design record: `docs/ARCHITECTURE.md` → "Public share links" + "Link previews (Open Graph)".
 - **Post-view signup CTA — the share-funnel growth loop (CANDIDATE — owner idea 2026-07-31):** the
   public no-account `/view` page (a non-registered friend viewing a shared character) offers a
   tasteful post-view **conversion CTA** — a premium nudge to "create your own character" / sign up.

@@ -11,13 +11,14 @@
  */
 
 import { lazy, Suspense } from "react";
-import { NavLink, useLocation } from "react-router";
+import { NavLink, Link, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { shortcutLabel } from "@/lib/platform";
 import { realmTarget } from "@/lib/realm-memory";
 import { useCoarsePointer } from "@/hooks/useCoarsePointer";
 import { BrandMark } from "@/components/ui/brand-mark";
+import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Kbd } from "@/components/ui/kbd";
 import { SettingsDropdown } from "@/components/sheet/SettingsDropdown";
@@ -85,19 +86,25 @@ export function Topbar({ onOpenPalette }: TopbarProps) {
         <BrandMark variant="gilt" size="md" />
       </NavLink>
 
-      {/* Hub tabs are desktop chrome; below md they'd overflow the bar, so they
-          collapse and the always-visible "Ask the Folio" trigger becomes the
-          mobile navigator (it lists every realm). */}
-      <nav aria-label={t("nav.primary")} className="hidden self-stretch md:flex">
-        {hub.map((link) => (
-          // No `end`: each realm link stays active across its whole subtree —
-          // "Characters" highlights on /characters, /characters/new and
-          // /characters/:id; "Campaigns" on /campaigns and /campaigns/:id (#17).
-          <NavLink key={link.to} to={realmTarget(link.to)} className={hubLinkClass}>
-            {link.label}
-          </NavLink>
-        ))}
-      </nav>
+      {/* Hub tabs + the palette are the SIGNED-IN navigator: every target is an
+          auth-guarded realm, useless to an anonymous share-link viewer. So for a
+          logged-out viewer the bar collapses to the SOTA public shape — wordmark
+          left, one primary action right (see the anon cluster below), content the
+          hero. Hub tabs are desktop chrome; below md they'd overflow the bar, so
+          they collapse and the "Ask the Folio" trigger becomes the mobile
+          navigator (it lists every realm). */}
+      {user && (
+        <nav aria-label={t("nav.primary")} className="hidden self-stretch md:flex">
+          {hub.map((link) => (
+            // No `end`: each realm link stays active across its whole subtree —
+            // "Characters" highlights on /characters, /characters/new and
+            // /characters/:id; "Campaigns" on /campaigns and /campaigns/:id (#17).
+            <NavLink key={link.to} to={realmTarget(link.to)} className={hubLinkClass}>
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+      )}
 
       {/* INIT-1 — the flexible gap that pushes the search + account cluster to the right
           edge ALSO hosts the persistent global combat pip (3 escalating tiers; loud when my
@@ -112,23 +119,25 @@ export function Topbar({ onOpenPalette }: TopbarProps) {
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={onOpenPalette}
-        aria-label={t("palette.trigger")}
-        aria-keyshortcuts="Meta+K Control+K"
-        className="topbar-ask"
-      >
-        <Icon as={Search} size="sm" decorative className="topbar-ask-icon" />
-        <span className="hidden sm:inline">{t("palette.trigger")}</span>
-        {!coarsePointer && (
-          <Kbd aria-hidden className="ml-1 hidden sm:inline-block">
-            {shortcutLabel("K")}
-          </Kbd>
-        )}
-      </button>
-
       {user && (
+        <button
+          type="button"
+          onClick={onOpenPalette}
+          aria-label={t("palette.trigger")}
+          aria-keyshortcuts="Meta+K Control+K"
+          className="topbar-ask"
+        >
+          <Icon as={Search} size="sm" decorative className="topbar-ask-icon" />
+          <span className="hidden sm:inline">{t("palette.trigger")}</span>
+          {!coarsePointer && (
+            <Kbd aria-hidden className="ml-1 hidden sm:inline-block">
+              {shortcutLabel("K")}
+            </Kbd>
+          )}
+        </button>
+      )}
+
+      {user ? (
         <div className="topbar-user">
           {/* Session undo/redo lives on the sheet's fob family (BinderFob /
               MobileSignet), since the stack is page-scoped by design. It no
@@ -140,6 +149,32 @@ export function Topbar({ onOpenPalette }: TopbarProps) {
               the name lives inside the SettingsDropdown button now, so clicking
               either opens the menu. */}
           <SettingsDropdown current={ringCurrent} />
+        </div>
+      ) : (
+        // ANONYMOUS viewer (a public /view or /legal page): the SAME bar, with ONLY
+        // the auth-gated right cluster (nav + palette + account) swapped — IN THE SAME
+        // SLOT (`.topbar-anon` mirrors `.topbar-user`'s box) — for the sign-in
+        // affordances (owner gate 2026-07-31). A quiet "Sign in" text link for the
+        // returning viewer, then the primary CTA. Both lead to the app's real Google
+        // auth entry (`/login`, sign-in IS sign-up); routing (not importing `signIn`)
+        // keeps firebase/auth off this eager shell bundle. On mobile the pair collapses
+        // to a SINGLE "Get started" pill. The CTA wears the standard brass `.btn` but is
+        // sized to the topbar's OWN control rhythm (see `.topbar-anon-cta` in folio.css
+        // — text-sm, not the tiny 10px in-card `.btn.sm`), so it reads native to the bar.
+        <div className="topbar-anon">
+          <Link to="/login" className="topbar-anon-signin">
+            {t("share.signInLink")}
+          </Link>
+          {/* Desktop shows the "Sign in" + this CTA pair; below `sm` the single "Get
+              started" pill replaces both. The show/hide is driven by folio.css media
+              rules, NOT Tailwind `sm:` utilities: `.btn` is unlayered and beats the
+              layered utilities, so a `sm:hidden` on a `.btn` is a no-op. */}
+          <Button asChild className="topbar-anon-cta">
+            <Link to="/login">{t("share.createCta")}</Link>
+          </Button>
+          <Button asChild className="topbar-anon-pill">
+            <Link to="/login">{t("share.getStarted")}</Link>
+          </Button>
         </div>
       )}
     </header>

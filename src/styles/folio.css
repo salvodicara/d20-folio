@@ -5931,6 +5931,109 @@ button.trk-pip:active {
   flex-shrink: 0; /* fixed-size invariant — see .topbar-brand */
   gap: 8px;
 }
+
+/* ─────────────────── ANONYMOUS-VIEWER CHROME (public /view + /legal) ───────────────────
+   The header is the SAME bar in both auth states (owner gate 2026-07-31): identical
+   brand, height, background, border, spacing. The ONLY difference logged-out is that the
+   auth-gated right cluster (hub nav + "Ask the Folio" palette + account menu) is REPLACED,
+   IN THE SAME SLOT, by the sign-in affordances. `.topbar-anon` is therefore a byte-for-byte
+   mirror of the account cluster's box (`.topbar-user`) — same display / alignment /
+   flex-shrink invariant / 8px gap — so nothing but the contents moves. Desktop shows a
+   quiet "Sign in" text link + the primary "Create your character" CTA; below `sm` both
+   collapse to a single "Get started" pill (≥44px tap floor). */
+.topbar-anon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0; /* fixed-size invariant — see .topbar-brand */
+  gap: 8px; /* == .topbar-user */
+}
+.topbar-anon-signin {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 8px 6px;
+  border-radius: var(--radius-md);
+  transition: color var(--m-fast) var(--ease-standard);
+}
+.topbar-anon-signin:hover {
+  color: var(--text-primary);
+}
+/* The brass CTA + pill wear the STANDARD `.btn` vocabulary, but sized to the topbar's
+   OWN control rhythm — the `.topbar-ask` scale (text-sm, 8px×14px padding, radius-md),
+   NOT the tiny 10px in-card `.btn.sm` — so they sit at the palette/account height and
+   read native to the bar rather than a small chip bolted on. (Same specificity as
+   `.btn.sm`, declared later, so this wins.) */
+.topbar-anon-cta.btn,
+.topbar-anon-pill.btn {
+  font-size: var(--text-sm);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+}
+/* The responsive swap is driven HERE, not by Tailwind `sm:` utilities: `.btn` is
+   UNLAYERED and beats the layered utilities, so a `sm:hidden` on a `.btn` never fires
+   (both the CTA and the pill would show at once). Below `sm` (640px) only the single
+   "Get started" pill shows; at/above `sm` the "Sign in" + "Create your character" pair
+   shows and the pill hides. The pill honours the ≥44px touch floor (the bar is 56px). */
+.topbar-anon-signin,
+.topbar-anon-cta.btn {
+  display: none;
+}
+.topbar-anon-pill.btn {
+  display: inline-flex;
+  min-height: 44px;
+}
+@media (min-width: 640px) {
+  .topbar-anon-signin {
+    display: inline-flex;
+    align-items: center;
+  }
+  .topbar-anon-cta.btn {
+    display: inline-flex;
+  }
+  .topbar-anon-pill.btn {
+    display: none;
+  }
+}
+
+/* ─────────────────── POST-VIEW CONVERSION CTA (the anon /view acquisition loop) ───────────────────
+   The ONE benefit-line moment allowed on a shared surface (DESIGN.md §6): inline AFTER the
+   sheet, never a modal / sticky / interstitial — dismissed by scrolling on. A calm, centred
+   folio panel: the invite headline (display voice), the primary CTA, then the quiet gilt
+   wordmark loop. Both themes ride the `.folio-panel` material; nothing here is a focus trap. */
+.share-cta {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding: var(--sp-8) var(--sp-4) var(--sp-10);
+}
+.share-cta-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  max-width: 34rem;
+  margin-inline: auto;
+  padding: var(--sp-8) var(--sp-6);
+  text-align: center;
+}
+.share-cta-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  line-height: 1.3;
+  font-style: italic;
+  color: var(--text-primary);
+  text-wrap: balance;
+  max-width: 26rem;
+}
+.share-cta-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-secondary);
+}
 .topbar-avatar {
   width: 28px;
   height: 28px;

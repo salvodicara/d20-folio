@@ -650,6 +650,41 @@ applies) loading and error states. Affordances are consistent across every surfa
   `tests/e2e/topbar-brand-invariant.spec.ts` (brand/search/account bounding boxes byte-identical with and
   without an active encounter at 390px, both pip forms, plus the needs-roll touch-reach probe).
 
+### Anonymous-viewer chrome (the public share-link surfaces)
+
+A logged-out viewer of a public surface (a `/view` share link, `/legal`) is an acquisition
+audience, not a lost user, so the topbar takes the **SOTA acquisition shape** (GitHub / Notion /
+Figma / Canva): **wordmark left, ONE primary action right, content the hero, no nags.**
+
+**THE RULE (owner gate 2026-07-31): it is the SAME bar in both auth states — identical brand,
+height, background, border, spacing.** The ONLY difference logged-out is that the auth-gated **right
+cluster** (the hub tabs + the "Ask the Folio" palette + the account menu) is **replaced, IN THE SAME
+SLOT,** by the sign-in affordances. Nothing else moves. The Topbar keys purely on `!user`:
+
+- **The brand is one element, rendered unconditionally** — the exact `<BrandMark variant="gilt"
+size="md">` in the `.topbar-brand` slot, never re-rendered or resized per auth state. The bar's
+  `.topbar` shell (height / background / blur / border) is likewise untouched.
+- **The swapped cluster** — `{user && …}` gates off the hub tabs + palette; `.topbar-anon` then
+  stands where `.topbar-user` (the account cluster) would, as a **byte-for-byte mirror of its box**
+  (same `display` / `align-items` / `flex-shrink` invariant / `8px` gap), so only the CONTENTS differ.
+- **Top-right (desktop):** a quiet `text-secondary` **"Sign in"** text link, then the brass
+  **"Create your character"** primary CTA (the standard `.btn` atom on a router `<Link to="/login">`).
+  **Mobile (< sm):** the pair collapses to a SINGLE **"Get started"** pill (`.topbar-anon-pill`, ≥44px
+  tap floor). Both route to `/login` — the app's real Google auth entry (sign-in IS sign-up); it is a
+  route, never a `signIn()` import, so the eager shell bundle stays firebase-free.
+- **Native to the bar, not bolted on:** the brass CTA/pill wear the standard `.btn` vocabulary but are
+  sized to the topbar's OWN control rhythm — the `.topbar-ask` scale (`text-sm`, `8px×14px` padding,
+  `radius-md`), NOT the tiny 10px in-card `.btn.sm` — so they sit at the palette/account height. (The
+  responsive desktop-pair↔mobile-pill swap is driven by folio.css media rules, not Tailwind `sm:`
+  utilities: `.btn` is unlayered and beats the layered utilities, so a `sm:hidden` on a `.btn` is a
+  no-op.)
+- **Post-view conversion CTA** (`ShareConversionCta`, in the LAZY `SharedCharacterView` chunk): the
+  ONE benefit-line moment (the decision moment — see §6's invitational-not-promotional principle),
+  inline AFTER the sheet, never a modal / sticky / interstitial nag — dismissed by scrolling on. A
+  calm centred `.folio-panel` (both themes): the invitation headline (display italic), the primary
+  CTA, then the quiet gilt wordmark loop ("Built with d20 Folio"). Shown only to `!user`; a signed-in
+  viewer (owner previewing, DM) gets just the sheet. Not a focus trap — ordinary inline content.
+
 ### The sheet management chrome — two homes, one signal
 
 The sheet's management chrome (Undo · Redo — the session stack; Edit — the mode toggle; ⋯ — the
