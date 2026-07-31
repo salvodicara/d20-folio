@@ -120,7 +120,8 @@ describe("campaignCard", () => {
       CAMP_IMG
     );
     expect(card?.title).toBe("Join Starless Keep on d20 Folio");
-    expect(card?.description).toContain("Starless Keep");
+    // The invite description is invitational (the NAME rides the title, not the body).
+    expect(card?.description).toContain("Take a look inside this adventure");
     expect(card?.image).toBe(CAMP_IMG);
     expect(CAMP_IMG).toBe(`${SITE}/og/campaign/ABC.png`);
   });
@@ -155,7 +156,7 @@ describe("owner-locale meta (the OWNER's stored locale, EN default + fallback)",
     // "Livello" localises; "Rogue" (the class label) is kept as-is by design.
     expect(card?.title).toBe("Mara Quickfingers — Livello 5 Rogue · d20 Folio");
     expect(card?.description).toBe(
-      "Conosci Mara Quickfingers, una scheda vivente su d20 Folio. Lettura gratuita, nessun account. Un compagno per D&D 2024."
+      "Dai un'occhiata all'eroe Mara Quickfingers su d20 Folio, un compagno per D&D 2024."
     );
   });
 
@@ -179,7 +180,7 @@ describe("owner-locale meta (the OWNER's stored locale, EN default + fallback)",
     const card = campaignCard({ name: "Starless Keep" }, URL, CAMP_IMG, "it");
     expect(card?.title).toBe("Unisciti a Starless Keep su d20 Folio");
     expect(card?.description).toBe(
-      "Prendi posto al tavolo di Starless Keep su d20 Folio, un compagno gratuito e offline-first per D&D 2024."
+      "Dai un'occhiata a questa avventura su d20 Folio, un compagno per D&D 2024."
     );
   });
 });
@@ -201,6 +202,47 @@ describe("compatibility phrasing — the OG surface states compatibility, never 
     const card = campaignCard({ name: "Starless Keep" }, URL, CAMP_IMG);
     expect(card?.description).toContain("companion for D&D 2024");
     expect(card?.description).not.toContain("D&D 2024 companion");
+  });
+});
+
+describe("invitational, not promotional — a share artifact NAMES the thing, never sells it", () => {
+  // Owner-ratified (2026-07-31): a shared link is an invitation, not an ad. No
+  // price/benefit claim ("free", "no account") appears on the preview surface —
+  // benefits are stated only at the decision moment (the /view sign-up CTA). A guard
+  // so the promotional copy can't creep back into either card's description.
+  const descriptions = [
+    characterCard(
+      { name: "Mara", classes: [{ classId: "rogue", level: 5 }] },
+      URL,
+      CHAR_IMG,
+      "en"
+    )?.description,
+    characterCard(
+      { name: "Mara", classes: [{ classId: "rogue", level: 5 }] },
+      URL,
+      CHAR_IMG,
+      "it"
+    )?.description,
+    campaignCard({ name: "Starless Keep" }, URL, CAMP_IMG, "en")?.description,
+    campaignCard({ name: "Starless Keep" }, URL, CAMP_IMG, "it")?.description,
+  ];
+
+  it("neither the EN nor the IT description makes a free / no-account claim", () => {
+    for (const d of descriptions) {
+      expect(d).toBeTruthy();
+      expect(d).not.toMatch(/free/i);
+      expect(d).not.toMatch(/no account/i);
+      expect(d).not.toMatch(/gratuit/i); // gratis/gratuito — the IT price claim
+      expect(d).not.toMatch(/nessun account/i);
+    }
+  });
+
+  it("the descriptions are invitational — 'have a look' / 'take a look inside'", () => {
+    const [enChar, itChar, enCamp, itCamp] = descriptions;
+    expect(enChar).toContain("Have a look at Mara's hero");
+    expect(itChar).toContain("Dai un'occhiata all'eroe Mara");
+    expect(enCamp).toContain("Take a look inside this adventure");
+    expect(itCamp).toContain("Dai un'occhiata a questa avventura");
   });
 });
 

@@ -205,15 +205,18 @@ describe("owner-locale card strings (EN default, IT for an IT owner)", () => {
     portrait: null,
   };
 
-  it("EN owner (and the default) render the English labels + the value footer, NO dry eyebrow", () => {
+  it("EN owner (and the default) render the English labels + the invitation footer, NO dry eyebrow", () => {
     for (const svg of [characterSvg(char), characterSvg(char, "en")]) {
       expect(svg).toContain("Level 5 Rogue");
       expect(svg).toContain("AC 15");
       expect(svg).toContain("HP 42");
-      // The card SELLS — the conversion hook is baked in as a footer value line…
-      expect(svg).toContain("Free to read · no account needed");
+      // The card INVITES — a quiet invitation line anchors the foot…
+      expect(svg).toContain("Have a look at this hero");
       // …and the old dry classification eyebrow is GONE (owner 2026-07-31).
       expect(svg).not.toContain("A SHARED CHARACTER");
+      // …and no benefit/price claim is ever made on a share artifact.
+      expect(svg).not.toContain("Free to read");
+      expect(svg).not.toContain("no account");
     }
   });
 
@@ -222,28 +225,30 @@ describe("owner-locale card strings (EN default, IT for an IT owner)", () => {
     expect(svg).toContain("Livello 5 Rogue"); // "Livello" localised, "Rogue" kept
     expect(svg).toContain("CA 15");
     expect(svg).toContain("PF 42");
-    expect(svg).toContain("Lettura gratuita · nessun account");
+    // The apostrophe is `esc`-encoded in the SVG (`'` → `&#39;`), so assert the
+    // apostrophe-free tail — still unique to the IT footer.
+    expect(svg).toContain("occhiata a questo eroe");
     // MUTATION PROOF — the EN forms must be ABSENT on the IT card, so it is the locale
     // (not incidental substring overlap) that swapped the strings.
-    expect(svg).not.toContain("Free to read");
+    expect(svg).not.toContain("Have a look at this hero");
     expect(svg).not.toContain("AC 15");
     expect(svg).not.toContain("HP 42");
   });
 
-  it("the campaign card localises the party line + aspirational footer, NO dry eyebrow", () => {
+  it("the campaign card localises the party line + invitation footer, NO dry eyebrow", () => {
     const en = campaignSvg({ name: "Ravenholt", members: 5 });
     expect(en).toContain("5 adventurers at the table");
-    expect(en).toContain("A seat awaits you");
+    expect(en).toContain("Step into this adventure");
     expect(en).not.toContain("AN INVITATION");
 
     const it = campaignSvg({ name: "Ravenholt", members: 5 }, "it");
     expect(it).toContain("5 avventurieri al tavolo");
-    expect(it).toContain("Un posto ti attende");
+    expect(it).toContain("Entra in questa avventura");
     expect(campaignSvg({ name: "Ravenholt", members: 1 }, "it")).toContain(
       "1 avventuriero al tavolo"
     );
     // MUTATION PROOF — no EN leakage on the IT invite card.
-    expect(it).not.toContain("A seat awaits you");
+    expect(it).not.toContain("Step into this adventure");
     expect(it).not.toContain("at the table");
   });
 

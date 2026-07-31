@@ -212,9 +212,9 @@ export function characterSvg(data: CharacterImageData, locale: OgLocale = "en"):
   // single-letter initial. A proper name in Cinzel would shout in full caps.
   const nameLines = wrapText(data.name, data.name.length > 22 ? 20 : 15, 2);
   const nameSize = nameLines.length > 1 || data.name.length > 15 ? 60 : 74;
-  // No dry eyebrow above the name anymore (owner 2026-07-31 — the card SELLS, it does
-  // not classify): the name is the hero, lifted toward the wordmark, with a quiet
-  // value line anchoring the foot.
+  // No dry eyebrow above the name (owner 2026-07-31 — the card INVITES, it does not
+  // classify): the name is the hero, lifted toward the wordmark, with a quiet
+  // invitation line anchoring the foot.
   const nameTop = 210;
   const nameEls = nameLines
     .map(
@@ -248,9 +248,9 @@ export function characterSvg(data: CharacterImageData, locale: OgLocale = "en"):
       ` fill="${GOLD}">${esc(statLine)}</text>`
     : "";
 
-  // The quiet value line at the foot — the conversion hook baked INTO the pixels so
-  // it survives a crawler's crop (the `og:description` may be truncated; the card is
-  // not). Marketing, not classification.
+  // The quiet invitation line at the foot — baked INTO the pixels so it survives a
+  // crawler's crop (the `og:description` may be truncated; the card is not). An
+  // invitation ("have a look"), never a benefit claim.
   const footerEl =
     `<text x="72" y="574" ${T_SUB} font-size="26" letter-spacing="0.4"` +
     ` fill="${GOLD_DIM}">${esc(s.characterFooter)}</text>`;
@@ -318,8 +318,8 @@ export function campaignSvg(data: CampaignImageData, locale: OgLocale = "en"): s
   const s = ogStrings(locale);
   const nameLines = wrapText(data.name, data.name.length > 22 ? 18 : 14, 2);
   const nameSize = nameLines.length > 1 || data.name.length > 14 ? 62 : 78;
-  // No dry "AN INVITATION" eyebrow (owner 2026-07-31): the party NAME is the hook,
-  // lifted toward the wordmark; an aspirational value line anchors the foot.
+  // No dry "AN INVITATION" eyebrow (owner 2026-07-31): the party NAME is the hero,
+  // lifted toward the wordmark; a quiet "step inside" invitation anchors the foot.
   const nameTop = 214;
   const nameEls = nameLines
     .map(
@@ -334,8 +334,9 @@ export function campaignSvg(data: CampaignImageData, locale: OgLocale = "en"): s
     ? `<text x="72" y="${ruleY + 52}" ${T_SUB} font-size="34"` +
       ` fill="${CREAM}">${esc(party)}</text>`
     : "";
-  // The aspirational value line at the foot — "join us" made to feel exciting, not
-  // administrative, and baked in so it survives a crawler's crop.
+  // The quiet invitation line at the foot — "step inside" made to feel warm, not
+  // administrative, and baked in so it survives a crawler's crop. An invitation, not
+  // a benefit claim.
   const footerEl =
     `<text x="72" y="574" ${T_SUB} font-size="26" letter-spacing="0.4"` +
     ` fill="${GOLD_DIM}">${esc(s.inviteFooter)}</text>`;

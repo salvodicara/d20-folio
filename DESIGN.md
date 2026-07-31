@@ -1697,6 +1697,10 @@ while a curious user can drill in without dead-ends? If either answer is no, it 
 - No text below the 10px `--text-micro` floor; no literal hex in component code.
 - No em dashes / marketing buzzwords in UI copy; button labels are **verb + object**; EN + IT both
   natural (test every term "cool AND natural in Italian too").
+- **Shared artifacts are invitational, never promotional** (owner 2026-07-31): a share link / OG
+  preview / public `/view` chrome names the thing and opens the door ("Have a look at this hero"),
+  and states benefits only at the decision moment (the sign-up CTA) — never as ambient claims
+  ("free", "no account") on the artifact itself.
 
 ## 8. The Identity Guard + "Deliberate Choices, Do NOT Fix"
 

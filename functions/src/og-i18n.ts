@@ -34,19 +34,20 @@ export function asOgLocale(value: unknown): OgLocale {
 /**
  * Every user-facing string the DYNAMIC OG output needs, per locale.
  *
- * MARKETING, not classification (owner 2026-07-31): these cards are the product's
- * acquisition top-of-funnel (a friend shares → a non-user wants in), so they SELL.
- * The old dry eyebrows ("A SHARED CHARACTER" / "AN INVITATION") are gone — the
- * character's own name + stats + portrait carry the card (content-forward), and a
- * quiet value-forward FOOTER line carries the hook so it survives a crawler's crop.
- * The conversion hook ("free, no account needed" / "take a seat") also lives in the
- * unfurl DESCRIPTION, which stays compatibility-phrased ("for D&D 2024", never a form
- * that reads as an official product).
+ * INVITATIONAL, not promotional (owner 2026-07-31): a shared link is an invitation
+ * ("here's my character, have a look"), never an ad. So these cards NAME the thing and
+ * OPEN the door — the character's own name + stats + portrait carry the card
+ * (content-forward), and a quiet FOOTER line extends the invitation. No price /
+ * benefit claim ("free", "no account") ever appears here: a benefit is stated only at
+ * the decision moment (the sign-up CTA on the /view page), never as an ambient claim on
+ * a share artifact. The eyebrows ("A SHARED CHARACTER" / "AN INVITATION") are likewise
+ * gone. The unfurl DESCRIPTION stays compatibility-phrased ("for D&D 2024", never a
+ * form that reads as an official product).
  */
 export interface OgStrings {
-  /** The character card footer — the value line / conversion hook (read-free). */
+  /** The character card footer — the invitation line (read-free, no benefit claim). */
   characterFooter: string;
-  /** The invite card footer — the aspirational "join us" line. */
+  /** The invite card footer — the "step inside" invitation line. */
   inviteFooter: string;
   /** The "Level" word prefixing the total level (class names stay as-is). */
   level: string;
@@ -66,30 +67,32 @@ export interface OgStrings {
 
 const STRINGS: Record<OgLocale, OgStrings> = {
   en: {
-    characterFooter: "Free to read · no account needed",
-    inviteFooter: "A seat awaits you",
+    characterFooter: "Have a look at this hero",
+    inviteFooter: "Step into this adventure",
     level: "Level",
     ac: "AC",
     hp: "HP",
     atTheTable: (n) => `${n} ${n === 1 ? "adventurer" : "adventurers"} at the table`,
+    // Invitational, no benefit claim (the `${name}` is unused for the invite card): the
+    // compat phrase stays ("for D&D 2024"), the "free / no account" hook does not.
     sheetDescription: (name) =>
-      `Meet ${name}, a living character sheet on ${BRAND}. Free to read, no account needed. A companion for D&D 2024.`,
+      `Have a look at ${name}'s hero on ${BRAND}, a companion for D&D 2024.`,
     joinTitle: (name) => `Join ${name} on ${BRAND}`,
-    inviteDescription: (name) =>
-      `Take a seat at the ${name} table on ${BRAND}, a free, offline-first companion for D&D 2024.`,
+    inviteDescription: () =>
+      `Take a look inside this adventure on ${BRAND}, a companion for D&D 2024.`,
   },
   it: {
-    characterFooter: "Lettura gratuita · nessun account",
-    inviteFooter: "Un posto ti attende",
+    characterFooter: "Dai un'occhiata a questo eroe",
+    inviteFooter: "Entra in questa avventura",
     level: "Livello",
     ac: "CA",
     hp: "PF",
     atTheTable: (n) => `${n} ${n === 1 ? "avventuriero" : "avventurieri"} al tavolo`,
     sheetDescription: (name) =>
-      `Conosci ${name}, una scheda vivente su ${BRAND}. Lettura gratuita, nessun account. Un compagno per D&D 2024.`,
+      `Dai un'occhiata all'eroe ${name} su ${BRAND}, un compagno per D&D 2024.`,
     joinTitle: (name) => `Unisciti a ${name} su ${BRAND}`,
-    inviteDescription: (name) =>
-      `Prendi posto al tavolo di ${name} su ${BRAND}, un compagno gratuito e offline-first per D&D 2024.`,
+    inviteDescription: () =>
+      `Dai un'occhiata a questa avventura su ${BRAND}, un compagno per D&D 2024.`,
   },
 };
 

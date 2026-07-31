@@ -1404,14 +1404,18 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   shows the campaign name + party size — every number read straight off the roster `cache` (the
   engine is never re-run server-side), behind the SAME share/lock gate. The three static cards became
   the FALLBACK: an unshared / locked / unknown link, or any render error, redirects to them, so a
-  broken render can never 500 or leak and the indistinguishability holds. Then the copy became
-  MARKETING (2026-07-31): these cards are the acquisition top-of-funnel, so the dry classification
+  broken render can never 500 or leak and the indistinguishability holds. The dry classification
   eyebrows ("A SHARED CHARACTER" / "AN INVITATION") were DROPPED — the character's name + stats +
-  portrait carry the card (content-forward), a quiet value line anchors the foot (EN "Free to read ·
-  no account needed" / "A seat awaits you"; IT twins), and the unfurl descriptions sell while staying
-  compatibility-phrased ("for D&D 2024"). Owner-locale + the static English fallback + gating all
-  unchanged. Full design record: `docs/ARCHITECTURE.md` → "Public share links" + "Link previews
-  (Open Graph)".
+  portrait carry the card (content-forward). Then the copy was reframed INVITATIONAL, not
+  promotional (owner + research settled 2026-07-31): a shared link is an invitation, never an ad, so
+  every price/benefit claim came off the artifact — the footers became "Have a look at this hero" /
+  "Step into this adventure" (IT twins), replacing "Free to read · no account needed" / "A seat
+  awaits you", and the unfurl descriptions open the door ("Have a look at {name}'s hero …", "Take a
+  look inside this adventure …") while staying compatibility-phrased ("companion for D&D 2024").
+  Benefits are stated only at the decision moment (the /view sign-up CTA — see the anon-viewer chrome
+  below), never as ambient claims; DESIGN.md §6 records the principle. Owner-locale + the static
+  English fallback + gating all unchanged. Full design record: `docs/ARCHITECTURE.md` → "Public share
+  links" + "Link previews (Open Graph)".
 - **Post-view signup CTA — the share-funnel growth loop (CANDIDATE — owner idea 2026-07-31):** the
   public no-account `/view` page (a non-registered friend viewing a shared character) offers a
   tasteful post-view **conversion CTA** — a premium nudge to "create your own character" / sign up.
