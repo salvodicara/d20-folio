@@ -71,8 +71,9 @@ import {
   characterSvg,
   campaignSvg,
   tryRender,
+  makeImageMemo,
+  type ImageMemoEntry,
 } from "./og-image";
-import { createHash } from "node:crypto";
 
 initializeApp();
 
@@ -590,6 +591,19 @@ export const ogShell = onRequest(async (req, res) => {
 // CDN/crawler revalidate with a 304 instead of re-downloading the PNG.
 const OG_IMAGE_CACHE = "public, max-age=300, s-maxage=900";
 
+// The render is anonymous, uncached-per-query at the CDN (Firebase Hosting keys its
+// cache on the FULL URL incl. query string — docs/hosting/manage-cache — so a
+// `…png?i=1,2,3…` flood misses the CDN every time), and does real per-request CPU
+// (resvg raster + a Firestore read + a Storage download). Two belts bound the blast
+// radius on a zero-budget project WITHOUT reaching for the SAFE-01 billing kill-switch
+// (that is the nuclear money backstop, never the routine DoS control):
+//   1. `maxInstances` on the route (below) caps concurrent renders regardless of the
+//      CDN key — the app stays UP under a flood instead of fanning out to 100 instances.
+//   2. A warm-instance memo keyed on `req.path` (query-agnostic) folds a junk-query
+//      flood back onto ONE render, re-serving cached bytes + ETag from memory.
+// TTL tracks `s-maxage` (900s); the cap bounds memory (~64 cards ≈ a few MB of PNG).
+const ogImageMemo = makeImageMemo(64, 900_000);
+
 /** A shared character's portrait as a data URI, or null — fetched from Storage ONLY
  *  for a confirmed-shared doc that records a portrait. A missing/failed read is not an
  *  error: the card falls back to the per-seed tinted initial. */
@@ -652,10 +666,16 @@ function fallbackCard(pathname: string): string {
   return CARD_GENERIC;
 }
 
-export const ogImage = onRequest(async (req, res) => {
-  let png: Buffer | null = null;
+// `maxInstances: 3` OVERRIDES the package default (gen-2's up-to-100) for THIS route
+// only — the other functions keep the global. It is the hard ceiling on concurrent
+// renders: a flood queues against 3 instances rather than fanning out and running up
+// CPU-seconds. See the memo note above for why the CDN can't be relied on to dedupe.
+export const ogImage = onRequest({ maxInstances: 3 }, async (req, res) => {
+  let entry: ImageMemoEntry | null = null;
   try {
-    png = await resolveImage(req.path);
+    // Memoised per `req.path` (query-agnostic) — a burst on one link rasterises ONCE
+    // and re-serves the same bytes + ETag from memory (see `ogImageMemo` note above).
+    entry = await ogImageMemo(req.path, () => resolveImage(req.path));
   } catch (e) {
     // A lookup failure is a PREVIEW failure, never a page failure — fall to the static
     // card (handled below by the `null` branch), never a 500 that could leak.
@@ -664,12 +684,12 @@ export const ogImage = onRequest(async (req, res) => {
       error: e instanceof Error ? e.message : String(e),
     });
   }
-  if (!png) {
+  if (!entry) {
     // Unshared / locked / unknown / any error → the designed static per-type card.
     res.redirect(302, fallbackCard(req.path));
     return;
   }
-  const etag = `"${createHash("sha1").update(png).digest("base64")}"`;
+  const { etag, png } = entry;
   if (req.headers["if-none-match"] === etag) {
     res.status(304).set("Cache-Control", OG_IMAGE_CACHE).set("ETag", etag).end();
     return;

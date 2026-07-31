@@ -28,6 +28,7 @@
 import { Resvg } from "@resvg/resvg-js";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { createHash } from "node:crypto";
 import {
   summarizeClasses,
   type CharacterCacheLike,
@@ -369,4 +370,64 @@ export function tryRender(
   } catch {
     return null;
   }
+}
+
+/** A strong ETag over the PNG bytes (sha1 / base64) — the value the route revalidates
+ *  a crawler's `If-None-Match` against for a 304. Computed once, at cache-fill. */
+export function imageEtag(png: Buffer): string {
+  return `"${createHash("sha1").update(png).digest("base64")}"`;
+}
+
+/** One memoised render: the PNG, its ETag, and the epoch-ms it goes stale. */
+export interface ImageMemoEntry {
+  etag: string;
+  png: Buffer;
+  expiresAt: number;
+}
+
+/**
+ * A tiny in-process render memo for the `ogImage` route — the DoS/cost belt.
+ *
+ * The render is DETERMINISTIC per request PATH (the query string is excluded: Express
+ * `req.path` drops it). Firebase Hosting's CDN, however, keys its cache on the FULL URL
+ * INCLUDING the query string (docs/hosting/manage-cache — "the CDN cache your content
+ * based on … the query string", with no knob to normalise it away), so a `…png?i=1,2,3…`
+ * flood is a fresh CDN miss every time and would re-rasterise per hit. This memo folds
+ * that whole flood back onto ONE render: every junk-query variant shares the same
+ * `req.path` key and re-serves the cached bytes from memory. Paired with the route's
+ * `maxInstances` cap, worst-case raster work is bounded regardless of the CDN key.
+ *
+ * BOUNDED so it can't grow unbounded (LRU by insertion order, `maxEntries`) and TTL'd
+ * (~ the CDN `s-maxage`) so a revoked link can't be re-served past the CDN's own window.
+ * `produce` returns `null` for an ungated / failed path; nulls are NOT cached — they
+ * redirect to the static card and never rasterise, so there is nothing costly to memo.
+ * (No in-flight de-dupe: two concurrent cold hits on one path may both render once
+ * before the fill lands — acceptable, and the `maxInstances` cap bounds even that.)
+ */
+export function makeImageMemo(maxEntries: number, ttlMs: number) {
+  const store = new Map<string, ImageMemoEntry>();
+  return async function memo(
+    path: string,
+    produce: () => Promise<Buffer | null>,
+    now: number = Date.now()
+  ): Promise<ImageMemoEntry | null> {
+    const hit = store.get(path);
+    if (hit && hit.expiresAt > now) {
+      // LRU touch — re-insert so a live key is evicted last.
+      store.delete(path);
+      store.set(path, hit);
+      return hit;
+    }
+    if (hit) store.delete(path); // stale — drop before re-producing
+    const png = await produce();
+    if (!png) return null;
+    const entry: ImageMemoEntry = { etag: imageEtag(png), png, expiresAt: now + ttlMs };
+    store.set(path, entry);
+    // Bound the map — evict the oldest (first-inserted) key once over the cap.
+    if (store.size > maxEntries) {
+      const oldest = store.keys().next().value as string;
+      store.delete(oldest);
+    }
+    return entry;
+  };
 }

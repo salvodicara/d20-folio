@@ -14,7 +14,7 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   wrapText,
   characterImageData,
@@ -23,6 +23,8 @@ import {
   campaignSvg,
   renderSvg,
   tryRender,
+  imageEtag,
+  makeImageMemo,
 } from "./og-image";
 
 /** Read a PNG's declared dimensions from its IHDR (bytes 16–24). */
@@ -242,6 +244,83 @@ describe("tryRender — the fallback seam (a render throw must NOT reach the rou
       throw new Error("resvg exploded");
     });
     expect(png).toBeNull();
+  });
+});
+
+describe("imageEtag — a stable strong ETag over the PNG bytes", () => {
+  it("is deterministic per bytes and differs when the bytes differ", () => {
+    const a = imageEtag(Buffer.from([1, 2, 3]));
+    expect(a).toBe(imageEtag(Buffer.from([1, 2, 3])));
+    expect(a).not.toBe(imageEtag(Buffer.from([1, 2, 4])));
+    expect(a).toMatch(/^".+"$/); // a quoted strong ETag
+  });
+});
+
+describe("makeImageMemo — the DoS belt: one render per path, re-served from memory", () => {
+  const svg = characterSvg({
+    name: "Mara",
+    level: 1,
+    classLine: "",
+    ac: 0,
+    hp: 0,
+    portrait: null,
+  });
+
+  it("rasters ONCE for repeated hits on the same path; both serve a valid PNG + ETag", async () => {
+    const render = vi.fn((s: string) => renderSvg(s));
+    const memo = makeImageMemo(64, 900_000);
+    const produce = () => Promise.resolve(tryRender(svg, render));
+
+    const path = "/og/character/u/c.png"; // a `?i=1,2,3…` flood all keys to this path
+    const a = await memo(path, produce);
+    const b = await memo(path, produce);
+    expect(render).toHaveBeenCalledTimes(1); // memoised — NOT re-rastered
+    expect(a).toBe(b); // the same cached entry, byte-for-byte
+    expect(pngSize(a!.png)).toEqual({ w: 1200, h: 630 });
+    expect(a!.etag).toMatch(/^".+"$/);
+
+    // MUTATION PROOF — the same producer WITHOUT the memo rasters on every call, so it
+    // is the memo (not some incidental caching) that collapses the flood onto one render.
+    render.mockClear();
+    await produce();
+    await produce();
+    expect(render).toHaveBeenCalledTimes(2);
+  });
+
+  it("never caches a null produce (ungated/failed) — nothing costly to memo", async () => {
+    const memo = makeImageMemo(64, 900_000);
+    const produce = vi.fn<() => Promise<Buffer | null>>(() => Promise.resolve(null));
+    expect(await memo("/og/x.png", produce)).toBeNull();
+    expect(await memo("/og/x.png", produce)).toBeNull();
+    expect(produce).toHaveBeenCalledTimes(2); // re-tried each hit, never stored
+  });
+
+  it("re-produces once an entry passes its TTL", async () => {
+    const memo = makeImageMemo(64, 1000);
+    const produce = vi.fn<() => Promise<Buffer | null>>(() =>
+      Promise.resolve(Buffer.from([1, 2, 3]))
+    );
+    await memo("/og/c.png", produce, 0);
+    await memo("/og/c.png", produce, 500); // within TTL → served from memo
+    expect(produce).toHaveBeenCalledTimes(1);
+    await memo("/og/c.png", produce, 2000); // past TTL → re-produced
+    expect(produce).toHaveBeenCalledTimes(2);
+  });
+
+  it("is bounded — evicts the oldest key once past the cap", async () => {
+    const memo = makeImageMemo(2, 900_000);
+    const produce = vi.fn<() => Promise<Buffer | null>>(() =>
+      Promise.resolve(Buffer.from([9]))
+    );
+    await memo("/a", produce);
+    await memo("/b", produce);
+    await memo("/c", produce); // over cap → evicts /a (oldest)
+    expect(produce).toHaveBeenCalledTimes(3);
+
+    await memo("/c", produce); // still cached → no re-produce
+    expect(produce).toHaveBeenCalledTimes(3);
+    await memo("/a", produce); // evicted → re-produced
+    expect(produce).toHaveBeenCalledTimes(4);
   });
 });
 
