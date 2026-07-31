@@ -15,10 +15,12 @@
  *   · a character: ONLY when its document carries `shared: true`, and only its name,
  *     total level and class. An unshared, unknown or malformed id falls back to the
  *     generic branded card — never a leak, never a "not found" that confirms an id.
- *   · a campaign: ONLY its name, and only for an invite code that resolves. The
- *     invite code IS the campaign's document id, i.e. the same secret the join flow
- *     already treats as the grant.
- * Nothing else from either document is ever read into a tag.
+ *   · a campaign: ONLY its name, and only for an invite code that resolves AND whose
+ *     joins are still open. The invite code IS the campaign's document id, i.e. the
+ *     same secret the join flow already treats as the grant.
+ * Nothing else from either document is ever read into a tag. Anything that fails the
+ * rule yields NO card, and the caller then serves the shell untouched — the baseline
+ * branded card every other route already gets.
  */
 
 /** The canonical public origin — what `og:url` always points at, whichever host
@@ -55,17 +57,6 @@ export interface OgCard {
   title: string;
   description: string;
   url: string;
-}
-
-/** The generic branded card — the fallback for every path that names nothing. */
-export function genericCard(url: string): OgCard {
-  return {
-    title: `${BRAND} — a living D&D 2024 character sheet`,
-    description:
-      "Build, level and play your D&D 2024 characters on a sheet that does the math " +
-      "for you. Free, offline-first, and bilingual, with the whole 2024 SRD built in.",
-    url,
-  };
 }
 
 /** The `cache` projection a character document carries (see `character-cache.ts`). */
@@ -120,9 +111,24 @@ export function characterCard(cache: CharacterCacheLike, url: string): OgCard | 
   };
 }
 
-/** "Join «Campaign» on d20 Folio" — the campaign's NAME and nothing else. */
-export function campaignCard(name: unknown, url: string): OgCard | null {
-  const clean = typeof name === "string" ? name.trim() : "";
+/** The fields an invite preview may look at on a campaign document. */
+export interface CampaignDocLike {
+  name?: unknown;
+  joinsLocked?: unknown;
+}
+
+/**
+ * "Join «Campaign» on d20 Folio" — the campaign's NAME and nothing else.
+ *
+ * `joinsLocked` is the DM's kill switch for a leaked invite link: once set, the link
+ * admits nobody (`firestore.rules` refuses the self-join). The Admin SDK bypasses
+ * those rules, so the lock is re-checked HERE — a locked campaign yields no card and
+ * is therefore indistinguishable from a code that never existed, which is the same
+ * rule the character branch follows.
+ */
+export function campaignCard(doc: CampaignDocLike, url: string): OgCard | null {
+  if (doc.joinsLocked === true) return null;
+  const clean = typeof doc.name === "string" ? doc.name.trim() : "";
   if (!clean) return null;
   return {
     title: `Join ${clean} on ${BRAND}`,
@@ -191,15 +197,29 @@ export function injectOgTags(shell: string, card: OgCard): string {
 }
 
 /**
+ * The hosts a shell may be fetched from: production, a Firebase preview channel
+ * (`d20-folio--<channel>-<hash>.web.app`), and the local emulator.
+ *
+ * `ogShell` MUST allow unauthenticated invocation (the Hosting rewrite needs it), so
+ * its raw `*.run.app` URL is reachable directly and `x-forwarded-host` is attacker-
+ * settable there. Without this allowlist a forged host would make the function fetch
+ * `https://evil.example/index.html` and reflect that attacker HTML back with 200 +
+ * CDN cache headers. Anything unrecognised falls back to {@link SITE}.
+ */
+const ALLOWED_HOST =
+  /^(?:d20-folio(?:--[a-z0-9-]+)?\.web\.app|d20-folio\.firebaseapp\.com|localhost|127\.\d+\.\d+\.\d+|\[::1\]|0\.0\.0\.0)(?::\d+)?$/i;
+
+/**
  * The origin to fetch the built shell FROM — the host that actually served this
  * request, so the emulator reads the emulator's `dist/` and a preview channel reads
  * its own. Distinct from {@link SITE}, which is what `og:url` advertises. Hosting
- * fronts the function, so the forwarded headers are the truth; the localhost /
- * loopback carve-out is what makes `firebase emulators:start` verifiable with curl.
+ * fronts the function, so the forwarded headers are the truth ONCE the host is one of
+ * ours ({@link ALLOWED_HOST}); the localhost / loopback carve-out is what makes
+ * `firebase emulators:start` verifiable with curl.
  */
 export function shellOrigin(headers: Record<string, string | undefined>): string {
   const host = headers["x-forwarded-host"] ?? headers["host"];
-  if (!host) return SITE;
+  if (!host || !ALLOWED_HOST.test(host)) return SITE;
   const local = /^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(host);
   const proto = headers["x-forwarded-proto"] ?? (local ? "http" : "https");
   return `${proto}://${host}`;

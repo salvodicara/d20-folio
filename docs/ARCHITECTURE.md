@@ -1586,14 +1586,22 @@ per-link previews on its own — every URL would unfurl as the same card. Two ti
   `europe-west1` explicitly, because a rewrite defaults to `us-central1` while `setGlobalOptions`
   puts the package in Europe). It fetches the built shell from the host that served the request,
   splices the entity's tags in between the same two markers, and returns it — the SAME shell, so a
-  human still gets the ordinary SPA and there is no second rendering path to keep in step.
+  human still gets the ordinary SPA and there is no second rendering path to keep in step. The
+  fetched-from host is ALLOWLISTED (production, a `d20-folio--<channel>-<hash>.web.app` preview
+  channel, the local emulator) and anything else falls back to the canonical origin: the function
+  must allow unauthenticated invocation for the rewrite to work, so its raw `*.run.app` URL is
+  reachable directly and a forged `X-Forwarded-Host` would otherwise have it fetch — and reflect,
+  with a 200 and CDN cache headers — an attacker's HTML.
 - **What may be exposed, and nothing else.** A character: only when its document carries
   `shared: true`, and then only name, total level and class (read off the SRD-free roster `cache`).
-  A campaign: only its NAME, and only for an invite code that resolves — the code IS the campaign's
-  document id, the same secret the join flow already treats as the grant. The Admin SDK bypasses
-  `firestore.rules`, so `ogShell` re-checks the share flag itself. Every other case — unshared,
-  unknown, malformed, lookup failed — returns the generic branded card, so an unshared id is not even
-  distinguishable from a nonexistent one.
+  A campaign: only its NAME, and only for an invite code that resolves to a campaign whose joins are
+  still open — the code IS the campaign's document id, the same secret the join flow already treats
+  as the grant. The Admin SDK bypasses `firestore.rules`, so `ogShell` re-checks BOTH the share flag
+  and `joinsLocked` (the DM's kill switch for a leaked link) itself. Every other case — unshared,
+  locked, unknown, malformed, lookup failed — is served the shell UNTOUCHED, i.e. the baseline card
+  above, which is why there is exactly one copy of that generic copy in the repo and nothing to drift
+  against. An unshared id is then not even distinguishable from a nonexistent one; the only thing
+  given up is `og:url` echoing the shared path on a link that describes nothing anyway.
 - **Cost + staleness.** The response is CDN-cacheable per URL (`max-age=300, s-maxage=3600`), so the
   function runs on a crawl or a cold first hit, not per pageview — and a returning user never reaches
   it at all, because the service worker answers `/view/**` and `/join/**` navigations from the

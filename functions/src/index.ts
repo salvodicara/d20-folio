@@ -52,7 +52,6 @@ import {
 import { parseBudgetNotification, decideBudgetKill } from "./budget-kill";
 import {
   parseSharePath,
-  genericCard,
   characterCard,
   campaignCard,
   injectOgTags,
@@ -466,10 +465,11 @@ export const onBudgetAlert = onMessagePublished(
 //
 // EXPOSURE (enforced in `og-meta.ts`, and re-asserted here at the read): a character
 // only when its document carries `shared: true`, and then only name / level / class;
-// a campaign only its NAME, and only for an invite code that resolves (the code IS
-// the campaign's doc id — the same secret the join flow already treats as the
-// grant). Everything else falls back to the generic branded card: an unshared or
-// unknown id must not even be distinguishable from a nonexistent one.
+// a campaign only its NAME, and only for an invite code that resolves to a campaign
+// whose joins are still open (the code IS the campaign's doc id — the same secret the
+// join flow already treats as the grant). Everything else is served the UNTOUCHED
+// shell, i.e. the baseline branded card `index.html` already carries: an unshared,
+// locked or unknown id is then byte-identical to any other route.
 //
 // ZERO-BUDGET: the response is CDN-cacheable per URL (`s-maxage`), so in practice
 // this runs on a crawl or a cold first hit, not per pageview — and returning users
@@ -490,7 +490,7 @@ async function loadShell(origin: string): Promise<string> {
   return html;
 }
 
-/** Resolve the card for a shared path, or null to serve the generic one. */
+/** Resolve the card for a shared path, or null to serve the shell as-built. */
 async function resolveCard(pathname: string, url: string): Promise<OgCard | null> {
   const target = parseSharePath(pathname);
   if (!target) return null;
@@ -508,7 +508,9 @@ async function resolveCard(pathname: string, url: string): Promise<OgCard | null
   }
   const camp = await db.collection("campaigns").doc(target.code).get();
   if (!camp.exists) return null;
-  return campaignCard(camp.get("name"), url);
+  // `campaignCard` re-checks the joins lock — the DM's kill switch for a leaked link
+  // (the Admin SDK bypasses the rules that enforce it on the join itself).
+  return campaignCard(camp.data() ?? {}, url);
 }
 
 export const ogShell = onRequest(async (req, res) => {
@@ -521,8 +523,8 @@ export const ogShell = onRequest(async (req, res) => {
     card = await resolveCard(req.path, url);
   } catch (e) {
     // A lookup failure is a PREVIEW failure, never a page failure: fall through to
-    // the generic card so the link still opens.
-    logger.warn("ogShell: entity lookup failed; serving the generic card", {
+    // the shell's baseline card so the link still opens.
+    logger.warn("ogShell: entity lookup failed; serving the shell untouched", {
       path: req.path,
       error: e instanceof Error ? e.message : String(e),
     });
@@ -533,7 +535,9 @@ export const ogShell = onRequest(async (req, res) => {
       .status(200)
       .set("Cache-Control", OG_CACHE_CONTROL)
       .set("Content-Type", "text/html; charset=utf-8")
-      .send(injectOgTags(shell, card ?? genericCard(url)));
+      // No card ⇒ the shell EXACTLY as built, baseline tags and all. One copy of the
+      // generic card, in `index.html`, so the two can never drift apart.
+      .send(card ? injectOgTags(shell, card) : shell);
   } catch (e) {
     // The shell itself is unreachable — redirect rather than serve a broken page.
     logger.error("ogShell: could not load the app shell", {

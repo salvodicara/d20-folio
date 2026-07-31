@@ -1366,8 +1366,9 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   and **per-link dynamic tags on the two shared route families** (`/view/**`, `/join/**`) from a
   lightweight Cloud Function behind Hosting rewrites that serves the SPA shell with the entity's
   tags injected — a shared character reads its `shared: true` doc (an unshared or unknown id gets
-  the generic branded tags, never a leak), a campaign invite exposes the campaign NAME and nothing
-  else, for a valid code only. Crawlers must get the tags with NO JavaScript.
+  the shell's own baseline tags, never a leak), a campaign invite exposes the campaign NAME and
+  nothing else, for a valid code whose joins are still open. Crawlers must get the tags with NO
+  JavaScript.
   **All of it shipped in the same wave.** What landed: `CharacterDoc.shared` (replacing the
   never-implemented `shareId` scaffolding and the unused public `/shared` collection it pointed at);
   ONE `allow get` arm in `firestore.rules`, deliberately `get` and not `read` so it can never widen
@@ -1380,8 +1381,13 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   native sheet; `ogShell` + the two Hosting rewrites + the designed `public/og-card.jpg`, verified
   by curl under a crawler UA. One rule-27 stability fix fell out of it: every ⋯ overflow item inside
   the mobile Signet was inert, because `useDismissOnOutside` collapsed the chain on a pointerdown
-  inside the menu's own Radix portal. Full design record: `docs/ARCHITECTURE.md` → "Public share
-  links" + "Link previews (Open Graph)".
+  inside the menu's own Radix portal. Review convergence closed two exposures in `ogShell` and one
+  duplication: the shell is now fetched only from an ALLOWLISTED host (a forged `X-Forwarded-Host`
+  on the function's public `*.run.app` URL could otherwise have it reflect attacker HTML with CDN
+  cache headers); a `joinsLocked` campaign now unfurls as nothing, so the DM's leaked-link kill
+  switch holds against the Admin SDK too; and the generic card exists ONLY in `index.html` — no card
+  means the shell is served untouched, so the copy cannot drift. Full design record:
+  `docs/ARCHITECTURE.md` → "Public share links" + "Link previews (Open Graph)".
 - **Post-view signup CTA — the share-funnel growth loop (CANDIDATE — owner idea 2026-07-31):** the
   public no-account `/view` page (a non-registered friend viewing a shared character) offers a
   tasteful post-view **conversion CTA** — a premium nudge to "create your own character" / sign up.

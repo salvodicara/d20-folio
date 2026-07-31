@@ -9,16 +9,16 @@
  *
  * BLIND SPOTS, stated: (1) this cannot see the deployed Hosting rewrite, so "a
  * crawler actually reaches this function" is verified by curl against the emulator,
- * not here; (2) it does not exercise Firestore — `index.ts` owns that edge and the
- * exposure re-check there is asserted by reading the same rule twice (rules suite +
- * the `shared !== true` guard), not by this file.
+ * not here; (2) it does not exercise Firestore — `index.ts` owns that edge, so the
+ * character `shared !== true` re-check there is asserted by reading the same rule
+ * twice (rules suite + the guard), not by this file. The campaign side of the
+ * exposure rule (name + the joins lock) lives in `campaignCard`, so it IS covered.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   parseSharePath,
-  genericCard,
   characterCard,
   campaignCard,
   renderOgTags,
@@ -43,7 +43,7 @@ describe("parseSharePath", () => {
     expect(parseSharePath("/join/ABC123")).toEqual({ kind: "campaign", code: "ABC123" });
   });
 
-  it("refuses anything else, so a stray path serves the generic card", () => {
+  it("refuses anything else, so a stray path is served the shell untouched", () => {
     for (const path of [
       "/",
       "/view",
@@ -88,7 +88,7 @@ describe("characterCard", () => {
     expect(
       characterCard({ name: "Husk", classes: [{ classId: "", level: 3 }] }, URL)?.title
     ).toBe("Husk — Level 3 · d20 Folio");
-    // No usable name ⇒ no card at all; the caller serves the generic one.
+    // No usable name ⇒ no card at all; the caller then serves the shell as-built.
     expect(characterCard({ name: "   " }, URL)).toBeNull();
     expect(characterCard({}, URL)).toBeNull();
   });
@@ -96,15 +96,28 @@ describe("characterCard", () => {
 
 describe("campaignCard", () => {
   it("exposes the campaign NAME and nothing else", () => {
-    const card = campaignCard("Starless Keep", "https://d20-folio.web.app/join/ABC");
+    const card = campaignCard(
+      { name: "Starless Keep" },
+      "https://d20-folio.web.app/join/ABC"
+    );
     expect(card?.title).toBe("Join Starless Keep on d20 Folio");
     expect(card?.description).toContain("Starless Keep");
   });
 
   it("returns null for a code that resolved to nothing usable", () => {
-    expect(campaignCard(undefined, URL)).toBeNull();
-    expect(campaignCard("", URL)).toBeNull();
-    expect(campaignCard(42, URL)).toBeNull();
+    expect(campaignCard({}, URL)).toBeNull();
+    expect(campaignCard({ name: "" }, URL)).toBeNull();
+    expect(campaignCard({ name: 42 }, URL)).toBeNull();
+  });
+
+  it("a LOCKED campaign unfurls as nothing — the leaked-link kill switch holds here too", () => {
+    // The Admin SDK bypasses the rules that refuse the join, so the preview must
+    // re-check the lock itself: locked reads exactly like a code that never existed.
+    expect(campaignCard({ name: "Starless Keep", joinsLocked: true }, URL)).toBeNull();
+    // Explicitly unlocked and legacy-absent both still unfurl.
+    expect(
+      campaignCard({ name: "Starless Keep", joinsLocked: false }, URL)
+    ).not.toBeNull();
   });
 });
 
@@ -122,7 +135,7 @@ describe("renderOgTags", () => {
   });
 
   it("carries the branded card, never a portrait", () => {
-    const html = renderOgTags(genericCard("https://d20-folio.web.app/"));
+    const html = renderOgTags(campaignCard({ name: "Starless Keep" }, URL)!);
     expect(html).toContain('content="https://d20-folio.web.app/og-card.jpg"');
     expect(html).toContain('name="twitter:card" content="summary_large_image"');
   });
@@ -131,9 +144,31 @@ describe("renderOgTags", () => {
 describe("shellOrigin", () => {
   it("reads the host that actually served the request", () => {
     expect(shellOrigin({ host: "d20-folio.web.app" })).toBe("https://d20-folio.web.app");
+    expect(shellOrigin({ host: "d20-folio.firebaseapp.com" })).toBe(
+      "https://d20-folio.firebaseapp.com"
+    );
     expect(
-      shellOrigin({ "x-forwarded-host": "preview--x.web.app", host: "run.app" })
-    ).toBe("https://preview--x.web.app");
+      shellOrigin({
+        "x-forwarded-host": "d20-folio--pr9-a1b2c3.web.app",
+        host: "run.app",
+      })
+    ).toBe("https://d20-folio--pr9-a1b2c3.web.app");
+  });
+
+  it("REFUSES a forged host — the function is public, so the header is attacker input", () => {
+    // Hitting the raw *.run.app URL directly with a forged X-Forwarded-Host would
+    // otherwise make the shell fetch — and therefore the 200 we reflect with CDN
+    // cache headers — come from the attacker's origin.
+    for (const host of [
+      "evil.example",
+      "d20-folio.web.app.evil.example",
+      "evil.example/d20-folio.web.app",
+      "notd20-folio.web.app",
+      "d20-folio.web.app@evil.example",
+      "localhost.evil.example",
+    ]) {
+      expect(shellOrigin({ "x-forwarded-host": host, host: "x.run.app" })).toBe(SITE);
+    }
   });
 
   it("speaks http to the local emulator, which is what makes the rewrite curl-able", () => {
@@ -189,6 +224,8 @@ describe("injectOgTags against the REAL index.html", () => {
 
   it("returns a marker-less shell untouched rather than serving a broken page", () => {
     const stripped = "<html><head></head><body>hi</body></html>";
-    expect(injectOgTags(stripped, genericCard(URL))).toBe(stripped);
+    expect(injectOgTags(stripped, campaignCard({ name: "Starless Keep" }, URL)!)).toBe(
+      stripped
+    );
   });
 });
