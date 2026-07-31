@@ -53,7 +53,7 @@ export function WizardFrame({
   // mounting the realm here covers both.
   useRealmBackdrop("var(--asset-creation-scene)");
   return (
-    <div className="wiz on-art-scope">
+    <div className="wb wiz on-art-scope">
       {paths}
       {children}
       {nav}

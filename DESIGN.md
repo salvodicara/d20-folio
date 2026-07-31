@@ -1077,7 +1077,7 @@ campaign hub if it adopts tabbed IA — never re-roll a second tab look.
 **The grammar reaches every surface (owner, 2026-07-31 — "niente escluso"):** every page root AND
 every PORTAL root carries the `wb` scope — portals (dialogs, popovers, tooltips, toasts) mount on
 `<body>` outside the page roots, so each portal wrapper declares the scope itself (DialogContent,
-ModalShell, PopoverContent, Tooltip, the toast region, the portrait lightbox). Dialogs are the
+ModalShell, PopoverContent, Tooltip, the toast region, the portrait lightbox) — and the two wizards' `WizardFrame`. Dialogs are the
 LEATHER working plate (`.wb .modal` twins `.wb .folio-panel` — §16.2: slate stays the ceremony
 register) with the modal's own deeper elevation; the lightbox and every floating list speak the
 `.popover`/`.modal-close` vocabulary — no hand-rolled overlay surfaces.
