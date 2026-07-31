@@ -1061,5 +1061,41 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         characterId: "team-mandorlino-paladin",
       },
     ],
+    // The Combat-Chronicle feed (begun demo only) — a populated feed so the DM's live
+    // "Chronicle of the fight" + the one-tap attribution picker (a PENDING un-attributed
+    // hit) render in the screenshot / a11y matrix. Ephemeral + DM-only; deterministic.
+    ...(gathering
+      ? {}
+      : {
+          events: [
+            {
+              id: "0",
+              round: 1,
+              kind: "hp-damage" as const,
+              targetId: "monster-1",
+              amount: 8,
+              current: 3,
+              max: 7,
+              attackerId: "pc-member-mara",
+            },
+            {
+              id: "1",
+              round: 1,
+              kind: "condition-gain" as const,
+              targetId: "monster-1",
+              conditionId: "prone",
+            },
+            {
+              id: "2",
+              round: 2,
+              kind: "hp-damage" as const,
+              // A PENDING un-attributed hit → the feed shows the one-tap picker.
+              targetId: "pc-member-bren",
+              amount: 6,
+              current: 24,
+              max: 60,
+            },
+          ],
+        }),
   };
 }

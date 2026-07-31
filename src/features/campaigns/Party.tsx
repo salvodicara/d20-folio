@@ -832,6 +832,7 @@ function CombatLayer({
         <ChronicleFeed
           events={encounter.events ?? []}
           rows={view.rows}
+          memberDetails={memberDetails}
           currentId={view.currentId}
           gathering={gathering}
           apply={apply}
@@ -844,6 +845,7 @@ function CombatLayer({
         <EndEncounterDialog
           encounter={encounter}
           rows={view.rows}
+          memberDetails={memberDetails}
           onSave={saveChronicle}
           onSkip={() => {
             setEndOpen(false);

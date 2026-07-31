@@ -90,6 +90,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
       <ChronicleFeed
         events={[damageEvent]}
         rows={ROWS}
+        memberDetails={{}}
         currentId="pc-mara"
         gathering={false}
         apply={apply}
@@ -111,6 +112,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
       <ChronicleFeed
         events={[damageEvent]}
         rows={ROWS}
+        memberDetails={{}}
         currentId="pc-mara"
         gathering={false}
         apply={apply}
@@ -136,6 +138,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
       <ChronicleFeed
         events={[damageEvent]}
         rows={ROWS}
+        memberDetails={{}}
         currentId="pc-mara"
         gathering={false}
         apply={apply}
@@ -153,6 +156,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
       <ChronicleFeed
         events={[{ ...damageEvent, attackerId: "pc-mara" }]}
         rows={ROWS}
+        memberDetails={{}}
         currentId="pc-mara"
         gathering={false}
         apply={vi.fn()}
@@ -172,6 +176,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
       <ChronicleFeed
         events={[]}
         rows={ROWS}
+        memberDetails={{}}
         currentId="pc-mara"
         gathering={false}
         apply={apply}
@@ -185,7 +190,14 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
 
   it("hides the miss/pass logger while gathering (no active combatant)", () => {
     render(
-      <ChronicleFeed events={[]} rows={ROWS} currentId={null} gathering apply={vi.fn()} />
+      <ChronicleFeed
+        events={[]}
+        rows={ROWS}
+        memberDetails={{}}
+        currentId={null}
+        gathering
+        apply={vi.fn()}
+      />
     );
     expect(screen.queryByRole("button", { name: /Log a pass/ })).toBeNull();
   });
@@ -218,6 +230,7 @@ describe("EndEncounterDialog — the editable end entry", () => {
       <EndEncounterDialog
         encounter={encounter}
         rows={ROWS}
+        memberDetails={{}}
         onSave={onSave}
         onSkip={vi.fn()}
         onCancel={vi.fn()}
@@ -239,6 +252,7 @@ describe("EndEncounterDialog — the editable end entry", () => {
       <EndEncounterDialog
         encounter={encounter}
         rows={ROWS}
+        memberDetails={{}}
         onSave={onSave}
         onSkip={vi.fn()}
         onCancel={vi.fn()}
@@ -260,6 +274,7 @@ describe("EndEncounterDialog — the editable end entry", () => {
       <EndEncounterDialog
         encounter={encounter}
         rows={ROWS}
+        memberDetails={{}}
         onSave={onSave}
         onSkip={onSkip}
         onCancel={vi.fn()}

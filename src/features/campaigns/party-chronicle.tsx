@@ -45,20 +45,37 @@ import {
 } from "@/features/campaigns/combat-chronicle";
 import type { ApplyFn } from "@/features/campaigns/party-encounter";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
-import type { EncounterState } from "@/types/campaign";
+import type { CampaignDoc, EncounterState } from "@/types/campaign";
 import type { CombatChronicleEvent, EncounterOutcome } from "@/types/combat-chronicle";
+
+type MemberDetails = CampaignDoc["memberDetails"];
 
 // ─── Shared resolvers (combatant id → name, condition id → name) ─────────────
 
-function useChronicleResolvers(rows: ReadonlyArray<EncounterCombatantView>): {
+function useChronicleResolvers(
+  rows: ReadonlyArray<EncounterCombatantView>,
+  memberDetails: MemberDetails
+): {
   resolveName: ResolveCombatantName;
   resolveCondition: ResolveConditionName;
 } {
   const { t } = useTranslation();
   const { language } = useLocale();
   const nameById = useMemo(
-    () => new Map(rows.map((r) => [r.id, r.name] as const)),
-    [rows]
+    () =>
+      new Map(
+        rows.map((r) => {
+          // Prefer the denormalized member snapshot name for a PC — it is ALWAYS present
+          // (the live doc hydrates late) AND it is the SAME name the party cards +
+          // `resolveActorName` show, so the chronicle never disagrees with the table. Fall
+          // back to the live row name (a monster, or a PC with no snapshot yet).
+          const snapshot = r.memberUid
+            ? memberDetails[r.memberUid]?.character?.name
+            : undefined;
+          return [r.id, snapshot?.trim() || r.name.trim() || ""] as const;
+        })
+      ),
+    [rows, memberDetails]
   );
   const resolveName = useCallback<ResolveCombatantName>(
     (id) => nameById.get(id)?.trim() || t("combatChronicle.someone"),
@@ -109,12 +126,15 @@ function CombatantChip({
 export function ChronicleFeed({
   events,
   rows,
+  memberDetails,
   currentId,
   gathering,
   apply,
 }: {
   events: ReadonlyArray<CombatChronicleEvent>;
   rows: ReadonlyArray<EncounterCombatantView>;
+  /** The campaign roster — the source of a PC's snapshot name while its live doc loads. */
+  memberDetails: MemberDetails;
   currentId: string | null;
   /** During the gathering phase there is no active combatant, so no miss/pass logger. */
   gathering: boolean;
@@ -122,7 +142,7 @@ export function ChronicleFeed({
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(true);
-  const { resolveName, resolveCondition } = useChronicleResolvers(rows);
+  const { resolveName, resolveCondition } = useChronicleResolvers(rows, memberDetails);
 
   return (
     <section className="rounded-md border border-border-medium bg-[var(--bg-recessed)] shadow-[var(--elev-recessed)]">
@@ -229,7 +249,7 @@ function FeedLine({
           {candidates.map((c) => (
             <CombatantChip
               key={c.id}
-              label={c.name}
+              label={resolveName(c.id)}
               selected={c.id === currentId}
               onClick={() => apply((e) => setEventAttacker(e, event.id, c.id))}
             />
@@ -294,7 +314,7 @@ function MissPassLogger({
           {targets.map((c) => (
             <CombatantChip
               key={c.id}
-              label={c.name}
+              label={resolveName(c.id)}
               onClick={() => {
                 apply((e) => recordMiss(e, actorId, c.id));
                 setPickingMiss(false);
@@ -319,12 +339,15 @@ function MissPassLogger({
 export function EndEncounterDialog({
   encounter,
   rows,
+  memberDetails,
   onSave,
   onSkip,
   onCancel,
 }: {
   encounter: EncounterState;
   rows: ReadonlyArray<EncounterCombatantView>;
+  /** The campaign roster — the source of a PC's snapshot name while its live doc loads. */
+  memberDetails: MemberDetails;
   /** Persist the built markdown chapter (the single write). Resolves on success (the
    *  caller then clears the encounter); REJECTS on failure (offline) so the dialog stays
    *  open + the fight running for a retry. */
@@ -335,7 +358,7 @@ export function EndEncounterDialog({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const { resolveName, resolveCondition } = useChronicleResolvers(rows);
+  const { resolveName, resolveCondition } = useChronicleResolvers(rows, memberDetails);
   const events = useMemo(() => encounter.events ?? [], [encounter.events]);
   const [saving, setSaving] = useState(false);
 

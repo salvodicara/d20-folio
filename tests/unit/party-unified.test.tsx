@@ -529,11 +529,18 @@ describe("Party combat — DM (editable layer)", () => {
   it("renders the PC member cards + the monster rows, INCLUDING the hidden one", async () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
-    // Monsters (genuine encounter state) render by their typed names.
+    // Monsters (genuine encounter state) render by their typed names. (The DM combat
+    // chronicle can ALSO echo a combatant name — e.g. the current actor in its miss/pass
+    // logger — so scope the row assertion to a `.party-card`, not the whole surface.)
     expect(screen.getAllByText("Goblin").length).toBeGreaterThan(0);
-    expect(screen.getByText("Goblin Chief")).toBeInTheDocument();
-    // The DM sees the HIDDEN ambush monster (with its Hidden badge).
-    expect(screen.getByText("Shadow")).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Goblin Chief").some((el) => el.closest(".party-card"))
+    ).toBe(true);
+    // The DM sees the HIDDEN ambush monster (with its Hidden badge). Scope to the card:
+    // Shadow is the current actor here, so the chronicle logger echoes its name too.
+    expect(screen.getAllByText("Shadow").some((el) => el.closest(".party-card"))).toBe(
+      true
+    );
     expect(screen.getByText(/^Hidden$/)).toBeInTheDocument();
   });
 
@@ -625,9 +632,13 @@ describe("Party combat — DM (editable layer)", () => {
   it("the DM sees the EXACT monster HP and can reveal it to players (CARD-5)", async () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
-    // The DM reads the exact summed HP (Goblin Chief: 21/21) — no concealed band.
-    const boss = screen.getByText("Goblin Chief").closest(".party-card");
-    if (!(boss instanceof HTMLElement)) throw new Error("no boss card");
+    // The DM reads the exact summed HP (Goblin Chief: 21/21) — no concealed band. (Scope
+    // to the CARD: the chronicle logger can echo the same name elsewhere on the surface.)
+    const boss = screen
+      .getAllByText("Goblin Chief")
+      .map((el) => el.closest(".party-card"))
+      .find((c): c is HTMLElement => c instanceof HTMLElement);
+    if (!boss) throw new Error("no boss card");
     const scope = within(boss);
     expect(scope.getByTitle(/21.*21|21/)).toBeInTheDocument();
     // Expand → flip the per-monster reveal flag through the encounter writer.
