@@ -56,7 +56,7 @@ describe("revealActiveTab", () => {
     // The CONTAINER scrolled, by the nearest-edge delta (tab right 200 → edge 100).
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy.mock.instances[0]).toBe(container);
-    expect(spy.mock.calls[0][0]).toMatchObject({ left: 100 });
+    expect(spy.mock.calls[0]?.[0]).toMatchObject({ left: 100 });
     // …and NOTHING was asked to scroll ancestors.
     expect(intoView).not.toHaveBeenCalled();
   });
@@ -66,7 +66,7 @@ describe("revealActiveTab", () => {
     const spy = vi.fn();
     HTMLElement.prototype.scrollBy = spy;
     revealActiveTab(container);
-    expect(spy.mock.calls[0][0]).toMatchObject({ left: -30 });
+    expect(spy.mock.calls[0]?.[0]).toMatchObject({ left: -30 });
   });
 
   it("does NOT nudge an already fully-visible active tab (the member-sheet clip fix)", () => {

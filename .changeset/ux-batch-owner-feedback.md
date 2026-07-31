@@ -11,4 +11,4 @@ sheds its scrollbar and dead padding; the tab-search lens becomes a true toggle 
 blur/click flash race dies, closing clears the query); the command palette goes
 mobile-native (no keyboard legend, no pre-selected row on touch); and the sheet-tail
 sections lose their collapsed ghost padding. Pinned by tests/e2e/tab-no-jump.spec.ts and
-new unit suites.
+new unit suites. The batch tests type cleanly (toHaveValue, optional call tuples).

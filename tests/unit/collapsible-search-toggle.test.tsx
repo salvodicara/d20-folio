@@ -40,7 +40,7 @@ describe("CollapsibleSearch toggle", () => {
     render(<Harness initial="dagger" />);
     const input = screen.getByRole("searchbox");
     fireEvent.click(screen.getByRole("button", { name: "Search" }));
-    expect(input.value).toBe("");
+    expect(input).toHaveValue("");
     expect(document.activeElement).not.toBe(input);
   });
 });
