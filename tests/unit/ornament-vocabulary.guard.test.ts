@@ -53,8 +53,11 @@ describe("ornament vocabulary (T5)", () => {
     // ON the host's 1px border — the regression this pins is the fitting
     // drifting back INSIDE the panel (or the seat geometry changing without
     // the doc trail). Position: the four corners; span: the 48px wing.
+    // The modal's fittings ride the HEAD band since 2026-08-01 (the owner's
+    // bound-cover ruling): the shared rule hosts .modal-head::after, scaled
+    // to 32px by its own override below.
     const fitting = folioCss.match(
-      /\.page-head\.framed::before,\n\.folio-panel\.gilt-frame::after,\n\.modal::after \{[\s\S]*?\n\}/
+      /\.page-head\.framed::before,\n\.folio-panel\.gilt-frame::after,\n\.modal-head::after \{[\s\S]*?\n\}/
     )?.[0];
     expect(fitting).toBeTruthy();
     expect(fitting).toContain("inset: -1px");
@@ -62,6 +65,8 @@ describe("ornament vocabulary (T5)", () => {
       /mask-position:\s*left top,\s*right top,\s*left bottom,\s*right bottom/
     );
     expect(fitting).toMatch(/mask-size: 48px 48px/);
+    // …and the dialog head wears them SCALED (32px), never the masthead size.
+    expect(folioCss).toMatch(/\.modal-head::after \{\n {2}mask-size: 32px 32px;/);
     const modalStart = folioCss.indexOf("\n.modal {");
     const modalEnd = folioCss.indexOf(".modal.sm");
     expect(modalStart).toBeGreaterThan(-1);

@@ -2267,17 +2267,18 @@ button.pr-dot.lg::before {
   padding: var(--sp-4);
 }
 .modal {
-  /* relative seats the reliquary corner overlay (`.modal::after`, the ornament
-     vocabulary below) — dialogs are an earned hero register. The modal must NOT
-     clip child paint: that would cut the corner fitting, which straddles the
-     frame line (the mask overlay sits at inset -1px). Scroll clipping lives on the ModalScroll primitive. The one full-bleed child is `.modal-head` (gradient
-     band): it rounds its OWN top corners to the card radius below, so no child
-     paint ever overruns the rounded corner arc. */
+  /* The corner fittings ride the HEAD band (.modal-head::after) — the modal
+     itself must still not clip child paint (the head's overlay sits at
+     inset -1px, straddling the modal's top border). Scroll clipping lives on
+     the ModalScroll primitive. */
   position: relative;
   width: 100%;
   max-width: 32rem;
   /* Material comes from the `.wb .modal` leather-plate twin (every dialog
-     shell stamps `wb` on its portal overlay) + the elevation restore block. */
+     shell stamps `wb` on its portal overlay) + the elevation restore block.
+     The fittings live on the HEAD band now, so the frame no longer demands
+     square corners: the body rounds at its foot like every folio panel. */
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 .modal.sm {
   max-width: 24rem;
@@ -2286,6 +2287,11 @@ button.pr-dot.lg::before {
   max-width: 46rem;
 }
 .modal-head {
+  /* The dialog's BOUND COVER (owner, 2026-08-01): the binding-corner
+     fittings ride THIS band's corners — the page-masthead grammar scaled to
+     the dialog — so the body below stays clean and nothing contests the
+     scrolling list. `relative` seats the shared fitting overlay (::after). */
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: var(--sp-3);
@@ -14278,13 +14284,12 @@ button.party-avatar-btn:focus-visible {
    the fitting (geometric necessity: a rounded line would curve out from under
    the straight fitting and read as a second line). */
 .page-head.framed,
-.folio-panel.gilt-frame,
-.modal {
+.folio-panel.gilt-frame {
   border-radius: 0;
 }
 .page-head.framed::before,
 .folio-panel.gilt-frame::after,
-.modal::after {
+.modal-head::after {
   content: "";
   position: absolute;
   pointer-events: none;
@@ -14301,6 +14306,11 @@ button.party-avatar-btn:focus-visible {
     right bottom;
   mask-size: 48px 48px;
   mask-repeat: no-repeat;
+}
+/* The dialog head wears the fittings SCALED to its band (owner: "pennacchi
+   scalati, proporzionati" — the masthead's 48px would overwhelm the head). */
+.modal-head::after {
+  mask-size: 32px 32px;
 }
 
 /* Engraved ceremonial titling (same push): the Cinzel register reads STRUCK into
