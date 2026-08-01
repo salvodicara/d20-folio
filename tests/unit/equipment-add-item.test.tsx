@@ -209,8 +209,13 @@ describe("InventoryTab — unified Add Item", () => {
     ).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Custom" })).toBeInTheDocument();
 
-    // Switch to Magic Items → the magic-item browse body renders (a known SRD item).
+    // Switch to Magic Items → the magic-item browse body renders. Search for a known
+    // SRD item (the result list caps mounted rows, so a far-down item is reached by
+    // query, not by an unfiltered scroll).
     fireEvent.click(within(dialog).getByRole("button", { name: "Magic Items" }));
+    fireEvent.change(within(dialog).getByPlaceholderText(/Search magic items/i), {
+      target: { value: "Potion of Healing" },
+    });
     expect(within(dialog).getByText(/Potion of Healing/i)).toBeInTheDocument();
   });
 });
@@ -243,6 +248,10 @@ describe("AddItemModal — tab bodies", () => {
     expect(
       within(dialog).getByPlaceholderText(/Search magic items/i)
     ).toBeInTheDocument();
+    // The list caps mounted rows; search for the far-down item to render it.
+    fireEvent.change(within(dialog).getByPlaceholderText(/Search magic items/i), {
+      target: { value: "Potion of Healing" },
+    });
     expect(within(dialog).getByText(/Potion of Healing/i)).toBeInTheDocument();
   });
 });

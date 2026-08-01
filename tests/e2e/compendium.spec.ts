@@ -18,10 +18,10 @@ test.describe("Compendium browse", () => {
   });
 
   test("browses spells by default and searches by name", async ({ page }) => {
-    // Browse is global (no class filter) → every spell is listed.
-    await expect(
-      page.locator(".pick-name", { hasText: /Hypnotic Pattern/i }).first()
-    ).toBeVisible();
+    // Browse is global (no class filter) → the list is populated (the mounted rows are
+    // capped, with a "refine to see more" footer for the rest — a far-down spell is
+    // reached by search, below).
+    await expect(page.locator(".pick-name").first()).toBeVisible();
 
     // Searching narrows the list (bilingual, accent-insensitive substring).
     await page.getByRole("searchbox").fill("Hypnotic");
@@ -426,12 +426,9 @@ test.describe("Compendium browse", () => {
     // The lazy `monster` catalogue is registered by the specs-barrel TLA before the
     // page renders, so the pilot corpus is listed once the searchbox is up.
     await expect(page.getByRole("searchbox")).toBeVisible();
-    await expect(
-      page.locator(".pick-name", { hasText: /^Skeleton$/i }).first()
-    ).toBeVisible();
-    await expect(
-      page.locator(".pick-name", { hasText: /Adult Red Dragon/i }).first()
-    ).toBeVisible();
+    // The list is populated (mounted rows are capped, with a "refine to see more"
+    // footer for the rest); the specific monsters below are reached by the CR facet.
+    await expect(page.locator(".pick-name").first()).toBeVisible();
 
     // The "17+" CR band leaves only the CR-17 dragon; the CR-1/4 skeleton drops out.
     const filtersToggle = page.getByRole("button", { name: /^Filters$/i });
