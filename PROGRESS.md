@@ -24,8 +24,9 @@
 > rollback → grammar → hero cockpit → full rollout (every surface family incl. dialogs/portals),
 > the protruding index-tab construction, the two-style law (working plate vs parchment), the
 > remastered tome leaves, and the refreshed README screenshots (six WebP shots of the shipped
-> identity, compendium row added). Leftovers routed to standing jobs: the statblock-contrast
-> a11y fixes (rule 27) and the pack-side MM corpus.
+> identity, compendium row added). The statblock-contrast a11y job turned out already
+> resolved (statblock-ink-contrast.spec green in both themes, full e2e matrix confirming);
+> the one leftover is the pack-side MM corpus (its own standing job).
 
 The post-v0.22.0 **chrome-reset visual identity was REJECTED by the owner** (2026-07-30: the
 corner knots, the missing borders, the plate/veil material, the compendium treatment — "the
