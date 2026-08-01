@@ -436,7 +436,8 @@ at "End encounter", becomes ONE editable Chronicle chapter, removing the mechani
 DM writes STORY. Deterministic (no AI prose beyond templated facts, no dice), table-first, budget-safe.
 
 - **Data seam** — a `CombatChronicleEvent` union (`src/types/combat-chronicle.ts`: `hp-damage` /
-  `hp-heal` / `down` / `condition-gain` / `condition-loss`; ids + numbers only) on an **ephemeral
+  `hp-heal` / `down` / `condition-gain` / `condition-loss`, plus the reconciliation-only `attack-miss`
+  added in Phase 1 below; ids + numbers only) on an **ephemeral
   `EncounterState.events`** that rides the EXISTING debounced encounter writer — NO new write cadence,
   never a per-action write; the single persisted Chronicle write is the ONE chapter appended at close.
   Pure recorders in `features/campaigns/combat-chronicle.ts`; the presenter + markdown chapter builder
@@ -444,10 +445,40 @@ DM writes STORY. Deterministic (no AI prose beyond templated facts, no dice), ta
 - **UX** — the DM-only collapsible live feed + the **one-tap attacker attribution** (pre-picked to the
   current combatant, always skippable, NEVER auto-guessed), and the editable end entry (title ·
   free-text narrative · state-inferred outcome · removable lines) → `appendChronicleChapter`
-  (`features/campaigns/party-chronicle.tsx`). No miss / pass logging: a miss has no deterministic signal
-  and a per-turn button is exactly the friction the app avoids — missed swings + drama go in the DM's
-  narrative note.
+  (`features/campaigns/party-chronicle.tsx`). No DM miss button: a miss has no deterministic signal for
+  the DM and a per-turn button is the friction the app avoids — a miss now enters the record only when a
+  PLAYER declares it (Phase 1 below); other drama stays in the DM's narrative note.
 - Full detail: `docs/ARCHITECTURE.md → "The Combat Chronicle event seam"`.
+
+## Shipped — Auto-narrated combat, Phase 1: in-encounter target capture + single-attack reconciliation (2026-08-01)
+
+**The players now write the fight WITH the DM.** Phase 0 had the DM attribute each hit by hand; Phase 1
+lets a player, while IN a live campaign encounter, pick who they swung at and — after rolling at the
+table — tap **HIT** or **MISS** on their own sheet. That declaration flows to the DM through the
+existing per-PC channel and a pure correlation layer fuses it with the HP the DM applies into a
+CONFIRMED (or CERTAIN-miss) chronicle line, with no extra Firestore cost and no interruption to the
+fight. Solo play is untouched. Deterministic and never fabricated: the app supplies the action's known
+shape, the table supplies the roll.
+
+- **Channel** — a small capped `recentActions` ring on the per-PC `combat/state` subdoc
+  (`src/types/combat-state.ts` + `pushRecentAttack`), written through the EXISTING `writeCombatState`
+  on the player's HIT/MISS tap (`characterStore.declareAttack`). **NO new document, NO new subscription,
+  NO per-sub-action write** — the DM/hub already streams every member's subdoc via
+  `usePartyCombatStates`; the store mirrors the ring like the combat round so no HP write clobbers it.
+- **Capture UI** — `features/character/center/AttackDeclaration.tsx`, opened by `PlayTab` ONLY when
+  `useSheetCombat() != null` and a WEAPON attack is committed (SOLO renders nothing — the key rail).
+  Compact, non-modal, dismissible; pick a monster, then tap HIT/MISS; nothing is written until the tap.
+- **Correlation** — the PURE, derived-every-render `features/campaigns/chronicle-reconcile.ts`
+  (`flattenDeclarations` + `reconcileChronicle`) fuses declarations with the DM's observed HP deltas
+  keyed on (target, round): declared HIT + a matching pending delta ⇒ auto-attributed hit line (the DM's
+  real amount); declared MISS ⇒ a certain synthesized `attack-miss` line; ambiguous match (>1 declarer)
+  ⇒ uncertain-marked (never dropped/invented); a delta with no declaration ⇒ the Phase-0 one-tap
+  fallback. The DM live feed + end entry render the reconciled view (a new `attack-miss` event kind + a
+  subtle uncertain marker, EN + IT), and every line stays DM-overridable.
+- Scope note — Phase 1 covers single WEAPON attacks on monster targets; save-based / AoE / cast-attack
+  declarations and per-swing (Extra Attack) capture are later phases.
+- Full detail: `docs/ARCHITECTURE.md → "The Combat Chronicle event seam"` (the auto-narrated capture +
+  correlation bullet).
 
 ## Shipped — corner-ornament revert to the owner-approved style-A knot (2026-07-25)
 

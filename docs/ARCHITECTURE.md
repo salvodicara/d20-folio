@@ -492,14 +492,14 @@ pre-events persisted row as a `legacy` event; the engine never emits `legacy`). 
 The DM's in-hub encounter tracker has its OWN events-as-data feed — the table-wide sibling of the solo
 combat log, the **deterministic record of what LANDED**. As the DM books HP / conditions, the pure
 recorders append a structured **`CombatChronicleEvent`** (`src/types/combat-chronicle.ts` — a
-discriminated union: `hp-damage` / `hp-heal` / `down` / `condition-gain` / `condition-loss`; ids +
-numbers only — combatant ids `pc-<uid>` / `monster-<n>`, condition ids, amounts; NO localized string,
-golden rule 7) to an **ephemeral `EncounterState.events`** array. Because the events live on the
-encounter object, they ride the SAME debounced encounter writer the tracker already uses — accumulating
-them adds **no new write cadence and never a per-action write**; the array is dropped when the encounter
-clears at end. There is **no miss / pass logging**: a miss has no deterministic signal (no dice), and a
-per-turn button is exactly the friction the app avoids — missed swings and dramatic beats belong in the
-DM's narrative note at the end entry (where the DM is writing the story anyway).
+discriminated union: `hp-damage` / `hp-heal` / `down` / `condition-gain` / `condition-loss` / the
+reconciliation-only `attack-miss`; ids + numbers only — combatant ids `pc-<uid>` / `monster-<n>`,
+condition ids, amounts; NO localized string, golden rule 7) to an **ephemeral `EncounterState.events`**
+array. Because the events live on the encounter object, they ride the SAME debounced encounter writer the
+tracker already uses — accumulating them adds **no new write cadence and never a per-action write**; the
+array is dropped when the encounter clears at end. The DM never books a **miss** by hand (no dice, no
+per-turn button — that friction the app avoids); a miss enters the record only when a PLAYER declares it
+from their sheet (the auto-narrated capture below), and drama still belongs in the DM's end-entry note.
 
 - **Emit** — the pure recorders in `src/features/campaigns/combat-chronicle.ts` (`recordMonsterHp` /
   `recordPcHp` / `recordCondition`) compose with the plain encounter
@@ -510,7 +510,25 @@ DM's narrative note at the end entry (where the DM is writing the story anyway).
   own HP edit never writes the feed.
 - **Attribution** — a damage event carries an attacker **only** when the DM taps the feed's one-tap picker
   (`setEventAttacker`), pre-selected to the current combatant, always skippable (`skipEventAttacker`); the
-  app NEVER auto-guesses.
+  app NEVER auto-guesses. This is the **fallback** for undeclared (paper-play) damage; a declared attack
+  is attributed automatically (below).
+- **Auto-narrated capture + correlation (the in-encounter → chronicle seam).** When a player's OPEN sheet
+  is in a live encounter (`useSheetCombat() != null`), committing a WEAPON attack opens a compact,
+  dismissible **target picker + HIT/MISS** (`features/character/center/AttackDeclaration.tsx`, gated in
+  `PlayTab`; SOLO renders nothing). The tap writes the target + outcome to a small capped **`recentActions`
+  ring** on the player's own `combat/state` subdoc (`characterStore.declareAttack` →
+  `pushRecentAttack` → the EXISTING `writeCombatState`) — **no new document, no new subscription, no
+  per-sub-action write**; the DM/hub already streams every member's subdoc via `usePartyCombatStates`.
+  The PURE, derived-every-render correlation layer `features/campaigns/chronicle-reconcile.ts`
+  (`flattenDeclarations` + `reconcileChronicle`) fuses those declarations with the DM's observed HP deltas
+  keyed on (target, round): a declared HIT + a matching pending `hp-damage` ⇒ an **auto-attributed** hit
+  line (amount = the DM's real delta); a declared MISS ⇒ a **certain** synthesized `attack-miss` line; an
+  ambiguous match (>1 declarer) ⇒ **uncertain**-marked (a subtle marker, never dropped, never invented); a
+  declared hit with no delta ⇒ no line; a delta with no declaration ⇒ stays pending for the one-tap
+  fallback. It is **deterministic and never fabricated** (a hit line needs a real HP delta, a miss line an
+  explicit tap) and **writes nothing back** (no Firestore cost). The DM still overrides any pending or
+  uncertain line via the one-tap picker (which writes the stored `attackerId`) and edits/removes any line
+  at the end entry. Locked by `chronicle-reconcile.test.ts` + `attack-declaration.test.tsx`.
 - **Localize + close** — ONE presenter `src/lib/views/combat-chronicle-view.ts` resolves each event to its
   prose line (injected combatant-name + condition-name resolvers → EN/IT re-localizes on a language
   switch) and `buildChronicleChapter` assembles the kept lines into one round-grouped markdown `##`
