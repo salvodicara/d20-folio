@@ -450,6 +450,33 @@ DM writes STORY. Deterministic (no AI prose beyond templated facts, no dice), ta
   PLAYER declares it (Phase 1 below); other drama stays in the DM's narrative note.
 - Full detail: `docs/ARCHITECTURE.md → "The Combat Chronicle event seam"`.
 
+## Shipped — Auto-narrated combat, Phase 2: multi-target capture + fusion (2026-08-01)
+
+**One declared AoE, one chronicle line.** Phase 1 bound a single swing to a single HP drop; Phase 2
+lets an action that strikes SEVERAL foes (Magic Missile's darts, Scorching Ray's rays) capture the whole
+SET of targets and fuse the several drops the DM applies into ONE summary line — "A hits the Goblin (22),
+the Chief (22) and the Ogre (11)". Still deterministic and never fabricated: every per-target number is a
+real DM delta; a declared target with no drop is simply omitted, never invented. Solo untouched, no new
+Firestore cost.
+
+- **Single- vs multi-select is decided from the action's OWN shape** — `attack-scope.ts`
+  (`attackTargetCap` / `shouldDeclareAttack`) reads `summary.instances`: `> 1` ⇒ a multi-select picker
+  capped at that count (Phase 2), else single (Phase 1 unchanged). There is no area geometry modeled, so
+  an AoE save-spell (no `instances`) is by shape indistinguishable from a single-target save cantrip and
+  stays single — the genuinely multi-target actions are the multi-instance ones.
+- **Capture** — `AttackDeclaration` becomes multi-select for a multi-target action (toggle the set,
+  capped, never over-pick), resolving as one "Landed"/"Miss". The declared target SET + its instance drop
+  bound ride the SAME `recentActions` ring on the existing `writeCombatState` (NO new doc/subscription).
+- **Fusion** — `reconcileChronicle` binds a declared multi-target HIT to the pending `hp-damage` drops on
+  its targets in-window (bounded by `instances`), CONSUMING them into ONE new `attack-multi` line with
+  each struck target's real amount; a target with no drop is omitted; drops that can't cleanly match (over
+  the bound, or a competing declaration on a shared target) mark the line uncertain; a multi MISS ⇒ one
+  line naming the set. Bilingual prose (`combat-chronicle-view.ts`, a natural EN/IT enumeration reusing
+  `common.and`) reads naturally for 2, 3, or N targets; the fused line is DM-deletable at the end entry.
+- Scope note — Phase 2 covers multi-target capture + fusion; saves-for-half / riders / conditions (the
+  "made the save?" inference) are Phase 3.
+- Full detail: `docs/ARCHITECTURE.md → "The Combat Chronicle event seam"`.
+
 ## Shipped — Auto-narrated combat, Phase 1: in-encounter target capture + single-attack reconciliation (2026-08-01)
 
 **The players now write the fight WITH the DM.** Phase 0 had the DM attribute each hit by hand; Phase 1
