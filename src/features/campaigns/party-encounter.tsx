@@ -598,7 +598,11 @@ function FallbackVitals({
         <StatBadge
           density="chip"
           icon={Shield}
-          acronym={t("character.vitals.ac")}
+          acronym={
+            <GlossaryTip term="armorClass" rubric={t("character.vitals.acFull")}>
+              {t("character.vitals.ac")}
+            </GlossaryTip>
+          }
           fullLabel={t("character.vitals.acFull")}
           value={snapshot.ac}
           valueText={snapshot.ac}
@@ -733,7 +737,11 @@ function PcReadyCard({
         <StatBadge
           density="chip"
           icon={Shield}
-          acronym={t("character.vitals.ac")}
+          acronym={
+            <GlossaryTip term="armorClass" rubric={t("character.vitals.acFull")}>
+              {t("character.vitals.ac")}
+            </GlossaryTip>
+          }
           fullLabel={t("character.vitals.acFull")}
           value={stats.ac}
           valueText={stats.ac}
@@ -751,7 +759,11 @@ function PcReadyCard({
         <StatBadge
           density="chip"
           icon={Footprints}
-          acronym={t("character.vitals.spd")}
+          acronym={
+            <GlossaryTip term="speed" rubric={t("character.vitals.speed")}>
+              {t("character.vitals.spd")}
+            </GlossaryTip>
+          }
           fullLabel={t("character.vitals.speed")}
           value={formatSpeed(stats.walkingSpeedFt, locale)}
           valueText={formatSpeed(stats.walkingSpeedFt, locale)}
@@ -1583,7 +1595,11 @@ export function MonsterCard({
       <StatBadge
         density="chip"
         icon={Shield}
-        acronym={t("character.vitals.ac")}
+        acronym={
+          <GlossaryTip term="armorClass" rubric={t("character.vitals.acFull")}>
+            {t("character.vitals.ac")}
+          </GlossaryTip>
+        }
         fullLabel={t("character.vitals.acFull")}
         value={monster.ac}
         valueText={monster.ac}
@@ -1734,7 +1750,11 @@ export function MonsterCard({
             >
               <InitBadge
                 value={monster.initiative ?? "—"}
-                acronym={t("character.vitals.init")}
+                acronym={
+                  <GlossaryTip term="initiative" rubric={t("character.vitals.initAria")}>
+                    {t("character.vitals.init")}
+                  </GlossaryTip>
+                }
                 icon={Dices}
               />
             </span>
@@ -2107,7 +2127,12 @@ export function AddMonsterForm({
           IDENTICAL on desktop + mobile (no breakpoints). */}
       <div className="grid grid-cols-[max-content_max-content] items-center gap-x-3 gap-y-2">
         <FormStepper
-          label={t("character.vitals.initAria")}
+          label={
+            <GlossaryTip term="initiative" rubric={t("character.vitals.initAria")}>
+              {t("character.vitals.initAria")}
+            </GlossaryTip>
+          }
+          ariaLabel={t("character.vitals.initAria")}
           value={initiative}
           onChange={setInitiativeVal}
           min={0}
@@ -2115,7 +2140,12 @@ export function AddMonsterForm({
           digits={2}
         />
         <FormStepper
-          label={t("character.armorClassShort")}
+          label={
+            <GlossaryTip term="armorClass" rubric={t("character.vitals.acFull")}>
+              {t("character.armorClassShort")}
+            </GlossaryTip>
+          }
+          ariaLabel={t("character.armorClassShort")}
           value={ac}
           onChange={setAc}
           min={0}
@@ -2123,7 +2153,12 @@ export function AddMonsterForm({
           digits={2}
         />
         <FormStepper
-          label={t("campaignHub.encounterMonsterMaxHp")}
+          label={
+            <GlossaryTip term="hitPoints" rubric={t("character.hitPoints")}>
+              {t("campaignHub.encounterMonsterMaxHp")}
+            </GlossaryTip>
+          }
+          ariaLabel={t("campaignHub.encounterMonsterMaxHp")}
           value={maxHp}
           onChange={setMaxHp}
           min={0}
@@ -2132,6 +2167,7 @@ export function AddMonsterForm({
         />
         <FormStepper
           label={t("campaignHub.encounterMonsterCount")}
+          ariaLabel={t("campaignHub.encounterMonsterCount")}
           value={count}
           onChange={setCount}
           min={1}
@@ -2144,7 +2180,11 @@ export function AddMonsterForm({
             each CR's XP cost while choosing (no second field), and a closed set makes
             an invalid CR untypeable. */}
         <label className="contents">
-          <span className="text-sm text-text-secondary">{t("monster.crRubric")}</span>
+          <span className="text-sm text-text-secondary">
+            <GlossaryTip term="challengeRating" rubric={t("monster.crRubric")}>
+              {t("monster.crRubric")}
+            </GlossaryTip>
+          </span>
           <Select
             size="sm"
             value={cr}
@@ -2191,13 +2231,17 @@ export function AddMonsterForm({
  *  and the stepper carries its own `aria-label`, so the accessible name is intact. */
 function FormStepper({
   label,
+  ariaLabel,
   value,
   onChange,
   min,
   max,
   digits,
 }: {
-  label: string;
+  /** The visible label — may be a {@link GlossaryTip} teaching trigger. */
+  label: ReactNode;
+  /** The plain-text accessible name for the stepper (the label may be a node). */
+  ariaLabel: string;
   value: number;
   onChange: (next: number) => void;
   min: number;
@@ -2215,7 +2259,7 @@ function FormStepper({
         max={max}
         digits={digits}
         compact
-        ariaLabel={label}
+        ariaLabel={ariaLabel}
         decrementLabel={t("common.remove")}
         incrementLabel={t("common.add")}
       />

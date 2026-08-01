@@ -47,7 +47,8 @@
       "heroicInspiration": "A boon the DM grants for heroic moments. While you hold it you can expend it to reroll any die you just rolled, and you must use the new roll. You can hold only one. Tap the token when you receive it; tap again when you spend it.",
       "bardicInspirationDie": "A die an ally Bard gives you (d6–d12); you can hold only one at a time. Within the next hour, when you fail a D20 Test, you can roll it and add the result, possibly turning the failure into a success; the die is expended when rolled. Tap the size you receive; tap again when you roll it.",
       "encounterXp": "The encounter's total threat, added up from each monster's Experience Points. The app weighs it against your party's XP budget to grade how hard the fight is.",
-      "encounterDifficulty": "How hard this fight is likely to be. Low is an easy win, Moderate a real fight, High is dangerous, and Over High is likely deadly. The grade comes from the monsters' total XP measured against your party's budget."
+      "encounterDifficulty": "How hard this fight is likely to be. Low is an easy win, Moderate a real fight, High is dangerous, and Over High is likely deadly. The grade comes from the monsters' total XP measured against your party's budget.",
+      "challengeRating": "A monster's rough power level. Pick one and the app uses its standard XP to weigh this monster into the encounter's difficulty grade. Leave it blank for a quick improvised NPC that stays uncounted."
     }
   }
 }

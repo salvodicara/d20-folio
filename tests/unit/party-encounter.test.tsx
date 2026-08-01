@@ -308,6 +308,22 @@ describe("AddMonsterForm — the optional CR select emits xp (§D.4)", () => {
     // The select resets to blank after the add (next monster starts un-costed).
     expect(screen.getByLabelText("CR")).toHaveValue("");
   });
+
+  it("the CR label carries a teaching tooltip explaining Challenge Rating (EN)", () => {
+    render(<AddMonsterForm onAdd={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Learn about CR" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      enGlossary.glossary.term.challengeRating
+    );
+  });
+
+  it("the AC / Init / Max HP field labels each carry a teaching tooltip", () => {
+    render(<AddMonsterForm onAdd={vi.fn()} />);
+    // AC teaches Armor Class; the stepper keeps its own accessible name.
+    expect(screen.getByRole("button", { name: "Learn about Armor Class" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Learn about Initiative" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Learn about Hit Points" })).toBeTruthy();
+  });
 });
 
 describe("EncounterTurnControls — arrow-key discoverability (§3.5)", () => {
