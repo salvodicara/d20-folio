@@ -45,7 +45,9 @@
       "masteryTopple": "Maestria nelle armi: quando colpisci, puoi costringere il bersaglio a un tiro salvezza su Costituzione (CD 8 + il tuo modificatore di attacco + Bonus Competenza) o cade Prono.",
       "masteryVex": "Maestria nelle armi: quando colpisci e infliggi danni, ottieni Vantaggio al tuo prossimo tiro per colpire contro quel bersaglio prima della fine del tuo prossimo turno.",
       "heroicInspiration": "Un dono che il DM concede nei momenti eroici. Finché la possiedi puoi spenderla per ritirare un dado appena tirato, e devi usare il nuovo risultato. Puoi averne solo una. Tocca il segnalino quando la ricevi; toccalo di nuovo quando la spendi.",
-      "bardicInspirationDie": "Un dado che un Bardo alleato ti concede (da d6 a d12); puoi tenerne solo uno alla volta. Entro l'ora successiva, quando fallisci un Test del d20, puoi tirarlo e sommare il risultato, trasformando magari il fallimento in un successo: il dado è speso quando viene tirato. Tocca la taglia che ricevi; tocca di nuovo quando lo tiri."
+      "bardicInspirationDie": "Un dado che un Bardo alleato ti concede (da d6 a d12); puoi tenerne solo uno alla volta. Entro l'ora successiva, quando fallisci un Test del d20, puoi tirarlo e sommare il risultato, trasformando magari il fallimento in un successo: il dado è speso quando viene tirato. Tocca la taglia che ricevi; tocca di nuovo quando lo tiri.",
+      "encounterXp": "La minaccia totale dello scontro, sommata dai Punti Esperienza di ogni mostro. L'app la confronta con il budget di PE del gruppo per valutare quanto è difficile il combattimento.",
+      "encounterDifficulty": "Quanto sarà probabilmente difficile questo scontro. Facile è una vittoria semplice, Media un vero combattimento, Difficile è pericoloso e Oltre Difficile è probabilmente letale. Il grado deriva dai PE totali dei mostri rispetto al budget del gruppo."
     }
   }
 }

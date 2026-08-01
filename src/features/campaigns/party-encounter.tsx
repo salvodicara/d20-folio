@@ -1326,6 +1326,7 @@ export function EncounterBudgetReadout({
       ? t("campaignHub.encounterBudgetPending")
       : budget !== null
         ? t("campaignHub.encounterBudgetTooltip", {
+            costed: fmtXp(costedXp, locale),
             count: partySize,
             low: fmtXp(budget.low, locale),
             moderate: fmtXp(budget.moderate, locale),
@@ -1348,7 +1349,14 @@ export function EncounterBudgetReadout({
           glyph={((Glyph) => <Glyph width={12} height={12} />)(VERDICT_GLYPH[verdict])}
           title={chipTitle}
         >
-          {t(VERDICT_LABEL[verdict])}
+          {/* Tap the grade to learn what it means (plain-language ladder); the chip's
+              own hover carries the live budget math. */}
+          <GlossaryTip
+            term="encounterDifficulty"
+            rubric={t("campaignHub.encounterDifficultyRubric")}
+          >
+            {t(VERDICT_LABEL[verdict])}
+          </GlossaryTip>
         </Badge>
       ) : (
         <Badge variant="muted" size="sm" title={chipTitle}>
@@ -1359,7 +1367,14 @@ export function EncounterBudgetReadout({
         className="tabular-nums text-xs text-text-muted"
         title={noMonsters ? t("campaignHub.encounterBudgetNoMonsters") : undefined}
       >
-        {t("campaignHub.encounterBudgetXp", { xp: fmtXp(costedXp, locale) })}
+        {noMonsters ? (
+          t("campaignHub.encounterBudgetXp", { xp: fmtXp(costedXp, locale) })
+        ) : (
+          // Tap the total to learn what the encounter XP means and how it grades the fight.
+          <GlossaryTip term="encounterXp" rubric={t("campaignHub.encounterXpRubric")}>
+            {t("campaignHub.encounterBudgetXp", { xp: fmtXp(costedXp, locale) })}
+          </GlossaryTip>
+        )}
       </span>
       {uncostedGroups > 0 && (
         <span

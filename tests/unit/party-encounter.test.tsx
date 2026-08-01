@@ -26,6 +26,8 @@ import {
   type MonsterInput,
 } from "@/features/campaigns/encounter";
 import { xpForCr } from "@/lib/monster";
+import enGlossary from "@/i18n/en/ui/glossary.json";
+import itGlossary from "@/i18n/it/ui/glossary.json";
 import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
 import type { EncounterMonster } from "@/types/campaign";
 
@@ -338,5 +340,63 @@ describe("EncounterTurnControls — arrow-key discoverability (§3.5)", () => {
       />
     );
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+// ─── Explain-on-demand: the readout's teaching tooltips (difficulty grade · XP) ────
+
+describe("EncounterBudgetReadout — teaching tooltips (explain-on-demand sweep)", () => {
+  const t = i18n.getFixedT("en");
+
+  it("the verdict grade opens a glossary popover teaching what the grade means (EN)", () => {
+    render(
+      <EncounterBudgetReadout
+        budget={budgetView({ costedXp: 1250, verdict: "moderate" })}
+      />
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `Learn about ${t("campaignHub.encounterDifficultyRubric")}`,
+      })
+    );
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      enGlossary.glossary.term.encounterDifficulty
+    );
+  });
+
+  it("the costed-XP total opens a glossary popover teaching what encounter XP means (EN)", () => {
+    render(
+      <EncounterBudgetReadout budget={budgetView({ costedXp: 1250, verdict: "low" })} />
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `Learn about ${t("campaignHub.encounterXpRubric")}`,
+      })
+    );
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      enGlossary.glossary.term.encounterXp
+    );
+  });
+
+  it("the difficulty teaching tooltip is localized in Italian", async () => {
+    await i18n.changeLanguage("it");
+    try {
+      const it = i18n.getFixedT("it");
+      render(
+        <EncounterBudgetReadout
+          budget={budgetView({ costedXp: 1250, verdict: "over" })}
+        />
+      );
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: `Scopri cosa significa ${it("campaignHub.encounterDifficultyRubric")}`,
+        })
+      );
+      expect(screen.getByRole("dialog")).toHaveTextContent(
+        itGlossary.glossary.term.encounterDifficulty
+      );
+    } finally {
+      await i18n.changeLanguage("en");
+    }
   });
 });
