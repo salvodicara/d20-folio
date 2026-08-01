@@ -134,11 +134,40 @@ export function useCompendiumPicker<T>(
     const id = opts.initialSelectedId;
     return id ? (spec.data.find((e) => spec.getId(e) === id) ?? null) : null;
   });
+  // D55 — the add-time quantity for the open detail (reset to 1 on each select).
+  const [quantity, setQuantity] = useState(1);
+  // Reset per-type state when the SPEC (or a seeded deep-link query) changes —
+  // the render-time derive-from-props pattern, replacing the old remount-by-key
+  // of the whole browser: remounting also recreated the type ribbon and zeroed
+  // its scroll position on every selection (the "tab row jumps" the owner
+  // reported, grilled 2026-07-31). State resets here; the list DOM resets via
+  // the keyed `.cmp-body`; the ribbon persists.
+  //
+  // THE CONTRACT (crash #7): a render-phase setState re-renders, but the
+  // CURRENT pass still finishes executing with the OLD state — so everything
+  // downstream must read the PASS-LOCAL `eff*` values below, never the raw
+  // state. The shipped crash: the spell facet predicates ran against another
+  // type's filter shapes ("value.conc" of undefined) in exactly that pass.
+  const resetKey = `${spec.id}:${opts.initialQuery ?? ""}`;
+  const [prevReset, setPrevReset] = useState(resetKey);
+  const stale = resetKey !== prevReset;
+  if (stale) {
+    setPrevReset(resetKey);
+    setQuery(opts.initialQuery ?? "");
+    setFilterState(Object.fromEntries(spec.filters.map((g) => [g.id, g.initial])));
+    setLocalSelected(null);
+    setQuantity(1);
+  }
+  const effQuery = stale ? (opts.initialQuery ?? "") : query;
+  const effFilterState = stale
+    ? Object.fromEntries(spec.filters.map((g) => [g.id, g.initial]))
+    : filterState;
+  const effLocalSelected = stale ? null : localSelected;
   const controlledSelected = useMemo(() => {
     if (!controlled || !selectedId) return null;
     return spec.data.find((e) => spec.getId(e) === selectedId) ?? null;
   }, [controlled, selectedId, spec]);
-  const selected = controlled ? controlledSelected : localSelected;
+  const selected = controlled ? controlledSelected : effLocalSelected;
   const setSelected = useCallback(
     (entry: T | null) => {
       if (controlled) onSelectedIdChange(entry == null ? null : spec.getId(entry));
@@ -146,24 +175,6 @@ export function useCompendiumPicker<T>(
     },
     [controlled, onSelectedIdChange, spec]
   );
-  // D55 — the add-time quantity for the open detail (reset to 1 on each select).
-  const [quantity, setQuantity] = useState(1);
-
-  // Reset per-type state when the SPEC (or a seeded deep-link query) changes —
-  // the render-time derive-from-props pattern, replacing the old remount-by-key
-  // of the whole browser: remounting also recreated the type ribbon and zeroed
-  // its scroll position on every selection (the "tab row jumps" the owner
-  // reported, grilled 2026-07-31). State resets here; the list DOM resets via
-  // the keyed `.cmp-body`; the ribbon persists.
-  const resetKey = `${spec.id}:${opts.initialQuery ?? ""}`;
-  const [prevReset, setPrevReset] = useState(resetKey);
-  if (resetKey !== prevReset) {
-    setPrevReset(resetKey);
-    setQuery(opts.initialQuery ?? "");
-    setFilterState(Object.fromEntries(spec.filters.map((g) => [g.id, g.initial])));
-    setLocalSelected(null);
-    setQuantity(1);
-  }
 
   const setFilterValue = useCallback((id: string, v: unknown) => {
     setFilterState((prev) => ({ ...prev, [id]: v }));
@@ -179,8 +190,8 @@ export function useCompendiumPicker<T>(
   const filtered = useMemo(() => {
     let result = [...spec.data];
     for (const g of spec.filters) {
-      const v = filterState[g.id];
-      result = result.filter((e) => g.predicate(e, v, ctx, filterState));
+      const v = effFilterState[g.id];
+      result = result.filter((e) => g.predicate(e, v, ctx, effFilterState));
     }
     // NAME-PRIORITY ranking (fb4 — the SAME `rankedSearch` primitive the wizard
     // pickers use): an entry whose NAME matches outranks one that matches only in
@@ -197,13 +208,13 @@ export function useCompendiumPicker<T>(
     const corpus = (cands: Array<string | null | undefined>) => cands.join(" ");
     return [
       ...rankedSearch(
-        query.trim(),
+        effQuery.trim(),
         result,
         (e) => corpus(spec.nameText(e, ctx)),
         (e) => corpus(spec.searchText(e, ctx))
       ),
     ];
-  }, [spec, filterState, query, ctx]);
+  }, [spec, effFilterState, effQuery, ctx]);
 
   const existingIds = useMemo(() => {
     if (mode !== "add" || !character || !spec.existingIds) return null;
@@ -217,7 +228,7 @@ export function useCompendiumPicker<T>(
 
   // COMPENDIUM-NAV — resets on a real query/facet change, NOT on store churn; see resultSetKey.
   const { attach: attachListScroll, save: saveListScroll } = useScrollMemory(
-    resultSetKey(query, spec.filters, filterState),
+    resultSetKey(effQuery, spec.filters, effFilterState),
     ".pick-row" // row-anchored: exact across content-visibility re-estimation
   );
 
@@ -248,9 +259,9 @@ export function useCompendiumPicker<T>(
 
   return {
     ctx,
-    query,
+    query: effQuery,
     setQuery,
-    filterState,
+    filterState: effFilterState,
     setFilterValue,
     filtered,
     count: filtered.length,
