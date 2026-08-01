@@ -17,6 +17,7 @@ import {
   skipEventAttacker,
 } from "@/features/campaigns/combat-chronicle";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
+import type { ReconciledEvent } from "@/features/campaigns/chronicle-reconcile";
 import type { EncounterState } from "@/types/campaign";
 import type { CombatChronicleEvent } from "@/types/combat-chronicle";
 
@@ -72,6 +73,13 @@ const damageEvent: CombatChronicleEvent = {
   max: 12,
 };
 
+/** Wrap a stored event as a reconciled feed line (the ChronicleFeed/EndEncounterDialog
+ *  input shape now that the feed is the RECONCILED view). */
+const reco = (
+  event: CombatChronicleEvent,
+  o: Omit<ReconciledEvent, "event"> = {}
+): ReconciledEvent => ({ event, ...o });
+
 function stateWith(events: CombatChronicleEvent[]): EncounterState {
   return {
     combatants: [],
@@ -88,7 +96,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     const apply = vi.fn();
     render(
       <ChronicleFeed
-        events={[damageEvent]}
+        events={[reco(damageEvent)]}
         rows={ROWS}
         memberDetails={{}}
         currentId="pc-mara"
@@ -109,7 +117,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     });
     render(
       <ChronicleFeed
-        events={[damageEvent]}
+        events={[reco(damageEvent)]}
         rows={ROWS}
         memberDetails={{}}
         currentId="pc-mara"
@@ -134,7 +142,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     });
     render(
       <ChronicleFeed
-        events={[damageEvent]}
+        events={[reco(damageEvent)]}
         rows={ROWS}
         memberDetails={{}}
         currentId="pc-mara"
@@ -151,7 +159,7 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
   it("no attacker picker once the hit is attributed", () => {
     render(
       <ChronicleFeed
-        events={[{ ...damageEvent, attackerId: "pc-mara" }]}
+        events={[reco({ ...damageEvent, attackerId: "pc-mara" })]}
         rows={ROWS}
         memberDetails={{}}
         currentId="pc-mara"
@@ -160,6 +168,63 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     );
     // The attributed line uses "hits" and offers NO picker chip for Mara.
     expect(screen.getByText(/Mara hits Goblin for 8/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "No one" })).toBeNull();
+  });
+
+  it("a CERTAIN auto-attributed hit reads as a confirmed line with no picker", () => {
+    render(
+      <ChronicleFeed
+        events={[reco({ ...damageEvent, attackerId: "pc-mara" }, { auto: true })]}
+        rows={ROWS}
+        memberDetails={{}}
+        currentId="pc-mara"
+        apply={vi.fn()}
+      />
+    );
+    expect(screen.getByText(/Mara hits Goblin for 8/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "No one" })).toBeNull();
+  });
+
+  it("an UNCERTAIN auto-attribution wears the marker AND offers the override picker", () => {
+    render(
+      <ChronicleFeed
+        events={[
+          reco(
+            { ...damageEvent, attackerId: "pc-mara" },
+            { auto: true, uncertain: true }
+          ),
+        ]}
+        rows={ROWS}
+        memberDetails={{}}
+        currentId="pc-mara"
+        apply={vi.fn()}
+      />
+    );
+    // Subtle marker present (title/aria), and the DM can re-point the attribution.
+    expect(screen.getByRole("img", { name: /uncertain/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Mara" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "No one" })).toBeTruthy();
+  });
+
+  it("renders a synthesized player-declared MISS line (certain, no picker)", () => {
+    render(
+      <ChronicleFeed
+        events={[
+          reco({
+            id: "miss-mara:1:monster-1",
+            round: 1,
+            kind: "attack-miss",
+            attackerId: "pc-mara",
+            targetId: "monster-1",
+          }),
+        ]}
+        rows={ROWS}
+        memberDetails={{}}
+        currentId="pc-mara"
+        apply={vi.fn()}
+      />
+    );
+    expect(screen.getByText(/Mara misses Goblin/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "No one" })).toBeNull();
   });
 
@@ -200,12 +265,17 @@ describe("EndEncounterDialog — the editable end entry", () => {
       },
     ],
   };
+  const reconciled: ReconciledEvent[] = [
+    reco(damageEvent),
+    reco({ id: "1", round: 1, kind: "down", targetId: "monster-1" }),
+  ];
 
   it("builds a titled markdown chapter with the outcome and calls onSave", () => {
     const onSave = vi.fn<(chapter: string) => Promise<void>>(() => Promise.resolve());
     render(
       <EndEncounterDialog
         encounter={encounter}
+        reconciled={reconciled}
         rows={ROWS}
         memberDetails={{}}
         onSave={onSave}
@@ -228,6 +298,7 @@ describe("EndEncounterDialog — the editable end entry", () => {
     render(
       <EndEncounterDialog
         encounter={encounter}
+        reconciled={reconciled}
         rows={ROWS}
         memberDetails={{}}
         onSave={onSave}
@@ -250,6 +321,7 @@ describe("EndEncounterDialog — the editable end entry", () => {
     render(
       <EndEncounterDialog
         encounter={encounter}
+        reconciled={reconciled}
         rows={ROWS}
         memberDetails={{}}
         onSave={onSave}

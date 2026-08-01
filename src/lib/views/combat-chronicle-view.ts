@@ -77,6 +77,11 @@ export function localizeChronicleEvent(
         current: event.current,
         max: event.max,
       });
+    case "attack-miss":
+      return t("combatChronicle.missBy", {
+        attacker: resolveName(event.attackerId),
+        target: resolveName(event.targetId),
+      });
     case "down":
       return t("combatChronicle.down", { target: resolveName(event.targetId) });
     case "condition-gain":

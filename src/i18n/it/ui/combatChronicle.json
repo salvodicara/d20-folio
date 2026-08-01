@@ -2,6 +2,8 @@
   "combatChronicle": {
     "damage": "{{target}} subisce {{amount}} ({{current}}/{{max}} PF)",
     "damageBy": "{{attacker}} colpisce {{target}} per {{amount}} ({{current}}/{{max}} PF)",
+    "missBy": "{{attacker}} manca {{target}}",
+    "uncertain": "Incerto: più di un attaccante potrebbe aver messo a segno questo colpo",
     "heal": "{{target}} recupera {{amount}} ({{current}}/{{max}} PF)",
     "down": "{{target}} cade",
     "conditionGain": "{{target}} è {{condition}}",

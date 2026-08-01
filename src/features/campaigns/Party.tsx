@@ -59,6 +59,10 @@ import {
   appendChronicleChapter,
 } from "@/features/campaigns/campaign-io";
 import { ChronicleFeed, EndEncounterDialog } from "@/features/campaigns/party-chronicle";
+import {
+  flattenDeclarations,
+  reconcileChronicle,
+} from "@/features/campaigns/chronicle-reconcile";
 import { useGatheringScrollAnchor } from "@/features/campaigns/gathering-scroll-anchor";
 import { campaignPartySize, useCampaignStore } from "@/features/campaigns/campaignStore";
 import {
@@ -581,6 +585,17 @@ function CombatLayer({
       .map((m) => [m.id, m])
   );
 
+  // The RECONCILED chronicle feed (auto-narrated combat, Phase 1): fuse the stored beats
+  // with the players' declared attacks (from every member's live `combat/state` ring) —
+  // auto-attributing hits to a matching HP drop, synthesizing certain miss lines, marking
+  // an ambiguous match uncertain. PURE + derived every render (no write), so the
+  // correlation costs no Firestore budget. Both the live feed and the end entry read THIS.
+  const reconciled = useMemo(
+    () =>
+      reconcileChronicle(encounter.events ?? [], flattenDeclarations(ctx.combatStates)),
+    [encounter.events, ctx.combatStates]
+  );
+
   // INIT-6 — the SHARED turn pointer is advanceable by the DM (always) OR the player
   // whose PC is the current combatant. BOTH route through the ONE `advanceEncounterTurn`
   // TRANSACTION (the debounced whole-encounter writer is reserved for STRUCTURE): it
@@ -830,7 +845,7 @@ function CombatLayer({
           which only the DM writes; exact monster HP must not leak to a player). */}
       {isDm && apply && (
         <ChronicleFeed
-          events={encounter.events ?? []}
+          events={reconciled}
           rows={view.rows}
           memberDetails={memberDetails}
           currentId={view.currentId}
@@ -843,6 +858,7 @@ function CombatLayer({
       {endOpen && (
         <EndEncounterDialog
           encounter={encounter}
+          reconciled={reconciled}
           rows={view.rows}
           memberDetails={memberDetails}
           onSave={saveChronicle}

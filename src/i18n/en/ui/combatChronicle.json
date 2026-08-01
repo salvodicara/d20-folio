@@ -2,6 +2,8 @@
   "combatChronicle": {
     "damage": "{{target}} takes {{amount}} ({{current}}/{{max}} HP)",
     "damageBy": "{{attacker}} hits {{target}} for {{amount}} ({{current}}/{{max}} HP)",
+    "missBy": "{{attacker}} misses {{target}}",
+    "uncertain": "Uncertain: more than one attacker could have landed this hit",
     "heal": "{{target}} regains {{amount}} ({{current}}/{{max}} HP)",
     "down": "{{target}} falls",
     "conditionGain": "{{target}} is {{condition}}",

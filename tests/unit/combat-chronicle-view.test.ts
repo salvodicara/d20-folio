@@ -57,6 +57,12 @@ const SAMPLES: Record<CombatChronicleEventKind, CombatChronicleEvent> = {
     max: 22,
   },
   down: { ...base, kind: "down", targetId: "monster-1" },
+  "attack-miss": {
+    ...base,
+    kind: "attack-miss",
+    attackerId: "pc-mara",
+    targetId: "monster-1",
+  },
   "condition-gain": {
     ...base,
     kind: "condition-gain",
@@ -90,6 +96,13 @@ describe("localizeChronicleEvent — every kind routes to a distinct non-empty l
       attackerId: "pc-mara",
     };
     expect(localize(attributed)).toContain("combatChronicle.damageBy");
+  });
+
+  it("a player-declared miss uses missBy with the attacker + target", () => {
+    const line = localize(SAMPLES["attack-miss"]);
+    expect(line).toContain("combatChronicle.missBy");
+    expect(line).toContain("«pc-mara»");
+    expect(line).toContain("«monster-1»");
   });
 
   it("the SAME event renders per the injected locale", () => {

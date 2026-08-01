@@ -2,17 +2,21 @@
  * party-chronicle — the DM-facing UI over the Combat Chronicle feed
  * ({@link import("@/types/combat-chronicle").CombatChronicleEvent}).
  *
- * Two surfaces, both DM-only (the feed rides the encounter doc, which only the DM
- * writes; showing exact monster HP to a player would leak the concealed-band):
- *   • {@link ChronicleFeed} — the collapsible live feed the DM watches build, with the
- *     one-tap attacker attribution on each un-attributed hit (pre-picked to the current
- *     combatant, always skippable, NEVER auto-guessed) and the pull-only "log a
- *     miss / a pass" affordance for the active combatant.
+ * Both surfaces render the RECONCILED feed ({@link ReconciledEvent}) — the stored beats
+ * fused with the players' declared attacks by `chronicle-reconcile.ts` (auto-attributed
+ * hits + synthesized certain miss lines + uncertain markers). Both DM-only (the feed
+ * rides the encounter doc, which only the DM writes; showing exact monster HP to a player
+ * would leak the concealed-band):
+ *   • {@link ChronicleFeed} — the collapsible live feed the DM watches build. A hit that
+ *     is still PENDING (undeclared / paper play) OR an UNCERTAIN auto-attribution shows
+ *     the one-tap attacker override (pre-picked to the current combatant or the derived
+ *     attacker, always skippable, NEVER auto-guessed); a certain auto-attributed hit reads
+ *     as a plain confirmed line; a declared miss reads as a certain miss line.
  *   • {@link EndEncounterDialog} — the editable entry at "End encounter": a title, a
  *     free-text narrative note, an editable outcome, and the localized record lines
- *     (each removable). "Save to Chronicle" renders ONE markdown chapter and appends it
- *     (the single persisted Chronicle write per fight); "Skip" saves nothing. Either
- *     way the encounter then clears.
+ *     (each removable) — the DM's full override of the reconciled record. "Save to
+ *     Chronicle" renders ONE markdown chapter and appends it (the single persisted
+ *     Chronicle write per fight); "Skip" saves nothing. Either way the encounter clears.
  *
  * Localization is at the render edge only (the presenter `combat-chronicle-view.ts`
  * takes injected resolvers): combatant ids → names off the live view rows, condition
@@ -21,7 +25,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollText, ChevronDown, Trash2 } from "lucide-react";
+import { ScrollText, ChevronDown, Trash2, HelpCircle } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -41,10 +45,11 @@ import {
   skipEventAttacker,
   inferOutcome,
 } from "@/features/campaigns/combat-chronicle";
+import type { ReconciledEvent } from "@/features/campaigns/chronicle-reconcile";
 import type { ApplyFn } from "@/features/campaigns/party-encounter";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
-import type { CombatChronicleEvent, EncounterOutcome } from "@/types/combat-chronicle";
+import type { EncounterOutcome } from "@/types/combat-chronicle";
 
 type MemberDetails = CampaignDoc["memberDetails"];
 
@@ -128,7 +133,9 @@ export function ChronicleFeed({
   currentId,
   apply,
 }: {
-  events: ReadonlyArray<CombatChronicleEvent>;
+  /** The RECONCILED feed — stored beats fused with the players' declared attacks
+   *  (auto-attributed hits + synthesized miss lines + uncertain markers). */
+  events: ReadonlyArray<ReconciledEvent>;
   rows: ReadonlyArray<EncounterCombatantView>;
   /** The campaign roster — the source of a PC's snapshot name while its live doc loads. */
   memberDetails: MemberDetails;
@@ -173,18 +180,18 @@ export function ChronicleFeed({
             </p>
           ) : (
             <ol className="flex max-h-[240px] flex-col gap-1 overflow-y-auto">
-              {events.map((event, i) => {
+              {events.map((re, i) => {
                 const prev = events[i - 1];
-                const showRound = !prev || prev.round !== event.round;
+                const showRound = !prev || prev.event.round !== re.event.round;
                 return (
-                  <li key={event.id}>
+                  <li key={re.event.id}>
                     {showRound && (
                       <p className="mt-1.5 mb-0.5 font-mono text-[length:var(--text-micro)] uppercase tracking-[0.1em] text-text-faint first:mt-0">
-                        {t("combatChronicle.round", { n: event.round })}
+                        {t("combatChronicle.round", { n: re.event.round })}
                       </p>
                     )}
                     <FeedLine
-                      event={event}
+                      reconciled={re}
                       rows={rows}
                       currentId={currentId}
                       resolveName={resolveName}
@@ -202,16 +209,22 @@ export function ChronicleFeed({
   );
 }
 
-/** One feed line + (for an un-attributed hit) the one-tap attacker picker. */
+/**
+ * One feed line + the DM override affordance. The attacker picker shows when the stored
+ * hit is still PENDING (paper-play, the Phase-0 fallback) OR when the auto-attribution is
+ * UNCERTAIN (>1 player could have landed it) — so the DM confirms/corrects the guess. A
+ * CERTAIN auto-attributed hit reads as a plain confirmed line (removable at End). The
+ * uncertain marker is the subtle "which of these?" hint (never interrupts the fight).
+ */
 function FeedLine({
-  event,
+  reconciled,
   rows,
   currentId,
   resolveName,
   resolveCondition,
   apply,
 }: {
-  event: CombatChronicleEvent;
+  reconciled: ReconciledEvent;
   rows: ReadonlyArray<EncounterCombatantView>;
   currentId: string | null;
   resolveName: ResolveCombatantName;
@@ -219,16 +232,33 @@ function FeedLine({
   apply: ApplyFn;
 }) {
   const { t } = useTranslation();
+  const { event, uncertain } = reconciled;
   const text = localizeChronicleEvent(event, t, resolveName, resolveCondition);
-  const needsAttribution = chronicleNeedsAttribution(event);
+  // Show the picker for a still-pending stored hit OR an ambiguous auto-attribution.
+  const showPicker = chronicleNeedsAttribution(event) || uncertain === true;
   // Candidate attackers = every combatant EXCEPT the one that took the hit.
   const targetId = event.kind === "hp-damage" ? event.targetId : null;
   const candidates = rows.filter((r) => r.id !== targetId);
+  // Pre-select the derived attacker on an uncertain line, else the current combatant.
+  const preselect =
+    event.kind === "hp-damage" && event.attackerId ? event.attackerId : currentId;
 
   return (
     <div className="flex flex-col gap-1 rounded px-1 py-0.5">
-      <span className="text-2xs leading-snug text-text-secondary">{text}</span>
-      {needsAttribution && (
+      <span className="flex items-center gap-1 text-2xs leading-snug text-text-secondary">
+        {uncertain && (
+          <span
+            className="inline-flex shrink-0 text-warning"
+            title={t("combatChronicle.uncertain")}
+            aria-label={t("combatChronicle.uncertain")}
+            role="img"
+          >
+            <Icon as={HelpCircle} size="xs" decorative />
+          </span>
+        )}
+        <span>{text}</span>
+      </span>
+      {showPicker && event.kind === "hp-damage" && (
         <div className="flex flex-wrap items-center gap-1">
           <span className="text-[length:var(--text-micro)] uppercase tracking-[0.08em] text-text-faint">
             {t("combatChronicle.attributeLabel")}
@@ -237,7 +267,7 @@ function FeedLine({
             <CombatantChip
               key={c.id}
               label={resolveName(c.id)}
-              selected={c.id === currentId}
+              selected={c.id === preselect}
               onClick={() => apply((e) => setEventAttacker(e, event.id, c.id))}
             />
           ))}
@@ -262,6 +292,7 @@ function FeedLine({
  */
 export function EndEncounterDialog({
   encounter,
+  reconciled,
   rows,
   memberDetails,
   onSave,
@@ -269,6 +300,9 @@ export function EndEncounterDialog({
   onCancel,
 }: {
   encounter: EncounterState;
+  /** The RECONCILED lines (auto-attributed hits + miss lines) — the record the DM edits
+   *  and saves; the outcome default still derives from the live `encounter`. */
+  reconciled: ReadonlyArray<ReconciledEvent>;
   rows: ReadonlyArray<EncounterCombatantView>;
   /** The campaign roster — the source of a PC's snapshot name while its live doc loads. */
   memberDetails: MemberDetails;
@@ -283,7 +317,8 @@ export function EndEncounterDialog({
 }) {
   const { t } = useTranslation();
   const { resolveName, resolveCondition } = useChronicleResolvers(rows, memberDetails);
-  const events = useMemo(() => encounter.events ?? [], [encounter.events]);
+  // The record = the reconciled lines (stored beats + auto-attributions + miss lines).
+  const events = useMemo(() => reconciled.map((r) => r.event), [reconciled]);
   const [saving, setSaving] = useState(false);
 
   const defaultDate = useMemo(

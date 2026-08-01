@@ -76,6 +76,15 @@ export type CombatChronicleEvent =
     } & ChronicleEventBase)
   /** A combatant dropped (crossed to 0 HP — a PC downed, a monster group defeated). */
   | ({ kind: "down"; targetId: string } & ChronicleEventBase)
+  /**
+   * A player's DECLARED attack that MISSED — the certain miss line. Unlike every other
+   * kind this is NEVER stored on the encounter doc: it is SYNTHESIZED at read time by the
+   * reconciliation layer (`combat-reconcile.ts`) from a player's `recentActions` miss
+   * declaration, so a missed swing needs no HP delta to record (the app records only what
+   * the player explicitly tapped — golden rule 21, never inferred). `attackerId` is the
+   * declaring PC, `targetId` the enemy they named.
+   */
+  | ({ kind: "attack-miss"; attackerId: string; targetId: string } & ChronicleEventBase)
   /** A condition was gained. */
   | ({
       kind: "condition-gain";
