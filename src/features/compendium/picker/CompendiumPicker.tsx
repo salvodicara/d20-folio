@@ -11,11 +11,17 @@
  * SRD/Custom tab switchers stay at the host level.
  */
 
-import { useEffect } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { PickerSearch, PickerDetailFooter } from "@/components/sheet/picker-parts";
-import { useCompendiumPicker, type PickerMode } from "./useCompendiumPicker";
+import {
+  useCompendiumPicker,
+  countActiveFacets,
+  type PickerMode,
+} from "./useCompendiumPicker";
 import { CompendiumDetailBody } from "./detail";
 import { CompendiumResultList } from "./ResultList";
 import type { CompendiumPickerSpec } from "./types";
@@ -40,6 +46,14 @@ export function CompendiumPicker<T>({
   const { t } = useTranslation();
   const picker = useCompendiumPicker(spec, { mode });
   const { ctx, selected } = picker;
+
+  // Facets are ON-DEMAND (owner, 2026-08-01: "i filtri dovrebbero essere
+  // mostrati su richiesta… la gente potrebbe direttamente usare la barra di
+  // ricerca") — the same disclosure grammar as the Compendium codex, with the
+  // gilt tally keeping an active-but-collapsed facet visible.
+  const [facetsOpen, setFacetsOpen] = useState(false);
+  const facetsId = useId();
+  const activeFacets = countActiveFacets(spec.filters, picker.filterState);
 
   // Keep the host modal title in sync with the open detail (parity with the old
   // embeddable bodies, which did this imperatively on select / back).
@@ -87,6 +101,22 @@ export function CompendiumPicker<T>({
   }
 
   // ── List view ───────────────────────────────────────────────────────────────
+  // A facet whose `render` returns null is contextually hidden (e.g. the
+  // magic-only Rarity/Attunement axes while browsing mundane gear) — skip its
+  // strip entirely so no empty bordered row is left behind. All-hidden = no
+  // disclosure either.
+  const facetStrips = spec.filters
+    .map((g) => ({
+      id: g.id,
+      chips: g.render(
+        picker.filterState[g.id],
+        (v) => picker.setFilterValue(g.id, v),
+        ctx,
+        picker.filterState
+      ),
+    }))
+    .filter((s) => s.chips != null);
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <PickerSearch
@@ -96,26 +126,38 @@ export function CompendiumPicker<T>({
         autoFocus={autoFocus}
       />
 
-      {spec.filters.map((g) => {
-        // A facet whose `render` returns null is contextually hidden (e.g. the
-        // magic-only Rarity/Attunement axes while browsing mundane gear) — skip
-        // its strip entirely so no empty bordered row is left behind.
-        const chips = g.render(
-          picker.filterState[g.id],
-          (v) => picker.setFilterValue(g.id, v),
-          ctx,
-          picker.filterState
-        );
-        if (chips == null) return null;
-        return (
-          <div
-            key={g.id}
-            className="filters overflow-x-auto border-b border-border-subtle px-4 py-2"
-          >
-            {chips}
+      {facetStrips.length > 0 && (
+        <>
+          <div className="flex border-b border-border-subtle px-4 py-1.5">
+            <button
+              type="button"
+              className="fchip cmp-facet-toggle"
+              aria-expanded={facetsOpen}
+              aria-controls={facetsId}
+              onClick={() => setFacetsOpen((v) => !v)}
+            >
+              <Icon as={SlidersHorizontal} size="xs" decorative />
+              {t("compendium.filters")}
+              {activeFacets > 0 && (
+                <span className="cmp-facet-count">{activeFacets}</span>
+              )}
+              <Icon as={ChevronDown} size="xs" decorative className="cmp-facet-caret" />
+            </button>
           </div>
-        );
-      })}
+          {/* `hidden` (not unmount) keeps the aria-controls target real and the
+              chip rows' scroll positions intact across a close/reopen. */}
+          <div id={facetsId} hidden={!facetsOpen}>
+            {facetStrips.map((s) => (
+              <div
+                key={s.id}
+                className="filters overflow-x-auto border-b border-border-subtle px-4 py-2"
+              >
+                {s.chips}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <CompendiumResultList picker={picker} spec={spec} />
     </div>
