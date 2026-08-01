@@ -9,7 +9,7 @@
  * active character as the commit target and the source of filter defaults.
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useDeferredValue } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocale } from "@/hooks/useLocale";
 import { useScrollMemory } from "@/hooks/useScrollMemory";
@@ -187,6 +187,13 @@ export function useCompendiumPicker<T>(
     setFilterState(Object.fromEntries(spec.filters.map((g) => [g.id, g.initial])));
   }, [spec]);
 
+  // PERF — decouple typing from filtering. The input stays controlled on the
+  // IMMEDIATE `effQuery` (returned as `query`, so keystrokes paint instantly), but
+  // the heavy `filtered` recompute + list reconcile is driven by a DEFERRED copy:
+  // React keeps the stale list on screen while the low-priority re-filter runs, and
+  // a burst of keystrokes coalesces into one filter pass instead of one per key.
+  const deferredQuery = useDeferredValue(effQuery);
+
   const filtered = useMemo(() => {
     let result = [...spec.data];
     for (const g of spec.filters) {
@@ -208,13 +215,13 @@ export function useCompendiumPicker<T>(
     const corpus = (cands: Array<string | null | undefined>) => cands.join(" ");
     return [
       ...rankedSearch(
-        effQuery.trim(),
+        deferredQuery.trim(),
         result,
         (e) => corpus(spec.nameText(e, ctx)),
         (e) => corpus(spec.searchText(e, ctx))
       ),
     ];
-  }, [spec, effFilterState, effQuery, ctx]);
+  }, [spec, effFilterState, deferredQuery, ctx]);
 
   const existingIds = useMemo(() => {
     if (mode !== "add" || !character || !spec.existingIds) return null;
@@ -226,9 +233,11 @@ export function useCompendiumPicker<T>(
     [existingIds, spec]
   );
 
-  // COMPENDIUM-NAV — resets on a real query/facet change, NOT on store churn; see resultSetKey.
+  // COMPENDIUM-NAV — resets on a real query/facet change, NOT on store churn; see
+  // resultSetKey. Keyed on the DEFERRED query so scroll resets in lock-step with the
+  // list the reader actually sees (the memo above is deferred too), never a frame early.
   const { attach: attachListScroll, save: saveListScroll } = useScrollMemory(
-    resultSetKey(effQuery, spec.filters, effFilterState),
+    resultSetKey(deferredQuery, spec.filters, effFilterState),
     ".pick-row" // row-anchored: exact across content-visibility re-estimation
   );
 

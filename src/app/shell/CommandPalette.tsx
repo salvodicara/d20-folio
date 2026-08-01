@@ -46,6 +46,7 @@
 
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
   useId,
   useMemo,
@@ -217,7 +218,12 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
   const requestPlayRef = useUIStore((s) => s.requestPlayRef);
   const [query, setQuery] = useState("");
-  const q = query.trim();
+  // PERF — the input stays controlled on the immediate `query` (typing paints at
+  // once), but every result memo below keys off `q`, a DEFERRED copy: the ~630-entry
+  // compendium fan-out re-ranks at low priority, so a keystroke burst coalesces and
+  // the palette never blocks the caret.
+  const deferredQuery = useDeferredValue(query);
+  const q = deferredQuery.trim();
   const listboxId = useId();
 
   // The roving highlight for keyboard nav (OWN-28b): Arrow Up/Down move it, Enter
