@@ -7320,6 +7320,17 @@ button.trk-pip:active {
   color: var(--text-faint);
 }
 
+/* The result-list overflow note (PERF cap) — a quiet centered footer under the last
+   mounted row telling the reader more entries exist and to narrow the query/facets to
+   reach them. Same faint register as the empty leaf, so it reads as chrome, not a row. */
+.pick-more {
+  padding: var(--sp-2) 0;
+  text-align: center;
+  font-size: var(--text-micro);
+  font-style: italic;
+  color: var(--text-faint);
+}
+
 /* Rich option cell (stacked) — the one picker primitive also serves the species /
    background / feature / invocation / spell pickers, which carry a gloss line, an
    optional prerequisite caveat, and/or a chromatic chip beside the name. Such a
