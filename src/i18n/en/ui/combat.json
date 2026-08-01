@@ -1,6 +1,13 @@
 {
   "combat": {
     "title": "Combat",
+    "declareTitle": "Declare your attack",
+    "declareHint": "Pick the target, then tap the result after you roll.",
+    "declareHit": "Hit",
+    "declareMiss": "Miss",
+    "declareDismiss": "Dismiss",
+    "declareNoTargets": "No visible enemies to target.",
+    "declareTargetAria": "Target {{name}}",
     "allActions": "All Actions",
     "baseActions": "Base Actions",
     "searchActions": "Search actions...",

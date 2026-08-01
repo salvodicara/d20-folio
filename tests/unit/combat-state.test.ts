@@ -420,7 +420,7 @@ describe("combat-state — pushRecentAttack (the declared-attack ring)", () => {
     }
     expect(s.recentActions).toHaveLength(RECENT_ATTACK_CAP);
     // The oldest entries fell off; the ids never repeat (survive the slide).
-    expect(s.recentActions[0].id).toBe("4");
+    expect(s.recentActions[0]?.id).toBe("4");
     expect(s.recentActions.at(-1)?.id).toBe(String(RECENT_ATTACK_CAP + 3));
   });
 

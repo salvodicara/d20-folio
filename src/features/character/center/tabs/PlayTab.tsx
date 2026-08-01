@@ -39,6 +39,8 @@ import { NumberStepper } from "@/components/ui/input";
 import { weaponSealIcon, magicItemSealIcon } from "@/components/shared/item-icons";
 import { getMagicItem } from "@/data/magic-items";
 import { ThisTurnTracker } from "../ThisTurnTracker";
+import { AttackDeclaration } from "../AttackDeclaration";
+import { useSheetCombat } from "../turn-state";
 import { InCombatStatus } from "@/features/campaigns/in-combat-chip";
 import { CombatAlgorithm } from "./CombatAlgorithm";
 import { SituationalRules } from "./SituationalRules";
@@ -314,6 +316,23 @@ export function PlayTab() {
   // undo refs), used by BOTH these cards and the center ThisTurnTracker.
   const { handleSelect, handleUseReaction, spendRider, applyCunningStrike } =
     useTurnEconomy();
+
+  // AUTO-NARRATED COMBAT (Phase 1) — when THIS sheet is in a live campaign encounter, a
+  // committed WEAPON attack opens the target + HIT/MISS capture ({@link AttackDeclaration}).
+  // SOLO (`sheetCombat === null`) never opens it — the gate is here, so no target/hit-miss
+  // UI exists off an encounter. The panel reads its targets live off `sheetCombat`.
+  const sheetCombat = useSheetCombat();
+  const [declaringAttack, setDeclaringAttack] = useState(false);
+  const commitAction = useCallback(
+    (action: ResolvedAction) => {
+      handleSelect(action);
+      // A weapon swing in a live encounter → capture target + outcome. Non-weapon actions
+      // and solo play never open it (Phase 1 scope: single weapon attacks; save/AoE/cast
+      // attacks are later phases).
+      if (sheetCombat && action.source === "weapon") setDeclaringAttack(true);
+    },
+    [handleSelect, sheetCombat]
+  );
 
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
@@ -931,6 +950,16 @@ export function PlayTab() {
         />
       </div>
 
+      {/* ── In-encounter attack declaration (auto-narrated combat, Phase 1) ──────
+          Rendered ONLY while in a live encounter AND a weapon attack was just
+          committed; SOLO never mounts it (the gate is `sheetCombat` on the commit). */}
+      {declaringAttack && sheetCombat && (
+        <AttackDeclaration
+          sheetCombat={sheetCombat}
+          onDone={() => setDeclaringAttack(false)}
+        />
+      )}
+
       {/* ── Pinned ──────────────────────────────────────────────────
           Promoted across types; honors the active filter + search (D13) — hidden
           when nothing pinned matches the chosen type, and narrowed to that type
@@ -959,7 +988,7 @@ export function PlayTab() {
                 skillCheckBonusFor={skillCheckBonusFor}
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                onCommit={() => handleSelect(action)}
+                onCommit={() => commitAction(action)}
                 onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
               />
             ))}
@@ -996,7 +1025,7 @@ export function PlayTab() {
               cunningStrike={cunningStrike}
               expandedId={expandedId}
               onExpand={setExpandedId}
-              onCommit={handleSelect}
+              onCommit={commitAction}
               onPin={(action) => togglePinnedAction(action.id, action.defaultPinned)}
             />
           ))
@@ -1020,7 +1049,7 @@ export function PlayTab() {
               cunningStrike={cunningStrike}
               expandedId={expandedId}
               onExpand={setExpandedId}
-              onCommit={handleSelect}
+              onCommit={commitAction}
               onPin={(action) => togglePinnedAction(action.id, action.defaultPinned)}
             />
           )}
@@ -1096,7 +1125,7 @@ export function PlayTab() {
                 skillCheckBonusFor={skillCheckBonusFor}
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                onCommit={() => handleSelect(action)}
+                onCommit={() => commitAction(action)}
                 onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
               />
             ))}
