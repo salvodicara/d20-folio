@@ -1,6 +1,6 @@
 {
   "monster": {
-    "crRubric": "GS",
+    "crRubric": "Grado di Sfida (GS)",
     "size": "Taglia",
     "xp": "PE {{xp}}",
     "xpWithLair": "PE {{xp}}, o {{lairXp}} nella tana",

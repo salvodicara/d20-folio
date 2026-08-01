@@ -1,6 +1,6 @@
 {
   "monster": {
-    "crRubric": "CR",
+    "crRubric": "Challenge Rating (CR)",
     "size": "Size",
     "xp": "XP {{xp}}",
     "xpWithLair": "XP {{xp}}, or {{lairXp}} in lair",

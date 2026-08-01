@@ -174,7 +174,7 @@
     "encounterBudgetHigh": "High",
     "encounterBudgetOver": "Over High",
     "encounterBudgetXp": "{{xp}} XP",
-    "encounterXpRubric": "Experience (XP)",
+    "encounterXpRubric": "Experience Points (XP)",
     "encounterDifficultyRubric": "Encounter difficulty",
     "encounterBudgetTooltip": "This fight is {{costed}} XP against the budget for {{count}} characters. Low {{low}} · Moderate {{moderate}} · High {{high}}.",
     "encounterBudgetUncosted_one": "{{count}} not yet graded",

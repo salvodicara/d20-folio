@@ -3,12 +3,12 @@
     "whatIs": "Learn about {{term}}",
     "term": {
       "abilityScores": "The six scores that define your hero, from 3 (feeble) to 20 (legendary). What matters most is the modifier in front: you add it to nearly every roll you make.",
-      "armorClass": "How hard you are to hit. An attacker rolls a d20 and adds its bonuses; it hits only if the total meets or beats this number. Armor, shields, and Dexterity raise it.",
+      "armorClass": "Armor Class (AC) is how hard you are to hit. An attacker rolls a d20 and adds its bonuses; it hits only if the total meets or beats this number. Armor, shields, and Dexterity raise it.",
       "attackRoll": "Roll a d20 and add this bonus; you hit if the total meets or beats the target's Armor Class. The bonus is your ability modifier plus your Proficiency Bonus; damage adds only the ability modifier. On a Critical Hit you roll all the attack's damage dice twice (including extra dice like Sneak Attack) and total them; your modifier is still added only once.",
-      "initiative": "When combat starts, everyone rolls a d20 and adds this bonus. The results set the turn order: highest acts first.",
-      "speed": "How far you can move on your turn, alongside your action. Difficult terrain costs double.",
+      "initiative": "Initiative sets the turn order. When combat starts, everyone rolls a d20 and adds this bonus; the highest acts first.",
+      "speed": "Speed is how far you can move on your turn, alongside your action. Difficult terrain costs double.",
       "proficiencyBonus": "Your training bonus. Add it to every roll you are proficient in: trained skills, saving throws, weapon attacks, and your spells. It grows with level, from +2 at level 1 to +6 at level 20.",
-      "hitPoints": "Your stamina and will to keep fighting. Damage lowers them; rest and healing restore them. At 0 you fall unconscious and start making death saving throws.",
+      "hitPoints": "Hit Points (HP) are your stamina and will to keep fighting. Damage lowers them; rest and healing restore them. At 0 you fall unconscious and start making death saving throws.",
       "hitDice": "Your personal healing pool, one die per level. During a Short Rest you can spend Hit Dice: roll each die, add your Constitution modifier, and regain that many hit points.",
       "passiveScore": "What you notice without rolling: 10 plus the skill's bonus. The DM checks it quietly, for example to see whether you spot a hidden creature.",
       "savingThrow": "A d20 roll to resist a danger: dodging a fireball, shaking off a charm, enduring poison. The threat decides which ability you use; proficiency adds your Proficiency Bonus.",
@@ -46,9 +46,9 @@
       "masteryVex": "Weapon mastery: when you hit and deal damage, you gain Advantage on your next attack roll against that target before the end of your next turn.",
       "heroicInspiration": "A boon the DM grants for heroic moments. While you hold it you can expend it to reroll any die you just rolled, and you must use the new roll. You can hold only one. Tap the token when you receive it; tap again when you spend it.",
       "bardicInspirationDie": "A die an ally Bard gives you (d6–d12); you can hold only one at a time. Within the next hour, when you fail a D20 Test, you can roll it and add the result, possibly turning the failure into a success; the die is expended when rolled. Tap the size you receive; tap again when you roll it.",
-      "encounterXp": "The encounter's total threat, added up from each monster's Experience Points. The app weighs it against your party's XP budget to grade how hard the fight is.",
+      "encounterXp": "Experience Points (XP) rate a monster's threat. This is the encounter's total, added up from each monster's XP, which the app weighs against your party's XP budget to grade how hard the fight is.",
       "encounterDifficulty": "How hard this fight is likely to be. Low is an easy win, Moderate a real fight, High is dangerous, and Over High is likely deadly. The grade comes from the monsters' total XP measured against your party's budget.",
-      "challengeRating": "A monster's rough power level. Pick one and the app uses its standard XP to weigh this monster into the encounter's difficulty grade. Leave it blank for a quick improvised NPC that stays uncounted."
+      "challengeRating": "Challenge Rating (CR) is a monster's rough power level. Pick one and the app uses its standard XP to weigh this monster into the encounter's difficulty grade. Leave it blank for a quick improvised NPC that stays uncounted."
     }
   }
 }

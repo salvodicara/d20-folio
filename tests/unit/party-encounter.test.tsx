@@ -301,17 +301,21 @@ describe("AddMonsterForm — the optional CR select emits xp (§D.4)", () => {
     fireEvent.change(screen.getByLabelText("Monster name"), {
       target: { value: "Goblin" },
     });
-    fireEvent.change(screen.getByLabelText("CR"), { target: { value: "0.25" } });
+    fireEvent.change(screen.getByLabelText("Challenge Rating (CR)"), {
+      target: { value: "0.25" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Add monster" }));
     expect(onAdd.mock.calls[1]?.[0]?.xp).toBe(xpForCr(0.25));
 
     // The select resets to blank after the add (next monster starts un-costed).
-    expect(screen.getByLabelText("CR")).toHaveValue("");
+    expect(screen.getByLabelText("Challenge Rating (CR)")).toHaveValue("");
   });
 
   it("the CR label carries a teaching tooltip explaining Challenge Rating (EN)", () => {
     render(<AddMonsterForm onAdd={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Learn about CR" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Learn about Challenge Rating (CR)" })
+    );
     expect(screen.getByRole("dialog")).toHaveTextContent(
       enGlossary.glossary.term.challengeRating
     );

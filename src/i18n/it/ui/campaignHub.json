@@ -174,7 +174,7 @@
     "encounterBudgetHigh": "Difficile",
     "encounterBudgetOver": "Oltre Difficile",
     "encounterBudgetXp": "{{xp}} PE",
-    "encounterXpRubric": "Esperienza (PE)",
+    "encounterXpRubric": "Punti Esperienza (PE)",
     "encounterDifficultyRubric": "Difficoltà dello scontro",
     "encounterBudgetTooltip": "Questo scontro vale {{costed}} PE rispetto al budget per {{count}} personaggi. Facile {{low}} · Media {{moderate}} · Difficile {{high}}.",
     "encounterBudgetUncosted_one": "{{count}} non ancora valutato",
