@@ -46,6 +46,17 @@ const monName = (m: MonsterStatBlock, locale: Locale) =>
   localizeSrd("monster", m.id, "name", locale);
 
 /**
+ * PERF — the prose corpus is stable per (monster, locale): the statblock text does
+ * not change while the user types. Rebuilding it (a nested loop of `hasSrd`/`localizeSrd`
+ * i18n lookups across every entry × locale × field) on EVERY keystroke, for all ~330
+ * monsters, was the bestiary-search cost. Memoize it once per `${id}:${locale}` — the
+ * same precomputed-haystack precedent as the inventory's `searchEn`. Bounded: the key
+ * space is the finite monster set × two locales. The cached array is spread by callers,
+ * never mutated, so sharing the reference is safe.
+ */
+const monsterProseCache = new Map<string, string[]>();
+
+/**
  * The statblock PROSE search corpus — every entry's name + text, in the active
  * locale + EN, each `hasSrd`-guarded to the resident-locales-only contract (the
  * `descriptionSearch` pattern applied to the nested entry keys). Lets §2.5's
@@ -54,6 +65,9 @@ const monName = (m: MonsterStatBlock, locale: Locale) =>
  * is guarded.
  */
 function monsterProse(m: MonsterStatBlock, locale: Locale): string[] {
+  const cacheKey = `${m.id}:${locale}`;
+  const cached = monsterProseCache.get(cacheKey);
+  if (cached) return cached;
   const out: string[] = [];
   const sections: Array<[string, ReadonlyArray<MonsterEntry> | undefined]> = [
     ["traits", m.traits],
@@ -75,6 +89,7 @@ function monsterProse(m: MonsterStatBlock, locale: Locale): string[] {
       }
     }
   }
+  monsterProseCache.set(cacheKey, out);
   return out;
 }
 

@@ -21,6 +21,23 @@ export function normalizeSearch(s: string): string {
 }
 
 /**
+ * PERF — {@link normalizeSearch} for STABLE corpus CANDIDATES (names, prose), memoized.
+ * The searchable corpus is a fixed set of strings per locale, so re-normalizing every
+ * candidate on every keystroke is pure waste; the cache is bounded because its keys are
+ * that finite corpus. The QUERY is deliberately NOT routed here (it varies per keystroke
+ * — caching it would grow without bound), so it keeps the plain {@link normalizeSearch}.
+ */
+const corpusNormCache = new Map<string, string>();
+function normalizeCorpus(s: string): string {
+  let n = corpusNormCache.get(s);
+  if (n === undefined) {
+    n = normalizeSearch(s);
+    corpusNormCache.set(s, n);
+  }
+  return n;
+}
+
+/**
  * True if EVERY whitespace token of `query` is a substring of the combined
  * candidate corpus (case- and accent-insensitive). Candidates are normalized and
  * joined into one haystack, so a query can spread its tokens across several names
@@ -36,7 +53,7 @@ export function matchesSearch(
   if (tokens.length === 0) return true;
   const haystack = candidates
     .filter((c): c is string => c != null)
-    .map(normalizeSearch)
+    .map(normalizeCorpus)
     .join(" ");
   return tokens.every((tok) => haystack.includes(tok));
 }
@@ -82,7 +99,7 @@ export function matchQuality(
   if (tokens.length === 0) return "prefix";
   const haystack = candidates
     .filter((c): c is string => c != null)
-    .map(normalizeSearch)
+    .map(normalizeCorpus)
     .join(" ");
   let worst = MATCH_QUALITY_RANK.prefix;
   tokens.forEach((tok, i) => {
