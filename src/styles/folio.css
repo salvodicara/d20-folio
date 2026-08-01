@@ -3483,8 +3483,8 @@ button.pr-dot.lg::before {
 
 /* ─────────────────────────── CONTENT COLUMN ─────────────────────────── */
 /* The column is a TRANSPARENT stack: the strip's index tabs protrude on the
-   scene, and `.sheet-page` (composing `.tome-leaf-surface`, the tome's
-   bound-leaf material) is the character's PAGE hugging the tab content —
+   scene, and `.sheet-page` (the CSS-built working
+   plate — two-style law) is the character's PLATE hugging the tab content —
    the tabs overlap its top border and the active one bites it (owner,
    2026-07-31: "linguette di un libro/quaderno"). */
 .content {
@@ -3511,15 +3511,6 @@ button.pr-dot.lg::before {
   border-top: 0;
   border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
   overflow: hidden;
-  box-shadow:
-    0 3px 0 rgba(0, 0, 0, 0.4),
-    0 6px 14px rgba(0, 0, 0, 0.45);
-}
-[data-theme="light"] .sheet-page {
-  box-shadow:
-    0 2px 5px rgba(46, 30, 6, 0.24),
-    0 12px 28px rgba(46, 30, 6, 0.34),
-    var(--gilt-glow);
 }
 /* The cockpit's OWN page tones (the compendium keeps the global vellum pair):
    head band = --page-tone (the active tab fuses with it by token identity),
@@ -9578,16 +9569,19 @@ button.create-need:focus-visible .create-need-chev {
   border-top-right-radius: 0;
   --leaf-head: var(--page-tone);
 }
-/* The page hosts drop the elevation token's INSET sheens (the embossed
+/* The page hosts (the tome; the sheet plate joins for the SHADOWS only —
+   its border/band live on .sheet-page) drop the elevation token's INSET sheens (the embossed
    top-highlight painted a 1px lit row across the page's head — under the
    active tab it read as a separator, killing the one-piece fusion). Only the
    OUTER drops remain: a page casts a shadow, it is not embossed. */
-[data-theme="dark"] .cmp-tome {
+[data-theme="dark"] .cmp-tome,
+[data-theme="dark"] .sheet-page {
   box-shadow:
     0 3px 0 rgba(0, 0, 0, 0.4),
     0 6px 14px rgba(0, 0, 0, 0.45);
 }
-[data-theme="light"] .cmp-tome {
+[data-theme="light"] .cmp-tome,
+[data-theme="light"] .sheet-page {
   box-shadow:
     0 2px 5px rgba(46, 30, 6, 0.24),
     0 12px 28px rgba(46, 30, 6, 0.34),
