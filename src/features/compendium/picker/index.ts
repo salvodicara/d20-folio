@@ -31,6 +31,7 @@ export { featureSpec } from "./specs/feature";
 export { featSpec } from "./specs/feat";
 export { equipmentSpec } from "./specs/equipment";
 export { magicItemSpec } from "./specs/magic-item";
+export { itemsSpec, type ItemEntry } from "./specs/items";
 export { maneuverSpec } from "./specs/maneuver";
 export { metamagicSpec } from "./specs/metamagic";
 export { invocationSpec } from "./specs/invocation";

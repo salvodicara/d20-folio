@@ -1,0 +1,12 @@
+{
+  "items": {
+    "tab": "Oggetti",
+    "searchPlaceholder": "Cerca oggetti…",
+    "kind": "Tipo",
+    "kind_tool": "Strumento",
+    "kind_pack": "Kit",
+    "magic": "Magia",
+    "magical": "Magici",
+    "nonmagical": "Non magici"
+  }
+}

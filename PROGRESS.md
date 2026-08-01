@@ -73,7 +73,11 @@ SHIPPED** (2026-07-24), the **encounter picker SHIPPED** (2026-07-25; bestiary-f
 ready-made build, with a Randomize reroll) and **share links SHIPPED** (2026-07-31 — public
 read-only character links, the native share sheet on every link the app hands out, invitational Open
 Graph previews, and the anonymous-viewer sign-in chrome on the public /view page — a single header
-sign-in button, no marketing card); the live head is **compendium completeness**. The
+sign-in button, no marketing card), and the **unified Items browser CODE-COMPLETE** (2026-08-01 —
+the separate Equipment + Magic Items tabs/ribbon-entries merged into ONE searchable "Items" list over
+both corpora, with a smart facet rail: Magic lens · Kind spanning both datasets · magic-only
+Rarity/Attunement that light up in context; in BOTH the Add-Item modal and the Compendium page. HOLDS
+for owner screenshot approval, rule 25); the live head is **compendium completeness**. The
 competitive map is `docs/POSITIONING.md`. **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
 **id-storage + GR7 i18n-leak-eradication campaign** is **CLOSED** (v0.13.0): every SRD-derived value

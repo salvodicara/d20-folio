@@ -45,8 +45,7 @@
  *     level-up          header pill → full level-up modal (Bard 9→10, single scroll)
  *     spell-add         spells (edit) → Add Spell modal
  *     spell-cast        spells (play) → Cast / upcast (CastLevel) modal  [best-effort]
- *     equipment-add     equipment (edit) → Add Equipment modal
- *     magic-item-add    equipment (edit) → Magic Items modal
+ *     item-add          equipment (edit) → unified Add Item modal (Items · Custom)
  *     feature-add       features (edit) → Add Feature modal
  *     mobile-drawer     mobile → MobileGameDrawer bottom sheet (expanded)
  *     hp-popover        TABLET band → header HP pill → damage/heal/temp popover

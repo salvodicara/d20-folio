@@ -96,19 +96,26 @@ export function CompendiumPicker<T>({
         autoFocus={autoFocus}
       />
 
-      {spec.filters.map((g) => (
-        <div
-          key={g.id}
-          className="filters overflow-x-auto border-b border-border-subtle px-4 py-2"
-        >
-          {g.render(
-            picker.filterState[g.id],
-            (v) => picker.setFilterValue(g.id, v),
-            ctx,
-            picker.filterState
-          )}
-        </div>
-      ))}
+      {spec.filters.map((g) => {
+        // A facet whose `render` returns null is contextually hidden (e.g. the
+        // magic-only Rarity/Attunement axes while browsing mundane gear) — skip
+        // its strip entirely so no empty bordered row is left behind.
+        const chips = g.render(
+          picker.filterState[g.id],
+          (v) => picker.setFilterValue(g.id, v),
+          ctx,
+          picker.filterState
+        );
+        if (chips == null) return null;
+        return (
+          <div
+            key={g.id}
+            className="filters overflow-x-auto border-b border-border-subtle px-4 py-2"
+          >
+            {chips}
+          </div>
+        );
+      })}
 
       <CompendiumResultList picker={picker} spec={spec} />
     </div>

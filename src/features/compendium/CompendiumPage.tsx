@@ -56,7 +56,12 @@ export function CompendiumPage() {
   // to the first spec.
   const [searchParams, setSearchParams] = useSearchParams();
   const fallbackId = COMPENDIUM_SPECS[0]?.id ?? "spell";
-  const param = searchParams.get("type");
+  const rawParam = searchParams.get("type");
+  // Deep-link continuity: the old separate `equipment` + `magic-item` types were
+  // merged into one `items` browser (2026-08-01) — alias both so bookmarked /
+  // shared `?type=` links (and palette muscle memory) still land on Items.
+  const param =
+    rawParam === "equipment" || rawParam === "magic-item" ? "items" : rawParam;
   const activeId = COMPENDIUM_SPECS.some((s) => s.id === param)
     ? (param as string)
     : fallbackId;

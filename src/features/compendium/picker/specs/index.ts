@@ -12,6 +12,7 @@ import { featureSpec } from "./feature";
 import { featSpec } from "./feat";
 import { equipmentSpec } from "./equipment";
 import { magicItemSpec } from "./magic-item";
+import { itemsSpec } from "./items";
 import { maneuverSpec } from "./maneuver";
 import { metamagicSpec } from "./metamagic";
 import { invocationSpec } from "./invocation";
@@ -37,8 +38,13 @@ export {
   spellSpec,
   featureSpec,
   featSpec,
+  // equipmentSpec + magicItemSpec stay exported: they carry the per-corpus logic
+  // the unified `itemsSpec` DELEGATES to (row/detail/verdict/onAdd) and the add-
+  // parity + filter-axes tests exercise directly. They are no longer in the
+  // registry below — one "Items" entry replaces the two.
   equipmentSpec,
   magicItemSpec,
+  itemsSpec,
   maneuverSpec,
   metamagicSpec,
   invocationSpec,
@@ -56,8 +62,9 @@ export const COMPENDIUM_SPECS: readonly AnyCompendiumSpec[] = [
   spellSpec,
   featureSpec,
   featSpec,
-  equipmentSpec,
-  magicItemSpec,
+  // ONE unified Items browser (mundane equipment + magic items) — replaces the
+  // old separate `equipment` + `magic-item` ribbon entries.
+  itemsSpec,
   maneuverSpec,
   metamagicSpec,
   invocationSpec,

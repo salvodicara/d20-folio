@@ -1,0 +1,12 @@
+{
+  "items": {
+    "tab": "Items",
+    "searchPlaceholder": "Search items…",
+    "kind": "Kind",
+    "kind_tool": "Tool",
+    "kind_pack": "Pack",
+    "magic": "Magic",
+    "magical": "Magic",
+    "nonmagical": "Nonmagical"
+  }
+}

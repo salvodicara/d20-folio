@@ -48,7 +48,7 @@ describe("useCompendiumPicker — spec switch (crash #7)", () => {
 
   it("a touched facet on one type never leaks into the next type's pass", () => {
     const spells = spec("spell");
-    const equipment = spec("equipment");
+    const items = spec("items");
     const { result, rerender } = renderHook(
       ({ s }: { s: AnyCompendiumSpec }) =>
         useCompendiumPicker(s as never, { mode: "browse" }),
@@ -60,7 +60,7 @@ describe("useCompendiumPicker — spec switch (crash #7)", () => {
     expect(concCount).toBeGreaterThan(0);
 
     // …switch type twice (each pass must survive foreign state shapes)…
-    rerender({ s: equipment });
+    rerender({ s: items });
     expect(result.current.filtered.length).toBeGreaterThan(0);
     rerender({ s: spells });
 

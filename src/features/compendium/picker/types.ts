@@ -92,6 +92,11 @@ export interface FilterGroup<T> {
   id: string;
   /** Heading shown by the page facet rail (modals render the chips inline). */
   label?: (t: TFn) => string;
+  /** P2 explain-on-demand — a glossary id for the rubric: the page facet ledger
+   *  then wraps the {@link label} in the shared `GlossaryTip` (a dotted-underline
+   *  teaching trigger), so a jargon axis (Rarity, Attunement) explains itself.
+   *  Coverage grows by DATA (a group names an id), never by new code. */
+  term?: GlossaryTermId;
   initial: unknown;
   render: (
     value: unknown,
@@ -111,6 +116,7 @@ export interface FilterGroup<T> {
 export function defineFilter<T, V>(g: {
   id: string;
   label?: (t: TFn) => string;
+  term?: GlossaryTermId;
   initial: V;
   render: (
     value: V,

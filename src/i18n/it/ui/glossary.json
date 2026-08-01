@@ -48,7 +48,9 @@
       "bardicInspirationDie": "Un dado che un Bardo alleato ti concede (da d6 a d12); puoi tenerne solo uno alla volta. Entro l'ora successiva, quando fallisci un Test del d20, puoi tirarlo e sommare il risultato, trasformando magari il fallimento in un successo: il dado è speso quando viene tirato. Tocca la taglia che ricevi; tocca di nuovo quando lo tiri.",
       "encounterXp": "I Punti Esperienza (PE) misurano la minaccia di un mostro. Questa è la minaccia totale dello scontro, sommata dai PE di ogni mostro, che l'app confronta con il budget di PE del gruppo per valutare quanto è difficile il combattimento.",
       "encounterDifficulty": "Quanto sarà probabilmente difficile questo scontro. Facile è una vittoria semplice, Media un vero combattimento, Difficile è pericoloso e Oltre Difficile è probabilmente letale. Il grado deriva dai PE totali dei mostri rispetto al budget del gruppo.",
-      "challengeRating": "Il Grado di Sfida (GS) è il livello di potenza indicativo di un mostro. Scegline uno e l'app usa i suoi PE standard per pesare il mostro nel grado di difficoltà dello scontro. Lascialo vuoto per un PNG improvvisato al volo, che resta non conteggiato."
+      "challengeRating": "Il Grado di Sfida (GS) è il livello di potenza indicativo di un mostro. Scegline uno e l'app usa i suoi PE standard per pesare il mostro nel grado di difficoltà dello scontro. Lascialo vuoto per un PNG improvvisato al volo, che resta non conteggiato.",
+      "attunement": "Alcuni oggetti magici funzionano solo dopo che ti sei legato a essi, la cosiddetta sintonia. Legarsi richiede un Riposo Breve; puoi essere in sintonia con tre oggetti alla volta e ogni oggetto in sintonia occupa uno di quei posti.",
+      "magicRarity": "La rarità indica quanto è potente e difficile da trovare un oggetto magico, da Comune fino a Non comune, Raro, Molto raro e Leggendario, fino all'Artefatto unico. Gli oggetti più rari sono più potenti e, nella maggior parte dei giochi, più difficili da ottenere."
     }
   }
 }

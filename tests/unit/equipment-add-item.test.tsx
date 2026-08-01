@@ -2,17 +2,16 @@
  * Unified Add-Item flow (E14/E15)
  *
  * The Equipment page exposes exactly ONE "Add Item" trigger (BOTH modes — §2.8,
- * loot lands mid-session) which
- * opens the single `AddItemModal` — a three-tab picker (Equipment / Magic Items /
- * Custom) that replaced the old two separate "Add Equipment" + "Add Magic Item"
- * buttons. These tests pin:
+ * loot lands mid-session) which opens the single `AddItemModal` — now a TWO-tab
+ * picker (Items / Custom): the Equipment + Magic Items tabs merged into one unified
+ * "Items" browser over both corpora (2026-08-01). These tests pin:
  *   1. the equipment page surfaces a single add trigger (no second magic-item one),
- *   2. opening it shows the three tabs,
- *   3. the Magic Items tab renders the magic-item browse body (a known SRD item),
+ *   2. opening it shows the two tabs (no separate Magic Items tab),
+ *   3. the one Items browser finds a magic item (a known SRD item) with no switch,
  *   4. the page header migrated to the canonical `<PageHeader>` (`.page-head`).
  *
- * Also covers `AddItemModal` in isolation: each tab renders its embeddable body,
- * confirming the deleted standalone wrappers are not needed.
+ * Also covers `AddItemModal` in isolation: the Items tab renders the unified body
+ * and searches BOTH corpora, confirming the deleted standalone wrappers are gone.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
@@ -195,25 +194,23 @@ describe("InventoryTab — unified Add Item", () => {
     expect(within(crowbarCard as HTMLElement).getByText(/5 lb/)).toBeInTheDocument();
   });
 
-  it("opens the unified modal with three tabs and the Magic Items tab renders the magic-item body", () => {
+  it("opens the unified modal with two tabs and the Items browser finds a magic item", () => {
     load();
     useUIStore.setState({ sheetMode: "edit" });
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: /Add Item/i }));
 
-    // Three tabs present.
+    // Two tabs present (Items + Custom) — the old Equipment/Magic split is merged.
     const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByRole("button", { name: "Equipment" })).toBeInTheDocument();
-    expect(
-      within(dialog).getByRole("button", { name: "Magic Items" })
-    ).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Items" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Custom" })).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("button", { name: "Magic Items" })
+    ).not.toBeInTheDocument();
 
-    // Switch to Magic Items → the magic-item browse body renders. Search for a known
-    // SRD item (the result list is virtualized, so a far-down item is reached by
-    // query, not by an unscrolled window).
-    fireEvent.click(within(dialog).getByRole("button", { name: "Magic Items" }));
-    fireEvent.change(within(dialog).getByPlaceholderText(/Search magic items/i), {
+    // The one Items browser searches BOTH corpora — a magic item is found with no
+    // separate tab (the list is virtualized, so a far-down item is reached by query).
+    fireEvent.change(within(dialog).getByPlaceholderText(/Search items/i), {
       target: { value: "Potion of Healing" },
     });
     expect(within(dialog).getByText(/Potion of Healing/i)).toBeInTheDocument();
@@ -234,24 +231,22 @@ describe("AddItemModal — tab bodies", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("defaults to the Equipment tab (SRD equipment search)", () => {
+  it("defaults to the Items tab (unified search over both corpora)", () => {
     render(<AddItemModal open onClose={() => {}} />);
     const dialog = screen.getByRole("dialog");
-    // The equipment body owns a search input with the equipment placeholder.
-    expect(within(dialog).getByPlaceholderText(/Search equipment/i)).toBeInTheDocument();
+    // The Items body owns a search input with the unified placeholder.
+    expect(within(dialog).getByPlaceholderText(/Search items/i)).toBeInTheDocument();
   });
 
-  it("renders the Magic Items body on the magic tab", () => {
+  it("finds BOTH a mundane and a magic item in the one Items browser (no tab switch)", () => {
     render(<AddItemModal open onClose={() => {}} />);
     const dialog = screen.getByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("button", { name: "Magic Items" }));
-    expect(
-      within(dialog).getByPlaceholderText(/Search magic items/i)
-    ).toBeInTheDocument();
-    // The list is virtualized; search for the far-down item to bring it into the window.
-    fireEvent.change(within(dialog).getByPlaceholderText(/Search magic items/i), {
-      target: { value: "Potion of Healing" },
-    });
+    const search = within(dialog).getByPlaceholderText(/Search items/i);
+    // A magic item…
+    fireEvent.change(search, { target: { value: "Potion of Healing" } });
     expect(within(dialog).getByText(/Potion of Healing/i)).toBeInTheDocument();
+    // …and a mundane weapon, in the SAME list.
+    fireEvent.change(search, { target: { value: "Longsword" } });
+    expect(within(dialog).getByText(/Longsword/i)).toBeInTheDocument();
   });
 });

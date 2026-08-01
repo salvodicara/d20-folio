@@ -24,6 +24,7 @@
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useOverflowFadeY } from "@/hooks/useOverflowFade";
+import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import type { CompendiumPickerApi } from "./picker/useCompendiumPicker";
 import type { AnyCompendiumSpec } from "./picker/specs";
 
@@ -53,25 +54,39 @@ export function CompendiumFacets({ spec, picker, collapsed, id }: FacetsProps) {
       <div className="cmp-facets-reveal">
         <div className="cmp-facet-ledger">
           <div ref={scrollRef} className="cmp-facet-scroll" data-fade={fade || undefined}>
-            {spec.filters.map((g) => (
-              <div
-                key={g.id}
-                className="cmp-facet-group"
-                data-group={g.id}
-                role="group"
-                aria-label={g.label ? g.label(t) : undefined}
-              >
-                {g.label && <span className="cmp-facet-label">{g.label(t)}</span>}
-                <div className="cmp-facet-chips">
-                  {g.render(
-                    picker.filterState[g.id],
-                    (v) => picker.setFilterValue(g.id, v),
-                    picker.ctx,
-                    picker.filterState
-                  )}
+            {spec.filters.map((g) => {
+              // A contextually-hidden facet (null render — e.g. the magic-only
+              // Rarity/Attunement axes off a mundane pool) drops its whole group.
+              const chips = g.render(
+                picker.filterState[g.id],
+                (v) => picker.setFilterValue(g.id, v),
+                picker.ctx,
+                picker.filterState
+              );
+              if (chips == null) return null;
+              return (
+                <div
+                  key={g.id}
+                  className="cmp-facet-group"
+                  data-group={g.id}
+                  role="group"
+                  aria-label={g.label ? g.label(t) : undefined}
+                >
+                  {g.label &&
+                    // P2 — a jargon axis (Rarity, Attunement) teaches itself: the
+                    // rubric becomes a dotted-underline GlossaryTip when the group
+                    // names a glossary `term`; plain text otherwise.
+                    (g.term ? (
+                      <span className="cmp-facet-label">
+                        <GlossaryTip term={g.term} rubric={g.label(t)} />
+                      </span>
+                    ) : (
+                      <span className="cmp-facet-label">{g.label(t)}</span>
+                    ))}
+                  <div className="cmp-facet-chips">{chips}</div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

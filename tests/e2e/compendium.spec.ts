@@ -2,10 +2,11 @@
  * E2E: Compendium browse page (Phase 5 — Part 1).
  *
  * Drives the new faceted, read-only SRD browse at `/compendium` (dev-bypass
- * auth, no Firebase): the type selector (Spells · Features · Feats · Equipment ·
- * Magic Items), bilingual search, a facet filter, and opening one entry's read
- * view + returning to the list. Powered by the same `CompendiumPicker` primitive
- * the sheet "Add-X" modals use — here in browse mode.
+ * auth, no Firebase): the type selector (Spells · Features · Feats · Items ·
+ * …), bilingual search, a facet filter, and opening one entry's read view +
+ * returning to the list. Powered by the same `CompendiumPicker` primitive the
+ * sheet "Add-X" modals use — here in browse mode. (Equipment + Magic Items merged
+ * into one unified "Items" browser, 2026-08-01.)
  */
 
 import { test, expect } from "@playwright/test";
@@ -107,11 +108,12 @@ test.describe("Compendium browse", () => {
     expect(r.straddles || r.fadeOverlapsLastRow).toBe(true);
   });
 
-  test("switches the type to Equipment via the codex ribbon", async ({ page }) => {
-    // The type selector is now the codex ribbon (role=tablist / role=tab).
-    await page.getByRole("tab", { name: "Equipment" }).click();
-    // The Equipment spec's own search placeholder + a known item appear.
-    await expect(page.getByPlaceholder(/search equipment/i)).toBeVisible();
+  test("switches the type to Items via the codex ribbon", async ({ page }) => {
+    // The type selector is now the codex ribbon (role=tablist / role=tab). The
+    // Equipment + Magic Items types merged into one unified "Items" browser.
+    await page.getByRole("tab", { name: "Items" }).click();
+    // The unified Items search placeholder + a known item appear.
+    await expect(page.getByPlaceholder(/search items/i)).toBeVisible();
     await expect(page.locator(".pick-name").first()).toBeVisible();
   });
 

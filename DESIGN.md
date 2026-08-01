@@ -1369,6 +1369,20 @@ the index depth on Back. The recipe's parts:
   while closed.
 - **School enamel chips:** the spell row's classifier chip wears its school's `--school-*` enamel
   (§2 "One hue vocabulary per fact"); rarity/category chips keep their existing tones.
+- **The unified Items browser** (owner-greenlit 2026-08-01): the old separate **Equipment** +
+  **Magic Items** ribbon/tab entries are ONE **Items** browser — a single search + list over BOTH
+  corpora (mundane SRD equipment + magic items), everywhere the picker renders (the Compendium
+  ribbon AND the sheet Add-Item modal, which is now **Items · Custom**). The two data shapes stay
+  separate under the hood; the `itemsSpec` (`picker/specs/items.tsx`) wraps each row in a
+  discriminated `ItemEntry` and DELEGATES row/detail/verdict/onAdd to the existing equipment/magic
+  specs (one source of truth). Its **smart facet rail**: a **Magic lens** (All · Magic · Nonmagical)
+  and one **Kind** axis spanning both datasets (Weapon · Armor · Shield · Gear · Tool · Pack ·
+  Wondrous · Potion · Ring · Rod · Scroll · Staff · Wand — Weapon/Armor surface mundane AND magic
+  alike), followed by the **magic-only Rarity + Attunement** axes that LIGHT UP only in a magic
+  context (their `render` returns null otherwise; the picker + ledger skip the empty strip). Rows
+  read mundane-then-magic at rest (common before rare), reordered by name once the reader types.
+  A facet group may now name a glossary `term` — the ledger wraps its rubric in the shared
+  `GlossaryTip` (Rarity → _magicRarity_, Attunement → _attunement_), so a jargon axis teaches itself.
 - **The frontispiece** (`.cmp-frontis`, reading leaf at rest): the brand crest as a whisper
   watermark behind the active type's gold seal, name, live count, and the one next action — a
   quiet facing page, never louder than the content it awaits.
