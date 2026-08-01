@@ -167,7 +167,7 @@ read those rather than duplicating them here.
   seam"). Both build modes stay green: `just ci` (pack) and `just ci-srd-only` (the public
   snapshot's composition). The partition is a licensing boundary, never a scope boundary — every
   change is designed against the FULL game and pack-side twins update in the same motion
-  (`docs/GOLDEN_RULES.md` D11).
+  (`docs/GOLDEN_RULES.md` golden rule 28 (D11)).
 - **Source of truth = `http://dnd2024.wikidot.com/`** — the standard public 2024-rules reference
   5e tools verify against. Model the **facts** (which spells a subclass grants and at what level,
   numeric values, level tables) as declarative data; don't paste long verbatim prose — write
@@ -192,7 +192,7 @@ read those rather than duplicating them here.
 ## Golden rules + philosophy → `docs/GOLDEN_RULES.md`
 
 **The non-negotiable cross-cutting disciplines + owner philosophy live in `docs/GOLDEN_RULES.md` —
-READ THEM FIRST, EVERY SESSION, before any work.** They carry the 27 golden rules, the domain
+READ THEM FIRST, EVERY SESSION, before any work.** They carry the 28 golden rules, the domain
 rules, the precedence chain, and **the four forks** (`docs/GOLDEN_RULES.md` → "The four forks" —
 the ONLY reasons to stop and ask the owner; everything else, decide and keep moving). The supreme
 PRODUCT/UX/design rules live in `docs/PRODUCT_CONSTITUTION.md`. Violating one is never acceptable.

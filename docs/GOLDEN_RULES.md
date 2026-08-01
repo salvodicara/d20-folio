@@ -277,6 +277,24 @@ renumber it into the 1–4 sequence. -->
     most 2–3 Tier-1 agents at once, queue the rest; Fable agents delegate their own mechanical
     fan-out to cheap tiers. (owner, 2026-07-10)
 
+<!-- Rule 28 is placed in this theme group out of numeric sequence (rules are numbered by
+provenance, then placed in their theme group — see "How to add a rule"); this comment breaks the
+list so Prettier does not renumber it into the 11–18 sequence. -->
+
+28. **Both repos move as one — the pack twin ships in the same motion.** The public SRD repo and
+    the private `content-pack` are ONE product, split ONLY for licensing, never for scope. Every
+    change is conceived and validated against the FULL D&D 2024 game — the wiki corpus, the private
+    pack's content, the BG3-informed IT lexicon, the whole D2 cascade — and the SRD-only public
+    build is just the license-clean projection of that whole. When a change touches anything the
+    pack mirrors, extends, or depends on (types, evaluator branches, i18n keys/lexicon, guards, data
+    seams, docs), the pack-side twin is updated IN THE SAME UNIT OF WORK — both build modes green
+    (`just ci` + `just ci-srd-only`) — never deferred as a follow-up; shipping public-side while
+    leaving the pack stale is a BUG. The one carve-out is concurrency: when the pack is frozen
+    (owned read-only by another worktree), the twin becomes a TRACKED, EXPLICIT handoff executed the
+    moment the pack is workable — still the same logical unit of work, never a silent deferral.
+    (owner, 2026-07-24; promoted to a golden rule 2026-08-01.) Anchored as domain rule D11 for
+    existing cross-references.
+
 ### UX & design
 
 19. **Impeccable — and only-and-all-the-necessary.** Use the `impeccable` skill for any
@@ -315,7 +333,7 @@ free integration — this gate binds the VISUAL surface only. Deploy stays a sec
 owner gate (rule 22). Rule 15 is HOW the review runs (Chromium capture across states/themes);
 rule 25 is the standing mandate that the screenshots ALWAYS precede the merge. (Supersedes the
 2026-07-06 non-blocking form of this rule.)
-<!-- Rule 28 keeps the next global id (see "How to add a rule"). -->
+<!-- Rule 29 keeps the next global id (see "How to add a rule"). -->
 
 26. **Ambiguous UI/UX feedback is grilled BEFORE any code — and design directions are
     PREVIEWED before they are built.** When the owner reports a UX problem or wish and the
@@ -417,23 +435,13 @@ rule 25 is the standing mandate that the screenshots ALWAYS precede the merge. (
 - **D10 — React purity.** No `Date.now()`/`Math.random()` in render, no `.current` reads during
   render, no synchronous `setState` in effects. (The React Compiler itself is deliberately NOT
   enabled — `docs/CONTRIBUTING.md`.)
-- **D11 — The split is licensing, not scope.** The public/pack partition is a LICENSING
-  boundary only, never a scope boundary: every change is conceived and validated against the
-  FULL D&D 2024 game — the wiki corpus, the private pack's content, the BG3-informed IT lexicon,
-  the whole D2 cascade — and the SRD-only public build is just the license-clean projection of
-  that whole. When a change touches anything the content pack mirrors, extends, or depends on
-  (types, evaluator branches, i18n keys/lexicon, guards, data seams, docs), the pack-side twin is
-  updated IN THE SAME MOTION — same unit of work, both build modes green (`just ci` +
-  `just ci-srd-only`) — never deferred as a follow-up. The one carve-out is concurrency: when the
-  pack is currently owned by another worktree (frozen read-only), the pack-side twin becomes a
-  TRACKED, EXPLICIT handoff executed the moment the pack is workable — still the same logical unit of
-  work, never a silent deferral. A change that ships public-side while silently leaving the pack
-  stale is a bug (owner, 2026-07-24).
+- **D11 — The split is licensing, not scope.** → promoted to **golden rule 28**; see it for the
+  full statement. (Kept as an anchor for existing cross-references.)
 
 ## How to add a rule
 
 1. First ask: is it a FACET of an existing rule? Then amend that rule (same commit as the work) —
-   the count stays small (~27); never restate an existing rule under a new number.
+   the count stays small (~28); never restate an existing rule under a new number.
 2. A genuinely new discipline appends to its theme group with the next number, tagged
    `(owner, YYYY-MM-DD)` where the provenance matters.
 3. Write it once, tight, enforceable; update every doc that should point at it. `CLAUDE.md` only
