@@ -12,6 +12,7 @@
  * outcome.
  */
 import { describe, it, expect } from "vitest";
+import i18n from "@/i18n";
 import {
   localizeChronicleEvent,
   chronicleNeedsAttribution,
@@ -63,6 +64,16 @@ const SAMPLES: Record<CombatChronicleEventKind, CombatChronicleEvent> = {
     attackerId: "pc-mara",
     targetId: "monster-1",
   },
+  "attack-multi": {
+    ...base,
+    kind: "attack-multi",
+    attackerId: "pc-mara",
+    targetIds: ["monster-1", "monster-2"],
+    amounts: [
+      { targetId: "monster-1", amount: 22 },
+      { targetId: "monster-2", amount: 11 },
+    ],
+  },
   "condition-gain": {
     ...base,
     kind: "condition-gain",
@@ -105,12 +116,100 @@ describe("localizeChronicleEvent — every kind routes to a distinct non-empty l
     expect(line).toContain("«monster-1»");
   });
 
+  it("a multi-target HIT uses multiHit; a fully-un-dropped set uses multiMiss", () => {
+    expect(localize(SAMPLES["attack-multi"])).toContain("combatChronicle.multiHit");
+    const missed: CombatChronicleEvent = {
+      ...base,
+      kind: "attack-multi",
+      attackerId: "pc-mara",
+      targetIds: ["monster-1", "monster-2"],
+      amounts: [], // no drops ⇒ the MISS line over the full declared set
+    };
+    expect(localize(missed)).toContain("combatChronicle.multiMiss");
+  });
+
   it("the SAME event renders per the injected locale", () => {
     const en = localizeChronicleEvent(SAMPLES.down, tEn, resolveName, resolveCondition);
     const it = localizeChronicleEvent(SAMPLES.down, tIt, resolveName, resolveCondition);
     expect(en).toBe("«monster-1» falls");
     expect(it).toBe("«monster-1» cade");
     expect(en).not.toBe(it);
+  });
+});
+
+describe("attack-multi prose — natural EN + IT for 2 / 3 / N targets (real i18n)", () => {
+  // The REAL translator (setup.fast loads EN + IT eagerly), so the enumeration join +
+  // per-target amounts read as real prose in both languages. Names resolve bare (no
+  // article) — locale-correct for both EN and IT.
+  const name = (id: string): string =>
+    ({ "monster-1": "Goblin", "monster-2": "Chief", "monster-3": "Ogre" })[id] ?? id;
+  const cond = (id: string): string => id;
+  const multi = (
+    amounts: Array<{ targetId: string; amount: number }>
+  ): CombatChronicleEvent => ({
+    ...base,
+    kind: "attack-multi",
+    attackerId: "pc-cor",
+    targetIds: amounts.map((a) => a.targetId),
+    amounts,
+  });
+  const proseFor = (
+    locale: "en" | "it",
+    amounts: Array<{ targetId: string; amount: number }>
+  ) =>
+    localizeChronicleEvent(
+      multi(amounts),
+      i18n.getFixedT(locale),
+      (id) => (id === "pc-cor" ? "Coralino" : name(id)),
+      cond
+    );
+
+  it("two targets: 'A (x) and B (y)' / 'A (x) e B (y)'", () => {
+    const two = [
+      { targetId: "monster-1", amount: 22 },
+      { targetId: "monster-2", amount: 11 },
+    ];
+    expect(proseFor("en", two)).toBe("Coralino hits Goblin (22) and Chief (11)");
+    expect(proseFor("it", two)).toBe("Coralino colpisce Goblin (22) e Chief (11)");
+  });
+
+  it("three targets: 'A (x), B (y) and C (z)' / 'A (x), B (y) e C (z)'", () => {
+    const three = [
+      { targetId: "monster-1", amount: 22 },
+      { targetId: "monster-2", amount: 22 },
+      { targetId: "monster-3", amount: 11 },
+    ];
+    expect(proseFor("en", three)).toBe(
+      "Coralino hits Goblin (22), Chief (22) and Ogre (11)"
+    );
+    expect(proseFor("it", three)).toBe(
+      "Coralino colpisce Goblin (22), Chief (22) e Ogre (11)"
+    );
+  });
+
+  it("a single struck target reads as one clause (no conjunction)", () => {
+    const one = [{ targetId: "monster-1", amount: 22 }];
+    expect(proseFor("en", one)).toBe("Coralino hits Goblin (22)");
+    expect(proseFor("it", one)).toBe("Coralino colpisce Goblin (22)");
+  });
+
+  it("a full MISS names every declared target with the locale conjunction", () => {
+    const missed: CombatChronicleEvent = {
+      ...base,
+      kind: "attack-multi",
+      attackerId: "pc-cor",
+      targetIds: ["monster-1", "monster-2", "monster-3"],
+      amounts: [],
+    };
+    const t = (locale: "en" | "it") =>
+      localizeChronicleEvent(
+        missed,
+        i18n.getFixedT(locale),
+        (id) => (id === "pc-cor" ? "Coralino" : name(id)),
+        cond
+      );
+    expect(t("en")).toBe("Coralino misses Goblin, Chief and Ogre");
+    expect(t("it")).toBe("Coralino manca Goblin, Chief e Ogre");
   });
 });
 

@@ -44,6 +44,23 @@ export function chronicleNeedsAttribution(event: CombatChronicleEvent): boolean 
 }
 
 /**
+ * Join a list of already-localized segments into a natural-language enumeration using
+ * the locale's conjunction: `["A"]` → "A", `["A","B"]` → "A and B" / "A e B",
+ * `["A","B","C"]` → "A, B and C" / "A, B e C". Pure — the conjunction word is the only
+ * locale input (injected `t`), so the same list reads correctly in EN and IT. The
+ * caller guarantees a non-empty list for a rendered line (an empty enumeration returns
+ * the empty string rather than fabricating content).
+ */
+function joinLocalizedList(parts: readonly string[], t: TranslateFn): string {
+  const [first, ...rest] = parts;
+  if (first === undefined) return "";
+  if (rest.length === 0) return first;
+  const last = rest[rest.length - 1];
+  const head = [first, ...rest.slice(0, -1)].join(", ");
+  return `${head} ${t("common.and")} ${last}`;
+}
+
+/**
  * Localize one {@link CombatChronicleEvent} to its display LINE. Exhaustive over every
  * `kind` — the `string` return type makes a missing case a compile error (a fall-through
  * would return `undefined`), so a new kind cannot silently render blank.
@@ -82,6 +99,31 @@ export function localizeChronicleEvent(
         attacker: resolveName(event.attackerId),
         target: resolveName(event.targetId),
       });
+    case "attack-multi": {
+      // A HIT line (≥1 real drop) lists the struck targets with their DM amounts; an
+      // empty `amounts` is the MISS line over the full declared set. Never fabricates a
+      // per-target number — an un-dropped target is simply absent from `amounts`.
+      if (event.amounts.length > 0) {
+        const struck = joinLocalizedList(
+          event.amounts.map((a) =>
+            t("combatChronicle.multiTarget", {
+              target: resolveName(a.targetId),
+              amount: a.amount,
+            })
+          ),
+          t
+        );
+        return t("combatChronicle.multiHit", {
+          attacker: resolveName(event.attackerId),
+          targets: struck,
+        });
+      }
+      const named = joinLocalizedList(event.targetIds.map(resolveName), t);
+      return t("combatChronicle.multiMiss", {
+        attacker: resolveName(event.attackerId),
+        targets: named,
+      });
+    }
     case "down":
       return t("combatChronicle.down", { target: resolveName(event.targetId) });
     case "condition-gain":

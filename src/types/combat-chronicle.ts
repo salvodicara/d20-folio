@@ -85,6 +85,27 @@ export type CombatChronicleEvent =
    * declaring PC, `targetId` the enemy they named.
    */
   | ({ kind: "attack-miss"; attackerId: string; targetId: string } & ChronicleEventBase)
+  /**
+   * A player's DECLARED MULTI-TARGET action FUSED with the several HP drops the DM
+   * applied across the struck foes (auto-narrated combat, Phase 2 — Magic Missile's
+   * darts, Scorching Ray's rays, an AoE's per-target damage). Like {@link attack-miss}
+   * this is SYNTHESIZED at read time by the reconciliation layer (`chronicle-reconcile.
+   * ts`), never stored: it REPLACES the individual per-target `hp-damage` lines with ONE
+   * summary line. `amounts` carries the REAL DM delta for each struck target (NEVER an
+   * invented number — a declared target with no in-window drop is simply ABSENT here);
+   * a non-empty `amounts` renders the HIT line ("{attacker} hits A (x), B (y) and C
+   * (z)"), an EMPTY `amounts` the MISS line over the full declared `targetIds`
+   * ("{attacker} misses A, B and C"). `attackerId` is the declaring PC.
+   */
+  | ({
+      kind: "attack-multi";
+      attackerId: string;
+      /** The full declared target set (ids), declared order — drives the MISS prose. */
+      targetIds: string[];
+      /** Per-struck-target REAL DM damage, declared order; ONLY targets that took a
+       *  bound drop. Empty ⇒ the MISS line (or a hit awaiting HP, which emits no line). */
+      amounts: ReadonlyArray<{ targetId: string; amount: number }>;
+    } & ChronicleEventBase)
   /** A condition was gained. */
   | ({
       kind: "condition-gain";
