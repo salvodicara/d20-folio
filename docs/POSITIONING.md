@@ -63,8 +63,9 @@ frontier"_), sequenced **bestiary-first**:
   MM statblock corpus advances along the same manifest.
 - **Homebrew — the ladder's first rung SHIPPED (2026-07-30):** the account-level library (rung (a)
   — every per-character custom spell/feature/equipment silently kept as a reusable account doc,
-  "custom IS the library"). The remaining rungs stand: campaign sharing → monster editor →
-  species/feats/subclasses → **homebrew classes**, the declared _horizon flagship_ because it is
+  "custom IS the library"). The remaining rungs stand: campaign sharing → monster editor
+  (a reusable custom-monster library — "custom IS the library" applied to monsters — is the CANDIDATE
+  first cut, owner idea 2026-08-01) → species/feats/subclasses → **homebrew classes**, the declared _horizon flagship_ because it is
   D&D Beyond's #1 refused community ask, and our grants seam can actually do it well.
 - **Quickbuild parity SHIPPED (2026-07-30)** — DDB shipped "Quickbuilder" March 2026; Quick Start
   now opens on a complete, legal, class-recommended build (only the name left to type) **plus the

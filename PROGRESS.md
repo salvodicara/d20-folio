@@ -1346,10 +1346,27 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   INJECTS the store's write seam (`combatPersistence` pattern), so the store + every card stay
   Firebase-free (`docs/ARCHITECTURE.md` → "The account-level homebrew library"); (b) campaign
   sharing of that library — the ladder's NEXT rung; (c) authoring types staged after the bestiary —
-  monster editor first, then species/feats/subclasses/backgrounds as declarative Grants; (d) homebrew
+  monster editor first (the reusable custom-monster library candidate below is that rung's first
+  cut — owner idea 2026-08-01), then species/feats/subclasses/backgrounds as declarative Grants; (d) homebrew
   CLASSES declared the horizon flagship on the grants seam (DDB's #1 refused community ask),
   scheduled only once (c) proves the authoring UX. Homebrew is user data, never repo data — no #32
   impact.
+- **Reusable custom-monster library — "custom IS the library" for monsters (CANDIDATE — owner idea
+  2026-08-01):** a DM who builds a **custom monster** inside an encounter has it **auto-saved to a
+  reusable ACCOUNT-level library** — droppable into any encounter/campaign, editable/deletable, and
+  never rebuilt. The homebrew ladder's **"monster editor / reusable homebrew monsters"** rung
+  (charter rung (c), monster-editor-first). _Capturing analysis (orchestrator, 2026-08-01):_
+  - **Directly reuses the SHIPPED homebrew-library infra** — the `libraryStore` / `library-io` /
+    `LibraryEntry` seam and the **"custom IS the library"** pattern (`src/lib/library.ts`,
+    `library-io.ts`, `stores/libraryStore.ts`, `features/account/library-mount.ts`) — extended with a
+    `monster` kind on `LIBRARY_KINDS` / `LibraryDraft` (or a **sibling monster library** if the
+    encounter-monster shape doesn't fit the per-character custom-item union).
+  - **Wiring:** the encounter **Add-monster modal's Custom tab** (`encounter-bestiary.tsx` / the
+    `AddMonsterForm` in `party-encounter.tsx`) grows a "your custom monsters" list — **silent
+    auto-save on create, tap-to-add, edit/delete** — account-level, reusable across campaigns.
+  - **DDB-parity angle:** DDB has a monster/homebrew library.
+  - **Sequencing:** touches the SAME `AddMonsterForm` as the in-flight encounter-polish + the
+    combat-chronicle epic, so it sequences **after** those; **priority is the owner's call**.
 - **Public share links: SHIPPED 2026-07-31 — CHARACTERS ONLY, industry standard.** The
   decided LIVE model shipped as decided — a `shared: true` flag on the character doc + the unguessable doc id
   as the URL; rules allow anonymous read-only when flagged; revoke = flip the flag; noindex;
