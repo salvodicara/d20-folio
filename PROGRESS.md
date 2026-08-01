@@ -20,8 +20,12 @@
 > owner's row · campaigns → DM's row, lazy char index) + campaigns-style disclosure rows
 > (actions inside the detail) + bounded list (25 + show-more). Overview + bug inbox unchanged.
 
-> **Epic-close checklist:** when the whole identity epic lands, REDO the README/GitHub
-> screenshots and any repo-front imagery (owner, 2026-07-31 — they still show the pre-BG3 UI).
+> **EPIC CLOSED (2026-08-01):** the BG3 corpus-studied visual identity epic is COMPLETE —
+> rollback → grammar → hero cockpit → full rollout (every surface family incl. dialogs/portals),
+> the protruding index-tab construction, the two-style law (working plate vs parchment), the
+> remastered tome leaves, and the refreshed README screenshots (six WebP shots of the shipped
+> identity, compendium row added). Leftovers routed to standing jobs: the statblock-contrast
+> a11y fixes (rule 27) and the pack-side MM corpus.
 
 The post-v0.22.0 **chrome-reset visual identity was REJECTED by the owner** (2026-07-30: the
 corner knots, the missing borders, the plate/veil material, the compendium treatment — "the

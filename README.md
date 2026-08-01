@@ -24,16 +24,20 @@ Try it at [d20-folio.web.app](https://d20-folio.web.app). It requires a free Goo
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/assets/cockpit-dark.png" alt="Character cockpit in dark theme: the play-mode sheet showing combat, spells, features, and trackers"></td>
-    <td width="50%"><img src="docs/assets/cockpit-light.png" alt="Character cockpit in light theme: the same play-mode sheet at full parity with dark"></td>
+    <td width="50%"><img src="docs/assets/cockpit-dark.webp" alt="Character cockpit in dark theme: the play-mode sheet showing combat, spells, features, and trackers"></td>
+    <td width="50%"><img src="docs/assets/cockpit-light.webp" alt="Character cockpit in light theme: the same play-mode sheet at full parity with dark"></td>
   </tr>
   <tr>
     <td align="center"><em>Character cockpit (dark)</em></td>
     <td align="center"><em>Character cockpit (light)</em></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/assets/roster.png" alt="Character roster: the grid of a player's saved characters with create and import actions"></td>
-    <td width="50%"><img src="docs/assets/campaign.png" alt="Campaign hub: party view, treasury, shared notes, sessions, and the markdown chronicle"></td>
+    <td width="50%"><img src="docs/assets/roster.webp" alt="Character roster: the grid of a player's saved characters with create and import actions"></td>
+    <td width="50%"><img src="docs/assets/campaign.webp" alt="Campaign hub: party view, treasury, shared notes, sessions, and the markdown chronicle"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/assets/compendium-dark.webp" alt="Compendium: the bound tome with protruding index tabs, the full SRD database including the 330-monster bestiary, in dark theme"></td>
+    <td width="50%"><img src="docs/assets/compendium-light.webp" alt="Compendium in light theme: the same tome on aged parchment at full theme parity"></td>
   </tr>
   <tr>
     <td align="center"><em>Roster</em></td>
