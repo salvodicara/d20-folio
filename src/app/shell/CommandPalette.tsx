@@ -46,7 +46,6 @@
 
 import {
   useCallback,
-  useDeferredValue,
   useEffect,
   useId,
   useMemo,
@@ -218,12 +217,13 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
   const requestPlayRef = useUIStore((s) => s.requestPlayRef);
   const [query, setQuery] = useState("");
-  // PERF — the input stays controlled on the immediate `query` (typing paints at
-  // once), but every result memo below keys off `q`, a DEFERRED copy: the ~630-entry
-  // compendium fan-out re-ranks at low priority, so a keystroke burst coalesces and
-  // the palette never blocks the caret.
-  const deferredQuery = useDeferredValue(query);
-  const q = deferredQuery.trim();
+  // The palette query drives its results SYNCHRONOUSLY (no deferral): the roving
+  // keyboard nav (activeIndex reset + aria-activedescendant) must track the typed
+  // query in the SAME commit, and a low-priority deferred render can be starved under
+  // load, stranding ↑↓/↵ on a stale result set. The ~630-entry compendium fan-out is
+  // kept cheap by the shared corpus-normalization cache in `@/lib/search` (candidate
+  // strings normalize once), so typing stays responsive without decoupling paint.
+  const q = query.trim();
   const listboxId = useId();
 
   // The roving highlight for keyboard nav (OWN-28b): Arrow Up/Down move it, Enter
