@@ -1353,6 +1353,15 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   2024 source; no data work exists. The **Homunculus Servant** spell-companion rides
   the shipped public `SrdSpellData.companion` seam pack-side (D11). The lazy leaf
   keeps the eager bundle at zero corpus delta (tripwired).
+- **STANDING PRINCIPLE — preserve every custom entry (owner-ratified 2026-08-01).** The account-level
+  homebrew library is the home for ALL homebrew — **no custom entity type is one-off.** Every custom
+  thing a user builds persists to their reusable `users/{uid}/library/index` by default and is
+  re-addable from any surface, never re-typed. This is the override-first doctrine (golden rule 8)
+  made durable: custom data is authored once, kept forever. Today's coverage = **exactly 4 kinds**
+  (spell, feature, equipment/custom-item, weapon — all reusable; `src/lib/library.ts`); the open gap
+  = **custom monsters**, still one-off (the confirmed rung below closes it). The principle
+  **generalizes** — any FUTURE custom entity type (monsters, then species/feats/subclasses/
+  backgrounds/classes) persists to the library by default, never a throwaway.
 - **Homebrew — the full ladder:** (a) an account-level library promoting the per-character
   CustomSpell/Feature/Equipment/Weapon types to reusable account docs — **SHIPPED (2026-07-30)**
   on the owner-ratified **"custom IS the library"** model: ONE `users/{uid}/library/index` doc
@@ -1367,47 +1376,50 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   INJECTS the store's write seam (`combatPersistence` pattern), so the store + every card stay
   Firebase-free (`docs/ARCHITECTURE.md` → "The account-level homebrew library"); (b) campaign
   sharing of that library — the ladder's NEXT rung; (c) authoring types staged after the bestiary —
-  monster editor first (the reusable custom-monster library candidate below is that rung's first
-  cut — owner idea 2026-08-01), then species/feats/subclasses/backgrounds as declarative Grants; (d) homebrew
+  monster editor first (the reusable custom-monster library confirmed below is that rung's first
+  cut — owner-ratified 2026-08-01), then species/feats/subclasses/backgrounds as declarative Grants; (d) homebrew
   CLASSES declared the horizon flagship on the grants seam (DDB's #1 refused community ask),
   scheduled only once (c) proves the authoring UX. Homebrew is user data, never repo data — no #32
   impact.
-- **Reusable custom-monster library — "custom IS the library" for monsters (CANDIDATE — owner idea
-  2026-08-01):** a DM who builds a **custom monster** inside an encounter has it **auto-saved to a
-  reusable ACCOUNT-level library** — droppable into any encounter/campaign, editable/deletable, and
-  never rebuilt. The homebrew ladder's **"monster editor / reusable homebrew monsters"** rung
-  (charter rung (c), monster-editor-first). _Capturing analysis (orchestrator, 2026-08-01):_
-  - **Directly reuses the SHIPPED homebrew-library infra** — the `libraryStore` / `library-io` /
-    `LibraryEntry` seam and the **"custom IS the library"** pattern (`src/lib/library.ts`,
-    `library-io.ts`, `stores/libraryStore.ts`, `features/account/library-mount.ts`) — extended with a
-    `monster` kind on `LIBRARY_KINDS` / `LibraryDraft` (or a **sibling monster library** if the
-    encounter-monster shape doesn't fit the per-character custom-item union).
-  - **Wiring:** the encounter **Add-monster modal's Custom tab** (`encounter-bestiary.tsx` / the
-    `AddMonsterForm` in `party-encounter.tsx`) grows a "your custom monsters" list — **silent
-    auto-save on create, tap-to-add, edit/delete** — account-level, reusable across campaigns.
-  - **DDB-parity angle:** DDB has a monster/homebrew library.
-  - **Sequencing:** touches the SAME `AddMonsterForm` as the in-flight encounter-polish + the
-    combat-chronicle epic, so it sequences **after** those; **priority is the owner's call**.
-- **Custom-monster portrait/token image — DM uploads their OWN art (CANDIDATE — owner idea
-  2026-08-01):** encounter monsters can carry a **portrait/token image**, replacing the current
-  per-seed tinted initial token. Tightly coupled to the **reusable custom-monster library** candidate
-  above — a custom monster is saved WITH its portrait and reused across encounters/campaigns. Two
-  parts, DIFFERENT dispositions:
-  - **DOABLE + wanted — custom-monster image UPLOAD:** a DM uploads their OWN image as a custom
-    monster's portrait (a VTT-style token used ONLY as a portrait, never on a battle map — respects
-    Constitution §2.9, still no VTT). **Reuses the EXISTING character-portrait infrastructure** —
-    Firebase Storage upload + the crop flow already shipped for character portraits — so the DM is
-    responsible for their uploaded content, the SAME model as character portraits. Pairs with the
-    reusable custom-monster library (the portrait rides the saved custom monster).
-  - **NOT doable — internet/wiki monster ARTWORK is OFF the table (LEGAL): DECLINED, a non-goal.**
-    Pulling WotC/wiki/artist monster art off the internet is copyright infringement — the SRD's
-    CC-BY-4.0 licenses stats/text ONLY, **never the art** — and it violates the app's SRD-clean
-    licensing boundary, a real risk heading to GA/commercial (`docs/POSITIONING.md` → the deliberate
-    non-goals + the monetization boundary). No future agent revisits this. NEVER scraped art.
-  - **Legal alternatives for SRD-monster visuals (CANDIDATE, lower priority):** generic
-    **type-based icons the project draws itself** (dragon/humanoid/undead/beast glyphs — our own art,
-    zero copyright issue), OR **owner-generated monster art shipped in the PRIVATE pack** over time
-    (the BG3 art-pipeline model — personal/friends use only). Never scraped art.
+- **CONFIRMED — reusable custom-monster library ("custom IS the library" for monsters, owner-ratified
+  2026-08-01):** promoted from candidate to a CONFIRMED homebrew-ladder rung (charter rung (c),
+  monster-editor-first). Today a DM's custom monster is **one-off** — `AddMonsterForm`
+  (`src/features/campaigns/party-encounter.tsx`) appends an inline `EncounterMonster`
+  (`src/types/campaign.ts`) straight to `campaign.encounter.combatants`, persisting nothing; the same
+  monster is re-typed every encounter. The fix adds **`monster` as a 5th `LibraryEntry` kind** on the
+  SHIPPED homebrew infra (`LIBRARY_KINDS` / `LibraryDraft` in `src/lib/library.ts`, `library-io.ts`,
+  `stores/libraryStore.ts`, `features/account/library-mount.ts` — or a **sibling monster library** if
+  the encounter-monster shape doesn't fit the per-character custom-item union). The encounter
+  custom-monster flow **saves-to and re-adds-from the library exactly like custom items** — save
+  strips the per-encounter state to a **template**, re-add **re-seeds** a fresh `EncounterMonster` —
+  closing the one-off gap. Wiring: the Add-monster modal's **Custom** tab (`encounter-bestiary.tsx` /
+  `AddMonsterForm`) grows a "your custom monsters" list (silent auto-save on create, tap-to-add,
+  edit/delete), account-level and reusable across campaigns. **DDB-parity angle:** DDB has a
+  monster/homebrew library. **Has a visual surface → owner screenshot approval per golden rule 25;**
+  touches the encounter UI + the library store. The **override-first monster portraits** rung below
+  **rides this one** (a saved custom monster persists its portrait). Sequences **after** the in-flight
+  encounter-polish + combat-chronicle epic (same `AddMonsterForm`); priority is the owner's call.
+- **CONFIRMED — override-first monster portraits (owner-ratified 2026-08-01):** monsters gain a
+  **portrait slot** — real bestiary AND custom. Today they have NONE: `MonsterStatBlock`
+  (`src/data/types.ts`) and `EncounterMonster` carry no image/portrait/token field, and `MonsterCard`
+  renders a deterministic tinted-initial monogram. The slot's default **fills from LEGAL art tiers
+  ONLY** — verified public-domain / CC art where it cleanly matches (Wikimedia PD; a game-icons.net
+  CC-BY type-glyph as the universal fallback) plus owner-generated art in the private pack — and is
+  **ALWAYS user-overridable via upload**, **reusing the existing character-portrait system** (Firebase
+  Storage — `src/lib/storage.ts`, `users/{uid}/portraits/…` + `portraitCrop`/`portraitUrl` on
+  `CharacterDoc` + the `PortraitEditMenu` Re-crop / Upload new / Remove). This is the **RESOLUTION of
+  the internet-art problem:** the app **ships only legal art**; a user uploads their OWN image for any
+  monster (including copyrighted ones) on their own responsibility — the SAME model as character
+  portraits, and a VTT-style token used ONLY as a portrait, never on a battle map (respects
+  Constitution §2.9, still no VTT). The **internet/wiki-art DECLINE stays fully intact** — we still
+  never SHIP copyrighted/WotC art; this design routes AROUND it via legal-default + user-override,
+  **not** by shipping WotC art (`docs/POSITIONING.md` → the deliberate non-goals + the monetization
+  boundary; no future agent revisits the decline). Displayed in the encounter **beside the hero
+  portraits** + in the **bestiary**; a saved custom monster **persists its portrait** (rides the
+  reusable custom-monster-library rung above). **Image-sourcing reality:** no single CC source covers
+  the INVENTED, non-SRD signature D&D monsters — those are **owner-generated-or-user-
+  upload only**; PD/CC covers **real animals + classic myth**; art for the rest is an **automated
+  batch generation**, not hand-drawing. **Visual surface → owner screenshot approval per golden rule 25.**
 - **Public share links: SHIPPED 2026-07-31 — CHARACTERS ONLY, industry standard.** The
   decided LIVE model shipped as decided — a `shared: true` flag on the character doc + the unguessable doc id
   as the URL; rules allow anonymous read-only when flagged; revoke = flip the flag; noindex;
