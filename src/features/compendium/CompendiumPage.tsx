@@ -378,11 +378,15 @@ function CompendiumBrowser({
               className="cmp-tab"
               // No native focus-scroll on tap: focus is taken manually, scroll-free;
               // the ribbon hook owns ALL movement.
-              onPointerDown={(e) => e.preventDefault()}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.currentTarget.dataset.pointerFocus = "1";
+              }}
               onClick={(e) => {
                 e.currentTarget.focus({ preventScroll: true });
                 onSelectType(s.id);
               }}
+              onBlur={(e) => delete e.currentTarget.dataset.pointerFocus}
             >
               {s.icon && <Icon as={s.icon} decorative />}
               {s.label(t)}

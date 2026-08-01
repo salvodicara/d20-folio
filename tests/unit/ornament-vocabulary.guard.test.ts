@@ -86,16 +86,10 @@ describe("ornament vocabulary (T5)", () => {
     expect(folioCss).not.toMatch(/--orn-corners/);
     expect(indexCss).not.toMatch(/--orn-ink/);
     expect(folioCss).not.toMatch(/\.wiz-hero:not\(\.empty\)::before/);
-    // The active tab's ::before/::after are the STRUCTURAL junction curls (the
-    // one-piece tab↔page fillets, owner 2026-07-31) — allowed, but they must be
-    // the radial-fillet anatomy, never a decorative diamond/crest revival.
-    const curl = folioCss.match(
-      /\.cmp-tab\[aria-selected="true"\]::before[\s\S]{0,400}?radial-gradient/
-    );
-    expect(
-      curl,
-      "the active-tab ::before must be the radial junction fillet"
-    ).toBeTruthy();
+    // The junction curls died with the classic construction (owner,
+    // 2026-08-01: "è semplicemente il bordo del riquadro" — the seat line IS
+    // the panel's border, the active tab overlaps it, no pseudo ornaments).
+    expect(folioCss).not.toMatch(/\.cmp-tab\[aria-selected="true"\]::before/);
     expect(folioCss).not.toMatch(
       /\.wiz-pager-btn\.commit \.wiz-pager-seal\.gold::before/
     );

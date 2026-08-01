@@ -3507,9 +3507,9 @@ button.pr-dot.lg::before {
     var(--page-tone) 0 48px,
     var(--sheet-plate-body) 320px
   );
+  /* a NORMAL panel — the seat line IS this border (see .cmp-tome) */
   border: 1px solid var(--seat-ink);
-  border-top: 0;
-  border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
+  border-radius: var(--radius-2xl);
   overflow: hidden;
 }
 /* The cockpit's OWN page tones (the compendium keeps the global vellum pair):
@@ -9567,9 +9567,11 @@ button.create-need:focus-visible .create-need-chev {
    against the vellum photo; the band melts into the texture below. The dark
    vignette is dropped here (flat head band must stay flat to the corners). */
 .cmp-tome {
-  border-top: 0;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
+  /* A NORMAL panel (owner, 2026-08-01: "è semplicemente il bordo del
+     riquadro e avrebbe sempre dovuto esserlo"): full border, full rounding.
+     The seat line IS this border; the ACTIVE tab overlaps it 2px and its
+     page-tone fill merges with the head band beneath. */
+  border-radius: var(--radius-2xl);
   --leaf-head: var(--page-tone);
 }
 /* The page hosts (the tome; the sheet plate joins for the SHADOWS only —
@@ -9643,16 +9645,11 @@ button.create-need:focus-visible .create-need-chev {
      in the fade. */
   scroll-padding-inline: 44px;
   gap: 5px;
-  padding: 0 var(--sp-4);
-  /* THE SEAT LINE — never drawn where it must not exist (the lesson of three
-     failed cover-based rounds: sibling boxes snap to device pixels
-     independently, so ANY "cover the border" scheme leaks a fringe).
-     Construction: the line lives as (a) each RESTING tab's own border-bottom
-     (same box — flawless by construction) and (b) THIS row background, which
-     fills the gaps and the trailing run — a parent's background can never
-     paint over a child, so crossing the ACTIVE tab (transparent-bottomed,
-     nothing to cover) is impossible by paint order. */
-  background: linear-gradient(to top, var(--seat-ink) 0 1px, transparent 1px) no-repeat;
+  /* 2px of bottom padding: the row is a SCROLLER (overflow-x clips Y too),
+     and the active tab's 2px drop over the panel border must stay inside
+     the padding box or the scroller cuts it. The shell's -2px puts the
+     panel back where it was. */
+  padding: 0 var(--sp-4) 2px;
 }
 .cmp-ribbon::-webkit-scrollbar,
 .wb .tabstrip::-webkit-scrollbar {
@@ -9669,46 +9666,10 @@ button.create-need:focus-visible .create-need-chev {
      dissolve MASK makes it a stacking context that traps any per-tab z-index,
      so the lift must live on the SHELL — one mechanism at every viewport. */
   z-index: 1;
+  /* compensates the row's 2px overlap padding (see the row rule) */
+  margin-bottom: -2px;
 }
 
-/* The junction curls — the active tab's feet flare into the page with two
-   concave fillets (the folder-tab pattern), the arc drawn in the SAME ink as
-   the page border so tab + page read as one continuous stroke. Fill = the
-   calibrated page tone (see the fusion notes on the aria-selected rules). */
-.cmp-tab[aria-selected="true"]::before,
-.cmp-tab[aria-selected="true"]::after,
-.wb .tabstrip [role="tab"][aria-selected="true"]::before,
-.wb .tabstrip [role="tab"][aria-selected="true"]::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  width: 8px;
-  height: 8px;
-  --curl-ink: var(--seat-ink);
-  --curl-fill: var(--page-tone);
-}
-.cmp-tab[aria-selected="true"]::before,
-.wb .tabstrip [role="tab"][aria-selected="true"]::before {
-  left: -8px;
-  background: radial-gradient(
-    circle at 0 0,
-    transparent 6.5px,
-    var(--curl-ink) 6.5px,
-    var(--curl-ink) 7.8px,
-    var(--curl-fill) 7.8px
-  );
-}
-.cmp-tab[aria-selected="true"]::after,
-.wb .tabstrip [role="tab"][aria-selected="true"]::after {
-  right: -8px;
-  background: radial-gradient(
-    circle at 100% 0,
-    transparent 6.5px,
-    var(--curl-ink) 6.5px,
-    var(--curl-ink) 7.8px,
-    var(--curl-fill) 7.8px
-  );
-}
 .cmp-ribbon-shell[data-fade="l"] .cmp-ribbon,
 .tabstrip-shell[data-fade="l"] .tabstrip {
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px);
@@ -9841,15 +9802,29 @@ button.create-need:focus-visible .create-need-chev {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
+/* Pointer-origin focus (the anti-jump manual focus()) never rings — only the
+   keyboard's earns the outline (the data flag is set at pointerdown, cleared
+   on blur/keydown). */
+.cmp-tab[data-pointer-focus]:focus-visible,
+.wb .tabstrip [role="tab"][data-pointer-focus]:focus-visible {
+  outline: none;
+}
 .cmp-tab[aria-selected="true"],
 .wb .tabstrip [role="tab"][aria-selected="true"] {
   color: var(--accent-text);
   /* the seat ink — the tab's outline continues the page's stroke */
   border-color: var(--seat-ink);
   border-bottom-color: transparent;
-  /* THE FUSION: this fill EQUALS the page's head band by token identity
-     (`--page-tone`) — never a calibration against the vellum photo. */
+  /* THE FUSION: the fill EQUALS the panel's head band (`--page-tone`), and
+     the tab overlaps the panel border by 2px — in a stretch flex row a
+     negative margin alone does NOT extend the box, so the box itself grows
+     (38px) while the margin returns its LAYOUT size to 36 and the padding
+     keeps the label optically centered. Two opaque device rows over a 1px
+     border: sub-pixel layout can never leave a fringe. */
   background: var(--page-tone);
+  height: 38px;
+  margin-bottom: -2px;
+  padding-bottom: 2px;
   /* NO box-shadow: the active tab is a PIECE OF THE PAGE (owner, 2026-07-31 —
      "un pezzo unico"); a halo ring would draw a line across the fused base.
      Identity = gold ink + the one continuous border stroke. */

@@ -77,12 +77,24 @@ export function TabStrip() {
               aria-selected={selected}
               aria-controls={panelDomId(uid, tab.id)}
               tabIndex={selected ? 0 : -1}
-              onPointerDown={(e) => e.preventDefault()}
+              // data-pointer-focus: our anti-jump focus() is PROGRAMMATIC, so
+              // :focus-visible matches even on a real tap and ringed every
+              // click (owner, 2026-08-01). The flag marks pointer-origin focus
+              // so CSS silences the ring for it; keyboard paths clear it and
+              // keep the ring.
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.currentTarget.dataset.pointerFocus = "1";
+              }}
               onClick={(e) => {
                 e.currentTarget.focus({ preventScroll: true });
                 selectTab(tab.id);
               }}
-              onKeyDown={(e) => onTabKeyDown(e, index)}
+              onBlur={(e) => delete e.currentTarget.dataset.pointerFocus}
+              onKeyDown={(e) => {
+                delete e.currentTarget.dataset.pointerFocus;
+                onTabKeyDown(e, index);
+              }}
             >
               <Icon as={tab.icon} size="sm" decorative />
               {t(tab.labelKey, tab.defaultLabel)}
