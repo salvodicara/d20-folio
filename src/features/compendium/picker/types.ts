@@ -152,7 +152,8 @@ export interface CompendiumVerdict {
  * browse-only types (e.g. feats) simply omit them.
  */
 export interface CompendiumPickerSpec<T> {
-  /** Stable id: "spell" | "feature" | "feat" | "equipment" | "magic-item". */
+  /** Stable registry id: "spell" | "feature" | "feat" | "items" | "monster" …
+   *  (`equipment`/`magic-item` are the two per-corpus specs `items` delegates to). */
   id: string;
   /** Type label for the compendium type selector (EN inline default). */
   label: (t: TFn) => string;

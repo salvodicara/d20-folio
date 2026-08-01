@@ -175,12 +175,12 @@ for (const surface of SURFACES) {
 const WORST_NAME_SURFACES: { slug: string; route: string; anchor: RegExp }[] = [
   {
     slug: "compendium-magic-item-longest",
-    route: "/compendium?type=magic-item&q=incensiere",
+    route: "/compendium?type=items&q=incensiere",
     anchor: /Incensiere del Controllo degli Elementali dell'Aria/,
   },
   {
     slug: "compendium-equipment-longest",
-    route: "/compendium?type=equipment&q=custodia",
+    route: "/compendium?type=items&q=custodia",
     anchor: /Custodia per mappe o pergamene/,
   },
   {
