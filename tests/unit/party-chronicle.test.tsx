@@ -243,6 +243,44 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     expect(screen.queryByRole("button", { name: /Log a pass/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Log a miss/ })).toBeNull();
   });
+
+  it("a fused MULTI-target line renders one summary line + an UNCERTAIN marker, no picker", () => {
+    // Rows for a three-foe volley (the Chief + Ogre alongside the Goblin).
+    const rows3: EncounterCombatantView[] = [
+      ...ROWS,
+      { ...ROWS[1], id: "monster-2", name: "Chief" } as EncounterCombatantView,
+    ];
+    const fused: ReconciledEvent = reco(
+      {
+        kind: "attack-multi",
+        id: "multi-mara:5",
+        round: 1,
+        attackerId: "pc-mara",
+        targetIds: ["monster-1", "monster-2"],
+        amounts: [
+          { targetId: "monster-1", amount: 22 },
+          { targetId: "monster-2", amount: 11 },
+        ],
+      },
+      { auto: true, uncertain: true }
+    );
+    render(
+      <ChronicleFeed
+        events={[fused]}
+        rows={rows3}
+        memberDetails={{}}
+        currentId="pc-mara"
+        apply={vi.fn()}
+      />
+    );
+    // ONE line summarizing both real amounts (never two individual drop lines).
+    expect(screen.getByText(/Mara hits Goblin \(22\) and Chief \(11\)/)).toBeTruthy();
+    // The subtle uncertain marker is present…
+    expect(screen.getByLabelText(/Uncertain/)).toBeTruthy();
+    // …but a fused multi line is NOT an hp-damage line, so it offers NO attacker picker
+    // (its override is deletion at end-entry, like any synthesized line).
+    expect(screen.queryByRole("button", { name: "No one" })).toBeNull();
+  });
 });
 
 describe("EndEncounterDialog — the editable end entry", () => {

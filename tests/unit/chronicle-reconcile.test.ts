@@ -1,20 +1,30 @@
 /**
- * chronicle-reconcile — the PURE correlation layer of the auto-narrated combat epic.
- * Proves the deterministic, never-fabricated fusion of the players' declared attacks with
- * the DM's observed HP deltas:
+ * chronicle-reconcile — the PURE correlation layer of the auto-narrated combat epic
+ * (Phase 1 single-target + Phase 2 multi-target fusion). Proves the deterministic,
+ * never-fabricated fusion of the players' declared actions with the DM's observed HP
+ * deltas:
  *
- *  - declared HIT + a matching pending HP drop ⇒ CONFIRMED auto-attributed line (amount =
- *    the DM's real delta);
- *  - declared MISS ⇒ a CERTAIN synthesized miss line (no HP);
- *  - ambiguous match (>1 declarer) ⇒ UNCERTAIN-marked, never dropped, never invented;
- *  - a declared hit with NO delta ⇒ NO line (never fabricate an amount);
- *  - a delta with NO declaration ⇒ stays PENDING (the Phase-0 one-tap fallback).
+ *  SINGLE-target:
+ *   - declared HIT + a matching pending HP drop ⇒ CONFIRMED auto-attributed line (amount =
+ *     the DM's real delta);
+ *   - declared MISS ⇒ a CERTAIN synthesized miss line (no HP);
+ *   - ambiguous match (>1 declarer) ⇒ UNCERTAIN-marked, never dropped, never invented;
+ *   - a declared hit with NO delta ⇒ NO line (never fabricate an amount);
+ *   - a delta with NO declaration ⇒ stays PENDING (the Phase-0 one-tap fallback).
+ *
+ *  MULTI-target (Phase 2):
+ *   - a declared AoE HIT + the several drops the DM applied ⇒ ONE fused `attack-multi`
+ *     line carrying each struck target's REAL amount; the individual drops are consumed;
+ *   - a declared target with NO in-window drop ⇒ OMITTED (never an invented number);
+ *   - drops that can't cleanly match the set (over the instance bound, or a competing
+ *     declaration) ⇒ UNCERTAIN, and the instance bound caps how many drops it may claim;
+ *   - a multi MISS ⇒ ONE line naming the whole set, no amounts.
  */
 import { describe, it, expect } from "vitest";
 import {
   reconcileChronicle,
   flattenDeclarations,
-  type DeclaredAttack,
+  type DeclaredAction,
 } from "@/features/campaigns/chronicle-reconcile";
 import type { CombatChronicleEvent } from "@/types/combat-chronicle";
 import type { CombatState } from "@/types/combat-state";
@@ -41,25 +51,33 @@ const hit = (
   attackerId: string,
   targetId: string,
   round: number
-): DeclaredAttack => ({
-  id,
-  attackerId,
-  targetId,
-  outcome: "hit",
-  round,
-});
+): DeclaredAction => ({ id, attackerId, targetIds: [targetId], outcome: "hit", round });
 const miss = (
   id: string,
   attackerId: string,
   targetId: string,
   round: number
-): DeclaredAttack => ({ id, attackerId, targetId, outcome: "miss", round });
+): DeclaredAction => ({ id, attackerId, targetIds: [targetId], outcome: "miss", round });
+const multiHit = (
+  id: string,
+  attackerId: string,
+  targetIds: string[],
+  round: number,
+  instances?: number
+): DeclaredAction => ({
+  id,
+  attackerId,
+  targetIds,
+  outcome: "hit",
+  round,
+  ...(instances !== undefined ? { instances } : {}),
+});
 
 describe("reconcileChronicle — HIT auto-attribution (confirmed)", () => {
   it("a declared hit + a matching pending delta ⇒ CONFIRMED, amount = the DM's delta", () => {
     const out = reconcileChronicle(
       [dmg("0", "monster-1", 2, 8)],
-      [hit("mara:1:monster-1", "pc-mara", "monster-1", 2)]
+      [hit("mara:1", "pc-mara", "monster-1", 2)]
     );
     expect(out).toHaveLength(1);
     expect(out[0]?.auto).toBe(true);
@@ -74,7 +92,7 @@ describe("reconcileChronicle — HIT auto-attribution (confirmed)", () => {
   it("only matches within the SAME (target, round) — a mismatched round stays pending", () => {
     const out = reconcileChronicle(
       [dmg("0", "monster-1", 3)],
-      [hit("mara:1:monster-1", "pc-mara", "monster-1", 2)] // declared round 2, delta round 3
+      [hit("mara:1", "pc-mara", "monster-1", 2)] // declared round 2, delta round 3
     );
     // The delta is untouched (still pending); the round-2 hit found no delta → NO line.
     expect(out).toHaveLength(1);
@@ -93,7 +111,7 @@ describe("reconcileChronicle — HIT auto-attribution (confirmed)", () => {
     };
     const out = reconcileChronicle(
       [already, skipped],
-      [hit("mara:1:monster-1", "pc-mara", "monster-1", 2)]
+      [hit("mara:1", "pc-mara", "monster-1", 2)]
     );
     // Neither stored event is touched; the hit had no PENDING delta → no new line.
     expect(out).toHaveLength(2);
@@ -105,16 +123,13 @@ describe("reconcileChronicle — HIT auto-attribution (confirmed)", () => {
 
 describe("reconcileChronicle — MISS (certain, no HP)", () => {
   it("a declared miss ⇒ a CERTAIN synthesized attack-miss line", () => {
-    const out = reconcileChronicle(
-      [],
-      [miss("mara:1:monster-1", "pc-mara", "monster-1", 2)]
-    );
+    const out = reconcileChronicle([], [miss("mara:1", "pc-mara", "monster-1", 2)]);
     expect(out).toHaveLength(1);
     expect(out[0]?.auto).toBe(true);
     expect(out[0]?.uncertain).toBeUndefined();
     expect(out[0]?.event).toEqual({
       kind: "attack-miss",
-      id: "miss-mara:1:monster-1",
+      id: "miss-mara:1",
       round: 2,
       attackerId: "pc-mara",
       targetId: "monster-1",
@@ -124,10 +139,7 @@ describe("reconcileChronicle — MISS (certain, no HP)", () => {
 
 describe("reconcileChronicle — never fabricate", () => {
   it("a declared hit with NO delta produces NO line (amount is never invented)", () => {
-    const out = reconcileChronicle(
-      [],
-      [hit("mara:1:monster-1", "pc-mara", "monster-1", 2)]
-    );
+    const out = reconcileChronicle([], [hit("mara:1", "pc-mara", "monster-1", 2)]);
     expect(out).toEqual([]);
   });
 
@@ -143,10 +155,7 @@ describe("reconcileChronicle — ambiguity ⇒ uncertain (never dropped/fabricat
   it("two declarers on the same target/round ⇒ paired but UNCERTAIN-marked", () => {
     const out = reconcileChronicle(
       [dmg("0", "monster-1", 2, 8), dmg("1", "monster-1", 2, 5)],
-      [
-        hit("bren:1:monster-1", "pc-bren", "monster-1", 2),
-        hit("mara:1:monster-1", "pc-mara", "monster-1", 2),
-      ]
+      [hit("bren:1", "pc-bren", "monster-1", 2), hit("mara:1", "pc-mara", "monster-1", 2)]
     );
     expect(out).toHaveLength(2);
     // Both deltas are attributed (never dropped) with their REAL amounts, both uncertain.
@@ -159,7 +168,7 @@ describe("reconcileChronicle — ambiguity ⇒ uncertain (never dropped/fabricat
   it("a SINGLE declarer with multiple deltas stays CERTAIN (one possible attacker)", () => {
     const out = reconcileChronicle(
       [dmg("0", "monster-1", 2, 8), dmg("1", "monster-1", 2, 5)],
-      [hit("mara:1:monster-1", "pc-mara", "monster-1", 2)]
+      [hit("mara:1", "pc-mara", "monster-1", 2)]
     );
     // Only the first delta pairs (1:1); it is certain. The second stays pending.
     expect(out[0]?.auto).toBe(true);
@@ -174,13 +183,128 @@ describe("reconcileChronicle — feed order (round-grouped, stable)", () => {
   it("miss lines slot into their round after the stored beats", () => {
     const out = reconcileChronicle(
       [dmg("0", "monster-1", 1), dmg("1", "monster-1", 2)],
-      [miss("mara:9:monster-1", "pc-mara", "monster-1", 1)]
+      [miss("mara:9", "pc-mara", "monster-1", 1)]
     );
     expect(out.map((r) => [r.event.round, r.event.kind])).toEqual([
       [1, "hp-damage"], // round-1 stored beat
       [1, "attack-miss"], // round-1 miss slots after it
       [2, "hp-damage"], // round-2 beat
     ]);
+  });
+});
+
+describe("reconcileChronicle — MULTI-target fusion (Phase 2)", () => {
+  it("a 3-target AoE HIT + 3 matching drops ⇒ ONE line with the 3 REAL amounts", () => {
+    const out = reconcileChronicle(
+      [
+        dmg("0", "monster-1", 2, 22),
+        dmg("1", "monster-2", 2, 22),
+        dmg("2", "monster-3", 2, 11),
+      ],
+      [multiHit("cor:5", "pc-cor", ["monster-1", "monster-2", "monster-3"], 2, 3)]
+    );
+    // The three individual drops are FUSED into one summary line — never double-rendered.
+    expect(out).toHaveLength(1);
+    expect(out[0]?.auto).toBe(true);
+    expect(out[0]?.uncertain).toBeUndefined();
+    expect(out[0]?.event).toEqual({
+      kind: "attack-multi",
+      id: "multi-cor:5",
+      round: 2,
+      attackerId: "pc-cor",
+      targetIds: ["monster-1", "monster-2", "monster-3"],
+      amounts: [
+        { targetId: "monster-1", amount: 22 },
+        { targetId: "monster-2", amount: 22 },
+        { targetId: "monster-3", amount: 11 },
+      ],
+    });
+  });
+
+  it("3 targets declared but only 2 drops ⇒ binds the 2, third OMITTED (not fabricated)", () => {
+    const out = reconcileChronicle(
+      [dmg("0", "monster-1", 2, 22), dmg("1", "monster-2", 2, 18)],
+      [multiHit("cor:5", "pc-cor", ["monster-1", "monster-2", "monster-3"], 2, 3)]
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]?.uncertain).toBeUndefined(); // a missing target is normal, not ambiguous
+    expect(out[0]?.event).toMatchObject({
+      kind: "attack-multi",
+      amounts: [
+        { targetId: "monster-1", amount: 22 },
+        { targetId: "monster-2", amount: 18 },
+      ],
+    });
+    // monster-3 (declared, no drop) never appears in the amounts — no invented number.
+    const multi = out[0]?.event;
+    if (multi?.kind !== "attack-multi") throw new Error("expected attack-multi");
+    expect(multi.amounts.some((a) => a.targetId === "monster-3")).toBe(false);
+  });
+
+  it("the instance bound caps how many drops fuse; extra drops stay PENDING + mark UNCERTAIN", () => {
+    // instances = 2, but THREE pending drops fall on the declared set this round.
+    const out = reconcileChronicle(
+      [
+        dmg("0", "monster-1", 2, 10),
+        dmg("1", "monster-1", 2, 10),
+        dmg("2", "monster-2", 2, 5),
+      ],
+      [multiHit("cor:5", "pc-cor", ["monster-1", "monster-2"], 2, 2)]
+    );
+    // The fused line claims only the FIRST 2 (both on monster-1 = 20) — bound respected.
+    const fused = out.find((r) => r.event.kind === "attack-multi");
+    expect(fused?.uncertain).toBe(true); // more drops than the action can own
+    if (fused?.event.kind !== "attack-multi") throw new Error("expected attack-multi");
+    expect(fused.event.amounts).toEqual([{ targetId: "monster-1", amount: 20 }]);
+    // The un-claimed 3rd drop (monster-2, 5) survives as its own PENDING line — never lost.
+    const leftover = out.find((r) => r.event.kind === "hp-damage" && r.event.id === "2");
+    expect(leftover?.auto).toBeUndefined();
+    expect(leftover?.event).not.toHaveProperty("attackerId");
+  });
+
+  it("a competing declaration on a shared target/round marks the fused line UNCERTAIN", () => {
+    const out = reconcileChronicle(
+      [dmg("0", "monster-1", 2, 22), dmg("1", "monster-2", 2, 11)],
+      [
+        multiHit("cor:5", "pc-cor", ["monster-1", "monster-2"], 2, 2),
+        hit("bren:1", "pc-bren", "monster-1", 2), // another attacker claims monster-1
+      ]
+    );
+    const fused = out.find((r) => r.event.kind === "attack-multi");
+    expect(fused?.uncertain).toBe(true);
+  });
+
+  it("a multi-target MISS ⇒ ONE line naming the whole set, NO amounts", () => {
+    const out = reconcileChronicle(
+      [],
+      [
+        {
+          id: "cor:5",
+          attackerId: "pc-cor",
+          targetIds: ["monster-1", "monster-2"],
+          outcome: "miss",
+          round: 2,
+          instances: 3,
+        },
+      ]
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]?.event).toEqual({
+      kind: "attack-multi",
+      id: "multi-cor:5",
+      round: 2,
+      attackerId: "pc-cor",
+      targetIds: ["monster-1", "monster-2"],
+      amounts: [],
+    });
+  });
+
+  it("a multi HIT that landed NO drop yet ⇒ NO line (never fabricate)", () => {
+    const out = reconcileChronicle(
+      [],
+      [multiHit("cor:5", "pc-cor", ["monster-1", "monster-2"], 2, 3)]
+    );
+    expect(out).toEqual([]);
   });
 });
 
@@ -194,25 +318,42 @@ describe("flattenDeclarations — the per-member ring → declaration list", () 
     recentActions,
   });
 
-  it("derives pc-<uid> attacker ids + a stable global id per (uid, action, target)", () => {
+  it("keeps the target SET together, derives pc-<uid> ids + a stable (uid, action) id", () => {
     const out = flattenDeclarations({
       mara: state([{ id: "1", targetIds: ["monster-0"], outcome: "hit", round: 2 }]),
+      cor: state([
+        {
+          id: "5",
+          targetIds: ["monster-0", "monster-1"],
+          outcome: "hit",
+          round: 3,
+          instances: 3,
+        },
+      ]),
       bren: state([{ id: "3", targetIds: ["monster-1"], outcome: "miss", round: 2 }]),
       absent: null,
       loading: undefined,
     });
     expect(out).toEqual([
       {
-        id: "mara:1:monster-0",
+        id: "mara:1",
         attackerId: "pc-mara",
-        targetId: "monster-0",
+        targetIds: ["monster-0"],
         outcome: "hit",
         round: 2,
       },
       {
-        id: "bren:3:monster-1",
+        id: "cor:5",
+        attackerId: "pc-cor",
+        targetIds: ["monster-0", "monster-1"],
+        outcome: "hit",
+        round: 3,
+        instances: 3, // the multi-instance drop bound rides the flattened declaration
+      },
+      {
+        id: "bren:3",
         attackerId: "pc-bren",
-        targetId: "monster-1",
+        targetIds: ["monster-1"],
         outcome: "miss",
         round: 2,
       },
