@@ -1582,7 +1582,7 @@ The pieces and their ONE home (`src/styles/folio.css`; the metal tokens in `src/
   size: a small jewel that reads as worked metal beats a large flat one. EXACTLY three earned
   registers wear it (Constitution §4.16):
   the framed realm masthead (`.page-head.framed::before`), the gilt-framed hero band
-  (`.folio-panel.gilt-frame::after` — cockpit identity), and dialogs (`.modal::after`).
+  (`.folio-panel.gilt-frame::after` — cockpit identity), and dialog HEAD BANDS (`.modal-head::after`, scaled to 32px — the bound-cover ruling, owner 2026-08-01: the fittings frame the head like the page mastheads frame theirs; the modal body stays clean and rounds at its foot, `0 0 radius-lg radius-lg`).
   Mechanism: the binding-corner spandrel silhouette (CC0-derived,
   `public/assets/ornaments/corner-*.svg`) rendered as four CSS mask layers painted with the
   hero-frame border's own ink mix, on an overlay pseudo at `inset: -1px` — the tile origin

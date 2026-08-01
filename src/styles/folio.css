@@ -2296,10 +2296,9 @@ button.pr-dot.lg::before {
   align-items: flex-start;
   gap: var(--sp-3);
   padding: var(--sp-4) var(--sp-5) var(--sp-3);
-  /* The head's gradient is the modal's one full-bleed child paint: with the card
-     no longer overflow-clipping (the corner goldwork straddles the frame), the
-     band rounds its own top corners to sit inside the card's 1px border arc. */
-  border-radius: calc(var(--radius-xl) - 1px) calc(var(--radius-xl) - 1px) 0 0;
+  /* Square corners — the head HOSTS the binding fittings now, and the shared
+     law demands square corners beneath a fitting. */
+  border-radius: 0;
   /* The head's seat rule is the `.sec-rule` idiom (full-BG3 push): a gilt-touched
      hairline that FADES AT BOTH TIPS instead of a wall-to-wall border — the
      border-image bottom slice of a to-right gradient paints exactly that. */
@@ -9682,12 +9681,14 @@ button.create-need:focus-visible .create-need-chev {
   -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent 100%);
   mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent 100%);
 }
-/* THE FRAME'S MARGIN (owner, 2026-07-31: content must never contest the
-   binding corners) — one law, two guards:
+/* THE FRAME'S MARGIN (owner, 2026-07-31) — the fittings left the modal foot
+   for the head band (2026-08-01), but the law stands on its own legs: a
+   uniform safe field reads premium, and the dissolve still needs a calm
+   ground to melt into. One law, two guards:
    1. A uniform SAFE FIELD (sp-6) between the content and the frame on the
       sides and at rest at the tail — the book-margin principle: rows keep a
-      professional distance from the spandrels horizontally always, and the
-      last row lands clear vertically. One token, no per-dialog cushions.
+      professional distance from the frame horizontally always, and the last
+      row lands with air beneath. One token, no per-dialog cushions.
    2. The DISSOLVE below guards the MOVING edge: scroller padding cannot
       protect mid-scroll rows (padding scrolls with content), so rows melt
       36px before the frame while more content hides, and the fade lifts at
@@ -20995,7 +20996,7 @@ body:has(.fob) .toast-region {
 /* Dialogs are the LEATHER working plate (§16.2 — slate is the ceremony
    register only), FLOATING: the plate material above + the modal's own
    deeper elevation in both themes (placed after both twins so it wins).
-   The binding corners already ride `.modal::after`. */
+   The binding corners ride the head band (`.modal-head::after`). */
 .wb .modal,
 [data-theme="light"] .wb .modal {
   box-shadow: var(--elev-modal);
