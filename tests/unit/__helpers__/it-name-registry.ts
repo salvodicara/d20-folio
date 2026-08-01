@@ -546,16 +546,47 @@ function proseStrings(v: unknown, out: string[]): void {
       if (k !== "name") proseStrings(val, out);
 }
 
+/**
+ * One SRD kind's catalogue for a locale under `root` — the COMPOSED shape. Reads the
+ * single `srd/<kind>.json` file AND, when present, merges every `srd/<kind>/*.json`
+ * fragment. The content pack PARTITIONS its monster catalogue into per-tranche
+ * fragments (`content-pack/i18n/<locale>/srd/monsters/<tranche>.json`) for
+ * parallel-safe authoring, so this guard must merge them or it would silently stop
+ * checking pack monster names. `undefined` = the kind has neither file nor fragment
+ * directory under this root (skip it for this root).
+ */
+function readSrdKind(
+  root: string,
+  locale: string,
+  kind: string
+): Record<string, unknown> | undefined {
+  const file = resolve(root, locale, "srd", kind + ".json");
+  const dir = resolve(root, locale, "srd", kind);
+  let out: Record<string, unknown> | undefined;
+  if (existsSync(file)) {
+    out = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+  }
+  if (existsSync(dir)) {
+    out ??= {};
+    for (const f of readdirSync(dir)) {
+      if (!f.endsWith(".json")) continue;
+      Object.assign(
+        out,
+        JSON.parse(readFileSync(resolve(dir, f), "utf8")) as Record<string, unknown>
+      );
+    }
+  }
+  return out;
+}
+
 /** Load every entity across the given i18n roots (e.g. [".../src/i18n", ".../content-pack/i18n"]). */
 export function loadEntities(roots: string[]): Ent[] {
   const ents: Ent[] = [];
   for (const root of roots) {
     for (const kind of KINDS) {
-      const enP = resolve(root, "en", "srd", kind + ".json");
-      const itP = resolve(root, "it", "srd", kind + ".json");
-      if (!existsSync(enP) || !existsSync(itP)) continue;
-      const en = JSON.parse(readFileSync(enP, "utf8")) as Record<string, unknown>;
-      const it = JSON.parse(readFileSync(itP, "utf8")) as Record<string, unknown>;
+      const en = readSrdKind(root, "en", kind);
+      const it = readSrdKind(root, "it", kind);
+      if (en === undefined || it === undefined) continue;
       for (const [id, evRaw] of Object.entries(en)) {
         if (id.includes(".") || typeof evRaw !== "object" || evRaw === null) continue;
         const ev = evRaw as Record<string, unknown>;
@@ -596,9 +627,8 @@ export function loadSubEntityProse(roots: string[]): Ent[] {
   const ents: Ent[] = [];
   for (const root of roots) {
     for (const kind of KINDS) {
-      const itP = resolve(root, "it", "srd", kind + ".json");
-      if (!existsSync(itP)) continue;
-      const it = JSON.parse(readFileSync(itP, "utf8")) as Record<string, unknown>;
+      const it = readSrdKind(root, "it", kind);
+      if (it === undefined) continue;
       for (const [id, ivRaw] of Object.entries(it)) {
         if (!id.includes(".") || typeof ivRaw !== "object" || ivRaw === null) continue;
         const fields: string[] = [];

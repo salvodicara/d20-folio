@@ -9,7 +9,8 @@
  * See docs/ARCHITECTURE.md → "The content-pack seam".
  *
  * This stub also serves the pack's ONE sub-entry alias, `@pack/monsters` (which
- * in pack mode resolves to `content-pack/data/monsters.ts`, deliberately OFF the
+ * in pack mode resolves to `content-pack/data/monsters/index.ts`, the tranche
+ * barrel, deliberately OFF the
  * eager-reachable barrel) — so `packMonsters` below is the stub's twin for BOTH
  * aliases. One empty stub, no second file to keep in step; the extra empty
  * exports tree-shake away.

@@ -33,7 +33,8 @@ export const CONTENT_PACK_MONSTERS_ENTRY = path.join(
   ROOT,
   "content-pack",
   "data",
-  "monsters.ts"
+  "monsters",
+  "index.ts"
 );
 
 /** True when this build/test run composes the private content pack in. */

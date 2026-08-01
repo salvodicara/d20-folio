@@ -44,7 +44,10 @@
        SRD-only falls back to the SAME typed-empty stub. */
     "paths": {
       "@/*": ["./src/*"],
-      "@pack/monsters": ["./content-pack/data/monsters.ts", "./src/data/pack-empty.ts"],
+      "@pack/monsters": [
+        "./content-pack/data/monsters/index.ts",
+        "./src/data/pack-empty.ts"
+      ],
       "@pack": ["./content-pack/index.ts", "./src/data/pack-empty.ts"],
       "@tests/*": ["./tests/*"],
       "@scripts/*": ["./scripts/*"]

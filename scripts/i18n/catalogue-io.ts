@@ -95,7 +95,23 @@ export function mergedUi(locale: Locale): Json {
 export function srdCatalogue(locale: Locale, file: string): Json {
   const base = readShard(locale, "srd", file);
   if (!contentPackEnabled()) return base;
-  const packPath = join(PACK_I18N_ROOT, locale, "srd", `${file}.json`);
-  if (!existsSync(packPath)) return base;
-  return Object.assign({}, base, JSON.parse(readFileSync(packPath, "utf-8")) as Json);
+  const merged: Json = { ...base };
+  // A pack shard is either a single `srd/<file>.json` OR a `srd/<file>/` directory of
+  // per-tranche fragments (the monster corpus is partitioned for parallel-safe
+  // authoring; docs/ARCHITECTURE.md → content-pack seam). Merge whichever is present.
+  const packFile = join(PACK_I18N_ROOT, locale, "srd", `${file}.json`);
+  if (existsSync(packFile)) {
+    Object.assign(merged, JSON.parse(readFileSync(packFile, "utf-8")) as Json);
+  }
+  const packDir = join(PACK_I18N_ROOT, locale, "srd", file);
+  if (existsSync(packDir)) {
+    for (const frag of readdirSync(packDir)) {
+      if (!frag.endsWith(".json")) continue;
+      Object.assign(
+        merged,
+        JSON.parse(readFileSync(join(packDir, frag), "utf-8")) as Json
+      );
+    }
+  }
+  return merged;
 }
