@@ -1080,7 +1080,13 @@ bordo del riquadro e avrebbe sempre dovuto esserlo"): the page hosts are normal 
 full `--seat-ink` border, fully rounded corners — and the ACTIVE tab simply overlaps that border
 by 2px (box height 38px + margin −2px, painted inside the scroller row's 2px bottom padding:
 `overflow-x` clips at the padding box), its `--page-tone` fill merging with the panel's head band.
-No pseudo ornaments, no synthetic lines. The tab focus ring is KEYBOARD-ONLY: the anti-jump
+No pseudo ornaments, no synthetic lines — and **no per-tab bottom stroke**: a RESTING tab's
+bottom border is transparent in every state and theme, because the panel's one seat line already
+runs beneath the whole strip (a tab-own stroke stacked on it as a thicker, brighter segment —
+owner, 2026-08-01: "ogni linguetta un bordo inferiore dorato che non dovrebbe esserci").
+`--seat-ink` lives in `:root` (lazy substitution resolves it per theme; scoped to the dark block
+it silently zeroed the light cockpit's whole panel border), and `.tome-leaf-surface` consumes the
+same token — one ink, no inlined twin mixes. The tab focus ring is KEYBOARD-ONLY: the anti-jump
 programmatic `focus()` matches `:focus-visible` even on real taps, so a `data-pointer-focus` flag
 (set at pointerdown, cleared on blur/keydown) silences the ring for pointer-origin focus. The
 reveal gap (`scroll-padding-inline: 44px`, honored by `useActiveTabScroll`) lands a just-revealed

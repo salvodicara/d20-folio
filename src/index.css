@@ -46,6 +46,13 @@
     var(--metal-silver)
   );
 
+  /* § Index-tab construction (DESIGN.md → Tabs) — the ONE seat-line ink.
+     Theme-agnostic by the same derivation as --frame-selected: substitution is
+     lazy, so each theme resolves the mix through its own accent/border tokens.
+     (It once lived inside the dark block only — the light cockpit lost its
+     whole panel border to the unresolved var, owner report 2026-08-01.) */
+  --seat-ink: color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
+
   /* Legibility floor — the smallest size ANY state-cue / label may use. Sub-10px
      text (the old 8px eyebrows / ritual tag) is illegible at default zoom for
      low-vision users and degrades badly on reflow. New cues inherit this. */
@@ -619,10 +626,9 @@
     0 0 0 1px var(--glow-stroke-gold), 0 0 24px rgba(184, 146, 61, 0.2),
     0 0 1px rgba(212, 172, 77, 0.55);
 
-  /* § Index-tab construction (DESIGN.md → Tabs) — the ONE seat-line ink and
-     the ONE flat page-head tone (the active tab's fill EQUALS the page band
-     by token identity; the mix resolves per theme via its inner tokens). */
-  --seat-ink: color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
+  /* § Index-tab construction (DESIGN.md → Tabs) — the ONE flat page-head tone
+     (the active tab's fill EQUALS the page band by token identity; the shared
+     --seat-ink lives in :root). */
   --page-tone: #130d07;
 
   /* Vellum grain + atmosphere — a warm gold pool top-left, a cool lapis pool

@@ -9501,7 +9501,8 @@ button.create-need:focus-visible .create-need-chev {
      scroll, dark swaps in the pre-graded dark vellum below — one recipe, one
      indirection, no duplicated structure. */
   --tome-leaf: var(--asset-parchment);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
+  /* the ONE seat-line ink (was this same mix inlined — one token, one truth) */
+  border: 1px solid var(--seat-ink);
   border-radius: var(--radius-2xl);
   /* OWN-23 — the aged-scroll image carries the grain now, so the old CSS fibre overlay
      is gone (owner: it muddied the photo). OWN-19/22 — the image COVERS the panel as one
@@ -9748,12 +9749,12 @@ button.create-need:focus-visible .create-need-chev {
   text-transform: uppercase;
   color: var(--text-secondary);
   border: 1px solid var(--border-medium);
-  /* the resting tab's bottom edge IS its segment of the seat line (page ink) */
-  border-bottom-color: color-mix(
-    in oklab,
-    var(--accent-primary) 38%,
-    var(--border-medium)
-  );
+  /* NO own bottom border: the panel's seat line runs beneath EVERY tab, so a
+     per-tab bottom stroke would STACK on it — the thicker, brighter segment
+     the owner flagged 2026-08-01 ("ogni linguetta un bordo inferiore dorato
+     che non dovrebbe esserci"). The resting tab stands ON the page's one
+     stroke; only its fill meets the line. */
+  border-bottom-color: transparent;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   /* OPAQUE: the tabs protrude over the scene art — translucency would read as
      dirt. Resting = the page ground warmed a step toward the leather dark. */
@@ -9775,6 +9776,9 @@ button.create-need:focus-visible .create-need-chev {
 .wb .tabstrip [role="tab"]:hover {
   color: var(--text-primary);
   border-color: var(--border-strong);
+  /* the 4-side shorthand above must never resurrect a bottom stroke over the
+     panel's seat line (the doubled-line defect) */
+  border-bottom-color: transparent;
   background: var(--bg-surface-2);
 }
 /* Light strike: surface-2 on the ivory band was IMPERCEPTIBLE (near-ivory on
@@ -9785,6 +9789,7 @@ button.create-need:focus-visible .create-need-chev {
 [data-theme="light"] .wb .tabstrip [role="tab"]:hover {
   background: color-mix(in oklab, var(--accent-primary) 9%, var(--bg-surface-2));
   border-color: color-mix(in oklab, var(--accent-primary) 35%, var(--border-strong));
+  border-bottom-color: transparent;
 }
 .cmp-tab:hover .icon,
 .wb .tabstrip [role="tab"]:hover .icon {
@@ -17827,6 +17832,7 @@ button.econ-tok-filter:active .econ-disc {
 [data-theme="light"] .wb .tabstrip [role="tab"] {
   background: color-mix(in oklab, var(--bg-surface-2) 85%, var(--accent-primary));
   border-color: color-mix(in oklab, var(--accent-primary) 24%, var(--border-medium));
+  border-bottom-color: transparent;
   box-shadow: inset 0 1px 0 var(--emboss-sheen);
 }
 /* Light ACTIVE — placed AFTER the light base so the cascade cannot re-paint
