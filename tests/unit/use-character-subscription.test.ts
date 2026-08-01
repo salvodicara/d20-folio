@@ -417,6 +417,7 @@ describe("useCharacterSubscription — combat/state subdoc hydration", () => {
         initiativeRoll: 19,
         deathSaves: { successes: 1, failures: 0 },
         round: 1,
+        recentActions: [],
       })
     );
 
@@ -461,6 +462,7 @@ describe("useCharacterSubscription — combat/state subdoc hydration", () => {
         initiativeRoll: null,
         deathSaves: { successes: 0, failures: 0 },
         round: 1,
+        recentActions: [],
       })
     );
     // No character yet → nothing applied.

@@ -1794,6 +1794,7 @@ describe("characterStore — hydrateCombatState (combat/state subdoc → session
       initiativeRoll: 18,
       deathSaves: { successes: 1, failures: 2 },
       round: 1,
+      recentActions: [],
     });
     const s = useCharacterStore.getState().character?.session;
     expect(s?.hp).toEqual({ current: 12, temp: 4 });
@@ -1828,6 +1829,7 @@ describe("characterStore — hydrateCombatState (combat/state subdoc → session
       initiativeRoll: null,
       deathSaves: { successes: 0, failures: 0 },
       round: 1,
+      recentActions: [],
     });
     const s = useCharacterStore.getState().character?.session;
     expect(s?.hp).toEqual({ current: 44, temp: 0 });
@@ -2225,10 +2227,58 @@ describe("characterStore — combat-state persistence (C7 offline-safe write sea
       initiativeRoll: null,
       deathSaves: { successes: 0, failures: 0 },
       round: 6,
+      recentActions: [],
     });
     expect(useCharacterStore.getState().combatRound).toBe(6);
     useCharacterStore.getState().hydrateCombatState(null);
     expect(useCharacterStore.getState().combatRound).toBe(1);
+  });
+
+  it("declareAttack appends to the ring, persists, and later writes preserve it", () => {
+    useCharacterStore.getState().declareAttack({
+      targetIds: ["monster-0"],
+      outcome: "hit",
+      round: 2,
+    });
+    expect(lastWrite().recentActions).toEqual([
+      { id: "1", targetIds: ["monster-0"], outcome: "hit", round: 2 },
+    ]);
+    expect(useCharacterStore.getState().combatRecentActions).toHaveLength(1);
+    // A later HP write carries the declared ring forward — the OVERWRITE never drops it.
+    persistence.write.mockClear();
+    useCharacterStore.getState().applyDamage(3);
+    expect(lastWrite().recentActions).toHaveLength(1);
+  });
+
+  it("hydrateCombatState mirrors the subdoc's recentActions ring into the store", () => {
+    useCharacterStore.getState().hydrateCombatState({
+      hp: { current: 10, temp: 0 },
+      conditions: [],
+      initiativeRoll: null,
+      deathSaves: { successes: 0, failures: 0 },
+      round: 1,
+      recentActions: [{ id: "7", targetIds: ["monster-2"], outcome: "miss", round: 3 }],
+    });
+    expect(useCharacterStore.getState().combatRecentActions).toEqual([
+      { id: "7", targetIds: ["monster-2"], outcome: "miss", round: 3 },
+    ]);
+    // The next declaration keeps ids climbing off the hydrated max (no repeat).
+    useCharacterStore.getState().setCombatPersistence(persistence);
+    useCharacterStore.getState().declareAttack({
+      targetIds: ["monster-0"],
+      outcome: "hit",
+      round: 3,
+    });
+    expect(useCharacterStore.getState().combatRecentActions.at(-1)?.id).toBe("8");
+  });
+
+  it("a read-only sheet never declares an attack (the optimistic guard short-circuits)", () => {
+    useCharacterStore.getState().loadReadonly(mockCharacter());
+    useCharacterStore.getState().setCombatPersistence(persistence);
+    useCharacterStore
+      .getState()
+      .declareAttack({ targetIds: ["monster-0"], outcome: "hit", round: 1 });
+    expect(persistence.write).not.toHaveBeenCalled();
   });
 
   it("longRest persists the whole restored trio (HP full, death saves cleared)", () => {
@@ -2262,6 +2312,7 @@ describe("characterStore — combat-state persistence (C7 offline-safe write sea
       initiativeRoll: 13,
       deathSaves: { successes: 0, failures: 0 },
       round: 1,
+      recentActions: [],
     });
     persistence.write.mockClear();
     useCharacterStore.getState().applyDamage(3);

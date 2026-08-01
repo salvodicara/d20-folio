@@ -73,6 +73,7 @@ function combatStateWriteData(state: CombatState): Record<string, unknown> {
       failures: state.deathSaves.failures,
     },
     round: state.round,
+    recentActions: state.recentActions,
     updatedAt: serverTimestamp(),
   };
 }
@@ -98,7 +99,31 @@ function parseCombatState(data: Record<string, unknown>): CombatState {
     // Absence-safe: a subdoc written before `round` moved here (or a fresh one) reads as
     // round 1 — a natural default, never a permanent read-shim (rule 10).
     round: num(data.round, 1),
+    recentActions: parseRecentActions(data.recentActions),
   };
+}
+
+/** Defensively parse the `recentActions` ring (ids + numbers only; drop any malformed
+ *  entry so a stray/legacy shape can never crash the DM's correlation read). */
+function parseRecentActions(value: unknown): CombatState["recentActions"] {
+  if (!Array.isArray(value)) return [];
+  const out: CombatState["recentActions"] = [];
+  for (const raw of value) {
+    if (typeof raw !== "object" || raw === null) continue;
+    const a = raw as Record<string, unknown>;
+    const outcome = a.outcome === "hit" || a.outcome === "miss" ? a.outcome : null;
+    const targetIds = Array.isArray(a.targetIds)
+      ? a.targetIds.filter((t): t is string => typeof t === "string")
+      : [];
+    if (typeof a.id !== "string" || outcome === null || targetIds.length === 0) continue;
+    out.push({
+      id: a.id,
+      targetIds,
+      outcome,
+      round: typeof a.round === "number" && Number.isFinite(a.round) ? a.round : 1,
+    });
+  }
+  return out;
 }
 
 /**

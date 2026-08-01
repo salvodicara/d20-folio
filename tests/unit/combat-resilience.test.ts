@@ -142,6 +142,8 @@ describe("reload-mid-combat resilience — every PC's combat/state survives byte
     initiativeRoll: 17,
     deathSaves: { successes: 0, failures: 0 },
     round: 1,
+    // A declared in-encounter attack must survive a reload byte-identical too.
+    recentActions: [{ id: "1", targetIds: ["monster-0"], outcome: "hit", round: 1 }],
   };
   const brenState: CombatState = {
     hp: { current: 0, temp: 0 }, // DOWN — mid death-saves
@@ -149,6 +151,7 @@ describe("reload-mid-combat resilience — every PC's combat/state survives byte
     initiativeRoll: 4,
     deathSaves: { successes: 1, failures: 2 },
     round: 1,
+    recentActions: [],
   };
   const PC_STATES: Record<string, CombatState> = {
     "char-mara": maraState,

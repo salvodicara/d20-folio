@@ -26,6 +26,8 @@ import {
   setHpAbsolute,
   setTempAbsolute,
   setInitiativeAbsolute,
+  pushRecentAttack,
+  RECENT_ATTACK_CAP,
 } from "@/lib/combat-state";
 
 function session(overrides: Partial<SessionState> = {}): SessionState {
@@ -116,6 +118,7 @@ describe("combat-state — session → CombatState projection", () => {
       initiativeRoll: 15,
       deathSaves: { successes: 1, failures: 2 },
       round: 1,
+      recentActions: [],
     });
   });
 
@@ -166,6 +169,7 @@ describe("combat-state — applyCombatToSession (the ONE trio-hydration merge)",
         initiativeRoll: 18,
         deathSaves: { successes: 5, failures: 1 }, // over-3 success,
         round: 1,
+        recentActions: [],
       },
       30
     );
@@ -227,6 +231,7 @@ const baseCombat: CombatState = {
   initiativeRoll: 12,
   deathSaves: { successes: 1, failures: 0 },
   round: 1,
+  recentActions: [],
 };
 
 // (The INIT-4 epoch gate is DELETED with the initiative SSOT: an encounter roll lives in
@@ -272,6 +277,7 @@ describe("combat-state — reduceHpDelta (the transactional HP read-modify-write
       initiativeRoll: 5,
       deathSaves: { successes: 1, failures: 2 },
       round: 1,
+      recentActions: [],
     };
     const next = reduceHpDelta(downed, { kind: "heal", amount: 6 }, 30);
     expect(next.hp.current).toBe(6);
@@ -378,7 +384,50 @@ describe("combat-state — defaultCombatState (the absent-subdoc full-HP seed)",
       initiativeRoll: null,
       deathSaves: { successes: 0, failures: 0 },
       round: 1,
+      recentActions: [],
     });
+  });
+});
+
+describe("combat-state — pushRecentAttack (the declared-attack ring)", () => {
+  const seed = (): CombatState => ({ ...baseCombat, recentActions: [] });
+
+  it("stamps a monotonic id (max existing + 1) and appends the entry", () => {
+    const s1 = pushRecentAttack(seed(), {
+      targetIds: ["monster-0"],
+      outcome: "hit",
+      round: 2,
+    });
+    expect(s1.recentActions).toEqual([
+      { id: "1", targetIds: ["monster-0"], outcome: "hit", round: 2 },
+    ]);
+    const s2 = pushRecentAttack(s1, {
+      targetIds: ["monster-1"],
+      outcome: "miss",
+      round: 2,
+    });
+    expect(s2.recentActions.map((a) => a.id)).toEqual(["1", "2"]);
+    expect(s2.recentActions[1]).toMatchObject({
+      outcome: "miss",
+      targetIds: ["monster-1"],
+    });
+  });
+
+  it("caps the ring at RECENT_ATTACK_CAP, and ids keep CLIMBING as it slides", () => {
+    let s = seed();
+    for (let i = 0; i < RECENT_ATTACK_CAP + 3; i++) {
+      s = pushRecentAttack(s, { targetIds: [`monster-${i}`], outcome: "hit", round: 1 });
+    }
+    expect(s.recentActions).toHaveLength(RECENT_ATTACK_CAP);
+    // The oldest entries fell off; the ids never repeat (survive the slide).
+    expect(s.recentActions[0].id).toBe("4");
+    expect(s.recentActions.at(-1)?.id).toBe(String(RECENT_ATTACK_CAP + 3));
+  });
+
+  it("does not mutate the input state", () => {
+    const s = seed();
+    pushRecentAttack(s, { targetIds: ["monster-0"], outcome: "hit", round: 1 });
+    expect(s.recentActions).toEqual([]);
   });
 });
 
@@ -462,6 +511,7 @@ const COMBAT: CombatState = {
   initiativeRoll: 14,
   deathSaves: { successes: 1, failures: 0 },
   round: 1,
+  recentActions: [],
 };
 
 beforeEach(() => {
@@ -523,7 +573,57 @@ describe("combat-state-io — subscribe", () => {
       initiativeRoll: 11,
       deathSaves: { successes: 2, failures: 1 },
       round: 1,
+      recentActions: [],
     });
+  });
+
+  it("parses recentActions defensively (keeps valid entries, drops malformed ones)", () => {
+    const received: Array<CombatState | null> = [];
+    onSnapshotImpl = (_ref, next) => {
+      next({
+        exists: () => true,
+        data: () => ({
+          hp: { current: 5, temp: 0 },
+          conditions: [],
+          initiativeRoll: null,
+          deathSaves: { successes: 0, failures: 0 },
+          round: 2,
+          recentActions: [
+            { id: "1", targetIds: ["monster-0"], outcome: "hit", round: 2 },
+            { id: "2", targetIds: [], outcome: "hit", round: 2 }, // no target → dropped
+            { id: "3", targetIds: ["monster-1"], outcome: "nonsense", round: 2 }, // bad outcome
+            { targetIds: ["monster-2"], outcome: "miss", round: 2 }, // no id → dropped
+            "garbage",
+          ],
+        }),
+        metadata: { hasPendingWrites: false },
+      });
+      return () => {};
+    };
+    subscribeCombatState("u1", "c1", (s) => received.push(s));
+    expect(received[0]?.recentActions).toEqual([
+      { id: "1", targetIds: ["monster-0"], outcome: "hit", round: 2 },
+    ]);
+  });
+
+  it("defaults recentActions to [] when the field is absent (a pre-Phase-1 subdoc)", () => {
+    const received: Array<CombatState | null> = [];
+    onSnapshotImpl = (_ref, next) => {
+      next({
+        exists: () => true,
+        data: () => ({
+          hp: { current: 5, temp: 0 },
+          conditions: [],
+          initiativeRoll: null,
+          deathSaves: { successes: 0, failures: 0 },
+          round: 1,
+        }),
+        metadata: { hasPendingWrites: false },
+      });
+      return () => {};
+    };
+    subscribeCombatState("u1", "c1", (s) => received.push(s));
+    expect(received[0]?.recentActions).toEqual([]);
   });
 
   it("delivers null for an ABSENT doc (caller defaults to full HP)", () => {
@@ -566,6 +666,7 @@ describe("combat-state-io — base-reducing op helpers (offline-safe whole-objec
     initiativeRoll: 14,
     deathSaves: { successes: 0, failures: 0 },
     round: 1,
+    recentActions: [],
   };
 
   /** Every op persists the EXACT field-locked shape via `setDoc(merge)` (no extra/missing
@@ -581,6 +682,7 @@ describe("combat-state-io — base-reducing op helpers (offline-safe whole-objec
       "deathSaves",
       "hp",
       "initiativeRoll",
+      "recentActions",
       "round",
       "updatedAt",
     ]);

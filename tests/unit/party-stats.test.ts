@@ -66,6 +66,7 @@ describe("hydrateMemberDoc — combat/state subdoc is the sole source", () => {
       initiativeRoll: 13,
       deathSaves: { successes: 0, failures: 1 },
       round: 1,
+      recentActions: [],
     };
     const stats = derivePartyMemberStats(hydrateMemberDoc(MOCK_CHARACTER, wounded));
     expect(stats.currentHp).toBe(5);
@@ -87,6 +88,7 @@ describe("derivePcLive — initiative TOTAL = roll + bonus (the encounterInit ta
     initiativeRoll: null,
     deathSaves: { successes: 0, failures: 0 },
     round: 1,
+    recentActions: [],
     ...over,
   });
 

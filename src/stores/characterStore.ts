@@ -14,8 +14,12 @@ import type {
   SessionState,
 } from "@/types/character";
 import type { CombatEvent } from "@/types/combat-log";
-import type { CombatState, CombatPersistence } from "@/types/combat-state";
-import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
+import type { CombatState, CombatPersistence, RecentAttack } from "@/types/combat-state";
+import {
+  applyCombatToSession,
+  sessionToCombatState,
+  pushRecentAttack,
+} from "@/lib/combat-state";
 import type { StoredConcentration } from "@/types/ids";
 import { saveLogToIDB, clearLogFromIDB } from "@/lib/log-persistence";
 import {
@@ -145,6 +149,15 @@ interface CharacterState {
    * (a local turn advance), so every whole-object combat write carries the current round.
    */
   combatRound: number;
+  /**
+   * The player's declared in-encounter attacks ({@link RecentAttack}) — the in-store
+   * mirror of the `combat/state` subdoc's `recentActions` ring. Held here (like
+   * {@link combatRound}) so EVERY whole-object combat write (an HP tap, a condition
+   * toggle) carries the ring along and the last-write-wins OVERWRITE never clobbers a
+   * just-declared attack. Hydrated inbound by `hydrateCombatState`; appended by
+   * {@link declareAttack}. Empty outside a live encounter.
+   */
+  combatRecentActions: RecentAttack[];
 
   // Actions
   setCharacter: (doc: CharacterDoc | null) => void;
@@ -194,6 +207,13 @@ interface CharacterState {
    * A no-op without an injected persistence.
    */
   persistCombatRound: (round: number) => void;
+  /**
+   * Record a player-DECLARED in-encounter attack (target(s) + the HIT/MISS tapped after
+   * rolling) into the `recentActions` ring and persist the whole combat state — the
+   * budget-safe channel the DM's correlation reads. Rides the EXISTING combat-state
+   * write (no new doc/subscription). The sheet gates this on being in a live encounter,
+   * so SOLO never calls it. A no-op without an injected persistence (dev/bypass). */
+  declareAttack: (entry: Omit<RecentAttack, "id">) => void;
   setTempHP: (temp: number) => void;
   /**
    * Apply incoming damage: temp HP absorbs first, then current HP. The
@@ -509,7 +529,9 @@ const UNCONSCIOUS_CONDITION_ID = "unconscious";
 function persistCombat(get: () => CharacterState): void {
   const cur = get().character;
   if (!cur) return;
-  get().combatPersistence?.write(sessionToCombatState(cur.session, get().combatRound));
+  get().combatPersistence?.write(
+    sessionToCombatState(cur.session, get().combatRound, get().combatRecentActions)
+  );
 }
 
 export const useCharacterStore = create<CharacterState>()((set, get) => ({
@@ -519,6 +541,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   readonly: false,
   combatPersistence: null,
   combatRound: 1,
+  combatRecentActions: [],
 
   // The normal owner-edit load path — always clears read-only (so re-entering a
   // sheet you own after viewing someone else's is fully editable again).
@@ -544,6 +567,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       // Mirror the subdoc's SOLO round so a later whole-object write carries it; `1` when
       // the subdoc is absent (a fresh char) — the turn engine seeds from this on hydrate.
       combatRound: combat?.round ?? 1,
+      // Mirror the declared-attack ring so a later whole-object write preserves it (the
+      // OVERWRITE write would otherwise drop a declaration made from another surface).
+      combatRecentActions: combat?.recentActions ?? [],
     });
   },
 
@@ -1361,6 +1387,22 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // `[character]` resync sees the advanced round and never clobbers it back. The durable
     // write then rides `persistCombat` (a no-op `?.write` when there is no persistence).
     set({ combatRound: round });
+    persistCombat(get);
+  },
+
+  declareAttack: (entry) => {
+    if (get().readonly) return;
+    const character = get().character;
+    if (!character) return;
+    // Append to the ring (id stamped by the pure reducer) and mirror it in-store so the
+    // whole-object combat write carries it; the durable write rides `persistCombat` (a
+    // no-op when there is no injected persistence — dev/bypass optimistic-only).
+    const base = sessionToCombatState(
+      character.session,
+      get().combatRound,
+      get().combatRecentActions
+    );
+    set({ combatRecentActions: pushRecentAttack(base, entry).recentActions });
     persistCombat(get);
   },
 

@@ -22,6 +22,7 @@ const combat: CombatState = {
   initiativeRoll: null,
   deathSaves: { successes: 0, failures: 1 },
   round: 1,
+  recentActions: [],
 };
 
 const liveTrio = {

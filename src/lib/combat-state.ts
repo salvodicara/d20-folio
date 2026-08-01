@@ -23,8 +23,30 @@
  * always-eager path with zero SRD/Firebase weight.
  */
 import type { SessionState } from "@/types/character";
-import type { CombatState } from "@/types/combat-state";
+import type { CombatState, RecentAttack } from "@/types/combat-state";
 import { applyDamage, applyHealing, clampHp, clampTemp } from "@/lib/combat-hp";
+
+/** The `recentActions` ring cap — the last few declared attacks are all the correlation
+ *  window ever needs; older ones fall off (a fight rarely correlates beyond the round). */
+export const RECENT_ATTACK_CAP = 8;
+
+/**
+ * Append a player-declared attack to the `recentActions` ring, stamping a stable,
+ * monotonically-increasing id (max existing + 1 — deterministic, NO RNG, golden rule
+ * 21) and capping the ring at {@link RECENT_ATTACK_CAP}. Pure: the store injects the
+ * `round`/`targetIds`/`outcome`; the id derivation lives here (one place, testable) so
+ * ids keep climbing even as the ring slides (a de-dup handle never repeats). SOLO never
+ * calls this (the sheet gates the declaration UI on being in a live encounter).
+ */
+export function pushRecentAttack(
+  s: CombatState,
+  entry: Omit<RecentAttack, "id">
+): CombatState {
+  const actions = s.recentActions;
+  const nextId = actions.reduce((m, a) => Math.max(m, Number(a.id) || 0), 0) + 1;
+  const full: RecentAttack = { ...entry, id: String(nextId) };
+  return { ...s, recentActions: [...actions, full].slice(-RECENT_ATTACK_CAP) };
+}
 
 /**
  * REMOTE-CHANGE FENCE comparison (§5.4): whether an incoming combat-state snapshot
@@ -102,13 +124,18 @@ export function initiativeToString(value: number | null): string {
  * subdoc), so it is passed in — the cockpit store supplies the live
  * `combatStore.round`; a mock/dev seed defaults it to `1`.
  */
-export function sessionToCombatState(session: SessionState, round = 1): CombatState {
+export function sessionToCombatState(
+  session: SessionState,
+  round = 1,
+  recentActions: RecentAttack[] = []
+): CombatState {
   return {
     hp: { current: session.hp.current, temp: session.hp.temp },
     conditions: session.conditions,
     initiativeRoll: initiativeToNumber(session.initiative),
     deathSaves: { successes: session.deathSucc, failures: session.deathFail },
     round,
+    recentActions,
   };
 }
 
@@ -177,6 +204,7 @@ export function defaultCombatState(max: number): CombatState {
     initiativeRoll: null,
     deathSaves: { successes: 0, failures: 0 },
     round: 1,
+    recentActions: [],
   };
 }
 

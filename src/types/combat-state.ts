@@ -34,6 +34,32 @@
  */
 import type { SessionState } from "@/types/character";
 
+/**
+ * A player-DECLARED attack in a live campaign encounter — the target(s) the player
+ * chose on their sheet plus the HIT/MISS they tapped after rolling at the table. This
+ * is the cross-user channel the DM's correlation layer (`combat-reconcile.ts`) fuses
+ * with the observed HP deltas into CONFIRMED chronicle lines: a declared HIT + a
+ * matching monster HP drop ⇒ an auto-attributed hit line, a declared MISS ⇒ a certain
+ * miss line. The app NEVER fabricates one — it is written only by the player's explicit
+ * HIT/MISS tap.
+ *
+ * IDS + NUMBERS ONLY (golden rule 7): the target(s) are ENCOUNTER combatant ids
+ * (`monster-<n>`), never a display name; the attacker is the owning PC (`pc-<uid>`),
+ * derived at read time from the subdoc's uid (not stored here). SOLO play never writes
+ * one (the sheet gates the target/HIT-MISS UI on being in a live encounter).
+ */
+export interface RecentAttack {
+  /** Stable, monotonically-increasing id within the ring (the max existing id + 1 —
+   *  deterministic, no RNG; survives the ring so a de-dup handle never repeats). */
+  id: string;
+  /** The encounter combatant ids the player targeted (`monster-<n>`). Phase 1: one. */
+  targetIds: string[];
+  /** The outcome the player tapped after rolling — the fact the app never infers. */
+  outcome: "hit" | "miss";
+  /** The encounter round the attack was declared in — the correlation window key. */
+  round: number;
+}
+
 export interface CombatState {
   hp: { current: number; temp: number };
   conditions: string[];
@@ -46,6 +72,15 @@ export interface CombatState {
    *  to — this subdoc is its SOLE persisted home (an encounter uses the shared doc). `1`
    *  when combat has not advanced. */
   round: number;
+  /**
+   * The capped ring of the player's recently-DECLARED in-encounter attacks
+   * ({@link RecentAttack}) — the budget-safe cross-user channel the DM's correlation
+   * layer reads to auto-attribute hits + emit miss lines. Rides the EXISTING debounced
+   * `writeCombatState` (NO new doc, NO new subscription — the DM already subscribes to
+   * this subdoc), so an attack declaration costs ~one turn-frequency write. Absent /
+   * `[]` outside an encounter (SOLO never declares).
+   */
+  recentActions: RecentAttack[];
 }
 
 /**
