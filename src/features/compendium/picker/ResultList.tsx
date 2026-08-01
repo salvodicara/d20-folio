@@ -4,24 +4,189 @@
  * `CompendiumPicker` and the Compendium page, so the row markup (and the
  * already-added override) lives in exactly one place. Rows are `PickerRow`s; the
  * spec supplies leading / name / meta / warning, the picker supplies "added".
+ *
+ * PERF — the whole filtered set is scrollable, but only the on-screen window (plus
+ * an overscan margin) is MOUNTED, via a small dependency-free windowed list
+ * (`VirtualRows` below). The pools are large (≈330 monsters, ≈420 spells) and a full
+ * reconcile of every row on each keystroke was the search-input cost; windowing keeps
+ * every edit — and cold open — cheap while the reader still scrolls the ENTIRE list,
+ * no cap, no ceiling. The row markup, verdict, already-added state, selection and
+ * keyboard reach are unchanged.
  */
 
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalScroll } from "@/components/ui/modal-head";
 import { PickerRow } from "@/components/sheet/picker-parts";
 import type { CompendiumPickerApi } from "./useCompendiumPicker";
 import type { CompendiumPickerSpec } from "./types";
 
+/** Seed stride for a codex row (row box + inter-row gap) — replaced by the MEASURED
+ *  stride of a real row on mount, so this only sizes the very first frame. Codex rows
+ *  are a uniform box (the design's own contract), so one stride windows the pool. */
+const EST_ROW_H = 62;
+/** Space between rows — matches the codex row rhythm (the old `.pick-row + .pick-row`
+ *  margin), folded into the stride so windowed offsets stay exact. */
+const ROW_GAP = 6;
+/** Rows kept mounted beyond the viewport on EACH side. Generous on purpose: the
+ *  compendium page's arrow-key nav walks the mounted `.pick-row`s, so the row just
+ *  past the fold must already be in the DOM for ↑/↓ to reach it — and background
+ *  character-store churn must never pop a near row out from under the reader. */
+const OVERSCAN = 10;
+/** The first-frame slice, before the viewport is measured — bounded so cold open never
+ *  reconciles the whole pool, yet ample so the initial screenful is always covered. */
+const INITIAL_WINDOW = 40;
+
+/** The nearest scrollable ancestor — the `ModalScroll` body in a modal, the page's
+ *  `.cmp-list` in bare mode — i.e. the element the list scrolls against. */
+function findScrollParent(el: HTMLElement | null): HTMLElement | null {
+  for (let p = el?.parentElement ?? null; p; p = p.parentElement) {
+    const oy = getComputedStyle(p).overflowY;
+    if (oy === "auto" || oy === "scroll") return p;
+  }
+  return null;
+}
+
+interface VirtualRowsProps<T> {
+  items: readonly T[];
+  getKey: (item: T) => string;
+  renderItem: (item: T) => ReactNode;
+}
+
 /**
- * PERF — the most rows we ever mount at once. The pools are large (≈330 monsters,
- * ≈420 spells) and rendering dominates a keystroke (a 0-result query is instant), so
- * a full reconcile of every row on each edit is the cost. Capping the MOUNTED rows to
- * a screenful-plus keeps cold modal-open and every keystroke cheap without a
- * virtualization dependency; the truthful full `count` still shows, and a quiet
- * "refine to see more" footer keeps the hidden rows honest (they exist, narrow to
- * reach them). No behavior change for the shown rows — same markup, same keyboard nav.
+ * The windowed row renderer (no dependency). Finds its scroll container on mount,
+ * measures one real row's stride, then mounts only the visible slice (+ overscan) as
+ * absolutely-positioned rows over a full-height spacer — so the scrollbar and every
+ * scroll offset match the FULL list, with no cap and no ceiling.
+ *
+ * `range === null` is the render-EVERY-row fallback taken where there is no layout to
+ * window against (jsdom, or any zero-height host): correct, just un-windowed, so tests
+ * and SSR-less first paint still show the whole list. A real browser measures a
+ * positive height and switches to the windowed path.
  */
-const RESULT_CAP = 60;
+function VirtualRows<T>({ items, getKey, renderItem }: VirtualRowsProps<T>) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLElement | null>(null);
+  const count = items.length;
+  // STATE (never refs read during render): `stride` positions the rows; `range` is the
+  // mounted window (`null` = render every row where there's no layout to window against).
+  const [stride, setStride] = useState(EST_ROW_H);
+  const [range, setRange] = useState<{ start: number; end: number } | null>({
+    start: 0,
+    end: Math.min(count, INITIAL_WINDOW),
+  });
+
+  // Runs only from effects / scroll+resize handlers (never during render), so reading
+  // the scroll-box ref here is safe. Depends on the state it reads, so it re-derives.
+  const recompute = useCallback(() => {
+    const cont = containerRef.current;
+    if (!cont) return;
+    const sc = scrollRef.current;
+    // No scroll box, or no measurable viewport (jsdom / hidden) — render the whole
+    // list. Un-windowed but correct, so tests and zero-height hosts show every row.
+    if (!sc || sc.clientHeight <= 0) {
+      setRange((r) => (r === null ? r : null));
+      return;
+    }
+    const vh = sc.clientHeight;
+    // How far the list's top has scrolled ABOVE the viewport top — measured live so
+    // any header above the list (the modal's count line) is accounted for exactly.
+    const scrolledPast = Math.max(
+      0,
+      sc.getBoundingClientRect().top - cont.getBoundingClientRect().top
+    );
+    const start = Math.max(0, Math.floor(scrolledPast / stride) - OVERSCAN);
+    const end = Math.min(count, Math.ceil((scrolledPast + vh) / stride) + OVERSCAN);
+    setRange((r) => (r && r.start === start && r.end === end ? r : { start, end }));
+  }, [count, stride]);
+
+  // Keep the scroll/resize listener STABLE while `recompute` changes identity: it calls
+  // the latest recompute through a ref updated in an effect (never during render).
+  const recomputeRef = useRef(recompute);
+  useLayoutEffect(() => {
+    recomputeRef.current = recompute;
+  });
+
+  // Wire the scroll box ONCE: find the scroll parent, measure a real row's stride, and
+  // attach scroll + resize handlers (which re-window via the latest-recompute ref).
+  useLayoutEffect(() => {
+    const cont = containerRef.current;
+    const sc = findScrollParent(cont);
+    scrollRef.current = sc;
+    const firstRow = cont?.querySelector<HTMLElement>("[data-vrow]");
+    if (firstRow) {
+      // offsetHeight = the row's real box height (position-independent); + the gap is
+      // the true stride. Uniform codex rows, so one measurement windows the pool.
+      const h = firstRow.offsetHeight;
+      if (h > 0) setStride(h + ROW_GAP);
+    }
+    recomputeRef.current();
+    if (!sc) return;
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => recomputeRef.current());
+    };
+    sc.addEventListener("scroll", onScroll, { passive: true });
+    const ro =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(onScroll) : null;
+    ro?.observe(sc);
+    return () => {
+      sc.removeEventListener("scroll", onScroll);
+      ro?.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  // Re-window when the result set size or the measured stride changes (recompute
+  // closes over both), against the same scroll box.
+  useLayoutEffect(() => {
+    recompute();
+  }, [recompute]);
+
+  if (range === null) {
+    return (
+      <div ref={containerRef} className="flex flex-col gap-1.5">
+        {items.map((item) => (
+          <div key={getKey(item)} data-vrow>
+            {renderItem(item)}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const end = Math.min(range.end, count);
+  const slice: ReactNode[] = [];
+  for (let i = range.start; i < end; i++) {
+    const item = items[i];
+    if (item == null) continue;
+    slice.push(
+      <div
+        key={getKey(item)}
+        data-vrow
+        data-index={i}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          transform: `translateY(${i * stride}px)`,
+        }}
+      >
+        {renderItem(item)}
+      </div>
+    );
+  }
+  return (
+    <div
+      ref={containerRef}
+      style={{ position: "relative", height: count * stride, width: "100%" }}
+    >
+      {slice}
+    </div>
+  );
+}
 
 interface ResultListProps<T> {
   picker: CompendiumPickerApi<T>;
@@ -46,35 +211,17 @@ export function CompendiumResultList<T>({
   // marks its source as a ref, and later `picker.*` reads would trip the
   // Rules-of-React lint if the object itself carried it.
   const { attachListScroll } = picker;
-  const total = picker.filtered.length;
-  const capped = total > RESULT_CAP;
-  const shown = capped ? picker.filtered.slice(0, RESULT_CAP) : picker.filtered;
-  const rows = shown.map((entry) => (
-    <CompendiumResultRow
-      key={spec.getId(entry)}
-      entry={entry}
-      picker={picker}
-      spec={spec}
-    />
-  ));
-  // The "there are more" affordance — shown whenever the pool overflows the cap, so a
-  // reader is never misled into thinking the list ends at 60. Carries the truthful
-  // full total and tells them the lever (refine the query / facets).
-  const moreFooter = capped ? (
-    <p className="pick-more" role="status">
-      {t("common.refineToSeeMore", { count: total })}
-    </p>
-  ) : null;
+  const renderItem = (entry: T) => (
+    <CompendiumResultRow entry={entry} picker={picker} spec={spec} />
+  );
+  const rows = (
+    <VirtualRows items={picker.filtered} getKey={spec.getId} renderItem={renderItem} />
+  );
 
   if (bare) {
-    // The page wraps this in `.cmp-list` (its own scroll + padding) and renders
-    // its own empty leaf, so here we emit the rows only (plus the overflow note).
-    return (
-      <div className="flex flex-col">
-        {rows}
-        {moreFooter}
-      </div>
-    );
+    // The page wraps this in `.cmp-list` (its own scroll + padding) and renders its
+    // own empty leaf, so here we emit the windowed rows only.
+    return rows;
   }
 
   return (
@@ -86,11 +233,11 @@ export function CompendiumResultList<T>({
       <div className="mb-1 px-2 font-mono text-[length:var(--text-micro)] uppercase tracking-wider text-text-secondary">
         {t("common.items", { count: picker.count })}
       </div>
-      <div className="flex flex-col gap-1">
-        {rows}
-        {total === 0 && <p className="opt-empty">{t("common.noResults")}</p>}
-        {moreFooter}
-      </div>
+      {picker.filtered.length === 0 ? (
+        <p className="opt-empty">{t("common.noResults")}</p>
+      ) : (
+        rows
+      )}
     </ModalScroll>
   );
 }

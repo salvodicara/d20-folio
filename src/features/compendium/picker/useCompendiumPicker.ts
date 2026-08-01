@@ -236,9 +236,12 @@ export function useCompendiumPicker<T>(
   // COMPENDIUM-NAV — resets on a real query/facet change, NOT on store churn; see
   // resultSetKey. Keyed on the DEFERRED query so scroll resets in lock-step with the
   // list the reader actually sees (the memo above is deferred too), never a frame early.
+  // RAW scrollTop (no row anchor): the list is virtualized against a spacer of the
+  // FULL height, so a scroll offset maps to a stable position and restores exactly —
+  // the anchor workaround (for content-visibility's estimate-then-realize height
+  // drift) is obsolete, and it read the wrong row now that only a window is mounted.
   const { attach: attachListScroll, save: saveListScroll } = useScrollMemory(
-    resultSetKey(deferredQuery, spec.filters, effFilterState),
-    ".pick-row" // row-anchored: exact across content-visibility re-estimation
+    resultSetKey(deferredQuery, spec.filters, effFilterState)
   );
 
   // Opening a detail seeds the stepper at one step (1, or one bundle for ammo).

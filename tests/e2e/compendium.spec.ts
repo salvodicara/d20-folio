@@ -18,9 +18,8 @@ test.describe("Compendium browse", () => {
   });
 
   test("browses spells by default and searches by name", async ({ page }) => {
-    // Browse is global (no class filter) → the list is populated (the mounted rows are
-    // capped, with a "refine to see more" footer for the rest — a far-down spell is
-    // reached by search, below).
+    // Browse is global (no class filter) → the list is populated (it is virtualized, so
+    // only a window of rows mounts — a far-down spell is reached by search, below).
     await expect(page.locator(".pick-name").first()).toBeVisible();
 
     // Searching narrows the list (bilingual, accent-insensitive substring).
@@ -426,8 +425,8 @@ test.describe("Compendium browse", () => {
     // The lazy `monster` catalogue is registered by the specs-barrel TLA before the
     // page renders, so the pilot corpus is listed once the searchbox is up.
     await expect(page.getByRole("searchbox")).toBeVisible();
-    // The list is populated (mounted rows are capped, with a "refine to see more"
-    // footer for the rest); the specific monsters below are reached by the CR facet.
+    // The list is populated (it is virtualized, so only a window of rows mounts); the
+    // specific monsters below are reached by the CR facet.
     await expect(page.locator(".pick-name").first()).toBeVisible();
 
     // The "17+" CR band leaves only the CR-17 dragon; the CR-1/4 skeleton drops out.

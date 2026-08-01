@@ -7320,17 +7320,6 @@ button.trk-pip:active {
   color: var(--text-faint);
 }
 
-/* The result-list overflow note (PERF cap) — a quiet centered footer under the last
-   mounted row telling the reader more entries exist and to narrow the query/facets to
-   reach them. Same faint register as the empty leaf, so it reads as chrome, not a row. */
-.pick-more {
-  padding: var(--sp-2) 0;
-  text-align: center;
-  font-size: var(--text-micro);
-  font-style: italic;
-  color: var(--text-faint);
-}
-
 /* Rich option cell (stacked) — the one picker primitive also serves the species /
    background / feature / invocation / spell pickers, which carry a gloss line, an
    optional prerequisite caveat, and/or a chromatic chip beside the name. Such a
@@ -9405,6 +9394,9 @@ button.create-need:focus-visible .create-need-chev {
 .spell-pick-row {
   all: unset;
   box-sizing: border-box;
+  /* Fill the row track — the virtualized list places each row in an absolutely
+     positioned wrapper, so the button no longer stretches via a flex-column parent. */
+  width: 100%;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -10403,9 +10395,9 @@ button.create-need:focus-visible .create-need-chev {
   );
   box-shadow: var(--elev-resting);
 }
-[data-variant="codex"] .pick-row + .pick-row {
-  margin-top: 6px;
-}
+/* Inter-row rhythm is owned by the virtualized list's row gap (ResultList `ROW_GAP`),
+   not an adjacent-sibling margin: windowing wraps each row so `.pick-row + .pick-row`
+   no longer pairs, and the gap keeps the windowed offsets exact. */
 [data-variant="codex"] .pick-row:hover:not(:disabled) {
   border-color: color-mix(in oklab, var(--accent-primary) 50%, var(--border-medium));
   background: linear-gradient(
@@ -10776,18 +10768,13 @@ button.create-need:focus-visible .create-need-chev {
   );
 }
 
-/* COMPENDIUM-LUX perf — off-screen codex rows skip style/layout/paint entirely
-   (the spells index is 400+ rows), the SAME containment recipe the wizard list
-   uses (`.wiz-list > .wiz-entry`). `auto 57.8px` is the MEASURED realized row
-   box (uniform across widths), so estimated and realized layout agree and the
-   scroll math is exact — a wrong estimate makes every off-screen realization
-   shift the list under the reader (COMPENDIUM-NAV: it broke Back's exact
-   scroll restore). The keyword memoizes the real size after first paint.
-   Page-scoped: the add-modal lists are pre-filtered and short. */
-.cmp-list .pick-row {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 57.8px;
-}
+/* COMPENDIUM-LUX perf — off-screen codex rows are no longer PAINTED because the
+   list is virtualized (ResultList mounts only the visible window + overscan), which
+   supersedes the old `content-visibility` containment on `.cmp-list .pick-row`: with
+   ~a screenful of rows in the DOM there is nothing off-screen to skip, and react-
+   virtual measures each mounted row so the scroll math stays exact (Back's restore
+   included). Dropping the containment also keeps row measurement honest (a contained
+   row would report its intrinsic estimate, not its realized height). */
 
 /* Mobile masthead — same anatomy, compact strike. */
 @media (max-width: 720px) {

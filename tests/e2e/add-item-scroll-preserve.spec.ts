@@ -39,14 +39,16 @@ test.describe("Add-item picker — scroll depth survives background store churn"
     await dialog.waitFor({ timeout: 20_000 });
 
     // The results list = the scroll container the picker attaches its memory to.
-    // Empty query + no facet = the full SRD equipment list (plenty of rows).
+    // Empty query + no facet = the full SRD equipment list. The list is VIRTUALIZED,
+    // so only a bounded window of rows is mounted (a screenful + overscan, ~a dozen
+    // at the top) — enough to prove the list is populated before we scroll.
     const list = dialog.locator('[data-variant="codex"]');
     await list.waitFor({ timeout: 20_000 });
     await expect
       .poll(() => list.evaluate((e) => e.querySelectorAll(".pick-row").length), {
         timeout: 10_000,
       })
-      .toBeGreaterThan(20);
+      .toBeGreaterThan(10);
 
     // Scroll DOWN. The mount-time settle loop stands down on a >24px user move, so
     // once the depth holds we know the list is parked below the top.
