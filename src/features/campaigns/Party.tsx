@@ -834,7 +834,6 @@ function CombatLayer({
           rows={view.rows}
           memberDetails={memberDetails}
           currentId={view.currentId}
-          gathering={gathering}
           apply={apply}
         />
       )}

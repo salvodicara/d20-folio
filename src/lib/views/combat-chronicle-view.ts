@@ -89,13 +89,6 @@ export function localizeChronicleEvent(
         target: resolveName(event.targetId),
         condition: resolveCondition(event.conditionId),
       });
-    case "attack-miss":
-      return t("combatChronicle.miss", {
-        attacker: resolveName(event.attackerId),
-        target: resolveName(event.targetId),
-      });
-    case "turn-pass":
-      return t("combatChronicle.turnPass", { actor: resolveName(event.actorId) });
   }
 }
 

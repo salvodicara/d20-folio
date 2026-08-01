@@ -69,13 +69,6 @@ const SAMPLES: Record<CombatChronicleEventKind, CombatChronicleEvent> = {
     targetId: "pc-mara",
     conditionId: "frightened",
   },
-  "attack-miss": {
-    ...base,
-    kind: "attack-miss",
-    attackerId: "pc-mara",
-    targetId: "monster-1",
-  },
-  "turn-pass": { ...base, kind: "turn-pass", actorId: "monster-1" },
 };
 
 describe("localizeChronicleEvent — every kind routes to a distinct non-empty line", () => {

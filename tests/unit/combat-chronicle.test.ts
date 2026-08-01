@@ -15,8 +15,6 @@ import {
   recordMonsterHp,
   recordPcHp,
   recordCondition,
-  recordMiss,
-  recordTurnPass,
   setEventAttacker,
   skipEventAttacker,
   inferOutcome,
@@ -46,8 +44,8 @@ const last = (s: EncounterState) => events(s)[events(s).length - 1];
 describe("appendEvent — stamps a stable id + the current round", () => {
   it("assigns the append index as id and the state round, in order", () => {
     let s = fight();
-    s = appendEvent(s, { kind: "turn-pass", actorId: "pc-mara" });
-    s = appendEvent(s, { kind: "turn-pass", actorId: "monster-1" });
+    s = appendEvent(s, { kind: "down", targetId: "monster-1" });
+    s = appendEvent(s, { kind: "down", targetId: "pc-mara" });
     expect(events(s).map((e) => e.id)).toEqual(["0", "1"]);
     expect(events(s).every((e) => e.round === 1)).toBe(true);
   });
@@ -141,9 +139,9 @@ describe("recordPcHp — appends from the caller's pre/post HP", () => {
   });
 });
 
-// ─── Conditions / miss / pass ────────────────────────────────────────────────
+// ─── Conditions ──────────────────────────────────────────────────────────────
 
-describe("recordCondition / recordMiss / recordTurnPass", () => {
+describe("recordCondition", () => {
   it("condition gain + loss carry the target + condition id", () => {
     let s = recordCondition(fight(), "pc-mara", "frightened", true);
     expect(last(s)).toMatchObject({
@@ -155,16 +153,11 @@ describe("recordCondition / recordMiss / recordTurnPass", () => {
     expect(last(s)).toMatchObject({ kind: "condition-loss" });
   });
 
-  it("a miss / pass is recorded ONLY when explicitly called (never auto)", () => {
-    // The fight ran with no miss/pass recorder called → the feed has none.
-    let s = recordMonsterHp(fight(), "monster-1", 0, 3);
-    expect(events(s).some((e) => e.kind === "attack-miss")).toBe(false);
-    expect(events(s).some((e) => e.kind === "turn-pass")).toBe(false);
-    // Only an explicit call creates them.
-    s = recordMiss(s, "pc-mara", "monster-1");
-    s = recordTurnPass(s, "monster-1");
-    expect(s.events?.map((e) => e.kind)).toContain("attack-miss");
-    expect(s.events?.map((e) => e.kind)).toContain("turn-pass");
+  it("the feed records ONLY what LANDED — an ordinary damage edit adds no other kind", () => {
+    // The chronicle is the deterministic record of what landed (no miss/pass logging):
+    // a damage edit records exactly one hp-damage (+ any down), nothing speculative.
+    const s = recordMonsterHp(fight(), "monster-1", 0, 3);
+    expect(events(s).map((e) => e.kind)).toEqual(["hp-damage"]);
   });
 });
 
@@ -185,7 +178,7 @@ describe("setEventAttacker / skipEventAttacker", () => {
   });
 
   it("attribution is a no-op on a non-damage event", () => {
-    let s = recordTurnPass(fight(), "monster-1"); // id "0"
+    let s = recordCondition(fight(), "monster-1", "prone", true); // id "0"
     s = setEventAttacker(s, "0", "pc-mara");
     expect(s.events?.[0]).not.toHaveProperty("attackerId");
   });

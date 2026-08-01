@@ -1,9 +1,9 @@
 /**
  * party-chronicle — thin render tests for the DM-facing Combat Chronicle UI: the live
  * feed's one-tap attacker attribution (pre-picked to the current combatant, skippable,
- * NEVER auto), the pull-only miss/pass logger, and the editable end entry (line
- * deletion honored, markdown built, Save/Skip wired). `@/lib/firebase` is stubbed
- * because the components transitively import `campaign-io` → `@/lib/firebase`.
+ * NEVER auto) and the editable end entry (line deletion honored, markdown built,
+ * Save/Skip wired). `@/lib/firebase` is stubbed because the components transitively
+ * import `campaign-io` → `@/lib/firebase`.
  */
 import { describe, it, expect, vi, beforeAll } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
@@ -92,7 +92,6 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
         rows={ROWS}
         memberDetails={{}}
         currentId="pc-mara"
-        gathering={false}
         apply={apply}
       />
     );
@@ -114,7 +113,6 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
         rows={ROWS}
         memberDetails={{}}
         currentId="pc-mara"
-        gathering={false}
         apply={apply}
       />
     );
@@ -140,7 +138,6 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
         rows={ROWS}
         memberDetails={{}}
         currentId="pc-mara"
-        gathering={false}
         apply={apply}
       />
     );
@@ -158,7 +155,6 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
         rows={ROWS}
         memberDetails={{}}
         currentId="pc-mara"
-        gathering={false}
         apply={vi.fn()}
       />
     );
@@ -167,39 +163,20 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     expect(screen.queryByRole("button", { name: "No one" })).toBeNull();
   });
 
-  it("miss/pass are pull-only — Log pass records, and there is no auto miss", () => {
-    let captured: (e: EncounterState) => EncounterState = (e) => e;
-    const apply = vi.fn((fn: (e: EncounterState) => EncounterState) => {
-      captured = fn;
-    });
+  it("records ONLY what landed — the feed has no miss/pass logging affordance", () => {
     render(
       <ChronicleFeed
         events={[]}
         rows={ROWS}
         memberDetails={{}}
         currentId="pc-mara"
-        gathering={false}
-        apply={apply}
-      />
-    );
-    // Nothing logged until tapped.
-    fireEvent.click(screen.getByRole("button", { name: /Log a pass/ }));
-    const next = captured(stateWith([]));
-    expect(next.events?.[0]).toMatchObject({ kind: "turn-pass", actorId: "pc-mara" });
-  });
-
-  it("hides the miss/pass logger while gathering (no active combatant)", () => {
-    render(
-      <ChronicleFeed
-        events={[]}
-        rows={ROWS}
-        memberDetails={{}}
-        currentId={null}
-        gathering
         apply={vi.fn()}
       />
     );
+    // The chronicle is the deterministic record of what landed; missed swings + drama
+    // belong in the DM's narrative note, not a per-turn button.
     expect(screen.queryByRole("button", { name: /Log a pass/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Log a miss/ })).toBeNull();
   });
 });
 

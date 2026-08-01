@@ -21,7 +21,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollText, ChevronDown, Trash2, Swords, Crosshair } from "lucide-react";
+import { ScrollText, ChevronDown, Trash2 } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -39,8 +39,6 @@ import {
 import {
   setEventAttacker,
   skipEventAttacker,
-  recordMiss,
-  recordTurnPass,
   inferOutcome,
 } from "@/features/campaigns/combat-chronicle";
 import type { ApplyFn } from "@/features/campaigns/party-encounter";
@@ -118,26 +116,24 @@ function CombatantChip({
 
 /**
  * The collapsible Combat Chronicle feed — DM-only. Renders the accumulated events in
- * round-grouped order; each un-attributed damage hit shows the one-tap attacker picker
- * (current combatant pre-selected), and the active combatant gets the pull-only
- * miss / pass logger. All edits route through `apply` (the DM encounter reducer), so
- * they ride the SAME debounced encounter writer (no per-action write).
+ * round-grouped order (the deterministic record of what LANDED); each un-attributed
+ * damage hit shows the one-tap attacker picker (current combatant pre-selected). All
+ * edits route through `apply` (the DM encounter reducer), so they ride the SAME
+ * debounced encounter writer (no per-action write).
  */
 export function ChronicleFeed({
   events,
   rows,
   memberDetails,
   currentId,
-  gathering,
   apply,
 }: {
   events: ReadonlyArray<CombatChronicleEvent>;
   rows: ReadonlyArray<EncounterCombatantView>;
   /** The campaign roster — the source of a PC's snapshot name while its live doc loads. */
   memberDetails: MemberDetails;
+  /** The current combatant id — the attacker the attribution picker pre-selects. */
   currentId: string | null;
-  /** During the gathering phase there is no active combatant, so no miss/pass logger. */
-  gathering: boolean;
   apply: ApplyFn;
 }) {
   const { t } = useTranslation();
@@ -200,15 +196,6 @@ export function ChronicleFeed({
               })}
             </ol>
           )}
-
-          {!gathering && currentId && (
-            <MissPassLogger
-              actorId={currentId}
-              rows={rows}
-              resolveName={resolveName}
-              apply={apply}
-            />
-          )}
         </div>
       )}
     </section>
@@ -258,69 +245,6 @@ function FeedLine({
             label={t("combatChronicle.attributeSkip")}
             onClick={() => apply((e) => skipEventAttacker(e, event.id))}
           />
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** The pull-only miss / pass logger for the active combatant — off unless the DM taps.
- *  A miss reveals target chips; a pass logs immediately. The app NEVER infers either. */
-function MissPassLogger({
-  actorId,
-  rows,
-  resolveName,
-  apply,
-}: {
-  actorId: string;
-  rows: ReadonlyArray<EncounterCombatantView>;
-  resolveName: ResolveCombatantName;
-  apply: ApplyFn;
-}) {
-  const { t } = useTranslation();
-  const [pickingMiss, setPickingMiss] = useState(false);
-  const targets = rows.filter((r) => r.id !== actorId);
-  const actorName = resolveName(actorId);
-
-  return (
-    <div className="mt-2 flex flex-col gap-1.5 border-t border-border-subtle pt-2">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[length:var(--text-micro)] uppercase tracking-[0.08em] text-text-faint">
-          {actorName}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setPickingMiss((v) => !v)}
-          aria-expanded={pickingMiss}
-        >
-          <Icon as={Crosshair} size="xs" decorative />
-          {t("combatChronicle.logMiss")}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => apply((e) => recordTurnPass(e, actorId))}
-        >
-          <Icon as={Swords} size="xs" decorative />
-          {t("combatChronicle.logPass")}
-        </Button>
-      </div>
-      {pickingMiss && (
-        <div className="flex flex-wrap items-center gap-1">
-          <span className="text-[length:var(--text-micro)] uppercase tracking-[0.08em] text-text-faint">
-            {t("combatChronicle.missTargetLabel")}
-          </span>
-          {targets.map((c) => (
-            <CombatantChip
-              key={c.id}
-              label={resolveName(c.id)}
-              onClick={() => {
-                apply((e) => recordMiss(e, actorId, c.id));
-                setPickingMiss(false);
-              }}
-            />
-          ))}
         </div>
       )}
     </div>

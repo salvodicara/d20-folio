@@ -3,8 +3,9 @@
  * table-wide counterpart to the solo cockpit's {@link import("./combat-log").CombatEvent}).
  *
  * As the DM runs an encounter in the tracker, the PURE reducers append one
- * structured event per mechanical beat (an HP change, a condition, a fall, a
- * logged miss / pass). Each event carries ONLY ids + numbers — combatant ids
+ * structured event per landed beat (an HP change, a condition, a fall) — the
+ * deterministic record of WHAT LANDED (missed swings and drama belong in the DM's
+ * narrative note at the end entry, not here). Each event carries ONLY ids + numbers — combatant ids
  * (`pc-<uid>` / `monster-<n>`), condition ids, amounts — never a localized display
  * string (golden rule 7). The presenter `lib/views/combat-chronicle-view.ts`
  * resolves every one to its prose line at render, so the SAME stored log renders
@@ -86,12 +87,7 @@ export type CombatChronicleEvent =
       kind: "condition-loss";
       targetId: string;
       conditionId: string;
-    } & ChronicleEventBase)
-  /** A LOGGED miss — pulled explicitly by the DM on the active combatant (never
-   *  inferred from an event-less turn). */
-  | ({ kind: "attack-miss"; attackerId: string; targetId: string } & ChronicleEventBase)
-  /** A LOGGED pass/hold — the active combatant's turn went by without an action. */
-  | ({ kind: "turn-pass"; actorId: string } & ChronicleEventBase);
+    } & ChronicleEventBase);
 
 /** Every `CombatChronicleEvent.kind` discriminant (for the presenter's exhaustiveness). */
 export type CombatChronicleEventKind = CombatChronicleEvent["kind"];

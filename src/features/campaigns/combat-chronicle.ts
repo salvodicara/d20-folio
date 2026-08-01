@@ -2,9 +2,9 @@
  * combat-chronicle — PURE recorders that append {@link CombatChronicleEvent}s to an
  * encounter's ephemeral `events` feed as the DM runs the fight.
  *
- * The chronicle's data seam: the emit points (monster HP, PC HP, conditions, logged
- * miss/pass) compose one of these recorders with the plain encounter reducer, so
- * every factual beat lands as a structured event (ids + numbers only — golden rule
+ * The chronicle's data seam: the emit points (monster HP, PC HP, conditions) compose
+ * one of these recorders with the plain encounter reducer, so every LANDED beat lands
+ * as a structured event (ids + numbers only — golden rule
  * 7). NO React, NO Firebase (rides the pure-module + architecture-direction guards):
  * the events ride the SAME debounced encounter writer the reducers already use, so
  * accumulating them adds NO write cadence. The DM's tracker is the ONLY author (the
@@ -165,20 +165,6 @@ export function recordCondition(
     targetId,
     conditionId,
   });
-}
-
-/** Record a LOGGED miss (pulled explicitly — never inferred). */
-export function recordMiss(
-  state: EncounterState,
-  attackerId: string,
-  targetId: string
-): EncounterState {
-  return appendEvent(state, { kind: "attack-miss", attackerId, targetId });
-}
-
-/** Record a LOGGED pass/hold on the active combatant (pulled explicitly). */
-export function recordTurnPass(state: EncounterState, actorId: string): EncounterState {
-  return appendEvent(state, { kind: "turn-pass", actorId });
 }
 
 /** Attribute a pending `hp-damage` event to `attackerId` (the one-tap pick). A no-op
