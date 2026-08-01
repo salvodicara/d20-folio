@@ -117,7 +117,11 @@ budget readout in the round bar & Add-monster modal, the custom-monster CR selec
 toggle — more correct than DDB's standalone tool, which still runs 2014 multiplier math). The live
 head is now the **pack-side MM corpus**, advancing along the
 same manifest (`docs/POSITIONING.md`) — the react-router advisory triage, and the P4 polish tail
-(guided tour, compendium polish).
+(guided tour, compendium polish). **Campaign-foe additions (2026-08-01):** **Orc** + **Orc War
+Chief** authored pack-side for the owner's live session — off-roster last-official (2014-MM)
+statblocks, since the 2025 MM dropped their species-specific blocks for generic Humanoids
+(`content-pack/docs/BESTIARY_MANIFEST.md` → "Off-roster additions"). Nothic was already shipped
+(wave-1 pilot).
 
 **Session undo/redo stack — shipped in v0.19.0, DEPLOYED live (2026-07-11):** the 5-second undo toast grew a durable
 home — a per-character, session-memory, LIFO **undo stack** (`src/stores/undoStore.ts`, depth 20) with
