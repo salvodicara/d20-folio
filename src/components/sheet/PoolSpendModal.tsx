@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import type { TrackerUnit } from "@/data/types";
 import { localizeTrackerUnit } from "@/lib/views/tracker-view";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { NumberStepper } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -64,7 +65,7 @@ export function PoolSpendModal({ request, onConfirm, onCancel }: PoolSpendModalP
         unit,
       })}
     >
-      <div className="confirm-body items-center">
+      <ModalBody className="flex flex-col items-center gap-4">
         <NumberStepper
           value={amount}
           onChange={setAmount}
@@ -77,15 +78,15 @@ export function PoolSpendModal({ request, onConfirm, onCancel }: PoolSpendModalP
         <p className="m-0 text-center font-mono text-xs text-text-secondary">
           {t("combat.poolSpendLabel", { unit })}
         </p>
-        <div className="confirm-actions w-full">
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            {t("common.cancel")}
-          </Button>
-          <Button size="sm" onClick={() => onConfirm(amount)}>
-            {t("combat.poolSpendConfirm")}
-          </Button>
-        </div>
-      </div>
+      </ModalBody>
+      <ModalFoot>
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          {t("common.cancel")}
+        </Button>
+        <Button size="sm" onClick={() => onConfirm(amount)}>
+          {t("combat.poolSpendConfirm")}
+        </Button>
+      </ModalFoot>
     </ModalShell>
   );
 }

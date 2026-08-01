@@ -49,6 +49,7 @@ import {
   type ImportError,
 } from "./algorithm-json";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { cn } from "@/lib/utils";
@@ -540,7 +541,7 @@ function ImportJSONModal({
       rubric={t("algorithm.importJSONRubric")}
       size="md"
     >
-      <div className="modal-body flex flex-col gap-3 p-4">
+      <ModalBody className="flex flex-col gap-3">
         {/* Item i — a plain-language hint over the box; the box itself is pre-filled
             with the CURRENT algorithm (when one exists) or a working example to
             edit (a template, not a blank). */}
@@ -564,33 +565,32 @@ function ImportJSONModal({
             {error}
           </p>
         )}
-        <div className="flex items-center justify-between gap-2">
-          {/* Reset the box back to its seed (the current algorithm, or the worked
-              example when empty) after an edit/clear. */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setRaw(seed);
-              setError(null);
-            }}
-          >
-            {t(
-              hasContent
-                ? "algorithm.importJSONResetCurrent"
-                : "algorithm.importJSONResetExample"
-            )}
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={handleClose}>
-              {t("common.cancel")}
-            </Button>
-            <Button size="sm" onClick={handleConfirm}>
-              {t("common.confirm")}
-            </Button>
-          </div>
-        </div>
-      </div>
+      </ModalBody>
+      <ModalFoot>
+        {/* Reset the box back to its seed (the current algorithm, or the worked
+            example when empty) after an edit/clear — parked left of the pair. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="me-auto"
+          onClick={() => {
+            setRaw(seed);
+            setError(null);
+          }}
+        >
+          {t(
+            hasContent
+              ? "algorithm.importJSONResetCurrent"
+              : "algorithm.importJSONResetExample"
+          )}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={handleClose}>
+          {t("common.cancel")}
+        </Button>
+        <Button size="sm" onClick={handleConfirm}>
+          {t("common.confirm")}
+        </Button>
+      </ModalFoot>
     </ModalShell>
   );
 }

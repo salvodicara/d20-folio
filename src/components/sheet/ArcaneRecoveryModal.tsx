@@ -18,6 +18,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { arcaneRecoveryCap, ARCANE_RECOVERY_MAX_SLOT_LEVEL } from "@/lib/arcane-recovery";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { NumberStepper } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -93,7 +94,7 @@ export function ArcaneRecoveryModal({
         cap,
       })}
     >
-      <div className="confirm-body">
+      <ModalBody className="flex flex-col gap-4">
         {rows.length === 0 ? (
           <p className="m-0 text-center text-sm text-text-secondary">
             {t("combat.arcaneRecoveryNothing")}
@@ -121,16 +122,15 @@ export function ArcaneRecoveryModal({
             ))}
           </div>
         )}
-
-        <div className="confirm-actions w-full">
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            {t("common.cancel")}
-          </Button>
-          <Button size="sm" disabled={!chosenAny} onClick={confirm}>
-            {t("combat.arcaneRecoveryConfirm")}
-          </Button>
-        </div>
-      </div>
+      </ModalBody>
+      <ModalFoot>
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          {t("common.cancel")}
+        </Button>
+        <Button size="sm" disabled={!chosenAny} onClick={confirm}>
+          {t("combat.arcaneRecoveryConfirm")}
+        </Button>
+      </ModalFoot>
     </ModalShell>
   );
 }

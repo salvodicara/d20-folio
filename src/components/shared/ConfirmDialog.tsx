@@ -15,6 +15,7 @@
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { useConfirmStore } from "@/stores/confirmStore";
 
 export function ConfirmDialog() {
@@ -35,7 +36,7 @@ export function ConfirmDialog() {
       title={options.title}
       size="sm"
     >
-      <div className="modal-body confirm-body">
+      <ModalBody className="flex flex-col gap-4">
         <p className="confirm-msg">{options.message}</p>
         {options.details && options.details.length > 0 && (
           <ul className="confirm-details">
@@ -44,20 +45,20 @@ export function ConfirmDialog() {
             ))}
           </ul>
         )}
-        <div className="confirm-actions">
-          <Button variant="ghost" size="sm" onClick={() => respond(false)}>
-            {options.cancelLabel ?? t("common.cancel")}
-          </Button>
-          <Button
-            size="sm"
-            variant={options.tone === "danger" ? "destructive" : "primary"}
-            onClick={() => respond(true)}
-            autoFocus
-          >
-            {options.confirmLabel ?? t("common.confirm")}
-          </Button>
-        </div>
-      </div>
+      </ModalBody>
+      <ModalFoot>
+        <Button variant="ghost" size="sm" onClick={() => respond(false)}>
+          {options.cancelLabel ?? t("common.cancel")}
+        </Button>
+        <Button
+          size="sm"
+          variant={options.tone === "danger" ? "destructive" : "primary"}
+          onClick={() => respond(true)}
+          autoFocus
+        >
+          {options.confirmLabel ?? t("common.confirm")}
+        </Button>
+      </ModalFoot>
     </ModalShell>
   );
 }

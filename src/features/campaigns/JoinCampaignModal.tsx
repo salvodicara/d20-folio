@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { retireTopOverlayThen } from "@/lib/overlay-history";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
@@ -77,7 +78,7 @@ export function JoinCampaignModal({
       rubric={t("campaigns.rubric")}
       title={t("campaigns.joinTitle")}
     >
-      <div className="modal-body flex flex-col gap-4">
+      <ModalBody className="flex flex-col gap-4">
         <p className="text-sm text-text-secondary">{t("campaigns.joinBlurb")}</p>
         <Field
           label={t("campaigns.inviteLink")}
@@ -99,20 +100,20 @@ export function JoinCampaignModal({
             />
           )}
         </Field>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={handleClose}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            variant="primary"
-            loading={busy}
-            disabled={code.trim().length === 0}
-            onClick={() => void handleJoin()}
-          >
-            {t("campaigns.join")}
-          </Button>
-        </div>
-      </div>
+      </ModalBody>
+      <ModalFoot>
+        <Button variant="ghost" onClick={handleClose}>
+          {t("common.cancel")}
+        </Button>
+        <Button
+          variant="primary"
+          loading={busy}
+          disabled={code.trim().length === 0}
+          onClick={() => void handleJoin()}
+        >
+          {t("campaigns.join")}
+        </Button>
+      </ModalFoot>
     </ModalShell>
   );
 }

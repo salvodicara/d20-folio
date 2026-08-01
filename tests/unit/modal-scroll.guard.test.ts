@@ -74,6 +74,25 @@ describe("modal scroll — one primitive, every dialog", () => {
     ).toEqual([]);
   });
 
+  it("no file re-declares the body class raw (the padding lives on the primitive)", () => {
+    // A raw `className="modal-body …"` div bypasses ModalScroll, so it gets NO
+    // scroll-dissolve and NO frame's-margin padding — a zero-margin dialog (the
+    // 2026-08-01 invite-link regression). The class may only ship via ModalBody.
+    const offenders: string[] = [];
+    for (const rel of tsxFiles("src")) {
+      if (SANCTIONED.has(rel)) continue;
+      const src = readFileSync(join(ROOT, rel), "utf8");
+      if (/className=(?:"|\{cn\(")(?:modal-body|confirm-body)/.test(src))
+        offenders.push(rel);
+    }
+    expect(
+      offenders,
+      "the modal body ships ONLY through the ModalBody component — raw " +
+        "modal-body/confirm-body class found in: " +
+        offenders.join(", ")
+    ).toEqual([]);
+  });
+
   it("the primitive carries the dissolve + the frame's-margin hook", () => {
     const src = readFileSync(join(ROOT, "src/components/ui/modal-head.tsx"), "utf8");
     expect(src).toMatch(/export function ModalScroll/);

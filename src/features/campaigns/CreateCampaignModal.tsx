@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { retireTopOverlayThen } from "@/lib/overlay-history";
 import { CopyButton } from "@/components/shared/CopyButton";
 import { ShareButton } from "@/components/shared/ShareButton";
@@ -97,7 +98,7 @@ export function CreateCampaignModal({
       rubric={t("campaigns.rubric")}
       title={phase === "form" ? t("campaigns.createTitle") : t("campaigns.createdTitle")}
     >
-      <div className="modal-body flex flex-col gap-4">
+      <ModalBody className="flex flex-col gap-4">
         {phase === "form" ? (
           <>
             <p className="text-sm text-text-secondary">{t("campaigns.createBlurb")}</p>
@@ -116,19 +117,6 @@ export function CreateCampaignModal({
                 />
               )}
             </Field>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={handleClose}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="primary"
-                loading={busy}
-                disabled={name.trim().length === 0}
-                onClick={() => void handleCreate()}
-              >
-                {t("campaigns.create")}
-              </Button>
-            </div>
           </>
         ) : (
           <>
@@ -154,17 +142,28 @@ export function CreateCampaignModal({
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={handleClose}>
-                {t("common.close")}
-              </Button>
-              <Button variant="primary" onClick={openHub}>
-                {t("campaigns.openHub")}
-              </Button>
-            </div>
           </>
         )}
-      </div>
+      </ModalBody>
+      <ModalFoot>
+        <Button variant="ghost" onClick={handleClose}>
+          {t(phase === "form" ? "common.cancel" : "common.close")}
+        </Button>
+        {phase === "form" ? (
+          <Button
+            variant="primary"
+            loading={busy}
+            disabled={name.trim().length === 0}
+            onClick={() => void handleCreate()}
+          >
+            {t("campaigns.create")}
+          </Button>
+        ) : (
+          <Button variant="primary" onClick={openHub}>
+            {t("campaigns.openHub")}
+          </Button>
+        )}
+      </ModalFoot>
     </ModalShell>
   );
 }
