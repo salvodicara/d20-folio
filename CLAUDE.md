@@ -17,8 +17,8 @@ deterministic rules engine is the product's intelligence — there is no AI/LLM 
 stay owner-gated (golden rule 22), so `main` may run ahead of live at any time. The repo is
 **open-source + split-repo since 2026-07-17** (public SRD-only `salvodicara/d20-folio` + the private
 `content-pack`); the **full-BG3
-identity pivot is code-complete**, with only owner-generated art asset integration remaining (the
-"ASSET-INTEGRATION HANDOFF" in `PROGRESS.md`). The 100%-automation
+identity pivot is COMPLETE** — asset integration closed 2026-07-24 (PROMPT_12–25 all resolved,
+the ASSET-INTEGRATION ledger in `PROGRESS.md`; the tome-leaf remasters closed 2026-08-01). The 100%-automation
 push, the encounter/combat single-source re-architecture, the campaign-hub redesign, admin
 god-mode, the initiative single-source re-architecture, the sheet's management-chrome system (the
 Binder's Fob / Signet), and the combat-CTA/reversal grammar are shipped and deployed; the

@@ -64,7 +64,8 @@ blocking on owner screenshots):
 (https://d20-folio.web.app, owner-confirmed live 2026-07-23), so `main` and live are currently **in
 step**. Deploys stay owner-gated (golden rule 22), so `main` may run ahead of live at any time.
 **6 real users** have been playing since 2026-06-08. The repo went **open-source + split-repo**
-(2026-07-17), the **full-BG3 identity pivot** landed code-complete (asset integration pending), and
+(2026-07-17), the **full-BG3 identity pivot** is **COMPLETE** (asset integration closed 2026-07-24 —
+PROMPT*12–25 all resolved, the ledger below; the tome-leaf remasters 28/29 closed 2026-08-01), and
 the **DDB-parity feature epic** is now **ACTIVE** (OPENED 2026-07-23) with its **bestiary flagship
 SHIPPED** (2026-07-24), the **encounter picker SHIPPED** (2026-07-25; bestiary-first), the
 **2024-DMG XP-budget difficulty calculator SHIPPED** (2026-07-25; the DM-only budget readout),
@@ -110,8 +111,8 @@ the **"· active" self-labelling** of while-active effect chips and the GR7 **pr
 (`extractTrigger` / `extractSpellTrigger` / `extractDamageDice` retired in favour of structured tokens).
 The **DM toolkit's** headline surface (the in-hub party-overview dashboard + encounter/initiative
 tracker) is **shipped and live**. The **2024 core-rules SYSTEM audit (RA-01…RA-35)** is now
-**fully CLOSED** (`docs/AUTOMATION_BACKLOG.md` is a dated audit record; see _Shipped — the 2024
-core-rules audit close-out_), and the tracking-doc reconciliation truth-sweep landed with it. The
+**fully CLOSED** (`docs/AUTOMATION_BACKLOG.md` is a dated audit record; see \_Shipped — the 2024
+core-rules audit close-out*), and the tracking-doc reconciliation truth-sweep landed with it. The
 forward frontier (detailed under _Next — the forward plan_) is the **ACTIVE DDB-parity feature
 epic** — its **bestiary flagship SHIPPED** (2026-07-24: 330 SRD monsters EN+IT + the compendium
 Monsters section; see _Shipped — the SRD bestiary campaign_), the **encounter picker SHIPPED**
