@@ -9560,12 +9560,9 @@ button.create-need:focus-visible .create-need-chev {
     inset 0 0 70px 24px color-mix(in oklab, #000 62%, var(--gold-leaf-900));
 }
 
-/* The PAGE HOSTS (the tome + the sheet page): their top edge IS the shell's
-   seat line — no own border-top, square head corners (a notebook page under
-   its index tabs). `--leaf-head` paints the FLAT head band in the active
-   tab's exact fill, so tab↔page fusion is an equality, not a calibration
-   against the vellum photo; the band melts into the texture below. The dark
-   vignette is dropped here (flat head band must stay flat to the corners). */
+/* The PAGE HOSTS: normal folio panels — full border (the seat line IS this
+   border), full rounding; `--leaf-head` paints the flat head band the active
+   tab fuses with. */
 .cmp-tome {
   /* A NORMAL panel (owner, 2026-08-01: "è semplicemente il bordo del
      riquadro e avrebbe sempre dovuto esserlo"): full border, full rounding.
@@ -9647,8 +9644,7 @@ button.create-need:focus-visible .create-need-chev {
   gap: 5px;
   /* 2px of bottom padding: the row is a SCROLLER (overflow-x clips Y too),
      and the active tab's 2px drop over the panel border must stay inside
-     the padding box or the scroller cuts it. The shell's -2px puts the
-     panel back where it was. */
+     the padding box or the scroller cuts it. */
   padding: 0 var(--sp-4) 2px;
 }
 .cmp-ribbon::-webkit-scrollbar,
@@ -9743,7 +9739,7 @@ button.create-need:focus-visible .create-need-chev {
   align-items: center;
   gap: 7px;
   /* INTEGER height (not font-derived): a fractional row bottom makes the
-     browser snap the seat line and the tab's cover onto DIFFERENT device
+     browser snap the seat line and the tab's overlap onto DIFFERENT device
      pixel rows — the un-killable hairline under the active tab (owner,
      2026-07-31). An integer edge snaps identically at every DPR. */
   height: 36px;
