@@ -141,10 +141,11 @@ export function CockpitView() {
         <TabsProvider>
           <PlayRefDeepLink />
           <TabStrip />
-          {/* The character's PAGE — the tome's bound-leaf material hugging the
-              tab content; the strip's index tabs protrude above its top edge
-              and the active one bites into it (owner, 2026-07-31). */}
-          <div className="tome-leaf-surface sheet-page">
+          {/* The character's PLATE — the CSS-built working-register material
+              (two-style law: parchment is the compendium's alone); the strip's
+              index tabs protrude above its top edge and the active one fuses
+              with its head band (owner, 2026-08-01). */}
+          <div className="sheet-page">
             <TabBody />
           </div>
         </TabsProvider>

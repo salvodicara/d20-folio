@@ -3496,6 +3496,41 @@ button.pr-dot.lg::before {
 .sheet-page {
   padding: var(--sp-3);
   min-width: 0;
+  /* THE SHEET PLATE (two-style law, owner 2026-08-01): the working-register
+     material, CSS-BUILT from the BG3-examine tones measured in the corpus —
+     never a cover photo: this surface GROWS when sections expand, and a cover
+     image rescales on every growth (the owner's "texture that regenerates"
+     jump). PX-ANCHORED stops are stable under any height: a flat head band in
+     the page tone (the tab-fusion equality), melting into the smoky body. */
+  background: linear-gradient(
+    180deg,
+    var(--page-tone) 0 48px,
+    var(--sheet-plate-body) 320px
+  );
+  border: 1px solid var(--seat-ink);
+  border-top: 0;
+  border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
+  overflow: hidden;
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.4),
+    0 6px 14px rgba(0, 0, 0, 0.45);
+}
+[data-theme="light"] .sheet-page {
+  box-shadow:
+    0 2px 5px rgba(46, 30, 6, 0.24),
+    0 12px 28px rgba(46, 30, 6, 0.34),
+    var(--gilt-glow);
+}
+/* The cockpit's OWN page tones (the compendium keeps the global vellum pair):
+   head band = --page-tone (the active tab fuses with it by token identity),
+   body = the deeper smoky umber beneath. */
+.content {
+  --page-tone: #201c19;
+  --sheet-plate-body: #130e0b;
+}
+[data-theme="light"] .content {
+  --page-tone: #ded2bc;
+  --sheet-plate-body: #c9bda6;
 }
 /* SYMMETRIC TAIL (owner, 2026-07-31): the page's breath is `.sheet-page`'s
    own sp-3 padding, every side; TabBody's `pb-3` keeps the tail's mirror. The
@@ -9537,8 +9572,7 @@ button.create-need:focus-visible .create-need-chev {
    tab's exact fill, so tab↔page fusion is an equality, not a calibration
    against the vellum photo; the band melts into the texture below. The dark
    vignette is dropped here (flat head band must stay flat to the corners). */
-.cmp-tome,
-.sheet-page {
+.cmp-tome {
   border-top: 0;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
@@ -9548,14 +9582,12 @@ button.create-need:focus-visible .create-need-chev {
    top-highlight painted a 1px lit row across the page's head — under the
    active tab it read as a separator, killing the one-piece fusion). Only the
    OUTER drops remain: a page casts a shadow, it is not embossed. */
-[data-theme="dark"] .cmp-tome,
-[data-theme="dark"] .sheet-page {
+[data-theme="dark"] .cmp-tome {
   box-shadow:
     0 3px 0 rgba(0, 0, 0, 0.4),
     0 6px 14px rgba(0, 0, 0, 0.45);
 }
-[data-theme="light"] .cmp-tome,
-[data-theme="light"] .sheet-page {
+[data-theme="light"] .cmp-tome {
   box-shadow:
     0 2px 5px rgba(46, 30, 6, 0.24),
     0 12px 28px rgba(46, 30, 6, 0.34),
