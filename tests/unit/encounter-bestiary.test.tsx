@@ -17,9 +17,11 @@ vi.mock("@/features/campaigns/dm-readers", () => ({
 }));
 
 import {
+  EncounterAddMonsterBody,
   EncounterAddMonsterModal,
   EncounterStatblockModal,
 } from "@/features/campaigns/encounter-bestiary";
+import { ModalShell } from "@/components/shared/ModalShell";
 import { makeEncounterMonsterSpec } from "@/features/campaigns/encounter-monster-spec";
 import { localizeSrd } from "@/i18n/resolver";
 import { monsterXp } from "@/lib/monster";
@@ -76,6 +78,51 @@ describe("EncounterAddMonsterModal — Bestiary + Custom tabs (§A.2)", () => {
         i18n.getFixedT("en")("campaignHub.encounterBudgetXp", { xp: fmtXp(350, "en") })
       )
     ).toBeTruthy();
+  });
+});
+
+describe("EncounterAddMonsterBody — single-mount body (cold-open flash fix)", () => {
+  it("renders the tabs + picker WITHOUT its own dialog shell, so the caller's lifted shell is the only dialog", () => {
+    // The body owns no ModalShell: `Party` renders ONE shell above the Suspense
+    // boundary, so the dialog mounts once and only the body swaps in (no shell
+    // tear-down + remount, no cold-open die flash).
+    const { unmount } = render(
+      <EncounterAddMonsterBody
+        onAdd={vi.fn()}
+        budget={BLANK_BUDGET}
+        onDetailTitle={vi.fn()}
+      />
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByRole("button", { name: "Bestiary" })).toBeTruthy();
+    expect(screen.getByPlaceholderText(/search monsters/i)).toBeTruthy();
+    unmount();
+  });
+
+  it("under a single lifted ModalShell there is exactly ONE dialog (mounts once)", () => {
+    render(
+      <ModalShell open onClose={vi.fn()} title="Add to the encounter">
+        <EncounterAddMonsterBody
+          onAdd={vi.fn()}
+          budget={BLANK_BUDGET}
+          onDetailTitle={vi.fn()}
+        />
+      </ModalShell>
+    );
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+  });
+
+  it("reports a null detail-title on tab change, so the caller's shell falls back to the default rubric", () => {
+    const onDetailTitle = vi.fn();
+    render(
+      <EncounterAddMonsterBody
+        onAdd={vi.fn()}
+        budget={BLANK_BUDGET}
+        onDetailTitle={onDetailTitle}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Custom monster" }));
+    expect(onDetailTitle).toHaveBeenCalledWith(null);
   });
 });
 

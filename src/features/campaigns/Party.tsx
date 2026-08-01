@@ -114,9 +114,24 @@ import {
 // catalogue load run in parallel, and `ensureSrdKind` marks the kind resident so a
 // later locale switch carries the corpus. The campaign chunk gains only this lazy
 // wrapper; the eager closure gains zero corpus bytes (the eager-partition tripwire).
-const EncounterAddMonsterModal = lazy(() =>
-  Promise.all([import("./encounter-bestiary"), ensureSrdKind("monster")]).then(([m]) => ({
-    default: m.EncounterAddMonsterModal,
+const importBestiary = () => import("./encounter-bestiary");
+
+/** Warm the bestiary chunk + monster catalogue on Add-monster INTENT (hover / focus /
+ *  press), so by open time both are cached and Suspense never shows its fallback — the
+ *  cold-open die never flashes. Both underlying loads are idempotent (`import()` is
+ *  module-cached; `ensureSrdKind` de-dupes via its in-flight map), so firing on every
+ *  intent event is free. */
+function preloadBestiary(): void {
+  void Promise.all([importBestiary(), ensureSrdKind("monster")]);
+}
+
+// Only the BODY is lazy — the enclosing `ModalShell` is eager (imported above) and
+// rendered ONCE by `Party` above the Suspense boundary, so the dialog mounts a single
+// time and only its inner body swaps from the region loader to the resolved content
+// (no shell tear-down + remount on cold open).
+const EncounterAddMonsterBody = lazy(() =>
+  Promise.all([importBestiary(), ensureSrdKind("monster")]).then(([m]) => ({
+    default: m.EncounterAddMonsterBody,
   }))
 );
 
@@ -529,6 +544,14 @@ function CombatLayer({
   // it opens the bestiary picker MODAL (Bestiary + Custom tabs). DM-only; reinforcements
   // are addable all through the fight. The chunk + catalogue fetch happens on FIRST open.
   const [pickerOpen, setPickerOpen] = useState(false);
+  // The shell title, lifted from the (lazy) body so the single ModalShell can mount
+  // above Suspense: null = the default "Add to the encounter" rubric; the body reports
+  // an open picker entry's name via `onDetailTitle`.
+  const [pickerTitle, setPickerTitle] = useState<string | null>(null);
+  const closePicker = () => {
+    setPickerOpen(false);
+    setPickerTitle(null);
+  };
   // The FULL live turn order INCLUDING hidden (hidden is a display filter, not a turn
   // filter), so the DM and a player step the identical order and a staged ambush still
   // takes its turn.
@@ -715,6 +738,11 @@ function CombatLayer({
               <Button
                 variant="secondary"
                 onClick={() => setPickerOpen(true)}
+                // Warm the lazy chunk + monster catalogue the moment the DM aims at the
+                // trigger, so open is instant and the Suspense fallback never paints.
+                onPointerEnter={preloadBestiary}
+                onFocus={preloadBestiary}
+                onPointerDown={preloadBestiary}
                 aria-haspopup="dialog"
               >
                 <Icon as={Plus} size="sm" decorative />
@@ -744,28 +772,26 @@ function CombatLayer({
         }
       />
 
-      {/* The bestiary picker modal — conditionally mounted so the chunk + catalogue
-          fetch happens on FIRST open, never on hub load. The Suspense fallback shows
-          the real shell + loader (both eager-reachable) so a cold tap gives instant
-          feedback; warm opens are instant (module cache + resident catalogue). */}
+      {/* The bestiary picker modal — the chunk + catalogue fetch happens on FIRST open
+          (or earlier, on trigger intent — see `preloadBestiary`), never on hub load.
+          ONE eager `ModalShell` mounts here, above Suspense, so the dialog mounts a
+          single time; only the inner BODY swaps from the region loader to the resolved
+          picker (no shell tear-down + remount, no cold-open die flash). Warm opens are
+          instant (module cache + resident catalogue). */}
       {pickerOpen && (
-        <Suspense
-          fallback={
-            <ModalShell
-              open
-              onClose={() => setPickerOpen(false)}
-              title={t("campaignHub.encounterAddForm")}
-            >
-              <FolioLoader variant="region" />
-            </ModalShell>
-          }
+        <ModalShell
+          open
+          onClose={closePicker}
+          title={pickerTitle ?? t("campaignHub.encounterAddForm")}
         >
-          <EncounterAddMonsterModal
-            onAdd={addMonsterReinforcement}
-            budget={budget}
-            onClose={() => setPickerOpen(false)}
-          />
-        </Suspense>
+          <Suspense fallback={<FolioLoader variant="region" />}>
+            <EncounterAddMonsterBody
+              onAdd={addMonsterReinforcement}
+              budget={budget}
+              onDetailTitle={setPickerTitle}
+            />
+          </Suspense>
+        </ModalShell>
       )}
 
       <EncounterRoundBar

@@ -34,15 +34,18 @@ import { setMonsterXp, type MonsterInput } from "./encounter";
 import type { EncounterBudgetView } from "./encounter-view";
 
 /**
- * The DM's Add-monster modal — two tabs: Bestiary (the shared picker) and Custom
- * (the surviving manual `AddMonsterForm`). Both commit through the ONE `onAdd`
- * handler; the shell owns dismissal. `closeOnAdd` stays unset — assembling an
- * encounter is N picks without reopening (matching the spell modal).
+ * The DM's Add-monster modal BODY — two tabs: Bestiary (the shared picker) and
+ * Custom (the surviving manual `AddMonsterForm`). Both commit through the ONE
+ * `onAdd` handler. This renders only the CONTENT (tabs · budget strip · picker /
+ * form) — the enclosing `ModalShell` is owned by the caller so the dialog can mount
+ * ONCE (above the Suspense boundary) and never tear down + remount when the lazy
+ * chunk resolves (the cold-open flash fix). It reports the open entry's name via
+ * `onDetailTitle` so the caller's shell title can reflect it.
  */
-export function EncounterAddMonsterModal({
+export function EncounterAddMonsterBody({
   onAdd,
   budget,
-  onClose,
+  onDetailTitle,
 }: {
   onAdd: (input: MonsterInput) => void;
   /** The DM XP-budget grading (§D.1 mount 2) — a live strip under the tab switcher
@@ -50,25 +53,21 @@ export function EncounterAddMonsterModal({
    *  mobile; SRD Step 3 is literally "deduct as you add"). Each add re-renders the
    *  caller → a fresh prop → this strip ticks live. */
   budget: EncounterBudgetView;
-  onClose: () => void;
+  /** Report the open picker entry's name (or null on tab change) so the caller's
+   *  shell title reflects it. */
+  onDetailTitle: (title: string | null) => void;
 }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"srd" | "custom">("srd");
-  // The picker reports the open entry's name so the shell title reflects it.
-  const [detailTitle, setDetailTitle] = useState<string | null>(null);
   const spec = useMemo(() => makeEncounterMonsterSpec(onAdd, t), [onAdd, t]);
 
   return (
-    <ModalShell
-      open
-      onClose={onClose}
-      title={detailTitle ?? t("campaignHub.encounterAddForm")}
-    >
+    <>
       <ModalTabSwitcher
         activeTab={activeTab}
         onTabChange={(tab) => {
           setActiveTab(tab);
-          setDetailTitle(null);
+          onDetailTitle(null);
         }}
         tabs={[
           { id: "srd", label: t("campaignHub.encounterBestiaryTab") },
@@ -86,10 +85,44 @@ export function EncounterAddMonsterModal({
         <CompendiumPicker
           spec={spec}
           mode="add"
-          onDetailTitle={setDetailTitle}
+          onDetailTitle={onDetailTitle}
           autoFocus
         />
       )}
+    </>
+  );
+}
+
+/**
+ * The DM's Add-monster modal — {@link EncounterAddMonsterBody} inside its own
+ * `ModalShell`, owning the detail-title state and dismissal. `Party.tsx` renders the
+ * BODY directly under a lifted shell (single-mount, no cold-open flash); this
+ * self-contained wrapper stays for standalone callers/tests.
+ */
+export function EncounterAddMonsterModal({
+  onAdd,
+  budget,
+  onClose,
+}: {
+  onAdd: (input: MonsterInput) => void;
+  budget: EncounterBudgetView;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  // The picker reports the open entry's name so the shell title reflects it.
+  const [detailTitle, setDetailTitle] = useState<string | null>(null);
+
+  return (
+    <ModalShell
+      open
+      onClose={onClose}
+      title={detailTitle ?? t("campaignHub.encounterAddForm")}
+    >
+      <EncounterAddMonsterBody
+        onAdd={onAdd}
+        budget={budget}
+        onDetailTitle={setDetailTitle}
+      />
     </ModalShell>
   );
 }

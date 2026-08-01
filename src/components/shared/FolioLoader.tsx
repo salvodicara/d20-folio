@@ -102,10 +102,16 @@ export function FolioLoader({
   const [show, setShow] = useState(delay === 0);
 
   useEffect(() => {
-    if (delay === 0) return;
+    // MIN-DISPLAY LATCH (systemic anti-flash net): once the die has painted it is
+    // COMMITTED for the rest of the mount — the effect early-returns, so a late
+    // `delay`-prop change or a Strict-mode re-run can never re-arm the timer and blink
+    // the die back off a few frames after it appeared. Combined with the eager
+    // single-mount shell + intent preload upstream (the primary cold-open fix), no lazy
+    // surface can flash this loader in-then-out.
+    if (show) return;
     const id = setTimeout(() => setShow(true), delay);
     return () => clearTimeout(id);
-  }, [delay]);
+  }, [delay, show]);
 
   const px = size ?? (variant === "fullscreen" ? 84 : 72);
   // The WRAPPER mounts immediately (only the die waits out the delay): it reserves
