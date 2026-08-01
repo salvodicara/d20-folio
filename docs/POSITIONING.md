@@ -64,8 +64,8 @@ frontier"_), sequenced **bestiary-first**:
 - **Homebrew — the ladder's first rung SHIPPED (2026-07-30):** the account-level library (rung (a)
   — every per-character custom spell/feature/equipment silently kept as a reusable account doc,
   "custom IS the library"). The remaining rungs stand: campaign sharing → monster editor
-  (a reusable custom-monster library — "custom IS the library" applied to monsters — is the CANDIDATE
-  first cut, owner idea 2026-08-01) → species/feats/subclasses → **homebrew classes**, the declared _horizon flagship_ because it is
+  (a reusable custom-monster library — "custom IS the library" applied to monsters, plus DM-uploaded
+  custom-monster portraits — is the CANDIDATE first cut, owner idea 2026-08-01) → species/feats/subclasses → **homebrew classes**, the declared _horizon flagship_ because it is
   D&D Beyond's #1 refused community ask, and our grants seam can actually do it well.
 - **Quickbuild parity SHIPPED (2026-07-30)** — DDB shipped "Quickbuilder" March 2026; Quick Start
   now opens on a complete, legal, class-recommended build (only the name left to type) **plus the
@@ -103,6 +103,12 @@ frontier"_), sequenced **bestiary-first**:
 - **No dice rolling, ever** (golden rule 21) — show formulas + roll-entry; users roll externally.
 - **No AI / LLM assistant** (Constitution v1.7, owner-ratified 2026-07-06) — the deterministic engine
   _is_ the intelligence; do not re-add.
+- **No internet/wiki monster ARTWORK, ever** (LEGAL, owner-ratified 2026-08-01) — pulling WotC/wiki/
+  artist monster art off the internet is copyright infringement (SRD CC-BY licenses stats/text ONLY,
+  never the art) and breaks the SRD-clean boundary below. Legal monster visuals only: DM-uploaded
+  custom-monster portraits (the DM owns their content), our OWN type-based icons, or owner-generated
+  pack art — never scraped. Captured in `PROGRESS.md` → the DDB-parity charter's homebrew-ladder
+  custom-monster portrait candidate.
 
 ## The moat vs. the opening
 

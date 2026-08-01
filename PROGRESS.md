@@ -1372,6 +1372,26 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   - **DDB-parity angle:** DDB has a monster/homebrew library.
   - **Sequencing:** touches the SAME `AddMonsterForm` as the in-flight encounter-polish + the
     combat-chronicle epic, so it sequences **after** those; **priority is the owner's call**.
+- **Custom-monster portrait/token image — DM uploads their OWN art (CANDIDATE — owner idea
+  2026-08-01):** encounter monsters can carry a **portrait/token image**, replacing the current
+  per-seed tinted initial token. Tightly coupled to the **reusable custom-monster library** candidate
+  above — a custom monster is saved WITH its portrait and reused across encounters/campaigns. Two
+  parts, DIFFERENT dispositions:
+  - **DOABLE + wanted — custom-monster image UPLOAD:** a DM uploads their OWN image as a custom
+    monster's portrait (a VTT-style token used ONLY as a portrait, never on a battle map — respects
+    Constitution §2.9, still no VTT). **Reuses the EXISTING character-portrait infrastructure** —
+    Firebase Storage upload + the crop flow already shipped for character portraits — so the DM is
+    responsible for their uploaded content, the SAME model as character portraits. Pairs with the
+    reusable custom-monster library (the portrait rides the saved custom monster).
+  - **NOT doable — internet/wiki monster ARTWORK is OFF the table (LEGAL): DECLINED, a non-goal.**
+    Pulling WotC/wiki/artist monster art off the internet is copyright infringement — the SRD's
+    CC-BY-4.0 licenses stats/text ONLY, **never the art** — and it violates the app's SRD-clean
+    licensing boundary, a real risk heading to GA/commercial (`docs/POSITIONING.md` → the deliberate
+    non-goals + the monetization boundary). No future agent revisits this. NEVER scraped art.
+  - **Legal alternatives for SRD-monster visuals (CANDIDATE, lower priority):** generic
+    **type-based icons the project draws itself** (dragon/humanoid/undead/beast glyphs — our own art,
+    zero copyright issue), OR **owner-generated monster art shipped in the PRIVATE pack** over time
+    (the BG3 art-pipeline model — personal/friends use only). Never scraped art.
 - **Public share links: SHIPPED 2026-07-31 — CHARACTERS ONLY, industry standard.** The
   decided LIVE model shipped as decided — a `shared: true` flag on the character doc + the unguessable doc id
   as the URL; rules allow anonymous read-only when flagged; revoke = flip the flag; noindex;
