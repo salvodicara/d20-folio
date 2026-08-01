@@ -52,12 +52,21 @@ export interface RecentAttack {
   /** Stable, monotonically-increasing id within the ring (the max existing id + 1 —
    *  deterministic, no RNG; survives the ring so a de-dup handle never repeats). */
   id: string;
-  /** The encounter combatant ids the player targeted (`monster-<n>`). Phase 1: one. */
+  /** The encounter combatant ids the player targeted (`monster-<n>`). One for a
+   *  single-target swing; the SET the player struck for a multi-target action (Phase 2 —
+   *  Magic Missile's darts, Scorching Ray's rays across several foes). */
   targetIds: string[];
   /** The outcome the player tapped after rolling — the fact the app never infers. */
   outcome: "hit" | "miss";
   /** The encounter round the attack was declared in — the correlation window key. */
   round: number;
+  /**
+   * The action's multi-instance DROP BOUND — how many separate damage instances the
+   * declared action creates (Magic Missile 3, Scorching Ray 3), so the DM-side
+   * correlation caps how many observed HP drops it may fuse. Present ONLY for a
+   * multi-target declaration; ABSENT for a single-target swing (bound = 1 by shape).
+   */
+  instances?: number;
 }
 
 export interface CombatState {

@@ -40,6 +40,7 @@ import { weaponSealIcon, magicItemSealIcon } from "@/components/shared/item-icon
 import { getMagicItem } from "@/data/magic-items";
 import { ThisTurnTracker } from "../ThisTurnTracker";
 import { AttackDeclaration } from "../AttackDeclaration";
+import { attackTargetCap, shouldDeclareAttack } from "../attack-scope";
 import { useSheetCombat } from "../turn-state";
 import { InCombatStatus } from "@/features/campaigns/in-combat-chip";
 import { CombatAlgorithm } from "./CombatAlgorithm";
@@ -317,19 +318,21 @@ export function PlayTab() {
   const { handleSelect, handleUseReaction, spendRider, applyCunningStrike } =
     useTurnEconomy();
 
-  // AUTO-NARRATED COMBAT (Phase 1) — when THIS sheet is in a live campaign encounter, a
-  // committed WEAPON attack opens the target + HIT/MISS capture ({@link AttackDeclaration}).
+  // AUTO-NARRATED COMBAT (Phase 1 + 2) — when THIS sheet is in a live campaign encounter,
+  // a committed attack opens the target + HIT/MISS capture ({@link AttackDeclaration}).
   // SOLO (`sheetCombat === null`) never opens it — the gate is here, so no target/hit-miss
-  // UI exists off an encounter. The panel reads its targets live off `sheetCombat`.
+  // UI exists off an encounter. The panel reads its targets live off `sheetCombat`. The
+  // committed action's OWN shape decides single- vs multi-select: a weapon swing (Phase 1)
+  // or a single-instance action is single; a multi-target action (Magic Missile / Scorching
+  // Ray — {@link shouldDeclareAttack}) opens the multi-select capped at its instance count.
   const sheetCombat = useSheetCombat();
-  const [declaringAttack, setDeclaringAttack] = useState(false);
+  const [declaringCap, setDeclaringCap] = useState<number | null>(null);
   const commitAction = useCallback(
     (action: ResolvedAction) => {
       handleSelect(action);
-      // A weapon swing in a live encounter → capture target + outcome. Non-weapon actions
-      // and solo play never open it (Phase 1 scope: single weapon attacks; save/AoE/cast
-      // attacks are later phases).
-      if (sheetCombat && action.source === "weapon") setDeclaringAttack(true);
+      if (sheetCombat && shouldDeclareAttack(action)) {
+        setDeclaringCap(attackTargetCap(action));
+      }
     },
     [handleSelect, sheetCombat]
   );
@@ -950,13 +953,15 @@ export function PlayTab() {
         />
       </div>
 
-      {/* ── In-encounter attack declaration (auto-narrated combat, Phase 1) ──────
-          Rendered ONLY while in a live encounter AND a weapon attack was just
-          committed; SOLO never mounts it (the gate is `sheetCombat` on the commit). */}
-      {declaringAttack && sheetCombat && (
+      {/* ── In-encounter attack declaration (auto-narrated combat, Phase 1 + 2) ──
+          Rendered ONLY while in a live encounter AND an attack was just committed;
+          SOLO never mounts it (the gate is `sheetCombat` on the commit). `maxTargets`
+          is the committed action's own target cap (1 = single; > 1 = multi-select). */}
+      {declaringCap !== null && sheetCombat && (
         <AttackDeclaration
           sheetCombat={sheetCombat}
-          onDone={() => setDeclaringAttack(false)}
+          maxTargets={declaringCap}
+          onDone={() => setDeclaringCap(null)}
         />
       )}
 

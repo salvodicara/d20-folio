@@ -1,18 +1,24 @@
 /**
  * AttackDeclaration — the in-encounter target + HIT/MISS capture (auto-narrated combat,
- * Phase 1). Shown ONLY when the player commits a WEAPON attack while their open sheet is
- * in a LIVE campaign encounter ({@link useSheetCombat} non-null). It never renders in
- * SOLO play — the gate lives entirely at the call site in {@link
+ * Phase 1 + Phase 2). Shown ONLY when the player commits an attack while their open
+ * sheet is in a LIVE campaign encounter ({@link useSheetCombat} non-null). It never
+ * renders in SOLO play — the gate lives entirely at the call site in {@link
  * import("./tabs/PlayTab").PlayTab}, and this component is only mounted with a non-null
  * `sheetCombat`.
  *
  * The flow (deterministic, never fabricated — golden rule 21): the player picks the
- * monster they swung at, rolls at the table, then taps HIT or MISS. That target + outcome
- * is written to their `combat/state` subdoc's `recentActions` ring
+ * monster(s) they swung at, rolls at the table, then taps HIT or MISS. That target
+ * SET + outcome is written to their `combat/state` subdoc's `recentActions` ring
  * ({@link useCharacterStore.declareAttack}) — the budget-safe channel the DM's
- * correlation layer fuses with the observed HP delta into a confirmed chronicle line. No
- * result is ever inferred: nothing is written until the player taps HIT or MISS, and the
- * panel is freely dismissible (writes nothing).
+ * correlation layer fuses with the observed HP delta(s) into a confirmed chronicle
+ * line. No result is ever inferred: nothing is written until the player taps HIT or
+ * MISS, and the panel is freely dismissible (writes nothing).
+ *
+ * SINGLE- vs MULTI-select is driven by the committed action's OWN shape (`maxTargets`,
+ * from {@link import("./attack-scope").attackTargetCap}): a single-target swing keeps
+ * the Phase-1 single-select chip; a multi-target action (Magic Missile's darts,
+ * Scorching Ray's rays — `> 1`) becomes a MULTI-select, capped at that instance count.
+ * The per-target damage is whatever the DM applies (never captured here).
  *
  * Never interrupts the fight: it is a compact, non-modal, dismissible banner — no confirm
  * prompt, no blocking overlay.
@@ -25,15 +31,19 @@ import { Icon } from "@/components/ui/icon";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
 
-/** One target chip — a monster the player can pick. Single-select for Phase 1. */
+/** One target chip — a monster the player can pick. Toggles in the multi-target set;
+ *  a single-target picker replaces the selection. Disabled only when the multi cap is
+ *  reached and this chip is not already in the set (never lets the player over-pick). */
 function TargetChip({
   label,
   selected,
+  disabled,
   onClick,
   ariaLabel,
 }: {
   label: string;
   selected: boolean;
+  disabled: boolean;
   onClick: () => void;
   ariaLabel: string;
 }) {
@@ -41,9 +51,10 @@ function TargetChip({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-pressed={selected}
       aria-label={ariaLabel}
-      className="rounded-sm border border-border-medium bg-bg-tertiary px-2 py-0.5 text-2xs text-text-secondary transition-colors hover:border-accent hover:text-text-primary aria-pressed:border-accent aria-pressed:bg-accent/15 aria-pressed:text-text-primary"
+      className="rounded-sm border border-border-medium bg-bg-tertiary px-2 py-0.5 text-2xs text-text-secondary transition-colors hover:border-accent hover:text-text-primary aria-pressed:border-accent aria-pressed:bg-accent/15 aria-pressed:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
     >
       {label}
     </button>
@@ -53,29 +64,50 @@ function TargetChip({
 /**
  * The declaration banner. `sheetCombat` is the player's live encounter (its `view.rows`
  * carry the visible monsters — a non-DM view already filters hidden ambushers); `round`
- * stamps the declaration for the correlation window. Resolves via `onDone` after a
- * HIT/MISS write OR a dismiss.
+ * stamps the declaration for the correlation window. `maxTargets` is the committed
+ * action's target cap (1 = single-select Phase-1; `> 1` = multi-select, capped).
+ * Resolves via `onDone` after a HIT/MISS write OR a dismiss.
  */
 export function AttackDeclaration({
   sheetCombat,
+  maxTargets = 1,
   onDone,
 }: {
   sheetCombat: GlobalCombat;
+  maxTargets?: number;
   onDone: () => void;
 }) {
   const { t } = useTranslation();
   const declareAttack = useCharacterStore((s) => s.declareAttack);
-  const [targetId, setTargetId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const multi = maxTargets > 1;
 
-  // Phase 1 targets = the visible monster rows (the player's view already excludes hidden
+  // Phase-1 targets = the visible monster rows (the player's view already excludes hidden
   // ambushers), never-down. Ids only (golden rule 7) — the label is the row's typed name.
   const monsters = sheetCombat.view.rows.filter((r) => r.kind === "monster" && !r.down);
 
+  const toggle = (id: string): void =>
+    setSelected((prev) => {
+      if (!multi) return [id]; // single-select: replace
+      if (prev.includes(id)) return prev.filter((x) => x !== id); // deselect
+      if (prev.length >= maxTargets) return prev; // at cap: never over-pick
+      return [...prev, id];
+    });
+
   const declare = (outcome: "hit" | "miss"): void => {
-    if (!targetId) return;
-    declareAttack({ targetIds: [targetId], outcome, round: sheetCombat.round });
+    if (selected.length === 0) return;
+    declareAttack({
+      targetIds: selected,
+      outcome,
+      round: sheetCombat.round,
+      // The multi-instance drop bound rides the declaration ONLY for a multi-target
+      // action; a single swing carries no `instances` (bound = 1 by shape).
+      ...(multi ? { instances: maxTargets } : {}),
+    });
     onDone();
   };
+
+  const atCap = multi && selected.length >= maxTargets;
 
   return (
     <section
@@ -98,7 +130,9 @@ export function AttackDeclaration({
       </div>
 
       <p className="mt-0.5 text-[length:var(--text-micro)] text-text-secondary">
-        {t("combat.declareHint")}
+        {t(multi ? "combat.declareHintMulti" : "combat.declareHint", {
+          count: maxTargets,
+        })}
       </p>
 
       {monsters.length === 0 ? (
@@ -107,15 +141,19 @@ export function AttackDeclaration({
         </p>
       ) : (
         <div className="mt-2 flex flex-wrap gap-1">
-          {monsters.map((m) => (
-            <TargetChip
-              key={m.id}
-              label={m.name}
-              ariaLabel={t("combat.declareTargetAria", { name: m.name })}
-              selected={m.id === targetId}
-              onClick={() => setTargetId(m.id)}
-            />
-          ))}
+          {monsters.map((m) => {
+            const isSelected = selected.includes(m.id);
+            return (
+              <TargetChip
+                key={m.id}
+                label={m.name}
+                ariaLabel={t("combat.declareTargetAria", { name: m.name })}
+                selected={isSelected}
+                disabled={atCap && !isSelected}
+                onClick={() => toggle(m.id)}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -123,15 +161,15 @@ export function AttackDeclaration({
         <button
           type="button"
           onClick={() => declare("hit")}
-          disabled={!targetId}
+          disabled={selected.length === 0}
           className="flex-1 rounded-sm border border-success/50 bg-success/10 px-2 py-1 text-2xs font-semibold text-success transition-colors hover:bg-success/20 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {t("combat.declareHit")}
+          {t(multi ? "combat.declareLanded" : "combat.declareHit")}
         </button>
         <button
           type="button"
           onClick={() => declare("miss")}
-          disabled={!targetId}
+          disabled={selected.length === 0}
           className="flex-1 rounded-sm border border-border-medium bg-bg-tertiary px-2 py-1 text-2xs font-semibold text-text-secondary transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
         >
           {t("combat.declareMiss")}

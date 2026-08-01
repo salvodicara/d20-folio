@@ -163,6 +163,69 @@ describe("AttackDeclaration — the in-encounter capture panel", () => {
   });
 });
 
+describe("AttackDeclaration — MULTI-select (Phase 2: a multi-target action)", () => {
+  it("captures the target SET + the multi-instance bound, resolving as one 'Landed'", () => {
+    const gc = makeSheetCombat(
+      [
+        monsterRow("monster-0", "Goblin"),
+        monsterRow("monster-1", "Chief"),
+        monsterRow("monster-2", "Ogre"),
+      ],
+      4
+    );
+    render(<AttackDeclaration sheetCombat={gc} maxTargets={3} onDone={() => {}} />);
+    // Multi resolution reads "Landed", not "Hit" (still a single tap for the whole set).
+    const landed = screen.getByRole("button", { name: "Landed" });
+    expect(landed).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: /target goblin/i }));
+    fireEvent.click(screen.getByRole("button", { name: /target ogre/i }));
+    fireEvent.click(landed);
+    // The full SET rides one declaration, carrying the instance bound (3).
+    expect(useCharacterStore.getState().combatRecentActions).toEqual([
+      {
+        id: "1",
+        targetIds: ["monster-0", "monster-2"],
+        outcome: "hit",
+        round: 4,
+        instances: 3,
+      },
+    ]);
+  });
+
+  it("never lets the player over-pick — chips past the cap disable", () => {
+    const gc = makeSheetCombat([
+      monsterRow("monster-0", "Goblin"),
+      monsterRow("monster-1", "Chief"),
+      monsterRow("monster-2", "Ogre"),
+    ]);
+    render(<AttackDeclaration sheetCombat={gc} maxTargets={2} onDone={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: /target goblin/i }));
+    fireEvent.click(screen.getByRole("button", { name: /target chief/i }));
+    // At the cap of 2 → the unpicked third chip is disabled (can't exceed the bound).
+    expect(screen.getByRole("button", { name: /target ogre/i })).toBeDisabled();
+    // De-selecting frees a slot again.
+    fireEvent.click(screen.getByRole("button", { name: /target chief/i }));
+    expect(screen.getByRole("button", { name: /target ogre/i })).toBeEnabled();
+  });
+
+  it("a single-target action (maxTargets 1) stays single-select — Phase 1 unchanged", () => {
+    const gc = makeSheetCombat([
+      monsterRow("monster-0", "Goblin"),
+      monsterRow("monster-1", "Chief"),
+    ]);
+    // maxTargets defaults to 1; picking a second target REPLACES the first (single-select),
+    // and the resolution reads "Hit" (never the multi "Landed"), carrying NO instance bound.
+    render(<AttackDeclaration sheetCombat={gc} onDone={() => {}} />);
+    expect(screen.queryByRole("button", { name: "Landed" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /target goblin/i }));
+    fireEvent.click(screen.getByRole("button", { name: /target chief/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Hit" }));
+    expect(useCharacterStore.getState().combatRecentActions).toEqual([
+      { id: "1", targetIds: ["monster-1"], outcome: "hit", round: 2 },
+    ]);
+  });
+});
+
 describe("PlayTab gate — SOLO renders NO capture UI; an encounter opens it", () => {
   function renderPlay() {
     return render(

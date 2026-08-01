@@ -116,11 +116,18 @@ function parseRecentActions(value: unknown): CombatState["recentActions"] {
       ? a.targetIds.filter((t): t is string => typeof t === "string")
       : [];
     if (typeof a.id !== "string" || outcome === null || targetIds.length === 0) continue;
+    // The multi-instance drop bound (Magic Missile 3, …) — carried only when a valid
+    // count > 1; a single-target swing (absent / ≤ 1) stays unbounded-single (omitted).
+    const instances =
+      typeof a.instances === "number" && Number.isFinite(a.instances) && a.instances > 1
+        ? Math.floor(a.instances)
+        : undefined;
     out.push({
       id: a.id,
       targetIds,
       outcome,
       round: typeof a.round === "number" && Number.isFinite(a.round) ? a.round : 1,
+      ...(instances !== undefined ? { instances } : {}),
     });
   }
   return out;
