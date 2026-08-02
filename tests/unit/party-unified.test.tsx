@@ -608,6 +608,14 @@ describe("Party combat — DM (editable layer)", () => {
     expect(bossHp()).toBe(21);
   });
 
+  // Timeout raised to 15s (from the default 5s): opening the picker mounts the SRD
+  // Bestiary tab by default, and in jsdom the virtualized ResultList can't measure a
+  // positive-height viewport, so it renders ALL ~330 corpus rows un-windowed (the
+  // deliberate zero-height fallback — production measures a real viewport and windows to
+  // ~40 rows, so this heaviness is jsdom-only). Combined with the lazy chunk import +
+  // ensureSrdKind("monster") corpus load, this is the file's heaviest interaction
+  // (~2.4s under load) and legitimately overran the 5s cap under CI machine load. Not a
+  // product bug; the assertion is unchanged. Do NOT loosen globally.
   it("adds a monster group through the Custom tab of the picker modal", async () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
@@ -615,7 +623,7 @@ describe("Party combat — DM (editable layer)", () => {
     // "Add monster" now opens the bestiary picker MODAL (lazy) — switch to the Custom
     // manual tab, which mounts the surviving AddMonsterForm.
     fireEvent.click(
-      await screen.findByRole("button", { name: /custom monster/i }, { timeout: 5000 })
+      await screen.findByRole("button", { name: /custom monster/i }, { timeout: 15000 })
     );
     fireEvent.change(screen.getByLabelText(/monster name/i), {
       target: { value: "Dire Wolf" },
@@ -627,7 +635,7 @@ describe("Party combat — DM (editable layer)", () => {
         (c) => c.kind === "monster" && c.name === "Dire Wolf"
       )
     ).toBe(true);
-  });
+  }, 15000);
 
   it("the DM sees the EXACT monster HP and can reveal it to players (CARD-5)", async () => {
     renderParty();
@@ -838,9 +846,12 @@ describe("Party combat — C3 freeze / lock / reorder (DM)", () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
     fireEvent.click(screen.getByRole("button", { name: /add monster/i }));
-    // The Custom tab of the picker modal carries the manual form (default init 10).
+    // The Custom tab of the picker modal carries the manual form (default init 10). The
+    // 15s timeout mirrors the sibling Custom-tab test above: opening the picker renders
+    // the full ~330-row corpus un-windowed in jsdom (the zero-height fallback), so this
+    // legitimately-heavy interaction can overrun the default 5s cap under CI load.
     fireEvent.click(
-      await screen.findByRole("button", { name: /custom monster/i }, { timeout: 5000 })
+      await screen.findByRole("button", { name: /custom monster/i }, { timeout: 15000 })
     );
     fireEvent.change(screen.getByLabelText(/monster name/i), {
       target: { value: "Dire Wolf" },
@@ -860,7 +871,7 @@ describe("Party combat — C3 freeze / lock / reorder (DM)", () => {
       ]);
       expect(currentEncounter().currentCombatantId).toBe("pc-member-mara"); // pinned
     });
-  });
+  }, 15000);
 });
 
 // ─── Combat · player (read-only) ────────────────────────────────────────────────
