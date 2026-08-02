@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
 import {
   initializeFirestore,
@@ -19,6 +20,23 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
+
+// App Check (pre-GA hardening — docs/BUG_REPORTING.md → "App Check rollout runbook").
+// Strictly gated on VITE_APPCHECK_SITE_KEY being set: no key (dev/CI/e2e/forks, and prod
+// until the owner provisions a reCAPTCHA v3 site) = today's behavior, zero new network calls.
+const appCheckSiteKey = import.meta.env.VITE_APPCHECK_SITE_KEY;
+if (appCheckSiteKey) {
+  if (import.meta.env.VITE_APPCHECK_DEBUG === "true") {
+    // Debug-token escape hatch (dev/CI/e2e) — must be set BEFORE initializeAppCheck.
+    (self as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN =
+      true;
+  }
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider(appCheckSiteKey),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
+
 export const auth = getAuth(app);
 
 let db: ReturnType<typeof initializeFirestore>;

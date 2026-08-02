@@ -1347,6 +1347,12 @@ there is no reason to consider a higher cap in this phase.
    £10–15, add the £1/£5 alert steps. Console + budget-config action, owner-gated.
 2. **App Check + abuse-resistant quotas** (item 1): the owner's own recorded rationale — "before
    any advertising". The code is public; the backend must not be an open quota faucet.
+   **Client scaffold SHIPPED (code-only):** `src/lib/firebase.ts` calls `initializeAppCheck` +
+   `ReCaptchaV3Provider`, strictly gated on `VITE_APPCHECK_SITE_KEY` being set (unset today on
+   every env — zero new network calls, exactly today's behavior) + a debug-token escape hatch
+   (`VITE_APPCHECK_DEBUG`) for e2e/dev. The owner-run console rollout (site key, CI/deploy env,
+   monitor-then-enforce) is still OPEN — runbook in `docs/BUG_REPORTING.md` → "App Check rollout
+   runbook".
 3. **Legal pages** (item 5): privacy policy + terms, bilingual, linked from the existing `/legal`
    page (which today carries only licenses/attribution; the CC-BY SRD attribution requirement is
    already satisfied there, and account deletion already exists in-app).

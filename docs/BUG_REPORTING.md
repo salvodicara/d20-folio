@@ -562,6 +562,36 @@ projects → d20-folio → Actions (⋮) → Change billing**.
 
 ---
 
+## App Check rollout runbook
+
+Pre-GA hardening (soft-launch blocking item, `PROGRESS.md` → "Soft launch — the
+community-beta charter"). Client scaffold ships gated OFF: `src/lib/firebase.ts` only
+calls `initializeAppCheck` when `VITE_APPCHECK_SITE_KEY` is a non-empty string, so an
+unset key (today, on every env) is a no-op — zero new network calls. The owner does the
+rest out-of-band, in this order:
+
+1. **Register the web app** — Firebase console → **App Check** → **Apps** → select the
+   web app → **Register** → provider **reCAPTCHA v3** → create (or paste) a site key
+   from the [reCAPTCHA admin console](https://www.google.com/recaptcha/admin) scoped to
+   `d20-folio.web.app` (+ any custom domain).
+2. **Wire the key** — set `VITE_APPCHECK_SITE_KEY` in `.env.local` (owner machine), the
+   CI secret, and the deploy env (`deploy.yml` / `just deploy`'s build env). Optionally
+   set `VITE_APPCHECK_DEBUG=true` for e2e/dev runs that need a token without solving a
+   captcha — it arms `self.FIREBASE_APPCHECK_DEBUG_TOKEN` before init, and the console's
+   **Manage debug tokens** dialog must allow-list the token it logs to `console.debug`.
+3. **Watch, don't enforce yet** — leave Firestore and Storage in **unenforced (monitor)**
+   mode under **App Check → APIs** and watch the **Metrics** tab for a few days: verified
+   vs. unverified request volume should converge on ~100% verified once the deployed
+   client is shipping tokens. Enforcing before the client ships tokens breaks every live
+   user immediately (403s on every read/write) — the deploy must land and be confirmed
+   live FIRST.
+4. **Flip enforcement** — once metrics show the client population is covered, switch
+   Firestore and Storage from **Unenforced** to **Enforced** in the same **App Check →
+   APIs** tab. This is the only step that changes production behavior; everything before
+   it is additive.
+
+---
+
 ## Cost (free-tier envelope)
 
 - **Invocations:** the reporter / signup triggers fire only on a new report / new user,
