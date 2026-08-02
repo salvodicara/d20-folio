@@ -81,11 +81,13 @@ Rarity/Attunement that light up in context; in BOTH the Add-Item modal and the C
 for owner screenshot approval, rule 25), and the **reusable custom-monster library +
 override-first monster portraits CODE-COMPLETE** (2026-08-02 — the encounter's Custom tab is now a
 saved-monster library (5th `monster` library kind: create → saved → re-addable, with edit/delete),
-and every monster carries ART beside the hero portraits: an uploaded portrait, or a legal
-creature-type glyph (game-icons.net, CC BY 3.0) as the default, over the tinted monogram; the
-portrait is overridable on the compendium/bestiary monster view (per-user, keyed by `srdId`) and on a
-saved custom monster (kept with its template), reusing the character-portrait crop/upload flow. HOLDS
-for owner screenshot approval, rule 25); the live head is **compendium completeness**. The
+and every monster carries ART beside the hero portraits: an uploaded portrait, else the deterministic
+tinted-initial monogram — the SAME letter fallback the party heroes use (owner-ratified 2026-08-02:
+NO generated/icon placeholder art); the portrait is overridable on the compendium/bestiary monster
+view (per-user, keyed by `srdId`, seated in the stat block's right-side space beside the ability
+table, seal-as-affordance with no caption) and on a saved custom monster (kept with its template),
+reusing the character-portrait crop/upload flow. HOLDS for owner screenshot approval, rule 25); the
+live head is **compendium completeness**. The
 competitive map is `docs/POSITIONING.md`. **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
 **id-storage + GR7 i18n-leak-eradication campaign** is **CLOSED** (v0.13.0): every SRD-derived value
@@ -1518,10 +1520,12 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
 - **CONFIRMED — override-first monster portraits (owner-ratified 2026-08-01):** monsters gain a
   **portrait slot** — real bestiary AND custom. Today they have NONE: `MonsterStatBlock`
   (`src/data/types.ts`) and `EncounterMonster` carry no image/portrait/token field, and `MonsterCard`
-  renders a deterministic tinted-initial monogram. The slot's default **fills from LEGAL art tiers
-  ONLY** — verified public-domain / CC art where it cleanly matches (Wikimedia PD; a game-icons.net
-  CC-BY type-glyph as the universal fallback) plus owner-generated art in the private pack — and is
-  **ALWAYS user-overridable via upload**, **reusing the existing character-portrait system** (Firebase
+  renders a deterministic tinted-initial monogram. **REVISED 2026-08-02 (owner):** the slot's default
+  is the **tinted-initial monogram** — the SAME letter fallback the party heroes use — with **NO
+  generated/icon placeholder tier** (the creature-type-glyph default the first cut shipped was owner-
+  rejected: no synthetic default art). Any real art (owner-generated, in the private pack) rides the
+  same slot; it is **ALWAYS user-overridable via upload**, **reusing the existing character-portrait
+  system** (Firebase
   Storage — `src/lib/storage.ts`, `users/{uid}/portraits/…` + `portraitCrop`/`portraitUrl` on
   `CharacterDoc` + the `PortraitEditMenu` Re-crop / Upload new / Remove). This is the **RESOLUTION of
   the internet-art problem:** the app **ships only legal art**; a user uploads their OWN image for any

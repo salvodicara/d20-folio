@@ -321,7 +321,7 @@ describe("makeEncounterMonsterSpec — the derived add-mode spec (§A.6)", () =>
         initiative: null,
         ac: goblin.ac,
         maxHp: goblin.hp.average,
-        // Part B — the creature type is always seeded (powers the card glyph).
+        // Part B — the creature type is always seeded (the monster's identity type).
         creatureType: goblin.type,
       })
     );

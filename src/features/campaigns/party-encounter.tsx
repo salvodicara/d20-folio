@@ -81,7 +81,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipProvider } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/ui/kbd";
 import { Portrait } from "@/components/shared/Portrait";
-import { CREATURE_GLYPH_PATH } from "@/data/creature-glyphs";
 import { StatBadge, HpBadge, InitBadge, StatLabel } from "@/components/shared/StatBadge";
 import { AutoAnimateHeight } from "@/components/shared/AutoAnimateHeight";
 import { InlineEditable } from "@/components/shared/InlineEditable";
@@ -1725,16 +1724,13 @@ export function MonsterCard({
           <span className="seal party-avatar" aria-hidden>
             {/* Part B — the monster's own art beside the hero portraits: the DM's
                 uploaded portrait (copied onto the combatant at add time so every viewer
-                reads it), else the creature-type GLYPH default, else the tinted initial.
-                Override-first (golden rule 8). */}
+                reads it), else the tinted-initial monogram — the SAME letter fallback
+                the heroes use. Override-first (golden rule 8). */}
             <Portrait
               src={monster.portraitUrl ?? null}
               crop={monster.portraitCrop ?? null}
               name={monster.name}
               seed={monster.id}
-              glyphPath={
-                monster.creatureType ? CREATURE_GLYPH_PATH[monster.creatureType] : null
-              }
               className="h-full w-full"
             />
           </span>
@@ -2099,7 +2095,7 @@ export function AddMonsterForm({
   const { language: locale } = useLocale();
   const [name, setName] = useState(initial?.name ?? "");
   // Creature type — a closed-set select so an invalid type is untypeable; "" = none
-  // (a stat-less improv NPC, which then falls back to the monogram, no glyph).
+  // (a stat-less improv NPC). The portrait fallback is always the tinted initial.
   const [creatureType, setCreatureType] = useState<string>(initial?.creatureType ?? "");
   const [ac, setAc] = useState(initial?.ac ?? 12);
   const [maxHp, setMaxHp] = useState(initial?.maxHp ?? 10);
@@ -2163,7 +2159,7 @@ export function AddMonsterForm({
           label column (auto-sized to the widest label, locale-proof — no magic width,
           no truncation) + a small gap + the compact control hugging it. */}
       <div className="grid grid-cols-[max-content_max-content] items-center gap-x-3 gap-y-2">
-        {/* Creature type — powers the glyph portrait default + the identity; a closed
+        {/* Creature type — the monster's 2024 identity noun; a closed
             set so an invalid type is untypeable (golden rule 20). */}
         <label className="contents">
           <span className="text-sm text-text-secondary">{t("compendium.type")}</span>

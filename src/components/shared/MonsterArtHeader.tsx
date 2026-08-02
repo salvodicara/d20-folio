@@ -1,8 +1,11 @@
 /**
- * MonsterArtHeader (Part B) — the portrait row atop a bestiary monster's detail leaf
- * (compendium + the encounter picker's SRD detail). Shows the user's per-monster
- * portrait OVERRIDE (keyed by `srdId`) through the shared {@link MonsterPortraitPanel},
- * over the creature-type glyph default; hovering the seal reveals the upload affordance.
+ * MonsterArtHeader (Part B) — the per-monster portrait OVERRIDE seal for a bestiary
+ * monster's detail leaf (compendium + the encounter picker's SRD detail). It is seated
+ * in the stat block's top-right slot ({@link MonsterStatBlockCard}'s `portrait` prop),
+ * beside the ability table. Shows the user's portrait (keyed by `srdId`) through the
+ * shared {@link MonsterPortraitPanel}, over the tinted-initial default. The seal IS the
+ * affordance — hovering/clicking reveals the same upload/edit menu the character seal
+ * uses; there is no standing instructional caption.
  *
  * Reads the live override off `libraryStore.monsterArt[srdId]`, so setting art here
  * updates every surface at once — and, because `toMonsterInput` copies it, every future
@@ -10,9 +13,7 @@
  */
 
 import { lazy, Suspense } from "react";
-import { useTranslation } from "react-i18next";
 import { useLibraryStore } from "@/stores/libraryStore";
-import type { CreatureType } from "@/data/types";
 
 // The portrait editor pulls the crop UI (react-easy-crop) — load it lazily so the
 // statblock detail (the common read) doesn't carry the crop lib until it paints.
@@ -22,34 +23,19 @@ const MonsterPortraitPanel = lazy(() =>
   }))
 );
 
-export function MonsterArtHeader({
-  srdId,
-  name,
-  creatureType,
-}: {
-  srdId: string;
-  name: string;
-  creatureType: CreatureType;
-}) {
-  const { t } = useTranslation();
+export function MonsterArtHeader({ srdId, name }: { srdId: string; name: string }) {
   const art = useLibraryStore((s) => s.monsterArt[srdId]);
 
   return (
-    <div className="mb-4 flex items-center gap-4">
-      <Suspense fallback={<span className="seal h-20 w-20 shrink-0" aria-hidden />}>
-        <MonsterPortraitPanel
-          target={{ kind: "srd", srdId }}
-          portraitUrl={art?.portraitUrl ?? null}
-          portraitCrop={art?.portraitCrop ?? null}
-          name={name}
-          seed={srdId}
-          creatureType={creatureType}
-          className="h-20 w-20"
-        />
-      </Suspense>
-      <p className="text-xs leading-snug text-text-secondary">
-        {art ? t("monster.portrait.hintSet") : t("monster.portrait.hint")}
-      </p>
-    </div>
+    <Suspense fallback={<span className="seal mon-portrait-seal" aria-hidden />}>
+      <MonsterPortraitPanel
+        target={{ kind: "srd", srdId }}
+        portraitUrl={art?.portraitUrl ?? null}
+        portraitCrop={art?.portraitCrop ?? null}
+        name={name}
+        seed={srdId}
+        className="mon-portrait-seal"
+      />
+    </Suspense>
   );
 }

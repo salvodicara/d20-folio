@@ -167,10 +167,9 @@ export interface EncounterMonster extends EncounterCombatantBase {
   /**
    * The creature type (2024 identity noun), seeded at ADD time: picker path = the
    * statblock `type`; custom path = the DM's chosen type (or absent for a stat-less
-   * improv NPC). ENCOUNTER-OWNED like `ac`/`xp` — it powers the combatant card's
-   * type-glyph portrait fallback, so every viewer (player + DM) sees the same glyph
-   * beside the hero portraits WITHOUT the lazy bestiary corpus. Absent → the tinted
-   * monogram fallback (a nameless improv monster).
+   * improv NPC). ENCOUNTER-OWNED like `ac`/`xp` — it carries the monster's identity
+   * on the combatant WITHOUT the lazy bestiary corpus. The portrait fallback is always
+   * the tinted-initial monogram (the same letter fallback the heroes use).
    */
   creatureType?: CreatureType;
   /**
@@ -181,7 +180,7 @@ export interface EncounterMonster extends EncounterCombatantBase {
    * map — the same shared-fact reason `ac`/`name` are copied. `portraitUrl` is the
    * Firebase Storage download URL (`users/{uid}/portraits/monster-*.jpeg`, world-readable
    * to any signed-in user, like a character portrait); `portraitCrop` frames it. Absent
-   * → the type-glyph / monogram fallback (override-first, golden rule 8). Additive: a
+   * → the tinted-initial monogram fallback (override-first, golden rule 8). Additive: a
    * pre-feature encounter doc stays valid.
    */
   portraitUrl?: string;
@@ -208,7 +207,7 @@ export interface CustomMonster {
   ac: number;
   /** Maximum hit points (the per-token clamp ceiling once added). */
   maxHp: number;
-  /** The creature type id (2024 identity noun) — powers the glyph fallback + identity;
+  /** The creature type id (2024 identity noun) — the monster's identity type;
    *  absent for a stat-less improv NPC. */
   creatureType?: CreatureType;
   /** Challenge Rating as its stringified number ("0.25", "5"); seeds the encounter XP
@@ -217,16 +216,17 @@ export interface CustomMonster {
   /** Optional DM free-text notes carried onto the added combatant. */
   notes?: string;
   /** The DM's uploaded portrait (`users/{uid}/portraits/monster-{entryId}.jpeg`) +
-   *  its crop frame; absent → the type-glyph fallback. Kept WITH the template. */
+   *  its crop frame; absent → the tinted-initial fallback. Kept WITH the template. */
   portraitUrl?: string;
   portraitCrop?: PortraitCrop;
 }
 
 /**
  * A per-user portrait OVERRIDE for a bestiary (SRD) monster, keyed by its `srdId`
- * (Part B). The default art tier for the 330 SRD monsters is a legal type-glyph; a DM
- * who wants real art uploads one, and THIS carries it: shown in the compendium bestiary
- * view and COPIED onto every future encounter add of that monster. Stored in the
+ * (Part B). By default the 330 SRD monsters show the tinted-initial monogram (the same
+ * letter fallback the party heroes use); a DM who wants real art uploads one, and THIS
+ * carries it: shown in the compendium bestiary view and COPIED onto every future
+ * encounter add of that monster. Stored in the
  * library doc's `monsterArt` map (one listener, one writer — reuses the library seam),
  * keyed by `srdId`.
  */

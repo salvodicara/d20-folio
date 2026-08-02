@@ -1,9 +1,5 @@
 {
   "monster": {
-    "portrait": {
-      "hint": "Aggiungi un tuo ritratto: passa sul sigillo per caricare l'arte di questo mostro.",
-      "hintSet": "Il tuo ritratto per questo mostro. Passa sul sigillo per cambiarlo o rimuoverlo."
-    },
     "crRubric": "Grado di Sfida (GS)",
     "size": "Taglia",
     "xp": "PE {{xp}}",

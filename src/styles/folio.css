@@ -14542,22 +14542,6 @@ button:focus-visible > .seal .seal-edit-veil--hover {
   display: block;
 }
 
-/* The monster creature-type GLYPH emblem (Part B) — drawn in the same tinted well as
-   the initial monogram, sized as a centred emblem (not an edge-to-edge icon) and set to
-   the gilt ink at a slightly quieted opacity so it reads as an engraved crest, not a
-   loud UI glyph. `currentColor` = the well's `--accent-text`, so both themes come free. */
-.av-glyph {
-  width: 62%;
-  height: 62%;
-  color: var(--accent-text);
-  opacity: 0.82;
-  filter: drop-shadow(0 1px 1px hsl(0 0% 0% / 0.35));
-}
-[data-theme="light"] .av-glyph {
-  opacity: 0.9;
-  filter: drop-shadow(0 1px 0 hsl(42 30% 100% / 0.4));
-}
-
 /* ── INSPIRATION boon rows (#91 + D37, INSP-UX) — each boon is one full-width
    gilded ledger row: the GLOSSED term (left) · a quiet italic verb cue · the
    carved TOKEN SOCKET (right). The socket makes the two-state tracker physical:
@@ -20856,9 +20840,70 @@ body:has(.fob) .toast-region {
    NO light override (the `.beast-ref` precedent). */
 .mon-ref {
   gap: var(--sp-4);
+  /* Size context for the Part B portrait slot — the two-column top region responds to
+     the stat block's OWN width, not the viewport, so it never overflows a narrow
+     detail panel on a wide screen. */
+  container-type: inline-size;
+  container-name: mon-ref;
 }
 .mon-head {
   margin-bottom: 0;
+}
+/* Part B — stat block top region. The defence line + ability table sit on the left;
+   the optional portrait ({@link MonsterArtHeader}) fills the empty space to the right
+   of the 24rem-capped ability table. Below the container threshold it stacks with the
+   portrait ABOVE the stats, so it never crowds the table on a narrow panel/mobile. */
+.mon-top,
+.mon-top-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+.mon-top--art {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "art"
+    "stats";
+  align-items: start;
+  justify-items: start;
+}
+.mon-top--art .mon-top-stats {
+  grid-area: stats;
+}
+.mon-top--art .mon-portrait-slot {
+  grid-area: art;
+}
+.mon-portrait-seal {
+  width: 5rem;
+  height: 5rem;
+}
+/* Breathing room below the compendium masthead's gilt separator before the stat
+   block begins (owner: proper margin between the header separator and the content). */
+.cmp-entry .mon-ref {
+  margin-block-start: var(--sp-3);
+}
+@container mon-ref (min-width: 27rem) {
+  .mon-top--art {
+    /* The stat column takes its content width but can SHRINK (minmax lower bound 0),
+       so the two-column row never overflows a narrow panel; the seal then sits in the
+       space immediately beside the ability table, with the leftover as a trailing right
+       margin — a balanced [stats · portrait] grouping, not a marooned far-right seal. */
+    grid-template-columns: minmax(0, max-content) auto;
+    grid-template-areas: "stats art";
+    column-gap: var(--sp-8);
+    /* Centre the seal against the full height of the stat block so it anchors the
+       right-side space beside the ability table rather than floating alone at the top. */
+    align-items: center;
+  }
+  .mon-top--art .mon-portrait-slot {
+    justify-self: start;
+  }
+  .mon-portrait-seal {
+    width: 6.5rem;
+    height: 6.5rem;
+  }
 }
 /* Ability table — SCORE (in the row header) · MOD · SAVE, carved ruled cells. */
 .mon-abilities {

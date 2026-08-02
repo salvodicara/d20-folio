@@ -6,8 +6,8 @@
  *     `kind:"entry"`).
  *
  * A SQUARE seal drawn through the shared {@link Portrait} primitive: the uploaded art
- * (crop-framed), else the creature-type GLYPH default, else the tinted monogram —
- * override-first (golden rule 8). When `editable`, it wears the SAME affordance as the
+ * (crop-framed), else the tinted-initial monogram — override-first (golden rule 8),
+ * the SAME letter fallback the party heroes use. When `editable`, it wears the SAME affordance as the
  * character seal (the `.seal-edit-veil` camera on hover, the shared {@link
  * PortraitEditMenu} popover: Re-crop · Upload new · Remove, and the shared {@link
  * PortraitCropModal}), so a monster's portrait edits identically to a hero's. All the
@@ -27,9 +27,7 @@ import {
   useMonsterPortrait,
   type MonsterPortraitTarget,
 } from "@/hooks/useMonsterPortrait";
-import { CREATURE_GLYPH_PATH } from "@/data/creature-glyphs";
 import { cn } from "@/lib/utils";
-import type { CreatureType } from "@/data/types";
 import type { PortraitCrop } from "@/types/character";
 
 export function MonsterPortraitPanel({
@@ -38,7 +36,6 @@ export function MonsterPortraitPanel({
   portraitCrop = null,
   name,
   seed,
-  creatureType,
   className,
 }: {
   target: MonsterPortraitTarget;
@@ -48,8 +45,6 @@ export function MonsterPortraitPanel({
   name: string;
   /** Stable seed for the deterministic fallback tint. */
   seed: string;
-  /** Creature type — the glyph default beneath the upload; absent → monogram. */
-  creatureType?: CreatureType;
   /** Sizing utility classes for the square seal frame (defaults to a 6rem seal). */
   className?: string;
 }) {
@@ -71,8 +66,6 @@ export function MonsterPortraitPanel({
   const menuRef = useRef<HTMLDivElement>(null);
   useDismissOnOutside(menuOpen, menuRef, () => setMenuOpen(false));
 
-  const glyphPath = creatureType ? CREATURE_GLYPH_PATH[creatureType] : null;
-
   const seal = (
     <span className="seal relative block aspect-square h-full w-full overflow-hidden">
       <Portrait
@@ -80,7 +73,6 @@ export function MonsterPortraitPanel({
         crop={portraitCrop}
         name={name}
         seed={seed}
-        glyphPath={glyphPath}
         className="h-full w-full"
       />
       {/* Hover-only camera veil (the seal reads clean at rest, unlike the character

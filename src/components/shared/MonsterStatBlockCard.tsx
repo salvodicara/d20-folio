@@ -191,12 +191,18 @@ export interface MonsterStatBlockCardProps {
   /** When set, the card renders its own title band (name + identity line); omitted
    *  ⇒ headless (the compendium masthead already carries them). */
   title?: string;
+  /** Optional art slot (Part B) — the monster's portrait, seated in the top-right of
+   *  the stat block beside the ability table (the empty space left by the 24rem-capped
+   *  table). Absent on the encounter/companion reuse; present on the bestiary detail.
+   *  Reflows above the stats on narrow widths so it never crowds the table. */
+  portrait?: ReactNode;
 }
 
 export function MonsterStatBlockCard({
   monster: m,
   locale,
   title,
+  portrait,
 }: MonsterStatBlockCardProps) {
   const { t } = useTranslation();
 
@@ -305,55 +311,65 @@ export function MonsterStatBlockCard({
         </p>
       )}
 
-      {/* Defense line — AC · Initiative · HP · Speed */}
-      <dl className="beast-ref-grid mon-vitals">
-        <div>
-          <dt>{t("character.armorClassShort")}</dt>
-          <dd>{m.ac}</dd>
-        </div>
-        <div>
-          <dt>{t("monster.initiative")}</dt>
-          <dd>
-            {formatModifier(init)} ({10 + init})
-          </dd>
-        </div>
-        <div>
-          <dt>{t("units.hp")}</dt>
-          <dd>
-            {m.hp.average} (<span translate="no">{m.hp.formula}</span>)
-          </dd>
-        </div>
-        <div>
-          <dt>{t("character.speed")}</dt>
-          <dd>{speedParts.join(", ")}</dd>
-        </div>
-      </dl>
+      {/* Top region — the stat block's defence line + ability table on the left, the
+          optional portrait seated in the empty right-side space. `.mon-top` reflows to a
+          single column (portrait above the stats) on narrow widths. When no portrait is
+          passed it is a plain single-column stack, identical to before. */}
+      <div className={portrait ? "mon-top mon-top--art" : "mon-top"}>
+        <div className="mon-top-stats">
+          {/* Defense line — AC · Initiative · HP · Speed */}
+          <dl className="beast-ref-grid mon-vitals">
+            <div>
+              <dt>{t("character.armorClassShort")}</dt>
+              <dd>{m.ac}</dd>
+            </div>
+            <div>
+              <dt>{t("monster.initiative")}</dt>
+              <dd>
+                {formatModifier(init)} ({10 + init})
+              </dd>
+            </div>
+            <div>
+              <dt>{t("units.hp")}</dt>
+              <dd>
+                {m.hp.average} (<span translate="no">{m.hp.formula}</span>)
+              </dd>
+            </div>
+            <div>
+              <dt>{t("character.speed")}</dt>
+              <dd>{speedParts.join(", ")}</dd>
+            </div>
+          </dl>
 
-      {/* Ability table — SCORE · MOD · SAVE per ability */}
-      <table className="mon-abilities">
-        <caption className="sr-only">{t("character.abilityScores")}</caption>
-        <thead>
-          <tr>
-            <th scope="col" className="sr-only">
-              {t("character.abilityScores")}
-            </th>
-            <th scope="col">{t("monster.mod")}</th>
-            <th scope="col">{t("abilities.save")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ABILITY_ORDER.map((code) => (
-            <tr key={code}>
-              <th scope="row">
-                <span className="mon-ab-code">{t(`abilities.${code}_short`)}</span>{" "}
-                <span className="mon-ab-score">{m.abilityScores[code]}</span>
-              </th>
-              <td>{formatModifier(abilityModifier(m.abilityScores[code]))}</td>
-              <td>{formatModifier(monsterSaveBonus(m, code))}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          {/* Ability table — SCORE · MOD · SAVE per ability */}
+          <table className="mon-abilities">
+            <caption className="sr-only">{t("character.abilityScores")}</caption>
+            <thead>
+              <tr>
+                <th scope="col" className="sr-only">
+                  {t("character.abilityScores")}
+                </th>
+                <th scope="col">{t("monster.mod")}</th>
+                <th scope="col">{t("abilities.save")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ABILITY_ORDER.map((code) => (
+                <tr key={code}>
+                  <th scope="row">
+                    <span className="mon-ab-code">{t(`abilities.${code}_short`)}</span>{" "}
+                    <span className="mon-ab-score">{m.abilityScores[code]}</span>
+                  </th>
+                  <td>{formatModifier(abilityModifier(m.abilityScores[code]))}</td>
+                  <td>{formatModifier(monsterSaveBonus(m, code))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {portrait && <div className="mon-portrait-slot">{portrait}</div>}
+      </div>
 
       {/* Ledger lines */}
       {m.skills && m.skills.length > 0 && (

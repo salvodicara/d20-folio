@@ -1,9 +1,5 @@
 {
   "monster": {
-    "portrait": {
-      "hint": "Add your own portrait: hover the seal to upload art for this monster.",
-      "hintSet": "Your portrait for this monster. Hover the seal to change or remove it."
-    },
     "crRubric": "Challenge Rating (CR)",
     "size": "Size",
     "xp": "XP {{xp}}",

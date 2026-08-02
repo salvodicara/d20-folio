@@ -224,12 +224,14 @@ export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
     // §4.15 / golden rule 6).
     eyebrow: monsterIdentity(m, t),
     extras: (
-      <>
-        {/* Part B — the user's per-monster portrait override (over the type glyph),
-            editable right here; copied onto every future encounter add. */}
-        <MonsterArtHeader srdId={m.id} name={monName(m, locale)} creatureType={m.type} />
-        <MonsterStatBlockCard monster={m} locale={locale} />
-      </>
+      // Part B — the user's per-monster portrait override, seated in the stat block's
+      // top-right (beside the ability table); editable in place, copied onto every
+      // future encounter add. The seal is the affordance (no caption).
+      <MonsterStatBlockCard
+        monster={m}
+        locale={locale}
+        portrait={<MonsterArtHeader srdId={m.id} name={monName(m, locale)} />}
+      />
     ),
   }),
 };

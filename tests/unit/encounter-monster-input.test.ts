@@ -39,8 +39,8 @@ describe("toMonsterInput — pre-fill a monster group from its statblock", () =>
         expect(input.srdId).toBe(m.id);
         expect(input.xp).toBe(monsterXp(m)); // SRD Step 3 — seeded per-token XP
         expect(input.notes).toBeUndefined(); // no prose copy (one home per fact)
-        expect(input.creatureType).toBe(m.type); // Part B — seeds the card glyph
-        expect(input.portraitUrl).toBeUndefined(); // no override passed → glyph default
+        expect(input.creatureType).toBe(m.type); // Part B — carries the identity type
+        expect(input.portraitUrl).toBeUndefined(); // no override → tinted-initial default
       });
     }
   }

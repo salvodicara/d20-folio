@@ -179,7 +179,6 @@ export function EncounterCustomMonsters({
                 portraitCrop={m.portraitCrop ?? null}
                 name={m.name}
                 seed={viewing.id}
-                creatureType={m.creatureType}
                 className="h-24 w-24"
               />
             </Suspense>

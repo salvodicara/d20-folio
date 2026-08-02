@@ -25,10 +25,10 @@ import type { MonsterInput } from "./encounter";
  * `notes` pre-fill: the statblock facts live behind the DM disclosure, so copying
  * prose into `notes` would create a second drifting copy (golden rule 6).
  *
- * Part B — `creatureType` seeds the card's type-glyph fallback, and `art` (the DM's SRD
+ * Part B — `creatureType` carries the monster's identity type, and `art` (the DM's SRD
  * portrait OVERRIDE for this monster, if any) is COPIED onto the combatant so every
  * viewer sees the same face beside the hero portraits (the shared-fact reason ac/name
- * are copied). No override → the glyph default renders.
+ * are copied). No override → the tinted-initial default renders (the hero letter fallback).
  */
 export function toMonsterInput(
   m: MonsterStatBlock,
