@@ -1554,9 +1554,16 @@ there is no reason to consider a higher cap in this phase.
    (`VITE_APPCHECK_DEBUG`) for e2e/dev. The owner-run console rollout (site key, CI/deploy env,
    monitor-then-enforce) is still OPEN — runbook in `docs/BUG_REPORTING.md` → "App Check rollout
    runbook".
-3. **Legal pages** (item 5): privacy policy + terms, bilingual, linked from the existing `/legal`
-   page (which today carries only licenses/attribution; the CC-BY SRD attribution requirement is
-   already satisfied there, and account deletion already exists in-app).
+3. **Legal pages** (item 5): DONE — the bilingual privacy policy + terms shipped into the `/legal`
+   colophon (42ef886), and the trademark register was re-cut per R3 (2026-08-02): the page now
+   carries the **open, quotable nominative disclaimer** — "d20 Folio is an independent companion for
+   Dungeons & Dragons 2024 · not affiliated with, endorsed, sponsored by, or created by Wizards of
+   the Coast · D&D and its logos are trademarks of Wizards of the Coast LLC" (the marketing-usable
+   line the owner can say OPENLY; no marks/logos/trade dress), and the privacy sharing clause now
+   discloses the two outside-service sub-processors (bug report → GitHub issue · first sign-in →
+   owner email). The CC-BY SRD attribution requirement was already satisfied there, and account
+   deletion already exists in-app. **HELD for owner review** (legal copy is an AI-authored standard
+   draft — a lawyer glance is advised before TRUE public GA — plus rule-25 visual approval).
 4. **Pre-post safety net** (item 7, minimal cut): export DONE 2026-08-02
    (`gs://d20-folio-backups/pre-beta-2026-08-02`, europe-west1). one manual Firestore export before the first
    post, and a weekly look at Functions/Hosting error logs during the beta window. Automated

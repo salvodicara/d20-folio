@@ -19,12 +19,13 @@
     },
     "trademarks": {
       "heading": "Marchi",
-      "body": "Dungeons & Dragons, D&D e i rispettivi loghi sono marchi di Wizards of the Coast LLC e non sono concessi in licenza dall'SRD. I riferimenti qui presenti sono nominativi, fatti solo per descrivere la compatibilità, e non implicano alcuna affiliazione con Wizards of the Coast né alcuna approvazione da parte sua.",
-      "compatible": "Come consentito dai termini di licenza dell'SRD, d20 Folio è compatibile con la quinta edizione."
+      "disclaimer": "d20 Folio è un compagno indipendente per Dungeons & Dragons 2024. Non è affiliato a, avallato, sponsorizzato o creato da Wizards of the Coast. Dungeons & Dragons, D&D e i rispettivi loghi sono marchi di Wizards of the Coast LLC.",
+      "body": "Quel riferimento è nominativo: è fatto solo per descrivere a cosa serve d20 Folio e con cosa è compatibile, mai per lasciar intendere uno status ufficiale. Quei marchi non sono concessi in licenza dall'SRD, e d20 Folio non usa loghi, illustrazioni o elementi distintivi di D&D o di Wizards of the Coast.",
+      "compatible": "Come consentito dai termini di licenza dell'SRD, d20 Folio è compatibile con la quinta edizione; i suoi contenuti di regole provengono dai System Reference Document (vedi Attribuzione sopra)."
     },
     "app": {
       "heading": "L'app",
-      "body": "d20 Folio è un compagno gratuito e bilingue per giocare personaggi della quinta edizione (2024). È contenuto amatoriale non ufficiale, creato per un tavolo casalingo, e non è approvato né avallato da Wizards of the Coast.",
+      "body": "d20 Folio è un compagno gratuito, bilingue e amatoriale non ufficiale per giocare personaggi di Dungeons & Dragons 2024. È creato per un tavolo casalingo e non è approvato né avallato da Wizards of the Coast.",
       "editions": "I contenuti delle regole seguono di default l'SRD di D&D 2024; altre edizioni e homebrew sono supportati tramite override personalizzati."
     },
     "links": {
@@ -44,7 +45,7 @@
       "whereT": "Dove risiedono",
       "whereD": "Su Google Firebase (Firestore, Cloud Storage, Authentication), regione europe-west1 (Belgio). Google agisce come responsabile del trattamento secondo i propri Data Processing Terms, con le Clausole Contrattuali Standard UE dove si applicano trasferimenti.",
       "sharingT": "Cosa viene condiviso, e con chi",
-      "sharingD": "Solo ciò che scegli di condividere: entrare in una campagna mostra i tuoi personaggi e le note condivise a quel tavolo, e un link di condivisione che attivi rende quel personaggio leggibile a chiunque abbia l'URL finché non lo revochi. Non vendiamo dati né li cediamo a terzi.",
+      "sharingD": "Solo ciò che scegli di condividere con gli altri giocatori: entrare in una campagna mostra i tuoi personaggi e le note condivise a quel tavolo, e un link di condivisione che attivi rende un personaggio leggibile a chiunque abbia l'URL finché non lo revochi. Due flussi operativi raggiungono servizi esterni: inviare una segnalazione in-app apre una issue sul nostro tracker GitHub (includi quindi solo ciò che ti va di pubblicare lì), e il tuo primo accesso invia al titolare del sito un breve avviso di nuovo utente via email. Non vendiamo i tuoi dati né li cediamo a inserzionisti.",
       "retentionT": "Per quanto li conserviamo",
       "retentionD": "Finché non li cancelli. Puoi eliminare personaggi e campagne in autonomia in qualsiasi momento; per cancellare l'intero account scrivici (segnalazione in-app o email) e l'account con tutto ciò che possiede (personaggi, ritratti, appartenenze alle campagne) viene rimosso.",
       "rightsT": "I tuoi diritti",

@@ -10969,6 +10969,25 @@ button.create-need:focus-visible .create-need-chev {
   margin-bottom: 0;
 }
 
+/* The open, quotable trademark/independence disclaimer — the marketing-usable
+   "independent companion for D&D 2024" line. Emphasized one notch above body
+   prose within its column: a gilt left rule + faint accent wash (the plaque
+   family, sized for a register column). Nominative fair use, no marks or trade
+   dress (owner R3, 2026-08-02). */
+.colophon-disclaimer {
+  margin: 0 0 var(--sp-3);
+  max-width: 68ch;
+  padding: var(--sp-3) var(--sp-4);
+  border-left: 3px solid
+    color-mix(in oklab, var(--accent-primary) 58%, var(--border-medium));
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--accent-glow) 6%, var(--bg-surface-1));
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+  text-wrap: pretty;
+}
+
 /* The two governing licenses as twin deed columns — the term is the gilt
    rubric, the definition its description + links; a vertical fading thread
    (the one divider rule, upright) splits the pair on the wide register. */

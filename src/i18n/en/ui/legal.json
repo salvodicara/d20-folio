@@ -19,12 +19,13 @@
     },
     "trademarks": {
       "heading": "Trademarks",
-      "body": "Dungeons & Dragons, D&D, and their respective logos are trademarks of Wizards of the Coast LLC, and are not licensed by the SRD. References here are nominative, made only to describe compatibility, and imply no affiliation with or endorsement by Wizards of the Coast.",
-      "compatible": "As the SRD license terms allow, d20 Folio is compatible with fifth edition."
+      "disclaimer": "d20 Folio is an independent companion for Dungeons & Dragons 2024. It is not affiliated with, endorsed, sponsored by, or created by Wizards of the Coast. Dungeons & Dragons, D&D, and their logos are trademarks of Wizards of the Coast LLC.",
+      "body": "That reference is nominative: it is made only to describe what d20 Folio is for and what it is compatible with, never to imply any official status. Those trademarks are not licensed by the SRD, and d20 Folio uses no D&D or Wizards of the Coast logos, artwork, or trade dress.",
+      "compatible": "As the SRD license terms allow, d20 Folio is compatible with fifth edition; its rules content comes from the System Reference Documents (see Attribution above)."
     },
     "app": {
       "heading": "The App",
-      "body": "d20 Folio is a free, bilingual companion for playing fifth edition (2024) characters. It is unofficial fan content, built for a home table, and is not approved or endorsed by Wizards of the Coast.",
+      "body": "d20 Folio is a free, bilingual, unofficial fan companion for playing Dungeons & Dragons 2024 characters. It is built for a home table and is not approved or endorsed by Wizards of the Coast.",
       "editions": "Rules content follows the D&D 2024 SRD by default; other editions and homebrew are supported through custom overrides."
     },
     "links": {
@@ -44,7 +45,7 @@
       "whereT": "Where it lives",
       "whereD": "On Google Firebase (Firestore, Cloud Storage, Authentication), region europe-west1 (Belgium). Google acts as our processor under its Data Processing Terms, with EU Standard Contractual Clauses where transfers apply.",
       "sharingT": "What is shared, and with whom",
-      "sharingD": "Only what you choose to share: joining a campaign shows your shared characters and notes to that table, and a share link you enable makes that character readable by anyone with the URL until you revoke it. We never sell data or hand it to third parties.",
+      "sharingD": "Only what you choose to share with other players: joining a campaign shows your shared characters and notes to that table, and a share link you enable makes a character readable by anyone with the URL until you revoke it. Two operational flows reach outside services: sending an in-app bug report opens an issue on our GitHub tracker (so include only what you're comfortable posting there), and your first sign-in sends the site owner a short new-user notice by email. We never sell your data or hand it to advertisers.",
       "retentionT": "How long we keep it",
       "retentionD": "Until you delete it. You can delete characters and campaigns yourself at any time; to erase your whole account, ask us (in-app report or email) and the account with everything it owns (characters, portraits, campaign membership) is removed.",
       "rightsT": "Your rights",

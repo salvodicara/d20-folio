@@ -135,6 +135,10 @@ export function LegalPage() {
           {/* ── Trademarks — nominative use + the allowed compatibility statement ── */}
           <section id="trademarks" className="colophon-sec">
             <SectionHeader as="h2" tight title={t("legal.trademarks.heading")} />
+            {/* The open, quotable nominative disclaimer — the marketing-usable
+                "independent companion for D&D 2024" line (owner R3, 2026-08-02:
+                saying it is FOR D&D is fine nominatively; no marks/trade dress). */}
+            <p className="colophon-disclaimer">{t("legal.trademarks.disclaimer")}</p>
             <p className="colophon-body">{t("legal.trademarks.body")}</p>
             <p className="colophon-body">{t("legal.trademarks.compatible")}</p>
           </section>

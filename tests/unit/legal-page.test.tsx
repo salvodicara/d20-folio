@@ -115,6 +115,24 @@ describe("LegalPage colophon", () => {
     ]);
   });
 
+  it("renders the open, nominative D&D trademark disclaimer (marketing-usable, unofficial line)", () => {
+    render(
+      <MemoryRouter>
+        <LegalPage />
+      </MemoryRouter>
+    );
+    // The disclaimer says OPENLY it is a companion FOR Dungeons & Dragons
+    // (nominative fair use, owner R3 2026-08-02) AND that it is not affiliated —
+    // the two halves that keep the open wording safe.
+    const disclaimer = screen.getByText(enLegal.legal.trademarks.disclaimer);
+    expect(disclaimer.textContent).toMatch(
+      /independent companion for Dungeons & Dragons/i
+    );
+    expect(disclaimer.textContent).toMatch(
+      /not affiliated with, endorsed, sponsored by, or created by/i
+    );
+  });
+
   it("keeps all four verbatim attribution strings byte-exact in both locale catalogues", () => {
     expect(enLegal.legal.attribution.statement).toBe(REQUIRED_EN_521);
     expect(enLegal.legal.attribution.statement51).toBe(REQUIRED_EN_51);
