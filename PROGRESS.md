@@ -1276,7 +1276,8 @@ fleshed out by the owner on 2026-07-31, each item with its why:
    precedent); keeps the FOSS values, removes the clone-and-sell economics. Plus a **DCO for
    outside contributors** the moment external PRs start, preserving the sole-author relicensing
    position.
-5. **Legal pages** — privacy policy + GDPR basics (account deletion already exists), a visible
+5. **Legal pages** — privacy policy + GDPR basics (deletion exists as the ADMIN cascade; user
+   erasure is on-request until a self-serve button ships — a GA item), a visible
    **CC-BY-4.0 SRD attribution** (a license requirement, not a courtesy), and terms.
 6. **Trademark-safe branding** for anything public-facing — "5e / SRD-compatible" wording, never
    the D&D / WotC marks.

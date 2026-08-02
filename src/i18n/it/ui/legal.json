@@ -32,6 +32,44 @@
       "srd": "System Reference Document 5.2.1",
       "srd51": "System Reference Document 5.1",
       "mit": "Licenza MIT"
+    },
+    "privacy": {
+      "heading": "Informativa sulla privacy",
+      "effective": "In vigore dal 2 agosto 2026 · Titolare del trattamento: Salvatore Di Cara · salvodicara@gmail.com",
+      "intro": "d20 Folio raccoglie il minimo indispensabile per funzionare, e nient'altro. Niente analytics, niente pubblicità, niente tracker: i tuoi dati esistono perché il tuo tavolo possa giocare.",
+      "collectT": "Cosa raccogliamo",
+      "collectD": "Il profilo del tuo account Google quando accedi (nome, indirizzo email, avatar) e i contenuti che crei: personaggi, campagne, note, ritratti e le eventuali segnalazioni che invii. Firebase Authentication conserva lo stato di accesso nella memoria locale del tuo browser: non esistono cookie pubblicitari o di analisi.",
+      "useT": "Per cosa li usiamo",
+      "useD": "Per fornirti il servizio che hai richiesto: salvare i tuoi personaggi, sincronizzarli tra i tuoi dispositivi e far funzionare le campagne a cui partecipi (base giuridica: esecuzione di un contratto). La prevenzione degli abusi e il blocco degli account si fondano sul nostro legittimo interesse a mantenere il servizio sicuro.",
+      "whereT": "Dove risiedono",
+      "whereD": "Su Google Firebase (Firestore, Cloud Storage, Authentication), regione europe-west1 (Belgio). Google agisce come responsabile del trattamento secondo i propri Data Processing Terms, con le Clausole Contrattuali Standard UE dove si applicano trasferimenti.",
+      "sharingT": "Cosa viene condiviso, e con chi",
+      "sharingD": "Solo ciò che scegli di condividere: entrare in una campagna mostra i tuoi personaggi e le note condivise a quel tavolo, e un link di condivisione che attivi rende quel personaggio leggibile a chiunque abbia l'URL finché non lo revochi. Non vendiamo dati né li cediamo a terzi.",
+      "retentionT": "Per quanto li conserviamo",
+      "retentionD": "Finché non li cancelli. Puoi eliminare personaggi e campagne in autonomia in qualsiasi momento; per cancellare l'intero account scrivici (segnalazione in-app o email) e l'account con tutto ciò che possiede (personaggi, ritratti, appartenenze alle campagne) viene rimosso.",
+      "rightsT": "I tuoi diritti",
+      "rightsD": "Accesso, rettifica, cancellazione, limitazione, portabilità (ogni personaggio si esporta in JSON con un tocco) e opposizione: scrivi all'indirizzo sopra. Puoi inoltre presentare reclamo all'autorità di controllo (in Italia, il Garante per la Protezione dei Dati Personali).",
+      "childrenT": "Minori",
+      "childrenD": "d20 Folio non è rivolto a minori di 14 anni, l'età del consenso digitale in Italia.",
+      "changesT": "Modifiche",
+      "changesD": "Se questa informativa cambia, il nuovo testo viene pubblicato qui con una nuova data di decorrenza."
+    },
+    "terms": {
+      "heading": "Termini di utilizzo",
+      "effective": "In vigore dal 2 agosto 2026",
+      "intro": "La versione breve: d20 Folio è gratuito, i tuoi contenuti sono tuoi, e il tavolo merita correttezza.",
+      "serviceT": "Il servizio",
+      "serviceD": "d20 Folio è un'app companion gratuita per giocare alla quinta edizione, offerta così com'è e secondo disponibilità, senza garanzie di alcun tipo. È in sviluppo attivo: le funzionalità possono cambiare e la disponibilità non è garantita.",
+      "contentT": "I tuoi contenuti",
+      "contentD": "Personaggi, campagne, note e ritratti che crei restano tuoi. Ci concedi solo la licenza tecnica necessaria a conservarli e a mostrarli a te e alle persone con cui scegli di condividerli.",
+      "conductT": "Correttezza",
+      "conductD": "Non caricare contenuti illeciti, non abusare degli spazi condivisi, non attaccare il servizio. Gli account che lo fanno possono essere bloccati o rimossi.",
+      "unofficialT": "Contenuto amatoriale non ufficiale",
+      "unofficialD": "d20 Folio è contenuto amatoriale non ufficiale, non affiliato a, approvato o sostenuto da Wizards of the Coast. Dungeons & Dragons e D&D sono marchi di Wizards of the Coast LLC. Il contenuto di regole è riprodotto dagli SRD 5.2.1 e 5.1 secondo la licenza CC-BY-4.0 (vedi l'Attribuzione sopra).",
+      "liabilityT": "Responsabilità",
+      "liabilityD": "Nei limiti consentiti dalla legge, non rispondiamo di danni derivanti dall'uso di un servizio gratuito: conserva esportazioni JSON locali di ciò a cui tieni.",
+      "lawT": "Legge applicabile",
+      "lawD": "Questi termini sono regolati dalla legge italiana; restano ferme le tutele inderogabili del consumatore del tuo paese di residenza."
     }
   }
 }

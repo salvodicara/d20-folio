@@ -10991,6 +10991,41 @@ button.create-need:focus-visible .create-need-chev {
 .colophon-license dd {
   margin: 0;
 }
+
+/* The document registers (Privacy · Terms) — same deed-column grammar as the
+   licenses, generalised to N clauses: a 2-column wrap on the wide register (no
+   centre thread — the pairs are peers, not twins), the gilt rubric per clause. */
+.colophon-doc {
+  margin-top: var(--sp-6);
+}
+.colophon-effective {
+  margin: 0 0 var(--sp-2);
+  font-family: var(--font-numeric);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.colophon-clauses {
+  margin: var(--sp-4) 0 0;
+  display: grid;
+  gap: var(--sp-4) var(--colophon-gutter);
+}
+@media (min-width: 900px) {
+  .colophon-clauses {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.colophon-clause dt {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-md);
+  color: var(--accent-text);
+  margin-bottom: var(--sp-1);
+}
+.colophon-clause dd {
+  margin: 0;
+}
 .colophon-links {
   display: flex;
   flex-wrap: wrap;

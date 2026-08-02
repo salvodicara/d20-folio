@@ -71,23 +71,47 @@ describe("LegalPage colophon", () => {
     );
   });
 
-  it("keeps the four section anchors and sets the two licenses as definition terms", () => {
+  it("keeps the six section anchors and sets every register as definition terms", () => {
     render(
       <MemoryRouter>
         <LegalPage />
       </MemoryRouter>
     );
     // The section anchor ids survive (deep links keep working; the spread deleted the
-    // rail, not the anchors).
-    for (const id of ["attribution", "licenses", "trademarks", "app"]) {
+    // rail, not the anchors). Privacy + Terms joined for the soft launch (2026-08-02).
+    for (const id of [
+      "attribution",
+      "licenses",
+      "trademarks",
+      "app",
+      "privacy",
+      "terms",
+    ]) {
       expect(document.getElementById(id)).not.toBeNull();
     }
-    // The twin license columns are a real definition list: term → definition —
-    // pinned against the catalogue (structure + order, never frozen copy).
+    // Every register is a real definition list: term → definition — pinned
+    // against the catalogue (structure + order, never frozen copy): the twin
+    // license columns, then the privacy clauses, then the terms clauses.
     const terms = screen.getAllByRole("term").map((dt) => dt.textContent);
+    const p = enLegal.legal.privacy;
+    const tos = enLegal.legal.terms;
     expect(terms).toEqual([
       enLegal.legal.licenses.srdTerm,
       enLegal.legal.licenses.appTerm,
+      p.collectT,
+      p.useT,
+      p.whereT,
+      p.sharingT,
+      p.retentionT,
+      p.rightsT,
+      p.childrenT,
+      p.changesT,
+      tos.serviceT,
+      tos.contentT,
+      tos.conductT,
+      tos.unofficialT,
+      tos.liabilityT,
+      tos.lawT,
     ]);
   });
 

@@ -32,6 +32,44 @@
       "srd": "System Reference Document 5.2.1",
       "srd51": "System Reference Document 5.1",
       "mit": "MIT License"
+    },
+    "privacy": {
+      "heading": "Privacy Policy",
+      "effective": "Effective 2 August 2026 · Data controller: Salvatore Di Cara · salvodicara@gmail.com",
+      "intro": "d20 Folio collects the minimum it needs to run, and nothing more. No analytics, no advertising, no trackers: your data exists so your table can play.",
+      "collectT": "What we collect",
+      "collectD": "Your Google account profile when you sign in (name, email address, avatar) and the content you create: characters, campaigns, notes, portraits, and any bug reports you send. Firebase Authentication keeps your sign-in state in your browser's local storage; there are no advertising or analytics cookies.",
+      "useT": "What we use it for",
+      "useD": "To provide the service you asked for: storing your characters, syncing them across your devices, and running the campaign features you join (legal basis: performance of a contract). Abuse prevention and account blocking rest on our legitimate interest in keeping the service safe.",
+      "whereT": "Where it lives",
+      "whereD": "On Google Firebase (Firestore, Cloud Storage, Authentication), region europe-west1 (Belgium). Google acts as our processor under its Data Processing Terms, with EU Standard Contractual Clauses where transfers apply.",
+      "sharingT": "What is shared, and with whom",
+      "sharingD": "Only what you choose to share: joining a campaign shows your shared characters and notes to that table, and a share link you enable makes that character readable by anyone with the URL until you revoke it. We never sell data or hand it to third parties.",
+      "retentionT": "How long we keep it",
+      "retentionD": "Until you delete it. You can delete characters and campaigns yourself at any time; to erase your whole account, ask us (in-app report or email) and the account with everything it owns (characters, portraits, campaign membership) is removed.",
+      "rightsT": "Your rights",
+      "rightsD": "Access, rectification, erasure, restriction, portability (every character exports as JSON in one tap), and objection: write to the address above. You may also lodge a complaint with your supervisory authority (in Italy, the Garante per la Protezione dei Dati Personali).",
+      "childrenT": "Children",
+      "childrenD": "d20 Folio is not directed at children under 14, the age of digital consent in Italy.",
+      "changesT": "Changes",
+      "changesD": "If this policy changes, the new text is posted here with a new effective date."
+    },
+    "terms": {
+      "heading": "Terms of Use",
+      "effective": "Effective 2 August 2026",
+      "intro": "The short version: d20 Folio is free, your content is yours, and the table deserves fair play.",
+      "serviceT": "The service",
+      "serviceD": "d20 Folio is a free companion app for fifth-edition play, offered as-is and as-available, without warranties of any kind. It is in active development: features may change and availability is not guaranteed.",
+      "contentT": "Your content",
+      "contentD": "Characters, campaigns, notes, and portraits you create remain yours. You grant us only the technical license needed to store them and to show them to you and to the people you choose to share them with.",
+      "conductT": "Fair conduct",
+      "conductD": "Don't upload unlawful content, don't abuse shared spaces, don't attack the service. Accounts that do may be blocked or removed.",
+      "unofficialT": "Unofficial fan content",
+      "unofficialD": "d20 Folio is unofficial fan content, not affiliated with, approved, or endorsed by Wizards of the Coast. Dungeons & Dragons and D&D are trademarks of Wizards of the Coast LLC. Rules content is reproduced from the SRD 5.2.1 and 5.1 under CC-BY-4.0 (see Attribution above).",
+      "liabilityT": "Liability",
+      "liabilityD": "To the extent the law allows, we are not liable for damages arising from the use of a free service. Keep local JSON exports of anything you care about.",
+      "lawT": "Governing law",
+      "lawD": "These terms are governed by Italian law; any mandatory consumer protections of your country of residence remain unaffected."
     }
   }
 }

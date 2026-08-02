@@ -146,6 +146,82 @@ export function LegalPage() {
             <p className="colophon-body">{t("legal.app.editions")}</p>
           </section>
         </div>
+
+        {/* ── Privacy Policy — the GDPR register (soft-launch charter, blocking
+               item 3): one labelled clause per Art-13 disclosure, set in the
+               deed-column grammar and kept in plain table-talk. ── */}
+        <section id="privacy" className="colophon-sec colophon-doc">
+          <SectionHeader as="h2" tight title={t("legal.privacy.heading")} />
+          <p className="colophon-effective">{t("legal.privacy.effective")}</p>
+          <p className="colophon-body">{t("legal.privacy.intro")}</p>
+          <dl className="colophon-clauses">
+            <div className="colophon-clause">
+              <dt>{t("legal.privacy.collectT")}</dt>
+              <dd className="colophon-body">{t("legal.privacy.collectD")}</dd>
+            </div>
+            <div className="colophon-clause">
+              <dt>{t("legal.privacy.useT")}</dt>
+              <dd className="colophon-body">{t("legal.privacy.useD")}</dd>
+            </div>
+            <div className="colophon-clause">
+              <dt>{t("legal.privacy.whereT")}</dt>
+              <dd className="colophon-body">{t("legal.privacy.whereD")}</dd>
+            </div>
+            <div className="colophon-clause">
+              <dt>{t("legal.privacy.sharingT")}</dt>
+              <dd className="colophon-body">{t("legal.privacy.sharingD")}</dd>
+            </div>
+            <div className="colophon-clause">
+              <dt>{t("legal.privacy.retentionT")}</dt>
+              <dd className="colophon-body">{t("legal.privacy.retentionD")}</dd>
+            </div>
+            <div className="colophon-clause">
+              <dt>{t("legal.privacy.rightsT")}</dt>
+              <dd className="colophon-body">{t("legal.privacy.rightsD")}</dd>
+            </div>
+            <div className="colophon-clause">
+              <dt>{t("legal.privacy.childrenT")}</dt>
+              <dd className="colophon-body">{t("legal.privacy.childrenD")}</dd>
+            </div>
+            <div className="colophon-clause">
+              <dt>{t("legal.privacy.changesT")}</dt>
+              <dd className="colophon-body">{t("legal.privacy.changesD")}</dd>
+            </div>
+          </dl>
+        </section>
+
+        {/* ── Terms of Use — the short honest register for a free beta. ── */}
+        <section id="terms" className="colophon-sec colophon-doc">
+          <SectionHeader as="h2" tight title={t("legal.terms.heading")} />
+          <p className="colophon-effective">{t("legal.terms.effective")}</p>
+          <p className="colophon-body">{t("legal.terms.intro")}</p>
+          <dl className="colophon-clauses">
+            <div className="colophon-clause">
+              <dt>{t("legal.terms.serviceT")}</dt>
+              <dd className="colophon-body">{t("legal.terms.serviceD")}</dd>
+            </div>
+            <div className="colophon-clause">
+              <dt>{t("legal.terms.contentT")}</dt>
+              <dd className="colophon-body">{t("legal.terms.contentD")}</dd>
+            </div>
+            <div className="colophon-clause">
+              <dt>{t("legal.terms.conductT")}</dt>
+              <dd className="colophon-body">{t("legal.terms.conductD")}</dd>
+            </div>
+            <div className="colophon-clause">
+              <dt>{t("legal.terms.unofficialT")}</dt>
+              <dd className="colophon-body">{t("legal.terms.unofficialD")}</dd>
+            </div>
+            <div className="colophon-clause">
+              <dt>{t("legal.terms.liabilityT")}</dt>
+              <dd className="colophon-body">{t("legal.terms.liabilityD")}</dd>
+            </div>
+            <div className="colophon-clause">
+              <dt>{t("legal.terms.lawT")}</dt>
+              <dd className="colophon-body">{t("legal.terms.lawD")}</dd>
+            </div>
+          </dl>
+        </section>
       </article>
     </main>
   );
