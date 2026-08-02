@@ -20,8 +20,14 @@ vi.mock("@/lib/firebase", () => ({}));
 vi.mock("@/hooks/useCharacterSubscription", () => ({
   useCharacterSubscription: () => {},
 }));
+// The auto-apply seam is stubbed so the panel test stays pure (no campaign-io / Firebase)
+// and can ASSERT the player's typed damage is applied to the encounter on a HIT.
+vi.mock("@/features/character/center/apply-damage", () => ({
+  applyDeclaredDamage: vi.fn(() => Promise.resolve()),
+}));
 
 import "@/i18n";
+import { applyDeclaredDamage } from "@/features/character/center/apply-damage";
 import { AttackDeclaration } from "@/features/character/center/AttackDeclaration";
 import { PlayTab } from "@/features/character/center/tabs/PlayTab";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
@@ -84,7 +90,18 @@ function makeSheetCombat(rows: EncounterCombatantView[], round = 2): GlobalComba
   };
 }
 
+const applyMock = vi.mocked(applyDeclaredDamage);
+
+/** Type `amount` into a damage NumberStepper (found by its accessible label). The stepper
+ *  input filters+commits live, so a `change` is enough. */
+function enterDamage(label: RegExp | string, amount: string): void {
+  fireEvent.change(screen.getByRole("spinbutton", { name: label }), {
+    target: { value: amount },
+  });
+}
+
 beforeEach(() => {
+  applyMock.mockClear();
   useCombatStatusStore.setState({ status: null, pip: null, pendingTurn: null });
   useCombatStore.getState().endCombat();
   useCharacterStore.setState({
@@ -112,7 +129,7 @@ describe("AttackDeclaration — the in-encounter capture panel", () => {
     ).toBeNull();
   });
 
-  it("HIT/MISS stay disabled until a target is picked, then a HIT writes the ring", () => {
+  it("HIT stays disabled until a target AND a damage number, then applies + writes the ring", () => {
     const onDone = vi.fn();
     const gc = makeSheetCombat([monsterRow("monster-0", "Goblin")], 3);
     render(<AttackDeclaration sheetCombat={gc} onDone={onDone} />);
@@ -125,16 +142,26 @@ describe("AttackDeclaration — the in-encounter capture panel", () => {
     expect(useCharacterStore.getState().combatRecentActions).toEqual([]);
 
     fireEvent.click(screen.getByRole("button", { name: /target goblin/i }));
+    // A target alone arms MISS, but a HIT still needs the damage the player rolled.
+    expect(miss).toBeEnabled();
+    expect(hit).toBeDisabled();
+    enterDamage(/damage you rolled/i, "7");
     expect(hit).toBeEnabled();
     fireEvent.click(hit);
 
+    // The typed damage AUTO-APPLIES to the target monster's HP…
+    expect(applyMock).toHaveBeenCalledTimes(1);
+    expect(applyMock).toHaveBeenCalledWith("camp1", [
+      { targetId: "monster-0", amount: 7 },
+    ]);
+    // …and the declaration (amount-free — the amount rides the applied event) is written.
     expect(useCharacterStore.getState().combatRecentActions).toEqual([
       { id: "1", targetIds: ["monster-0"], outcome: "hit", round: 3 },
     ]);
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  it("a MISS writes a miss declaration (no HP ever involved)", () => {
+  it("a MISS writes a miss declaration and applies NOTHING", () => {
     const gc = makeSheetCombat([monsterRow("monster-0", "Goblin")], 1);
     render(<AttackDeclaration sheetCombat={gc} onDone={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: /target goblin/i }));
@@ -142,6 +169,8 @@ describe("AttackDeclaration — the in-encounter capture panel", () => {
     expect(useCharacterStore.getState().combatRecentActions).toEqual([
       { id: "1", targetIds: ["monster-0"], outcome: "miss", round: 1 },
     ]);
+    // A miss never touches monster HP.
+    expect(applyMock).not.toHaveBeenCalled();
   });
 
   it("dismiss writes NOTHING (never fabricate an outcome)", () => {
@@ -179,8 +208,12 @@ describe("AttackDeclaration — MULTI-select (Phase 2: a multi-target action)", 
     expect(landed).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: /target goblin/i }));
     fireEvent.click(screen.getByRole("button", { name: /target ogre/i }));
+    // Each struck target gets its OWN damage field; Landed arms only once both are filled.
+    enterDamage(/damage to goblin/i, "5");
+    expect(landed).toBeDisabled();
+    enterDamage(/damage to ogre/i, "9");
     fireEvent.click(landed);
-    // The full SET rides one declaration, carrying the instance bound (3).
+    // The full SET rides one declaration, carrying the instance bound (3)…
     expect(useCharacterStore.getState().combatRecentActions).toEqual([
       {
         id: "1",
@@ -189,6 +222,11 @@ describe("AttackDeclaration — MULTI-select (Phase 2: a multi-target action)", 
         round: 4,
         instances: 3,
       },
+    ]);
+    // …and each dart's typed damage auto-applies to its target.
+    expect(applyMock).toHaveBeenCalledWith("camp1", [
+      { targetId: "monster-0", amount: 5 },
+      { targetId: "monster-2", amount: 9 },
     ]);
   });
 
@@ -219,9 +257,13 @@ describe("AttackDeclaration — MULTI-select (Phase 2: a multi-target action)", 
     expect(screen.queryByRole("button", { name: "Landed" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /target goblin/i }));
     fireEvent.click(screen.getByRole("button", { name: /target chief/i }));
+    enterDamage(/damage you rolled/i, "6");
     fireEvent.click(screen.getByRole("button", { name: "Hit" }));
     expect(useCharacterStore.getState().combatRecentActions).toEqual([
       { id: "1", targetIds: ["monster-1"], outcome: "hit", round: 2 },
+    ]);
+    expect(applyMock).toHaveBeenCalledWith("camp1", [
+      { targetId: "monster-1", amount: 6 },
     ]);
   });
 });
@@ -247,6 +289,9 @@ describe("AttackDeclaration — AREA SAVE (Phase 3: a Fireball-class spell)", ()
     fireEvent.click(screen.getByRole("button", { name: /target goblin/i }));
     fireEvent.click(screen.getByRole("button", { name: /target chief/i }));
     fireEvent.click(screen.getByRole("button", { name: /target ogre/i }));
+    // A save shares ONE rolled number, applied in full to the whole area.
+    expect(resolve).toBeDisabled();
+    enterDamage(/damage you rolled/i, "24");
     fireEvent.click(resolve);
     // The whole declared set rides ONE save declaration — no instance bound.
     expect(useCharacterStore.getState().combatRecentActions).toEqual([
@@ -257,6 +302,12 @@ describe("AttackDeclaration — AREA SAVE (Phase 3: a Fireball-class spell)", ()
         round: 3,
         save: true,
       },
+    ]);
+    // The rolled damage applies in FULL to every target (the DM then trims the savers).
+    expect(applyMock).toHaveBeenCalledWith("camp1", [
+      { targetId: "monster-0", amount: 24 },
+      { targetId: "monster-1", amount: 24 },
+      { targetId: "monster-2", amount: 24 },
     ]);
   });
 
@@ -279,6 +330,7 @@ describe("AttackDeclaration — AREA SAVE (Phase 3: a Fireball-class spell)", ()
     const gc = makeSheetCombat([monsterRow("monster-0", "Goblin")]);
     render(<AttackDeclaration sheetCombat={gc} riders={["prone"]} onDone={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: /target goblin/i }));
+    enterDamage(/damage you rolled/i, "8");
     fireEvent.click(screen.getByRole("button", { name: "Hit" }));
     expect(useCharacterStore.getState().combatRecentActions).toEqual([
       { id: "1", targetIds: ["monster-0"], outcome: "hit", round: 2, riders: ["prone"] },

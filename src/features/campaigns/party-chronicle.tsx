@@ -25,7 +25,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollText, ChevronDown, Trash2, HelpCircle } from "lucide-react";
+import { ScrollText, ChevronDown, Trash2, HelpCircle, Undo2 } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -43,6 +43,7 @@ import {
 import {
   setEventAttacker,
   skipEventAttacker,
+  undoHpEvent,
   inferOutcome,
 } from "@/features/campaigns/combat-chronicle";
 import type { ReconciledEvent } from "@/features/campaigns/chronicle-reconcile";
@@ -243,6 +244,16 @@ function FeedLine({
   const preselect =
     event.kind === "hp-damage" && event.attackerId ? event.attackerId : currentId;
 
+  // UNDO affordance (remediability) — a stored MONSTER HP line can be reversed in one tap:
+  // {@link undoHpEvent} removes the line AND restores the monster's HP by the same amount,
+  // the airtight correction for a player's auto-applied number. Only for a real stored
+  // hp event on a monster target (a PC HP event / synthesized multi-save line has none).
+  const hpTargetRow =
+    event.kind === "hp-damage" || event.kind === "hp-heal"
+      ? rows.find((r) => r.id === event.targetId)
+      : undefined;
+  const canUndo = hpTargetRow?.kind === "monster";
+
   return (
     <div className="flex flex-col gap-1 rounded px-1 py-0.5">
       <span className="flex items-center gap-1 text-2xs leading-snug text-text-secondary">
@@ -256,7 +267,18 @@ function FeedLine({
             <Icon as={HelpCircle} size="xs" decorative />
           </span>
         )}
-        <span>{text}</span>
+        <span className="flex-1">{text}</span>
+        {canUndo && (
+          <button
+            type="button"
+            onClick={() => apply((e) => undoHpEvent(e, event.id))}
+            aria-label={t("combatChronicle.undoLine")}
+            title={t("combatChronicle.undoLineHint")}
+            className="shrink-0 rounded p-0.5 text-text-faint transition-colors hover:text-accent"
+          >
+            <Icon as={Undo2} size="xs" decorative />
+          </button>
+        )}
       </span>
       {showPicker && event.kind === "hp-damage" && (
         <div className="flex flex-wrap items-center gap-1">

@@ -246,6 +246,33 @@ service cloud.firestore {
                .affectedKeys().hasOnly(['currentCombatantId', 'round']);
       }
 
+      // COMBAT-CHRONICLE (owner 2026-08-02 — the source-of-truth flip): a player who
+      // types the damage they rolled AUTO-APPLIES it to the target monster's HP, so a
+      // regular member's update is ALSO allowed when the encounter diff touches ONLY
+      // `combatants` (the monster HP) + `events` (the appended chronicle beats) — every
+      // OTHER encounter field (round · order · currentCombatantId · status · epoch) stays
+      // byte-identical, so a member can never advance/rewind the fight, freeze the order,
+      // or end it through this path. The encounter must EXIST on both sides (a member
+      // can't conjure or clear a fight). TWO cheap structural guards keep it scoped: the
+      // combatants COUNT is unchanged (no add/remove — a member only edits existing token
+      // HP), and the events array only GROWS (append-only — a member can never delete the
+      // DM's chronicle lines; edit/undo of a line stays DM-only, the unconstrained isDm()
+      // branch). Like `turnFieldsOnlyChanged()` this is intentionally COARSE — the rules
+      // cannot iterate the combatants array to prove ONLY a token dropped, so a member
+      // could in principle over-edit a monster's HP, which is exactly the DM-remediable,
+      // low-risk case the owner's remediability mandate covers. Same
+      // diff().affectedKeys().hasOnly() construct proven in turnFieldsOnlyChanged().
+      function damageFieldsOnlyChanged() {
+        return resource.data.get('encounter', null) != null
+          && request.resource.data.get('encounter', null) != null
+          && request.resource.data.encounter.diff(resource.data.encounter)
+               .affectedKeys().hasOnly(['combatants', 'events'])
+          && request.resource.data.encounter.combatants.size()
+               == resource.data.encounter.combatants.size()
+          && request.resource.data.encounter.get('events', []).size()
+               >= resource.data.encounter.get('events', []).size();
+      }
+
       // INIT-SSOT — the `encounterInit` initiative table (`uid → raw d20 roll`, the
       // SIBLING of `encounter`) is the ONE home of PC initiative, and it is
       // DUAL-WRITER by design (the owner's mandate: "both should be able to edit
@@ -319,7 +346,7 @@ service cloud.firestore {
       // own member entry; the DM manages the roster + the encounter tracker; the
       // admin may write any DM-tool field; a non-member may self-join. Only the DM
       // may delete the campaign.
-      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged()) && encounterInitOwnEntryOnly() && joinsLockedUnchanged())
+      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || damageFieldsOnlyChanged()) && encounterInitOwnEntryOnly() && joinsLockedUnchanged())
         || isDm()
         || isAdmin()
         || isSelfJoin();

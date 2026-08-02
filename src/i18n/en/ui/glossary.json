@@ -9,6 +9,7 @@
       "speed": "Speed is how far you can move on your turn, alongside your action. Difficult terrain costs double.",
       "proficiencyBonus": "Your training bonus. Add it to every roll you are proficient in: trained skills, saving throws, weapon attacks, and your spells. It grows with level, from +2 at level 1 to +6 at level 20.",
       "hitPoints": "Hit Points (HP) are your stamina and will to keep fighting. Damage lowers them; rest and healing restore them. At 0 you fall unconscious and start making death saving throws.",
+      "damageDealt": "Type the total damage you rolled. It's applied to the target right away, lowering its HP. Made a mistake? The DM can adjust any HP and edit or undo the record.",
       "hitDice": "Your personal healing pool, one die per level. During a Short Rest you can spend Hit Dice: roll each die, add your Constitution modifier, and regain that many hit points.",
       "passiveScore": "What you notice without rolling: 10 plus the skill's bonus. The DM checks it quietly, for example to see whether you spot a hidden creature.",
       "savingThrow": "A d20 roll to resist a danger: dodging a fireball, shaking off a charm, enduring poison. The threat decides which ability you use; proficiency adds your Proficiency Bonus.",

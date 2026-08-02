@@ -571,6 +571,114 @@ describe("firestore.rules — /campaigns access", () => {
     });
   });
 
+  // ── COMBAT-CHRONICLE: a player AUTO-APPLIES their declared damage (member grant) ──
+  // The source-of-truth flip (owner 2026-08-02): a player who types the damage they
+  // rolled writes the target MONSTER's HP + the appended chronicle events on the
+  // CAMPAIGN doc the DM owns. The two-user topology is exactly DM (owns camp1) + a
+  // MEMBER-owned PC applying to it. A member may write ONLY `encounter.{combatants,
+  // events}` (the `damageFieldsOnlyChanged()` grant): the token HP drops + events
+  // append, and the combatants COUNT is unchanged (no add/remove) while events only
+  // GROW (no deleting the DM's lines). Any other encounter edit, a combatant add/remove,
+  // or an events shrink stays DM-only; a non-member is denied outright.
+  describe("a player applies declared damage (diff-scoped member grant)", () => {
+    beforeEach(async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), { encounter });
+      });
+    });
+
+    // The lone monster after the player's declared 1 damage lands on its first live token.
+    const damaged = [{ ...encounter.combatants[0], tokens: [6, 7, 0] }];
+    const appliedEvent = {
+      id: "0",
+      round: 1,
+      kind: "hp-damage",
+      targetId: "monster-1",
+      amount: 1,
+      current: 6,
+      max: 7,
+    };
+
+    it("a member MAY apply damage (writes only encounter.combatants + events)", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.combatants": damaged,
+          "encounter.events": [appliedEvent],
+        })
+      );
+    });
+
+    it("a member CANNOT add / remove a combatant through the damage path", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.combatants": [
+            ...damaged,
+            {
+              kind: "monster",
+              id: "monster-2",
+              name: "Worg",
+              ac: 13,
+              initiative: 8,
+              conditions: [],
+              maxHp: 26,
+              tokens: [26],
+            },
+          ],
+          "encounter.events": [appliedEvent],
+        })
+      );
+    });
+
+    it("a member CANNOT delete the DM's chronicle lines (events only grow)", async () => {
+      // Seed an existing event first, then attempt a write that shrinks the array.
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
+          "encounter.events": [appliedEvent, { ...appliedEvent, id: "1" }],
+        });
+      });
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.combatants": damaged,
+          "encounter.events": [appliedEvent], // dropped id "1"
+        })
+      );
+    });
+
+    it("a member CANNOT smuggle a turn / status change alongside the damage", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.combatants": damaged,
+          "encounter.events": [appliedEvent],
+          "encounter.status": "ended",
+        })
+      );
+    });
+
+    it("a non-member is denied a damage write", async () => {
+      const db = testEnv.authenticatedContext("outsider").firestore();
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.combatants": damaged,
+          "encounter.events": [appliedEvent],
+        })
+      );
+    });
+
+    it("the DM may still write the applied damage (unconstrained)", async () => {
+      const dm = testEnv.authenticatedContext("dm").firestore();
+      await assertSucceeds(
+        updateDoc(doc(dm, "campaigns", "camp1"), {
+          "encounter.combatants": damaged,
+          "encounter.events": [appliedEvent],
+        })
+      );
+    });
+  });
+
   // ── invite management: remove member + lock joins (DM tools) ──────────────────
   // Removing a member (arrayRemove + deleteField) and toggling `joinsLocked` are
   // DM/admin-only roster/tool writes; a regular member or a non-member may do

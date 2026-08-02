@@ -10,6 +10,8 @@
     "saveHitResisted": "{{attacker}} blasts {{targets}} · {{resisted}}: no damage",
     "saveAllResisted": "{{attacker}}'s blast · {{targets}}: no damage",
     "uncertain": "Uncertain: more than one attacker could have landed this hit",
+    "undoLine": "Undo this line",
+    "undoLineHint": "Remove this line and restore the target's HP by the same amount.",
     "heal": "{{target}} regains {{amount}} ({{current}}/{{max}} HP)",
     "down": "{{target}} falls",
     "conditionGain": "{{target}} is {{condition}}",

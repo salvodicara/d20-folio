@@ -450,6 +450,42 @@ DM writes STORY. Deterministic (no AI prose beyond templated facts, no dice), ta
   PLAYER declares it (Phase 1 below); other drama stays in the DM's narrative note.
 - Full detail: `docs/ARCHITECTURE.md → "The Combat Chronicle event seam"`.
 
+## Built (held for owner sign-off) — Combat Chronicle: the player-damage flip (2026-08-02)
+
+**The player enters the damage; it auto-applies to the monster; the DM overrides anything.** The
+owner's finishing decision for the held combat-chronicle epic (2026-08-02) flips the source of truth:
+instead of the player tapping only HIT/MISS and the DM lowering monster HP (the app reading that delta
+AS the damage), the player now **types the damage they rolled** in the declaration panel and it
+**AUTO-APPLIES to the target monster's HP** right away. The chronicle narrates the PLAYER's number.
+Still on `feat/combat-chronicle`, **HELD for the owner's rule-25 look — not merged, not deployed.**
+Deterministic, bilingual EN + IT, both gates green (`just ci` + `just ci-srd-only`); pack twin unchanged
+(the seam is SRD-clean).
+
+- **The panel (impeccable)** — `AttackDeclaration.tsx` gains a DAMAGE entry using the SAME `NumberStepper`
+  the HP popover uses (so entering damage reads like booking it): single-target = one target + one field
+  (autofocused after the pick — pick, type, Hit); multi-instance (Magic Missile) = a per-target field;
+  area-save (Fireball) = one rolled number applied in FULL to all (the DM trims savers — no per-target
+  save UI forced on the player). Explain-on-demand `damageDealt` glossary tip on the field.
+- **The write (permissions — the careful part)** — the damage lands on the encounter (a CAMPAIGN doc the
+  player doesn't own) via a NARROW cross-user dot-path transaction `campaign-io.applyDeclaredDamage`
+  (reached from the sheet through the Firebase-free `apply-damage.ts` bridge), writing ONLY
+  `encounter.{combatants, events}` — the monster token drops + the unattributed `hp-damage`/`down` events.
+  `firestore.rules` `damageFieldsOnlyChanged()` grants a member exactly that diff
+  (`affectedKeys().hasOnly(['combatants','events'])` + combatants count fixed + events append-only), the
+  SAME diff-scoped idiom as the turn-pointer grant. **Proven with a real two-user topology** (DM owns the
+  campaign, a member applies) in `tests/rules/firestore-rules.test.ts`.
+- **Reconcile is UNCHANGED** — the amount already came from the `hp-damage` event; only the WRITER flipped
+  (player, not DM), so the whole fusion pipeline (single/multi/save/rider) is untouched.
+- **DM remediability is airtight** (owner — "mistakes should always be remediable") — the DM freely
+  re-adjusts any monster's HP (the token popover), re-attributes a pending/uncertain line, and now taps
+  **Undo** on any applied monster HP line in the live feed (`combat-chronicle.undoHpEvent`): it removes the
+  line AND restores the token HP in one motion. All lines stay editable/removable at the end entry.
+- **Tests** — `attack-declaration.test.tsx` (damage entry + auto-apply + miss-applies-nothing),
+  `combat-chronicle.test.ts` (`undoHpEvent`), `party-chronicle.test.tsx` (the Undo affordance),
+  `firestore-rules.test.ts` (the two-user damage-write grant), and the keeper e2e
+  `combat-chronicle.spec.ts` drives the NEW flow (player types damage → monster HP drops → DM undoes one).
+- Full detail: `docs/ARCHITECTURE.md → "The Combat Chronicle event seam"`.
+
 ## Built (held for owner sign-off) — Auto-narrated combat, Phase 3: saves, AoE + side-effects (2026-08-02)
 
 **The Chronicle now reconciles the effects a hit/miss can't express** — saving throws, area bursts,

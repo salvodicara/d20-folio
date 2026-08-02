@@ -10,10 +10,11 @@
  *
  *  A. The SHEET's in-encounter AttackDeclaration banner — the evoker
  *     (`scn-evoker-wizard`) is scoped into a live own-turn encounter (the dev seam
- *     `d20-dev-combat-chronicle`), and a committed action opens the REAL banner: a
- *     weapon swing → single-target hit/miss picker; Magic Missile → the multi-select
- *     (3 targets); Fireball → the area-save "Resolve". These are the PC's real
- *     `declareAttack` writes.
+ *     `d20-dev-combat-chronicle`), and a committed action opens the REAL banner where the
+ *     player TYPES the damage they rolled (the source-of-truth flip, owner 2026-08-02):
+ *     a weapon swing → one target + one damage field; Magic Missile → the multi-select
+ *     with a PER-TARGET damage field (3 darts); Fireball → the area burst + one rolled
+ *     damage. These are the PC's real `declareAttack` writes + the auto-apply to monster HP.
  *
  *  B. The DM hub's reconciled LIVE FEED + editable end entry + saved Chronicle chapter —
  *     the dev campaign (`mock-1`) runs a begun encounter with the bypass user as DM. The
@@ -67,6 +68,16 @@ async function bootEvokerSheet(page: Page, theme: Theme): Promise<void> {
 
 const banner = (page: Page) => page.getByTestId("attack-declaration");
 
+/** Type damage into one of the banner's damage steppers (found by its accessible label).
+ *  EXACT match — "Damage to Goblin" must not also match "Damage to Goblin Chief". */
+async function enterBannerDamage(
+  page: Page,
+  label: string,
+  amount: string
+): Promise<void> {
+  await banner(page).getByRole("spinbutton", { name: label, exact: true }).fill(amount);
+}
+
 /** Click an action-card CTA, clear the cast-level modal if one opens (choose the base
  *  slot), and resolve once the declaration banner is up. */
 async function commitAction(page: Page, ctaName: RegExp): Promise<void> {
@@ -86,30 +97,30 @@ test.describe("Combat Chronicle — the sheet AttackDeclaration banner", () => {
   );
 
   for (const theme of THEMES) {
-    test(`weapon swing → single-target hit/miss picker (${theme})`, async ({ page }) => {
+    test(`weapon swing → single-target damage entry (${theme})`, async ({ page }) => {
       await bootEvokerSheet(page, theme);
       await commitAction(page, /^(Attack|Used): Quarterstaff/);
-      // Single-select: one target chip per visible monster, and the Hit + Miss verbs.
+      // Single-select: one target chip per visible monster, then the damage-you-rolled field.
       await expect(banner(page).getByText("Declare your attack")).toBeVisible();
       await banner(page)
         .getByRole("button", { name: "Target Goblin Chief", exact: true })
         .click();
-      await expect(
-        banner(page).getByRole("button", { name: "Hit", exact: true })
-      ).toBeVisible();
-      await expect(
-        banner(page).getByRole("button", { name: "Miss", exact: true })
-      ).toBeVisible();
+      // Hit stays disabled until the player types the damage they rolled.
+      const hit = banner(page).getByRole("button", { name: "Hit", exact: true });
+      await expect(hit).toBeDisabled();
+      await enterBannerDamage(page, "Damage you rolled", "8");
+      await expect(hit).toBeEnabled();
       await shot(page, `A1-banner-weapon-${theme}`);
-      // Complete the declaration for real (the PC's combat-state write).
-      await banner(page).getByRole("button", { name: "Hit", exact: true }).click();
+      // Confirm for real: the PC's declaration write + the auto-apply to the monster HP.
+      await hit.click();
       await expect(banner(page)).toHaveCount(0);
     });
 
-    test(`Magic Missile → the multi-select picker (${theme})`, async ({ page }) => {
+    test(`Magic Missile → per-target damage entry (${theme})`, async ({ page }) => {
       await bootEvokerSheet(page, theme);
       await commitAction(page, /^(Cast|Used): Magic Missile/);
-      // Multi-select up to the instance count (3 darts): pick several distinct targets.
+      // Multi-select up to the instance count (3 darts): pick distinct targets, each with
+      // its OWN damage field.
       await expect(banner(page).getByText("Declare your attack")).toBeVisible();
       await banner(page)
         .getByRole("button", { name: "Target Goblin", exact: true })
@@ -120,18 +131,22 @@ test.describe("Combat Chronicle — the sheet AttackDeclaration banner", () => {
       await banner(page)
         .getByRole("button", { name: "Target Ogre", exact: true })
         .click();
-      await expect(
-        banner(page).getByRole("button", { name: "Landed", exact: true })
-      ).toBeVisible();
+      const landed = banner(page).getByRole("button", { name: "Landed", exact: true });
+      await expect(landed).toBeDisabled();
+      await enterBannerDamage(page, "Damage to Goblin", "3");
+      await enterBannerDamage(page, "Damage to Goblin Chief", "4");
+      await enterBannerDamage(page, "Damage to Ogre", "2");
+      await expect(landed).toBeEnabled();
       await shot(page, `A2-banner-magic-missile-${theme}`);
-      await banner(page).getByRole("button", { name: "Landed", exact: true }).click();
+      await landed.click();
       await expect(banner(page)).toHaveCount(0);
     });
 
-    test(`Fireball → the area-save picker (${theme})`, async ({ page }) => {
+    test(`Fireball → area rolled-damage entry (${theme})`, async ({ page }) => {
       await bootEvokerSheet(page, theme);
       await commitAction(page, /^(Cast|Used): Fireball/);
-      // Area save: unbounded multi-select, one "Resolve" (the DM's per-target HP decides).
+      // Area save: unbounded multi-select + ONE rolled-damage number (applied in full to
+      // all; the DM trims the savers).
       await expect(banner(page).getByText("Declare your spell")).toBeVisible();
       await banner(page)
         .getByRole("button", { name: "Target Goblin", exact: true })
@@ -142,11 +157,12 @@ test.describe("Combat Chronicle — the sheet AttackDeclaration banner", () => {
       await banner(page)
         .getByRole("button", { name: "Target Ogre", exact: true })
         .click();
-      await expect(
-        banner(page).getByRole("button", { name: "Resolve", exact: true })
-      ).toBeVisible();
+      const resolve = banner(page).getByRole("button", { name: "Resolve", exact: true });
+      await expect(resolve).toBeDisabled();
+      await enterBannerDamage(page, "Damage you rolled", "24");
+      await expect(resolve).toBeEnabled();
       await shot(page, `A3-banner-fireball-${theme}`);
-      await banner(page).getByRole("button", { name: "Resolve", exact: true }).click();
+      await resolve.click();
       await expect(banner(page)).toHaveCount(0);
     });
   }
@@ -352,6 +368,37 @@ test.describe("Combat Chronicle — the DM hub feed, end entry, and saved chapte
       await expect(prose).toContainText("hits Goblin Chief for");
       await expect(prose).toContainText("blasts Goblin");
       await shot(page, `B4-saved-chapter-${theme}`);
+    });
+
+    // REMEDIABILITY (owner 2026-08-02 — "mistakes should always be remediable"): a
+    // player-applied hit drops the monster's HP and reads as an attributed feed line; the
+    // DM can UNDO it in one tap — the line disappears AND the monster's HP is restored.
+    // (In dev-bypass the DM tracker stands in for the cross-user apply write; the real
+    // member write path is proven by tests/rules/firestore-rules.test.ts.)
+    test(`the DM can undo an auto-applied hit — line + HP both revert (${theme})`, async ({
+      page,
+    }) => {
+      await bootDmHub(page, theme);
+      // A player's declared weapon hit lands on the Goblin Chief (21 HP) — the applied
+      // damage drops its HP and the reconciled feed reads it as Coralino's hit.
+      await bookDamage(page, "monster-2", 0, "7");
+      const chiefCard = monsterCard(page, "monster-2");
+      await expect(chiefCard.locator(".vital-hp").first()).toContainText("14");
+      const hitLine = feed(page).getByText(/Coralino.*hits Goblin Chief for 7/);
+      await expect(hitLine).toBeVisible();
+      await scrollFeedToEnd(page);
+      await shot(page, `B5-applied-hit-${theme}`);
+
+      // The DM overrides it: one tap on THAT line's Undo control removes the line AND heals
+      // the Goblin Chief back to full — the auto-applied number is trivially correctable.
+      // Scope to the Goblin Chief line's own row (the feed has an undo per HP line).
+      await feed(page)
+        .locator("li", { hasText: "hits Goblin Chief for 7" })
+        .getByRole("button", { name: "Undo this line" })
+        .click();
+      await expect(hitLine).toHaveCount(0);
+      await expect(chiefCard.locator(".vital-hp").first()).toContainText("21");
+      await shot(page, `B6-dm-undo-${theme}`);
     });
   }
 });

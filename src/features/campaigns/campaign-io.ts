@@ -43,6 +43,7 @@ import {
 import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { advanceTurn, prevTurn, removeCombatant } from "@/features/campaigns/encounter";
+import { recordMonsterHp } from "@/features/campaigns/combat-chronicle";
 import { attachViolatesOneCampaign } from "@/features/campaigns/attach-guard";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { pushVersion } from "@/features/campaigns/chronicle-versions";
@@ -527,6 +528,107 @@ export async function advanceEncounterTurn(
       updatedAt: serverTimestamp(),
     });
   });
+}
+
+/** The index of the first LIVE token in a monster group (`hp > 0`) — the token a
+ *  player's declared damage lands on; falls back to `0` when the whole group is down
+ *  (a re-hit on a dead group is a clamp no-op via {@link setHp}). Pure. */
+function firstLiveTokenIndex(tokens: ReadonlyArray<number>): number {
+  const i = tokens.findIndex((hp) => hp > 0);
+  return i < 0 ? 0 : i;
+}
+
+/** One declared hit a player is applying to a monster: the target combatant id + the
+ *  damage the player rolled and typed. */
+export interface DeclaredHit {
+  targetId: string;
+  amount: number;
+}
+
+/**
+ * COMBAT-CHRONICLE (owner 2026-08-02 — the source-of-truth flip) — APPLY a player's
+ * DECLARED damage to the encounter's monster HP. This is the write behind the sheet's
+ * AttackDeclaration panel: the player types the damage they rolled and it drops the
+ * target monster's HP RIGHT AWAY, so the number the reconcile layer narrates is the
+ * PLAYER's (previously it was the DM's manual HP delta).
+ *
+ * A CROSS-USER write by design: the monster HP lives on the CAMPAIGN doc, which the
+ * player does not own. Like {@link advanceEncounterTurn} it uses a NARROW dot-path
+ * transaction — it re-reads the encounter FRESH, applies each hit through the pure
+ * {@link recordMonsterHp} recorder (which lowers the token AND appends the `hp-damage`
+ * / `down` chronicle event, UNATTRIBUTED so the reconcile layer credits the declaring
+ * PC), then writes back ONLY `encounter.combatants` + `encounter.events`. That diff's
+ * `affectedKeys()` is exactly `{combatants, events}`, which the `firestore.rules`
+ * `memberAppliesDamage()` grant allows (round / order / turn / roster untouched). The
+ * events amount IS the player's typed number, so nothing else in the chronicle pipeline
+ * changes.
+ *
+ * The events are UNATTRIBUTED on purpose (not stamped with the caller's PC): the
+ * reconcile layer fuses them with the player's `recentActions` declaration exactly as
+ * before, keeping single/multi/save/rider fusion untouched. Every applied number stays
+ * DM-remediable — the DM freely re-adjusts monster HP (the token popover) and edits /
+ * undoes any chronicle line, so a wrong entry is always correctable.
+ *
+ * Tolerant no-op when no encounter is running, the target is gone / not a monster, or
+ * every amount is ≤ 0 (nothing is written). Reads FRESH inside the txn so concurrent
+ * player hits COMPOSE (each re-reads the latest tokens) instead of clobbering. No-op
+ * under dev bypass beyond an optimistic campaign-store update (so the local hub reflects
+ * the drop with no backend).
+ */
+export async function applyDeclaredDamage(
+  campaignId: string,
+  hits: ReadonlyArray<DeclaredHit>
+): Promise<void> {
+  const applicable = hits.filter((h) => h.amount > 0);
+  if (applicable.length === 0) return;
+  if (DEV_BYPASS_AUTH) return applyDeclaredDamageOptimistic(campaignId, applicable);
+  const ref = campaignDoc(campaignId);
+  await runTransaction(db, async (txn) => {
+    const snap = await txn.get(ref);
+    const encounter = (snap.data()?.encounter ?? null) as EncounterState | null;
+    if (!encounter) return; // tolerant: a member can't conjure a fight
+    const next = reduceDeclaredDamage(encounter, applicable);
+    if (next === encounter) return; // nothing landed (targets gone / all clamped)
+    txn.update(ref, {
+      "encounter.combatants": next.combatants,
+      "encounter.events": next.events ?? [],
+      updatedAt: serverTimestamp(),
+    });
+  });
+}
+
+/** Apply every declared hit to the encounter through the pure {@link recordMonsterHp}
+ *  recorder (lowers the first live token + appends the unattributed chronicle event).
+ *  PURE — shared by the live transaction and the dev-bypass optimistic path so both
+ *  behave identically. Returns the SAME state when nothing landed. */
+function reduceDeclaredDamage(
+  encounter: EncounterState,
+  hits: ReadonlyArray<DeclaredHit>
+): EncounterState {
+  let next = encounter;
+  for (const { targetId, amount } of hits) {
+    if (amount <= 0) continue;
+    const monster = next.combatants.find((c) => c.id === targetId);
+    if (!monster || monster.kind !== "monster") continue;
+    const tokenIndex = firstLiveTokenIndex(monster.tokens);
+    const value = (monster.tokens[tokenIndex] ?? 0) - amount;
+    next = recordMonsterHp(next, targetId, tokenIndex, value);
+  }
+  return next;
+}
+
+/** Dev-bypass optimistic apply: reduce the campaign store's live encounter so the local
+ *  hub reflects the drop (no Firestore). No-op when the store holds a different / no
+ *  encounter. */
+function applyDeclaredDamageOptimistic(
+  campaignId: string,
+  hits: ReadonlyArray<DeclaredHit>
+): void {
+  const store = useCampaignStore.getState();
+  const campaign = store.campaign;
+  if (!campaign || campaign.id !== campaignId || !campaign.encounter) return;
+  const next = reduceDeclaredDamage(campaign.encounter, hits);
+  if (next !== campaign.encounter) store.setEncounter(next);
 }
 
 /**

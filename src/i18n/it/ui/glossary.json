@@ -9,6 +9,7 @@
       "speed": "La Velocità è di quanto puoi muoverti nel tuo turno, oltre alla tua azione. Il terreno difficile costa il doppio.",
       "proficiencyBonus": "Il bonus del tuo addestramento. Lo sommi a ogni tiro in cui hai competenza: abilità, tiri salvezza, attacchi con le armi e i tuoi incantesimi. Cresce con il livello, da +2 al livello 1 fino a +6 al livello 20.",
       "hitPoints": "I Punti Ferita (PF) sono la tua resistenza e la volontà di continuare a combattere. I danni li riducono; riposo e cure li ripristinano. A 0 cadi privo di sensi e inizi a effettuare tiri salvezza contro la morte.",
+      "damageDealt": "Scrivi il danno totale che hai tirato. Viene applicato subito al bersaglio, riducendone i PF. Hai sbagliato? Il DM può correggere qualsiasi PF e modificare o annullare la riga.",
       "hitDice": "La tua riserva personale di guarigione, un dado per livello. Durante un Riposo Breve puoi spendere Dadi Vita: tira ogni dado, somma il tuo modificatore di Costituzione e recupera altrettanti punti ferita.",
       "passiveScore": "Ciò che noti senza tirare: 10 più il bonus dell'abilità. Il DM lo consulta in silenzio, per esempio per capire se scorgi una creatura nascosta.",
       "savingThrow": "Un tiro di d20 per resistere a un pericolo: schivare una palla di fuoco, scrollarsi di dosso un ammaliamento, sopportare un veleno. La minaccia decide quale caratteristica usi; con la competenza sommi il Bonus Competenza.",

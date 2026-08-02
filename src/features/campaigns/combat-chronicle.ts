@@ -20,7 +20,7 @@
 
 import type { EncounterState, EncounterMonster } from "@/types/campaign";
 import type { CombatChronicleEvent, EncounterOutcome } from "@/types/combat-chronicle";
-import { setHp, isDown } from "@/features/campaigns/encounter";
+import { setHp, applyHp, isDown } from "@/features/campaigns/encounter";
 
 /** A chronicle event WITHOUT its append-time-stamped fields (id + round). Distributive
  *  so each union member keeps its own discriminated shape. */
@@ -165,6 +165,64 @@ export function recordCondition(
     targetId,
     conditionId,
   });
+}
+
+/** The index of the first monster token BELOW its max (where a restore lands its HP
+ *  back); falls back to `0` when every token is full. Pure. */
+function firstRestorableToken(tokens: ReadonlyArray<number>, max: number): number {
+  const i = tokens.findIndex((hp) => hp < max);
+  return i < 0 ? 0 : i;
+}
+
+/**
+ * UNDO one MONSTER HP event from the chronicle (owner 2026-08-02 — remediability): the
+ * DM's one-tap reversal of an auto-applied player hit (or their own mis-booked edit). It
+ * both REMOVES the chronicle line AND restores the monster's HP by the SAME amount, so a
+ * wrong number is corrected in a single obvious tap — no HP left silently dropped.
+ *
+ * Damage undone → the amount is HEALED back onto the group (the first token below max);
+ * a heal undone → the amount is re-damaged off it. Any `down` line for that target is
+ * dropped once the group is no longer down (a restored group is no longer defeated). A
+ * no-op on a PC target (a PC's live HP lives in its own subdoc, not the encounter — the
+ * DM corrects that on the PC card) and on any non-HP event / unknown id. The reconcile
+ * layer then re-derives the feed: with the applied event gone, the player's declaration
+ * fuses no drop, so its line disappears too.
+ */
+export function undoHpEvent(state: EncounterState, eventId: string): EncounterState {
+  const events = state.events;
+  if (!events) return state;
+  const event = events.find((e) => e.id === eventId);
+  if (!event || (event.kind !== "hp-damage" && event.kind !== "hp-heal")) return state;
+  const target = state.combatants.find((c) => c.id === event.targetId);
+  // Only a monster's HP lives on the encounter; a PC event just clears its line. Undoing
+  // damage HEALS the amount back (onto the first token below max); undoing a heal
+  // re-damages it (off the first live token) — the reverse delta on a sensible token.
+  const isDamage = event.kind === "hp-damage";
+  let restored = state;
+  if (target && target.kind === "monster") {
+    const tokenIndex = isDamage
+      ? firstRestorableToken(target.tokens, target.maxHp)
+      : Math.max(
+          0,
+          target.tokens.findIndex((hp) => hp > 0)
+        );
+    restored = applyHp(
+      state,
+      event.targetId,
+      tokenIndex,
+      isDamage ? event.amount : -event.amount
+    );
+  }
+  // Drop the undone line, plus any now-stale `down` line for the same target once the
+  // restore leaves the group standing again.
+  const targetAfter = restored.combatants.find((c) => c.id === event.targetId);
+  const stillDown = targetAfter?.kind === "monster" && isDown(targetAfter);
+  const nextEvents = restored.events?.filter(
+    (e) =>
+      e.id !== eventId &&
+      !(e.kind === "down" && e.targetId === event.targetId && !stillDown)
+  );
+  return { ...restored, events: nextEvents };
 }
 
 /** Attribute a pending `hp-damage` event to `attackerId` (the one-tap pick). A no-op

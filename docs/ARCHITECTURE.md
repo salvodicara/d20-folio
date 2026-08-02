@@ -517,26 +517,45 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   is attributed automatically (below).
 - **Auto-narrated capture + correlation (the in-encounter → chronicle seam).** When a player's OPEN sheet
   is in a live encounter (`useSheetCombat() != null`), committing an attack opens a compact,
-  dismissible **target picker + HIT/MISS** (`features/character/center/AttackDeclaration.tsx`, gated in
+  dismissible **target picker + DAMAGE entry** (`features/character/center/AttackDeclaration.tsx`, gated in
   `PlayTab`; SOLO renders nothing). Single- vs multi-select is decided PURELY from the committed action's
   own modeled shape (`attack-scope.ts` → `attackTargetCap` / `isSaveDeclaration` / `actionRiderConditions`):
-  a weapon swing or single-instance action stays single-select (Phase 1); a genuinely multi-target action —
-  Magic Missile's darts, Scorching Ray's rays (`instances > 1`) — becomes a **multi-select capped at that
-  count** (Phase 2); and an **AoE save-for-half burst** (Fireball class — `summary.area`, Phase 3) becomes an
-  **unbounded multi-select SAVE** whose commit is a single "Resolve" (no HIT/MISS — the DM's per-target HP
-  delta decides each outcome). The `area` fact (`SrdSpellData.area`, set on Burning Hands, Thunderwave,
+  a weapon swing or single-instance action stays single-select (one target + one damage field); a genuinely
+  multi-target action — Magic Missile's darts, Scorching Ray's rays (`instances > 1`) — becomes a
+  **multi-select capped at that count** with a **per-target** damage field; and an **AoE save-for-half burst**
+  (Fireball class — `summary.area`) becomes an **unbounded multi-select** with one rolled-damage field whose
+  commit is a single "Resolve". The `area` fact (`SrdSpellData.area`, set on Burning Hands, Thunderwave,
   Shatter, Fireball, Lightning Bolt, Ice Storm, Cone of Cold + the pack's burst save spells) is what finally
-  distinguishes an AoE save-spell from a single-target save cantrip (both are just save + damage). The tap
-  writes the target SET + outcome (+ the multi-instance drop bound, or a `save` flag, + any applied-condition
-  `riders`) to a small capped **`recentActions` ring** on the player's own `combat/state`
-  subdoc (`characterStore.declareAttack` → `pushRecentAttack` → the EXISTING `writeCombatState`) — **no new
-  document, no new subscription, no per-sub-action write**; the DM/hub already streams every member's subdoc
-  via `usePartyCombatStates`. The PURE, derived-every-render correlation layer
-  `features/campaigns/chronicle-reconcile.ts` (`flattenDeclarations` + `reconcileChronicle`) fuses those
-  declarations with the DM's observed HP deltas + conditions, keyed on (target, round):
+  distinguishes an AoE save-spell from a single-target save cantrip (both are just save + damage).
+
+  **THE SOURCE-OF-TRUTH FLIP (owner 2026-08-02).** On a HIT the player types the damage they rolled and it
+  **AUTO-APPLIES to the target monster's HP right away** — the chronicle now narrates the PLAYER's number,
+  not the DM's manual HP delta. Two writes fire on confirm, and the reconcile pipeline is **unchanged**
+  (it still fuses a declaration with the observed `hp-damage` events — those events are now written by the
+  player instead of the DM):
+  1. the damage application — `features/character/center/apply-damage.ts` (a Firebase-free dynamic-import
+     bridge, the `advanceSharedTurn` pattern) → `campaign-io.applyDeclaredDamage`, a **narrow cross-user
+     dot-path transaction** that re-reads the encounter fresh, lowers the target's first live token via the
+     pure `recordMonsterHp` recorder (appending an **unattributed** `hp-damage`/`down` event so reconcile
+     still credits the declaring PC), and writes back ONLY `encounter.{combatants, events}`. The monster HP
+     lives on the CAMPAIGN doc the player doesn't own, so `firestore.rules` `damageFieldsOnlyChanged()`
+     grants a member that exact diff (`affectedKeys().hasOnly(['combatants','events'])` + combatants count
+     unchanged + events append-only), the SAME diff-scoped member-grant idiom as `turnFieldsOnlyChanged()`.
+     A MISS applies nothing.
+  2. the declaration — the target SET + outcome (+ the multi-instance drop bound, or a `save` flag, + any
+     applied-condition `riders`; **no amount** — the amount rides the applied event) to a small capped
+     **`recentActions` ring** on the player's own `combat/state` subdoc
+     (`characterStore.declareAttack` → `pushRecentAttack` → the EXISTING `writeCombatState`) — **no new
+     document, no new subscription, no per-sub-action write**; the DM/hub already streams every member's
+     subdoc via `usePartyCombatStates`.
+
+  The PURE, derived-every-render correlation layer `features/campaigns/chronicle-reconcile.ts`
+  (`flattenDeclarations` + `reconcileChronicle`) fuses those declarations with the observed HP deltas +
+  conditions, keyed on (target, round):
   - **single-target** — a declared HIT + a matching pending `hp-damage` ⇒ an **auto-attributed** hit line
-    (amount = the DM's real delta); a declared MISS ⇒ a **certain** synthesized `attack-miss` line; an
-    ambiguous match (>1 declarer) ⇒ **uncertain**-marked; a declared hit with no delta ⇒ no line;
+    (amount = the applied delta, i.e. the player's number); a declared MISS ⇒ a **certain** synthesized
+    `attack-miss` line; an ambiguous match (>1 declarer) ⇒ **uncertain**-marked; a declared hit with no
+    delta ⇒ no line;
   - **multi-target** — a declared HIT with a target SET binds the several drops the DM applied across those
     targets in-window (bounded by the action's `instances`), FUSING them into ONE **`attack-multi`** line
     that carries each struck target's real amount ("A hits G (22), the Chief (22) and the Ogre (11)"); a
@@ -544,11 +563,13 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
     the set (over the bound, or a competing declaration on a shared target) ⇒ **uncertain**; a multi MISS ⇒
     one line naming the whole set;
   - **area save (Phase 3)** — a declared SAVE spell binds **all** its declared targets' drops this round
-    (no instance cap — an area hits everyone at once) into ONE **`attack-save`** line: each damaged target
-    carries the DM's real number (half on a save, full on a fail — always the truth, never invented), and a
-    declared target the DM left un-dropped is **positively logged as resisted** ("A blasts G (22), the Chief
-    (22) · the Ogre: no damage"). Emitted only once ≥1 target took a drop (so an un-booked target is never
-    fabricated as resisted); a competing declaration on a shared target ⇒ **uncertain**;
+    (no instance cap — an area hits everyone at once) into ONE **`attack-save`** line. The player enters the
+    ONE rolled number and it applies in FULL to every target (saves are a table/DM call, so no per-target
+    save UI is forced on the player); the DM then **trims the savers' HP** (raising it / undoing the line —
+    the standard override). Each damaged target carries the applied number, and a declared target the DM
+    has left un-dropped is **positively logged as resisted** ("A blasts G (22), the Chief (22) · the Ogre:
+    no damage"). Emitted only once ≥1 target took a drop; a competing declaration on a shared target ⇒
+    **uncertain**;
   - **condition rider (Phase 3)** — a DM-booked `condition-gain` is **credited to a caster** only when the
     gained condition id is that action's declared RIDER (a Topple mastery's Prone) on the SAME (target,
     round) — the confident provenance, never guessed from mere co-occurrence; >1 caster with the same rider ⇒
@@ -557,11 +578,16 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
 
   It is **deterministic and never fabricated** (a hit line needs a real HP delta, a miss line an explicit
   tap, a per-target amount a real drop, a resisted target the spell having resolved, a condition credit an
-  exact rider match) and **writes nothing back** (no Firestore cost). The DM still overrides any pending or
-  uncertain single-target line via the one-tap picker (which writes the stored `attackerId`) and edits/removes
-  any line — including a fused multi / save line — at the end entry. Locked by `chronicle-reconcile.test.ts`
-  (single/multi/save/condition branches) + `attack-declaration.test.tsx` + `attack-scope.test.ts` +
-  `combat-chronicle-view.test.ts`.
+  exact rider match) and **writes nothing back** (no Firestore cost). **DM remediability is airtight**
+  (owner mandate — "mistakes should always be remediable"): the DM freely re-adjusts any monster's HP (the
+  token popover), overrides any pending/uncertain single-target line via the one-tap picker (writing the
+  stored `attackerId`), and — for any applied MONSTER hit line — taps **Undo** in the live feed
+  (`party-chronicle.tsx` → `combat-chronicle.undoHpEvent`), which removes the line AND restores the token
+  HP by the same amount in one motion (reconcile then re-derives the feed with that drop gone). All lines
+  remain editable/removable at the end entry. Locked by `chronicle-reconcile.test.ts` (single/multi/save/
+  condition branches) + `attack-declaration.test.tsx` (the damage-entry + auto-apply) + `attack-scope.test.ts`
+  - `combat-chronicle-view.test.ts` + `party-chronicle.test.tsx` (the Undo affordance) + the two-user
+    `damageFieldsOnlyChanged()` grant in `firestore-rules.test.ts`.
 
 - **Localize + close** — ONE presenter `src/lib/views/combat-chronicle-view.ts` resolves each event to its
   prose line (injected combatant-name + condition-name resolvers → EN/IT re-localizes on a language

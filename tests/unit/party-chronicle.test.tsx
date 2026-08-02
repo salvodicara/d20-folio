@@ -15,6 +15,7 @@ import { ChronicleFeed, EndEncounterDialog } from "@/features/campaigns/party-ch
 import {
   setEventAttacker,
   skipEventAttacker,
+  undoHpEvent,
 } from "@/features/campaigns/combat-chronicle";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
 import type { ReconciledEvent } from "@/features/campaigns/chronicle-reconcile";
@@ -169,6 +170,72 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     // The attributed line uses "hits" and offers NO picker chip for Mara.
     expect(screen.getByText(/Mara hits Goblin for 8/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "No one" })).toBeNull();
+  });
+
+  it("offers a one-tap UNDO on a monster HP line (removes the line + restores HP)", () => {
+    let captured: (e: EncounterState) => EncounterState = (e) => e;
+    const apply = vi.fn((fn: (e: EncounterState) => EncounterState) => {
+      captured = fn;
+    });
+    render(
+      <ChronicleFeed
+        events={[reco({ ...damageEvent, attackerId: "pc-mara" }, { auto: true })]}
+        rows={ROWS}
+        memberDetails={{}}
+        currentId="pc-mara"
+        apply={apply}
+      />
+    );
+    // A CERTAIN auto-applied player hit still carries the DM's undo affordance.
+    fireEvent.click(screen.getByRole("button", { name: "Undo this line" }));
+    expect(apply).toHaveBeenCalledTimes(1);
+    // The reducer IS undoHpEvent — it clears the line and heals the token back to full.
+    const seed: EncounterState = {
+      combatants: [
+        {
+          kind: "monster",
+          id: "monster-1",
+          name: "Goblin",
+          ac: 13,
+          initiative: 12,
+          conditions: [],
+          maxHp: 12,
+          tokens: [4],
+        },
+      ],
+      round: 1,
+      currentCombatantId: "pc-mara",
+      epoch: 1,
+      status: "active",
+      events: [{ ...damageEvent, attackerId: "pc-mara" }],
+    };
+    const next = captured(seed);
+    expect(next).toEqual(undoHpEvent(seed, "0"));
+    expect(next.events).toEqual([]);
+    expect(next.combatants[0]).toMatchObject({ tokens: [12] }); // 4 + 8 healed back
+  });
+
+  it("shows NO undo on a PC-target HP line (a PC's HP is not on the encounter)", () => {
+    render(
+      <ChronicleFeed
+        events={[
+          reco({
+            id: "0",
+            round: 1,
+            kind: "hp-damage",
+            targetId: "pc-mara",
+            amount: 5,
+            current: 17,
+            max: 22,
+          }),
+        ]}
+        rows={ROWS}
+        memberDetails={{}}
+        currentId="pc-mara"
+        apply={vi.fn()}
+      />
+    );
+    expect(screen.queryByRole("button", { name: "Undo this line" })).toBeNull();
   });
 
   it("a CERTAIN auto-attributed hit reads as a confirmed line with no picker", () => {

@@ -17,6 +17,7 @@ import {
   recordCondition,
   setEventAttacker,
   skipEventAttacker,
+  undoHpEvent,
   inferOutcome,
 } from "@/features/campaigns/combat-chronicle";
 import { startEncounter, addMonster, setHp } from "@/features/campaigns/encounter";
@@ -181,6 +182,65 @@ describe("setEventAttacker / skipEventAttacker", () => {
     let s = recordCondition(fight(), "monster-1", "prone", true); // id "0"
     s = setEventAttacker(s, "0", "pc-mara");
     expect(s.events?.[0]).not.toHaveProperty("attackerId");
+  });
+});
+
+// ─── undoHpEvent — the DM's one-tap reversal (remediability) ──────────────────
+
+describe("undoHpEvent — removes the line AND restores the monster's HP", () => {
+  const monster = (s: EncounterState) => s.combatants.find((c) => c.id === "monster-1");
+
+  it("undoing a damage event heals the amount back and drops the line", () => {
+    let s = recordMonsterHp(fight(), "monster-1", 0, 3); // 7 → 3, event id "0", amount 4
+    expect(monster(s)).toMatchObject({ tokens: [3, 7, 7] });
+    s = undoHpEvent(s, "0");
+    // The token is restored to full and the chronicle line is gone.
+    expect(monster(s)).toMatchObject({ tokens: [7, 7, 7] });
+    expect(s.events).toEqual([]);
+  });
+
+  it("undoing the killing blow revives the group AND removes the trailing down line", () => {
+    let s = recordMonsterHp(fight(), "monster-1", 0, 0); // id "0"
+    s = recordMonsterHp(s, "monster-1", 1, 0); // id "1"
+    s = recordMonsterHp(s, "monster-1", 2, 0); // id "2" damage + id "3" down (last token)
+    expect(events(s).map((e) => e.kind)).toContain("down");
+    s = undoHpEvent(s, "2");
+    // The amount is healed back onto the first restorable token (index 0 here — the
+    // group's HP total is restored even if the exact token differs), the group is no
+    // longer defeated, and BOTH the damage line and the now-stale down line are gone.
+    expect(monster(s)).toMatchObject({ tokens: [7, 0, 0] });
+    expect(events(s).some((e) => e.kind === "down")).toBe(false);
+    expect(events(s).map((e) => e.id)).toEqual(["0", "1"]);
+  });
+
+  it("undoing a heal re-damages the amount off the group", () => {
+    let s = recordMonsterHp(fight(), "monster-1", 0, 3); // damage 7→3 (id "0")
+    s = recordMonsterHp(s, "monster-1", 0, 7); // heal 3→7 (id "1", amount 4)
+    s = undoHpEvent(s, "1");
+    expect(monster(s)).toMatchObject({ tokens: [3, 7, 7] });
+    expect(events(s).map((e) => e.id)).toEqual(["0"]);
+  });
+
+  it("a PC HP event has no encounter HP to restore — it just clears its line", () => {
+    let s = recordPcHp(fight(), {
+      targetId: "pc-mara",
+      kind: "damage",
+      amount: 5,
+      preCurrent: 20,
+      postCurrent: 15,
+      max: 20,
+    });
+    const before = s.combatants;
+    s = undoHpEvent(s, "0");
+    expect(s.events).toEqual([]);
+    expect(s.combatants).toEqual(before); // monster tokens untouched
+  });
+
+  it("is a tolerant no-op on an unknown id or a non-HP event", () => {
+    const dmg = recordMonsterHp(fight(), "monster-1", 0, 3);
+    expect(undoHpEvent(dmg, "999")).toBe(dmg); // unknown id
+    const cond = recordCondition(fight(), "monster-1", "prone", true);
+    expect(undoHpEvent(cond, "0")).toBe(cond); // condition line, not HP
   });
 });
 
