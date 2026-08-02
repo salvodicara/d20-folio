@@ -11,6 +11,7 @@ A free, bilingual (English + Italian) PWA for D&D 2024 players to create, level 
 [![Firebase](https://img.shields.io/badge/Firebase-12-ffa000.svg)](https://firebase.google.com)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind-v4-38bdf8.svg)](https://tailwindcss.com)
 [![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-d97757.svg)](https://claude.com/claude-code)
+[![Built with Codex](https://img.shields.io/badge/Built%20with-OpenAI%20Codex-111111.svg)](https://openai.com/codex/)
 
 ## Purpose
 
@@ -159,7 +160,10 @@ Contributions are welcome — start with [docs/CONTRIBUTING.md](docs/CONTRIBUTIN
 
 ## How this was built
 
-d20 Folio is 100% AI-written. Every line of application code, every test, and most of the docs were produced by Anthropic's Claude using [Claude Code](https://claude.com/claude-code), directed and supervised by the maintainer ([@salvodicara](https://github.com/salvodicara)) who set the product direction, made the decisions, and reviewed the behavior, but did not write the code by hand.
+d20 Folio is 100% AI-written. Application code, tests, and most docs are produced with
+[Claude Code](https://claude.com/claude-code) and [OpenAI Codex](https://openai.com/codex/), directed
+and supervised by the maintainer ([@salvodicara](https://github.com/salvodicara)), who sets product
+direction, makes the decisions, and reviews the behavior without writing the code by hand.
 
 There is no human code review. The only quality gate is automated: TypeScript strict, ESLint at zero warnings, Vitest unit coverage thresholds, a production build, and a Playwright accessibility gate (`tests/e2e/a11y.spec.ts`) that runs axe across every surface in both themes and fails on any serious or critical issue. If it is green, it ships. The complete development journey lives in git history.
 

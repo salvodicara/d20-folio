@@ -211,13 +211,21 @@ dev server allows the pack's real directory (`fsAllowRoots()`,
 
 ## Reading order (especially for AI agents)
 
-1. **`CLAUDE.md`** — project rules (TypeScript strict, Italian source cascade, override-first,
+1. **`CLAUDE.md` / `AGENTS.md`** — one shared project briefing exposed under the native filename
+   expected by Claude Code and Codex (TypeScript strict, Italian source cascade, override-first,
    no `Math.random`, …).
 2. **`docs/ARCHITECTURE.md`** — system overview, where to put new code.
 3. **`docs/MECHANICS.md`** — Grant taxonomy + how to add new mechanics.
 4. **`PROGRESS.md`** — living roadmap; which phase the current work belongs to.
 5. **`docs/AUTOMATION_BACKLOG.md`** — the open mechanics-automation backlog (12 levers +
    data-wiring, from the 161-finding coverage audit).
+
+### Claude Code and Codex parity
+
+The two agent harnesses intentionally read the same project contract and the same Impeccable skill.
+`AGENTS.md` is a tracked symlink to `CLAUDE.md`; `.agents/skills/impeccable` is a tracked symlink to
+the canonical `.claude/skills/impeccable` directory. Update only the canonical targets. This keeps
+instructions and UI craft behavior identical without vendoring a second skill copy that can drift.
 
 ---
 

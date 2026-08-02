@@ -66,6 +66,8 @@ step**. Deploys stay owner-gated (golden rule 22), so `main` may run ahead of li
 **6 real users** have been playing since 2026-06-08. The repo went **open-source + split-repo**
 (2026-07-17), the **full-BG3 identity pivot** is **COMPLETE** (asset integration closed 2026-07-24 —
 PROMPT*12–25 all resolved, the ledger below; the tome-leaf remasters 28/29 closed 2026-08-01), and
+Claude Code/Codex project parity is **SHIPPED** (2026-08-02 — one shared briefing and one shared
+Impeccable installation, exposed through each harness's native discovery path), and
 the **DDB-parity feature epic** is now **ACTIVE** (OPENED 2026-07-23) with its **bestiary flagship
 SHIPPED** (2026-07-24), the **encounter picker SHIPPED** (2026-07-25; bestiary-first), the
 **2024-DMG XP-budget difficulty calculator SHIPPED** (2026-07-25; the DM-only budget readout),
