@@ -10749,11 +10749,21 @@ button.create-need:focus-visible .create-need-chev {
    included). Dropping the containment also keeps row measurement honest (a contained
    row would report its intrinsic estimate, not its realized height). */
 
-/* Mobile masthead — same anatomy, compact strike. */
+/* Mobile masthead — same anatomy, compact strike. The knot divider (§16.3,
+   `.wb .cmp-entry-head::after`: a 25px weave hung at the head's bottom) needs
+   its ROOM reserved here: at this width the eyebrow wraps and the title's last
+   line reaches the head's foot, where the bottom-anchored knot then strikes
+   THROUGH the name (owner, 2026-08-02: "il separatore si sovrappone con il
+   nome"). The extra bottom padding is exactly the knot's in-head extent, so
+   title and weave can never meet; the lift lets the below-line curls paint
+   over the next panel's edge instead of being clipped by it. Desktop keeps
+   its own geometry untouched — the tall masthead already clears the knot. */
 @media (max-width: 720px) {
   .cmp-entry-head {
     padding: var(--sp-3);
+    padding-bottom: calc(var(--sp-3) + 21px);
     gap: var(--sp-2);
+    z-index: 1;
   }
   .cmp-entry-name {
     font-size: 1.2rem;
