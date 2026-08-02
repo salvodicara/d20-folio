@@ -57,6 +57,33 @@ describe("Portrait", () => {
     expect(fallback?.style.getPropertyValue("--av-hue")).toBe(String(idToHue("c2")));
   });
 
+  it("draws a creature-type GLYPH emblem (over the tint) when given a glyphPath, not the monogram", () => {
+    const { container } = render(
+      <Portrait src={null} name="Goblin" seed="m1" glyphPath="M0 0h10v10H0z" />
+    );
+    const fallback = container.querySelector<HTMLElement>(".av-fallback");
+    expect(fallback).not.toBeNull();
+    // The glyph replaces the monogram letter, over the SAME deterministic tint.
+    expect(fallback?.textContent).toBe("");
+    expect(fallback?.style.getPropertyValue("--av-hue")).toBe(String(idToHue("m1")));
+    const path = container.querySelector(".av-glyph path");
+    expect(path?.getAttribute("d")).toBe("M0 0h10v10H0z");
+  });
+
+  it("still renders the uploaded portrait even when a glyphPath is supplied (override-first)", () => {
+    const { container } = render(
+      <Portrait
+        src="m.jpg"
+        crop={null}
+        name="Goblin"
+        seed="m1"
+        glyphPath="M0 0h10v10H0z"
+      />
+    );
+    expect(container.querySelector("img")).not.toBeNull();
+    expect(container.querySelector(".av-glyph")).toBeNull();
+  });
+
   it("eager-loads only when asked (the above-the-fold hero)", () => {
     const { container } = render(
       <Portrait src="x.jpg" crop={null} name="A" seed="s" loading="eager" />
