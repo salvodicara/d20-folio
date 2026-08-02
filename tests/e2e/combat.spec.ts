@@ -16,12 +16,12 @@
 
 import { test, expect, type Page, type Locator } from "@playwright/test";
 
-/** The CONCENTRATION banner specifically — not the sibling B3 "what's limiting
- *  you this turn" banner that shares the `.conc-banner` register. The
- *  concentration banner is the one announcing "Concentrating on …" (the limiter
- *  read-out never carries that copy), so this stays a single, stable element. */
-function concentrationBanner(page: Page): Locator {
-  return page.locator(".conc-banner").filter({ hasText: /Concentrating on/i });
+/** The CONCENTRATION status badge on the turn altar's status ledge (the BG3-style
+ *  badge row): the gold badge wearing the concentrated-on spell's name. The
+ *  limiter badges are siblings with their own `data-kind`s, so this stays a
+ *  single, stable element. */
+function concentrationBadge(page: Page): Locator {
+  return page.locator('.status-badge[data-kind="concentration"]');
 }
 
 test.describe("Combat live-play loop (cockpit)", () => {
@@ -55,14 +55,31 @@ test.describe("Combat live-play loop (cockpit)", () => {
     await expect(page.locator(".r-ring")).toHaveText("5");
   });
 
-  test("the concentration banner names the active spell", async ({ page }) => {
-    // `.conc-banner` is a shared register: the concentration banner AND the B3
-    // "what's limiting you this turn" banner (`.turn-limiters`, surfaced here by
-    // the mock's Frightened → netted attack-disadvantage) both use it. Scope to
-    // the concentration banner — the one carrying the clear-concentration drop
-    // control (the limiter read-out has no action) — so the strict locator is
-    // unambiguous.
-    await expect(concentrationBanner(page)).toContainText(/Hypnotic Pattern/i);
+  test("the concentration badge names the active spell; its popover carries the drop action", async ({
+    page,
+  }) => {
+    // The badge itself wears the spell name (glanceable); the full sentence +
+    // the one-tap "Stop concentrating" live in its explain-on-demand popover.
+    await expect(concentrationBadge(page)).toContainText(/Hypnotic Pattern/i);
+    await concentrationBadge(page).click();
+    await expect(page.getByText(/Concentrating on Hypnotic Pattern/i)).toBeVisible();
+    // Scoped to the badge popover — the rail's conc pill carries its own drop control.
+    await expect(
+      page.locator(".status-pop").getByRole("button", { name: /stop concentrating/i })
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+  });
+
+  test("the mock's Frightened surfaces a limiter badge whose popover explains the penalty", async ({
+    page,
+  }) => {
+    // Frightened → netted attack-disadvantage → one crimson-family badge on the
+    // ledge; the effect sentence is explain-on-demand (BG3 grammar).
+    const frightened = page.locator(".status-badge").filter({ hasText: /Frightened/i });
+    await expect(frightened).toBeVisible();
+    await frightened.click();
+    await expect(page.getByText(/Disadvantage on attack rolls/i)).toBeVisible();
+    await page.keyboard.press("Escape");
   });
 
   test("the Resources rail shows active conditions and spell slots", async ({ page }) => {
@@ -193,8 +210,8 @@ test.describe("Combat live-play loop (cockpit)", () => {
   test("casting a 2nd concentration spell prompts to break, and undo restores it", async ({
     page,
   }) => {
-    const banner = concentrationBanner(page);
-    await expect(banner).toContainText(/Hypnotic Pattern/i);
+    const badge = concentrationBadge(page);
+    await expect(badge).toContainText(/Hypnotic Pattern/i);
 
     // Bane is a L1 concentration spell that costs a slot → the cast-level picker
     // opens first; pick the base level.
@@ -206,7 +223,7 @@ test.describe("Combat live-play loop (cockpit)", () => {
     await page.getByRole("button", { name: /cast anyway/i }).click();
 
     // Concentration swapped to Bane; the committed card disables to "Used".
-    await expect(banner).toContainText(/Bane/i);
+    await expect(badge).toContainText(/Bane/i);
     await expect(
       page.getByRole("button", { name: "Used: Bane", exact: true })
     ).toBeDisabled();
@@ -214,7 +231,7 @@ test.describe("Combat live-play loop (cockpit)", () => {
     // Undo via the cast's snackbar (the one visible Undo — the CTA grammar):
     // concentration is restored.
     await page.getByRole("button", { name: "Undo", exact: true }).click();
-    await expect(banner).toContainText(/Hypnotic Pattern/i);
+    await expect(badge).toContainText(/Hypnotic Pattern/i);
   });
 
   // ── Extra Attack (the double-attack answer) — scn-barbarian-extra-attack ─────

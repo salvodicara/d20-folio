@@ -822,8 +822,8 @@ in-the-moment affordance, one keyboard path — and CTAs never reverse.**
    reminder, an error) is a message in its own lane — short (2–6 s), rare, never claiming the
    snackbar slot.
 6. **Semantically different ≠ undo.** Ending an ONGOING state is a forward act with its own
-   affordance (the lit rail chip ends Rage/a buff; the concentration banner's drop control ends a
-   spell; the wield-stance toggle is stateless display) — each itself undoable where destructive.
+   affordance (the lit rail chip ends Rage/a buff; the concentration badge popover's drop control
+   ends a spell; the wield-stance toggle is stateless display) — each itself undoable where destructive.
    The turn-meter **coin re-arm** is a bookkeeping EDIT of the economy display (owner-ratified
    2026-07-03), registered on the stack like any act. A **level-down** is the deliberate reversal
    of a level-up (a feature, not an undo). **Fences** (the stack's never-list, `undoStore.ts`):
@@ -1271,6 +1271,25 @@ recovery lives on the coins (below).
   never health, which is why the earlier green→red spectrum was rejected). A small warm dot marks the leading
   edge; engraved 5-ft ticks sit above it. Still ONE `role="slider"` (click / arrow-key / type); the
   remaining-first numeral and its dotted-underline edit affordance are unchanged.
+
+- **Status ledge — the BG3-style status-effect badge row** (`.status-ledge`, 2026-08-02): when ≥1
+  status is active the band grows an integrated bottom tier (`.turn[data-status]` opens the grid
+  track; an engraved gold hairline fuses it to the plate — never a floating strip). One compact
+  pill badge per status — a coined 20px icon socket (a miniature of the economy discs) + the
+  status name in the numeric small-cap register: **concentration** leads in the gold accent
+  register (the `focus-mark` sigil + the spell's name; a candlelit halo; a crimson signal ring via
+  `data-blocked` when an Incapacitated-family condition forbids holding it), each **limiting
+  condition** wears its own `--cond-*`/`--cond-*-ink` hue split (the same vocabulary as the rail's
+  `.co-chip`s) with its per-condition lucide glyph, **Exhaustion N** carries its level on the
+  badge, and the RA-08 slot advisory reads in the warm `--warning` tone (`data-kind="advisory"`).
+  Detail is EXPLAIN-ON-DEMAND (constitution §1): every badge is a folio-Popover trigger
+  (`.status-pop`) whose body lists the effect sentences — the badge unit is the CAUSE
+  (`composeStatusBadges` groups the `composeTurnLimiters` VMs one badge per condition), so
+  Paralyzed reads as ONE badge whose popover lists blocked economy + Speed 0 + auto-fail saves.
+  The concentration popover carries the one-tap "Stop concentrating" action (hidden on a
+  read-only viewer). Action PROMPTS (Prone stand, turn-start regen apply, round-1 reminder,
+  maintained keep/end) stay `.conc-banner` action banners below the band — a call to action never
+  hides behind a click.
 
 Every economy token (Reaction included) is one button with **two tap meanings by state**: an OPEN coin
 is a **board filter** (narrows the Play board to that type; the ACTIVE filter is the **lit-socket**

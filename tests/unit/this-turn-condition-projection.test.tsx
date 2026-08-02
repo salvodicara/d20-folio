@@ -71,7 +71,7 @@ describe("ThisTurnTracker — condition projection (B1)", () => {
     useCharacterStore.setState({ character: null, loading: false, error: null });
   });
 
-  it("no condition gate → no zeroed movement readout, no blocked concentration note", () => {
+  it("no condition gate → no zeroed movement readout, no blocked concentration ring", () => {
     // The mock concentrates on Hypnotic Pattern + carries Frightened (no
     // speed-zero, no concentration break) — neither projection fires.
     load();
@@ -80,11 +80,13 @@ describe("ThisTurnTracker — condition projection (B1)", () => {
       false
     );
     expect(document.querySelector(".move-num-zero")).toBeNull();
-    expect(document.querySelector(".conc-banner[data-blocked]")).toBeNull();
-    expect(document.querySelector(".conc-banner-note")).toBeNull();
+    // The concentration badge renders (gold ledge) WITHOUT the blocked signal.
+    const badge = document.querySelector('.status-badge[data-kind="concentration"]');
+    expect(badge).not.toBeNull();
+    expect(badge?.hasAttribute("data-blocked")).toBe(false);
   });
 
-  it("a speed-zeroing condition (Grappled) → the movement readout dims to a clean struck '0' (cause lives in the B3 banner, not the slider)", () => {
+  it("a speed-zeroing condition (Grappled) → the movement readout dims to a clean struck '0' (cause lives on the Grappled badge, not the slider)", () => {
     load((doc) => {
       doc.session.conditions = ["grappled"];
     });
@@ -95,23 +97,38 @@ describe("ThisTurnTracker — condition projection (B1)", () => {
     expect(document.querySelector(".move-num-zero")).not.toBeNull();
     expect(document.querySelector(".move-num-in")).toBeNull();
     // …and the slider itself carries NO crimson cause caption (DRY — the cause is
-    // carried solely by the "what's limiting you this turn" banner, asserted in B3).
+    // carried solely by the status ledge's Grappled badge, asserted in B3).
     expect(slider?.querySelector(".move-zero-note")).toBeNull();
     expect(slider?.textContent ?? "").not.toMatch(/Grappled/i);
   });
 
-  it("a concentration-breaking condition (Incapacitated) → the banner names the cause", () => {
+  it("a concentration-breaking condition (Incapacitated) → the badge flags blocked; its popover names the cause + keeps the drop action", () => {
     load((doc) => {
-      // Keep the mock's active concentration so the banner renders.
+      // Keep the mock's active concentration so the badge renders.
       doc.session.conditions = ["incapacitated"];
     });
     mount();
-    const banner = document.querySelector(".conc-banner[data-blocked]");
-    expect(banner).not.toBeNull();
-    const note = banner?.querySelector(".conc-banner-note");
-    expect(note?.textContent).toMatch(/Incapacitated/i);
-    // Override-first: the drop affordance is still present (player owns the call).
+    const badge = document.querySelector('.status-badge[data-kind="concentration"]');
+    expect(badge).not.toBeNull();
+    expect(badge?.hasAttribute("data-blocked")).toBe(true);
+    // Explain on demand: the popover names the cause…
+    fireEvent.click(badge as HTMLElement);
+    const pop = screen.getByRole("dialog");
+    expect(pop.querySelector(".sp-note")?.textContent).toMatch(/Incapacitated/i);
+    // …and override-first: the drop affordance is still present (player owns the call).
     expect(screen.getByText(/Stop concentrating/i)).toBeInTheDocument();
+  });
+
+  it("the concentration badge's popover carries the one-tap drop (fires exactly the store action)", () => {
+    load((doc) => {
+      doc.session.conditions = [];
+    });
+    mount();
+    fireEvent.click(
+      document.querySelector('.status-badge[data-kind="concentration"]') as HTMLElement
+    );
+    fireEvent.click(screen.getByText(/Stop concentrating/i));
+    expect(useCharacterStore.getState().character?.session.concentration).toBeFalsy();
   });
 
   it("removing the condition clears both projections (override-first)", () => {
@@ -123,11 +140,13 @@ describe("ThisTurnTracker — condition projection (B1)", () => {
       false
     );
     expect(document.querySelector(".move-num-zero")).toBeNull();
-    expect(document.querySelector(".conc-banner[data-blocked]")).toBeNull();
+    expect(
+      document.querySelector('.status-badge[data-kind="concentration"][data-blocked]')
+    ).toBeNull();
   });
 });
 
-describe("ThisTurnTracker — 'what's limiting you this turn' summary (B3)", () => {
+describe("ThisTurnTracker — the status ledge's limiter badges (B3)", () => {
   beforeEach(() => {
     useCombatStore.setState({
       round: 1,
@@ -139,113 +158,125 @@ describe("ThisTurnTracker — 'what's limiting you this turn' summary (B3)", () 
     useCharacterStore.setState({ character: null, loading: false, error: null });
   });
 
-  it("afflicted (Restrained + Paralyzed + netted disadvantage + exhaustion) → the summary lists every limiter", () => {
-    // Restrained imposes attack-dis + speed-0; Paralyzed adds auto-fail saves —
-    // together they surface every condition-sourced limiter at once.
+  /** The ledge's non-concentration badges (condition/exhaustion/advisory). */
+  const limiterBadges = () =>
+    Array.from(
+      document.querySelectorAll(
+        '.status-badge:not([data-kind="concentration"]) .sb-label'
+      )
+    ).map((el) => el.textContent);
+
+  /** Open the badge whose label matches, returning ITS popover (the newest
+   *  dialog — jsdom fires no pointerdown, so a prior popover may linger open). */
+  const openBadge = (label: RegExp): HTMLElement => {
+    const badge = Array.from(document.querySelectorAll(".status-badge")).find((b) =>
+      label.test(b.textContent)
+    );
+    expect(badge, `badge ${label}`).toBeTruthy();
+    fireEvent.click(badge as HTMLElement);
+    const dialogs = screen.getAllByRole("dialog");
+    return dialogs[dialogs.length - 1] as HTMLElement;
+  };
+
+  it("afflicted (Restrained + Paralyzed + netted disadvantage + exhaustion) → ONE badge per cause, popovers carry the effect sentences", () => {
+    // Restrained imposes attack-dis + speed-0; Paralyzed adds blocked economy +
+    // auto-fail saves — grouped per CAUSE on the ledge (BG3 grammar), never one
+    // sentence-soup line.
     load((doc) => {
       doc.session.conditions = ["restrained", "paralyzed"];
       doc.session.exhaustion = 1;
     });
     mount("disadvantage");
-    const summary = document.querySelector(".turn-limiters");
-    expect(summary).not.toBeNull();
-    const text = summary?.textContent ?? "";
-    // Paralyzed forbids every economy slot → the blocked-economy line leads.
-    expect(text).toMatch(/can't take/i);
-    expect(text).toMatch(/Disadvantage on attacks/i);
-    expect(text).toMatch(/Speed 0/i);
-    expect(text).toMatch(/Auto-fail STR\/DEX saves/i);
-    expect(text).toMatch(/Exhaustion 1/i);
-    // Reuses the `.conc-banner` register (sibling of the concentration banner).
-    expect(summary?.classList.contains("conc-banner")).toBe(true);
+    // The ledge is integrated into the turn altar (grid row via data-status).
+    expect(document.querySelector(".turn[data-status] .status-ledge")).not.toBeNull();
+    expect(limiterBadges()).toEqual(["Paralyzed", "Restrained", "Exhaustion 1"]);
+    // Paralyzed's popover: blocked economy leads, then auto-fail saves.
+    let pop = openBadge(/Paralyzed/i);
+    expect(pop.textContent).toMatch(/can't take/i);
+    expect(pop.textContent).toMatch(/Auto-fail STR\/DEX saves/i);
+    // Restrained's popover: attack disadvantage + Speed 0.
+    pop = openBadge(/Restrained/i);
+    expect(pop.textContent).toMatch(/Disadvantage on attack rolls/i);
+    expect(pop.textContent).toMatch(/Speed 0/i);
   });
 
-  it("Stunned → the blocked-economy line names the forbidden slots + the cause", () => {
-    // Stunned forbids action/bonus/reaction (Incapacitated family) — the summary
-    // reads "You can't take Action, Bonus, Reaction (Stunned)".
+  it("Stunned → one badge; its popover names the forbidden slots", () => {
+    // Stunned forbids action/bonus/reaction (Incapacitated family).
     load((doc) => {
       doc.session.conditions = ["stunned"];
     });
     mount("none");
-    const text = document.querySelector(".turn-limiters")?.textContent ?? "";
-    expect(text).toMatch(/can't take/i);
-    expect(text).toMatch(/Action/);
-    expect(text).toMatch(/Bonus/);
-    expect(text).toMatch(/Reaction/);
-    expect(text).toMatch(/Stunned/i);
+    expect(limiterBadges()).toEqual(["Stunned"]);
+    const pop = openBadge(/Stunned/i);
+    expect(pop.textContent).toMatch(/can't take/i);
+    expect(pop.textContent).toMatch(/Action/);
+    expect(pop.textContent).toMatch(/Bonus/);
+    expect(pop.textContent).toMatch(/Reaction/);
   });
 
   // REGRESSION — the exhaustion line used to read a hardcoded "−2 to all d20" at
   // EVERY level, so an Exhaustion-5 hero was taught −2 while the header showed the
-  // real −10. It now renders the resolved penalties (2 × level d20, 5 ft × level).
+  // real −10. The badge popover renders the resolved penalties (2 × level d20,
+  // 5 ft × level); the LEVEL reads on the badge itself ("Exhaustion 5").
   it("names the REAL exhaustion penalties at the character's level (never a fixed −2)", () => {
     load((doc) => {
       doc.session.conditions = [];
       doc.session.exhaustion = 5;
     });
     mount("none");
-    const text = document.querySelector(".turn-limiters")?.textContent ?? "";
-    expect(text).toMatch(/−10/);
-    expect(text).toMatch(/25 ft/);
-    expect(text).toMatch(/Exhaustion 5/i);
-    expect(text).not.toMatch(/−2\b/);
+    expect(limiterBadges()).toEqual(["Exhaustion 5"]);
+    const pop = openBadge(/Exhaustion 5/i);
+    expect(pop.textContent).toMatch(/−10/);
+    expect(pop.textContent).toMatch(/25 ft/);
+    expect(pop.textContent).not.toMatch(/−2\b/);
   });
 
-  it("a clean character (no conditions) → no blocked-economy clause", () => {
+  it("a clean character (no conditions, no exhaustion, none roll-state) → no ledge at all (rule 19)", () => {
     load((doc) => {
       doc.session.conditions = [];
       doc.session.exhaustion = 0;
+      doc.session.concentration = "";
     });
     mount("none");
-    // No banner at all, so certainly no blocked-economy line (rule 19).
-    expect(document.querySelector(".turn-limiters")).toBeNull();
+    expect(document.querySelector(".status-ledge")).toBeNull();
+    expect(document.querySelector(".turn")?.hasAttribute("data-status")).toBe(false);
   });
 
-  it("clean (no conditions, no exhaustion, none roll-state) → no summary at all (rule 19)", () => {
-    load((doc) => {
-      doc.session.conditions = [];
-      doc.session.exhaustion = 0;
-    });
-    mount("none");
-    expect(document.querySelector(".turn-limiters")).toBeNull();
-  });
-
-  it("the mock (Frightened) shows the attack-disadvantage limiter only when netted to disadvantage", () => {
+  it("the mock (Frightened) shows the attack-disadvantage badge only when netted to disadvantage", () => {
     // The mock carries Frightened (disadvantage on attacks/checks). With the net
-    // resolved to disadvantage the limiter shows; netted to none (an advantage
+    // resolved to disadvantage the badge shows; netted to none (an advantage
     // source cancels it) it does not — single source of truth on the netted state.
     load();
     mount("disadvantage");
-    expect(document.querySelector(".turn-limiters")?.textContent).toMatch(
-      /Disadvantage on attacks.*Frightened/i
-    );
+    expect(limiterBadges()).toEqual(["Frightened"]);
+    const pop = openBadge(/Frightened/i);
+    expect(pop.textContent).toMatch(/Disadvantage on attack rolls/i);
   });
 
-  it("Frightened netted to NONE → no attack limiter (advantage cancels the disadvantage)", () => {
+  it("Frightened netted to NONE → no limiter badge (advantage cancels the disadvantage)", () => {
     load();
     mount("none");
-    expect(document.querySelector(".turn-limiters")).toBeNull();
+    expect(limiterBadges()).toEqual([]);
   });
 
   // RA-32 — Grappled's attack Disadvantage is RAW-scoped to targets OTHER than
-  // the grappler; the turn-limiter summary must say so, instead of implying all
+  // the grappler; the badge popover must say so, instead of implying all
   // attacks are at Disadvantage. Every OTHER attack-dis condition stays blanket.
-  it("RA-32 — Grappled netted to disadvantage → the attack limiter states the non-grappler scope", () => {
+  it("RA-32 — Grappled netted to disadvantage → the popover states the non-grappler scope", () => {
     load((d) => {
       d.session.conditions = ["grappled"];
     });
     mount("disadvantage");
-    const text = document.querySelector(".turn-limiters")?.textContent ?? "";
-    expect(text).toMatch(/other than the grappler/i);
-    expect(text).toMatch(/Grappled/i);
+    const pop = openBadge(/Grappled/i);
+    expect(pop.textContent).toMatch(/other than the grappler/i);
   });
 
   it("RA-32 — a blanket attack-dis condition (Frightened) keeps the unscoped sentence", () => {
     load(); // the mock carries Frightened
     mount("disadvantage");
-    const text = document.querySelector(".turn-limiters")?.textContent ?? "";
-    expect(text).toMatch(/Disadvantage on attacks.*Frightened/i);
-    expect(text).not.toMatch(/other than the grappler/i);
+    const pop = openBadge(/Frightened/i);
+    expect(pop.textContent).toMatch(/Disadvantage on attack rolls/i);
+    expect(pop.textContent).not.toMatch(/other than the grappler/i);
   });
 
   // RA-19 — SRD Prone "Restricted Movement": while Prone the turn meter offers a

@@ -141,8 +141,9 @@ export interface ScenarioSpec {
    * Active session CONDITIONS to start with (SRD condition ids, e.g.
    * `["stunned"]`) — seeds `session.conditions`. For the condition-projection
    * surfaces: the Stats rail's (LeftHud) crimson save auto-fail mark (Stunned /
-   * Paralyzed auto-fail STR + DEX saves) and the turn-limiters banner's
-   * blocked-economy line (the Incapacitated family forbids Action/Bonus/Reaction).
+   * Paralyzed auto-fail STR + DEX saves) and the status ledge's condition badge,
+   * whose popover carries the blocked-economy line (the Incapacitated family
+   * forbids Action/Bonus/Reaction).
    * Empty by default. Unknown ids simply have no gate and are skipped.
    */
   conditions?: string[];
@@ -461,8 +462,8 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     // The BG3 can/cannot projection — the condition surfaces. A Cleric 5
     // (WIS 18) STUNNED: the Stats rail (LeftHud) shows the crimson AUTO-FAIL mark on
     // the STR + DEX save medallions (Stunned auto-fails both), and the Play tab's
-    // turn-limiters banner shows the blocked-economy line "You can't take Action,
-    // Bonus, Reaction (Stunned)". The proficient WIS/CHA saves + skill proficiencies
+    // status ledge shows the Stunned badge (popover: "You can't take Action,
+    // Bonus, Reaction"). The proficient WIS/CHA saves + skill proficiencies
     // give the rail its on-demand BreakdownTip triggers. Visit
     // `/characters/scn-bg3-projection`.
     name: "Auria, Stunned Cleric",
@@ -481,7 +482,7 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     ],
     conditions: ["stunned"],
     exercises:
-      "condition projection: Stunned surfaces the Stats rail's (LeftHud) crimson auto-fail mark on STR + DEX saves AND the turn-limiters blocked-economy line (You can't take Action, Bonus, Reaction (Stunned)); proficient saves/skills carry the BreakdownTip.",
+      "condition projection: Stunned surfaces the Stats rail's (LeftHud) crimson auto-fail mark on STR + DEX saves AND the status ledge's Stunned badge (popover: You can't take Action, Bonus, Reaction); proficient saves/skills carry the BreakdownTip.",
   },
   "s13-speed": {
     // S13 — the effective walking Speed reaching the UI. A low-STR (8) Wizard
@@ -837,7 +838,7 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     activeFeatures: ["barbarian-reckless-attack"],
     conditions: ["prone"],
     exercises:
-      "PS-J composition: Prone's blanket attack Disadvantage and Reckless Attack's Strength-scoped Advantage cancel, so the greataxe card reads 'Disadv. · Straight roll on Strength attacks' — one true statement per roll, never both claims at once. The turn-limiter banner states the same blanket verdict.",
+      "PS-J composition: Prone's blanket attack Disadvantage and Reckless Attack's Strength-scoped Advantage cancel, so the greataxe card reads 'Disadv. · Straight roll on Strength attacks' — one true statement per roll, never both claims at once. The status ledge's Prone badge states the same blanket verdict.",
   },
   // PS-J — Hunter Defensive Tactics → Escape the Horde, the INCOMING-attack half.
   // The Disadvantage lands on Opportunity Attacks made AGAINST the Hunter, so the

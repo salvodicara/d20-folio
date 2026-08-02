@@ -14952,6 +14952,16 @@ button:focus-visible > .seal .seal-edit-veil--hover {
   border-radius: var(--radius-lg);
   box-shadow: var(--elev-raised);
 }
+/* STATUS LEDGE — when ≥1 status is active (`data-status`), the altar grows a
+   full-width bottom row for the badge ledge. The track exists only then, so a
+   clean band never pays the empty row's gap (golden rule 19). */
+.turn[data-status] {
+  grid-template-areas:
+    "round init      .         endturn"
+    "econ  econ      econ      endturn"
+    "endcombat endcombat endcombat ."
+    "status status status status";
+}
 /* Light: the gilt edge GLOWS (the hub gilt-frame aura) — vellum can't halo, so
    the aura is the designed light answer to dark's ember. */
 [data-theme="light"] .turn {
@@ -15810,8 +15820,11 @@ button.econ-tok-filter:active .econ-disc {
   transition: none;
 }
 
-/* ── Concentration banner (under the turn bar) — first-class combat state.
-   Gold-leaf focus motif + spell name + a one-tap drop control. ── */
+/* ── Action-PROMPT banners (under the turn bar) — the `.conc-banner` register
+   now carries only turn PROMPTS that demand a visible call to action (Prone
+   stand · turn-start regen apply · round-1 reminder · maintained keep/end).
+   Concentration + the turn limiters moved onto the altar's STATUS LEDGE (the
+   `.status-badge` row below). ── */
 .conc-banner {
   display: flex;
   align-items: center;
@@ -15854,41 +15867,6 @@ button.econ-tok-filter:active .econ-disc {
   font-weight: 600;
   font-size: var(--text-md);
   color: var(--accent-text);
-}
-/* B1 — the "concentration can't be held (<condition>)" sub-note inside the
-   concentration banner: a crimson clarifier on its own line. The banner keeps its
-   gold frame (the player is still flagged as concentrating + can drop it); the
-   note explains the active condition forbids holding it. Token-driven. */
-.conc-banner-note {
-  display: block;
-  margin-top: 2px;
-  font-family: var(--font-numeric);
-  font-style: normal;
-  font-weight: 600;
-  font-size: var(--text-micro);
-  letter-spacing: 0.03em;
-  color: var(--semantic-danger);
-}
-.conc-banner[data-blocked] {
-  border-color: color-mix(in oklab, var(--semantic-danger) 45%, transparent);
-  background: color-mix(in oklab, var(--semantic-danger) 10%, transparent);
-}
-.conc-banner[data-blocked] .conc-banner-mark {
-  border-color: var(--semantic-danger);
-  background: var(--semantic-danger);
-}
-/* B3 — the "what's limiting you this turn" summary is a `.conc-banner` VARIANT
-   (the crimson `data-blocked` register), not a new recipe. Its text is a penalty
-   read-out (a `·`-joined list), so it reads in the SAME crimson numeric register as
-   the `.conc-banner-note` clarifier rather than the italic gold spell-name
-   display — the at-a-glance "these are your penalties" line. */
-.turn-limiters .conc-banner-text {
-  font-family: var(--font-numeric);
-  font-style: normal;
-  font-weight: 600;
-  font-size: var(--text-micro);
-  letter-spacing: 0.03em;
-  color: var(--semantic-danger);
 }
 .conc-banner-drop,
 .conc-banner-keep {
@@ -15939,6 +15917,130 @@ button.econ-tok-filter:active .econ-disc {
 .conc-banner-keep {
   background: color-mix(in oklab, var(--accent-glow) 16%, var(--bg-surface-1));
   border-color: var(--accent-primary);
+}
+
+/* ── STATUS LEDGE — the BG3-style status-effect badge row, INTEGRATED as the
+   turn altar's bottom tier (grid area `status`, opened by `.turn[data-status]`).
+   One compact badge per active status: a coined icon socket + the status name,
+   tinted by the SAME `--co`/`--co-ink` condition-palette split the rail chips
+   speak (`condColor`/`condInkColor`); the concentration badge speaks the gold
+   accent register instead. Detail is explain-on-demand: the badge is a Popover
+   trigger (folio-branded overlay). ── */
+.status-ledge {
+  grid-area: status;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  /* An engraved hairline fuses the ledge to the altar — part of the plate,
+     never a floating strip below it. */
+  padding-top: var(--sp-3);
+  border-top: 1px solid color-mix(in oklab, var(--accent-primary) 20%, transparent);
+}
+.status-badge {
+  --co: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 3px 11px 3px 4px;
+  cursor: pointer;
+  /* Pill silhouette — the combat family's coin/pip grammar (econ discs, topbar
+     combat pip), distinct from the lapidary 4px facet of the passive chips: a
+     badge here is a tappable status token, not list metadata. */
+  border-radius: 999px;
+  font-family: var(--font-numeric);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--co-ink, var(--co));
+  background: color-mix(in oklab, var(--co) 16%, var(--bg-surface-2));
+  border: 1px solid color-mix(in oklab, var(--co) 55%, var(--border-medium));
+  transition:
+    border-color var(--m-fast),
+    box-shadow var(--m-fast);
+}
+.status-badge:hover,
+.status-badge[data-state="open"] {
+  border-color: var(--co);
+  box-shadow: 0 0 7px color-mix(in oklab, var(--co) 30%, transparent);
+}
+[data-motion="reduced"] .status-badge {
+  transition: none;
+}
+/* The coined icon socket — a miniature of the economy discs, so the ledge reads
+   as one instrument with the meter above it. */
+.status-badge .sb-disc {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--co) 26%, var(--bg-surface-1));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--co) 55%, transparent);
+}
+.status-badge .sb-disc svg,
+.status-badge .sb-disc .icon {
+  width: 12px;
+  height: 12px;
+  color: var(--co-ink, var(--co));
+}
+.status-badge .sb-disc .focus-mark {
+  display: inline-flex;
+  width: 12px;
+  height: 12px;
+  color: var(--co-ink, var(--co));
+}
+.status-badge .sb-label {
+  white-space: nowrap;
+}
+/* Concentration — the one GOLD badge (a held state, not a penalty): the accent
+   register + a soft candlelit halo so it leads the ledge. */
+.status-badge[data-kind="concentration"] {
+  --co: var(--accent-primary);
+  --co-ink: var(--accent-text);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--accent-primary) 22%, transparent);
+}
+/* B1 — an active condition forbids HOLDING concentration: the gold badge takes a
+   crimson signal ring (the popover names the cause + keeps the drop action). */
+.status-badge[data-kind="concentration"][data-blocked] {
+  border-color: color-mix(in oklab, var(--semantic-danger) 60%, transparent);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--semantic-danger) 26%, transparent);
+}
+/* RA-08 slot-limit ADVISORY — the warm "needs attention" tone (the maintained-
+   prompt register), never alarm-red: it is a rules nudge, not a penalty. */
+.status-badge[data-kind="advisory"] {
+  --co: var(--warning, var(--accent-primary));
+}
+/* Light parity: on vellum the tonal fill needs the same deepening as the chips
+   (co-chip's 22%) + the hue-matched halo so the border reads lit, not flat. */
+[data-theme="light"] .status-badge {
+  background: color-mix(in oklab, var(--co) 22%, var(--bg-surface-2));
+}
+[data-theme="light"] .status-badge:hover {
+  box-shadow: 0 0 7px color-mix(in oklab, var(--co) 26%, transparent);
+}
+/* Badge popover body — effect sentences as quiet stacked lines; the crimson
+   blocked note + the gold drop action reuse their established registers. */
+.status-pop .pop-body {
+  display: grid;
+  gap: var(--sp-2);
+  justify-items: start;
+  max-width: 19rem;
+}
+.status-pop .sp-line {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.status-pop .sp-note {
+  margin: 0;
+  font-family: var(--font-numeric);
+  font-weight: 600;
+  font-size: var(--text-micro);
+  letter-spacing: 0.03em;
+  color: var(--semantic-danger);
 }
 
 /* ═══ Polymorph / True Polymorph — Beast-form picker + active-form banner (S7) ═══
@@ -16261,6 +16363,14 @@ button.econ-tok-filter:active .econ-disc {
       "endturn endturn"
       "endcombat endcombat";
     gap: var(--sp-2);
+  }
+  .turn[data-status] {
+    grid-template-areas:
+      "round init"
+      "econ  econ"
+      "endturn endturn"
+      "endcombat endcombat"
+      "status status";
   }
   .turn .econ {
     justify-content: flex-start;

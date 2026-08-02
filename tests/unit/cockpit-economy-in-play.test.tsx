@@ -171,11 +171,16 @@ describe("economy in the Play tab", () => {
     const showToast = vi.spyOn(useToastStore.getState(), "showToast");
 
     const { container } = renderCockpit();
-    // The meter's own concentration-drop (the rail surfaces its own copy too — we
-    // assert THIS handler fires a single toast, not a double).
-    const drop = container.querySelector(
-      '[role="tabpanel"]:not([inert]) .conc-banner-drop'
+    // The meter's own concentration-drop now lives in the concentration BADGE's
+    // popover (the rail surfaces its own copy too — we assert THIS handler fires
+    // a single toast, not a double). Open the badge, then tap the drop action
+    // (portaled popover → query from document).
+    const badge = container.querySelector(
+      '[role="tabpanel"]:not([inert]) .status-badge[data-kind="concentration"]'
     );
+    expect(badge).not.toBeNull();
+    fireEvent.click(badge as HTMLElement);
+    const drop = document.querySelector(".status-pop .conc-banner-drop");
     expect(drop).not.toBeNull();
     fireEvent.click(drop as HTMLElement);
 

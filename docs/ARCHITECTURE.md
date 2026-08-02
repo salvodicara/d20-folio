@@ -1970,7 +1970,10 @@ React/store/Firebase-free). Present modules: `sheet-view.ts` (LeftHud/ResourceRa
 senses/speeds/immunities/advantage chips), `saves-checks-view.ts` (`deriveSavesAndChecks` — the ONE
 locale-free home of the six saves + 18 skills + three passives row math, consumed by the cockpit rail
 `LeftHud`, its sole surface), `combat-action-view.ts` (log-icon type, action sort, upcast text + the
-`composeTurnLimiters` "what's limiting you" summary), `weapon-facts-view.ts` (the **unified weapon facts VM** — `buildWeaponFacts` produces ONE
+`composeTurnLimiters` limiter VMs and `composeStatusBadges`, which groups them ONE badge per cause
+for the turn meter's status ledge — the BG3-style badge row where concentration + each limiting
+condition read as compact tinted badges with explain-on-demand popovers, replacing the old floating
+banner lines), `weapon-facts-view.ts` (the **unified weapon facts VM** — `buildWeaponFacts` produces ONE
 `WeaponFactsVM` rendered by the SAME shared `WeaponFacts` component on BOTH the Combat and Inventory
 tabs, so the two weapon cards are identical by construction; a mastery chip appears only for an OWNED
 mastery), and `toast-intent.ts` (the toasts-as-data localizer).

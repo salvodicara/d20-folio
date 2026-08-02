@@ -19,6 +19,7 @@ import {
   actionSortTier,
   localizeActions,
   composeTurnLimiters,
+  composeStatusBadges,
   attacksRemainingInAction,
   isPipAttackAction,
   maxReplaceAttackSpellLevel,
@@ -167,7 +168,6 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
         conditions: [],
         attackRollState: "none",
         exhaustion: 0,
-        locale: "en",
       })
     ).toEqual([]);
   });
@@ -280,9 +280,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
 
   it.each(cases)("$name", ({ conditions, attackRollState, exhaustion, expected }) => {
     expect(
-      kinds(
-        composeTurnLimiters({ conditions, attackRollState, exhaustion, locale: "en" })
-      )
+      kinds(composeTurnLimiters({ conditions, attackRollState, exhaustion }))
     ).toEqual(expected);
   });
 
@@ -299,7 +297,6 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
       attackRollState: "none",
       exhaustion: 0,
       spellSlotCasts,
-      locale: "en",
     });
     expect(kinds(ls).includes("spellSlotLimit")).toBe(present);
     const limit = ls.find((l) => l.kind === "spellSlotLimit");
@@ -314,7 +311,6 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
       attackRollState: "none",
       exhaustion: 1,
       spellSlotCasts: 2,
-      locale: "en",
     });
     expect(kinds(ls)).toEqual(["speedZero", "exhaustion", "spellSlotLimit"]);
   });
@@ -327,36 +323,33 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
       conditions: ["grappled"],
       attackRollState: "disadvantage",
       exhaustion: 0,
-      locale: "en",
     });
     const gAtk = grap.find((l) => l.kind === "attackDisadvantage");
     expect(gAtk?.kind === "attackDisadvantage" && gAtk.scoped).toBe(true);
-    expect(gAtk?.kind === "attackDisadvantage" && gAtk.cause).toMatch(/Grappled/i);
+    expect(gAtk?.kind === "attackDisadvantage" && gAtk.causeId).toBe("grappled");
 
     const restr = composeTurnLimiters({
       conditions: ["restrained"],
       attackRollState: "disadvantage",
       exhaustion: 0,
-      locale: "en",
     });
     const rAtk = restr.find((l) => l.kind === "attackDisadvantage");
     expect(rAtk?.kind === "attackDisadvantage" && !!rAtk.scoped).toBe(false);
   });
 
-  it("resolves the cause to the localized condition name + stable ordered ability ids", () => {
+  it("resolves the cause to a STABLE condition id + stable ordered ability ids", () => {
     const ls = composeTurnLimiters({
       conditions: ["restrained", "paralyzed"],
       attackRollState: "disadvantage",
       exhaustion: 0,
-      locale: "en",
     });
     const attack = ls.find((l) => l.kind === "attackDisadvantage");
     // Restrained is the first active condition that imposes attack disadvantage.
-    expect(attack && "cause" in attack && attack.cause).toMatch(/Restrained/i);
+    expect(attack && "causeId" in attack && attack.causeId).toBe("restrained");
     const saves = ls.find((l) => l.kind === "autoFailSaves");
     // STABLE order (STR before DEX) — never Set-iteration order.
     expect(saves?.kind === "autoFailSaves" && saves.abilities).toEqual(["STR", "DEX"]);
-    expect(saves && "cause" in saves && saves.cause).toMatch(/Paralyzed/i);
+    expect(saves && "causeId" in saves && saves.causeId).toBe("paralyzed");
   });
 
   it("blocked-economy limiter carries the forbidden slots (stable order) + the first-condition cause", () => {
@@ -364,7 +357,6 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
       conditions: ["stunned"],
       attackRollState: "none",
       exhaustion: 0,
-      locale: "en",
     });
     const blocked = ls.find((l) => l.kind === "blockedEconomy");
     // Stunned forbids the action, bonus, AND reaction slots — a stable ordered
@@ -374,7 +366,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
       "bonus",
       "reaction",
     ]);
-    expect(blocked && "cause" in blocked && blocked.cause).toMatch(/Stunned/i);
+    expect(blocked && "causeId" in blocked && blocked.causeId).toBe("stunned");
   });
 
   it("no blocked-economy limiter for a clean character (rule 19)", () => {
@@ -382,7 +374,6 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
       conditions: ["frightened"],
       attackRollState: "disadvantage",
       exhaustion: 0,
-      locale: "en",
     });
     // Frightened imposes attack disadvantage but forbids no economy slot.
     expect(ls.some((l) => l.kind === "blockedEconomy")).toBe(false);
@@ -393,7 +384,6 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
       conditions: [],
       attackRollState: "none",
       exhaustion: 9,
-      locale: "en",
     });
     const ex = ls.find((l) => l.kind === "exhaustion");
     expect(ex?.kind === "exhaustion" && ex.level).toBe(6);
@@ -416,7 +406,6 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
         conditions: [],
         attackRollState: "none",
         exhaustion,
-        locale: "en",
       }).find((l) => l.kind === "exhaustion");
       expect(ex?.kind === "exhaustion" && ex.d20Penalty).toBe(d20Penalty);
       expect(ex?.kind === "exhaustion" && ex.speedPenaltyFt).toBe(speedPenaltyFt);
@@ -429,7 +418,6 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
         conditions: [],
         attackRollState: "none",
         exhaustion: level,
-        locale: "en",
       }).find((l) => l.kind === "exhaustion");
       expect(ex?.kind === "exhaustion" && ex.d20Penalty).toBe(
         Math.abs(exhaustionPenalty(level))
@@ -438,6 +426,66 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
         exhaustionSpeedReductionFt(level)
       );
     }
+  });
+});
+
+// ── STATUS BADGES — the ledge's badge unit is the CAUSE: composeStatusBadges
+//    groups the composed limiters into one badge per condition (first-seen order),
+//    with exhaustion + the RA-08 slot advisory standing alone. Pure + id-based. ──
+describe("composeStatusBadges (one badge per cause, first-seen order)", () => {
+  it("groups a multi-limiter condition into ONE badge carrying every sentence", () => {
+    // Paralyzed alone imposes blocked-economy + speed-0 + auto-fail saves.
+    const badges = composeStatusBadges(
+      composeTurnLimiters({
+        conditions: ["paralyzed"],
+        attackRollState: "none",
+        exhaustion: 0,
+      })
+    );
+    expect(badges).toHaveLength(1);
+    const b = badges[0];
+    expect(b?.kind === "condition" && b.conditionId).toBe("paralyzed");
+    if (b?.kind !== "condition") throw new Error("expected a condition badge");
+    expect(b.limiters.map((l) => l.kind)).toEqual([
+      "blockedEconomy",
+      "speedZero",
+      "autoFailSaves",
+    ]);
+  });
+
+  it("keeps distinct causes as distinct badges, in the composer's order", () => {
+    // Restrained (attack-dis + speed-0) + Paralyzed (blocked + auto-fail) +
+    // exhaustion + the slot advisory → 4 badges: paralyzed leads (its
+    // blocked-economy limiter is first), then restrained, exhaustion, slot-limit.
+    const badges = composeStatusBadges(
+      composeTurnLimiters({
+        conditions: ["restrained", "paralyzed"],
+        attackRollState: "disadvantage",
+        exhaustion: 2,
+        spellSlotCasts: 2,
+      })
+    );
+    expect(badges.map((b) => (b.kind === "condition" ? b.conditionId : b.kind))).toEqual([
+      "paralyzed",
+      "restrained",
+      "exhaustion",
+      "slotLimit",
+    ]);
+    // Restrained's two limiters folded into its one badge.
+    const restrained = badges.find(
+      (b) => b.kind === "condition" && b.conditionId === "restrained"
+    );
+    expect(restrained?.limiters.map((l) => l.kind)).toEqual([
+      "attackDisadvantage",
+      "speedZero",
+    ]);
+    // The exhaustion badge carries the level for its "Exhaustion N" label.
+    const ex = badges.find((b) => b.kind === "exhaustion");
+    expect(ex?.kind === "exhaustion" && ex.level).toBe(2);
+  });
+
+  it("no limiters → no badges (rule 19)", () => {
+    expect(composeStatusBadges([])).toEqual([]);
   });
 });
 

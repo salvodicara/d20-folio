@@ -4,8 +4,11 @@
  * player acts from, instead of floating above every tab.
  *
  * Round ring · initiative · the Action / Bonus / Reaction economy tokens · the
- * 5-ft movement bar · the gilded End-Turn button, with the concentration banner
- * directly under it. It is a PURE meter: it READS the combat turn state
+ * 5-ft movement bar · the gilded End-Turn button, with the STATUS LEDGE (the
+ * BG3-style badge row: concentration + one badge per limiting cause, popover
+ * detail — StatusLedge) as the altar's integrated bottom row, and the
+ * action-PROMPT banners (Prone stand · turn-start regen · round-1 reminder ·
+ * maintained keep/end) directly under it. It is a PURE meter: it READS the combat turn state
  * (`combatStore`) + the character (for the engine-derived initiative bonus +
  * movement budget) and DISPATCHES turn actions only. The per-slot commit/undo +
  * End-Turn finalization are owned by the shared `useTurnEconomy()` provider (one
@@ -36,11 +39,7 @@ import {
   effectiveProficiencyBonus,
 } from "@/lib/compute";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
-import {
-  concentrationLabel,
-  grantSourceLabel,
-  conditionLabel,
-} from "@/lib/views/tracker-view";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
 import {
   resolveStartOfTurnRegen,
   resolveRound1DamageDoubles,
@@ -57,6 +56,7 @@ import {
   wireUndoToast,
 } from "@/stores/undoStore";
 import { InitVital } from "@/features/campaigns/init-vital";
+import { StatusLedge } from "./StatusLedge";
 import { useTurnEconomy } from "./useTurnEconomy";
 import { useTurnState, useSheetCombat } from "./turn-state";
 import { MovementSlider } from "./MovementSlider";
@@ -464,57 +464,17 @@ export function ThisTurnTracker({
     ? (conditions.find((id) => resolveConditionEffects([id]).breaksConcentration) ?? null)
     : null;
 
-  // B3 — the single-glance "what's limiting you this turn" summary, composed
-  // from the SAME memoized condition resolver + the netted attackRollState (from
-  // PlayTab) + active exhaustion. Pure presenter (single source of truth — the
-  // cause names re-derive from `resolveConditionEffects`, never re-stated).
-  // Renders ONLY when ≥1 limiter is active (golden rule 19).
+  // B3 — the turn's active limiters, composed from the SAME memoized condition
+  // resolver + the netted attackRollState (from PlayTab) + active exhaustion.
+  // Grouped into one badge per cause on the meter's STATUS LEDGE (StatusLedge —
+  // the BG3-style badge row); renders ONLY when ≥1 status is active (rule 19).
   const limiters = composeTurnLimiters({
     conditions,
     attackRollState,
     exhaustion,
     spellSlotCasts: spellSlotCastsThisTurn,
-    locale,
   });
-  const limiterText = (l: (typeof limiters)[number]): string => {
-    // Branch on the STABLE limiter kind (golden rule 7 — ids, never labels);
-    // each maps to its UI sentence key, the cause/abilities localized for it.
-    switch (l.kind) {
-      case "blockedEconomy":
-        return t("combat.limiterBlockedEconomy", {
-          slots: l.slots.map((s) => t(`combat.${s}`)).join(", "),
-          cause: l.cause,
-        });
-      case "attackDisadvantage":
-        // RA-32 — Grappled's attack Disadvantage is RAW-scoped to targets OTHER
-        // than the grappler; every other attack-dis condition is blanket.
-        return t(
-          l.scoped
-            ? "combat.limiterAttackDisadvantageScoped"
-            : "combat.limiterAttackDisadvantage",
-          { cause: l.cause }
-        );
-      case "speedZero":
-        return t("combat.limiterSpeedZero", { cause: l.cause });
-      case "autoFailSaves":
-        return t("combat.limiterAutoFailSaves", {
-          abilities: l.abilities.map((a) => t(`abilities.${a}_short`)).join("/"),
-          cause: l.cause,
-        });
-      case "exhaustion":
-        // The REAL penalties at this level (2 × level to d20 Tests, 5 ft × level
-        // Speed) — resolved by the composer off the engine formulas, so the
-        // sentence agrees with the header's INIT and the movement meter. The
-        // Speed figure localizes through D3 (`localeDistance`: ft / metres).
-        return t("combat.limiterExhaustion", {
-          n: l.d20Penalty,
-          speed: localeDistance(l.speedPenaltyFt, locale),
-          level: l.level,
-        });
-      case "spellSlotLimit":
-        return t("combat.limiterSpellSlotLimit", { n: l.count });
-    }
-  };
+  const hasStatuses = !!character.session.concentration || limiters.length > 0;
 
   // SR-only economy-token status: "Action: available" / "Action: spent on X".
   // `spentName === undefined` → available; "" → spent (no named action, e.g.
@@ -558,7 +518,11 @@ export function ThisTurnTracker({
           band flips to waiting IMMEDIATELY (optimistic status), dimming + inerting the economy
           and quieting End Turn on `--ease-settle` so the hand-off is unmistakable on the SHEET
           (the pip carries whose-turn; this makes the meter respond too). */}
-      <div className="turn" data-phase={inEncounter ? phase : undefined}>
+      <div
+        className="turn"
+        data-phase={inEncounter ? phase : undefined}
+        data-status={hasStatuses ? "" : undefined}
+      >
         <div className="round">
           <span className="r-lbl">{t("combat.round")}</span>
           <span className="r-ring tnum">
@@ -693,6 +657,20 @@ export function ThisTurnTracker({
             <span>{t("combat.endCombat")}</span>
           </button>
         )}
+
+        {/* STATUS LEDGE — the BG3-style status-effect badge row, integrated as the
+            altar's bottom row (`data-status` opens the grid track): concentration
+            + one badge per limiting cause, each with an explain-on-demand popover
+            (the concentration badge carries the one-tap drop action). Replaces the
+            floating concentration + turn-limiter banners. */}
+        {hasStatuses && (
+          <StatusLedge
+            limiters={limiters}
+            concentration={character.session.concentration || null}
+            concBlockedConditionId={concBlockedReason}
+            readonly={readonly}
+          />
+        )}
       </div>
 
       {/* RA-19 — while Prone, a one-tap Stand on the turn meter clears the
@@ -787,68 +765,6 @@ export function ThisTurnTracker({
           </button>
         </div>
       ))}
-
-      {/* Concentration banner — first-class combat state (§3.1, p01-combat):
-          when concentrating, surface the spell + a one-tap drop control directly
-          under the turn bar (not only as a rail status chip). */}
-      {character.session.concentration && (
-        <div
-          className="conc-banner"
-          data-blocked={concBlockedReason ? "" : undefined}
-          role="status"
-        >
-          <span className="conc-banner-mark" aria-hidden />
-          <span className="conc-banner-text">
-            {t("combat.concentratingOn", {
-              spell: concentrationLabel(character.session.concentration, locale),
-            })}
-            {/* B1 — an active condition (Incapacitated family) forbids holding
-                Concentration: name the cause inline. Override-first — the drop
-                control beside it lets the player end it; the engine never
-                auto-drops on a condition toggle. */}
-            {concBlockedReason && (
-              <span className="conc-banner-note">
-                {t("combat.concentrationBlockedNote", {
-                  condition: conditionLabel(concBlockedReason, locale),
-                })}
-              </span>
-            )}
-          </span>
-          <button
-            type="button"
-            className="conc-banner-drop"
-            // #66 — `setConcentration("")` already emits the stopped-concentrating
-            // toast WITH undo (the store generalises the immediate-commit-with-undo
-            // contract to every destructive action). Dispatch it alone so dropping
-            // concentration fires EXACTLY ONE toast (matches ResourceRail); a second
-            // showToast here was the double-toast bug.
-            onClick={() => useCharacterStore.getState().setConcentration("")}
-          >
-            {t("combat.clearConcentration")}
-          </button>
-        </div>
-      )}
-
-      {/* B3 — "what's limiting you this turn": a single-glance read-out of every
-          active penalty (condition disadvantages / speed-0 / auto-fail saves /
-          exhaustion), composed from the SAME condition resolver. Reuses the
-          `.conc-banner` register (crimson `data-blocked` variant — these are
-          penalties) as a sibling of the concentration banner, not a new recipe.
-          Renders ONLY when ≥1 limiter is active (golden rule 19). Pure read-out:
-          clearing the source condition / exhaustion empties it. */}
-      {limiters.length > 0 && (
-        <div
-          className="conc-banner turn-limiters"
-          data-blocked=""
-          role="status"
-          aria-label={t("combat.limitersLabel")}
-        >
-          <span className="conc-banner-mark" aria-hidden />
-          <span className="conc-banner-text">
-            {limiters.map(limiterText).join(" · ")}
-          </span>
-        </div>
-      )}
     </div>
   );
 }

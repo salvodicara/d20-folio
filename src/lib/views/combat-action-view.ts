@@ -26,7 +26,6 @@ import { formatModifier } from "@/lib/utils";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import type { GatedSlot } from "@/lib/condition-effects";
-import { conditionLabel } from "@/lib/views/tracker-view";
 import {
   clampExhaustion,
   exhaustionPenalty,
@@ -616,19 +615,19 @@ export type TurnLimiterVM =
    *  `blockedSlots`). `slots` is a STABLE ordered id list (action → bonus →
    *  reaction); the edge localizes each slot name (`combat.action`/`bonus`/
    *  `reaction`). breaksConcentration is NOT a limiter — it is owned by the
-   *  concentration banner (single source / DRY). */
-  | { kind: "blockedEconomy"; slots: ReadonlyArray<GatedSlot>; cause: string }
+   *  concentration badge (single source / DRY). */
+  | { kind: "blockedEconomy"; slots: ReadonlyArray<GatedSlot>; causeId: string }
   /** Disadvantage on attack rolls (Frightened/Poisoned/Prone/…) — the netted
    *  attack state must actually be disadvantage (an advantage source cancels it).
    *  RA-32 — `scoped` marks the ONE RAW-scoped case: Grappled gives Disadvantage
    *  only vs targets OTHER than the grappler; every other attack-dis condition
    *  (Blinded/Frightened/Poisoned/Prone/Restrained) is blanket (`scoped` absent). */
-  | { kind: "attackDisadvantage"; cause: string; scoped?: boolean }
+  | { kind: "attackDisadvantage"; causeId: string; scoped?: boolean }
   /** Speed reduced to 0 (Grappled/Restrained/Paralyzed/…). */
-  | { kind: "speedZero"; cause: string }
+  | { kind: "speedZero"; causeId: string }
   /** Auto-fail STR/DEX saves (Paralyzed/Stunned/Unconscious/…). `abilities`
    *  is a STABLE ordered id list (STR before DEX); the edge localizes each. */
-  | { kind: "autoFailSaves"; abilities: ReadonlyArray<AbilityCode>; cause: string }
+  | { kind: "autoFailSaves"; abilities: ReadonlyArray<AbilityCode>; causeId: string }
   /**
    * The Exhaustion penalties, RESOLVED (SRD "Exhaustion"): `d20Penalty` is the
    * magnitude subtracted from every D20 Test (2 × level) and `speedPenaltyFt`
@@ -647,15 +646,16 @@ export type TurnLimiterVM =
  * Compose the ordered list of limiters the player is acting under THIS turn,
  * from the SAME inputs the Play surface already reads — `resolveConditionEffects`
  * (B1's single self-side condition seam) + the netted `attackRollState` + the
- * active exhaustion level. ONE source of truth: the cause name for each limiter
- * is re-derived from the SAME resolver (the first active condition that produces
- * the effect), never re-stated.
+ * active exhaustion level. ONE source of truth: the cause for each limiter is
+ * re-derived from the SAME resolver (the first active condition that produces
+ * the effect), never re-stated — carried as a STABLE `causeId` (golden rule 7:
+ * ids, never labels; the edge localizes via `conditionLabel` and tints via the
+ * `--cond-*` palette).
  *
  * Returns `[]` when nothing limits the turn (golden rule 19 — the renderer shows
  * nothing). Ordering matches the player's decision priority: attack penalty →
- * movement → saves → exhaustion. Pure + locale-aware (the lib/views localizing
- * layer): resolves only the SRD condition names; the limiter sentences are UI
- * keys the renderer applies.
+ * movement → saves → exhaustion. Pure and i18n-free (ids in, ids out); the
+ * limiter sentences are UI keys the renderer applies.
  *
  * Override-first: every limiter mirrors a player-controlled condition/exhaustion;
  * clearing the source empties the summary. The engine enforces nothing here —
@@ -670,48 +670,44 @@ export function composeTurnLimiters(args: {
   exhaustion: number;
   /** RA-08 — spell slots expended to cast a spell this turn (advisory when >1). */
   spellSlotCasts?: number;
-  locale: Locale;
 }): TurnLimiterVM[] {
-  const { conditions, attackRollState, exhaustion, spellSlotCasts = 0, locale } = args;
+  const { conditions, attackRollState, exhaustion, spellSlotCasts = 0 } = args;
   const effects = resolveConditionEffects(conditions);
   const limiters: TurnLimiterVM[] = [];
 
-  // The first active condition that produced a given effect names the cause —
+  // The first active condition that produced a given effect is the cause —
   // re-derived from the SAME resolver, never re-stated (single source of truth).
-  const causeFor = (predicate: (e: typeof effects) => boolean): string | null => {
-    const id = conditions.find((c) => predicate(resolveConditionEffects([c])));
-    return id ? conditionLabel(id, locale) : null;
-  };
+  const causeFor = (predicate: (e: typeof effects) => boolean): string | undefined =>
+    conditions.find((c) => predicate(resolveConditionEffects([c])));
 
   // 0. Blocked action economy — the most totalising constraint (you can't take
   //    the forbidden slots at all), so it leads. The forbidden slots are a STABLE
   //    ordered list; the edge localizes each slot name. The cause is the first
   //    active condition that forbids a slot (same single-source attribution as
   //    the other limiters). `breaksConcentration` stays OUT — the concentration
-  //    banner owns it (DRY); depleted pools / already-spent economy also stay out
+  //    badge owns it (DRY); depleted pools / already-spent economy also stay out
   //    (shown on the coins/cards — golden rule 19, no duplication).
   if (effects.blockedSlots.size > 0) {
-    const cause = causeFor((e) => e.blockedSlots.size > 0);
+    const causeId = causeFor((e) => e.blockedSlots.size > 0);
     const slotOrder: ReadonlyArray<GatedSlot> = ["action", "bonus", "reaction"];
     const slots = slotOrder.filter((s) => effects.blockedSlots.has(s));
-    if (cause) limiters.push({ kind: "blockedEconomy", slots, cause });
+    if (causeId) limiters.push({ kind: "blockedEconomy", slots, causeId });
   }
 
   // 1. Attack disadvantage — only when the NETTED state is disadvantage (an
   //    advantage source from a grant/condition cancels it; then no limiter).
   if (attackRollState === "disadvantage") {
-    // Capture the cause ID (not just its label) so Grappled — the ONE condition
-    // whose attack Disadvantage is RAW-scoped to targets OTHER than the grappler
-    // (SRD "Grappled") — flags the scoped sentence. Every other attack-dis
-    // condition (Blinded/Frightened/Poisoned/Prone/Restrained) is blanket.
-    // `grappled` is a stable ConditionId (ids-not-labels, golden rule 7).
+    // RA-32 — Grappled is the ONE condition whose attack Disadvantage is
+    // RAW-scoped to targets OTHER than the grappler (SRD "Grappled"); it flags
+    // the scoped sentence. Every other attack-dis condition (Blinded/Frightened/
+    // Poisoned/Prone/Restrained) is blanket.
     const causeId = conditions.find((c) =>
       resolveConditionEffects([c]).disadvantages.some((d) => d.rollType === "attack")
     );
     if (causeId) {
       limiters.push({
         kind: "attackDisadvantage",
-        cause: conditionLabel(causeId, locale),
+        causeId,
         ...(causeId === "grappled" ? { scoped: true } : {}),
       });
     }
@@ -719,18 +715,18 @@ export function composeTurnLimiters(args: {
 
   // 2. Speed 0.
   if (effects.speedZero) {
-    const cause = causeFor((e) => e.speedZero);
-    if (cause) limiters.push({ kind: "speedZero", cause });
+    const causeId = causeFor((e) => e.speedZero);
+    if (causeId) limiters.push({ kind: "speedZero", causeId });
   }
 
   // 3. Auto-fail saves (STR/DEX under Paralyzed/Stunned/…). The ability ids are
   //    a STABLE ordered list; the edge localizes each short name.
   if (effects.autoFailSaves.size > 0) {
-    const cause = causeFor((e) => e.autoFailSaves.size > 0);
+    const causeId = causeFor((e) => e.autoFailSaves.size > 0);
     // Canonical order so the rendered "STR/DEX" is stable, not Set-iteration order.
     const order: ReadonlyArray<AbilityCode> = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
     const abilities = order.filter((a) => effects.autoFailSaves.has(a));
-    if (cause) limiters.push({ kind: "autoFailSaves", abilities, cause });
+    if (causeId) limiters.push({ kind: "autoFailSaves", abilities, causeId });
   }
 
   // 4. Exhaustion — −2 × level to all d20 Tests AND −5 ft × level Speed (2024).
@@ -753,4 +749,67 @@ export function composeTurnLimiters(args: {
     limiters.push({ kind: "spellSlotLimit", count: spellSlotCasts });
 
   return limiters;
+}
+
+/**
+ * One badge on the turn meter's STATUS LEDGE (the BG3-style status-effect row):
+ * the at-a-glance unit is the CAUSE, not the individual penalty — a condition
+ * that imposes three limiters (Paralyzed → blocked economy + Speed 0 + auto-fail
+ * saves) is ONE badge whose popover lists all three sentences (explain on
+ * demand). Stable ids only (golden rule 7): the edge resolves the label via
+ * `conditionLabel` and the tint via the `--cond-*` palette.
+ */
+export type StatusBadgeVM =
+  /** A condition-caused badge — every limiter this condition imposes, in the
+   *  composer's decision-priority order. */
+  | { kind: "condition"; conditionId: string; limiters: TurnLimiterVM[] }
+  /** The Exhaustion badge — `level` renders on the badge itself ("Exhaustion 3");
+   *  the resolved penalties live in the popover sentence. */
+  | {
+      kind: "exhaustion";
+      level: number;
+      limiters: [Extract<TurnLimiterVM, { kind: "exhaustion" }>];
+    }
+  /** RA-08 — the one-spell-slot-per-turn ADVISORY (no condition behind it). */
+  | {
+      kind: "slotLimit";
+      limiters: [Extract<TurnLimiterVM, { kind: "spellSlotLimit" }>];
+    };
+
+/**
+ * Group the composed turn limiters into status badges, ONE per cause, preserving
+ * first-seen order (so the badge row keeps the composer's decision priority).
+ * Pure + i18n-free; concentration is NOT a limiter, so the concentration badge is
+ * composed at the edge beside these (it carries an action, not a penalty).
+ */
+export function composeStatusBadges(
+  limiters: ReadonlyArray<TurnLimiterVM>
+): StatusBadgeVM[] {
+  const badges: StatusBadgeVM[] = [];
+  const byCondition = new Map<string, Extract<StatusBadgeVM, { kind: "condition" }>>();
+  for (const l of limiters) {
+    switch (l.kind) {
+      case "exhaustion":
+        badges.push({ kind: "exhaustion", level: l.level, limiters: [l] });
+        break;
+      case "spellSlotLimit":
+        badges.push({ kind: "slotLimit", limiters: [l] });
+        break;
+      default: {
+        const existing = byCondition.get(l.causeId);
+        if (existing) {
+          existing.limiters.push(l);
+        } else {
+          const badge: Extract<StatusBadgeVM, { kind: "condition" }> = {
+            kind: "condition",
+            conditionId: l.causeId,
+            limiters: [l],
+          };
+          byCondition.set(l.causeId, badge);
+          badges.push(badge);
+        }
+      }
+    }
+  }
+  return badges;
 }

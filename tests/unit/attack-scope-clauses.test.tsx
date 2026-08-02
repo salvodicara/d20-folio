@@ -8,7 +8,7 @@
  * Firebase is mocked so the unit stays CI-pure.
  */
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 
 vi.mock("@/lib/firebase", () => ({}));
@@ -151,13 +151,19 @@ describe("PS-J — narrowing-scope attack clauses never gloss every attack card"
     }
   });
 
-  it("the turn-limiter banner states the SAME blanket verdict the cards carry", () => {
-    // One source of truth: the banner reports the posture of a roll no scope
+  it("the status ledge's Prone badge states the SAME blanket verdict the cards carry", () => {
+    // One source of truth: the badge reports the posture of a roll no scope
     // touches, which is exactly the card's verdict — the scoped exception rides
-    // the card. The two can never disagree.
+    // the card. The two can never disagree. The sentence is explain-on-demand
+    // (the badge popover); the badge itself wears the cause.
     load(barbarian(["barbarian-reckless-attack"], ["prone"]));
     renderPage();
-    expect(screen.getByText(/Disadvantage on attacks \(Prone\)/)).toBeInTheDocument();
+    const badge = Array.from(document.querySelectorAll(".status-badge")).find((b) =>
+      /Prone/i.test(b.textContent)
+    );
+    expect(badge).toBeTruthy();
+    fireEvent.click(badge as HTMLElement);
+    expect(screen.getByText(/Disadvantage on attack rolls/i)).toBeInTheDocument();
     for (const g of attackGlosses()) expect(g).toMatch(/to hit · Disadv\./);
   });
 
