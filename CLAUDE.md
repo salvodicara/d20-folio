@@ -34,7 +34,11 @@ ratified destination**, owner 2026-07-31), and
 budget-posture decision · the precache trim · the AGPL-3.0 license decision · legal pages ·
 trademark-safe branding · auth breadth beyond Google · the react-router advisory triage · backups ·
 observability — `PROGRESS.md` → the charter's 2026-07-31 amendment) — parked now, blocking GA
-later (the light theme is at FULL parity: the depth-parity
+later, EXCEPT the subset the **soft-launch charter** (owner-ratified 2026-08-02, same file)
+promotes to "blocking the first community post": budget rethreshold to £10–15 · App Check +
+quotas · privacy/terms pages · a pre-post export + minimal error watch · trademark-safe
+nominative-use post copy (IT-first; composed-build exposure = owner-accepted risk with the
+two-site fallback documented) (the light theme is at FULL parity: the depth-parity
 rebuild shipped 2026-07-09, the owner-ratified "Daylight Sibling Plates" art direction shipped
 2026-07-10, and the owner-ratified "Ember Penumbra" lit-magic grammar shipped 2026-07-11 — per-theme
 scene art, the P8 panel material wired, the custom-art veil, the glow-below gilt grammar, no open

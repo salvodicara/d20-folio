@@ -132,7 +132,12 @@ Yes — but **only ever the SRD-clean public build.** SRD 5.2.1 is **CC-BY-4.0**
 permitted _with attribution_ (and it excludes Product Identity creatures — the reason the licensing
 guard's denylist exists). **The private content pack carries non-SRD WotC content and can never be
 monetized or redistributed — personal + friends use only.** The public/private repo split is exactly
-what keeps this door open without forcing a choice now. A commercial build would also have to avoid
+what keeps this door open without forcing a choice now. [Soft-launch amendment, owner 2026-08-02:
+for the free community beta the owner ACCEPTED (informed override, surfaced) that the publicly
+posted hosted instance is the COMPOSED build, so signed-in strangers can reach pack content; the
+boundary above still governs everything monetization-shaped, and the documented fallback — the
+public URL goes SRD-only, friends move to an unadvertised second Hosting site — stands ready if a
+takedown ever arrives. The ruling + checklist live in `PROGRESS.md` → the soft-launch charter.] A commercial build would also have to avoid
 the D&D / WotC trademarks (brand as its own thing; "5e / SRD-compatible" wording only).
 
 **The ratified trajectory (owner, 2026-07-31): the destination is GA.** "Option A" (owner,

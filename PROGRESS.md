@@ -1276,6 +1276,82 @@ fleshed out by the owner on 2026-07-31, each item with its why:
 
 Posture home: `docs/POSITIONING.md`.
 
+### Soft launch — the community-beta charter (owner-ratified 2026-08-02)
+
+A NEW phase between "friends only" and GA: the owner starts **moderately posting the live site in
+communities** so real strangers use it and **feedback drives the roadmap** ("il feedback sarà
+quello che farà l'app grande"). Everything stays **free**. This subsection is the checklist for
+that step — it PROMOTES a subset of the pre-GA items above from "parked" to "blocking the first
+post" and leaves the rest parked.
+
+**The three owner rulings (grill of 2026-08-02):**
+
+- **R1 — Pack exposure: ACCEPTED RISK (informed override).** The live site is the COMPOSED build:
+  signed-in users can reach private-pack content (non-SRD WotC material). Publicly posting the
+  site advertises that distribution, which cuts against the "personal + friends use only"
+  boundary in `docs/POSITIONING.md` — surfaced to the owner, who accepted the risk for a free,
+  moderate-visibility beta (nominative fan-tool posture, no monetization anywhere near the pack).
+  **Documented fallback if a takedown ever arrives:** split hosting — the public URL serves the
+  SRD-only build; friends move to a second, unadvertised Hosting site of the same Firebase
+  project serving the composed build (same Firestore, pack `srdId`s keep resolving there).
+- **R2 — Budget posture: raise the cap to £10–15/month.** SAFE-01's kill threshold moves from £1
+  to £10–15 with intermediate alerts (~£1, ~£5) so a successful post can never blackout the app;
+  the hard ceiling stays (worst month = the cost of a pizza). See the capacity model below —
+  the owner asked for the realistic users-per-spend curve.
+- **R3 — IT-first posting, nominative-use wording.** Italian communities first (the bilingual
+  moat D&D Beyond does not have; smaller blast radius fits "moderate"). Wording rule per the
+  owner: **saying the tool is "for D&D" is fine (nominative fair use)** — what is forbidden is
+  implying we are OFFICIAL: no D&D/WotC marks in the name, logo, domain, or artwork, and posts
+  carry an "unofficial, not affiliated" line. The English wave comes after the first IT feedback
+  round is digested.
+
+**The capacity / spend-return model (estimates, 2026 Firebase pricing — re-verify at the console
+before relying on exact figures).** The cost anatomy of this app: returning users are nearly free
+(the service worker serves the shell locally; Firestore offline persistence caches reads; the
+debounced auto-save writes are the only steady cost), so **the binding axis is Hosting bandwidth
+for FIRST-TIME installs** — currently ~7.3 MiB of precache per new visitor (290 entries, the
+2026-08-01 build).
+
+| Posture                        | Fresh installs                   | Sustained players                                                        |
+| ------------------------------ | -------------------------------- | ------------------------------------------------------------------------ |
+| Free tier (today)              | ~45–50/day (360 MB/day egress)   | ~100–150 DAU (20k writes/day ≈ 130+ players at ~100–150 auto-saves each) |
+| £10–15/month cap               | +~400–550/day (~80–120 GB/month) | ~1,000–2,000 DAU (writes ≈ £7–14/month at 2k DAU; reads rarely bind)     |
+| Precache trim (free, any tier) | ×3 installs at ANY spend level   | unchanged                                                                |
+
+Reading of the curve: **the best spend/return move costs nothing** — the precache trim (pre-GA
+item 3: heavy scene art moves from precache to cache-on-demand, ~7.3 → ~2.5 MiB) triples free
+installs AND makes every paid install 3× cheaper. After the trim, £10–15 is comfortably past any
+"moderate posting" scenario; more spend buys nothing until well past ~2k DAU, so there is no
+reason to consider a higher cap in this phase.
+
+**BLOCKING before the first post** (each maps to a pre-GA item above):
+
+1. **Budget rethreshold** (item 2 → R2): raise the budget + SAFE-01 kill topic threshold to
+   £10–15, add the £1/£5 alert steps. Console + budget-config action, owner-gated.
+2. **App Check + abuse-resistant quotas** (item 1): the owner's own recorded rationale — "before
+   any advertising". The code is public; the backend must not be an open quota faucet.
+3. **Legal pages** (item 5): privacy policy + terms, bilingual, linked from the existing `/legal`
+   page (which today carries only licenses/attribution; the CC-BY SRD attribution requirement is
+   already satisfied there, and account deletion already exists in-app).
+4. **Pre-post safety net** (item 7, minimal cut): one manual Firestore export before the first
+   post, and a weekly look at Functions/Hosting error logs during the beta window. Automated
+   backups + real observability stay parked for GA.
+5. **Post copy per R3**: trademark-safe branding (item 6) + the nominative-use disclaimer, IT
+   first.
+
+**SHOULD (not blocking, best ROI):** the precache trim (item 3) — see the model; and a public-face
+pass on the README (the repo link will travel with the posts). The share-link funnel (OG previews,
+anonymous `/view`, invite cards) is already premium and is the beta's acquisition surface.
+
+**Explicitly NOT blocking this phase** (stay parked for GA): the AGPL-3.0 license decision (item
+4), auth breadth beyond Google (known friction — some users will balk at Google-only; noted, not
+blocking a free beta), automated backups, deeper observability, and anything monetization-shaped.
+
+**The feedback loop (the point of the whole phase):** the in-app reporter (bug/feature →
+GitHub issue via `onBugReportCreated`) is live and is the primary channel; posts mention it
+explicitly. Owner triages weekly; feedback lands in this file as roadmap input. No new channel
+(Discord etc.) until volume demands one.
+
 **The owner's charter, captured on ratification (golden rule 4).** A full competitive audit vs
 D&D Beyond (mid-2026 verified state: Project Sigil dead, 2D Maps free-for-all, DDB's 2026 roadmap
 rebuilding toward "rules as data" — the architecture this app already has; DDB's weaknesses =
