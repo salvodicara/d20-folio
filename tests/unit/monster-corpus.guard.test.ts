@@ -119,7 +119,17 @@ describe.each(cases)("%s", (id, m) => {
       if (entry.kind === "attack" || entry.kind === "save") {
         for (const clause of entry.damage ?? []) {
           expect(clause.dice).toMatch(/^(\d+d\d+([+-]\d+)?|\d+)$/);
-          expect(DAMAGE.has(clause.damageType)).toBe(true);
+          // A clause carries EXACTLY ONE type shape: a concrete `damageType`, OR
+          // a use-time `damageChoice` set (≥1 concrete element) — never both,
+          // never neither. The choice set is what lets a choice-damage attack
+          // (Chromatic Spittle, the elemental bursts, the empyreans' rays)
+          // satisfy the "attack needs ≥1 damage clause" rule below (§F.4).
+          const hasConcrete = clause.damageType !== undefined;
+          const hasChoice = (clause.damageChoice?.length ?? 0) > 0;
+          expect(hasConcrete !== hasChoice).toBe(true);
+          if (clause.damageType !== undefined)
+            expect(DAMAGE.has(clause.damageType)).toBe(true);
+          for (const dt of clause.damageChoice ?? []) expect(DAMAGE.has(dt)).toBe(true);
         }
       }
       if (entry.kind === "attack") {

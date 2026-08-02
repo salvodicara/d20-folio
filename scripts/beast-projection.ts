@@ -69,11 +69,20 @@ export function beastProjectionFromMonster(m: MonsterStatBlock): BeastStatBlock 
           `[beast-projection] ${m.id}: attack "${e.id}" has no damage clause`
         );
       }
+      // A Beast attack row shows ONE concrete type; a use-time `damageChoice`
+      // clause projects to its first element (no such monster is a Polymorph
+      // beast today, but the projection stays total).
+      const damageType = primary.damageType ?? primary.damageChoice?.[0];
+      if (damageType === undefined) {
+        throw new Error(
+          `[beast-projection] ${m.id}: attack "${e.id}" clause has no damage type`
+        );
+      }
       const base = {
         nameKey: `attack.${e.id}`,
         toHit: e.toHit,
         damageDice: primary.dice,
-        damageType: primary.damageType,
+        damageType,
       };
       return e.rangeFt
         ? {

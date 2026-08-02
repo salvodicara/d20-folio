@@ -1789,10 +1789,27 @@ export const ALL_ALIGNMENTS = [
  * corpus guard pins the dice against the entry's localized text (D-3).
  * `dice` is compact ("1d6+2", "2d10"), or a bare integer string ("1") for the
  * flat-damage CR-0 prints — the exact BeastAttack.damageDice grammar.
+ *
+ * A clause carries EXACTLY ONE of the two type shapes (corpus guard §F.4):
+ *  - `damageType` — a single CONCRETE element (the overwhelming majority).
+ *  - `damageChoice` — a use-time damage-type CHOICE, ≥1 concrete element the
+ *    attacker picks ONE of when it hits: Winged Kobold's Chromatic Spittle
+ *    ("Acid, Cold, Fire, Lightning, or Poison — the kobold's choice"), the
+ *    elemental titans' bursts (Acid/Cold/Fire/Lightning/Thunder), the empyreans'
+ *    Necrotic-or-Radiant rays. Mirrors the spell-side {@link SrdSpellData.damageChoice}
+ *    (pick ONE). The chosen word lives in the localized entry prose (D-3, the
+ *    statblock is prose-rendered); this array is the machine fact + the reason an
+ *    `attack` entry can now satisfy the "≥1 damage clause" rule without a concrete
+ *    type. Omit for a fixed-type clause.
  */
 export interface MonsterDamage {
   dice: string;
-  damageType: DamageType;
+  /** The concrete damage type. Omitted ONLY when the clause carries a use-time
+   *  {@link damageChoice} instead. */
+  damageType?: DamageType;
+  /** A use-time damage-type choice (≥1 concrete element; the attacker picks one).
+   *  Mutually exclusive with {@link damageType}. */
+  damageChoice?: ReadonlyArray<DamageType>;
 }
 
 /** Shared spine of every named statblock entry (trait/action/bonus/reaction/legendary). */
