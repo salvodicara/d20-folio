@@ -61,10 +61,9 @@ describe("LegalPage colophon", () => {
         name: /Creative Commons Attribution 4\.0 International/i,
       })
     ).toHaveAttribute("href", "https://creativecommons.org/licenses/by/4.0/legalcode");
-    expect(screen.getByRole("link", { name: /MIT License/i })).toHaveAttribute(
-      "href",
-      "https://opensource.org/license/mit"
-    );
+    expect(
+      screen.getByRole("link", { name: /GNU Affero General Public License/i })
+    ).toHaveAttribute("href", "https://www.gnu.org/licenses/agpl-3.0.html");
     // The page owns the single <h1> the a11y gate anchors on.
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Legal & Attribution"

@@ -1,6 +1,13 @@
 ---
-"d20-folio": patch
+"d20-folio": minor
 ---
+
+**Relicense the app code MIT → AGPL-3.0** (owner, 2026-08-02): the full AGPL-3.0
+text replaces MIT in `LICENSE` (copyright retained), `package.json` `license` is
+now `AGPL-3.0-or-later`, and the README badge + license section and the `/legal`
+license register are updated to match. **The SRD game content is untouched — it
+stays CC-BY-4.0** (the licensing partition is unchanged): `/legal` now reads app
+code = AGPL-3.0, SRD content = CC-BY-4.0.
 
 Re-cut the `/legal` trademark register into an open, quotable **nominative
 disclaimer** (owner R3, 2026-08-02: saying the tool is _for_ D&D is fine as

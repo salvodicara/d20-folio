@@ -1476,7 +1476,7 @@ of centring one measure in dead parchment:
   text keeps its measure. The register rule holds: the page's one elevated treatment is spent
   on the one legally load-bearing block.
 - **The twin deed columns** (`.colophon-licenses`): the two governing licenses (SRD content
-  under CC-BY-4.0 · the app under MIT) as equal definition-list columns split by an upright
+  under CC-BY-4.0 · the app under AGPL-3.0) as equal definition-list columns split by an upright
   fading hairline thread (the one divider rule, turned vertical).
 - **The bottom register** (`.colophon-register`): Trademarks · The App side by side, each under
   its own standard `.sec-head` rubric whose fading rule runs to its column edge; every column
@@ -2575,7 +2575,7 @@ Dividers and frames are never decorated — the LINE ITSELF performs:
   Every ornament asset is TRACED from human-made artwork with a verified public-domain/CC0
   license (printer's fleurons, engraved dividers, corner flourishes — the library lives at
   `~/Workspace/bg3-ui-study/pd-ornaments/` with per-file license evidence; only the traced
-  derivative ships, and only from PD/CC0 sources, keeping the MIT repo clean). Model-invented
+  derivative ships, and only from PD/CC0 sources, keeping the AGPL-3.0 repo clean). Model-invented
   strokes are a stopgap placeholder at most and must be replaced before a surface ships.
 
 ### 16.4 Frames by register

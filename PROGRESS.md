@@ -1465,12 +1465,15 @@ fleshed out by the owner on 2026-07-31, each item with its why:
    feat/magic-item catalogues) — genuinely-needed data, not art, and shrinking THAT is a much
    larger, separate, unscoped effort. See the soft-launch charter below for the corrected
    installs/day math.
-4. **The license decision** — the recommendation on record: switch future releases to **AGPL-3.0**
-   at (or before) GA — the industry-standard license for open-source end-user web apps with a
-   canonical hosted instance (the Mastodon / Nextcloud / Grafana / Bitwarden-server / Cal.com
-   precedent); keeps the FOSS values, removes the clone-and-sell economics. Plus a **DCO for
-   outside contributors** the moment external PRs start, preserving the sole-author relicensing
-   position.
+4. **The license decision** — DONE (owner, 2026-08-02): the app code relicensed **MIT → AGPL-3.0**
+   now (superseding the earlier "at/before GA" timing — owner confirmed harmless), the
+   industry-standard license for open-source end-user web apps with a canonical hosted instance
+   (the Mastodon / Nextcloud / Grafana / Bitwarden-server / Cal.com precedent); keeps the FOSS
+   values, removes the clone-and-sell economics. Applied to `LICENSE` (full AGPL-3.0 text),
+   `package.json` (`AGPL-3.0-or-later`), the README badge + license section, and the `/legal`
+   app-license line. **The SRD content stays CC-BY-4.0** — the licensing partition is unchanged.
+   Still open: a **DCO for outside contributors** the moment external PRs start, preserving the
+   sole-author relicensing position.
 5. **Legal pages** — privacy policy + GDPR basics (deletion exists as the ADMIN cascade; user
    erasure is on-request until a self-serve button ships — a GA item), a visible
    **CC-BY-4.0 SRD attribution** (a license requirement, not a courtesy), and terms.
@@ -1576,9 +1579,10 @@ public-face pass on the README (the repo link will travel with the posts). The s
 (OG previews, anonymous `/view`, invite cards) is already premium and is the beta's acquisition
 surface.
 
-**Explicitly NOT blocking this phase** (stay parked for GA): the AGPL-3.0 license decision (item
-4), auth breadth beyond Google (known friction — some users will balk at Google-only; noted, not
-blocking a free beta), automated backups, deeper observability, and anything monetization-shaped.
+**Explicitly NOT blocking this phase** (stay parked for GA): auth breadth beyond Google (known
+friction — some users will balk at Google-only; noted, not blocking a free beta), automated
+backups, deeper observability, and anything monetization-shaped. (The AGPL-3.0 license decision,
+formerly parked here as item 4, was pulled forward and DONE in this wave — see item 4 above.)
 
 **The feedback loop (the point of the whole phase):** the in-app reporter (bug/feature →
 GitHub issue via `onBugReportCreated`) is live and is the primary channel; posts mention it
@@ -2320,7 +2324,7 @@ documented in `docs/MECHANICS.md` + `DESIGN.md`.
    in the document type ramp — and now carries the EXACT dual SRD 5.2.1 + SRD 5.1 / CC-BY-4.0
    required attributions verbatim (WI-1, completed 2026-07-17: both EN required texts + WotC's
    official IT statements as two stacked plaques; `README.md` carries both EN statements), both
-   licenses linked (CC-BY-4.0 + MIT), and the nominative-trademark / "compatible with fifth edition"
+   licenses linked (CC-BY-4.0 + AGPL-3.0), and the nominative-trademark / "compatible with fifth edition"
    notices. Unit + e2e locks pin all four statements byte-exact. **Still open in #32 (out of this
    slice):** the repo-publication work itself — the content partition (the WI-3 display renames +
    the WI-5 PI-denylist guard), the SRD prose re-sourcing (WI-2), and the docs-partition +

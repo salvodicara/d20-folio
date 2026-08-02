@@ -3,7 +3,7 @@
 A free, bilingual (English + Italian) PWA for D&D 2024 players to create, level up, play, and manage characters and campaigns. Offline-first, with the complete 2024 SRD pre-loaded and every rule auto-computed.
 
 [![CI](https://github.com/salvodicara/d20-folio/actions/workflows/ci.yml/badge.svg)](https://github.com/salvodicara/d20-folio/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](./LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-informational.svg)](./LICENSE)
 [![PWA](https://img.shields.io/badge/PWA-installable-5a3e85.svg)](https://d20-folio.web.app)
 [![React 19](https://img.shields.io/badge/React-19-149eca.svg)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org)
@@ -173,4 +173,4 @@ There is no human code review. The only quality gate is automated: TypeScript st
 
 > This work includes material taken from the System Reference Document 5.1 (“SRD 5.1”) by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode.
 
-d20 Folio is an independent, unofficial, 5E-compatible tool and is not affiliated with or endorsed by Wizards of the Coast. The application code in this repository is licensed under the [MIT License](./LICENSE).
+d20 Folio is an independent, unofficial companion for Dungeons & Dragons 2024 (5E-compatible) and is not affiliated with, endorsed, sponsored by, or created by Wizards of the Coast. The application code in this repository is licensed under the [GNU Affero General Public License v3.0](./LICENSE) (AGPL-3.0-or-later). The bundled game rules content is drawn from the System Reference Documents 5.2.1 and 5.1 and remains under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/legalcode) (CC-BY-4.0) — see the attribution statements above.

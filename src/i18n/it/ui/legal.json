@@ -15,7 +15,7 @@
       "srdTerm": "Contenuti di regole SRD 5.2.1 e 5.1",
       "srdDesc": "Le regole, gli incantesimi, le classi e gli altri dati di gioco provengono dai System Reference Document 5.2.1 e 5.1, ciascuno usato secondo la licenza di attribuzione 4.0 Internazionale di Creative Commons.",
       "appTerm": "Codice sorgente di d20 Folio",
-      "appDesc": "L'applicazione stessa, il suo codice e il suo design, è rilasciata sotto licenza MIT."
+      "appDesc": "L'applicazione stessa, il suo codice e il suo design, è rilasciata sotto la GNU Affero General Public License v3.0 (AGPL-3.0-or-later)."
     },
     "trademarks": {
       "heading": "Marchi",
@@ -32,7 +32,7 @@
       "ccby": "Creative Commons Attribution 4.0 International",
       "srd": "System Reference Document 5.2.1",
       "srd51": "System Reference Document 5.1",
-      "mit": "Licenza MIT"
+      "agpl": "GNU Affero General Public License v3.0"
     },
     "privacy": {
       "heading": "Informativa sulla privacy",

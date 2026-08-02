@@ -16,7 +16,7 @@
  *      plates whose inscriptions centre at a capped measure — the OBJECTS span the
  *      leaf, the text keeps its measure.
  *   2. THE TWIN LICENSE COLUMNS (Licenses) — the two governing licenses (SRD content
- *      under CC-BY-4.0 · the app under MIT) set as two equal text columns divided by
+ *      under CC-BY-4.0 · the app under AGPL-3.0) set as two equal text columns divided by
  *      a vertical fading thread: the two-column deed register.
  *   3. THE BOTTOM REGISTER (Trademarks · The App) — two compact side-by-side sections,
  *      each under its own standard `.sec-head` rubric whose fading rule runs to its
@@ -45,7 +45,7 @@ import { useBackWithFallback } from "@/hooks/useBackWithFallback";
 const SRD_URL = "https://www.dndbeyond.com/srd";
 const SRD51_URL = "https://dnd.wizards.com/resources/systems-reference-document";
 const CCBY_URL = "https://creativecommons.org/licenses/by/4.0/legalcode";
-const MIT_URL = "https://opensource.org/license/mit";
+const AGPL_URL = "https://www.gnu.org/licenses/agpl-3.0.html";
 
 /** A gilt outbound link with the shared trailing external-link glyph. */
 function OutLink({ href, label }: { href: string; label: string }) {
@@ -123,7 +123,7 @@ export function LegalPage() {
               <dd>
                 <p className="colophon-body">{t("legal.licenses.appDesc")}</p>
                 <p className="colophon-links">
-                  <OutLink href={MIT_URL} label={t("legal.links.mit")} />
+                  <OutLink href={AGPL_URL} label={t("legal.links.agpl")} />
                 </p>
               </dd>
             </div>

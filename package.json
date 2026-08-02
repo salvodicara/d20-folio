@@ -8,7 +8,7 @@
   },
   "homepage": "https://d20-folio.web.app",
   "bugs": "https://github.com/salvodicara/d20-folio/issues",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "packageManager": "pnpm@11.2.2",
   "scripts": {
