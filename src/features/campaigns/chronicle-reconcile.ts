@@ -156,6 +156,23 @@ function byId(a: DeclaredAction, b: DeclaredAction): number {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
+/** Per-DECLARED-target REAL DM damage (in declared order), summing all `claimed` drops on
+ *  each; a target with no bound drop is OMITTED (never given an invented number). Shared by
+ *  the multi- and save-fusion paths. */
+function amountsByTarget(
+  targetIds: readonly string[],
+  claimed: ReadonlyArray<DamageEvent>
+): Array<{ targetId: string; amount: number }> {
+  return targetIds
+    .filter((targetId) => claimed.some((e) => e.targetId === targetId))
+    .map((targetId) => ({
+      targetId,
+      amount: claimed
+        .filter((e) => e.targetId === targetId)
+        .reduce((sum, e) => sum + e.amount, 0),
+    }));
+}
+
 /**
  * Reconcile the stored chronicle `events` with the players' `declarations` into the
  * derived feed. Total + deterministic (stable, side-effect-free): re-running it over the
@@ -198,14 +215,7 @@ export function reconcileChronicle(
     );
     if (claimed.length === 0) continue; // unresolved ⇒ no line (never fabricate resisted)
     for (const e of claimed) consumed.add(e.id);
-    const amounts = d.targetIds
-      .filter((targetId) => claimed.some((e) => e.targetId === targetId))
-      .map((targetId) => ({
-        targetId,
-        amount: claimed
-          .filter((e) => e.targetId === targetId)
-          .reduce((sum, e) => sum + e.amount, 0),
-      }));
+    const amounts = amountsByTarget(d.targetIds, claimed);
     // A declared target the DM left un-dropped saved for no damage — logged as resisted.
     const damagedIds = new Set(amounts.map((a) => a.targetId));
     const resisted = d.targetIds.filter((t) => !damagedIds.has(t));
@@ -256,16 +266,8 @@ export function reconcileChronicle(
     for (const e of claimed) consumed.add(e.id);
 
     // Per-target REAL amount (summed if the DM applied several drops to one target),
-    // in the DECLARED target order; a target with no bound drop is OMITTED (never given
-    // an invented number).
-    const amounts = d.targetIds
-      .filter((targetId) => claimed.some((e) => e.targetId === targetId))
-      .map((targetId) => ({
-        targetId,
-        amount: claimed
-          .filter((e) => e.targetId === targetId)
-          .reduce((sum, e) => sum + e.amount, 0),
-      }));
+    // in the DECLARED target order; a target with no bound drop is OMITTED.
+    const amounts = amountsByTarget(d.targetIds, claimed);
 
     // UNCERTAIN when the drops don't cleanly match: more matching drops than the action
     // can own, or another hit declaration in the round claims one of these same targets.
