@@ -304,8 +304,9 @@ const EAGER_CEILING_KB = 779; // baseline 727.1 → ~+7% (near budget — see AR
 // and ENTRY (61.8 KB gz) are UNCHANGED — the plates were never part of the JS bundle. Landed TOGETHER with the
 // same-day pack-bestiary growth above, so the ceiling is the fresh COMPOSED measurement of
 // the MERGED tree (grown bestiary − the 12 plates) + the usual +~11 KiB never-exact-fit
-// headroom: measured 8185.52 KiB / 311 entries on the merged tree → 8196.
-const PRECACHE_CEILING_KIB = 8196;
+// headroom: measured 8207.56 KiB / 311 entries on the merged tree (the pack sibling's
+// choice-damage prose, +22 KiB, landed between first measure and the push gate) → 8219.
+const PRECACHE_CEILING_KIB = 8219;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
