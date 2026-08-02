@@ -1468,8 +1468,8 @@ export function EncounterBudgetReadout({
 /** B6 — the "gathering initiative" phase cue, as ONE shared tonal chip (the same {@link
  *  Badge} atom the IN COMBAT / Your-turn chips use), NOT muted prose. The short label
  *  reads at a glance; the explanatory half ("the DM begins turns when everyone has
- *  rolled") lives in the hover/long-press tooltip. Rendered identically by the encounter
- *  panel (Party) and the cockpit combat region (in-combat-chip) — one element, no drift. */
+ *  rolled") lives in the hover/long-press tooltip. Rendered by the encounter panel
+ *  (Party); the cockpit's cue is the topbar combat pip. */
 export function GatheringInitiativeChip() {
   const { t } = useTranslation();
   return (

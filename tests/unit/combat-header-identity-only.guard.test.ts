@@ -4,15 +4,15 @@
  * strip — it must NEVER import a combat-SESSION control. Combat controls belong WITH
  * the combat economy on the Play tab (golden rule 6 — controls live with what they
  * change; never scatter or duplicate a control), so the live round, the roll-to-total
- * initiative ENTRY, the your-turn cue, and the campaign turn-advance render beside the
- * turn meter ({@link ThisTurnTracker} + {@link InCombatStatus}), never in the identity
+ * initiative ENTRY, the your-turn cue, and the shared turn-advance (End Turn routes
+ * through `advanceEncounterTurn` in an encounter) render on the turn meter
+ * ({@link ThisTurnTracker}), never in the identity
  * band. The header keeps only the 5 REFERENCE vitals (HP · AC · Init-BONUS · Speed · PB)
  * as `StatBadge` tiles — the Init tile is the DERIVED bonus (a reference stat like AC/PB),
  * not a roll/round/turn control.
  *
  * This pins that boundary at SOURCE level so the clutter can't creep back: `CombatHeader.tsx`
  * is forbidden from importing —
- *   • `@/features/campaigns/in-combat-chip`        (InCombatStatus — the in-combat region)
  *   • `@/features/campaigns/party-encounter`       (InitVital roll entry · EncounterTurnControls)
  *   • `@/features/campaigns/global-combat-context`  } the shell-level live combat status
  *   • `@/features/campaigns/global-combat`          } store/context + its producer
@@ -31,7 +31,6 @@ const HEADER = join(SRC, "features", "character", "center", "CombatHeader.tsx");
 
 /** The combat-SESSION modules the identity header must never reach. */
 const FORBIDDEN = [
-  join(SRC, "features", "campaigns", "in-combat-chip.tsx"),
   join(SRC, "features", "campaigns", "party-encounter.tsx"),
   join(SRC, "features", "campaigns", "global-combat-context.ts"),
   join(SRC, "features", "campaigns", "global-combat.tsx"),
@@ -77,8 +76,8 @@ describe("CombatHeader stays identity-only — no combat-session control imports
       offenders,
       `CombatHeader.tsx must stay PURE identity + the reference-vitals strip. A combat-` +
         `SESSION control (round / initiative ENTRY / your-turn cue / turn-advance / the ` +
-        `combat store) belongs WITH the combat economy on the Play tab (ThisTurnTracker + ` +
-        `InCombatStatus), not in the identity header (golden rule 6). Move the control ` +
+        `combat store) belongs WITH the combat economy on the Play tab (ThisTurnTracker), ` +
+        `not in the identity header (golden rule 6). Move the control ` +
         `beside the turn meter — never import it here.`
     ).toEqual([]);
   });

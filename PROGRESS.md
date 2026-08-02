@@ -450,6 +450,30 @@ DM writes STORY. Deterministic (no AI prose beyond templated facts, no dice), ta
   PLAYER declares it (Phase 1 below); other drama stays in the DM's narrative note.
 - Full detail: `docs/ARCHITECTURE.md → "The Combat Chronicle event seam"`.
 
+## Built (held for owner sign-off) — Cockpit status badges + turn-control cleanup (2026-08-02)
+
+Two owner-requested cockpit UX refinements, HELD for rule-25 screenshot approval before merge:
+
+- **The status ledge — BG3-style status badges.** The Play tab's verbose FLOATING status lines
+  ("Concentrating on Hypnotic Pattern" + "Stop concentrating"; "Disadvantage on attack rolls
+  (Frightened)") are replaced by compact iconic BADGES integrated into the turn altar's bottom
+  tier (`.turn[data-status]` grid row + `.status-ledge`, an engraved hairline fusing it to the
+  plate). One badge per CAUSE (`composeStatusBadges` groups the `composeTurnLimiters` VMs;
+  `causeId` is a stable condition id): concentration leads as the gold badge wearing the spell's
+  name (popover: full sentence + the one-tap "Stop concentrating" + the B1 blocked note), each
+  limiting condition is a badge in its own `--cond-*` hue with a per-condition lucide glyph
+  (popover: the effect sentences — explain-on-demand), Exhaustion carries its level on the badge,
+  and the RA-08 slot advisory reads in the warning tone. Action PROMPTS (Prone stand, regen
+  apply, round-1 reminder, maintained keep/end) stay action banners — a call to action never
+  hides behind a click. Recipes in `src/styles/folio.css`; register documented in DESIGN.md's
+  "This Turn" section.
+- **The sheet's Prev/Next-turn buttons are GONE.** They rendered only in a live encounter on the
+  player's own turn (`InCombatStatus`, beneath the meter) — but the meter's gilded End Turn
+  ALREADY routes the same shared `advanceEncounterTurn` transaction (and also runs the local
+  end-of-turn finalization the raw "Next turn" skipped), and "Previous turn" is the DM's
+  correction tool (still in the hub's `EncounterTurnControls`). `in-combat-chip.tsx` deleted;
+  one control per job (golden rule 6).
+
 ## Built (held for owner sign-off) — Combat Chronicle: the player-damage flip (2026-08-02)
 
 **The player enters the damage; it auto-applies to the monster; the DM overrides anything.** The

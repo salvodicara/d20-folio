@@ -495,10 +495,11 @@ export function CombatHeader() {
           )}
           {/* TB5 — the header is PURE identity + the reference-vitals strip. The
               in-combat session controls (live round, roll-to-total initiative, the
-              your-turn cue + turn-advance) belong WITH the combat economy, so they
-              render beside the turn meter on the Play tab (InCombatStatus), never in
-              the identity band (golden rule 6 — controls live with what they
-              change). A source-level guard pins this so the clutter can't creep back. */}
+              your-turn cue + the shared turn-advance via End Turn) belong WITH the
+              combat economy, so they render on the Play tab's turn meter
+              (ThisTurnTracker), never in the identity band (golden rule 6 — controls
+              live with what they change). A source-level guard pins this so the
+              clutter can't creep back. */}
         </div>
       </div>
 

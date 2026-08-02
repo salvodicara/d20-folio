@@ -47,7 +47,6 @@ import {
   actionRiderConditions,
 } from "../attack-scope";
 import { useSheetCombat } from "../turn-state";
-import { InCombatStatus } from "@/features/campaigns/in-combat-chip";
 import { CombatAlgorithm } from "./CombatAlgorithm";
 import { SituationalRules } from "./SituationalRules";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -910,13 +909,12 @@ export function PlayTab() {
           onFilterByType={(type) => setFilter((f) => (f === type ? "all" : type))}
           attackRollState={attackRoll.state}
         />
-        {/* TB1 — when the open PC is in an active campaign encounter, the in-combat
-            campaign control (the shared own-turn turn-advance) renders WITH the combat
-            economy, directly beneath the turn meter — not in the identity header (golden
-            rule 6). The status/link badges are dropped (the topbar pip is the signal).
-            The round + roll-to-total initiative live on the meter above (single source);
-            this region never duplicates them. */}
-        <InCombatStatus />
+        {/* NO separate encounter Prev/Next controls here (removed 2026-08-02): in an
+            encounter the meter's gilded End Turn IS the shared advance (`turn-state`'s
+            `endTurn` → the SAME `advanceEncounterTurn` transaction), so a duplicate
+            "Next turn" was a second path that skipped the local end-of-turn
+            finalization, and "Previous turn" is the DM's correction tool (it lives in
+            the hub's EncounterTurnControls — golden rule 6, one control per job). */}
       </div>
 
       {/* Filter bar — folio .filters/.fchip system (4px lapidary facet radius,

@@ -1394,7 +1394,7 @@ initiativeBonus` at the display/sort edge, the bonus engine-computed + override-
   posture — one live encounter at a time), and PUBLISHES two shapes into the light `combatStatusStore`
   through ONE reconcile seam (`combat-reconcile.ts` — see the turn-advance note below):
   - the `GlobalCombat` **status** of the viewer's OWN PC fight (`useGlobalCombat`) — read by the cockpit
-    `in-combat-chip` + the `useTurnState` seam, unchanged shape so the sheet never branches on the pip model;
+    through the `useTurnState` seam, unchanged shape so the sheet never branches on the pip model;
   - the `PipModel` (`usePipCombat`) — every active encounter reduced ONCE to a `PipState`
     (`needs-roll`/`your-turn`/`actor-turn`/`gathering`) for the topbar **`CombatPip`** (the C4 LABELLED SWITCH —
     `⚔ R{n} · {state} → {dest}`; colour carries the state; the destination flips `Party ⇄ {hero}` by the router
