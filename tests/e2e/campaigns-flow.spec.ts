@@ -68,6 +68,12 @@ test.describe("Campaigns flow", () => {
     await page.goto("/campaigns/mock-1");
     await expect(page.getByRole("heading", { name: /shared notes/i })).toBeVisible();
 
+    // The notes board keeps only the most-recent (pinned) note in the always-visible
+    // fixed panel; every older note — including the long "Rumors" one this test drives
+    // — lives in the collapsible "All notes" detail (the owner-ratified SectionPanel
+    // model). Reveal it before asserting on the rumor note's clamp.
+    await page.getByRole("button", { name: /all notes/i }).click();
+
     // The fixture's long rumor note renders CLAMPED at rest: its body stays under
     // the `note` cap (10.5em) instead of stretching the page…
     const noteClamp = page
@@ -94,6 +100,9 @@ test.describe("Campaigns flow", () => {
     // behind "View all (7)".
     const rows = page.locator(".sess-item");
     await expect(rows).toHaveCount(5);
+    // Older sessions ride the same collapsible SectionPanel detail — open it to
+    // reach the "View all" affordance and the archived rows below it.
+    await page.getByRole("button", { name: /older sessions/i }).click();
     await page.getByRole("button", { name: /view all \(7\)/i }).click();
     await expect(rows).toHaveCount(7);
 
