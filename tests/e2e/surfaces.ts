@@ -690,19 +690,22 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
         .first()
         .waitFor({ timeout: 8000 })
         .catch(() => {});
-      // Expand monster-1's DM disclosure (its toggle is labelled by the monster name),
-      // then open the statblock. The Statblock button appears only inside the DM body.
-      const statblock = page
+      // Expand monster-1's DM disclosure via its STABLE card toggle. A name-labelled
+      // role lookup is ambiguous now that the combat-chronicle feed also renders
+      // monster-name target chips — `getByRole("button", { name: /goblin/ })` would
+      // grab a feed chip, leave the disclosure closed, and (with no action timeout)
+      // hang the un-clickable Statblock click until the test times out. Scope to the
+      // combatant <li>, toggle only if collapsed, and BOUND every click so prepare
+      // can never hang. The Statblock button appears only inside the DM body.
+      const card = page.locator('li[data-combatant-id="monster-1"]');
+      const toggle = card.locator(".party-head-toggle").first();
+      if ((await toggle.getAttribute("aria-expanded").catch(() => null)) !== "true") {
+        await toggle.click({ timeout: 5000 }).catch(() => {});
+      }
+      const statblock = card
         .getByRole("button", { name: /^statblock$|blocco statistiche/i })
         .first();
-      if (!(await statblock.isVisible({ timeout: 2000 }).catch(() => false))) {
-        await page
-          .getByRole("button", { name: /^goblin$/i })
-          .first()
-          .click()
-          .catch(() => {});
-      }
-      await statblock.click().catch(() => {});
+      await statblock.click({ timeout: 5000 }).catch(() => {});
       // The statblock plaque painted inside the modal (the shared card class).
       await page
         .locator(".mon-ref, .beast-ref")
