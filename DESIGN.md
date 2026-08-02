@@ -673,14 +673,24 @@ only on hover/focus, unlike the character seal's always-on edit-mode veil. **The
 the affordance** — there is no standing instructional caption; hovering/clicking reveals
 the edit menu, exactly like the character portrait.
 
-On the **bestiary/compendium statblock** the monster portrait (`MonsterArtHeader`) is
-seated in the stat block's empty **right-side space beside the ability table**
-(`MonsterStatBlockCard`'s optional `portrait` slot → `.mon-top--art`): a container-query
-two-column top region (`@container mon-ref`) puts the defence line + ability table on the
-left and the seal vertically centred on the right, its column shrinkable
-(`minmax(0, max-content)`) so it never overflows a narrow panel. Below the container
-threshold it stacks with the portrait ABOVE the stats, so it never crowds the table on
-mobile.
+On the **bestiary/compendium statblock** the monster portrait (`MonsterArtHeader`) is a
+real framed **PLATE**, not a floating stamp — the SOTA statblock-with-art grammar (D&D
+Beyond / the 2024 core-book bestiary spreads): the data spine stays LEFT and the art fills
+the right column (`MonsterStatBlockCard`'s optional `portrait` slot → `.mon-top--art`).
+From 34rem of container width (`@container mon-ref`) the top region is two columns —
+defence line + ability table left (shrinkable, `minmax(0, max-content)`), the plate
+filling the rest (`minmax(12rem, 1fr)`, capped 21rem) and **stretched to the stat
+region's exact height** (`align-items: stretch`), so art and numbers form one solid
+illustrated block with zero dead space by construction. Below the threshold it becomes
+the **monster-card grammar** instead: a centred 4:5 plate above the stats (a deliberate
+mobile layout, not a shrunken desktop). The plate wears the `.seal` material at
+`--radius-lg`; with no art, the tinted-initial fallback is struck LARGE (an illuminated
+plate initial, 3.75–4.5rem) inside a fine gilt fillet (`.av-fallback::after`, scoped to
+`.mon-portrait-seal`) so the empty plate reads as a prepared bookplate awaiting its art —
+the hover camera veil remains the only affordance (no caption). The shape is owned by the
+CALLER's class: `MonsterPortraitPanel`'s inner seal has no fixed aspect, so the approved
+square library tile (`h-24 w-24`) and the tall bestiary plate share one component
+unchanged.
 
 ### Anonymous-viewer chrome (the public share-link surfaces)
 

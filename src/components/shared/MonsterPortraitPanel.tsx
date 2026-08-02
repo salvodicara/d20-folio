@@ -67,7 +67,9 @@ export function MonsterPortraitPanel({
   useDismissOnOutside(menuOpen, menuRef, () => setMenuOpen(false));
 
   const seal = (
-    <span className="seal relative block aspect-square h-full w-full overflow-hidden">
+    // The CALLER's className owns the frame's shape (square library tile, tall
+    // bestiary plate) — the seal just fills it.
+    <span className="seal relative block h-full w-full overflow-hidden">
       <Portrait
         src={portraitUrl}
         crop={portraitCrop}

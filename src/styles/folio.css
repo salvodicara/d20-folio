@@ -20849,10 +20849,13 @@ body:has(.fob) .toast-region {
 .mon-head {
   margin-bottom: 0;
 }
-/* Part B — stat block top region. The defence line + ability table sit on the left;
-   the optional portrait ({@link MonsterArtHeader}) fills the empty space to the right
-   of the 24rem-capped ability table. Below the container threshold it stacks with the
-   portrait ABOVE the stats, so it never crowds the table on a narrow panel/mobile. */
+/* Part B — stat block top region. The SOTA statblock-with-art grammar (D&D Beyond /
+   the 2024 core-book bestiary spreads): the data spine stays LEFT (defence line + ability
+   table, unmoved), and the portrait is a real framed PLATE that fills the right column
+   and stretches to the exact height of the stat region — the art and the numbers form
+   one solid illustrated block with no dead space by construction (the plate's height
+   IS the stats' height). Below the container threshold it becomes the monster-card
+   grammar instead: a centred 4:5 plate above the stats (never a shrunken desktop). */
 .mon-top,
 .mon-top-stats {
   display: flex;
@@ -20862,47 +20865,73 @@ body:has(.fob) .toast-region {
 }
 .mon-top--art {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
     "art"
     "stats";
   align-items: start;
-  justify-items: start;
+  row-gap: var(--sp-5);
 }
 .mon-top--art .mon-top-stats {
   grid-area: stats;
 }
 .mon-top--art .mon-portrait-slot {
   grid-area: art;
+  /* Card grammar (narrow): a centred portrait-orientation plate, sized like the art
+     panel of a printed monster card — a real illustration, not a stamp. */
+  justify-self: center;
+  width: min(100%, 15rem);
 }
 .mon-portrait-seal {
-  width: 5rem;
-  height: 5rem;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-lg);
+  /* The fallback monogram scales with the plate (the .av-fallback initial inherits
+     font-size) so a portrait-less monster reads as an illuminated plate INITIAL —
+     a deliberate engraved drop-cap, not a small avatar letter lost in a void. */
+  font-size: 3.75rem;
+}
+/* The no-art plate reads as a PREPARED BOOKPLATE (an ex-libris awaiting its art),
+   not an empty box: a fine gilt fillet ruled just inside the frame. Scoped to the
+   statblock plate only — the small square tiles keep the plain fallback. */
+.mon-portrait-seal .av-fallback {
+  position: relative;
+}
+.mon-portrait-seal .av-fallback::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid color-mix(in oklab, var(--border-accent) 55%, transparent);
+  border-radius: var(--radius-md);
+  pointer-events: none;
 }
 /* Breathing room below the compendium masthead's gilt separator before the stat
    block begins (owner: proper margin between the header separator and the content). */
 .cmp-entry .mon-ref {
   margin-block-start: var(--sp-3);
 }
-@container mon-ref (min-width: 27rem) {
+@container mon-ref (min-width: 34rem) {
   .mon-top--art {
-    /* The stat column takes its content width but can SHRINK (minmax lower bound 0),
-       so the two-column row never overflows a narrow panel; the seal then sits in the
-       space immediately beside the ability table, with the leftover as a trailing right
-       margin — a balanced [stats · portrait] grouping, not a marooned far-right seal. */
-    grid-template-columns: minmax(0, max-content) auto;
+    /* Two columns: the stat column takes its content width but can SHRINK (minmax
+       lower bound 0) so the row never overflows; the plate column takes the REST
+       (min 12rem so it always reads as art). `stretch` pins the plate's height to
+       the stat region's own height — the two columns bottom-align exactly. */
+    grid-template-columns: minmax(0, max-content) minmax(12rem, 1fr);
     grid-template-areas: "stats art";
-    column-gap: var(--sp-8);
-    /* Centre the seal against the full height of the stat block so it anchors the
-       right-side space beside the ability table rather than floating alone at the top. */
-    align-items: center;
+    column-gap: var(--sp-6);
+    align-items: stretch;
   }
   .mon-top--art .mon-portrait-slot {
-    justify-self: start;
+    justify-self: stretch;
+    width: auto;
+    display: flex;
   }
   .mon-portrait-seal {
-    width: 6.5rem;
-    height: 6.5rem;
+    /* Fill the column up to a painting-like cap; height comes from the stretched
+       row (the flex slot), so the plate is exactly as tall as the stats beside it. */
+    aspect-ratio: auto;
+    max-width: 21rem;
+    font-size: 4.5rem;
   }
 }
 /* Ability table — SCORE (in the row header) · MOD · SAVE, carved ruled cells. */

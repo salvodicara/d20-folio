@@ -1,9 +1,9 @@
 /**
- * MonsterArtHeader (Part B) — the per-monster portrait OVERRIDE seal for a bestiary
- * monster's detail leaf (compendium + the encounter picker's SRD detail). It is seated
- * in the stat block's top-right slot ({@link MonsterStatBlockCard}'s `portrait` prop),
- * beside the ability table. Shows the user's portrait (keyed by `srdId`) through the
- * shared {@link MonsterPortraitPanel}, over the tinted-initial default. The seal IS the
+ * MonsterArtHeader (Part B) — the per-monster portrait OVERRIDE plate for a bestiary
+ * monster's detail leaf (compendium + the encounter picker's SRD detail). It fills the
+ * stat block's right-column art slot ({@link MonsterStatBlockCard}'s `portrait` prop)
+ * at the stat region's own height. Shows the user's portrait (keyed by `srdId`) through
+ * the shared {@link MonsterPortraitPanel}, over the tinted-initial default. The seal IS the
  * affordance — hovering/clicking reveals the same upload/edit menu the character seal
  * uses; there is no standing instructional caption.
  *

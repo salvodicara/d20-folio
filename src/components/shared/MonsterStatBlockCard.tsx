@@ -191,10 +191,12 @@ export interface MonsterStatBlockCardProps {
   /** When set, the card renders its own title band (name + identity line); omitted
    *  ⇒ headless (the compendium masthead already carries them). */
   title?: string;
-  /** Optional art slot (Part B) — the monster's portrait, seated in the top-right of
-   *  the stat block beside the ability table (the empty space left by the 24rem-capped
-   *  table). Absent on the encounter/companion reuse; present on the bestiary detail.
-   *  Reflows above the stats on narrow widths so it never crowds the table. */
+  /** Optional art slot (Part B) — the monster's portrait PLATE, filling the right
+   *  column of the stat block's top region and stretched to the stat region's exact
+   *  height (the D&D Beyond statblock-with-art grammar — data spine left, art right,
+   *  no dead space). Absent on the encounter/companion reuse; present on the bestiary
+   *  detail. On narrow containers it becomes a centred monster-card plate above the
+   *  stats instead. */
   portrait?: ReactNode;
 }
 
@@ -312,9 +314,9 @@ export function MonsterStatBlockCard({
       )}
 
       {/* Top region — the stat block's defence line + ability table on the left, the
-          optional portrait seated in the empty right-side space. `.mon-top` reflows to a
-          single column (portrait above the stats) on narrow widths. When no portrait is
-          passed it is a plain single-column stack, identical to before. */}
+          portrait plate filling the right column at the stats' own height. `.mon-top`
+          reflows to a single column (a centred card plate above the stats) on narrow
+          widths. When no portrait is passed it is a plain single-column stack. */}
       <div className={portrait ? "mon-top mon-top--art" : "mon-top"}>
         <div className="mon-top-stats">
           {/* Defense line — AC · Initiative · HP · Speed */}
