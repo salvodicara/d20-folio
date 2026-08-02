@@ -25,48 +25,9 @@
 
 import { useEffect } from "react";
 import { useAuthStore } from "@/stores/authStore";
-import { useLibraryStore, type MonsterArtMap } from "@/stores/libraryStore";
+import { useLibraryStore } from "@/stores/libraryStore";
 import { createLibraryWriter, subscribeLibrary } from "@/lib/library-io";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
-
-/** Dev-only bestiary art seed (`localStorage["d20-dev-monster-art"]`, the
- *  `d20-dev-encounter` pattern): an owlbear plate (painterly SVG data URI) so the
- *  bypass bestiary can show the UPLOADED-portrait state of the statblock plate —
- *  otherwise every SRD monster renders the tinted-initial fallback. */
-function devMonsterArt(): MonsterArtMap {
-  try {
-    if (window.localStorage.getItem("d20-dev-monster-art") !== "1") return {};
-  } catch {
-    return {};
-  }
-  return {
-    owlbear: {
-      portraitUrl:
-        "data:image/svg+xml," +
-        encodeURIComponent(
-          `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 300'>` +
-            `<defs><radialGradient id='bg' cx='0.5' cy='0.35' r='0.9'>` +
-            `<stop offset='0' stop-color='#4a3b26'/><stop offset='0.55' stop-color='#241b10'/>` +
-            `<stop offset='1' stop-color='#0e0a06'/></radialGradient>` +
-            `<linearGradient id='fur' x1='0' y1='0' x2='0' y2='1'>` +
-            `<stop offset='0' stop-color='#6e5636'/><stop offset='1' stop-color='#2c2013'/>` +
-            `</linearGradient></defs>` +
-            `<rect width='240' height='300' fill='url(#bg)'/>` +
-            `<ellipse cx='120' cy='210' rx='85' ry='95' fill='url(#fur)'/>` +
-            `<circle cx='120' cy='120' r='62' fill='url(#fur)'/>` +
-            `<path d='M74 78l18 26-30 6z' fill='#3a2c19'/>` +
-            `<path d='M166 78l-18 26 30 6z' fill='#3a2c19'/>` +
-            `<circle cx='96' cy='114' r='13' fill='#f5d76e'/>` +
-            `<circle cx='144' cy='114' r='13' fill='#f5d76e'/>` +
-            `<circle cx='96' cy='116' r='6' fill='#120d07'/>` +
-            `<circle cx='144' cy='116' r='6' fill='#120d07'/>` +
-            `<path d='M120 128l-12 22h24z' fill='#c9a44a'/>` +
-            `<path d='M108 150q12 10 24 0l-12 16z' fill='#8a6f33'/>` +
-            `</svg>`
-        ),
-    },
-  };
-}
 
 export function LibraryMount(): null {
   const uid = useAuthStore((s) => s.user?.uid) ?? null;
@@ -74,7 +35,7 @@ export function LibraryMount(): null {
   useEffect(() => {
     const { hydrate, reset } = useLibraryStore.getState();
     if (DEV_BYPASS_AUTH) {
-      hydrate([], devMonsterArt(), null);
+      hydrate([], null);
       return;
     }
     if (!uid) {
@@ -86,7 +47,7 @@ export function LibraryMount(): null {
     const writer = createLibraryWriter(uid);
     const unsubscribe = subscribeLibrary(
       uid,
-      (entries, monsterArt) => hydrate(entries, monsterArt, writer.persist),
+      (entries) => hydrate(entries, writer.persist),
       (err) => console.error("Library subscription error", err)
     );
     return () => {

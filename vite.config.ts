@@ -9,6 +9,7 @@ import { runI18nChecks } from "./scripts/i18n/check-i18n.ts";
 import {
   fsAllowRoots,
   packAliasTarget,
+  packMonsterArtAliasTarget,
   packMonstersAliasTarget,
 } from "./scripts/content-pack-mode.ts";
 
@@ -165,9 +166,25 @@ export default defineConfig({
           // precached — they're cheap and near-universally needed on first paint,
           // so precaching them costs little and saves the runtime-cache round trip.
           "**/backgrounds/*.webp",
+          // The 503 bestiary portraits are canonical content, but forcing the whole
+          // gallery into every first install would be wasteful. Cache each portrait
+          // on first view; a visited monster remains available offline thereafter.
+          "**/assets/monsters/*.webp",
         ],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4 MiB — bundle is ~2.1 MiB
         runtimeCaching: [
+          {
+            urlPattern: /\/assets\/monsters\/.*\.webp$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "monster-art-cache",
+              expiration: {
+                maxEntries: 600,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+                purgeOnQuotaError: true,
+              },
+            },
+          },
           {
             // The heavy scene/backdrop plates (excluded from precache above,
             // PRE-GA item 3). CacheFirst: fetched once (whenever the page that
@@ -275,7 +292,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // The pack's ONE lazy sub-entry — the bestiary corpus, kept OFF the
+      "@pack/monster-art": packMonsterArtAliasTarget(),
+      // The pack's lazy bestiary-data sub-entry, kept OFF the
       // eager-reachable `@pack` barrel (docs/ARCHITECTURE.md → the content-pack
       // seam). MUST precede "@pack": string aliases match by prefix.
       "@pack/monsters": packMonstersAliasTarget(),
@@ -297,6 +315,17 @@ export default defineConfig({
     // can cache independently and parallel-fetch.
     rollupOptions: {
       output: {
+        assetFileNames(assetInfo) {
+          // Public source paths are flattened to bare names by Rolldown; every
+          // module-imported WebP is bestiary art (scene art lives in `public/`).
+          const isMonsterPortrait =
+            assetInfo.originalFileNames.some((file) =>
+              /[\\/]assets[\\/]monsters[\\/]/.test(file)
+            ) || assetInfo.names.some((name) => name.endsWith(".webp"));
+          return isMonsterPortrait
+            ? "assets/monsters/[name]-[hash][extname]"
+            : "assets/[name]-[hash][extname]";
+        },
         // Rolldown (Vite 8's bundler) requires manualChunks as a function.
         // Pattern: bucket modules by their pathname; everything else falls
         // through to the default chunking heuristic.
@@ -350,6 +379,7 @@ export default defineConfig({
           // the pre-split one. Pack i18n/fixtures stay on the default
           // heuristic (EN merges eagerly via srd-en; IT + fixtures stay lazy).
           if (/[\\/]content-pack[\\/]data[\\/]/.test(id)) {
+            if (/[\\/]data[\\/]monster-art\.ts$/.test(id)) return "monster-art";
             if (
               /[\\/]data[\\/](races|backgrounds|background-equipment|names)\.ts$/.test(id)
             )
@@ -371,6 +401,7 @@ export default defineConfig({
           // Splitting by domain lets each route pull only what it imports and the
           // browser parallel-fetch + independently cache each piece.
           if (/[\\/]src[\\/]data[\\/]/.test(id)) {
+            if (/[\\/]data[\\/]monster-art\.ts$/.test(id)) return "monster-art";
             // Light "identity" data the ROSTER glance needs (species/background
             // NAMES via srd-i18n). Kept in its own chunk so the landing page never
             // downloads the heavy spell/magic-item corpora. Rolldown keeps it

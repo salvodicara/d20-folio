@@ -78,15 +78,16 @@ sign-in button, no marketing card), and the **unified Items browser CODE-COMPLET
 the separate Equipment + Magic Items tabs/ribbon-entries merged into ONE searchable "Items" list over
 both corpora, with a smart facet rail: Magic lens · Kind spanning both datasets · magic-only
 Rarity/Attunement that light up in context; in BOTH the Add-Item modal and the Compendium page. HOLDS
-for owner screenshot approval, rule 25), and the **reusable custom-monster library +
-override-first monster portraits CODE-COMPLETE** (2026-08-02 — the encounter's Custom tab is now a
-saved-monster library (5th `monster` library kind: create → saved → re-addable, with edit/delete),
-and every monster carries ART beside the hero portraits: an uploaded portrait, else the deterministic
-tinted-initial monogram — the SAME letter fallback the party heroes use (owner-ratified 2026-08-02:
-NO generated/icon placeholder art); the portrait is overridable on the compendium/bestiary monster
-view (per-user, keyed by `srdId`, seated in the stat block's right-side space beside the ability
-table, seal-as-affordance with no caption) and on a saved custom monster (kept with its template),
-reusing the character-portrait crop/upload flow. HOLDS for owner screenshot approval, rule 25); the
+for owner screenshot approval, rule 25), and the **reusable custom-monster library + canonical
+monster-portrait collection CODE-COMPLETE** (2026-08-02 — the encounter's Custom tab is now
+a saved-monster library (5th `monster` library kind: create → saved → re-addable, with edit/delete),
+and all 503 database monsters have original, consistent 4:5 generated paintings keyed by
+stable id across the SRD + private pack. **Owner reversal 2026-08-02:** the earlier no-generated-default
+decision is superseded now that project-owned art can be generated at quality; database portraits are
+canonical and not user-overridable. Custom monsters alone retain upload/re-crop/remove at any time.
+The bestiary plate preserves 4:5 composition; encounter cards resolve the same art from `srdId`
+without copying URLs into Firestore. HOLDS for final compendium + encounter screenshots in dark/light
+and desktop/mobile, rule 25); the
 live head is **compendium completeness**. The
 competitive map is `docs/POSITIONING.md`. **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
@@ -1695,32 +1696,28 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   `AddMonsterForm`) grows a "your custom monsters" list (silent auto-save on create, tap-to-add,
   edit/delete), account-level and reusable across campaigns. **DDB-parity angle:** DDB has a
   monster/homebrew library. **Has a visual surface → owner screenshot approval per golden rule 25;**
-  touches the encounter UI + the library store. The **override-first monster portraits** rung below
+  touches the encounter UI + the library store. The **monster portraits** rung below
   **rides this one** (a saved custom monster persists its portrait). Sequences **after** the in-flight
   encounter-polish + combat-chronicle epic (same `AddMonsterForm`); priority is the owner's call.
-- **CONFIRMED — override-first monster portraits (owner-ratified 2026-08-01):** monsters gain a
-  **portrait slot** — real bestiary AND custom. Today they have NONE: `MonsterStatBlock`
-  (`src/data/types.ts`) and `EncounterMonster` carry no image/portrait/token field, and `MonsterCard`
-  renders a deterministic tinted-initial monogram. **REVISED 2026-08-02 (owner):** the slot's default
-  is the **tinted-initial monogram** — the SAME letter fallback the party heroes use — with **NO
-  generated/icon placeholder tier** (the creature-type-glyph default the first cut shipped was owner-
-  rejected: no synthetic default art). Any real art (owner-generated, in the private pack) rides the
-  same slot; it is **ALWAYS user-overridable via upload**, **reusing the existing character-portrait
-  system** (Firebase
+- **CODE-COMPLETE — canonical monster portraits (owner-ratified reversal 2026-08-02; holds for
+  rule-25 screenshots):** monsters now have a **portrait slot** — real bestiary AND custom.
+  **SUPERSEDING REVISION 2026-08-02 (owner):** now
+  that original art can be generated at the required quality, every one of the 503 database monsters
+  (330 public SRD + 173 private pack) receives a canonical professional portrait in one "Living
+  Bestiary" direction. Database portraits are product content and are **not user-overridable**.
+  Custom monsters remain fully user-owned and reuse the existing character-portrait system (Firebase
   Storage — `src/lib/storage.ts`, `users/{uid}/portraits/…` + `portraitCrop`/`portraitUrl` on
   `CharacterDoc` + the `PortraitEditMenu` Re-crop / Upload new / Remove). This is the **RESOLUTION of
-  the internet-art problem:** the app **ships only legal art**; a user uploads their OWN image for any
-  monster (including copyrighted ones) on their own responsibility — the SAME model as character
-  portraits, and a VTT-style token used ONLY as a portrait, never on a battle map (respects
-  Constitution §2.9, still no VTT). The **internet/wiki-art DECLINE stays fully intact** — we still
-  never SHIP copyrighted/WotC art; this design routes AROUND it via legal-default + user-override,
-  **not** by shipping WotC art (`docs/POSITIONING.md` → the deliberate non-goals + the monetization
-  boundary; no future agent revisits the decline). Displayed in the encounter **beside the hero
+  the internet-art problem:** the app ships only legal project-owned art; a user uploads their own
+  image for a custom monster on their own responsibility. The **internet/wiki-art DECLINE stays fully
+  intact**: no copyrighted/WotC artwork is shipped or scraped; D&D Beyond is information-hierarchy
+  inspiration only, never a pose/composition source. Displayed in the encounter **beside the hero
   portraits** + in the **bestiary**; a saved custom monster **persists its portrait** (rides the
-  reusable custom-monster-library rung above). **Image-sourcing reality:** no single CC source covers
-  the INVENTED, non-SRD signature D&D monsters — those are **owner-generated-or-user-
-  upload only**; PD/CC covers **real animals + classic myth**; art for the rest is an **automated
-  batch generation**, not hand-drawing. **Visual surface → owner screenshot approval per golden rule 25.**
+  reusable custom-monster-library rung above). The complete set uses original generated art rather
+  than a mixed-license collage. Exact-id + 672×840 + ≤90,000-byte guards pass across 330 public +
+  173 private portraits; binaries stay off first install and enter the runtime cache when viewed.
+  Both composed and SRD-only gates pass. **Visual surface → owner screenshot approval per golden
+  rule 25.**
 - **Public share links: SHIPPED 2026-07-31 — CHARACTERS ONLY, industry standard.** The
   decided LIVE model shipped as decided — a `shared: true` flag on the character doc + the unguessable doc id
   as the URL; rules allow anonymous read-only when flagged; revoke = flip the flag; noindex;

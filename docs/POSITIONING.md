@@ -64,8 +64,8 @@ frontier"_), sequenced **bestiary-first**:
 - **Homebrew — the ladder's first rung SHIPPED (2026-07-30):** the account-level library (rung (a)
   — every per-character custom spell/feature/equipment silently kept as a reusable account doc,
   "custom IS the library"). The remaining rungs stand: campaign sharing → monster editor
-  (a reusable custom-monster library — "custom IS the library" applied to monsters, plus override-first
-  monster portraits — is the CONFIRMED first cut, owner-ratified 2026-08-01) → species/feats/subclasses → **homebrew classes**, the declared _horizon flagship_ because it is
+  (a reusable custom-monster library — "custom IS the library" applied to monsters, plus canonical
+  database portraits and user-editable custom portraits — is the CONFIRMED first cut) → species/feats/subclasses → **homebrew classes**, the declared _horizon flagship_ because it is
   D&D Beyond's #1 refused community ask, and our grants seam can actually do it well.
 - **Quickbuild parity SHIPPED (2026-07-30)** — DDB shipped "Quickbuilder" March 2026; Quick Start
   now opens on a complete, legal, class-recommended build (only the name left to type) **plus the
@@ -106,10 +106,10 @@ frontier"_), sequenced **bestiary-first**:
 - **No internet/wiki monster ARTWORK, ever** (LEGAL, owner-ratified 2026-08-01) — pulling WotC/wiki/
   artist monster art off the internet is copyright infringement (SRD CC-BY licenses stats/text ONLY,
   never the art) and breaks the SRD-clean boundary below. Legal monster visuals only: a legal-art
-  default (verified PD/CC where it matches + owner-generated pack art) with an ALWAYS-available
-  user-upload override (the user owns their content), the SAME model as character portraits — never
-  scraped. Captured in `PROGRESS.md` → the DDB-parity charter's homebrew-ladder **override-first
-  monster portraits** confirmed rung.
+  default: original generated art made for this project, partitioned public/private with the
+  statblocks. Database art is canonical and is never scraped or user-overridden; custom monsters
+  remain fully user-editable and can use the owner's uploaded content. Captured in `PROGRESS.md` →
+  the DDB-parity charter's monster-portrait rung.
 
 ## The moat vs. the opening
 

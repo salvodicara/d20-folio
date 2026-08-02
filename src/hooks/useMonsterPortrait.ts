@@ -1,17 +1,14 @@
 /**
  * useMonsterPortrait (Part B) — the monster counterpart to `usePortraitCrop` /
  * `useCampaignBannerCrop`: the SAME compress-once-then-crop strategy (store the
- * original at quality, keep a % crop rectangle), for a monster's override art. A
+ * original at quality, keep a % crop rectangle), for a custom monster's art. A
  * SQUARE portrait like a character's (crop = the seal), never re-uploaded on a re-crop.
  *
- * Two persistence TARGETS, one flow:
- *   • `srd`   — a bestiary monster's per-user OVERRIDE, keyed by `srdId`; persists to
- *               `libraryStore.setMonsterArt`. Storage: `portraits/monster-{srdId}.jpeg`.
- *   • `entry` — a saved custom monster's art, kept ON its library entry; persists to
- *               `libraryStore.setEntryPortrait`. Storage: `portraits/monster-{entryId}.jpeg`.
+ * A saved custom monster's art stays on its library entry via
+ * `libraryStore.setEntryPortrait`. Storage: `portraits/monster-{entryId}.jpeg`.
  *
- * Both persist through the library store (debounced full-doc write), and both upload to
- * the per-user `portraits/` folder that any signed-in user can READ — so a portrait the
+ * It persists through the library store (debounced full-doc write) and uploads to the
+ * per-user `portraits/` folder that any signed-in user can READ — so a portrait the
  * DM copies onto a shared encounter combatant is visible to every table member.
  *
  * The parent owns the menu + renders the shared `PortraitCropModal` from `cropSrc`
@@ -42,11 +39,6 @@ import { readFileAsDataUrl } from "@/lib/image-crop";
 import { normalizePortraitCrop } from "@/lib/portrait-crop";
 import type { PortraitCrop } from "@/types/character";
 
-/** Which monster art this hook edits (chooses the Storage key + the store action). */
-export type MonsterPortraitTarget =
-  | { kind: "srd"; srdId: string }
-  | { kind: "entry"; entryId: string };
-
 type CropSession =
   | { type: "new"; compressedBlob: Blob }
   | { type: "recrop"; initialCropArea: Area | null }
@@ -58,13 +50,9 @@ export interface MonsterPortraitCurrent {
   portraitCrop?: PortraitCrop | null;
 }
 
-export function useMonsterPortrait(
-  target: MonsterPortraitTarget,
-  current: MonsterPortraitCurrent
-) {
+export function useMonsterPortrait(entryId: string, current: MonsterPortraitCurrent) {
   const { t } = useTranslation();
   const uid = useAuthStore((s) => s.user?.uid) ?? "dev"; // ignored under DEV_BYPASS
-  const setMonsterArt = useLibraryStore((s) => s.setMonsterArt);
   const setEntryPortrait = useLibraryStore((s) => s.setEntryPortrait);
   const showToast = useToastStore((s) => s.showToast);
 
@@ -73,15 +61,12 @@ export function useMonsterPortrait(
   const [uploading, setUploading] = useState(false);
   const [cropSession, setCropSession] = useState<CropSession>(null);
 
-  const storageKey = target.kind === "srd" ? target.srdId : target.entryId;
-
-  /** Route the persisted result to the right store home (or clear it with null). */
+  /** Persist the result on the custom monster entry (or clear it with null). */
   function persist(portraitUrl: string | null, portraitCrop: PortraitCrop | null): void {
     const art = portraitUrl
       ? { portraitUrl, ...(portraitCrop ? { portraitCrop } : {}) }
       : null;
-    if (target.kind === "srd") setMonsterArt(target.srdId, art);
-    else setEntryPortrait(target.entryId, art);
+    setEntryPortrait(entryId, art);
   }
 
   function openFilePickerForNew(): void {
@@ -122,7 +107,7 @@ export function useMonsterPortrait(
     try {
       const url =
         cropSession.type === "new"
-          ? await uploadMonsterPortrait(uid, storageKey, cropSession.compressedBlob)
+          ? await uploadMonsterPortrait(uid, entryId, cropSession.compressedBlob)
           : (current.portraitUrl ?? null); // re-crop: metadata only, keep the bytes
       persist(url, safeCrop);
     } catch {
@@ -141,7 +126,7 @@ export function useMonsterPortrait(
   async function removePortrait(): Promise<void> {
     setUploading(true);
     try {
-      await deleteMonsterPortrait(uid, storageKey);
+      await deleteMonsterPortrait(uid, entryId);
       persist(null, null);
     } catch {
       showToast({ message: t("portrait.crop.saveError"), duration: 5000 });

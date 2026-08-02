@@ -1,9 +1,7 @@
 /**
- * MonsterPortraitPanel (Part B) — the shared, self-contained portrait editor for a
- * monster's art. ONE component for both homes (golden rule 3/6):
- *   • the compendium/bestiary monster detail (a per-user SRD override, `kind:"srd"`);
- *   • the encounter's custom-monster create/edit form (art kept on the library entry,
- *     `kind:"entry"`).
+ * MonsterPortraitPanel — the self-contained portrait editor for a saved custom
+ * monster (art is kept on its library entry). Database monster art is canonical and
+ * renders through `MonsterArtHeader`, never this edit surface.
  *
  * A SQUARE seal drawn through the shared {@link Portrait} primitive: the uploaded art
  * (crop-framed), else the tinted-initial monogram — override-first (golden rule 8),
@@ -23,22 +21,19 @@ import { PortraitEditMenu } from "@/components/shared/PortraitEditMenu";
 import { PortraitCropModal } from "@/components/shared/PortraitCropModal";
 import { Spinner } from "@/components/ui/spinner";
 import { useDismissOnOutside } from "@/hooks/useDismissOnOutside";
-import {
-  useMonsterPortrait,
-  type MonsterPortraitTarget,
-} from "@/hooks/useMonsterPortrait";
+import { useMonsterPortrait } from "@/hooks/useMonsterPortrait";
 import { cn } from "@/lib/utils";
 import type { PortraitCrop } from "@/types/character";
 
 export function MonsterPortraitPanel({
-  target,
+  entryId,
   portraitUrl = null,
   portraitCrop = null,
   name,
   seed,
   className,
 }: {
-  target: MonsterPortraitTarget;
+  entryId: string;
   portraitUrl?: string | null;
   portraitCrop?: PortraitCrop | null;
   /** Display name — the fallback monogram + the accessible alt. */
@@ -60,7 +55,7 @@ export function MonsterPortraitPanel({
     onCancel,
     openRecrop,
     removePortrait,
-  } = useMonsterPortrait(target, { portraitUrl, portraitCrop });
+  } = useMonsterPortrait(entryId, { portraitUrl, portraitCrop });
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

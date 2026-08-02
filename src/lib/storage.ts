@@ -158,35 +158,34 @@ export async function uploadPortraitFromBase64(
 }
 
 /**
- * Upload a monster portrait blob (Part B) — a DM's uploaded art for a bestiary
- * monster (`key` = its `srdId`) or a saved custom monster (`key` = its library entry
- * id). Lives under the SAME per-user `portraits/` folder as character portraits, with a
+ * Upload a saved custom monster's portrait blob (`entryId` = its library entry id).
+ * Lives under the same per-user `portraits/` folder as character portraits, with a
  * `monster-` filename prefix so it can never collide with a `{charId}.jpeg` — so it
  * reuses the existing `users/{uid}/portraits/{fileName}` Storage rule (world-readable to
  * any signed-in user, exactly like a character portrait, so every campaign member sees
- * the art the DM copied onto a shared combatant). Overwrites in place (no orphans).
+ * a custom combatant's copied art). Overwrites in place (no orphans).
  * Returns the download URL.
  */
 export async function uploadMonsterPortrait(
   uid: string,
-  key: string,
+  entryId: string,
   blob: Blob
 ): Promise<string> {
   if (blob.size > MAX_FILE_SIZE) {
     throw new Error("Portrait is too large (max 5MB)");
   }
   if (DEV_BYPASS_AUTH) return URL.createObjectURL(blob);
-  const storageRef = ref(storage, `users/${uid}/portraits/monster-${key}.jpeg`);
+  const storageRef = ref(storage, `users/${uid}/portraits/monster-${entryId}.jpeg`);
   await uploadBytes(storageRef, blob, IMAGE_UPLOAD_META);
   return getDownloadURL(storageRef);
 }
 
 /** Delete a monster portrait (safe if it was never uploaded). Mirror of
- *  {@link deletePortrait} for the `monster-{key}.jpeg` art files. */
-export async function deleteMonsterPortrait(uid: string, key: string): Promise<void> {
+ *  {@link deletePortrait} for the `monster-{entryId}.jpeg` art files. */
+export async function deleteMonsterPortrait(uid: string, entryId: string): Promise<void> {
   if (DEV_BYPASS_AUTH) return;
   try {
-    await deleteObject(ref(storage, `users/${uid}/portraits/monster-${key}.jpeg`));
+    await deleteObject(ref(storage, `users/${uid}/portraits/monster-${entryId}.jpeg`));
   } catch (err: unknown) {
     const code = (err as { code?: string }).code;
     if (code !== "storage/object-not-found") throw err;

@@ -22,9 +22,6 @@ import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { stripUndefined } from "@/lib/strip-undefined";
 import { LIBRARY_KINDS, type LibraryEntry, type LibraryKind } from "@/lib/library";
-import type { MonsterArt } from "@/types/campaign";
-// Type-only (erased) — the store owns the map type; no Firebase pulled into the store.
-import type { MonsterArtMap } from "@/stores/libraryStore";
 
 /** Ref to the user's single homebrew-library document. */
 export function libraryRef(uid: string) {
@@ -56,28 +53,6 @@ function parseEntries(data: Record<string, unknown>): LibraryEntry[] {
 
 /** Defensively parse one stored SRD-art override — the crop is optional + trusted (our
  *  own write), so only the URL is validated (a broken entry is simply dropped). */
-function parseArt(raw: unknown): MonsterArt | null {
-  if (typeof raw !== "object" || raw === null) return null;
-  const r = raw as Record<string, unknown>;
-  if (typeof r.portraitUrl !== "string" || r.portraitUrl === "") return null;
-  const crop = r.portraitCrop;
-  return typeof crop === "object" && crop !== null
-    ? { portraitUrl: r.portraitUrl, portraitCrop: crop as MonsterArt["portraitCrop"] }
-    : { portraitUrl: r.portraitUrl };
-}
-
-/** Defensively parse the stored `monsterArt` map (srdId → art), dropping malformed. */
-function parseMonsterArt(data: Record<string, unknown>): MonsterArtMap {
-  const raw = data.monsterArt;
-  if (typeof raw !== "object" || raw === null) return {};
-  const out: Record<string, MonsterArt> = {};
-  for (const [srdId, value] of Object.entries(raw as Record<string, unknown>)) {
-    const art = parseArt(value);
-    if (art) out[srdId] = art;
-  }
-  return out;
-}
-
 /**
  * Subscribe to the live library doc. `cb([])` when the doc is ABSENT (a user who has
  * never saved homebrew) — an empty library, not an error. Returns an unsubscribe; a
@@ -85,7 +60,7 @@ function parseMonsterArt(data: Record<string, unknown>): MonsterArtMap {
  */
 export function subscribeLibrary(
   uid: string,
-  cb: (entries: LibraryEntry[], monsterArt: MonsterArtMap) => void,
+  cb: (entries: LibraryEntry[]) => void,
   onError?: (err: Error) => void
 ): () => void {
   if (DEV_BYPASS_AUTH) return () => {};
@@ -93,28 +68,22 @@ export function subscribeLibrary(
     libraryRef(uid),
     (snap) => {
       const data = snap.exists() ? snap.data() : {};
-      cb(parseEntries(data), parseMonsterArt(data));
+      cb(parseEntries(data));
     },
     (err) => onError?.(err)
   );
 }
 
 /**
- * Persist the WHOLE library doc — `entries` + `monsterArt` (last-write-wins OVERWRITE,
- * creates the doc if absent). A no-op under DEV_BYPASS. Single-writer per user, so no
- * transaction is needed. `stripUndefined` drops any absent optional (Firestore rejects
- * `undefined`; an empty `monsterArt` map is written as `{}`, harmless).
+ * Persist the whole library doc (last-write-wins overwrite, creates it if absent).
+ * A no-op under DEV_BYPASS. The overwrite also sheds obsolete stray keys.
  */
 export async function writeLibrary(
   uid: string,
-  entries: readonly LibraryEntry[],
-  monsterArt: MonsterArtMap
+  entries: readonly LibraryEntry[]
 ): Promise<void> {
   if (DEV_BYPASS_AUTH) return;
-  await setDoc(
-    libraryRef(uid),
-    stripUndefined({ entries, monsterArt }) as Record<string, unknown>
-  );
+  await setDoc(libraryRef(uid), stripUndefined({ entries }) as Record<string, unknown>);
 }
 
 /**
@@ -138,12 +107,11 @@ export function createLibraryWriter(
   delayMs: number = LIBRARY_WRITE_DEBOUNCE_MS,
   onError: (err: unknown) => void = (err) => console.error("Library write failed", err)
 ): {
-  persist: (entries: readonly LibraryEntry[], monsterArt: MonsterArtMap) => void;
+  persist: (entries: readonly LibraryEntry[]) => void;
   flush: () => void;
 } {
   let timer: ReturnType<typeof setTimeout> | null = null;
-  let pending: { entries: readonly LibraryEntry[]; monsterArt: MonsterArtMap } | null =
-    null;
+  let pending: readonly LibraryEntry[] | null = null;
 
   const flush = (): void => {
     if (timer !== null) {
@@ -151,14 +119,14 @@ export function createLibraryWriter(
       timer = null;
     }
     if (pending === null) return;
-    const { entries, monsterArt } = pending;
+    const entries = pending;
     pending = null;
-    void writeLibrary(uid, entries, monsterArt).catch(onError);
+    void writeLibrary(uid, entries).catch(onError);
   };
 
   return {
-    persist: (entries, monsterArt) => {
-      pending = { entries, monsterArt };
+    persist: (entries) => {
+      pending = entries;
       if (timer !== null) clearTimeout(timer);
       timer = setTimeout(flush, delayMs);
     },

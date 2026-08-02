@@ -653,44 +653,36 @@ applies) loading and error states. Affordances are consistent across every surfa
 ### Portraits + monster art (the avatar seal)
 
 The one avatar primitive is `Portrait` (`src/components/shared/Portrait.tsx`), filling any
-sized `.seal` / `.ch-portrait` / `.topbar-avatar` box. Its fallback ladder is two tiers
-(override-first, golden rule 8): a stored portrait (crop-framed) → the deterministic
-tinted-initial monogram (`avatarTint` over `idToHue`, no RNG). There is **no generated /
-icon placeholder tier** — a monster with no uploaded art reads as its initial letter,
-exactly like a party hero without a portrait (owner-ratified: no synthetic default art).
-So heroes and monsters share ONE fallback grammar, in both themes for free.
+sized `.seal` / `.ch-portrait` / `.topbar-avatar` box. Character and custom-monster art is
+override-first: stored crop-framed portrait → deterministic tinted-initial monogram
+(`avatarTint` over `idToHue`, no RNG). Database monsters instead resolve a **canonical,
+non-editable** portrait by stable monster id (`src/data/monster-art.ts`); only a missing or
+stale id falls back to the monogram. This owner-ratified distinction keeps the authored
+bestiary visually consistent while custom monsters remain wholly user-owned.
 
-**Monster portraits are user-overridable** through `MonsterPortraitPanel`
-(`src/components/shared/MonsterPortraitPanel.tsx`) — the SAME crop-and-upload flow as a
+Custom-monster portraits use `MonsterPortraitPanel` and the same crop/upload flow as a
 character portrait (`PortraitCropModal` + `PortraitEditMenu`: Re-crop · Upload new ·
-Remove), lifted into `useMonsterPortrait` and persisted through `libraryStore` (an SRD
-monster's per-user override keyed by `srdId`, or a custom monster's art kept on its
-library entry). Storage reuses the per-user `portraits/` path with a `monster-` filename
-prefix (world-readable, like a hero portrait), so the art the DM copies onto a shared
-encounter combatant is visible to every table member. The panel wears a **hover-only**
-seal veil (`.seal-edit-veil--hover`) — the seal reads clean at rest and reveals the camera
-only on hover/focus, unlike the character seal's always-on edit-mode veil. **The seal IS
-the affordance** — there is no standing instructional caption; hovering/clicking reveals
-the edit menu, exactly like the character portrait.
+Remove), lifted into `useMonsterPortrait` and kept on the monster's library entry. Storage
+reuses the per-user `portraits/` path with a `monster-` filename prefix. The panel wears a
+hover-only seal veil (`.seal-edit-veil--hover`); the seal is the affordance, with no standing
+instructional caption. Canonical database portraits expose no edit veil or menu.
 
 On the **bestiary/compendium statblock** the monster portrait (`MonsterArtHeader`) is a
-real framed **PLATE**, not a floating stamp — the SOTA statblock-with-art grammar (D&D
-Beyond / the 2024 core-book bestiary spreads): the data spine stays LEFT and the art fills
-the right column (`MonsterStatBlockCard`'s optional `portrait` slot → `.mon-top--art`).
+real framed **PLATE**, not a floating stamp. The information hierarchy takes inspiration
+from premium bestiary layouts while the imagery and compositions remain original: the data
+spine stays LEFT and the art occupies the right column (`MonsterStatBlockCard`'s optional
+`portrait` slot → `.mon-top--art`).
 From 34rem of container width (`@container mon-ref`) the top region is two columns —
-defence line + ability table left (shrinkable, `minmax(0, max-content)`), the plate
-filling the rest (`minmax(12rem, 1fr)`, capped 21rem) and **stretched to the stat
-region's exact height** (`align-items: stretch`), so art and numbers form one solid
-illustrated block with zero dead space by construction. Below the threshold it becomes
+defence line + ability table left, the plate in a capped `12–15rem` column. It preserves
+the authored **4:5** composition instead of widening into a landscape crop; this keeps the
+identity-bearing anatomy and central square-safe encounter crop intact. Below the threshold it becomes
 the **monster-card grammar** instead: a centred 4:5 plate above the stats (a deliberate
 mobile layout, not a shrunken desktop). The plate wears the `.seal` material at
 `--radius-lg`; with no art, the tinted-initial fallback is struck LARGE (an illuminated
 plate initial, 3.75–4.5rem) inside a fine gilt fillet (`.av-fallback::after`, scoped to
 `.mon-portrait-seal`) so the empty plate reads as a prepared bookplate awaiting its art —
-the hover camera veil remains the only affordance (no caption). The shape is owned by the
-CALLER's class: `MonsterPortraitPanel`'s inner seal has no fixed aspect, so the approved
-square library tile (`h-24 w-24`) and the tall bestiary plate share one component
-unchanged.
+The shape is owned by the caller: the custom library tile stays square while the canonical
+bestiary plate remains 4:5.
 
 ### Anonymous-viewer chrome (the public share-link surfaces)
 

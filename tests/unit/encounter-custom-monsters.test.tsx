@@ -21,7 +21,7 @@ import type { MonsterInput } from "@/features/campaigns/encounter";
 beforeEach(() => {
   // Hydrate the library LOADED with a no-op persist, so saves actually land in memory.
   useLibraryStore.getState().reset();
-  useLibraryStore.getState().hydrate([], {}, vi.fn());
+  useLibraryStore.getState().hydrate([], vi.fn());
 });
 
 function createBandit(): void {

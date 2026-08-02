@@ -21,6 +21,7 @@ import {
   EncounterRoundBar,
 } from "@/features/campaigns/party-encounter";
 import { addMonster, startEncounter } from "@/features/campaigns/encounter";
+import { monsterPortraitUrl } from "@/data/monster-art";
 import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";
 import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
@@ -188,6 +189,20 @@ describe("MonsterInitChip (via MonsterCard) — focusing the edit input never sc
 // ─── §C — the DM statblock disclosure + rename ──────────────────────────────────
 
 describe("MonsterCard — DM statblock disclosure (§C.1/§C.2)", () => {
+  it("resolves canonical database art from srdId instead of a stored portrait copy", () => {
+    const hawk = goblinWithSrd({
+      name: "Hawk",
+      srdId: "hawk",
+      portraitUrl: "https://x/obsolete-override.jpeg",
+    });
+    const { container } = render(
+      <MonsterCard monster={hawk} isCurrent apply={vi.fn()} />
+    );
+    expect(container.querySelector("img")?.getAttribute("src")).toBe(
+      monsterPortraitUrl("hawk")
+    );
+  });
+
   it("a DM card with srdId shows the Statblock button", () => {
     render(<MonsterCard monster={goblinWithSrd()} isCurrent apply={vi.fn()} />);
     expect(screen.getByRole("button", { name: "Statblock" })).toBeTruthy();

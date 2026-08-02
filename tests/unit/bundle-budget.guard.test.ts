@@ -342,7 +342,14 @@ const EAGER_CEILING_KB = 786; // baseline 727.1 → ~+8% (near budget — see AR
 // row) but the eager CLOSURE chunk families are unchanged (the Firebase apply-damage write is a
 // dynamic import). Measured 8287.80 KiB / 315 entries on the merged (rebased) tree; +~12 KiB
 // never-exact-fit headroom → 8300.
-const PRECACHE_CEILING_KIB = 8300;
+//
+// 2026-08-02 (canonical Living Bestiary portraits): the 503 WebPs emit under
+// `assets/monsters/` and are EXCLUDED from first install, entering a one-year CacheFirst
+// runtime cache only when viewed. The necessary lazy `monster-art` URL index remains
+// precached so an already-available campaign/compendium route can resolve hashed portrait
+// URLs offline. Measured 8340.67 KiB / 315 entries (+52.87 KiB, +0 entries from the
+// combat-chronicle base); +~12 KiB never-exact-fit headroom → 8353.
+const PRECACHE_CEILING_KIB = 8353;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

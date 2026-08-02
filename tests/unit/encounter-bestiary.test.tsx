@@ -297,10 +297,8 @@ describe("makeEncounterMonsterSpec — the derived add-mode spec (§A.6)", () =>
   const t = i18n.getFixedT("en");
   const ctx: PickerCtx = { t, locale: "en", character: null, mode: "add" };
 
-  const noArt = () => undefined;
-
   it("supportsQuantity + a 20 cap + the encounter add label", () => {
-    const spec = makeEncounterMonsterSpec(vi.fn(), t, noArt);
+    const spec = makeEncounterMonsterSpec(vi.fn(), t);
     const goblin = getMonster("goblin-warrior");
     if (!goblin) throw new Error("goblin-warrior missing");
     expect(spec.supportsQuantity).toBe(true);
@@ -310,7 +308,7 @@ describe("makeEncounterMonsterSpec — the derived add-mode spec (§A.6)", () =>
 
   it("onAdd maps the statblock + chosen quantity through toMonsterInput (count 3)", () => {
     const onAdd = vi.fn();
-    const spec = makeEncounterMonsterSpec(onAdd, t, noArt);
+    const spec = makeEncounterMonsterSpec(onAdd, t);
     const goblin = getMonster("goblin-warrior");
     if (!goblin) throw new Error("goblin-warrior missing");
     spec.onAdd?.(goblin, ctx, 3);
@@ -329,30 +327,10 @@ describe("makeEncounterMonsterSpec — the derived add-mode spec (§A.6)", () =>
 
   it("onAdd defaults quantity to 1 when the picker passes undefined", () => {
     const onAdd = vi.fn();
-    const spec = makeEncounterMonsterSpec(onAdd, t, noArt);
+    const spec = makeEncounterMonsterSpec(onAdd, t);
     const bear = getMonster("brown-bear");
     if (!bear) throw new Error("brown-bear missing");
     spec.onAdd?.(bear, ctx, undefined);
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ count: 1 }));
-  });
-
-  it("copies the DM's SRD portrait override onto the added monster (Part B)", () => {
-    const onAdd = vi.fn();
-    const art = {
-      portraitUrl: "https://x/monster-goblin-warrior.jpeg",
-      portraitCrop: { x: 1, y: 2, width: 50, height: 60 },
-    };
-    const spec = makeEncounterMonsterSpec(onAdd, t, (id) =>
-      id === "goblin-warrior" ? art : undefined
-    );
-    const goblin = getMonster("goblin-warrior");
-    if (!goblin) throw new Error("goblin-warrior missing");
-    spec.onAdd?.(goblin, ctx, 1);
-    expect(onAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        portraitUrl: art.portraitUrl,
-        portraitCrop: art.portraitCrop,
-      })
-    );
   });
 });

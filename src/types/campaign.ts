@@ -169,20 +169,15 @@ export interface EncounterMonster extends EncounterCombatantBase {
    * The creature type (2024 identity noun), seeded at ADD time: picker path = the
    * statblock `type`; custom path = the DM's chosen type (or absent for a stat-less
    * improv NPC). ENCOUNTER-OWNED like `ac`/`xp` — it carries the monster's identity
-   * on the combatant WITHOUT the lazy bestiary corpus. The portrait fallback is always
-   * the tinted-initial monogram (the same letter fallback the heroes use).
+   * on the combatant WITHOUT the lazy bestiary corpus.
    */
   creatureType?: CreatureType;
   /**
-   * A per-combatant portrait, seeded at ADD time from the DM's monster art: picker
-   * path = the SRD portrait OVERRIDE for this `srdId` (if the DM set one); custom path
-   * = the saved custom monster's portrait. COPIED onto the encounter doc (not resolved
-   * live) so EVERY viewer reads it — a player never holds the DM's account-level art
-   * map — the same shared-fact reason `ac`/`name` are copied. `portraitUrl` is the
-   * Firebase Storage download URL (`users/{uid}/portraits/monster-*.jpeg`, world-readable
-   * to any signed-in user, like a character portrait); `portraitCrop` frames it. Absent
-   * → the tinted-initial monogram fallback (override-first, golden rule 8). Additive: a
-   * pre-feature encounter doc stays valid.
+   * A custom combatant's uploaded portrait, copied from its library template so every
+   * viewer reads the same art. Database monsters leave these fields absent and resolve
+   * canonical art live from `srdId`. `portraitUrl` is the Firebase Storage download URL
+   * (`users/{uid}/portraits/monster-*.jpeg`); `portraitCrop` frames it. Additive: a
+   * pre-feature encounter document stays valid.
    */
   portraitUrl?: string;
   portraitCrop?: PortraitCrop;
@@ -219,22 +214,6 @@ export interface CustomMonster {
   /** The DM's uploaded portrait (`users/{uid}/portraits/monster-{entryId}.jpeg`) +
    *  its crop frame; absent → the tinted-initial fallback. Kept WITH the template. */
   portraitUrl?: string;
-  portraitCrop?: PortraitCrop;
-}
-
-/**
- * A per-user portrait OVERRIDE for a bestiary (SRD) monster, keyed by its `srdId`
- * (Part B). By default the 330 SRD monsters show the tinted-initial monogram (the same
- * letter fallback the party heroes use); a DM who wants real art uploads one, and THIS
- * carries it: shown in the compendium bestiary view and COPIED onto every future
- * encounter add of that monster. Stored in the
- * library doc's `monsterArt` map (one listener, one writer — reuses the library seam),
- * keyed by `srdId`.
- */
-export interface MonsterArt {
-  /** The Firebase Storage download URL (`users/{uid}/portraits/monster-{srdId}.jpeg`). */
-  portraitUrl: string;
-  /** The crop frame (percentages); absent → the whole image, centre-framed. */
   portraitCrop?: PortraitCrop;
 }
 

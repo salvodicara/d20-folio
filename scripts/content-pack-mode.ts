@@ -10,8 +10,9 @@
  * (`pnpm test:srd-only` / `pnpm build:srd-only`). Consumed by `vite.config.ts`,
  * `vitest.config.ts`, and the i18n leak-lock (`scripts/i18n/catalogue-io.ts`).
  *
- * There is ONE sub-entry alongside it — `@pack/monsters` — because the bestiary
- * corpus must stay out of the eager closure; see `packMonstersAliasTarget()`.
+ * The bestiary owns two lazy sub-entries: `@pack/monsters` for statblocks and
+ * `@pack/monster-art` for their canonical portrait URLs. Neither may enter the
+ * eager `@pack` barrel.
  */
 import { existsSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -37,6 +38,14 @@ export const CONTENT_PACK_MONSTERS_ENTRY = path.join(
   "index.ts"
 );
 
+/** Absolute path of the pack's lazy canonical-monster-art module (may not exist). */
+export const CONTENT_PACK_MONSTER_ART_ENTRY = path.join(
+  ROOT,
+  "content-pack",
+  "data",
+  "monster-art.ts"
+);
+
 /** True when this build/test run composes the private content pack in. */
 export function contentPackEnabled(): boolean {
   if (process.env.VITE_CONTENT_PACK === "0") return false;
@@ -50,7 +59,7 @@ export function packAliasTarget(): string {
 
 /**
  * The module the `@pack/monsters` alias resolves to for this run — the pack's
- * ONE lazy sub-entry (docs/ARCHITECTURE.md → "The content-pack seam").
+ * lazy bestiary-data sub-entry (docs/ARCHITECTURE.md → "The content-pack seam").
  *
  * The bestiary corpus must never enter the eager startup closure, and the
  * `@pack` BARREL is eager-reachable (the always-eager Grant engine reads
@@ -67,6 +76,11 @@ export function packAliasTarget(): string {
  */
 export function packMonstersAliasTarget(): string {
   return contentPackEnabled() ? CONTENT_PACK_MONSTERS_ENTRY : PACK_EMPTY_ENTRY;
+}
+
+/** The module the `@pack/monster-art` alias resolves to for this run. */
+export function packMonsterArtAliasTarget(): string {
+  return contentPackEnabled() ? CONTENT_PACK_MONSTER_ART_ENTRY : PACK_EMPTY_ENTRY;
 }
 
 /**

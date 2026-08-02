@@ -160,8 +160,8 @@ export interface MonsterInput {
   xp?: number;
   /** Creature type (2024 identity noun) — the monster's identity type. */
   creatureType?: CreatureType;
-  /** A portrait to COPY onto the combatant (Part B) — the SRD override for a picker add,
-   *  or the saved custom monster's art; omitted → the tinted-initial monogram fallback. */
+  /** A saved custom monster's portrait to copy onto the combatant. Database monsters
+   * resolve canonical art from `srdId` at render time and leave these fields absent. */
   portraitUrl?: string;
   portraitCrop?: PortraitCrop;
 }

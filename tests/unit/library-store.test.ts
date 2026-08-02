@@ -1,13 +1,9 @@
 /**
- * libraryStore — the in-memory home of the account library, including the Part-A/B
- * additions: the `monster` kind and the SRD `monsterArt` override map.
+ * libraryStore — the in-memory home of the account library, including custom monsters.
  *
  * Pins the facts the portrait + custom-monster persistence rests on:
- *  1. every mutation flushes the WHOLE doc — `entries` AND `monsterArt` together —
- *     through the injected persist seam (one full-doc overwrite, never a partial);
- *  2. `setMonsterArt` sets and clears an srdId override, and refuses to run unhydrated
- *     (a write from an empty store would erase the user's real art);
- *  3. `setEntryPortrait` attaches / removes a custom monster's portrait in place, by id,
+ *  1. every mutation flushes the whole entry list through the injected persist seam;
+ *  2. `setEntryPortrait` attaches / removes a custom monster's portrait in place, by id,
  *     and is inert for a non-monster (or unknown) id.
  *
  * Pure store, no Firebase — the persist seam is a plain mock (mirrors how `LibraryMount`
@@ -35,7 +31,7 @@ const SPELL: CustomSpell = {
 
 function hydrate(): ReturnType<typeof vi.fn<LibraryPersistence>> {
   const persist = vi.fn<LibraryPersistence>();
-  useLibraryStore.getState().hydrate([], {}, persist);
+  useLibraryStore.getState().hydrate([], persist);
   return persist;
 }
 
@@ -47,41 +43,7 @@ function firstMonsterPortrait(): string | undefined {
 
 beforeEach(() => useLibraryStore.getState().reset());
 
-describe("libraryStore — monster art + custom-monster persistence", () => {
-  it("refuses to mutate before hydration (a full-doc write would erase the library)", () => {
-    // reset() leaves loaded=false with no persist.
-    useLibraryStore
-      .getState()
-      .setMonsterArt("goblin-warrior", { portraitUrl: "https://x/g.jpeg" });
-    expect(useLibraryStore.getState().monsterArt).toEqual({});
-  });
-
-  it("sets and clears an SRD monster-art override, flushing entries + art together", () => {
-    const persist = hydrate();
-    // Seed one monster entry so we can prove BOTH halves flush on an art write.
-    useLibraryStore.getState().saveToLibrary({ kind: "monster", item: MONSTER });
-    persist.mockClear();
-
-    useLibraryStore.getState().setMonsterArt("goblin-warrior", {
-      portraitUrl: "https://x/g.jpeg",
-      portraitCrop: { x: 0, y: 0, width: 50, height: 50 },
-    });
-    const call = persist.mock.lastCall;
-    expect(call).toBeDefined();
-    if (!call) return;
-    const [entries, art] = call;
-    expect(entries).toHaveLength(1); // the entry rode along
-    expect(art).toEqual({
-      "goblin-warrior": {
-        portraitUrl: "https://x/g.jpeg",
-        portraitCrop: { x: 0, y: 0, width: 50, height: 50 },
-      },
-    });
-
-    useLibraryStore.getState().setMonsterArt("goblin-warrior", null);
-    expect(useLibraryStore.getState().monsterArt).toEqual({});
-  });
-
+describe("libraryStore — custom-monster portrait persistence", () => {
   it("attaches and removes a custom monster's portrait in place, by id", () => {
     const persist = hydrate();
     useLibraryStore.getState().saveToLibrary({ kind: "monster", item: MONSTER });
@@ -106,7 +68,7 @@ describe("libraryStore — monster art + custom-monster persistence", () => {
   it("is inert for an unknown id or a non-monster entry", () => {
     const persist = vi.fn<LibraryPersistence>();
     const spellEntry = toLibraryEntry({ kind: "spell", item: SPELL }, 1);
-    useLibraryStore.getState().hydrate([spellEntry], {}, persist);
+    useLibraryStore.getState().hydrate([spellEntry], persist);
     persist.mockClear();
 
     useLibraryStore

@@ -20981,13 +20981,9 @@ body:has(.fob) .toast-region {
 .mon-head {
   margin-bottom: 0;
 }
-/* Part B — stat block top region. The SOTA statblock-with-art grammar (D&D Beyond /
-   the 2024 core-book bestiary spreads): the data spine stays LEFT (defence line + ability
-   table, unmoved), and the portrait is a real framed PLATE that fills the right column
-   and stretches to the exact height of the stat region — the art and the numbers form
-   one solid illustrated block with no dead space by construction (the plate's height
-   IS the stats' height). Below the container threshold it becomes the monster-card
-   grammar instead: a centred 4:5 plate above the stats (never a shrunken desktop). */
+/* Statblock top region: the data spine stays left while the canonical 4:5 bestiary
+   painting keeps its authored composition at every breakpoint. Below the container
+   threshold the same plate centres above the stats (never a shrunken desktop row). */
 .mon-top,
 .mon-top-stats {
   display: flex;
@@ -21013,6 +21009,7 @@ body:has(.fob) .toast-region {
      panel of a printed monster card — a real illustration, not a stamp. */
   justify-self: center;
   width: min(100%, 15rem);
+  aspect-ratio: 4 / 5;
 }
 .mon-portrait-seal {
   width: 100%;
@@ -21044,25 +21041,21 @@ body:has(.fob) .toast-region {
 }
 @container mon-ref (min-width: 34rem) {
   .mon-top--art {
-    /* Two columns: the stat column takes its content width but can SHRINK (minmax
-       lower bound 0) so the row never overflows; the plate column takes the REST
-       (min 12rem so it always reads as art). `stretch` pins the plate's height to
-       the stat region's own height — the two columns bottom-align exactly. */
-    grid-template-columns: minmax(0, max-content) minmax(12rem, 1fr);
+    /* The art column is deliberately capped: widening a portrait into a landscape
+       crop discarded the anatomy and silhouettes these plates were authored around. */
+    grid-template-columns: minmax(0, 1fr) minmax(12rem, 15rem);
     grid-template-areas: "stats art";
     column-gap: var(--sp-6);
-    align-items: stretch;
+    align-items: start;
   }
   .mon-top--art .mon-portrait-slot {
     justify-self: stretch;
-    width: auto;
+    width: 100%;
     display: flex;
   }
   .mon-portrait-seal {
-    /* Fill the column up to a painting-like cap; height comes from the stretched
-       row (the flex slot), so the plate is exactly as tall as the stats beside it. */
-    aspect-ratio: auto;
-    max-width: 21rem;
+    aspect-ratio: 4 / 5;
+    max-width: 15rem;
     font-size: 4.5rem;
   }
 }

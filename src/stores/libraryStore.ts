@@ -38,38 +38,23 @@ import {
   type SheetLibraryKind,
 } from "@/lib/library";
 import type { CharacterData, PortraitCrop } from "@/types/character";
-import type { MonsterArt } from "@/types/campaign";
 
 /** What a save attempt did — the caller maps it to a toast. */
 export type SaveToLibraryOutcome = "saved" | "updated" | "full" | "unavailable";
 
-/** The per-srdId SRD monster portrait OVERRIDE map (Part B) — stored in the SAME
- *  library doc as `entries`, so one listener + one writer serve both. */
-export type MonsterArtMap = Readonly<Record<string, MonsterArt>>;
-
-/** The injected write seam: persist the WHOLE library doc (`entries` + `monsterArt`)
- *  — fire-and-forget, offline-safe (the debounced `library-io` writer). */
-export type LibraryPersistence = (
-  entries: readonly LibraryEntry[],
-  monsterArt: MonsterArtMap
-) => void;
+/** Fire-and-forget, offline-safe persistence for the whole entry list. */
+export type LibraryPersistence = (entries: readonly LibraryEntry[]) => void;
 
 interface LibraryState {
   /** The live library, newest-save-last (upserts keep their original position). */
   entries: LibraryEntry[];
-  /** SRD monster portrait overrides, keyed by `srdId` (Part B). */
-  monsterArt: MonsterArtMap;
   /** True once the library doc (or its confirmed absence) has been read. */
   loaded: boolean;
   /** Injected by `LibraryMount`; `null` = memory-only (signed out / DEV_BYPASS). */
   persist: LibraryPersistence | null;
 
   /** Hydrate from the live subscription (`LibraryMount` only). */
-  hydrate: (
-    entries: LibraryEntry[],
-    monsterArt: MonsterArtMap,
-    persist: LibraryPersistence | null
-  ) => void;
+  hydrate: (entries: LibraryEntry[], persist: LibraryPersistence | null) => void;
   /** Drop the library on sign-out / uid change so no entry leaks across accounts. */
   reset: () => void;
   /** Promote a homebrew item to a reusable entry (upsert by kind + name). */
@@ -83,8 +68,6 @@ interface LibraryState {
     id: string,
     portrait: { portraitUrl: string; portraitCrop?: PortraitCrop } | null
   ) => void;
-  /** Set (or clear, with `null`) the SRD monster portrait override for `srdId`. */
-  setMonsterArt: (srdId: string, art: MonsterArt | null) => void;
   /**
    * Mirror the character's item at `(kind, idx)` into the library — the shape every
    * sheet-side EDIT seam uses. A no-op for an SRD row, so a caller never branches.
@@ -113,23 +96,20 @@ interface LibraryState {
 }
 
 export const useLibraryStore = create<LibraryState>()((set, get) => {
-  /** Persist the WHOLE doc after a mutation — reads the just-`set` state so `entries`
-   *  and `monsterArt` always flush together (one full-doc overwrite). */
+  /** Persist the whole entry list after a mutation. */
   const flush = (): void => {
-    const { persist, entries, monsterArt } = get();
-    persist?.(entries, monsterArt);
+    const { persist, entries } = get();
+    persist?.(entries);
   };
 
   return {
     entries: [],
-    monsterArt: {},
     loaded: false,
     persist: null,
 
-    hydrate: (entries, monsterArt, persist) =>
-      set({ entries, monsterArt, persist, loaded: true }),
+    hydrate: (entries, persist) => set({ entries, persist, loaded: true }),
 
-    reset: () => set({ entries: [], monsterArt: {}, persist: null, loaded: false }),
+    reset: () => set({ entries: [], persist: null, loaded: false }),
 
     saveToLibrary: (draft) => {
       const { entries, loaded } = get();
@@ -199,17 +179,6 @@ export const useLibraryStore = create<LibraryState>()((set, get) => {
         return { ...e, item };
       });
       set({ entries: next });
-      flush();
-    },
-
-    setMonsterArt: (srdId, art) => {
-      const { loaded, monsterArt } = get();
-      if (!loaded) return;
-      // Immutable set/clear — no dynamic `delete` (clear filters the key out).
-      const next: Record<string, MonsterArt> = art
-        ? { ...monsterArt, [srdId]: art }
-        : Object.fromEntries(Object.entries(monsterArt).filter(([k]) => k !== srdId));
-      set({ monsterArt: next });
       flush();
     },
 

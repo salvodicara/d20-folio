@@ -50,6 +50,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { monsterPortraitUrl } from "@/data/monster-art";
 import {
   BookOpen,
   ChevronDown,
@@ -1798,13 +1799,13 @@ export function MonsterCard({
         dashed={monster.hidden}
         seal={
           <span className="seal party-avatar" aria-hidden>
-            {/* Part B — the monster's own art beside the hero portraits: the DM's
-                uploaded portrait (copied onto the combatant at add time so every viewer
-                reads it), else the tinted-initial monogram — the SAME letter fallback
-                the heroes use. Override-first (golden rule 8). */}
+            {/* Database monsters resolve immutable canonical art from `srdId`; custom
+                monsters keep the DM's uploaded portrait and crop on the combatant. */}
             <Portrait
-              src={monster.portraitUrl ?? null}
-              crop={monster.portraitCrop ?? null}
+              src={
+                monster.srdId ? monsterPortraitUrl(monster.srdId) : monster.portraitUrl
+              }
+              crop={monster.srdId ? null : monster.portraitCrop}
               name={monster.name}
               seed={monster.id}
               className="h-full w-full"

@@ -174,7 +174,7 @@ export function EncounterCustomMonsters({
           <div className="mb-4 flex items-start gap-4">
             <Suspense fallback={<span className="seal h-24 w-24 shrink-0" aria-hidden />}>
               <MonsterPortraitPanel
-                target={{ kind: "entry", entryId: viewing.id }}
+                entryId={viewing.id}
                 portraitUrl={m.portraitUrl ?? null}
                 portraitCrop={m.portraitCrop ?? null}
                 name={m.name}

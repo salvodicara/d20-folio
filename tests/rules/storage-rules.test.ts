@@ -111,11 +111,10 @@ describe("storage rules — bug-report screenshots (data-driven admin)", () => {
   });
 });
 
-// Shared monster art (Part B) lives under the SAME `users/{uid}/portraits/{fileName}`
-// rule as character portraits, with a `monster-` filename prefix. The intended scope:
-// WRITE is owner-only (only the uploading DM), READ is any authenticated user (so every
-// campaign member sees the art copied onto a shared encounter combatant — the art's
-// download URL is carried in the member-readable campaign doc). This block PINS that
+// Custom monster art lives under the same `users/{uid}/portraits/{fileName}` rule as
+// character portraits, with a `monster-` filename prefix. WRITE is owner-only (the
+// uploading DM); READ is any authenticated user, so campaign members can render the URL
+// copied onto a shared custom combatant. This block pins that
 // scope so the shared-art path can never silently widen to world-writable or public-read.
 describe("storage rules — shared monster art (users/{uid}/portraits/monster-*.jpeg)", () => {
   const MONSTER_ART_PATH = `users/${REPORTER_UID}/portraits/monster-goblin.jpeg`;

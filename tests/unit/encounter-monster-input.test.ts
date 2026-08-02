@@ -40,21 +40,18 @@ describe("toMonsterInput — pre-fill a monster group from its statblock", () =>
         expect(input.xp).toBe(monsterXp(m)); // SRD Step 3 — seeded per-token XP
         expect(input.notes).toBeUndefined(); // no prose copy (one home per fact)
         expect(input.creatureType).toBe(m.type); // Part B — carries the identity type
-        expect(input.portraitUrl).toBeUndefined(); // no override → tinted-initial default
+        expect(input.portraitUrl).toBeUndefined(); // canonical art is derived from srdId
       });
     }
   }
 
-  it("copies a passed SRD portrait override onto the input (Part B)", () => {
+  it("stores no portrait copy for database monsters; render resolves the canonical id", () => {
     const m = getMonster("goblin-warrior");
     if (!m) throw new Error("goblin-warrior missing");
-    const art = {
-      portraitUrl: "https://x/monster-goblin-warrior.jpeg",
-      portraitCrop: { x: 0, y: 0, width: 80, height: 80 },
-    };
-    const input = toMonsterInput(m, "en", 1, art);
-    expect(input.portraitUrl).toBe(art.portraitUrl);
-    expect(input.portraitCrop).toEqual(art.portraitCrop);
+    const input = toMonsterInput(m, "en", 1);
+    expect(input.srdId).toBe("goblin-warrior");
+    expect(input.portraitUrl).toBeUndefined();
+    expect(input.portraitCrop).toBeUndefined();
   });
 
   it("EN and IT names diverge for a translated entry (locale is actually threaded)", () => {

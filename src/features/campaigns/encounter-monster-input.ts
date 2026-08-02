@@ -13,7 +13,7 @@ import { localizeSrd } from "@/i18n/resolver";
 import { monsterXp, xpForCr } from "@/lib/monster";
 import type { MonsterStatBlock } from "@/data/types";
 import type { Locale } from "@/lib/locale";
-import type { CustomMonster, MonsterArt } from "@/types/campaign";
+import type { CustomMonster } from "@/types/campaign";
 import type { MonsterInput } from "./encounter";
 
 /**
@@ -25,16 +25,13 @@ import type { MonsterInput } from "./encounter";
  * `notes` pre-fill: the statblock facts live behind the DM disclosure, so copying
  * prose into `notes` would create a second drifting copy (golden rule 6).
  *
- * Part B — `creatureType` carries the monster's identity type, and `art` (the DM's SRD
- * portrait OVERRIDE for this monster, if any) is COPIED onto the combatant so every
- * viewer sees the same face beside the hero portraits (the shared-fact reason ac/name
- * are copied). No override → the tinted-initial default renders (the hero letter fallback).
+ * `creatureType` carries the monster's identity type. Portrait bytes are deliberately
+ * absent: every viewer resolves the canonical painting from the stable `srdId`.
  */
 export function toMonsterInput(
   m: MonsterStatBlock,
   locale: Locale,
-  count: number,
-  art?: MonsterArt
+  count: number
 ): MonsterInput {
   return {
     name: localizeSrd("monster", m.id, "name", locale),
@@ -45,7 +42,6 @@ export function toMonsterInput(
     srdId: m.id,
     xp: monsterXp(m),
     creatureType: m.type,
-    ...(art ? { portraitUrl: art.portraitUrl, portraitCrop: art.portraitCrop } : {}),
   };
 }
 

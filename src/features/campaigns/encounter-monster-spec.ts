@@ -9,7 +9,6 @@
 import { monsterSpec } from "@/features/compendium/picker/specs/monster";
 import type { CompendiumPickerSpec, TFn } from "@/features/compendium/picker/types";
 import type { MonsterStatBlock } from "@/data/types";
-import type { MonsterArt } from "@/types/campaign";
 import { toMonsterInput } from "./encounter-monster-input";
 import type { MonsterInput } from "./encounter";
 
@@ -23,17 +22,13 @@ import type { MonsterInput } from "./encounter";
  */
 export function makeEncounterMonsterSpec(
   onAdd: (input: MonsterInput) => void,
-  t: TFn,
-  /** The DM's SRD portrait override for a monster (by srdId), or undefined — copied
-   *  onto the combatant at add time (Part B). */
-  resolveArt: (srdId: string) => MonsterArt | undefined
+  t: TFn
 ): CompendiumPickerSpec<MonsterStatBlock> {
   return {
     ...monsterSpec,
     supportsQuantity: true,
     quantityMax: () => 20,
     addLabel: () => t("campaignHub.encounterAddMonster"),
-    onAdd: (m, ctx, quantity) =>
-      onAdd(toMonsterInput(m, ctx.locale, quantity ?? 1, resolveArt(m.id))),
+    onAdd: (m, ctx, quantity) => onAdd(toMonsterInput(m, ctx.locale, quantity ?? 1)),
   };
 }
