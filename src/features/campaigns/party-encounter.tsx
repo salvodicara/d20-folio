@@ -81,6 +81,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipProvider } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/ui/kbd";
 import { Portrait } from "@/components/shared/Portrait";
+import { creatureGlyphPath } from "@/data/creature-glyphs";
 import { StatBadge, HpBadge, InitBadge, StatLabel } from "@/components/shared/StatBadge";
 import { AutoAnimateHeight } from "@/components/shared/AutoAnimateHeight";
 import { InlineEditable } from "@/components/shared/InlineEditable";
@@ -127,7 +128,6 @@ import {
   setMonsterNotes,
   setRevealed,
   toggleCondition,
-  type MonsterInput,
 } from "@/features/campaigns/encounter";
 import { setEncounterInitiative } from "@/features/campaigns/campaign-io";
 import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
@@ -142,10 +142,12 @@ import { useToastStore } from "@/stores/toastStore";
 import type { CharacterDoc } from "@/types/character";
 import type { CombatState } from "@/types/combat-state";
 import type {
+  CustomMonster,
   EncounterMonster,
   EncounterState,
   MemberCharacterSnapshot,
 } from "@/types/campaign";
+import { ALL_CREATURE_TYPES, type CreatureType } from "@/data/types";
 
 // The DM statblock disclosure — the SECOND door into the ONE lazy bestiary chunk
 // (the same seam Party.tsx's Add-monster modal uses; router.tsx D-2 pattern: chunk
@@ -1721,10 +1723,18 @@ export function MonsterCard({
         dashed={monster.hidden}
         seal={
           <span className="seal party-avatar" aria-hidden>
+            {/* Part B — the monster's own art beside the hero portraits: the DM's
+                uploaded portrait (copied onto the combatant at add time so every viewer
+                reads it), else the creature-type GLYPH default, else the tinted initial.
+                Override-first (golden rule 8). */}
             <Portrait
-              src={null}
+              src={monster.portraitUrl ?? null}
+              crop={monster.portraitCrop ?? null}
               name={monster.name}
               seed={monster.id}
+              glyphPath={
+                monster.creatureType ? creatureGlyphPath(monster.creatureType) : null
+              }
               className="h-full w-full"
             />
           </span>
@@ -2063,42 +2073,75 @@ function MonsterTokens({
  *  the banner so its trigger can sit inline next to Begin-turns; this renders only the
  *  full-width body, and `onClose` (Cancel) collapses it back to the banner trigger. */
 export function AddMonsterForm({
-  onAdd,
+  initial,
+  showCount = true,
+  submitLabel,
+  onSubmit,
 }: {
-  /** Add the typed monster group. Routed by the caller through the REINFORCEMENT auto-slot
-   *  ({@link "@/features/campaigns/encounter-view".addReinforcement}) so a monster added
-   *  mid-combat slots into the FROZEN order at its initiative (C3, item 4). The Custom
-   *  tab of the encounter picker mounts this form as its body; the ModalShell owns
-   *  dismissal (no Cancel button here). */
-  onAdd: (input: MonsterInput) => void;
+  /** Prefill for EDITING a saved custom monster; absent = a blank CREATE form. */
+  initial?: CustomMonster;
+  /** Show the per-ADD fields (Initiative + Count); hidden when editing the TEMPLATE
+   *  (initiative + count are per-encounter, not part of the reusable template). */
+  showCount?: boolean;
+  /** The submit button's label ("Add to encounter" on create, "Save" on edit). */
+  submitLabel: string;
+  /**
+   * Commit the built {@link CustomMonster} template + the per-add `count` + typed
+   * `initiative` (`null` = blank; the DM rolls externally, golden rule 21). The caller
+   * saves the template to the library and (on create/add) materializes it into the
+   * encounter via `customMonsterToInput` — a non-blank initiative lets a mid-combat
+   * reinforcement AUTO-SLOT into the frozen order. The portrait is edited SEPARATELY
+   * (the detail seal), so an edit PRESERVES `initial`'s art — this form never touches it.
+   */
+  onSubmit: (template: CustomMonster, count: number, initiative: number | null) => void;
 }) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
-  const [name, setName] = useState("");
-  const [initiative, setInitiativeVal] = useState(10);
-  const [ac, setAc] = useState(12);
-  const [maxHp, setMaxHp] = useState(10);
+  const [name, setName] = useState(initial?.name ?? "");
+  // Creature type — a closed-set select so an invalid type is untypeable; "" = none
+  // (a stat-less improv NPC, which then falls back to the monogram, no glyph).
+  const [creatureType, setCreatureType] = useState<string>(initial?.creatureType ?? "");
+  const [ac, setAc] = useState(initial?.ac ?? 12);
+  const [maxHp, setMaxHp] = useState(initial?.maxHp ?? 10);
   const [count, setCount] = useState(1);
-  const [notes, setNotes] = useState("");
+  const [initiative, setInitiativeVal] = useState(10);
+  const [notes, setNotes] = useState(initial?.notes ?? "");
   // Optional CR — a closed-set select so an invalid CR is untypeable; blank ""
   // = no CR (a stat-less improv NPC stays un-costed, zero friction — rule 20). The
   // stored value is the CR's stringified number ("0.25"); "" is the blank sentinel.
-  const [cr, setCr] = useState("");
+  const [cr, setCr] = useState(initial?.cr ?? "");
 
-  function add(): void {
+  function submit(): void {
     const trimmed = name.trim();
     if (trimmed === "") return;
-    // A chosen CR seeds the SRD XP (SRD Step 3 — the DM thinks in CR); blank omits it.
-    const xp = cr === "" ? undefined : xpForCr(Number(cr));
-    onAdd({ name: trimmed, ac, maxHp, count, initiative, notes, xp });
-    // Each "Add" is a DISTINCT creature (identical copies use `count`) — reset EVERY
-    // field, not just name/count/notes, so the next (different) monster never silently
-    // inherits this group's AC/HP/initiative (B25).
+    const template: CustomMonster = {
+      name: trimmed,
+      ac,
+      maxHp,
+      ...(creatureType ? { creatureType: creatureType as CreatureType } : {}),
+      ...(cr ? { cr } : {}),
+      ...(notes.trim() ? { notes: notes.trim() } : {}),
+      // PRESERVE the entry's art across a template edit (it lives on the entry, edited
+      // via the detail seal — the form must never drop it).
+      ...(initial?.portraitUrl
+        ? {
+            portraitUrl: initial.portraitUrl,
+            ...(initial.portraitCrop ? { portraitCrop: initial.portraitCrop } : {}),
+          }
+        : {}),
+    };
+    // Initiative is a per-ADD field (never on the template); pass it through so a
+    // mid-combat reinforcement can auto-slot. Ignored by the edit flow (showCount off).
+    onSubmit(template, count, showCount ? initiative : null);
+    // CREATE resets EVERY field so the next (distinct) monster never inherits this one's
+    // AC/HP/type (B25); an EDIT closes back to the list, so there is nothing to reset.
+    if (initial) return;
     setName("");
-    setInitiativeVal(10);
+    setCreatureType("");
     setAc(12);
     setMaxHp(10);
     setCount(1);
+    setInitiativeVal(10);
     setNotes("");
     setCr("");
   }
@@ -2107,9 +2150,7 @@ export function AddMonsterForm({
     // FOCUSED COLUMN (CARD-7 polish) — the form body is capped to a ~24rem reading
     // column, left-aligned, so the name/notes inputs span that column and the stat
     // rows can hug their labels. No breakpoint: on mobile the column cap sits below
-    // the viewport, so it fills width exactly. The modal title carries "Add to the
-    // encounter"; a card-in-a-modal would be double chrome, so this is a plain
-    // column, not an InfoCard.
+    // the viewport, so it fills width exactly.
     <div className="flex max-w-sm flex-col gap-3 p-4">
       <Input
         value={name}
@@ -2120,25 +2161,41 @@ export function AddMonsterForm({
       />
       {/* CARD-7 — sheet-style LABEL-LEFT rows in a TWO-COLUMN GRID: a `max-content`
           label column (auto-sized to the widest label, locale-proof — no magic width,
-          no truncation) + a small gap + the compact stepper hugging it. Each
-          {@link FormStepper} is `display:contents`, so its label and stepper drop
-          straight into the grid: all four labels share the same column width and every
-          stepper's LEFT edge lines up — a tight block, NOT spread across the panel.
-          IDENTICAL on desktop + mobile (no breakpoints). */}
+          no truncation) + a small gap + the compact control hugging it. */}
       <div className="grid grid-cols-[max-content_max-content] items-center gap-x-3 gap-y-2">
-        <FormStepper
-          label={
-            <GlossaryTip term="initiative" rubric={t("character.vitals.initAria")}>
-              {t("character.vitals.initAria")}
-            </GlossaryTip>
-          }
-          ariaLabel={t("character.vitals.initAria")}
-          value={initiative}
-          onChange={setInitiativeVal}
-          min={0}
-          max={99}
-          digits={2}
-        />
+        {/* Creature type — powers the glyph portrait default + the identity; a closed
+            set so an invalid type is untypeable (golden rule 20). */}
+        <label className="contents">
+          <span className="text-sm text-text-secondary">{t("compendium.type")}</span>
+          <Select
+            size="sm"
+            value={creatureType}
+            onChange={(e) => setCreatureType(e.target.value)}
+            aria-label={t("compendium.type")}
+          >
+            <option value="">{"—"}</option>
+            {ALL_CREATURE_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {t(`srd.creatureType_${type}`)}
+              </option>
+            ))}
+          </Select>
+        </label>
+        {showCount && (
+          <FormStepper
+            label={
+              <GlossaryTip term="initiative" rubric={t("character.vitals.initAria")}>
+                {t("character.vitals.initAria")}
+              </GlossaryTip>
+            }
+            ariaLabel={t("character.vitals.initAria")}
+            value={initiative}
+            onChange={setInitiativeVal}
+            min={0}
+            max={99}
+            digits={2}
+          />
+        )}
         <FormStepper
           label={
             <GlossaryTip term="armorClass" rubric={t("character.vitals.acFull")}>
@@ -2165,20 +2222,19 @@ export function AddMonsterForm({
           max={999}
           digits={3}
         />
-        <FormStepper
-          label={t("campaignHub.encounterMonsterCount")}
-          ariaLabel={t("campaignHub.encounterMonsterCount")}
-          value={count}
-          onChange={setCount}
-          min={1}
-          max={20}
-          digits={2}
-        />
-        {/* Optional CR — a `label.contents` row so it drops into the SAME
-            two-column grid as the steppers: the label lands in the
-            shared `max-content` column, the Select hugs it in the next. The DM sees
-            each CR's XP cost while choosing (no second field), and a closed set makes
-            an invalid CR untypeable. */}
+        {showCount && (
+          <FormStepper
+            label={t("campaignHub.encounterMonsterCount")}
+            ariaLabel={t("campaignHub.encounterMonsterCount")}
+            value={count}
+            onChange={setCount}
+            min={1}
+            max={20}
+            digits={2}
+          />
+        )}
+        {/* Optional CR — the DM sees each CR's XP cost while choosing (no second field);
+            a closed set makes an invalid CR untypeable. */}
         <label className="contents">
           <span className="text-sm text-text-secondary">
             <GlossaryTip term="challengeRating" rubric={t("monster.crRubric")}>
@@ -2214,9 +2270,9 @@ export function AddMonsterForm({
         maxLength={2000}
       />
       <div className="flex items-center gap-2">
-        <Button variant="primary" onClick={add} disabled={name.trim() === ""}>
+        <Button variant="primary" onClick={submit} disabled={name.trim() === ""}>
           <Icon as={Plus} size="sm" decorative />
-          {t("campaignHub.encounterAddMonster")}
+          {submitLabel}
         </Button>
       </div>
     </div>

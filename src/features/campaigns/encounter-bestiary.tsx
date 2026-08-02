@@ -28,7 +28,9 @@ import { localizeSrd } from "@/i18n/resolver";
 import { useLocale } from "@/hooks/useLocale";
 import { fmtXp } from "@/lib/utils";
 import { monsterXp } from "@/lib/monster";
-import { AddMonsterForm, EncounterBudgetReadout, type ApplyFn } from "./party-encounter";
+import { useLibraryStore } from "@/stores/libraryStore";
+import { EncounterBudgetReadout, type ApplyFn } from "./party-encounter";
+import { EncounterCustomMonsters } from "./encounter-custom-monsters";
 import { makeEncounterMonsterSpec } from "./encounter-monster-spec";
 import { setMonsterXp, type MonsterInput } from "./encounter";
 import type { EncounterBudgetView } from "./encounter-view";
@@ -59,7 +61,12 @@ export function EncounterAddMonsterBody({
 }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"srd" | "custom">("srd");
-  const spec = useMemo(() => makeEncounterMonsterSpec(onAdd, t), [onAdd, t]);
+  // Part B — the DM's SRD portrait overrides, copied onto a picked monster at add time.
+  const monsterArt = useLibraryStore((s) => s.monsterArt);
+  const spec = useMemo(
+    () => makeEncounterMonsterSpec(onAdd, t, (srdId) => monsterArt[srdId]),
+    [onAdd, t, monsterArt]
+  );
 
   return (
     <>
@@ -80,7 +87,7 @@ export function EncounterAddMonsterBody({
         <EncounterBudgetReadout budget={budget} />
       </div>
       {activeTab === "custom" ? (
-        <AddMonsterForm onAdd={onAdd} />
+        <EncounterCustomMonsters onAdd={onAdd} />
       ) : (
         <CompendiumPicker
           spec={spec}

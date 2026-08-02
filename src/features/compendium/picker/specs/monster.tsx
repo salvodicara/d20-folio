@@ -19,6 +19,7 @@ import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { srdKey } from "@/i18n/srd-key";
 import { cn, formatCr } from "@/lib/utils";
 import { MonsterStatBlockCard } from "@/components/shared/MonsterStatBlockCard";
+import { MonsterArtHeader } from "@/components/shared/MonsterArtHeader";
 import { monsterIdentity, monsterRowMeta } from "@/components/shared/monster-identity";
 import { FilterChip } from "@/components/sheet/picker-parts";
 import { ALL_CREATURE_TYPES, CREATURE_SIZE_ORDER } from "@/data/types";
@@ -222,6 +223,13 @@ export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
     // full reading order, so the scaffold meta grid is omitted (one home per fact,
     // §4.15 / golden rule 6).
     eyebrow: monsterIdentity(m, t),
-    extras: <MonsterStatBlockCard monster={m} locale={locale} />,
+    extras: (
+      <>
+        {/* Part B — the user's per-monster portrait override (over the type glyph),
+            editable right here; copied onto every future encounter add. */}
+        <MonsterArtHeader srdId={m.id} name={monName(m, locale)} creatureType={m.type} />
+        <MonsterStatBlockCard monster={m} locale={locale} />
+      </>
+    ),
   }),
 };

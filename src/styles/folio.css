@@ -14490,6 +14490,19 @@ button.party-avatar-btn:focus-visible {
   opacity: 1;
   background: color-mix(in oklab, black 46%, transparent);
 }
+/* Hover-ONLY veil (the monster portrait panel — always editable, so the seal reads
+   clean at rest and reveals the camera only on hover/focus, unlike the character
+   seal's always-on edit-mode veil). The button wrapping the seal is the focus target,
+   so a `:focus-within` on the seal lights it for keyboard users too. */
+.seal-edit-veil--hover {
+  opacity: 0;
+}
+.seal:hover .seal-edit-veil--hover,
+.seal:focus-within .seal-edit-veil--hover,
+button:focus-visible > .seal .seal-edit-veil--hover {
+  opacity: 0.92;
+  background: color-mix(in oklab, black 42%, transparent);
+}
 
 /* ── Tinted-initial avatar fallback (#45/#92) — fills ANY avatar tile (.seal /
    .ch-portrait / .topbar-avatar / admin row) when there is no portrait. A
@@ -14527,6 +14540,22 @@ button.party-avatar-btn:focus-visible {
 }
 .av-img {
   display: block;
+}
+
+/* The monster creature-type GLYPH emblem (Part B) — drawn in the same tinted well as
+   the initial monogram, sized as a centred emblem (not an edge-to-edge icon) and set to
+   the gilt ink at a slightly quieted opacity so it reads as an engraved crest, not a
+   loud UI glyph. `currentColor` = the well's `--accent-text`, so both themes come free. */
+.av-glyph {
+  width: 62%;
+  height: 62%;
+  color: var(--accent-text);
+  opacity: 0.82;
+  filter: drop-shadow(0 1px 1px hsl(0 0% 0% / 0.35));
+}
+[data-theme="light"] .av-glyph {
+  opacity: 0.9;
+  filter: drop-shadow(0 1px 0 hsl(42 30% 100% / 0.4));
 }
 
 /* ── INSPIRATION boon rows (#91 + D37, INSP-UX) — each boon is one full-width

@@ -40,6 +40,14 @@ interface PortraitProps {
   name: string;
   /** Stable seed for the deterministic fallback tint (character id / uid / name). */
   seed: string;
+  /**
+   * An SVG path (`d` on the 512×512 game-icons viewBox — {@link
+   * import("@/data/creature-glyphs").CREATURE_GLYPH_VIEWBOX}) drawn as the fallback
+   * EMBLEM when there is no portrait: a monster's creature-type glyph (Part B), so a
+   * faceless monster reads as a distinct silhouette instead of a bare initial. Absent /
+   * null → the tinted-initial monogram (the character/user fallback, unchanged).
+   */
+  glyphPath?: string | null;
   /** Eager only for the above-the-fold hero; everything else lazy-loads. */
   loading?: "lazy" | "eager";
   /** Remote (googleusercontent) avatar — plain img + no-referrer, no crop math. */
@@ -59,6 +67,7 @@ export function Portrait({
   crop = null,
   name,
   seed,
+  glyphPath = null,
   loading = "lazy",
   remote = false,
   className,
@@ -92,7 +101,19 @@ export function Portrait({
       className={cn("av-fallback", className)}
       style={avatarTint(seed) as CSSProperties}
     >
-      {initialOf(name)}
+      {glyphPath ? (
+        <svg
+          className="av-glyph"
+          viewBox="0 0 512 512"
+          role="img"
+          aria-hidden
+          focusable="false"
+        >
+          <path d={glyphPath} fill="currentColor" />
+        </svg>
+      ) : (
+        initialOf(name)
+      )}
     </span>
   );
 }

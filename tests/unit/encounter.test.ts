@@ -587,6 +587,34 @@ describe("addMonster — srdId bestiary reference (minimal storage; the notes pa
   });
 });
 
+describe("addMonster — Part B identity + portrait (minimal storage; the notes pattern)", () => {
+  it("stores creatureType + portrait when supplied", () => {
+    const state = goblins(twoPcs(), {
+      creatureType: "humanoid",
+      portraitUrl: "https://x/monster-goblin.jpeg",
+      portraitCrop: { x: 1, y: 2, width: 50, height: 60 },
+    });
+    const m = monster(state, "monster-1");
+    expect(m.creatureType).toBe("humanoid");
+    expect(m.portraitUrl).toBe("https://x/monster-goblin.jpeg");
+    expect(m.portraitCrop).toEqual({ x: 1, y: 2, width: 50, height: 60 });
+  });
+
+  it("writes NO creatureType / portrait keys when absent", () => {
+    const m = monster(goblins(twoPcs()), "monster-1");
+    expect("creatureType" in m).toBe(false);
+    expect("portraitUrl" in m).toBe(false);
+    expect("portraitCrop" in m).toBe(false);
+  });
+
+  it("writes NO portraitCrop without a portraitUrl (a crop alone is meaningless)", () => {
+    const state = goblins(twoPcs(), {
+      portraitCrop: { x: 0, y: 0, width: 1, height: 1 },
+    });
+    expect("portraitCrop" in monster(state, "monster-1")).toBe(false);
+  });
+});
+
 describe("addMonster — xp seeding (SRD Step 3; existence-based, the srdId pattern)", () => {
   it("stores a rounded xp when supplied", () => {
     const state = goblins(twoPcs(), { xp: 50.4 });

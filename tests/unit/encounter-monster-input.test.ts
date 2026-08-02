@@ -10,8 +10,13 @@ import { ensureSrdKind } from "@/i18n";
 import { localizeSrd } from "@/i18n/resolver";
 import { getMonster } from "@/data/monsters";
 import { monsterXp } from "@/lib/monster";
-import { toMonsterInput } from "@/features/campaigns/encounter-monster-input";
+import {
+  customMonsterToInput,
+  toMonsterInput,
+} from "@/features/campaigns/encounter-monster-input";
+import { xpForCr } from "@/lib/monster";
 import type { Locale } from "@/lib/locale";
+import type { CustomMonster } from "@/types/campaign";
 
 await ensureSrdKind("monster");
 
@@ -34,9 +39,23 @@ describe("toMonsterInput — pre-fill a monster group from its statblock", () =>
         expect(input.srdId).toBe(m.id);
         expect(input.xp).toBe(monsterXp(m)); // SRD Step 3 — seeded per-token XP
         expect(input.notes).toBeUndefined(); // no prose copy (one home per fact)
+        expect(input.creatureType).toBe(m.type); // Part B — seeds the card glyph
+        expect(input.portraitUrl).toBeUndefined(); // no override passed → glyph default
       });
     }
   }
+
+  it("copies a passed SRD portrait override onto the input (Part B)", () => {
+    const m = getMonster("goblin-warrior");
+    if (!m) throw new Error("goblin-warrior missing");
+    const art = {
+      portraitUrl: "https://x/monster-goblin-warrior.jpeg",
+      portraitCrop: { x: 0, y: 0, width: 80, height: 80 },
+    };
+    const input = toMonsterInput(m, "en", 1, art);
+    expect(input.portraitUrl).toBe(art.portraitUrl);
+    expect(input.portraitCrop).toEqual(art.portraitCrop);
+  });
 
   it("EN and IT names diverge for a translated entry (locale is actually threaded)", () => {
     const m = getMonster("goblin-warrior");
@@ -48,5 +67,54 @@ describe("toMonsterInput — pre-fill a monster group from its statblock", () =>
     const m = getMonster("brown-bear");
     if (!m) throw new Error("brown-bear missing");
     expect(toMonsterInput(m, "en", 1).count).toBe(1);
+  });
+});
+
+describe("customMonsterToInput — materialize a saved custom monster (Part A)", () => {
+  const full: CustomMonster = {
+    name: "Ashmaw Hound",
+    ac: 14,
+    maxHp: 33,
+    creatureType: "monstrosity",
+    cr: "2",
+    notes: "hunts in pairs",
+    portraitUrl: "https://x/monster-ashmaw.jpeg",
+    portraitCrop: { x: 5, y: 5, width: 80, height: 80 },
+  };
+
+  it("copies identity + art, seeds XP from CR, adds count + typed initiative", () => {
+    const input = customMonsterToInput(full, 3, 12);
+    expect(input).toEqual({
+      name: "Ashmaw Hound",
+      ac: 14,
+      maxHp: 33,
+      count: 3,
+      initiative: 12,
+      xp: xpForCr(2),
+      notes: "hunts in pairs",
+      creatureType: "monstrosity",
+      portraitUrl: "https://x/monster-ashmaw.jpeg",
+      portraitCrop: { x: 5, y: 5, width: 80, height: 80 },
+    });
+  });
+
+  it("defaults initiative to null (no dice) and omits absent optionals", () => {
+    const input = customMonsterToInput({ name: "Wisp", ac: 10, maxHp: 4 }, 1);
+    expect(input.initiative).toBeNull();
+    expect(input.count).toBe(1);
+    expect("xp" in input).toBe(false);
+    expect("notes" in input).toBe(false);
+    expect("creatureType" in input).toBe(false);
+    expect("portraitUrl" in input).toBe(false);
+    expect("portraitCrop" in input).toBe(false);
+  });
+
+  it("keeps a portraitUrl even without a crop (crop is optional)", () => {
+    const input = customMonsterToInput(
+      { name: "Wisp", ac: 10, maxHp: 4, portraitUrl: "https://x/w.jpeg" },
+      1
+    );
+    expect(input.portraitUrl).toBe("https://x/w.jpeg");
+    expect("portraitCrop" in input).toBe(false);
   });
 });

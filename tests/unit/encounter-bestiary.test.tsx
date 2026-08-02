@@ -56,11 +56,12 @@ describe("EncounterAddMonsterModal — Bestiary + Custom tabs (§A.2)", () => {
     expect(screen.getByPlaceholderText(/search monsters/i)).toBeTruthy();
   });
 
-  it("the Custom tab mounts the manual AddMonsterForm", () => {
+  it("the Custom tab mounts the custom-monster library (opens on the create form when empty)", () => {
     render(
       <EncounterAddMonsterModal onAdd={vi.fn()} budget={BLANK_BUDGET} onClose={vi.fn()} />
     );
     fireEvent.click(screen.getByRole("button", { name: "Custom monster" }));
+    // An empty library opens directly on the create form (a blank list is a dead end).
     expect(screen.getByLabelText("Monster name")).toBeTruthy();
   });
 
@@ -296,8 +297,10 @@ describe("makeEncounterMonsterSpec — the derived add-mode spec (§A.6)", () =>
   const t = i18n.getFixedT("en");
   const ctx: PickerCtx = { t, locale: "en", character: null, mode: "add" };
 
+  const noArt = () => undefined;
+
   it("supportsQuantity + a 20 cap + the encounter add label", () => {
-    const spec = makeEncounterMonsterSpec(vi.fn(), t);
+    const spec = makeEncounterMonsterSpec(vi.fn(), t, noArt);
     const goblin = getMonster("goblin-warrior");
     if (!goblin) throw new Error("goblin-warrior missing");
     expect(spec.supportsQuantity).toBe(true);
@@ -307,7 +310,7 @@ describe("makeEncounterMonsterSpec — the derived add-mode spec (§A.6)", () =>
 
   it("onAdd maps the statblock + chosen quantity through toMonsterInput (count 3)", () => {
     const onAdd = vi.fn();
-    const spec = makeEncounterMonsterSpec(onAdd, t);
+    const spec = makeEncounterMonsterSpec(onAdd, t, noArt);
     const goblin = getMonster("goblin-warrior");
     if (!goblin) throw new Error("goblin-warrior missing");
     spec.onAdd?.(goblin, ctx, 3);
@@ -318,16 +321,38 @@ describe("makeEncounterMonsterSpec — the derived add-mode spec (§A.6)", () =>
         initiative: null,
         ac: goblin.ac,
         maxHp: goblin.hp.average,
+        // Part B — the creature type is always seeded (powers the card glyph).
+        creatureType: goblin.type,
       })
     );
   });
 
   it("onAdd defaults quantity to 1 when the picker passes undefined", () => {
     const onAdd = vi.fn();
-    const spec = makeEncounterMonsterSpec(onAdd, t);
+    const spec = makeEncounterMonsterSpec(onAdd, t, noArt);
     const bear = getMonster("brown-bear");
     if (!bear) throw new Error("brown-bear missing");
     spec.onAdd?.(bear, ctx, undefined);
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ count: 1 }));
+  });
+
+  it("copies the DM's SRD portrait override onto the added monster (Part B)", () => {
+    const onAdd = vi.fn();
+    const art = {
+      portraitUrl: "https://x/monster-goblin-warrior.jpeg",
+      portraitCrop: { x: 1, y: 2, width: 50, height: 60 },
+    };
+    const spec = makeEncounterMonsterSpec(onAdd, t, (id) =>
+      id === "goblin-warrior" ? art : undefined
+    );
+    const goblin = getMonster("goblin-warrior");
+    if (!goblin) throw new Error("goblin-warrior missing");
+    spec.onAdd?.(goblin, ctx, 1);
+    expect(onAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        portraitUrl: art.portraitUrl,
+        portraitCrop: art.portraitCrop,
+      })
+    );
   });
 });

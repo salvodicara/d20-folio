@@ -100,6 +100,7 @@ export function LegalPage() {
             {t("legal.attribution.statement51")}
           </blockquote>
           <p className="colophon-note">{t("legal.attribution.note")}</p>
+          <p className="colophon-note">{t("legal.attribution.glyphs")}</p>
         </section>
 
         {/* ── Licenses — the two governing licenses as twin deed columns ── */}

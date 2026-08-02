@@ -20,16 +20,11 @@ import {
   EncounterBudgetReadout,
   EncounterRoundBar,
 } from "@/features/campaigns/party-encounter";
-import {
-  addMonster,
-  startEncounter,
-  type MonsterInput,
-} from "@/features/campaigns/encounter";
-import { xpForCr } from "@/lib/monster";
+import { addMonster, startEncounter } from "@/features/campaigns/encounter";
 import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";
 import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
-import type { EncounterMonster } from "@/types/campaign";
+import type { CustomMonster, EncounterMonster } from "@/types/campaign";
 
 /** A budget view fixture — override the fields a given test cares about. */
 function budgetView(over: Partial<EncounterBudgetView> = {}): EncounterBudgetView {
@@ -66,14 +61,15 @@ function goblinWithSrd(over: Partial<Parameters<typeof addMonster>[1]> = {}) {
 
 // ─── B25 — AddMonsterForm.add() resets EVERY field ──────────────────────────────
 
-describe("AddMonsterForm — add() resets every field, not just name/count/notes (B25)", () => {
-  it("clears the whole form (incl. ac/maxHp/initiative) back to its defaults on a successful add", () => {
-    const onAdd = vi.fn();
-    render(<AddMonsterForm onAdd={onAdd} />);
+describe("AddMonsterForm — submit() resets every field, not just name/count/notes (B25)", () => {
+  it("builds the template + count and clears the whole form back to defaults on create", () => {
+    const onSubmit = vi.fn();
+    render(<AddMonsterForm submitLabel="Add monster" onSubmit={onSubmit} />);
 
     fireEvent.change(screen.getByLabelText("Monster name"), {
       target: { value: "Ogre" },
     });
+    fireEvent.change(screen.getByLabelText("Type"), { target: { value: "giant" } });
     fireEvent.change(screen.getByRole("spinbutton", { name: "Initiative" }), {
       target: { value: "18" },
     });
@@ -92,17 +88,16 @@ describe("AddMonsterForm — add() resets every field, not just name/count/notes
 
     fireEvent.click(screen.getByRole("button", { name: "Add monster" }));
 
-    expect(onAdd).toHaveBeenLastCalledWith({
-      name: "Ogre",
-      ac: 11,
-      maxHp: 59,
-      count: 3,
-      initiative: 18,
-      notes: "Tough boss",
-    });
+    // The template (identity, no per-encounter play state) + the per-add count + init.
+    expect(onSubmit).toHaveBeenLastCalledWith(
+      { name: "Ogre", ac: 11, maxHp: 59, creatureType: "giant", notes: "Tough boss" },
+      3,
+      18
+    );
 
-    // Every field is back to its empty/default state (B25) — not just name/count/notes.
+    // Every field is back to its empty/default state (B25).
     expect(screen.getByLabelText("Monster name")).toHaveValue("");
+    expect(screen.getByLabelText("Type")).toHaveValue("");
     expect(screen.getByRole("spinbutton", { name: "Initiative" })).toHaveAttribute(
       "aria-valuenow",
       "10"
@@ -126,14 +121,45 @@ describe("AddMonsterForm — add() resets every field, not just name/count/notes
       target: { value: "Goblin" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Add monster" }));
-    expect(onAdd).toHaveBeenLastCalledWith({
-      name: "Goblin",
-      ac: 12,
-      maxHp: 10,
-      count: 1,
-      initiative: 10,
-      notes: "",
-    });
+    expect(onSubmit).toHaveBeenLastCalledWith(
+      { name: "Goblin", ac: 12, maxHp: 10 },
+      1,
+      10
+    );
+  });
+
+  it("EDIT mode hides the count stepper and preserves the entry's portrait art", () => {
+    const onSubmit = vi.fn();
+    render(
+      <AddMonsterForm
+        submitLabel="Save"
+        showCount={false}
+        initial={{
+          name: "Ashmaw",
+          ac: 14,
+          maxHp: 33,
+          creatureType: "monstrosity",
+          portraitUrl: "https://x/monster-ashmaw.jpeg",
+          portraitCrop: { x: 1, y: 2, width: 50, height: 60 },
+        }}
+        onSubmit={onSubmit}
+      />
+    );
+    expect(screen.queryByRole("spinbutton", { name: "How many" })).toBeNull();
+    expect(screen.queryByRole("spinbutton", { name: "Initiative" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(onSubmit).toHaveBeenLastCalledWith(
+      {
+        name: "Ashmaw",
+        ac: 14,
+        maxHp: 33,
+        creatureType: "monstrosity",
+        portraitUrl: "https://x/monster-ashmaw.jpeg",
+        portraitCrop: { x: 1, y: 2, width: 50, height: 60 },
+      },
+      1,
+      null
+    );
   });
 });
 
@@ -286,18 +312,18 @@ describe("EncounterRoundBar — the readout is DM-only (§D.3 player row)", () =
   });
 });
 
-describe("AddMonsterForm — the optional CR select emits xp (§D.4)", () => {
-  it("choosing a CR emits xpForCr(cr) on the committed input; blank emits none", () => {
-    const onAdd = vi.fn<(input: MonsterInput) => void>();
-    render(<AddMonsterForm onAdd={onAdd} />);
+describe("AddMonsterForm — the optional CR select stores the CR on the template (§D.4)", () => {
+  it("choosing a CR stores `cr` on the template; blank stores none", () => {
+    const onSubmit = vi.fn<(t: CustomMonster, c: number, i: number | null) => void>();
+    render(<AddMonsterForm submitLabel="Add monster" onSubmit={onSubmit} />);
     fireEvent.change(screen.getByLabelText("Monster name"), {
       target: { value: "Goblin" },
     });
-    // Blank CR → no xp.
+    // Blank CR → no `cr` key (the encounter derives XP later via customMonsterToInput).
     fireEvent.click(screen.getByRole("button", { name: "Add monster" }));
-    expect(onAdd.mock.calls[0]?.[0]?.xp).toBeUndefined();
+    expect(onSubmit.mock.calls[0]?.[0]?.cr).toBeUndefined();
 
-    // Choose CR 1/4 (value "0.25") → xp = xpForCr(0.25) = 50.
+    // Choose CR 1/4 (value "0.25") → the template carries cr:"0.25".
     fireEvent.change(screen.getByLabelText("Monster name"), {
       target: { value: "Goblin" },
     });
@@ -305,14 +331,14 @@ describe("AddMonsterForm — the optional CR select emits xp (§D.4)", () => {
       target: { value: "0.25" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Add monster" }));
-    expect(onAdd.mock.calls[1]?.[0]?.xp).toBe(xpForCr(0.25));
+    expect(onSubmit.mock.calls[1]?.[0]?.cr).toBe("0.25");
 
     // The select resets to blank after the add (next monster starts un-costed).
     expect(screen.getByLabelText("Challenge Rating (CR)")).toHaveValue("");
   });
 
   it("the CR label carries a teaching tooltip explaining Challenge Rating (EN)", () => {
-    render(<AddMonsterForm onAdd={vi.fn()} />);
+    render(<AddMonsterForm submitLabel="Add monster" onSubmit={vi.fn()} />);
     fireEvent.click(
       screen.getByRole("button", { name: "Learn about Challenge Rating (CR)" })
     );
@@ -322,7 +348,7 @@ describe("AddMonsterForm — the optional CR select emits xp (§D.4)", () => {
   });
 
   it("the AC / Init / Max HP field labels each carry a teaching tooltip", () => {
-    render(<AddMonsterForm onAdd={vi.fn()} />);
+    render(<AddMonsterForm submitLabel="Add monster" onSubmit={vi.fn()} />);
     // AC teaches Armor Class; the stepper keeps its own accessible name.
     expect(screen.getByRole("button", { name: "Learn about Armor Class" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Learn about Initiative" })).toBeTruthy();
