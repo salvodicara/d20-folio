@@ -450,6 +450,35 @@ DM writes STORY. Deterministic (no AI prose beyond templated facts, no dice), ta
   PLAYER declares it (Phase 1 below); other drama stays in the DM's narrative note.
 - Full detail: `docs/ARCHITECTURE.md → "The Combat Chronicle event seam"`.
 
+## Built (held for owner sign-off) — Auto-narrated combat, Phase 3: saves, AoE + side-effects (2026-08-02)
+
+**The Chronicle now reconciles the effects a hit/miss can't express** — saving throws, area bursts,
+and applied conditions. Phase 2 fused a declared multi-INSTANCE attack; Phase 3 closes the AoE gap the
+owner flagged ("don't overlook AoE") and adds rider/condition correlation. Still on `feat/combat-chronicle`,
+**HELD for owner approval — not merged, not deployed.** Deterministic, never fabricated, no new Firestore
+cost, bilingual EN + IT. Both gates green (`just ci` + `just ci-srd-only`); pack twin updated in the same
+motion (rule 28).
+
+- **AoE data model (the Phase-2 gap)** — a new `area` fact (`SrdSpellData.area` → `ActionSummary.area`) on
+  the burst save-for-half spells (Burning Hands, Thunderwave, Shatter, Fireball, Lightning Bolt, Ice Storm,
+  Cone of Cold + the pack's own burst save spells, tagged in the same motion) finally distinguishes an AoE
+  save-spell from a single-target save cantrip
+  (both are just save + damage). `attack-scope.isSaveDeclaration` reads it to open an **unbounded** multi-target
+  SAVE declaration (one "Resolve", no HIT/MISS).
+- **Saves reconciliation** — `reconcileChronicle` binds ALL a declared SAVE spell's targets' drops this round
+  (no instance cap) into ONE `attack-save` line: each damaged target carries the DM's real number (**save-for-half
+  → the DM's reduced number is the truth**; full/no damage → **positively logged as resisted**), emitted only once
+  the spell has resolved (≥1 drop), so an un-booked target is never fabricated as resisted.
+- **Riders + conditions** — a declaration carries the action's applied-condition RIDER ids
+  (`actionRiderConditions` — a Topple mastery's Prone today, extensible); a DM-booked `condition-gain` is
+  **credited to the caster** only on an exact rider match (target + round + condition id), never guessed from
+  co-occurrence; >1 caster ⇒ uncertain. An un-correlated condition stays a plain logged line (condition
+  logging itself was wired in Phase 0).
+- Rule 13 — `chronicle-reconcile.test.ts` pins every branch (save damaged/resisted/unresolved/uncertain,
+  condition credit/no-credit/round-break/multi-caster) with mutation-proof assertions; `attack-scope`,
+  `combat-chronicle-view`, `attack-declaration`, `smart-tracker` + `spell-data-integrity` extended.
+- Full detail: `docs/ARCHITECTURE.md → "The Combat Chronicle event seam"`; the `area` fact in `docs/MECHANICS.md`.
+
 ## Shipped — Auto-narrated combat, Phase 2: multi-target capture + fusion (2026-08-01)
 
 **One declared AoE, one chronicle line.** Phase 1 bound a single swing to a single HP drop; Phase 2

@@ -184,7 +184,14 @@ damage instances, each rolling `damageDice` on its own (Magic Missile's 3 darts 
 per slot above 1st; Scorching Ray's 3 rays at 2d6 each, +1 ray per slot above 2nd). The shared pure
 `spellInstanceCount(spell, castLevel)` resolves the count at the cast level (base at the spell's own
 level); both surfaces render `N × {dice}` via `spells.multiInstance`, with the per-instance `damageDice`
-kept intact so a flat damage rider folds per instance before the UI multiplies. **Upcast dice scaling**
+kept intact so a flat damage rider folds per instance before the UI multiplies. **Area save-for-half**
+(`area`, S13) — a boolean shape fact on a burst save-spell (Burning Hands, Thunderwave, Shatter, Fireball,
+Lightning Bolt, Ice Storm, Cone of Cold) that hits every creature in it, resolved by a save. It carries no
+combat-math (the save + damage already do); its sole job is to finally distinguish an AoE save-spell from a
+single-target save cantrip (both are just `saveAbility` + `damageDice`) so the auto-narrated combat capture
+opens an unbounded multi-target SAVE declaration + `attack-save` reconciliation (`attack-scope.isSaveDeclaration`;
+docs/ARCHITECTURE.md → "The Combat Chronicle event seam"). Never set without a save; never on a persistent
+concentration zone (those use `recurrence`). **Upcast dice scaling**
 (`damageDicePerUpcast`, S12c) — a leveled DAMAGE spell's per-slot-level dice increment (Fireball `"1d6"`
 above 3rd, Inflict Wounds `"1d10"` above 1st, Vitriolic Sphere `"2d4"` above 4th). The shared pure
 `scaleUpcastDice(spell, castLevel)` resolves the slot total (base count + increment × steps above base,

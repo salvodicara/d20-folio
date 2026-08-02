@@ -492,8 +492,10 @@ pre-events persisted row as a `legacy` event; the engine never emits `legacy`). 
 The DM's in-hub encounter tracker has its OWN events-as-data feed — the table-wide sibling of the solo
 combat log, the **deterministic record of what LANDED**. As the DM books HP / conditions, the pure
 recorders append a structured **`CombatChronicleEvent`** (`src/types/combat-chronicle.ts` — a
-discriminated union: `hp-damage` / `hp-heal` / `down` / `condition-gain` / `condition-loss` / the
-reconciliation-only `attack-miss` + `attack-multi` (the fused multi-target line); ids + numbers only —
+discriminated union: `hp-damage` / `hp-heal` / `down` / `condition-gain` (with an optional
+reconciliation-set `attackerId` for a rider credit) / `condition-loss` / the reconciliation-only
+`attack-miss` + `attack-multi` (the fused multi-target line) + `attack-save` (the fused AoE
+save-for-half line); ids + numbers only —
 combatant ids `pc-<uid>` / `monster-<n>`,
 condition ids, amounts; NO localized string, golden rule 7) to an **ephemeral `EncounterState.events`**
 array. Because the events live on the encounter object, they ride the SAME debounced encounter writer the
@@ -517,17 +519,21 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   is in a live encounter (`useSheetCombat() != null`), committing an attack opens a compact,
   dismissible **target picker + HIT/MISS** (`features/character/center/AttackDeclaration.tsx`, gated in
   `PlayTab`; SOLO renders nothing). Single- vs multi-select is decided PURELY from the committed action's
-  own modeled shape (`attack-scope.ts` → `attackTargetCap`, reading `summary.instances`): a weapon swing or
-  single-instance action stays single-select (Phase 1); a genuinely multi-target action — Magic Missile's
-  darts, Scorching Ray's rays (`instances > 1`) — becomes a **multi-select capped at that count** (Phase 2).
-  There is no area geometry modeled, so an AoE save-spell (no `instances`) is by shape indistinguishable
-  from a single-target save cantrip and stays single. The tap writes the target SET + outcome (+ the
-  multi-instance drop bound) to a small capped **`recentActions` ring** on the player's own `combat/state`
+  own modeled shape (`attack-scope.ts` → `attackTargetCap` / `isSaveDeclaration` / `actionRiderConditions`):
+  a weapon swing or single-instance action stays single-select (Phase 1); a genuinely multi-target action —
+  Magic Missile's darts, Scorching Ray's rays (`instances > 1`) — becomes a **multi-select capped at that
+  count** (Phase 2); and an **AoE save-for-half burst** (Fireball class — `summary.area`, Phase 3) becomes an
+  **unbounded multi-select SAVE** whose commit is a single "Resolve" (no HIT/MISS — the DM's per-target HP
+  delta decides each outcome). The `area` fact (`SrdSpellData.area`, set on Burning Hands, Thunderwave,
+  Shatter, Fireball, Lightning Bolt, Ice Storm, Cone of Cold + the pack's burst save spells) is what finally
+  distinguishes an AoE save-spell from a single-target save cantrip (both are just save + damage). The tap
+  writes the target SET + outcome (+ the multi-instance drop bound, or a `save` flag, + any applied-condition
+  `riders`) to a small capped **`recentActions` ring** on the player's own `combat/state`
   subdoc (`characterStore.declareAttack` → `pushRecentAttack` → the EXISTING `writeCombatState`) — **no new
   document, no new subscription, no per-sub-action write**; the DM/hub already streams every member's subdoc
   via `usePartyCombatStates`. The PURE, derived-every-render correlation layer
   `features/campaigns/chronicle-reconcile.ts` (`flattenDeclarations` + `reconcileChronicle`) fuses those
-  declarations with the DM's observed HP deltas keyed on (target, round):
+  declarations with the DM's observed HP deltas + conditions, keyed on (target, round):
   - **single-target** — a declared HIT + a matching pending `hp-damage` ⇒ an **auto-attributed** hit line
     (amount = the DM's real delta); a declared MISS ⇒ a **certain** synthesized `attack-miss` line; an
     ambiguous match (>1 declarer) ⇒ **uncertain**-marked; a declared hit with no delta ⇒ no line;
@@ -537,13 +543,24 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
     declared target with no drop is **omitted** (never an invented number); drops that can't cleanly match
     the set (over the bound, or a competing declaration on a shared target) ⇒ **uncertain**; a multi MISS ⇒
     one line naming the whole set;
-  - and, both classes: a delta with no declaration ⇒ stays pending for the one-tap fallback.
+  - **area save (Phase 3)** — a declared SAVE spell binds **all** its declared targets' drops this round
+    (no instance cap — an area hits everyone at once) into ONE **`attack-save`** line: each damaged target
+    carries the DM's real number (half on a save, full on a fail — always the truth, never invented), and a
+    declared target the DM left un-dropped is **positively logged as resisted** ("A blasts G (22), the Chief
+    (22) · the Ogre: no damage"). Emitted only once ≥1 target took a drop (so an un-booked target is never
+    fabricated as resisted); a competing declaration on a shared target ⇒ **uncertain**;
+  - **condition rider (Phase 3)** — a DM-booked `condition-gain` is **credited to a caster** only when the
+    gained condition id is that action's declared RIDER (a Topple mastery's Prone) on the SAME (target,
+    round) — the confident provenance, never guessed from mere co-occurrence; >1 caster with the same rider ⇒
+    uncertain. An un-correlated condition stays a plain logged line;
+  - and, every class: a delta with no declaration ⇒ stays pending for the one-tap fallback.
 
   It is **deterministic and never fabricated** (a hit line needs a real HP delta, a miss line an explicit
-  tap, a per-target amount a real drop) and **writes nothing back** (no Firestore cost). The DM still
-  overrides any pending or uncertain single-target line via the one-tap picker (which writes the stored
-  `attackerId`) and edits/removes any line — including a fused multi line — at the end entry. Locked by
-  `chronicle-reconcile.test.ts` + `attack-declaration.test.tsx` + `attack-scope.test.ts` +
+  tap, a per-target amount a real drop, a resisted target the spell having resolved, a condition credit an
+  exact rider match) and **writes nothing back** (no Firestore cost). The DM still overrides any pending or
+  uncertain single-target line via the one-tap picker (which writes the stored `attackerId`) and edits/removes
+  any line — including a fused multi / save line — at the end entry. Locked by `chronicle-reconcile.test.ts`
+  (single/multi/save/condition branches) + `attack-declaration.test.tsx` + `attack-scope.test.ts` +
   `combat-chronicle-view.test.ts`.
 
 - **Localize + close** — ONE presenter `src/lib/views/combat-chronicle-view.ts` resolves each event to its
