@@ -307,6 +307,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDicePerUpcast: "1d10",
     secondaryDamage: { dice: "4d6", damageType: "cold" },
     saveAbility: "DEX",
+    area: true,
     source: "SRD",
   },
   {

@@ -74,6 +74,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     damageDice: "8d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "CON",
+    area: true,
     source: "SRD",
   },
   {

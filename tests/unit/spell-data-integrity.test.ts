@@ -78,6 +78,33 @@ describe("spell-data integrity", () => {
     }
   });
 
+  it("S13 — the Fireball-class burst spells carry `area` (the AoE save-for-half signal)", () => {
+    const areaBursts = [
+      "burning-hands",
+      "thunderwave",
+      "shatter",
+      "fireball",
+      "lightning-bolt",
+      "ice-storm",
+      "cone-of-cold",
+    ];
+    for (const id of areaBursts) {
+      const s = getSpellById(id);
+      expect(s?.area, id).toBe(true);
+      // An area save-for-half always carries a save + damage (never area alone).
+      expect(s?.saveAbility, id).toBeTruthy();
+      expect(s?.damageDice, id).toBeTruthy();
+    }
+    // A single-target save cantrip (Sacred Flame) is NOT area — the whole point of the flag.
+    expect(getSpellById("sacred-flame")?.area).toBeUndefined();
+  });
+
+  it("S13 — `area` is never set without a save (the flag means save-for-half over an area)", () => {
+    for (const s of spells) {
+      if (s.area) expect(s.saveAbility, s.id).toBeTruthy();
+    }
+  });
+
   it("models the 2024 attack-roll reworks (no stale save left behind)", () => {
     // (The pack-only melee rework — Grasping Vine — is pinned in
     // `content-pack/tests/unit/spell-data-integrity.pack.test.ts`.)

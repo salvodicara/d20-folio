@@ -839,6 +839,21 @@ export interface SrdSpellData {
    *  (Magic Missile / Scorching Ray: 1). Ignored unless `instances` is set. */
   instancesPerUpcast?: number;
   /**
+   * S13 — the spell strikes an AREA (every creature in a burst / cone / line),
+   * resolved by a saving throw for half — the Fireball class (Burning Hands,
+   * Thunderwave, Shatter, Fireball, Lightning Bolt, Ice Storm, Cone of Cold). The
+   * shape signal the auto-narrated combat capture (Phase 3) needs to distinguish an
+   * AoE save-spell from a single-target save cantrip (Sacred Flame): both are
+   * {@link saveAbility} + {@link damageDice}, but only the area spell offers a
+   * MULTI-target declaration + save reconciliation (the `attack-scope`
+   * `isSaveDeclaration` decision). Set ONLY
+   * on an INSTANTANEOUS burst that hits several creatures at once; a persistent
+   * concentration zone (Moonbeam, Spirit Guardians — modelled via {@link recurrence})
+   * is NOT `area` (its per-turn cadence, not a one-shot declaration). Omit for a
+   * single-target spell.
+   */
+  area?: boolean;
+  /**
    * G24 — the self-side cadence on which this spell's damage RE-APPLIES (a moving
    * area's per-turn save, a bonus-action-moved hazard, a re-fired bolt). A stable
    * {@link SpellRecurrence} token the presenter renders as a cadence note on the

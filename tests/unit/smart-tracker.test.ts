@@ -1689,6 +1689,20 @@ describe("resolveActions — S12b multi-instance spell damage (Magic Missile / S
     expect(spellInstanceCount(mm, 2)).toBe(4);
   });
 
+  it("S13 — Fireball carries summary.area=true (the AoE save-for-half signal); a non-area spell does not", () => {
+    const fb = localizeActions(makeWizard("fireball"), "en").find(
+      (a) => a.spellId === "fireball"
+    );
+    if (!fb) throw new Error("fireball action not found");
+    expect(fb.summary.area).toBe(true);
+    expect(fb.summary.saveAbility).toBe("DEX");
+    // Magic Missile (a multi-instance attack, not an area save) carries NO area.
+    const mm = localizeActions(makeWizard("magic-missile"), "en").find(
+      (a) => a.spellId === "magic-missile"
+    );
+    expect(mm?.summary.area).toBeUndefined();
+  });
+
   it("Scorching Ray carries instances=3 (2d6 each); upcast +1 ray per slot above 2nd (4 at L3)", () => {
     const acts = localizeActions(makeWizard("scorching-ray"), "en");
     const sr = acts.find((a) => a.spellId === "scorching-ray");

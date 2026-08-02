@@ -231,6 +231,16 @@ export interface ActionSummary {
    */
   instances?: number;
   /**
+   * S13 — the spell hits an AREA of creatures resolved by a save-for-half (the
+   * Fireball class), carried through from {@link import("@/data/types").SrdSpellData.area}.
+   * The auto-narrated combat capture (Phase 3) reads it to open a MULTI-target
+   * declaration whose per-target outcome is a SAVE (damaged for the DM's real
+   * number, or resisted for no damage) rather than an attack-roll hit/miss (the
+   * `attack-scope` `isSaveDeclaration` decision).
+   * Omitted for a single-target action.
+   */
+  area?: boolean;
+  /**
    * G24 — the self-side cadence on which this spell's damage RE-APPLIES (a moving
    * area's per-turn save, a bonus-action-moved hazard, a re-fired bolt). The
    * stable {@link SpellRecurrence} token (ids only — golden rule 7); the
@@ -4885,6 +4895,11 @@ function resolveSpellActions(
       // folds onto the bare die first, then the UI multiplies.
       const instances = spellInstanceCount(spell);
       if (instances && instances > 1) summary.instances = instances;
+
+      // S13 — an AREA save-for-half spell (Fireball class) carries the `area` shape
+      // signal through so the in-encounter capture opens a MULTI-target SAVE
+      // declaration (damaged/resisted per target) rather than a single hit/miss.
+      if (spell.area) summary.area = true;
 
       // Dual-damage-instance spells (Ice Storm 2d10 Bldg + 4d6 Cold, Ice Knife
       // 1d10 Prc + 2d6 Cold, Meteor Swarm 20d6 Fire + 20d6 Bldg) carry a SECOND
