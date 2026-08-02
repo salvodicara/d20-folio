@@ -275,7 +275,23 @@ const EAGER_CEILING_KB = 779; // baseline 727.1 → ~+7% (near budget — see AR
 // EAGER (776.50 KB gz) and ENTRY (61.8 KB gz) are UNCHANGED and stay under their ceilings —
 // the feature added only lazy chunks. Measured 9055.07 KiB (307 entries) on the COMPOSED
 // lane; +~11 KiB never-exact-fit headroom → 9066.
-const PRECACHE_CEILING_KIB = 9066;
+// +449 KiB 2026-08-02 (the full pack bestiary + 5 choice-damage monsters): 9066 → 9515.
+// The 9066 line was the wave-1 PILOT baseline (10 pack statblocks, 307 entries). Since then
+// the pack bestiary was authored to ~160 statblocks across the a-b…t-z tranches — but that
+// authoring lands in the PACK repo (`d20-folio-content`), which has NO pre-push budget gate,
+// so the composed lazy `monsters-*` catalogue shards (one precache entry per tranche × locale,
+// ~16 new entries) and their bilingual prose grew UNTRACKED here; this is the first PUBLIC
+// composed push to surface the accumulated drift. A/B on ONE app SHA with only the pack
+// varying (origin/main pack vs this branch's 5 new monsters, `content-pack` symlink target):
+//   precache  9481.90 KiB / 323 entries (pack origin/main)  →  9503.94 KiB / 323 entries
+//             (+22.04 KiB, +0 entries — the 5 choice-damage monsters' EN+IT prose grew the
+//              EXISTING e-g/t-z shards; no new image, font, or entry)
+// The bulk (9055.07 → 9481.90, +426.83 KiB / +16 entries) is the pre-existing pack-tranche
+// growth described above — all LAZY (fetched only when the codex Monsters wing opens),
+// precached for offline-first; the EAGER closure is unchanged (the corpus rides the
+// `@pack/monsters` lazy sub-entry, never the eager barrel — "The content-pack seam"). Ceiling =
+// the measured 9503.94 +~11 KiB never-exact-fit headroom → 9515.
+const PRECACHE_CEILING_KIB = 9515;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
