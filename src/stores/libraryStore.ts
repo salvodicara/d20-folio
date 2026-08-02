@@ -35,30 +35,56 @@ import {
   upsertEntry,
   type LibraryDraft,
   type LibraryEntry,
-  type LibraryKind,
+  type SheetLibraryKind,
 } from "@/lib/library";
-import type { CharacterData } from "@/types/character";
+import type { CharacterData, PortraitCrop } from "@/types/character";
+import type { MonsterArt } from "@/types/campaign";
 
 /** What a save attempt did — the caller maps it to a toast. */
 export type SaveToLibraryOutcome = "saved" | "updated" | "full" | "unavailable";
 
-/** The injected write seam: persist the WHOLE list (fire-and-forget, offline-safe). */
-export type LibraryPersistence = (entries: readonly LibraryEntry[]) => void;
+/** The per-srdId SRD monster portrait OVERRIDE map (Part B) — stored in the SAME
+ *  library doc as `entries`, so one listener + one writer serve both. */
+export type MonsterArtMap = Readonly<Record<string, MonsterArt>>;
+
+/** The injected write seam: persist the WHOLE library doc (`entries` + `monsterArt`)
+ *  — fire-and-forget, offline-safe (the debounced `library-io` writer). */
+export type LibraryPersistence = (
+  entries: readonly LibraryEntry[],
+  monsterArt: MonsterArtMap
+) => void;
 
 interface LibraryState {
   /** The live library, newest-save-last (upserts keep their original position). */
   entries: LibraryEntry[];
+  /** SRD monster portrait overrides, keyed by `srdId` (Part B). */
+  monsterArt: MonsterArtMap;
   /** True once the library doc (or its confirmed absence) has been read. */
   loaded: boolean;
   /** Injected by `LibraryMount`; `null` = memory-only (signed out / DEV_BYPASS). */
   persist: LibraryPersistence | null;
 
   /** Hydrate from the live subscription (`LibraryMount` only). */
-  hydrate: (entries: LibraryEntry[], persist: LibraryPersistence | null) => void;
+  hydrate: (
+    entries: LibraryEntry[],
+    monsterArt: MonsterArtMap,
+    persist: LibraryPersistence | null
+  ) => void;
   /** Drop the library on sign-out / uid change so no entry leaks across accounts. */
   reset: () => void;
   /** Promote a homebrew item to a reusable entry (upsert by kind + name). */
   saveToLibrary: (draft: LibraryDraft) => SaveToLibraryOutcome;
+  /**
+   * Set (or clear, with `null`) the uploaded portrait on a KEPT library entry, by id —
+   * a custom monster's face (Part B). No-op for an unknown id. Same debounced persist
+   * as every other library write; the entry keeps its id + position.
+   */
+  setEntryPortrait: (
+    id: string,
+    portrait: { portraitUrl: string; portraitCrop?: PortraitCrop } | null
+  ) => void;
+  /** Set (or clear, with `null`) the SRD monster portrait override for `srdId`. */
+  setMonsterArt: (srdId: string, art: MonsterArt | null) => void;
   /**
    * Mirror the character's item at `(kind, idx)` into the library — the shape every
    * sheet-side EDIT seam uses. A no-op for an SRD row, so a caller never branches.
@@ -71,7 +97,7 @@ interface LibraryState {
    */
   syncFromCharacter: (
     data: CharacterData,
-    kind: LibraryKind,
+    kind: SheetLibraryKind,
     idx: number,
     previousName?: string
   ) => void;
@@ -86,70 +112,114 @@ interface LibraryState {
   removeFromLibrary: (id: string) => void;
 }
 
-export const useLibraryStore = create<LibraryState>()((set, get) => ({
-  entries: [],
-  loaded: false,
-  persist: null,
+export const useLibraryStore = create<LibraryState>()((set, get) => {
+  /** Persist the WHOLE doc after a mutation — reads the just-`set` state so `entries`
+   *  and `monsterArt` always flush together (one full-doc overwrite). */
+  const flush = (): void => {
+    const { persist, entries, monsterArt } = get();
+    persist?.(entries, monsterArt);
+  };
 
-  hydrate: (entries, persist) => set({ entries, persist, loaded: true }),
+  return {
+    entries: [],
+    monsterArt: {},
+    loaded: false,
+    persist: null,
 
-  reset: () => set({ entries: [], persist: null, loaded: false }),
+    hydrate: (entries, monsterArt, persist) =>
+      set({ entries, monsterArt, persist, loaded: true }),
 
-  saveToLibrary: (draft) => {
-    const { entries, loaded, persist } = get();
-    if (!loaded) return "unavailable";
-    const { entries: next, replaced } = upsertEntry(
-      entries,
-      toLibraryEntry(draft, Date.now())
-    );
-    if (!replaced && next.length > FREE_TIER_LIMITS.libraryEntries) return "full";
-    set({ entries: next });
-    persist?.(next);
-    return replaced ? "updated" : "saved";
-  },
+    reset: () => set({ entries: [], monsterArt: {}, persist: null, loaded: false }),
 
-  syncFromCharacter: (data, kind, idx, previousName) => {
-    const draft = customDraftAt(data, kind, idx);
-    if (!draft) return;
-    // The outcome is DELIBERATELY ignored here: this is a per-keystroke edit seam, so
-    // a cap/limbo notice would fire on every character typed. The create seams (which
-    // fire once, on a deliberate act) are where "full" is spoken —
-    // `CustomCreationForms`.
-    const outcome = get().saveToLibrary(draft);
-    // Only MOVE the entry once the new name actually landed; if the upsert was refused
-    // (cap reached / library not hydrated) dropping the old one would lose it outright.
-    if (outcome !== "saved" && outcome !== "updated") return;
-    if (previousName === undefined) return;
-    const stale = get().entries.find((e) => isEntryNamed(e, kind, previousName));
-    // The lookup IS the rename check: when the name did not change, the entry found
-    // under `previousName` is the one just upserted, so there is nothing to move.
-    if (!stale || isEntryNamed(stale, kind, libraryEntryName(draft))) return;
-    get().removeFromLibrary(stale.id);
-  },
-
-  updateEntry: (id, draft) => {
-    const { entries, loaded, persist } = get();
-    if (!loaded || !entries.some((e) => e.id === id)) return;
-    const rewritten = toLibraryEntry(draft, Date.now());
-    const next = entries
-      // The edited entry keeps its id and its place in the list.
-      .map((e) => (e.id === id ? { ...rewritten, id } : e))
-      // A rename ONTO another kept entry's name would leave two rows sharing one
-      // (kind, name) identity — the second unreachable by every name-keyed upsert.
-      // The edit absorbs it.
-      .filter(
-        (e) => e.id === id || !isEntryNamed(e, draft.kind, libraryEntryName(draft))
+    saveToLibrary: (draft) => {
+      const { entries, loaded } = get();
+      if (!loaded) return "unavailable";
+      const { entries: next, replaced } = upsertEntry(
+        entries,
+        toLibraryEntry(draft, Date.now())
       );
-    set({ entries: next });
-    persist?.(next);
-  },
+      if (!replaced && next.length > FREE_TIER_LIMITS.libraryEntries) return "full";
+      set({ entries: next });
+      flush();
+      return replaced ? "updated" : "saved";
+    },
 
-  removeFromLibrary: (id) => {
-    const { entries, loaded, persist } = get();
-    if (!loaded) return;
-    const next = entries.filter((e) => e.id !== id);
-    if (next.length === entries.length) return;
-    set({ entries: next });
-    persist?.(next);
-  },
-}));
+    syncFromCharacter: (data, kind, idx, previousName) => {
+      const draft = customDraftAt(data, kind, idx);
+      if (!draft) return;
+      // The outcome is DELIBERATELY ignored here: this is a per-keystroke edit seam, so
+      // a cap/limbo notice would fire on every character typed. The create seams (which
+      // fire once, on a deliberate act) are where "full" is spoken —
+      // `CustomCreationForms`.
+      const outcome = get().saveToLibrary(draft);
+      // Only MOVE the entry once the new name actually landed; if the upsert was refused
+      // (cap reached / library not hydrated) dropping the old one would lose it outright.
+      if (outcome !== "saved" && outcome !== "updated") return;
+      if (previousName === undefined) return;
+      const stale = get().entries.find((e) => isEntryNamed(e, kind, previousName));
+      // The lookup IS the rename check: when the name did not change, the entry found
+      // under `previousName` is the one just upserted, so there is nothing to move.
+      if (!stale || isEntryNamed(stale, kind, libraryEntryName(draft))) return;
+      get().removeFromLibrary(stale.id);
+    },
+
+    updateEntry: (id, draft) => {
+      const { entries, loaded } = get();
+      if (!loaded || !entries.some((e) => e.id === id)) return;
+      const rewritten = toLibraryEntry(draft, Date.now());
+      const next = entries
+        // The edited entry keeps its id and its place in the list.
+        .map((e) => (e.id === id ? { ...rewritten, id } : e))
+        // A rename ONTO another kept entry's name would leave two rows sharing one
+        // (kind, name) identity — the second unreachable by every name-keyed upsert.
+        // The edit absorbs it.
+        .filter(
+          (e) => e.id === id || !isEntryNamed(e, draft.kind, libraryEntryName(draft))
+        );
+      set({ entries: next });
+      flush();
+    },
+
+    setEntryPortrait: (id, portrait) => {
+      const { entries, loaded } = get();
+      // Only run when a MONSTER entry with this id exists — a missing id or a non-monster
+      // entry is inert (no write, no mutation), so the caller never branches.
+      if (!loaded || !entries.some((e) => e.id === id && e.kind === "monster")) return;
+      const next = entries.map((e) => {
+        if (e.id !== id || e.kind !== "monster") return e;
+        const item = { ...e.item };
+        if (portrait) {
+          item.portraitUrl = portrait.portraitUrl;
+          if (portrait.portraitCrop) item.portraitCrop = portrait.portraitCrop;
+          else delete item.portraitCrop;
+        } else {
+          delete item.portraitUrl;
+          delete item.portraitCrop;
+        }
+        return { ...e, item };
+      });
+      set({ entries: next });
+      flush();
+    },
+
+    setMonsterArt: (srdId, art) => {
+      const { loaded, monsterArt } = get();
+      if (!loaded) return;
+      // Immutable set/clear — no dynamic `delete` (clear filters the key out).
+      const next: Record<string, MonsterArt> = art
+        ? { ...monsterArt, [srdId]: art }
+        : Object.fromEntries(Object.entries(monsterArt).filter(([k]) => k !== srdId));
+      set({ monsterArt: next });
+      flush();
+    },
+
+    removeFromLibrary: (id) => {
+      const { entries, loaded } = get();
+      if (!loaded) return;
+      const next = entries.filter((e) => e.id !== id);
+      if (next.length === entries.length) return;
+      set({ entries: next });
+      flush();
+    },
+  };
+});

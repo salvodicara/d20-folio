@@ -35,7 +35,7 @@ export function LibraryMount(): null {
   useEffect(() => {
     const { hydrate, reset } = useLibraryStore.getState();
     if (DEV_BYPASS_AUTH) {
-      hydrate([], null);
+      hydrate([], {}, null);
       return;
     }
     if (!uid) {
@@ -47,7 +47,7 @@ export function LibraryMount(): null {
     const writer = createLibraryWriter(uid);
     const unsubscribe = subscribeLibrary(
       uid,
-      (entries) => hydrate(entries, writer.persist),
+      (entries, monsterArt) => hydrate(entries, monsterArt, writer.persist),
       (err) => console.error("Library subscription error", err)
     );
     return () => {

@@ -26,12 +26,30 @@ import type {
   CustomSpell,
   CustomWeapon,
 } from "@/types/character";
+import type { CustomMonster } from "@/types/campaign";
 
-/** The four homebrew kinds, in display order — the union below derives from it. */
-export const LIBRARY_KINDS = ["spell", "feature", "equipment", "weapon"] as const;
+/**
+ * The homebrew kinds, in display order — the union below derives from it. The first
+ * four are SHEET items (they land on a `CharacterData` array); `monster` is the odd
+ * one — a reusable ENCOUNTER template that never touches a character sheet, so the
+ * character-materialization helpers ({@link entryToCharacterItem}, {@link customDraftAt})
+ * exclude it by TYPE ({@link SheetLibraryKind}) and it materializes through the
+ * campaigns-side `customMonsterToInput` instead.
+ */
+export const LIBRARY_KINDS = [
+  "spell",
+  "feature",
+  "equipment",
+  "weapon",
+  "monster",
+] as const;
 
-/** Which of the four homebrew types an entry carries. */
+/** Which homebrew type an entry carries. */
 export type LibraryKind = (typeof LIBRARY_KINDS)[number];
+
+/** The kinds that land on a character SHEET array (everything but `monster`) — the
+ *  domain of {@link entryToCharacterItem} / {@link customDraftAt} / the sheet edit seam. */
+export type SheetLibraryKind = Exclude<LibraryKind, "monster">;
 
 /**
  * Each kind's section word as an i18n KEY (the sheet's existing labels, never a
@@ -42,6 +60,7 @@ export const LIBRARY_KIND_LABEL_KEY: Record<LibraryKind, string> = {
   feature: "nav.features",
   equipment: "equipment.title",
   weapon: "equipment.weapons",
+  monster: "compendium.monsters",
 };
 
 /**
@@ -52,7 +71,13 @@ export type LibraryDraft =
   | { kind: "spell"; item: CustomSpell }
   | { kind: "feature"; item: CustomFeature }
   | { kind: "equipment"; item: CustomEquipment }
-  | { kind: "weapon"; item: CustomWeapon };
+  | { kind: "weapon"; item: CustomWeapon }
+  | { kind: "monster"; item: CustomMonster };
+
+/** A draft/entry of a SHEET kind (never `monster`) — narrowed for the
+ *  character-materialization helpers so `monster` is unrepresentable there. */
+export type SheetLibraryDraft = Extract<LibraryDraft, { kind: SheetLibraryKind }>;
+export type SheetLibraryEntry = LibraryEntry & SheetLibraryDraft;
 
 /** One stored library entry — a draft plus its stable id and save stamp. */
 export type LibraryEntry = LibraryDraft & { id: string; savedAt: number };
@@ -75,9 +100,9 @@ export function libraryEntryName(entry: LibraryDraft): string {
  */
 export function customDraftAt(
   data: CharacterData,
-  kind: LibraryKind,
+  kind: SheetLibraryKind,
   idx: number
-): LibraryDraft | null {
+): SheetLibraryDraft | null {
   switch (kind) {
     case "spell": {
       const ref = data.spells[idx];
@@ -143,6 +168,8 @@ export function isEntryNamed(
  * `now` is passed in (never read here) so the function stays pure; `id` is a fresh
  * UUID — {@link upsertEntry} restores the OLD id when it replaces an entry.
  */
+export function toLibraryEntry(draft: SheetLibraryDraft, now: number): SheetLibraryEntry;
+export function toLibraryEntry(draft: LibraryDraft, now: number): LibraryEntry;
 export function toLibraryEntry(draft: LibraryDraft, now: number): LibraryEntry {
   const id = crypto.randomUUID();
   switch (draft.kind) {
@@ -173,6 +200,11 @@ export function toLibraryEntry(draft: LibraryDraft, now: number): LibraryEntry {
     }
     case "feature":
       return { id, savedAt: now, kind: "feature", item: structuredClone(draft.item) };
+    case "monster":
+      // A monster template carries NO per-encounter play value by construction (the
+      // encounter re-seeds tokens/initiative/conditions/count at add). Its portrait +
+      // creatureType ARE identity, kept WHOLE — the feature-tier "kept verbatim" case.
+      return { id, savedAt: now, kind: "monster", item: structuredClone(draft.item) };
   }
 }
 
@@ -210,7 +242,10 @@ export function upsertEntry(
  * caller's `switch` narrows `item` to the exact type of the array it appends to —
  * one call site, zero casts.
  */
-export function entryToCharacterItem(entry: LibraryEntry, quantity = 1): LibraryDraft {
+export function entryToCharacterItem(
+  entry: SheetLibraryEntry,
+  quantity = 1
+): SheetLibraryDraft {
   switch (entry.kind) {
     case "spell":
       return { kind: "spell", item: { ...structuredClone(entry.item), prepared: true } };

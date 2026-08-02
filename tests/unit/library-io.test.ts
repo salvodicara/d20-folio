@@ -59,6 +59,17 @@ function emit(data: unknown, exists = true): LibraryEntry[] {
   return seen.at(-1) ?? [];
 }
 
+/** Emit and return the parsed `monsterArt` map (the second subscription arg). */
+function emitArt(data: unknown, exists = true): Record<string, { portraitUrl: string }> {
+  const seen: Array<Record<string, { portraitUrl: string }>> = [];
+  const unsubscribe = subscribeLibrary("u1", (_entries, monsterArt) => {
+    seen.push({ ...monsterArt });
+  });
+  snapshotHandlers.at(-1)?.({ exists: () => exists, data: () => data });
+  unsubscribe();
+  return seen.at(-1) ?? {};
+}
+
 describe("library-io", () => {
   it("addresses the ONE per-user document", () => {
     expect(libraryRef("u1").path).toBe("users/u1/library/index");
@@ -66,7 +77,7 @@ describe("library-io", () => {
 
   it("strips `undefined` out of the written payload (D1)", async () => {
     setDocMock.mockClear();
-    await writeLibrary("u1", [ENTRY]);
+    await writeLibrary("u1", [ENTRY], {});
     const payload = setDocMock.mock.calls.at(-1)?.[1] as {
       entries: Array<{ item: Record<string, unknown> }>;
     };
@@ -96,6 +107,43 @@ describe("library-io", () => {
   it("reads a doc with no `entries` field as empty", () => {
     expect(emit({})).toEqual([]);
   });
+
+  it("round-trips the SRD monster-art override map, dropping malformed art", () => {
+    const art = emitArt({
+      entries: [],
+      monsterArt: {
+        "goblin-warrior": {
+          portraitUrl: "https://x/monster-goblin-warrior.jpeg",
+          portraitCrop: { x: 0, y: 0, width: 100, height: 100 },
+        },
+        "no-url": { portraitCrop: { x: 0, y: 0, width: 1, height: 1 } }, // dropped
+        "empty-url": { portraitUrl: "" }, // dropped
+        "url-only": { portraitUrl: "https://x/monster-url-only.jpeg" }, // crop optional
+      },
+    });
+    expect(Object.keys(art).sort()).toEqual(["goblin-warrior", "url-only"]);
+  });
+
+  it("reads an absent / malformed monsterArt as an empty map", () => {
+    expect(emitArt({ entries: [] })).toEqual({});
+    expect(emitArt({ entries: [], monsterArt: "nope" })).toEqual({});
+    expect(emitArt(undefined, false)).toEqual({});
+  });
+
+  it("writes `entries` + `monsterArt` together (one full-doc overwrite)", async () => {
+    setDocMock.mockClear();
+    await writeLibrary("u1", [ENTRY], {
+      "goblin-warrior": { portraitUrl: "https://x/g.jpeg" },
+    });
+    const payload = setDocMock.mock.calls.at(-1)?.[1] as {
+      entries: unknown[];
+      monsterArt: Record<string, unknown>;
+    };
+    expect(payload.entries).toHaveLength(1);
+    expect(payload.monsterArt["goblin-warrior"]).toEqual({
+      portraitUrl: "https://x/g.jpeg",
+    });
+  });
 });
 
 describe("createLibraryWriter — one write per edit burst", () => {
@@ -107,9 +155,9 @@ describe("createLibraryWriter — one write per edit burst", () => {
     vi.useFakeTimers();
     setDocMock.mockClear();
     const { persist } = createLibraryWriter("u1", 2000);
-    persist([ENTRY]);
-    persist([ENTRY, { ...ENTRY, id: "e2" }]);
-    persist([{ ...ENTRY, id: "e3" }]);
+    persist([ENTRY], {});
+    persist([ENTRY, { ...ENTRY, id: "e2" }], {});
+    persist([{ ...ENTRY, id: "e3" }], {});
     // Nothing has hit Firestore yet — the store already shows every change.
     vi.advanceTimersByTime(1999);
     expect(setDocMock).not.toHaveBeenCalled();
@@ -129,7 +177,7 @@ describe("createLibraryWriter — one write per edit burst", () => {
     flush();
     expect(setDocMock).not.toHaveBeenCalled();
 
-    persist([ENTRY]);
+    persist([ENTRY], {});
     flush();
     expect(setDocMock).toHaveBeenCalledTimes(1);
 

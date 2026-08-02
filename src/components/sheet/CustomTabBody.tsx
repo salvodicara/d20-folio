@@ -63,7 +63,8 @@ import {
   libraryEntryName,
   type LibraryDraft,
   type LibraryEntry,
-  type LibraryKind,
+  type SheetLibraryEntry,
+  type SheetLibraryKind,
 } from "@/lib/library";
 
 /**
@@ -77,8 +78,9 @@ export interface LibraryEditRequest {
 }
 
 /** Append one library entry to the character array its kind belongs to, `quantity`
- *  copies deep (the two quantity-bearing kinds; the others ignore it). */
-function addEntryToCharacter(entry: LibraryEntry, quantity: number): void {
+ *  copies deep (the two quantity-bearing kinds; the others ignore it). Sheet kinds
+ *  only — a `monster` library entry is an encounter template, never a character item. */
+function addEntryToCharacter(entry: SheetLibraryEntry, quantity: number): void {
   const store = useCharacterStore.getState();
   const doc = store.character;
   if (!doc) return;
@@ -120,8 +122,9 @@ export function CustomTabBody({
   onAdded,
   onDetailTitle,
 }: {
-  /** Which entry kinds this modal lists + lands (the item modal takes two). */
-  kinds: readonly LibraryKind[];
+  /** Which entry kinds this modal lists + lands (the item modal takes two). Sheet
+   *  kinds only — the encounter's custom-monster list is a separate surface. */
+  kinds: readonly SheetLibraryKind[];
   /** Label of the bar that swaps to the create form (an existing `custom.*` key). */
   createLabel: string;
   /** The modal's own Custom form: blank to create, or prefilled to edit an entry. */
@@ -141,8 +144,8 @@ export function CustomTabBody({
   const updateEntry = useLibraryStore((s) => s.updateEntry);
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
-  const [editing, setEditing] = useState<LibraryEntry | null>(null);
-  const [viewing, setViewing] = useState<LibraryEntry | null>(null);
+  const [editing, setEditing] = useState<SheetLibraryEntry | null>(null);
+  const [viewing, setViewing] = useState<SheetLibraryEntry | null>(null);
   // D55 — the add-time count for the open detail, reset per entry like the SRD leg's.
   const [quantity, setQuantity] = useState(1);
 
@@ -152,9 +155,15 @@ export function CustomTabBody({
     onDetailTitle?.(viewing ? libraryEntryName(viewing) : null);
   }, [viewing, onDetailTitle]);
 
-  /** Everything of this modal's kind(s) — the "is my library empty here" set. */
+  /** Everything of this modal's kind(s) — the "is my library empty here" set. The
+   *  guard narrows to {@link SheetLibraryEntry} (this modal never lists monsters). */
   const mine = useMemo(
-    () => entries.filter((e) => kinds.includes(e.kind)),
+    () =>
+      entries.filter(
+        (e): e is SheetLibraryEntry =>
+          e.kind !== "monster" &&
+          (kinds as readonly LibraryEntry["kind"][]).includes(e.kind)
+      ),
     [entries, kinds]
   );
   const rows = useMemo(() => {

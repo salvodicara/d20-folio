@@ -5,7 +5,7 @@
  * stored in Firestore.
  */
 
-import type { CurrencyUnit } from "@/data/types";
+import type { CreatureType, CurrencyUnit } from "@/data/types";
 import type { PortraitCrop, ClassEntry } from "@/types/character";
 import type { NonEmptyString } from "@/lib/non-empty-string";
 import type { RaceId } from "@/types/ids";
@@ -164,6 +164,77 @@ export interface EncounterMonster extends EncounterCombatantBase {
    * and `xpInLair` prints.
    */
   xp?: number;
+  /**
+   * The creature type (2024 identity noun), seeded at ADD time: picker path = the
+   * statblock `type`; custom path = the DM's chosen type (or absent for a stat-less
+   * improv NPC). ENCOUNTER-OWNED like `ac`/`xp` — it powers the combatant card's
+   * type-glyph portrait fallback, so every viewer (player + DM) sees the same glyph
+   * beside the hero portraits WITHOUT the lazy bestiary corpus. Absent → the tinted
+   * monogram fallback (a nameless improv monster).
+   */
+  creatureType?: CreatureType;
+  /**
+   * A per-combatant portrait, seeded at ADD time from the DM's monster art: picker
+   * path = the SRD portrait OVERRIDE for this `srdId` (if the DM set one); custom path
+   * = the saved custom monster's portrait. COPIED onto the encounter doc (not resolved
+   * live) so EVERY viewer reads it — a player never holds the DM's account-level art
+   * map — the same shared-fact reason `ac`/`name` are copied. `portraitUrl` is the
+   * Firebase Storage download URL (`users/{uid}/portraits/monster-*.jpeg`, world-readable
+   * to any signed-in user, like a character portrait); `portraitCrop` frames it. Absent
+   * → the type-glyph / monogram fallback (override-first, golden rule 8). Additive: a
+   * pre-feature encounter doc stays valid.
+   */
+  portraitUrl?: string;
+  portraitCrop?: PortraitCrop;
+}
+
+/**
+ * A REUSABLE custom monster the DM authors once and re-adds to any encounter — the
+ * 5th account-level {@link import("@/lib/library").LibraryEntry} kind ("custom IS the
+ * library"). It is a TEMPLATE: the identity facts of a monster group MINUS every
+ * per-encounter play value (current HP `tokens`, `initiative`, `conditions`, the
+ * `count`, the turn/reveal/hidden flags), which the encounter re-seeds at add time
+ * (`customMonsterToInput`). Stored in the library doc, capped by
+ * `FREE_TIER_LIMITS.libraryEntries`.
+ *
+ * IDs / user content only (golden rule 7): `name` + `notes` are the DM's free strings;
+ * `creatureType`/`cr` are ids the picker binds to. The portrait is the DM's uploaded
+ * art, kept WITH the template so a re-added custom monster keeps its face (Part B).
+ */
+export interface CustomMonster {
+  /** User content — the monster/NPC name the DM types (the library identity key). */
+  name: string;
+  /** Armor Class (informational; the DM may edit per encounter after adding). */
+  ac: number;
+  /** Maximum hit points (the per-token clamp ceiling once added). */
+  maxHp: number;
+  /** The creature type id (2024 identity noun) — powers the glyph fallback + identity;
+   *  absent for a stat-less improv NPC. */
+  creatureType?: CreatureType;
+  /** Challenge Rating as its stringified number ("0.25", "5"); seeds the encounter XP
+   *  via `xpForCr` at add time and re-shows in the edit form. Absent → un-costed. */
+  cr?: string;
+  /** Optional DM free-text notes carried onto the added combatant. */
+  notes?: string;
+  /** The DM's uploaded portrait (`users/{uid}/portraits/monster-{entryId}.jpeg`) +
+   *  its crop frame; absent → the type-glyph fallback. Kept WITH the template. */
+  portraitUrl?: string;
+  portraitCrop?: PortraitCrop;
+}
+
+/**
+ * A per-user portrait OVERRIDE for a bestiary (SRD) monster, keyed by its `srdId`
+ * (Part B). The default art tier for the 330 SRD monsters is a legal type-glyph; a DM
+ * who wants real art uploads one, and THIS carries it: shown in the compendium bestiary
+ * view and COPIED onto every future encounter add of that monster. Stored in the
+ * library doc's `monsterArt` map (one listener, one writer — reuses the library seam),
+ * keyed by `srdId`.
+ */
+export interface MonsterArt {
+  /** The Firebase Storage download URL (`users/{uid}/portraits/monster-{srdId}.jpeg`). */
+  portraitUrl: string;
+  /** The crop frame (percentages); absent → the whole image, centre-framed. */
+  portraitCrop?: PortraitCrop;
 }
 
 /**

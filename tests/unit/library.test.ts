@@ -27,6 +27,7 @@ import type {
   CustomSpell,
   CustomWeapon,
 } from "@/types/character";
+import type { CustomMonster } from "@/types/campaign";
 
 const NOW = 1_700_000_000_000;
 
@@ -83,6 +84,17 @@ const WEAPON: CustomWeapon = {
   damageOverride: "1d8+5",
 };
 
+const MONSTER: CustomMonster = {
+  name: "Ashmaw Hound",
+  ac: 14,
+  maxHp: 33,
+  creatureType: "monstrosity",
+  cr: "2",
+  notes: "hunts in pairs",
+  portraitUrl: "https://x/monster-ashmaw.jpeg",
+  portraitCrop: { x: 5, y: 5, width: 80, height: 80 },
+};
+
 /** Every field {@link toLibraryEntry} must have removed, per kind. */
 const STRIP_CASES: ReadonlyArray<{
   draft: LibraryDraft;
@@ -117,6 +129,14 @@ const STRIP_CASES: ReadonlyArray<{
     // A feature's contentBlocks / trackers / actions / tags ARE its content.
     stripped: [],
     kept: ["title", "source", "tags", "contentBlocks", "trackers", "actions"],
+  },
+  {
+    draft: { kind: "monster", item: MONSTER },
+    name: "Ashmaw Hound",
+    // A monster template has NO per-encounter play value (the encounter re-seeds it);
+    // its portrait + creatureType ARE identity, kept whole (the feature-tier case).
+    stripped: [],
+    kept: ["name", "ac", "maxHp", "creatureType", "cr", "portraitUrl", "portraitCrop"],
   },
 ];
 

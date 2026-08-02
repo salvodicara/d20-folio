@@ -31,6 +31,8 @@ import type {
   EncounterPc,
   EncounterMonster,
 } from "@/types/campaign";
+import type { CreatureType } from "@/data/types";
+import type { PortraitCrop } from "@/types/character";
 
 // ─── Seeding from member references ─────────────────────────────────────────
 
@@ -156,6 +158,13 @@ export interface MonsterInput {
    *  custom form seeds `xpForCr(chosen CR)`; omitted (unknown) → no field stored, the
    *  group renders as un-costed. A harmless `xp: 0` IS stored (existence, not truthiness). */
   xp?: number;
+  /** Creature type (2024 identity noun) — seeds the card's type-glyph portrait fallback;
+   *  omitted → the monogram fallback. */
+  creatureType?: CreatureType;
+  /** A portrait to COPY onto the combatant (Part B) — the SRD override for a picker add,
+   *  or the saved custom monster's art; omitted → the glyph/monogram fallback. */
+  portraitUrl?: string;
+  portraitCrop?: PortraitCrop;
 }
 
 /**
@@ -186,6 +195,14 @@ export function addMonster(state: EncounterState, input: MonsterInput): Encounte
     ...(srdId ? { srdId } : {}),
     ...(input.xp != null && Number.isFinite(input.xp) && input.xp >= 0
       ? { xp: Math.round(input.xp) }
+      : {}),
+    // Identity + art (Part B) — copied onto the encounter doc so every viewer reads
+    // the same glyph/portrait beside the hero portraits. Only stored when meaningful
+    // (no empty-string field; `stripUndefined`-independent).
+    ...(input.creatureType ? { creatureType: input.creatureType } : {}),
+    ...(input.portraitUrl ? { portraitUrl: input.portraitUrl } : {}),
+    ...(input.portraitUrl && input.portraitCrop
+      ? { portraitCrop: input.portraitCrop }
       : {}),
   };
   const combatants = [...state.combatants, monster];
