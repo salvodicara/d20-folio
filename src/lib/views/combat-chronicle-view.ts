@@ -124,13 +124,62 @@ export function localizeChronicleEvent(
         targets: named,
       });
     }
+    case "attack-save": {
+      // An area save-for-half spell: the damaged targets carry the DM's real number
+      // (half or full), the resisted targets took no damage (a full save). Never
+      // fabricates a number — an un-dropped target only ever appears in `resisted`.
+      const damaged =
+        event.amounts.length > 0
+          ? joinLocalizedList(
+              event.amounts.map((a) =>
+                t("combatChronicle.multiTarget", {
+                  target: resolveName(a.targetId),
+                  amount: a.amount,
+                })
+              ),
+              t
+            )
+          : "";
+      const resisted =
+        event.resisted.length > 0
+          ? joinLocalizedList(event.resisted.map(resolveName), t)
+          : "";
+      if (damaged && resisted) {
+        return t("combatChronicle.saveHitResisted", {
+          attacker: resolveName(event.attackerId),
+          targets: damaged,
+          resisted,
+        });
+      }
+      if (damaged) {
+        return t("combatChronicle.saveHit", {
+          attacker: resolveName(event.attackerId),
+          targets: damaged,
+        });
+      }
+      // Only reachable if every declared target resisted (reconcile emits this line
+      // only once ≥1 target took a drop, so in practice `damaged` is non-empty).
+      return t("combatChronicle.saveAllResisted", {
+        attacker: resolveName(event.attackerId),
+        targets: resisted,
+      });
+    }
     case "down":
       return t("combatChronicle.down", { target: resolveName(event.targetId) });
     case "condition-gain":
-      return t("combatChronicle.conditionGain", {
-        target: resolveName(event.targetId),
-        condition: resolveCondition(event.conditionId),
-      });
+      // Credited to a caster when the reconciliation layer matched it to that action's
+      // declared rider (Topple → Prone, a spell rider); a bare DM-booked condition has
+      // no attacker.
+      return event.attackerId
+        ? t("combatChronicle.conditionGainBy", {
+            attacker: resolveName(event.attackerId),
+            target: resolveName(event.targetId),
+            condition: resolveCondition(event.conditionId),
+          })
+        : t("combatChronicle.conditionGain", {
+            target: resolveName(event.targetId),
+            condition: resolveCondition(event.conditionId),
+          });
     case "condition-loss":
       return t("combatChronicle.conditionLoss", {
         target: resolveName(event.targetId),

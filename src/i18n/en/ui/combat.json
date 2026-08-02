@@ -2,10 +2,13 @@
   "combat": {
     "title": "Combat",
     "declareTitle": "Declare your attack",
+    "declareTitleSave": "Declare your spell",
     "declareHint": "Pick the target, then tap the result after you roll.",
     "declareHintMulti": "Pick every enemy you struck (up to {{count}}), then tap the result.",
+    "declareHintSave": "Pick every enemy caught in the area, then Resolve. Each rolls its own save, and the DM's damage decides who takes it and who resists.",
     "declareHit": "Hit",
     "declareLanded": "Landed",
+    "declareResolve": "Resolve",
     "declareMiss": "Miss",
     "declareDismiss": "Dismiss",
     "declareNoTargets": "No visible enemies to target.",

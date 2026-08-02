@@ -40,7 +40,12 @@ import { weaponSealIcon, magicItemSealIcon } from "@/components/shared/item-icon
 import { getMagicItem } from "@/data/magic-items";
 import { ThisTurnTracker } from "../ThisTurnTracker";
 import { AttackDeclaration } from "../AttackDeclaration";
-import { attackTargetCap, shouldDeclareAttack } from "../attack-scope";
+import {
+  attackTargetCap,
+  shouldDeclareAttack,
+  isSaveDeclaration,
+  actionRiderConditions,
+} from "../attack-scope";
 import { useSheetCombat } from "../turn-state";
 import { InCombatStatus } from "@/features/campaigns/in-combat-chip";
 import { CombatAlgorithm } from "./CombatAlgorithm";
@@ -326,12 +331,22 @@ export function PlayTab() {
   // or a single-instance action is single; a multi-target action (Magic Missile / Scorching
   // Ray — {@link shouldDeclareAttack}) opens the multi-select capped at its instance count.
   const sheetCombat = useSheetCombat();
-  const [declaringCap, setDeclaringCap] = useState<number | null>(null);
+  // The committed action's declaration descriptor: the target cap, whether it resolves by
+  // a SAVE (area spell — Phase 3), and its applied-condition RIDER ids. `null` = no banner.
+  const [declaring, setDeclaring] = useState<{
+    cap: number;
+    save: boolean;
+    riders: string[];
+  } | null>(null);
   const commitAction = useCallback(
     (action: ResolvedAction) => {
       handleSelect(action);
       if (sheetCombat && shouldDeclareAttack(action)) {
-        setDeclaringCap(attackTargetCap(action));
+        setDeclaring({
+          cap: attackTargetCap(action),
+          save: isSaveDeclaration(action),
+          riders: actionRiderConditions(action),
+        });
       }
     },
     [handleSelect, sheetCombat]
@@ -957,11 +972,13 @@ export function PlayTab() {
           Rendered ONLY while in a live encounter AND an attack was just committed;
           SOLO never mounts it (the gate is `sheetCombat` on the commit). `maxTargets`
           is the committed action's own target cap (1 = single; > 1 = multi-select). */}
-      {declaringCap !== null && sheetCombat && (
+      {declaring !== null && sheetCombat && (
         <AttackDeclaration
           sheetCombat={sheetCombat}
-          maxTargets={declaringCap}
-          onDone={() => setDeclaringCap(null)}
+          maxTargets={declaring.cap}
+          save={declaring.save}
+          riders={declaring.riders}
+          onDone={() => setDeclaring(null)}
         />
       )}
 

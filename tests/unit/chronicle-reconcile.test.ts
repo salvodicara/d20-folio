@@ -360,3 +360,237 @@ describe("flattenDeclarations — the per-member ring → declaration list", () 
     ]);
   });
 });
+
+// ─── Phase 3: AREA SAVE fusion (Fireball class) ──────────────────────────────
+
+/** An area save-for-half declaration (Fireball class) — no attack roll, `save: true`. */
+const saveDecl = (
+  id: string,
+  attackerId: string,
+  targetIds: string[],
+  round: number
+): DeclaredAction => ({ id, attackerId, targetIds, outcome: "hit", round, save: true });
+
+/** A DM-booked condition-gain event. */
+const cond = (
+  id: string,
+  targetId: string,
+  round: number,
+  conditionId = "prone"
+): CombatChronicleEvent => ({ id, round, kind: "condition-gain", targetId, conditionId });
+
+/** A single-target hit that DECLARES an applied-condition rider (Topple → prone). */
+const riderHit = (
+  id: string,
+  attackerId: string,
+  targetId: string,
+  round: number,
+  riders: string[]
+): DeclaredAction => ({
+  id,
+  attackerId,
+  targetIds: [targetId],
+  outcome: "hit",
+  round,
+  riders,
+});
+
+describe("reconcileChronicle — AREA SAVE fusion (Phase 3)", () => {
+  it("some targets damaged (DM's real numbers), an un-dropped target logged as RESISTED", () => {
+    const out = reconcileChronicle(
+      [dmg("0", "monster-1", 1, 22), dmg("1", "monster-2", 1, 11)],
+      [saveDecl("mara:1", "pc-mara", ["monster-1", "monster-2", "monster-3"], 1)]
+    );
+    const save = out.find((r) => r.event.kind === "attack-save");
+    expect(save).toBeDefined();
+    if (save?.event.kind !== "attack-save") throw new Error("not a save line");
+    expect(save.auto).toBe(true);
+    expect(save.event.attackerId).toBe("pc-mara");
+    // The DM's real per-target numbers — never invented.
+    expect(save.event.amounts).toEqual([
+      { targetId: "monster-1", amount: 22 },
+      { targetId: "monster-2", amount: 11 },
+    ]);
+    // The declared target with no drop saved for no damage — positively logged.
+    expect(save.event.resisted).toEqual(["monster-3"]);
+    // The individual drops are FUSED — they no longer render as their own lines.
+    expect(out.filter((r) => r.event.kind === "hp-damage")).toHaveLength(0);
+  });
+
+  it("every declared target damaged ⇒ resisted is EMPTY", () => {
+    const out = reconcileChronicle(
+      [dmg("0", "monster-1", 1, 20), dmg("1", "monster-2", 1, 18)],
+      [saveDecl("mara:1", "pc-mara", ["monster-1", "monster-2"], 1)]
+    );
+    const save = out.find((r) => r.event.kind === "attack-save");
+    if (save?.event.kind !== "attack-save") throw new Error("not a save line");
+    expect(save.event.amounts).toEqual([
+      { targetId: "monster-1", amount: 20 },
+      { targetId: "monster-2", amount: 18 },
+    ]);
+    expect(save.event.resisted).toEqual([]);
+  });
+
+  it("a save spell with NO drops yet ⇒ NO line (never fabricate resisted)", () => {
+    const out = reconcileChronicle(
+      [dmg("0", "monster-9", 2, 8)], // a drop in a DIFFERENT round — untouched
+      [saveDecl("mara:1", "pc-mara", ["monster-1", "monster-2"], 1)]
+    );
+    expect(out.some((r) => r.event.kind === "attack-save")).toBe(false);
+    // The unrelated drop stays pending (its own line), never claimed by the save.
+    expect(out.filter((r) => r.event.kind === "hp-damage")).toHaveLength(1);
+  });
+
+  it("sums MULTIPLE drops the DM applied to one target within the round", () => {
+    const out = reconcileChronicle(
+      [dmg("0", "monster-1", 1, 10), dmg("1", "monster-1", 1, 12)],
+      [saveDecl("mara:1", "pc-mara", ["monster-1", "monster-2"], 1)]
+    );
+    const save = out.find((r) => r.event.kind === "attack-save");
+    if (save?.event.kind !== "attack-save") throw new Error("not a save line");
+    expect(save.event.amounts).toEqual([{ targetId: "monster-1", amount: 22 }]);
+    expect(save.event.resisted).toEqual(["monster-2"]);
+  });
+
+  it("only claims drops in the SAME round — a later round's drop stays pending", () => {
+    const out = reconcileChronicle(
+      [dmg("0", "monster-1", 1, 22), dmg("1", "monster-1", 2, 9)],
+      [saveDecl("mara:1", "pc-mara", ["monster-1"], 1)]
+    );
+    const save = out.find((r) => r.event.kind === "attack-save");
+    if (save?.event.kind !== "attack-save") throw new Error("not a save line");
+    expect(save.event.amounts).toEqual([{ targetId: "monster-1", amount: 22 }]);
+    // The round-2 drop is untouched.
+    const pending = out.filter((r) => r.event.kind === "hp-damage");
+    expect(pending).toHaveLength(1);
+    expect(pending[0]?.event.round).toBe(2);
+  });
+
+  it("a competing declaration on a shared target ⇒ UNCERTAIN", () => {
+    const out = reconcileChronicle(
+      [dmg("0", "monster-1", 1, 22)],
+      [
+        saveDecl("mara:1", "pc-mara", ["monster-1", "monster-2"], 1),
+        hit("bren:1", "pc-bren", "monster-1", 1),
+      ]
+    );
+    const save = out.find((r) => r.event.kind === "attack-save");
+    expect(save?.uncertain).toBe(true);
+  });
+
+  it("a lone save spell with no competitor is CERTAIN (no uncertain marker)", () => {
+    const out = reconcileChronicle(
+      [dmg("0", "monster-1", 1, 22)],
+      [saveDecl("mara:1", "pc-mara", ["monster-1"], 1)]
+    );
+    const save = out.find((r) => r.event.kind === "attack-save");
+    expect(save?.uncertain).toBeUndefined();
+  });
+});
+
+describe("reconcileChronicle — CONDITION-RIDER correlation (Phase 3)", () => {
+  it("credits a DM condition to the caster whose action RIDER applies it (same target+round)", () => {
+    const out = reconcileChronicle(
+      [cond("0", "monster-1", 2, "prone")],
+      [riderHit("mara:1", "pc-mara", "monster-1", 2, ["prone"])]
+    );
+    const line = out.find((r) => r.event.kind === "condition-gain");
+    if (line?.event.kind !== "condition-gain") throw new Error("no condition line");
+    expect(line.event.attackerId).toBe("pc-mara");
+    expect(line.auto).toBe(true);
+    expect(line.uncertain).toBeUndefined();
+  });
+
+  it("a condition with NO matching declaration stays a PLAIN logged line", () => {
+    const out = reconcileChronicle(
+      [cond("0", "monster-1", 2, "poisoned")],
+      [riderHit("mara:1", "pc-mara", "monster-1", 2, ["prone"])] // rider is prone, not poisoned
+    );
+    const line = out.find((r) => r.event.kind === "condition-gain");
+    if (line?.event.kind !== "condition-gain") throw new Error("no condition line");
+    expect(line.event.attackerId).toBeUndefined();
+    expect(line.auto).toBeUndefined();
+  });
+
+  it("never credits from mere co-occurrence — a hit with no rider leaves the condition plain", () => {
+    const out = reconcileChronicle(
+      [cond("0", "monster-1", 2, "prone")],
+      [hit("mara:1", "pc-mara", "monster-1", 2)] // declared, but no rider
+    );
+    const line = out.find((r) => r.event.kind === "condition-gain");
+    if (line?.event.kind !== "condition-gain") throw new Error("no condition line");
+    expect(line.event.attackerId).toBeUndefined();
+  });
+
+  it("a different round breaks the correlation", () => {
+    const out = reconcileChronicle(
+      [cond("0", "monster-1", 3, "prone")],
+      [riderHit("mara:1", "pc-mara", "monster-1", 2, ["prone"])]
+    );
+    const line = out.find((r) => r.event.kind === "condition-gain");
+    if (line?.event.kind !== "condition-gain") throw new Error("no condition line");
+    expect(line.event.attackerId).toBeUndefined();
+  });
+
+  it("two casters with the same rider on the target ⇒ UNCERTAIN provenance", () => {
+    const out = reconcileChronicle(
+      [cond("0", "monster-1", 2, "prone")],
+      [
+        riderHit("mara:1", "pc-mara", "monster-1", 2, ["prone"]),
+        riderHit("bren:1", "pc-bren", "monster-1", 2, ["prone"]),
+      ]
+    );
+    const line = out.find((r) => r.event.kind === "condition-gain");
+    if (line?.event.kind !== "condition-gain") throw new Error("no condition line");
+    expect(line.event.attackerId).toBe("pc-bren"); // stable byId pick (bren:1 < mara:1)
+    expect(line.uncertain).toBe(true);
+  });
+});
+
+describe("flattenDeclarations — carries the Phase-3 save + rider fields", () => {
+  it("threads `save` and `riders` from the ring onto the flattened declaration", () => {
+    const states: Record<string, CombatState> = {
+      mara: {
+        hp: { current: 10, temp: 0 },
+        conditions: [],
+        initiativeRoll: null,
+        deathSaves: { successes: 0, failures: 0 },
+        round: 1,
+        recentActions: [
+          {
+            id: "1",
+            targetIds: ["monster-1", "monster-2"],
+            outcome: "hit",
+            round: 1,
+            save: true,
+          },
+          {
+            id: "2",
+            targetIds: ["monster-3"],
+            outcome: "hit",
+            round: 1,
+            riders: ["prone"],
+          },
+        ],
+      },
+    };
+    expect(flattenDeclarations(states)).toEqual([
+      {
+        id: "mara:1",
+        attackerId: "pc-mara",
+        targetIds: ["monster-1", "monster-2"],
+        outcome: "hit",
+        round: 1,
+        save: true,
+      },
+      {
+        id: "mara:2",
+        attackerId: "pc-mara",
+        targetIds: ["monster-3"],
+        outcome: "hit",
+        round: 1,
+        riders: ["prone"],
+      },
+    ]);
+  });
+});

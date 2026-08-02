@@ -226,6 +226,66 @@ describe("AttackDeclaration — MULTI-select (Phase 2: a multi-target action)", 
   });
 });
 
+describe("AttackDeclaration — AREA SAVE (Phase 3: a Fireball-class spell)", () => {
+  it("shows ONE 'Resolve' (no HIT/MISS), captures the whole area, and writes save:true", () => {
+    const gc = makeSheetCombat(
+      [
+        monsterRow("monster-0", "Goblin"),
+        monsterRow("monster-1", "Chief"),
+        monsterRow("monster-2", "Ogre"),
+      ],
+      3
+    );
+    render(
+      <AttackDeclaration sheetCombat={gc} maxTargets={Infinity} save onDone={() => {}} />
+    );
+    // A save spell has no attack roll — one Resolve, never HIT/MISS.
+    expect(screen.queryByRole("button", { name: "Hit" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Miss" })).toBeNull();
+    const resolve = screen.getByRole("button", { name: "Resolve" });
+    expect(resolve).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: /target goblin/i }));
+    fireEvent.click(screen.getByRole("button", { name: /target chief/i }));
+    fireEvent.click(screen.getByRole("button", { name: /target ogre/i }));
+    fireEvent.click(resolve);
+    // The whole declared set rides ONE save declaration — no instance bound.
+    expect(useCharacterStore.getState().combatRecentActions).toEqual([
+      {
+        id: "1",
+        targetIds: ["monster-0", "monster-1", "monster-2"],
+        outcome: "hit",
+        round: 3,
+        save: true,
+      },
+    ]);
+  });
+
+  it("an area burst is UNBOUNDED — every chip stays enabled (never an over-pick cap)", () => {
+    const gc = makeSheetCombat([
+      monsterRow("monster-0", "Goblin"),
+      monsterRow("monster-1", "Chief"),
+      monsterRow("monster-2", "Ogre"),
+    ]);
+    render(
+      <AttackDeclaration sheetCombat={gc} maxTargets={Infinity} save onDone={() => {}} />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /target goblin/i }));
+    fireEvent.click(screen.getByRole("button", { name: /target chief/i }));
+    // No cap — the third chip is still selectable.
+    expect(screen.getByRole("button", { name: /target ogre/i })).toBeEnabled();
+  });
+
+  it("a rider-bearing weapon (Topple) carries its applied-condition ids on the declaration", () => {
+    const gc = makeSheetCombat([monsterRow("monster-0", "Goblin")]);
+    render(<AttackDeclaration sheetCombat={gc} riders={["prone"]} onDone={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: /target goblin/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Hit" }));
+    expect(useCharacterStore.getState().combatRecentActions).toEqual([
+      { id: "1", targetIds: ["monster-0"], outcome: "hit", round: 2, riders: ["prone"] },
+    ]);
+  });
+});
+
 describe("PlayTab gate — SOLO renders NO capture UI; an encounter opens it", () => {
   function renderPlay() {
     return render(

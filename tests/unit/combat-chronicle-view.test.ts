@@ -74,6 +74,17 @@ const SAMPLES: Record<CombatChronicleEventKind, CombatChronicleEvent> = {
       { targetId: "monster-2", amount: 11 },
     ],
   },
+  "attack-save": {
+    ...base,
+    kind: "attack-save",
+    attackerId: "pc-mara",
+    targetIds: ["monster-1", "monster-2", "monster-3"],
+    amounts: [
+      { targetId: "monster-1", amount: 22 },
+      { targetId: "monster-2", amount: 11 },
+    ],
+    resisted: ["monster-3"],
+  },
   "condition-gain": {
     ...base,
     kind: "condition-gain",
@@ -126,6 +137,48 @@ describe("localizeChronicleEvent — every kind routes to a distinct non-empty l
       amounts: [], // no drops ⇒ the MISS line over the full declared set
     };
     expect(localize(missed)).toContain("combatChronicle.multiMiss");
+  });
+
+  it("an area SAVE with damaged + resisted targets uses saveHitResisted", () => {
+    const line = localize(SAMPLES["attack-save"]);
+    expect(line).toContain("combatChronicle.saveHitResisted");
+    // The damaged targets carry the DM's real numbers; the resisted target is named.
+    expect(line).toContain("«monster-1»");
+    expect(line).toContain("22");
+    expect(line).toContain("«monster-3»");
+  });
+
+  it("an area SAVE with NO resisted targets uses the plain saveHit", () => {
+    const allDamaged: CombatChronicleEvent = {
+      ...base,
+      kind: "attack-save",
+      attackerId: "pc-mara",
+      targetIds: ["monster-1", "monster-2"],
+      amounts: [
+        { targetId: "monster-1", amount: 20 },
+        { targetId: "monster-2", amount: 18 },
+      ],
+      resisted: [],
+    };
+    const line = localize(allDamaged);
+    expect(line).toContain("combatChronicle.saveHit ");
+    expect(line).not.toContain("saveHitResisted");
+  });
+
+  it("a correlated condition uses conditionGainBy (crediting the attacker); a bare one uses conditionGain", () => {
+    expect(localize(SAMPLES["condition-gain"])).toContain(
+      "combatChronicle.conditionGain "
+    );
+    const credited: CombatChronicleEvent = {
+      ...base,
+      kind: "condition-gain",
+      targetId: "monster-1",
+      conditionId: "prone",
+      attackerId: "pc-mara",
+    };
+    const line = localize(credited);
+    expect(line).toContain("combatChronicle.conditionGainBy");
+    expect(line).toContain("«pc-mara»");
   });
 
   it("the SAME event renders per the injected locale", () => {

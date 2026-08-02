@@ -71,15 +71,26 @@ function TargetChip({
 export function AttackDeclaration({
   sheetCombat,
   maxTargets = 1,
+  save = false,
+  riders = [],
   onDone,
 }: {
   sheetCombat: GlobalCombat;
   maxTargets?: number;
+  /** S13 — an AREA save-for-half spell (Fireball class): the picker is unbounded and
+   *  the commit is a single "Resolve" (no HIT/MISS — the DM's per-target HP delta decides
+   *  each outcome). */
+  save?: boolean;
+  /** S13 — the action's applied-condition RIDER ids (Topple → prone): carried on the
+   *  declaration so the DM-side correlation credits a matching condition to this caster. */
+  riders?: string[];
   onDone: () => void;
 }) {
   const { t } = useTranslation();
   const declareAttack = useCharacterStore((s) => s.declareAttack);
   const [selected, setSelected] = useState<string[]>([]);
+  // A multi-select picker for a multi-instance attack (Magic Missile) OR an area save
+  // burst (unbounded, `maxTargets === Infinity`); a single swing stays single-select.
   const multi = maxTargets > 1;
 
   // Phase-1 targets = the visible monster rows (the player's view already excludes hidden
@@ -98,16 +109,21 @@ export function AttackDeclaration({
     if (selected.length === 0) return;
     declareAttack({
       targetIds: selected,
-      outcome,
+      // A save declaration has no attack roll — it commits as "hit" (cast/resolved) and
+      // the DM's per-target HP delta decides damaged vs resisted.
+      outcome: save ? "hit" : outcome,
       round: sheetCombat.round,
-      // The multi-instance drop bound rides the declaration ONLY for a multi-target
-      // action; a single swing carries no `instances` (bound = 1 by shape).
-      ...(multi ? { instances: maxTargets } : {}),
+      // A save declaration binds every target (no instance cap), so it carries no
+      // `instances`; a multi-instance ATTACK carries its drop bound; a single swing none.
+      ...(save ? { save: true } : multi ? { instances: maxTargets } : {}),
+      // The applied-condition rider ids (Topple → prone) ride every declaration that has one.
+      ...(riders.length > 0 ? { riders } : {}),
     });
     onDone();
   };
 
-  const atCap = multi && selected.length >= maxTargets;
+  // A save burst is unbounded (Infinity cap); a multi-instance attack caps at its count.
+  const atCap = !save && multi && selected.length >= maxTargets;
 
   return (
     <section
@@ -117,7 +133,7 @@ export function AttackDeclaration({
       <div className="flex items-center gap-2">
         <Icon as={Swords} size="sm" className="text-accent" decorative />
         <span className="flex-1 text-2xs font-semibold text-text-primary">
-          {t("combat.declareTitle")}
+          {t(save ? "combat.declareTitleSave" : "combat.declareTitle")}
         </span>
         <button
           type="button"
@@ -130,9 +146,11 @@ export function AttackDeclaration({
       </div>
 
       <p className="mt-0.5 text-[length:var(--text-micro)] text-text-secondary">
-        {t(multi ? "combat.declareHintMulti" : "combat.declareHint", {
-          count: maxTargets,
-        })}
+        {save
+          ? t("combat.declareHintSave")
+          : t(multi ? "combat.declareHintMulti" : "combat.declareHint", {
+              count: maxTargets,
+            })}
       </p>
 
       {monsters.length === 0 ? (
@@ -158,22 +176,37 @@ export function AttackDeclaration({
       )}
 
       <div className="mt-2 flex gap-2">
-        <button
-          type="button"
-          onClick={() => declare("hit")}
-          disabled={selected.length === 0}
-          className="flex-1 rounded-sm border border-success/50 bg-success/10 px-2 py-1 text-2xs font-semibold text-success transition-colors hover:bg-success/20 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {t(multi ? "combat.declareLanded" : "combat.declareHit")}
-        </button>
-        <button
-          type="button"
-          onClick={() => declare("miss")}
-          disabled={selected.length === 0}
-          className="flex-1 rounded-sm border border-border-medium bg-bg-tertiary px-2 py-1 text-2xs font-semibold text-text-secondary transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {t("combat.declareMiss")}
-        </button>
+        {save ? (
+          // An area save spell has no attack roll — ONE commit; the DM's per-target HP
+          // delta decides who took the number and who resisted.
+          <button
+            type="button"
+            onClick={() => declare("hit")}
+            disabled={selected.length === 0}
+            className="flex-1 rounded-sm border border-accent/50 bg-accent/10 px-2 py-1 text-2xs font-semibold text-accent transition-colors hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {t("combat.declareResolve")}
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => declare("hit")}
+              disabled={selected.length === 0}
+              className="flex-1 rounded-sm border border-success/50 bg-success/10 px-2 py-1 text-2xs font-semibold text-success transition-colors hover:bg-success/20 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {t(multi ? "combat.declareLanded" : "combat.declareHit")}
+            </button>
+            <button
+              type="button"
+              onClick={() => declare("miss")}
+              disabled={selected.length === 0}
+              className="flex-1 rounded-sm border border-border-medium bg-bg-tertiary px-2 py-1 text-2xs font-semibold text-text-secondary transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {t("combat.declareMiss")}
+            </button>
+          </>
+        )}
       </div>
     </section>
   );

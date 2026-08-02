@@ -106,11 +106,40 @@ export type CombatChronicleEvent =
        *  bound drop. Empty ⇒ the MISS line (or a hit awaiting HP, which emits no line). */
       amounts: ReadonlyArray<{ targetId: string; amount: number }>;
     } & ChronicleEventBase)
-  /** A condition was gained. */
+  /**
+   * A player's DECLARED AREA SAVE-for-half spell (Fireball class — auto-narrated combat,
+   * Phase 3) FUSED with the DM's per-target HP drops. Like {@link attack-multi} this is
+   * SYNTHESIZED at read time by the reconciliation layer, never stored: it REPLACES the
+   * individual per-target `hp-damage` lines with ONE summary line whose per-target
+   * outcome is a SAVE. `amounts` carries the REAL DM delta for each DAMAGED target
+   * (whether they failed → full or saved → half; the DM's number is the truth, never
+   * invented); `resisted` names the declared targets the DM left un-dropped (a full save
+   * / no damage — positively logged as resisted, the Phase-3 distinction from a
+   * multi-attack's silently-omitted target). Emitted only once at least one declared
+   * target took a drop (the spell resolved); `attackerId` is the declaring caster.
+   */
+  | ({
+      kind: "attack-save";
+      attackerId: string;
+      /** The full declared target set (ids), declared order. */
+      targetIds: string[];
+      /** Per-DAMAGED-target REAL DM damage, declared order (failed save → full, or
+       *  saved → half; the DM's number either way). */
+      amounts: ReadonlyArray<{ targetId: string; amount: number }>;
+      /** Declared targets the DM left un-dropped — full save / no damage, declared order. */
+      resisted: string[];
+    } & ChronicleEventBase)
+  /**
+   * A condition was gained. `attackerId` is set ONLY by the reconciliation layer when a
+   * declaring PC's action RIDER (a Topple mastery, a spell rider) applied it — the
+   * confident provenance ("{target} is {condition} — {attacker}'s strike"); it is NEVER
+   * stored (a DM-booked condition has no attacker) and NEVER guessed from co-occurrence.
+   */
   | ({
       kind: "condition-gain";
       targetId: string;
       conditionId: string;
+      attackerId?: string;
     } & ChronicleEventBase)
   /** A condition was lost / removed. */
   | ({

@@ -1,6 +1,6 @@
 /**
  * chronicle-reconcile — the PURE correlation layer of the auto-narrated combat epic
- * (Phase 1 + Phase 2). It fuses two independent streams the DM already holds into
+ * (Phases 1–3). It fuses two independent streams the DM already holds into
  * reconciled chronicle lines:
  *
  *   (a) the players' DECLARED actions — each PC's `combat/state` `recentActions` ring
@@ -35,7 +35,22 @@
  *     • a declared MISS ⇒ ONE `attack-multi` line naming the whole set with no amounts;
  *     • a declared hit that has landed NO drop yet ⇒ NO line (never fabricate).
  *
- *   And, for both classes: a delta with NO declaration stays PENDING for the DM's Phase-0
+ *   AREA SAVE declaration (Fireball class — Phase 3, `save: true`): ONE `attack-save` line
+ *   fuses the SEVERAL drops the DM applied across the whole declared set (no instance cap —
+ *   an area hits everyone at once). A declared target with a real drop took the DM's number
+ *   (half on a save, full on a fail — always the truth, never invented); a declared target
+ *   the DM left un-dropped RESISTED (a full save / no damage — positively logged, the
+ *   Phase-3 distinction from a multi-attack's silently-omitted target). Emitted only once
+ *   ≥1 declared target took a drop (the spell resolved), so an un-booked target is never
+ *   fabricated as resisted; a competing declaration on a shared target ⇒ UNCERTAIN.
+ *
+ *   CONDITION-RIDER correlation (Phase 3): a DM-booked `condition-gain` is credited to a
+ *   declaring caster ONLY when the gained condition id is that action's declared RIDER
+ *   (a Topple mastery's Prone, a spell rider) on the SAME (target, round) — the confident
+ *   provenance, never guessed from mere co-occurrence; >1 caster with the same rider ⇒
+ *   uncertain. An un-correlated condition stays a plain logged line.
+ *
+ *   And, for every class: a delta with NO declaration stays PENDING for the DM's Phase-0
  *   one-tap attribution (paper play / undeclared damage — the fallback is untouched).
  *
  * This is a feature-layer composition (it reads campaign + chronicle aggregates), not
@@ -62,6 +77,14 @@ export interface DeclaredAction {
   /** The multi-instance drop bound (Magic Missile 3, …) — how many observed HP drops a
    *  multi-target fusion may claim. Absent for a single-target swing. */
   instances?: number;
+  /** S13 — an AREA save-for-half declaration (Fireball class): reconcile fuses ALL the
+   *  declared targets' drops (no instance cap) and logs an un-dropped declared target as
+   *  RESISTED. Absent for an attack-roll declaration. */
+  save?: boolean;
+  /** S13 — the CONDITION ids this action applies on a hit (Topple → prone, a spell rider).
+   *  A DM `condition-gain` on a declared target this round is attributed to this caster when
+   *  its id is in this set. Absent when the action carries no modelled condition rider. */
+  riders?: string[];
 }
 
 /** A reconciled chronicle line: the (possibly auto-attributed, fused, or synthesized)
@@ -97,6 +120,8 @@ export function flattenDeclarations(
         outcome: ra.outcome,
         round: ra.round,
         ...(ra.instances !== undefined ? { instances: ra.instances } : {}),
+        ...(ra.save !== undefined ? { save: ra.save } : {}),
+        ...(ra.riders !== undefined ? { riders: ra.riders } : {}),
       });
     }
   }
@@ -144,15 +169,63 @@ export function reconcileChronicle(
   declarations: ReadonlyArray<DeclaredAction>
 ): ReconciledEvent[] {
   const pending = events.filter(isPendingDamage);
-  const hitDecls = declarations.filter((d) => d.outcome === "hit").sort(byId);
-  const singles = declarations.filter((d) => d.targetIds.length === 1);
-  const multis = declarations.filter((d) => d.targetIds.length > 1);
+  // Area SAVE declarations (Fireball class) fuse SEPARATELY (all targets, no instance cap,
+  // resisted logged); the ATTACK-roll declarations keep the Phase-1/2 single+multi split.
+  const saveDecls = declarations.filter((d) => d.save === true);
+  const attackDecls = declarations.filter((d) => d.save !== true);
+  const singles = attackDecls.filter((d) => d.targetIds.length === 1);
+  const multis = attackDecls.filter((d) => d.targetIds.length > 1);
+  // Every declaration that CLAIMS a target this round (a hit swing, a multi/save fusion) —
+  // a competing claimant on a shared (target, round) makes a fusion UNCERTAIN.
+  const claimants = declarations.filter((d) => d.save === true || d.outcome === "hit");
 
-  // Consumption ledger: an event id that a MULTI-target fusion has claimed no longer
-  // renders as its own line (it is fused into the multi line) and is off-limits to the
+  // Consumption ledger: an event id that a MULTI-target / SAVE fusion has claimed no longer
+  // renders as its own line (it is fused into the summary line) and is off-limits to the
   // single-target auto-attribution below.
   const consumed = new Set<string>();
   const fused: ReconciledEvent[] = [];
+
+  // ── 0) AREA SAVE fusion (Fireball class — drops-first) ──────────────────────────
+  // Bind ALL the declared targets' pending drops this round (an area hits everyone at
+  // once — no instance cap); a declared target with a real drop took the DM's number
+  // (half or full — the truth), a declared target left un-dropped RESISTED. Emitted only
+  // once ≥1 target took a drop (the spell resolved), so a not-yet-booked target is never
+  // fabricated as resisted.
+  for (const d of saveDecls.slice().sort(byId)) {
+    const set = new Set(d.targetIds);
+    const claimed = pending.filter(
+      (e) => e.round === d.round && set.has(e.targetId) && !consumed.has(e.id)
+    );
+    if (claimed.length === 0) continue; // unresolved ⇒ no line (never fabricate resisted)
+    for (const e of claimed) consumed.add(e.id);
+    const amounts = d.targetIds
+      .filter((targetId) => claimed.some((e) => e.targetId === targetId))
+      .map((targetId) => ({
+        targetId,
+        amount: claimed
+          .filter((e) => e.targetId === targetId)
+          .reduce((sum, e) => sum + e.amount, 0),
+      }));
+    // A declared target the DM left un-dropped saved for no damage — logged as resisted.
+    const damagedIds = new Set(amounts.map((a) => a.targetId));
+    const resisted = d.targetIds.filter((t) => !damagedIds.has(t));
+    const uncertain = claimants.some(
+      (o) => o.id !== d.id && o.round === d.round && o.targetIds.some((t) => set.has(t))
+    );
+    fused.push({
+      event: {
+        kind: "attack-save",
+        id: `save-${d.id}`,
+        round: d.round,
+        attackerId: d.attackerId,
+        targetIds: d.targetIds,
+        amounts,
+        resisted,
+      },
+      auto: true,
+      ...(uncertain ? { uncertain: true } : {}),
+    });
+  }
 
   // ── 1) MULTI-target fusion (drops-first, so single-target pairing sees the rest) ──
   for (const d of multis.slice().sort(byId)) {
@@ -198,7 +271,7 @@ export function reconcileChronicle(
     // can own, or another hit declaration in the round claims one of these same targets.
     const uncertain =
       available.length > bound ||
-      hitDecls.some(
+      claimants.some(
         (o) => o.id !== d.id && o.round === d.round && o.targetIds.some((t) => set.has(t))
       );
 
@@ -243,11 +316,49 @@ export function reconcileChronicle(
     }
   }
 
+  // ── 2b) CONDITION-RIDER correlation (Phase 3) ─────────────────────────────────────
+  // A DM-booked `condition-gain` is attributed to a declaring caster ONLY when the gained
+  // condition id is that action's declared RIDER on the SAME (target, round) — the confident
+  // "who applied it" provenance (a Topple mastery's Prone, a spell rider), never guessed from
+  // mere co-occurrence. >1 distinct caster with the same rider on that target ⇒ uncertain.
+  const conditionAttribution = new Map<
+    string,
+    { attackerId: string; uncertain: boolean }
+  >();
+  for (const event of events) {
+    if (event.kind !== "condition-gain") continue;
+    const matches = declarations.filter(
+      (d) =>
+        d.round === event.round &&
+        d.targetIds.includes(event.targetId) &&
+        (d.riders ?? []).includes(event.conditionId)
+    );
+    const first = matches.slice().sort(byId)[0];
+    if (!first) continue;
+    const attackers = new Set(matches.map((m) => m.attackerId));
+    conditionAttribution.set(event.id, {
+      attackerId: first.attackerId,
+      uncertain: attackers.size > 1,
+    });
+  }
+
   // ── 3) Build the feed: stored beats (fused drops dropped, single-target hits
-  //       attributed), then the synthesized fused multi lines + single-target miss lines.
+  //       attributed, correlated conditions credited), then the synthesized fused multi /
+  //       save lines + single-target miss lines.
   const reconciled: ReconciledEvent[] = [];
   for (const event of events) {
     if (event.kind !== "hp-damage") {
+      if (event.kind === "condition-gain") {
+        const cattr = conditionAttribution.get(event.id);
+        if (cattr) {
+          reconciled.push({
+            event: { ...event, attackerId: cattr.attackerId },
+            auto: true,
+            ...(cattr.uncertain ? { uncertain: true } : {}),
+          });
+          continue;
+        }
+      }
       reconciled.push({ event });
       continue;
     }

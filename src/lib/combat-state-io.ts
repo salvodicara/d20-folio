@@ -122,12 +122,22 @@ function parseRecentActions(value: unknown): CombatState["recentActions"] {
       typeof a.instances === "number" && Number.isFinite(a.instances) && a.instances > 1
         ? Math.floor(a.instances)
         : undefined;
+    // S13 — an area save-for-half declaration (Fireball class); reconcile logs a
+    // resisted target positively rather than omitting it.
+    const save = a.save === true ? true : undefined;
+    // S13 — the action's applied-condition rider ids (Topple → prone, a spell rider):
+    // string ids only, malformed dropped.
+    const riders = Array.isArray(a.riders)
+      ? a.riders.filter((r): r is string => typeof r === "string")
+      : [];
     out.push({
       id: a.id,
       targetIds,
       outcome,
       round: typeof a.round === "number" && Number.isFinite(a.round) ? a.round : 1,
       ...(instances !== undefined ? { instances } : {}),
+      ...(save !== undefined ? { save } : {}),
+      ...(riders.length > 0 ? { riders } : {}),
     });
   }
   return out;

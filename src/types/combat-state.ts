@@ -67,6 +67,26 @@ export interface RecentAttack {
    * multi-target declaration; ABSENT for a single-target swing (bound = 1 by shape).
    */
   instances?: number;
+  /**
+   * S13 — the declared action is an AREA SAVE-for-half spell (Fireball class). The
+   * DM's correlation treats this specially: a declared target with a real HP drop
+   * took the DM's number (half or full — the number is the truth), and a declared
+   * target the DM left un-dropped RESISTED (full save, no damage) — the outcome is a
+   * SAVE, not an attack-roll hit/miss (which is why `outcome` is always `"hit"` here,
+   * meaning "cast/resolved"). Present ONLY for an area save declaration; absent for a
+   * weapon swing or a multi-instance attack (Magic Missile). See the feature-layer
+   * `chronicle-reconcile` correlation.
+   */
+  save?: boolean;
+  /**
+   * S13 — the stable CONDITION ids this action applies on a hit as a RIDER (a weapon
+   * Mastery's Topple → `["prone"]`, a spell's rider). The DM-side correlation binds a
+   * DM-applied `condition-gain` on a declared target THIS round to the declaring PC
+   * when the gained condition id is in this set — the confident "who applied it"
+   * provenance (never guessed from mere co-occurrence). Absent when the action carries
+   * no modelled condition rider. Ids only (golden rule 7).
+   */
+  riders?: string[];
 }
 
 export interface CombatState {

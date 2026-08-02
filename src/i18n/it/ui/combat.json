@@ -2,10 +2,13 @@
   "combat": {
     "title": "Combattimento",
     "declareTitle": "Dichiara il tuo attacco",
+    "declareTitleSave": "Dichiara il tuo incantesimo",
     "declareHint": "Scegli il bersaglio, poi tocca l'esito dopo aver tirato.",
     "declareHintMulti": "Scegli ogni nemico che hai colpito (fino a {{count}}), poi tocca l'esito.",
+    "declareHintSave": "Scegli ogni nemico investito dall'area, poi Risolvi. Ognuno tira il proprio tiro salvezza e il danno del DM decide chi lo subisce e chi resiste.",
     "declareHit": "Colpito",
     "declareLanded": "A segno",
+    "declareResolve": "Risolvi",
     "declareMiss": "Mancato",
     "declareDismiss": "Ignora",
     "declareNoTargets": "Nessun nemico visibile da bersagliare.",
