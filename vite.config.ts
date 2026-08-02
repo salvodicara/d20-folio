@@ -128,9 +128,12 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // `webp` included (#59 F14) — the app-wide candlelit backdrop, parchment
-        // texture, login + campaign art are all .webp; excluding them broke
-        // offline-first (the shell loaded but its art 404'd offline / was evictable).
+        // `webp` included (#59 F14) — the parchment/panel textures, brand crest,
+        // and (via the runtime-cached rule below) the per-page scene art are all
+        // .webp; EXCLUDING art from the SW entirely broke offline-first (the shell
+        // loaded but its art 404'd offline / was evictable). The fix is
+        // precache→RUNTIME caching, never exclusion — see the scene-art
+        // runtimeCaching rule below for the heavy backdrops.
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
         // The PDF-export chunk (renderer + embedded fonts + pdf-lib + fontkit, ~1.3
         // MiB) is a rare, lazily-imported action — keep it OUT of the eager precache
@@ -145,9 +148,43 @@ export default defineConfig({
           "**/alegreya-cyrillic*",
           "**/alegreya-greek*",
           "**/alegreya-vietnamese*",
+          // PRE-GA item 3 (the first-load precache trim, `PROGRESS.md` → the
+          // soft-launch charter): the 12 full-bleed scene/backdrop plates
+          // (`public/assets/backgrounds/*.webp`, ~1.3 MiB combined, each
+          // 76–176 KiB — home hero, login, campaign hall, compendium/roster/
+          // creation realm scenes, dark+light pairs) are the ONLY heavy art the
+          // SW install used to force onto EVERY fresh visitor, including scenes
+          // for routes they hadn't opened yet (a visitor who only ever sees the
+          // roster still paid for the login + campaign-hall + compendium plates).
+          // Excluding them outright would repeat #59 F14 (offline 404s), so — per
+          // the comment above — they move to the "scene-art" CacheFirst runtime
+          // route instead: still offline-capable after the ONE visit that painted
+          // them, never force-fetched for scenes never opened. The small reusable
+          // UI textures (parchment/panel-leather/panel-light/vellum-dark, all
+          // <100 KiB and rendered on nearly every screen) and the brand crest stay
+          // precached — they're cheap and near-universally needed on first paint,
+          // so precaching them costs little and saves the runtime-cache round trip.
+          "**/backgrounds/*.webp",
         ],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4 MiB — bundle is ~2.1 MiB
         runtimeCaching: [
+          {
+            // The heavy scene/backdrop plates (excluded from precache above,
+            // PRE-GA item 3). CacheFirst: fetched once (whenever the page that
+            // uses it actually renders), then served instantly + offline from the
+            // "scene-art" cache — the SAME offline guarantee the old precache gave,
+            // just paid for on first USE instead of forced on every fresh install.
+            // Workbox's status-200 default suffices: these are same-origin CSS
+            // url() fetches, never the opaque no-cors case the portrait rule
+            // below must special-case. maxEntries 40 comfortably covers the 12
+            // current plates (6 scenes × dark/light) with per-theme headroom.
+            urlPattern: /\/assets\/backgrounds\/.*\.webp$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "scene-art-cache",
+              expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 90 },
+            },
+          },
           {
             // the lazily-loaded PDF-export chunk (excluded from precache above)
             urlPattern: /\/assets\/character-pdf-.*\.js$/,

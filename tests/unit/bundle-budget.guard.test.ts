@@ -291,7 +291,21 @@ const EAGER_CEILING_KB = 779; // baseline 727.1 → ~+7% (near budget — see AR
 // precached for offline-first; the EAGER closure is unchanged (the corpus rides the
 // `@pack/monsters` lazy sub-entry, never the eager barrel — "The content-pack seam"). Ceiling =
 // the measured 9503.94 +~11 KiB never-exact-fit headroom → 9515.
-const PRECACHE_CEILING_KIB = 9515;
+//
+// 2026-08-02 (the first-load precache trim, pre-GA item 3 — `PROGRESS.md` → the soft-launch
+// charter): by this point main had drifted to 9481.90 KiB / 323 entries (the difficulty-calc
+// / encounter-budget waves grew several lazy chunks without a ceiling bump — this trim's
+// LOWER new ceiling below closes that drift too, not just banks the win). The 12 heavy
+// scene/backdrop plates (`public/assets/backgrounds/*.webp`, ~1.3 MiB combined) moved from
+// the precache glob to a dedicated "scene-art" CacheFirst runtime route (`vite.config.ts`) —
+// still offline-capable after the one visit that painted a scene (the #59 F14 lesson: EXCLUDE
+// would 404 offline; RUNTIME-CACHE keeps the guarantee), but no longer force-fetched into
+// every fresh install regardless of which routes that visitor ever opens. EAGER (776.50 KB gz)
+// and ENTRY (61.8 KB gz) are UNCHANGED — the plates were never part of the JS bundle. Landed TOGETHER with the
+// same-day pack-bestiary growth above, so the ceiling is the fresh COMPOSED measurement of
+// the MERGED tree (grown bestiary − the 12 plates) + the usual +~11 KiB never-exact-fit
+// headroom: measured 8185.52 KiB / 311 entries on the merged tree → 8196.
+const PRECACHE_CEILING_KIB = 8196;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

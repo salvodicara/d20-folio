@@ -1258,8 +1258,18 @@ fleshed out by the owner on 2026-07-31, each item with its why:
    the 9 MB PWA precache means only ~40 fresh installs/day ride the free hosting bandwidth — a
    single successful advertising day trips the kill-switch and takes the app down; £10–20/month
    carries thousands of DAU. **SAFE-01 stays ARMED until this decision is made.**
-3. **The first-load precache trim** — move the heavy scene art from the precache to
-   cache-on-demand; triples the free daily installs, and is a premium first-load feel besides.
+3. **The first-load precache trim — DONE (2026-08-02).** Moved the 12 heavy scene/backdrop
+   plates (`public/assets/backgrounds/*.webp`, ~1.3 MiB combined) from the Workbox precache to a
+   dedicated "scene-art" `CacheFirst` runtime route (`vite.config.ts`) — still offline-capable
+   after the one visit that painted a scene (the #59 F14 lesson: EXCLUDING art 404s it offline;
+   RUNTIME-CACHING keeps the offline-first guarantee while ending the force-fetch of scenes a
+   visitor never opens). **Measured impact: precache 9481.90 → 8185.52 KiB (composed lane,
+   323 → 311 entries) — a real but MODEST ~14% cut, not the tripling the original estimate
+   assumed.** The scene art turned out to be a small slice (~1.3 MiB) of a precache now
+   dominated by offline-first JS/data (the bestiary corpus, `cockpit-engine`, the SRD spell/
+   feat/magic-item catalogues) — genuinely-needed data, not art, and shrinking THAT is a much
+   larger, separate, unscoped effort. See the soft-launch charter below for the corrected
+   installs/day math.
 4. **The license decision** — the recommendation on record: switch future releases to **AGPL-3.0**
    at (or before) GA — the industry-standard license for open-source end-user web apps with a
    canonical hosted instance (the Mastodon / Nextcloud / Grafana / Bitwarden-server / Cal.com
@@ -1309,20 +1319,27 @@ post" and leaves the rest parked.
 before relying on exact figures).** The cost anatomy of this app: returning users are nearly free
 (the service worker serves the shell locally; Firestore offline persistence caches reads; the
 debounced auto-save writes are the only steady cost), so **the binding axis is Hosting bandwidth
-for FIRST-TIME installs** — currently ~7.3 MiB of precache per new visitor (290 entries, the
-2026-08-01 build).
+for FIRST-TIME installs** — **~8.0 MiB of precache per new visitor after the 2026-08-02 precache
+trim** (8185.52 KiB / 311 entries, composed lane). Correction to the original 2026-08-01 estimate
+below this table: the ~7.3 MiB figure had already drifted to 9481.90 KiB / 323 entries (~9.26 MiB)
+by 2026-08-02 (the difficulty-calc/encounter-budget waves grew several lazy chunks without
+re-measuring this number) — both the pre-trim baseline and the trim's real yield are corrected
+here against the actual measured build, not the earlier estimate.
 
-| Posture                        | Fresh installs                   | Sustained players                                                        |
-| ------------------------------ | -------------------------------- | ------------------------------------------------------------------------ |
-| Free tier (today)              | ~45–50/day (360 MB/day egress)   | ~100–150 DAU (20k writes/day ≈ 130+ players at ~100–150 auto-saves each) |
-| £10–15/month cap               | +~400–550/day (~80–120 GB/month) | ~1,000–2,000 DAU (writes ≈ £7–14/month at 2k DAU; reads rarely bind)     |
-| Precache trim (free, any tier) | ×3 installs at ANY spend level   | unchanged                                                                |
+| Posture                                           | Fresh installs                                 | Sustained players                                                        |
+| ------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------ |
+| Free tier, pre-trim (2026-08-02, before this fix) | ~39/day (9.26 MiB precache, 360 MB/day egress) | ~100–150 DAU (20k writes/day ≈ 130+ players at ~100–150 auto-saves each) |
+| Free tier, post-trim (today)                      | ~45/day (7.99 MiB precache, +~15%)             | ~100–150 DAU (unchanged — the trim touches only install-time bandwidth)  |
+| £10–15/month cap (post-trim)                      | +~450–500/day (~80–90 GB/month)                | ~1,000–2,000 DAU (writes ≈ £7–14/month at 2k DAU; reads rarely bind)     |
 
-Reading of the curve: **the best spend/return move costs nothing** — the precache trim (pre-GA
-item 3: heavy scene art moves from precache to cache-on-demand, ~7.3 → ~2.5 MiB) triples free
-installs AND makes every paid install 3× cheaper. After the trim, £10–15 is comfortably past any
-"moderate posting" scenario; more spend buys nothing until well past ~2k DAU, so there is no
-reason to consider a higher cap in this phase.
+Reading of the curve: the precache trim (pre-GA item 3, DONE 2026-08-02) cost nothing and is a
+real, if modest, win — 9.26 → 7.99 MiB (−14%), lifting free installs ~39 → ~45/day, NOT the
+tripling the original (wrong) estimate assumed. The scene art it moved was only ~1.3 MiB of a
+precache dominated by offline-first JS/data (the bestiary corpus, `cockpit-engine`, the SRD
+catalogues) — genuinely-needed data that a further cut would have to attack separately, a much
+bigger and unscoped effort not attempted here. £10–15/month still comfortably covers any
+"moderate posting" scenario at this scale; more spend buys nothing until well past ~2k DAU, so
+there is no reason to consider a higher cap in this phase.
 
 **BLOCKING before the first post** (each maps to a pre-GA item above):
 
@@ -1339,9 +1356,10 @@ reason to consider a higher cap in this phase.
 5. **Post copy per R3**: trademark-safe branding (item 6) + the nominative-use disclaimer, IT
    first.
 
-**SHOULD (not blocking, best ROI):** the precache trim (item 3) — see the model; and a public-face
-pass on the README (the repo link will travel with the posts). The share-link funnel (OG previews,
-anonymous `/view`, invite cards) is already premium and is the beta's acquisition surface.
+**SHOULD (not blocking, best ROI):** the precache trim (item 3) — DONE, see the model above; and a
+public-face pass on the README (the repo link will travel with the posts). The share-link funnel
+(OG previews, anonymous `/view`, invite cards) is already premium and is the beta's acquisition
+surface.
 
 **Explicitly NOT blocking this phase** (stay parked for GA): the AGPL-3.0 license decision (item
 4), auth breadth beyond Google (known friction — some users will balk at Google-only; noted, not
