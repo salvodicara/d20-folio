@@ -100,7 +100,7 @@ describe("modal scroll — one primitive, every dialog", () => {
     expect(src).toMatch(/scroll-dissolve/);
     const css = readFileSync(join(ROOT, "src/styles/folio.css"), "utf8");
     expect(css).toMatch(
-      /\.modal \.scroll-dissolve \{\n\s+padding: var\(--sp-3\) var\(--sp-6\) var\(--sp-6\);/
+      /\.modal \.scroll-dissolve,\n\.cmp-entry \.scroll-dissolve \{\n\s+padding: var\(--sp-3\) var\(--sp-6\) var\(--sp-6\);/
     );
   });
 });

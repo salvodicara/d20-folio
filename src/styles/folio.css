@@ -9684,8 +9684,20 @@ button.create-need:focus-visible .create-need-chev {
       protect mid-scroll rows (padding scrolls with content), so rows melt
       36px before the frame while more content hides, and the fade lifts at
       the end. Same observer + mask vocabulary as the tab ribbons. */
-.modal .scroll-dissolve {
+.modal .scroll-dissolve,
+.cmp-entry .scroll-dissolve {
   padding: var(--sp-3) var(--sp-6) var(--sp-6);
+}
+/* The compendium READING LEAF shares the law (the same CompendiumDetailBody
+   scrolls in both hosts; when the scroll primitive absorbed the old px-4/py-4
+   the page-side leaf silently lost every margin — owner, 2026-08-02: "tutti i
+   margini sono svangolati"). Below the spread breakpoint the leaf tightens to
+   the compact masthead's own rhythm (sp-3/sp-4), one step denser than the
+   desktop measure exactly as the masthead itself compacts. */
+@media (max-width: 720px) {
+  .cmp-entry .scroll-dissolve {
+    padding: var(--sp-3) var(--sp-4) var(--sp-5);
+  }
 }
 .scroll-dissolve[data-fade="b"] {
   -webkit-mask-image: linear-gradient(#000 calc(100% - 36px), transparent 100%);
