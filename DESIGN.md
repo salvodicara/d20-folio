@@ -650,6 +650,29 @@ applies) loading and error states. Affordances are consistent across every surfa
   `tests/e2e/topbar-brand-invariant.spec.ts` (brand/search/account bounding boxes byte-identical with and
   without an active encounter at 390px, both pip forms, plus the needs-roll touch-reach probe).
 
+### Portraits + monster art (the avatar seal)
+
+The one avatar primitive is `Portrait` (`src/components/shared/Portrait.tsx`), filling any
+sized `.seal` / `.ch-portrait` / `.topbar-avatar` box. Its fallback ladder is now three
+tiers (override-first, golden rule 8): a stored portrait (crop-framed) → a **creature-type
+GLYPH** (`glyphPath`, monster surfaces only) → the deterministic tinted-initial monogram.
+The glyph set is `src/data/creature-glyphs.ts` — one silhouette per 2024 `CreatureType`,
+game-icons.net paths (CC BY 3.0, by Lorc + Delapouite; blanket attribution on `/legal`),
+recoloured to `currentColor` on a 512 viewBox and drawn as `.av-glyph` (62% of the seal,
+quieted opacity — an engraved crest, not a loud icon). So a faceless monster reads as a
+distinct creature emblem instead of a bare initial, in both themes for free.
+
+**Monster portraits are user-overridable** through `MonsterPortraitPanel`
+(`src/components/shared/MonsterPortraitPanel.tsx`) — the SAME crop-and-upload flow as a
+character portrait (`PortraitCropModal` + `PortraitEditMenu`: Re-crop · Upload new ·
+Remove), lifted into `useMonsterPortrait` and persisted through `libraryStore` (an SRD
+monster's per-user override keyed by `srdId`, or a custom monster's art kept on its
+library entry). Storage reuses the per-user `portraits/` path with a `monster-` filename
+prefix (world-readable, like a hero portrait), so the art the DM copies onto a shared
+encounter combatant is visible to every table member. The panel wears a **hover-only**
+seal veil (`.seal-edit-veil--hover`) — the seal reads clean at rest and reveals the camera
+only on hover/focus, unlike the character seal's always-on edit-mode veil.
+
 ### Anonymous-viewer chrome (the public share-link surfaces)
 
 A logged-out viewer of a public surface (a `/view` share link, `/legal`) is an acquisition

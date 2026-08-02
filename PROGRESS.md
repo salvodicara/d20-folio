@@ -78,6 +78,13 @@ sign-in button, no marketing card), and the **unified Items browser CODE-COMPLET
 the separate Equipment + Magic Items tabs/ribbon-entries merged into ONE searchable "Items" list over
 both corpora, with a smart facet rail: Magic lens · Kind spanning both datasets · magic-only
 Rarity/Attunement that light up in context; in BOTH the Add-Item modal and the Compendium page. HOLDS
+for owner screenshot approval, rule 25), and the **reusable custom-monster library +
+override-first monster portraits CODE-COMPLETE** (2026-08-02 — the encounter's Custom tab is now a
+saved-monster library (5th `monster` library kind: create → saved → re-addable, with edit/delete),
+and every monster carries ART beside the hero portraits: an uploaded portrait, or a legal
+creature-type glyph (game-icons.net, CC BY 3.0) as the default, over the tinted monogram; the
+portrait is overridable on the compendium/bestiary monster view (per-user, keyed by `srdId`) and on a
+saved custom monster (kept with its template), reusing the character-portrait crop/upload flow. HOLDS
 for owner screenshot approval, rule 25); the live head is **compendium completeness**. The
 competitive map is `docs/POSITIONING.md`. **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The

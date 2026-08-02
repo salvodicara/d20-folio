@@ -47,6 +47,12 @@ function devEmpty(): boolean {
 const DEV_HERO_PORTRAIT =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%231f5a4f'/%3E%3Cstop offset='1' stop-color='%23a8d8b0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' fill='url(%23h)'/%3E%3Ccircle cx='32' cy='24' r='11' fill='%23fff' opacity='0.9'/%3E%3Cpath d='M13 57c0-11 8-19 19-19s19 8 19 19z' fill='%23fff' opacity='0.9'/%3E%3C/svg%3E";
 
+/** A dev-only MONSTER portrait (a green goblin face on a dark field) so the encounter
+ *  shows the Part-B uploaded-portrait path beside the hero portraits — the other seeded
+ *  monsters carry only a `creatureType`, so they render the type-GLYPH default. */
+const DEV_MONSTER_PORTRAIT =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23243024'/%3E%3Cellipse cx='32' cy='34' rx='18' ry='20' fill='%235a7a3a'/%3E%3Cpath d='M20 20l10 8-10 4z' fill='%233c5226'/%3E%3Cpath d='M44 20l-10 8 10 4z' fill='%233c5226'/%3E%3Ccircle cx='25' cy='32' r='4' fill='%23f5d76e'/%3E%3Ccircle cx='39' cy='32' r='4' fill='%23f5d76e'/%3E%3Ccircle cx='25' cy='33' r='2' fill='%23111'/%3E%3Ccircle cx='39' cy='33' r='2' fill='%23111'/%3E%3Cpath d='M24 44h16l-3 5h-10z' fill='%23e8e0cf'/%3E%3C/svg%3E";
+
 /**
  * Dev-bypass sessions (D28) — newest first, with a populated summary on the latest
  * (so the accordion's rendered read view is exercised), an empty one (the "no
@@ -1014,6 +1020,10 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         conditions: ["prone"],
         maxHp: 7,
         tokens: [7, 3, 0],
+        // Part B — an UPLOADED monster portrait beside the hero portraits (the owner's
+        // core vision); its creature type would otherwise render the humanoid glyph.
+        creatureType: "humanoid",
+        portraitUrl: DEV_MONSTER_PORTRAIT,
       },
       {
         kind: "monster",
@@ -1029,6 +1039,7 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         conditions: [],
         maxHp: 21,
         tokens: [21],
+        creatureType: "humanoid", // Part B — the humanoid type-glyph default
       },
       {
         kind: "monster",
@@ -1040,6 +1051,7 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         maxHp: 16,
         tokens: [16],
         hidden: true,
+        creatureType: "undead", // Part B — the undead type-glyph default
       },
       {
         kind: "pc",
