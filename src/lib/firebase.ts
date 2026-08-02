@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
 import {
   initializeFirestore,
@@ -22,8 +22,10 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 
 // App Check (pre-GA hardening — docs/BUG_REPORTING.md → "App Check rollout runbook").
-// Strictly gated on VITE_APPCHECK_SITE_KEY being set: no key (dev/CI/e2e/forks, and prod
-// until the owner provisions a reCAPTCHA v3 site) = today's behavior, zero new network calls.
+// Strictly gated on VITE_APPCHECK_SITE_KEY being set: no key (dev/CI/e2e/forks) =
+// zero new network calls. The key is a reCAPTCHA ENTERPRISE score key (the one
+// kind provisionable headlessly via gcloud; token TTL 24h keeps the Enterprise
+// free tier roomy) — provisioned 2026-08-02, see the rollout runbook.
 const appCheckSiteKey = import.meta.env.VITE_APPCHECK_SITE_KEY;
 if (appCheckSiteKey) {
   if (import.meta.env.VITE_APPCHECK_DEBUG === "true") {
@@ -32,7 +34,7 @@ if (appCheckSiteKey) {
       true;
   }
   initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(appCheckSiteKey),
+    provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
     isTokenAutoRefreshEnabled: true,
   });
 }

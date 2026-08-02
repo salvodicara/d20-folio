@@ -572,19 +572,27 @@ projects → d20-folio → Actions (⋮) → Change billing**.
 Pre-GA hardening (soft-launch blocking item, `PROGRESS.md` → "Soft launch — the
 community-beta charter"). Client scaffold ships gated OFF: `src/lib/firebase.ts` only
 calls `initializeAppCheck` when `VITE_APPCHECK_SITE_KEY` is a non-empty string, so an
-unset key (today, on every env) is a no-op — zero new network calls. The owner does the
-rest out-of-band, in this order:
+unset key is a no-op — zero new network calls.
 
-1. **Register the web app** — Firebase console → **App Check** → **Apps** → select the
-   web app → **Register** → provider **reCAPTCHA v3** → create (or paste) a site key
-   from the [reCAPTCHA admin console](https://www.google.com/recaptcha/admin) scoped to
-   `d20-folio.web.app` (+ any custom domain).
-2. **Wire the key** — set `VITE_APPCHECK_SITE_KEY` in `.env.local` (owner machine), the
-   CI secret, and the deploy env (`deploy.yml` / `just deploy`'s build env). Optionally
+**Rollout state (2026-08-02): steps 1–3 are DONE** — provisioned headlessly: a
+**reCAPTCHA Enterprise SCORE key** (`gcloud recaptcha keys create --web
+--integration-type=score --domains=d20-folio.web.app,d20-folio.firebaseapp.com`;
+Enterprise is the one kind creatable without the web console — the client therefore
+uses `ReCaptchaEnterpriseProvider`, not V3), registered on the web app's
+`recaptchaEnterpriseConfig` via the App Check REST API with **tokenTtl 86400s** (24h ≈
+1 assessment/user/day, keeping the Enterprise free tier ~10k/mo roomy), and the key
+set in `.env.local`. Firestore + Storage sit in **monitor (unenforced)** mode. Only
+step 4 (enforce) remains, owner-gated on metrics.
+
+1. **Register the web app** — DONE 2026-08-02 (headless, as above). Console twin: Firebase
+   console → **App Check** → **Apps** → web app → **Register** → reCAPTCHA Enterprise.
+2. **Wire the key** — DONE for `.env.local` (the local-primary deploy builds from it;
+   the site key is public-by-design, safe in the bundle). The `deploy.yml` remote twin
+   needs the same var as a repo secret IF remote deploys resume. Optionally
    set `VITE_APPCHECK_DEBUG=true` for e2e/dev runs that need a token without solving a
    captcha — it arms `self.FIREBASE_APPCHECK_DEBUG_TOKEN` before init, and the console's
    **Manage debug tokens** dialog must allow-list the token it logs to `console.debug`.
-3. **Watch, don't enforce yet** — leave Firestore and Storage in **unenforced (monitor)**
+3. **Watch, don't enforce yet** — ACTIVE NOW: leave Firestore and Storage in **unenforced (monitor)**
    mode under **App Check → APIs** and watch the **Metrics** tab for a few days: verified
    vs. unverified request volume should converge on ~100% verified once the deployed
    client is shipping tokens. Enforcing before the client ships tokens breaks every live

@@ -157,14 +157,16 @@ cmd_arm() {
   if [[ -n "$existing" ]]; then
     ok "budget exists ($existing)"
     act "ensuring name=$BUDGET_NAME amount=£$BUDGET_AMOUNT + alert steps + Pub/Sub notification…"
+    # NB: update spells the flag --add-threshold-rule (create uses --threshold-rule);
+    # --clear-threshold-rules first so re-arms stay idempotent, never additive.
     mutate gcloud billing budgets update "$existing" --billing-account="$bid" \
       --display-name="$BUDGET_NAME" \
       --budget-amount="$BUDGET_AMOUNT" \
       --clear-threshold-rules \
-      --threshold-rule=percent=0.07 \
-      --threshold-rule=percent=0.33 \
-      --threshold-rule=percent=0.67 \
-      --threshold-rule=percent=1.0 \
+      --add-threshold-rule=percent=0.07 \
+      --add-threshold-rule=percent=0.33 \
+      --add-threshold-rule=percent=0.67 \
+      --add-threshold-rule=percent=1.0 \
       --notifications-rule-pubsub-topic="$topic_path"
     ok "budget verified + notification wired"
   else

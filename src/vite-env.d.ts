@@ -11,7 +11,7 @@ interface ImportMetaEnv {
   /** "owner/repo" issue-tracker override (defaults in `src/lib/github-issue-state.ts`). */
   readonly VITE_GITHUB_REPO?: string;
   /**
-   * reCAPTCHA v3 site key for Firebase App Check (`src/lib/firebase.ts`). Unset in
+   * reCAPTCHA Enterprise (score) site key for Firebase App Check (`src/lib/firebase.ts`). Unset in
    * dev/CI/e2e/forks — App Check only initializes when this is a non-empty string.
    * See docs/BUG_REPORTING.md → "App Check rollout runbook".
    */

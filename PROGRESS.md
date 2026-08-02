@@ -1347,9 +1347,12 @@ there is no reason to consider a higher cap in this phase.
 
 **BLOCKING before the first post** (each maps to a pre-GA item above):
 
-1. **Budget rethreshold** (item 2 → R2): raise the budget + SAFE-01 kill topic threshold to
+1. **Budget rethreshold** (item 2 → R2): DONE 2026-08-02 (armed live: £15 + £1/£5/£10
+   steps, the legacy £1 budgets deleted/renamed; `just safe-status` = ARMED). raise the budget + SAFE-01 kill topic threshold to
    £10–15, add the £1/£5 alert steps. Console + budget-config action, owner-gated.
-2. **App Check + abuse-resistant quotas** (item 1): the owner's own recorded rationale — "before
+2. **App Check + abuse-resistant quotas** (item 1): monitor-mode DONE 2026-08-02 (Enterprise
+   key provisioned + registered, tokenTtl 24h, Firestore/Storage unenforced; ENFORCE pends
+   on metrics — the runbook's step 4). the owner's own recorded rationale — "before
    any advertising". The code is public; the backend must not be an open quota faucet.
    **Client scaffold SHIPPED (code-only):** `src/lib/firebase.ts` calls `initializeAppCheck` +
    `ReCaptchaV3Provider`, strictly gated on `VITE_APPCHECK_SITE_KEY` being set (unset today on
@@ -1360,7 +1363,8 @@ there is no reason to consider a higher cap in this phase.
 3. **Legal pages** (item 5): privacy policy + terms, bilingual, linked from the existing `/legal`
    page (which today carries only licenses/attribution; the CC-BY SRD attribution requirement is
    already satisfied there, and account deletion already exists in-app).
-4. **Pre-post safety net** (item 7, minimal cut): one manual Firestore export before the first
+4. **Pre-post safety net** (item 7, minimal cut): export DONE 2026-08-02
+   (`gs://d20-folio-backups/pre-beta-2026-08-02`, europe-west1). one manual Firestore export before the first
    post, and a weekly look at Functions/Hosting error logs during the beta window. Automated
    backups + real observability stay parked for GA.
 5. **Post copy per R3**: trademark-safe branding (item 6) + the nominative-use disclaimer, IT
