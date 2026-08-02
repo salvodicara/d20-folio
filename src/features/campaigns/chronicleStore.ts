@@ -38,6 +38,16 @@ export interface ChronicleState {
    * (never `Date.now()` in render). Debounce-persisted by the subscription.
    */
   commitText: (text: string, editedBy: string, editedByName: string, at: Date) => void;
+
+  /**
+   * Append ONE combat-chronicle chapter to the shared text — the OPTIMISTIC local
+   * mirror of `appendChronicleChapter`'s server transaction (same blank-line join +
+   * pre-append version snapshot). In production the Firestore listener echoes the
+   * appended text, so the store updates that way; under DEV_BYPASS_AUTH there is no
+   * echo, so the End-encounter Save calls THIS so the appended chapter shows in the
+   * dev/e2e Chronicle. Idempotent-safe last-write-wins, exactly like the live echo.
+   */
+  appendChapter: (chapter: string, editedBy: string, at: Date) => void;
 }
 
 export const useChronicleStore = create<ChronicleState>()((set, get) => ({
@@ -63,6 +73,22 @@ export const useChronicleStore = create<ChronicleState>()((set, get) => ({
       editedByName,
       textSnapshot: base.text,
     });
+    set({
+      chronicle: { ...base, text, lastEditedBy: editedBy, lastEditedAt: at, versions },
+    });
+  },
+
+  appendChapter: (chapter, editedBy, at) => {
+    const base = get().chronicle ?? EMPTY_CHRONICLE;
+    // Snapshot the pre-append text so it stays restorable (mirrors the server txn).
+    const versions = pushVersion(base.versions, {
+      timestamp: base.lastEditedAt,
+      editedBy: base.lastEditedBy,
+      editedByName: "",
+      textSnapshot: base.text,
+    });
+    // Same blank-line join as `joinChronicleText` (campaign-io).
+    const text = base.text.trim() ? `${base.text.trimEnd()}\n\n${chapter}` : chapter;
     set({
       chronicle: { ...base, text, lastEditedBy: editedBy, lastEditedAt: at, versions },
     });

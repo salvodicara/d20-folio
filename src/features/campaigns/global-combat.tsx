@@ -37,6 +37,7 @@ import { useLiveEncounter } from "@/features/campaigns/useLiveEncounter";
 import {
   makeDevPip,
   makeDevGlobalCombat,
+  makeDevChronicleCombat,
   devPipMode,
   turnFlickerReplayMode,
   makeTurnFlickerSteps,
@@ -92,6 +93,15 @@ export function GlobalCombatMount(): null {
   );
   const devStatus = useMemo(
     () => (DEV_BYPASS_AUTH ? makeDevGlobalCombat(devPipMode()) : null),
+    []
+  );
+  // DEV ONLY — the combat-chronicle e2e/dev seam. When `d20-dev-combat-chronicle=1` is
+  // set before boot, publish a ready-made own-PC encounter status (the evoker + three
+  // monsters) so the OPEN `scn-evoker-wizard` sheet's AttackDeclaration banner renders for
+  // real (`useSheetCombat` scopes on `characterId`). Takes precedence over the live
+  // resolution + the pip seed below.
+  const devCombat = useMemo(
+    () => (DEV_BYPASS_AUTH ? makeDevChronicleCombat() : null),
     []
   );
 
@@ -150,6 +160,7 @@ export function GlobalCombatMount(): null {
   // in this fight). The merged live row carries the override-first init bonus / raw roll /
   // max HP, the SAME values the party card derives (golden rule 6).
   const status = useMemo<GlobalCombat | null>(() => {
+    if (devCombat) return devCombat; // dev seed: the combat-chronicle sheet-banner fight
     if (devPip) return devStatus; // dev seed: needs-roll publishes a status, others null
     if (!uid || !primaryId || primaryIsDm || !live) return null;
     const myId = `pc-${uid}`;
@@ -172,7 +183,7 @@ export function GlobalCombatMount(): null {
       initiativeRoll: myRow?.initiativeRoll ?? null,
       round: live.encounter.round,
     };
-  }, [devPip, devStatus, uid, primaryId, primaryIsDm, live]);
+  }, [devCombat, devPip, devStatus, uid, primaryId, primaryIsDm, live]);
 
   // The pip model — the dev seed wins; otherwise every active encounter reduced to a
   // PipState, each row carrying ITS OWN doc-derived roll-state.

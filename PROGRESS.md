@@ -477,6 +477,18 @@ motion (rule 28).
 - Rule 13 — `chronicle-reconcile.test.ts` pins every branch (save damaged/resisted/unresolved/uncertain,
   condition credit/no-credit/round-break/multi-caster) with mutation-proof assertions; `attack-scope`,
   `combat-chronicle-view`, `attack-declaration`, `smart-tracker` + `spell-data-integrity` extended.
+- **In-app e2e regression + the rule-25 screenshots** — `tests/e2e/combat-chronicle.spec.ts` drives a
+  REAL encounter through the ACTUAL surfaces (NOT a bespoke showcase): the sheet's `AttackDeclaration`
+  banner (weapon single-target hit/miss · Magic Missile multi-select · Fireball area-save "Resolve"), then
+  the DM hub's reconciled LIVE FEED accumulating across two rounds (auto-attributed hit · synthesized miss ·
+  fused multi-line · area-save with mixed saves · Topple→Prone rider credited · plain Frightened · a "No one"
+  skip), the editable end-of-combat entry, and the saved Chronicle chapter — so the real `reconcileChronicle`
+  generates the chronicle live. Dev-bypass-only, production-tree-shaken seams back it: `makeDevChronicleCombat`
+  (a scoped own-PC encounter status for the sheet banner, hero `scn-evoker-wizard` + a Quarterstaff), a
+  `d20-dev-declarations` seed folded into `usePartyCombatStates` (the party's declared attacks), and an
+  optimistic turn-advance + chronicle-append under bypass (so the fight steps rounds and the saved chapter
+  shows without Firestore). Owner-review PNGs write to `CHRONICLE_SHOT_DIR` (light + dark); assertions run
+  regardless. **Held with the rest of the phase for the owner's in-app-screenshot look.**
 - Full detail: `docs/ARCHITECTURE.md → "The Combat Chronicle event seam"`; the `area` fact in `docs/MECHANICS.md`.
 
 ## Shipped — Auto-narrated combat, Phase 2: multi-target capture + fusion (2026-08-01)

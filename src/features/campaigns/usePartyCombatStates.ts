@@ -26,6 +26,7 @@ import { useEffect, useState } from "react";
 import { subscribeCombatState } from "@/lib/combat-state-io";
 import { sessionToCombatState } from "@/lib/combat-state";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
+import { devDeclarations } from "@/features/campaigns/dev-fixture";
 import { resolveDevDoc } from "@/features/campaigns/useMemberCharacterDocs";
 import type { MemberCharacterRef } from "@/features/campaigns/useMemberCharacterDocs";
 import type { CombatState } from "@/types/combat-state";
@@ -58,9 +59,13 @@ export function usePartyCombatStates(
       // No real listeners under bypass — project each dev fixture doc's session once.
       // (Encounter initiative is NOT here: it rides the dev campaign's `encounterInit`
       // table, the same doc production reads — the initiative SSOT.)
+      // The combat-chronicle demo seams the party's DECLARED attacks here (the
+      // dev-bypass stand-in for the players' live `combat/state` rings) so the DM feed's
+      // reconciliation fuses them with the DM's live-booked HP for real (`devDeclarations`).
+      const seededDeclarations = devDeclarations();
       for (const { uid, characterId } of current) {
         void resolveDevDoc(characterId).then((doc) =>
-          settle(uid, sessionToCombatState(doc.session))
+          settle(uid, sessionToCombatState(doc.session, 1, seededDeclarations[uid] ?? []))
         );
       }
       return () => {

@@ -58,7 +58,9 @@ import {
   persistEndEncounter,
   appendChronicleChapter,
 } from "@/features/campaigns/campaign-io";
+import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { ChronicleFeed, EndEncounterDialog } from "@/features/campaigns/party-chronicle";
+import { useChronicleStore } from "@/features/campaigns/chronicleStore";
 import {
   flattenDeclarations,
   reconcileChronicle,
@@ -72,8 +74,10 @@ import {
 } from "@/features/campaigns/useMemberCharacterDocs";
 import { usePartyCombatStates } from "@/features/campaigns/usePartyCombatStates";
 import {
+  advanceTurn,
   beginEncounterTurns,
   encounterRollFor,
+  prevTurn,
   reorderCombatant,
   startEncounter,
   type EncounterPcSeed,
@@ -610,6 +614,16 @@ function CombatLayer({
   const step = (dir: "next" | "prev"): void => {
     if (advancing) return;
     setAdvancing(true);
+    // DEV ONLY — under bypass `advanceEncounterTurn` is a no-op (no Firestore + no listener
+    // echo), so the shared pointer would never move. Advance it optimistically through the
+    // SAME pure reducer the transaction uses, so the dev/e2e turn order + round genuinely
+    // step through the real Next/Prev controls (and the combat-chronicle demo can reach
+    // round 3). Only the DM (`apply`) can, mirroring the live authority.
+    if (DEV_BYPASS_AUTH && apply) {
+      apply((e) => (dir === "next" ? advanceTurn(e) : prevTurn(e)));
+      setAdvancing(false);
+      return;
+    }
     // The transaction reads the FROZEN `order` off the encounter doc — no `orderedIds`
     // param (every caller stepped a live-recomputed order before, which diverged).
     // `view.currentId` is the pointer the DM SAW — the CAS aborts a stale double-click.
@@ -743,8 +757,19 @@ function CombatLayer({
   // Save the DM's finished chronicle chapter — the SINGLE persisted Chronicle write per
   // fight. Resolves → the caller clears the encounter (the dialog unmounts); rejects
   // (offline) → the dialog stays open + the fight running for a retry.
-  const saveChronicle = (chapter: string): Promise<void> =>
-    appendChronicleChapter(ctx.campaignId, { chapter, editedBy: ctx.currentUid ?? "" })
+  const saveChronicle = (chapter: string): Promise<void> => {
+    // DEV ONLY — under bypass `appendChronicleChapter` is a no-op (no Firestore) and there
+    // is no listener echo, so mirror the append into the chronicle store optimistically so
+    // the saved chapter shows in the dev/e2e Chronicle exactly as the live echo would.
+    if (DEV_BYPASS_AUTH) {
+      useChronicleStore
+        .getState()
+        .appendChapter(chapter, ctx.currentUid ?? "", new Date());
+    }
+    return appendChronicleChapter(ctx.campaignId, {
+      chapter,
+      editedBy: ctx.currentUid ?? "",
+    })
       .then(() => {
         useToastStore.getState().showToast({
           message: t("combatChronicle.savedToast"),
@@ -760,6 +785,7 @@ function CombatLayer({
         });
         throw e;
       });
+  };
 
   return (
     <div className="flex flex-col gap-4">

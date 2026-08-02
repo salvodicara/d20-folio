@@ -512,13 +512,21 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     level: 10,
     background: "sage",
     abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 18, WIS: 12, CHA: 10 },
+    // A carried Quarterstaff (a Simple weapon the Wizard is proficient with) so the
+    // sheet has a WEAPON attack alongside Magic Missile (multi-instance) + Fireball
+    // (area save) — the three action shapes the in-encounter AttackDeclaration banner
+    // demonstrates (single-target hit/miss · multi-select · area save). Drives the
+    // combat-chronicle e2e's sheet-banner leg (`makeDevChronicleCombat` scopes THIS
+    // hero into a live encounter). Harmless to the evoker spellcasting/damage tests
+    // (they assert spells only).
+    weapons: [{ srdId: "quarterstaff", quantity: 1 }],
     spells: [
       { srdId: "fire-bolt" },
       { srdId: "fireball", prepared: true },
       { srdId: "magic-missile", prepared: true },
     ],
     exercises:
-      "spell-damage-bonus schools filter (Empowered Evocation → +INT to Evocation spell damage).",
+      "spell-damage-bonus schools filter (Empowered Evocation → +INT to Evocation spell damage); also the combat-chronicle sheet-banner hero (weapon + Magic Missile + Fireball).",
   },
   "potent-druid": {
     // Elemental Fury (L7) Potent Spellcasting — the `druid-elemental-fury` choice

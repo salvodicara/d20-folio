@@ -24,6 +24,7 @@ import type {
   PipState,
   PendingTurn,
 } from "@/features/campaigns/global-combat-context";
+import type { RecentAttack } from "@/types/combat-state";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { asRaceId } from "@/data/srd-names";
 
@@ -1098,4 +1099,122 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
           ],
         }),
   };
+}
+
+// ─── Dev-bypass COMBAT-CHRONICLE demo seams (drive the REAL surfaces end-to-end) ────
+//
+// Two independent dev-only seams that let the combat-chronicle e2e (and a local dev
+// walk-through) exercise the ACTUAL in-app surfaces — the sheet's AttackDeclaration
+// banner and the DM hub's reconciled feed — with NO Firestore. Both are read only under
+// `DEV_BYPASS_AUTH`, so this whole module (and these) are tree-shaken from production.
+
+/**
+ * The SHEET-side seam. When `d20-dev-combat-chronicle=1` is set before boot, the shell
+ * publishes THIS {@link GlobalCombat} as the viewer's own-PC fight (see
+ * {@link "@/features/campaigns/global-combat".GlobalCombatMount}) — scoping the OPEN
+ * `scn-evoker-wizard` sheet ({@link "@/features/character/center/turn-state".useSheetCombat}
+ * matches `characterId`) into a LIVE own-turn encounter with THREE named monster rows. That
+ * is exactly the state the in-encounter {@link
+ * "@/features/character/center/AttackDeclaration".AttackDeclaration} banner needs to render
+ * for real: a weapon swing opens the single-target hit/miss picker, Magic Missile the
+ * multi-select (3 targets), Fireball the area-save "Resolve". `null` when the flag is unset.
+ *
+ * The evoker (`scn-evoker-wizard`) carries a Quarterstaff + Magic Missile + Fireball
+ * (see `dev-scenarios.ts`), so all three action shapes are commit-able on that one sheet.
+ */
+export function makeDevChronicleCombat(): GlobalCombat | null {
+  if (typeof window === "undefined") return null;
+  if (window.localStorage.getItem("d20-dev-combat-chronicle") !== "1") return null;
+  const myId = "pc-mock-uid";
+  const round = 2;
+  const rows = [
+    { id: myId, kind: "pc", name: "Pyra" },
+    { id: "monster-1", kind: "monster", name: "Goblin" },
+    { id: "monster-2", kind: "monster", name: "Goblin Chief" },
+    { id: "monster-3", kind: "monster", name: "Ogre" },
+  ] as GlobalCombat["view"]["rows"];
+  const turnOrderIds = [myId, "monster-1", "monster-2", "monster-3"];
+  const encounter: EncounterState = {
+    round,
+    currentCombatantId: myId,
+    order: turnOrderIds,
+    epoch: 1,
+    status: "active",
+    combatants: [
+      {
+        kind: "pc",
+        id: myId,
+        memberUid: "mock-uid",
+        characterId: "scn-evoker-wizard",
+      },
+      {
+        kind: "monster",
+        id: "monster-1",
+        name: "Goblin",
+        ac: 13,
+        initiative: 14,
+        conditions: [],
+        maxHp: 12,
+        tokens: [12],
+      },
+      {
+        kind: "monster",
+        id: "monster-2",
+        name: "Goblin Chief",
+        ac: 17,
+        initiative: 12,
+        conditions: [],
+        maxHp: 21,
+        tokens: [21],
+      },
+      {
+        kind: "monster",
+        id: "monster-3",
+        name: "Ogre",
+        ac: 11,
+        initiative: 8,
+        conditions: [],
+        maxHp: 59,
+        tokens: [59],
+      },
+    ],
+  };
+  return {
+    campaignId: "mock-1",
+    encounter,
+    view: { rows, turnOrderIds, currentId: myId },
+    myId,
+    characterId: "scn-evoker-wizard",
+    gathering: false,
+    isMyTurn: true,
+    initiativeBonus: 2,
+    initiativeRoll: 15,
+    round,
+  };
+}
+
+/**
+ * The DM-HUB-side seam. The reconciled feed fuses the DM's observed HP deltas with the
+ * PLAYERS' declared attacks, read live off each attached member's `combat/state` ring. Under
+ * bypass there is no such live ring — {@link
+ * "@/features/campaigns/usePartyCombatStates".usePartyCombatStates} projects each member's
+ * dev fixture session ONCE — so this seam lets a spec seed the party's declarations (the
+ * dev-bypass stand-in for "the other players already tapped their targets on their own
+ * sheets") via the `d20-dev-declarations` localStorage key: a JSON `{ "<uid>": RecentAttack[] }`
+ * map. The projected combat state then carries those `recentActions`, so `reconcileChronicle`
+ * fuses them with the DM's live-booked HP for real. Returns `{}` when unset / malformed.
+ */
+export function devDeclarations(): Record<string, RecentAttack[]> {
+  if (typeof window === "undefined") return {};
+  const raw = window.localStorage.getItem("d20-dev-declarations");
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed === null || typeof parsed !== "object") return {};
+    // Trust the shape loosely (dev-only seed); the reconcile layer + `flattenDeclarations`
+    // already tolerate partial/odd rings, and this never runs in production.
+    return parsed as Record<string, RecentAttack[]>;
+  } catch {
+    return {};
+  }
 }
