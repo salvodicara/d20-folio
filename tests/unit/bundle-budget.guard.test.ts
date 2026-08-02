@@ -102,7 +102,20 @@ const ENTRY_CEILING_KB = 64; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // folio.css (~+2.7 KB gz); the feature's JS lands in LAZY chunks (the encounter editor,
 // the portrait panel, the crop hook), not the eager closure. Measured 779.2 KB gz
 // (JS 702.9 + CSS 76.3); +~2.8 KB never-exact-fit headroom → 782.
-const EAGER_CEILING_KB = 782; // baseline 727.1 → ~+7.5% (near budget — see ARCHITECTURE P3 frontier #1)
+// 2026-08-02 (the status ledge — BG3-style status badges on the turn meter): raised
+// 782 → 786 (+4 KB) for the owner-approved status-ledge. The chunk families are
+// UNCHANGED (still the same 14 eager chunks) — StatusLedge rides the eager PlayTab via
+// ThisTurnTracker, and its composeStatusBadges/composeTurnLimiters live in the already-
+// eager combat-action-view, so NO new lazy chunk went statically reachable; the growth
+// is the component code (~+3.3 KB JS) + the `.status-ledge`/`.status-badge` folio.css
+// grammar (~+0.7 KB gz). The dead-icon trim was applied FIRST — the badge unit is a
+// turn LIMITER, so the icon map now imports ONLY the limiter-causing conditions and
+// drops charmed/deafened/invisible (no self-side limiter → never badged today; see the
+// StatusLedge seam comment) — but it recovered ~0 KB (per-icon gz is negligible; the
+// eager number was byte-identical before and after), confirming the icons were never
+// the driver. This is legitimate eager feature weight on the play surface, not a leak.
+// Measured 783.2 KB gz (JS 706.2 + CSS 77.0); +~2.8 KB never-exact-fit headroom → 786.
+const EAGER_CEILING_KB = 786; // baseline 727.1 → ~+8% (near budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
 // on demand from the PDF export flow) and correctly precached for offline-first.

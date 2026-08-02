@@ -29,12 +29,9 @@ import { useTranslation } from "react-i18next";
 import {
   ArrowDownToLine,
   Ban,
-  EarOff,
-  Eye,
   EyeOff,
   Ghost,
   Hand,
-  Heart,
   Hourglass,
   Link,
   Moon,
@@ -59,16 +56,26 @@ import {
   type TurnLimiterVM,
 } from "@/lib/views/combat-action-view";
 
-/** One glyph per SRD condition (BG3 status-icon vocabulary; ids, never labels). */
+/**
+ * One glyph per SRD condition that can CURRENTLY render as a badge (BG3 status-icon
+ * vocabulary; ids, never labels). A badge only exists for a condition that imposes a
+ * turn LIMITER (`composeTurnLimiters` → blocked economy / attack Disadvantage /
+ * Speed 0 / auto-fail saves), so this map deliberately covers ONLY the limiter-
+ * causing conditions plus the `exhaustion` badge glyph.
+ *
+ * Omitted on purpose (their `CONDITION_GATES` entry carries no self-side turn
+ * limiter, so no badge is ever composed for them today — eager-icon weight the
+ * bundle budget must not pay for): `charmed`, `deafened`, and `invisible`
+ * (Invisible grants self-side ADVANTAGE, not a limiter). SEAM: if any of these ever
+ * gains a self-side limiter (or the ledge starts badging positive statuses), add its
+ * id + glyph back here (charmed → Heart, deafened → EarOff, invisible → Eye).
+ */
 const CONDITION_ICONS: Record<string, LucideIcon> = {
   blinded: EyeOff,
-  charmed: Heart,
-  deafened: EarOff,
   exhaustion: Hourglass,
   frightened: Ghost,
   grappled: Hand,
   incapacitated: Ban,
-  invisible: Eye,
   paralyzed: ZapOff,
   petrified: Mountain,
   poisoned: Skull,
