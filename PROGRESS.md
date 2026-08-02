@@ -79,15 +79,16 @@ the separate Equipment + Magic Items tabs/ribbon-entries merged into ONE searcha
 both corpora, with a smart facet rail: Magic lens · Kind spanning both datasets · magic-only
 Rarity/Attunement that light up in context; in BOTH the Add-Item modal and the Compendium page. HOLDS
 for owner screenshot approval, rule 25), and the **reusable custom-monster library + canonical
-monster-portrait collection CODE-COMPLETE** (2026-08-02 — the encounter's Custom tab is now
+monster-portrait collection SHIPPED** (2026-08-02 — the encounter's Custom tab is now
 a saved-monster library (5th `monster` library kind: create → saved → re-addable, with edit/delete),
 and all 503 database monsters have original, consistent 4:5 generated paintings keyed by
 stable id across the SRD + private pack. **Owner reversal 2026-08-02:** the earlier no-generated-default
 decision is superseded now that project-owned art can be generated at quality; database portraits are
 canonical and not user-overridable. Custom monsters alone retain upload/re-crop/remove at any time.
 The bestiary plate preserves 4:5 composition; encounter cards resolve the same art from `srdId`
-without copying URLs into Firestore. HOLDS for final compendium + encounter screenshots in dark/light
-and desktop/mobile, rule 25); the
+without copying URLs into Firestore. The owner approved the final compendium + encounter screenshot
+matrix in dark/light and desktop/mobile (rule 25); that acceptance pass also caught and closed the
+pre-existing light-theme mobile multi-encounter count-chip contrast gap, now browser-guarded); the
 live head is **compendium completeness**. The
 competitive map is `docs/POSITIONING.md`. **Phase 1** (single-user foundation) is complete; the **100%-automation push** and the
 **R1–R8 target-architecture campaign** are both **CLOSED** (shipped, merged, deployed). The
@@ -1699,8 +1700,8 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   touches the encounter UI + the library store. The **monster portraits** rung below
   **rides this one** (a saved custom monster persists its portrait). Sequences **after** the in-flight
   encounter-polish + combat-chronicle epic (same `AddMonsterForm`); priority is the owner's call.
-- **CODE-COMPLETE — canonical monster portraits (owner-ratified reversal 2026-08-02; holds for
-  rule-25 screenshots):** monsters now have a **portrait slot** — real bestiary AND custom.
+- **SHIPPED — canonical monster portraits (owner-ratified reversal + rule-25 screenshot approval
+  2026-08-02):** monsters now have a **portrait slot** — real bestiary AND custom.
   **SUPERSEDING REVISION 2026-08-02 (owner):** now
   that original art can be generated at the required quality, every one of the 503 database monsters
   (330 public SRD + 173 private pack) receives a canonical professional portrait in one "Living
@@ -1716,8 +1717,10 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   reusable custom-monster-library rung above). The complete set uses original generated art rather
   than a mixed-license collage. Exact-id + 672×840 + ≤90,000-byte guards pass across 330 public +
   173 private portraits; binaries stay off first install and enter the runtime cache when viewed.
-  Both composed and SRD-only gates pass. **Visual surface → owner screenshot approval per golden
-  rule 25.**
+  Both composed and SRD-only gates pass. The owner approved the complete compendium + encounter
+  dark/light × desktop/mobile matrix; the acceptance pass additionally caught the mobile
+  multi-encounter chip's light-theme dark-on-dark ink, fixed it at the carved-control token seam,
+  and added a real-browser AA guard for both the sword glyph and count.
 - **Public share links: SHIPPED 2026-07-31 — CHARACTERS ONLY, industry standard.** The
   decided LIVE model shipped as decided — a `shared: true` flag on the character doc + the unguessable doc id
   as the URL; rules allow anonymous read-only when flagged; revoke = flip the flag; noindex;

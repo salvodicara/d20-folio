@@ -5821,16 +5821,20 @@ button.trk-pip:active {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 1px solid var(--border-soft);
-  background: var(--bg-surface-2);
-  color: var(--text-secondary);
+  border: 1px solid var(--gold-leaf-700);
+  /* The count is the mobile multi-encounter socket, so it uses the same fixed dark
+     material + fixed light ink as the destination socket. Theme-flipping field ink
+     is invalid here: in light mode it becomes espresso and disappears on this fill. */
+  background: linear-gradient(180deg, #241d12, var(--cp-dest-bg));
+  color: var(--cp-dest-ink);
   font-family: var(--font-numeric);
   font-size: var(--text-micro);
   font-weight: 600;
 }
 .cp-count:hover {
-  color: var(--text-primary);
-  border-color: var(--accent-primary);
+  color: var(--gold-leaf-100);
+  border-color: var(--gold-leaf-500);
+  background: linear-gradient(180deg, #322717, #241b10);
 }
 .cp-count:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -5840,7 +5844,7 @@ button.trk-pip:active {
    `:has(.combat-pip-wrap)` block reveals it when the count chip stands alone. */
 .cp-count-glyph {
   display: none;
-  color: var(--text-secondary);
+  color: inherit;
 }
 
 /* The chooser list inside the popover — one tap target per row, the state colour on the

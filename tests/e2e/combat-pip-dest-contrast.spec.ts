@@ -1,7 +1,8 @@
 /**
  * combat-pip-dest-contrast — REAL-Chromium proof that the topbar combat pip's
- * "Open {hero}" destination chip (`.cp-dest-chip`) carries readable text in BOTH
- * themes. The bug (owner-reported): in LIGHT theme the chip's label rode
+ * combat-pip carved controls carry readable text in BOTH themes. This covers the
+ * "Open {hero}" destination (`.cp-dest-chip`) and the mobile multi-encounter count
+ * (`.cp-count`). The first bug (owner-reported): in LIGHT theme the destination label rode
  * `--text-secondary` (a dark espresso ink) on a HARDCODED warm-black gradient →
  * dark-on-dark, ~1.2:1, unreadable ("Apri Lyra ›" invisible).
  *
@@ -9,7 +10,8 @@
  * per theme + the gradient stops), so it must be measured in a real browser.
  * This drives the dev-bypass pip seed (`d20-dev-pip=actorturn` → a quiet split
  * switch), toggles each theme, and asserts the label text clears WCAG-AA 4.5:1
- * against the chip's DARKEST gradient stop (the worst case).
+ * against each chip's DARKEST gradient stop (the worst case). The count variant was
+ * added after its light-theme espresso ink disappeared on the dark socket.
  */
 
 import { test, expect, type Page } from "@playwright/test";
@@ -89,6 +91,52 @@ test.describe("combat pip dest-chip — label text clears AA in both themes", ()
       expect(ratio, `dest-chip label vs darkest stop (${theme})`).toBeGreaterThanOrEqual(
         4.5
       );
+    });
+  }
+});
+
+test.describe("combat pip multi-count — glyph and number clear AA in both themes", () => {
+  for (const theme of ["dark", "light"] as const) {
+    test(`${theme}: mobile cp-count ink ≥ 4.5:1 on the chip`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await seedUI(page, theme, "play");
+      await seedLang(page, "en");
+      await page.addInitScript(() =>
+        window.localStorage.setItem("d20-dev-pip-scenario", "multi")
+      );
+      await page.goto("/characters/mock-1");
+      const chip = page.locator(".cp-count");
+      await chip.waitFor({ timeout: 20_000 });
+      await freezeMotion(page);
+
+      const raw = await chip.evaluate((el) => {
+        const glyph = el.querySelector(".cp-count-glyph") as HTMLElement;
+        return JSON.stringify({
+          color: getComputedStyle(el).color,
+          glyphColor: getComputedStyle(glyph).color,
+          bg: getComputedStyle(el).backgroundImage,
+        });
+      });
+      const { color, glyphColor, bg } = JSON.parse(raw) as {
+        color: string;
+        glyphColor: string;
+        bg: string;
+      };
+      const fg = parseRgbs(color)[0];
+      const glyphFg = parseRgbs(glyphColor)[0];
+      const stops = parseRgbs(bg);
+      expect(fg, "count color parsed").toBeTruthy();
+      expect(glyphFg, "glyph color parsed").toBeTruthy();
+      expect(stops.length, "count has ≥1 gradient stop").toBeGreaterThan(0);
+      const darkest = stops.reduce((a, b) => (lum(a) < lum(b) ? a : b));
+      await shot(page, `multi-count-${theme}`);
+
+      expect(contrast(fg as [number, number, number], darkest)).toBeGreaterThanOrEqual(
+        4.5
+      );
+      expect(
+        contrast(glyphFg as [number, number, number], darkest)
+      ).toBeGreaterThanOrEqual(4.5);
     });
   }
 });

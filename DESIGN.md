@@ -644,7 +644,10 @@ applies) loading and error states. Affordances are consistent across every surfa
   `max-width` + `min-width: 0` but NEVER `overflow: hidden` — that would clip the needs-roll pip's ≥44px
   `::before` touch overlay back to the pill height; (b) the rare multi-encounter wrap (two live fights) drops
   the primary pill entirely and stands the count chip alone as `⚔ {N}` (its own `.cp-count-glyph` revealed) —
-  the chooser still reaches every fight, and nothing overflows. A prior fix that SHRANK the "d20 Folio" brand
+  the chooser still reaches every fight, and nothing overflows. That count chip is a carved dark socket in
+  both themes and therefore uses the same fixed `--cp-dest-ink` light ink as the destination chip—never
+  theme-flipping field text; a real-browser contrast guard locks both its glyph and number to AA. A prior fix
+  that SHRANK the "d20 Folio" brand
   (die 34→26px, smaller wordmark) + tightened the bar padding when a pip appeared is DELETED — the owner
   flagged it as a "big bug" (the wordmark clipped "FOLIO"→"FOL"). Pinned by
   `tests/e2e/topbar-brand-invariant.spec.ts` (brand/search/account bounding boxes byte-identical with and
