@@ -27,7 +27,7 @@ import {
   useMonsterPortrait,
   type MonsterPortraitTarget,
 } from "@/hooks/useMonsterPortrait";
-import { creatureGlyphPath } from "@/data/creature-glyphs";
+import { CREATURE_GLYPH_PATH } from "@/data/creature-glyphs";
 import { cn } from "@/lib/utils";
 import type { CreatureType } from "@/data/types";
 import type { PortraitCrop } from "@/types/character";
@@ -39,7 +39,6 @@ export function MonsterPortraitPanel({
   name,
   seed,
   creatureType,
-  editable = true,
   className,
 }: {
   target: MonsterPortraitTarget;
@@ -51,8 +50,6 @@ export function MonsterPortraitPanel({
   seed: string;
   /** Creature type — the glyph default beneath the upload; absent → monogram. */
   creatureType?: CreatureType;
-  /** Show the upload/re-crop/remove affordance (a signed-in editor). */
-  editable?: boolean;
   /** Sizing utility classes for the square seal frame (defaults to a 6rem seal). */
   className?: string;
 }) {
@@ -74,7 +71,7 @@ export function MonsterPortraitPanel({
   const menuRef = useRef<HTMLDivElement>(null);
   useDismissOnOutside(menuOpen, menuRef, () => setMenuOpen(false));
 
-  const glyphPath = creatureType ? creatureGlyphPath(creatureType) : null;
+  const glyphPath = creatureType ? CREATURE_GLYPH_PATH[creatureType] : null;
 
   const seal = (
     <span className="seal relative block aspect-square h-full w-full overflow-hidden">
@@ -88,7 +85,7 @@ export function MonsterPortraitPanel({
       />
       {/* Hover-only camera veil (the seal reads clean at rest, unlike the character
           seal's always-on edit-mode veil — the monster panel is always editable). */}
-      {editable && !uploading && (
+      {!uploading && (
         <span className="seal-edit-veil seal-edit-veil--hover" aria-hidden>
           <Camera className="h-6 w-6" />
         </span>
@@ -103,22 +100,20 @@ export function MonsterPortraitPanel({
 
   return (
     <div ref={menuRef} className={cn("relative shrink-0", className)}>
-      {editable ? (
-        <button
-          type="button"
-          disabled={uploading}
-          aria-label={t("portrait.menu.edit")}
-          className="block h-full w-full cursor-pointer"
-          onClick={() => {
-            if (portraitUrl) setMenuOpen((v) => !v);
-            else openFilePickerForNew();
-          }}
-        >
-          {seal}
-        </button>
-      ) : (
-        seal
-      )}
+      {/* The seal IS the affordance (the panel is always editable): a portrait opens
+          the menu, an empty seal opens the file picker straight away. */}
+      <button
+        type="button"
+        disabled={uploading}
+        aria-label={t("portrait.menu.edit")}
+        className="block h-full w-full cursor-pointer"
+        onClick={() => {
+          if (portraitUrl) setMenuOpen((v) => !v);
+          else openFilePickerForNew();
+        }}
+      >
+        {seal}
+      </button>
 
       {menuOpen && (
         <PortraitEditMenu

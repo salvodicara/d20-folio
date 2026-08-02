@@ -17,6 +17,14 @@
  * The parent owns the menu + renders the shared `PortraitCropModal` from `cropSrc`
  * (identical to the character/banner call sites). The store already applied the change
  * in memory, so every surface reflects it immediately.
+ *
+ * ponytail: the crop-session machine (`cropSession` + openFilePickerForNew / onFileChange
+ * / openRecrop / onConfirm / onCancel + the return shape) is the THIRD near-verbatim copy
+ * of `usePortraitCrop` / `useCampaignBannerCrop` (the banner hook is itself a sanctioned
+ * clone — see its docblock). A `useCropFlow({ current, upload, remove, persist })` core
+ * would collapse all three into ~15-line adapters, but that refactor re-touches the
+ * SHIPPED character-portrait + campaign-banner surfaces (rule 27 stability-first), so it
+ * is a deliberate follow-up, not part of this feature's diff.
  */
 
 import { useRef, useState } from "react";

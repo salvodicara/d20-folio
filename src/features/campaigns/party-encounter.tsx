@@ -81,7 +81,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipProvider } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/ui/kbd";
 import { Portrait } from "@/components/shared/Portrait";
-import { creatureGlyphPath } from "@/data/creature-glyphs";
+import { CREATURE_GLYPH_PATH } from "@/data/creature-glyphs";
 import { StatBadge, HpBadge, InitBadge, StatLabel } from "@/components/shared/StatBadge";
 import { AutoAnimateHeight } from "@/components/shared/AutoAnimateHeight";
 import { InlineEditable } from "@/components/shared/InlineEditable";
@@ -1733,7 +1733,7 @@ export function MonsterCard({
               name={monster.name}
               seed={monster.id}
               glyphPath={
-                monster.creatureType ? creatureGlyphPath(monster.creatureType) : null
+                monster.creatureType ? CREATURE_GLYPH_PATH[monster.creatureType] : null
               }
               className="h-full w-full"
             />
