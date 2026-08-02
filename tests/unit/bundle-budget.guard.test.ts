@@ -96,7 +96,13 @@ const ENTRY_CEILING_KB = 63; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // (+3 KB) for the style-A per-corner ornament CSS (~+1 KB gz) atop the bestiary-held
 // 771.4 KB baseline; chunk shape unchanged at 14 chunks. Measured 773.2 KB; +3 KB
 // deterministic headroom (never exact-fit).
-const EAGER_CEILING_KB = 779; // baseline 727.1 → ~+7% (near budget — see ARCHITECTURE P3 frontier #1)
+// 2026-08-02 (custom-monster library + monster portraits): raised 779 → 782 (+3 KB)
+// for the owner-approved monster-art feature. The chunk families are UNCHANGED (still
+// the same 14 eager chunks) — the growth is the eagerly-loaded Option-B plate CSS in
+// folio.css (~+2.7 KB gz); the feature's JS lands in LAZY chunks (the encounter editor,
+// the portrait panel, the crop hook), not the eager closure. Measured 779.2 KB gz
+// (JS 702.9 + CSS 76.3); +~2.8 KB never-exact-fit headroom → 782.
+const EAGER_CEILING_KB = 782; // baseline 727.1 → ~+7.5% (near budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
 // on demand from the PDF export flow) and correctly precached for offline-first.
@@ -306,7 +312,15 @@ const EAGER_CEILING_KB = 779; // baseline 727.1 → ~+7% (near budget — see AR
 // the MERGED tree (grown bestiary − the 12 plates) + the usual +~11 KiB never-exact-fit
 // headroom: measured 8207.56 KiB / 311 entries on the merged tree (the pack sibling's
 // choice-damage prose, +22 KiB, landed between first measure and the push gate) → 8219.
-const PRECACHE_CEILING_KIB = 8219;
+//
+// 2026-08-02 (custom-monster library + monster portraits): raised 8219 → 8255 (+36 KiB)
+// for the owner-approved monster-art feature. The growth is the new LAZY UI chunks
+// precached for offline-first — the custom-monster editor (encounter-custom-monsters),
+// the height-matched Option-B portrait plate (MonsterPortraitPanel / MonsterArtHeader),
+// the useMonsterPortrait crop hook, and the Option-B folio.css — none eager (the eager
+// closure grew only marginally, see EAGER_CEILING_KB below). Measured 8243.51 KiB / 313
+// entries on the merged (rebased) tree; +~11.5 KiB never-exact-fit headroom → 8255.
+const PRECACHE_CEILING_KIB = 8255;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
