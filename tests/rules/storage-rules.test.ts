@@ -110,3 +110,63 @@ describe("storage rules — bug-report screenshots (data-driven admin)", () => {
     await assertFails(getBytes(ref(storage, SHOT_PATH)));
   });
 });
+
+// Shared monster art (Part B) lives under the SAME `users/{uid}/portraits/{fileName}`
+// rule as character portraits, with a `monster-` filename prefix. The intended scope:
+// WRITE is owner-only (only the uploading DM), READ is any authenticated user (so every
+// campaign member sees the art copied onto a shared encounter combatant — the art's
+// download URL is carried in the member-readable campaign doc). This block PINS that
+// scope so the shared-art path can never silently widen to world-writable or public-read.
+describe("storage rules — shared monster art (users/{uid}/portraits/monster-*.jpeg)", () => {
+  const MONSTER_ART_PATH = `users/${REPORTER_UID}/portraits/monster-goblin.jpeg`;
+
+  it("the owner can upload their own monster art (owner-scoped write)", async () => {
+    const storage = testEnv.authenticatedContext(REPORTER_UID).storage();
+    await assertSucceeds(
+      uploadBytes(ref(storage, MONSTER_ART_PATH), PNG_BYTES, {
+        contentType: "image/jpeg",
+      })
+    );
+  });
+
+  it("a non-owner CANNOT upload into another user's portraits path", async () => {
+    const storage = testEnv.authenticatedContext(PEER_UID).storage();
+    await assertFails(
+      uploadBytes(ref(storage, MONSTER_ART_PATH), PNG_BYTES, {
+        contentType: "image/jpeg",
+      })
+    );
+  });
+
+  it("any authenticated user CAN read shared monster art (campaign-member visibility)", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await uploadBytes(ref(ctx.storage(), MONSTER_ART_PATH), PNG_BYTES, {
+        contentType: "image/jpeg",
+      });
+    });
+    const storage = testEnv.authenticatedContext(PEER_UID).storage();
+    await assertSucceeds(getBytes(ref(storage, MONSTER_ART_PATH)));
+  });
+
+  it("an UNauthenticated visitor CANNOT read monster art (not public)", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await uploadBytes(ref(ctx.storage(), MONSTER_ART_PATH), PNG_BYTES, {
+        contentType: "image/jpeg",
+      });
+    });
+    const storage = testEnv.unauthenticatedContext().storage();
+    await assertFails(getBytes(ref(storage, MONSTER_ART_PATH)));
+  });
+
+  it("only the owner can delete their own monster art", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await uploadBytes(ref(ctx.storage(), MONSTER_ART_PATH), PNG_BYTES, {
+        contentType: "image/jpeg",
+      });
+    });
+    const peer = testEnv.authenticatedContext(PEER_UID).storage();
+    await assertFails(deleteObject(ref(peer, MONSTER_ART_PATH)));
+    const owner = testEnv.authenticatedContext(REPORTER_UID).storage();
+    await assertSucceeds(deleteObject(ref(owner, MONSTER_ART_PATH)));
+  });
+});
