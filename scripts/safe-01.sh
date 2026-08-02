@@ -2,7 +2,7 @@
 #
 # safe-01.sh — the SAFE-01 billing kill-switch lifecycle, one script, three verbs.
 #
-#   arm      one-shot idempotent setup: APIs · topic · £1 budget wired to the
+#   arm      one-shot idempotent setup: APIs · topic · £15 budget wired to the
 #            topic · the detach IAM grant · deploy onBudgetAlert. Re-running is
 #            always a no-op on anything already in place.
 #   status   read-only: prints ARMED / NOT ARMED / FIRED and the state of each piece.
@@ -27,8 +27,9 @@ PROJECT_ID="d20-folio"
 REGION="europe-west1"
 TOPIC="budget-kill"                          # hard-coded in onBudgetAlert — keep exact
 FUNCTION="onBudgetAlert"
-BUDGET_NAME="d20-folio £1 cap"
-BUDGET_AMOUNT="1"                            # £1 — inherits the billing account currency (this account is GBP)
+BUDGET_NAME="d20-folio £15 cap"
+BUDGET_NAME_LEGACY="d20-folio £1 cap"        # pre-soft-launch name — matched so re-arm RENAMES in place, never duplicates
+BUDGET_AMOUNT="15"                           # £15 — the soft-launch cap (owner-ratified 2026-08-02, PROGRESS.md charter R2); inherits the billing account currency (GBP)
 DETACH_ROLE="roles/billing.projectManager"  # project-scoped: DETACH-only, can never re-link
 
 DRY="${SAFE01_DRY_RUN:-}"
@@ -113,7 +114,7 @@ iam_bound() {  # 0 if $sa holds $DETACH_ROLE on the project
 
 # ── arm ───────────────────────────────────────────────────────────────────────
 cmd_arm() {
-  step "SAFE-01 ARM — the £1 billing kill-switch (idempotent)"
+  step "SAFE-01 ARM — the £$BUDGET_AMOUNT billing kill-switch (idempotent)"
   preflight
 
   step "resolving project + billing account…"
@@ -145,15 +146,25 @@ cmd_arm() {
     ok "topic ready"
   fi
 
-  step "£1 budget wired to '$TOPIC'…"
+  step "£$BUDGET_AMOUNT budget wired to '$TOPIC'…"
   local topic_path="projects/$PROJECT_ID/topics/$TOPIC" existing
+  # Match the current OR the legacy display name so a re-arm after the
+  # soft-launch rethreshold UPDATES the one existing budget in place (rename +
+  # new amount) instead of leaving the old £1 tripwire armed beside a new one.
   existing="$(query "" gcloud billing budgets list --billing-account="$bid" \
-    --filter="displayName='$BUDGET_NAME'" --format='value(name)')"
+    --filter="displayName='$BUDGET_NAME' OR displayName='$BUDGET_NAME_LEGACY'" \
+    --format='value(name)' | head -n1)"
   if [[ -n "$existing" ]]; then
     ok "budget exists ($existing)"
-    act "ensuring amount=£$BUDGET_AMOUNT + Pub/Sub notification wired…"
+    act "ensuring name=$BUDGET_NAME amount=£$BUDGET_AMOUNT + alert steps + Pub/Sub notification…"
     mutate gcloud billing budgets update "$existing" --billing-account="$bid" \
+      --display-name="$BUDGET_NAME" \
       --budget-amount="$BUDGET_AMOUNT" \
+      --clear-threshold-rules \
+      --threshold-rule=percent=0.07 \
+      --threshold-rule=percent=0.33 \
+      --threshold-rule=percent=0.67 \
+      --threshold-rule=percent=1.0 \
       --notifications-rule-pubsub-topic="$topic_path"
     ok "budget verified + notification wired"
   else
@@ -161,6 +172,10 @@ cmd_arm() {
     mutate gcloud billing budgets create --billing-account="$bid" \
       --display-name="$BUDGET_NAME" \
       --budget-amount="$BUDGET_AMOUNT" \
+      --threshold-rule=percent=0.07 \
+      --threshold-rule=percent=0.33 \
+      --threshold-rule=percent=0.67 \
+      --threshold-rule=percent=1.0 \
       --filter-projects="projects/$pnum" \
       --notifications-rule-pubsub-topic="$topic_path"
     ok "budget created + notification wired"
@@ -180,7 +195,7 @@ cmd_arm() {
   ok "function deployed"
 
   printf '\n'
-  step "ARMED — the £1 kill-switch is live."
+  step "ARMED — the £$BUDGET_AMOUNT kill-switch is live."
   printf '    billing account : %s (cached)\n' "$bid"
   printf '    topic           : %s\n' "$topic_path"
   printf '    budget          : £%s → publishes to the topic\n' "$BUDGET_AMOUNT"

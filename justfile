@@ -138,13 +138,13 @@ release:
     echo "  owner permission (golden rule 22) — 'just deploy'."
 
 # ─── SAFE-01 billing kill-switch (arm · status · restore) ─────────────────────
-# One script (scripts/safe-01.sh) wraps the whole £1-cap lifecycle. Every recipe is
+# One script (scripts/safe-01.sh) wraps the whole £15-cap lifecycle. Every recipe is
 # idempotent + owner-run (they touch billing + IAM). Full runbook: docs/BUG_REPORTING.md
 # § SAFE-01. Defuse mechanism + IAM rationale are documented there.
 
-# One-shot idempotent setup: APIs · budget-kill topic · £1 budget wired to it · the
+# One-shot idempotent setup: APIs · budget-kill topic · £15 budget wired to it · the
 # detach IAM grant · deploy onBudgetAlert.
-# Run once to arm the £1 kill-switch — then you're protected; re-running is always safe.
+# Run once to arm the £15 kill-switch — then you're protected; re-running is always safe.
 safe-arm:
     scripts/safe-01.sh arm
 

@@ -9,9 +9,9 @@ maintainer and hard-guarantee the zero-budget promise:
   **privacy-stripped** (see [What reaches the public issue](#what-reaches-the-public-issue)).
 - **OWN-38** — every **new user registration** emails the owner so abuse can be
   blocked fast from `/admin`.
-- **SAFE-01** — the **billing kill-switch**: a Pub/Sub trigger the £1 Cloud Billing
+- **SAFE-01** — the **billing kill-switch**: a Pub/Sub trigger the £15 Cloud Billing
   budget publishes to; on actual cost overrun it DETACHES billing from the project so
-  spend can never run past ~£1. Runbook in [its own section](#safe-01--billing-kill-switch-the-zero-budget-hard-guarantee).
+  spend can never run past ~£15 (the soft-launch cap, owner 2026-08-02; £1 until then). Runbook in [its own section](#safe-01--billing-kill-switch-the-zero-budget-hard-guarantee).
 - **`ogShell`** — the ONLY HTTP (`onRequest`) function here: Hosting rewrites `/view/**`
   and `/join/**` to it so a link a player shares unfurls with the entity's own Open
   Graph tags in WhatsApp / Discord / iMessage. It needs **no secret and no setup** —
@@ -306,14 +306,19 @@ firebase emulators:start --only functions,firestore,storage,auth
 >
 > - **Setup (once):** `just safe-arm`. You're protected from then on — nothing else to
 >   do or remember. Re-running is always safe.
-> - **No disarm needed** — it sits inert until actual spend crosses the £1 budget.
+> - **No disarm needed** — it sits inert until actual spend crosses the £15 budget.
 > - **Check anytime:** `just safe-status` → `ARMED` / `NOT ARMED` / `FIRED`.
 > - **If it fires** (budget alert email / paid features freeze): run `just safe-restore`
 >   — it defuses first, re-attaches billing, and prints the next step. Re-arm with
 >   `just safe-arm`, preferably once the new billing month starts.
 > - **Preview only:** `just safe-arm-dry` — shows every command, touches nothing.
+> - **Rethreshold (soft launch, 2026-08-02):** the £1→£15 raise ships in the script — one
+>   `just safe-arm` renames the legacy £1 budget in place, sets £15 + the £1/£5/£10 alert
+>   steps, and the kill threshold follows the budget amount automatically
+>   (`costAmount > budgetAmount`).
 
-The £1 Cloud Billing budget is an ALERT by default — it emails, it never stops spend.
+The £15 Cloud Billing budget is an ALERT by default — it emails at the £1 / £5 / £10 /
+£15 threshold steps (7% / 33% / 67% / 100%), it never stops spend.
 SAFE-01 turns it into a hard cap using Google's documented ["disable Cloud Billing to
 stop usage"](https://docs.cloud.google.com/billing/docs/how-to/disable-billing-with-notifications)
 pattern: the budget publishes a JSON notification to a Pub/Sub topic; a Cloud Function
@@ -333,7 +338,7 @@ cannot run past the cap.
 ```
 ┌────────────────────┐  cost crosses a threshold   ┌──────────────────────────┐
 │ Cloud Billing      │ ──────────────────────────▶ │ Pub/Sub topic            │
-│ £1 budget (alert)  │   JSON: costAmount,          │ budget-kill              │
+│ £15 budget (alert) │   JSON: costAmount,          │ budget-kill              │
 │  + Pub/Sub linked  │        budgetAmount, …       └───────────┬──────────────┘
 └────────────────────┘                                          │ onMessagePublished
                                                                 ▼
@@ -375,7 +380,7 @@ It resolves the project's billing account and runtime service account, then, in 
 1. **Enables the required APIs** — `cloudbilling`, `billingbudgets`, `pubsub`.
 2. **Creates the `budget-kill` Pub/Sub topic** if absent (the name is hard-coded in
    `onBudgetAlert`; the script keeps it exact).
-3. **Creates (or verifies) the £1 budget wired to the topic** — `gcloud billing budgets
+3. **Creates (or verifies) the £15 budget wired to the topic** — `gcloud billing budgets
 create/update` with `--notifications-rule-pubsub-topic`, scoped to the project, in the
    billing account's currency (GBP for this account). The old manual "Console → Manage
    notifications" step is gone: the CLI wires the Pub/Sub notification directly.
@@ -466,7 +471,7 @@ just safe-restore
 ```
 
 It runs the recovery in the **SAFE order** — defuse before re-attach — because
-month-to-date cost stays above £1 for the rest of the calendar month, so a naive
+month-to-date cost stays above £15 for the rest of the calendar month, so a naive
 re-attach would let the budget re-fire and re-detach within minutes:
 
 1. **DEFUSE FIRST.** Removes the `roles/billing.projectManager` grant from the runtime
@@ -480,7 +485,7 @@ re-attach would let the budget re-fire and re-detach within minutes:
 3. **Re-enables the core APIs** a detach can disable (functions, run, firestore, storage,
    billing, budgets, pubsub) and verifies billing shows enabled.
 4. **RE-ARM, gated.** It **warns** that re-granting the detach role while cost is still
-   over £1 will re-fire, then asks. Answer **no** to leave the switch DEFUSED (billing
+   over £15 will re-fire, then asks. Answer **no** to leave the switch DEFUSED (billing
    up, detach disabled) and re-arm later with `just safe-arm` once cost is under budget or
    the month rolled over; answer **yes** only when the abuse is fixed and cost is back
    under budget.
@@ -500,7 +505,7 @@ re-attach per the restore path):
 
 ```bash
 gcloud pubsub topics publish budget-kill --project=d20-folio \
-  --message='{"budgetDisplayName":"d20-folio £1 cap","costAmount":9.99,"budgetAmount":1,"currencyCode":"GBP"}'
+  --message='{"budgetDisplayName":"d20-folio £15 cap","costAmount":19.99,"budgetAmount":15,"currencyCode":"GBP"}'
 ```
 
 A safer dry run: temporarily comment the `updateProjectBillingInfo` call (or check

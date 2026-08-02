@@ -1253,7 +1253,8 @@ fleshed out by the owner on 2026-07-31, each item with its why:
 
 1. **Firebase App Check + abuse-resistant quotas** — the code is public, so strangers can hit our
    backend directly; the quota must be protected before any advertising.
-2. **The budget posture decision** — replace the £1 SAFE-01 tripwire with a consciously raised cap
+2. **The budget posture decision** — DECIDED 2026-08-02 (soft-launch charter R2: £15 cap,
+   script-side done, `just safe-arm` applies) — replace the £1 SAFE-01 tripwire with a consciously raised cap
    BEFORE any public push. The analysis on record: the free tier sustains ~100–150 DAU at £0, but
    the 9 MB PWA precache means only ~40 fresh installs/day ride the free hosting bandwidth — a
    single successful advertising day trips the kill-switch and takes the app down; £10–20/month
@@ -1305,7 +1306,9 @@ post" and leaves the rest parked.
   **Documented fallback if a takedown ever arrives:** split hosting — the public URL serves the
   SRD-only build; friends move to a second, unadvertised Hosting site of the same Firebase
   project serving the composed build (same Firestore, pack `srdId`s keep resolving there).
-- **R2 — Budget posture: raise the cap to £10–15/month.** SAFE-01's kill threshold moves from £1
+- **R2 — Budget posture: raise the cap to £10–15/month.** [Script-side DONE 2026-08-02:
+  `scripts/safe-01.sh` now carries the £15 budget + the £1/£5/£10 alert steps and renames the
+  legacy £1 budget in place — the owner applies it with one `just safe-arm`.] SAFE-01's kill threshold moves from £1
   to £10–15 with intermediate alerts (~£1, ~£5) so a successful post can never blackout the app;
   the hard ceiling stays (worst month = the cost of a pizza). See the capacity model below —
   the owner asked for the realistic users-per-spend curve.

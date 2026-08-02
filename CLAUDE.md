@@ -164,7 +164,8 @@ read those rather than duplicating them here.
 
 ## Constraints
 
-- **Zero budget.** Firebase Blaze, stays in free tier; budget alert at £1.
+- **Zero budget.** Firebase Blaze, stays in free tier; alerts from £1, the SAFE-01 hard cap at
+  £15 (the soft-launch posture, owner 2026-08-02 — worst month = a pizza).
 - **Licensing partition.** `src/data` + `src/i18n/*/srd` carry ONLY SRD 5.2.1 (CC-BY-4.0) content,
   every entry `source: "SRD"` (guard-enforced); ALL other content lives in the private
   `content-pack/`, composed in via the `@pack` alias (docs/ARCHITECTURE.md → "The content-pack
@@ -257,7 +258,7 @@ A better skill for a job REPLACES the incumbent (golden rule 18).
 - **Cloud Functions** (`functions/`, 2nd-gen, `europe-west1`, Node 24): two Firestore `onCreate`
   triggers — `onBugReportCreated` (in-app report → GitHub issue) and `onUserCreated` (new signup →
   owner email) — plus `deleteUser` (admin-only account nuke), `onBudgetAlert` (SAFE-01 billing
-  kill-switch: a Pub/Sub trigger on the `budget-kill` topic that detaches billing when the £1 budget
+  kill-switch: a Pub/Sub trigger on the `budget-kill` topic that detaches billing when the £15 budget
   is exceeded, hard-guaranteeing the zero-budget promise), and `ogShell` (the one HTTP function —
   Hosting rewrites `/view/**` + `/join/**` to it so a shared link unfurls with per-entity Open Graph
   tags; `docs/ARCHITECTURE.md` → "Link previews"). This package uses **npm** (standalone —
