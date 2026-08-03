@@ -58,6 +58,8 @@ import {
   isWeaponProficient,
   isArmorProficient,
   resolveWeaponAttackStat,
+  type ResolvedWeaponAttackStat,
+  type ResolvedWeaponDie,
   resolveItemBoundWeaponBonus,
   exhaustionPenalty,
   carryingCapacity,
@@ -74,6 +76,8 @@ import {
   resolveWeaponAttackBonuses,
   isMonkMeleeWeapon,
   featureClassRow,
+  attackStatWhy,
+  weaponDieWhy,
   freeCastItemChargeMax,
   masteryNumbers,
 } from "@/lib/smart-tracker";
@@ -389,8 +393,8 @@ function buildWeaponVM(
   // inventory to-hit can NEVER disagree with the Play card (golden rule 6). The
   // previous call missed the monk-melee swap, so a Monk's inventory weapon showed
   // a STR to-hit while Combat showed DEX — the divergence this fix closes.
-  const stat: AbilityCode = isCustom
-    ? ref.attackStat
+  const statResolution: ResolvedWeaponAttackStat = isCustom
+    ? { ability: ref.attackStat, reason: "default" }
     : resolveWeaponAttackStat({
         weaponType: srdWeapon?.weaponType,
         properties: rawProperties,
@@ -398,6 +402,10 @@ function buildWeaponVM(
         weaponAttackAbilities: ctx.weaponAttackAbilities,
         isMonkMelee: isMonkMeleeWeapon(srdWeapon),
       });
+  const stat: AbilityCode = statResolution.ability;
+  // Why THIS ability won (Finesse best-of, the Monk swap) — the SAME composer the
+  // combat row uses, so both weapon surfaces explain identically (golden rule 6).
+  const abilityWhy = attackStatWhy(statResolution);
   const mod = abilityModifier(effectiveScores[stat]);
 
   const isProficient = isCustom
@@ -434,6 +442,7 @@ function buildWeaponVM(
   const attackBreakdownParts = buildWeaponAttackBreakdown({
     attackStat: stat,
     abilityMod: mod,
+    ...(abilityWhy ? { abilityWhy } : {}),
     proficiencyBonus: isProficient ? effectivePB : 0,
     enchantBonus,
     ...(enchantItem && enchantBonus !== 0
@@ -471,14 +480,18 @@ function buildWeaponVM(
   // larger MA die) — the SAME `effectiveWeaponDie` the combat row uses, resolved
   // against the Monk's own level via `featureClassRow` (golden rule 6).
   const printedDie = isCustom ? ref.damageDie : (srdWeapon?.damage?.die ?? "1d8");
-  const damageDie = isCustom
-    ? printedDie
+  const dieResolution: ResolvedWeaponDie = isCustom
+    ? { die: printedDie }
     : effectiveWeaponDie(
         printedDie,
         isMonkMeleeWeapon(srdWeapon),
         ctx.weaponAttackAbilities,
         (sid, key) => (sid ? featureClassRow(sid, doc)?.[key] : undefined)
       );
+  const damageDie = dieResolution.die;
+  // The feature that REPLACED the printed die (Martial Arts) — the SAME composer
+  // the combat row uses, so the inventory tip explains it identically.
+  const dieWhy = weaponDieWhy(dieResolution, doc);
   const damageType: DamageType = isCustom
     ? ref.damageType
     : (srdWeapon?.damage?.type ?? "slashing");
@@ -499,7 +512,7 @@ function buildWeaponVM(
           isMonkMeleeWeapon(srdWeapon),
           ctx.weaponAttackAbilities,
           (sid, key) => (sid ? featureClassRow(sid, doc)?.[key] : undefined)
-        )
+        ).die
       : rawVersatileDie;
 
   const description = isCustom
@@ -531,11 +544,14 @@ function buildWeaponVM(
   const damageBreakdown = localizeDamageBreakdown(
     buildWeaponDamageBreakdown({
       damageDie,
+      ...(dieResolution.replaced ? { replacedDie: dieResolution.replaced } : {}),
+      ...(dieWhy ? { dieWhy } : {}),
       weaponName: isCustom
         ? customTextRef(ref.name)
         : srdTextRef("equipment", ref.srdId, "name"),
       attackStat: stat,
       abilityMod: mod,
+      ...(abilityWhy ? { abilityWhy } : {}),
       enchantBonus,
       ...(enchantItem
         ? { enchantName: srdTextRef("magic-item", enchantItem.id, "name") }

@@ -15,6 +15,7 @@ import { classFeatureIndex } from "@/data/classes";
 import { FEATS_BY_ID } from "@/data/feats";
 import { raceFeatureIndex, raceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
 import type { SrdKind } from "@/i18n/srd-en";
+import { srdText, customText, litText, type LocText } from "@/lib/loc-text";
 
 /** An SRD feature source the grant pipeline resolves (class-feature/feat/race-trait). */
 export type SrdFeatureSource = SrdClassFeatureData | SrdFeatData | RaceFeatureEntry;
@@ -51,4 +52,22 @@ export function srdRefForFeatureSource(entry: SrdFeatureSource): {
   // their own id under their respective catalogue.
   const kind: SrdKind = "category" in entry ? "feat" : "class-feature";
   return { kind, key: entry.id };
+}
+
+/**
+ * Provenance NAME ref for a granting feature — its ONE catalogue name (golden
+ * rule 6), so a rider token can read "+2d6 (Frenzy)" and a breakdown's why line
+ * can lead with "Martial Arts:" by the feature's canonical title. Lives on this
+ * LEAF module so every engine layer that needs it (compute's AC formulas, the
+ * smart-tracker's riders + die upgrades) shares ONE resolver without a cycle. An
+ * absent/unknown id (defensive — every SRD rider carries a `sourceId`) falls back
+ * to the id literal, never a thrown resolver. The view materializes it via
+ * `localizeText`.
+ */
+export function featureNameLoc(sourceId: string | undefined): LocText {
+  if (!sourceId) return litText({ en: "Extra damage", it: "Danni extra" });
+  const src = getSrdFeatureSource(sourceId);
+  if (!src) return customText(sourceId);
+  const ref = srdRefForFeatureSource(src);
+  return srdText(ref.kind, ref.key, "name");
 }

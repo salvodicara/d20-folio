@@ -11,6 +11,19 @@
     },
     "spell": {
       "bonus": "Spellcasting bonuses"
+    },
+    "why": {
+      "dieUpgrade": "The {{cls}}'s die ({{die}} at {{cls}} level {{level}}) replaces this weapon's printed {{printed}} whenever it's larger.",
+      "unarmedDie": "The {{cls}}'s die ({{die}} at {{cls}} level {{level}}) replaces the base damage ({{printed}}) a plain Unarmed Strike deals.",
+      "monkAbilitySwap": "Monk weapons and Unarmed Strikes can use Dexterity instead of Strength: the higher modifier applies.",
+      "abilitySwap": "This feature lets you use {{chosen}} for this attack in place of {{usual}}: the higher modifier applies.",
+      "finesse": "A weapon with {{property}} can use Dexterity or Strength: the higher modifier applies.",
+      "dexCap": "This armor adds at most +{{max}} of your Dexterity modifier.",
+      "unarmoredDefense": "While you aren't wearing armor, your base AC is {{base}} plus the ability modifiers listed here.",
+      "rider": "On a hit, this deals an extra {{dice}} {{type}} damage.",
+      "riderOnce": "Once per turn when you hit, this deals an extra {{dice}} {{type}} damage.",
+      "riderCost": "On a hit, you can spend 1 {{tracker}} to deal an extra {{dice}} {{type}} damage.",
+      "riderOnceCost": "Once per turn when you hit, you can spend 1 {{tracker}} to deal an extra {{dice}} {{type}} damage."
     }
   }
 }

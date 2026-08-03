@@ -30,6 +30,7 @@ import { useTranslation } from "react-i18next";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { damageVerdictOutcome } from "@/features/character/center/tabs/inventory/inventory-card-helpers";
 import { summarizeRiders, type RiderVM } from "@/lib/views/rider-view";
+import { WhyProse } from "@/components/shared/BreakdownWhy";
 
 /** Whether a rider can be spent right now on the combat surface. */
 function isSpendable(
@@ -210,7 +211,11 @@ function RiderToken({
   const { text, outcome } = riderToken(rider, t);
   // Provenance + qualifiers live in the tooltip (progressive disclosure): the
   // source feature, the once-per-turn note, and the spend cost when consumable.
+  // That compact line stays the aria/title text; when the engine composed a WHY
+  // sentence for this rider, the popover shows THAT instead — plain language
+  // beats a dot-joined qualifier list (rule 20: beginner-friendly on demand).
   const detail = riderDetail(rider, t);
+  const residual = rider.why ? riderQualifiers(rider, t, true).join(" · ") : "";
 
   const chip = (
     <span className="uc-verdict rider-chip" data-o={outcome} translate="no">
@@ -263,7 +268,17 @@ function RiderToken({
         className="glossary-pop"
         aria-label={riderName(rider, t)}
       >
-        {detail}
+        {rider.why ? (
+          <>
+            {/* The rubric above already NAMES the feature — no gold lead-in here. */}
+            <WhyProse why={rider.why} showRule={false} />
+            {residual ? (
+              <p className="mt-1 text-xs text-accent-text">{residual}</p>
+            ) : null}
+          </>
+        ) : (
+          detail
+        )}
       </PopoverContent>
     </Popover>
   );
@@ -309,9 +324,15 @@ function riderToken(rider: RiderVM, t: TranslateFn): { text: string; outcome: st
   }
 }
 
-/** Compose the rider's tooltip / aria detail line — provenance + qualifiers. */
-function riderDetail(rider: RiderVM, t: TranslateFn): string {
-  const parts: string[] = [rider.source];
+/**
+ * The rider's qualifier chips. `composed` = a WHY sentence is being shown, whose
+ * prose ALREADY carries the once-per-turn limiter and the tracker spend — those
+ * two are then omitted so nothing is stated twice (rule 19). The toggle state,
+ * the attack-or-spell scope and a Hit-Die cost are never in the sentence, so
+ * they always ride here.
+ */
+function riderQualifiers(rider: RiderVM, t: TranslateFn, composed: boolean): string[] {
+  const parts: string[] = [];
   // A rider gated on a `while-active` toggle that is up reads "· active" — the
   // SAME `combat.whileActiveNote` key the weapon-damage breakdown shows, so the
   // user sees the extra damage is conditional on the toggle (Rage, Divine Favor).
@@ -319,8 +340,15 @@ function riderDetail(rider: RiderVM, t: TranslateFn): string {
   // G14 — an attack-or-spell rider isn't weapon-bound; spell out the scope so the
   // self-side reminder reads "on an attack or a spell" (a species revelation form).
   if (rider.scope === "attack-or-spell") parts.push(t("combat.riderScopeAttackOrSpell"));
-  if (rider.oncePerTurn) parts.push(t("combat.oncePerTurn"));
-  if (rider.spend?.kind === "tracker") parts.push(t("combat.riderSpendsResource"));
+  if (!composed && rider.oncePerTurn) parts.push(t("combat.oncePerTurn"));
+  if (!composed && rider.spend?.kind === "tracker") {
+    parts.push(t("combat.riderSpendsResource"));
+  }
   if (rider.spend?.kind === "hit-die") parts.push(t("combat.riderSpendsHitDie"));
-  return parts.join(" · ");
+  return parts;
+}
+
+/** Compose the rider's compact aria / title detail line — provenance + qualifiers. */
+function riderDetail(rider: RiderVM, t: TranslateFn): string {
+  return [rider.source, ...riderQualifiers(rider, t, false)].join(" · ");
 }

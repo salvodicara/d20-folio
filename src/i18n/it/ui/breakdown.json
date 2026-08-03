@@ -11,6 +11,19 @@
     },
     "spell": {
       "bonus": "Bonus agli incantesimi"
+    },
+    "why": {
+      "dieUpgrade": "Il dado del {{cls}} ({{die}} al livello {{level}} da {{cls}}) sostituisce il {{printed}} stampato dell'arma quando è maggiore.",
+      "unarmedDie": "Il dado del {{cls}} ({{die}} al livello {{level}} da {{cls}}) sostituisce il danno base ({{printed}}) di un normale colpo senz'armi.",
+      "monkAbilitySwap": "Con le armi da monaco e i colpi senz'armi puoi usare Destrezza invece di Forza: si applica il modificatore più alto.",
+      "abilitySwap": "Questo privilegio ti permette di usare {{chosen}} per questo attacco al posto di {{usual}}: si applica il modificatore più alto.",
+      "finesse": "Un'arma con la proprietà {{property}} può usare Destrezza o Forza: si applica il modificatore più alto.",
+      "dexCap": "Questa armatura aggiunge al massimo +{{max}} del tuo modificatore di Destrezza.",
+      "unarmoredDefense": "Se non indossi armature, la tua CA base è {{base}} più i modificatori di caratteristica elencati qui.",
+      "rider": "Quando colpisci, infliggi {{dice}} danni extra di tipo {{type}}.",
+      "riderOnce": "Una volta per turno, quando colpisci, infliggi {{dice}} danni extra di tipo {{type}}.",
+      "riderCost": "Quando colpisci, puoi spendere 1 {{tracker}} per infliggere {{dice}} danni extra di tipo {{type}}.",
+      "riderOnceCost": "Una volta per turno, quando colpisci, puoi spendere 1 {{tracker}} per infliggere {{dice}} danni extra di tipo {{type}}."
     }
   }
 }

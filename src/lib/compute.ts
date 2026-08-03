@@ -27,7 +27,8 @@ import {
   abilityPart,
   locPart,
 } from "@/lib/value-breakdown";
-import { srdText } from "@/lib/loc-text";
+import { srdText, customText, type LocText } from "@/lib/loc-text";
+import { featureNameLoc } from "@/lib/srd-feature-lookup";
 import type {
   SrdEquipmentRef,
   CustomEquipment,
@@ -196,6 +197,10 @@ export function computeACDetailed(
   let baseValue = 10;
   let dexContribution = dexMod;
   let dexCapped = false;
+  // The ceiling that CLIPPED the DEX bonus, and the armor that imposed it — the
+  // why line answers "why is my +4 DEX only +2 here?" with the actual number.
+  let dexCapMax: number | null = null;
+  let armorRule: LocText | undefined;
   // Whether the WINNING base came from an equipped armor piece (vs the bare 10
   // default or a UD/item formula). Drives the base part's label: a worn armor
   // whose effective AC is BEATEN by 10 + high DEX leaves the 10 default winning,
@@ -230,20 +235,28 @@ export function computeACDetailed(
       base: number,
       category: "light" | "medium" | "heavy",
       ac: { dexBonus?: boolean; maxDex?: number | null }
-    ): { effective: number; base: number; dexPart: number; capped: boolean } => {
+    ): {
+      effective: number;
+      base: number;
+      dexPart: number;
+      capped: boolean;
+      cap: number | null;
+    } => {
       let dexPart = 0;
       let capped = false;
+      let capValue: number | null = null;
       if (ac.dexBonus) {
         if (ac.maxDex != null) {
           const cap =
             category === "medium" ? effectiveMediumDexCap(ac.maxDex) : ac.maxDex;
           dexPart = Math.min(dexMod, cap);
           capped = dexMod > cap;
+          capValue = cap;
         } else {
           dexPart = dexMod;
         }
       }
-      return { effective: base + dexPart, base, dexPart, capped };
+      return { effective: base + dexPart, base, dexPart, capped, cap: capValue };
     };
 
     if ("custom" in item) {
@@ -256,6 +269,8 @@ export function computeACDetailed(
           baseValue = c.base;
           dexContribution = c.dexPart;
           dexCapped = c.capped;
+          dexCapMax = c.cap;
+          armorRule = customText(item.name);
           baseFromArmor = true;
         }
         armorEquipped = true;
@@ -282,6 +297,8 @@ export function computeACDetailed(
           baseValue = c.base;
           dexContribution = c.dexPart;
           dexCapped = c.capped;
+          dexCapMax = c.cap;
+          armorRule = srdText("equipment", item.srdId, "name");
           baseFromArmor = true;
         }
         armorEquipped = true;
@@ -298,12 +315,26 @@ export function computeACDetailed(
   // The ability-mod composition of a winning Unarmored-Defense formula (so the
   // tip shows "13 base · +2 DEX · +3 WIS" for a Monk). Empty unless a formula won.
   let formulaAbilities: AbilityCode[] = [];
+  // The feature/item that OWNS the winning unarmored formula — names the rule in
+  // the breakdown's why line ("Unarmored Defense — while you aren't wearing
+  // armor…"). Undefined for an active-SPELL formula (Mage Armor), which reaches
+  // here without a catalogue source.
+  let formulaRule: LocText | undefined;
   if (!armorEquipped) {
     let bestFormulaAC = bestArmorAC;
-    const formulaGrants: Array<Extract<Grant, { type: "ac-formula" }>> = [];
+    // Each candidate carries its OWNING entity's NAME ref, so the winning
+    // formula's breakdown can lead with the rule that produced it ("Unarmored
+    // Defense", "Robe of the Archmagi"). A spell formula has no catalogue owner
+    // here and simply carries none.
+    const formulaGrants: Array<{
+      grant: Extract<Grant, { type: "ac-formula" }>;
+      rule?: LocText;
+    }> = [];
     for (const f of features ?? []) {
       if (!("srdId" in f)) continue;
-      formulaGrants.push(...resolveAcFormulaGrants(f.srdId));
+      for (const grant of resolveAcFormulaGrants(f.srdId)) {
+        formulaGrants.push({ grant, rule: featureNameLoc(f.srdId) });
+      }
     }
     // Equipped + attunement-satisfied magic items (same gate as the item-AC
     // pass above and the equipment → grant seam): a worn Robe of the Archmagi
@@ -311,7 +342,9 @@ export function computeACDetailed(
     for (const item of equipment) {
       if (!item.equipped || "custom" in item || !("srdId" in item)) continue;
       if (!attunementSatisfied(item)) continue; // attunement-required, not yet attuned
-      formulaGrants.push(...resolveItemAcFormulaGrants(item.srdId));
+      for (const grant of resolveItemAcFormulaGrants(item.srdId)) {
+        formulaGrants.push({ grant, rule: srdText("magic-item", item.srdId, "name") });
+      }
     }
     // ACTIVE-SPELL unarmored formulas (Mage Armor: 13 + DEX, `no-armor`). They
     // reach the aggregate ONLY while the spell's toggle is on, so they belong in
@@ -322,14 +355,16 @@ export function computeACDetailed(
     for (const g of activeAcFormulas) {
       if (g.condition === "no-armor" || g.condition === "no-armor-no-shield") {
         formulaGrants.push({
-          type: "ac-formula",
-          base: g.base,
-          bonuses: g.bonuses,
-          condition: g.condition,
+          grant: {
+            type: "ac-formula",
+            base: g.base,
+            bonuses: g.bonuses,
+            condition: g.condition,
+          },
         });
       }
     }
-    for (const g of formulaGrants) {
+    for (const { grant: g, rule } of formulaGrants) {
       // Condition gate: "always" always applies; "no-armor" applies (we
       // already know !armorEquipped); "no-armor-no-shield" needs to skip
       // the shield bonus.
@@ -343,7 +378,9 @@ export function computeACDetailed(
         baseValue = g.base;
         dexContribution = 0;
         dexCapped = false;
+        dexCapMax = null;
         formulaAbilities = [...g.bonuses];
+        formulaRule = rule;
       }
     }
     bestArmorAC = bestFormulaAC;
@@ -404,7 +441,21 @@ export function computeACDetailed(
     // F7 — label the base by whether the WINNING base actually came from worn
     // armor. A worn armor whose effective AC loses to 10 + high DEX leaves the
     // 10 default winning, so it reads "Base 10", not "Armor 10".
-    termPart(baseFromArmor ? "equipment.armor" : "breakdown.base", baseValue),
+    termPart(
+      baseFromArmor ? "equipment.armor" : "breakdown.base",
+      baseValue,
+      undefined,
+      // An Unarmored-Defense-style formula won: the base is NOT the bare 10 and
+      // it only holds while you wear no armor — say so (the ability rows below
+      // already list which modifiers ride it).
+      formulaAbilities.length > 0
+        ? {
+            term: "breakdown.why.unarmoredDefense",
+            params: { base: baseValue },
+            ...(formulaRule ? { rule: { loc: formulaRule } } : {}),
+          }
+        : undefined
+    ),
   ];
   // Show DEX whenever it contributes, or as the explicit +0 in the bare
   // "10 + DEX" default (a 0-DEX commoner still reads "10 base · +0 DEX"). A
@@ -415,7 +466,16 @@ export function computeACDetailed(
       abilityPart(
         "DEX",
         dexContribution,
-        dexCapped ? { term: "breakdown.ac.capped" } : undefined
+        dexCapped ? { term: "breakdown.ac.capped" } : undefined,
+        // The armor CLIPPED the DEX bonus — name the ceiling and the armor that
+        // set it, so a +4 DEX showing as +2 stops being a mystery.
+        dexCapped && dexCapMax !== null
+          ? {
+              term: "breakdown.why.dexCap",
+              params: { max: dexCapMax },
+              ...(armorRule ? { rule: { loc: armorRule } } : {}),
+            }
+          : undefined
       )
     );
   }
@@ -2111,6 +2171,15 @@ export interface UnarmedStrikeProfile {
   damageType: DamageType;
   /** The die the upgrade contributes (`null` when no upgrade applies). */
   die: string | null;
+  /** The WINNING upgrade's owning feature id — names the rule in the breakdown's
+   *  why layer (`null` when no upgrade applies). */
+  dieSourceId: string | null;
+  /** The ability folded into the damage formula (`null` for the base 1 + STR
+   *  strike, whose flat total carries no separate modifier row). */
+  damageAbility: AbilityCode | null;
+  /** True when the upgrade's alternate attack ability BEAT Strength — the silent
+   *  DEX-for-STR choice the breakdown explains. */
+  attackAbilitySwapped: boolean;
 }
 
 /**
@@ -2182,10 +2251,14 @@ export function effectiveUnarmedStrike(
   // Attack ability: STR by default; an upgrade's attackAbility may be USED in
   // its place — take the best modifier (RAW "you can use").
   let attackAbility: AbilityCode = "STR";
+  let attackAbilitySwapped = false;
   if (best?.attackAbility) {
     const altMod = abilityModifier(abilityScores[best.attackAbility]);
     const strMod = abilityModifier(abilityScores.STR);
-    if (altMod > strMod) attackAbility = best.attackAbility;
+    if (altMod > strMod) {
+      attackAbility = best.attackAbility;
+      attackAbilitySwapped = true;
+    }
   }
   const attackMod = abilityModifier(abilityScores[attackAbility]);
   const attackBonus = override?.attackBonus ?? attackMod + pb;
@@ -2216,6 +2289,9 @@ export function effectiveUnarmedStrike(
     damage: override?.damage ?? damage,
     damageType: override?.damageType ?? damageType,
     die,
+    dieSourceId: best?.sourceId ?? null,
+    damageAbility: best?.damageAbility ?? null,
+    attackAbilitySwapped,
   };
 }
 
@@ -2230,6 +2306,22 @@ export interface WeaponDieUpgrade {
 }
 
 /**
+ * The RESOLVED damage die of a weapon — the die actually rolled, plus the
+ * provenance of any rule that REPLACED the printed one. `replaced`/`sourceId`
+ * are present together and ONLY when a substitution happened, so a consumer can
+ * show `1d4 → 1d6` and name the feature that did it (the breakdown why layer)
+ * without re-deriving the winner.
+ */
+export interface ResolvedWeaponDie {
+  /** The die actually used ("1d6"). */
+  die: string;
+  /** The PRINTED die this replaced — absent when nothing was replaced. */
+  replaced?: string;
+  /** The winning upgrade's owning feature id — present iff `replaced` is. */
+  sourceId?: string;
+}
+
+/**
  * The effective DAMAGE DIE of a carried Monk weapon — the Monk Martial Arts die
  * REPLACES the weapon's printed die when LARGER (Shortsword 1d6 → 1d8 at Monk
  * L5; a Dagger 1d4 → 1d6 even at L1). Mirrors {@link effectiveUnarmedStrike}'s
@@ -2239,21 +2331,27 @@ export interface WeaponDieUpgrade {
  * untouched since a Heavy weapon is never a Monk weapon, so no upgrade applies).
  * `isMonkWeapon` gates the `"monk-melee"`-scoped upgrades. `deferredDice`
  * resolves a `"classSpecific:<key>"` sentinel (the Monk's `martialArtsDie` at the
- * Monk's own level — multiclass-correct). Returns the upgraded `"1dM"` when an
- * upgrade beats the printed face, else `weaponDie` unchanged. Pure — no rolls.
+ * Monk's own level — multiclass-correct).
+ *
+ * Returns the WINNER with its provenance ({@link ResolvedWeaponDie}): the
+ * upgraded `"1dM"` plus the `replaced` printed die and the `sourceId` of the
+ * upgrade that beat it, or just `{ die: weaponDie }` when nothing applied. The
+ * seam knows WHICH rule won, so the breakdown can say so instead of a consumer
+ * guessing from a bare string (golden rule 2). Pure — no rolls.
  */
 export function effectiveWeaponDie(
   weaponDie: string,
   isMonkWeapon: boolean,
   upgrades: ReadonlyArray<WeaponDieUpgrade>,
   deferredDice: DeferredDieResolver
-): string {
+): ResolvedWeaponDie {
   // Printed face — the count is preserved (a Monk weapon is single-die, so a
   // multi-die weapon, which is never a Monk weapon, simply never upgrades).
   const m = /^(\d*)d(\d+)$/.exec(weaponDie.trim());
-  if (!m) return weaponDie;
+  if (!m) return { die: weaponDie };
   const printedFace = parseInt(m[2] ?? "0", 10);
   let bestFace = printedFace;
+  let winner: string | undefined;
   for (const u of upgrades) {
     if (!u.dieUpgrade) continue;
     if (u.weaponScope === "monk-melee" && !isMonkWeapon) continue;
@@ -2264,9 +2362,19 @@ export function effectiveWeaponDie(
       die = typeof raw === "string" ? raw : "";
     }
     const um = /^d?(\d+)$/.exec(die);
-    if (um) bestFace = Math.max(bestFace, parseInt(um[1] ?? "0", 10));
+    if (!um) continue;
+    const face = parseInt(um[1] ?? "0", 10);
+    if (face > bestFace) {
+      bestFace = face;
+      winner = u.sourceId;
+    }
   }
-  return bestFace > printedFace ? `1d${bestFace}` : weaponDie;
+  if (bestFace <= printedFace) return { die: weaponDie };
+  return {
+    die: `1d${bestFace}`,
+    replaced: weaponDie,
+    ...(winner ? { sourceId: winner } : {}),
+  };
 }
 
 /**
@@ -2703,31 +2811,71 @@ export function resolveWeaponAttackStat(ctx: {
     ability: AbilityCode;
     magicOnly: boolean;
     weaponScope?: "monk-melee";
+    /** Owning feature id — names the rule in the breakdown's why layer. */
+    sourceId?: string;
   }>;
   /** Whether THIS weapon is a Monk weapon (Simple Melee or Light Martial Melee) —
    *  gates the `weaponScope: "monk-melee"` DEX swap. The caller computes it from
    *  `isMonkMeleeWeapon` (custom weapons supply their own `attackStat` upstream). */
   isMonkMelee: boolean;
-}): AbilityCode {
+}): ResolvedWeaponAttackStat {
   const { weaponType, properties, scores, weaponAttackAbilities, isMonkMelee } = ctx;
   const isRanged = weaponType === "ranged";
   const isFinesse = properties.some((p) => p.toLowerCase() === "finesse");
 
   let attackStat: AbilityCode = "STR";
+  let reason: ResolvedWeaponAttackStat["reason"] = "default";
+  let sourceId: string | undefined;
+  let displaced: AbilityCode | undefined;
   if (isRanged) {
     attackStat = "DEX";
   } else if (isFinesse) {
     attackStat =
       abilityModifier(scores.DEX) >= abilityModifier(scores.STR) ? "DEX" : "STR";
+    reason = "finesse";
   }
   for (const wa of weaponAttackAbilities) {
     if (wa.magicOnly) continue;
     if (wa.weaponScope === "monk-melee" && !isMonkMelee) continue;
     if (abilityModifier(scores[wa.ability]) > abilityModifier(scores[attackStat])) {
+      displaced = attackStat;
       attackStat = wa.ability;
+      // The Monk swap has its OWN plain-language explanation ("Monk weapons and
+      // Unarmed Strikes…"); every other swap gets the generic feature wording.
+      reason = wa.weaponScope === "monk-melee" ? "monk-swap" : "swap";
+      sourceId = wa.sourceId;
     }
   }
-  return attackStat;
+  return {
+    ability: attackStat,
+    reason,
+    ...(sourceId ? { sourceId } : {}),
+    ...(displaced ? { displaced } : {}),
+  };
+}
+
+/**
+ * The WINNING attack ability of a weapon plus WHY it won — the seam that knows
+ * the rule reports it, so the breakdown can explain a silent choice instead of a
+ * consumer re-deriving it (golden rule 2).
+ *  - `"default"` — the weapon's own default (STR melee / DEX ranged). Nothing to
+ *    explain; the row stays a plain receipt line.
+ *  - `"finesse"` — the Finesse property let the player pick the higher of
+ *    STR/DEX. Informative in BOTH outcomes (a Rapier resolving to STR surprises
+ *    exactly as much as one resolving to DEX).
+ *  - `"monk-swap"` — a `weaponScope: "monk-melee"` grant beat the default (Monk
+ *    Martial Arts → DEX on a Monk weapon).
+ *  - `"swap"` — any other `weapon-attack-ability` grant beat the default
+ *    (Bladesong → INT). `sourceId` names the granting feature in both swap
+ *    cases; `displaced` is the ability the swap pushed aside.
+ */
+export interface ResolvedWeaponAttackStat {
+  ability: AbilityCode;
+  reason: "default" | "finesse" | "monk-swap" | "swap";
+  /** The winning swap's owning feature id — present only for a swap. */
+  sourceId?: string;
+  /** The ability the swap displaced — present only for a swap. */
+  displaced?: AbilityCode;
 }
 
 /**

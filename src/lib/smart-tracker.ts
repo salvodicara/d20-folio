@@ -81,7 +81,11 @@ import { scaleCombatSummaryAtCastLevel } from "@/lib/cast-resolution";
 import { getRace, rawRaceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
 import type { CreatureSize, SrdRaceTrait } from "@/data/types";
 import { SRD_INVOCATIONS } from "@/data/invocations";
-import { getSrdFeatureSource, srdRefForFeatureSource } from "@/lib/srd-feature-lookup";
+import {
+  getSrdFeatureSource,
+  srdRefForFeatureSource,
+  featureNameLoc,
+} from "@/lib/srd-feature-lookup";
 import { spellIndex, spells } from "@/data/spells";
 import { WEAPONS_BY_ID } from "@/data/weapons";
 import { getEquipment } from "@/data/equipment";
@@ -122,12 +126,19 @@ import {
   maxTableExtraAttacks,
   isHeavyArmorEquipped,
   heavyWeaponDisadvantage,
+  type ResolvedWeaponDie,
+  type ResolvedWeaponAttackStat,
+  type UnarmedStrikeProfile,
 } from "@/lib/compute";
 import { srdEn, type SrdKind } from "@/i18n/srd-en";
 import { srdKey } from "@/i18n/srd-key";
 import type { LocText } from "@/lib/loc-text";
 import { srdText, customText, litText, uiText } from "@/lib/loc-text";
-import type { BreakdownLine, RawBreakdownPart } from "@/lib/value-breakdown";
+import type {
+  BreakdownLine,
+  BreakdownWhy,
+  RawBreakdownPart,
+} from "@/lib/value-breakdown";
 import { abilityPart, locPart, termPart, breakdownTotal } from "@/lib/value-breakdown";
 import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 import { resolveSpellAbility } from "@/lib/resolve-spell-ability";
@@ -922,6 +933,13 @@ export interface RawActionSummary extends Omit<
      * breakdown note. Absent → an unconditional rider.
      */
     whileActive?: boolean;
+    /**
+     * The rider's plain-language explanation, COMPOSED from the grant's own
+     * fields (dice, damage type, once-per-turn, resource cost) rather than
+     * hand-authored per feature — so every current AND future rider explains
+     * itself with zero per-feature prose. Locale-free; the presenter resolves it.
+     */
+    why?: BreakdownWhy;
   }>;
   /**
    * Damage-die roll manipulations on this weapon's own dice (Great Weapon
@@ -1625,20 +1643,6 @@ function raceTraitLoc(raceId: string, trait: SrdRaceTrait, field: string): LocTe
 }
 
 /**
- * Provenance NAME ref for a damage-rider / die-modifier — the granting
- * feature/feat's ONE catalogue name (golden rule 6), so a rider token can read
- * "+2d6 (Frenzy)" by the feature's canonical title. Resolves the source id
- * through the shared feature lookup; an absent/unknown id (defensive — every SRD
- * rider carries a `sourceId`) falls back to the id literal, never a thrown
- * resolver. The view materializes it via `localizeText`.
- */
-function riderSourceLoc(sourceId: string | undefined): LocText {
-  if (!sourceId) return litText({ en: "Extra damage", it: "Danni extra" });
-  const src = getSrdFeatureMechanics(sourceId);
-  return src ? featLoc(src, "name") : customText(sourceId);
-}
-
-/**
  * The collapsed-card EFFECT ref for one SRD catalogue entry: the authored
  * one-line `summary` when the catalogue carries one (a FACT gate via
  * {@link srdEn} — the field either exists in both locales or in neither, the
@@ -1729,6 +1733,180 @@ function featureScalingLevel(
   if (!feat) return totalLevel(character.character);
   const classLevel = classEntryLevel(character.character, feat.class);
   return classLevel > 0 ? classLevel : totalLevel(character.character);
+}
+
+/**
+ * The CLASS a source feature belongs to and the character's level in it — the
+ * provenance a die-upgrade explanation needs to say "1d6 at Monk level 3"
+ * (multiclass-correct: a College of Dance upgrade reads the BARD level). `null`
+ * for a non-class source (feat / race trait / item) or a class the character
+ * doesn't have — such a source simply carries no class-level phrasing.
+ */
+function featureSourceClass(
+  sourceId: string | undefined,
+  character: CharacterDoc
+): { classId: string; level: number } | null {
+  const feat = sourceId ? classFeatureIndex.get(sourceId) : undefined;
+  if (!feat) return null;
+  const level = classEntryLevel(character.character, feat.class);
+  return level > 0 ? { classId: feat.class, level } : null;
+}
+
+/**
+ * The WHY for a die a class feature REPLACED (Monk Martial Arts turning a
+ * Dagger's printed 1d4 into 1d6; College of Dance's Bardic Damage). Composed
+ * from the winner the SEAM reported ({@link effectiveWeaponDie}) — never
+ * re-derived, never regexed out of prose (golden rule 2). `undefined` when
+ * nothing was replaced or the source can't be attributed to a class level, so
+ * an unexplained row stays a plain receipt line (rule 19).
+ */
+export function weaponDieWhy(
+  resolved: ResolvedWeaponDie,
+  character: CharacterDoc,
+  /** The prose key — the weapon wording by default; an Unarmed Strike replaces
+   *  a flat 1 rather than a printed die, so it passes its own. */
+  term = "breakdown.why.dieUpgrade"
+): BreakdownWhy | undefined {
+  if (!resolved.replaced || !resolved.sourceId) return undefined;
+  const owner = featureSourceClass(resolved.sourceId, character);
+  if (!owner) return undefined;
+  return {
+    term,
+    params: {
+      die: resolved.die,
+      printed: resolved.replaced,
+      level: owner.level,
+      cls: { loc: srdText("class", owner.classId, "name") },
+    },
+    rule: { loc: featureNameLoc(resolved.sourceId) },
+  };
+}
+
+/**
+ * The plain-language WHY for one on-hit damage rider, COMPOSED from the grant's
+ * own declarative fields — never hand-authored per feature. Four sentence shapes
+ * cover every rider the taxonomy can express: with/without a once-per-turn
+ * limiter x with/without a spent resource. The dice string already carries any
+ * folded ability modifier ("1d6+3"), and the damage-type WORD + the tracker NAME
+ * ride as `LocText` params, so a NEW rider added tomorrow is self-explaining the
+ * moment it declares its grant (golden rule 2).
+ */
+function riderWhy(rider: {
+  dice: string;
+  damageType: string;
+  oncePerTurn: boolean;
+  /** The tracker each use spends — its id IS the owning feature's ("monk-focus"). */
+  trackerId?: string;
+  sourceId?: string;
+}): BreakdownWhy {
+  const term = rider.oncePerTurn
+    ? rider.trackerId
+      ? "breakdown.why.riderOnceCost"
+      : "breakdown.why.riderOnce"
+    : rider.trackerId
+      ? "breakdown.why.riderCost"
+      : "breakdown.why.rider";
+  return {
+    term,
+    params: {
+      dice: rider.dice,
+      type: { loc: uiText(`srd.damage_${rider.damageType}`) },
+      ...(rider.trackerId ? { tracker: { loc: featureNameLoc(rider.trackerId) } } : {}),
+    },
+    ...(rider.sourceId ? { rule: { loc: featureNameLoc(rider.sourceId) } } : {}),
+  };
+}
+
+/** The damage a plain 2024 Unarmed Strike deals before any feature die — the
+ *  value a `unarmed-strike-die` upgrade REPLACES (shown as `1 → 1d6`). */
+const BASE_UNARMED_DAMAGE = "1";
+
+/**
+ * The Unarmed Strike's damage breakdown — the Monk's MAIN attack finally gets
+ * the same tip a carried weapon has, through the SAME builder (golden rule 6).
+ * BOTH of its numbers come from a silent rule, and both are explained: the
+ * feature die replaced the plain strike's flat 1, and its damage ability may be
+ * DEX where the base strike uses STR.
+ *
+ * Returns `[]` for a plain 1 + STR strike (no upgrade): a flat total has no
+ * composition to decompose, so no tip renders at all (rule 19).
+ */
+function buildUnarmedDamageBreakdown(
+  profile: UnarmedStrikeProfile,
+  name: LocText,
+  scores: Record<AbilityCode, number>,
+  character: CharacterDoc
+): RawBreakdownPart[] {
+  if (!profile.die || !profile.damageAbility) return [];
+  const dieWhy = weaponDieWhy(
+    {
+      die: profile.die,
+      replaced: BASE_UNARMED_DAMAGE,
+      ...(profile.dieSourceId ? { sourceId: profile.dieSourceId } : {}),
+    },
+    character,
+    "breakdown.why.unarmedDie"
+  );
+  // The base strike uses STR; an upgrade that names a different damage ability
+  // silently changed which modifier applies — say so.
+  const abilityWhy: BreakdownWhy | undefined =
+    profile.damageAbility !== "STR" && profile.dieSourceId
+      ? {
+          term: "breakdown.why.monkAbilitySwap",
+          rule: { loc: featureNameLoc(profile.dieSourceId) },
+        }
+      : undefined;
+  return buildWeaponDamageBreakdown({
+    damageDie: profile.die,
+    replacedDie: BASE_UNARMED_DAMAGE,
+    ...(dieWhy ? { dieWhy } : {}),
+    weaponName: name,
+    attackStat: profile.damageAbility,
+    abilityMod: abilityModifier(scores[profile.damageAbility]),
+    ...(abilityWhy ? { abilityWhy } : {}),
+  });
+}
+
+/**
+ * The WHY for the ability a weapon attack/damage row resolved to, when the
+ * choice was not the weapon's own default: the Finesse best-of, or a feature
+ * swap (Monk Martial Arts' DEX-for-STR, Bladesong's INT). `undefined` for a
+ * plain STR longsword — there is nothing non-obvious to explain (rule 19).
+ */
+export function attackStatWhy(
+  resolved: ResolvedWeaponAttackStat
+): BreakdownWhy | undefined {
+  switch (resolved.reason) {
+    case "default":
+      return undefined;
+    case "finesse": {
+      const property = srdText("weapon-property", "finesse", "name");
+      return {
+        term: "breakdown.why.finesse",
+        params: { property: { loc: property } },
+        rule: { loc: property },
+      };
+    }
+    case "monk-swap":
+      return {
+        term: "breakdown.why.monkAbilitySwap",
+        ...(resolved.sourceId
+          ? { rule: { loc: featureNameLoc(resolved.sourceId) } }
+          : {}),
+      };
+    case "swap":
+      // A generic feature swap: name both abilities so the sentence stands on
+      // its own for any current or future `weapon-attack-ability` grant.
+      if (!resolved.sourceId || !resolved.displaced) return undefined;
+      return {
+        term: "breakdown.why.abilitySwap",
+        params: {
+          chosen: { loc: uiText(`abilities.${resolved.ability}`) },
+          usual: { loc: uiText(`abilities.${resolved.displaced}`) },
+        },
+        rule: { loc: featureNameLoc(resolved.sourceId) },
+      };
+  }
 }
 
 /**
@@ -1884,10 +2062,18 @@ export function resolveWeaponDamageBonuses(
 export function buildWeaponDamageBreakdown(opts: {
   /** The (one-handed) damage die, e.g. "2d6". */
   damageDie: string;
+  /** The PRINTED die a rule REPLACED (Monk Martial Arts) — renders `1d4 → 1d6`.
+   *  Absent when the weapon rolls its own printed die. */
+  replacedDie?: string;
+  /** Why the die was replaced ({@link weaponDieWhy}) — makes the row tappable. */
+  dieWhy?: BreakdownWhy;
   /** The weapon NAME ref — labels the die line. */
   weaponName: LocText;
   attackStat: AbilityCode;
   abilityMod: number;
+  /** Why THIS ability won the roll ({@link attackStatWhy}) — Finesse best-of, a
+   *  Monk swap. Absent for the weapon's plain default. */
+  abilityWhy?: BreakdownWhy;
   /** The bound magic enchant's +N and its item NAME ref (0/absent = none). */
   enchantBonus?: number;
   enchantName?: LocText;
@@ -1901,10 +2087,15 @@ export function buildWeaponDamageBreakdown(opts: {
   // (it is not summed into a scalar total — damage HAS no scalar total, it is a
   // formula). The ability mod + named bonuses are signed numeric parts.
   const parts: RawBreakdownPart[] = [
-    { label: { loc: opts.weaponName }, dice: opts.damageDie },
+    {
+      label: { loc: opts.weaponName },
+      dice: opts.damageDie,
+      ...(opts.replacedDie ? { fromDice: opts.replacedDie } : {}),
+      ...(opts.dieWhy ? { why: opts.dieWhy } : {}),
+    },
   ];
   if (opts.abilityMod !== 0) {
-    parts.push(abilityPart(opts.attackStat, opts.abilityMod));
+    parts.push(abilityPart(opts.attackStat, opts.abilityMod, undefined, opts.abilityWhy));
   }
   if (opts.enchantBonus && opts.enchantName) {
     parts.push(locPart(opts.enchantName, opts.enchantBonus));
@@ -1993,6 +2184,9 @@ export function resolveWeaponAttackBonuses(
 export function buildWeaponAttackBreakdown(opts: {
   attackStat: AbilityCode;
   abilityMod: number;
+  /** Why THIS ability won the roll ({@link attackStatWhy}) — Finesse best-of, a
+   *  Monk swap. Absent for the weapon's plain default. */
+  abilityWhy?: BreakdownWhy;
   /** Proficiency Bonus contribution (already 0 when not proficient). */
   proficiencyBonus: number;
   /** The bound magic enchant's +N and its item NAME ref (0/absent = none). */
@@ -2006,7 +2200,9 @@ export function buildWeaponAttackBreakdown(opts: {
   hasOverride?: boolean;
 }): RawBreakdownPart[] {
   if (opts.hasOverride) return [];
-  const parts: RawBreakdownPart[] = [abilityPart(opts.attackStat, opts.abilityMod)];
+  const parts: RawBreakdownPart[] = [
+    abilityPart(opts.attackStat, opts.abilityMod, undefined, opts.abilityWhy),
+  ];
   if (opts.proficiencyBonus !== 0) {
     parts.push(termPart("character.proficiencyBonus", opts.proficiencyBonus));
   }
@@ -2961,12 +3157,24 @@ export function resolveAttackDamageRiders(
           : // D2 — effective score (set-score item floor) for the rider's ability mod.
             abilityModifier(scores[r.addAbilityMod])
       );
+      const damageType =
+        r.damageType === "same-as-weapon" ? target.damageType : r.damageType;
       return {
         dice,
         // "same-as-weapon" (Colossus Slayer) resolves to the attack's OWN damage
         // type so the UI receives a real type, never the sentinel.
-        damageType: r.damageType === "same-as-weapon" ? target.damageType : r.damageType,
+        damageType,
         oncePerTurn: r.oncePerTurn,
+        // The plain-language "what is this and when does it apply?" — COMPOSED
+        // from this grant's own fields, so every rider (present and future)
+        // explains itself without a line of per-feature prose.
+        why: riderWhy({
+          dice,
+          damageType,
+          oncePerTurn: r.oncePerTurn,
+          ...(r.resourceCost ? { trackerId: r.resourceCost.trackerId } : {}),
+          sourceId: r.sourceId,
+        }),
         // A per-hit "vs marked/cursed target" rider (Hunter's Mark, Hex) — carried
         // so the presenter labels the chip; the player applies it only when the hit
         // lands on the marked creature (never auto-summed — no modeled enemy).
@@ -2978,7 +3186,7 @@ export function resolveAttackDamageRiders(
         // resolves it into the rider token's "(Frenzy)" attribution. A rider with
         // no `sourceId` (defensive — every SRD rider carries one) falls back to a
         // generic "extra damage" label resolved at the edge.
-        source: riderSourceLoc(r.sourceId),
+        source: featureNameLoc(r.sourceId),
         // A rider gated on a `while-active` toggle that is up marks the chip as a
         // conditional, currently-active source ("· active") — same flag the
         // weapon-damage breakdown reads from `whileActiveKey`.
@@ -3019,7 +3227,7 @@ export function resolveSpellAttackMarkedRiders(
         // player applies the die only when the spell attack lands on the marked
         // creature (never auto-summed — the app models no enemy).
         vsMarkedTarget: r.vsMarkedTarget,
-        source: riderSourceLoc(r.sourceId),
+        source: featureNameLoc(r.sourceId),
         ...(r.whileActiveKey ? { whileActive: true } : {}),
       },
     ];
@@ -3063,7 +3271,7 @@ export function resolveWeaponDieModifiers(
           mode: "floor",
           ...(m.floorBelow !== undefined ? { floorBelow: m.floorBelow } : {}),
           ...(m.floorTo !== undefined ? { floorTo: m.floorTo } : {}),
-          source: riderSourceLoc(m.sourceId),
+          source: featureNameLoc(m.sourceId),
         });
       }
     } else if (m.mode === "reroll-keep-higher") {
@@ -3072,7 +3280,7 @@ export function resolveWeaponDieModifiers(
         out.push({
           mode: "reroll-keep-higher",
           ...(m.oncePerTurn !== undefined ? { oncePerTurn: m.oncePerTurn } : {}),
-          source: riderSourceLoc(m.sourceId),
+          source: featureNameLoc(m.sourceId),
         });
       }
     }
@@ -3144,7 +3352,7 @@ export function resolveUnarmedFightingAttack(
             dice: mod.grappleDie,
             damageType,
             oncePerTurn: true,
-            source: riderSourceLoc(mod.sourceId),
+            source: featureNameLoc(mod.sourceId),
           },
         ]
       : []),
@@ -3351,7 +3559,7 @@ export function resolveManifestedWeaponAttacks(
       scores: ctx.abilityScores,
       weaponAttackAbilities: ctx.weaponAttackAbilities,
       isMonkMelee: isMonkMeleeWeapon(mw),
-    });
+    }).ability;
 
     const mod = abilityModifier(ctx.abilityScores[attackStat]);
     const proficient =
@@ -5425,8 +5633,11 @@ function resolveWeaponActions(
     // STR/DEX (by modifier); Monk Martial Arts' DEX swap on Monk weapons; the
     // best of any Bladesong-style `weapon-attack-ability`. D2 effective scores.
     // A custom weapon already carries its own `attackStat`.
-    const attackStat: AbilityCode = isCustom
-      ? weaponRef.attackStat
+    // A custom weapon carries a player-CHOSEN stat — the "default" reason, so
+    // nothing to explain; an SRD weapon resolves through the shared authority,
+    // which also reports WHY its ability won (Finesse best-of, the Monk swap).
+    const statResolution: ResolvedWeaponAttackStat = isCustom
+      ? { ability: weaponRef.attackStat, reason: "default" }
       : resolveWeaponAttackStat({
           weaponType: srdWeapon?.weaponType,
           properties: srdWeapon?.properties ?? [],
@@ -5434,6 +5645,8 @@ function resolveWeaponActions(
           weaponAttackAbilities: grantAgg.weaponAttackAbilities,
           isMonkMelee: isMonkMeleeWeapon(srdWeapon),
         });
+    const attackStat: AbilityCode = statResolution.ability;
+    const abilityWhy = attackStatWhy(statResolution);
 
     // D2 — the attack/damage modifier reads the EFFECTIVE score (set-score item floor),
     // so a Gauntlets/Belt user's weapon to-hit + damage reflect the set STR.
@@ -5479,6 +5692,7 @@ function resolveWeaponActions(
     const attackBreakdown = buildWeaponAttackBreakdown({
       attackStat,
       abilityMod: mod,
+      ...(abilityWhy ? { abilityWhy } : {}),
       proficiencyBonus: proficient ? pb : 0,
       enchantBonus: itemBoundBonus,
       ...(enchantItemId && itemBoundBonus !== 0
@@ -5499,14 +5713,18 @@ function resolveWeaponActions(
     // Monk L5). Resolved against the Monk's OWN level (multiclass-correct) via
     // the same `featureClassRow` deferred resolver the Unarmed Strike row uses.
     const printedDie = isCustom ? weaponRef.damageDie : (srdWeapon?.damage?.die ?? "1d8");
-    const damageDie = isCustom
-      ? printedDie
+    const dieResolution: ResolvedWeaponDie = isCustom
+      ? { die: printedDie }
       : effectiveWeaponDie(
           printedDie,
           isMonkMeleeWeapon(srdWeapon),
           grantAgg.weaponAttackAbilities,
           (sid, key) => (sid ? featureClassRow(sid, character)?.[key] : undefined)
         );
+    const damageDie = dieResolution.die;
+    // The feature that REPLACED the printed die (Martial Arts) — the tip renders
+    // `1d4 → 1d6` and unfolds this sentence on tap.
+    const dieWhy = weaponDieWhy(dieResolution, character);
     const damageType = isCustom
       ? weaponRef.damageType
       : (srdWeapon?.damage?.type ?? "bludgeoning");
@@ -5661,7 +5879,7 @@ function resolveWeaponActions(
             isMonkMeleeWeapon(srdWeapon),
             grantAgg.weaponAttackAbilities,
             (sid, key) => (sid ? featureClassRow(sid, character)?.[key] : undefined)
-          )
+          ).die
         : rawVersatileDie;
     // The SAME damage modifier as the one-handed formula (incl. the item-bound
     // enchant +N — previously the bare ability mod, so a +1 longsword read
@@ -5676,9 +5894,12 @@ function resolveWeaponActions(
     // enchant + Rage-style flat bonuses) — empty under a damageOverride.
     const damageBreakdown = buildWeaponDamageBreakdown({
       damageDie,
+      ...(dieResolution.replaced ? { replacedDie: dieResolution.replaced } : {}),
+      ...(dieWhy ? { dieWhy } : {}),
       weaponName: name,
       attackStat,
       abilityMod: mod,
+      ...(abilityWhy ? { abilityWhy } : {}),
       enchantBonus: itemBoundBonus,
       ...(enchantItemId && itemBoundBonus !== 0
         ? { enchantName: srdText("magic-item", enchantItemId, "name") }
@@ -6001,9 +6222,24 @@ function resolveWeaponActions(
     // rides the Unarmed Strike too (RAW: the reach buff names Unarmed Strikes).
     // An Unarmed Strike is never Heavy/Versatile, so only `all-melee` riders apply.
     const { reachBonusFt } = resolveMeleeReachBonus(grantAgg.weaponReachBonuses, false);
+    // The Monk's Unarmed Strike is their MAIN attack, and BOTH of its numbers are
+    // the product of a silent rule: the feature die REPLACES the plain strike's
+    // flat 1 damage, and its damage ability may be DEX where the base strike uses
+    // STR. So the row carries the SAME damage breakdown a carried weapon does —
+    // built by the ONE builder (golden rule 6) — with both substitutions
+    // explained. Only when an upgrade actually applied: a plain "1 + STR" strike
+    // has no composition worth a tip.
+    const unarmedName = litText({ en: "Unarmed Strike", it: "Colpo Senz'armi" });
+    const damageBreakdown = buildUnarmedDamageBreakdown(
+      profile,
+      unarmedName,
+      ctx.abilityScores,
+      character
+    );
     const summary: RawActionSummary = {
       attackBonus: profile.attackBonus + exPenalty,
       damage: profile.damage,
+      ...(damageBreakdown.length > 0 ? { damageBreakdown } : {}),
       damageType: profile.damageType,
       // Melee reach — 5 ft base + any active reach rider; the view formats it.
       weaponRange: { kind: "melee", reachFt: 5 + reachBonusFt },
@@ -6017,7 +6253,7 @@ function resolveWeaponActions(
     }
     actions.push({
       id,
-      name: litText({ en: "Unarmed Strike", it: "Colpo Senz'armi" }),
+      name: unarmedName,
       type: "action",
       source: "weapon",
       spellLevel: null,

@@ -850,6 +850,7 @@ describe("resolveWeaponAttackStat", () => {
       ability: "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
       magicOnly: boolean;
       weaponScope?: "monk-melee";
+      sourceId?: string;
     }>;
     isMonkMelee?: boolean;
   }) =>
@@ -868,7 +869,9 @@ describe("resolveWeaponAttackStat", () => {
         properties: ["Ammunition (Range 80/320; Bolt)"],
         scoreOver: { STR: 14, DEX: 16 },
       })
-    ).toBe("DEX");
+      // The reason rides with the ability so the breakdown can explain a
+      // non-default choice; a ranged weapon's DEX IS the default (no why).
+    ).toEqual({ ability: "DEX", reason: "default" });
   });
 
   it("returns STR for melee weapons without Finesse", () => {
@@ -878,7 +881,7 @@ describe("resolveWeaponAttackStat", () => {
         properties: ["Two-Handed", "Heavy"],
         scoreOver: { STR: 16, DEX: 14 },
       })
-    ).toBe("STR");
+    ).toEqual({ ability: "STR", reason: "default" });
   });
 
   it("returns DEX for Finesse weapons when DEX > STR", () => {
@@ -888,7 +891,9 @@ describe("resolveWeaponAttackStat", () => {
         properties: ["Finesse", "Light"],
         scoreOver: { STR: 12, DEX: 16 },
       })
-    ).toBe("DEX");
+      // Finesse is reported in BOTH outcomes — a Rapier resolving to STR is
+      // exactly as surprising as one resolving to DEX, so both get the why.
+    ).toEqual({ ability: "DEX", reason: "finesse" });
   });
 
   it("returns STR for Finesse weapons when STR > DEX", () => {
@@ -898,7 +903,7 @@ describe("resolveWeaponAttackStat", () => {
         properties: ["Finesse", "Light"],
         scoreOver: { STR: 18, DEX: 14 },
       })
-    ).toBe("STR");
+    ).toEqual({ ability: "STR", reason: "finesse" });
   });
 
   it("returns DEX for Finesse when the MODIFIERS tie (prefers DEX even if STR score higher)", () => {
@@ -910,11 +915,14 @@ describe("resolveWeaponAttackStat", () => {
         properties: ["Finesse", "Light"],
         scoreOver: { STR: 19, DEX: 18 },
       })
-    ).toBe("DEX");
+    ).toEqual({ ability: "DEX", reason: "finesse" });
   });
 
   it("handles undefined weapon type (defaults to STR)", () => {
-    expect(stat({ scoreOver: { STR: 14, DEX: 16 } })).toBe("STR");
+    expect(stat({ scoreOver: { STR: 14, DEX: 16 } })).toEqual({
+      ability: "STR",
+      reason: "default",
+    });
   });
 
   it("applies the Monk Martial-Arts DEX swap on a Monk weapon when DEX > STR", () => {
@@ -929,7 +937,9 @@ describe("resolveWeaponAttackStat", () => {
         ],
         isMonkMelee: true,
       })
-    ).toBe("DEX");
+      // "monk-swap" (not the generic "swap") selects the Monk-specific prose;
+      // `displaced` is the ability the swap pushed aside.
+    ).toEqual({ ability: "DEX", reason: "monk-swap", displaced: "STR" });
   });
 
   it("does NOT apply the monk-melee swap to a non-Monk weapon", () => {
@@ -943,7 +953,7 @@ describe("resolveWeaponAttackStat", () => {
         ],
         isMonkMelee: false,
       })
-    ).toBe("STR");
+    ).toEqual({ ability: "STR", reason: "default" });
   });
 });
 
@@ -1338,9 +1348,23 @@ describe("computeAC", () => {
       const eq: SrdEquipmentRef[] = [{ srdId: "half-plate-armor", equipped: true }];
       const { ac, parts } = computeACDetailed(eq, scores(18), resolve);
       expect(ac).toBe(17);
+      // The clipped DEX row now also carries the WHY: the actual ceiling (+2) and
+      // the armor NAME ref that imposed it, so the tip can answer "why is my +4
+      // DEX only +2?" in plain language. An UNCAPPED DEX row carries none.
       expect(parts).toEqual([
         { label: { term: "equipment.armor" }, value: 15 },
-        { label: { ability: "DEX" }, value: 2, note: { term: "breakdown.ac.capped" } },
+        {
+          label: { ability: "DEX" },
+          value: 2,
+          note: { term: "breakdown.ac.capped" },
+          why: {
+            term: "breakdown.why.dexCap",
+            params: { max: 2 },
+            rule: {
+              loc: { srd: { kind: "equipment", key: "half-plate-armor", field: "name" } },
+            },
+          },
+        },
       ]);
     });
 
@@ -1392,8 +1416,27 @@ describe("computeAC", () => {
       // 10 + 2 (DEX) + 3 (CON) = 15; the formula owns its abilities, so there is
       // exactly ONE DEX row (emitted in formula order), never a standalone +DEX.
       expect(ac).toBe(15);
+      // The BASE row carries the why (the formula only holds while unarmored);
+      // the ability rows below already say WHICH modifiers ride it, so they stay
+      // plain — one attribution, never two (rule 19).
       expect(parts).toEqual([
-        { label: { term: "breakdown.base" }, value: 10 },
+        {
+          label: { term: "breakdown.base" },
+          value: 10,
+          why: {
+            term: "breakdown.why.unarmoredDefense",
+            params: { base: 10 },
+            rule: {
+              loc: {
+                srd: {
+                  kind: "class-feature",
+                  key: "barbarian-unarmored-defense",
+                  field: "name",
+                },
+              },
+            },
+          },
+        },
         { label: { ability: "DEX" }, value: 2 },
         { label: { ability: "CON" }, value: 3 },
       ]);
@@ -1408,7 +1451,23 @@ describe("computeAC", () => {
       // 10 + 3 (DEX) + 3 (WIS) = 16.
       expect(ac).toBe(16);
       expect(parts).toEqual([
-        { label: { term: "breakdown.base" }, value: 10 },
+        {
+          label: { term: "breakdown.base" },
+          value: 10,
+          why: {
+            term: "breakdown.why.unarmoredDefense",
+            params: { base: 10 },
+            rule: {
+              loc: {
+                srd: {
+                  kind: "class-feature",
+                  key: "monk-unarmored-defense",
+                  field: "name",
+                },
+              },
+            },
+          },
+        },
         { label: { ability: "DEX" }, value: 3 },
         { label: { ability: "WIS" }, value: 3 },
       ]);

@@ -1216,6 +1216,26 @@ in a void: last ink → panel edge = strip → panel edge.
   detail-on-demand inside an already-disclosed detail surface, so collapsed rows stay quiet. The
   chip keeps its per-weapon numbers ("Da Lancio (Gittata 6/18 m)"); the rubric strips them.
 
+### Breakdown "why" rows (`BreakdownTip`)
+
+- **A breakdown row that a RULE produced becomes a disclosure**, riding the EXISTING `.cause-toggle`
+  recipe (the level-up multiclass fork's "Details" twin of `.glossary-term`: inherit-everything
+  typography, dotted gold underline, pointer cursor, inline chevron slot) — no new trigger chrome. The
+  chevron is a `ChevronRight` that rotates 90° on open (`transition-transform`, globally motion-gated by
+  `[data-motion="reduced"]`). Real `<button>` + `aria-expanded`/`aria-controls`; keyboard-operable.
+- **A replaced value shows the substitution in the value cell** — `1d4 → 1d6`: the superseded value
+  muted (`text-text-secondary`, 65% opacity, normal weight), a quiet `→`, the effective value bold as
+  before. Silent replacement is the defect this fixes.
+- **The explanation unfolds BENEATH its row, inside the same popover**, accordion-style — one open at a
+  time. Quiet register: `text-xs`, `leading-[1.5]`, `text-text-secondary`, `max-w-[15.5rem]`, the rule's
+  NAME as a gold (`text-accent-text`) lead-in, a colon (never an em dash — §7), then plain-language
+  prose. Rendered by
+  the ONE shared `WhyProse` component, which the on-hit rider popover also uses (with the lead-in
+  suppressed — its rubric already names the feature).
+- **Only rows with something non-obvious to explain get a toggle.** A plain STR longsword's ability row,
+  a shield row, a base-AC row: no chevron, no change from before (rule 19 — only, and all, the
+  necessary). Never annotate the obvious.
+
 ### Health + resource bars
 
 - **HP bar = "Liquid Mercury":** a recessed channel (`--elev-recessed`) filled by a 3-stop gradient +

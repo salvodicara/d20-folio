@@ -2086,6 +2086,27 @@ never a bespoke `breakdown.*` term), so the tip can't localize the entity differ
 surfaces (rule 6). `tests/unit/value-breakdown.guard.test.ts` pins `sum(parts) === displayed total`
 across the 6 fixtures + MOCK, the HP override-gate, and (table-driven) each entity name in EN + IT.
 
+**The WHY layer (2026-08-03).** A breakdown is a receipt: it says WHAT sums, never WHY. So a part may
+additionally carry a locale-free `why: BreakdownWhy` — `{ term, params?, rule? }`, where `term` is an
+APP i18n key (`breakdown.why.*`) the EDGE interpolates, `params` may hold `{ loc }` `LocText` refs, and
+`rule` is the feature/property NAME the tip shows as a gold, colon-terminated lead-in — and a DICE part may carry
+`fromDice`, the printed die a rule REPLACED. The presenter's `resolveWhy` turns each into a
+`BreakdownWhyLine` (LocText refs resolved, `term` + scalar params left for the edge) and `localizeBreakdown`
+threads it onto `BreakdownLine.why` / `.fromValue`; `BreakdownTip` then renders `1d4 → 1d6` in the value
+cell and makes that row a `.cause-toggle` disclosure whose tap unfolds ONE plain-language sentence
+(accordion, one open at a time), rendered by the shared `WhyProse` component. **A `why` is emitted at the
+exact engine site that applied the rule** (golden rule 2) — `effectiveWeaponDie` and
+`resolveWeaponAttackStat` return the WINNING rule's provenance (`ResolvedWeaponDie` /
+`ResolvedWeaponAttackStat`) rather than a bare value, so no consumer re-derives it. Wave-1 sites: the Monk
+Martial Arts die replacement (carried weapon, Versatile grip, Unarmed Strike, inventory row), the ability
+choice on attack/damage rows (Finesse best-of, a feature swap), the medium-armor DEX cap and the winning
+Unarmored-Defense formula in `computeACDetailed`, and every on-hit `damage-rider` — whose sentence is
+COMPOSED from the grant's own fields (`riderWhy`: dice × damage type × `oncePerTurn` × `resourceCost`), so
+a rider added tomorrow explains itself with zero per-feature prose. A `why` NEVER affects a total: a plain
+STR longsword row carries none and renders exactly as before (rule 19), and the sum-of-parts guard is
+unchanged. The rider's popover renders the SAME `WhyProse` (rule lead-in suppressed — its rubric already
+names the feature).
+
 **Toasts-as-data.** `stores/characterStore.ts` no longer imports i18n. Destructive/combat mutations
 push a **structured `ToastIntent`** (`src/types/toast.ts` — a `kind` discriminant + raw args: ids +
 numbers) onto `toastStore`; the `useToasts` hook (UI) localizes it at render via

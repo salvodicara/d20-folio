@@ -484,6 +484,29 @@ DM writes STORY. Deterministic (no AI prose beyond templated facts, no dice), ta
   PLAYER declares it (Phase 1 below); other drama stays in the DM's narrative note.
 - Full detail: `docs/ARCHITECTURE.md → "The Combat Chronicle event seam"`.
 
+## Built (held for owner sign-off) — The breakdown "why" layer (2026-08-03)
+
+Owner request (2026-08-03), design previewed and approved on the real popover: **every value breakdown
+answers "why?", on demand.** The `BreakdownTip` was a receipt — it showed WHAT sums, never WHY. The real
+case: Bo (Monk 3, daggers) read "Dagger 1d6 · DEX +3", but a dagger prints 1d4 — Martial Arts had
+silently replaced the die AND silently chosen DEX over STR.
+
+- **Substitutions are visible** — a replaced die renders `1d4 → 1d6` in the value cell (printed die
+  muted, quiet arrow, effective die bold).
+- **A row a rule produced becomes a disclosure** on the EXISTING `.cause-toggle` recipe (dotted gold
+  underline + inline chevron rotating 90°); tapping it unfolds ONE plain-language sentence beneath the
+  row inside the same popover, accordion-style (one open at a time). Rows with nothing non-obvious to
+  explain are untouched (rule 19).
+- **Emitted at the seam that applied the rule** (rule 2): `effectiveWeaponDie` /
+  `resolveWeaponAttackStat` now return the WINNING rule's provenance instead of a bare value.
+- **Wave 1** — the Monk die replacement (carried weapon · Versatile grip · Unarmed Strike, which gains
+  its first damage breakdown · inventory row), the ability choice (Finesse best-of, feature swaps), the
+  medium-armor DEX cap, the winning Unarmored-Defense formula, and EVERY on-hit damage rider — whose
+  sentence is COMPOSED from the grant's own fields, so a rider added tomorrow self-explains with zero
+  per-feature prose.
+- HELD for the rule-25 screenshot approval before merge. Full detail: `docs/ARCHITECTURE.md → "The WHY
+layer"`; the visual recipe: `DESIGN.md → "Breakdown "why" rows"`.
+
 ## Built (held for owner sign-off) — Cockpit status badges + turn-control cleanup (2026-08-02)
 
 Two owner-requested cockpit UX refinements, HELD for rule-25 screenshot approval before merge:

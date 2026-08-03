@@ -47,19 +47,59 @@ import type { AbilityCode } from "@/data/types";
 import type { LocText } from "@/lib/loc-text";
 
 /**
+ * The WHY layer — a locale-free explanation of the RULE that produced a part.
+ *
+ * A breakdown line is a receipt: it says WHAT sums. When a rule silently changed
+ * the outcome (Martial Arts replacing a Dagger's printed 1d4 with 1d6, a Monk
+ * spending DEX where the weapon defaults to STR, medium armor clipping the DEX
+ * bonus), the receipt alone leaves the player asking "why?". A part that carries
+ * a `why` becomes TAPPABLE in the tip and unfolds this micro-explanation.
+ *
+ * Locale-free by construction (engine-core ↛ i18n, §1.1): `term` is an APP i18n
+ * key the EDGE interpolates via `t(term, params)`; a `{ loc }` param and the
+ * `rule` lead-in are {@link LocText} refs the PRESENTER resolves. Emit a `why`
+ * ONLY where a rule did something non-obvious — a plain STR longsword row has
+ * nothing to explain and must render exactly as it always has (rule 19: only,
+ * and all, the necessary).
+ */
+export interface BreakdownWhy {
+  /** APP i18n key carrying the plain-language prose (`breakdown.why.*`). */
+  term: string;
+  /** Interpolation params; a `{ loc }` value is resolved by the presenter. */
+  params?: Readonly<Record<string, string | number | { loc: LocText }>>;
+  /** The gold lead-in — the NAME of the feature/property that did this. */
+  rule?: { loc: LocText };
+}
+
+/** Fields every {@link RawBreakdownPart} variant may carry. */
+interface BreakdownPartExtras {
+  /** A short annotation appended after the label ("capped by armor"). */
+  note?: BreakdownNote;
+  /** The rule explanation this row unfolds on tap (see {@link BreakdownWhy}). */
+  why?: BreakdownWhy;
+}
+
+/**
  * One ENGINE-emitted (locale-free) breakdown source. Exactly one label variant.
  * `value` is the signed numeric contribution; `dice` (mutually exclusive with a
  * numeric `value`) carries a damage/heal die string the tip shows verbatim.
  */
 export type RawBreakdownPart =
   /** APP-string label (i18n key resolved at the edge): Base, Shield, PB, … */
-  | { label: { term: string }; value: number; note?: BreakdownNote }
+  | ({ label: { term: string }; value: number } & BreakdownPartExtras)
   /** Ability-modifier source: the edge renders the short ability name. */
-  | { label: { ability: AbilityCode }; value: number; note?: BreakdownNote }
+  | ({ label: { ability: AbilityCode }; value: number } & BreakdownPartExtras)
   /** SRD NAME label (feat/feature/item) resolved by the presenter. */
-  | { label: { loc: LocText }; value: number; note?: BreakdownNote }
-  /** A dice row (weapon/heal die): the SRD NAME labels it, `dice` is verbatim. */
-  | { label: { loc: LocText }; dice: string; note?: BreakdownNote };
+  | ({ label: { loc: LocText }; value: number } & BreakdownPartExtras)
+  /** A dice row (weapon/heal die): the SRD NAME labels it, `dice` is verbatim.
+   *  `fromDice` is the PRINTED die a rule REPLACED — present only when a
+   *  substitution actually happened, and rendered as `1d4 → 1d6` so the swap is
+   *  visible instead of silent. */
+  | ({
+      label: { loc: LocText };
+      dice: string;
+      fromDice?: string;
+    } & BreakdownPartExtras);
 
 /** A presenter-resolvable annotation appended after a part's label. */
 export type BreakdownNote =
@@ -69,6 +109,31 @@ export type BreakdownNote =
   | { whileActive: true };
 
 /**
+ * A presenter-RESOLVED {@link BreakdownWhy}: every {@link LocText} ref (the rule
+ * lead-in, any `{ loc }` param) is now a string; `term` + `params` stay
+ * structured because the presenter is i18next-free (§2.5) — the EDGE runs
+ * `t(term, params)`.
+ */
+export interface BreakdownWhyLine {
+  /** APP i18n key the edge interpolates. */
+  term: string;
+  /** Resolved interpolation params. */
+  params?: Readonly<Record<string, string | number>>;
+  /** The resolved gold lead-in (the rule/feature name). */
+  rule?: string;
+}
+
+/** Fields every {@link BreakdownLine} variant may carry. */
+interface BreakdownLineExtras {
+  note?: BreakdownNote;
+  /** The unfoldable rule explanation (absent ⇒ the row is not tappable). */
+  why?: BreakdownWhyLine;
+  /** The SUPERSEDED value a rule replaced — rendered muted before `value`
+   *  (`1d4 → 1d6`). Absent ⇒ nothing was replaced. */
+  fromValue?: string;
+}
+
+/**
  * One LOCALIZED breakdown line the {@link BreakdownTip} renders. SUPERSEDES the
  * old `DamageBreakdownLine` — damage + heal now emit this shape too. The label is
  * resolved (SRD `loc` → string; `ability`/`term` stay structured for the edge's
@@ -76,9 +141,9 @@ export type BreakdownNote =
  * contribution ("+3", "10", "2d6", "1d8 + 2"). `note` is the optional annotation.
  */
 export type BreakdownLine =
-  | { kind: "term"; value: string; term: string; note?: BreakdownNote }
-  | { kind: "ability"; value: string; ability: AbilityCode; note?: BreakdownNote }
-  | { kind: "loc"; value: string; label: string; note?: BreakdownNote };
+  | ({ kind: "term"; value: string; term: string } & BreakdownLineExtras)
+  | ({ kind: "ability"; value: string; ability: AbilityCode } & BreakdownLineExtras)
+  | ({ kind: "loc"; value: string; label: string } & BreakdownLineExtras);
 
 /**
  * The displayed total of a breakdown — the SUM of every part's numeric `value`
@@ -100,25 +165,38 @@ export function breakdownTotal(parts: ReadonlyArray<RawBreakdownPart>): number {
 export function termPart(
   term: string,
   value: number,
-  note?: BreakdownNote
+  note?: BreakdownNote,
+  why?: BreakdownWhy
 ): RawBreakdownPart {
-  return { label: { term }, value, ...(note ? { note } : {}) };
+  return { label: { term }, value, ...(note ? { note } : {}), ...(why ? { why } : {}) };
 }
 
 /** A part labelled by an ability modifier (DEX, the spellcasting ability, …). */
 export function abilityPart(
   ability: AbilityCode,
   value: number,
-  note?: BreakdownNote
+  note?: BreakdownNote,
+  why?: BreakdownWhy
 ): RawBreakdownPart {
-  return { label: { ability }, value, ...(note ? { note } : {}) };
+  return {
+    label: { ability },
+    value,
+    ...(note ? { note } : {}),
+    ...(why ? { why } : {}),
+  };
 }
 
 /** A part labelled by an SRD NAME ref (a feat/feature/item the presenter resolves). */
 export function locPart(
   label: LocText,
   value: number,
-  note?: BreakdownNote
+  note?: BreakdownNote,
+  why?: BreakdownWhy
 ): RawBreakdownPart {
-  return { label: { loc: label }, value, ...(note ? { note } : {}) };
+  return {
+    label: { loc: label },
+    value,
+    ...(note ? { note } : {}),
+    ...(why ? { why } : {}),
+  };
 }

@@ -18,7 +18,12 @@ import type {
   ResolvedActionHeal,
 } from "@/lib/smart-tracker";
 import { resolveActions } from "@/lib/smart-tracker";
-import type { BreakdownLine, RawBreakdownPart } from "@/lib/value-breakdown";
+import type {
+  BreakdownLine,
+  BreakdownWhy,
+  BreakdownWhyLine,
+  RawBreakdownPart,
+} from "@/lib/value-breakdown";
 import type { AbilityCode, BiText } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
@@ -186,40 +191,54 @@ export function localizeBreakdown(
   locale: Locale
 ): BreakdownLine[] {
   return parts.map((p) => {
+    const extras = {
+      ...(p.note ? { note: p.note } : {}),
+      ...(p.why ? { why: resolveWhy(p.why, locale) } : {}),
+    };
     if ("dice" in p) {
       // A die row (weapon/heal): the SRD NAME labels it; the dice string shows
-      // verbatim (it is not a signed numeric contribution).
+      // verbatim (it is not a signed numeric contribution). `fromDice` — the
+      // printed die a rule REPLACED — rides along so the tip renders the
+      // substitution (`1d4 → 1d6`) instead of hiding it.
       return {
         kind: "loc",
         value: p.dice,
         label: localizeText(p.label.loc, locale),
-        ...(p.note ? { note: p.note } : {}),
+        ...(p.fromDice ? { fromValue: p.fromDice } : {}),
+        ...extras,
       };
     }
     const value = formatModifier(p.value);
     if ("term" in p.label) {
-      return {
-        kind: "term",
-        value,
-        term: p.label.term,
-        ...(p.note ? { note: p.note } : {}),
-      };
+      return { kind: "term", value, term: p.label.term, ...extras };
     }
     if ("ability" in p.label) {
-      return {
-        kind: "ability",
-        value,
-        ability: p.label.ability,
-        ...(p.note ? { note: p.note } : {}),
-      };
+      return { kind: "ability", value, ability: p.label.ability, ...extras };
     }
-    return {
-      kind: "loc",
-      value,
-      label: localizeText(p.label.loc, locale),
-      ...(p.note ? { note: p.note } : {}),
-    };
+    return { kind: "loc", value, label: localizeText(p.label.loc, locale), ...extras };
   });
+}
+
+/**
+ * Resolve one engine-emitted {@link BreakdownWhy} into its display twin: the
+ * `rule` lead-in and every `{ loc }` param become strings here (the presenter is
+ * the ONLY engine-side layer permitted to localize, §1.1); the prose `term` +
+ * its scalar params stay structured for the edge's `t(term, params)`.
+ */
+export function resolveWhy(why: BreakdownWhy, locale: Locale): BreakdownWhyLine {
+  const params = why.params
+    ? Object.fromEntries(
+        Object.entries(why.params).map(([k, v]) => [
+          k,
+          typeof v === "object" ? localizeText(v.loc, locale) : v,
+        ])
+      )
+    : undefined;
+  return {
+    term: why.term,
+    ...(params ? { params } : {}),
+    ...(why.rule ? { rule: localizeText(why.rule.loc, locale) } : {}),
+  };
 }
 
 /**

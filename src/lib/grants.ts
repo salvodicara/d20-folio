@@ -4171,9 +4171,12 @@ export interface AggregatedGrants {
     magicOnly: boolean;
     weaponScope?: "monk-melee";
     /** Monk Martial Arts die upgrade for the scoped weapons (replaces the printed
-     *  die when larger) — a fixed/deferred die; `sourceId` resolves the deferred
-     *  `classSpecific:<key>` against the owning class+level. */
+     *  die when larger) — a fixed/deferred die resolved against `sourceId`'s
+     *  owning class+level. */
     dieUpgrade?: string;
+    /** The GRANTING feature's id. Resolves a deferred `classSpecific:<key>` die
+     *  against its owning class+level, AND names the rule when this entry's
+     *  ability swap wins the attack roll (the breakdown why layer). */
     sourceId?: string;
   }>;
   /**
@@ -4755,6 +4758,8 @@ export function evaluateGrants(
     ability: AbilityCode;
     magicOnly: boolean;
     weaponScope?: "monk-melee";
+    dieUpgrade?: string;
+    sourceId?: string;
   }[] = [];
   const weaponAttackBonuses: WeaponAttackBonusEntry[] = [];
   const damageDieModifiers: DamageDieModifierEntry[] = [];
@@ -5349,7 +5354,10 @@ export function evaluateGrants(
           ability: g.ability,
           magicOnly: g.magicOnly ?? false,
           ...(g.weaponScope ? { weaponScope: g.weaponScope } : {}),
-          ...(g.dieUpgrade ? { dieUpgrade: g.dieUpgrade, sourceId } : {}),
+          ...(g.dieUpgrade ? { dieUpgrade: g.dieUpgrade } : {}),
+          // Carried unconditionally (not only for a die upgrade): a swap that
+          // WINS the attack roll names its rule in the breakdown's why layer.
+          ...(sourceId ? { sourceId } : {}),
         });
         break;
       case "weapon-attack-bonus":

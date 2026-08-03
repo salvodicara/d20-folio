@@ -117,6 +117,47 @@ describe("ActionRiders", () => {
   });
 });
 
+describe("ActionRiders — the composed WHY sentence (2026-08-03)", () => {
+  // The engine composes a rider's explanation from the grant's OWN fields, so the
+  // popover reads as plain language instead of a dot-joined qualifier list. The
+  // rubric already names the feature, so the why's gold lead-in is suppressed and
+  // the qualifiers the SENTENCE carries (once-per-turn, the tracker spend) are
+  // not repeated beneath it.
+  const explained: RiderVM = {
+    ...display,
+    spend: { kind: "tracker", trackerId: "monk-focus" },
+    why: {
+      term: "breakdown.why.riderOnceCost",
+      params: { dice: "1d6+3", type: "Necrotic", tracker: "Focus Points" },
+      rule: "Hand of Harm",
+    },
+  };
+
+  it("renders the sentence, drops the duplicate lead-in, and keeps the qualifiers it omits", () => {
+    // No `onSpend` → the read-only info popover (the surface carrying the why).
+    render(<ActionRiders riders={[{ ...explained, whileActive: true }]} />);
+    fireEvent.click(screen.getByRole("button", { name: /Frenzy/ }));
+    const pop = screen.getByRole("dialog");
+    expect(pop.textContent).toContain(
+      "Once per turn when you hit, you can spend 1 Focus Points"
+    );
+    // The rubric IS "Frenzy"; the why's own lead-in ("Hand of Harm") is suppressed.
+    expect(pop.textContent).not.toContain("Hand of Harm");
+    // "while active" is NOT in the sentence, so it still rides as a qualifier…
+    expect(pop.textContent).toContain("active");
+    // …while the two the sentence DOES carry are not repeated (rule 19).
+    expect(pop.textContent).not.toContain("spends 1 use");
+  });
+
+  it("a rider with no composed why keeps the compact qualifier line", () => {
+    render(<ActionRiders riders={[display]} />);
+    fireEvent.click(screen.getByRole("button", { name: /Frenzy/ }));
+    const pop = screen.getByRole("dialog");
+    expect(pop.textContent).toContain("Frenzy");
+    expect(pop.textContent).toContain("1/turn");
+  });
+});
+
 describe("RiderSummary — the always-visible collapsed-face damage cluster (#87)", () => {
   it("renders nothing when the action carries no rider", () => {
     const { container } = render(<RiderSummary riders={[]} />);

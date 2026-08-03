@@ -32,7 +32,9 @@ import type { Locale } from "@/lib/locale";
 import type { RawActionSummary } from "@/lib/smart-tracker";
 import type { LocText } from "@/lib/loc-text";
 import type { MarkedTargetScope } from "@/lib/grants";
+import type { BreakdownWhyLine } from "@/lib/value-breakdown";
 import { localizeText } from "@/lib/views/srd-i18n";
+import { resolveWhy } from "@/lib/views/combat-action-view";
 
 /** The kind of rider — drives the token's icon/colour register + composition. */
 export type RiderKind = "damage" | "die-mod" | "heal";
@@ -93,6 +95,15 @@ export interface RiderVM {
    * mirrors the weapon-damage breakdown note. Absent → an unconditional rider.
    */
   whileActive?: boolean;
+  /**
+   * The rider's plain-language explanation — one sentence COMPOSED by the engine
+   * from the grant's own fields (dice, damage type, once-per-turn limiter, spent
+   * resource), resolved here. The popover renders it through the SAME `WhyProse`
+   * the breakdown tip's why rows use (golden rule 3), so a rider reads like every
+   * other on-demand rule explanation. Absent on die-mod / heal riders, whose own
+   * token text already IS the explanation.
+   */
+  why?: BreakdownWhyLine;
 
   // ── die-modifier rider (`kind: "die-mod"`) ───────────────────────────────
   /** The annotation mode (the component picks the plain-language phrasing). */
@@ -132,6 +143,7 @@ export function buildRiders(summary: RawActionSummary, locale: Locale): RiderVM[
       ...(r.scope ? { scope: r.scope } : {}),
       ...(r.vsMarkedTarget ? { vsMarkedTarget: r.vsMarkedTarget } : {}),
       ...(r.whileActive ? { whileActive: true } : {}),
+      ...(r.why ? { why: resolveWhy(r.why, locale) } : {}),
     });
   }
 
