@@ -51,13 +51,12 @@ on the local critical path, never twice.
 **E2E lane shape (cost-trimmed 2026-06-13, ZERO coverage loss).** The Playwright matrix that
 `just deploy` and remote CI run is the same `playwright.config.ts`, trimmed of provable waste:
 
-- **The two viewport-PINNED surface sweeps run on chromium ONLY, not mobile.** `on-art-ink.spec.ts`
-  and `visual-full.spec.ts` call `page.setViewportSize(...)` for EVERY navigation, so the project's
-  viewport is irrelevant — the mobile (Pixel 7 / 390px) pass was a byte-identical duplicate of the
-  chromium pass. They are scoped off the `mobile` project via its `testIgnore` (chromium still runs
-  them; `visual-full`'s own variant matrix already enumerates both desktop AND mobile cells). The
-  surface sweeps whose assertions DO depend on the project width — `a11y.spec.ts` and
-  `i18n-sweep.spec.ts` — STAY on both projects (real 390px coverage): `i18n-sweep` reads
+- **The native-mobile project runs only the two width-dependent surface sweeps.** The project is
+  allow-listed with `testMatch` to `a11y.spec.ts` and `i18n-sweep.spec.ts`; every other behavioural
+  journey already runs in chromium, and viewport-pinned sweeps such as `visual-full.spec.ts` enumerate
+  their own desktop/mobile cells. This prevents desktop-only mouse/keyboard journeys and duplicate
+  viewport-pinned cells from being replayed under touch emulation while preserving the real 390px
+  coverage that matters: `i18n-sweep` reads
   `document.body.innerText`, which at 390px includes the `md:hidden` `MobileBottomNav` labels the
   desktop pass never renders. Net: the mobile project drops the ~302 redundant duplicate cells, the
   chromium project is unchanged, no coverage is lost.

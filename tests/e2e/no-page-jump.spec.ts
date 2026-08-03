@@ -49,7 +49,7 @@ test.describe("no page jump on click", () => {
     await expect(page.getByRole("searchbox")).toBeVisible();
 
     const before = await scrollY(page);
-    const equipment = page.getByRole("tab", { name: "Equipment" });
+    const equipment = page.locator(".cmp-ribbon").getByRole("tab").last();
     await equipment.click();
     // The tapped type is now selected AND fully revealed inside the viewport.
     await expect(equipment).toHaveAttribute("aria-selected", "true");
@@ -86,7 +86,9 @@ test.describe("no page jump on click", () => {
   test("double-clicking Next turn does not jump the page", async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem("d20-dev-encounter", "1"));
     await page.goto("/campaigns/mock-1");
-    const next = page.getByRole("button", { name: /next turn/i }).first();
+    const next = page
+      .getByRole("button", { name: /next turn|turno successivo/i })
+      .first();
     await next.scrollIntoViewIfNeeded();
     await page.waitForTimeout(300);
     const box = await next.boundingBox();

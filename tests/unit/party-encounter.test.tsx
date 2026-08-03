@@ -189,6 +189,14 @@ describe("MonsterInitChip (via MonsterCard) — focusing the edit input never sc
 // ─── §C — the DM statblock disclosure + rename ──────────────────────────────────
 
 describe("MonsterCard — DM statblock disclosure (§C.1/§C.2)", () => {
+  it("keeps the DM disclosure collapsed when the turn lands on the monster", () => {
+    render(<MonsterCard monster={goblinWithSrd()} isCurrent apply={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Goblin A 1" })).toHaveAttribute(
+      "aria-expanded",
+      "false"
+    );
+  });
+
   it("resolves canonical database art from srdId instead of a stored portrait copy", () => {
     const hawk = goblinWithSrd({
       name: "Hawk",
@@ -205,6 +213,7 @@ describe("MonsterCard — DM statblock disclosure (§C.1/§C.2)", () => {
 
   it("a DM card with srdId shows the Statblock button", () => {
     render(<MonsterCard monster={goblinWithSrd()} isCurrent apply={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Goblin A 1" }));
     expect(screen.getByRole("button", { name: "Statblock" })).toBeTruthy();
   });
 
@@ -226,6 +235,7 @@ describe("MonsterCard — DM rename-in-place routes through apply (§C.4)", () =
   it("committing a new name calls apply (setMonsterName)", () => {
     const apply = vi.fn();
     render(<MonsterCard monster={goblinWithSrd()} isCurrent apply={apply} />);
+    fireEvent.click(screen.getByRole("button", { name: "Goblin A 1" }));
     fireEvent.click(screen.getByRole("button", { name: "Monster name" }));
     const input = screen.getByLabelText("Monster name");
     fireEvent.change(input, { target: { value: "Goblin B" } });

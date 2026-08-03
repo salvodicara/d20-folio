@@ -47,7 +47,6 @@ import {
   type MouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
-  type Ref,
   type SetStateAction,
 } from "react";
 import { useTranslation } from "react-i18next";
@@ -287,7 +286,6 @@ export function CombatantCard({
   onToggle,
   detailId,
   toggleLabel,
-  cardRef,
   reorder,
 }: {
   /** The accent side — `ally` (PC, neutral) or `enemy` (monster, danger edge). */
@@ -317,9 +315,6 @@ export function CombatantCard({
   detailId: string;
   /** The accessible name for the disclosure toggle (the combatant's name). */
   toggleLabel: string;
-  /** Optional ref to the card `<li>` (the combat layer scrolls the current turn into
-   *  view). */
-  cardRef?: Ref<HTMLLIElement>;
   /** C3 — the DM drag-to-reorder controls for this row (DM + turns-begun only); absent =
    *  no reorder affordance (every player card, and every card before Begin-turns). */
   reorder?: ReorderRow;
@@ -403,7 +398,6 @@ export function CombatantCard({
 
   return (
     <li
-      ref={cardRef}
       className={cn(
         "party-card combatant-card",
         isCurrent && "combat-current",
@@ -1609,25 +1603,10 @@ export function MonsterCard({
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const displayName = monsterInstanceName(monster);
-  const cardRef = useRef<HTMLLIElement>(null);
   const editable = !!apply;
-  const [open, setOpen] = useState(isCurrent && editable);
+  const [open, setOpen] = useState(false);
   // The DM-only statblock disclosure (a picker-added monster carries `srdId`).
   const [statblockOpen, setStatblockOpen] = useState(false);
-  // Auto-EXPAND the card the moment the turn lands on it (DM only) — the documented
-  // "adjust state when a prop changes" pattern, not a setState-in-effect.
-  const [wasCurrent, setWasCurrent] = useState(isCurrent);
-  if (isCurrent !== wasCurrent) {
-    setWasCurrent(isCurrent);
-    if (isCurrent && editable) setOpen(true);
-  }
-
-  // Scroll the current combatant into view when the turn lands on it (DOM effect).
-  useEffect(() => {
-    if (isCurrent)
-      cardRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [isCurrent]);
-
   const down = isDown(monster);
   const groupCurrent = monster.tokens.reduce((sum, hp) => sum + hp, 0);
   const groupMax = monster.maxHp * monster.tokens.length;
@@ -1829,7 +1808,6 @@ export function MonsterCard({
   return (
     <>
       <CombatantCard
-        cardRef={cardRef}
         side="enemy"
         isCurrent={isCurrent}
         dimmed={down}

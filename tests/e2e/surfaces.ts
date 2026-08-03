@@ -151,7 +151,18 @@ function readyText(re: RegExp): (page: Page) => Promise<void> {
  *  ("Familiar …" / "Famiglio …"), which the HP steppers ("−1 HP Imp") never
  *  match at the start. */
 const FAMILIAR_ROW = /^(familiar|famiglio)\s+imp\b/i;
+async function openResourcesDisclosure(page: Page): Promise<void> {
+  const toggle = page.getByRole("button", { name: /^(resources|risorse)$/i }).first();
+  if (
+    (await toggle.isVisible({ timeout: 500 }).catch(() => false)) &&
+    (await toggle.getAttribute("aria-expanded")) !== "true"
+  ) {
+    await toggle.click();
+  }
+}
+
 async function readyFamiliarRow(page: Page): Promise<void> {
+  await openResourcesDisclosure(page);
   await page
     .getByRole("button", { name: FAMILIAR_ROW })
     .first()
@@ -483,6 +494,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     variants: OVERLAY_VARIANTS,
     ready: readyText(/Garrek/),
     prepare: async (page) => {
+      await openResourcesDisclosure(page);
       const section = page
         .locator("section", {
           has: page.getByRole("heading", { name: /companions|compagni/i }),

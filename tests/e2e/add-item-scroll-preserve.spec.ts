@@ -70,7 +70,11 @@ test.describe("Add-item picker — scroll depth survives background store churn"
       // imported, so this is the live Zustand singleton. The specifier is held in
       // a variable so tsc doesn't try to resolve the browser URL as a module; the
       // result is cast to the module's compile-time shape (no `any`, no seam).
-      const specifier = "/src/stores/characterStore.ts";
+      const loadedUrl = performance
+        .getEntriesByType("resource")
+        .map((entry) => entry.name)
+        .find((name) => name.includes("/src/stores/characterStore.ts"));
+      const specifier = loadedUrl ?? "/src/stores/characterStore.ts";
       const mod = (await import(
         specifier
       )) as typeof import("../../src/stores/characterStore");

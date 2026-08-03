@@ -43,6 +43,9 @@ test("compendium: selecting a fully visible type moves nothing", async ({ page }
 test("compendium: selecting a clipped type nudges ONLY the strip, minimally", async ({
   page,
 }) => {
+  // Keep this regression independent of the runner's desktop default: at 900px the
+  // ribbon genuinely overflows, while remaining in the desktop layout under test.
+  await page.setViewportSize({ width: 900, height: 800 });
   await seedLang(page, "en");
   await seedUI(page, "dark", "play");
   await freezeMotion(page);
@@ -50,7 +53,7 @@ test("compendium: selecting a clipped type nudges ONLY the strip, minimally", as
   const ribbon = ".cmp-ribbon";
   await page.waitForSelector(ribbon);
   const before = await metrics(page, ribbon);
-  // The LAST type tab sits past the right edge at 1280px.
+  // The LAST type tab sits past the right edge at this explicit narrow-desktop width.
   const tabs = page.getByRole("tab");
   const last = tabs.last();
   await last.click();

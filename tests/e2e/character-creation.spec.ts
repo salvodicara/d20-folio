@@ -52,17 +52,13 @@ test.describe("Character Creation Wizard", () => {
       await quickStart.click();
     }
 
-    // Try to submit/proceed without filling required fields
+    // Empty required fields keep creation unavailable. Clicking a disabled button
+    // is a Playwright timeout, not a user interaction or a validation assertion.
     const submitButton = page
       .getByRole("button", { name: /create|finish|done/i })
       .first();
     if (await submitButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await submitButton.click();
-      // Should show validation error
-      const error = page.getByText(/required|please|must|obbligatorio/i).first();
-      if (await error.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await expect(error).toBeVisible();
-      }
+      await expect(submitButton).toBeDisabled();
     }
   });
 

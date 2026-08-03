@@ -58,37 +58,13 @@ export default defineConfig({
       // here so the normal chromium run (no SW) never picks it up.
       testIgnore: /portrait-export-journey\.spec\.ts/,
     },
-    // Mobile tests opt-in (run with --project=mobile)
-    // Desktop-first app; mobile UX will be finalized in UI/UX gate
     {
       name: "mobile",
       use: { ...devices["Pixel 7"] },
-      // Mobile (390px / Pixel 7) re-runs the surface sweep ONLY for the specs whose
-      // assertions actually depend on the project's width — so a layout/CSS/a11y
-      // regression that only bites at 390px still can't slip the gate. The two
-      // viewport-PINNED surface sweeps are scoped OFF mobile because they call
-      // `page.setViewportSize(...)` for EVERY navigation, making the project's
-      // viewport irrelevant — the mobile pass would be a byte-identical duplicate
-      // of the chromium pass (and chromium still runs them):
-      //   • chrome-census — pins 1440×2400 for every nav (the framed-box budget is a
-      //                    full-page count, so a 390px project would re-run the
-      //                    identical cells).
-      //   • on-art-ink   — pins DESKTOP for every nav (ink colour is width-invariant).
-      //   • visual-full  — pins each variant's own viewport; its variant matrix
-      //                    ALREADY enumerates both desktop AND mobile cells, so the
-      //                    mobile project would re-run the identical cells.
-      // KEPT on mobile (their assertions DO use the project viewport — real 390px
-      // coverage, NOT redundant): a11y.spec.ts and i18n-sweep.spec.ts. The latter
-      // reads `document.body.innerText`, which at 390px includes the `md:hidden`
-      // MobileBottomNav labels (nav.characters/campaigns/compendium) that the
-      // desktop chromium pass never renders — so its mobile run sweeps strings the
-      // chromium run cannot.  See docs/CONTRIBUTING.md → "The gate split".
-      testIgnore: [
-        /portrait-export-journey\.spec\.ts/,
-        /chrome-census\.spec\.ts/,
-        /on-art-ink\.spec\.ts/,
-        /visual-full\.spec\.ts/,
-      ],
+      // Only these sweeps intentionally consume the project's native mobile
+      // viewport. Every other width-sensitive spec pins its own viewport under
+      // Chromium; keyboard and desktop-flow specs must not be re-run as touch.
+      testMatch: /(?:a11y|i18n-sweep)\.spec\.ts/,
     },
     // Portrait-export journey — the ONE spec that needs a live service worker (the
     // owner's bug is an opaque SW-cache entry). Its own server registers the REAL
