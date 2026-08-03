@@ -33,8 +33,7 @@ import type { RawActionSummary } from "@/lib/smart-tracker";
 import type { LocText } from "@/lib/loc-text";
 import type { MarkedTargetScope } from "@/lib/grants";
 import type { BreakdownWhyLine } from "@/lib/value-breakdown";
-import { localizeText } from "@/lib/views/srd-i18n";
-import { resolveWhy } from "@/lib/views/combat-action-view";
+import { localizeText, resolveWhy } from "@/lib/views/srd-i18n";
 
 /** The kind of rider — drives the token's icon/colour register + composition. */
 export type RiderKind = "damage" | "die-mod" | "heal";

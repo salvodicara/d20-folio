@@ -320,6 +320,10 @@ export function computeACDetailed(
   // armor…"). Undefined for an active-SPELL formula (Mage Armor), which reaches
   // here without a catalogue source.
   let formulaRule: LocText | undefined;
+  // The winning formula's own CONDITION — a `no-armor-no-shield` grant (Dance
+  // Bard, Draconic Sorcery) also forbids a shield, and the explanation must say
+  // so rather than promising the laxer no-armor rule.
+  let formulaNoShield = false;
   if (!armorEquipped) {
     let bestFormulaAC = bestArmorAC;
     // Each candidate carries its OWNING entity's NAME ref, so the winning
@@ -381,6 +385,7 @@ export function computeACDetailed(
         dexCapMax = null;
         formulaAbilities = [...g.bonuses];
         formulaRule = rule;
+        formulaNoShield = g.condition === "no-armor-no-shield";
       }
     }
     bestArmorAC = bestFormulaAC;
@@ -450,7 +455,9 @@ export function computeACDetailed(
       // already list which modifiers ride it).
       formulaAbilities.length > 0
         ? {
-            term: "breakdown.why.unarmoredDefense",
+            term: formulaNoShield
+              ? "breakdown.why.unarmoredDefenseNoShield"
+              : "breakdown.why.unarmoredDefense",
             params: { base: baseValue },
             ...(formulaRule ? { rule: { loc: formulaRule } } : {}),
           }
@@ -469,7 +476,7 @@ export function computeACDetailed(
         dexCapped ? { term: "breakdown.ac.capped" } : undefined,
         // The armor CLIPPED the DEX bonus — name the ceiling and the armor that
         // set it, so a +4 DEX showing as +2 stops being a mystery.
-        dexCapped && dexCapMax !== null
+        dexCapMax !== null
           ? {
               term: "breakdown.why.dexCap",
               params: { max: dexCapMax },
@@ -2177,9 +2184,6 @@ export interface UnarmedStrikeProfile {
   /** The ability folded into the damage formula (`null` for the base 1 + STR
    *  strike, whose flat total carries no separate modifier row). */
   damageAbility: AbilityCode | null;
-  /** True when the upgrade's alternate attack ability BEAT Strength — the silent
-   *  DEX-for-STR choice the breakdown explains. */
-  attackAbilitySwapped: boolean;
 }
 
 /**
@@ -2251,14 +2255,10 @@ export function effectiveUnarmedStrike(
   // Attack ability: STR by default; an upgrade's attackAbility may be USED in
   // its place — take the best modifier (RAW "you can use").
   let attackAbility: AbilityCode = "STR";
-  let attackAbilitySwapped = false;
   if (best?.attackAbility) {
     const altMod = abilityModifier(abilityScores[best.attackAbility]);
     const strMod = abilityModifier(abilityScores.STR);
-    if (altMod > strMod) {
-      attackAbility = best.attackAbility;
-      attackAbilitySwapped = true;
-    }
+    if (altMod > strMod) attackAbility = best.attackAbility;
   }
   const attackMod = abilityModifier(abilityScores[attackAbility]);
   const attackBonus = override?.attackBonus ?? attackMod + pb;
@@ -2269,12 +2269,16 @@ export function effectiveUnarmedStrike(
   let damageType: DamageType;
   let die: string | null;
   if (best) {
-    die = best.die;
+    // Normalize a bare face ("d6", the shape a `classSpecific` row carries) to
+    // the canonical "1d6" HERE, at the one seam that picks the winner — so the
+    // profile's `die`, the damage formula, and every breakdown cell read the
+    // same notation instead of mixing "1 → d6" with "1d4 → 1d6".
+    die = /^d\d+$/.test(best.die) ? `1${best.die}` : best.die;
     damageType = best.damageType;
     const dmgMod = best.damageAbility
       ? abilityModifier(abilityScores[best.damageAbility])
       : 0;
-    damage = appendAbilityModToDice(best.die, dmgMod);
+    damage = appendAbilityModToDice(die, dmgMod);
   } else {
     die = null;
     damageType = "bludgeoning";
@@ -2291,7 +2295,6 @@ export function effectiveUnarmedStrike(
     die,
     dieSourceId: best?.sourceId ?? null,
     damageAbility: best?.damageAbility ?? null,
-    attackAbilitySwapped,
   };
 }
 
@@ -2301,8 +2304,10 @@ export interface WeaponDieUpgrade {
   weaponScope?: "monk-melee";
   /** A fixed die (`"d8"`) or the deferred `"classSpecific:<key>"` sentinel. */
   dieUpgrade?: string;
-  /** Owning feature id — resolves the deferred die against its class+level. */
-  sourceId?: string;
+  /** Owning feature id — ALWAYS present (the grant-apply seam requires it).
+   *  Resolves the deferred die against its class+level AND names the rule in
+   *  the breakdown why layer. */
+  sourceId: string;
 }
 
 /**
@@ -2312,14 +2317,12 @@ export interface WeaponDieUpgrade {
  * show `1d4 → 1d6` and name the feature that did it (the breakdown why layer)
  * without re-deriving the winner.
  */
-export interface ResolvedWeaponDie {
-  /** The die actually used ("1d6"). */
-  die: string;
-  /** The PRINTED die this replaced — absent when nothing was replaced. */
-  replaced?: string;
-  /** The winning upgrade's owning feature id — present iff `replaced` is. */
-  sourceId?: string;
-}
+export type ResolvedWeaponDie =
+  /** Nothing replaced the weapon's own printed die. */
+  | { die: string; replaced?: undefined; sourceId?: undefined }
+  /** A rule REPLACED the printed die: `replaced` is what it superseded and
+   *  `sourceId` the feature that did it — present TOGETHER, by type. */
+  | { die: string; replaced: string; sourceId: string };
 
 /**
  * The effective DAMAGE DIE of a carried Monk weapon — the Monk Martial Arts die
@@ -2351,7 +2354,7 @@ export function effectiveWeaponDie(
   if (!m) return { die: weaponDie };
   const printedFace = parseInt(m[2] ?? "0", 10);
   let bestFace = printedFace;
-  let winner: string | undefined;
+  let winner = "";
   for (const u of upgrades) {
     if (!u.dieUpgrade) continue;
     if (u.weaponScope === "monk-melee" && !isMonkWeapon) continue;
@@ -2370,11 +2373,7 @@ export function effectiveWeaponDie(
     }
   }
   if (bestFace <= printedFace) return { die: weaponDie };
-  return {
-    die: `1d${bestFace}`,
-    replaced: weaponDie,
-    ...(winner ? { sourceId: winner } : {}),
-  };
+  return { die: `1d${bestFace}`, replaced: weaponDie, sourceId: winner };
 }
 
 /**

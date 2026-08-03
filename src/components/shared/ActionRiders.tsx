@@ -273,7 +273,7 @@ function RiderToken({
             {/* The rubric above already NAMES the feature — no gold lead-in here. */}
             <WhyProse why={rider.why} showRule={false} />
             {residual ? (
-              <p className="mt-1 text-xs text-accent-text">{residual}</p>
+              <p className="mt-1 text-xs text-text-secondary">{residual}</p>
             ) : null}
           </>
         ) : (

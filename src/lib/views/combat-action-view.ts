@@ -18,17 +18,12 @@ import type {
   ResolvedActionHeal,
 } from "@/lib/smart-tracker";
 import { resolveActions } from "@/lib/smart-tracker";
-import type {
-  BreakdownLine,
-  BreakdownWhy,
-  BreakdownWhyLine,
-  RawBreakdownPart,
-} from "@/lib/value-breakdown";
+import type { BreakdownLine, RawBreakdownPart } from "@/lib/value-breakdown";
 import type { AbilityCode, BiText } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { formatModifier } from "@/lib/utils";
-import { localizeText } from "@/lib/views/srd-i18n";
+import { localizeText, resolveWhy } from "@/lib/views/srd-i18n";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import type { GatedSlot } from "@/lib/condition-effects";
 import {
@@ -217,28 +212,6 @@ export function localizeBreakdown(
     }
     return { kind: "loc", value, label: localizeText(p.label.loc, locale), ...extras };
   });
-}
-
-/**
- * Resolve one engine-emitted {@link BreakdownWhy} into its display twin: the
- * `rule` lead-in and every `{ loc }` param become strings here (the presenter is
- * the ONLY engine-side layer permitted to localize, §1.1); the prose `term` +
- * its scalar params stay structured for the edge's `t(term, params)`.
- */
-export function resolveWhy(why: BreakdownWhy, locale: Locale): BreakdownWhyLine {
-  const params = why.params
-    ? Object.fromEntries(
-        Object.entries(why.params).map(([k, v]) => [
-          k,
-          typeof v === "object" ? localizeText(v.loc, locale) : v,
-        ])
-      )
-    : undefined;
-  return {
-    term: why.term,
-    ...(params ? { params } : {}),
-    ...(why.rule ? { rule: localizeText(why.rule.loc, locale) } : {}),
-  };
 }
 
 /**

@@ -121,7 +121,13 @@ const ENTRY_CEILING_KB = 65; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // 2026-08-03: raised 786 → 788 after moving the encounter and resolver CSS out of the
 // global folio sheet. The same 14 eager chunk families remain; measured 787.03 KB
 // (JS 710.1 + CSS 76.9), leaving ~1 KB deterministic headroom.
-const EAGER_CEILING_KB = 788; // baseline 727.1 → ~+8% (near budget — see ARCHITECTURE P3 frontier #1)
+// 2026-08-04: raised 788 → 790 for the breakdown WHY layer. The eager growth is
+// the 28 new `breakdown.why.*` strings (the `common` chrome bundle is eager by
+// design, EN + the active locale) plus the shared `WhyProse` component and the
+// tip's accordion. Structurally clean: the SAME 14 eager chunk families as the
+// 787.03 measurement — no lazy chunk became statically reachable, this is genuine
+// feature weight. Measured 788.70 KB gz (JS 711.7 + CSS 77.0) → ~1.3 KB headroom.
+const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
 // on demand from the PDF export flow) and correctly precached for offline-first.
@@ -359,7 +365,10 @@ const EAGER_CEILING_KB = 788; // baseline 727.1 → ~+8% (near budget — see AR
 // resolver/campaign CSS chunks, typed persistent-effect metadata, and peer-delivery seam.
 // PROMPT_28 was first re-encoded from 86 KiB to 17.5 KiB WebP; measured 8376.51 KiB /
 // 321 entries after that trim, leaving ~13.5 KiB never-exact-fit headroom.
-const PRECACHE_CEILING_KIB = 8390;
+// 2026-08-04: raised 8390 → 8392 for the breakdown WHY layer's eager bytes (the
+// same +1.7 KB the eager closure grew by — the precache mirrors it). Measured
+// 8390.11 KiB across 321 entries; no new asset family entered the precache.
+const PRECACHE_CEILING_KIB = 8392;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

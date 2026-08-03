@@ -1617,12 +1617,6 @@ function applyTrackerOverrides(
  * Unified lookup: class feature index first, then feats, then race traits.
  * Returns the feature's name, mechanics, or undefined if not found.
  */
-function getSrdFeatureMechanics(
-  srdId: string
-): SrdClassFeatureData | SrdFeatData | RaceFeatureEntry | undefined {
-  return getSrdFeatureSource(srdId);
-}
-
 /**
  * A {@link LocText} `srd` ref for one field of an SRD feature source (R6+R3 SLICE
  * 7c) — the catalogue key the codemod wrote for this class-feature / feat / race
@@ -1753,23 +1747,33 @@ function featureSourceClass(
 }
 
 /**
- * The WHY for a die a class feature REPLACED (Monk Martial Arts turning a
- * Dagger's printed 1d4 into 1d6; College of Dance's Bardic Damage). Composed
- * from the winner the SEAM reported ({@link effectiveWeaponDie}) — never
- * re-derived, never regexed out of prose (golden rule 2). `undefined` when
- * nothing was replaced or the source can't be attributed to a class level, so
- * an unexplained row stays a plain receipt line (rule 19).
+ * The WHY for a die a feature REPLACED (Monk Martial Arts turning a Dagger's
+ * printed 1d4 into 1d6; College of Dance's Dazzling Footwork). Composed from the
+ * winner the SEAM reported ({@link effectiveWeaponDie}) — never re-derived, never
+ * regexed out of prose (golden rule 2).
+ *
+ * A CLASS feature can say "at {class} level N"; a feat / race trait / item can't,
+ * so it falls back to the class-free sentence rather than returning nothing — the
+ * tip must never show a bare `1d4 → 1d6` arrow with no explanation behind it.
+ * `undefined` only when nothing was replaced at all.
  */
 export function weaponDieWhy(
   resolved: ResolvedWeaponDie,
   character: CharacterDoc,
-  /** The prose key — the weapon wording by default; an Unarmed Strike replaces
-   *  a flat 1 rather than a printed die, so it passes its own. */
+  /** The class-level prose key — the weapon wording by default; an Unarmed
+   *  Strike replaces a flat 1 rather than a printed die, so it passes its own. */
   term = "breakdown.why.dieUpgrade"
 ): BreakdownWhy | undefined {
-  if (!resolved.replaced || !resolved.sourceId) return undefined;
+  if (!resolved.replaced) return undefined;
+  const rule = { loc: featureNameLoc(resolved.sourceId) };
   const owner = featureSourceClass(resolved.sourceId, character);
-  if (!owner) return undefined;
+  if (!owner) {
+    return {
+      term: "breakdown.why.dieUpgradeFeature",
+      params: { die: resolved.die, printed: resolved.replaced },
+      rule,
+    };
+  }
   return {
     term,
     params: {
@@ -1778,7 +1782,7 @@ export function weaponDieWhy(
       level: owner.level,
       cls: { loc: srdText("class", owner.classId, "name") },
     },
-    rule: { loc: featureNameLoc(resolved.sourceId) },
+    rule,
   };
 }
 
@@ -1826,7 +1830,7 @@ const BASE_UNARMED_DAMAGE = "1";
  * the same tip a carried weapon has, through the SAME builder (golden rule 6).
  * BOTH of its numbers come from a silent rule, and both are explained: the
  * feature die replaced the plain strike's flat 1, and its damage ability may be
- * DEX where the base strike uses STR.
+ * one the base strike never uses.
  *
  * Returns `[]` for a plain 1 + STR strike (no upgrade): a flat total has no
  * composition to decompose, so no tip renders at all (rule 19).
@@ -1837,32 +1841,37 @@ function buildUnarmedDamageBreakdown(
   scores: Record<AbilityCode, number>,
   character: CharacterDoc
 ): RawBreakdownPart[] {
-  if (!profile.die || !profile.damageAbility) return [];
+  const { die, damageAbility, dieSourceId } = profile;
+  if (!die || !damageAbility || !dieSourceId) return [];
   const dieWhy = weaponDieWhy(
-    {
-      die: profile.die,
-      replaced: BASE_UNARMED_DAMAGE,
-      ...(profile.dieSourceId ? { sourceId: profile.dieSourceId } : {}),
-    },
+    { die, replaced: BASE_UNARMED_DAMAGE, sourceId: dieSourceId },
     character,
     "breakdown.why.unarmedDie"
   );
-  // The base strike uses STR; an upgrade that names a different damage ability
-  // silently changed which modifier applies — say so.
+  // The base strike's damage uses STR; an upgrade that names a different damage
+  // ability silently changed which modifier applies. This is NOT the attack
+  // roll's best-of choice — `effectiveUnarmedStrike` takes the upgrade's
+  // `damageAbility` UNCONDITIONALLY here — so the copy states the substitution
+  // plainly and never promises "the higher modifier applies". Feature-agnostic:
+  // Monk Martial Arts and a Dance Bard's Dazzling Footwork read alike.
   const abilityWhy: BreakdownWhy | undefined =
-    profile.damageAbility !== "STR" && profile.dieSourceId
-      ? {
-          term: "breakdown.why.monkAbilitySwap",
-          rule: { loc: featureNameLoc(profile.dieSourceId) },
-        }
-      : undefined;
+    damageAbility === "STR"
+      ? undefined
+      : {
+          term: "breakdown.why.damageAbility",
+          params: {
+            chosen: { loc: uiText(`abilities.${damageAbility}`) },
+            usual: { loc: uiText("abilities.STR") },
+          },
+          rule: { loc: featureNameLoc(dieSourceId) },
+        };
   return buildWeaponDamageBreakdown({
-    damageDie: profile.die,
+    damageDie: die,
     replacedDie: BASE_UNARMED_DAMAGE,
     ...(dieWhy ? { dieWhy } : {}),
     weaponName: name,
-    attackStat: profile.damageAbility,
-    abilityMod: abilityModifier(scores[profile.damageAbility]),
+    attackStat: damageAbility,
+    abilityMod: abilityModifier(scores[damageAbility]),
     ...(abilityWhy ? { abilityWhy } : {}),
   });
 }
@@ -1879,14 +1888,12 @@ export function attackStatWhy(
   switch (resolved.reason) {
     case "default":
       return undefined;
-    case "finesse": {
-      const property = srdText("weapon-property", "finesse", "name");
+    case "finesse":
+      // The gold lead-in IS the property name — the sentence must not repeat it.
       return {
         term: "breakdown.why.finesse",
-        params: { property: { loc: property } },
-        rule: { loc: property },
+        rule: { loc: srdText("weapon-property", "finesse", "name") },
       };
-    }
     case "monk-swap":
       return {
         term: "breakdown.why.monkAbilitySwap",
@@ -1924,7 +1931,7 @@ export function resolveFeatureRider(
   featureId: string,
   character: CharacterDoc
 ): { label: LocText; value: string } | undefined {
-  const srdFeature = getSrdFeatureMechanics(featureId);
+  const srdFeature = getSrdFeatureSource(featureId);
   if (!srdFeature || !("mechanics" in srdFeature)) return undefined;
   // Riders live on SrdClassFeatureData.mechanics only; feats + race traits
   // don't carry one. We narrow with `"rider" in mechanics` so the type-checker
@@ -1955,7 +1962,7 @@ export function resolveFeatureRiders(
   featureId: string,
   character: CharacterDoc
 ): { label: LocText; value: string }[] {
-  const srdFeature = getSrdFeatureMechanics(featureId);
+  const srdFeature = getSrdFeatureSource(featureId);
   if (!srdFeature || !("mechanics" in srdFeature)) return [];
   const mechanics = srdFeature.mechanics;
   const rider = mechanics && "rider" in mechanics ? mechanics.rider : undefined;
@@ -2040,12 +2047,11 @@ export function resolveWeaponDamageBonuses(
       if (typeof raw === "number") amount = raw;
     }
     if (amount === undefined || amount === 0) continue;
-    const src = getSrdFeatureMechanics(e.sourceId);
     out.push({
       amount,
       sourceId: e.sourceId,
-      // The feature's catalogue name ref; an unknown source falls back to its id.
-      label: src ? featLoc(src, "name") : customText(e.sourceId),
+      // The feature's ONE catalogue name ref (unknown id → the id literal).
+      label: featureNameLoc(e.sourceId),
       whileActive: e.whileActiveKey !== undefined,
     });
   }
@@ -2157,12 +2163,11 @@ export function resolveWeaponAttackBonuses(
         ? e.amount
         : Math.max(abilityModifier(opts.scores[e.amount.ability]), e.amount.min ?? 0);
     if (amount === 0) continue;
-    const src = getSrdFeatureMechanics(e.sourceId);
     out.push({
       amount,
       sourceId: e.sourceId,
-      // The feature's catalogue name ref; an unknown source falls back to its id.
-      label: src ? featLoc(src, "name") : customText(e.sourceId),
+      // The feature's ONE catalogue name ref (unknown id → the id literal).
+      label: featureNameLoc(e.sourceId),
       whileActive: e.whileActiveKey !== undefined,
     });
   }
@@ -2752,7 +2757,7 @@ export function resolveFreeCastFeatTrackers(
 ): RawResolvedTracker[] {
   const out: RawResolvedTracker[] = [];
   forEachFeatFreeCast(character, (fc) => {
-    const src = getSrdFeatureMechanics(fc.sourceId);
+    const src = getSrdFeatureSource(fc.sourceId);
     out.push({
       id: fc.id,
       label: srdText("spell", fc.spellId, "name"),
@@ -2832,7 +2837,7 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
     }
 
     // SRD feature — look up in class feature index, then feats
-    const srdFeature = getSrdFeatureMechanics(featureRef.srdId);
+    const srdFeature = getSrdFeatureSource(featureRef.srdId);
     if (!srdFeature?.mechanics?.tracker) continue;
 
     // B2 — scale a CLASS feature's tracker (both its `levels[]` gating AND its
@@ -4338,7 +4343,7 @@ function resolveFeatureActions(
       continue;
     }
 
-    const srdFeature = getSrdFeatureMechanics(featureRef.srdId);
+    const srdFeature = getSrdFeatureSource(featureRef.srdId);
     if (!srdFeature?.mechanics?.actions) continue;
     // The catalogue base key for this feature's strings (name/desc/action descs).
     const featRef = srdRefForFeatureSource(srdFeature);
@@ -4550,7 +4555,7 @@ function resolveFeatureActions(
       } else if (action.costTracker) {
         // Action references another feature's tracker (e.g. monk-focus)
         actionCostTracker = action.costTracker;
-        const crossFeature = getSrdFeatureMechanics(action.costTracker);
+        const crossFeature = getSrdFeatureSource(action.costTracker);
         if (crossFeature?.mechanics?.tracker) {
           actionCostIsPool = crossFeature.mechanics.tracker.isPool;
           actionCostUnit = crossFeature.mechanics.tracker.unit;
@@ -6355,7 +6360,7 @@ function featureActionSourceIds(character: CharacterDoc): Set<string> {
   const ids = new Set<string>();
   for (const featureRef of charData.features) {
     if ("custom" in featureRef) continue;
-    const srdFeature = getSrdFeatureMechanics(featureRef.srdId);
+    const srdFeature = getSrdFeatureSource(featureRef.srdId);
     if (srdFeature?.mechanics?.actions?.length) ids.add(srdFeature.id);
   }
   const race = getRace(charData.race) ?? getRace(charData.race.toLowerCase());
@@ -6459,7 +6464,7 @@ function resolveTemporaryHpActions(
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   ).tempHpGrants;
   // A race trait's grant `sourceId` is the `race:<id>:<trait.id>` session id (NOT a
-  // raceFeatureIndex key), so `getSrdFeatureMechanics` can't resolve it — match it
+  // raceFeatureIndex key), so `getSrdFeatureSource` can't resolve it — match it
   // back to its trait to localize the name/description off the race catalogue.
   const race = getRace(charData.race) ?? getRace(charData.race.toLowerCase());
   const raceTraitBySessionId = new Map<string, SrdRaceTrait>();
@@ -6488,7 +6493,7 @@ function resolveTemporaryHpActions(
     if (thp.slot !== undefined || actionBearingSources.has(thp.sourceId)) continue;
     const amount = resolveTempHp(thp.formula, character);
     const raceTrait = race ? raceTraitBySessionId.get(thp.sourceId) : undefined;
-    const srdFeature = raceTrait ? undefined : getSrdFeatureMechanics(thp.sourceId);
+    const srdFeature = raceTrait ? undefined : getSrdFeatureSource(thp.sourceId);
     // Feature name = its catalogue ref (race trait → race catalogue; class
     // feature/feat → its own; fallback: the source id). The dynamic "Gain N temp
     // HP" effect is an engine literal (the number is a computed fact).
@@ -6586,7 +6591,7 @@ export function getShortRestRecoveries(
   for (const featureRef of character.character.features) {
     if ("custom" in featureRef) continue;
 
-    const srdFeature = getSrdFeatureMechanics(featureRef.srdId);
+    const srdFeature = getSrdFeatureSource(featureRef.srdId);
     if (!srdFeature?.mechanics?.tracker) continue;
 
     // B2 — the feature's OWNING-class level gates its `levels[]` (Bard 5's Font

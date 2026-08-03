@@ -12,6 +12,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import "@/i18n";
 import { ActionRiders, RiderSummary } from "@/components/shared/ActionRiders";
 import type { RiderVM } from "@/lib/views/rider-view";
+import { localizeSrd } from "@/i18n/resolver";
+
+/** The Focus-Points pool's OWN catalogue name (never a hand-picked literal). */
+const FOCUS_NAME = localizeSrd("class-feature", "monk-focus", "name", "en");
 
 const display: RiderVM = {
   id: "damage:0",
@@ -128,7 +132,9 @@ describe("ActionRiders — the composed WHY sentence (2026-08-03)", () => {
     spend: { kind: "tracker", trackerId: "monk-focus" },
     why: {
       term: "breakdown.why.riderOnceCost",
-      params: { dice: "1d6+3", type: "Necrotic", tracker: "Focus Points" },
+      // The tracker name is DERIVED from its own catalogue entry, never a
+      // hand-picked string — a renamed pool must move this test with it.
+      params: { dice: "1d6+3", type: "Necrotic", tracker: FOCUS_NAME },
       rule: "Hand of Harm",
     },
   };
@@ -139,7 +145,7 @@ describe("ActionRiders — the composed WHY sentence (2026-08-03)", () => {
     fireEvent.click(screen.getByRole("button", { name: /Frenzy/ }));
     const pop = screen.getByRole("dialog");
     expect(pop.textContent).toContain(
-      "Once per turn when you hit, you can spend 1 Focus Points"
+      `Once per turn when you hit, you can spend a use of ${FOCUS_NAME}`
     );
     // The rubric IS "Frenzy"; the why's own lead-in ("Hand of Harm") is suppressed.
     expect(pop.textContent).not.toContain("Hand of Harm");

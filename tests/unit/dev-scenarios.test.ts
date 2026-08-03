@@ -97,7 +97,7 @@ describe("dev-scenarios — the mechanics surface through resolveActions", () =>
     // Combat. L6 → d8 Martial Arts die; DEX 18 → +4 damage, +4 + PB 3 = +7 to hit.
     const ua = actionsFor("open-hand-monk").find((a) => a.id === "unarmed-strike");
     expect(ua).toBeDefined();
-    expect(ua?.summary.damage).toBe("d8+4");
+    expect(ua?.summary.damage).toBe("1d8+4");
     expect(ua?.summary.damageType).toBe("bludgeoning");
     expect(ua?.summary.attackBonus).toBe(7);
     // Empowered Strikes (L6): the strike offers a Bludgeoning/Force CHOICE.

@@ -4174,10 +4174,11 @@ export interface AggregatedGrants {
      *  die when larger) — a fixed/deferred die resolved against `sourceId`'s
      *  owning class+level. */
     dieUpgrade?: string;
-    /** The GRANTING feature's id. Resolves a deferred `classSpecific:<key>` die
+    /** The GRANTING feature's id — ALWAYS present (the grant-apply seam takes it
+     *  as a required argument). Resolves a deferred `classSpecific:<key>` die
      *  against its owning class+level, AND names the rule when this entry's
      *  ability swap wins the attack roll (the breakdown why layer). */
-    sourceId?: string;
+    sourceId: string;
   }>;
   /**
    * Flat to-hit bonuses on weapon attack rolls, scoped ranged / melee / any
@@ -4759,7 +4760,7 @@ export function evaluateGrants(
     magicOnly: boolean;
     weaponScope?: "monk-melee";
     dieUpgrade?: string;
-    sourceId?: string;
+    sourceId: string;
   }[] = [];
   const weaponAttackBonuses: WeaponAttackBonusEntry[] = [];
   const damageDieModifiers: DamageDieModifierEntry[] = [];
@@ -5356,8 +5357,8 @@ export function evaluateGrants(
           ...(g.weaponScope ? { weaponScope: g.weaponScope } : {}),
           ...(g.dieUpgrade ? { dieUpgrade: g.dieUpgrade } : {}),
           // Carried unconditionally (not only for a die upgrade): a swap that
-          // WINS the attack roll names its rule in the breakdown's why layer.
-          ...(sourceId ? { sourceId } : {}),
+          // WINS the attack roll names its rule in the breakdown why layer.
+          sourceId,
         });
         break;
       case "weapon-attack-bonus":
@@ -5920,7 +5921,11 @@ export function evaluateGrants(
               (wa) => wa.ability === g.attackAbility && !wa.magicOnly
             )
           ) {
-            weaponAttackAbilities.push({ ability: g.attackAbility, magicOnly: false });
+            weaponAttackAbilities.push({
+              ability: g.attackAbility,
+              magicOnly: false,
+              sourceId,
+            });
           }
         }
         break;

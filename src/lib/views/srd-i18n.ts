@@ -15,6 +15,7 @@ import {
 } from "@/data/srd-names";
 import { localeRangePair } from "@/lib/utils";
 import type { LocText } from "@/lib/loc-text";
+import type { BreakdownWhy, BreakdownWhyLine } from "@/lib/value-breakdown";
 import { hasSrd, localizeSrd, localizeCustom, type SrdKind } from "@/i18n/resolver";
 import i18n from "@/i18n";
 
@@ -59,6 +60,33 @@ export function localizeText(text: LocText, locale: Locale): string {
   if ("custom" in text) return localizeCustom(text.custom);
   if ("ui" in text) return i18n.getFixedT(locale)(text.ui);
   return text.lit[locale];
+}
+
+/**
+ * Resolve one engine-emitted {@link BreakdownWhy} into its display twin: the
+ * `rule` lead-in and every `{ loc }` param become strings here (this views layer
+ * is the ONLY engine-side one permitted to localize, §1.1); the prose `term` and
+ * its scalar params stay structured for the edge's `t(term, params)`.
+ *
+ * Lives beside {@link localizeText} — its only dependency — because BOTH
+ * breakdown presenters need it (`combat-action-view.localizeBreakdown` and
+ * `rider-view.buildRiders`) and those two already import each other; hanging it
+ * off either would close the cycle.
+ */
+export function resolveWhy(why: BreakdownWhy, locale: Locale): BreakdownWhyLine {
+  const params = why.params
+    ? Object.fromEntries(
+        Object.entries(why.params).map(([k, v]) => [
+          k,
+          typeof v === "object" ? localizeText(v.loc, locale) : v,
+        ])
+      )
+    : undefined;
+  return {
+    term: why.term,
+    ...(params ? { params } : {}),
+    ...(why.rule ? { rule: localizeText(why.rule.loc, locale) } : {}),
+  };
 }
 
 // Name maps are built from the SRD-FREE `@/data/srd-names` source (not the full

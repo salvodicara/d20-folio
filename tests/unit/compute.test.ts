@@ -1454,8 +1454,11 @@ describe("computeAC", () => {
         {
           label: { term: "breakdown.base" },
           value: 10,
+          // The Monk's formula is `no-armor-no-shield`, so it gets the STRICTER
+          // sentence — the plain no-armor copy would promise a rule the Monk
+          // doesn't have. (The Barbarian above is `no-armor` and keeps the base key.)
           why: {
-            term: "breakdown.why.unarmoredDefense",
+            term: "breakdown.why.unarmoredDefenseNoShield",
             params: { base: 10 },
             rule: {
               loc: {

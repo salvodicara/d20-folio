@@ -80,7 +80,7 @@ describe("BreakdownTip — the why accordion", () => {
     expect(dagger).toHaveAttribute("aria-expanded", "true");
     // The rule NAME leads, then the interpolated plain-language sentence.
     expect(pop.textContent).toContain("Martial Arts");
-    expect(pop.textContent).toContain("replaces this weapon's printed 1d4");
+    expect(pop.textContent).toContain("replaces the weapon's printed die (1d4)");
     // `aria-controls` points at the element that actually appeared.
     const controls = dagger.getAttribute("aria-controls") ?? "";
     expect(controls).not.toBe("");
@@ -120,6 +120,6 @@ describe("BreakdownTip — the why accordion", () => {
     await i18n.changeLanguage("it");
     const pop = openTip();
     fireEvent.click(within(pop).getByRole("button", { name: "Dagger" }));
-    expect(pop.textContent).toContain("sostituisce il 1d4 stampato dell'arma");
+    expect(pop.textContent).toContain("sostituisce il dado stampato dell'arma (1d4)");
   });
 });

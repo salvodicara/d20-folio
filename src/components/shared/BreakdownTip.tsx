@@ -79,7 +79,13 @@ export function BreakdownTip({
     </span>
   );
   return (
-    <Popover>
+    // Closing the popover RESETS the accordion: reopening it must show the
+    // resting receipt, not whichever row happened to be open last time.
+    <Popover
+      onOpenChange={(o) => {
+        if (!o) setOpenIndex(null);
+      }}
+    >
       <PopoverTrigger asChild>
         <button
           type="button"

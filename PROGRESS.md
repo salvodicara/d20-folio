@@ -504,6 +504,14 @@ silently replaced the die AND silently chosen DEX over STR.
   medium-armor DEX cap, the winning Unarmored-Defense formula, and EVERY on-hit damage rider — whose
   sentence is COMPOSED from the grant's own fields, so a rider added tomorrow self-explains with zero
   per-feature prose.
+- **Review pass 2 (2026-08-04)** applied 15 adjudicated ponytail-review findings: broke a
+  presenter import cycle (`resolveWhy` → the leaf `srd-i18n.ts`), fixed the Monk sentence firing on a
+  Dance Bard, split attack-roll ("higher modifier applies") from unarmed DAMAGE ability (taken
+  unconditionally), normalized the bare `d6` face at the seam so nothing reads `1 → d6`, branched
+  Unarmored Defense on its own `no-armor-no-shield` condition (the MONK's case — it was showing the
+  wrong rule), added the class-free die-upgrade fallback so a substitution is never unexplained,
+  count-free rider spend copy, de-duplicated the IT/EN interpolations, deleted a dead profile field
+  and a compat pass-through, and reset the accordion on popover close.
 - HELD for the rule-25 screenshot approval before merge. Full detail: `docs/ARCHITECTURE.md → "The WHY
 layer"`; the visual recipe: `DESIGN.md → "Breakdown "why" rows"`.
 

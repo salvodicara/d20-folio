@@ -21,7 +21,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { effectiveWeaponDie, resolveWeaponAttackStat } from "@/lib/compute";
-import { localizeBreakdown, resolveWhy } from "@/lib/views/combat-action-view";
+import { localizeBreakdown } from "@/lib/views/combat-action-view";
+import { resolveWhy } from "@/lib/views/srd-i18n";
 import { abilityPart, type RawBreakdownPart } from "@/lib/value-breakdown";
 import { srdText, uiText } from "@/lib/loc-text";
 import { localizeSrd } from "@/i18n/resolver";
