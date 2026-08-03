@@ -1368,6 +1368,32 @@ describe("computeAC", () => {
       ]);
     });
 
+    it("medium armor whose cap the character never REACHES carries no why (DEX 12)", () => {
+      // The regression this pins: `cap` records the ceiling that actually CLIPPED
+      // the bonus, not merely that the armor HAS one. A DEX 12 half-plate wearer
+      // is at +1 because their modifier IS +1 — nothing happened to that row, so
+      // it gets no note, no why, and no chevron (rule 19).
+      const eq: SrdEquipmentRef[] = [{ srdId: "half-plate-armor", equipped: true }];
+      const { ac, parts } = computeACDetailed(eq, scores(12), resolve);
+      expect(ac).toBe(16);
+      expect(parts).toEqual([
+        { label: { term: "equipment.armor" }, value: 15 },
+        { label: { ability: "DEX" }, value: 1 },
+      ]);
+    });
+
+    it("medium armor at EXACTLY the cap carries no why either (DEX 14 → +2 == cap 2)", () => {
+      // The boundary: `dexMod > cap` is strict, so a modifier that equals the
+      // ceiling was never clipped. (This is the live santaera-barbarian case.)
+      const eq: SrdEquipmentRef[] = [{ srdId: "half-plate-armor", equipped: true }];
+      const { ac, parts } = computeACDetailed(eq, scores(14), resolve);
+      expect(ac).toBe(17);
+      expect(parts).toEqual([
+        { label: { term: "equipment.armor" }, value: 15 },
+        { label: { ability: "DEX" }, value: 2 },
+      ]);
+    });
+
     it("heavy armor: no DEX row at all (chain mail → just the 16 base)", () => {
       const eq: SrdEquipmentRef[] = [{ srdId: "chain-mail", equipped: true }];
       const { ac, parts } = computeACDetailed(eq, scores(16), resolve);

@@ -121,12 +121,16 @@ const ENTRY_CEILING_KB = 65; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // 2026-08-03: raised 786 → 788 after moving the encounter and resolver CSS out of the
 // global folio sheet. The same 14 eager chunk families remain; measured 787.03 KB
 // (JS 710.1 + CSS 76.9), leaving ~1 KB deterministic headroom.
-// 2026-08-04: raised 788 → 790 for the breakdown WHY layer. The eager growth is
-// the 28 new `breakdown.why.*` strings (the `common` chrome bundle is eager by
-// design, EN + the active locale) plus the shared `WhyProse` component and the
-// tip's accordion. Structurally clean: the SAME 14 eager chunk families as the
-// 787.03 measurement — no lazy chunk became statically reachable, this is genuine
-// feature weight. Measured 788.70 KB gz (JS 711.7 + CSS 77.0) → ~1.3 KB headroom.
+// 2026-08-04: raised 788 → 790 for the breakdown WHY layer. MEASURED both sides
+// with this guard (main cd1f93f built into a throwaway worktree, then this
+// branch): main 785.80 KB gz (JS 708.8 + CSS 77.0) / 14 chunks → branch 788.70 KB
+// gz (JS 711.7 + CSS 77.0) / 14 chunks, so the branch costs +2.90 KB gz. (The
+// 787.03 figure recorded on 2026-08-03 no longer reproduces on main — treat the
+// 785.80 above as the current baseline.) The growth is the 28 new
+// `breakdown.why.*` chrome strings (the `common` bundle is eager by design, EN +
+// the active locale) plus the shared `WhyProse` component and the tip's
+// accordion. Structurally clean: the SAME 14 eager chunk families on both sides,
+// so no lazy chunk became statically reachable. → ~1.3 KB headroom.
 const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
@@ -365,9 +369,14 @@ const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see AR
 // resolver/campaign CSS chunks, typed persistent-effect metadata, and peer-delivery seam.
 // PROMPT_28 was first re-encoded from 86 KiB to 17.5 KiB WebP; measured 8376.51 KiB /
 // 321 entries after that trim, leaving ~13.5 KiB never-exact-fit headroom.
-// 2026-08-04: raised 8390 → 8392 for the breakdown WHY layer's eager bytes (the
-// same +1.7 KB the eager closure grew by — the precache mirrors it). Measured
-// 8390.11 KiB across 321 entries; no new asset family entered the precache.
+// 2026-08-04: raised 8390 → 8392 for the breakdown WHY layer. NOTE the units
+// differ from the eager ceiling above — precache sums RAW on-disk bytes per the
+// manifest, the eager closure sums GZIPPED bytes, so the two deltas are not the
+// same number. Measured both sides with this guard: main cd1f93f 8377.13 KiB /
+// 321 entries → branch 8390.11 KiB / 321 entries, so the branch costs +12.98 KiB
+// raw (≈ the +2.90 KB gz the eager closure grew by). Entry count unchanged and no
+// new asset family entered the precache — it is the WHY layer's own bytes. (The
+// 8376.51 figure recorded on 2026-08-03 drifted +0.62 KiB on main since.)
 const PRECACHE_CEILING_KIB = 8392;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 

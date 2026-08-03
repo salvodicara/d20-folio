@@ -240,6 +240,9 @@ export function computeACDetailed(
       base: number;
       dexPart: number;
       capped: boolean;
+      /** The ceiling that actually CLIPPED the DEX bonus, or `null` when nothing
+       *  was clipped — an armor whose cap the character never reaches has done
+       *  NOTHING to explain, so the why layer must stay silent there (rule 19). */
       cap: number | null;
     } => {
       let dexPart = 0;
@@ -251,7 +254,9 @@ export function computeACDetailed(
             category === "medium" ? effectiveMediumDexCap(ac.maxDex) : ac.maxDex;
           dexPart = Math.min(dexMod, cap);
           capped = dexMod > cap;
-          capValue = cap;
+          // Only a cap that BIT is recorded: a DEX 12 half-plate wearer is at
+          // +2 because their modifier IS +2, not because the armor clipped it.
+          capValue = capped ? cap : null;
         } else {
           dexPart = dexMod;
         }
@@ -2354,7 +2359,9 @@ export function effectiveWeaponDie(
   if (!m) return { die: weaponDie };
   const printedFace = parseInt(m[2] ?? "0", 10);
   let bestFace = printedFace;
-  let winner = "";
+  // Assigned IFF an upgrade beats the printed face — so `winner === undefined`
+  // IS the "nothing was replaced" test (no sentinel, no defaulted value).
+  let winner: string | undefined;
   for (const u of upgrades) {
     if (!u.dieUpgrade) continue;
     if (u.weaponScope === "monk-melee" && !isMonkWeapon) continue;
@@ -2372,7 +2379,7 @@ export function effectiveWeaponDie(
       winner = u.sourceId;
     }
   }
-  if (bestFace <= printedFace) return { die: weaponDie };
+  if (winner === undefined) return { die: weaponDie };
   return { die: `1d${bestFace}`, replaced: weaponDie, sourceId: winner };
 }
 

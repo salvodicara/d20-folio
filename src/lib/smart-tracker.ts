@@ -1614,10 +1614,6 @@ function applyTrackerOverrides(
 }
 
 /**
- * Unified lookup: class feature index first, then feats, then race traits.
- * Returns the feature's name, mechanics, or undefined if not found.
- */
-/**
  * A {@link LocText} `srd` ref for one field of an SRD feature source (R6+R3 SLICE
  * 7c) — the catalogue key the codemod wrote for this class-feature / feat / race
  * trait. The engine emits these on the resolved trackers/actions; the view
