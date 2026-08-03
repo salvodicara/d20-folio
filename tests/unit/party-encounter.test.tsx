@@ -244,7 +244,7 @@ describe("MonsterCard — init-chip null relaxation once turns begin (§D.3)", (
         apply={vi.fn()}
       />
     );
-    expect(screen.getByRole("button", { name: "Initiative for Goblin A" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Initiative for Goblin A/ })).toBeTruthy();
   });
 
   it("initLocked + a SET initiative renders the STATIC chip (locked like every frozen row)", () => {
@@ -284,8 +284,8 @@ describe("EncounterBudgetReadout — verdict chip + costed XP + un-costed marker
       />
     );
     expect(
-      screen.getByText(t("campaignHub.encounterBudgetUncosted", { count: 2 }))
-    ).toBeTruthy();
+      screen.getByLabelText(t("campaignHub.encounterBudgetUncosted", { count: 2 }))
+    ).toHaveTextContent("+2 ?");
   });
 
   it("withholds the verdict (muted em-dash chip) while the party budget is pending", () => {

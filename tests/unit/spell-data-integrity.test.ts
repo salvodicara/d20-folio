@@ -25,6 +25,36 @@ import { SRD_SPELLS_LEVEL8 } from "@/data/spells/level8";
 import { SRD_SPELLS_LEVEL9 } from "@/data/spells/level9";
 
 describe("spell-data integrity", () => {
+  it("models Vampiric Touch's linked healing as a deterministic combat effect", () => {
+    expect(getSpellById("vampiric-touch")?.selfHealingFromDamage).toEqual({
+      fraction: 0.5,
+    });
+  });
+
+  it("separates persistent placement from later deterministic resolution", () => {
+    for (const id of [
+      "blade-barrier",
+      "cloudkill",
+      "evards-black-tentacles",
+      "insect-plague",
+      "moonbeam",
+      "sleet-storm",
+      "spirit-guardians",
+      "stinking-cloud",
+      "web",
+    ]) {
+      const spell = getSpellById(id);
+      expect(spell?.resolveOnCast, id).toBe(false);
+      expect(spell?.recurrence, id).toBeTypeOf("string");
+    }
+
+    expect(getSpellById("heat-metal")?.recurrence).toBe("bonus-action-retrigger");
+    expect(getSpellById("spiritual-weapon")?.recurrence).toBe("bonus-action-retrigger");
+    expect(getSpellById("wall-of-fire")?.followUp).toMatchObject({
+      type: "free",
+      attack: { damageType: "fire", resolution: "automatic" },
+    });
+  });
   it("has unique spell ids across every level file", () => {
     const seen = new Map<string, number>();
     for (const s of spells) {
@@ -105,15 +135,22 @@ describe("spell-data integrity", () => {
     }
   });
 
-  it("models the 2024 attack-roll reworks (no stale save left behind)", () => {
+  it("models the 2024 attack-roll reworks and genuine hybrid resolution", () => {
     // (The pack-only melee rework — Grasping Vine — is pinned in
     // `content-pack/tests/unit/spell-data-integrity.pack.test.ts`.)
-    const ranged = ["poison-spray", "ray-of-sickness"];
-    for (const id of ranged) {
-      const s = getSpellById(id);
-      expect(s?.attackType, id).toBe("ranged");
-      expect(s?.saveAbility, id).toBeUndefined();
-    }
+    const poisonSpray = getSpellById("poison-spray");
+    expect(poisonSpray?.attackType).toBe("ranged");
+    expect(poisonSpray?.saveAbility).toBeUndefined();
+
+    // Ray of Sickness is intentionally hybrid: the attack gates damage, then a
+    // Constitution save gates Poisoned. Flattening it to either branch loses RAW.
+    const ray = getSpellById("ray-of-sickness");
+    expect(ray?.attackType).toBe("ranged");
+    expect(ray?.saveAbility).toBe("CON");
+    expect(ray?.conditionApplication).toEqual({
+      options: ["poisoned"],
+      on: "failed-save",
+    });
   });
 
   it("uses the 2024 school of magic for the audited spells", () => {
@@ -346,6 +383,8 @@ describe("spell-data integrity", () => {
       dice: "2d6",
       damageType: "cold",
       dicePerUpcast: "1d6",
+      resolution: "save",
+      area: true,
     });
     // Components: S, M (no Verbal) per 2024 RAW.
     expect(s?.components).toEqual({ v: false, s: true, m: true });
@@ -714,5 +753,20 @@ describe("spell-data integrity", () => {
         ).toBe(expectedLevel);
       }
     }
+  });
+
+  it("models every catalogued damaging save-for-half spell as structured data", () => {
+    const missing = spells
+      .filter(
+        (spell) =>
+          spell.damageDice !== undefined &&
+          spell.saveAbility !== undefined &&
+          /half (?:as much|the damage)/i.test(
+            srd("spell", spell.id, "description", "en")
+          ) &&
+          spell.damageOnSave !== "half"
+      )
+      .map((spell) => spell.id);
+    expect(missing).toEqual([]);
   });
 });

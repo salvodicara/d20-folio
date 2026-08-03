@@ -83,6 +83,7 @@ import { stripInline } from "@/components/shared/parseInline";
 import { cn } from "@/lib/utils";
 import { RailSection } from "../RailSection";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalScrollColumn } from "@/components/ui/modal-head";
 import { CompanionStatBlockCard } from "@/components/shared/CompanionStatBlockCard";
 import { CompanionHpStepper } from "@/components/shared/CompanionHpStepper";
 import { buildCompanionCardViews } from "@/lib/views/companion-row-view";
@@ -693,26 +694,28 @@ export function ResourceRail() {
             title={view?.label ?? ""}
             size="sm"
           >
-            {view && (
-              <CompanionStatBlockCard
-                view={view}
-                interactive={sheetMode === "play"}
-                onHpChange={setCompanionHp}
-                onVariantChange={(featureId, variantId) => {
-                  const label =
-                    view.variants?.find((o) => o.variantId === variantId)?.label ??
-                    variantId;
-                  registerUndoableToast(
-                    { message: t("features.variantSwitched", { name: label }) },
-                    () =>
-                      useCharacterStore
-                        .getState()
-                        .setCompanionVariant(featureId, variantId),
-                    { turnScoped: false }
-                  );
-                }}
-              />
-            )}
+            <ModalScrollColumn>
+              {view && (
+                <CompanionStatBlockCard
+                  view={view}
+                  interactive={sheetMode === "play"}
+                  onHpChange={setCompanionHp}
+                  onVariantChange={(featureId, variantId) => {
+                    const label =
+                      view.variants?.find((o) => o.variantId === variantId)?.label ??
+                      variantId;
+                    registerUndoableToast(
+                      { message: t("features.variantSwitched", { name: label }) },
+                      () =>
+                        useCharacterStore
+                          .getState()
+                          .setCompanionVariant(featureId, variantId),
+                      { turnScoped: false }
+                    );
+                  }}
+                />
+              )}
+            </ModalScrollColumn>
           </ModalShell>
         );
       })()}

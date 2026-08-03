@@ -6,8 +6,8 @@
  *
  * The journey (spec §F.5):
  *   1. Add-monster → the modal opens on Bestiary → search "goblin" → open the Goblin
- *      Warrior statblock → set quantity 3 → Add → a toast + a "Goblin Warrior ×3" row with
- *      AC/HP pre-filled and INIT "—".
+ *      Warrior statblock → set quantity 3 → Add → a toast + three addressable Goblin Warrior
+ *      rows with AC/HP pre-filled and INIT "—".
  *   2. Custom tab → type a name + Add → the hand-typed combatant appears (manual path).
  *   3. The seeded monster-1 (srdId goblin-warrior) → DM disclosure → Statblock → the modal
  *      shows the statblock plaque.
@@ -15,7 +15,12 @@
  */
 
 import { test, expect, type Page } from "@playwright/test";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { seedUI, seedLang, type Locale } from "./surfaces";
+
+const here = fileURLToPath(new URL(".", import.meta.url));
+const PORTRAIT_FIXTURE = resolve(here, "fixtures/portrait.png");
 
 /** Seed the dev encounter flag before boot, then open the dev campaign hub as its DM. */
 async function bootEncounter(page: Page, locale: Locale = "en"): Promise<void> {
@@ -29,7 +34,7 @@ async function bootEncounter(page: Page, locale: Locale = "en"): Promise<void> {
 const dialog = (page: Page) => page.getByRole("dialog");
 
 test.describe("encounter bestiary picker", () => {
-  test("add a bestiary monster ×3 → a pre-filled row with a blank initiative", async ({
+  test("add a bestiary monster ×3 → three addressable rows with blank initiative", async ({
     page,
   }) => {
     await bootEncounter(page, "en");
@@ -63,15 +68,25 @@ test.describe("encounter bestiary picker", () => {
     // The commit toast confirms the add.
     await expect(page.getByText(/goblin warrior ×3/i).first()).toBeVisible();
 
-    // Close the modal — a new "Goblin Warrior" combatant row is on the table.
+    // Close the modal — each physical creature is independently targetable on the table.
     await page.keyboard.press("Escape");
     await expect(dialog(page)).toHaveCount(0);
-    await expect(page.getByText(/^goblin warrior$/i).first()).toBeVisible();
-    // The group carries ×3 and a blank ("—") initiative until the DM rolls.
-    await expect(page.getByText("×3").first()).toBeVisible();
+    for (const index of [1, 2, 3]) {
+      await expect(
+        page.getByLabel(`Goblin Warrior ${index}`, { exact: true })
+      ).toBeVisible();
+      await expect(
+        page.getByRole("button", {
+          name: `Initiative for Goblin Warrior ${index}`,
+          exact: true,
+        })
+      ).toContainText("—");
+    }
   });
 
-  test("the Custom tab still adds a hand-typed monster", async ({ page }) => {
+  test("the Custom tab uploads, crops, and carries a portrait into combat", async ({
+    page,
+  }) => {
     await bootEncounter(page, "en");
     await page
       .getByRole("button", { name: /add monster/i })
@@ -82,26 +97,45 @@ test.describe("encounter bestiary picker", () => {
     await dialog(page)
       .getByRole("button", { name: /custom monster/i })
       .click();
+    const addPhoto = dialog(page).getByRole("button", { name: /add photo/i });
+    await expect(addPhoto).toBeVisible();
+    const chooser = page.waitForEvent("filechooser");
+    await addPhoto.click();
+    await (await chooser).setFiles(PORTRAIT_FIXTURE);
+
+    const cropDialog = page.getByRole("dialog", { name: /set portrait/i });
+    await expect(cropDialog).toBeVisible();
+    await cropDialog.getByRole("button", { name: /set portrait/i }).click();
+    await expect(cropDialog).toBeHidden();
+
     await dialog(page)
       .getByLabel(/monster name/i)
       .fill("Bandit Captain");
     await dialog(page)
+      .getByRole("button", { name: /save and customize/i })
+      .click();
+    await expect(dialog(page).getByRole("img", { name: "Bandit Captain" })).toBeVisible();
+    await dialog(page)
       .getByRole("button", { name: /add monster/i })
       .click();
     await expect(page.getByText(/bandit captain ×1/i).first()).toBeVisible();
+    await page.keyboard.press("Escape");
+    const card = page
+      .locator('li[data-combatant-id^="monster-"]')
+      .filter({ hasText: "Bandit Captain" });
+    await expect(card.locator('img[alt="Bandit Captain"]')).toBeVisible();
   });
 
   test("the DM statblock disclosure opens the seeded monster's statblock", async ({
     page,
   }) => {
     await bootEncounter(page, "en");
-    // Expand monster-1 ("Goblin") — its disclosure toggle is labelled by its name.
-    const statblockBtn = page.getByRole("button", { name: /^statblock$/i }).first();
+    // Scope the interaction to monster-1 so a same-name Chronicle attribution control
+    // can never steal this click.
+    const card = page.locator('li[data-combatant-id="monster-1"]');
+    const statblockBtn = card.getByRole("button", { name: /^statblock$/i });
     if (!(await statblockBtn.isVisible().catch(() => false))) {
-      await page
-        .getByRole("button", { name: /^goblin$/i })
-        .first()
-        .click();
+      await card.getByRole("button", { name: /^goblin$/i }).click();
     }
     await statblockBtn.click();
     await expect(dialog(page)).toBeVisible();

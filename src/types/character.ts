@@ -803,6 +803,9 @@ export interface SessionState {
   /** Concentration as a branded {@link StoredConcentration} (id / `custom:` / ""); a bare
    *  display name can't type-check here (golden rule 7 — leaks impossible at build). */
   concentration: StoredConcentration;
+  /** Slot level that established the current concentration spell. Needed only to
+   * scale its later repeatable combat action; absent means the spell's base level. */
+  concentrationCastLevel?: number;
   initiative: string;
   conditions: string[];
   /**
@@ -851,6 +854,9 @@ export interface SessionState {
    * `evaluateGrants`. Optional for back-compat with pre-L11 saved docs.
    */
   activeFeatures?: string[];
+  /** Cast level behind an active spell toggle, keyed by that toggle's stable key.
+   * It preserves upcast math for non-concentration follow-up actions. */
+  activeSpellCastLevels?: Record<string, number>;
   /**
    * FRONTIER-S3 — combat-round countdown for the `while-active` states that
    * declare a `maxRounds` duration (Rage = 100 rounds, a 1-minute buff = 10).

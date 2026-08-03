@@ -56,6 +56,8 @@ function encounter(over: Partial<EncounterState> = {}): EncounterState {
         initiative: 14,
         conditions: ["prone"],
         maxHp: 7,
+        srdId: "goblin-warrior",
+        portraitUrl: "https://example.com/custom.jpeg",
         tokens: [7, 3, 0],
       },
     ],
@@ -101,6 +103,8 @@ describe("buildEncounterView — live merge + sort + current pointer", () => {
       conditions: ["prone"],
       currentHp: 10, // 7 + 3 + 0
       maxHp: 21, // 7 × 3
+      srdId: "goblin-warrior",
+      portraitUrl: "https://example.com/custom.jpeg",
       tokens: [7, 3, 0],
       down: false,
     });
@@ -274,7 +278,14 @@ describe("addReinforcement — auto-slot a mid-combat monster into the frozen or
         "pc-bren": pcLive({ name: "Bren", initiative: 5 }),
       }
     );
-    expect(after.order).toEqual(["pc-mara", "monster-1", "pc-bren", "monster-2"]);
+    expect(after.order).toEqual([
+      "pc-mara",
+      "monster-1",
+      "pc-bren",
+      "monster-2",
+      "monster-2~2",
+      "monster-2~3",
+    ]);
     const newcomer = after.combatants.find(
       (c) => c.kind === "monster" && c.id === "monster-2"
     );

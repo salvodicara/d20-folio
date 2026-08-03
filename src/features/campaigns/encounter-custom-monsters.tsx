@@ -18,13 +18,14 @@
  *              preserved). Commits route through `libraryStore` (debounced full-doc write).
  */
 
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, PencilLine, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, PencilLine, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { IconButton } from "@/components/ui/icon-button";
 import { ModalScroll } from "@/components/ui/modal-head";
+import { Portrait } from "@/components/shared/Portrait";
 import {
   PickerDetailFooter,
   PickerRow,
@@ -32,14 +33,20 @@ import {
 } from "@/components/sheet/picker-parts";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { useConfirmStore } from "@/stores/confirmStore";
+import { useAuthStore } from "@/stores/authStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useToastStore } from "@/stores/toastStore";
+import { compressImage, uploadMonsterPortrait } from "@/lib/storage";
+import { readFileAsDataUrl } from "@/lib/image-crop";
+import { normalizePortraitCrop } from "@/lib/portrait-crop";
 import { matchesSearch } from "@/lib/search";
+import { isEntryNamed } from "@/lib/library";
 import { xpForCr } from "@/lib/monster";
 import { fmtXp, formatCr } from "@/lib/utils";
 import { useLocale } from "@/hooks/useLocale";
 import type { LibraryEntry } from "@/lib/library";
 import type { CustomMonster } from "@/types/campaign";
+import type { PortraitCrop } from "@/types/character";
 import { AddMonsterForm } from "./party-encounter";
 import { customMonsterToInput } from "./encounter-monster-input";
 import type { MonsterInput } from "./encounter";
@@ -51,6 +58,123 @@ const MonsterPortraitPanel = lazy(() =>
     default: m.MonsterPortraitPanel,
   }))
 );
+const PortraitCropModal = lazy(() =>
+  import("@/components/shared/PortraitCropModal").then((m) => ({
+    default: m.PortraitCropModal,
+  }))
+);
+
+interface DraftPortrait {
+  blob: Blob;
+  previewUrl: string;
+  crop: PortraitCrop;
+}
+
+/** Portrait selection belongs to creation, not to a hidden post-save screen. Bytes are
+ * uploaded only after the library entry has an id; to the DM this remains one direct
+ * create flow: choose, crop, save. */
+function DraftMonsterPortrait({
+  name,
+  value,
+  onChange,
+}: {
+  name: string;
+  value: DraftPortrait | null;
+  onChange: (portrait: DraftPortrait | null) => void;
+}) {
+  const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [blob, setBlob] = useState<Blob | null>(null);
+  const [preparing, setPreparing] = useState(false);
+
+  async function choose(file: File | undefined): Promise<void> {
+    if (!file) return;
+    if (inputRef.current) inputRef.current.value = "";
+    setPreparing(true);
+    try {
+      const compressed = await compressImage(file);
+      const previewUrl = await readFileAsDataUrl(
+        new File([compressed], file.name, { type: "image/jpeg" })
+      );
+      setBlob(compressed);
+      setCropSrc(previewUrl);
+    } catch {
+      useToastStore.getState().showToast({
+        message: t("portrait.crop.readError"),
+        duration: 4000,
+      });
+    } finally {
+      setPreparing(false);
+    }
+  }
+
+  return (
+    <section className="custom-monster-portrait-field">
+      <div className="custom-monster-portrait-heading">
+        <strong>{t("character.portrait")}</strong>
+      </div>
+      <div className="custom-monster-portrait-control">
+        <button
+          type="button"
+          className="custom-monster-portrait-button"
+          onClick={() => inputRef.current?.click()}
+          disabled={preparing}
+          aria-label={value ? t("portrait.menu.replace") : t("portrait.crop.add")}
+        >
+          <span className="seal custom-monster-portrait-preview">
+            <Portrait
+              src={value?.previewUrl ?? null}
+              crop={value?.crop ?? null}
+              name={name}
+              seed={name || "custom-monster"}
+              className="h-full w-full"
+            />
+            <span className="monster-portrait-empty-cta" aria-hidden>
+              <Camera className="h-6 w-6" />
+            </span>
+          </span>
+          <span>
+            <strong>{value ? t("portrait.menu.replace") : t("portrait.crop.add")}</strong>
+          </span>
+        </button>
+        {value && (
+          <IconButton
+            aria-label={t("portrait.menu.remove")}
+            onClick={() => onChange(null)}
+          >
+            <Icon as={X} size="sm" decorative />
+          </IconButton>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => void choose(event.target.files?.[0])}
+      />
+      <Suspense fallback={null}>
+        <PortraitCropModal
+          key={cropSrc ?? ""}
+          open={cropSrc !== null}
+          imageSrc={cropSrc ?? ""}
+          onConfirm={(area) => {
+            const crop = normalizePortraitCrop(area);
+            if (!crop || !blob || !cropSrc) return;
+            onChange({ blob, previewUrl: cropSrc, crop });
+            setCropSrc(null);
+            setBlob(null);
+          }}
+          onClose={() => {
+            setCropSrc(null);
+            setBlob(null);
+          }}
+        />
+      </Suspense>
+    </section>
+  );
+}
 
 /** A library entry known to carry a custom monster. */
 type MonsterEntry = LibraryEntry & { kind: "monster"; item: CustomMonster };
@@ -70,18 +194,27 @@ export function EncounterCustomMonsters({
   const updateEntry = useLibraryStore((s) => s.updateEntry);
   const removeFromLibrary = useLibraryStore((s) => s.removeFromLibrary);
   const showToast = useToastStore((s) => s.showToast);
+  const uid = useAuthStore((s) => s.user?.uid) ?? "dev";
 
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<MonsterEntry | null>(null);
-  const [viewing, setViewing] = useState<MonsterEntry | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
   const [count, setCount] = useState(1);
+  const [pendingInitiative, setPendingInitiative] = useState<number | null>(null);
+  const [draftPortrait, setDraftPortrait] = useState<DraftPortrait | null>(null);
 
   const mine = useMemo(() => entries.filter(isMonsterEntry), [entries]);
   const rows = useMemo(() => {
     if (!search.trim()) return mine;
     return mine.filter((e) => matchesSearch(search, e.item.name));
   }, [mine, search]);
+  // Read the open detail from the LIVE library, never a captured row. Portrait edits
+  // mutate the entry in place; a stale snapshot used to hide the new art and then add
+  // the portrait-less template to the encounter.
+  const viewing = viewingId
+    ? (mine.find((entry) => entry.id === viewingId) ?? null)
+    : null;
 
   /** The one-line reading under the name: type · CR · AC/HP. */
   function meta(m: CustomMonster): string {
@@ -105,12 +238,31 @@ export function EncounterCustomMonsters({
       showToast({ message: t("custom.libraryFull"), duration: 4000 });
       return;
     }
-    onAdd(customMonsterToInput(template, addCount, initiative));
-    showToast({
-      message: t("campaignHub.encounterCustomAdded", { name: template.name }),
-      duration: 3000,
-    });
+    const saved = useLibraryStore
+      .getState()
+      .entries.find(
+        (entry): entry is MonsterEntry =>
+          isMonsterEntry(entry) && isEntryNamed(entry, "monster", template.name)
+      );
+    if (!saved) return;
+    setCount(addCount);
+    setPendingInitiative(initiative);
+    setViewingId(saved.id);
     setCreating(false);
+    const portrait = draftPortrait;
+    setDraftPortrait(null);
+    if (portrait) {
+      void uploadMonsterPortrait(uid, saved.id, portrait.blob)
+        .then((portraitUrl) =>
+          useLibraryStore.getState().setEntryPortrait(saved.id, {
+            portraitUrl,
+            portraitCrop: portrait.crop,
+          })
+        )
+        .catch(() =>
+          showToast({ message: t("portrait.crop.saveError"), duration: 5000 })
+        );
+    }
   }
 
   async function handleDelete(entry: MonsterEntry): Promise<void> {
@@ -124,7 +276,7 @@ export function EncounterCustomMonsters({
     if (ok) removeFromLibrary(entry.id);
   }
 
-  // CREATE / EDIT — the shared form with a Back bar (create shows the "kept" hint).
+  // CREATE / EDIT — one shared form with a Back bar whenever a prior surface exists.
   if (creating || editing || mine.length === 0) {
     const isEdit = editing !== null;
     const back = isEdit
@@ -134,23 +286,30 @@ export function EncounterCustomMonsters({
         : () => setCreating(false);
     return (
       <div className="flex flex-1 flex-col overflow-hidden">
-        {back ? (
+        {back && (
           <div className="border-b border-border-subtle px-4 py-2">
             <Button size="sm" variant="ghost" onClick={back}>
               <Icon as={ArrowLeft} size="sm" decorative />
               {t("common.back")}
             </Button>
           </div>
-        ) : (
-          <p className="border-b border-border-subtle px-4 py-2 text-[0.72rem] italic text-text-secondary">
-            {t("campaignHub.encounterCustomAutoHint")}
-          </p>
         )}
         <ModalScroll className="flex-1">
           <AddMonsterForm
             initial={editing?.item}
             showCount={!isEdit}
-            submitLabel={isEdit ? t("common.save") : t("campaignHub.encounterAddMonster")}
+            intro={
+              isEdit ? undefined : (
+                <DraftMonsterPortrait
+                  name=""
+                  value={draftPortrait}
+                  onChange={setDraftPortrait}
+                />
+              )
+            }
+            submitLabel={
+              isEdit ? t("common.save") : t("campaignHub.encounterCustomSaveContinue")
+            }
             onSubmit={(template, addCount, initiative) => {
               if (editing) {
                 updateEntry(editing.id, { kind: "monster", item: template });
@@ -171,7 +330,7 @@ export function EncounterCustomMonsters({
     return (
       <div className="flex flex-1 flex-col overflow-hidden">
         <ModalScroll className="flex-1 p-4">
-          <div className="mb-4 flex items-start gap-4">
+          <div className="custom-monster-detail-identity">
             <Suspense fallback={<span className="seal h-24 w-24 shrink-0" aria-hidden />}>
               <MonsterPortraitPanel
                 entryId={viewing.id}
@@ -182,11 +341,11 @@ export function EncounterCustomMonsters({
                 className="h-24 w-24"
               />
             </Suspense>
-            <div className="min-w-0">
-              <h3 className="text-base font-semibold text-text-primary">{m.name}</h3>
-              <p className="mt-0.5 text-xs text-text-secondary">{meta(m)}</p>
+            <div className="custom-monster-detail-copy">
+              <h3>{m.name}</h3>
+              <p>{meta(m)}</p>
               {m.cr && (
-                <p className="mt-1 text-xs text-text-muted">
+                <p className="custom-monster-detail-cr">
                   <GlossaryTip term="challengeRating" rubric={t("monster.crRubric")}>
                     {t("campaignHub.encounterCrOption", {
                       cr: formatCr(Number(m.cr)),
@@ -205,13 +364,16 @@ export function EncounterCustomMonsters({
           alreadyAdded={false}
           addLabel={t("campaignHub.encounterAddMonster")}
           onAdd={() => {
-            onAdd(customMonsterToInput(m, count));
+            onAdd(customMonsterToInput(m, count, pendingInitiative));
             showToast({
               message: t("campaignHub.encounterCustomAdded", { name: m.name }),
               duration: 3000,
             });
           }}
-          onBack={() => setViewing(null)}
+          onBack={() => {
+            setViewingId(null);
+            setPendingInitiative(null);
+          }}
           quantity={{ value: count, onChange: setCount, min: 1, max: 20 }}
         />
       </div>
@@ -242,7 +404,8 @@ export function EncounterCustomMonsters({
                     ariaLabel={entry.item.name}
                     onClick={() => {
                       setCount(1);
-                      setViewing(entry);
+                      setPendingInitiative(null);
+                      setViewingId(entry.id);
                     }}
                   />
                 </span>

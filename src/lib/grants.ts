@@ -1554,6 +1554,20 @@ export type Grant =
     }
   | {
       /**
+       * Changes the damage consequence of a spell's declared attack/save outcome
+       * without changing its dice. Evoker Potent Cantrip makes a qualifying
+       * cantrip deal half damage after a missed attack or successful save. The
+       * table still declares the observable outcome; the shared resolver applies
+       * this deterministic consequence. No spell ids or localized prose are read.
+       */
+      type: "spell-damage-outcome";
+      scope?: "all" | ClassId;
+      cantripOnly?: boolean;
+      damageOnMiss?: "half";
+      damageOnSave?: "half";
+    }
+  | {
+      /**
        * A bonus added to the HIT POINTS a HEALING SPELL restores — the healing
        * counterpart of `spell-damage-bonus`. Cleric Disciple of Life: "Whenever
        * you cast a spell of level 1 or higher that restores Hit Points to a
@@ -1573,6 +1587,23 @@ export type Grant =
       type: "heal-bonus";
       amount: number;
       perSpellLevel?: boolean;
+      minSpellLevel?: number;
+      scope?: "all" | ClassId;
+    }
+  | {
+      /** Heal the caster once when a qualifying spell restores HP to somebody
+       * else (Life Cleric Blessed Healer). The cast level is known before target
+       * resolution, so the resolver can apply this deterministic linked effect. */
+      type: "self-heal-on-other";
+      amount: number;
+      perSpellLevel?: boolean;
+      minSpellLevel?: number;
+      scope?: "all" | ClassId;
+    }
+  | {
+      /** Replace every healing die of a qualifying spell with its maximum face
+       * (Life Cleric Supreme Healing). This computes a ceiling; it never rolls. */
+      type: "maximize-spell-healing";
       minSpellLevel?: number;
       scope?: "all" | ClassId;
     }
@@ -2943,6 +2974,14 @@ export interface SpellDamageBonusEntry {
   schools?: ReadonlyArray<string>;
 }
 
+/** Outcome-driven damage rules for qualifying spells (Evoker Potent Cantrip). */
+export interface SpellDamageOutcomeEntry {
+  scope: "all" | ClassId;
+  cantripOnly: boolean;
+  damageOnMiss?: "half";
+  damageOnSave?: "half";
+}
+
 /**
  * A bonus added to the Hit Points a HEALING SPELL restores (the healing
  * counterpart of {@link SpellDamageBonusEntry}). `amount` is the flat base;
@@ -2953,6 +2992,18 @@ export interface SpellDamageBonusEntry {
 export interface HealBonusEntry {
   amount: number;
   perSpellLevel: boolean;
+  minSpellLevel: number;
+  scope: "all" | ClassId;
+}
+
+export interface SelfHealOnOtherEntry {
+  amount: number;
+  perSpellLevel: boolean;
+  minSpellLevel: number;
+  scope: "all" | ClassId;
+}
+
+export interface MaximizeSpellHealingEntry {
   minSpellLevel: number;
   scope: "all" | ClassId;
 }
@@ -4025,12 +4076,16 @@ export interface AggregatedGrants {
    * (`resolveSpellDamageBonus`) resolves the modifier per spell at render.
    */
   spellDamageBonuses: ReadonlyArray<SpellDamageBonusEntry>;
+  /** Deterministic miss/save damage consequences applied by the combat resolver. */
+  spellDamageOutcomes: ReadonlyArray<SpellDamageOutcomeEntry>;
   /**
    * Bonuses added to the Hit Points a HEALING SPELL restores (Cleric Disciple of
    * Life: +2 + spell level). The consumer (`resolveHealBonus`) resolves the
    * amount per cast at render and appends it to the heal verdict.
    */
   healBonuses: ReadonlyArray<HealBonusEntry>;
+  selfHealOnOther: ReadonlyArray<SelfHealOnOtherEntry>;
+  maximizeSpellHealing: ReadonlyArray<MaximizeSpellHealingEntry>;
   /**
    * Alternate damage types a damaging spell may deal at the player's choice
    * (Great Old One Psychic Spells → Psychic). The consumer
@@ -4435,7 +4490,10 @@ export function emptyAggregate(): AggregatedGrants {
     damageRiders: [],
     weaponDamageBonuses: [],
     spellDamageBonuses: [],
+    spellDamageOutcomes: [],
     healBonuses: [],
+    selfHealOnOther: [],
+    maximizeSpellHealing: [],
     spellDamageTypeOverrides: [],
     unarmedStrikeDamageTypeOptions: [],
     componentWaivers: [],
@@ -4672,7 +4730,10 @@ export function evaluateGrants(
   const damageRiders: AggregatedGrants["damageRiders"][number][] = [];
   const weaponDamageBonuses: AggregatedGrants["weaponDamageBonuses"][number][] = [];
   const spellDamageBonuses: SpellDamageBonusEntry[] = [];
+  const spellDamageOutcomes: SpellDamageOutcomeEntry[] = [];
   const healBonuses: HealBonusEntry[] = [];
+  const selfHealOnOther: SelfHealOnOtherEntry[] = [];
+  const maximizeSpellHealing: MaximizeSpellHealingEntry[] = [];
   const spellDamageTypeOverrides: SpellDamageTypeOverrideEntry[] = [];
   const unarmedStrikeDamageTypeOptions: DamageType[] = [];
   const componentWaivers: ComponentWaiverEntry[] = [];
@@ -5136,10 +5197,32 @@ export function evaluateGrants(
           ...(g.schools ? { schools: g.schools } : {}),
         });
         break;
+      case "spell-damage-outcome":
+        spellDamageOutcomes.push({
+          scope: g.scope ?? "all",
+          cantripOnly: g.cantripOnly ?? false,
+          ...(g.damageOnMiss ? { damageOnMiss: g.damageOnMiss } : {}),
+          ...(g.damageOnSave ? { damageOnSave: g.damageOnSave } : {}),
+        });
+        break;
       case "heal-bonus":
         healBonuses.push({
           amount: g.amount,
           perSpellLevel: g.perSpellLevel ?? false,
+          minSpellLevel: g.minSpellLevel ?? 0,
+          scope: g.scope ?? "all",
+        });
+        break;
+      case "self-heal-on-other":
+        selfHealOnOther.push({
+          amount: g.amount,
+          perSpellLevel: g.perSpellLevel ?? false,
+          minSpellLevel: g.minSpellLevel ?? 0,
+          scope: g.scope ?? "all",
+        });
+        break;
+      case "maximize-spell-healing":
+        maximizeSpellHealing.push({
           minSpellLevel: g.minSpellLevel ?? 0,
           scope: g.scope ?? "all",
         });
@@ -6019,7 +6102,10 @@ export function evaluateGrants(
     damageRiders,
     weaponDamageBonuses,
     spellDamageBonuses,
+    spellDamageOutcomes,
     healBonuses,
+    selfHealOnOther,
+    maximizeSpellHealing,
     spellDamageTypeOverrides,
     unarmedStrikeDamageTypeOptions,
     componentWaivers,

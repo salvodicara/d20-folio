@@ -162,4 +162,64 @@ test.describe("initiative editor floats — the card never reflows", () => {
     await expect(monsterInput).toBeHidden();
     await expect(bossTrigger).toContainText("15");
   });
+
+  test("committing initiative never teleports the edited card while rows glide", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 430, height: 920 });
+    await page.addInitScript(() => {
+      window.localStorage.setItem("d20-dev-encounter", "gathering");
+      (
+        window as typeof window & { __initiativeTransitions: string[] }
+      ).__initiativeTransitions = [];
+      document.addEventListener("transitionrun", (event) => {
+        if (
+          event instanceof TransitionEvent &&
+          event.propertyName === "transform" &&
+          event.target instanceof HTMLElement &&
+          event.target.matches(".party-card")
+        ) {
+          (
+            window as typeof window & { __initiativeTransitions: string[] }
+          ).__initiativeTransitions.push(event.target.dataset.combatantId ?? "unknown");
+        }
+      });
+    });
+    await page.goto("/campaigns/mock-1");
+    const bossCard = page
+      .locator(".party-card")
+      .filter({ hasText: "Goblin Chief" })
+      .first();
+    const bossTrigger = bossCard.locator("button.vital-init");
+    await bossCard.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(150);
+    const beforeTop = (await bossCard.boundingBox())?.y;
+    expect(beforeTop).toBeDefined();
+
+    await bossTrigger.click();
+    const input = page.locator("input.init-edit-input");
+    await input.fill("99");
+    await input.press("Enter");
+
+    const duringTop = (await bossCard.boundingBox())?.y;
+    // Playwright returns after the transition has begun, so scheduler timing determines
+    // how far through the 220ms glide this sample lands. It must remain a bounded fraction
+    // of the move; the old defect teleported the card the full ~280 px in one frame.
+    expect(Math.abs((duringTop ?? 0) - (beforeTop ?? 0))).toBeLessThanOrEqual(80);
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () =>
+              (window as typeof window & { __initiativeTransitions: string[] })
+                .__initiativeTransitions.length
+          ),
+        { timeout: 1000 }
+      )
+      .toBeGreaterThan(0);
+    await page.waitForTimeout(280);
+    const settledTop = (await bossCard.boundingBox())?.y;
+    expect(Math.abs((settledTop ?? 0) - (beforeTop ?? 0))).toBeGreaterThan(100);
+    await expect(bossTrigger).toContainText("99");
+  });
 });

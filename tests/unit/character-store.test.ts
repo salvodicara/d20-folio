@@ -372,6 +372,21 @@ describe("characterStore — rest mechanics", () => {
       expect(sess()?.deathFail).toBe(0);
       expect(sess()?.conditions).toEqual(["prone"]);
     });
+
+    it("applies and reverses a reviewed combat result as one exact unit", () => {
+      seed({ current: 20, temp: 3, conditions: ["frightened"] });
+      const undo = store().applyResolvedCombatEffects({
+        damage: 8,
+        addConditions: ["prone"],
+        removeConditions: ["frightened"],
+      });
+      expect(sess()?.hp).toEqual({ current: 15, temp: 0 });
+      expect(sess()?.conditions).toEqual(["prone"]);
+      expect(undo).toBeTypeOf("function");
+      undo?.();
+      expect(sess()?.hp).toEqual({ current: 20, temp: 3 });
+      expect(sess()?.conditions).toEqual(["frightened"]);
+    });
   });
 
   describe("HP management", () => {
@@ -2057,12 +2072,21 @@ describe("characterStore — S1 concentration drop/swap clears the buff chip", (
 
   it("clears the dropped spell's chip when setConcentration('') ends it (+ undo restores it)", async () => {
     const { useToastStore } = await import("@/stores/toastStore");
-    useCharacterStore.getState().setCharacter(concentratingOnShieldOfFaith());
+    const character = concentratingOnShieldOfFaith();
+    character.session.concentrationCastLevel = 3;
+    character.session.activeSpellCastLevels = { "spell-shield-of-faith": 3 };
+    useCharacterStore.getState().setCharacter(character);
 
     useCharacterStore.getState().setConcentration("");
     // Chip retracted together with concentration.
     expect(useCharacterStore.getState().character?.session.concentration).toBe("");
     expect(useCharacterStore.getState().character?.session.activeFeatures).toEqual([]);
+    expect(
+      useCharacterStore.getState().character?.session.concentrationCastLevel
+    ).toBeUndefined();
+    expect(
+      useCharacterStore.getState().character?.session.activeSpellCastLevels
+    ).toBeUndefined();
 
     // The stopped-concentrating UNDO toast restores BOTH atomically.
     const undo = useToastStore.getState().toasts.at(-1)?.onUndo;
@@ -2074,6 +2098,14 @@ describe("characterStore — S1 concentration drop/swap clears the buff chip", (
     expect(useCharacterStore.getState().character?.session.activeFeatures).toEqual([
       "spell-shield-of-faith",
     ]);
+    expect(useCharacterStore.getState().character?.session.concentrationCastLevel).toBe(
+      3
+    );
+    expect(useCharacterStore.getState().character?.session.activeSpellCastLevels).toEqual(
+      {
+        "spell-shield-of-faith": 3,
+      }
+    );
   });
 
   it("on swap, strips ONLY the OLD spell's chip — the new spell's chip stays the player's manual act", () => {
@@ -2126,10 +2158,15 @@ describe("characterStore — S1 concentration drop/swap clears the buff chip", (
   });
 
   it("the manual chip toggle still works (override-first — auto-light never removes it)", () => {
-    useCharacterStore.getState().setCharacter(concentratingOnShieldOfFaith());
+    const character = concentratingOnShieldOfFaith();
+    character.session.activeSpellCastLevels = { "spell-shield-of-faith": 3 };
+    useCharacterStore.getState().setCharacter(character);
     // Player taps the chip off by hand while still concentrating.
     useCharacterStore.getState().toggleActiveFeature("spell-shield-of-faith");
     expect(useCharacterStore.getState().character?.session.activeFeatures).toEqual([]);
+    expect(
+      useCharacterStore.getState().character?.session.activeSpellCastLevels
+    ).toBeUndefined();
     // …and back on.
     useCharacterStore.getState().toggleActiveFeature("spell-shield-of-faith");
     expect(useCharacterStore.getState().character?.session.activeFeatures).toEqual([

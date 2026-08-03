@@ -216,6 +216,20 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
       scope: "sorcerer",
     },
     {
+      type: "spell-damage-outcome",
+      scope: "wizard",
+      cantripOnly: true,
+      damageOnMiss: "half",
+      damageOnSave: "half",
+    },
+    {
+      type: "self-heal-on-other",
+      amount: 2,
+      perSpellLevel: true,
+      minSpellLevel: 1,
+    },
+    { type: "maximize-spell-healing" },
+    {
       type: "cantrip-damage-bonus",
       spellId: "eldritch-blast",
       ability: "CHA",
@@ -302,16 +316,16 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
     { type: "temp-hp", formula: "CHA+level" },
   ];
 
-  it("exercises one grant of all 67 union members without throwing", () => {
+  it("exercises one grant of all 70 union members without throwing", () => {
     // If a future member is added without a switch case, `default: assertNever`
     // throws here at runtime AND fails to compile in grants.ts.
     expect(() => evaluateGrants([make("all-kinds", sample)])).not.toThrow();
   });
 
-  it("covers exactly the 67 distinct Grant kinds (roster guard)", () => {
+  it("covers exactly the 70 distinct Grant kinds (roster guard)", () => {
     const kinds = new Set(sample.map((g) => g.type));
     expect(kinds.size).toBe(sample.length); // no duplicate kinds in the roster
-    expect(kinds.size).toBe(67);
+    expect(kinds.size).toBe(70);
   });
 
   it("each kind writes its expected aggregate field (nothing silently dropped)", () => {
@@ -371,6 +385,23 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
     expect(out.initiativeBonusFlat).toBe(2);
     expect(out.damageRiders).toHaveLength(1);
     expect(out.spellDamageBonuses).toHaveLength(1);
+    expect(out.spellDamageOutcomes).toEqual([
+      {
+        scope: "wizard",
+        cantripOnly: true,
+        damageOnMiss: "half",
+        damageOnSave: "half",
+      },
+    ]);
+    expect(out.selfHealOnOther).toEqual([
+      {
+        amount: 2,
+        perSpellLevel: true,
+        minSpellLevel: 1,
+        scope: "all",
+      },
+    ]);
+    expect(out.maximizeSpellHealing).toEqual([{ minSpellLevel: 0, scope: "all" }]);
     expect(out.cantripDamageBonuses).toHaveLength(1);
     expect(out.cantripEffectRiders).toHaveLength(1);
     expect(out.cantripRangeBonuses).toHaveLength(1);

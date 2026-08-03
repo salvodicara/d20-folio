@@ -28,6 +28,7 @@ import {
   passiveAdvantageStep,
   resolveAbilityCheckBonus,
   savingThrowBonus,
+  isHeavyArmorEquipped,
 } from "@/lib/compute";
 import {
   aggregateCharacterGrants,
@@ -39,6 +40,8 @@ import type { CombatState } from "@/types/combat-state";
 import type { PcLive } from "@/features/campaigns/encounter-view";
 import {
   deriveSensesAndSpeeds,
+  deriveDamageDefenses,
+  deriveDefenseKind,
   mergeSaveProficiencies,
   mergeSkillProficiencies,
   type SenseEntry,
@@ -48,6 +51,8 @@ import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
 import { getEquipment } from "@/data/equipment";
 import type { CharacterDoc } from "@/types/character";
 import type { AbilityCode } from "@/data/types";
+import type { ConditionId } from "@/data/types";
+import type { DamageDefenses } from "@/lib/damage-intake";
 
 /** One saving throw, ready for the dashboard's expanded detail. */
 export interface PartyMemberSave {
@@ -91,6 +96,8 @@ export interface PartyMemberStats {
   initiativeBonus: number;
   /** Active condition ids (localized to chips at the render edge). */
   conditions: string[];
+  defenses: DamageDefenses;
+  conditionImmunities: ReadonlySet<ConditionId>;
 }
 
 /**
@@ -190,6 +197,26 @@ export function derivePartyMemberStats(doc: CharacterDoc): PartyMemberStats {
         )
     );
 
+  const pb = effectiveProficiencyBonus(level, pbOverride);
+  const defenses = deriveDamageDefenses(
+    aggregate,
+    {
+      resistance: charData.damageResistanceOverrides,
+      immunity: charData.damageImmunityOverrides,
+      vulnerability: charData.damageVulnerabilityOverrides,
+    },
+    session.sessionDefenses,
+    pb,
+    isHeavyArmorEquipped(charData.equipment, getEquipment)
+  );
+  const conditionImmunities = new Set(
+    deriveDefenseKind(
+      aggregate.conditionImmunities,
+      charData.conditionImmunityOverrides,
+      session.sessionDefenses?.conditionImmunity
+    ).effective as ConditionId[]
+  );
+
   return {
     level,
     ac: effectiveAC(charData, aggSession),
@@ -205,6 +232,8 @@ export function derivePartyMemberStats(doc: CharacterDoc): PartyMemberStats {
     walkingSpeedFt,
     initiativeBonus,
     conditions: session.conditions,
+    defenses,
+    conditionImmunities,
   };
 }
 
@@ -262,6 +291,8 @@ export function derivePcLive(
     classes: doc.character.classes,
     portraitUrl: doc.portraitUrl,
     portraitCrop: doc.portraitCrop,
+    defenses: stats.defenses,
+    conditionImmunities: stats.conditionImmunities,
   };
 }
 

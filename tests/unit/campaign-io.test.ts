@@ -135,6 +135,7 @@ import {
   undoTreasuryEntry,
   updateCampaign,
   removeMember,
+  reduceDeclaredEffects,
   setJoinsLocked,
   deleteSession,
   updateSession,
@@ -153,6 +154,113 @@ import type {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+describe("campaign-io — reviewed combat effects", () => {
+  const encounter: EncounterState = {
+    round: 2,
+    currentCombatantId: "pc-a",
+    order: ["pc-a", "monster-1"],
+    epoch: 1,
+    status: "active",
+    combatants: [
+      { kind: "pc", id: "pc-a", memberUid: "a", characterId: "char-a" },
+      {
+        kind: "monster",
+        id: "monster-1",
+        name: "Goblin",
+        ac: 13,
+        initiative: 8,
+        conditions: [],
+        maxHp: 7,
+        tokens: [5],
+      },
+    ],
+  };
+
+  it("lands healing and an idempotent condition in one pure reduction", () => {
+    const next = reduceDeclaredEffects(encounter, [
+      { kind: "healing", targetId: "monster-1", amount: 4 },
+      {
+        kind: "condition",
+        targetId: "monster-1",
+        conditionId: "prone",
+        active: true,
+      },
+    ]);
+    const goblin = next.combatants.find((combatant) => combatant.id === "monster-1");
+    expect(goblin?.kind === "monster" ? goblin.tokens : null).toEqual([7]);
+    expect(goblin?.kind === "monster" ? goblin.conditions : null).toEqual(["prone"]);
+    expect(next.events?.map((event) => event.kind)).toEqual([
+      "hp-heal",
+      "condition-gain",
+    ]);
+  });
+
+  it("does not duplicate a condition on transaction-style replay", () => {
+    const once = reduceDeclaredEffects(encounter, [
+      {
+        kind: "condition",
+        targetId: "monster-1",
+        conditionId: "prone",
+        active: true,
+      },
+    ]);
+    const twice = reduceDeclaredEffects(once, [
+      {
+        kind: "condition",
+        targetId: "monster-1",
+        conditionId: "prone",
+        active: true,
+      },
+    ]);
+    expect(twice.events).toHaveLength(1);
+  });
+
+  it("queues PC effects with deterministic ids instead of mutating a peer character", () => {
+    const next = reduceDeclaredEffects(encounter, [
+      { kind: "healing", targetId: "pc-a", amount: 6 },
+      { kind: "temp-hp", targetId: "pc-a", amount: 9 },
+      {
+        kind: "condition",
+        targetId: "pc-a",
+        conditionId: "poisoned",
+        active: false,
+      },
+    ]);
+    expect(next.memberEffects).toEqual([
+      { id: "1:0", kind: "healing", targetId: "pc-a", amount: 6 },
+      { id: "1:1", kind: "temp-hp", targetId: "pc-a", amount: 9 },
+      {
+        id: "1:2",
+        kind: "condition",
+        targetId: "pc-a",
+        conditionId: "poisoned",
+        active: false,
+      },
+    ]);
+  });
+
+  it("applies Temporary HP to monsters with max-wins semantics and consumes it first", () => {
+    const fortified = reduceDeclaredEffects(encounter, [
+      { kind: "temp-hp", targetId: "monster-1", amount: 4 },
+      { kind: "temp-hp", targetId: "monster-1", amount: 2 },
+    ]);
+    const damaged = reduceDeclaredEffects(fortified, [
+      { kind: "damage", targetId: "monster-1", amount: 6 },
+    ]);
+    expect(damaged.combatants.find((c) => c.id === "monster-1")).toMatchObject({
+      tokens: [3],
+    });
+    expect(damaged.combatants.find((c) => c.id === "monster-1")).not.toHaveProperty(
+      "tempHp"
+    );
+    expect(damaged.events?.at(-1)).toMatchObject({
+      kind: "hp-damage",
+      amount: 6,
+      tempAbsorbed: 4,
+    });
+  });
 });
 
 describe("campaign-io — advanceEncounterTurn (P2 scoped turn write)", () => {

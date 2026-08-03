@@ -13,19 +13,27 @@ import { describe, it, expect } from "vitest";
 import {
   appendEvent,
   recordMonsterHp,
+  recordMonsterDamage,
   recordPcHp,
   recordCondition,
   setEventAttacker,
   skipEventAttacker,
   undoHpEvent,
+  undoConditionEvent,
   inferOutcome,
 } from "@/features/campaigns/combat-chronicle";
-import { startEncounter, addMonster, setHp } from "@/features/campaigns/encounter";
+import {
+  startEncounter,
+  addMonster,
+  setHp,
+  toggleCondition,
+  setMonsterTempHp,
+} from "@/features/campaigns/encounter";
 import type { EncounterState } from "@/types/campaign";
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
-/** A one-PC encounter (mara) + a Goblin ×3 group at 7 HP each. */
+/** A one-PC encounter (mara) + three independently targetable Goblins. */
 function fight(): EncounterState {
   const base = startEncounter({ mara: { characterId: "char-mara" } }, ["mara"], 100);
   return addMonster(base, {
@@ -83,18 +91,44 @@ describe("recordMonsterHp — derives damage/heal + down", () => {
     expect(last(s)).toMatchObject({ kind: "hp-heal", amount: 4, current: 6 });
   });
 
-  it("emits DOWN only when the LAST live token of the group dies", () => {
-    let s = fight();
-    s = recordMonsterHp(s, "monster-1", 0, 0); // token 0 dead — group still up
-    expect(events(s).some((e) => e.kind === "down")).toBe(false);
-    s = recordMonsterHp(s, "monster-1", 1, 0); // token 1 dead — group still up
-    s = recordMonsterHp(s, "monster-1", 2, 0); // last token — group defeated
+  it("emits DOWN when that creature crosses to zero", () => {
+    const s = recordMonsterHp(fight(), "monster-1", 0, 0);
     expect(last(s)).toMatchObject({ kind: "down", targetId: "monster-1" });
   });
 
   it("a no-change edit (clamp no-op) records nothing", () => {
     const s = recordMonsterHp(fight(), "monster-1", 0, 7); // already 7
     expect(s.events).toBeUndefined();
+  });
+});
+
+describe("recordMonsterDamage — Temporary HP is part of the same damage transaction", () => {
+  it("absorbs Temporary HP first and records the landed total", () => {
+    const withTemp = setMonsterTempHp(fight(), "monster-1", 5);
+    const damaged = recordMonsterDamage(withTemp, "monster-1", 0, 8);
+    expect(damaged.combatants.find((c) => c.id === "monster-1")).toMatchObject({
+      tokens: [4],
+    });
+    expect(damaged.combatants.find((c) => c.id === "monster-1")).not.toHaveProperty(
+      "tempHp"
+    );
+    expect(last(damaged)).toMatchObject({
+      kind: "hp-damage",
+      amount: 8,
+      tempAbsorbed: 5,
+      current: 4,
+    });
+  });
+
+  it("undo restores both ordinary and Temporary HP exactly", () => {
+    const withTemp = setMonsterTempHp(fight(), "monster-1", 5);
+    const damaged = recordMonsterDamage(withTemp, "monster-1", 0, 8);
+    const restored = undoHpEvent(damaged, "0");
+    expect(restored.combatants.find((c) => c.id === "monster-1")).toMatchObject({
+      tokens: [7],
+      tempHp: 5,
+    });
+    expect(restored.events).toEqual([]);
   });
 });
 
@@ -192,32 +226,27 @@ describe("undoHpEvent — removes the line AND restores the monster's HP", () =>
 
   it("undoing a damage event heals the amount back and drops the line", () => {
     let s = recordMonsterHp(fight(), "monster-1", 0, 3); // 7 → 3, event id "0", amount 4
-    expect(monster(s)).toMatchObject({ tokens: [3, 7, 7] });
+    expect(monster(s)).toMatchObject({ tokens: [3] });
     s = undoHpEvent(s, "0");
     // The token is restored to full and the chronicle line is gone.
-    expect(monster(s)).toMatchObject({ tokens: [7, 7, 7] });
+    expect(monster(s)).toMatchObject({ tokens: [7] });
     expect(s.events).toEqual([]);
   });
 
-  it("undoing the killing blow revives the group AND removes the trailing down line", () => {
-    let s = recordMonsterHp(fight(), "monster-1", 0, 0); // id "0"
-    s = recordMonsterHp(s, "monster-1", 1, 0); // id "1"
-    s = recordMonsterHp(s, "monster-1", 2, 0); // id "2" damage + id "3" down (last token)
+  it("undoing the killing blow revives the creature AND removes the trailing down line", () => {
+    let s = recordMonsterHp(fight(), "monster-1", 0, 0); // id "0" damage + id "1" down
     expect(events(s).map((e) => e.kind)).toContain("down");
-    s = undoHpEvent(s, "2");
-    // The amount is healed back onto the first restorable token (index 0 here — the
-    // group's HP total is restored even if the exact token differs), the group is no
-    // longer defeated, and BOTH the damage line and the now-stale down line are gone.
-    expect(monster(s)).toMatchObject({ tokens: [7, 0, 0] });
+    s = undoHpEvent(s, "0");
+    expect(monster(s)).toMatchObject({ tokens: [7] });
     expect(events(s).some((e) => e.kind === "down")).toBe(false);
-    expect(events(s).map((e) => e.id)).toEqual(["0", "1"]);
+    expect(events(s)).toEqual([]);
   });
 
   it("undoing a heal re-damages the amount off the group", () => {
     let s = recordMonsterHp(fight(), "monster-1", 0, 3); // damage 7→3 (id "0")
     s = recordMonsterHp(s, "monster-1", 0, 7); // heal 3→7 (id "1", amount 4)
     s = undoHpEvent(s, "1");
-    expect(monster(s)).toMatchObject({ tokens: [3, 7, 7] });
+    expect(monster(s)).toMatchObject({ tokens: [3] });
     expect(events(s).map((e) => e.id)).toEqual(["0"]);
   });
 
@@ -244,6 +273,40 @@ describe("undoHpEvent — removes the line AND restores the monster's HP", () =>
   });
 });
 
+describe("undoConditionEvent — removes the line AND reverses the monster condition", () => {
+  it("undoes both a gain and a loss", () => {
+    let gained = recordCondition(
+      toggleCondition(fight(), "monster-1", "prone"),
+      "monster-1",
+      "prone",
+      true
+    );
+    gained = undoConditionEvent(gained, "0");
+    expect(gained.events).toEqual([]);
+    expect(gained.combatants.find((c) => c.id === "monster-1")).toMatchObject({
+      conditions: [],
+    });
+
+    let lost = toggleCondition(fight(), "monster-1", "prone");
+    lost = recordCondition(
+      toggleCondition(lost, "monster-1", "prone"),
+      "monster-1",
+      "prone",
+      false
+    );
+    lost = undoConditionEvent(lost, "0");
+    expect(lost.events).toEqual([]);
+    expect(lost.combatants.find((c) => c.id === "monster-1")).toMatchObject({
+      conditions: ["prone"],
+    });
+  });
+
+  it("does not claim ownership of PC conditions", () => {
+    const pc = recordCondition(fight(), "pc-mara", "prone", true);
+    expect(undoConditionEvent(pc, "0")).toBe(pc);
+  });
+});
+
 // ─── Outcome inference ───────────────────────────────────────────────────────
 
 describe("inferOutcome — victory only when every monster is down", () => {
@@ -251,9 +314,9 @@ describe("inferOutcome — victory only when every monster is down", () => {
     expect(inferOutcome(fight())).toBe("ended");
   });
 
-  it("victory when every monster group is defeated", () => {
+  it("victory when every monster is defeated", () => {
     let s = fight();
-    for (const i of [0, 1, 2]) s = setHp(s, "monster-1", i, 0);
+    for (const id of ["monster-1", "monster-1~2", "monster-1~3"]) s = setHp(s, id, 0, 0);
     expect(inferOutcome(s)).toBe("victory");
   });
 

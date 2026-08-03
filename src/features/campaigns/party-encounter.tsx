@@ -43,10 +43,12 @@ import {
   useMemo,
   useRef,
   useState,
+  type Dispatch,
   type MouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type Ref,
+  type SetStateAction,
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -86,6 +88,7 @@ import { StatBadge, HpBadge, InitBadge, StatLabel } from "@/components/shared/St
 import { AutoAnimateHeight } from "@/components/shared/AutoAnimateHeight";
 import { InlineEditable } from "@/components/shared/InlineEditable";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalStage } from "@/components/ui/modal-head";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import {
   CardEditorScopeContext,
@@ -98,7 +101,14 @@ import { cn, fmtXp, formatCr, formatSpeed, localeDistance } from "@/lib/utils";
 import { CR_VALUES, xpForCr } from "@/lib/monster";
 import { ensureSrdKind } from "@/i18n";
 import { useLocale } from "@/hooks/useLocale";
-import { conditionChips } from "@/lib/views/tracker-view";
+import { conditionChips, conditionOptions } from "@/lib/views/tracker-view";
+import {
+  ALL_CREATURE_TYPES,
+  ALL_DAMAGE_TYPES,
+  type ConditionId,
+  type CreatureType,
+  type DamageType,
+} from "@/data/types";
 import { bloodiedFromHp } from "@/lib/aggregate-character";
 import {
   hpState,
@@ -125,11 +135,14 @@ import {
   setInitiative,
   setMonsterName,
   setMonsterNotes,
+  setMonsterTempHp,
   setRevealed,
   toggleCondition,
+  monsterInstanceName,
 } from "@/features/campaigns/encounter";
 import {
   recordMonsterHp,
+  recordMonsterDamage,
   recordCondition,
   recordPcHp,
 } from "@/features/campaigns/combat-chronicle";
@@ -148,11 +161,11 @@ import type { CharacterDoc } from "@/types/character";
 import type { CombatState } from "@/types/combat-state";
 import type {
   CustomMonster,
+  CombatDefenseSnapshot,
   EncounterMonster,
   EncounterState,
   MemberCharacterSnapshot,
 } from "@/types/campaign";
-import { ALL_CREATURE_TYPES, type CreatureType } from "@/data/types";
 
 // The DM statblock disclosure — the SECOND door into the ONE lazy bestiary chunk
 // (the same seam Party.tsx's Add-monster modal uses; router.tsx D-2 pattern: chunk
@@ -1310,7 +1323,7 @@ function DetailRow({ label, value }: { label: string; value: string | number }) 
 // COMBAT LAYER — round bar · turn controls · per-card initiative chip
 // ════════════════════════════════════════════════════════════════════════════
 
-/** The combat-layer header strip: the round badge + (DM) End-encounter. */
+/** The combat-layer folio rail: round + difficulty + (DM) End-encounter. */
 export function EncounterRoundBar({
   round,
   isDm,
@@ -1326,20 +1339,24 @@ export function EncounterRoundBar({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Badge
-        variant="emphasized"
-        color="var(--accent-primary)"
-        size="md"
-        style={{ ["--bd-ink" as string]: "var(--accent-text)" }}
-      >
+    <div className="encounter-dossier-rail">
+      <span className="encounter-dossier-mark" aria-hidden>
+        <Icon as={Swords} size="sm" decorative />
+      </span>
+      <span className="encounter-dossier-round">
         {t("campaignHub.encounterRound", { round })}
-      </Badge>
+      </span>
       {isDm && <EncounterBudgetReadout budget={budget} />}
       {isDm && (
-        <Button variant="destructive" size="sm" className="ml-auto" onClick={onEnd}>
+        <Button
+          variant="destructive"
+          size="sm"
+          className="encounter-summary-end"
+          title={t("campaignHub.encounterEnd")}
+          onClick={onEnd}
+        >
           <Icon as={X} size="sm" decorative />
-          {t("campaignHub.encounterEnd")}
+          <span className="max-sm:sr-only">{t("campaignHub.encounterEnd")}</span>
         </Button>
       )}
     </div>
@@ -1418,7 +1435,7 @@ export function EncounterBudgetReadout({
   const noMonsters = costedXp === 0 && uncostedGroups === 0 && verdict === null;
 
   return (
-    <span className="flex flex-wrap items-center gap-2">
+    <span className="encounter-budget-readout">
       {verdict !== null ? (
         <Badge
           variant="tonal"
@@ -1442,7 +1459,7 @@ export function EncounterBudgetReadout({
         </Badge>
       )}
       <span
-        className="tabular-nums text-xs text-text-muted"
+        className="encounter-budget-xp"
         title={noMonsters ? t("campaignHub.encounterBudgetNoMonsters") : undefined}
       >
         {noMonsters ? (
@@ -1456,10 +1473,11 @@ export function EncounterBudgetReadout({
       </span>
       {uncostedGroups > 0 && (
         <span
-          className="text-xs text-text-muted"
+          className="encounter-budget-uncosted"
           title={t("campaignHub.encounterBudgetUncostedHint")}
+          aria-label={t("campaignHub.encounterBudgetUncosted", { count: uncostedGroups })}
         >
-          {t("campaignHub.encounterBudgetUncosted", { count: uncostedGroups })}
+          +{uncostedGroups} ?
         </span>
       )}
     </span>
@@ -1590,6 +1608,7 @@ export function MonsterCard({
 }) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
+  const displayName = monsterInstanceName(monster);
   const cardRef = useRef<HTMLLIElement>(null);
   const editable = !!apply;
   const [open, setOpen] = useState(isCurrent && editable);
@@ -1670,7 +1689,12 @@ export function MonsterCard({
         value={monster.ac}
         valueText={monster.ac}
       />
-      <MonsterHpStat current={groupCurrent} max={groupMax} showExact={showExactHp} />
+      <MonsterHpStat
+        current={groupCurrent}
+        max={groupMax}
+        temp={monster.tempHp ?? 0}
+        showExact={showExactHp}
+      />
     </div>
   );
 
@@ -1708,12 +1732,25 @@ export function MonsterCard({
 
       <MonsterTokens
         monster={monster}
-        onSet={(tokenIndex, v) =>
-          // Record the chronicle beat (damage/heal + any fall) IN the same reducer as
-          // the HP write — one debounced encounter write covers both (no new cadence).
-          // Attribution is left to the feed's one-tap picker (never auto-guessed here).
-          apply((e) => recordMonsterHp(e, monster.id, tokenIndex, v))
+        onDamage={(tokenIndex, amount) =>
+          apply((e) => recordMonsterDamage(e, monster.id, tokenIndex, amount))
         }
+        onHeal={(tokenIndex, amount) =>
+          apply((e) =>
+            recordMonsterHp(
+              e,
+              monster.id,
+              tokenIndex,
+              (monster.tokens[tokenIndex] ?? 0) + amount
+            )
+          )
+        }
+        onTemp={(amount) =>
+          apply((e) =>
+            setMonsterTempHp(e, monster.id, Math.max(monster.tempHp ?? 0, amount))
+          )
+        }
+        onClearTemp={() => apply((e) => setMonsterTempHp(e, monster.id, 0))}
       />
 
       <ConditionEditor
@@ -1806,7 +1843,7 @@ export function MonsterCard({
                 monster.srdId ? monsterPortraitUrl(monster.srdId) : monster.portraitUrl
               }
               crop={monster.srdId ? null : monster.portraitCrop}
-              name={monster.name}
+              name={displayName}
               seed={monster.id}
               className="h-full w-full"
             />
@@ -1822,7 +1859,7 @@ export function MonsterCard({
           apply && (!initLocked || monster.initiative === null) ? (
             <MonsterInitChip
               value={monster.initiative}
-              ariaLabel={t("campaignHub.encounterInitiativeFor", { name: monster.name })}
+              ariaLabel={t("campaignHub.encounterInitiativeFor", { name: displayName })}
               onCommit={(v) => apply((e) => setInitiative(e, monster.id, v))}
             />
           ) : (
@@ -1843,7 +1880,7 @@ export function MonsterCard({
             </span>
           )
         }
-        title={monster.name}
+        title={displayName}
         subline={subline}
         cluster={cluster}
         badges={badges}
@@ -1852,7 +1889,7 @@ export function MonsterCard({
         open={open}
         onToggle={() => setOpen((v) => !v)}
         detailId={`monster-detail-${monster.id}`}
-        toggleLabel={monster.name}
+        toggleLabel={displayName}
         reorder={reorder}
       />
       {/* The DM statblock disclosure — lazily loaded on first open through the SAME
@@ -1861,14 +1898,16 @@ export function MonsterCard({
       {statblockOpen && monster.srdId && (
         <Suspense
           fallback={
-            <ModalShell open onClose={() => setStatblockOpen(false)} title={monster.name}>
-              <FolioLoader variant="region" />
+            <ModalShell open onClose={() => setStatblockOpen(false)} title={displayName}>
+              <ModalStage>
+                <FolioLoader variant="region" />
+              </ModalStage>
             </ModalShell>
           }
         >
           <EncounterStatblockModal
             srdId={monster.srdId}
-            combatantName={monster.name}
+            combatantName={displayName}
             combatantId={monster.id}
             currentXp={monster.xp}
             apply={apply}
@@ -1889,10 +1928,12 @@ export function MonsterCard({
 function MonsterHpStat({
   current,
   max,
+  temp,
   showExact,
 }: {
   current: number;
   max: number;
+  temp: number;
   showExact: boolean;
 }) {
   const { t } = useTranslation();
@@ -1912,7 +1953,7 @@ function MonsterHpStat({
           density="chip"
           current={current}
           max={max}
-          temp={0}
+          temp={temp}
           state={state}
           pct={pct}
           hpLabel={hpLabel}
@@ -2060,10 +2101,16 @@ function MonsterInitChip({
  */
 function MonsterTokens({
   monster,
-  onSet,
+  onDamage,
+  onHeal,
+  onTemp,
+  onClearTemp,
 }: {
   monster: EncounterMonster;
-  onSet: (tokenIndex: number, value: number) => void;
+  onDamage: (tokenIndex: number, amount: number) => void;
+  onHeal: (tokenIndex: number, amount: number) => void;
+  onTemp: (amount: number) => void;
+  onClearTemp: () => void;
 }) {
   const { t } = useTranslation();
   const hpLabel = t("character.health.hpAbbr");
@@ -2091,16 +2138,16 @@ function MonsterTokens({
             <HpEditPopover
               current={hp}
               max={monster.maxHp}
-              temp={0}
-              hideTemp
-              // DELTA → absolute: `onSet` writes through `setHp`/`clampHp`, which
-              // clamps to `[0, maxHp]` — hence the raw `hp ± n` (no local clamp).
-              onDamage={(parts) => onSet(i, hp - parts.reduce((s, p) => s + p.amount, 0))}
-              onHeal={(n) => onSet(i, hp + n)}
-              // Unreachable under `hideTemp` (monsters have no temp pool) — the TEMP
-              // + clear-temp verbs are not rendered, so these are never invoked.
-              onTemp={() => {}}
-              onClearTemp={() => {}}
+              temp={monster.tempHp ?? 0}
+              onDamage={(parts) =>
+                onDamage(
+                  i,
+                  parts.reduce((sum, part) => sum + part.amount, 0)
+                )
+              }
+              onHeal={(amount) => onHeal(i, amount)}
+              onTemp={onTemp}
+              onClearTemp={onClearTemp}
               ariaLabel={aria}
               align="start"
               // B4 — pass the SAME glossary rubric as the PC HpVital so the monster
@@ -2124,7 +2171,7 @@ function MonsterTokens({
                   density="chip"
                   current={hp}
                   max={monster.maxHp}
-                  temp={0}
+                  temp={monster.tempHp ?? 0}
                   state={state}
                   pct={pct}
                   hpLabel={hpLabel}
@@ -2148,6 +2195,7 @@ function MonsterTokens({
 export function AddMonsterForm({
   initial,
   showCount = true,
+  intro,
   submitLabel,
   onSubmit,
 }: {
@@ -2156,6 +2204,8 @@ export function AddMonsterForm({
   /** Show the per-ADD fields (Initiative + Count); hidden when editing the TEMPLATE
    *  (initiative + count are per-encounter, not part of the reusable template). */
   showCount?: boolean;
+  /** Optional identity editor rendered before the monster's mechanical fields. */
+  intro?: ReactNode;
   /** The submit button's label ("Add to encounter" on create, "Save" on edit). */
   submitLabel: string;
   /**
@@ -2183,6 +2233,50 @@ export function AddMonsterForm({
   // = no CR (a stat-less improv NPC stays un-costed, zero friction — rule 20). The
   // stored value is the CR's stringified number ("0.25"); "" is the blank sentinel.
   const [cr, setCr] = useState(initial?.cr ?? "");
+  const [vulnerabilities, setVulnerabilities] = useState<DamageType[]>(
+    initial?.defenses?.damageVulnerabilities ?? []
+  );
+  const [resistances, setResistances] = useState<DamageType[]>(
+    initial?.defenses?.damageResistances ?? []
+  );
+  const [immunities, setImmunities] = useState<DamageType[]>(
+    initial?.defenses?.damageImmunities ?? []
+  );
+  const [conditionImmunities, setConditionImmunities] = useState<ConditionId[]>(
+    (initial?.defenses?.conditionImmunities ?? []).flatMap((entry) =>
+      typeof entry === "string" ? [entry] : []
+    )
+  );
+  const availableConditions = useMemo(() => conditionOptions(locale), [locale]);
+
+  const toggleDamageType = (
+    setValues: Dispatch<SetStateAction<DamageType[]>>,
+    value: DamageType
+  ): void =>
+    setValues((current) =>
+      current.includes(value)
+        ? current.filter((entry) => entry !== value)
+        : [...current, value]
+    );
+
+  const defenses: CombatDefenseSnapshot | undefined =
+    vulnerabilities.length > 0 ||
+    resistances.length > 0 ||
+    immunities.length > 0 ||
+    conditionImmunities.length > 0 ||
+    initial?.defenses?.qualifiedDefenses
+      ? {
+          ...(vulnerabilities.length > 0
+            ? { damageVulnerabilities: vulnerabilities }
+            : {}),
+          ...(resistances.length > 0 ? { damageResistances: resistances } : {}),
+          ...(immunities.length > 0 ? { damageImmunities: immunities } : {}),
+          ...(conditionImmunities.length > 0 ? { conditionImmunities } : {}),
+          ...(initial?.defenses?.qualifiedDefenses
+            ? { qualifiedDefenses: initial.defenses.qualifiedDefenses }
+            : {}),
+        }
+      : undefined;
 
   function submit(): void {
     const trimmed = name.trim();
@@ -2194,6 +2288,7 @@ export function AddMonsterForm({
       ...(creatureType ? { creatureType: creatureType as CreatureType } : {}),
       ...(cr ? { cr } : {}),
       ...(notes.trim() ? { notes: notes.trim() } : {}),
+      ...(defenses ? { defenses } : {}),
       // PRESERVE the entry's art across a template edit (it lives on the entry, edited
       // via the detail seal — the form must never drop it).
       ...(initial?.portraitUrl
@@ -2217,6 +2312,10 @@ export function AddMonsterForm({
     setInitiativeVal(10);
     setNotes("");
     setCr("");
+    setVulnerabilities([]);
+    setResistances([]);
+    setImmunities([]);
+    setConditionImmunities([]);
   }
 
   return (
@@ -2224,14 +2323,18 @@ export function AddMonsterForm({
     // column, left-aligned, so the name/notes inputs span that column and the stat
     // rows can hug their labels. No breakpoint: on mobile the column cap sits below
     // the viewport, so it fills width exactly.
-    <div className="flex max-w-sm flex-col gap-3 p-4">
-      <Input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder={t("campaignHub.encounterMonsterNamePlaceholder")}
-        aria-label={t("campaignHub.encounterMonsterName")}
-        maxLength={60}
-      />
+    <div className="custom-monster-form">
+      {intro}
+      <label className="custom-monster-field custom-monster-name-field">
+        <span>{t("campaignHub.encounterMonsterName")}</span>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={t("campaignHub.encounterMonsterNamePlaceholder")}
+          aria-label={t("campaignHub.encounterMonsterName")}
+          maxLength={60}
+        />
+      </label>
       {/* CARD-7 — sheet-style LABEL-LEFT rows in a TWO-COLUMN GRID: a `max-content`
           label column (auto-sized to the widest label, locale-proof — no magic width,
           no truncation) + a small gap + the compact control hugging it. */}
@@ -2332,17 +2435,81 @@ export function AddMonsterForm({
           </Select>
         </label>
       </div>
+      <details className="custom-monster-defenses">
+        <summary>{t("character.hud.defenses")}</summary>
+        {(
+          [
+            ["vulnerable", vulnerabilities, setVulnerabilities],
+            ["resistant", resistances, setResistances],
+            ["immune", immunities, setImmunities],
+          ] as const
+        ).map(([kind, values, setValues]) => (
+          <fieldset key={kind}>
+            <legend>
+              {t(
+                kind === "vulnerable"
+                  ? "abilities.vulnerabilitiesLabel"
+                  : kind === "resistant"
+                    ? "abilities.resistancesLabel"
+                    : "campaignHub.encounterDefense_immune"
+              )}
+            </legend>
+            <div className="custom-monster-defense-grid">
+              {ALL_DAMAGE_TYPES.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  className="combat-condition-chip"
+                  data-selected={values.includes(type) || undefined}
+                  aria-pressed={values.includes(type)}
+                  onClick={() => toggleDamageType(setValues, type)}
+                >
+                  {t(`srd.damage_${type}`)}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        ))}
+        <fieldset>
+          <legend>{t("campaignHub.encounterDefense_conditionImmune")}</legend>
+          <div className="custom-monster-defense-grid">
+            {availableConditions.map((condition) => (
+              <button
+                key={condition.id}
+                type="button"
+                className="combat-condition-chip"
+                data-selected={
+                  conditionImmunities.includes(condition.id as ConditionId) || undefined
+                }
+                aria-pressed={conditionImmunities.includes(condition.id as ConditionId)}
+                onClick={() =>
+                  setConditionImmunities((current) =>
+                    current.includes(condition.id as ConditionId)
+                      ? current.filter((entry) => entry !== condition.id)
+                      : [...current, condition.id as ConditionId]
+                  )
+                }
+              >
+                {condition.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      </details>
       {/* Optional DM notes — same free-text field the card's DM disclosure shows. */}
-      <Textarea
-        className="field-sizing-content min-h-[3.5rem]"
-        rows={2}
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder={t("campaignHub.encounterMonsterNotesPlaceholder")}
-        aria-label={t("campaignHub.encounterMonsterNotes")}
-        maxLength={2000}
-      />
-      <div className="flex items-center gap-2">
+      <label className="custom-monster-field">
+        <span>{t("campaignHub.encounterMonsterNotes")}</span>
+        <Textarea
+          className="field-sizing-content min-h-[3.5rem]"
+          rows={2}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder={t("campaignHub.encounterMonsterNotesPlaceholder")}
+          aria-label={t("campaignHub.encounterMonsterNotes")}
+          maxLength={2000}
+        />
+      </label>
+      <div className="custom-monster-form-actions">
         <Button variant="primary" onClick={submit} disabled={name.trim() === ""}>
           <Icon as={Plus} size="sm" decorative />
           {submitLabel}

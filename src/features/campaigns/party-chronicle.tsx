@@ -31,19 +31,23 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Select } from "@/components/shared/Select";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { useLocale } from "@/hooks/useLocale";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
+import { localizeText } from "@/lib/views/srd-i18n";
 import {
   localizeChronicleEvent,
   chronicleNeedsAttribution,
   buildChronicleChapter,
   type ResolveCombatantName,
   type ResolveConditionName,
+  type ResolveActionName,
 } from "@/lib/views/combat-chronicle-view";
 import {
   setEventAttacker,
   skipEventAttacker,
   undoHpEvent,
+  undoConditionEvent,
   inferOutcome,
 } from "@/features/campaigns/combat-chronicle";
 import type { ReconciledEvent } from "@/features/campaigns/chronicle-reconcile";
@@ -62,6 +66,7 @@ function useChronicleResolvers(
 ): {
   resolveName: ResolveCombatantName;
   resolveCondition: ResolveConditionName;
+  resolveAction: ResolveActionName;
 } {
   const { t } = useTranslation();
   const { language } = useLocale();
@@ -92,7 +97,11 @@ function useChronicleResolvers(
         : id,
     [language]
   );
-  return { resolveName, resolveCondition };
+  const resolveAction = useCallback<ResolveActionName>(
+    (action) => localizeText(action, language),
+    [language]
+  );
+  return { resolveName, resolveCondition, resolveAction };
 }
 
 // ─── A combatant chip (attribution pick / miss target) ───────────────────────
@@ -133,6 +142,7 @@ export function ChronicleFeed({
   memberDetails,
   currentId,
   apply,
+  embedded = false,
 }: {
   /** The RECONCILED feed — stored beats fused with the players' declared attacks
    *  (auto-attributed hits + synthesized miss lines + uncertain markers). */
@@ -143,51 +153,61 @@ export function ChronicleFeed({
   /** The current combatant id — the attacker the attribution picker pre-selects. */
   currentId: string | null;
   apply: ApplyFn;
+  /** Join the feed to the encounter status rail inside one framed folio surface. */
+  embedded?: boolean;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(true);
-  const { resolveName, resolveCondition } = useChronicleResolvers(rows, memberDetails);
+  const { resolveName, resolveCondition, resolveAction } = useChronicleResolvers(
+    rows,
+    memberDetails
+  );
 
   return (
-    <section className="rounded-md border border-border-medium bg-[var(--bg-recessed)] shadow-[var(--elev-recessed)]">
+    <section
+      className={embedded ? "encounter-chronicle is-embedded" : "encounter-chronicle"}
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left"
+        className="encounter-chronicle-toggle"
       >
-        <Icon as={ScrollText} size="sm" className="text-text-secondary" decorative />
-        <span className="flex-1 font-mono text-2xs uppercase tracking-[0.08em] text-text-secondary">
+        <span className="encounter-chronicle-sigil" aria-hidden>
+          <Icon as={ScrollText} size="sm" decorative />
+        </span>
+        <span className="encounter-chronicle-title">
           {t("combatChronicle.feedTitle")}
         </span>
         {events.length > 0 && (
-          <span className="rounded-sm bg-bg-tertiary px-1.5 text-2xs tabular-nums text-text-muted">
-            {events.length}
-          </span>
+          <span className="encounter-chronicle-count">{events.length}</span>
         )}
         <Icon
           as={ChevronDown}
           size="sm"
-          className={open ? "rotate-180 transition-transform" : "transition-transform"}
+          className={
+            open ? "encounter-chronicle-chevron is-open" : "encounter-chronicle-chevron"
+          }
           decorative
         />
       </button>
 
       {open && (
-        <div className="border-t border-border-subtle px-3 py-2">
+        <div className="encounter-chronicle-body">
           {events.length === 0 ? (
-            <p className="py-2 text-center text-2xs italic text-text-faint">
-              {t("combatChronicle.feedEmpty")}
-            </p>
+            <p className="encounter-chronicle-empty">{t("combatChronicle.feedEmpty")}</p>
           ) : (
-            <ol className="flex max-h-[240px] flex-col gap-1 overflow-y-auto">
+            <ol className="encounter-timeline">
               {events.map((re, i) => {
                 const prev = events[i - 1];
                 const showRound = !prev || prev.event.round !== re.event.round;
                 return (
-                  <li key={re.event.id}>
+                  <li
+                    key={re.event.id}
+                    className={showRound ? "encounter-beat has-round" : "encounter-beat"}
+                  >
                     {showRound && (
-                      <p className="mt-1.5 mb-0.5 font-mono text-[length:var(--text-micro)] uppercase tracking-[0.1em] text-text-faint first:mt-0">
+                      <p className="encounter-timeline-round">
                         {t("combatChronicle.round", { n: re.event.round })}
                       </p>
                     )}
@@ -197,6 +217,7 @@ export function ChronicleFeed({
                       currentId={currentId}
                       resolveName={resolveName}
                       resolveCondition={resolveCondition}
+                      resolveAction={resolveAction}
                       apply={apply}
                     />
                   </li>
@@ -223,6 +244,7 @@ function FeedLine({
   currentId,
   resolveName,
   resolveCondition,
+  resolveAction,
   apply,
 }: {
   reconciled: ReconciledEvent;
@@ -230,11 +252,18 @@ function FeedLine({
   currentId: string | null;
   resolveName: ResolveCombatantName;
   resolveCondition: ResolveConditionName;
+  resolveAction: ResolveActionName;
   apply: ApplyFn;
 }) {
   const { t } = useTranslation();
   const { event, uncertain } = reconciled;
-  const text = localizeChronicleEvent(event, t, resolveName, resolveCondition);
+  const text = localizeChronicleEvent(
+    event,
+    t,
+    resolveName,
+    resolveCondition,
+    resolveAction
+  );
   // Show the picker for a still-pending stored hit OR an ambiguous auto-attribution.
   const showPicker = chronicleNeedsAttribution(event) || uncertain === true;
   // Candidate attackers = every combatant EXCEPT the one that took the hit.
@@ -252,11 +281,16 @@ function FeedLine({
     event.kind === "hp-damage" || event.kind === "hp-heal"
       ? rows.find((r) => r.id === event.targetId)
       : undefined;
-  const canUndo = hpTargetRow?.kind === "monster";
+  const conditionTargetRow =
+    event.kind === "condition-gain" || event.kind === "condition-loss"
+      ? rows.find((r) => r.id === event.targetId)
+      : undefined;
+  const canUndoHp = hpTargetRow?.kind === "monster";
+  const canUndoCondition = conditionTargetRow?.kind === "monster";
 
   return (
-    <div className="flex flex-col gap-1 rounded px-1 py-0.5">
-      <span className="flex items-center gap-1 text-2xs leading-snug text-text-secondary">
+    <div className="encounter-feed-line">
+      <span className="encounter-feed-copy">
         {uncertain && (
           <span
             className="inline-flex shrink-0 text-warning"
@@ -268,10 +302,16 @@ function FeedLine({
           </span>
         )}
         <span className="flex-1">{text}</span>
-        {canUndo && (
+        {(canUndoHp || canUndoCondition) && (
           <button
             type="button"
-            onClick={() => apply((e) => undoHpEvent(e, event.id))}
+            onClick={() =>
+              apply((encounter) =>
+                canUndoCondition
+                  ? undoConditionEvent(encounter, event.id)
+                  : undoHpEvent(encounter, event.id)
+              )
+            }
             aria-label={t("combatChronicle.undoLine")}
             title={t("combatChronicle.undoLineHint")}
             className="shrink-0 rounded p-0.5 text-text-faint transition-colors hover:text-accent"
@@ -338,7 +378,10 @@ export function EndEncounterDialog({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const { resolveName, resolveCondition } = useChronicleResolvers(rows, memberDetails);
+  const { resolveName, resolveCondition, resolveAction } = useChronicleResolvers(
+    rows,
+    memberDetails
+  );
   // The record = the reconciled lines (stored beats + auto-attributions + miss lines).
   const events = useMemo(() => reconciled.map((r) => r.event), [reconciled]);
   const [saving, setSaving] = useState(false);
@@ -363,7 +406,8 @@ export function EndEncounterDialog({
       { title: effectiveTitle, note, events: kept, outcome },
       t,
       resolveName,
-      resolveCondition
+      resolveCondition,
+      resolveAction
     );
     setSaving(true);
     // On success the caller clears the encounter (this dialog unmounts); on failure it
@@ -379,7 +423,7 @@ export function EndEncounterDialog({
       backDismiss={false}
       compact
     >
-      <div className="flex flex-col gap-4">
+      <ModalBody className="flex flex-col gap-4">
         {/* Title */}
         <label className="flex flex-col gap-1">
           <span className="text-2xs uppercase tracking-[0.12em] text-text-muted">
@@ -433,7 +477,7 @@ export function EndEncounterDialog({
               {t("combatChronicle.endEmpty")}
             </p>
           ) : (
-            <ul className="flex max-h-[220px] flex-col gap-0.5 overflow-y-auto rounded-md border border-border-subtle bg-bg-tertiary/40 p-2">
+            <ul className="flex flex-col gap-0.5 rounded-md border border-border-subtle bg-bg-tertiary/40 p-2">
               {events.map((event) => {
                 const gone = removed.has(event.id);
                 return (
@@ -445,7 +489,13 @@ export function EndEncounterDialog({
                           : "flex-1 text-2xs text-text-secondary"
                       }
                     >
-                      {localizeChronicleEvent(event, t, resolveName, resolveCondition)}
+                      {localizeChronicleEvent(
+                        event,
+                        t,
+                        resolveName,
+                        resolveCondition,
+                        resolveAction
+                      )}
                     </span>
                     <button
                       type="button"
@@ -469,18 +519,16 @@ export function EndEncounterDialog({
             </ul>
           )}
         </div>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onSkip} disabled={saving}>
-            {t("combatChronicle.endSkip")}
-          </Button>
-          <Button variant="primary" onClick={save} disabled={saving}>
-            <Icon as={ScrollText} size="sm" decorative />
-            {t("combatChronicle.endSave")}
-          </Button>
-        </div>
-      </div>
+      </ModalBody>
+      <ModalFoot>
+        <Button variant="ghost" onClick={onSkip} disabled={saving}>
+          {t("combatChronicle.endSkip")}
+        </Button>
+        <Button variant="primary" onClick={save} disabled={saving}>
+          <Icon as={ScrollText} size="sm" decorative />
+          {t("combatChronicle.endSave")}
+        </Button>
+      </ModalFoot>
     </ModalShell>
   );
 }

@@ -144,6 +144,7 @@ vi.mock("@/stores/confirmStore", () => ({
 import { Party } from "@/features/campaigns/Party";
 import { advanceTurn, prevTurn } from "@/features/campaigns/encounter";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
+import { useLibraryStore } from "@/stores/libraryStore";
 import { useToastStore } from "@/stores/toastStore";
 import { makeDevCampaign } from "@/features/campaigns/dev-fixture";
 import type { CampaignDoc } from "@/types/campaign";
@@ -232,6 +233,7 @@ beforeEach(() => {
   setEncounterInitiativeMock.mockReset();
   setEncounterInitiativeMock.mockResolvedValue(undefined);
   rosterRef.value = [];
+  useLibraryStore.getState().hydrate([], null);
   listSharedCampaignsMock.mockReset();
   listSharedCampaignsMock.mockResolvedValue([]);
   setMemberCharacterMock.mockReset();
@@ -565,7 +567,7 @@ describe("Party combat — DM (editable layer)", () => {
     expect(currentEncounter().round).toBe(3);
   });
 
-  it("a monster token reuses the shared HP popover (no TEMP), delta-clamped to [0, maxHp]", async () => {
+  it("a monster reuses the shared HP popover with TEMP and clamps HP to [0, maxHp]", async () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
     // Expand the Goblin Chief row (single token [21], maxHp 21). A lone token reuses the
@@ -588,10 +590,9 @@ describe("Party combat — DM (editable layer)", () => {
       );
     };
 
-    // The popover is the SAME shared control, opened with `hideTemp` → DAMAGE + HEAL but
-    // NO temp affordance (monsters have no temp pool).
+    // Monsters share the same deterministic Temporary-HP pool as PCs.
     openHp();
-    expect(screen.queryByRole("button", { name: /^Temp$/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /^Temp$/ })).toBeInTheDocument();
     // DAMAGE past 0 clamps low (delta → absolute via setHp → clampHp).
     fireEvent.change(screen.getByLabelText(/amount of damage/i), {
       target: { value: "999" },
@@ -628,8 +629,8 @@ describe("Party combat — DM (editable layer)", () => {
     fireEvent.change(screen.getByLabelText(/monster name/i), {
       target: { value: "Dire Wolf" },
     });
-    const submit = screen.getAllByRole("button", { name: /add monster/i }).at(-1);
-    fireEvent.click(submit as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: /save and customize/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /add monster/i }));
     expect(
       currentEncounter().combatants.some(
         (c) => c.kind === "monster" && c.name === "Dire Wolf"
@@ -858,8 +859,8 @@ describe("Party combat — C3 freeze / lock / reorder (DM)", () => {
     });
     // The form's default initiative is 10 → slots after the Boss (12), ahead of the
     // blank-init PCs (a non-blank outranks a blank), NOT appended at the very end.
-    const submit = screen.getAllByRole("button", { name: /add monster/i }).at(-1);
-    fireEvent.click(submit as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: /save and customize/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /add monster/i }));
     await waitFor(() => {
       expect(currentEncounter().order).toEqual([
         "monster-3",

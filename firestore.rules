@@ -246,8 +246,8 @@ service cloud.firestore {
                .affectedKeys().hasOnly(['currentCombatantId', 'round']);
       }
 
-      // COMBAT-CHRONICLE (owner 2026-08-02 — the source-of-truth flip): a player who
-      // types the damage they rolled AUTO-APPLIES it to the target monster's HP, so a
+      // COMBAT RESOLUTION: a player who confirms a reviewed target effect AUTO-APPLIES
+      // monster damage, healing, and conditions to the shared encounter, so a
       // regular member's update is ALSO allowed when the encounter diff touches ONLY
       // `combatants` (the monster HP) + `events` (the appended chronicle beats) — every
       // OTHER encounter field (round · order · currentCombatantId · status · epoch) stays
@@ -262,15 +262,17 @@ service cloud.firestore {
       // could in principle over-edit a monster's HP, which is exactly the DM-remediable,
       // low-risk case the owner's remediability mandate covers. Same
       // diff().affectedKeys().hasOnly() construct proven in turnFieldsOnlyChanged().
-      function damageFieldsOnlyChanged() {
+      function combatEffectFieldsOnlyChanged() {
         return resource.data.get('encounter', null) != null
           && request.resource.data.get('encounter', null) != null
           && request.resource.data.encounter.diff(resource.data.encounter)
-               .affectedKeys().hasOnly(['combatants', 'events'])
+               .affectedKeys().hasOnly(['combatants', 'events', 'memberEffects'])
           && request.resource.data.encounter.combatants.size()
                == resource.data.encounter.combatants.size()
           && request.resource.data.encounter.get('events', []).size()
-               >= resource.data.encounter.get('events', []).size();
+               >= resource.data.encounter.get('events', []).size()
+          && request.resource.data.encounter.get('memberEffects', []).size()
+               >= resource.data.encounter.get('memberEffects', []).size();
       }
 
       // INIT-SSOT — the `encounterInit` initiative table (`uid → raw d20 roll`, the
@@ -346,7 +348,7 @@ service cloud.firestore {
       // own member entry; the DM manages the roster + the encounter tracker; the
       // admin may write any DM-tool field; a non-member may self-join. Only the DM
       // may delete the campaign.
-      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || damageFieldsOnlyChanged()) && encounterInitOwnEntryOnly() && joinsLockedUnchanged())
+      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || combatEffectFieldsOnlyChanged()) && encounterInitOwnEntryOnly() && joinsLockedUnchanged())
         || isDm()
         || isAdmin()
         || isSelfJoin();

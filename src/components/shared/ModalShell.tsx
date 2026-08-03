@@ -20,8 +20,13 @@
  *
  * Usage:
  *   <ModalShell open={x} onClose={fn} title="Add Spell">
- *     ...content...
+ *     <ModalBody>...content...</ModalBody>
+ *     <ModalFoot>...actions...</ModalFoot>
  *   </ModalShell>
+ *
+ * Every caller supplies one canonical body primitive: `ModalBody` for compact
+ * forms, `ModalScrollColumn` for long reading, or the allowlisted `ModalStage` for
+ * compound pickers/editors that own a sanctioned inner scroller. Guard-enforced.
  */
 
 import type { ReactNode } from "react";

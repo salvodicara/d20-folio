@@ -16,13 +16,27 @@ import type { ResolvedAction, ActiveMaintainedEffect } from "@/lib/smart-tracker
 import type { RiderVM } from "@/lib/views/rider-view";
 import type { CunningStrikeVM } from "@/lib/views/cunning-strike-view";
 
+type CommitEffect = () => (() => void) | undefined;
+
 /** The economy commit surface shared by the center meter + the Play-tab cards. */
 export interface TurnEconomyApi {
+  /**
+   * Resolve every pre-target choice (currently slot level / free-cast source /
+   * Metamagic) without spending it. The returned commit closes over those exact
+   * choices, so cancelling the target review spends nothing.
+   */
+  prepareResolution: (
+    action: ResolvedAction,
+    onPrepared: (
+      action: ResolvedAction,
+      commit: (afterCommit: CommitEffect) => void
+    ) => void
+  ) => void;
   /** Tap an action card: commit its cost immediately (reversal lives on the
    *  session undo system — 5s toast · masthead · ⌘Z; the CTA grammar). */
-  handleSelect: (action: ResolvedAction) => void;
+  handleSelect: (action: ResolvedAction, onCommitted?: CommitEffect) => void;
   /** Use a reaction (immediate-commit on another creature's turn). */
-  handleUseReaction: (action: ResolvedAction) => void;
+  handleUseReaction: (action: ResolvedAction, onCommitted?: CommitEffect) => void;
   /**
    * Spend a CONSUMABLE on-hit rider on an attack card (Psi Warrior Psionic
    * Strike → a Psionic Energy Die; Lifedrinker → a Hit Point Die). Debits the

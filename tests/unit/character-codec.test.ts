@@ -597,6 +597,27 @@ describe("codec — state restoration", () => {
     expect(serializeCharacter(lift(parseCharacter(x)))).toBe(x);
   });
 
+  it("round-trips persistent spell cast levels for later deterministic uses", () => {
+    const doc: CharacterDoc = {
+      ...MOCK_CHARACTER,
+      session: {
+        ...MOCK_CHARACTER.session,
+        concentration: conc("moonbeam"),
+        concentrationCastLevel: 4,
+        activeFeatures: ["spell-sylunes-viper"],
+        activeSpellCastLevels: { "spell-sylunes-viper": 5 },
+      },
+    };
+
+    const encoded = serializeCharacter(doc);
+    const restored = lift(parseCharacter(encoded));
+    expect(restored.session.concentrationCastLevel).toBe(4);
+    expect(restored.session.activeSpellCastLevels).toEqual({
+      "spell-sylunes-viper": 5,
+    });
+    expect(serializeCharacter(restored)).toBe(encoded);
+  });
+
   it("FRONTIER-S3 — back-compat: absent effectTimers stays absent (no timers)", () => {
     const res = parseCharacter(serializeCharacter(MOCK_CHARACTER));
     expect(res.success).toBe(true);

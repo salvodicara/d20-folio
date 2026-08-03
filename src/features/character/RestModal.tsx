@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { HealRollEntry } from "@/components/shared/HealRollEntry";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalBody } from "@/components/ui/modal-head";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,12 +67,9 @@ export function RestModal({ open, onClose }: { open: boolean; onClose: () => voi
       size="lg"
       compact
     >
-      {/* The padded body — same `p-5` inset as the level-up wizard so every phase's
-          content (section headers, panels, buttons) breathes inside the modal frame
-          instead of running flush to its edges. */}
-      <div className="p-5">
+      <ModalBody>
         <RestFlow onClose={onClose} />
-      </div>
+      </ModalBody>
     </ModalShell>
   );
 }

@@ -11,6 +11,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalStage } from "@/components/ui/modal-head";
 import { CompendiumPicker, spellSpec } from "@/features/compendium/picker";
 import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
 import { CustomSpellForm } from "./CustomCreationForms";
@@ -31,45 +32,47 @@ export function SpellAddModal({ open, onClose }: SpellAddModalProps) {
 
   return (
     <ModalShell open={open} onClose={onClose} title={detailTitle ?? t("spells.addSpell")}>
-      <ModalTabSwitcher
-        activeTab={activeTab}
-        onTabChange={(tab) => {
-          setActiveTab(tab);
-          setDetailTitle(null);
-        }}
-        tabs={[
-          { id: "srd", label: t("custom.srdTab") },
-          { id: "custom", label: t("custom.customTab") },
-        ]}
-      />
-      {activeTab === "custom" ? (
-        <CustomTabBody
-          kinds={KINDS}
-          createLabel={t("custom.createSpell")}
-          renderForm={(edit) => (
-            <CustomSpellForm
-              onCreated={onClose}
-              // The kind check NARROWS the entry to a spell — no cast, and a
-              // mismatched kind simply opens the blank create form.
-              libraryEdit={
-                edit?.entry.kind === "spell"
-                  ? { item: edit.entry.item, onSave: edit.onSave }
-                  : undefined
-              }
-            />
-          )}
-          onAdded={onClose}
-          onDetailTitle={setDetailTitle}
+      <ModalStage>
+        <ModalTabSwitcher
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            setDetailTitle(null);
+          }}
+          tabs={[
+            { id: "srd", label: t("custom.srdTab") },
+            { id: "custom", label: t("custom.customTab") },
+          ]}
         />
-      ) : (
-        <CompendiumPicker
-          spec={spellSpec}
-          mode="add"
-          onClose={onClose}
-          onDetailTitle={setDetailTitle}
-          autoFocus
-        />
-      )}
+        {activeTab === "custom" ? (
+          <CustomTabBody
+            kinds={KINDS}
+            createLabel={t("custom.createSpell")}
+            renderForm={(edit) => (
+              <CustomSpellForm
+                onCreated={onClose}
+                // The kind check NARROWS the entry to a spell — no cast, and a
+                // mismatched kind simply opens the blank create form.
+                libraryEdit={
+                  edit?.entry.kind === "spell"
+                    ? { item: edit.entry.item, onSave: edit.onSave }
+                    : undefined
+                }
+              />
+            )}
+            onAdded={onClose}
+            onDetailTitle={setDetailTitle}
+          />
+        ) : (
+          <CompendiumPicker
+            spec={spellSpec}
+            mode="add"
+            onClose={onClose}
+            onDetailTitle={setDetailTitle}
+            autoFocus
+          />
+        )}
+      </ModalStage>
     </ModalShell>
   );
 }

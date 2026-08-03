@@ -60,7 +60,10 @@ const ASSETS = resolve(DIST, "assets");
 // ── Measured P3 baseline (2026-06-11) + ~10% headroom ──────────────────────────
 // Baseline (gz): entry 53.7 KB · eager closure (28 chunks + css) 660.5 KB.
 // Precache after the font-subset trim: 5884.9 KiB.
-const ENTRY_CEILING_KB = 64; // baseline 53.7 → +17% (2026-07-10: +1 for the global keyboard-shortcut listener + the nav-anchor chrome; the SHORTCUTS registry itself stays in the lazy ShortcutsSheet chunk. 2026-07-24: raised 61 → 62 (+1 KB) for the ⌘K reference palette entries — the always-mounted palette's referenceHits memo + its inline bilingual search-term arrays + the requestPlayRef uiStore seam, all EAGER SHELL code. 2026-07-31: raised 62 → 63 (+1 KB) for the anonymous-viewer topbar chrome — the logged-out `{user ? account : sign-in}` branch the eager Topbar renders in place of the account cluster (a single "Sign in" button routing to /login; owner-simplified from the earlier two-button form, and the post-view conversion card removed entirely). All EAGER SHELL (the topbar is on the eager AppShell). NOT a data leak: the button routes to /login (no firebase/auth import); eager-closure chunk families unchanged vs main. 2026-08-02: raised 63 → 64 (+1 KB) for the combat-chronicle in-encounter declaration panel — AttackDeclaration + the pure attack-scope helpers on the EAGER PlayTab (the sheet's play surface); the Firebase-side apply-damage write stays behind a DYNAMIC import so the eager closure's chunk families are UNCHANGED vs main (eager-closure ceiling untouched). Measured 63.61; +0.39 KB deterministic headroom (never exact-fit))
+const ENTRY_CEILING_KB = 65; // baseline 53.7 → +17% (2026-07-10: +1 for the global keyboard-shortcut listener + the nav-anchor chrome; the SHORTCUTS registry itself stays in the lazy ShortcutsSheet chunk. 2026-07-24: raised 61 → 62 (+1 KB) for the ⌘K reference palette entries — the always-mounted palette's referenceHits memo + its inline bilingual search-term arrays + the requestPlayRef uiStore seam, all EAGER SHELL code. 2026-07-31: raised 62 → 63 (+1 KB) for the anonymous-viewer topbar chrome — the logged-out `{user ? account : sign-in}` branch the eager Topbar renders in place of the account cluster (a single "Sign in" button routing to /login; owner-simplified from the earlier two-button form, and the post-view conversion card removed entirely). All EAGER SHELL (the topbar is on the eager AppShell). NOT a data leak: the button routes to /login (no firebase/auth import); eager-closure chunk families unchanged vs main. 2026-08-02: raised 63 → 64 (+1 KB) for the combat-chronicle in-encounter declaration panel — CombatResolver + the pure attack-scope helpers on the EAGER PlayTab (the sheet's play surface); the Firebase-side apply-damage write stays behind a DYNAMIC import so the eager closure's chunk families are UNCHANGED vs main (eager-closure ceiling untouched). Measured 63.61; +0.39 KB deterministic headroom (never exact-fit))
+// 2026-08-03: raised 64 → 65 for the universal resolver's bilingual outcome vocabulary
+// and the shell's tiny peer-effect delivery trigger. The delivery implementation and both
+// feature style sheets are lazy; measured 64.62 KB, leaving 0.38 KB deterministic headroom.
 // 2026-06-29: re-baselined 660.5 → 727.1 (the prior +10% headroom was fully absorbed by
 // accumulated shipping; the premium campaign-hub layout CSS crossed it). Tightened headroom to
 // ~+3% — the eager closure is NEAR budget; frontier #1 (make SRD resolution lazy) is the real lever.
@@ -115,7 +118,10 @@ const ENTRY_CEILING_KB = 64; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // eager number was byte-identical before and after), confirming the icons were never
 // the driver. This is legitimate eager feature weight on the play surface, not a leak.
 // Measured 783.2 KB gz (JS 706.2 + CSS 77.0); +~2.8 KB never-exact-fit headroom → 786.
-const EAGER_CEILING_KB = 786; // baseline 727.1 → ~+8% (near budget — see ARCHITECTURE P3 frontier #1)
+// 2026-08-03: raised 786 → 788 after moving the encounter and resolver CSS out of the
+// global folio sheet. The same 14 eager chunk families remain; measured 787.03 KB
+// (JS 710.1 + CSS 76.9), leaving ~1 KB deterministic headroom.
+const EAGER_CEILING_KB = 788; // baseline 727.1 → ~+8% (near budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
 // on demand from the PDF export flow) and correctly precached for offline-first.
@@ -338,7 +344,7 @@ const EAGER_CEILING_KB = 786; // baseline 727.1 → ~+8% (near budget — see AR
 // auto-narrated combat chronicle. The growth is the new LAZY campaign/sheet chunks precached
 // for offline-first — the chronicle recorders + reconciler (combat-chronicle / chronicle-
 // reconcile), the EN/IT presenter (combat-chronicle-view), the party-chronicle live feed, and
-// the in-encounter declaration panel (AttackDeclaration); the eager entry grew +1 KB (its own
+// the in-encounter declaration panel (CombatResolver); the eager entry grew +1 KB (its own
 // row) but the eager CLOSURE chunk families are unchanged (the Firebase apply-damage write is a
 // dynamic import). Measured 8287.80 KiB / 315 entries on the merged (rebased) tree; +~12 KiB
 // never-exact-fit headroom → 8300.
@@ -349,7 +355,11 @@ const EAGER_CEILING_KB = 786; // baseline 727.1 → ~+8% (near budget — see AR
 // precached so an already-available campaign/compendium route can resolve hashed portrait
 // URLs offline. Measured 8340.67 KiB / 315 entries (+52.87 KiB, +0 entries from the
 // combat-chronicle base); +~12 KiB never-exact-fit headroom → 8353.
-const PRECACHE_CEILING_KIB = 8353;
+// 2026-08-03 (universal combat resolution): raised 8353 → 8390 for the new lazy
+// resolver/campaign CSS chunks, typed persistent-effect metadata, and peer-delivery seam.
+// PROMPT_28 was first re-encoded from 86 KiB to 17.5 KiB WebP; measured 8376.51 KiB /
+// 321 entries after that trim, leaving ~13.5 KiB never-exact-fit headroom.
+const PRECACHE_CEILING_KIB = 8390;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

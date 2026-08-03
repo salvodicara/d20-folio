@@ -24,6 +24,7 @@
  */
 import type { SessionState } from "@/types/character";
 import type { CombatState, RecentAttack } from "@/types/combat-state";
+import type { MemberCombatEffect } from "@/types/campaign";
 import { applyDamage, applyHealing, clampHp, clampTemp } from "@/lib/combat-hp";
 
 /** The `recentActions` ring cap — the last few declared attacks are all the correlation
@@ -127,7 +128,8 @@ export function initiativeToString(value: number | null): string {
 export function sessionToCombatState(
   session: SessionState,
   round = 1,
-  recentActions: RecentAttack[] = []
+  recentActions: RecentAttack[] = [],
+  appliedEncounterEffects?: CombatState["appliedEncounterEffects"]
 ): CombatState {
   return {
     hp: { current: session.hp.current, temp: session.hp.temp },
@@ -136,6 +138,7 @@ export function sessionToCombatState(
     deathSaves: { successes: session.deathSucc, failures: session.deathFail },
     round,
     recentActions,
+    ...(appliedEncounterEffects ? { appliedEncounterEffects } : {}),
   };
 }
 
@@ -205,6 +208,47 @@ export function defaultCombatState(max: number): CombatState {
     deathSaves: { successes: 0, failures: 0 },
     round: 1,
     recentActions: [],
+  };
+}
+
+/** Apply campaign-delivered effects exactly once for one encounter epoch. */
+export function reduceMemberCombatEffects(
+  state: CombatState,
+  epoch: number,
+  effects: ReadonlyArray<MemberCombatEffect>,
+  maxHp: number
+): CombatState {
+  const prior =
+    state.appliedEncounterEffects?.epoch === epoch
+      ? state.appliedEncounterEffects.ids
+      : [];
+  const seen = new Set(prior);
+  let next = state;
+  for (const effect of effects) {
+    if (seen.has(effect.id)) continue;
+    if (effect.kind === "condition") {
+      next = reduceCondition(next, {
+        kind: effect.active ? "add" : "remove",
+        conditionId: effect.conditionId,
+      });
+    } else if (effect.kind === "temp-hp") {
+      next = {
+        ...next,
+        hp: { ...next.hp, temp: Math.max(next.hp.temp, effect.amount) },
+      };
+    } else {
+      next = reduceHpDelta(
+        next,
+        { kind: effect.kind === "healing" ? "heal" : "damage", amount: effect.amount },
+        maxHp
+      );
+    }
+    seen.add(effect.id);
+  }
+  if (seen.size === prior.length && prior.every((id) => seen.has(id))) return next;
+  return {
+    ...next,
+    appliedEncounterEffects: { epoch, ids: [...seen] },
   };
 }
 

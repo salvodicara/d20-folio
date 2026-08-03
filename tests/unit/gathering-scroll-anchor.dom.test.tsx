@@ -36,7 +36,10 @@ beforeAll(() => {
       toJSON: () => ({}),
     };
   });
-  vi.spyOn(window, "scrollBy").mockImplementation(() => {});
+  vi.spyOn(window, "scrollBy").mockImplementation((_x, y) => {
+    const delta = y;
+    for (const [id, top] of positions) positions.set(id, top - delta);
+  });
 });
 afterAll(() => {
   vi.restoreAllMocks();
@@ -105,8 +108,8 @@ describe("initiativeChangeAnchor (pure)", () => {
   });
 });
 
-describe("useGatheringScrollAnchor (wiring guard — NOT a visual proof)", () => {
-  it("scrolls by the moved anchor's delta so the just-committed row stays put", () => {
+describe("useGatheringScrollAnchor (motion wiring guard — NOT a visual proof)", () => {
+  it("keeps the committed row put and FLIP-slides the displaced siblings", () => {
     // Baseline frame: the DM scrolled down; monster-1 (blank) sits at viewport top 100.
     positions.set("pc-a", 0);
     positions.set("monster-1", 100);
@@ -138,6 +141,13 @@ describe("useGatheringScrollAnchor (wiring guard — NOT a visual proof)", () =>
     // under the user's eye. INSTANT (no smooth-behaviour arg).
     expect(scrollBySpy()).toHaveBeenCalledTimes(1);
     expect(scrollBySpy()).toHaveBeenCalledWith(0, -100);
+
+    const anchor = document.querySelector<HTMLElement>('[data-id="monster-1"]');
+    const displaced = document.querySelector<HTMLElement>('[data-id="pc-a"]');
+    expect(anchor?.style.transition).toBe("");
+    expect(anchor?.style.transform).toBe("");
+    expect(displaced?.style.transition).toContain("transform 220ms");
+    expect(displaced?.style.transform).toBe("");
   });
 
   it("does NOTHING when disabled (turns begun → frozen order, no live re-sort)", () => {

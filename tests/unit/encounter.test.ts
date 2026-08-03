@@ -82,6 +82,27 @@ function goblins(state = twoPcs(), over: Partial<Parameters<typeof addMonster>[1
   });
 }
 
+/** Compatibility fixture for the pre-instance wire shape. Reducers keep reading it so
+ * an encounter can be safely conformed at the campaign boundary. */
+function legacyGoblins(count = 3): EncounterState {
+  return {
+    ...twoPcs(),
+    combatants: [
+      ...twoPcs().combatants,
+      {
+        kind: "monster",
+        id: "monster-1",
+        name: "Goblin",
+        ac: 13,
+        maxHp: 7,
+        tokens: Array.from({ length: count }, () => 7),
+        initiative: 12,
+        conditions: [],
+      },
+    ],
+  };
+}
+
 // ─── startEncounter ──────────────────────────────────────────────────────────
 
 describe("startEncounter — seed PC REFERENCES (no statline copy)", () => {
@@ -149,12 +170,17 @@ describe("beginEncounterTurns — leave the gathering phase", () => {
 
 // ─── addMonster ──────────────────────────────────────────────────────────────
 
-describe("addMonster — token seeding (genuine encounter state)", () => {
-  it("seeds `count` tokens each at full maxHp with a typed initiative", () => {
-    const m = monster(goblins(), "monster-1");
+describe("addMonster — first-class creature instances", () => {
+  it("seeds one independently targetable combatant per requested creature", () => {
+    const state = goblins();
+    const m = monster(state, "monster-1");
     expect(m.kind).toBe("monster");
     expect(m.name).toBe("Goblin");
-    expect(m.tokens).toEqual([7, 7, 7]);
+    expect(m.tokens).toEqual([7]);
+    expect(state.combatants.filter((c) => c.kind === "monster").map((c) => c.id)).toEqual(
+      ["monster-1", "monster-1~2", "monster-1~3"]
+    );
+    expect(m).toMatchObject({ groupId: "monster-1", groupIndex: 1, groupSize: 3 });
     expect(m.maxHp).toBe(7);
     expect(m.initiative).toBe(12);
     // No notes passed → no `notes` field stored (doc stays minimal).
@@ -219,17 +245,17 @@ describe("applyHp / setHp — monster token clamp to [0, maxHp]; PC is a no-op",
     [3, 3],
     [100, 7],
   ])("setHp on a monster token to %i (maxHp 7) → %i", (value, expected) => {
-    const state = setHp(goblins(), "monster-1", 1, value);
+    const state = setHp(legacyGoblins(), "monster-1", 1, value);
     expect(monster(state, "monster-1").tokens).toEqual([7, expected, 7]);
   });
 
   it("applyHp targets the right monster token and leaves siblings untouched", () => {
-    const state = applyHp(goblins(), "monster-1", 2, -7); // kill the third token
+    const state = applyHp(legacyGoblins(), "monster-1", 2, -7); // kill the third token
     expect(monster(state, "monster-1").tokens).toEqual([7, 7, 0]);
   });
 
   it("an out-of-range token index is a no-op (immutably copies)", () => {
-    const state = goblins(twoPcs(), { count: 2 });
+    const state = legacyGoblins(2);
     expect(monster(setHp(state, "monster-1", 9, 0), "monster-1").tokens).toEqual([7, 7]);
   });
 
@@ -689,7 +715,7 @@ describe("endEncounter + isDown", () => {
   });
 
   it("isDown: a monster is down only when EVERY token is dead", () => {
-    let state = goblins(twoPcs(), { count: 2 });
+    let state = legacyGoblins(2);
     state = setHp(state, "monster-1", 0, 0);
     expect(isDown(monster(state, "monster-1"))).toBe(false); // one token still alive
     state = setHp(state, "monster-1", 1, 0);

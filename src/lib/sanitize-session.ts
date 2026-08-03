@@ -117,6 +117,13 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
       cp: session.currency?.cp ?? 0,
     },
     concentration: session.concentration ?? "",
+    concentrationCastLevel:
+      session.concentration &&
+      typeof session.concentrationCastLevel === "number" &&
+      Number.isFinite(session.concentrationCastLevel) &&
+      session.concentrationCastLevel > 0
+        ? Math.round(session.concentrationCastLevel)
+        : undefined,
     initiative: session.initiative ?? "",
     conditions: session.conditions ?? [],
     deathSucc: session.deathSucc ?? 0,
@@ -137,6 +144,7 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     // SessionState must be added here too. `undefined` is dropped by
     // `stripUndefined` before any Firestore write.
     activeFeatures: session.activeFeatures,
+    activeSpellCastLevels: session.activeSpellCastLevels,
     // FRONTIER-S3 — the combat-round countdown for `maxRounds` while-active
     // states (Rage = 100 rounds). Enumerated so it round-trips a reload mid-Rage;
     // absent on every pre-existing doc (back-compat).

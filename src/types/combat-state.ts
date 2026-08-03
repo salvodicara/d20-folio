@@ -33,6 +33,7 @@
  *    in-memory reader, so the parent-doc mirror was pure duplication (rule 6/10).
  */
 import type { SessionState } from "@/types/character";
+import type { LocText } from "@/lib/loc-text";
 
 /**
  * A player-DECLARED attack in a live campaign encounter — the target(s) the player
@@ -60,6 +61,8 @@ export interface RecentAttack {
   outcome: "hit" | "miss";
   /** The encounter round the attack was declared in — the correlation window key. */
   round: number;
+  /** The exact action used, as a stable localizable reference. */
+  action?: LocText;
   /**
    * The action's multi-instance DROP BOUND — how many separate damage instances the
    * declared action creates (Magic Missile 3, Scorching Ray 3), so the DM-side
@@ -110,6 +113,9 @@ export interface CombatState {
    * `[]` outside an encounter (SOLO never declares).
    */
   recentActions: RecentAttack[];
+  /** Idempotency receipt for PC-targeted effects delivered through the current
+   * campaign encounter. A new encounter epoch replaces the receipt. */
+  appliedEncounterEffects?: { epoch: number; ids: string[] };
 }
 
 /**

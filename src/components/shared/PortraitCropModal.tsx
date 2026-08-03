@@ -27,6 +27,7 @@ import type { Area } from "react-easy-crop";
 import { useTranslation } from "react-i18next";
 import { ZoomIn, ZoomOut, Check, X } from "lucide-react";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalFoot, ModalStage } from "@/components/ui/modal-head";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
@@ -151,87 +152,89 @@ export function PortraitCropModal({
       // so the default 88vh shell left a huge dead void under the actions.
       compact
     >
-      {/* ── Crop area (only render Cropper when we have a real image) ── */}
-      {/* Local error boundary: if react-easy-crop throws (degenerate image /
-          crop math), recover inline instead of white-screening the SPA. */}
-      <div className="relative h-72 w-full shrink-0 overflow-hidden bg-black">
-        {open && imageSrc ? (
-          <PortraitCropErrorBoundary
-            resetKey={cropperKey}
-            onRetry={() => setCropperKey((k) => k + 1)}
-            messages={{
-              error: t("portrait.crop.cropperError"),
-              retry: t("common.retry"),
-            }}
-          >
-            {cropperReady ? (
-              <Cropper
-                key={cropperKey}
-                image={imageSrc}
-                crop={crop}
-                zoom={zoom}
-                aspect={aspect}
-                cropShape="rect"
-                // Rule-of-thirds guides help frame the wide banner; the square
-                // portrait stays clean (matching the old circle's gridless feel).
-                showGrid={isBanner}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropAreaChange={onAreaChange}
-                initialCroppedAreaPercentages={initialArea}
-                style={{
-                  containerStyle: { background: "#000" },
-                  cropAreaStyle: {
-                    border: "2px solid rgba(200, 168, 75, 0.8)", // --accent
-                    boxShadow: "0 0 0 9999px rgba(0,0,0,0.65)",
-                    // Portrait = the lapidary rounded square the tiles render;
-                    // banner = sharp wide rect. The boxShadow scrim follows it.
-                    ...(isBanner ? {} : { borderRadius: "var(--radius-lg)" }),
-                  },
-                }}
-              />
-            ) : (
-              // Brief: measuring the image's natural size to open the square on
-              // the face. A data URL resolves in the same frame, so this is only
-              // ever visible for a slow remote re-crop.
-              <div className="absolute inset-0 grid place-items-center">
-                <Spinner size="lg" />
-              </div>
-            )}
-          </PortraitCropErrorBoundary>
-        ) : null}
-      </div>
+      <ModalStage>
+        {/* ── Crop area (only render Cropper when we have a real image) ── */}
+        {/* Local error boundary: if react-easy-crop throws (degenerate image /
+            crop math), recover inline instead of white-screening the SPA. */}
+        <div className="relative h-72 w-full shrink-0 overflow-hidden bg-black">
+          {open && imageSrc ? (
+            <PortraitCropErrorBoundary
+              resetKey={cropperKey}
+              onRetry={() => setCropperKey((k) => k + 1)}
+              messages={{
+                error: t("portrait.crop.cropperError"),
+                retry: t("common.retry"),
+              }}
+            >
+              {cropperReady ? (
+                <Cropper
+                  key={cropperKey}
+                  image={imageSrc}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={aspect}
+                  cropShape="rect"
+                  // Rule-of-thirds guides help frame the wide banner; the square
+                  // portrait stays clean (matching the old circle's gridless feel).
+                  showGrid={isBanner}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropAreaChange={onAreaChange}
+                  initialCroppedAreaPercentages={initialArea}
+                  style={{
+                    containerStyle: { background: "#000" },
+                    cropAreaStyle: {
+                      border: "2px solid rgba(200, 168, 75, 0.8)", // --accent
+                      boxShadow: "0 0 0 9999px rgba(0,0,0,0.65)",
+                      // Portrait = the lapidary rounded square the tiles render;
+                      // banner = sharp wide rect. The boxShadow scrim follows it.
+                      ...(isBanner ? {} : { borderRadius: "var(--radius-lg)" }),
+                    },
+                  }}
+                />
+              ) : (
+                // Brief: measuring the image's natural size to open the square on
+                // the face. A data URL resolves in the same frame, so this is only
+                // ever visible for a slow remote re-crop.
+                <div className="absolute inset-0 grid place-items-center">
+                  <Spinner size="lg" />
+                </div>
+              )}
+            </PortraitCropErrorBoundary>
+          ) : null}
+        </div>
 
-      {/* ── Zoom slider ── */}
-      <div className="flex items-center gap-3 px-5 py-3 border-t border-border-subtle bg-bg-secondary shrink-0">
-        <button
-          onClick={() => setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
-          className="text-text-secondary hover:text-text-primary transition-colors"
-          aria-label={t("portrait.crop.zoomOut")}
-        >
-          <ZoomOut className="h-4 w-4" />
-        </button>
-        <input
-          type="range"
-          min={1}
-          max={3}
-          step={0.01}
-          value={zoom}
-          onChange={(e) => setZoom(Number(e.target.value))}
-          className="flex-1 accent-accent h-1.5 rounded cursor-pointer"
-          aria-label={t("portrait.crop.zoom")}
-        />
-        <button
-          onClick={() => setZoom((z) => Math.min(3, +(z + 0.1).toFixed(2)))}
-          className="text-text-secondary hover:text-text-primary transition-colors"
-          aria-label={t("portrait.crop.zoomIn")}
-        >
-          <ZoomIn className="h-4 w-4" />
-        </button>
-      </div>
+        {/* ── Zoom slider ── */}
+        <div className="flex shrink-0 items-center gap-3 border-t border-border-subtle bg-bg-secondary px-5 py-3">
+          <button
+            onClick={() => setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
+            className="text-text-secondary hover:text-text-primary transition-colors"
+            aria-label={t("portrait.crop.zoomOut")}
+          >
+            <ZoomOut className="h-4 w-4" />
+          </button>
+          <input
+            type="range"
+            min={1}
+            max={3}
+            step={0.01}
+            value={zoom}
+            onChange={(e) => setZoom(Number(e.target.value))}
+            className="flex-1 accent-accent h-1.5 rounded cursor-pointer"
+            aria-label={t("portrait.crop.zoom")}
+          />
+          <button
+            onClick={() => setZoom((z) => Math.min(3, +(z + 0.1).toFixed(2)))}
+            className="text-text-secondary hover:text-text-primary transition-colors"
+            aria-label={t("portrait.crop.zoomIn")}
+          >
+            <ZoomIn className="h-4 w-4" />
+          </button>
+        </div>
+      </ModalStage>
 
       {/* ── Actions ── (folio Button recipe, not raw bg-accent — #58 coherence) */}
-      <div className="flex gap-3 px-5 py-4 shrink-0">
+      <ModalFoot>
         <Button variant="ghost" onClick={onClose} className="flex-1">
           <Icon as={X} size="sm" decorative />
           {t("common.cancel")}
@@ -240,7 +243,7 @@ export function PortraitCropModal({
           <Icon as={Check} size="sm" decorative />
           {t("portrait.crop.confirm")}
         </Button>
-      </div>
+      </ModalFoot>
     </ModalShell>
   );
 }

@@ -75,11 +75,45 @@ describe("Wizard Empowered Evocation declares the schooled spell-damage-bonus", 
   });
 });
 
+describe("Wizard Potent Cantrip declares a generic outcome rule", () => {
+  it("deals half damage after a miss or successful save without a spell-id branch", () => {
+    const grants = classFeatureIndex.get("wizard-evoker-potent-cantrip")?.grants ?? [];
+    expect(grants).toContainEqual({
+      type: "spell-damage-outcome",
+      scope: "wizard",
+      cantripOnly: true,
+      damageOnMiss: "half",
+      damageOnSave: "half",
+    });
+
+    const spec = DEV_SCENARIOS["evoker-wizard"];
+    if (!spec) throw new Error("scenario missing");
+    const actions = resolveActions(buildScenario(spec));
+    const fireBolt = actions.find((action) => action.spellId === "fire-bolt");
+    expect(fireBolt?.summary.damageOnMiss).toBe("half");
+    expect(fireBolt?.summary.damageOnSave).toBe("half");
+    expect(
+      actions.find((action) => action.spellId === "fireball")?.summary.damageOnMiss
+    ).toBeUndefined();
+  });
+});
+
 describe("resolveActions — an Evoker's Fireball gains +INT", () => {
   it("Fireball (Evocation) damage chip ends in +4 (INT 18)", () => {
     const spec = DEV_SCENARIOS["evoker-wizard"];
     if (!spec) throw new Error("scenario missing");
     const fb = resolveActions(buildScenario(spec)).find((a) => a.spellId === "fireball");
     expect(fb?.summary.damage).toMatch(/\+4$/);
+  });
+
+  it("keeps +INT separate for Magic Missile so it applies to exactly one dart", () => {
+    const spec = DEV_SCENARIOS["evoker-wizard"];
+    if (!spec) throw new Error("scenario missing");
+    const missile = resolveActions(buildScenario(spec)).find(
+      (action) => action.spellId === "magic-missile"
+    );
+    expect(missile?.summary.damage).toBe("1d4+1");
+    expect(missile?.summary.instances).toBe(3);
+    expect(missile?.summary.oneRollDamageBonus).toBe(4);
   });
 });

@@ -18,6 +18,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalStage } from "@/components/ui/modal-head";
 import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
 import { CustomEquipmentForm } from "./CustomCreationForms";
 import { ItemAddBody } from "./ItemAddModal";
@@ -68,7 +69,7 @@ export function AddItemModal({ open, onClose }: AddItemModalProps) {
       title={modalTitle}
       rubric={t("equipment.addItem")}
     >
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <ModalStage>
         <ModalTabSwitcher
           activeTab={activeTab}
           onTabChange={(tab) => {
@@ -93,7 +94,7 @@ export function AddItemModal({ open, onClose }: AddItemModalProps) {
             onDetailTitle={setDetailTitle}
           />
         )}
-      </div>
+      </ModalStage>
     </ModalShell>
   );
 }

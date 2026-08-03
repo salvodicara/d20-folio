@@ -10,11 +10,9 @@
  * `window.scrollY`), and browser scroll-anchoring fails here because the moved node was
  * itself the anchor, so the viewport lands on different content.
  *
- * The fix is a FLIP-style compensation: measure the row whose initiative changed
- * before/after the re-sort and `window.scrollBy` the delta so that row stays at the
- * same viewport position. INSTANT (never smooth) — it is the anti-jump, so it must
- * land in the same frame as the re-sort (this is also why it needs no reduced-motion
- * gate: there is no animation to suppress).
+ * The fix combines two parts in one layout frame: keep the edited row at the same
+ * viewport position, then FLIP-slide every other row from its old position into the new
+ * initiative order. The list communicates what changed without teleporting content.
  */
 
 import { useLayoutEffect, useRef, type RefObject } from "react";
@@ -41,6 +39,16 @@ interface Snapshot {
   tops: Map<string, number>;
   /** Each row id → its initiative as of the last measured frame. */
   inits: Map<string, number | null>;
+}
+
+const REORDER_MS = 220;
+const REORDER_EASE = "cubic-bezier(.2, .8, .2, 1)";
+
+function reducedMotion(): boolean {
+  return (
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
 }
 
 /**
@@ -94,8 +102,37 @@ export function useGatheringScrollAnchor<E extends HTMLElement>({
     const delta = newTop - prevTop;
     if (Math.abs(delta) < 1) return; // the anchor didn't actually move
     window.scrollBy(0, delta);
-    // scrollBy shifts every viewport top by -delta; reconcile the stored baseline so the
-    // NEXT diff measures from the corrected frame without forcing another reflow.
-    for (const [id, top] of tops) tops.set(id, top - delta);
+    // The document may be against its top/bottom scroll boundary, so the browser might
+    // apply only PART of the requested compensation. Re-measure what actually happened;
+    // the residual becomes a FLIP transform instead of a visible teleport.
+    for (let i = 0; i < rowIds.length; i++) {
+      const el = children[i];
+      const id = rowIds[i];
+      if (el && id !== undefined) tops.set(id, el.getBoundingClientRect().top);
+    }
+
+    if (reducedMotion()) return;
+    // The scroll compensation keeps the edited card fixed. Every other card begins at
+    // its previous visual top and glides to its newly-sorted slot (FLIP). Inline styles
+    // are transient and removed after the motion, so normal card CSS remains the owner.
+    for (let i = 0; i < rowIds.length; i++) {
+      const id = rowIds[i];
+      const el = children[i] as HTMLElement | undefined;
+      if (!id || !el) continue;
+      const oldTop = prev.tops.get(id);
+      const correctedTop = tops.get(id);
+      if (oldTop === undefined || correctedTop === undefined) continue;
+      const dy = oldTop - correctedTop;
+      if (Math.abs(dy) < 1) continue;
+      el.style.transition = "none";
+      el.style.transform = `translateY(${dy}px)`;
+      void el.offsetHeight;
+      el.style.transition = `transform ${REORDER_MS}ms ${REORDER_EASE}`;
+      el.style.transform = "";
+      window.setTimeout(() => {
+        el.style.transition = "";
+        el.style.transform = "";
+      }, REORDER_MS + 30);
+    }
   }, [enabled, rowIds, initByRowId, listRef]);
 }

@@ -36,6 +36,7 @@ import { Crown, Lock, Plus, Swords, UserRound } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalStage } from "@/components/ui/modal-head";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { ensureSrdKind } from "@/i18n";
 import { Portrait } from "@/components/shared/Portrait";
@@ -850,34 +851,43 @@ function CombatLayer({
           onClose={closePicker}
           title={pickerTitle ?? t("campaignHub.encounterAddForm")}
         >
-          <Suspense fallback={<FolioLoader variant="region" />}>
-            <EncounterAddMonsterBody
-              onAdd={addMonsterReinforcement}
-              budget={budget}
-              onDetailTitle={setPickerTitle}
-            />
-          </Suspense>
+          <ModalStage>
+            <Suspense fallback={<FolioLoader variant="region" />}>
+              <EncounterAddMonsterBody
+                onAdd={addMonsterReinforcement}
+                budget={budget}
+                onDetailTitle={setPickerTitle}
+              />
+            </Suspense>
+          </ModalStage>
         </ModalShell>
       )}
 
-      <EncounterRoundBar
-        round={encounter.round}
-        isDm={isDm}
-        budget={budget}
-        onEnd={() => setEndOpen(true)}
-      />
-
-      {/* The Combat Chronicle — DM-only live feed (the events ride the encounter doc,
-          which only the DM writes; exact monster HP must not leak to a player). */}
-      {isDm && apply && (
-        <ChronicleFeed
-          events={reconciled}
-          rows={view.rows}
-          memberDetails={memberDetails}
-          currentId={view.currentId}
-          apply={apply}
+      {/* One folio summary surface: status rail + its attached combat record. */}
+      <section
+        data-testid="encounter-summary"
+        className="encounter-dossier bg-bg-recessed"
+      >
+        <EncounterRoundBar
+          round={encounter.round}
+          isDm={isDm}
+          budget={budget}
+          onEnd={() => setEndOpen(true)}
         />
-      )}
+
+        {/* The Combat Chronicle — DM-only live feed (the events ride the encounter doc,
+            which only the DM writes; exact monster HP must not leak to a player). */}
+        {isDm && apply && (
+          <ChronicleFeed
+            events={reconciled}
+            rows={view.rows}
+            memberDetails={memberDetails}
+            currentId={view.currentId}
+            apply={apply}
+            embedded
+          />
+        )}
+      </section>
 
       {/* The editable end entry — Save appends ONE chapter to the Chronicle then clears
           the fight; Skip clears without saving; Cancel keeps the fight running. */}

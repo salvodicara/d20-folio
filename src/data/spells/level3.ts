@@ -64,6 +64,8 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     damageDice: "3d10",
     damageDicePerUpcast: "1d10",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
     // G24 — the caster re-fires a bolt as a MAGIC action on later turns at a point
     // of their choice (PHB 2024).
     recurrence: "action-retrigger",
@@ -98,6 +100,9 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     damageDice: "3d10",
     damageDicePerUpcast: "1d10",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
+    recurrence: "bonus-action-move",
     source: "SRD",
   },
   {
@@ -176,6 +181,8 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     concentration: true,
     effectTag: "control",
     saveAbility: "WIS",
+    area: true,
+    conditionApplication: { options: ["frightened"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -196,6 +203,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     damageDice: "8d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "DEX",
+    damageOnSave: "half",
     area: true,
     source: "SRD",
   },
@@ -265,6 +273,8 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     concentration: true,
     effectTag: "control",
     saveAbility: "WIS",
+    area: true,
+    conditionApplication: { options: ["charmed", "incapacitated"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -300,6 +310,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     damageDice: "8d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "DEX",
+    damageOnSave: "half",
     area: true,
     source: "SRD",
   },
@@ -336,6 +347,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     healDicePerUpcast: "1d4",
     healAddsCastMod: true,
     effectTag: "heal",
+    targeting: { affinity: "ally", maxTargets: 6, sharedAmount: true },
     source: "SRD",
   },
   {
@@ -456,9 +468,12 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     damageDice: "3d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "WIS",
+    area: true,
+    damageOnSave: "half",
     // G24 — a creature saves "when it enters the Emanation or ends its turn there"
     // (PHB 2024); the emanation moves with the caster (a self-side cadence).
     recurrence: "on-enter-or-end-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -475,6 +490,10 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "CON",
+    area: true,
+    conditionApplication: { options: ["incapacitated"], on: "failed-save" },
+    recurrence: "start-of-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -505,6 +524,8 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     damageDice: "3d6",
     damageDicePerUpcast: "1d6",
     attackType: "melee",
+    selfHealingFromDamage: { fraction: 0.5 },
+    recurrence: "action-retrigger",
     source: "SRD",
   },
   {
@@ -627,6 +648,10 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "DEX",
+    area: true,
+    conditionApplication: { options: ["prone"], on: "failed-save" },
+    recurrence: "on-enter-or-start-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -686,6 +711,8 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     damageType: "bludgeoning",
     damageDice: "3d8",
     saveAbility: "STR",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
 ];

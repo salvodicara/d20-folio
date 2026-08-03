@@ -342,6 +342,8 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
           trackerCost: 1,
           saveAbility: "CON",
           saveDcAbility: "WIS",
+          conditionApplication: { options: ["stunned"], on: "failed-save" },
+          targeting: { affinity: "enemy", maxTargets: 1 },
         },
       ],
     },

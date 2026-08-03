@@ -8,6 +8,7 @@
 
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalStage } from "@/components/ui/modal-head";
 import { CompendiumDetailBody } from "@/features/compendium/picker/detail";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CompendiumPickerSpec } from "@/features/compendium/picker/types";
@@ -42,16 +43,18 @@ export function PickerDetailModal<T extends { id: string }>({
       // big empty void below; long descriptions still scroll under the 88vh cap.
       compact
     >
-      {entry && (
-        <CompendiumDetailBody
-          view={spec.detail(
-            entry,
-            { t, locale, character, mode: "add" as const },
-            { added: false }
-          )}
-          locale={locale}
-        />
-      )}
+      <ModalStage>
+        {entry && (
+          <CompendiumDetailBody
+            view={spec.detail(
+              entry,
+              { t, locale, character, mode: "add" as const },
+              { added: false }
+            )}
+            locale={locale}
+          />
+        )}
+      </ModalStage>
     </ModalShell>
   );
 }

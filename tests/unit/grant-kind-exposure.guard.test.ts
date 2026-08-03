@@ -236,7 +236,19 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "resolveSpellDamageBonus",
     consumer: "src/lib/smart-tracker.ts",
   },
+  "spell-damage-outcome": {
+    via: "spellDamageOutcomes",
+    consumer: "src/lib/smart-tracker.ts",
+  },
   "heal-bonus": { via: "resolveHealBonus", consumer: "src/lib/smart-tracker.ts" },
+  "self-heal-on-other": {
+    via: "selfHealingOnOther",
+    consumer: "src/features/character/center/CombatResolver.tsx",
+  },
+  "maximize-spell-healing": {
+    via: 'healingMode === "maximum"',
+    consumer: "src/features/character/center/CombatResolver.tsx",
+  },
   "spell-damage-type-override": {
     via: "resolveSpellDamageTypeOverrides",
     consumer: "src/lib/smart-tracker.ts",

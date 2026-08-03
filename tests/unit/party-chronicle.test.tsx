@@ -16,6 +16,7 @@ import {
   setEventAttacker,
   skipEventAttacker,
   undoHpEvent,
+  undoConditionEvent,
 } from "@/features/campaigns/combat-chronicle";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
 import type { ReconciledEvent } from "@/features/campaigns/chronicle-reconcile";
@@ -238,6 +239,51 @@ describe("ChronicleFeed — the live feed + one-tap attribution", () => {
     expect(screen.queryByRole("button", { name: "Undo this line" })).toBeNull();
   });
 
+  it("offers the same one-tap reversal for a monster condition mistake", () => {
+    let captured: (e: EncounterState) => EncounterState = (e) => e;
+    const apply = vi.fn((fn: (e: EncounterState) => EncounterState) => {
+      captured = fn;
+    });
+    const event: CombatChronicleEvent = {
+      id: "0",
+      round: 1,
+      kind: "condition-gain",
+      targetId: "monster-1",
+      conditionId: "prone",
+    };
+    render(
+      <ChronicleFeed
+        events={[reco(event)]}
+        rows={ROWS}
+        memberDetails={{}}
+        currentId="pc-mara"
+        apply={apply}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Undo this line" }));
+    const seed: EncounterState = {
+      combatants: [
+        {
+          kind: "monster",
+          id: "monster-1",
+          name: "Goblin",
+          ac: 13,
+          initiative: 12,
+          conditions: ["prone"],
+          maxHp: 12,
+          tokens: [12],
+        },
+      ],
+      round: 1,
+      currentCombatantId: "monster-1",
+      epoch: 1,
+      status: "active",
+      events: [event],
+    };
+    expect(captured(seed)).toEqual(undoConditionEvent(seed, "0"));
+    expect(captured(seed).combatants[0]).toMatchObject({ conditions: [] });
+  });
+
   it("a CERTAIN auto-attributed hit reads as a confirmed line with no picker", () => {
     render(
       <ChronicleFeed
@@ -374,6 +420,23 @@ describe("EndEncounterDialog — the editable end entry", () => {
     reco(damageEvent),
     reco({ id: "1", round: 1, kind: "down", targetId: "monster-1" }),
   ];
+
+  it("uses the shared modal body and footer spacing grammar", () => {
+    render(
+      <EndEncounterDialog
+        encounter={encounter}
+        reconciled={reconciled}
+        rows={ROWS}
+        memberDetails={{}}
+        onSave={vi.fn(() => Promise.resolve())}
+        onSkip={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.querySelector(":scope > .modal-body")).toBeTruthy();
+    expect(dialog.querySelector(":scope > .modal-foot")).toBeTruthy();
+  });
 
   it("builds a titled markdown chapter with the outcome and calls onSave", () => {
     const onSave = vi.fn<(chapter: string) => Promise<void>>(() => Promise.resolve());

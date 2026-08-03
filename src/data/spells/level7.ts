@@ -11,9 +11,16 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     damageType: "radiant",
-    damageDice: "4d12",
+    damageDice: "6d12",
     damageDicePerUpcast: "1d12",
+    healDice: "4d12",
+    healDicePerUpcast: "1d12",
+    healAddsCastMod: true,
+    effectTag: "heal",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
+    targeting: { affinity: "any" },
     source: "SRD",
   },
   {
@@ -33,6 +40,8 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
     damageDice: "12d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -72,6 +81,7 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
     damageType: "necrotic",
     damageDice: "7d8+30",
     saveAbility: "CON",
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -87,6 +97,8 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
     damageType: "fire",
     damageDice: "7d10",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -123,6 +135,7 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
     damageType: "force",
     damageDice: "4d12",
     attackType: "melee",
+    recurrence: "bonus-action-retrigger",
     source: "SRD",
   },
   {
@@ -286,6 +299,8 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
+    conditionApplication: { options: ["invisible"], on: "automatic" },
+    targeting: { affinity: "ally", maxTargets: 1 },
     source: "SRD",
   },
   {
@@ -304,6 +319,12 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
     },
     concentration: false,
     saveAbility: "WIS",
+    area: true,
+    conditionApplication: {
+      options: ["frightened", "incapacitated", "unconscious", "stunned"],
+      max: 1,
+      on: "failed-save",
+    },
     source: "SRD",
   },
   {

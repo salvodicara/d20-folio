@@ -515,7 +515,7 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 18, WIS: 12, CHA: 10 },
     // A carried Quarterstaff (a Simple weapon the Wizard is proficient with) so the
     // sheet has a WEAPON attack alongside Magic Missile (multi-instance) + Fireball
-    // (area save) — the three action shapes the in-encounter AttackDeclaration banner
+    // (area save) — the three action shapes the in-encounter CombatResolver banner
     // demonstrates (single-target hit/miss · multi-select · area save). Drives the
     // combat-chronicle e2e's sheet-banner leg (`makeDevChronicleCombat` scopes THIS
     // hero into a live encounter). Harmless to the evoker spellcasting/damage tests

@@ -54,6 +54,10 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     damageDice: "5d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "CON",
+    area: true,
+    damageOnSave: "half",
+    recurrence: "on-enter-or-end-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -74,6 +78,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     damageDice: "8d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "CON",
+    damageOnSave: "half",
     area: true,
     source: "SRD",
   },
@@ -86,7 +91,15 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    damageType: "lightning",
+    damageChoice: ["lightning", "thunder", "fire", "cold"],
+    damageDice: "8d8",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
+    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    recurrence: "on-enter-or-start-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -141,6 +154,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "WIS",
+    conditionApplication: { options: ["charmed"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -177,6 +191,8 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     damageDice: "5d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -191,6 +207,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     damageType: "psychic",
     damageDice: "5d10",
     saveAbility: "WIS",
+    conditionApplication: { options: ["charmed"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -209,6 +226,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     },
     concentration: false,
     instantaneous: true,
+    conditionRemoval: { options: ["charmed", "exhaustion", "petrified"], max: 1 },
     source: "SRD",
   },
   {
@@ -243,6 +261,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     concentration: true,
     effectTag: "control",
     saveAbility: "WIS",
+    conditionApplication: { options: ["paralyzed"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -260,6 +279,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     healDicePerUpcast: "1d8",
     healAddsCastMod: true,
     effectTag: "heal",
+    targeting: { affinity: "ally", maxTargets: 6, sharedAmount: true },
     source: "SRD",
   },
   {
@@ -442,6 +462,10 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     damageDice: "4d10",
     damageDicePerUpcast: "1d10",
     saveAbility: "CON",
+    area: true,
+    damageOnSave: "half",
+    recurrence: "on-enter-or-end-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -484,6 +508,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "WIS",
+    conditionApplication: { options: ["charmed"], on: "failed-save" },
     source: "SRD",
   },
   {

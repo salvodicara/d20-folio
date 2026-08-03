@@ -1094,6 +1094,7 @@ svg.icon[stroke],
   width: 40px;
   height: 40px;
 }
+
 .btn.loading {
   cursor: progress;
   color: transparent;
@@ -5683,6 +5684,14 @@ button.trk-pip:active {
   display: none;
   align-items: center;
   gap: 5px;
+}
+/* The compact lead lives ON the fixed dark destination socket, so its nested combat
+   glyph/round must inherit that socket's fixed light ink. Their normal `.cp-*` colors
+   are phase tokens for the pale status segment; in light theme those become espresso
+   and disappear on this dark mobile control. */
+.cp-dest-lead .cp-glyph,
+.cp-dest-lead .cp-round {
+  color: inherit;
 }
 .cp-dest-label-mobile {
   display: none;
@@ -14548,7 +14557,6 @@ button:focus-visible > .seal .seal-edit-veil--hover {
   opacity: 0.92;
   background: color-mix(in oklab, black 42%, transparent);
 }
-
 /* ── Tinted-initial avatar fallback (#45/#92) — fills ANY avatar tile (.seal /
    .ch-portrait / .topbar-avatar / admin row) when there is no portrait. A
    deterministic per-seed hue (--av-hue from avatarTint, no RNG) layers over the

@@ -1,8 +1,9 @@
 /**
  * combat-pip-dest-contrast — REAL-Chromium proof that the topbar combat pip's
  * combat-pip carved controls carry readable text in BOTH themes. This covers the
- * "Open {hero}" destination (`.cp-dest-chip`) and the mobile multi-encounter count
- * (`.cp-count`). The first bug (owner-reported): in LIGHT theme the destination label rode
+ * "Open {hero}" destination (`.cp-dest-chip`), its compact single-encounter mobile lead,
+ * and the mobile multi-encounter count (`.cp-count`). The first bug (owner-reported):
+ * in LIGHT theme the destination label rode
  * `--text-secondary` (a dark espresso ink) on a HARDCODED warm-black gradient →
  * dark-on-dark, ~1.2:1, unreadable ("Apri Lyra ›" invisible).
  *
@@ -91,6 +92,47 @@ test.describe("combat pip dest-chip — label text clears AA in both themes", ()
       expect(ratio, `dest-chip label vs darkest stop (${theme})`).toBeGreaterThanOrEqual(
         4.5
       );
+    });
+  }
+});
+
+test.describe("combat pip dest-chip — compact mobile glyph and round clear AA", () => {
+  for (const theme of ["dark", "light"] as const) {
+    test(`${theme}: compact cp-dest-lead ink ≥ 4.5:1 on the chip`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      const chip = await bootDestChip(page, theme);
+      const lead = chip.locator(".cp-dest-lead");
+      await expect(lead).toBeVisible();
+
+      const raw = await chip.evaluate((el) => {
+        const glyph = el.querySelector(".cp-dest-lead .cp-glyph") as HTMLElement;
+        const round = el.querySelector(".cp-dest-lead .cp-round") as HTMLElement;
+        return JSON.stringify({
+          glyphColor: getComputedStyle(glyph).color,
+          roundColor: getComputedStyle(round).color,
+          bg: getComputedStyle(el).backgroundImage,
+        });
+      });
+      const { glyphColor, roundColor, bg } = JSON.parse(raw) as {
+        glyphColor: string;
+        roundColor: string;
+        bg: string;
+      };
+      const glyphFg = parseRgbs(glyphColor)[0];
+      const roundFg = parseRgbs(roundColor)[0];
+      const stops = parseRgbs(bg);
+      expect(glyphFg, "compact glyph color parsed").toBeTruthy();
+      expect(roundFg, "compact round color parsed").toBeTruthy();
+      expect(stops.length, "chip has ≥1 gradient stop").toBeGreaterThan(0);
+      const darkest = stops.reduce((a, b) => (lum(a) < lum(b) ? a : b));
+      await shot(page, `dest-chip-compact-${theme}`);
+
+      expect(
+        contrast(glyphFg as [number, number, number], darkest)
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrast(roundFg as [number, number, number], darkest)
+      ).toBeGreaterThanOrEqual(4.5);
     });
   }
 });

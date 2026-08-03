@@ -239,6 +239,15 @@ export const WIZARD_FEATURES: SrdClassFeatureData[] = [
     class: "wizard",
     subclass: "evoker",
     level: 3,
+    grants: [
+      {
+        type: "spell-damage-outcome",
+        scope: "wizard",
+        cantripOnly: true,
+        damageOnMiss: "half",
+        damageOnSave: "half",
+      },
+    ],
     source: "SRD",
   },
   {

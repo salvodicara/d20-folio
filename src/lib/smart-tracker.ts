@@ -35,6 +35,9 @@ import type {
   SpellRecurrence,
   TrackerUnit,
   AltRecoveryCost,
+  CombatConditionApplication,
+  CombatTargeting,
+  CombatResolutionGate,
 } from "@/data/types";
 import { isPoolAltRecovery, isSlotAltRecovery } from "@/data/types";
 import { classFeatureIndex, getClassTable, pactSlotLevel } from "@/data/classes";
@@ -74,6 +77,7 @@ import {
   aggregateCharacterGrants,
 } from "@/lib/aggregate-character";
 import { slotUsageKey } from "@/lib/cast-options";
+import { scaleCombatSummaryAtCastLevel } from "@/lib/cast-resolution";
 import { getRace, rawRaceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
 import type { CreatureSize, SrdRaceTrait } from "@/data/types";
 import { SRD_INVOCATIONS } from "@/data/invocations";
@@ -86,6 +90,7 @@ import { resolveItemConsumable, consumableActionSlot } from "@/lib/srd-resolve";
 import {
   appendAbilityModToDice,
   scaleCantripDice,
+  scaleUpcastDice,
   pickDiceByLevel,
   spellInstanceCount,
 } from "@/lib/utils";
@@ -210,8 +215,12 @@ export interface ResolvedTracker {
 export interface ActionSummary {
   /** Attack bonus: +9 to hit */
   attackBonus?: number;
+  conditionApplication?: CombatConditionApplication;
   /** Damage formula: "8d6", "1d8+5", "3×(1d4+1)" */
   damage?: string;
+  /** Flat bonus that applies to exactly one damage roll of this cast. Kept separate
+   * for multi-instance spells so the resolver cannot multiply it across darts/rays. */
+  oneRollDamageBonus?: number;
   /**
    * The TWO-HANDED damage formula for a Versatile weapon (item g) — the larger
    * die from the weapon's "Versatile (1dX)" property, with the same ability mod
@@ -230,16 +239,15 @@ export interface ActionSummary {
    * modal). Omitted (or 1) for a single-roll spell.
    */
   instances?: number;
-  /**
-   * S13 — the spell hits an AREA of creatures resolved by a save-for-half (the
-   * Fireball class), carried through from {@link import("@/data/types").SrdSpellData.area}.
-   * The auto-narrated combat capture (Phase 3) reads it to open a MULTI-target
-   * declaration whose per-target outcome is a SAVE (damaged for the DM's real
-   * number, or resisted for no damage) rather than an attack-roll hit/miss (the
-   * `attack-scope` `isSaveDeclaration` decision).
-   * Omitted for a single-target action.
-   */
+  /** The action can affect multiple creatures. This is target shape only: the
+   * successful-save consequence lives independently in {@link damageOnSave}. */
   area?: boolean;
+  /** Damage suffered after a successful save. Omitted means none. */
+  damageOnSave?: "half";
+  /** Damage suffered after a missed attack. Omitted means none. */
+  damageOnMiss?: "half";
+  damageResolution?: CombatResolutionGate;
+  primaryTargetOnly?: boolean;
   /**
    * G24 — the self-side cadence on which this spell's damage RE-APPLIES (a moving
    * area's per-turn save, a bonus-action-moved hazard, a re-fired bolt). The
@@ -248,6 +256,10 @@ export interface ActionSummary {
    * spell.
    */
   recurrence?: SpellRecurrence;
+  resolveOnCast?: false;
+  /** This row reuses an already-active spell. It never spends another slot or starts
+   * concentration; its formulas are scaled to the original cast level. */
+  recurringUse?: true;
   /** Damage type: "fire", "piercing", "force" */
   damageType?: string;
   /**
@@ -273,7 +285,14 @@ export interface ActionSummary {
    * roll (per-slot upcast is previewed in the cast modal); the type is a stable
    * {@link DamageType} id, localized at the render edge. Omitted otherwise.
    */
-  secondaryDamage?: { dice: string; damageType: string };
+  secondaryDamage?: {
+    dice: string;
+    damageType: string;
+    resolution?: "attack" | "save" | "automatic";
+    area?: boolean;
+    damageOnSave?: "half";
+    damageOnMiss?: "half";
+  };
   /**
    * Self-contained extra-damage riders that apply on a hit with this attack
    * (Paladin Radiant Strikes +1d8 Radiant, etc.). Rendered as extra damage
@@ -340,6 +359,15 @@ export interface ActionSummary {
   trigger?: string;
   /** Healing formula: "1d10+9", "5×level" */
   healing?: string;
+  /** Target-facing conditions this action can end. */
+  conditionRemoval?: { options: ConditionId[]; max?: number };
+  targeting?: CombatTargeting;
+  healingMode?: "full" | "consumable" | "maximum";
+  healingPool?: number;
+  tempHpPool?: number;
+  selfHealingFromDamage?: { fraction: number };
+  /** One linked self-heal when this cast restores HP to another creature. */
+  selfHealingOnOther?: { amount: number; perCastLevel: number };
   /**
    * Provenance lines for the heal chip's breakdown tip — present only on the
    * LOCALIZED summary (composed by `localizeHealBreakdown` from the engine's
@@ -3952,6 +3980,9 @@ function applySaveAttackSummary(
     saveAbility?: AbilityCode;
     saveDcAbility?: AbilityCode;
     attack?: ActionAttack;
+    conditionApplication?: CombatConditionApplication;
+    targeting?: CombatTargeting;
+    area?: boolean;
   },
   character: CharacterDoc,
   ctx: ActionResolveCtx,
@@ -3969,6 +4000,10 @@ function applySaveAttackSummary(
       character.character.proficiencyBonusOverride
     );
   }
+  if (action.conditionApplication)
+    summary.conditionApplication = action.conditionApplication;
+  if (action.targeting) summary.targeting = action.targeting;
+  if (action.area) summary.area = true;
   // Declarative damage half (S11) — dice scale from the class/feature table at
   // the action's scaling level (golden rule 5 — scale from data, never hardcode);
   // the damage type is an id resolved at the render edge (golden rule 7).
@@ -3993,6 +4028,8 @@ function applySaveAttackSummary(
       // `appendAbilityModToDice` is the SAME flat-fold the spell/heal formulas use.
       summary.damage = appendAbilityModToDice(baseDice, bonus);
     }
+    if (attack.damageOnSave) summary.damageOnSave = attack.damageOnSave;
+    if (attack.resolution) summary.damageResolution = attack.resolution;
     if (attack.damageType) {
       summary.damageType = attack.damageType;
     } else if (attack.damageTypeChoices && attack.damageTypeChoices.length > 0) {
@@ -4886,7 +4923,11 @@ function resolveSpellActions(
       // is layered elsewhere).
       const dmgDice =
         spell.level === 0 ? scaleCantripDice(spell.damageDice, level) : spell.damageDice;
-      if (dmgDice) summary.damage = dmgDice;
+      if (dmgDice) {
+        summary.damage = spell.damageAddsCastMod
+          ? appendAbilityModToDice(dmgDice, abilityModifier(spellCastScore))
+          : dmgDice;
+      }
 
       // S12b — a multi-instance spell (Magic Missile 3 darts, Scorching Ray 3
       // rays) carries its instance COUNT so the card shows "N × {damage}". Resolved
@@ -4900,6 +4941,16 @@ function resolveSpellActions(
       // signal through so the in-encounter capture opens a MULTI-target SAVE
       // declaration (damaged/resisted per target) rather than a single hit/miss.
       if (spell.area) summary.area = true;
+      if (spell.damageOnSave) summary.damageOnSave = spell.damageOnSave;
+      if (spell.damageOnMiss) summary.damageOnMiss = spell.damageOnMiss;
+      for (const outcome of spellGrantAggregate.spellDamageOutcomes) {
+        if (outcome.scope !== "all" && outcome.scope !== spellOwningClassId) continue;
+        if (outcome.cantripOnly && spell.level !== 0) continue;
+        if (outcome.damageOnSave) summary.damageOnSave = outcome.damageOnSave;
+        if (outcome.damageOnMiss) summary.damageOnMiss = outcome.damageOnMiss;
+      }
+      if (spell.damageResolution) summary.damageResolution = spell.damageResolution;
+      if (spell.primaryTargetOnly) summary.primaryTargetOnly = true;
 
       // Dual-damage-instance spells (Ice Storm 2d10 Bldg + 4d6 Cold, Ice Knife
       // 1d10 Prc + 2d6 Cold, Meteor Swarm 20d6 Fire + 20d6 Bldg) carry a SECOND
@@ -4911,6 +4962,16 @@ function resolveSpellActions(
         summary.secondaryDamage = {
           dice: spell.secondaryDamage.dice,
           damageType: spell.secondaryDamage.damageType,
+          ...(spell.secondaryDamage.resolution
+            ? { resolution: spell.secondaryDamage.resolution }
+            : {}),
+          ...(spell.secondaryDamage.area ? { area: true } : {}),
+          ...(spell.secondaryDamage.damageOnSave
+            ? { damageOnSave: spell.secondaryDamage.damageOnSave }
+            : {}),
+          ...(spell.secondaryDamage.damageOnMiss
+            ? { damageOnMiss: spell.secondaryDamage.damageOnMiss }
+            : {}),
         };
       }
 
@@ -4929,24 +4990,27 @@ function resolveSpellActions(
           damageFacet.kind === "single"
             ? [damageFacet.damageType]
             : [...damageFacet.damageTypes];
-        const bonus =
-          resolveSpellDamageBonus(
-            spellDamageBonuses,
-            spellTypes,
-            ctx.abilityScores, // D2 — effective scores (set-score floors)
-            spellOwningClassId,
-            spell.level,
-            spell.school
-          ) +
-          // Per-cantrip flat damage bonus (`cantrip-damage-bonus` — Agonizing
-          // Blast: +CHA mod on the chosen cantrip's damage rolls). AX exposure
-          // audit — previously aggregated but never consumed.
-          resolveCantripDamageBonus(
-            spellGrantAggregate.cantripDamageBonuses,
-            spell.id,
-            ctx.abilityScores // D2 — effective scores (set-score floors)
-          );
-        if (bonus > 0) summary.damage = `${summary.damage}+${bonus}`;
+        const oneRollBonus = resolveSpellDamageBonus(
+          spellDamageBonuses,
+          spellTypes,
+          ctx.abilityScores, // D2 — effective scores (set-score floors)
+          spellOwningClassId,
+          spell.level,
+          spell.school
+        );
+        // Per-cantrip flat damage bonus (`cantrip-damage-bonus` — Agonizing
+        // Blast: +CHA mod on the chosen cantrip's damage rolls) applies to every
+        // qualifying damage roll, unlike the spell-damage-bonus family above.
+        const perRollBonus = resolveCantripDamageBonus(
+          spellGrantAggregate.cantripDamageBonuses,
+          spell.id,
+          ctx.abilityScores // D2 — effective scores (set-score floors)
+        );
+        if (perRollBonus > 0) summary.damage = `${summary.damage}+${perRollBonus}`;
+        if (oneRollBonus > 0) {
+          if ((summary.instances ?? 1) > 1) summary.oneRollDamageBonus = oneRollBonus;
+          else summary.damage = `${summary.damage}+${oneRollBonus}`;
+        }
       }
     }
 
@@ -4973,6 +5037,7 @@ function resolveSpellActions(
     // "when it recurs" note. A stable id (golden rule 7) — the presenter
     // localizes it. Informational; the engine tracks no geometry (golden rule 21).
     if (spell.recurrence) summary.recurrence = spell.recurrence;
+    if (spell.resolveOnCast === false) summary.resolveOnCast = false;
 
     // Forced-movement rider (`cantrip-effect-rider` — Repelling Blast: push a
     // Large-or-smaller creature 10 ft on a hit with the chosen cantrip). AX
@@ -5023,27 +5088,49 @@ function resolveSpellActions(
       summary.trigger = uiText(`combat.reactionTrigger_${spell.reactionTrigger}`);
     }
 
-    // Healing — read the STRUCTURED `spell.healDice` FACT (S12), the SAME field
-    // the spell cards read, so both surfaces show identical base dice by
-    // construction (no more English-prose regex). Gated like before: only when the
-    // spell exposes NO damage facet and is not an attack/save/weapon-attack-cantrip
-    // spell, so a damaging spell never doubles as a healer.
-    if (!damageFacet && !watCantrip && !spell.attackType && !spell.saveAbility) {
-      if (spell.healDice) {
-        // The combat chip folds the caster's spellcasting modifier into the
-        // formula for the 2024 "regains NdM + your spellcasting ability modifier"
-        // family (`healAddsCastMod`), plus the Disciple-of-Life heal-amount rider.
-        // Both are FLAT — combine into ONE trailing modifier so the verdict reads
-        // "2d8+7", not "2d8+4+3". The spell card shows the base `healDice` only.
-        // Engine rolls no dice.
-        const baseMod = spell.healAddsCastMod ? abilityModifier(spellCastScore) : 0;
-        const healBonus = resolveHealBonus(healBonuses, spellOwningClassId, spell.level);
-        const flat = baseMod + healBonus;
-        summary.healing = appendAbilityModToDice(spell.healDice, flat);
+    // Healing is an independent capability, not the inverse of damage. Most spells
+    // expose one or the other, but Conjure Celestial deliberately lets each target
+    // receive damage OR healing in the same resolution. The structured facts remain
+    // the sole gate; no spell-name branch or prose parser is involved.
+    if (spell.healDice && spell.healingMode !== "consumable") {
+      const baseMod = spell.healAddsCastMod ? abilityModifier(spellCastScore) : 0;
+      const healBonus = resolveHealBonus(healBonuses, spellOwningClassId, spell.level);
+      const flat = baseMod + healBonus;
+      summary.healing = appendAbilityModToDice(spell.healDice, flat);
+      const selfHealEntries = spellGrantAggregate.selfHealOnOther.filter(
+        (entry) =>
+          (entry.scope === "all" || entry.scope === spellOwningClassId) &&
+          spell.level >= entry.minSpellLevel
+      );
+      if (selfHealEntries.length > 0) {
+        const perCastLevel = selfHealEntries.filter(
+          (entry) => entry.perSpellLevel
+        ).length;
+        summary.selfHealingOnOther = {
+          amount: selfHealEntries.reduce(
+            (total, entry) =>
+              total + entry.amount + (entry.perSpellLevel ? spell.level : 0),
+            0
+          ),
+          perCastLevel,
+        };
       }
-      // No verbose effect text for spells — name + range + duration is enough.
-      // The spell name already communicates what it does (Fly, Invisibility, etc.)
+      const maximized = spellGrantAggregate.maximizeSpellHealing.some(
+        (entry) =>
+          (entry.scope === "all" || entry.scope === spellOwningClassId) &&
+          spell.level >= entry.minSpellLevel
+      );
+      if (maximized) summary.healingMode = "maximum";
     }
+    if (spell.conditionRemoval) summary.conditionRemoval = spell.conditionRemoval;
+    if (spell.conditionApplication)
+      summary.conditionApplication = spell.conditionApplication;
+    if (spell.targeting) summary.targeting = spell.targeting;
+    if (spell.healingMode) summary.healingMode = spell.healingMode;
+    if (spell.healingPool !== undefined) summary.healingPool = spell.healingPool;
+    if (spell.tempHpPool !== undefined) summary.tempHpPool = spell.tempHpPool;
+    if (spell.selfHealingFromDamage)
+      summary.selfHealingFromDamage = spell.selfHealingFromDamage;
 
     // Per-spell Temporary-HP roll-entry (False Life: 2d4 + 4). The dice are
     // ROLL-ENTRY (golden rule 21 — the app never rolls); the +4 is the
@@ -5085,7 +5172,7 @@ function resolveSpellActions(
       }
     }
 
-    actions.push({
+    const castAction: RawResolvedAction = {
       id: `spell-${spell.id}`,
       name: srdText("spell", spell.id, "name"),
       type: actionType,
@@ -5101,7 +5188,95 @@ function resolveSpellActions(
       description: srdText("spell", spell.id, "description"),
       // Casting establishes the spell's while-active state (Shield of Faith's AC).
       ...(spellActivatesKey ? { activatesKey: spellActivatesKey } : {}),
-    });
+    };
+    actions.push(castAction);
+
+    // An active recurring concentration spell exposes a SECOND row that reuses the
+    // established effect without spending another slot or restarting concentration.
+    // The stored cast level preserves upcast math across later turns. Geometry and
+    // timing remain table declarations; every consequence still uses CombatResolver.
+    const persistentSpellActive =
+      session.concentration === spell.id ||
+      Boolean(
+        spellActivatesKey && (session.activeFeatures ?? []).includes(spellActivatesKey)
+      );
+    if ((spell.recurrence || spell.followUp) && persistentSpellActive) {
+      const castLevel = Math.max(
+        spell.level,
+        session.concentration === spell.id
+          ? (session.concentrationCastLevel ?? spell.level)
+          : spellActivatesKey
+            ? (session.activeSpellCastLevels?.[spellActivatesKey] ?? spell.level)
+            : spell.level
+      );
+      const type: ActionType = spell.followUp
+        ? spell.followUp.type
+        : spell.recurrence === "action-retrigger"
+          ? "action"
+          : spell.recurrence === "bonus-action-move" ||
+              spell.recurrence === "bonus-action-retrigger"
+            ? "bonus"
+            : "free";
+      const follow = spell.followUp;
+      const followBaseDamage = follow?.attack
+        ? (follow.attack.dice ?? pickDiceByLevel(follow.attack.diceByLevel, castLevel))
+        : undefined;
+      const followDamage =
+        followBaseDamage && follow?.attack?.dicePerUpcast
+          ? scaleUpcastDice(
+              {
+                level: spell.level,
+                damageDice: followBaseDamage,
+                damageDicePerUpcast: follow.attack.dicePerUpcast,
+              },
+              castLevel
+            )
+          : followBaseDamage;
+      const recurringSummary: RawActionSummary = follow
+        ? {
+            ...(follow.attackType && spellAtkBonus != null
+              ? { attackBonus: spellAtkBonus }
+              : {}),
+            ...(followDamage ? { damage: followDamage } : {}),
+            ...(follow.attack?.damageType
+              ? { damageType: follow.attack.damageType }
+              : {}),
+            ...(follow.attack?.damageOnSave
+              ? { damageOnSave: follow.attack.damageOnSave }
+              : {}),
+            ...(follow.attack?.resolution
+              ? { damageResolution: follow.attack.resolution }
+              : {}),
+            ...(follow.saveAbility && spellDc != null
+              ? { saveAbility: follow.saveAbility, saveDC: spellDc }
+              : {}),
+            ...(follow.conditionApplication
+              ? { conditionApplication: follow.conditionApplication }
+              : {}),
+            ...(follow.targeting ? { targeting: follow.targeting } : {}),
+            ...(follow.area ? { area: true } : {}),
+            ...(follow.trigger
+              ? { trigger: uiText(`combat.reactionTrigger_${follow.trigger}`) }
+              : {}),
+            recurringUse: true,
+          }
+        : {
+            ...scaleCombatSummaryAtCastLevel(summary, spell, castLevel),
+            recurringUse: true,
+          };
+      actions.push({
+        ...castAction,
+        id: `spell-${spell.id}-recurring`,
+        type,
+        concentration: false,
+        costsSlot: false,
+        slotLevel: undefined,
+        pinned: true,
+        defaultPinned: true,
+        summary: recurringSummary,
+        activatesKey: undefined,
+      });
+    }
   }
 
   return actions;
@@ -5992,6 +6167,24 @@ function resolveTemporaryHpActions(
         effect: litText(ba.effect),
         ...(ba.trigger ? { trigger: litText(ba.trigger) } : {}),
         ...(isUnarmedStrikeOption ? { saveDC: unarmedStrikeDc, saveAbility: "STR" } : {}),
+        ...(ba.id === "base-grapple"
+          ? {
+              conditionApplication: {
+                options: ["grappled" as const],
+                on: "failed-save" as const,
+              },
+            }
+          : {}),
+        ...(ba.id === "base-shove"
+          ? {
+              // Optional because the table may choose the 5-foot push instead.
+              conditionApplication: {
+                options: ["prone" as const],
+                max: 1,
+                on: "failed-save" as const,
+              },
+            }
+          : {}),
         // RA-12 — the Hide action resolves through a flat DC 15 Dexterity
         // (Stealth) check (SRD 5.2.1 "Hide [Action]"); the card renders a
         // roll-entry whose success applies the Invisible condition.

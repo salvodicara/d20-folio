@@ -20,7 +20,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { ModalScroll } from "@/components/ui/modal-head";
+import { ModalScroll, ModalStage } from "@/components/ui/modal-head";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { SearchField } from "@/components/shared/SearchField";
@@ -112,7 +112,7 @@ export function DivineInterventionModal({
       title={t("combat.divineInterventionTitle")}
       subtitle={subtitle}
     >
-      <div className="flex flex-col gap-3 px-4 pb-4">
+      <ModalStage className="gap-3 px-4 pb-4">
         {/* S9 — an item pool spends a shared CHARGE budget at a per-spell cost, so
             the picker leads with the live remaining/total charges the rows draw
             from; each per-row cost pill then reads against this visible budget.
@@ -190,7 +190,7 @@ export function DivineInterventionModal({
             })}
           </ModalScroll>
         )}
-      </div>
+      </ModalStage>
     </ModalShell>
   );
 }

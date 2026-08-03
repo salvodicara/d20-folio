@@ -181,6 +181,36 @@ describe("localizeChronicleEvent — every kind routes to a distinct non-empty l
     expect(line).toContain("«pc-mara»");
   });
 
+  it("keeps the exact action name in an attributed save and condition", () => {
+    const action = {
+      srd: { kind: "spell" as const, key: "vicious-mockery", field: "name" },
+    };
+    const resolveAction = () => "Beffa crudele";
+    const save: CombatChronicleEvent = {
+      ...base,
+      kind: "attack-save",
+      attackerId: "pc-lyra",
+      targetIds: ["monster-specter"],
+      amounts: [{ targetId: "monster-specter", amount: 4 }],
+      resisted: [],
+      action,
+    };
+    const condition: CombatChronicleEvent = {
+      ...base,
+      kind: "condition-gain",
+      targetId: "monster-specter",
+      conditionId: "frightened",
+      attackerId: "pc-lyra",
+      action,
+    };
+    expect(
+      localizeChronicleEvent(save, t, resolveName, resolveCondition, resolveAction)
+    ).toContain('"action":"Beffa crudele"');
+    expect(
+      localizeChronicleEvent(condition, t, resolveName, resolveCondition, resolveAction)
+    ).toContain("conditionGainByAction");
+  });
+
   it("the SAME event renders per the injected locale", () => {
     const en = localizeChronicleEvent(SAMPLES.down, tEn, resolveName, resolveCondition);
     const it = localizeChronicleEvent(SAMPLES.down, tIt, resolveName, resolveCondition);

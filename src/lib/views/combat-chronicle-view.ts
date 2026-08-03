@@ -17,6 +17,7 @@
  */
 
 import type { CombatChronicleEvent, EncounterOutcome } from "@/types/combat-chronicle";
+import type { LocText } from "@/lib/loc-text";
 
 /** The i18next translator shape this presenter needs (structural, so no react-i18next
  *  import — the hook injects the real `t`). */
@@ -29,6 +30,7 @@ export type ResolveCombatantName = (combatantId: string) => string;
 
 /** Resolve a stable condition id to its localized name. Injected by the UI. */
 export type ResolveConditionName = (conditionId: string) => string;
+export type ResolveActionName = (action: LocText) => string;
 
 /**
  * Whether a damage event's attacker is still PENDING attribution — the feed shows the
@@ -69,18 +71,23 @@ export function localizeChronicleEvent(
   event: CombatChronicleEvent,
   t: TranslateFn,
   resolveName: ResolveCombatantName,
-  resolveCondition: ResolveConditionName
+  resolveCondition: ResolveConditionName,
+  resolveAction: ResolveActionName = () => ""
 ): string {
   switch (event.kind) {
     case "hp-damage":
       return event.attackerId
-        ? t("combatChronicle.damageBy", {
-            attacker: resolveName(event.attackerId),
-            target: resolveName(event.targetId),
-            amount: event.amount,
-            current: event.current,
-            max: event.max,
-          })
+        ? t(
+            event.action ? "combatChronicle.damageByAction" : "combatChronicle.damageBy",
+            {
+              attacker: resolveName(event.attackerId),
+              target: resolveName(event.targetId),
+              amount: event.amount,
+              current: event.current,
+              max: event.max,
+              ...(event.action ? { action: resolveAction(event.action) } : {}),
+            }
+          )
         : t("combatChronicle.damage", {
             target: resolveName(event.targetId),
             amount: event.amount,
@@ -95,9 +102,10 @@ export function localizeChronicleEvent(
         max: event.max,
       });
     case "attack-miss":
-      return t("combatChronicle.missBy", {
+      return t(event.action ? "combatChronicle.missByAction" : "combatChronicle.missBy", {
         attacker: resolveName(event.attackerId),
         target: resolveName(event.targetId),
+        ...(event.action ? { action: resolveAction(event.action) } : {}),
       });
     case "attack-multi": {
       // A HIT line (≥1 real drop) lists the struck targets with their DM amounts; an
@@ -113,16 +121,24 @@ export function localizeChronicleEvent(
           ),
           t
         );
-        return t("combatChronicle.multiHit", {
-          attacker: resolveName(event.attackerId),
-          targets: struck,
-        });
+        return t(
+          event.action ? "combatChronicle.multiHitAction" : "combatChronicle.multiHit",
+          {
+            attacker: resolveName(event.attackerId),
+            targets: struck,
+            ...(event.action ? { action: resolveAction(event.action) } : {}),
+          }
+        );
       }
       const named = joinLocalizedList(event.targetIds.map(resolveName), t);
-      return t("combatChronicle.multiMiss", {
-        attacker: resolveName(event.attackerId),
-        targets: named,
-      });
+      return t(
+        event.action ? "combatChronicle.multiMissAction" : "combatChronicle.multiMiss",
+        {
+          attacker: resolveName(event.attackerId),
+          targets: named,
+          ...(event.action ? { action: resolveAction(event.action) } : {}),
+        }
+      );
     }
     case "attack-save": {
       // An area save-for-half spell: the damaged targets carry the DM's real number
@@ -145,24 +161,40 @@ export function localizeChronicleEvent(
           ? joinLocalizedList(event.resisted.map(resolveName), t)
           : "";
       if (damaged && resisted) {
-        return t("combatChronicle.saveHitResisted", {
-          attacker: resolveName(event.attackerId),
-          targets: damaged,
-          resisted,
-        });
+        return t(
+          event.action
+            ? "combatChronicle.saveHitResistedAction"
+            : "combatChronicle.saveHitResisted",
+          {
+            attacker: resolveName(event.attackerId),
+            targets: damaged,
+            resisted,
+            ...(event.action ? { action: resolveAction(event.action) } : {}),
+          }
+        );
       }
       if (damaged) {
-        return t("combatChronicle.saveHit", {
-          attacker: resolveName(event.attackerId),
-          targets: damaged,
-        });
+        return t(
+          event.action ? "combatChronicle.multiHitAction" : "combatChronicle.saveHit",
+          {
+            attacker: resolveName(event.attackerId),
+            targets: damaged,
+            ...(event.action ? { action: resolveAction(event.action) } : {}),
+          }
+        );
       }
       // Only reachable if every declared target resisted (reconcile emits this line
       // only once ≥1 target took a drop, so in practice `damaged` is non-empty).
-      return t("combatChronicle.saveAllResisted", {
-        attacker: resolveName(event.attackerId),
-        targets: resisted,
-      });
+      return t(
+        event.action
+          ? "combatChronicle.saveAllResistedAction"
+          : "combatChronicle.saveAllResisted",
+        {
+          attacker: resolveName(event.attackerId),
+          targets: resisted,
+          ...(event.action ? { action: resolveAction(event.action) } : {}),
+        }
+      );
     }
     case "down":
       return t("combatChronicle.down", { target: resolveName(event.targetId) });
@@ -171,11 +203,17 @@ export function localizeChronicleEvent(
       // declared rider (Topple → Prone, a spell rider); a bare DM-booked condition has
       // no attacker.
       return event.attackerId
-        ? t("combatChronicle.conditionGainBy", {
-            attacker: resolveName(event.attackerId),
-            target: resolveName(event.targetId),
-            condition: resolveCondition(event.conditionId),
-          })
+        ? t(
+            event.action
+              ? "combatChronicle.conditionGainByAction"
+              : "combatChronicle.conditionGainBy",
+            {
+              attacker: resolveName(event.attackerId),
+              target: resolveName(event.targetId),
+              condition: resolveCondition(event.conditionId),
+              ...(event.action ? { action: resolveAction(event.action) } : {}),
+            }
+          )
         : t("combatChronicle.conditionGain", {
             target: resolveName(event.targetId),
             condition: resolveCondition(event.conditionId),
@@ -214,7 +252,8 @@ export function buildChronicleChapter(
   },
   t: TranslateFn,
   resolveName: ResolveCombatantName,
-  resolveCondition: ResolveConditionName
+  resolveCondition: ResolveConditionName,
+  resolveAction: ResolveActionName = () => ""
 ): string {
   const lines: string[] = [`## ${args.title.trim()}`, ""];
   const note = args.note.trim();
@@ -228,7 +267,9 @@ export function buildChronicleChapter(
       if (lines[lines.length - 1] !== "") lines.push("");
       lines.push(`**${t("combatChronicle.round", { n: currentRound })}**`, "");
     }
-    lines.push(`- ${localizeChronicleEvent(event, t, resolveName, resolveCondition)}`);
+    lines.push(
+      `- ${localizeChronicleEvent(event, t, resolveName, resolveCondition, resolveAction)}`
+    );
   }
   lines.push("", `_${chronicleOutcomeLine(args.outcome, t)}_`);
   return lines.join("\n");

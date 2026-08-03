@@ -69,6 +69,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "WIS",
+    conditionApplication: { options: ["charmed"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -85,6 +86,8 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "DEX",
+    area: true,
+    conditionApplication: { options: ["prone"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -167,7 +170,8 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     components: { v: true, s: false, m: false },
     concentration: false,
     instantaneous: true,
-    saveAbility: "CON",
+    conditionApplication: { options: ["stunned"], on: "automatic" },
+    targeting: { affinity: "enemy", maxTargets: 1 },
     source: "SRD",
   },
   {
@@ -221,6 +225,9 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     damageType: "fire",
     damageDice: "10d8",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
+    recurrence: "on-enter-or-end-turn",
     source: "SRD",
   },
   {
@@ -240,6 +247,9 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     damageType: "radiant",
     damageDice: "12d6",
     saveAbility: "CON",
+    conditionApplication: { options: ["blinded"], on: "failed-save" },
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -254,6 +264,8 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     damageType: "bludgeoning",
     damageDice: "6d10",
     saveAbility: "STR",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
 ];

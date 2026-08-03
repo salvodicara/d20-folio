@@ -158,6 +158,7 @@ interface CharacterState {
    * {@link declareAttack}. Empty outside a live encounter.
    */
   combatRecentActions: RecentAttack[];
+  combatAppliedEncounterEffects: CombatState["appliedEncounterEffects"];
 
   // Actions
   setCharacter: (doc: CharacterDoc | null) => void;
@@ -247,6 +248,15 @@ interface CharacterState {
    * seam, so `setTempHP` (rest/undo/USE-APPLIES) stays log-free. No-op for a
    * non-positive amount. */
   gainTempHp: (amount: number) => void;
+  /** Apply the current hero's reviewed combat consequences as one reversible unit.
+   * The caller composes the returned inverse with the action/resource inverse. */
+  applyResolvedCombatEffects: (effects: {
+    damage?: number;
+    healing?: number;
+    tempHp?: number;
+    addConditions?: string[];
+    removeConditions?: string[];
+  }) => (() => void) | null;
   /**
    * Expend one spell slot at `level`. `pactMagic` selects the Warlock Pact-Magic
    * pool (which can co-exist with a normal pool at the same level — Sorlock); it
@@ -268,8 +278,14 @@ interface CharacterState {
    * undo. Inverse-op by design — never a snapshot that could stomp later edits.
    */
   adjustEquipmentQuantity: (srdId: string, delta: number) => boolean;
-  setConcentration: (spell: StoredConcentration) => void;
-  addCondition: (condition: string) => void;
+  setConcentration: (
+    spell: StoredConcentration,
+    opts?: { undoable?: boolean; castLevel?: number }
+  ) => void;
+  addCondition: (
+    condition: string,
+    opts?: { registerConcentrationUndo?: boolean }
+  ) => void;
   removeCondition: (condition: string) => void;
   /**
    * RA-19 — drop a condition WITHOUT its own toast, returning the EXACT reverse
@@ -335,6 +351,7 @@ interface CharacterState {
    * WITHOUT ever flipping a state the player set by hand.
    */
   setActiveFeature: (key: string, active: boolean) => void;
+  setActiveSpellCastLevel: (key: string, level?: number) => void;
   /**
    * FRONTIER-S3 — reset every `recovery: "per-turn"` tracker with a spent use
    * (Sneak Attack) to full, run at the owner's turn start (the End-Turn seam).
@@ -530,7 +547,12 @@ function persistCombat(get: () => CharacterState): void {
   const cur = get().character;
   if (!cur) return;
   get().combatPersistence?.write(
-    sessionToCombatState(cur.session, get().combatRound, get().combatRecentActions)
+    sessionToCombatState(
+      cur.session,
+      get().combatRound,
+      get().combatRecentActions,
+      get().combatAppliedEncounterEffects
+    )
   );
 }
 
@@ -542,6 +564,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   combatPersistence: null,
   combatRound: 1,
   combatRecentActions: [],
+  combatAppliedEncounterEffects: undefined,
 
   // The normal owner-edit load path — always clears read-only (so re-entering a
   // sheet you own after viewing someone else's is fully editable again).
@@ -570,6 +593,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       // Mirror the declared-attack ring so a later whole-object write preserves it (the
       // OVERWRITE write would otherwise drop a declaration made from another surface).
       combatRecentActions: combat?.recentActions ?? [],
+      combatAppliedEncounterEffects: combat?.appliedEncounterEffects,
     });
   },
 
@@ -935,6 +959,25 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     get().logEvent({ kind: "temp-hp-gain", amount: newTemp });
   },
 
+  applyResolvedCombatEffects: (effects) => {
+    if (get().readonly) return null;
+    const before = get().character;
+    if (!before) return null;
+    const damageTakenBefore = useCombatStore.getState().damageTakenThisRound;
+    if (effects.damage) get().applyDamage(effects.damage);
+    if (effects.healing) get().applyHealing(effects.healing);
+    if (effects.tempHp) get().gainTempHp(effects.tempHp);
+    for (const condition of effects.addConditions ?? [])
+      get().addCondition(condition, { registerConcentrationUndo: false });
+    for (const condition of effects.removeConditions ?? [])
+      get().removeConditionSilent(condition);
+    return () => {
+      set({ character: before });
+      useCombatStore.setState({ damageTakenThisRound: damageTakenBefore });
+      persistCombat(get);
+    };
+  },
+
   useSpellSlot: (level, pactMagic = false) => {
     if (get().readonly) return;
     const { character } = get();
@@ -1065,7 +1108,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     return true;
   },
 
-  setConcentration: (spell) => {
+  setConcentration: (spell, opts?: { undoable?: boolean; castLevel?: number }) => {
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
@@ -1099,6 +1142,16 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       droppedActiveKeys.length > 0
         ? priorActive.filter((k) => !droppedActiveKeys.includes(k))
         : priorActive;
+    const priorActiveSpellCastLevels = character.session.activeSpellCastLevels;
+    const nextActiveSpellCastLevels = droppedActiveKeys.reduce<
+      Record<string, number> | undefined
+    >((levels, key) => {
+      if (!levels || !(key in levels)) return levels;
+      const next = Object.fromEntries(
+        Object.entries(levels).filter(([entryKey]) => entryKey !== key)
+      );
+      return Object.keys(next).length > 0 ? next : undefined;
+    }, priorActiveSpellCastLevels);
     // RAW 2024 (PHB p.235): when you start casting another spell that
     // requires Concentration, your existing concentration ends. We
     // perform the swap silently in the store (the caller already knows
@@ -1125,7 +1178,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           session: {
             ...character.session,
             concentration: spell,
+            concentrationCastLevel:
+              spell && opts?.castLevel && opts.castLevel > 0
+                ? Math.round(opts.castLevel)
+                : undefined,
             activeFeatures: nextActive,
+            activeSpellCastLevels: nextActiveSpellCastLevels,
             // S7 — drop the form + retract the Beast Temp HP to the caster's own.
             ...(retractForm
               ? {
@@ -1144,7 +1202,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // in-combat spell. Route it onto the session undo stack (mirrors the tracker/HP/cast
     // pattern) so every caller — rail, combat, mobile drawer — inherits recovery + redo
     // for free, generalising the undo contract to ALL destructive actions.
-    if (prev && !spell) {
+    if (prev && !spell && opts?.undoable !== false) {
       registerUndoableToast(
         { intent: { kind: "stopped-concentrating", spell: prev } },
         () => {
@@ -1165,10 +1223,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
                 session: {
                   ...cur.session,
                   concentration: prev,
+                  concentrationCastLevel: character.session.concentrationCastLevel,
                   // Restore the EXACT prior active toggles alongside concentration,
                   // so the chip re-lights atomically with the spell (mirrors the
                   // cast-undo + `advanceEffectTimers` revert).
                   activeFeatures: priorActive,
+                  activeSpellCastLevels: priorActiveSpellCastLevels,
                 },
               },
             });
@@ -1181,7 +1241,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     }
   },
 
-  addCondition: (condition) => {
+  addCondition: (condition, opts) => {
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
@@ -1211,7 +1271,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       conditionBreaksConcentration(condition) &&
       get().character?.session.concentration
     ) {
-      get().setConcentration("");
+      get().setConcentration("", {
+        undoable: opts?.registerConcentrationUndo !== false,
+      });
     }
     // Persist the whole resulting combat state (offline-safe).
     persistCombat(get);
@@ -1400,7 +1462,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const base = sessionToCombatState(
       character.session,
       get().combatRound,
-      get().combatRecentActions
+      get().combatRecentActions,
+      get().combatAppliedEncounterEffects
     );
     set({ combatRecentActions: pushRecentAttack(base, entry).recentActions });
     persistCombat(get);
@@ -1663,10 +1726,44 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const active = character.session.activeFeatures ?? [];
     if (active.includes(key) === isActive) return;
     const next = isActive ? [...active, key] : active.filter((k) => k !== key);
+    const levels = isActive
+      ? character.session.activeSpellCastLevels
+      : Object.fromEntries(
+          Object.entries(character.session.activeSpellCastLevels ?? {}).filter(
+            ([entryKey]) => entryKey !== key
+          )
+        );
     set({
       character: {
         ...character,
-        session: { ...character.session, activeFeatures: next },
+        session: {
+          ...character.session,
+          activeFeatures: next,
+          activeSpellCastLevels:
+            levels && Object.keys(levels).length > 0 ? levels : undefined,
+        },
+      },
+    });
+  },
+
+  setActiveSpellCastLevel: (key, level) => {
+    if (get().readonly) return;
+    const character = get().character;
+    if (!character) return;
+    const previous = character.session.activeSpellCastLevels ?? {};
+    const levels =
+      level !== undefined && Number.isFinite(level) && level > 0
+        ? { ...previous, [key]: Math.round(level) }
+        : Object.fromEntries(
+            Object.entries(previous).filter(([entryKey]) => entryKey !== key)
+          );
+    set({
+      character: {
+        ...character,
+        session: {
+          ...character.session,
+          activeSpellCastLevels: Object.keys(levels).length > 0 ? levels : undefined,
+        },
       },
     });
   },

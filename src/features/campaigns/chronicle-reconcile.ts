@@ -61,6 +61,7 @@
 
 import type { CombatChronicleEvent } from "@/types/combat-chronicle";
 import type { CombatState } from "@/types/combat-state";
+import type { LocText } from "@/lib/loc-text";
 
 /** One player-declared action, flattened from a single member's ring with a stable global
  *  id (the correlation input unit). `targetIds` is the FULL declared set: one for a
@@ -74,6 +75,8 @@ export interface DeclaredAction {
   targetIds: string[];
   outcome: "hit" | "miss";
   round: number;
+  /** Exact action used; absent only on declarations written before this field shipped. */
+  action?: LocText;
   /** The multi-instance drop bound (Magic Missile 3, …) — how many observed HP drops a
    *  multi-target fusion may claim. Absent for a single-target swing. */
   instances?: number;
@@ -119,6 +122,7 @@ export function flattenDeclarations(
         targetIds: ra.targetIds,
         outcome: ra.outcome,
         round: ra.round,
+        ...(ra.action ? { action: ra.action } : {}),
         ...(ra.instances !== undefined ? { instances: ra.instances } : {}),
         ...(ra.save !== undefined ? { save: ra.save } : {}),
         ...(ra.riders !== undefined ? { riders: ra.riders } : {}),
@@ -154,6 +158,23 @@ function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
 /** Stable declaration order = ascending global id (ids are namespaced monotonic). */
 function byId(a: DeclaredAction, b: DeclaredAction): number {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/** Whether another PLAYER could own the same landed effect. Repeated actions by the
+ * same attacker are not an attribution ambiguity: the answer to “who did it?” is
+ * still certain even when the exact swing-to-delta pairing is not. */
+function hasCompetingAttacker(
+  declaration: DeclaredAction,
+  candidates: ReadonlyArray<DeclaredAction>,
+  sharesTarget: (candidate: DeclaredAction) => boolean
+): boolean {
+  return candidates.some(
+    (candidate) =>
+      candidate.id !== declaration.id &&
+      candidate.attackerId !== declaration.attackerId &&
+      candidate.round === declaration.round &&
+      sharesTarget(candidate)
+  );
 }
 
 /** Per-DECLARED-target REAL DM damage (in declared order), summing all `claimed` drops on
@@ -219,8 +240,8 @@ export function reconcileChronicle(
     // A declared target the DM left un-dropped saved for no damage — logged as resisted.
     const damagedIds = new Set(amounts.map((a) => a.targetId));
     const resisted = d.targetIds.filter((t) => !damagedIds.has(t));
-    const uncertain = claimants.some(
-      (o) => o.id !== d.id && o.round === d.round && o.targetIds.some((t) => set.has(t))
+    const uncertain = hasCompetingAttacker(d, claimants, (candidate) =>
+      candidate.targetIds.some((targetId) => set.has(targetId))
     );
     fused.push({
       event: {
@@ -231,6 +252,7 @@ export function reconcileChronicle(
         targetIds: d.targetIds,
         amounts,
         resisted,
+        ...(d.action ? { action: d.action } : {}),
       },
       auto: true,
       ...(uncertain ? { uncertain: true } : {}),
@@ -250,6 +272,7 @@ export function reconcileChronicle(
           attackerId: d.attackerId,
           targetIds: d.targetIds,
           amounts: [],
+          ...(d.action ? { action: d.action } : {}),
         },
         auto: true,
       });
@@ -273,8 +296,8 @@ export function reconcileChronicle(
     // can own, or another hit declaration in the round claims one of these same targets.
     const uncertain =
       available.length > bound ||
-      claimants.some(
-        (o) => o.id !== d.id && o.round === d.round && o.targetIds.some((t) => set.has(t))
+      hasCompetingAttacker(d, claimants, (candidate) =>
+        candidate.targetIds.some((targetId) => set.has(targetId))
       );
 
     fused.push({
@@ -285,6 +308,7 @@ export function reconcileChronicle(
         attackerId: d.attackerId,
         targetIds: d.targetIds,
         amounts,
+        ...(d.action ? { action: d.action } : {}),
       },
       auto: true,
       ...(uncertain ? { uncertain: true } : {}),
@@ -304,17 +328,24 @@ export function reconcileChronicle(
   );
 
   /** eventId → { attackerId, uncertain } for each auto-attributed delta. */
-  const attribution = new Map<string, { attackerId: string; uncertain: boolean }>();
+  const attribution = new Map<
+    string,
+    { attackerId: string; uncertain: boolean; action?: LocText }
+  >();
   for (const [k, deltas] of pendingByKey) {
     const hits = singleHitsByKey.get(k);
     if (!hits || hits.length === 0) continue;
-    const uncertain = hits.length > 1; // >1 possible attacker for these deltas
+    const uncertain = new Set(hits.map((hit) => hit.attackerId)).size > 1;
     const pairs = Math.min(deltas.length, hits.length);
     for (let i = 0; i < pairs; i++) {
       const delta = deltas[i];
       const hit = hits[i];
       if (!delta || !hit) continue;
-      attribution.set(delta.id, { attackerId: hit.attackerId, uncertain });
+      attribution.set(delta.id, {
+        attackerId: hit.attackerId,
+        uncertain,
+        ...(hit.action ? { action: hit.action } : {}),
+      });
     }
   }
 
@@ -325,7 +356,7 @@ export function reconcileChronicle(
   // mere co-occurrence. >1 distinct caster with the same rider on that target ⇒ uncertain.
   const conditionAttribution = new Map<
     string,
-    { attackerId: string; uncertain: boolean }
+    { attackerId: string; uncertain: boolean; action?: LocText }
   >();
   for (const event of events) {
     if (event.kind !== "condition-gain") continue;
@@ -341,6 +372,7 @@ export function reconcileChronicle(
     conditionAttribution.set(event.id, {
       attackerId: first.attackerId,
       uncertain: attackers.size > 1,
+      ...(first.action ? { action: first.action } : {}),
     });
   }
 
@@ -354,7 +386,11 @@ export function reconcileChronicle(
         const cattr = conditionAttribution.get(event.id);
         if (cattr) {
           reconciled.push({
-            event: { ...event, attackerId: cattr.attackerId },
+            event: {
+              ...event,
+              attackerId: cattr.attackerId,
+              ...(cattr.action ? { action: cattr.action } : {}),
+            },
             auto: true,
             ...(cattr.uncertain ? { uncertain: true } : {}),
           });
@@ -368,7 +404,11 @@ export function reconcileChronicle(
     const attr = attribution.get(event.id);
     if (attr) {
       reconciled.push({
-        event: { ...event, attackerId: attr.attackerId },
+        event: {
+          ...event,
+          attackerId: attr.attackerId,
+          ...(attr.action ? { action: attr.action } : {}),
+        },
         auto: true,
         ...(attr.uncertain ? { uncertain: true } : {}),
       });
@@ -390,6 +430,7 @@ export function reconcileChronicle(
         round: d.round,
         attackerId: d.attackerId,
         targetId,
+        ...(d.action ? { action: d.action } : {}),
       },
       auto: true,
     });

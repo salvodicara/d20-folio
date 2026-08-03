@@ -15,6 +15,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalStage } from "@/components/ui/modal-head";
 import { Segmented } from "@/components/ui/segmented";
 import { CompendiumPicker } from "@/features/compendium/picker";
 import type { CompendiumPickerSpec } from "@/features/compendium/picker";
@@ -116,13 +117,15 @@ export function FamiliarFormPicker({
 
   return (
     <ModalShell open onClose={onClose} title={detailTitle ?? t("familiar.pickTitle")}>
-      <CompendiumPicker
-        spec={spec}
-        mode="add"
-        onClose={onClose}
-        onDetailTitle={setDetailTitle}
-        autoFocus
-      />
+      <ModalStage>
+        <CompendiumPicker
+          spec={spec}
+          mode="add"
+          onClose={onClose}
+          onDetailTitle={setDetailTitle}
+          autoFocus
+        />
+      </ModalStage>
     </ModalShell>
   );
 }

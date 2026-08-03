@@ -178,10 +178,49 @@ cast-commit seam (`TurnEconomyProvider.commitCastOption`, slot-paid casts only �
 
 **Spell-data structured facts** (`SrdSpellData`, not Grants) carry the cast-time numerics both the
 Spells card and the combat card read from ONE source (S12/S12b/G24): `damageDice` / `healDice` (the base
-NdM), `healAddsCastMod`, `damageType(s)` / `damageChoice`. Two S12b shapes model spells whose effect is
+NdM), `damageAddsCastMod` / `healAddsCastMod`, `damageType(s)` / `damageChoice`. Two S12b shapes model spells whose effect is
 NOT one roll: **multi-instance** (`instances` + `instancesPerUpcast`) — a spell that creates N SEPARATE
 damage instances, each rolling `damageDice` on its own (Magic Missile's 3 darts at 1d4+1 each, +1 dart
 per slot above 1st; Scorching Ray's 3 rays at 2d6 each, +1 ray per slot above 2nd). The shared pure
+**Shared combat resolution capability.** `src/lib/combat-resolution.ts` turns structured combat-action facts into one
+`CombatResolutionSpec`: resolution (`attack` / `save` / `automatic`), target affinity, cap/area,
+damage, healing, instance count and typed condition riders. It never parses a localized description or
+branches on an action/spell name. The UI can therefore resolve weapon attacks, damaging or non-damaging
+saves, healing, multi-instance and area effects through the same target/outcome/effect grammar, while an
+explicit any-creature filter and per-target condition override preserve table rulings and homebrew.
+Slot/upcast/metamagic configuration resolves before targets, so the spec carries the real cast-level dice
+and instance count. Healing has four structural shapes: ordinary per-target amount, one shared group roll,
+a bounded distributed pool, and full restoration; condition cures declare eligible stable ids; consumable
+creation is deliberately not immediate healing. Reviewed effects apply only after the action/cast/reaction
+economy commits, in one idempotent damage/healing/condition batch; cancelling applies and spends nothing.
+Self and monster effects use their canonical owners. A flat spell bonus that applies to **one damage roll**
+stays a separate `oneRollDamageBonus` component for a multi-instance cast: the resolver assigns it to one
+reviewed target exactly once, while true per-roll bonuses remain folded into every instance formula. This
+prevents one-roll features such as Empowered Evocation from being multiplied across darts or rays.
+The `spell-damage-outcome` grant separately modifies a qualifying spell's declared miss/save
+consequence. Evoker Potent Cantrip uses it for half damage on a missed attack or successful save; the
+table declares the roll outcome and the same resolver performs the deterministic halving.
+Healing riders use the same pipeline: `self-heal-on-other` adds one cast-level-scaled self-heal when at
+least one other creature actually receives healing, while `maximize-spell-healing` replaces each healing
+die with its maximum face through the pure `maximizeDiceFormula` helper. The resulting number still passes
+through the normal reviewed target, apply and undo flow.
+Peer-PC effects cross an append-only encounter command queue and are applied exactly once by the recipient
+to their own combat subdocument. See
+`docs/ARCHITECTURE.md` → “The Combat Chronicle event seam”.
+
+The capability boundary is shared by SOLO and encounters. The table supplies targets, hit/save outcomes,
+rolls and battlefield geometry; the engine applies typed damage defenses, Temporary-HP absorption/max-wins,
+healing, condition application/removal and linked self effects. SOLO intentionally resolves only effects on
+the current character because it owns no enemy state. The same action facts drive both surfaces; source ids
+and localized names never select a rules branch.
+
+Persistent spells separate three facts: `resolveOnCast:false` means placement spends the slot but has no
+immediate target consequence; `recurrence` repeats the established effect at its stable cadence; `followUp`
+defines a mechanically different action granted while active. The chosen cast level is persisted with the
+concentration or stable active key, so every later action reuses its upcast formula without spending another
+slot. Clearing or undoing that state retracts/restores the level atomically. This covers repeated damage,
+attacks, saves, healing and conditions with the same generic resolver rather than spell-name cases.
+
 `spellInstanceCount(spell, castLevel)` resolves the count at the cast level (base at the spell's own
 level); both surfaces render `N × {dice}` via `spells.multiInstance`, with the per-instance `damageDice`
 kept intact so a flat damage rider folds per instance before the UI multiplies. **Area save-for-half**
@@ -189,7 +228,7 @@ kept intact so a flat damage rider folds per instance before the UI multiplies. 
 Lightning Bolt, Ice Storm, Cone of Cold) that hits every creature in it, resolved by a save. It carries no
 combat-math (the save + damage already do); its sole job is to finally distinguish an AoE save-spell from a
 single-target save cantrip (both are just `saveAbility` + `damageDice`) so the auto-narrated combat capture
-opens an unbounded multi-target SAVE declaration + `attack-save` reconciliation (`attack-scope.isSaveDeclaration`;
+opens an unbounded multi-target SAVE declaration + `attack-save` reconciliation (`combatResolutionSpec`;
 docs/ARCHITECTURE.md → "The Combat Chronicle event seam"). Never set without a save; never on a persistent
 concentration zone (those use `recurrence`). **Upcast dice scaling**
 (`damageDicePerUpcast`, S12c) — a leveled DAMAGE spell's per-slot-level dice increment (Fireball `"1d6"`

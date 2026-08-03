@@ -75,8 +75,15 @@ export function MonsterPortraitPanel({
       {/* Hover-only camera veil (the seal reads clean at rest, unlike the character
           seal's always-on edit-mode veil — the monster panel is always editable). */}
       {!uploading && (
-        <span className="seal-edit-veil seal-edit-veil--hover" aria-hidden>
+        <span
+          className={cn(
+            "seal-edit-veil",
+            portraitUrl ? "seal-edit-veil--hover" : "monster-portrait-empty-cta"
+          )}
+          aria-hidden
+        >
           <Camera className="h-6 w-6" />
+          {!portraitUrl && <span>{t("portrait.crop.add")}</span>}
         </span>
       )}
       {uploading && (

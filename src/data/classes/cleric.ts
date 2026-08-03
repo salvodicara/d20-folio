@@ -283,7 +283,9 @@ export const CLERIC_FEATURES: SrdClassFeatureData[] = [
             addMod: "WIS",
             damageTypeChoices: ["necrotic", "radiant"],
             mode: "heal-or-damage",
+            damageOnSave: "half",
           },
+          targeting: { affinity: "ally", maxTargets: 1 },
         },
       ],
     },
@@ -488,6 +490,14 @@ export const CLERIC_FEATURES: SrdClassFeatureData[] = [
     class: "cleric",
     subclass: "life-domain",
     level: 6,
+    grants: [
+      {
+        type: "self-heal-on-other",
+        amount: 2,
+        perSpellLevel: true,
+        minSpellLevel: 1,
+      },
+    ],
     source: "SRD",
   },
   {
@@ -495,6 +505,7 @@ export const CLERIC_FEATURES: SrdClassFeatureData[] = [
     class: "cleric",
     subclass: "life-domain",
     level: 17,
+    grants: [{ type: "maximize-spell-healing", minSpellLevel: 0 }],
     source: "SRD",
   },
 ];

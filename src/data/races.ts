@@ -847,7 +847,10 @@ const PUBLIC_RACES: SrdRaceData[] = [
               attack: {
                 diceByLevel: { 1: "1d10", 5: "2d10", 11: "3d10", 17: "4d10" },
                 damageTypeFromBundle: "dragonborn-ancestry",
+                damageOnSave: "half",
               },
+              area: true,
+              targeting: { affinity: "enemy" },
             },
           ],
         },

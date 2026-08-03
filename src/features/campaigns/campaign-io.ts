@@ -42,8 +42,17 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
-import { advanceTurn, prevTurn, removeCombatant } from "@/features/campaigns/encounter";
-import { recordMonsterHp } from "@/features/campaigns/combat-chronicle";
+import {
+  advanceTurn,
+  prevTurn,
+  removeCombatant,
+  setMonsterCondition,
+} from "@/features/campaigns/encounter";
+import {
+  recordCondition,
+  recordMonsterDamage,
+  recordMonsterHp,
+} from "@/features/campaigns/combat-chronicle";
 import { attachViolatesOneCampaign } from "@/features/campaigns/attach-guard";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { pushVersion } from "@/features/campaigns/chronicle-versions";
@@ -68,6 +77,10 @@ import type {
   MemberCharacterSnapshot,
   TreasuryLogEntry,
 } from "@/types/campaign";
+import {
+  conformEncounterCreatures,
+  setMonsterTempHp,
+} from "@/features/campaigns/encounter";
 import type { PortraitCrop } from "@/types/character";
 import {
   createDebouncedWriter,
@@ -147,7 +160,11 @@ function toCampaignDoc(id: string, data: Record<string, unknown>): CampaignDoc {
   // live campaign doc carries an encounter at all — encounters are seeded fresh by the
   // DM (`encounter.ts` → `startEncounter`, `currentCombatantId = combatants[0].id`).
   // Adding a `turnIndex → combatants[i].id` conform would be day-one dead code (rule 10).
-  return { ...doc, memberDetails: conformCampaignMembers(doc.memberDetails) };
+  return {
+    ...doc,
+    memberDetails: conformCampaignMembers(doc.memberDetails),
+    ...(doc.encounter ? { encounter: conformEncounterCreatures(doc.encounter) } : {}),
+  };
 }
 
 /**
@@ -538,60 +555,50 @@ function firstLiveTokenIndex(tokens: ReadonlyArray<number>): number {
   return i < 0 ? 0 : i;
 }
 
-/** One declared hit a player is applying to a monster: the target combatant id + the
- *  damage the player rolled and typed. */
-export interface DeclaredHit {
+/** Shared numeric shape for reviewed monster HP changes. */
+interface DeclaredAmountEffect {
   targetId: string;
   amount: number;
+  /** Compatibility-only index for a legacy grouped monster that has not crossed the
+   * campaign conform boundary yet. Current creature instances always use index 0. */
+  tokenIndex?: number;
 }
 
-/**
- * COMBAT-CHRONICLE (owner 2026-08-02 — the source-of-truth flip) — APPLY a player's
- * DECLARED damage to the encounter's monster HP. This is the write behind the sheet's
- * AttackDeclaration panel: the player types the damage they rolled and it drops the
- * target monster's HP RIGHT AWAY, so the number the reconcile layer narrates is the
- * PLAYER's (previously it was the DM's manual HP delta).
- *
- * A CROSS-USER write by design: the monster HP lives on the CAMPAIGN doc, which the
- * player does not own. Like {@link advanceEncounterTurn} it uses a NARROW dot-path
- * transaction — it re-reads the encounter FRESH, applies each hit through the pure
- * {@link recordMonsterHp} recorder (which lowers the token AND appends the `hp-damage`
- * / `down` chronicle event, UNATTRIBUTED so the reconcile layer credits the declaring
- * PC), then writes back ONLY `encounter.combatants` + `encounter.events`. That diff's
- * `affectedKeys()` is exactly `{combatants, events}`, which the `firestore.rules`
- * `memberAppliesDamage()` grant allows (round / order / turn / roster untouched). The
- * events amount IS the player's typed number, so nothing else in the chronicle pipeline
- * changes.
- *
- * The events are UNATTRIBUTED on purpose (not stamped with the caller's PC): the
- * reconcile layer fuses them with the player's `recentActions` declaration exactly as
- * before, keeping single/multi/save/rider fusion untouched. Every applied number stays
- * DM-remediable — the DM freely re-adjusts monster HP (the token popover) and edits /
- * undoes any chronicle line, so a wrong entry is always correctable.
- *
- * Tolerant no-op when no encounter is running, the target is gone / not a monster, or
- * every amount is ≤ 0 (nothing is written). Reads FRESH inside the txn so concurrent
- * player hits COMPOSE (each re-reads the latest tokens) instead of clobbering. No-op
- * under dev bypass beyond an optimistic campaign-store update (so the local hub reflects
- * the drop with no backend).
- */
-export async function applyDeclaredDamage(
+/** One target-facing consequence confirmed in the universal combat resolver. Damage,
+ * healing, and conditions share one transaction so a multi-effect action lands as one
+ * reviewable change. */
+export type DeclaredCombatEffect =
+  | ({ kind: "damage" | "healing" | "temp-hp" } & DeclaredAmountEffect)
+  | {
+      kind: "condition";
+      targetId: string;
+      conditionId: string;
+      active: boolean;
+    };
+
+/** Apply every reviewed target consequence in one fresh-read transaction. Monster state
+ * lands immediately; PC effects enter the encounter delivery queue and are applied once
+ * by the target owner's authorized combat-state client. */
+export async function applyDeclaredCombatEffects(
   campaignId: string,
-  hits: ReadonlyArray<DeclaredHit>
+  effects: ReadonlyArray<DeclaredCombatEffect>
 ): Promise<void> {
-  const applicable = hits.filter((h) => h.amount > 0);
+  const applicable = effects.filter(
+    (effect) => effect.kind === "condition" || effect.amount > 0
+  );
   if (applicable.length === 0) return;
-  if (DEV_BYPASS_AUTH) return applyDeclaredDamageOptimistic(campaignId, applicable);
+  if (DEV_BYPASS_AUTH) return applyDeclaredEffectsOptimistic(campaignId, applicable);
   const ref = campaignDoc(campaignId);
   await runTransaction(db, async (txn) => {
     const snap = await txn.get(ref);
     const encounter = (snap.data()?.encounter ?? null) as EncounterState | null;
     if (!encounter) return; // tolerant: a member can't conjure a fight
-    const next = reduceDeclaredDamage(encounter, applicable);
+    const next = reduceDeclaredEffects(encounter, applicable);
     if (next === encounter) return; // nothing landed (targets gone / all clamped)
     txn.update(ref, {
       "encounter.combatants": next.combatants,
       "encounter.events": next.events ?? [],
+      "encounter.memberEffects": next.memberEffects ?? [],
       updatedAt: serverTimestamp(),
     });
   });
@@ -601,18 +608,75 @@ export async function applyDeclaredDamage(
  *  recorder (lowers the first live token + appends the unattributed chronicle event).
  *  PURE — shared by the live transaction and the dev-bypass optimistic path so both
  *  behave identically. Returns the SAME state when nothing landed. */
-function reduceDeclaredDamage(
+export function reduceDeclaredEffects(
   encounter: EncounterState,
-  hits: ReadonlyArray<DeclaredHit>
+  effects: ReadonlyArray<DeclaredCombatEffect>
 ): EncounterState {
   let next = encounter;
-  for (const { targetId, amount } of hits) {
-    if (amount <= 0) continue;
-    const monster = next.combatants.find((c) => c.id === targetId);
-    if (!monster || monster.kind !== "monster") continue;
-    const tokenIndex = firstLiveTokenIndex(monster.tokens);
-    const value = (monster.tokens[tokenIndex] ?? 0) - amount;
-    next = recordMonsterHp(next, targetId, tokenIndex, value);
+  for (const effect of effects) {
+    const { targetId } = effect;
+    let storedTargetId = targetId;
+    let legacyIndex = effect.kind === "condition" ? undefined : effect.tokenIndex;
+    let monster = next.combatants.find((c) => c.id === storedTargetId);
+    // A player may be looking at the read-conformed instance `monster-1~2` while an
+    // untouched live campaign still stores the retired `monster-1.tokens[1]` group.
+    // Resolve that deterministic id back to the old slot inside this transaction. The
+    // member write keeps the combatant count unchanged, satisfying the narrow rules;
+    // the next DM structural save persists the already-conformed instance model.
+    if (!monster) {
+      const legacy = /^(.*)~(\d+)$/.exec(targetId);
+      if (legacy) {
+        storedTargetId = legacy[1] ?? targetId;
+        legacyIndex = Math.max(0, Number(legacy[2]) - 1);
+        monster = next.combatants.find((c) => c.id === storedTargetId);
+      }
+    }
+    if (monster?.kind === "pc") {
+      const memberEffects = next.memberEffects ?? [];
+      const id = `${next.epoch}:${memberEffects.length}`;
+      const delivered =
+        effect.kind === "condition"
+          ? {
+              id,
+              targetId: monster.id,
+              kind: "condition" as const,
+              conditionId: effect.conditionId,
+              active: effect.active,
+            }
+          : {
+              id,
+              targetId: monster.id,
+              kind: effect.kind,
+              amount: effect.amount,
+            };
+      next = { ...next, memberEffects: [...memberEffects, delivered] };
+      continue;
+    }
+    if (!monster) continue;
+    if (effect.kind === "condition") {
+      const wasActive = monster.conditions.includes(effect.conditionId);
+      next = setMonsterCondition(next, storedTargetId, effect.conditionId, effect.active);
+      if (wasActive !== effect.active) {
+        next = recordCondition(next, storedTargetId, effect.conditionId, effect.active);
+      }
+      continue;
+    }
+    if (effect.amount <= 0) continue;
+    if (effect.kind === "temp-hp") {
+      next = setMonsterTempHp(
+        next,
+        storedTargetId,
+        Math.max(monster.tempHp ?? 0, effect.amount)
+      );
+      continue;
+    }
+    const tokenIndex = legacyIndex ?? firstLiveTokenIndex(monster.tokens);
+    if (effect.kind === "damage") {
+      next = recordMonsterDamage(next, storedTargetId, tokenIndex, effect.amount);
+    } else {
+      const value = (monster.tokens[tokenIndex] ?? 0) + effect.amount;
+      next = recordMonsterHp(next, storedTargetId, tokenIndex, value);
+    }
   }
   return next;
 }
@@ -620,14 +684,14 @@ function reduceDeclaredDamage(
 /** Dev-bypass optimistic apply: reduce the campaign store's live encounter so the local
  *  hub reflects the drop (no Firestore). No-op when the store holds a different / no
  *  encounter. */
-function applyDeclaredDamageOptimistic(
+function applyDeclaredEffectsOptimistic(
   campaignId: string,
-  hits: ReadonlyArray<DeclaredHit>
+  effects: ReadonlyArray<DeclaredCombatEffect>
 ): void {
   const store = useCampaignStore.getState();
   const campaign = store.campaign;
   if (!campaign || campaign.id !== campaignId || !campaign.encounter) return;
-  const next = reduceDeclaredDamage(campaign.encounter, hits);
+  const next = reduceDeclaredEffects(campaign.encounter, effects);
   if (next !== campaign.encounter) store.setEncounter(next);
 }
 

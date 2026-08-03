@@ -76,8 +76,6 @@ const DELIBERATE_RESIDUALS = new Set<string>([
   "paladin-devotion-smite-of-protection",
   "ranger-relentless-hunter",
   // ── Heal / temp-HP riders on a non-spell trigger (no clean rider seam yet) ──
-  "cleric-life-blessed-healer",
-  "cleric-life-supreme-healing",
   "paladin-restoring-touch",
   "monk-self-restoration",
   // ── Per-use utility / movement / resource niceties (prose) ──
@@ -104,8 +102,6 @@ const DELIBERATE_RESIDUALS = new Set<string>([
   // (warlock-magical-cunning is now AUTOMATED — the PRIM-resource-conversion
   // `pact-slot` restore on its 1/LR tracker; no longer a residual.)
   "warlock-eldritch-master", // L20 system-handled UPGRADE of Magical Cunning (flips its restore to the full Pact pool via the live `restoresAll` flag); carries no grant of its own.
-  // ── Wizard save-outcome (potent cantrip half-on-save) ──
-  "wizard-evoker-potent-cantrip",
 ]);
 
 describe("automation coverage — every public class feature is automated, system-handled, or a listed residual", () => {

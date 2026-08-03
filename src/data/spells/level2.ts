@@ -104,6 +104,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     components: { v: true, s: false, m: false },
     concentration: false,
     saveAbility: "CON",
+    conditionApplication: { options: ["blinded", "deafened"], max: 1, on: "failed-save" },
     source: "SRD",
   },
   {
@@ -275,9 +276,12 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     damageDice: "2d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
     // G24 — a creature that ends its turn within 5 ft saves; the caster moves the
     // sphere up to 30 ft as a BONUS ACTION each turn to re-trigger it (PHB 2024).
     recurrence: "bonus-action-move",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -313,6 +317,8 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     damageDice: "2d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "CON",
+    damageResolution: "automatic",
+    recurrence: "bonus-action-retrigger",
     source: "SRD",
   },
   {
@@ -329,6 +335,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "WIS",
+    conditionApplication: { options: ["paralyzed"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -344,6 +351,12 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    conditionApplication: { options: ["invisible"], on: "automatic" },
+    targeting: {
+      affinity: "ally",
+      maxTargets: 1,
+      maxTargetsPerUpcast: 1,
+    },
     source: "SRD",
   },
   {
@@ -368,6 +381,10 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     instantaneous: true,
+    conditionRemoval: {
+      options: ["blinded", "deafened", "paralyzed", "poisoned"],
+      max: 1,
+    },
     source: "SRD",
   },
   {
@@ -453,9 +470,12 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     damageDice: "2d10",
     damageDicePerUpcast: "1d10",
     saveAbility: "CON",
+    area: true,
+    damageOnSave: "half",
     // G24 — a creature saves when it enters the area or ENDS its turn there
     // (2024); the beam is moved up to 60 ft with a Magic action on later turns.
     recurrence: "on-enter-or-end-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -488,6 +508,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     healDicePerUpcast: "2d8",
     healAddsCastMod: true,
     effectTag: "heal",
+    targeting: { affinity: "ally", maxTargets: 5, sharedAmount: true },
     source: "SRD",
   },
   {
@@ -542,6 +563,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     damageDice: "3d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "CON",
+    damageOnSave: "half",
     area: true,
     source: "SRD",
   },
@@ -554,6 +576,8 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: true,
     components: { v: true, s: true, m: false },
     concentration: true,
+    conditionApplication: { options: ["deafened"], on: "automatic" },
+    targeting: { affinity: "any" },
     source: "SRD",
   },
   {
@@ -608,6 +632,8 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     damageType: "force",
     damageDice: "1d8",
     damageDicePerUpcast: "1d8",
+    attackType: "melee",
+    recurrence: "bonus-action-retrigger",
     source: "SRD",
   },
   {
@@ -680,6 +706,10 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "DEX",
+    area: true,
+    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    recurrence: "on-enter-or-start-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -733,6 +763,8 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     damageDice: "3d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -745,6 +777,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "WIS",
+    area: true,
     source: "SRD",
   },
   {
@@ -840,6 +873,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     damageDice: "3d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "WIS",
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -915,6 +949,9 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     damageType: "radiant",
     damageDice: "2d6",
     damageDicePerUpcast: "1d6",
+    damageResolution: "automatic",
+    conditionRemoval: { options: ["invisible"] },
+    targeting: { affinity: "enemy", maxTargets: 1 },
     source: "SRD",
   },
   {
@@ -954,6 +991,8 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    conditionRemoval: { options: ["poisoned"], max: 1 },
+    targeting: { affinity: "ally", maxTargets: 1 },
     source: "SRD",
   },
 ];

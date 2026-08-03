@@ -20,7 +20,7 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
-import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
+import { ModalBody, ModalFoot, ModalStage } from "@/components/ui/modal-head";
 import { OptionGrid, type OptionGridItem } from "@/components/shared/OptionGrid";
 import { Button } from "@/components/ui/button";
 
@@ -151,7 +151,7 @@ export function ChoiceRePicker({
         title={moreId && detailTitleFor ? detailTitleFor(moreId) : undefined}
         compact
       >
-        {moreBody}
+        <ModalStage>{moreBody}</ModalStage>
       </ModalShell>
     </ModalShell>
   );

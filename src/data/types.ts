@@ -678,6 +678,8 @@ export type CurrencyUnit = "gp" | "sp" | "cp" | "ep" | "pp";
  *  - `"bonus-action-move"` — a moving hazard the caster re-aims as a BONUS ACTION,
  *    damaging a creature that ends its turn near it (Flaming Sphere). The caster
  *    spends a Bonus Action each turn to re-trigger/relocate it.
+ *  - `"bonus-action-retrigger"` — the established spell repeats its modeled effect
+ *    as a BONUS ACTION (Heat Metal, Spiritual Weapon, Aura of Vitality).
  *  - `"action-retrigger"` — the caster re-fires the spell as a MAGIC ACTION on a
  *    later turn at a point of their choice (Call Lightning's repeated bolts).
  * Informational only — the engine tracks no geometry and rolls no dice (golden
@@ -686,8 +688,30 @@ export type CurrencyUnit = "gp" | "sp" | "cp" | "ep" | "pp";
  */
 export type SpellRecurrence =
   | "on-enter-or-end-turn"
+  | "on-enter-or-start-turn"
+  | "start-and-end-turn"
+  | "start-of-turn"
   | "bonus-action-move"
+  | "bonus-action-retrigger"
   | "action-retrigger";
+
+/** Shared combat-effect vocabulary. Spells, class/species actions and the
+ * resolved action view all use these shapes so the target resolver never needs
+ * source-specific branches. */
+export type CombatResolutionGate = "attack" | "save" | "automatic";
+
+export interface CombatConditionApplication {
+  options: ConditionId[];
+  max?: number;
+  on: "hit" | "failed-save" | "automatic";
+}
+
+export interface CombatTargeting {
+  affinity: "ally" | "enemy" | "any";
+  maxTargets?: number;
+  maxTargetsPerUpcast?: number;
+  sharedAmount?: boolean;
+}
 
 /**
  * A SECOND, simultaneous damage instance a single casting deals with its OWN
@@ -711,6 +735,14 @@ export interface SpellDamageInstance {
   /** Per-spell-slot-level dice increment when upcast (Ice Knife Cold: "1d6").
    *  Same NdM shape + face as {@link dice}; omit when this instance is fixed. */
   dicePerUpcast?: string;
+  /** Override the action's primary roll gate for this component. */
+  resolution?: CombatResolutionGate;
+  /** This component can affect several creatures even when the primary cannot. */
+  area?: boolean;
+  /** Per-component successful-save consequence. */
+  damageOnSave?: "half";
+  /** Per-component missed-attack consequence. */
+  damageOnMiss?: "half";
 }
 
 /**
@@ -725,7 +757,7 @@ export interface SpellDamageInstance {
  */
 export interface SpellTempHpRoll {
   /** The dice the player rolls externally (False Life: "2d4"). NdM shape. */
-  dice: string;
+  dice?: string;
   /** The DETERMINISTIC flat bonus the app adds to the entered roll (False Life: 4). */
   bonus: number;
   /**
@@ -741,6 +773,26 @@ export interface SrdSpellData {
   id: string;
   /** 0 = cantrip, 1-9 for leveled spells */
   level: number;
+  /** Conditions this spell can end on its target. `max` omitted means every matching
+   * condition ends; `max: 1` means the caster chooses one. Disease/curse/ability-score
+   * effects stay table adjudication until those effects have structured homes. */
+  conditionRemoval?: { options: ConditionId[]; max?: number };
+  /** Conditions this resolution can apply. `max` omitted means all listed
+   * conditions apply together; a finite max is a table choice. */
+  conditionApplication?: CombatConditionApplication;
+  /** Explicit target shape for effects whose target count is not one. Omitted means
+   * the ordinary single target; absent `maxTargets` means any number in range. */
+  targeting?: CombatTargeting;
+  /** Healing semantics that are not an ordinary rolled amount. */
+  healingMode?: "full" | "consumable";
+  /** One rolled/flat amount divided among the selected targets (Mass Heal). */
+  healingPool?: number;
+  /** One temporary-HP pool divided among selected targets (Power Word Fortify). */
+  tempHpPool?: number;
+  /** Deterministic self-healing derived from damage this resolution actually deals.
+   * The resolver applies `floor(net damage × fraction)` to the caster in the same
+   * undoable commit. Vampiric Touch uses `0.5`. */
+  selfHealingFromDamage?: { fraction: number };
   /** School of magic */
   school: SpellSchool;
   /** Class IDs that have access to this spell */
@@ -799,6 +851,8 @@ export interface SrdSpellData {
    * type word. Omit when the spell deals no dice-based damage.
    */
   damageDice?: string;
+  /** The spell's own damage formula adds the caster's spellcasting modifier. */
+  damageAddsCastMod?: boolean;
   /**
    * S12c — the per-spell-slot-level damage-dice INCREMENT a leveled spell gains
    * when cast with a slot above its own level ("the damage increases by 1d6 for
@@ -838,21 +892,23 @@ export interface SrdSpellData {
   /** S12b — extra {@link instances} per spell-slot level above the spell's own
    *  (Magic Missile / Scorching Ray: 1). Ignored unless `instances` is set. */
   instancesPerUpcast?: number;
-  /**
-   * S13 — the spell strikes an AREA (every creature in a burst / cone / line),
-   * resolved by a saving throw for half — the Fireball class (Burning Hands,
-   * Thunderwave, Shatter, Fireball, Lightning Bolt, Ice Storm, Cone of Cold). The
-   * shape signal the auto-narrated combat capture (Phase 3) needs to distinguish an
-   * AoE save-spell from a single-target save cantrip (Sacred Flame): both are
-   * {@link saveAbility} + {@link damageDice}, but only the area spell offers a
-   * MULTI-target declaration + save reconciliation (the `attack-scope`
-   * `isSaveDeclaration` decision). Set ONLY
-   * on an INSTANTANEOUS burst that hits several creatures at once; a persistent
-   * concentration zone (Moonbeam, Spirit Guardians — modelled via {@link recurrence})
-   * is NOT `area` (its per-turn cadence, not a one-shot declaration). Omit for a
-   * single-target spell.
-   */
+  /** The spell can affect multiple creatures in one resolution. This is target
+   * shape only; never infer its save consequence from this flag. Persistent
+   * zones use {@link recurrence} instead. */
   area?: boolean;
+  /** Damage suffered after a successful saving throw. Omitted means none. Kept
+   * independent from `area`: single-target spells can deal half damage, while an
+   * area can have a different success outcome. */
+  damageOnSave?: "half";
+  /** Damage suffered after a missed attack. Omitted means none. */
+  damageOnMiss?: "half";
+  /** Gate for the primary damage component when it differs from the spell's
+   * apparent attack/save shape (post-hit smites deal damage automatically, then
+   * a save can independently gate their rider). */
+  damageResolution?: CombatResolutionGate;
+  /** Only the first declared target receives the primary damage; the action can
+   * still expose additional targets for an area rider/save. */
+  primaryTargetOnly?: boolean;
   /**
    * G24 — the self-side cadence on which this spell's damage RE-APPLIES (a moving
    * area's per-turn save, a bonus-action-moved hazard, a re-fired bolt). A stable
@@ -861,6 +917,13 @@ export interface SrdSpellData {
    * Omit for a once-at-cast spell.
    */
   recurrence?: SpellRecurrence;
+  /** False when casting only creates the persistent effect and its first damage/save
+   * happens later (for example Flaming Sphere at end of turn). */
+  resolveOnCast?: false;
+  /** A target-facing action granted while this spell remains active. It uses the same
+   * source-neutral action vocabulary as class/species features and never spends the
+   * spell slot again. */
+  followUp?: SrdActionDef;
   /**
    * Base healing dice (or flat amount) at the spell's own level, e.g. "2d8" /
    * "2d4" / "70". Drives a verdigris "NdM Heal" verdict on the spell card and the
@@ -1089,6 +1152,8 @@ export interface ActionHeal {
 export interface SrdActionDef {
   /** Action economy cost */
   type: ActionType;
+  /** Use the caster's spell attack modifier for this granted action. */
+  attackType?: "melee" | "ranged";
   /**
    * The STRUCTURED reaction trigger (golden rule 7) — a stable
    * {@link ReactionTrigger} token, never prose. Set on a `type: "reaction"`
@@ -1166,6 +1231,10 @@ export interface SrdActionDef {
    * label is localized at the render edge (golden rule 7).
    */
   saveDcAbility?: AbilityCode;
+  /** Structured target/rider facts consumed by the same resolver as spells. */
+  conditionApplication?: CombatConditionApplication;
+  targeting?: CombatTargeting;
+  area?: boolean;
   /**
    * S11 — the DECLARATIVE save-based ATTACK an action deals (Dragonborn Breath
    * Weapon 2d10 Fire on a DEX save, Cleric Divine Spark 1d8 Necrotic/Radiant on a
@@ -1303,6 +1372,9 @@ export interface ActionAttack {
    * locale-agnostic FACT rolled externally (golden rule 21).
    */
   dice?: string;
+  /** Extra dice per spell slot above the owning spell's base level, for an active
+   * spell's follow-up attack (Sylune's Viper). */
+  dicePerUpcast?: string;
   /**
    * Damage dice keyed by the threshold level at which they begin to apply
    * (Breath Weapon: `{ 1: "1d10", 5: "2d10", 11: "3d10", 17: "4d10" }`; Divine
@@ -1314,6 +1386,11 @@ export interface ActionAttack {
    * Omit for a fixed-dice action (set `dice`).
    */
   diceByLevel?: Readonly<Record<number, string>>;
+  /** Deterministic successful-save consequence for this damage component. */
+  damageOnSave?: "half";
+  /** Override the default save gate (for example damage that applies before a
+   * separate rider save). */
+  resolution?: CombatResolutionGate;
   /** The fixed damage type id (one of {@link DamageType}). Mutually exclusive
    *  with `damageTypeChoices` / `damageTypeFromBundle`. */
   damageType?: DamageType;

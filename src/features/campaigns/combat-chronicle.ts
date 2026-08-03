@@ -20,7 +20,13 @@
 
 import type { EncounterState, EncounterMonster } from "@/types/campaign";
 import type { CombatChronicleEvent, EncounterOutcome } from "@/types/combat-chronicle";
-import { setHp, applyHp, isDown } from "@/features/campaigns/encounter";
+import {
+  setHp,
+  applyHp,
+  isDown,
+  setMonsterCondition,
+  setMonsterTempHp,
+} from "@/features/campaigns/encounter";
 
 /** A chronicle event WITHOUT its append-time-stamped fields (id + round). Distributive
  *  so each union member keeps its own discriminated shape. */
@@ -100,6 +106,47 @@ export function recordMonsterHp(
           current: afterHp,
           max: after.maxHp,
         });
+  if (!isDown(before) && isDown(after)) {
+    out = appendEvent(out, { kind: "down", targetId: monsterId });
+  }
+  return out;
+}
+
+/** Apply incoming damage to a monster through Temporary HP first, then ordinary HP,
+ * and record the single factual damage beat. This is the damage seam used by both the
+ * universal resolver and the DM's manual override. */
+export function recordMonsterDamage(
+  state: EncounterState,
+  monsterId: string,
+  tokenIndex: number,
+  amount: number,
+  attackerId?: string
+): EncounterState {
+  const before = state.combatants.find((c) => c.id === monsterId);
+  if (!before || before.kind !== "monster" || amount <= 0) return state;
+  const beforeHp = before.tokens[tokenIndex] ?? 0;
+  const tempAbsorbed = Math.min(before.tempHp ?? 0, Math.max(0, Math.round(amount)));
+  const afterTemp = setMonsterTempHp(
+    state,
+    monsterId,
+    (before.tempHp ?? 0) - tempAbsorbed
+  );
+  const remaining = Math.max(0, Math.round(amount) - tempAbsorbed);
+  const afterHpState = setHp(afterTemp, monsterId, tokenIndex, beforeHp - remaining);
+  const after = afterHpState.combatants.find((c) => c.id === monsterId);
+  if (!after || after.kind !== "monster") return afterHpState;
+  const hpLost = beforeHp - (after.tokens[tokenIndex] ?? 0);
+  const landed = tempAbsorbed + hpLost;
+  if (landed === 0) return afterHpState;
+  let out = appendEvent(afterHpState, {
+    kind: "hp-damage",
+    targetId: monsterId,
+    amount: landed,
+    current: after.tokens[tokenIndex] ?? 0,
+    max: after.maxHp,
+    ...(tempAbsorbed > 0 ? { tempAbsorbed } : {}),
+    ...(attackerId ? { attackerId } : {}),
+  });
   if (!isDown(before) && isDown(after)) {
     out = appendEvent(out, { kind: "down", targetId: monsterId });
   }
@@ -210,8 +257,15 @@ export function undoHpEvent(state: EncounterState, eventId: string): EncounterSt
       state,
       event.targetId,
       tokenIndex,
-      isDamage ? event.amount : -event.amount
+      isDamage ? event.amount - (event.tempAbsorbed ?? 0) : -event.amount
     );
+    if (isDamage && (event.tempAbsorbed ?? 0) > 0) {
+      restored = setMonsterTempHp(
+        restored,
+        event.targetId,
+        (target.tempHp ?? 0) + (event.tempAbsorbed ?? 0)
+      );
+    }
   }
   // Drop the undone line, plus any now-stale `down` line for the same target once the
   // restore leaves the group standing again.
@@ -223,6 +277,31 @@ export function undoHpEvent(state: EncounterState, eventId: string): EncounterSt
       !(e.kind === "down" && e.targetId === event.targetId && !stillDown)
   );
   return { ...restored, events: nextEvents };
+}
+
+/** Reverse one MONSTER condition event and remove its Chronicle line. A PC remains a
+ * no-op because its conditions live in its own combat-state subdocument; the DM can
+ * correct those directly on the PC card without pretending the campaign doc owns them. */
+export function undoConditionEvent(
+  state: EncounterState,
+  eventId: string
+): EncounterState {
+  const event = state.events?.find((candidate) => candidate.id === eventId);
+  if (!event || (event.kind !== "condition-gain" && event.kind !== "condition-loss")) {
+    return state;
+  }
+  const target = state.combatants.find((combatant) => combatant.id === event.targetId);
+  if (!target || target.kind !== "monster") return state;
+  const restored = setMonsterCondition(
+    state,
+    event.targetId,
+    event.conditionId,
+    event.kind === "condition-loss"
+  );
+  return {
+    ...restored,
+    events: restored.events?.filter((candidate) => candidate.id !== eventId),
+  };
 }
 
 /** Attribute a pending `hp-damage` event to `attackerId` (the one-tap pick). A no-op

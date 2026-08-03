@@ -1,0 +1,459 @@
+/* ── Active encounter dossier ────────────────────────────────────────────────
+   A compact command rail joined to its live record. This deliberately borrows
+   the combat cards' struck border + recessed material instead of reading as a
+   generic toolbar floating above them. Difficulty is the only semantic badge;
+   round / XP stay typographic, and the Chronicle opens into a gilt timeline. */
+.encounter-dossier {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--accent-primary) 32%, var(--border-medium));
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--accent-glow) 7%, transparent),
+      transparent 32%
+    ),
+    var(--bg-surface-1);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--accent-primary) 20%, transparent),
+    var(--elev-resting);
+}
+.encounter-dossier::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0 0 auto;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--accent-primary) 82%, white) 18%,
+    var(--accent-primary) 50%,
+    color-mix(in oklab, var(--accent-primary) 82%, white) 82%,
+    transparent
+  );
+  opacity: 0.72;
+}
+.encounter-dossier-rail {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 52px;
+  padding: 8px 12px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--bg-surface-2) 92%, var(--accent-primary)),
+    var(--bg-surface-1)
+  );
+}
+.encounter-dossier-mark {
+  display: grid;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: var(--accent-text);
+  border: 1px solid color-mix(in oklab, var(--accent-primary) 65%, var(--border-medium));
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    145deg,
+    color-mix(in oklab, var(--accent-glow) 35%, var(--bg-surface-3)),
+    color-mix(in oklab, var(--accent-glow) 14%, var(--bg-recessed))
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 22%, transparent),
+    0 2px 5px color-mix(in oklab, black 28%, transparent);
+}
+.encounter-dossier-round {
+  flex: none;
+  padding-right: var(--sp-3);
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-medium);
+  font-family: var(--font-display);
+  font-size: 0.94rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.encounter-budget-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.encounter-budget-xp,
+.encounter-budget-uncosted {
+  color: var(--text-muted);
+  font-family: var(--font-numeric);
+  font-size: var(--text-2xs);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.encounter-budget-xp {
+  color: var(--text-secondary);
+}
+.btn.encounter-summary-end {
+  flex: none;
+  margin-left: auto;
+}
+
+.encounter-chronicle {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  background: var(--bg-recessed);
+  box-shadow: var(--elev-recessed);
+}
+.encounter-chronicle.is-embedded {
+  border: 0;
+  border-top: 1px solid color-mix(in oklab, var(--accent-primary) 20%, var(--border-soft));
+  border-radius: 0;
+  box-shadow: none;
+}
+.encounter-chronicle-toggle {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--accent-glow) 8%, var(--bg-recessed)),
+    var(--bg-recessed) 42%
+  );
+  transition:
+    color var(--m-fast),
+    background var(--m-fast);
+}
+.encounter-chronicle-toggle:hover {
+  color: var(--text-primary);
+  background: color-mix(in oklab, var(--accent-glow) 9%, var(--bg-recessed));
+}
+.encounter-chronicle-toggle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -3px;
+}
+.encounter-chronicle-sigil {
+  display: grid;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  color: var(--accent-text);
+  border: 1px solid color-mix(in oklab, var(--accent-primary) 45%, var(--border-medium));
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-2));
+}
+.encounter-chronicle-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: currentColor;
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.encounter-chronicle-count {
+  display: grid;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  color: var(--accent-text);
+  border: 1px solid color-mix(in oklab, var(--accent-primary) 38%, var(--border-medium));
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--accent-glow) 10%, var(--bg-surface-2));
+  font-family: var(--font-numeric);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+.encounter-chronicle-chevron {
+  flex: none;
+  transition: transform var(--m-fast) var(--ease-settle);
+}
+.encounter-chronicle-chevron.is-open {
+  transform: rotate(180deg);
+}
+.encounter-chronicle-body {
+  border-top: 1px solid var(--border-soft);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--accent-primary) 5%, transparent),
+      transparent 36%
+    ),
+    color-mix(in oklab, var(--bg-recessed) 88%, var(--bg-surface-1));
+  padding: 9px 12px 10px;
+}
+.encounter-chronicle-empty {
+  padding: var(--sp-2);
+  color: var(--text-faint);
+  font-size: var(--text-2xs);
+  font-style: italic;
+  text-align: center;
+}
+.encounter-timeline {
+  position: relative;
+  display: flex;
+  max-height: 190px;
+  flex-direction: column;
+  gap: 1px;
+  overflow-y: auto;
+  padding-left: 19px;
+}
+.encounter-timeline::before {
+  content: "";
+  position: absolute;
+  inset: 5px auto 5px 5px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in oklab, var(--accent-primary) 62%, var(--border-medium)) 8%,
+    color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium)) 92%,
+    transparent
+  );
+}
+.encounter-beat {
+  position: relative;
+  min-width: 0;
+}
+.encounter-beat::before {
+  content: "";
+  position: absolute;
+  top: 0.64rem;
+  left: -17px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid color-mix(in oklab, var(--accent-primary) 58%, var(--border-medium));
+  background: var(--bg-recessed);
+  transform: rotate(45deg);
+}
+.encounter-beat.has-round::before {
+  top: 1.66rem;
+  border-color: var(--accent-primary);
+  background: color-mix(in oklab, var(--accent-glow) 32%, var(--bg-recessed));
+}
+.encounter-timeline-round {
+  margin: 5px 0 2px;
+  color: var(--accent-text);
+  font-family: var(--font-numeric);
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.encounter-beat:first-child .encounter-timeline-round {
+  margin-top: 1px;
+}
+.encounter-feed-line {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 3px;
+}
+.encounter-feed-copy {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: var(--text-2xs);
+  line-height: 1.35;
+}
+
+@media (max-width: 639px) {
+  .encounter-dossier-rail {
+    gap: 6px;
+    min-height: 46px;
+    padding: 7px 8px;
+  }
+  .encounter-dossier-mark {
+    width: 27px;
+    height: 27px;
+  }
+  .encounter-dossier-round {
+    padding-right: 7px;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+  }
+  .btn.encounter-summary-end {
+    width: 28px;
+    padding-inline: 0;
+  }
+  .encounter-chronicle-toggle {
+    padding-inline: 8px;
+  }
+  .encounter-chronicle-title {
+    font-size: 0.76rem;
+    letter-spacing: 0.075em;
+  }
+  .encounter-chronicle-body {
+    padding-inline: 8px;
+  }
+}
+
+.monster-portrait-empty-cta {
+  flex-direction: column;
+  gap: var(--sp-1);
+  background: color-mix(in oklab, black 44%, transparent);
+  opacity: 1;
+}
+/* Custom-monster editor — one quiet form column and one identity-led detail. The
+   portrait is a visible action, then the mechanical facts follow in the same compact
+   label/control rhythm as the encounter cards. */
+.custom-monster-form {
+  display: flex;
+  width: min(100%, 28rem);
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+}
+.custom-monster-portrait-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--border-soft);
+}
+.custom-monster-portrait-heading strong {
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+.custom-monster-portrait-control,
+.custom-monster-portrait-button {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.custom-monster-portrait-control {
+  justify-content: space-between;
+}
+.custom-monster-portrait-button {
+  min-width: 0;
+  color: var(--text-secondary);
+  text-align: left;
+}
+.custom-monster-portrait-button:hover strong,
+.custom-monster-portrait-button:focus-visible strong {
+  color: var(--accent-primary);
+}
+.custom-monster-portrait-button > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.custom-monster-portrait-preview {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex: none;
+  overflow: hidden;
+}
+.custom-monster-portrait-preview .monster-portrait-empty-cta {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.78;
+  transition: opacity 150ms ease;
+}
+.custom-monster-portrait-button:hover .monster-portrait-empty-cta,
+.custom-monster-portrait-button:focus-visible .monster-portrait-empty-cta {
+  opacity: 1;
+}
+.custom-monster-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.custom-monster-field > span {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.custom-monster-name-field > span {
+  color: var(--text-primary);
+}
+.custom-monster-defenses {
+  border-block: 1px solid var(--border-soft);
+  padding-block: var(--sp-2);
+}
+.custom-monster-defenses summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+.custom-monster-defenses[open] summary {
+  margin-bottom: var(--sp-3);
+  color: var(--text-primary);
+}
+.custom-monster-defenses fieldset {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-3);
+  border: 0;
+  padding: 0;
+}
+.custom-monster-defenses legend {
+  margin-bottom: var(--sp-1);
+  color: var(--text-muted);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+}
+.custom-monster-defense-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+.custom-monster-form-actions {
+  display: flex;
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--border-soft);
+}
+.custom-monster-detail-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--border-soft);
+}
+.custom-monster-detail-copy {
+  min-width: 0;
+  padding-top: var(--sp-1);
+}
+.custom-monster-detail-copy h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+}
+.custom-monster-detail-copy > p {
+  margin: var(--sp-1) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+.custom-monster-detail-copy .custom-monster-detail-cr {
+  color: var(--text-muted);
+}

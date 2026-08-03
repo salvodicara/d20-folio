@@ -30,6 +30,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: false,
     saveAbility: "WIS",
+    conditionApplication: { options: ["charmed"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -78,6 +79,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "3d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "DEX",
+    damageOnSave: "half",
     area: true,
     source: "SRD",
   },
@@ -92,6 +94,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     effectTag: "control",
     saveAbility: "WIS",
+    conditionApplication: { options: ["charmed"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -185,6 +188,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "3d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "WIS",
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -198,6 +202,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     damageType: "radiant",
     damageDice: "1d4",
+    resolveOnCast: false,
     grants: [
       // PROSE-SWEPT 2026-06-10 — +1d4 Radiant on weapon hits for the duration.
       {
@@ -242,6 +247,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "STR",
+    area: true,
+    conditionApplication: { options: ["restrained"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -350,6 +357,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: false,
     healDice: "1",
+    healingMode: "consumable",
     effectTag: "heal",
     source: "SRD",
   },
@@ -400,6 +408,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "2d10",
     damageDicePerUpcast: "1d10",
     saveAbility: "DEX",
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -540,7 +549,13 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     // then the shard explodes — a DEX save vs 2d6 Cold (+1d6/slot above 1st).
     damageType: "piercing",
     damageDice: "1d10",
-    secondaryDamage: { dice: "2d6", damageType: "cold", dicePerUpcast: "1d6" },
+    secondaryDamage: {
+      dice: "2d6",
+      damageType: "cold",
+      dicePerUpcast: "1d6",
+      resolution: "save",
+      area: true,
+    },
     saveAbility: "DEX",
     attackType: "ranged",
     source: "SRD",
@@ -559,6 +574,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "2d10",
     damageDicePerUpcast: "1d10",
     saveAbility: "CON",
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -732,6 +748,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: true,
     effectTag: "control",
     saveAbility: "WIS",
+    area: true,
+    conditionApplication: { options: ["unconscious"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -759,6 +777,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "WIS",
+    conditionApplication: { options: ["prone", "incapacitated"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -775,6 +794,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "2d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "CON",
+    damageOnSave: "half",
     area: true,
     source: "SRD",
   },
@@ -815,6 +835,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     instantaneous: true,
     saveAbility: "CON",
+    area: true,
+    conditionApplication: { options: ["blinded"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -872,6 +894,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "1d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "STR",
+    conditionApplication: { options: ["restrained"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -888,6 +911,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: false,
     saveAbility: "DEX",
+    area: true,
+    conditionApplication: { options: ["prone"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -950,6 +975,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "2d8",
     damageDicePerUpcast: "1d8",
     attackType: "ranged",
+    saveAbility: "CON",
+    conditionApplication: { options: ["poisoned"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -965,6 +992,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "1d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "CON",
+    damageResolution: "automatic",
     source: "SRD",
   },
   {

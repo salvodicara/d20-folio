@@ -979,6 +979,8 @@ function sessionToState(s: SessionState): Record<string, unknown> {
   if (Object.keys(currency).length > 0) state.currency = currency;
 
   if (s.concentration !== "") state.concentration = s.concentration;
+  if (s.concentration !== "" && s.concentrationCastLevel !== undefined)
+    state.concentrationCastLevel = s.concentrationCastLevel;
   if (s.initiative !== "") state.initiative = s.initiative;
   if (s.conditions.length > 0) state.conditions = s.conditions;
   // RA-12 — the Hide action's find-DC (meaningful only alongside `invisible`).
@@ -994,6 +996,8 @@ function sessionToState(s: SessionState): Record<string, unknown> {
   if (s.logEntries.length > 0) state.log = s.logEntries.map(logToState);
 
   if (isNonEmptyArray(s.activeFeatures)) state.activeFeatures = s.activeFeatures;
+  if (isNonEmptyRecord(s.activeSpellCastLevels))
+    state.activeSpellCastLevels = s.activeSpellCastLevels;
   if (isNonEmptyRecord(s.effectTimers)) state.effectTimers = s.effectTimers;
   if (isNonEmptyRecord(s.grantBundleChoices))
     state.grantBundleChoices = s.grantBundleChoices;
@@ -1047,6 +1051,14 @@ function stateToSession(state: Record<string, unknown>): Partial<SessionState> {
   // Boundary read-normalization (golden rule 10): a legacy bare NAME (or any non-id,
   // non-`custom:` value) is conformed so it can never reach the strict resolver.
   s.concentration = normalizeStoredConcentration(state.concentration);
+  if (
+    s.concentration &&
+    typeof state.concentrationCastLevel === "number" &&
+    Number.isFinite(state.concentrationCastLevel) &&
+    state.concentrationCastLevel > 0
+  ) {
+    s.concentrationCastLevel = Math.round(state.concentrationCastLevel);
+  }
   s.initiative = asString(state.initiative);
   s.conditions = Array.isArray(state.conditions)
     ? state.conditions.filter((c): c is string => typeof c === "string")
@@ -1076,6 +1088,15 @@ function stateToSession(state: Record<string, unknown>): Partial<SessionState> {
   if (Array.isArray(state.activeFeatures)) {
     s.activeFeatures = state.activeFeatures.filter(
       (a): a is string => typeof a === "string"
+    );
+  }
+  if (isRecord(state.activeSpellCastLevels)) {
+    s.activeSpellCastLevels = Object.fromEntries(
+      Object.entries(state.activeSpellCastLevels).flatMap(([key, value]) =>
+        typeof value === "number" && Number.isFinite(value) && value > 0
+          ? [[key, Math.round(value)]]
+          : []
+      )
     );
   }
   if (isRecord(state.effectTimers)) {

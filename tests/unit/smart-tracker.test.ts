@@ -11,6 +11,7 @@ import { buildDevScenario, buildScenario } from "@/lib/dev-scenarios";
 import { consumableActionSlot } from "@/lib/srd-resolve";
 import { combatVerdict } from "@/features/character/center/tabs/combat-card-helpers";
 import { spellInstanceCount } from "@/lib/utils";
+import { concentrationValue } from "@/lib/concentration";
 import type { CharacterDoc } from "@/types/character";
 
 // ─── Minimal character fixture ────────────────────────────────────────────────
@@ -575,6 +576,15 @@ describe("resolveActions — base actions", () => {
     expect(grapple?.summary.saveAbility).toBe("STR");
     expect(shove?.summary.saveDC).toBe(14);
     expect(shove?.summary.saveAbility).toBe("STR");
+    expect(grapple?.summary.conditionApplication).toEqual({
+      options: ["grappled"],
+      on: "failed-save",
+    });
+    expect(shove?.summary.conditionApplication).toEqual({
+      options: ["prone"],
+      max: 1,
+      on: "failed-save",
+    });
     // The wrong-edition "contest" wording is gone from both cards.
     expect(grapple?.summary.effect ?? "").not.toMatch(/contest/i);
     expect(shove?.summary.effect ?? "").not.toMatch(/contest/i);
@@ -1438,6 +1448,10 @@ describe("resolveActions — cross-feature costTracker", () => {
     expect(stun).toBeDefined();
     expect(stun?.costTracker).toBe("monk-focus");
     expect(stun?.trackerCost).toBe(1); // explicit fixed cost, no pool prompt
+    expect(stun?.summary.conditionApplication).toEqual({
+      options: ["stunned"],
+      on: "failed-save",
+    });
   });
 });
 
@@ -1471,6 +1485,8 @@ describe("resolveActions — S11 save-based attacks (G1/G14/G15-DC)", () => {
     expect(l1?.summary.saveDC).toBe(13);
     expect(l1?.summary.damage).toBe("1d10");
     expect(l1?.summary.damageType).toBe("fire");
+    expect(l1?.summary.damageOnSave).toBe("half");
+    expect(l1?.summary.area).toBe(true);
     // L5: PB +3 → DC 14; dice step up to 2d10 (the next character-level threshold).
     const l5 = localizeActions(dragonborn(5, "white"), "en").find(
       (a) => a.id === "race:dragonborn:breath-weapon-action"
@@ -1513,6 +1529,7 @@ describe("resolveActions — S11 save-based attacks (G1/G14/G15-DC)", () => {
     expect(l2?.summary.damage).toBe("1d8+3");
     expect(l2?.summary.damageTypes).toEqual(["necrotic", "radiant"]);
     expect(l2?.summary.multiDamageTypeFlavor).toBe("choice");
+    expect(l2?.summary.damageOnSave).toBe("half");
     // S11b heal-or-damage mode: the SAME total surfaces as a heal chip + apply.
     expect(l2?.summary.healing).toBe("1d8+3");
     expect(l2?.summary.healApply).toEqual({ dice: "1d8", bonus: 3 });
@@ -1733,7 +1750,12 @@ describe("resolveActions — S12b multi-instance spell damage (Magic Missile / S
     );
     if (!knife) throw new Error("ice-knife action not found");
     expect(knife.summary.damageType).toBe("piercing");
-    expect(knife.summary.secondaryDamage).toEqual({ dice: "2d6", damageType: "cold" });
+    expect(knife.summary.secondaryDamage).toEqual({
+      dice: "2d6",
+      damageType: "cold",
+      resolution: "save",
+      area: true,
+    });
     expect(combatVerdict(knife, t)).toBe("1d10 pie + 2d6 col");
   });
 
@@ -1808,5 +1830,60 @@ describe("resolveActions — G24 spell-area recurrence cadence (Moonbeam / Spiri
       (a) => a.spellId === "fireball"
     );
     expect(fb?.summary.recurrence).toBeUndefined();
+  });
+
+  it("exposes an active spell use without a second slot and preserves upcast math", () => {
+    const char = makeCleric("spirit-guardians");
+    char.session.concentration = concentrationValue("spirit-guardians");
+    char.session.concentrationCastLevel = 5;
+    const active = resolveActions(char).find(
+      (action) => action.id === "spell-spirit-guardians-recurring"
+    );
+    expect(active).toMatchObject({
+      type: "free",
+      costsSlot: false,
+      concentration: false,
+      summary: { damage: "5d8", recurringUse: true },
+    });
+  });
+
+  it("Vampiric Touch reuses a Magic Action while concentration lasts", () => {
+    const char = makeCleric("vampiric-touch");
+    char.session.concentration = concentrationValue("vampiric-touch");
+    const active = resolveActions(char).find(
+      (action) => action.id === "spell-vampiric-touch-recurring"
+    );
+    expect(active).toMatchObject({
+      type: "action",
+      costsSlot: false,
+      summary: {
+        damage: "3d6",
+        selfHealingFromDamage: { fraction: 0.5 },
+        recurringUse: true,
+      },
+    });
+  });
+
+  it("Spiritual Weapon repeats as a bonus-action attack without another slot", () => {
+    const char = makeCleric("spiritual-weapon");
+    char.session.concentration = concentrationValue("spiritual-weapon");
+    char.session.concentrationCastLevel = 4;
+    const active = resolveActions(char).find(
+      (action) => action.id === "spell-spiritual-weapon-recurring"
+    );
+    expect(active).toMatchObject({
+      type: "bonus",
+      costsSlot: false,
+      summary: { damage: "3d8", recurringUse: true },
+    });
+    expect(active?.summary.attackBonus).toBeTypeOf("number");
+  });
+
+  it("a persistent zone waits for its table-declared trigger", () => {
+    const char = makeCleric("spirit-guardians");
+    const cast = resolveActions(char).find(
+      (action) => action.id === "spell-spirit-guardians"
+    );
+    expect(cast?.summary.resolveOnCast).toBe(false);
   });
 });

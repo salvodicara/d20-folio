@@ -74,6 +74,9 @@ function combatStateWriteData(state: CombatState): Record<string, unknown> {
     },
     round: state.round,
     recentActions: state.recentActions,
+    ...(state.appliedEncounterEffects
+      ? { appliedEncounterEffects: state.appliedEncounterEffects }
+      : {}),
     updatedAt: serverTimestamp(),
   };
 }
@@ -89,6 +92,7 @@ function parseCombatState(data: Record<string, unknown>): CombatState {
   ) as Record<string, unknown>;
   const num = (v: unknown, fallback: number): number =>
     typeof v === "number" && Number.isFinite(v) ? v : fallback;
+  const applied = parseAppliedEncounterEffects(data.appliedEncounterEffects);
   return {
     hp: { current: num(hp.current, 0), temp: num(hp.temp, 0) },
     conditions: Array.isArray(data.conditions)
@@ -100,7 +104,20 @@ function parseCombatState(data: Record<string, unknown>): CombatState {
     // round 1 — a natural default, never a permanent read-shim (rule 10).
     round: num(data.round, 1),
     recentActions: parseRecentActions(data.recentActions),
+    ...(applied ? { appliedEncounterEffects: applied } : {}),
   };
+}
+
+function parseAppliedEncounterEffects(
+  value: unknown
+): CombatState["appliedEncounterEffects"] {
+  if (typeof value !== "object" || value === null) return undefined;
+  const row = value as Record<string, unknown>;
+  if (typeof row.epoch !== "number" || !Number.isFinite(row.epoch)) return undefined;
+  const ids = Array.isArray(row.ids)
+    ? row.ids.filter((id): id is string => typeof id === "string")
+    : [];
+  return { epoch: row.epoch, ids };
 }
 
 /** Defensively parse the `recentActions` ring (ids + numbers only; drop any malformed
@@ -130,17 +147,42 @@ function parseRecentActions(value: unknown): CombatState["recentActions"] {
     const riders = Array.isArray(a.riders)
       ? a.riders.filter((r): r is string => typeof r === "string")
       : [];
+    const action = parseLocText(a.action);
     out.push({
       id: a.id,
       targetIds,
       outcome,
       round: typeof a.round === "number" && Number.isFinite(a.round) ? a.round : 1,
+      ...(action ? { action } : {}),
       ...(instances !== undefined ? { instances } : {}),
       ...(save !== undefined ? { save } : {}),
       ...(riders.length > 0 ? { riders } : {}),
     });
   }
   return out;
+}
+
+/** Minimal defensive reader for the JSON-plain localizable action reference. */
+function parseLocText(value: unknown): import("@/lib/loc-text").LocText | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const row = value as Record<string, unknown>;
+  if (typeof row.custom === "string") return { custom: row.custom };
+  if (typeof row.ui === "string") return { ui: row.ui };
+  if (typeof row.srd === "object" && row.srd !== null) {
+    const srd = row.srd as Record<string, unknown>;
+    if (
+      typeof srd.kind === "string" &&
+      typeof srd.key === "string" &&
+      typeof srd.field === "string"
+    )
+      return { srd } as import("@/lib/loc-text").LocText;
+  }
+  if (typeof row.lit === "object" && row.lit !== null) {
+    const lit = row.lit as Record<string, unknown>;
+    const { en, it } = lit;
+    if (typeof en === "string" && typeof it === "string") return { lit: { en, it } };
+  }
+  return undefined;
 }
 
 /**

@@ -72,6 +72,7 @@ export function GlobalCombatMount(): null {
   const pendingTurn = useCombatStatusStore((s) => s.pendingTurn);
   const clearPendingTurn = useCombatStatusStore((s) => s.clearPendingTurn);
   const [campaigns, setCampaigns] = useState<CampaignDoc[]>([]);
+  const deliveringEffects = useRef<string | null>(null);
   // The OPTIMISTIC open campaign (the hub the viewer is on, if any) — `null` off the hub.
   // Overlaid below so the pip reflects the viewer's OWN start/end/begin-turns in the same
   // tick, not ~2 s later when the autosave-debounced write echoes (the pip's "no echo lag").
@@ -97,7 +98,7 @@ export function GlobalCombatMount(): null {
   );
   // DEV ONLY — the combat-chronicle e2e/dev seam. When `d20-dev-combat-chronicle=1` is
   // set before boot, publish a ready-made own-PC encounter status (the evoker + three
-  // monsters) so the OPEN `scn-evoker-wizard` sheet's AttackDeclaration banner renders for
+  // monsters) so the OPEN `scn-evoker-wizard` sheet's CombatResolver banner renders for
   // real (`useSheetCombat` scopes on `characterId`). Takes precedence over the live
   // resolution + the pip seed below.
   const devCombat = useMemo(
@@ -184,6 +185,37 @@ export function GlobalCombatMount(): null {
       round: live.encounter.round,
     };
   }, [devCombat, devPip, devStatus, uid, primaryId, primaryIsDm, live]);
+
+  // PC-targeted healing/damage/conditions are delivered through the encounter because
+  // a player must never write another user's character doc. The target owner applies the
+  // queued ids once to their own combat/state; the persisted receipt makes reload/offline
+  // replay idempotent.
+  useEffect(() => {
+    if (!uid || !status || !live || live.myMaxHp <= 0 || live.myCombatState === undefined)
+      return;
+    const pending = (live.encounter.memberEffects ?? []).filter(
+      (effect) => effect.targetId === status.myId
+    );
+    if (pending.length === 0) return;
+    const key = `${live.encounter.epoch}:${pending.map((effect) => effect.id).join(",")}`;
+    if (deliveringEffects.current === key) return;
+    deliveringEffects.current = key;
+    void import("@/features/campaigns/deliver-member-effects")
+      .then(({ deliverMemberEffects }) =>
+        deliverMemberEffects({
+          uid,
+          characterId: status.characterId,
+          epoch: live.encounter.epoch,
+          effects: pending,
+          maxHp: live.myMaxHp,
+          combatState: live.myCombatState ?? null,
+        })
+      )
+      .catch(() => {
+        deliveringEffects.current = null;
+        showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+      });
+  }, [uid, status, live, showToast, t]);
 
   // The pip model — the dev seed wins; otherwise every active encounter reduced to a
   // PipState, each row carrying ITS OWN doc-derived roll-state.

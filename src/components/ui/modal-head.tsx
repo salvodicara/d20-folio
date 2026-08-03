@@ -15,6 +15,8 @@
  *   command palette routes its ↑↓/Enter `onKeyDown` here).
  * - `ModalScrollColumn` — the same scroll region for `ModalShell`'s tall flex card
  *   (`flex-1` instead of `.modal-body`'s fixed max-height).
+ * - `ModalStage` — the fixed flex viewport for compound pickers/editors that own a
+ *   sanctioned `ModalScroll` deeper in their shared body.
  * - `ModalFoot` — the `.modal-foot` action row.
  */
 
@@ -183,6 +185,28 @@ export function ModalScrollColumn({
     >
       {children}
     </ModalScroll>
+  );
+}
+
+/**
+ * ModalStage — the only non-scrolling body tier. It exists for compound modal
+ * applications (picker search/facets + a nested ModalScroll, crop canvas + controls)
+ * whose inner shared component already owns the one scroll region. Simple forms and
+ * prose use ModalBody/ModalScrollColumn instead; a source guard allowlists every Stage
+ * host so it cannot become a generic escape hatch around the frame-margin law.
+ */
+export function ModalStage({
+  className,
+  children,
+  ...rest
+}: ComponentPropsWithoutRef<"div">) {
+  return (
+    <div
+      className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}
+      {...rest}
+    >
+      {children}
+    </div>
   );
 }
 

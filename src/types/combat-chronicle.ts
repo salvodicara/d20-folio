@@ -25,6 +25,8 @@
  * so storing them would be redundant state (rule 1 — declare the least).
  */
 
+import type { LocText } from "@/lib/loc-text";
+
 /** Shared fields every chronicle event carries. */
 interface ChronicleEventBase {
   /**
@@ -56,12 +58,16 @@ export type CombatChronicleEvent =
       targetId: string;
       /** Incoming damage (may exceed HP lost when temp HP absorbed some). */
       amount: number;
+      /** Portion of `amount` absorbed by temporary HP, for exact one-tap reversal. */
+      tempAbsorbed?: number;
       /** The target's HP AFTER the hit (the "{current}/{max}" readout). */
       current: number;
       max: number;
       /** The attributed attacker's combatant id — set by the one-tap picker; absent =
        *  unattributed. */
       attackerId?: string;
+      /** Exact declared action when auto-attributed; absent on legacy/manual beats. */
+      action?: LocText;
       /** The DM tapped "skip": attribution resolved as deliberately unattributed (the
        *  picker hides without ever guessing a "who"). */
       attackerSkipped?: boolean;
@@ -84,7 +90,12 @@ export type CombatChronicleEvent =
    * the player explicitly tapped — golden rule 21, never inferred). `attackerId` is the
    * declaring PC, `targetId` the enemy they named.
    */
-  | ({ kind: "attack-miss"; attackerId: string; targetId: string } & ChronicleEventBase)
+  | ({
+      kind: "attack-miss";
+      attackerId: string;
+      targetId: string;
+      action?: LocText;
+    } & ChronicleEventBase)
   /**
    * A player's DECLARED MULTI-TARGET action FUSED with the several HP drops the DM
    * applied across the struck foes (auto-narrated combat, Phase 2 — Magic Missile's
@@ -105,6 +116,7 @@ export type CombatChronicleEvent =
       /** Per-struck-target REAL DM damage, declared order; ONLY targets that took a
        *  bound drop. Empty ⇒ the MISS line (or a hit awaiting HP, which emits no line). */
       amounts: ReadonlyArray<{ targetId: string; amount: number }>;
+      action?: LocText;
     } & ChronicleEventBase)
   /**
    * A player's DECLARED AREA SAVE-for-half spell (Fireball class — auto-narrated combat,
@@ -128,6 +140,7 @@ export type CombatChronicleEvent =
       amounts: ReadonlyArray<{ targetId: string; amount: number }>;
       /** Declared targets the DM left un-dropped — full save / no damage, declared order. */
       resisted: string[];
+      action?: LocText;
     } & ChronicleEventBase)
   /**
    * A condition was gained. `attackerId` is set ONLY by the reconciliation layer when a
@@ -140,6 +153,7 @@ export type CombatChronicleEvent =
       targetId: string;
       conditionId: string;
       attackerId?: string;
+      action?: LocText;
     } & ChronicleEventBase)
   /** A condition was lost / removed. */
   | ({

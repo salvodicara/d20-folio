@@ -33,6 +33,7 @@ import type {
 } from "@/types/campaign";
 import type { CreatureType } from "@/data/types";
 import type { PortraitCrop } from "@/types/character";
+import type { CombatDefenseSnapshot } from "@/types/campaign";
 
 // ─── Seeding from member references ─────────────────────────────────────────
 
@@ -140,6 +141,39 @@ function nextMonsterId(combatants: ReadonlyArray<EncounterCombatant>): string {
   return `monster-${max + 1}`;
 }
 
+/**
+ * Conform the retired monster-group representation into first-class creature instances.
+ * Pure and idempotent: current encounters (one HP value per monster) are returned by
+ * reference; a legacy group keeps its original id for the first creature and receives
+ * deterministic `~N` ids for the rest. Frozen order expands in place, preserving the
+ * group's initiative position and current-turn pointer.
+ */
+export function conformEncounterCreatures(state: EncounterState): EncounterState {
+  if (!state.combatants.some((c) => c.kind === "monster" && c.tokens.length > 1)) {
+    return state;
+  }
+  const replacements = new Map<string, string[]>();
+  const combatants: EncounterCombatant[] = state.combatants.flatMap((combatant) => {
+    if (combatant.kind !== "monster" || combatant.tokens.length <= 1) return [combatant];
+    const groupId = combatant.groupId ?? combatant.id;
+    const size = combatant.tokens.length;
+    const ids = combatant.tokens.map((_, index) =>
+      index === 0 ? combatant.id : `${combatant.id}~${index + 1}`
+    );
+    replacements.set(combatant.id, ids);
+    return combatant.tokens.map((hp, index) => ({
+      ...combatant,
+      id: index === 0 ? combatant.id : `${combatant.id}~${index + 1}`,
+      tokens: [hp],
+      groupId,
+      groupIndex: index + 1,
+      groupSize: size,
+    }));
+  });
+  const order = state.order?.flatMap((id) => replacements.get(id) ?? [id]);
+  return { ...state, combatants, ...(order ? { order } : {}) };
+}
+
 /** A DM-typed monster/NPC group to add to the encounter. */
 export interface MonsterInput {
   /** User content — the monster/NPC name the DM types. */
@@ -164,6 +198,15 @@ export interface MonsterInput {
    * resolve canonical art from `srdId` at render time and leave these fields absent. */
   portraitUrl?: string;
   portraitCrop?: PortraitCrop;
+  /** Bestiary/custom defense defaults copied onto each targetable creature. */
+  defenses?: CombatDefenseSnapshot;
+}
+
+/** Disambiguated instance label without mutating the DM-authored base name. */
+export function monsterInstanceName(monster: EncounterMonster): string {
+  return monster.groupSize && monster.groupSize > 1 && monster.groupIndex
+    ? `${monster.name} ${monster.groupIndex}`
+    : monster.name;
 }
 
 /**
@@ -176,15 +219,14 @@ export function addMonster(state: EncounterState, input: MonsterInput): Encounte
   const maxHp = Math.max(0, Math.round(input.maxHp));
   const notes = input.notes?.trim();
   const srdId = input.srdId?.trim();
-  const monster: EncounterMonster = {
+  const groupId = nextMonsterId(state.combatants);
+  const base: Omit<EncounterMonster, "id" | "tokens"> = {
     kind: "monster",
-    id: nextMonsterId(state.combatants),
     name: input.name,
     ac: input.ac,
     initiative: input.initiative === null ? null : Math.round(input.initiative),
     conditions: [],
     maxHp,
-    tokens: Array.from({ length: count }, () => maxHp),
     // Only store `notes`/`srdId`/`xp` when meaningful — keep the doc minimal (no
     // empty-string field, `stripUndefined`-independent). The `xp` guard is
     // EXISTENCE-based (`!= null` + finite + `≥ 0`), never truthy: a genuine harmless
@@ -203,15 +245,26 @@ export function addMonster(state: EncounterState, input: MonsterInput): Encounte
     ...(input.portraitUrl && input.portraitCrop
       ? { portraitCrop: input.portraitCrop }
       : {}),
+    ...(input.defenses ? { defenses: input.defenses } : {}),
   };
-  const combatants = [...state.combatants, monster];
+  const monsters: EncounterMonster[] = Array.from({ length: count }, (_, index) => ({
+    ...base,
+    id: index === 0 ? groupId : `${groupId}~${index + 1}`,
+    tokens: [maxHp],
+    ...(count > 1 ? { groupId, groupIndex: index + 1, groupSize: count } : {}),
+  }));
+  const combatants = [...state.combatants, ...monsters];
   // REINFORCEMENT auto-join: once the order is FROZEN (turns have begun), a monster added
   // mid-combat must enter the turn order or it would never act — append its id so it is
   // never orphaned. (The feature layer may re-freeze to slot it by initiative; correctness
   // over auto-slot polish here.) Before turns begin (no/empty order) the order is set fresh
   // at Begin-turns, so it is left untouched.
   if (state.order && state.order.length > 0) {
-    return { ...state, combatants, order: [...state.order, monster.id] };
+    return {
+      ...state,
+      combatants,
+      order: [...state.order, ...monsters.map((m) => m.id)],
+    };
   }
   return { ...state, combatants };
 }
@@ -363,6 +416,23 @@ export function setHp(
   );
 }
 
+/** Set a monster instance's Temporary HP. Values are finite, integral and non-negative;
+ * PCs remain authoritative in their combat-state subdocument and are a no-op here. */
+export function setMonsterTempHp(
+  state: EncounterState,
+  id: string,
+  value: number
+): EncounterState {
+  const next = Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
+  return mapCombatant(state, id, (combatant) => {
+    if (combatant.kind === "pc") return combatant;
+    if (next > 0) return { ...combatant, tempHp: next };
+    return Object.fromEntries(
+      Object.entries(combatant).filter(([key]) => key !== "tempHp")
+    ) as typeof combatant;
+  });
+}
+
 /** Immutably write `clampHp(base + delta, max)` into `tokens[index]` (out-of-range
  *  index is a no-op — returns the same array). */
 function setToken(
@@ -394,6 +464,28 @@ export function toggleCondition(
             : [...c.conditions, conditionId],
         }
   );
+}
+
+/** Set a condition on a MONSTER to an explicit state. Unlike the UI-facing toggle this
+ * is idempotent, so a Firestore transaction retry can never invert the requested result.
+ * A PC remains a no-op because its conditions live in its combat-state subdocument. */
+export function setMonsterCondition(
+  state: EncounterState,
+  id: string,
+  conditionId: string,
+  active: boolean
+): EncounterState {
+  return mapCombatant(state, id, (c) => {
+    if (c.kind === "pc") return c;
+    const present = c.conditions.includes(conditionId);
+    if (present === active) return c;
+    return {
+      ...c,
+      conditions: active
+        ? [...c.conditions, conditionId]
+        : c.conditions.filter((value) => value !== conditionId),
+    };
+  });
 }
 
 /** Set a MONSTER's DM free-text notes. Whitespace-only clears the field (kept minimal —

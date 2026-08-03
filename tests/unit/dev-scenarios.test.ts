@@ -78,6 +78,19 @@ describe("dev-scenarios — the mechanics surface through resolveActions", () =>
     expect(word?.summary.healing).toBe("2d4+7");
   });
 
+  it("Life Cleric L17: linked self-healing and maximized healing are structured", () => {
+    const spec = DEV_SCENARIOS["life-cleric"];
+    if (!spec) throw new Error("life-cleric scenario missing");
+    const cure = resolveActions(buildScenario({ ...spec, level: 17 })).find(
+      (action) => action.spellId === "cure-wounds"
+    );
+    expect(cure?.summary.healingMode).toBe("maximum");
+    expect(cure?.summary.selfHealingOnOther).toEqual({
+      amount: 3,
+      perCastLevel: 1,
+    });
+  });
+
   it("Open Hand Monk: has an Unarmed Strike attack row (Martial Arts die + DEX)", () => {
     // A Monk's Unarmed Strike is their main attack, but no carried weapon produces
     // a row — without the `unarmed-strike-die` consumer a Monk had NO attack row in

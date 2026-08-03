@@ -5,7 +5,14 @@
  * stored in Firestore.
  */
 
-import type { CreatureType, CurrencyUnit } from "@/data/types";
+import type {
+  CreatureType,
+  CurrencyUnit,
+  DamageType,
+  MonsterConditionImmunity,
+  QualifiedDefense,
+  QualifiedDefenseNote,
+} from "@/data/types";
 import type { PortraitCrop, ClassEntry } from "@/types/character";
 import type { NonEmptyString } from "@/lib/non-empty-string";
 import type { RaceId } from "@/types/ids";
@@ -74,6 +81,19 @@ export interface MemberCharacterSnapshot {
  */
 export type EncounterCombatant = EncounterPc | EncounterMonster;
 
+/** Serializable defense facts copied when a monster template enters an encounter.
+ * They are encounter-owned defaults: the DM may override the applied result, and a
+ * later bestiary correction never rewrites an active fight. */
+export interface CombatDefenseSnapshot {
+  damageVulnerabilities?: DamageType[];
+  damageResistances?: DamageType[];
+  damageImmunities?: DamageType[];
+  conditionImmunities?: MonsterConditionImmunity[];
+  /** Conditional defenses are surfaced for table adjudication; they are never
+   * silently applied without the table declaring that the qualifier is satisfied. */
+  qualifiedDefenses?: Array<QualifiedDefense | QualifiedDefenseNote>;
+}
+
 /** Fields shared by every combatant regardless of kind. */
 interface EncounterCombatantBase {
   /** Stable per-encounter id (PC: `pc-<memberUid>`; monster: `monster-<n>`). */
@@ -102,11 +122,15 @@ export interface EncounterPc extends EncounterCombatantBase {
 }
 
 /**
- * A monster/NPC group the DM types. UNLIKE a PC, this IS genuine encounter-owned
- * state — it carries its own name / AC / initiative / conditions / maxHp. `tokens` is
- * the per-token current HP over the shared `maxHp`, so "Goblin ×3" is one combatant
- * with `tokens: [7, 7, 0]` (the third dead). A single monster is just a one-element
- * `tokens` array.
+ * A monster/NPC the DM adds. UNLIKE a PC, this IS genuine encounter-owned state — it
+ * carries its own name / AC / initiative / conditions / maxHp. Every current combatant
+ * is one targetable creature and therefore owns exactly one HP value in `tokens`.
+ *
+ * `tokens` remains an array for backward compatibility with encounters created before
+ * the instance model. The campaign read boundary splits a legacy `tokens.length > 1`
+ * group into individual combatants before any feature consumes it; current writers only
+ * emit one-element arrays. Keeping the field avoids an unsafe live-data flag day while
+ * removing the group abstraction from the product model.
  */
 export interface EncounterMonster extends EncounterCombatantBase {
   kind: "monster";
@@ -135,6 +159,18 @@ export interface EncounterMonster extends EncounterCombatantBase {
   maxHp: number;
   /** Per-token current HP; each clamped to `[0, maxHp]`. A token at 0 is dead. */
   tokens: number[];
+  /** Temporary HP for this creature instance. Optional keeps live encounters additive;
+   * absent is exactly zero. Temporary HP never stack (the greater value wins). */
+  tempHp?: number;
+  /** Stable identity of the batch this creature was added with. Creatures in the same
+   * batch share the DM-entered initiative by default but remain independently targetable,
+   * damageable, conditionable, renameable, and removable. Absent for a lone creature and
+   * old one-creature records. */
+  groupId?: string;
+  /** One-based label within `groupId` (Goblin 1, Goblin 2, …). */
+  groupIndex?: number;
+  /** Original batch size, used only to disambiguate otherwise-identical display names. */
+  groupSize?: number;
   /**
    * DM-only "reveal exact HP" flag (CARD-5). By default players see only a qualitative
    * HP BAND (Healthy / Bloodied / Near Death) derived from current/max — never the
@@ -181,6 +217,8 @@ export interface EncounterMonster extends EncounterCombatantBase {
    */
   portraitUrl?: string;
   portraitCrop?: PortraitCrop;
+  /** Defenses seeded from the statblock/custom template for deterministic damage math. */
+  defenses?: CombatDefenseSnapshot;
 }
 
 /**
@@ -215,6 +253,8 @@ export interface CustomMonster {
    *  its crop frame; absent → the tinted-initial fallback. Kept WITH the template. */
   portraitUrl?: string;
   portraitCrop?: PortraitCrop;
+  /** Optional homebrew defenses; omitted means none. Stable ids only. */
+  defenses?: CombatDefenseSnapshot;
 }
 
 /**
@@ -281,7 +321,25 @@ export interface EncounterState {
    * firestore.rules keep the whole `encounter` structure DM-write-only).
    */
   events?: CombatChronicleEvent[];
+  /** Reviewed effects aimed at a PC. The campaign carries delivery; the owning
+   * character client applies each id once to its authorized combat/state doc. */
+  memberEffects?: MemberCombatEffect[];
 }
+
+export type MemberCombatEffect =
+  | {
+      id: string;
+      targetId: string;
+      kind: "damage" | "healing" | "temp-hp";
+      amount: number;
+    }
+  | {
+      id: string;
+      targetId: string;
+      kind: "condition";
+      conditionId: string;
+      active: boolean;
+    };
 
 export interface CampaignDoc {
   id: string;

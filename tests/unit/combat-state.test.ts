@@ -28,6 +28,7 @@ import {
   setInitiativeAbsolute,
   pushRecentAttack,
   RECENT_ATTACK_CAP,
+  reduceMemberCombatEffects,
 } from "@/lib/combat-state";
 
 function session(overrides: Partial<SessionState> = {}): SessionState {
@@ -286,6 +287,31 @@ describe("combat-state — reduceHpDelta (the transactional HP read-modify-write
     expect(reduceHpDelta(baseCombat, { kind: "heal", amount: 2 }, 30).deathSaves).toBe(
       baseCombat.deathSaves
     );
+  });
+});
+
+describe("combat-state — campaign member-effect delivery", () => {
+  it("applies healing, Temporary HP, and a cure once, including after a replay", () => {
+    const effects = [
+      { id: "9:0", kind: "healing" as const, targetId: "pc-a", amount: 7 },
+      { id: "9:2", kind: "temp-hp" as const, targetId: "pc-a", amount: 9 },
+      {
+        id: "9:1",
+        kind: "condition" as const,
+        targetId: "pc-a",
+        conditionId: "poisoned",
+        active: false,
+      },
+    ];
+    const once = reduceMemberCombatEffects(baseCombat, 9, effects, 30);
+    expect(once.hp.current).toBe(25);
+    expect(once.hp.temp).toBe(9);
+    expect(once.conditions).toEqual([]);
+    expect(once.appliedEncounterEffects).toEqual({
+      epoch: 9,
+      ids: ["9:0", "9:2", "9:1"],
+    });
+    expect(reduceMemberCombatEffects(once, 9, effects, 30)).toBe(once);
   });
 });
 

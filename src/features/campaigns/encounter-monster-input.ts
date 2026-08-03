@@ -13,7 +13,7 @@ import { localizeSrd } from "@/i18n/resolver";
 import { monsterXp, xpForCr } from "@/lib/monster";
 import type { MonsterStatBlock } from "@/data/types";
 import type { Locale } from "@/lib/locale";
-import type { CustomMonster } from "@/types/campaign";
+import type { CombatDefenseSnapshot, CustomMonster } from "@/types/campaign";
 import type { MonsterInput } from "./encounter";
 
 /**
@@ -33,6 +33,15 @@ export function toMonsterInput(
   locale: Locale,
   count: number
 ): MonsterInput {
+  const defenses: CombatDefenseSnapshot = {
+    ...(m.damageVulnerabilities
+      ? { damageVulnerabilities: [...m.damageVulnerabilities] }
+      : {}),
+    ...(m.damageResistances ? { damageResistances: [...m.damageResistances] } : {}),
+    ...(m.damageImmunities ? { damageImmunities: [...m.damageImmunities] } : {}),
+    ...(m.conditionImmunities ? { conditionImmunities: [...m.conditionImmunities] } : {}),
+    ...(m.qualifiedDefenses ? { qualifiedDefenses: [...m.qualifiedDefenses] } : {}),
+  };
   return {
     name: localizeSrd("monster", m.id, "name", locale),
     ac: m.ac,
@@ -42,6 +51,7 @@ export function toMonsterInput(
     srdId: m.id,
     xp: monsterXp(m),
     creatureType: m.type,
+    ...(Object.keys(defenses).length > 0 ? { defenses } : {}),
   };
 }
 
@@ -69,6 +79,7 @@ export function customMonsterToInput(
     ...(cr ? { xp: xpForCr(Number(cr)) } : {}),
     ...(notes ? { notes } : {}),
     ...(entry.creatureType ? { creatureType: entry.creatureType } : {}),
+    ...(entry.defenses ? { defenses: entry.defenses } : {}),
     ...(entry.portraitUrl
       ? {
           portraitUrl: entry.portraitUrl,

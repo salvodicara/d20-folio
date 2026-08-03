@@ -1095,7 +1095,7 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
 // ─── Dev-bypass COMBAT-CHRONICLE demo seams (drive the REAL surfaces end-to-end) ────
 //
 // Two independent dev-only seams that let the combat-chronicle e2e (and a local dev
-// walk-through) exercise the ACTUAL in-app surfaces — the sheet's AttackDeclaration
+// walk-through) exercise the ACTUAL in-app surfaces — the sheet's CombatResolver
 // banner and the DM hub's reconciled feed — with NO Firestore. Both are read only under
 // `DEV_BYPASS_AUTH`, so this whole module (and these) are tree-shaken from production.
 
@@ -1106,7 +1106,7 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
  * `scn-evoker-wizard` sheet ({@link "@/features/character/center/turn-state".useSheetCombat}
  * matches `characterId`) into a LIVE own-turn encounter with THREE named monster rows. That
  * is exactly the state the in-encounter {@link
- * "@/features/character/center/AttackDeclaration".AttackDeclaration} banner needs to render
+ * "@/features/character/center/CombatResolver".CombatResolver} banner needs to render
  * for real: a weapon swing opens the single-target hit/miss picker, Magic Missile the
  * multi-select (3 targets), Fireball the area-save "Resolve". `null` when the flag is unset.
  *
@@ -1118,12 +1118,65 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
   if (window.localStorage.getItem("d20-dev-combat-chronicle") !== "1") return null;
   const myId = "pc-mock-uid";
   const round = 2;
-  const rows = [
-    { id: myId, kind: "pc", name: "Pyra" },
-    { id: "monster-1", kind: "monster", name: "Goblin" },
-    { id: "monster-2", kind: "monster", name: "Goblin Chief" },
-    { id: "monster-3", kind: "monster", name: "Ogre" },
-  ] as GlobalCombat["view"]["rows"];
+  const rows: GlobalCombat["view"]["rows"] = [
+    {
+      id: myId,
+      kind: "pc",
+      name: "Pyra",
+      ac: 13,
+      initiative: 17,
+      conditions: [],
+      currentHp: 34,
+      maxHp: 34,
+      tempHp: 0,
+      down: false,
+      hidden: false,
+      memberUid: "mock-uid",
+      characterId: "scn-evoker-wizard",
+    },
+    {
+      id: "monster-1",
+      kind: "monster",
+      name: "Goblin",
+      ac: 13,
+      initiative: 14,
+      conditions: [],
+      currentHp: 12,
+      maxHp: 12,
+      tempHp: 0,
+      down: false,
+      hidden: false,
+      tokens: [12],
+    },
+    {
+      id: "monster-2",
+      kind: "monster",
+      name: "Goblin Chief",
+      ac: 17,
+      initiative: 12,
+      conditions: [],
+      currentHp: 21,
+      maxHp: 21,
+      tempHp: 0,
+      down: false,
+      hidden: false,
+      tokens: [21],
+    },
+    {
+      id: "monster-3",
+      kind: "monster",
+      name: "Ogre",
+      ac: 11,
+      initiative: 8,
+      conditions: [],
+      currentHp: 59,
+      maxHp: 59,
+      tempHp: 0,
+      down: false,
+      hidden: false,
+      tokens: [59],
+    },
+  ];
   const turnOrderIds = [myId, "monster-1", "monster-2", "monster-3"];
   const encounter: EncounterState = {
     round,

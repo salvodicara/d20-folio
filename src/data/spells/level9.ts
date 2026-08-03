@@ -91,6 +91,9 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     instantaneous: true,
     healDice: "700",
     effectTag: "heal",
+    conditionRemoval: { options: ["blinded", "deafened"] },
+    targeting: { affinity: "ally" },
+    healingPool: 700,
     source: "SRD",
   },
   {
@@ -109,6 +112,8 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     damageDice: "20d6",
     secondaryDamage: { dice: "20d6", damageType: "bludgeoning" },
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -229,6 +234,9 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     damageType: "psychic",
     damageDice: "8d12",
     saveAbility: "WIS",
+    conditionApplication: { options: ["frightened"], on: "failed-save" },
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -254,6 +262,10 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     concentration: false,
     instantaneous: true,
     effectTag: "heal",
+    healingMode: "full",
+    conditionRemoval: {
+      options: ["charmed", "frightened", "paralyzed", "poisoned", "stunned"],
+    },
     source: "SRD",
   },
 ];

@@ -58,6 +58,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDice: "8d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "CON",
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -70,6 +71,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "WIS",
+    area: true,
     source: "SRD",
   },
   {
@@ -86,6 +88,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "WIS",
+    area: true,
     source: "SRD",
   },
   {
@@ -181,6 +184,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "WIS",
+    conditionApplication: { options: ["charmed"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -271,6 +275,8 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    conditionApplication: { options: ["invisible"], on: "automatic" },
+    targeting: { affinity: "ally", maxTargets: 1 },
     source: "SRD",
   },
   {
@@ -284,6 +290,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     concentration: false,
     damageType: "radiant",
     saveAbility: "DEX",
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -307,6 +314,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDicePerUpcast: "1d10",
     secondaryDamage: { dice: "4d6", damageType: "cold" },
     saveAbility: "DEX",
+    damageOnSave: "half",
     area: true,
     source: "SRD",
   },
@@ -370,6 +378,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDice: "4d10",
     damageDicePerUpcast: "1d10",
     saveAbility: "WIS",
+    conditionApplication: { options: ["frightened"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -436,6 +445,19 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDice: "5d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
+    followUp: {
+      type: "free",
+      attack: {
+        dice: "5d8",
+        dicePerUpcast: "1d8",
+        damageType: "fire",
+        resolution: "automatic",
+      },
+      targeting: { affinity: "enemy" },
+      area: true,
+    },
     source: "SRD",
   },
   {
@@ -448,6 +470,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     saveAbility: "WIS",
+    conditionApplication: { options: ["charmed"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -463,6 +486,9 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDice: "5d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "WIS",
+    area: true,
+    damageOnSave: "half",
+    recurrence: "bonus-action-move",
     source: "SRD",
   },
   {
@@ -481,6 +507,10 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageType: "bludgeoning",
     damageDice: "3d6",
     saveAbility: "DEX",
+    area: true,
+    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    recurrence: "on-enter-or-end-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -576,6 +606,8 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDice: "10d4",
     damageDicePerUpcast: "2d4",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
 ];

@@ -25,6 +25,7 @@
  */
 
 import { useEffect, type ReactNode } from "react";
+import "./encounter.css";
 import { useTranslation } from "react-i18next";
 import { Navigate, useParams } from "react-router";
 import { AlertTriangle, Users } from "lucide-react";

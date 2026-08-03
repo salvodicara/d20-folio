@@ -177,6 +177,22 @@ describe("reconcileChronicle — ambiguity ⇒ uncertain (never dropped/fabricat
     expect(out[1]?.auto).toBeUndefined();
     expect(out[1]?.event).not.toHaveProperty("attackerId");
   });
+
+  it("repeated declarations by the SAME attacker never reopen 'who hit?'", () => {
+    const out = reconcileChronicle(
+      [dmg("0", "monster-1", 2, 5), dmg("1", "monster-1", 2, 3)],
+      [hit("mara:1", "pc-mara", "monster-1", 2), hit("mara:2", "pc-mara", "monster-1", 2)]
+    );
+
+    expect(out).toHaveLength(2);
+    expect(out.every((line) => line.auto === true)).toBe(true);
+    expect(out.every((line) => line.uncertain === undefined)).toBe(true);
+    expect(
+      out.every(
+        (line) => line.event.kind === "hp-damage" && line.event.attackerId === "pc-mara"
+      )
+    ).toBe(true);
+  });
 });
 
 describe("reconcileChronicle — feed order (round-grouped, stable)", () => {

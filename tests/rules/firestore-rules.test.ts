@@ -571,16 +571,17 @@ describe("firestore.rules — /campaigns access", () => {
     });
   });
 
-  // ── COMBAT-CHRONICLE: a player AUTO-APPLIES their declared damage (member grant) ──
+  // ── COMBAT RESOLUTION: a player auto-applies reviewed monster effects ──
   // The source-of-truth flip (owner 2026-08-02): a player who types the damage they
   // rolled writes the target MONSTER's HP + the appended chronicle events on the
   // CAMPAIGN doc the DM owns. The two-user topology is exactly DM (owns camp1) + a
   // MEMBER-owned PC applying to it. A member may write ONLY `encounter.{combatants,
-  // events}` (the `damageFieldsOnlyChanged()` grant): the token HP drops + events
+  // events,memberEffects}` (the `combatEffectFieldsOnlyChanged()` grant): monster HP,
+  // chronicle events, or an append-only PC effect delivery
   // append, and the combatants COUNT is unchanged (no add/remove) while events only
   // GROW (no deleting the DM's lines). Any other encounter edit, a combatant add/remove,
   // or an events shrink stays DM-only; a non-member is denied outright.
-  describe("a player applies declared damage (diff-scoped member grant)", () => {
+  describe("a player applies reviewed combat effects (diff-scoped member grant)", () => {
     beforeEach(async () => {
       await testEnv.withSecurityRulesDisabled(async (ctx) => {
         await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), { encounter });
@@ -605,6 +606,63 @@ describe("firestore.rules — /campaigns access", () => {
         updateDoc(doc(db, "campaigns", "camp1"), {
           "encounter.combatants": damaged,
           "encounter.events": [appliedEvent],
+        })
+      );
+    });
+
+    it("a member MAY heal or add a condition through the same narrow effect path", async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
+          "encounter.combatants": damaged,
+          "encounter.events": [appliedEvent],
+        });
+      });
+      const db = testEnv.authenticatedContext("member").firestore();
+      const affected = [
+        { ...encounter.combatants[0], tokens: [7, 7, 0], conditions: ["prone"] },
+      ];
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.combatants": affected,
+          "encounter.events": [
+            appliedEvent,
+            {
+              id: "1",
+              round: 1,
+              kind: "hp-heal",
+              targetId: "monster-1",
+              amount: 1,
+              current: 7,
+              max: 7,
+            },
+            {
+              id: "2",
+              round: 1,
+              kind: "condition-gain",
+              targetId: "monster-1",
+              conditionId: "prone",
+            },
+          ],
+        })
+      );
+    });
+
+    it("a member MAY append a PC effect delivery but cannot remove one", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      const effect = {
+        id: "1:0",
+        targetId: "pc-member",
+        kind: "healing",
+        amount: 5,
+      };
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.memberEffects": [effect],
+        })
+      );
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.memberEffects": [],
         })
       );
     });

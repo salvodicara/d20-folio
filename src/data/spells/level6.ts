@@ -13,6 +13,10 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageType: "slashing",
     damageDice: "6d10",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
+    recurrence: "on-enter-or-end-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -32,6 +36,8 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageType: "lightning",
     damageDice: "10d8",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -54,6 +60,8 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageDice: "8d8",
     damageDicePerUpcast: "2d8",
     saveAbility: "CON",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -114,6 +122,11 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "WIS",
+    conditionApplication: {
+      options: ["unconscious", "frightened"],
+      max: 1,
+      on: "failed-save",
+    },
     source: "SRD",
   },
   {
@@ -160,6 +173,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageType: "necrotic",
     damageDice: "14d6",
     saveAbility: "CON",
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -174,6 +188,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     instantaneous: true,
     healDice: "70",
     effectTag: "heal",
+    conditionRemoval: { options: ["blinded", "deafened"] },
     source: "SRD",
   },
   {
@@ -208,6 +223,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     },
     concentration: false,
     saveAbility: "WIS",
+    targeting: { affinity: "enemy", maxTargets: 12 },
     source: "SRD",
   },
   {
@@ -265,6 +281,9 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageType: "radiant",
     damageDice: "6d8",
     saveAbility: "CON",
+    conditionApplication: { options: ["blinded"], on: "failed-save" },
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -309,6 +328,8 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageDice: "10d6",
     damageDicePerUpcast: "2d6", // RAW: appearance damage +2d6 per slot above 6
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -357,6 +378,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "CON",
+    conditionApplication: { options: ["restrained"], on: "failed-save" },
     source: "SRD",
   },
   {
@@ -425,6 +447,8 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageDice: "10d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "CON",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -498,6 +522,8 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageDice: "7d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "DEX",
+    area: true,
+    damageOnSave: "half",
     source: "SRD",
   },
 ];

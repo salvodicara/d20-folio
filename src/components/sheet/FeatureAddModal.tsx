@@ -11,6 +11,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
+import { ModalStage } from "@/components/ui/modal-head";
 import { CompendiumPicker, featureSpec } from "@/features/compendium/picker";
 import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
 import { CustomFeatureForm } from "./CustomCreationForms";
@@ -49,53 +50,55 @@ export function FeatureAddModal({
       rubric={editing ? t("common.edit") : undefined}
       title={editing ? t("custom.editFeature") : (detailTitle ?? t("nav.addFeature"))}
     >
-      {editing ? (
-        <CustomFeatureForm
-          onCreated={onClose}
-          editFeature={editFeature}
-          editIndex={editIndex}
-        />
-      ) : (
-        <>
-          <ModalTabSwitcher
-            activeTab={activeTab}
-            onTabChange={(tab) => {
-              setActiveTab(tab);
-              setDetailTitle(null);
-            }}
-            tabs={[
-              { id: "srd", label: t("custom.srdTab") },
-              { id: "custom", label: t("custom.customTab") },
-            ]}
+      <ModalStage>
+        {editing ? (
+          <CustomFeatureForm
+            onCreated={onClose}
+            editFeature={editFeature}
+            editIndex={editIndex}
           />
-          {activeTab === "custom" ? (
-            <CustomTabBody
-              kinds={KINDS}
-              createLabel={t("custom.createFeature")}
-              renderForm={(edit) => (
-                <CustomFeatureForm
-                  onCreated={onClose}
-                  libraryEdit={
-                    edit?.entry.kind === "feature"
-                      ? { item: edit.entry.item, onSave: edit.onSave }
-                      : undefined
-                  }
-                />
-              )}
-              onAdded={onClose}
-              onDetailTitle={setDetailTitle}
+        ) : (
+          <>
+            <ModalTabSwitcher
+              activeTab={activeTab}
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                setDetailTitle(null);
+              }}
+              tabs={[
+                { id: "srd", label: t("custom.srdTab") },
+                { id: "custom", label: t("custom.customTab") },
+              ]}
             />
-          ) : (
-            <CompendiumPicker
-              spec={featureSpec}
-              mode="add"
-              onClose={onClose}
-              onDetailTitle={setDetailTitle}
-              autoFocus
-            />
-          )}
-        </>
-      )}
+            {activeTab === "custom" ? (
+              <CustomTabBody
+                kinds={KINDS}
+                createLabel={t("custom.createFeature")}
+                renderForm={(edit) => (
+                  <CustomFeatureForm
+                    onCreated={onClose}
+                    libraryEdit={
+                      edit?.entry.kind === "feature"
+                        ? { item: edit.entry.item, onSave: edit.onSave }
+                        : undefined
+                    }
+                  />
+                )}
+                onAdded={onClose}
+                onDetailTitle={setDetailTitle}
+              />
+            ) : (
+              <CompendiumPicker
+                spec={featureSpec}
+                mode="add"
+                onClose={onClose}
+                onDetailTitle={setDetailTitle}
+                autoFocus
+              />
+            )}
+          </>
+        )}
+      </ModalStage>
     </ModalShell>
   );
 }

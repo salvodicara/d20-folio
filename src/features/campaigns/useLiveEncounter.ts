@@ -34,11 +34,15 @@ import { derivePcLive } from "@/features/campaigns/party-stats";
 import { encounterRollFor } from "@/features/campaigns/encounter";
 import { buildEncounterView, type PcLive } from "@/features/campaigns/encounter-view";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
+import type { CombatState } from "@/types/combat-state";
 
 /** The live encounter for one campaign: its structure + the assembled, sorted view. */
 export interface LiveEncounter {
   encounter: EncounterState;
   view: NonNullable<ReturnType<typeof buildEncounterView>>;
+  /** The viewer's live combat-state base for idempotent member-effect delivery. */
+  myCombatState: CombatState | null | undefined;
+  myMaxHp: number;
 }
 
 /**
@@ -126,8 +130,14 @@ export function useLiveEncounter(
     [encounter, pcLiveById, viewerIsDm]
   );
 
-  return useMemo(
-    () => (encounter && view ? { encounter, view } : null),
-    [encounter, view]
-  );
+  return useMemo(() => {
+    if (!encounter || !view) return null;
+    const myRow = uid ? view.rows.find((row) => row.id === `pc-${uid}`) : undefined;
+    return {
+      encounter,
+      view,
+      myCombatState: uid ? combatStates[uid] : undefined,
+      myMaxHp: myRow?.maxHp ?? 0,
+    };
+  }, [encounter, view, uid, combatStates]);
 }

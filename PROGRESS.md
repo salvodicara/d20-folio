@@ -60,6 +60,36 @@ blocking on owner screenshots):
 
 ## Current state
 
+**CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
+(2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark
+ink for its nested glyph/count despite the carved socket's correct fixed ink, and the end-encounter
+Chronicle dialog bypassed the shared modal body/footer spacing grammar. The compact lead now inherits
+the socket's fixed light ink (real-Chromium dark/light + single/multi/desktop coverage; 9.40:1 in the
+reported light case). The dialog now composes `ModalBody` + `ModalFoot`, owns one shared scroll region,
+and renders with the canonical safe field/pinned actions across dark/light × desktop/mobile. The
+systemic seam is closed too: every `ModalShell` host is source-derived by the modal guard and must use
+`ModalBody`, `ModalScrollColumn`, or the reviewed compound-app `ModalStage`; raw nested scrollers and
+unreviewed stages fail CI. The active summary is now one compact struck-folio command dossier with an
+attached Chronicle timeline rather than a loose dashboard row.
+
+The battle mechanic now resolves structurally modeled attacks, saves (including non-damage saves such as
+Vicious Mockery), damage, healing, multi-instance/area effects and condition changes through one compact,
+responsive target/outcome/effect modal. Harm defaults to enemies, healing to allies, while **Any creature**
+and per-target conditions preserve rulings/homebrew. Effects wait behind the real action/cast/reaction
+commit and land as one generic, transaction-safe batch; cancelling any nested choice spends/applies
+nothing. Legacy monster groups conform idempotently into separately named/targetable creature instances.
+The DM can directly override every live value and now one-tap reverses both monster HP and condition
+Chronicle mistakes. Finally, initiative entry was reproduced in real Chromium: the old re-sort teleported
+the edited card by ~283px; scroll compensation plus a reduced-motion-safe FLIP transition now explains
+the move continuously. Per-roll and once-per-cast damage bonuses are now distinct engine facts: Empowered
+Evocation remains valid on Magic Missile but is assigned to exactly one reviewed damage roll instead of
+being multiplied across every dart. The same audit closed Potent Cantrip's stale prose-only gap through a
+generic spell-outcome grant: declared misses/successful saves now deal half damage automatically while
+additional effects remain gated. Life Cleric healing now follows the same doctrine: Blessed Healer applies
+one slot-scaled self-heal only when another creature is healed, and Supreme Healing computes the scaled
+maximum with no fake roll input. Unit, rules and focused Chromium regressions cover the seams. Not merged pending
+the visual gate (golden rule 25).
+
 **Released on `main` at v0.22.0** — the same version **deployed to production**
 (https://d20-folio.web.app, owner-confirmed live 2026-07-23), so `main` and live are currently **in
 step**. Deploys stay owner-gated (golden rule 22), so `main` may run ahead of live at any time.
@@ -485,30 +515,39 @@ owner's finishing decision for the held combat-chronicle epic (2026-08-02) flips
 instead of the player tapping only HIT/MISS and the DM lowering monster HP (the app reading that delta
 AS the damage), the player now **types the damage they rolled** in the declaration panel and it
 **AUTO-APPLIES to the target monster's HP** right away. The chronicle narrates the PLAYER's number.
-Still on `feat/combat-chronicle`, **HELD for the owner's rule-25 look — not merged, not deployed.**
-Deterministic, bilingual EN + IT, both gates green (`just ci` + `just ci-srd-only`); pack twin unchanged
-(the seam is SRD-clean).
+Held in the current task worktree for the owner's rule-25 look — **not merged, not deployed.**
+Deterministic and bilingual EN + IT; the public + pack twins move together and final dual-mode validation
+follows the visual sign-off.
 
-- **The panel (impeccable)** — `AttackDeclaration.tsx` gains a DAMAGE entry using the SAME `NumberStepper`
-  the HP popover uses (so entering damage reads like booking it): single-target = one target + one field
-  (autofocused after the pick — pick, type, Hit); multi-instance (Magic Missile) = a per-target field;
-  area-save (Fireball) = one rolled number applied in FULL to all (the DM trims savers — no per-target
-  save UI forced on the player). Explain-on-demand `damageDealt` glossary tip on the field.
-- **The write (permissions — the careful part)** — the damage lands on the encounter (a CAMPAIGN doc the
-  player doesn't own) via a NARROW cross-user dot-path transaction `campaign-io.applyDeclaredDamage`
-  (reached from the sheet through the Firebase-free `apply-damage.ts` bridge), writing ONLY
-  `encounter.{combatants, events}` — the monster token drops + the unattributed `hp-damage`/`down` events.
-  `firestore.rules` `damageFieldsOnlyChanged()` grants a member exactly that diff
-  (`affectedKeys().hasOnly(['combatants','events'])` + combatants count fixed + events append-only), the
+- **The panel (impeccable; generalized 2026-08-03)** — `CombatResolver.tsx` now
+  hosts ONE compact universal resolution surface: independently targetable creature cards; attack/save/
+  automatic outcomes; per-target or shared-area damage; healing; instance allocation; and optional
+  condition override. The same component and pure plan serve encounter play and self-owned SOLO effects.
+- **Deterministic effect algebra (generalized 2026-08-03)** — typed damage components now apply target
+  resistance/immunity/vulnerability/flat reduction, PC and monster Temporary HP, healing/condition cures,
+  and linked self-healing in one reviewed commit. Grapple/Shove use the same save/condition grammar.
+  Geometry, range/LOS and forced movement stay table declarations because this app is not a VTT.
+- **Persistent actions (2026-08-03)** — placement-only zones no longer pretend to damage on cast;
+  `recurrence`/`followUp` emits a later active row with the right action economy, no second slot and the
+  original upcast level. Concentration/active-state undo restores the exact spell, toggle and cast level.
+- **The write (permissions — the careful part)** — reviewed monster effects land on the encounter (a
+  CAMPAIGN doc the player doesn't own) via one NARROW cross-user transaction
+  `campaign-io.applyDeclaredCombatEffects` (reached through the Firebase-free `apply-damage.ts` bridge),
+  writing ONLY `encounter.{combatants, events, memberEffects}` — exact-instance
+  damage/healing/Temporary-HP/condition changes plus
+  their structured events. `firestore.rules` `combatEffectFieldsOnlyChanged()` grants a member exactly that diff
+  (`affectedKeys().hasOnly(['combatants','events','memberEffects'])` + combatants count fixed +
+  events/effects append-only), the
   SAME diff-scoped idiom as the turn-pointer grant. **Proven with a real two-user topology** (DM owns the
   campaign, a member applies) in `tests/rules/firestore-rules.test.ts`.
 - **Reconcile is UNCHANGED** — the amount already came from the `hp-damage` event; only the WRITER flipped
   (player, not DM), so the whole fusion pipeline (single/multi/save/rider) is untouched.
 - **DM remediability is airtight** (owner — "mistakes should always be remediable") — the DM freely
-  re-adjusts any monster's HP (the token popover), re-attributes a pending/uncertain line, and now taps
-  **Undo** on any applied monster HP line in the live feed (`combat-chronicle.undoHpEvent`): it removes the
-  line AND restores the token HP in one motion. All lines stay editable/removable at the end entry.
-- **Tests** — `attack-declaration.test.tsx` (damage entry + auto-apply + miss-applies-nothing),
+  re-adjusts any monster's HP/conditions, re-attributes a pending/uncertain line, and taps **Undo** on an
+  applied monster HP or condition line: the Chronicle event is removed and the underlying monster state
+  is reversed in one motion. All lines stay editable/removable at the end entry.
+- **Tests** — `combat-resolver.test.tsx` + `combat-resolution.test.ts` (capability plan, review/apply,
+  defenses, healing, Temporary HP and linked effects),
   `combat-chronicle.test.ts` (`undoHpEvent`), `party-chronicle.test.tsx` (the Undo affordance),
   `firestore-rules.test.ts` (the two-user damage-write grant), and the keeper e2e
   `combat-chronicle.spec.ts` drives the NEW flow (player types damage → monster HP drops → DM undoes one).
@@ -527,7 +566,7 @@ motion (rule 28).
   the burst save-for-half spells (Burning Hands, Thunderwave, Shatter, Fireball, Lightning Bolt, Ice Storm,
   Cone of Cold + the pack's own burst save spells, tagged in the same motion) finally distinguishes an AoE
   save-spell from a single-target save cantrip
-  (both are just save + damage). `attack-scope.isSaveDeclaration` reads it to open an **unbounded** multi-target
+  (both are just save + damage). `combatResolutionSpec` reads it to open an **unbounded** multi-target
   SAVE declaration (one "Resolve", no HIT/MISS).
 - **Saves reconciliation** — `reconcileChronicle` binds ALL a declared SAVE spell's targets' drops this round
   (no instance cap) into ONE `attack-save` line: each damaged target carries the DM's real number (**save-for-half
@@ -539,10 +578,10 @@ motion (rule 28).
   co-occurrence; >1 caster ⇒ uncertain. An un-correlated condition stays a plain logged line (condition
   logging itself was wired in Phase 0).
 - Rule 13 — `chronicle-reconcile.test.ts` pins every branch (save damaged/resisted/unresolved/uncertain,
-  condition credit/no-credit/round-break/multi-caster) with mutation-proof assertions; `attack-scope`,
-  `combat-chronicle-view`, `attack-declaration`, `smart-tracker` + `spell-data-integrity` extended.
+  condition credit/no-credit/round-break/multi-caster) with mutation-proof assertions; `combat-resolution`,
+  `combat-chronicle-view`, `combat-resolver`, `smart-tracker` + `spell-data-integrity` extended.
 - **In-app e2e regression + the rule-25 screenshots** — `tests/e2e/combat-chronicle.spec.ts` drives a
-  REAL encounter through the ACTUAL surfaces (NOT a bespoke showcase): the sheet's `AttackDeclaration`
+  REAL encounter through the ACTUAL surfaces (NOT a bespoke showcase): the sheet's `CombatResolver`
   banner (weapon single-target hit/miss · Magic Missile multi-select · Fireball area-save "Resolve"), then
   the DM hub's reconciled LIVE FEED accumulating across two rounds (auto-attributed hit · synthesized miss ·
   fused multi-line · area-save with mixed saves · Topple→Prone rider credited · plain Frightened · a "No one"
@@ -564,12 +603,12 @@ the Chief (22) and the Ogre (11)". Still deterministic and never fabricated: eve
 real DM delta; a declared target with no drop is simply omitted, never invented. Solo untouched, no new
 Firestore cost.
 
-- **Single- vs multi-select is decided from the action's OWN shape** — `attack-scope.ts`
-  (`attackTargetCap` / `shouldDeclareAttack`) reads `summary.instances`: `> 1` ⇒ a multi-select picker
+- **Single- vs multi-select is decided from the action's OWN shape** — `combat-resolution.ts`
+  (`combatResolutionSpec` / `shouldResolveCombatAction`) reads `summary.instances`: `> 1` ⇒ a multi-select picker
   capped at that count (Phase 2), else single (Phase 1 unchanged). There is no area geometry modeled, so
   an AoE save-spell (no `instances`) is by shape indistinguishable from a single-target save cantrip and
   stays single — the genuinely multi-target actions are the multi-instance ones.
-- **Capture** — `AttackDeclaration` becomes multi-select for a multi-target action (toggle the set,
+- **Capture** — `CombatResolver` becomes multi-select for a multi-target action (toggle the set,
   capped, never over-pick), resolving as one "Landed"/"Miss". The declared target SET + its instance drop
   bound ride the SAME `recentActions` ring on the existing `writeCombatState` (NO new doc/subscription).
 - **Fusion** — `reconcileChronicle` binds a declared multi-target HIT to the pending `hp-damage` drops on
@@ -597,7 +636,7 @@ shape, the table supplies the roll.
   on the player's HIT/MISS tap (`characterStore.declareAttack`). **NO new document, NO new subscription,
   NO per-sub-action write** — the DM/hub already streams every member's subdoc via
   `usePartyCombatStates`; the store mirrors the ring like the combat round so no HP write clobbers it.
-- **Capture UI** — `features/character/center/AttackDeclaration.tsx`, opened by `PlayTab` ONLY when
+- **Capture UI** — `features/character/center/CombatResolver.tsx`, opened by `PlayTab` when
   `useSheetCombat() != null` and a WEAPON attack is committed (SOLO renders nothing — the key rail).
   Compact, non-modal, dismissible; pick a monster, then tap HIT/MISS; nothing is written until the tap.
 - **Correlation** — the PURE, derived-every-render `features/campaigns/chronicle-reconcile.ts`
@@ -1734,6 +1773,16 @@ the private content pack) — and the £1 budget. Forks resolved in the ratifica
   dark/light × desktop/mobile matrix; the acceptance pass additionally caught the mobile
   multi-encounter chip's light-theme dark-on-dark ink, fixed it at the carved-control token seam,
   and added a real-browser AA guard for both the sword glyph and count.
+  The same dogfood pass rebuilt the active-encounter summary as one premium encounter dossier: a
+  struck command rail with a quiet round marker, one semantic difficulty badge, terse XP metadata,
+  and a responsive end action; its attached Chronicle is a designed drawer edge when collapsed and
+  a compact gilt-spine event timeline when expanded. Light/dark × desktop/mobile owner-review crops
+  are generated by the real E2E flow.
+  **Dogfood correction, closed 2026-08-03:** the light-theme tome was correctly wired through
+  `--asset-parchment`, but the committed binary did not match the owner's pale `PROMPT_28.png`.
+  The supplied 1672×941 source is now the exact source of `public/assets/textures/parchment.webp`
+  (WebP q50 + sharp_yuv, 17.5 KiB, no creative regrading); the earlier false shipment claim is no
+  longer carried forward.
 - **Public share links: SHIPPED 2026-07-31 — CHARACTERS ONLY, industry standard.** The
   decided LIVE model shipped as decided — a `shared: true` flag on the character doc + the unguessable doc id
   as the URL; rules allow anonymous read-only when flagged; revoke = flip the flag; noindex;

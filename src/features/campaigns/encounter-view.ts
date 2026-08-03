@@ -20,6 +20,7 @@ import {
   isDown,
   sortByInitiative,
   type MonsterInput,
+  monsterInstanceName,
 } from "@/features/campaigns/encounter";
 import { totalLevel } from "@/lib/classes";
 import {
@@ -29,9 +30,11 @@ import {
   type BudgetVerdict,
   type XpBudget,
 } from "@/lib/encounter-difficulty";
-import type { EncounterState } from "@/types/campaign";
+import type { EncounterMonster, EncounterState } from "@/types/campaign";
 import type { ClassEntry, PortraitCrop } from "@/types/character";
 import type { RaceId } from "@/types/ids";
+import type { ConditionId } from "@/data/types";
+import type { DamageDefenses } from "@/lib/damage-intake";
 
 /**
  * The LIVE facts for one PC, assembled by the caller from the member's character doc
@@ -58,6 +61,9 @@ export interface PcLive {
   classes: ClassEntry[] | undefined;
   portraitUrl: string | null;
   portraitCrop: PortraitCrop | null;
+  /** Effective live defenses derived through the same seam as the character sheet. */
+  defenses?: DamageDefenses;
+  conditionImmunities?: ReadonlySet<ConditionId>;
 }
 
 /** One render-ready combatant row — a flat, localized-at-the-edge view-model. PC rows
@@ -92,7 +98,12 @@ export interface EncounterCombatantView {
   classes?: ClassEntry[];
   portraitUrl?: string | null;
   portraitCrop?: PortraitCrop | null;
+  defenses?: DamageDefenses;
+  conditionImmunities?: ReadonlySet<ConditionId>;
+  /** Conditional monster defenses require an explicit table declaration. */
+  qualifiedDefenseCount?: number;
   // ── Monster state (present on `kind === "monster"`) ──
+  srdId?: string;
   tokens?: number[];
 }
 
@@ -153,22 +164,44 @@ export function buildEncounterView(
         classes: live?.classes,
         portraitUrl: live?.portraitUrl ?? null,
         portraitCrop: live?.portraitCrop ?? null,
+        defenses: live?.defenses,
+        conditionImmunities: live?.conditionImmunities,
       });
     } else {
       const currentHp = c.tokens.reduce((sum, hp) => sum + hp, 0);
       allRows.push({
         id: c.id,
         kind: "monster",
-        name: c.name,
+        name: monsterInstanceName(c),
         ac: c.ac,
         initiative: c.initiative,
         conditions: c.conditions,
         currentHp,
         maxHp: c.maxHp * c.tokens.length,
-        tempHp: 0,
+        tempHp: c.tempHp ?? 0,
         down: isDown(c),
         hidden: c.hidden ?? false,
+        srdId: c.srdId,
+        portraitUrl: c.portraitUrl ?? null,
+        portraitCrop: c.portraitCrop ?? null,
         tokens: c.tokens,
+        defenses: c.defenses
+          ? {
+              resistances: new Set(c.defenses.damageResistances ?? []),
+              immunities: new Set(c.defenses.damageImmunities ?? []),
+              vulnerabilities: new Set(c.defenses.damageVulnerabilities ?? []),
+              sourceResistances: new Set(),
+              flatReductions: [],
+            }
+          : undefined,
+        conditionImmunities: c.defenses?.conditionImmunities
+          ? new Set(
+              c.defenses.conditionImmunities.flatMap((entry) =>
+                typeof entry === "string" ? [entry] : []
+              )
+            )
+          : undefined,
+        qualifiedDefenseCount: c.defenses?.qualifiedDefenses?.length ?? 0,
       });
     }
   }
@@ -302,10 +335,10 @@ export function addReinforcement(
   const added = addMonster(encounter, input);
   const order = encounter.order;
   if (!order || order.length === 0) return added;
-  // The newcomer is the last combatant addMonster appended.
-  const newcomer = added.combatants[added.combatants.length - 1];
-  if (!newcomer || newcomer.kind !== "monster") return added;
-  const newInit = newcomer.initiative;
+  const newcomers = added.combatants
+    .slice(encounter.combatants.length)
+    .filter((c): c is EncounterMonster => c.kind === "monster");
+  if (newcomers.length === 0) return added;
   const initOf = (id: string): number | null => {
     const live = pcLiveById[id];
     if (live) return live.initiative;
@@ -317,13 +350,16 @@ export function addReinforcement(
   // after them, so a tie is stable and a prior manual reorder is preserved.
   const outranks = (a: number | null, b: number | null): boolean =>
     a !== null && (b === null || a > b);
-  let at = order.length;
-  for (let i = 0; i < order.length; i++) {
-    if (outranks(newInit, initOf(order[i] ?? ""))) {
-      at = i;
-      break;
+  let next = [...order];
+  for (const newcomer of newcomers) {
+    let at = next.length;
+    for (let i = 0; i < next.length; i++) {
+      if (outranks(newcomer.initiative, initOf(next[i] ?? ""))) {
+        at = i;
+        break;
+      }
     }
+    next = [...next.slice(0, at), newcomer.id, ...next.slice(at)];
   }
-  const next = [...order.slice(0, at), newcomer.id, ...order.slice(at)];
   return freezeOrder(added, next);
 }

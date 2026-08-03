@@ -22,7 +22,7 @@
  * creature is always visible without scrolling past the whole list.
  */
 import { useMemo, useState } from "react";
-import { ModalScroll } from "@/components/ui/modal-head";
+import { ModalScroll, ModalStage } from "@/components/ui/modal-head";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { Segmented } from "@/components/ui/segmented";
@@ -194,7 +194,7 @@ export function BeastFormPicker({
       {/* Fixed-height flex column: the list is the `flex-1` scroll region, and the
           REFERENCE stat block pins below it (`shrink-0`) so the picked creature is
           always visible — the list shrinks to make room, never the block. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4">
+      <ModalStage className="gap-3 px-4 pb-4">
         <Segmented
           className="poly-mode-switch"
           aria-label={t("polymorph.title")}
@@ -256,7 +256,7 @@ export function BeastFormPicker({
             <BeastStatBlockView beast={selected} locale={locale} />
           </div>
         )}
-      </div>
+      </ModalStage>
     </ModalShell>
   );
 }

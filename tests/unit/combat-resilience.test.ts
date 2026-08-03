@@ -68,8 +68,8 @@ function session(overrides: Partial<SessionState> = {}): SessionState {
 
 /**
  * Build a realistic IN-COMBAT encounter through the REAL reducers (never hand-rolled):
- * a 4-way fight, turns begun (order frozen), advanced past round 1, a goblin group with one
- * token dead + one wounded + Prone, a HIDDEN ambush monster, and a mid-fight reinforcement.
+ * a fight with three individual goblins, turns begun (order frozen), advanced past round
+ * 1, one goblin down + one wounded/Prone, a HIDDEN ambush monster, and a reinforcement.
  */
 function inCombatEncounter(): EncounterState {
   let enc = startEncounter(
@@ -88,17 +88,25 @@ function inCombatEncounter(): EncounterState {
   enc = addMonster(enc, { name: "Shadow", ac: 12, maxHp: 16, count: 1, initiative: 18 });
   enc = setHidden(enc, "monster-2", true); // a staged ambush
   // Begin turns — freeze the order (hidden combatant included; hidden is display-only).
-  enc = beginEncounterTurns(enc, ["monster-2", "pc-mara", "monster-1", "pc-bren"]);
+  enc = beginEncounterTurns(enc, [
+    "monster-2",
+    "pc-mara",
+    "monster-1",
+    "monster-1~2",
+    "monster-1~3",
+    "pc-bren",
+  ]);
   enc = advanceTurn(enc); // monster-2 → pc-mara
   enc = advanceTurn(enc); // pc-mara → monster-1
-  // Wound the goblins: token 1 killed, token 0 at 4 HP, the group is Prone.
-  enc = setHp(enc, "monster-1", 1, 0);
+  // Wound the goblins: instance 2 killed, instance 1 at 4 HP and Prone.
+  enc = setHp(enc, "monster-1~2", 0, 0);
   enc = setHp(enc, "monster-1", 0, 4);
   enc = toggleCondition(enc, "monster-1", "prone");
   // A reinforcement wolf arrives mid-fight (auto-slots onto the frozen order as monster-3).
   enc = addMonster(enc, { name: "Wolf", ac: 13, maxHp: 11, count: 1, initiative: 7 });
-  enc = advanceTurn(enc); // monster-1 → pc-bren
-  enc = advanceTurn(enc); // pc-bren → monster-3 (the reinforcement)
+  enc = advanceTurn(enc); // monster-1 → monster-1~3 (down instance 2 is skipped)
+  enc = advanceTurn(enc); // monster-1~3 → pc-bren
+  enc = advanceTurn(enc); // pc-bren → monster-3
   enc = advanceTurn(enc); // monster-3 → wrap → round 2, back to monster-2
   return enc;
 }
@@ -113,6 +121,8 @@ describe("reload-mid-combat resilience — the encounter survives a serialize �
       "monster-2",
       "pc-mara",
       "monster-1",
+      "monster-1~2",
+      "monster-1~3",
       "pc-bren",
       "monster-3", // the reinforcement auto-slotted onto the frozen order
     ]);
@@ -126,9 +136,12 @@ describe("reload-mid-combat resilience — the encounter survives a serialize �
     expect(after.order).toEqual(before.order);
     expect(after.currentCombatantId).toBe(before.currentCombatantId);
     expect(after.epoch).toBe(before.epoch);
-    // The wounded goblin group survives with its exact token HP + condition + the hidden flag.
+    // Each goblin keeps independent HP/conditions and the ambush keeps its hidden flag.
     const goblin = after.combatants.find((c) => c.id === "monster-1");
-    expect(goblin).toMatchObject({ tokens: [4, 0, 7], conditions: ["prone"] });
+    expect(goblin).toMatchObject({ tokens: [4], conditions: ["prone"] });
+    expect(after.combatants.find((c) => c.id === "monster-1~2")).toMatchObject({
+      tokens: [0],
+    });
     const ambush = after.combatants.find((c) => c.id === "monster-2");
     expect(ambush).toMatchObject({ hidden: true });
   });

@@ -25,13 +25,12 @@
  * - Reactions commit immediately too (their own section, same grammar).
  */
 
-import { useState, useMemo, useCallback, type ReactNode } from "react";
+import { lazy, Suspense, useState, useMemo, useCallback, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Layers } from "lucide-react";
 import { localizeSrd } from "@/i18n/resolver";
 import { CollapsibleSearch } from "@/components/shared/CollapsibleSearch";
-import { HealRollEntry } from "@/components/shared/HealRollEntry";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
 import { InfoCard } from "@/components/shared/InfoCard";
@@ -39,13 +38,10 @@ import { NumberStepper } from "@/components/ui/input";
 import { weaponSealIcon, magicItemSealIcon } from "@/components/shared/item-icons";
 import { getMagicItem } from "@/data/magic-items";
 import { ThisTurnTracker } from "../ThisTurnTracker";
-import { AttackDeclaration } from "../AttackDeclaration";
 import {
-  attackTargetCap,
-  shouldDeclareAttack,
-  isSaveDeclaration,
-  actionRiderConditions,
-} from "../attack-scope";
+  shouldResolveCombatAction,
+  shouldResolveSoloAction,
+} from "@/lib/combat-resolution";
 import { useSheetCombat } from "../turn-state";
 import { CombatAlgorithm } from "./CombatAlgorithm";
 import { SituationalRules } from "./SituationalRules";
@@ -86,6 +82,12 @@ import {
   armorDisadvantageClauses,
   type ResolvedAction,
 } from "@/lib/smart-tracker";
+
+const CombatResolver = lazy(() =>
+  import("../CombatResolver").then(({ CombatResolver: resolver }) => ({
+    default: resolver,
+  }))
+);
 import { uiText } from "@/lib/loc-text";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { CunningStrikeOptions } from "@/components/shared/CunningStrikeOptions";
@@ -251,6 +253,7 @@ function combatGloss(
   // Lightning re-fire) surfaces a "when it recurs" note. The stable token (golden
   // rule 7) localizes to the short cadence chip the Spells card also shows.
   if (summary.recurrence) parts.push(t(`spells.recurrence_${summary.recurrence}`));
+  if (summary.recurringUse) parts.unshift(t("combat.activeSpellUse"));
   // G23 — Tactical Mind: "+1d10 to a failed check" (refunded on a fail). A
   // decision-useful gloss fact; the refund clause appends only when RAW grants it.
   if (summary.checkBonus) {
@@ -319,36 +322,34 @@ export function PlayTab() {
   const togglePinnedAction = useCharacterStore((s) => s.togglePinnedAction);
   // The shared turn-economy owner: commit / undo (one source of the per-slot
   // undo refs), used by BOTH these cards and the center ThisTurnTracker.
-  const { handleSelect, handleUseReaction, spendRider, applyCunningStrike } =
-    useTurnEconomy();
+  const {
+    prepareResolution,
+    handleSelect,
+    handleUseReaction,
+    spendRider,
+    applyCunningStrike,
+  } = useTurnEconomy();
 
-  // AUTO-NARRATED COMBAT (Phase 1 + 2) — when THIS sheet is in a live campaign encounter,
-  // a committed attack opens the target + HIT/MISS capture ({@link AttackDeclaration}).
-  // SOLO (`sheetCombat === null`) never opens it — the gate is here, so no target/hit-miss
-  // UI exists off an encounter. The panel reads its targets live off `sheetCombat`. The
-  // committed action's OWN shape decides single- vs multi-select: a weapon swing (Phase 1)
-  // or a single-instance action is single; a multi-target action (Magic Missile / Scorching
-  // Ray — {@link shouldDeclareAttack}) opens the multi-select capped at its instance count.
+  // Encounter actions resolve BEFORE they spend anything. The capability model decides
+  // whether the shared resolver is needed; names and source type never do.
   const sheetCombat = useSheetCombat();
-  // The committed action's declaration descriptor: the target cap, whether it resolves by
-  // a SAVE (area spell — Phase 3), and its applied-condition RIDER ids. `null` = no banner.
   const [declaring, setDeclaring] = useState<{
-    cap: number;
-    save: boolean;
-    riders: string[];
+    action: ResolvedAction;
+    commit: (afterCommit: () => (() => void) | undefined) => void;
   } | null>(null);
   const commitAction = useCallback(
     (action: ResolvedAction) => {
-      handleSelect(action);
-      if (sheetCombat && shouldDeclareAttack(action)) {
-        setDeclaring({
-          cap: attackTargetCap(action),
-          save: isSaveDeclaration(action),
-          riders: actionRiderConditions(action),
-        });
-      }
+      if (
+        (sheetCombat && shouldResolveCombatAction(action)) ||
+        (!sheetCombat && shouldResolveSoloAction(action))
+      )
+        prepareResolution(action, (prepared, commit) =>
+          setDeclaring({ action: prepared, commit })
+        );
+      else if (action.type === "reaction") handleUseReaction(action);
+      else handleSelect(action);
     },
-    [handleSelect, sheetCombat]
+    [handleSelect, handleUseReaction, prepareResolution, sheetCombat]
   );
 
   const [filter, setFilter] = useState<FilterType>("all");
@@ -966,18 +967,18 @@ export function PlayTab() {
         />
       </div>
 
-      {/* ── In-encounter attack declaration (auto-narrated combat, Phase 1 + 2) ──
-          Rendered ONLY while in a live encounter AND an attack was just committed;
-          SOLO never mounts it (the gate is `sheetCombat` on the commit). `maxTargets`
-          is the committed action's own target cap (1 = single; > 1 = multi-select). */}
-      {declaring !== null && sheetCombat && (
-        <AttackDeclaration
-          sheetCombat={sheetCombat}
-          maxTargets={declaring.cap}
-          save={declaring.save}
-          riders={declaring.riders}
-          onDone={() => setDeclaring(null)}
-        />
+      {/* One capability-driven resolver. Encounters expose the live roster; SOLO
+          mounts it only for consequences the current sheet can own (healing,
+          temporary HP, and condition cures). Cast-level choices happen first. */}
+      {declaring !== null && (
+        <Suspense fallback={null}>
+          <CombatResolver
+            action={declaring.action}
+            sheetCombat={sheetCombat}
+            onCommit={declaring.commit}
+            onDone={() => setDeclaring(null)}
+          />
+        </Suspense>
       )}
 
       {/* ── Pinned ──────────────────────────────────────────────────
@@ -1102,7 +1103,7 @@ export function PlayTab() {
                 higherLevelsFor={higherLevelsFor}
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                onUse={() => handleUseReaction(action)}
+                onUse={() => commitAction(action)}
               />
             ))}
             {/* Off-list reaction bookkeeping — ONE clear "Mark used" row for a
@@ -1216,7 +1217,16 @@ function combatFacts(
           // label from `weaponFacts.breakdown` (issue #27 dogfood: "+3 STR · +2
           // Rage…"). This branch stays a plain label.
           label: t("combat.damage"),
-          value: `${summary.damage} ${t(`srd.damage_${summary.damageType}`)}`,
+          value: [
+            `${summary.damage} ${t(`srd.damage_${summary.damageType}`)}`,
+            summary.oneRollDamageBonus
+              ? t("combat.resolveOneRollBonus", {
+                  bonus: summary.oneRollDamageBonus,
+                })
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" · "),
         }
       : null,
     summary.healing ? { label: t("combat.heal"), value: summary.healing } : null,
@@ -1512,50 +1522,6 @@ function CombatActionCard({
     cta.emphasis && attackCount ? `${baseAriaLabel} — ${attackCount}` : baseAriaLabel;
   const pinLabel = pinned ? t("combat.unpin") : t("combat.pinToTop");
 
-  // S8 ROLL-ENTRY — apply a dice self-heal (Second Wind) the player ROLLED
-  // externally. `total` = enteredRoll + the engine's deterministic bonus; route
-  // it through the store `applyHealing` seam (clamps to effective max + logs the
-  // structured `hp-heal` event) and REGISTER it on the session undo stack (the
-  // reversal contract — ⌘Z/masthead reach it like every act). Pattern B (see
-  // `use-hp-controls`): the toast message depends on the mutation's clamped
-  // RESULT, so mutate first, register manually, then wire the toast. The app
-  // never fabricates the die; it applies ONLY the number the player supplied.
-  function applyEnteredHeal(total: number) {
-    if (total <= 0) return;
-    const cs = useCharacterStore.getState();
-    const prevHP = cs.character?.session.hp.current ?? 0;
-    cs.applyHealing(total);
-    const nextHP = cs.character?.session.hp.current ?? prevHP;
-    if (nextHP === prevHP) return; // already at full — nothing applied, no undo
-    registerUndoableResult(
-      { message: t("combat.hpHealToast", { val: total, prev: prevHP, next: nextHP }) },
-      () => useCharacterStore.getState().setHP(prevHP),
-      () => applyEnteredHeal(total)
-    );
-  }
-
-  // TEMP-HP ROLL-ENTRY — apply the Temporary HP a spell grants (False Life:
-  // enteredRoll + 4; Fiendish Vigor: the flat one-tap 12). Routed through the
-  // store `gainTempHp` seam so the MAX-WINS rule (temp HP don't stack) lives in
-  // ONE place (golden rule 6); it logs the structured `temp-hp-gain` event and
-  // registers on the session undo stack (Pattern B — the toast reads the
-  // max-wins RESULT), the reverse restoring the exact prior pool. No fabricated
-  // die — only the number the player supplied (+ the deterministic bonus). A
-  // max-wins no-op (the pool was already higher) applies nothing — no entry.
-  function applyEnteredTempHp(amount: number) {
-    if (amount <= 0) return;
-    const cs = useCharacterStore.getState();
-    const prevTemp = cs.character?.session.hp.temp ?? 0;
-    cs.gainTempHp(amount);
-    const nextTemp = cs.character?.session.hp.temp ?? prevTemp;
-    if (nextTemp === prevTemp) return; // already higher — nothing applied, no undo
-    registerUndoableResult(
-      { message: t("combat.tempHpToast", { val: nextTemp }) },
-      () => useCharacterStore.getState().setTempHP(prevTemp),
-      () => applyEnteredTempHp(amount)
-    );
-  }
-
   // RA-12 — apply an entered Hide check d20 (SRD "Hide [Action]": DC 15
   // Dexterity (Stealth); success = the Invisible condition, your total = the DC
   // to find you). The player rolls the d20 IN REAL LIFE and enters the face
@@ -1691,29 +1657,6 @@ function CombatActionCard({
       ) : (
         <>
           <UniversalCardFacts facts={facts} />
-          {/* S8 ROLL-ENTRY — a dice self-heal (Second Wind 1d10 + level): the
-              player rolls externally + enters the result, then applies
-              enteredRoll + the deterministic bonus (golden rule 21 — never
-              auto-rolled). Display-only formula above; this is the apply seam. */}
-          {effectiveSummary.healApply && (
-            <HealRollEntry
-              dice={effectiveSummary.healApply.dice}
-              bonus={effectiveSummary.healApply.bonus}
-              onApply={applyEnteredHeal}
-            />
-          )}
-          {/* TEMP-HP ROLL-ENTRY — the sibling of the heal roll-entry for spells
-              that grant a rolled Temp HP (False Life 2d4 + 4). Enter the 2d4, tap
-              once → apply enteredRoll + 4 (max-wins). Fiendish Vigor maximizes it
-              (dice-free), so that path renders a one-tap "Gain 12 temp HP" button
-              instead of the roll field (golden rule 21). */}
-          {effectiveSummary.tempHpApply && (
-            <TempHpRollEntry
-              dice={effectiveSummary.tempHpApply.dice}
-              bonus={effectiveSummary.tempHpApply.bonus}
-              onApply={applyEnteredTempHp}
-            />
-          )}
           {/* RA-12 — the Hide check roll-entry (d20 + live Stealth bonus vs the
               flat DC 15): the outcome APPLIES (Invisible + the remembered
               find-DC), never just informs. The end-conditions hint teaches when
@@ -1755,85 +1698,6 @@ function CombatActionCard({
         </UniversalCardFoot>
       )}
     </UniversalCard>
-  );
-}
-
-/**
- * TEMP-HP ROLL-ENTRY — the sibling of {@link HealRollEntry} for a spell's rolled
- * Temporary HP (False Life: "2d4 + 4"). Golden rule 21: the app NEVER rolls — the
- * player rolls their 2d4 EXTERNALLY and enters it; tapping Apply gains
- * `enteredRoll + bonus` Temp HP via the store `gainTempHp` seam (max-wins,
- * undoable). When `dice` is absent the source MAXIMIZES the spell (Warlock
- * Fiendish Vigor → the dice-free maximum, 12): there's nothing to roll, so it
- * renders a single one-tap "Gain N temp HP" button (a deterministic number MAY
- * one-tap-apply). Reuses the `.heal-roll-entry` register — visually identical.
- */
-function TempHpRollEntry({
-  dice,
-  bonus,
-  onApply,
-}: {
-  dice?: string;
-  bonus: number;
-  onApply: (total: number) => void;
-}) {
-  const { t } = useTranslation();
-  // The die's cap (2d4 → 8), so the entry can't exceed the dice's own maximum.
-  // Falls back to a loose cap if the token is unexpected (never blocks entry).
-  const m = dice ? /^(\d*)d(\d+)$/.exec(dice) : null;
-  const count = m && m[1] ? parseInt(m[1], 10) : 1;
-  const face = m ? parseInt(m[2] ?? "0", 10) : 0;
-  const dieMax = face > 0 ? count * face : 99;
-  const dieMin = m ? count : 1;
-  // Hooks run unconditionally (React rules) — the dice-free branch just ignores it.
-  const [roll, setRoll] = useState(dieMin);
-  // One-tap: a maximized (dice-free) grant — apply the flat total directly.
-  if (!dice) {
-    return (
-      <div className="heal-roll-entry">
-        <span className="heal-roll-label">{t("combat.tempHpMaxLabel")}</span>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onApply(bonus);
-          }}
-        >
-          {t("combat.tempHpMaxApply", { val: bonus })}
-        </Button>
-      </div>
-    );
-  }
-  return (
-    <div className="heal-roll-entry">
-      {/* The label/field/stepper strings are GENERIC roll-entry phrasing ("Roll
-          {{dice}}, then apply" / "Your {{dice}} roll" / Lower·Raise) — shared with
-          the heal roll-entry as ONE canonical key (i18n dedup guard). Only the
-          APPLY button copy ("Temp HP +N") is temp-HP-specific. */}
-      <span className="heal-roll-label">{t("combat.healRollLabel", { dice })}</span>
-      <NumberStepper
-        value={roll}
-        onChange={setRoll}
-        min={dieMin}
-        max={dieMax}
-        ariaLabel={t("combat.healRollField", { dice })}
-        decrementLabel={t("combat.healRollDec")}
-        incrementLabel={t("combat.healRollInc")}
-      />
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={(e) => {
-          e.stopPropagation();
-          onApply(roll + bonus);
-        }}
-      >
-        {bonus > 0
-          ? t("combat.tempHpRollApply", { bonus })
-          : t("combat.tempHpRollApplyFlat")}
-      </Button>
-    </div>
   );
 }
 

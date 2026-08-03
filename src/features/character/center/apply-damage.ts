@@ -1,12 +1,12 @@
 /**
  * apply-damage — the sheet's Firebase-free bridge to the campaign encounter write behind
- * the AttackDeclaration panel (auto-narrated combat — the source-of-truth flip, owner
+ * the CombatResolver panel (auto-narrated combat — the source-of-truth flip, owner
  * 2026-08-02).
  *
  * When a player types the damage they rolled and confirms a HIT, that damage AUTO-APPLIES
  * to the target monster's HP on the shared campaign doc. The write itself is
- * {@link import("@/features/campaigns/campaign-io").applyDeclaredDamage} (a narrow
- * cross-user dot-path transaction the `firestore.rules` `memberAppliesDamage()` grant
+ * {@link import("@/features/campaigns/campaign-io").applyDeclaredCombatEffects} (a narrow
+ * cross-user dot-path transaction the rules' combat-effect grant
  * allows). This module reaches it through a DYNAMIC import — exactly like
  * {@link import("./turn-state").advanceSharedTurn} — so the sheet's STATIC graph (and its
  * unit tests) stay Firebase-free: the always-eager cockpit never pulls the campaign+engine
@@ -17,21 +17,17 @@
  * subscription reconciles the truth. NEVER throws.
  */
 
-import type { DeclaredHit } from "@/features/campaigns/campaign-io";
+import type { DeclaredCombatEffect } from "@/features/campaigns/campaign-io";
 
-/**
- * Apply the player's declared per-target damage to the encounter's monster HP. `hits`
- * carries one entry per struck target (the id + the typed damage). Resolves when the
- * write lands; rejects on failure so the caller can toast — but the internal `.catch`
- * guarantees a rejection is always logged even when the caller ignores the promise.
- */
-export async function applyDeclaredDamage(
+/** Apply the reviewed damage/healing/condition batch through one dynamic campaign boundary. */
+export async function applyDeclaredCombatEffects(
   campaignId: string,
-  hits: ReadonlyArray<DeclaredHit>
+  effects: ReadonlyArray<DeclaredCombatEffect>
 ): Promise<void> {
-  const { applyDeclaredDamage: apply } = await import("@/features/campaigns/campaign-io");
-  await apply(campaignId, hits).catch((e: unknown) => {
-    console.error("Declared-damage apply failed", e);
+  const { applyDeclaredCombatEffects: apply } =
+    await import("@/features/campaigns/campaign-io");
+  await apply(campaignId, effects).catch((e: unknown) => {
+    console.error("Declared combat-effect apply failed", e);
     throw e;
   });
 }
