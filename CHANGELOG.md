@@ -1,5 +1,89 @@
 # Changelog
 
+## 0.23.0
+
+This release collects the work shipped since 0.22.0 into a much more capable table companion: the
+complete bilingual SRD bestiary, shareable characters and campaigns, reusable homebrew, companions,
+and a unified deterministic combat-resolution flow. It also completes the soft-launch safety and
+legal baseline, while preserving the app's core rule: automate what the table has determined and
+leave every result reversible.
+
+### Combat and encounters
+
+- Replaced the separate attack-declaration paths with one compact resolver for attacks, saving
+  throws, damage, healing, Temporary HP, conditions, cures, area effects, and multiple targets.
+  Slot level and upcast scaling are resolved before targets, and recurring spell actions retain the
+  original cast level without spending another slot.
+- Monsters added in groups are now independent, named combatants, so the exact Goblin or other
+  creature can be selected. Players and DMs can freely override targets, results, amounts, and
+  conditions when the table or homebrew says otherwise.
+- The encounter Chronicle now preserves the action or spell name, actor, targets, outcome, round,
+  damage, healing, and conditions. Peer-player effects use an idempotent delivery queue, and DM undo
+  reverses HP, Temporary HP, conditions, concentration, and active-state changes atomically.
+- Added typed damage defenses, save-for-half outcomes, linked self-healing, maximized spell healing,
+  multi-instance casts, Grapple/Shove consequences, and deterministic spell riders without branching
+  on spell or feature names.
+- Redesigned the encounter header and Chronicle as one compact folio dossier, fixed the light-theme
+  compact encounter chip, removed initiative-entry reflow, and restored canonical margins,
+  scrolling, and footers in the end-encounter dialog and every shared modal.
+
+### Bestiary, companions, and homebrew
+
+- Added the complete SRD 5.2.1 bestiary: 330 bilingual EN/IT monsters with searchable Compendium
+  browsing, full statblocks, CR/XP data, structured attacks and saves, encounter selection, and the
+  2024 DMG encounter-difficulty budget.
+- Added canonical living monster portraits throughout the Compendium, encounter cards, and target
+  selection. Custom monsters can upload, crop, replace, or remove their own portraits, with a clean
+  creature-type fallback when no image exists.
+- Added the Companions rail and shared companion statblocks, including Find Familiar form selection,
+  creature-type variants, and Chain Pact enhancements.
+- Added an account-level homebrew library. Custom items and monsters persist automatically, can be
+  edited in place, and appear in the same add flows as built-in content.
+- Added quickbuild presets and Randomize so character creation can open with a complete playable
+  build while keeping every choice editable.
+
+### Sharing and campaign tools
+
+- Added revocable public character links and campaign invite links, including a read-only anonymous
+  character view and one consistent Share popover. Stopping and restoring a share is immediate and
+  non-destructive.
+- Added secure per-link Open Graph previews for characters and campaigns, localized to the owner's
+  EN/IT preference. Locked, revoked, unknown, and unshared links reveal no private campaign or
+  character data.
+- Expanded the DM encounter workflow with the bestiary picker, statblock disclosure, CR controls,
+  lair adjustment, XP budget, custom-monster library, exact target capture, and an auto-narrated live
+  combat Chronicle.
+- Reworked the admin console with bounded disclosure rows and one lazy omni-search across users,
+  characters, and campaigns.
+
+### Design, accessibility, and performance
+
+- Unified dialogs, portals, sheets, campaign surfaces, wizards, login, loaders, and error states under
+  the worked-bronze folio grammar. Shared primitives now own modal framing, body scrolling, edge
+  dissolves, and footer spacing so individual dialogs cannot drift independently.
+- Rebuilt the light and dark reading surfaces, including the supplied parchment texture for the
+  light theme, stable CSS working plates, canonical binding corners, index tabs, and accessible
+  damage/condition inks in both themes.
+- Virtualized large Compendium and picker result lists, deferred expensive filtering, cached stable
+  search corpora, lazy-loaded the homebrew library and pack bestiary, and moved heavy scene art to a
+  runtime cache. Keyboard navigation and full uncapped result access remain intact.
+- Fixed mobile sheet-menu actions, tab/search flashes and jumps, nested Escape handling, statblock
+  scrolling, light-theme contrast regressions, and the remaining dialog and reading-leaf margin
+  inconsistencies.
+
+### Reliability, safety, and project baseline
+
+- Added Firebase App Check in monitor mode, tightened Firestore and Storage rules for sharing and
+  monster art, and rethresholded the SAFE-01 budget guard to a £15 hard cap with £1/£5/£10 alerts for
+  the community soft launch.
+- Added bilingual Privacy Policy and Terms of Use pages, the nominative D&D compatibility disclaimer,
+  and the required privacy sub-processor disclosure.
+- Relicensed the application code under AGPL-3.0. SRD content remains CC-BY-4.0 and the public/private
+  content-pack boundary is unchanged.
+- Upgraded React Router to 8.3.0, patched known dependency advisories, strengthened accessibility,
+  bundle-budget, Firestore/Storage, corpus, and automation guards, and kept both composed and SRD-only
+  builds green.
+
 ## 0.22.0
 
 A 2024-rules correctness and Italian-authenticity release: three more play procedures now run themselves (Hide, Weapon Mastery, ammunition), every Italian name is re-sourced to the official SRD 5.2.1, the PDF export regained its resource ledger, and a wave of overlay, search, and combat fixes landed.

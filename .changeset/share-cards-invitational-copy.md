@@ -1,5 +1,0 @@
----
-"d20-folio": patch
----
-
-feat(share): reframe the link-preview copy as INVITATIONAL, not promotional (owner + research settled 2026-07-31). A shared link is an invitation ("here's my character, have a look"), never an ad, so the OG cards drop every price/benefit claim: the character footer becomes "Have a look at this hero" (IT "Dai un'occhiata a questo eroe") and the invite footer "Step into this adventure" ("Entra in questa avventura"), replacing the "Free to read · no account needed" / "A seat awaits you" value lines. The unfurl `og:description` text is likewise reworded to open the door rather than sell ("Have a look at {name}'s hero on d20 Folio", "Take a look inside this adventure on d20 Folio"), keeping the "companion for D&D 2024" compatibility phrasing (never an official-product claim). Owner-locale EN/IT localization, the security gating, and the static English fallback card are all unchanged — only the copy moves. A new guard pins that neither description makes a free/no-account claim; DESIGN.md §6 records the principle (shared artifacts name the thing and open the door; benefits are stated only at the decision moment).
