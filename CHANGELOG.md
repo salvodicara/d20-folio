@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.23.1
+
+### Patch Changes
+
+- 489ef46: Keep encounter turn changes spatially stable: advancing initiative no longer auto-expands monster details or moves the page.
+
 ## 0.23.0
 
 This release collects the work shipped since 0.22.0 into a much more capable table companion: the
