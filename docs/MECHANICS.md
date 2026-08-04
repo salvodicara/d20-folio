@@ -273,12 +273,14 @@ Persistent spells separate three facts: `resolveOnCast:false` means placement sp
 immediate target consequence; `recurrence` repeats the established effect at its stable cadence; `followUp`
 defines a mechanically different action granted while active. The chosen cast level is persisted with the
 concentration or stable active key, so every later action reuses its upcast formula without spending another
-slot. Clearing or undoing that state retracts/restores the level atomically. This covers repeated damage,
-attacks, saves, healing and conditions with the same generic resolver rather than spell-name cases.
+slot. A recurring selected-recipient effect keeps the exact target from the active occurrence; a declared
+successful-save ending removes the caster state and every source-owned occurrence in one undoable operation.
+Clearing or undoing that state retracts/restores the level atomically. This covers repeated damage, attacks,
+saves, healing and conditions with the same generic resolver rather than spell-name cases.
 
-Target-bound duration uses `ActiveCombatEffect`, not a parallel spell model: stable actor/target/source,
-`grant-group | target-mark` payload, frozen cast bindings and `encounter | concentration | turn-boundary`
-duration. An append-only apply/revoke ledger projects the referenced catalogue grants onto PCs and exact
+Target-bound duration uses `ActiveCombatEffect`, not a parallel spell model: stable actor/target/source
+(spell or feature), `grant-group | target-mark` payload, frozen cast bindings and
+`encounter | concentration | turn-boundary` duration. An append-only apply/revoke ledger projects the referenced catalogue grants onto PCs and exact
 monster instances. Typed grants own the deterministic legs (`hp-flat`, `hp-current-on-apply`, recurring
 Temp HP, all-damage resistance, damage transfer, zero-HP floor, extra-action restrictions and aftereffects);
 the campaign reducer owns lifecycle and atomic cross-document writes. Aid, Heroism, Warding Bond, Death
@@ -286,12 +288,17 @@ Ward and Haste are examples, not branches. The table can still revoke or correct
 
 Short effects use exact turn-phase boundaries in both homes. A self effect persists its computed
 `{round, phase}` under `session.effectBoundaries`; a selected-recipient effect stores the equivalent
-`turn-boundary` occurrence in the campaign ledger. `roll-die-adjustment` declares a physical next-roll
-die (scope, sign, formula and one-shot consumption), while `healing-blocked` declares that HP recovery is
-forbidden without suppressing cures or Temporary HP. The resolver surfaces these facts on the target,
+`turn-boundary` occurrence in the campaign ledger. `roll-die-adjustment` declares a physical roll die
+(scope, sign and formula) with either one-shot `next` consumption or persistent `each` application,
+while `healing-blocked` declares that HP recovery is forbidden without suppressing cures or Temporary HP.
+The resolver surfaces these facts on the target,
 consumes a one-shot adjustment only when that roll is adjudicated and in the same transaction as the
 action consequences, then restores a fresh occurrence on undo. Shield, Mind Sliver, Chill Touch and Ray
-of Frost are data consumers of these generic seams.
+of Frost are data consumers of these generic seams; Bless uses the same registry for every attack/save.
+
+Target-conditional damage remains a normal damage component. `bonusDamageAgainst` declares its creature-type
+set, dice and damage type; target review includes it only for a matching creature and sends it through the
+ordinary defense reducer. It never mutates the base formula or branches on a spell id.
 
 `spellInstanceCount(spell, castLevel)` resolves the count at the cast level (base at the spell's own
 level); both surfaces render `N × {dice}` via `spells.multiInstance`, with the per-instance `damageDice`

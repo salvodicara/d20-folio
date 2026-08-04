@@ -37,6 +37,7 @@ import {
   appendPersistentCombatEffect,
   applyDeclaredCombatEffects,
   revokePersistentCombatEffect,
+  revokePersistentCombatEffectsBySource,
 } from "./apply-damage";
 import {
   combatDamageParts,
@@ -51,10 +52,11 @@ import { NO_DEFENSES, type DamageDefenses } from "@/lib/damage-intake";
 import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
 import { resolveTrackers, type ResolvedAction } from "@/lib/smart-tracker";
 import type { PortraitCrop } from "@/types/character";
-import type { ConditionId, DamageType } from "@/data/types";
+import type { ConditionId, CreatureType, DamageType } from "@/data/types";
 import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 import {
   activeRollDieAdjustments,
+  effectsByActorSource,
   effectsForTarget,
   healingBlockedByEffects,
   speedAdjustmentByEffects,
@@ -95,11 +97,13 @@ interface TargetChoice {
   defenses: DamageDefenses;
   conditionImmunities: ReadonlySet<ConditionId>;
   qualifiedDefenseCount: number;
+  creatureType?: CreatureType;
   healingBlocked: boolean;
   speedAdjustmentFt: number;
   rollDieAdjustments: Array<
     Omit<ActiveRollDieAdjustment, "effect"> & { effect?: ActiveCombatEffect }
   >;
+  markScopes: Array<"marked" | "cursed" | "vowed">;
 }
 
 function encounterTargets(combat: GlobalCombat): TargetChoice[] {
@@ -120,6 +124,9 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
       healingBlocked: healingBlockedByEffects(effects),
       speedAdjustmentFt: speedAdjustmentByEffects(effects),
       rollDieAdjustments: activeRollDieAdjustments(effects),
+      markScopes: effects.flatMap((effect) =>
+        effect.payload.kind === "target-mark" ? [effect.payload.scope] : []
+      ),
     };
   };
   return combat.view.rows.flatMap((row) => {
@@ -150,6 +157,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         defenses: row.defenses ?? NO_DEFENSES,
         conditionImmunities: row.conditionImmunities ?? new Set(),
         qualifiedDefenseCount: row.qualifiedDefenseCount ?? 0,
+        creatureType: row.creatureType,
         ...effectStateFor(row.id, index),
       }));
     }
@@ -178,6 +186,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         defenses: row.defenses ?? NO_DEFENSES,
         conditionImmunities: row.conditionImmunities ?? new Set(),
         qualifiedDefenseCount: row.qualifiedDefenseCount ?? 0,
+        creatureType: row.creatureType,
         ...effectStateFor(row.id),
       },
     ];
@@ -254,6 +263,9 @@ export function CombatResolver({
                 ...adjustment,
               })
             ),
+            markScopes: (character.session.encounterEffects ?? []).flatMap((effect) =>
+              effect.payload.kind === "target-mark" ? [effect.payload.scope] : []
+            ),
           },
         ]
       : [];
@@ -298,10 +310,30 @@ export function CombatResolver({
       ? "enemy"
       : spec.targetAffinity;
 
+  const persistentTargetEffects =
+    action.persistentTargetSourceId && sheetCombat
+      ? effectsByActorSource(
+          sheetCombat.encounter.effectOps,
+          sheetCombat.myId,
+          action.persistentTargetSourceId
+        )
+      : [];
+  const actionTargets =
+    !showAll && persistentTargetEffects.length > 0
+      ? targets.filter((target) =>
+          persistentTargetEffects.some(
+            (effect) =>
+              effect.target.combatantId === target.targetId &&
+              (effect.target.kind !== "monster" ||
+                effect.target.tokenIndex === target.tokenIndex)
+          )
+        )
+      : targets;
+
   const affinityTargets =
     showAll || activeAffinity === "any"
-      ? targets
-      : targets.filter((target) =>
+      ? actionTargets
+      : actionTargets.filter((target) =>
           activeAffinity === "self"
             ? target.targetId === (sheetCombat?.myId ?? "self")
             : activeAffinity === "ally"
@@ -467,14 +499,19 @@ export function CombatResolver({
         ).some((amount) => amount > 0)
     );
 
-  const damagePartsForTarget = (key: string): CombatDamagePartSpec[] =>
-    damageParts.filter(
+  const damagePartsForTarget = (key: string): CombatDamagePartSpec[] => {
+    const creatureType = byKey.get(key)?.creatureType;
+    return damageParts.filter(
       (part) =>
         partTargets(key, part) &&
         (!part.round1 || (sheetCombat?.round ?? soloRound) === 1) &&
+        (!part.targetCreatureTypes ||
+          (creatureType !== undefined &&
+            part.targetCreatureTypes.includes(creatureType))) &&
         (!part.requiresRiderTrackerId ||
           requiredRiderApplied(key, part.requiresRiderTrackerId))
     );
+  };
 
   const damageResolutionFor = (key: string) => {
     const target = byKey.get(key);
@@ -744,15 +781,48 @@ export function CombatResolver({
     // target state untouched.
     let sharedEffectsApplied = false;
     let closed = false;
-    const committedAction = dynamicHpPool
-      ? { ...action, trackerCost: totalPoolCost }
-      : action;
+    const markTransferEffect =
+      sheetCombat && action.standingEffect?.markScope
+        ? effectsByActorSource(
+            sheetCombat.encounter.effectOps,
+            sheetCombat.myId,
+            action.standingEffect.sourceId
+          ).find((effect) => {
+            if (
+              effect.payload.kind !== "target-mark" ||
+              effect.payload.scope !== action.standingEffect?.markScope
+            ) {
+              return false;
+            }
+            return targets.some(
+              (target) =>
+                target.targetId === effect.target.combatantId &&
+                (effect.target.kind !== "monster" ||
+                  effect.target.tokenIndex === target.tokenIndex) &&
+                target.down
+            );
+          })
+        : undefined;
+    const committedAction: ResolvedAction = {
+      ...action,
+      ...(dynamicHpPool ? { trackerCost: totalPoolCost } : {}),
+      ...(markTransferEffect
+        ? {
+            costTracker: undefined,
+            trackerCost: undefined,
+            costTrackerIsPool: undefined,
+            costTrackerUnit: undefined,
+          }
+        : {}),
+    };
     let consumableSaveEffects = [
       ...new Map(
         spec.kind === "save" || spec.kind === "attack-save"
           ? choices.flatMap(({ target }) =>
               target.rollDieAdjustments.flatMap((adjustment) =>
-                adjustment.rollType === "save" && adjustment.effect
+                adjustment.rollType === "save" &&
+                adjustment.consume === "next" &&
+                adjustment.effect
                   ? [[adjustment.effect.id, adjustment.effect] as const]
                   : []
               )
@@ -762,6 +832,47 @@ export function CombatResolver({
     ];
     onCommit(() => {
       const consumedSaveEffects = consumableSaveEffects;
+      const endingActiveKey = action.endsActiveKeyOnSuccessfulSave;
+      const endsOnSave =
+        Boolean(endingActiveKey && action.spellId) &&
+        selected.some((key) => outcomeFor(key).save === "saved");
+      const endedEffects =
+        endsOnSave && sheetCombat && action.spellId
+          ? effectsByActorSource(
+              sheetCombat.encounter.effectOps,
+              sheetCombat.myId,
+              action.spellId
+            )
+          : [];
+      const previousCastLevel = endingActiveKey
+        ? useCharacterStore.getState().character?.session.activeSpellCastLevels?.[
+            endingActiveKey
+          ]
+        : undefined;
+      let endApplied = endsOnSave;
+      const endPromise =
+        endsOnSave && endingActiveKey
+          ? (() => {
+              const store = useCharacterStore.getState();
+              store.setActiveFeature(endingActiveKey, false);
+              store.setActiveSpellCastLevel(endingActiveKey, undefined);
+              return (
+                sheetCombat && action.spellId
+                  ? revokePersistentCombatEffectsBySource(sheetCombat.campaignId, {
+                      actorId: sheetCombat.myId,
+                      sourceId: action.spellId,
+                    })
+                  : Promise.resolve()
+              ).catch((error: unknown) => {
+                endApplied = false;
+                const current = useCharacterStore.getState();
+                current.setActiveFeature(endingActiveKey, true);
+                current.setActiveSpellCastLevel(endingActiveKey, previousCastLevel);
+                showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+                throw error;
+              });
+            })()
+          : null;
       const riderUndo = appliedResourceRiders.flatMap(([trackerId, part]) => {
         const cs = useCharacterStore.getState();
         cs.useTracker(trackerId, 1);
@@ -944,23 +1055,24 @@ export function CombatResolver({
                     }
                   )
                 : null;
-              const duration: ActiveCombatEffect["duration"] = standingEffect.lifetime
-                .concentration
-                ? {
-                    kind: "concentration",
-                    actorId: actorRef.combatantId,
-                    sourceId: standingEffect.source.id,
-                  }
-                : relativeBoundary
-                  ? relativeBoundary
-                  : standingEffect.lifetime.maxRounds !== undefined
-                    ? {
-                        kind: "turn-boundary",
-                        combatantId: actorRef.combatantId,
-                        round: sheetCombat.round + standingEffect.lifetime.maxRounds,
-                        phase: "turn-end",
-                      }
-                    : { kind: "encounter" };
+              const duration: ActiveCombatEffect["duration"] = markTransferEffect
+                ? markTransferEffect.duration
+                : standingEffect.lifetime.concentration
+                  ? {
+                      kind: "concentration",
+                      actorId: actorRef.combatantId,
+                      sourceId: standingEffect.source.id,
+                    }
+                  : relativeBoundary
+                    ? relativeBoundary
+                    : standingEffect.lifetime.maxRounds !== undefined
+                      ? {
+                          kind: "turn-boundary",
+                          combatantId: actorRef.combatantId,
+                          round: sheetCombat.round + standingEffect.lifetime.maxRounds,
+                          phase: "turn-end",
+                        }
+                      : { kind: "encounter" };
               return [
                 {
                   id,
@@ -1088,10 +1200,35 @@ export function CombatResolver({
                 });
             }
           : null;
-      return undoOwn || undoPersistent || undoConsumedSaveAdjustments || riderUndo.length
+      const undoEndedRecurringEffect =
+        endPromise && endingActiveKey
+          ? () => {
+              void endPromise
+                .then(async () => {
+                  if (!endApplied) return;
+                  const current = useCharacterStore.getState();
+                  current.setActiveFeature(endingActiveKey, true);
+                  current.setActiveSpellCastLevel(endingActiveKey, previousCastLevel);
+                  if (!sheetCombat) return;
+                  for (const effect of endedEffects) {
+                    await appendPersistentCombatEffect(sheetCombat.campaignId, {
+                      ...effect,
+                      id: crypto.randomUUID(),
+                    });
+                  }
+                })
+                .catch(() => undefined);
+            }
+          : null;
+      return undoOwn ||
+        undoPersistent ||
+        undoConsumedSaveAdjustments ||
+        undoEndedRecurringEffect ||
+        riderUndo.length
         ? () => {
             undoPersistent?.();
             undoConsumedSaveAdjustments?.();
+            undoEndedRecurringEffect?.();
             undoOwn?.();
             for (const undo of riderUndo) undo();
           }
@@ -1211,6 +1348,11 @@ export function CombatResolver({
                           })}
                         </small>
                       )}
+                      {target.markScopes.map((scope) => (
+                        <small key={scope}>
+                          {t(`combat.resolveTargetMark_${scope}`)}
+                        </small>
+                      ))}
                       {target.conditions.length > 0 && (
                         <small>
                           {target.conditions
@@ -1234,11 +1376,16 @@ export function CombatResolver({
                       )}
                       {target.rollDieAdjustments.map((adjustment, index) => (
                         <small key={`${adjustment.sourceId}-${index}`}>
-                          {t("combat.resolveNextRollAdjustment", {
-                            roll: t(`combat.resolveRoll_${adjustment.rollType}`),
-                            sign: adjustment.operation === "add" ? "+" : "−",
-                            dice: adjustment.dice,
-                          })}
+                          {t(
+                            adjustment.consume === "next"
+                              ? "combat.resolveNextRollAdjustment"
+                              : "combat.resolveEachRollAdjustment",
+                            {
+                              roll: t(`combat.resolveRoll_${adjustment.rollType}`),
+                              sign: adjustment.operation === "add" ? "+" : "−",
+                              dice: adjustment.dice,
+                            }
+                          )}
                         </small>
                       ))}
                     </span>
@@ -1333,11 +1480,16 @@ export function CombatResolver({
                               color="var(--semantic-warning)"
                               size="sm"
                             >
-                              {t("combat.resolveNextRollAdjustment", {
-                                roll: t("combat.resolveRoll_save"),
-                                sign: adjustment.operation === "add" ? "+" : "−",
-                                dice: adjustment.dice,
-                              })}
+                              {t(
+                                adjustment.consume === "next"
+                                  ? "combat.resolveNextRollAdjustment"
+                                  : "combat.resolveEachRollAdjustment",
+                                {
+                                  roll: t("combat.resolveRoll_save"),
+                                  sign: adjustment.operation === "add" ? "+" : "−",
+                                  dice: adjustment.dice,
+                                }
+                              )}
                             </Badge>
                           ))}
                       {action.summary.oneRollDamageBonus && targetAppliesDamage && (

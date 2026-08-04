@@ -22,6 +22,7 @@ import {
   type MonsterInput,
   monsterInstanceName,
 } from "@/features/campaigns/encounter";
+import type { CreatureType } from "@/data/types";
 import { totalLevel } from "@/lib/classes";
 import {
   budgetVerdict,
@@ -128,6 +129,7 @@ export interface EncounterCombatantView {
   qualifiedDefenseCount?: number;
   // ── Monster state (present on `kind === "monster"`) ──
   srdId?: string;
+  creatureType?: CreatureType;
   tokens?: number[];
 }
 
@@ -210,6 +212,7 @@ export function buildEncounterView(
         down: isDown(c),
         hidden: c.hidden ?? false,
         srdId: c.srdId,
+        creatureType: c.creatureType,
         portraitUrl: c.portraitUrl ?? null,
         portraitCrop: c.portraitCrop ?? null,
         tokens: c.tokens,

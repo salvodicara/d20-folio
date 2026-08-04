@@ -30,6 +30,7 @@ import type {
   SrdFeatData,
   AbilityCode,
   ConditionId,
+  CreatureType,
   DamageType,
   SrdEquipmentData,
   SpellRecurrence,
@@ -295,6 +296,7 @@ export interface ActionSummary {
   /** This row reuses an already-active spell. It never spends another slot or starts
    * concentration; its formulas are scaled to the original cast level. */
   recurringUse?: true;
+  endsOnSuccessfulSave?: true;
   /** Damage type: "fire", "piercing", "force" */
   damageType?: string;
   /**
@@ -350,6 +352,7 @@ export interface ActionSummary {
     resourceTrackerId?: string;
     round1?: true;
     requiresRiderTrackerId?: string;
+    targetCreatureTypes?: ReadonlyArray<CreatureType>;
   }>;
   /**
    * How this weapon's OWN damage dice are manipulated when rolled (Great Weapon
@@ -693,6 +696,12 @@ export interface ResolvedAction {
     phase: "turn-start" | "turn-end";
     turns: number;
   };
+  /** A recurring save can end this already-active state without re-activating it. */
+  endsActiveKeyOnSuccessfulSave?: string;
+  /** The actor's live effect from this source owns the recurring action's exact
+   * target. The resolver defaults to that creature while retaining explicit
+   * table override through its existing "any creature" control. */
+  persistentTargetSourceId?: string;
   /**
    * A standing spell grant that belongs on the selected creature rather than on
    * the caster. The action carries only the catalogue reference; the encounter
@@ -701,7 +710,9 @@ export interface ResolvedAction {
    */
   standingEffect?: {
     sourceId: string;
+    sourceKind?: "spell" | "feature";
     activeKey: string;
+    markScope?: "marked" | "cursed" | "vowed";
     targetAffinity: CombatTargeting["affinity"];
     excludeSelf?: boolean;
     /** Deterministic combat cap declared by the while-active grant, when any. */
@@ -1006,6 +1017,7 @@ export interface RawActionSummary extends Omit<
     resourceTrackerId?: string;
     round1?: true;
     requiresRiderTrackerId?: string;
+    targetCreatureTypes?: ReadonlyArray<CreatureType>;
     /**
      * G14 — an `attack-or-spell` rider is NOT weapon-bound (a celestial-revelation
      * Revelation's +PB): it rides ONE attack OR spell per turn, surfaced as a
@@ -4936,6 +4948,21 @@ function resolveFeatureActions(
           : {}),
         ...(action.locksMovement ? { locksMovement: true as const } : {}),
         ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+        ...(action.targetMark
+          ? {
+              standingEffect: {
+                sourceId: srdFeature.id,
+                sourceKind: "feature" as const,
+                activeKey: activatesKey ?? srdFeature.id,
+                markScope: action.targetMark.scope,
+                targetAffinity: action.targeting?.affinity ?? ("enemy" as const),
+                ...(action.targeting?.excludeSelf ? { excludeSelf: true } : {}),
+                ...(action.targetMark.maxRounds !== undefined
+                  ? { maxRounds: action.targetMark.maxRounds }
+                  : {}),
+              },
+            }
+          : {}),
         // USE-APPLIES — deterministic effects this action auto-applies on use
         // (a slot-gated same-source temp-hp grant: Chef's PB temp HP).
         ...(srdUseEffects.length ? { useEffects: srdUseEffects } : {}),
@@ -5538,6 +5565,19 @@ function resolveSpellActions(
       }
     }
 
+    if (spell.bonusDamageAgainst) {
+      summary.extraDamage = [
+        ...(summary.extraDamage ?? []),
+        {
+          dice: spell.bonusDamageAgainst.dice,
+          damageType: spell.bonusDamageAgainst.damageType,
+          oncePerTurn: false,
+          targetCreatureTypes: spell.bonusDamageAgainst.creatureTypes,
+          source: srdText("spell", spell.id, "name"),
+        },
+      ];
+    }
+
     // AREA is target geometry, not a damage capability. Carry it for every area
     // spell — including condition-only/control spells — so a physical-table user
     // freely declares every creature caught without the app pretending to know
@@ -5696,6 +5736,7 @@ function resolveSpellActions(
     // that ownership on the grant itself. Targeting metadata describes legal targets;
     // it never silently re-homes an otherwise caster-owned standing grant.
     let spellActivatesKey: string | undefined;
+    let spellActiveDurationRounds: number | undefined;
     let spellActiveTurnBoundary: ResolvedAction["activeTurnBoundary"];
     let standingEffect: ResolvedAction["standingEffect"];
     for (const g of spell.grants ?? []) {
@@ -5724,6 +5765,7 @@ function resolveSpellActions(
         };
       } else {
         spellActivatesKey = g.activeKey;
+        spellActiveDurationRounds = g.duration?.maxRounds;
         if (g.duration?.kind === "turn-boundary") {
           spellActiveTurnBoundary = {
             phase: g.duration.phase,
@@ -5731,7 +5773,6 @@ function resolveSpellActions(
           };
         }
       }
-      break;
     }
 
     const castAction: RawResolvedAction = {
@@ -5751,6 +5792,9 @@ function resolveSpellActions(
       // Casting establishes the spell's while-active state (Shield of Faith's AC).
       ...(spellActivatesKey ? { activatesKey: spellActivatesKey } : {}),
       ...(spellActiveTurnBoundary ? { activeTurnBoundary: spellActiveTurnBoundary } : {}),
+      ...(spellActiveDurationRounds !== undefined
+        ? { activeDurationRounds: spellActiveDurationRounds }
+        : {}),
       ...(standingEffect ? { standingEffect } : {}),
     };
     actions.push(castAction);
@@ -5837,10 +5881,12 @@ function resolveSpellActions(
               ? { trigger: uiText(`combat.reactionTrigger_${follow.trigger}`) }
               : {}),
             recurringUse: true,
+            ...(spell.endsOnSuccessfulSave ? { endsOnSuccessfulSave: true } : {}),
           }
         : {
             ...scaleCombatSummaryAtCastLevel(summary, spell, castLevel),
             recurringUse: true,
+            ...(spell.endsOnSuccessfulSave ? { endsOnSuccessfulSave: true } : {}),
           };
       actions.push({
         ...castAction,
@@ -5853,6 +5899,13 @@ function resolveSpellActions(
         defaultPinned: true,
         summary: recurringSummary,
         activatesKey: undefined,
+        activeDurationRounds: undefined,
+        activeTurnBoundary: undefined,
+        standingEffect: undefined,
+        ...(standingEffect ? { persistentTargetSourceId: spell.id } : {}),
+        ...(spell.endsOnSuccessfulSave && recurringActiveKey
+          ? { endsActiveKeyOnSuccessfulSave: recurringActiveKey }
+          : {}),
       });
     }
   }

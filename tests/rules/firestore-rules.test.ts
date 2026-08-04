@@ -807,6 +807,32 @@ describe("firestore.rules — /campaigns access", () => {
       );
     });
 
+    it("accepts a feature-owned vowed-target payload", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            {
+              ...persistentApply,
+              effect: {
+                ...persistentApply.effect,
+                source: {
+                  kind: "feature",
+                  id: "paladin-vengeance-vow-of-enmity",
+                  actionId: "paladin-vengeance-vow-of-enmity-free",
+                },
+                payload: {
+                  kind: "target-mark",
+                  activeKey: "paladin-vengeance-vow-of-enmity",
+                  scope: "vowed",
+                },
+              },
+            },
+          ],
+        })
+      );
+    });
+
     it("a member CANNOT append a malformed or actor-spoofed application", async () => {
       const db = testEnv.authenticatedContext("member").firestore();
       await assertFails(

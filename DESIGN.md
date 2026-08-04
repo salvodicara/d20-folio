@@ -2113,6 +2113,9 @@ test.ts` READS the live `.cp-dest-chip` declaration out of `folio.css`, resolves
      then exposes only the outcome controls that action needs: hit/miss, per-target save, shared area
      damage, individual damage/healing, instance allocation and optional condition override. Enemy/allied
      targeting is the safe default; **Any creature** is the explicit table/homebrew escape hatch. The
+     target cards keep decision-critical state in view—PF, conditions, active marks and physical-roll
+     adjustments—without explanatory copy. A recurring target-bound effect opens on its actual creature;
+     Any creature still exposes the deliberate override instead of silently retargeting it. The
      footer sits against the content—never a tall empty pseudo-page—and the same hierarchy survives
      dark/light and desktop/mobile. Slot level and other cast configuration always precede target choice;
      a charged-item level row reuses the slot seal and scaled damage/healing facts, adding only its exact

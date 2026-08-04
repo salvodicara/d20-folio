@@ -226,6 +226,7 @@ export type WhileActiveGrant = Extract<Grant, { type: "while-active" }>;
 export function resolveCombatEffectGrantGroup(
   effect: ActiveCombatEffect
 ): WhileActiveGrant | null {
+  if (effect.source.kind !== "spell") return null;
   const spell = getSpellById(effect.source.id);
   return (
     spell?.grants?.find(

@@ -65,6 +65,29 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: true,
     targeting: { affinity: "ally", maxTargets: 3, maxTargetsPerUpcast: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-bless",
+        recipient: "selected",
+        grants: [
+          {
+            type: "roll-die-adjustment",
+            rollType: "attack",
+            operation: "add",
+            dice: "1d4",
+            consume: "each",
+          },
+          {
+            type: "roll-die-adjustment",
+            rollType: "save",
+            operation: "add",
+            dice: "1d4",
+            consume: "each",
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -239,6 +262,12 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     // is generic over `damageDice`); the +1d8-vs-Fiend/Undead stays prose.
     damageDice: "2d8",
     damageDicePerUpcast: "1d8",
+    bonusDamageAgainst: {
+      creatureTypes: ["fiend", "undead"],
+      dice: "1d8",
+      damageType: "radiant",
+    },
+    targeting: { affinity: "enemy", maxTargets: 1 },
     source: "SRD",
   },
   {
@@ -1007,8 +1036,36 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageType: "fire",
     damageDice: "1d6",
     damageDicePerUpcast: "1d6",
-    saveAbility: "CON",
     damageResolution: "automatic",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    recurrence: "start-of-turn",
+    endsOnSuccessfulSave: true,
+    followUp: {
+      type: "free",
+      saveAbility: "CON",
+      attack: {
+        dice: "1d6",
+        dicePerUpcast: "1d6",
+        damageType: "fire",
+        resolution: "automatic",
+      },
+      targeting: { affinity: "enemy", maxTargets: 1 },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-searing-smite",
+        grants: [],
+        duration: { kind: "timed", minutes: 1, maxRounds: 10 },
+      },
+      {
+        type: "while-active",
+        activeKey: "spell-searing-smite",
+        recipient: "selected",
+        grants: [],
+        duration: { kind: "timed", minutes: 1, maxRounds: 10 },
+      },
+    ],
     source: "SRD",
   },
   {

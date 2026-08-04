@@ -282,7 +282,9 @@ function isActiveCombatEffect(value: unknown): value is ActiveCombatEffect {
         payload.phase === "active" ||
         payload.phase === "aftereffect")) ||
       (payload.kind === "target-mark" &&
-        (payload.scope === "marked" || payload.scope === "cursed")));
+        (payload.scope === "marked" ||
+          payload.scope === "cursed" ||
+          payload.scope === "vowed")));
   const validBindings =
     value.bindings === undefined ||
     (isRecord(value.bindings) &&
@@ -300,7 +302,7 @@ function isActiveCombatEffect(value: unknown): value is ActiveCombatEffect {
     isCombatantRef(value.actor) &&
     isCombatantRef(value.target) &&
     isRecord(source) &&
-    source.kind === "spell" &&
+    (source.kind === "spell" || source.kind === "feature") &&
     isString(source.id) &&
     isString(source.actionId) &&
     validPayload &&

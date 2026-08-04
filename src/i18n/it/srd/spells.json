@@ -2741,6 +2741,15 @@
   "shield.grants.0": {
     "label": "Scudo (fino al tuo prossimo turno)"
   },
+  "bless.grants.0": {
+    "label": "Benedizione attiva"
+  },
+  "searing-smite.grants.0": {
+    "label": "Punizione Incandescente attiva"
+  },
+  "searing-smite.grants.1": {
+    "label": "In fiamme per Punizione Incandescente"
+  },
   "shield-of-faith.grants.0": {
     "label": "Scudo della Fede attivo"
   },

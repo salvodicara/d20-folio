@@ -46,6 +46,7 @@ import {
 import { effectiveAlwaysPreparedEntries } from "@/lib/expanded-spells";
 import { getClasses, primaryClassEntry } from "@/lib/classes";
 import { computeMulticlassSpellSlots } from "@/lib/multiclass-slots";
+import { isFightingStylePlaceholder } from "@/lib/fighting-style";
 
 /**
  * A minimized character: a subset of `CharacterData` with derivable + default-valued
@@ -542,7 +543,17 @@ export function rehydrateCharacter(min: MinimalCharacter): CharacterData {
     seenStored.add(id);
     return true;
   });
-  c.features = [...derived, ...storedKept];
+  const mergedFeatures = [...derived, ...storedKept];
+  c.features = mergedFeatures.filter(
+    (feature) =>
+      !(
+        !("custom" in feature) &&
+        isFightingStylePlaceholder(feature.srdId) &&
+        mergedFeatures.some(
+          (other) => !("custom" in other) && other.srdId.startsWith(`${feature.srdId}-`)
+        )
+      )
+  );
   // NB: spells[] is NOT reconstructed here — inferred always-prepared spells are
   // re-inferred at RENDER by `resolveEffectiveSpells` (the single read seam).
   // Jack-of-All-Trades half-proficiency is likewise DERIVED at render (#57) —

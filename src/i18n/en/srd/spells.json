@@ -2741,6 +2741,15 @@
   "shield.grants.0": {
     "label": "Shield (until your next turn)"
   },
+  "bless.grants.0": {
+    "label": "Bless active"
+  },
+  "searing-smite.grants.0": {
+    "label": "Searing Smite active"
+  },
+  "searing-smite.grants.1": {
+    "label": "Burning from Searing Smite"
+  },
   "shield-of-faith.grants.0": {
     "label": "Shield of Faith active"
   },

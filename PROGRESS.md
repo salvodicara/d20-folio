@@ -130,7 +130,19 @@ use after movement. Cunning Action is three real Bonus Actions—Dash, Disengage
 the universal movement/economy/Stealth-check seams. Assassinate's round-1 Rogue-level damage now appears
 only after Sneak Attack is entered on the same hit; the target/order facts remain table-supplied. The
 real fixture locks all four contracts plus Alert and the subclass's scoped initiative/first-strike rules.
-Paladin and the final six-fixture conformance pass follow.
+The Paladin and final six-fixture conformance passes follow.
+
+**Live-team truth audit — Paladin/Vengeance contract CLOSED on branch (2026-08-04):** the real fixture
+exposed a false default Fighting Style and four target-state gaps. Class inference now grants only the
+features named by the level table plus the selected subclass; an explicit historical choice remains
+lossless, but an orphan catalogue option can never silently add +1 CA. Bless projects +1d4 to every
+attack/save on each selected ally for the Concentration lifetime. Vow of Enmity is a feature-owned exact
+target mark; after that creature reaches 0 PF its free transfer preserves the original duration and spends
+no second Channel Divinity. Divine Smite adds its separate +1d8 only for Fiends/Undead. Searing Smite
+separates initial damage from the bound target's start-turn damage/save loop, preserves upcast level,
+ends both sides on a successful save and restores them on undo. Compelled Duel now records its exact
+failed-save target for the Concentration lifetime. The real fixture locks CA 20, Lay On Hands 15, Channel
+Divinity 2, Lucky 2 and every resolved target contract. The final six-fixture conformance pass follows.
 
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark

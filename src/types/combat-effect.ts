@@ -59,7 +59,7 @@ export type CombatEffectPayload =
       /** A caster-owned rider whose selected creature identity matters (Hex / Mark). */
       kind: "target-mark";
       activeKey: string;
-      scope: "marked" | "cursed";
+      scope: "marked" | "cursed" | "vowed";
     };
 
 export interface ActiveCombatEffect {
@@ -68,7 +68,7 @@ export interface ActiveCombatEffect {
   actor: CombatantRef;
   target: CombatantRef;
   source: {
-    kind: "spell";
+    kind: "spell" | "feature";
     id: string;
     actionId: string;
     castLevel?: number;

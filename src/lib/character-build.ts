@@ -9,7 +9,7 @@
  * Used by character creation; level-up and import build feature lists their own way
  * today but should converge here.
  */
-import { classFeatures } from "@/data/classes";
+import { classFeatures, classTables } from "@/data/classes";
 import { raceFeatureEntries } from "@/data/races";
 import { FEATS_BY_ID } from "@/data/feats";
 import { getBackgroundOriginFeat } from "@/data/backgrounds";
@@ -40,10 +40,13 @@ export function buildGrantedFeatures(input: GrantedFeatureInput): SrdFeatureRef[
     }
   };
 
+  const table = classTables.find((candidate) => candidate.id === classId);
+  for (const row of table?.levels ?? []) {
+    if (row.level > level) continue;
+    for (const id of row.featureIds) add(id);
+  }
   for (const f of classFeatures) {
-    if (f.class !== classId) continue;
-    if (f.level > level) continue;
-    if (f.subclass && f.subclass !== subclassId) continue;
+    if (f.class !== classId || f.subclass !== subclassId || f.level > level) continue;
     add(f.id);
   }
   for (const e of raceFeatureEntries) {

@@ -56,3 +56,13 @@ export async function revokePersistentCombatEffect(
     await import("@/features/campaigns/campaign-io");
   await revoke(campaignId, effectId);
 }
+
+/** Revoke every standing occurrence owned by one actor/source pair. */
+export async function revokePersistentCombatEffectsBySource(
+  campaignId: string,
+  owner: { actorId: string; sourceId: string }
+): Promise<void> {
+  const { revokePersistentCombatEffectsBySource: revoke } =
+    await import("@/features/campaigns/campaign-io");
+  await revoke(campaignId, owner);
+}

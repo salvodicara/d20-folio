@@ -2063,14 +2063,14 @@ export type Grant =
       description?: BiText;
     }
   | {
-      /** A physical die adjustment to a roll. The engine never rolls it; it
-       * surfaces the formula and `consume: "next"` lets the combat resolver
-       * retire the target-bound occurrence after that roll is adjudicated. */
+      /** A physical die adjustment to a roll. The engine never rolls it; `next`
+       * retires the target-bound occurrence after one adjudicated roll, while
+       * `each` keeps applying for the standing effect's lifetime. */
       type: "roll-die-adjustment";
       rollType: "check" | "save" | "attack";
       operation: "add" | "subtract";
       dice: string;
-      consume: "next";
+      consume: "next" | "each";
     }
   | {
       /**
@@ -3744,7 +3744,7 @@ export interface RollDieAdjustmentClause {
   rollType: "check" | "save" | "attack";
   operation: "add" | "subtract";
   dice: string;
-  consume: "next";
+  consume: "next" | "each";
 }
 
 /**

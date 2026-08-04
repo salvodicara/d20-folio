@@ -19,6 +19,7 @@ interface StandingSpellExpectation {
   id: string;
   recipient: "caster" | "selected";
   targeting?: CombatTargeting;
+  lifecycleOnly?: true;
 }
 
 /**
@@ -28,6 +29,11 @@ interface StandingSpellExpectation {
  * grant models every clause of the spell or whether the resolver persists it.
  */
 const STANDING_SPELLS = [
+  {
+    id: "bless",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 3, maxTargetsPerUpcast: 1 },
+  },
   {
     id: "chill-touch",
     recipient: "selected",
@@ -52,6 +58,12 @@ const STANDING_SPELLS = [
     targeting: { affinity: "ally", maxTargets: 1 },
   },
   { id: "shield", recipient: "caster" },
+  {
+    id: "searing-smite",
+    recipient: "caster",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    lifecycleOnly: true,
+  },
   {
     id: "shield-of-faith",
     recipient: "selected",
@@ -130,13 +142,19 @@ const STANDING_SPELLS = [
 ] as const satisfies ReadonlyArray<StandingSpellExpectation>;
 
 describe("PROSE sweep — standing buff spells carry while-active grants", () => {
-  it.each(STANDING_SPELLS)("$id wraps its standing effect behind spell-$id", ({ id }) => {
-    const wa = (getSpellById(id)?.grants ?? []).find(
-      (g): g is Extract<Grant, { type: "while-active" }> => g.type === "while-active"
-    );
-    expect(wa?.activeKey).toBe(`spell-${id}`);
-    expect(wa?.grants.length).toBeGreaterThan(0);
-  });
+  it.each(STANDING_SPELLS)(
+    "$id wraps its standing effect behind spell-$id",
+    (expectation) => {
+      const { id } = expectation;
+      const lifecycleOnly = "lifecycleOnly" in expectation;
+      const wa = (getSpellById(id)?.grants ?? []).find(
+        (g): g is Extract<Grant, { type: "while-active" }> => g.type === "while-active"
+      );
+      expect(wa?.activeKey).toBe(`spell-${id}`);
+      if (lifecycleOnly) expect(wa?.grants).toEqual([]);
+      else expect(wa?.grants.length).toBeGreaterThan(0);
+    }
+  );
 
   it("covers every public-SRD top-level while-active spell", () => {
     const actual = spells
@@ -152,9 +170,10 @@ describe("PROSE sweep — standing buff spells carry while-active grants", () =>
 
   it.each(STANDING_SPELLS)(
     "$id routes its standing grants to $recipient with the exact target shape",
-    ({ id, recipient, ...expected }) => {
+    (expectation) => {
+      const { id, recipient } = expectation;
+      const targeting = "targeting" in expectation ? expectation.targeting : undefined;
       const spell = getSpellById(id);
-      const expectedTargeting = "targeting" in expected ? expected.targeting : undefined;
       const whileActive = spell?.grants?.find(
         (grant): grant is Extract<Grant, { type: "while-active" }> =>
           grant.type === "while-active"
@@ -163,7 +182,7 @@ describe("PROSE sweep — standing buff spells carry while-active grants", () =>
       expect({
         recipient: whileActive?.recipient ?? "caster",
         targeting: spell?.targeting,
-      }).toEqual({ recipient, targeting: expectedTargeting });
+      }).toEqual({ recipient, targeting });
     }
   );
 

@@ -8,7 +8,7 @@
  * participate in the rules math, so every surface consumes the same plan.
  */
 
-import type { DamageSource, DamageType } from "@/data/types";
+import type { CreatureType, DamageSource, DamageType } from "@/data/types";
 import {
   NO_DEFENSES,
   resolveDamageIntake,
@@ -82,6 +82,7 @@ export interface CombatDamagePartSpec {
   resourceTrackerId?: string;
   round1?: true;
   requiresRiderTrackerId?: string;
+  targetCreatureTypes?: ReadonlyArray<CreatureType>;
   /** The table fact that gates this component. Hybrid actions can therefore
    * resolve an attack component and a save component independently. */
   resolution: "attack" | "save" | "automatic";
@@ -197,32 +198,39 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     (s.cureOptions?.length
       ? { options: s.cureOptions.map(({ condition }) => condition) }
       : undefined);
-  const standingEffect = action.standingEffect
-    ? {
-        source: {
-          kind: "spell" as const,
-          id: action.standingEffect.sourceId,
-          actionId: action.id,
-          ...(action.slotLevel !== undefined ? { castLevel: action.slotLevel } : {}),
-        },
-        payload: {
-          kind: "grant-group" as const,
+  const standingPayload: ActiveCombatEffect["payload"] | undefined = action.standingEffect
+    ? action.standingEffect.markScope
+      ? {
+          kind: "target-mark",
           activeKey: action.standingEffect.activeKey,
-        },
-        lifetime: {
-          concentration: action.concentration,
-          ...(action.standingEffect.maxRounds !== undefined
-            ? { maxRounds: action.standingEffect.maxRounds }
-            : {}),
-          ...(action.standingEffect.turnBoundary
-            ? { turnBoundary: action.standingEffect.turnBoundary }
-            : {}),
-        },
-        ...(action.standingEffect.requiresAppliedTempHp
-          ? { requiresAppliedTempHp: true as const }
-          : {}),
-      }
+          scope: action.standingEffect.markScope,
+        }
+      : { kind: "grant-group", activeKey: action.standingEffect.activeKey }
     : undefined;
+  const standingEffect =
+    action.standingEffect && standingPayload
+      ? {
+          source: {
+            kind: action.standingEffect.sourceKind ?? ("spell" as const),
+            id: action.standingEffect.sourceId,
+            actionId: action.id,
+            ...(action.slotLevel !== undefined ? { castLevel: action.slotLevel } : {}),
+          },
+          payload: standingPayload,
+          lifetime: {
+            concentration: action.concentration,
+            ...(action.standingEffect.maxRounds !== undefined
+              ? { maxRounds: action.standingEffect.maxRounds }
+              : {}),
+            ...(action.standingEffect.turnBoundary
+              ? { turnBoundary: action.standingEffect.turnBoundary }
+              : {}),
+          },
+          ...(action.standingEffect.requiresAppliedTempHp
+            ? { requiresAppliedTempHp: true as const }
+            : {}),
+        }
+      : undefined;
   const targetAffinity: CombatTargetAffinity =
     action.standingEffect?.targetAffinity ??
     (s.targeting?.affinity === "self"
@@ -397,6 +405,9 @@ export function combatDamageParts(action: ResolvedAction): CombatDamagePartSpec[
       ...(extra.round1 ? { round1: true as const } : {}),
       ...(extra.requiresRiderTrackerId
         ? { requiresRiderTrackerId: extra.requiresRiderTrackerId }
+        : {}),
+      ...(extra.targetCreatureTypes
+        ? { targetCreatureTypes: extra.targetCreatureTypes }
         : {}),
       resolution: primaryResolution,
       target: "all",

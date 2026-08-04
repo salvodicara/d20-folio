@@ -6,6 +6,7 @@ vi.mock("@/features/character/center/apply-damage", () => ({
   applyDeclaredCombatEffects: vi.fn(() => Promise.resolve()),
   appendPersistentCombatEffect: vi.fn(() => Promise.resolve()),
   revokePersistentCombatEffect: vi.fn(() => Promise.resolve()),
+  revokePersistentCombatEffectsBySource: vi.fn(() => Promise.resolve()),
 }));
 
 import "@/i18n";
@@ -14,6 +15,7 @@ import {
   appendPersistentCombatEffect,
   applyDeclaredCombatEffects,
   revokePersistentCombatEffect,
+  revokePersistentCombatEffectsBySource,
 } from "@/features/character/center/apply-damage";
 import { useCharacterStore } from "@/stores/characterStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
@@ -128,6 +130,7 @@ function healingPoolAction(): ResolvedAction {
 const applyMock = vi.mocked(applyDeclaredCombatEffects);
 const appendPersistentMock = vi.mocked(appendPersistentCombatEffect);
 const revokePersistentMock = vi.mocked(revokePersistentCombatEffect);
+const revokePersistentSourceMock = vi.mocked(revokePersistentCombatEffectsBySource);
 const commitNow = (afterCommit: () => void) => afterCommit();
 
 function expectApplied(effects: unknown[]): void {
@@ -145,6 +148,7 @@ beforeEach(() => {
   applyMock.mockClear();
   appendPersistentMock.mockClear();
   revokePersistentMock.mockClear();
+  revokePersistentSourceMock.mockClear();
   useCharacterStore.setState({
     character: { ...MOCK_CHARACTER },
     readonly: false,
@@ -334,6 +338,186 @@ describe("universal combat resolution", () => {
     randomUuid.mockRestore();
   });
 
+  it("ends and undo-restores a recurring spell after the target succeeds on its save", async () => {
+    const recurring = {
+      ...action({
+        damage: "1d6",
+        damageType: "fire",
+        damageResolution: "automatic",
+        saveAbility: "CON",
+        saveDC: 13,
+        targeting: { affinity: "enemy", maxTargets: 1 },
+        recurringUse: true,
+        endsOnSuccessfulSave: true,
+      }),
+      id: "spell-searing-smite-recurring",
+      spellId: "searing-smite",
+      endsActiveKeyOnSuccessfulSave: "spell-searing-smite",
+      persistentTargetSourceId: "searing-smite",
+    } satisfies ResolvedAction;
+    const runningEffect = {
+      id: "burning-goblin",
+      actor: {
+        kind: "pc" as const,
+        combatantId: "pc-u1",
+        memberUid: "u1",
+        characterId: MOCK_CHARACTER.id,
+      },
+      target: { kind: "monster" as const, combatantId: "monster-1" },
+      source: {
+        kind: "spell" as const,
+        id: "searing-smite",
+        actionId: "spell-searing-smite",
+        castLevel: 1,
+      },
+      payload: { kind: "grant-group" as const, activeKey: "spell-searing-smite" },
+      duration: {
+        kind: "turn-boundary" as const,
+        combatantId: "pc-u1",
+        round: 11,
+        phase: "turn-end" as const,
+      },
+    };
+    const runningCombat = combat([
+      pc(),
+      monster("monster-1", "Goblin"),
+      monster("monster-2", "Orc"),
+    ]);
+    runningCombat.encounter = {
+      effectOps: [{ id: "apply-burning", kind: "apply", effect: runningEffect }],
+    } as GlobalCombat["encounter"];
+    useCharacterStore.setState((state) => ({
+      character: state.character
+        ? {
+            ...state.character,
+            session: {
+              ...state.character.session,
+              activeFeatures: ["spell-searing-smite"],
+              activeSpellCastLevels: { "spell-searing-smite": 1 },
+            },
+          }
+        : null,
+    }));
+    let undo: (() => void) | undefined;
+    render(
+      <CombatResolver
+        action={recurring}
+        sheetCombat={runningCombat}
+        onCommit={(afterCommit) => {
+          undo = afterCommit();
+        }}
+        onDone={() => {}}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: /orc/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Saved" }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: /damage to goblin/i }), {
+      target: { value: "4" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expect(revokePersistentSourceMock).toHaveBeenCalledWith("camp1", {
+      actorId: "pc-u1",
+      sourceId: "searing-smite",
+    });
+    expect(useCharacterStore.getState().character?.session.activeFeatures).not.toContain(
+      "spell-searing-smite"
+    );
+
+    undo?.();
+    await vi.waitFor(() =>
+      expect(appendPersistentMock).toHaveBeenCalledWith(
+        "camp1",
+        expect.objectContaining({
+          target: { kind: "monster", combatantId: "monster-1" },
+          source: runningEffect.source,
+        })
+      )
+    );
+    expect(useCharacterStore.getState().character?.session.activeFeatures).toContain(
+      "spell-searing-smite"
+    );
+  });
+
+  it("transfers a vow from a fallen target without another resource cost or duration reset", () => {
+    const vow = {
+      ...action({ targeting: { affinity: "enemy", maxTargets: 1 } }),
+      id: "paladin-vengeance-vow-of-enmity-free",
+      source: "feature" as const,
+      spellLevel: null,
+      costTracker: "paladin-channel-divinity",
+      standingEffect: {
+        sourceId: "paladin-vengeance-vow-of-enmity",
+        sourceKind: "feature" as const,
+        activeKey: "paladin-vengeance-vow-of-enmity",
+        markScope: "vowed" as const,
+        targetAffinity: "enemy" as const,
+        maxRounds: 10,
+      },
+    } satisfies ResolvedAction;
+    const oldVow = {
+      id: "vow-old",
+      actor: {
+        kind: "pc" as const,
+        combatantId: "pc-u1",
+        memberUid: "u1",
+        characterId: MOCK_CHARACTER.id,
+      },
+      target: { kind: "monster" as const, combatantId: "monster-old" },
+      source: {
+        kind: "feature" as const,
+        id: "paladin-vengeance-vow-of-enmity",
+        actionId: "paladin-vengeance-vow-of-enmity-free",
+      },
+      payload: {
+        kind: "target-mark" as const,
+        activeKey: "paladin-vengeance-vow-of-enmity",
+        scope: "vowed" as const,
+      },
+      duration: {
+        kind: "turn-boundary" as const,
+        combatantId: "pc-u1",
+        round: 7,
+        phase: "turn-end" as const,
+      },
+    };
+    const activeCombat = combat([
+      pc(),
+      monster("monster-old", "Fallen Fiend", [0]),
+      monster("monster-new", "New Fiend"),
+    ]);
+    activeCombat.encounter = {
+      effectOps: [{ id: "apply-old-vow", kind: "apply", effect: oldVow }],
+    } as GlobalCombat["encounter"];
+    let committed: ResolvedAction | undefined;
+
+    render(
+      <CombatResolver
+        action={vow}
+        sheetCombat={activeCombat}
+        onCommit={(afterCommit, actionOverride) => {
+          committed = actionOverride;
+          afterCommit();
+        }}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /new fiend/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expect(committed?.costTracker).toBeUndefined();
+    expect(appendPersistentMock).toHaveBeenCalledWith(
+      "camp1",
+      expect.objectContaining({
+        target: { kind: "monster", combatantId: "monster-new" },
+        payload: oldVow.payload,
+        duration: oldVow.duration,
+      })
+    );
+  });
+
   it("commits once and applies the entered damage to the selected creature", () => {
     const onCommit = vi.fn(commitNow);
     render(
@@ -368,6 +552,54 @@ describe("universal combat resolution", () => {
         round: 3,
       },
     ]);
+  });
+
+  it("offers creature-type bonus damage only for qualifying targets", () => {
+    const smite = action({
+      damage: "2d8",
+      damageType: "radiant",
+      damageResolution: "automatic",
+      targeting: { affinity: "enemy", maxTargets: 1 },
+      extraDamage: [
+        {
+          dice: "1d8",
+          damageType: "radiant",
+          oncePerTurn: false,
+          sourceName: "Divine Smite",
+          targetCreatureTypes: ["fiend", "undead"],
+        },
+      ],
+    });
+    const { unmount } = render(
+      <CombatResolver
+        action={smite}
+        sheetCombat={combat([
+          { ...monster("monster-1", "Zombie"), creatureType: "undead" },
+        ])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /zombie/i }));
+    expect(screen.getAllByRole("spinbutton", { name: /damage to zombie/i })).toHaveLength(
+      2
+    );
+    unmount();
+
+    render(
+      <CombatResolver
+        action={smite}
+        sheetCombat={combat([
+          { ...monster("monster-2", "Bandit"), creatureType: "humanoid" },
+        ])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /bandit/i }));
+    expect(screen.getAllByRole("spinbutton", { name: /damage to bandit/i })).toHaveLength(
+      1
+    );
   });
 
   it("applies Sneak Attack and its round-1 dependent rider atomically", () => {

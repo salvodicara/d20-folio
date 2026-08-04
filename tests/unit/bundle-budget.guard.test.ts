@@ -405,7 +405,11 @@ const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see AR
 // economy, durable turn effects, and atomic/dependent damage riders grew the same
 // existing JS/i18n chunks to 8490.94 KiB / 321 entries. No new entry or asset family;
 // +~3 KiB deterministic headroom.
-const PRECACHE_CEILING_KIB = 8494;
+// 2026-08-04 (Paladin combat contract): raised 8494 → 8500 after target-bound
+// feature/spell effects, recurring-save lifecycle, creature-type damage and their
+// bilingual labels grew the same chunks to 8496.63 KiB / 321 entries. No new entry
+// or asset family; +~3 KiB deterministic headroom.
+const PRECACHE_CEILING_KIB = 8500;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

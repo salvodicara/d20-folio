@@ -900,6 +900,14 @@ export interface SrdSpellData {
    * count cantrip (which scales by character level via {@link damageDice}).
    */
   damageDicePerUpcast?: string;
+  /** Extra damage that is deterministic from the selected target's creature type
+   * (Divine Smite against Fiends/Undead). It is a separate typed component so
+   * resistance math and roll entry stay exact. */
+  bonusDamageAgainst?: {
+    creatureTypes: ReadonlyArray<CreatureType>;
+    dice: string;
+    damageType: DamageType;
+  };
   /**
    * A SECOND simultaneous damage instance with its OWN dice + type, for the few
    * spells whose two components have DIFFERENT dice the single
@@ -956,6 +964,9 @@ export interface SrdSpellData {
    * source-neutral action vocabulary as class/species features and never spends the
    * spell slot again. */
   followUp?: SrdActionDef;
+  /** A successful save made by a recurring target ends the spell's target-bound
+   * occurrence and caster-side recurrence state. */
+  endsOnSuccessfulSave?: boolean;
   /**
    * Base healing dice (or flat amount) at the spell's own level, e.g. "2d8" /
    * "2d4" / "70". Drives a verdigris "NdM Heal" verdict on the spell card and the
@@ -1294,6 +1305,13 @@ export interface SrdActionDef {
   conditionRemoval?: ActionConditionRemoval;
   targeting?: ActionTargeting;
   area?: boolean;
+  /** Bind one selected creature to a caster-owned target identity for the effect's
+   * lifetime (Hunter's Mark, Hex, Vow of Enmity). The table still chooses the
+   * creature; the encounter ledger makes that identity exact and undoable. */
+  targetMark?: {
+    scope: "marked" | "cursed" | "vowed";
+    maxRounds?: number;
+  };
   /**
    * S11 — the DECLARATIVE save-based ATTACK an action deals (Dragonborn Breath
    * Weapon 2d10 Fire on a DEX save, Cleric Divine Spark 1d8 Necrotic/Radiant on a

@@ -106,7 +106,7 @@ export interface ActiveRollDieAdjustment {
   rollType: "check" | "save" | "attack";
   operation: "add" | "subtract";
   dice: string;
-  consume: "next";
+  consume: "next" | "each";
 }
 
 /** Physical roll adjustments projected by live target effects. */
@@ -369,7 +369,7 @@ export function expiredCombatEffects(
 export function markedTargetForActor(
   operations: ReadonlyArray<CombatEffectOp> | undefined,
   actorId: string,
-  scope: "marked" | "cursed",
+  scope: "marked" | "cursed" | "vowed",
   position?: EncounterPosition
 ): CombatantRef | null {
   const effect = foldCombatEffectOps(operations, position).find(

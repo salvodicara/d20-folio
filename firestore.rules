@@ -339,19 +339,20 @@ service cloud.firestore {
           && validCombatantRef(actor)
           && validCombatantRef(effect.get('target', {}))
           && source is map
-          && source.get('kind', '') == 'spell'
+          && source.get('kind', '') in ['spell', 'feature']
           && nonEmptyEffectString(source.get('id', ''))
           && nonEmptyEffectString(source.get('actionId', ''))
           && source.keys().hasOnly(['kind', 'id', 'actionId', 'castLevel'])
           && payload is map
           && nonEmptyEffectString(payload.get('activeKey', ''))
           && (
-            (payload.get('kind', '') == 'grant-group'
+            (source.get('kind', '') == 'spell'
+              && payload.get('kind', '') == 'grant-group'
               && payload.get('phase', 'active') in ['active', 'aftereffect']
               && payload.keys().hasOnly(['kind', 'activeKey', 'phase']))
             ||
             (payload.get('kind', '') == 'target-mark'
-              && payload.get('scope', '') in ['marked', 'cursed']
+              && payload.get('scope', '') in ['marked', 'cursed', 'vowed']
               && payload.keys().hasOnly(['kind', 'activeKey', 'scope']))
           )
           && (bindings == null
