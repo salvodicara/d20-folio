@@ -16,7 +16,7 @@
  * with the canonical mock.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act, within } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router";
 
@@ -34,6 +34,21 @@ import { useUIStore } from "@/stores/uiStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { conc } from "./__helpers__/concentration";
 import i18n from "@/i18n";
+
+const originalMatchMedia = window.matchMedia;
+
+function useCompactViewport() {
+  window.matchMedia = (query: string) => ({
+    matches: query === "(max-width: 720px)",
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  });
+}
 
 function renderCockpit() {
   return render(
@@ -55,7 +70,62 @@ beforeEach(() => {
   });
 });
 
+afterEach(() => {
+  window.matchMedia = originalMatchMedia;
+});
+
 describe("economy in the Play tab", () => {
+  it("opens the mobile Play board on the curated Pinned hotbar, with All one tap away", () => {
+    useCompactViewport();
+
+    const { container } = renderCockpit();
+    const panel = container.querySelector(
+      '[role="tabpanel"]:not([inert])'
+    ) as HTMLElement;
+    const pinned = within(panel).getByRole("button", { name: /^pinned/i });
+    const all = within(panel).getByRole("button", { name: /^all/i });
+
+    expect(pinned).toHaveAttribute("aria-pressed", "true");
+    expect(all).toHaveAttribute("aria-pressed", "false");
+    expect(within(panel).getByText("Dagger")).toBeInTheDocument();
+    expect(within(panel).queryByText("Mage Hand")).not.toBeInTheDocument();
+
+    fireEvent.click(all);
+    expect(all).toHaveAttribute("aria-pressed", "true");
+    expect(within(panel).getByText("Mage Hand")).toBeInTheDocument();
+  });
+
+  it("falls back to Actions when a mobile character has no pinned hotbar", () => {
+    useCompactViewport();
+    useCharacterStore.setState({
+      character: {
+        ...MOCK_CHARACTER,
+        session: {
+          ...MOCK_CHARACTER.session,
+          pinnedActions: [],
+          unpinnedActions: [
+            "weapon-dagger",
+            "weapon-quarterstaff",
+            "weapon-rapier",
+            "weapon-shortbow",
+          ],
+        },
+      },
+    });
+
+    const { container } = renderCockpit();
+    const panel = container.querySelector(
+      '[role="tabpanel"]:not([inert])'
+    ) as HTMLElement;
+    const action = within(panel).getByRole("button", { name: /^action/i });
+
+    expect(
+      within(panel).queryByRole("button", { name: /^pinned/i })
+    ).not.toBeInTheDocument();
+    expect(action).toHaveAttribute("aria-pressed", "true");
+    expect(within(panel).getByText("Mage Hand")).toBeInTheDocument();
+  });
+
   it("renders the meter (End Turn) and the solo End Combat together at the top of Play", () => {
     const { container } = renderCockpit();
     const panel = container.querySelector(

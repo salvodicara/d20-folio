@@ -1393,6 +1393,15 @@ treatment, in the token's own semantic hue, never monochrome gold — the disc g
   no Available/Used chip: spent-ness reads on the turn-meter coins (and on the cards' own disabled "Used"
   CTAs), never as duplicated header text.
 
+- **Mobile opens on the curated hotbar; desktop opens on the catalogue** (2026-08-04): at the shared
+  `max-width: 720px` compact breakpoint, the Play board's initial filter is **Pinned** — the existing
+  player-curated set, rendered by the existing action cards. `All` and every economy type remain one tap
+  away in the one filter strip, and the economy coins continue to drive that same filter state. A character
+  with no pinned rows falls through to **Action**, then to **All** only if no Action rows exist; the Pinned
+  chip is absent rather than leading to an empty view. Desktop retains **All** as its initial overview.
+  Resizing never overwrites an explicit choice: viewport chooses the mount default once, not a second
+  responsive state machine. This is progressive disclosure, not content removal or a parallel hotbar.
+
 - **Extra Attack — the struck-gold attack CTA IS the signal, no text anywhere** (`attackBudget > 1`; owner
   rulings 2026-07-10, the BG3 grammar). The turn-meter Action **coin behaves like ANY action** — it spends
   fully on the FIRST swing (plain `open` → `spent`; no `partial` state, no segmented rim ring). While swings
