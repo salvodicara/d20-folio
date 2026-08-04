@@ -56,8 +56,19 @@ import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { makeDevCampaign } from "@/features/campaigns/dev-fixture";
 import { removeMember } from "@/features/campaigns/campaign-io";
 
+function openDmTools(): void {
+  const disclosure = screen.getByRole("button", { name: /show dm tools/i });
+  expect(disclosure).toHaveAttribute("aria-expanded", "false");
+  fireEvent.click(disclosure);
+  expect(screen.getByRole("button", { name: /hide dm tools/i })).toHaveAttribute(
+    "aria-expanded",
+    "true"
+  );
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
   authUid.value = "mock-uid"; // matches the fixture dmUid
   isAdminState.value = false;
   useCampaignStore.setState({
@@ -68,12 +79,25 @@ beforeEach(() => {
 });
 
 describe("DmTools", () => {
+  it("keeps low-frequency role and danger controls behind one explicit disclosure", () => {
+    render(
+      <MemoryRouter>
+        <DmTools />
+      </MemoryRouter>
+    );
+    expect(
+      screen.getByText(/manage the dm role, campaign members, and deletion/i)
+    ).toBeInTheDocument();
+    openDmTools();
+  });
+
   it("no longer hosts the invite link (moved to the ungated CampaignInvite) nor any coming-soon placeholder chips", () => {
     render(
       <MemoryRouter>
         <DmTools />
       </MemoryRouter>
     );
+    openDmTools();
     // Sharing opened to ALL members: the invite/share link affordance left DmTools
     // for the ungated CampaignInvite section, so the DM-only tools no longer show it.
     expect(screen.queryByDisplayValue(/\/join\/c1$/)).not.toBeInTheDocument();
@@ -90,6 +114,7 @@ describe("DmTools", () => {
         <DmTools />
       </MemoryRouter>
     );
+    openDmTools();
     expect(screen.getByLabelText(/remove a member/i)).toBeInTheDocument();
     // The lock-new-members kill switch now lives in the Access section (CampaignInvite),
     // co-located with the link it disables — DmTools no longer hosts it.
@@ -104,6 +129,7 @@ describe("DmTools", () => {
         <DmTools />
       </MemoryRouter>
     );
+    openDmTools();
     // The fixture's other members are member-mara + member-bren (dmUid = mock-uid).
     fireEvent.change(screen.getByLabelText(/remove a member/i), {
       target: { value: "member-mara" },
@@ -118,6 +144,7 @@ describe("DmTools", () => {
         <DmTools />
       </MemoryRouter>
     );
+    openDmTools();
     // The party overview + Run-encounter affordance live in the Party section now.
     expect(
       screen.queryByRole("button", { name: /run encounter|party overview|resume/i })
@@ -143,6 +170,7 @@ describe("DmTools", () => {
         <DmTools />
       </MemoryRouter>
     );
+    openDmTools();
     // The admin override renders the DM tools — proven by the DM-only hand-over + remove
     // controls (the invite link + its lock now live in CampaignInvite / Access).
     expect(screen.getByText(/hand over the dm role/i)).toBeInTheDocument();
@@ -162,6 +190,7 @@ describe("DmTools", () => {
         <DmTools />
       </MemoryRouter>
     );
+    openDmTools();
     fireEvent.change(screen.getByLabelText(/hand over the dm role/i), {
       target: { value: "member-mara" },
     });
@@ -189,6 +218,7 @@ describe("DmTools", () => {
         <DmTools />
       </MemoryRouter>
     );
+    openDmTools();
     fireEvent.change(screen.getByLabelText(/remove a member/i), {
       target: { value: "member-mara" },
     });
@@ -212,6 +242,7 @@ describe("DmTools", () => {
         <DmTools />
       </MemoryRouter>
     );
+    openDmTools();
     fireEvent.change(screen.getByLabelText(/hand over the dm role/i), {
       target: { value: "member-mara" },
     });

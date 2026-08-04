@@ -4,7 +4,9 @@
  * Renders only for the campaign's DM (`uid === dmUid`) or the admin — for everyone else
  * it returns null, so the campaign hub simply ends at the utility pair (no phantom foot
  * card). ROLE + DANGER only: roster management (yield DM · remove member) and the
- * delete-campaign danger zone, laid out 2-up. The lock-new-members kill switch moved to
+ * delete-campaign danger zone, laid out 2-up behind one low-frequency disclosure. The
+ * resting panel names the scope without keeping destructive controls in the campaign's
+ * everyday reading path. The lock-new-members kill switch moved to
  * the Access section (CampaignInvite) to sit with the link it disables (golden rule 6);
  * the party overview + encounter tracker live in the Party section. It rides
  * {@link SectionPanel} so it shares the one desk-card rubric, and spans both dashboard
@@ -188,95 +190,98 @@ export function DmTools() {
       sectionId="dm"
       className="lg:col-span-2"
       title={t("campaignHub.dmTools")}
-    >
-      {/* ROLE + DANGER only, laid out 2-up on desktop (one column on mobile). The party
-          overview + encounter tracker live in the Party section; the invite link + its
-          lock (revoke) live in the Access section. Each control is its own carded cell so
-          a missing one (no member to promote/remove) never leaves a hanging divider. */}
-      <div className="grid gap-3 sm:grid-cols-2 sm:items-start">
-        {/* D29 — hand the DM crown to another member (shown only when there's
-            someone to promote). */}
-        {otherMembers.length > 0 && (
-          <InfoCard className="flex flex-col gap-1">
-            <span className="text-sm text-text-secondary">
-              {t("campaignHub.yieldDm")}
-            </span>
-            <p className="mb-1 text-xs text-text-muted">{t("campaignHub.yieldDmHint")}</p>
-            <div className="flex items-center gap-2">
-              <Select
-                value={yieldTo}
-                onChange={(e) => setYieldTo(e.target.value)}
-                aria-label={t("campaignHub.yieldDm")}
-              >
-                <option value="">{t("campaignHub.yieldDmPick")}</option>
-                {otherMembers.map(([id, m]) => (
-                  <option key={id} value={id}>
-                    {m.displayName || t("campaignHub.unnamedPlayer")}
-                  </option>
-                ))}
-              </Select>
-              <Button
-                variant="secondary"
-                disabled={!yieldTo}
-                onClick={() => void confirmYieldDm()}
-              >
-                <Crown aria-hidden className="h-4 w-4" />
-                {t("campaignHub.yieldDmConfirm")}
-              </Button>
-            </div>
-          </InfoCard>
-        )}
+      showLabel={t("campaignHub.showDmTools")}
+      hideLabel={t("campaignHub.hideDmTools")}
+      detail={
+        <div className="grid gap-3 sm:grid-cols-2 sm:items-start">
+          {/* D29 — hand the DM crown to another member (shown only when there's
+              someone to promote). */}
+          {otherMembers.length > 0 && (
+            <InfoCard className="flex flex-col gap-1">
+              <span className="text-sm text-text-secondary">
+                {t("campaignHub.yieldDm")}
+              </span>
+              <p className="mb-1 text-xs text-text-muted">
+                {t("campaignHub.yieldDmHint")}
+              </p>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={yieldTo}
+                  onChange={(e) => setYieldTo(e.target.value)}
+                  aria-label={t("campaignHub.yieldDm")}
+                >
+                  <option value="">{t("campaignHub.yieldDmPick")}</option>
+                  {otherMembers.map(([id, m]) => (
+                    <option key={id} value={id}>
+                      {m.displayName || t("campaignHub.unnamedPlayer")}
+                    </option>
+                  ))}
+                </Select>
+                <Button
+                  variant="secondary"
+                  disabled={!yieldTo}
+                  onClick={() => void confirmYieldDm()}
+                >
+                  <Crown aria-hidden className="h-4 w-4" />
+                  {t("campaignHub.yieldDmConfirm")}
+                </Button>
+              </div>
+            </InfoCard>
+          )}
 
-        {/* Remove a player from the campaign (shown only when there's someone to
-            remove). Their character detaches; they can rejoin unless joins are locked. */}
-        {otherMembers.length > 0 && (
-          <InfoCard className="flex flex-col gap-1">
+          {/* Remove a player from the campaign (shown only when there's someone to
+              remove). Their character detaches; they can rejoin unless joins are locked. */}
+          {otherMembers.length > 0 && (
+            <InfoCard className="flex flex-col gap-1">
+              <span className="text-sm text-text-secondary">
+                {t("campaignHub.removeMember")}
+              </span>
+              <p className="mb-1 text-xs text-text-muted">
+                {t("campaignHub.removeMemberHint")}
+              </p>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={removeTo}
+                  onChange={(e) => setRemoveTo(e.target.value)}
+                  aria-label={t("campaignHub.removeMember")}
+                >
+                  <option value="">{t("campaignHub.yieldDmPick")}</option>
+                  {otherMembers.map(([id, m]) => (
+                    <option key={id} value={id}>
+                      {m.displayName || t("campaignHub.unnamedPlayer")}
+                    </option>
+                  ))}
+                </Select>
+                <Button
+                  variant="destructive"
+                  disabled={!removeTo}
+                  onClick={() => void confirmRemoveMember()}
+                >
+                  <UserMinus aria-hidden className="h-4 w-4" />
+                  {t("campaignHub.removeMemberConfirm")}
+                </Button>
+              </div>
+            </InfoCard>
+          )}
+
+          <InfoCard className="flex flex-col gap-1 sm:col-span-2">
             <span className="text-sm text-text-secondary">
-              {t("campaignHub.removeMember")}
+              {t("campaignHub.dangerZone")}
             </span>
             <p className="mb-1 text-xs text-text-muted">
-              {t("campaignHub.removeMemberHint")}
+              {t("campaignHub.deleteCampaignHint")}
             </p>
-            <div className="flex items-center gap-2">
-              <Select
-                value={removeTo}
-                onChange={(e) => setRemoveTo(e.target.value)}
-                aria-label={t("campaignHub.removeMember")}
-              >
-                <option value="">{t("campaignHub.yieldDmPick")}</option>
-                {otherMembers.map(([id, m]) => (
-                  <option key={id} value={id}>
-                    {m.displayName || t("campaignHub.unnamedPlayer")}
-                  </option>
-                ))}
-              </Select>
-              <Button
-                variant="destructive"
-                disabled={!removeTo}
-                onClick={() => void confirmRemoveMember()}
-              >
-                <UserMinus aria-hidden className="h-4 w-4" />
-                {t("campaignHub.removeMemberConfirm")}
+            <div>
+              <Button variant="destructive" onClick={() => void confirmDeleteCampaign()}>
+                <Trash2 aria-hidden className="h-4 w-4" />
+                {t("campaignHub.deleteCampaignConfirm")}
               </Button>
             </div>
           </InfoCard>
-        )}
-
-        <InfoCard className="flex flex-col gap-1 sm:col-span-2">
-          <span className="text-sm text-text-secondary">
-            {t("campaignHub.dangerZone")}
-          </span>
-          <p className="mb-1 text-xs text-text-muted">
-            {t("campaignHub.deleteCampaignHint")}
-          </p>
-          <div>
-            <Button variant="destructive" onClick={() => void confirmDeleteCampaign()}>
-              <Trash2 aria-hidden className="h-4 w-4" />
-              {t("campaignHub.deleteCampaignConfirm")}
-            </Button>
-          </div>
-        </InfoCard>
-      </div>
+        </div>
+      }
+    >
+      <p className="text-sm text-text-secondary">{t("campaignHub.dmToolsSummary")}</p>
     </SectionPanel>
   );
 }
