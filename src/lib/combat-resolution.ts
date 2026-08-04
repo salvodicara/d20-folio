@@ -29,6 +29,7 @@ export interface CombatStandingEffectSpec {
   lifetime: {
     concentration: boolean;
     maxRounds?: number;
+    turnBoundary?: { phase: "turn-start" | "turn-end"; turns: number };
   };
   requiresAppliedTempHp?: true;
 }
@@ -205,6 +206,9 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
           concentration: action.concentration,
           ...(action.standingEffect.maxRounds !== undefined
             ? { maxRounds: action.standingEffect.maxRounds }
+            : {}),
+          ...(action.standingEffect.turnBoundary
+            ? { turnBoundary: action.standingEffect.turnBoundary }
             : {}),
         },
         ...(action.standingEffect.requiresAppliedTempHp

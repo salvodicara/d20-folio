@@ -100,6 +100,54 @@ export interface PersistentHitInput {
   tempHp: number;
 }
 
+export interface ActiveRollDieAdjustment {
+  effect: ActiveCombatEffect;
+  sourceId: string;
+  rollType: "check" | "save" | "attack";
+  operation: "add" | "subtract";
+  dice: string;
+  consume: "next";
+}
+
+/** Physical roll adjustments projected by live target effects. */
+export function activeRollDieAdjustments(
+  effects: ReadonlyArray<ActiveCombatEffect>,
+  rollType?: ActiveRollDieAdjustment["rollType"]
+): ActiveRollDieAdjustment[] {
+  return effects.flatMap((effect) =>
+    resolveCombatEffectGrants(effect).flatMap((grant) =>
+      grant.type === "roll-die-adjustment" &&
+      (rollType === undefined || grant.rollType === rollType)
+        ? [{ effect, sourceId: effect.source.id, ...grant }]
+        : []
+    )
+  );
+}
+
+/** Whether any live target-bound rule prevents Hit Point recovery. */
+export function healingBlockedByEffects(
+  effects: ReadonlyArray<ActiveCombatEffect>
+): boolean {
+  return effects.some((effect) =>
+    resolveCombatEffectGrants(effect).some((grant) => grant.type === "healing-blocked")
+  );
+}
+
+/** Net temporary walking-speed delta projected by live target effects. */
+export function speedAdjustmentByEffects(
+  effects: ReadonlyArray<ActiveCombatEffect>
+): number {
+  return effects.reduce(
+    (total, effect) =>
+      total +
+      resolveCombatEffectGrants(effect).reduce(
+        (sum, grant) => sum + (grant.type === "speed" ? grant.amount : 0),
+        0
+      ),
+    0
+  );
+}
+
 type PersistentRetaliation = {
   actor: CombatantRef;
   target: CombatantRef;
@@ -333,7 +381,7 @@ export function markedTargetForActor(
   return effect?.target ?? null;
 }
 
-function turnBoundaryAfter(
+export function turnBoundaryAfter(
   targetId: string,
   turns: number,
   phase: "turn-start" | "turn-end",

@@ -83,6 +83,25 @@ export function resolveTurnState(
   return { round: gc.round, isMyTurn: gc.isMyTurn, phase, currentActorName };
 }
 
+/** Latest owner-relative boundary definitely observed by the shared pointer. */
+export function observedOwnerBoundary(status: GlobalCombat): {
+  round: number;
+  phase: "turn-start" | "turn-end";
+} {
+  const order = status.encounter.order ?? status.view.turnOrderIds;
+  const ownerIndex = order.indexOf(status.myId);
+  const currentIndex = status.encounter.currentCombatantId
+    ? order.indexOf(status.encounter.currentCombatantId)
+    : -1;
+  if (ownerIndex < 0 || currentIndex < 0 || currentIndex < ownerIndex) {
+    return { round: Math.max(0, status.round - 1), phase: "turn-end" };
+  }
+  return {
+    round: status.round,
+    phase: currentIndex === ownerIndex ? "turn-start" : "turn-end",
+  };
+}
+
 /** The owning player's uid behind a PC combatant id (`pc-<uid>` → `<uid>`). The advancing
  *  player IS the current combatant, so their uid is encoded in the status's `myId` — no
  *  `authStore` read needed (which would pull `firebase/auth` into this module's graph). */

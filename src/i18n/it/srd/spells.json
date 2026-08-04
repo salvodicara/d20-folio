@@ -305,6 +305,9 @@
     "name": "Tocco Gelido",
     "range": "Contatto"
   },
+  "chill-touch.grants.0": {
+    "label": "Effetto di Tocco Gelido"
+  },
   "chromatic-orb": {
     "description": "Scagli un globo di energia contro una creatura che puoi vedere entro gittata. Scegli Acido, Freddo, Fuoco, Fulmine, Veleno o Tuono per il tipo di globo che crei, e poi effettui un attacco incantesimo a distanza contro il bersaglio. In caso di colpo, il bersaglio subisce 3d8 danni del tipo scelto.",
     "duration": "Istantaneo",
@@ -2036,6 +2039,9 @@
     "higherLevels": "I danni dell'incantesimo aumentano di 1d8 quando raggiungi il 5° livello (2d8), l'11° livello (3d8) e il 17° livello (4d8).",
     "name": "Raggio di Gelo",
     "range": "18 metri"
+  },
+  "ray-of-frost.grants.0": {
+    "label": "Effetto di Raggio di Gelo"
   },
   "ray-of-sickness": {
     "description": "Un raggio di energia verdastra nauseante si scaglia verso una creatura entro gittata. Effettua un attacco incantesimo a distanza contro il bersaglio. In caso di colpo, il bersaglio subisce 2d8 danni da Veleno e deve effettuare un tiro salvezza su Costituzione. Se fallisce, ha anche la condizione Avvelenato fino alla fine del tuo prossimo turno.",

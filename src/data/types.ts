@@ -140,6 +140,7 @@ export type ReactionTrigger =
   // its turn within 30 ft of you while your Rage is active.
   | "creatureStartsTurnNear"
   | "enemyEndsTurnNear"
+  | "hitOrMagicMissileTarget"
   // Ranger Fey Wanderer "Beguiling Twist": you or a creature within 120 ft
   // SUCCEEDS on a save to avoid or end the Charmed or Frightened condition.
   | "savedVsCharmOrFear"
@@ -154,6 +155,7 @@ export const ALL_REACTION_TRIGGERS = [
   "creatureHitsOther",
   "creatureStartsTurnNear",
   "enemyEndsTurnNear",
+  "hitOrMagicMissileTarget",
   "savedVsCharmOrFear",
   "targetAttacks",
   "takeDamage",
@@ -166,6 +168,7 @@ export const ALL_REACTION_TRIGGERS = [
     "creatureHitsOther",
     "creatureStartsTurnNear",
     "enemyEndsTurnNear",
+    "hitOrMagicMissileTarget",
     "savedVsCharmOrFear",
     "targetAttacks",
     "takeDamage",

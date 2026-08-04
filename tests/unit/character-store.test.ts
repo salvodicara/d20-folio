@@ -467,6 +467,32 @@ describe("characterStore — rest mechanics", () => {
       expect(sess()?.hp).toEqual({ current: 20, temp: 3 });
       expect(sess()?.conditions).toEqual(["frightened"]);
     });
+
+    it("blocks solo healing while a projected Chill Touch effect is active", () => {
+      const char = mockCharacter();
+      char.session.hp.current = 20;
+      const effect: ActiveCombatEffect = {
+        id: "chill-touch-1",
+        actor: { kind: "monster", combatantId: "enemy" },
+        target: {
+          kind: "pc",
+          combatantId: "pc-test",
+          memberUid: "u-test",
+          characterId: char.id,
+        },
+        source: {
+          kind: "spell",
+          id: "chill-touch",
+          actionId: "spell-chill-touch",
+        },
+        payload: { kind: "grant-group", activeKey: "spell-chill-touch" },
+        duration: { kind: "encounter" },
+      };
+      useCharacterStore.getState().setCharacter(char);
+      useCharacterStore.getState().setEncounterEffects(char.id, [effect]);
+      useCharacterStore.getState().applyResolvedCombatEffects({ healing: 12 });
+      expect(useCharacterStore.getState().character?.session.hp.current).toBe(20);
+    });
   });
 
   describe("HP management", () => {
@@ -2126,6 +2152,66 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
       expect(
         useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
       ).toEqual({ roundsLeft: 100 });
+    });
+  });
+
+  describe("exact active effect boundaries", () => {
+    it("expires Shield at the stored next-turn start and restores it atomically", () => {
+      const wizard = mockCharacter();
+      wizard.character.spells = [
+        ...wizard.character.spells,
+        { srdId: "shield", prepared: true },
+      ];
+      wizard.session.activeFeatures = ["spell-shield"];
+      wizard.session.effectBoundaries = {
+        "spell-shield": { round: 2, phase: "turn-start" },
+      };
+      useCharacterStore.getState().setCharacter(wizard);
+
+      expect(
+        useCharacterStore
+          .getState()
+          .expireEffectBoundaries({ round: 1, phase: "turn-end" }).expired
+      ).toEqual([]);
+      const beforeLogs = wizard.session.logEntries.length;
+      const { expired, restore } = useCharacterStore
+        .getState()
+        .expireEffectBoundaries({ round: 2, phase: "turn-start" });
+      expect(expired).toEqual([{ activeKey: "spell-shield", sourceId: "shield" }]);
+      expect(
+        useCharacterStore.getState().character?.session.activeFeatures
+      ).not.toContain("spell-shield");
+      expect(
+        useCharacterStore.getState().character?.session.effectBoundaries
+      ).toBeUndefined();
+      expect(useCharacterStore.getState().character?.session.logEntries.length).toBe(
+        beforeLogs + 1
+      );
+
+      restore();
+      expect(useCharacterStore.getState().character?.session.activeFeatures).toContain(
+        "spell-shield"
+      );
+      expect(useCharacterStore.getState().character?.session.effectBoundaries).toEqual({
+        "spell-shield": { round: 2, phase: "turn-start" },
+      });
+      expect(useCharacterStore.getState().character?.session.logEntries).toHaveLength(
+        beforeLogs
+      );
+    });
+
+    it("arming one boundary has a surgical inverse", () => {
+      useCharacterStore.getState().setCharacter(mockCharacter());
+      const restore = useCharacterStore
+        .getState()
+        .armEffectBoundary("spell-shield", { round: 2, phase: "turn-start" });
+      useCharacterStore
+        .getState()
+        .armEffectBoundary("later", { round: 3, phase: "turn-end" });
+      restore?.();
+      expect(useCharacterStore.getState().character?.session.effectBoundaries).toEqual({
+        later: { round: 3, phase: "turn-end" },
+      });
     });
   });
 

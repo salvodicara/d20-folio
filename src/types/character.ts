@@ -906,6 +906,9 @@ export interface SessionState {
    * no cap) — it lives until the player ends it. Optional for back-compat.
    */
   effectTimers?: Record<string, { roundsLeft: number }>;
+  /** Exact owner-turn expiry for short active states (Shield). Stored separately
+   * from round countdowns so turn-start and turn-end cannot drift. */
+  effectBoundaries?: Record<string, { round: number; phase: "turn-start" | "turn-end" }>;
   /**
    * L12 — single-select variant choices, `bundleKey → selected optionId`
    * (Circle of the Land terrain, re-chosen each Long Rest). Drives the

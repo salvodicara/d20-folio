@@ -284,6 +284,15 @@ Temp HP, all-damage resistance, damage transfer, zero-HP floor, extra-action res
 the campaign reducer owns lifecycle and atomic cross-document writes. Aid, Heroism, Warding Bond, Death
 Ward and Haste are examples, not branches. The table can still revoke or correct any instance.
 
+Short effects use exact turn-phase boundaries in both homes. A self effect persists its computed
+`{round, phase}` under `session.effectBoundaries`; a selected-recipient effect stores the equivalent
+`turn-boundary` occurrence in the campaign ledger. `roll-die-adjustment` declares a physical next-roll
+die (scope, sign, formula and one-shot consumption), while `healing-blocked` declares that HP recovery is
+forbidden without suppressing cures or Temporary HP. The resolver surfaces these facts on the target,
+consumes a one-shot adjustment only when that roll is adjudicated and in the same transaction as the
+action consequences, then restores a fresh occurrence on undo. Shield, Mind Sliver, Chill Touch and Ray
+of Frost are data consumers of these generic seams.
+
 `spellInstanceCount(spell, castLevel)` resolves the count at the cast level (base at the spell's own
 level); both surfaces render `N × {dice}` via `spells.multiInstance`, with the per-instance `damageDice`
 kept intact so a flat damage rider folds per instance before the UI multiplies. **Area save-for-half**

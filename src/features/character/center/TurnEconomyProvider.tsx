@@ -90,6 +90,8 @@ import {
   activeKeysForConcentration,
   aggregateCharacterGrants,
 } from "@/lib/aggregate-character";
+import { turnBoundaryAfter } from "@/lib/combat-effects";
+import { observedOwnerBoundary } from "./turn-state";
 import {
   localizeActions,
   logTypeForAction,
@@ -241,6 +243,33 @@ function activateActionState(
   const restoreTimer = action.activeDurationRounds
     ? store.armEffectTimer(key, action.activeDurationRounds)
     : null;
+  const status = useCombatStatusStore.getState().status;
+  const relativeBoundary = action.activeTurnBoundary
+    ? turnBoundaryAfter(
+        status?.myId ?? "self",
+        action.activeTurnBoundary.turns,
+        action.activeTurnBoundary.phase,
+        status
+          ? {
+              round: status.round,
+              currentCombatantId: status.encounter.currentCombatantId,
+              phase: "turn-start",
+              order: status.encounter.order ?? status.view.turnOrderIds,
+            }
+          : {
+              round: useCombatStore.getState().round,
+              currentCombatantId: "self",
+              phase: "turn-start",
+              order: ["self"],
+            }
+      )
+    : null;
+  const restoreBoundary = relativeBoundary
+    ? store.armEffectBoundary(key, {
+        round: relativeBoundary.round,
+        phase: relativeBoundary.phase,
+      })
+    : null;
   return {
     activated,
     restore: () => {
@@ -252,6 +281,7 @@ function activateActionState(
       if (activated) current.setActiveFeature(key, false);
       if (action.source === "spell") current.setActiveSpellCastLevel(key, previousLevel);
       restoreTimer?.();
+      restoreBoundary?.();
       if (canRestoreConcentration) {
         current.setConcentration(previousConcentration, {
           castLevel: previousConcentrationCastLevel,
@@ -560,6 +590,20 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // `turnStartKey` always null) this never fires; the solo End-Turn `endTurn()` resets
   // the economy there (every turn is yours), so there is no double-reset.
   useEffect(() => {
+    const initialStatus = useCombatStatusStore.getState().status;
+    if (initialStatus) {
+      // Hydration/reload may happen after the shared pointer already crossed the
+      // boundary. The persisted round+phase makes this idempotent and prevents a
+      // missed offline turn-start from leaving a stale Shield active.
+      useCharacterStore
+        .getState()
+        .expireEffectBoundaries(observedOwnerBoundary(initialStatus));
+    } else {
+      useCharacterStore.getState().expireEffectBoundaries({
+        round: useCombatStore.getState().round,
+        phase: "turn-start",
+      });
+    }
     // Prime to the CURRENT key (not `undefined`) so a reload while already on your
     // turn never spuriously resets — the reset fires only on a genuine entry into a
     // NEW turn (the key moving to a fresh non-null value).
@@ -567,6 +611,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     return useCombatStatusStore.subscribe((s) => {
       const key = turnStartKey(s.status);
       if (shouldToastTurnStart(seenTurnKey, key)) {
+        const boundaryExpiry = s.status
+          ? useCharacterStore.getState().expireEffectBoundaries({
+              round: s.status.round,
+              phase: "turn-start",
+            })
+          : { expired: [], restore: () => undefined };
         resetTurn();
         // Finalize the just-ended turn's undo machinery: PURGE the turn-scoped
         // entries (dismissing their lingering toasts) — the economy they reversed was
@@ -575,10 +625,18 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         // Character-state entries (HP, conditions) SURVIVE: their reverse-appliers
         // don't touch the per-turn economy (§1.4 encounter turn-start).
         useUndoStore.getState().purgeTurnScoped();
+        for (const effect of boundaryExpiry.expired) {
+          showToast({
+            message: t("combatLog.effectExpired", {
+              name: grantSourceLabel(effect.sourceId, locale),
+            }),
+            duration: 4000,
+          });
+        }
       }
       seenTurnKey = key;
     });
-  }, [resetTurn]);
+  }, [character?.id, locale, resetTurn, showToast, t]);
 
   // ENCOUNTER ENDED → SOLO AT BASELINE (owner-ratified 2026-07-03). When the OPEN hero's
   // encounter ends (the DM ends the fight, or this PC is removed), the shell status for this
@@ -1720,6 +1778,17 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // robust even if you never formally End Turn (the DM advances you, you go AFK).
   function handleEndTurn() {
     const c = useCombatStore.getState();
+    const charStore = useCharacterStore.getState();
+    const combatStatusStore = useCombatStatusStore.getState();
+    const encounterStatus = combatStatusStore.status;
+    // A stale/off-turn control must be a true no-op. Check before any local
+    // recovery, expiry, log, or boundary mutation; the shared CAS remains the
+    // authoritative persistence guard.
+    if (encounterStatus && !encounterStatus.isMyTurn) return;
+    const boundaryAtEnd = charStore.expireEffectBoundaries({
+      round: encounterStatus?.round ?? c.round,
+      phase: "turn-end",
+    });
     // USE-APPLIES (Task 2) — Rage-style `maintained` states end at the end of
     // your turn UNLESS a maintaining event happened this round. Two events are
     // AUTO-tracked from the durable per-round action receipts:
@@ -1749,7 +1818,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     //     `effect-expired` line. Both return undo appliers folded into the End-Turn
     //     undo. Run BEFORE the maintenance prompt is committed so an EXPIRED state
     //     never also surfaces a keep/end prompt (a hard drop supersedes the soft one).
-    const charStore = useCharacterStore.getState();
     const restorePerTurn = charStore.recoverPerTurnTrackers();
     const { expired, restore: restoreTimers } = charStore.advanceEffectTimers();
     const expiredKeys = new Set(expired.map((e) => e.activeKey));
@@ -1777,14 +1845,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // expiry above still ran — this player's turn just ended. Read the shared status
     // at CLICK time (getState — never a reactive subscription, so the §7.2
     // render-isolation of this provider holds).
-    const combatStatusStore = useCombatStatusStore.getState();
-    const encounterStatus = combatStatusStore.status;
     if (encounterStatus) {
       // DOUBLE-ACTIVATION CAS (optimistic layer): once the first End Turn optimistically
       // advanced, the status reads `isMyTurn === false`; a rapid second press then finds it
       // is no longer this PC's turn and no-ops here — so the optimistic pointer can't be
       // double-stepped even before the disarm re-renders (the persisted CAS mirrors this).
-      if (!encounterStatus.isMyTurn) return;
       // BUG 2 — flip the turn hand-off IMMEDIATELY (optimistic): publish the advanced status
       // + pip so the sheet band goes to its `waiting` state, the own-turn controls vanish,
       // and the pip flips quiet in THIS tick — instead of feeling dead for the
@@ -1813,6 +1878,14 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       );
       // Timed-state expiry (Rage at its round cap) still surfaces its live feedback.
       for (const e of expired) {
+        showToast({
+          message: t("combatLog.effectExpired", {
+            name: grantSourceLabel(e.sourceId, locale),
+          }),
+          duration: 4000,
+        });
+      }
+      for (const e of boundaryAtEnd.expired) {
         showToast({
           message: t("combatLog.effectExpired", {
             name: grantSourceLabel(e.sourceId, locale),
@@ -1851,6 +1924,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const compacted = useUndoStore.getState().past.filter((e) => e.turnScoped);
     useUndoStore.getState().purgeTurnScoped();
     endTurn();
+    const boundaryAtStart = useCharacterStore.getState().expireEffectBoundaries({
+      round: c.round + 1,
+      phase: "turn-start",
+    });
     // Log the round advance as a STRUCTURED turn-end event (the new round number).
     // Undoable: removing the entry on undo keeps the log faithful to the restored turn.
     const turnLogId = useCharacterStore
@@ -1861,6 +1938,14 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // live feedback. Its undo rides the single End-Turn undo below.
     for (const e of expired) {
       // Reuse the combat-LOG expiry line — one semantic unit = one i18n key (rule 6).
+      showToast({
+        message: t("combatLog.effectExpired", {
+          name: grantSourceLabel(e.sourceId, locale),
+        }),
+        duration: 4000,
+      });
+    }
+    for (const e of [...boundaryAtEnd.expired, ...boundaryAtStart.expired]) {
       showToast({
         message: t("combatLog.effectExpired", {
           name: grantSourceLabel(e.sourceId, locale),
@@ -1883,6 +1968,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         // timers/toggles/log. The whole step undoes atomically.
         restorePerTurn?.();
         restoreTimers();
+        boundaryAtStart.restore();
+        boundaryAtEnd.restore();
         // Re-evaluate the maintenance prompt for the restored round (it was set for
         // the advanced round; undoing the round un-sets it).
         setMaintenancePrompts([]);

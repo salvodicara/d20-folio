@@ -676,6 +676,11 @@ export interface ResolvedAction {
   /** Source-specific duration for an activated cast state (for example War
    * God's Blessing's concentration-free 1-minute spell). */
   activeDurationRounds?: number;
+  /** Exact future owner-turn boundary for a short active state (Shield). */
+  activeTurnBoundary?: {
+    phase: "turn-start" | "turn-end";
+    turns: number;
+  };
   /**
    * A standing spell grant that belongs on the selected creature rather than on
    * the caster. The action carries only the catalogue reference; the encounter
@@ -689,6 +694,8 @@ export interface ResolvedAction {
     excludeSelf?: boolean;
     /** Deterministic combat cap declared by the while-active grant, when any. */
     maxRounds?: number;
+    /** Exact source-turn boundary declared by the while-active grant, when any. */
+    turnBoundary?: { phase: "turn-start" | "turn-end"; turns: number };
     /** The effect occurrence exists only when this cast's Temporary HP replace the
      * target's current pool. */
     requiresAppliedTempHp?: true;
@@ -4651,12 +4658,17 @@ function resolveFeatureActions(
     // chip + every while-active grant) and clears it on undo.
     let activatesKey: string | undefined;
     let activationEndsEarlyOn: ReadonlyArray<string> | undefined;
+    let activeTurnBoundary: ResolvedAction["activeTurnBoundary"];
     if ("grants" in srdFeature) {
       for (const g of srdFeature.grants ?? []) {
         if (g.type === "while-active") {
           activatesKey = g.activeKey;
           activationEndsEarlyOn =
             g.duration?.kind === "maintained" ? g.duration.endsEarlyOn : undefined;
+          activeTurnBoundary =
+            g.duration?.kind === "turn-boundary"
+              ? { phase: g.duration.phase, turns: g.duration.turns }
+              : undefined;
           break;
         }
       }
@@ -4882,6 +4894,7 @@ function resolveFeatureActions(
         // Using this action establishes its feature's while-active state (Rage).
         ...(activatesKey ? { activatesKey } : {}),
         ...(activationEndsEarlyOn?.length ? { activationEndsEarlyOn } : {}),
+        ...(activeTurnBoundary ? { activeTurnBoundary } : {}),
         // USE-APPLIES — deterministic effects this action auto-applies on use
         // (a slot-gated same-source temp-hp grant: Chef's PB temp HP).
         ...(srdUseEffects.length ? { useEffects: srdUseEffects } : {}),
@@ -5640,6 +5653,7 @@ function resolveSpellActions(
     // that ownership on the grant itself. Targeting metadata describes legal targets;
     // it never silently re-homes an otherwise caster-owned standing grant.
     let spellActivatesKey: string | undefined;
+    let spellActiveTurnBoundary: ResolvedAction["activeTurnBoundary"];
     let standingEffect: ResolvedAction["standingEffect"];
     for (const g of spell.grants ?? []) {
       if (g.type !== "while-active") continue;
@@ -5653,12 +5667,26 @@ function resolveSpellActions(
           ...(g.duration?.maxRounds !== undefined
             ? { maxRounds: g.duration.maxRounds }
             : {}),
+          ...(g.duration?.kind === "turn-boundary"
+            ? {
+                turnBoundary: {
+                  phase: g.duration.phase,
+                  turns: g.duration.turns,
+                },
+              }
+            : {}),
           ...(g.grants.some((inner) => inner.type === "damage-retaliation")
             ? { requiresAppliedTempHp: true }
             : {}),
         };
       } else {
         spellActivatesKey = g.activeKey;
+        if (g.duration?.kind === "turn-boundary") {
+          spellActiveTurnBoundary = {
+            phase: g.duration.phase,
+            turns: g.duration.turns,
+          };
+        }
       }
       break;
     }
@@ -5679,6 +5707,7 @@ function resolveSpellActions(
       description: srdText("spell", spell.id, "description"),
       // Casting establishes the spell's while-active state (Shield of Faith's AC).
       ...(spellActivatesKey ? { activatesKey: spellActivatesKey } : {}),
+      ...(spellActiveTurnBoundary ? { activeTurnBoundary: spellActiveTurnBoundary } : {}),
       ...(standingEffect ? { standingEffect } : {}),
     };
     actions.push(castAction);
@@ -7257,6 +7286,42 @@ export interface ActiveTimedEffect {
   sourceId: string;
   /** The round cap the countdown arms to when the state lights. */
   maxRounds: number;
+}
+
+export interface ActiveBoundaryEffect {
+  activeKey: string;
+  sourceId: string;
+  phase: "turn-start" | "turn-end";
+  turns: number;
+}
+
+/** Active states whose exact future owner-turn boundary is persisted at use time. */
+export function resolveActiveBoundaryEffects(
+  character: CharacterDoc
+): ActiveBoundaryEffect[] {
+  const active = new Set(character.session.activeFeatures ?? []);
+  if (active.size === 0) return [];
+  const seen = new Set<string>();
+  const out: ActiveBoundaryEffect[] = [];
+  for (const source of resolveAllGrantSources(character.character)) {
+    for (const grant of source.grants ?? []) {
+      if (
+        grant.type !== "while-active" ||
+        grant.duration?.kind !== "turn-boundary" ||
+        !active.has(grant.activeKey) ||
+        seen.has(grant.activeKey)
+      )
+        continue;
+      seen.add(grant.activeKey);
+      out.push({
+        activeKey: grant.activeKey,
+        sourceId: source.id,
+        phase: grant.duration.phase,
+        turns: grant.duration.turns,
+      });
+    }
+  }
+  return out;
 }
 
 /**

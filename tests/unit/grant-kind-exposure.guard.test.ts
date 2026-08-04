@@ -425,6 +425,14 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "rollFloorVMs",
     consumer: "src/features/character/molecules/ResourceRail.tsx",
   },
+  "roll-die-adjustment": {
+    via: "activeRollDieAdjustments",
+    consumer: "src/features/character/center/CombatResolver.tsx",
+  },
+  "healing-blocked": {
+    via: "healingBlocked",
+    consumer: "src/features/character/molecules/ResourceRail.tsx",
+  },
   // Reckless Attack's SELF-side downside ("attacks against you have Advantage"):
   // surfaced as a framed Disadv. note in the rail's Advantages section.
   "incoming-attack-advantage": {

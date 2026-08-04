@@ -27,7 +27,7 @@ import { Icon } from "@/components/ui/icon";
 import { NumberStepper } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useCharacterStore } from "@/stores/characterStore";
-import { effectiveMaxHp } from "@/lib/aggregate-character";
+import { aggregateCharacterGrants, effectiveMaxHp } from "@/lib/aggregate-character";
 import { useToastStore } from "@/stores/toastStore";
 import { useLocale } from "@/hooks/useLocale";
 import { conditionOptions } from "@/lib/views/tracker-view";
@@ -52,7 +52,16 @@ import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { PortraitCrop } from "@/types/character";
 import type { ConditionId, DamageType } from "@/data/types";
 import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
+import {
+  activeRollDieAdjustments,
+  effectsForTarget,
+  healingBlockedByEffects,
+  speedAdjustmentByEffects,
+  turnBoundaryAfter,
+  type ActiveRollDieAdjustment,
+} from "@/lib/combat-effects";
 import { maximizeDiceFormula } from "@/lib/grants";
+import { localeDistance } from "@/lib/utils";
 import type { PreparedCommit } from "./useTurnEconomy";
 import "./CombatResolver.css";
 
@@ -85,9 +94,33 @@ interface TargetChoice {
   defenses: DamageDefenses;
   conditionImmunities: ReadonlySet<ConditionId>;
   qualifiedDefenseCount: number;
+  healingBlocked: boolean;
+  speedAdjustmentFt: number;
+  rollDieAdjustments: Array<
+    Omit<ActiveRollDieAdjustment, "effect"> & { effect?: ActiveCombatEffect }
+  >;
 }
 
 function encounterTargets(combat: GlobalCombat): TargetChoice[] {
+  const position = {
+    round: combat.round,
+    currentCombatantId: combat.encounter.currentCombatantId,
+    phase: "turn-start" as const,
+    order: combat.encounter.order ?? combat.view.turnOrderIds,
+  };
+  const effectStateFor = (targetId: string, tokenIndex?: number) => {
+    const effects = effectsForTarget(
+      combat.encounter.effectOps,
+      targetId,
+      position,
+      tokenIndex
+    );
+    return {
+      healingBlocked: healingBlockedByEffects(effects),
+      speedAdjustmentFt: speedAdjustmentByEffects(effects),
+      rollDieAdjustments: activeRollDieAdjustments(effects),
+    };
+  };
   return combat.view.rows.flatMap((row) => {
     // Read-side compatibility for a dev/legacy group that has not crossed the campaign
     // conform boundary yet. Current persisted encounters have one row per creature.
@@ -116,6 +149,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         defenses: row.defenses ?? NO_DEFENSES,
         conditionImmunities: row.conditionImmunities ?? new Set(),
         qualifiedDefenseCount: row.qualifiedDefenseCount ?? 0,
+        ...effectStateFor(row.id, index),
       }));
     }
     return [
@@ -143,6 +177,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         defenses: row.defenses ?? NO_DEFENSES,
         conditionImmunities: row.conditionImmunities ?? new Set(),
         qualifiedDefenseCount: row.qualifiedDefenseCount ?? 0,
+        ...effectStateFor(row.id),
       },
     ];
   });
@@ -185,6 +220,9 @@ export function CombatResolver({
     : spec.hasHealing
       ? "healing"
       : "temp-hp";
+  const ownAggregate = character
+    ? aggregateCharacterGrants(character.character, character.session)
+    : null;
   const targets: TargetChoice[] = sheetCombat
     ? encounterTargets(sheetCombat)
     : character
@@ -205,6 +243,15 @@ export function CombatResolver({
             defenses: NO_DEFENSES,
             conditionImmunities: new Set(),
             qualifiedDefenseCount: 0,
+            healingBlocked: ownAggregate?.healingBlocked ?? false,
+            speedAdjustmentFt: speedAdjustmentByEffects(
+              character.session.encounterEffects ?? []
+            ),
+            rollDieAdjustments: (ownAggregate?.rollDieAdjustments ?? []).map(
+              (adjustment) => ({
+                ...adjustment,
+              })
+            ),
           },
         ]
       : [];
@@ -643,7 +690,21 @@ export function CombatResolver({
     const committedAction = dynamicHpPool
       ? { ...action, trackerCost: totalPoolCost }
       : action;
+    let consumableSaveEffects = [
+      ...new Map(
+        spec.kind === "save" || spec.kind === "attack-save"
+          ? choices.flatMap(({ target }) =>
+              target.rollDieAdjustments.flatMap((adjustment) =>
+                adjustment.rollType === "save" && adjustment.effect
+                  ? [[adjustment.effect.id, adjustment.effect] as const]
+                  : []
+              )
+            )
+          : []
+      ).values(),
+    ];
     onCommit(() => {
+      const consumedSaveEffects = consumableSaveEffects;
       const effects = choices.flatMap(({ target, amount, mode }) => {
         if (!sheetCombat || target.targetId === sheetCombat.myId) return [];
         const shared = {
@@ -705,9 +766,12 @@ export function CombatResolver({
           ? [target.targetId]
           : []
       );
+      let consumeSaveAdjustments: Promise<void> | null = null;
       if (
         sheetCombat &&
-        (effects.length > 0 || hitTargetIds.length > 0) &&
+        (effects.length > 0 ||
+          hitTargetIds.length > 0 ||
+          consumedSaveEffects.length > 0) &&
         !sharedEffectsApplied
       ) {
         sharedEffectsApplied = true;
@@ -728,17 +792,27 @@ export function CombatResolver({
               ]
             : []
         );
-        void applyDeclaredCombatEffects(sheetCombat.campaignId, effects, {
-          actorId: sheetCombat.myId,
-          action: action.nameLoc,
-          round: sheetCombat.round,
-          pcTargets,
-          ...(hitTargetIds.length > 0 ? { hitTargetIds } : {}),
-          ...(spec.attackMode ? { attackMode: spec.attackMode } : {}),
-        }).catch(() => {
+        const sharedEffectsApply = applyDeclaredCombatEffects(
+          sheetCombat.campaignId,
+          effects,
+          {
+            actorId: sheetCombat.myId,
+            action: action.nameLoc,
+            round: sheetCombat.round,
+            pcTargets,
+            ...(consumedSaveEffects.length > 0
+              ? { consumeEffectIds: consumedSaveEffects.map(({ id }) => id) }
+              : {}),
+            ...(hitTargetIds.length > 0 ? { hitTargetIds } : {}),
+            ...(spec.attackMode ? { attackMode: spec.attackMode } : {}),
+          }
+        );
+        void sharedEffectsApply.catch(() => {
           sharedEffectsApplied = false;
           showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
         });
+        consumeSaveAdjustments =
+          consumedSaveEffects.length > 0 ? sharedEffectsApply : null;
       }
       const actor = sheetCombat
         ? targets.find((target) => target.targetId === sheetCombat.myId)
@@ -781,6 +855,19 @@ export function CombatResolver({
                     : null;
               if (!targetRef) return [];
               const id = crypto.randomUUID();
+              const relativeBoundary = standingEffect.lifetime.turnBoundary
+                ? turnBoundaryAfter(
+                    actorRef.combatantId,
+                    standingEffect.lifetime.turnBoundary.turns,
+                    standingEffect.lifetime.turnBoundary.phase,
+                    {
+                      round: sheetCombat.round,
+                      currentCombatantId: sheetCombat.encounter.currentCombatantId,
+                      phase: "turn-start",
+                      order: sheetCombat.encounter.order ?? sheetCombat.view.turnOrderIds,
+                    }
+                  )
+                : null;
               const duration: ActiveCombatEffect["duration"] = standingEffect.lifetime
                 .concentration
                 ? {
@@ -788,14 +875,16 @@ export function CombatResolver({
                     actorId: actorRef.combatantId,
                     sourceId: standingEffect.source.id,
                   }
-                : standingEffect.lifetime.maxRounds !== undefined
-                  ? {
-                      kind: "turn-boundary",
-                      combatantId: actorRef.combatantId,
-                      round: sheetCombat.round + standingEffect.lifetime.maxRounds,
-                      phase: "turn-end",
-                    }
-                  : { kind: "encounter" };
+                : relativeBoundary
+                  ? relativeBoundary
+                  : standingEffect.lifetime.maxRounds !== undefined
+                    ? {
+                        kind: "turn-boundary",
+                        combatantId: actorRef.combatantId,
+                        round: sheetCombat.round + standingEffect.lifetime.maxRounds,
+                        phase: "turn-end",
+                      }
+                    : { kind: "encounter" };
               return [
                 {
                   id,
@@ -901,9 +990,32 @@ export function CombatResolver({
                 });
             }
           : null;
-      return undoOwn || undoPersistent
+      const undoConsumedSaveAdjustments =
+        sheetCombat && consumeSaveAdjustments
+          ? () => {
+              void consumeSaveAdjustments
+                .then(async () => {
+                  const restored = consumedSaveEffects.map((effect) => ({
+                    ...effect,
+                    id: crypto.randomUUID(),
+                  }));
+                  for (const effect of restored) {
+                    await appendPersistentCombatEffect(sheetCombat.campaignId, effect);
+                  }
+                  consumableSaveEffects = restored;
+                })
+                .catch(() => {
+                  showToast({
+                    message: t("combat.declareApplyFailed"),
+                    duration: 6000,
+                  });
+                });
+            }
+          : null;
+      return undoOwn || undoPersistent || undoConsumedSaveAdjustments
         ? () => {
             undoPersistent?.();
+            undoConsumedSaveAdjustments?.();
             undoOwn?.();
           }
         : undefined;
@@ -1022,6 +1134,36 @@ export function CombatResolver({
                           })}
                         </small>
                       )}
+                      {target.conditions.length > 0 && (
+                        <small>
+                          {target.conditions
+                            .map(
+                              (id) =>
+                                conditionChoices.find((option) => option.id === id)
+                                  ?.label ?? id
+                            )
+                            .join(" · ")}
+                        </small>
+                      )}
+                      {target.healingBlocked && (
+                        <small>{t("combat.resolveHealingBlocked")}</small>
+                      )}
+                      {target.speedAdjustmentFt !== 0 && (
+                        <small>
+                          {t("combat.resolveSpeedAdjustment", {
+                            distance: localeDistance(target.speedAdjustmentFt, locale),
+                          })}
+                        </small>
+                      )}
+                      {target.rollDieAdjustments.map((adjustment, index) => (
+                        <small key={`${adjustment.sourceId}-${index}`}>
+                          {t("combat.resolveNextRollAdjustment", {
+                            roll: t(`combat.resolveRoll_${adjustment.rollType}`),
+                            sign: adjustment.operation === "add" ? "+" : "−",
+                            dice: adjustment.dice,
+                          })}
+                        </small>
+                      ))}
                     </span>
                     <span className="combat-target-check" aria-hidden>
                       {chosen ? <Check /> : <CircleDot />}
@@ -1105,6 +1247,22 @@ export function CombatResolver({
                       {target.qualifiedDefenseCount > 0 && targetAppliesDamage && (
                         <small>{t("combat.resolveConditionalDefense")}</small>
                       )}
+                      {needsSaveOutcome &&
+                        target.rollDieAdjustments
+                          .filter((adjustment) => adjustment.rollType === "save")
+                          .map((adjustment, index) => (
+                            <Badge
+                              key={`${adjustment.sourceId}-save-${index}`}
+                              color="var(--semantic-warning)"
+                              size="sm"
+                            >
+                              {t("combat.resolveNextRollAdjustment", {
+                                roll: t("combat.resolveRoll_save"),
+                                sign: adjustment.operation === "add" ? "+" : "−",
+                                dice: adjustment.dice,
+                              })}
+                            </Badge>
+                          ))}
                       {action.summary.oneRollDamageBonus && targetAppliesDamage && (
                         <button
                           type="button"

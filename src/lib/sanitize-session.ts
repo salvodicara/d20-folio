@@ -149,6 +149,7 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     // states (Rage = 100 rounds). Enumerated so it round-trips a reload mid-Rage;
     // absent on every pre-existing doc (back-compat).
     effectTimers: session.effectTimers,
+    effectBoundaries: session.effectBoundaries,
     grantBundleChoices: session.grantBundleChoices,
     companionHp: session.companionHp,
     // Companion variant pick (Beast Master) + the Find Familiar summon. Enumerated

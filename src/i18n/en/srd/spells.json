@@ -305,6 +305,9 @@
     "name": "Chill Touch",
     "range": "Touch"
   },
+  "chill-touch.grants.0": {
+    "label": "Chill Touch effect"
+  },
   "chromatic-orb": {
     "description": "You hurl an orb of energy at a creature you can see within range. You choose Acid, Cold, Fire, Lightning, Poison, or Thunder for the type of orb you create, and then make a ranged spell attack against the target. On a hit, the target takes 3d8 damage of the type you chose.",
     "duration": "Instantaneous",
@@ -2036,6 +2039,9 @@
     "higherLevels": "The spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8).",
     "name": "Ray of Frost",
     "range": "60 feet"
+  },
+  "ray-of-frost.grants.0": {
+    "label": "Ray of Frost effect"
   },
   "ray-of-sickness": {
     "description": "A ray of sickening greenish energy lashes out toward a creature within range. Make a ranged spell attack against the target. On a hit, the target takes 2d8 poison damage and must make a Constitution saving throw. On a failed save, it also has the Poisoned condition until the end of your next turn.",

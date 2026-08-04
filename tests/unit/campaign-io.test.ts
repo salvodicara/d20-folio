@@ -185,6 +185,18 @@ describe("campaign-io — reviewed combat effects", () => {
       },
     ],
   };
+  const chillTouchEffect: ActiveCombatEffect = {
+    id: "chill-touch:1",
+    actor: { kind: "monster", combatantId: "caster" },
+    target: { kind: "monster", combatantId: "monster-1" },
+    source: {
+      kind: "spell",
+      id: "chill-touch",
+      actionId: "spell-chill-touch",
+    },
+    payload: { kind: "grant-group", activeKey: "spell-chill-touch" },
+    duration: { kind: "encounter" },
+  };
 
   it("lands healing and an idempotent condition in one pure reduction", () => {
     const next = reduceDeclaredEffects(encounter, [
@@ -203,6 +215,18 @@ describe("campaign-io — reviewed combat effects", () => {
       "hp-heal",
       "condition-gain",
     ]);
+  });
+
+  it("prevents monster healing while Chill Touch is active", () => {
+    const next = reduceDeclaredEffects(
+      encounter,
+      [{ kind: "healing", targetId: "monster-1", amount: 4 }],
+      undefined,
+      [chillTouchEffect]
+    );
+    const goblin = next.combatants.find((combatant) => combatant.id === "monster-1");
+    expect(goblin?.kind === "monster" ? goblin.tokens : null).toEqual([5]);
+    expect(next.events).toBeUndefined();
   });
 
   it("does not duplicate a condition on transaction-style replay", () => {
@@ -285,6 +309,50 @@ describe("campaign-io — reviewed combat effects", () => {
         actorId: "pc-b",
         conditionId: "poisoned",
       }),
+    ]);
+  });
+
+  it("prevents offline PC healing while preserving unrelated condition cures", () => {
+    const result = reduceDirectPcEffects(
+      {
+        targetId: "pc-a",
+        memberUid: "a",
+        characterId: "char-a",
+        currentHp: 7,
+        tempHp: 0,
+        maxHp: 20,
+        conditions: ["poisoned"],
+        defenses: NO_DEFENSES,
+      },
+      [
+        { kind: "healing", targetId: "pc-a", amount: 8 },
+        {
+          kind: "condition",
+          targetId: "pc-a",
+          conditionId: "poisoned",
+          active: false,
+        },
+      ],
+      {
+        actorId: "pc-b",
+        action: { custom: "Healing and cure" },
+        round: 2,
+        persistentEffects: [
+          {
+            ...chillTouchEffect,
+            target: {
+              kind: "pc",
+              combatantId: "pc-a",
+              memberUid: "a",
+              characterId: "char-a",
+            },
+          },
+        ],
+      }
+    );
+    expect(result).toMatchObject({ hp: { current: 7, temp: 0 }, conditions: [] });
+    expect(result?.events).toEqual([
+      expect.objectContaining({ kind: "condition-loss", conditionId: "poisoned" }),
     ]);
   });
 
@@ -607,6 +675,77 @@ describe("campaign-io — reviewed combat effects", () => {
     ).toEqual([1, 1]);
     const effectOps = written?.["encounter.effectOps"] as CombatEffectOp[];
     expect(effectOps.filter((operation) => operation.kind === "revoke")).toHaveLength(2);
+  });
+
+  it("consumes declared next-roll effects atomically even without an HP change", async () => {
+    const caster = {
+      kind: "pc" as const,
+      id: "pc-caster",
+      memberUid: "caster-uid",
+      characterId: "caster-character",
+    };
+    const targets = ["target-a", "target-b"];
+    const penalties: ActiveCombatEffect[] = targets.map((combatantId) => ({
+      id: `mind-sliver:${combatantId}`,
+      actor: {
+        kind: "pc",
+        combatantId: caster.id,
+        memberUid: caster.memberUid,
+        characterId: caster.characterId,
+      },
+      target: { kind: "monster", combatantId },
+      source: { kind: "spell", id: "mind-sliver", actionId: "cast-sliver" },
+      payload: { kind: "grant-group", activeKey: "spell-mind-sliver" },
+      duration: { kind: "encounter" },
+    }));
+    const live: EncounterState = {
+      round: 1,
+      currentCombatantId: caster.id,
+      order: [caster.id, ...targets],
+      epoch: 1,
+      status: "active",
+      combatants: [
+        caster,
+        ...targets.map((id, index) => ({
+          kind: "monster" as const,
+          id,
+          name: `Target ${index + 1}`,
+          ac: 12,
+          initiative: 9 - index,
+          conditions: [],
+          maxHp: 8,
+          tokens: [8],
+        })),
+      ],
+      effectOps: penalties.map((effect) => ({
+        id: `apply:${effect.id}`,
+        kind: "apply" as const,
+        effect,
+      })),
+    };
+    const update = vi.fn<(ref: unknown, data: Record<string, unknown>) => void>();
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: () => Promise.resolve({ data: () => ({ encounter: live }) }),
+        update,
+      })
+    );
+
+    await applyDeclaredCombatEffects("camp1", [], {
+      actorId: caster.id,
+      action: { custom: "Saving throw" },
+      round: 1,
+      pcTargets: [],
+      consumeEffectIds: penalties.map(({ id }) => id),
+    });
+
+    const written = update.mock.calls[0]?.[1];
+    const effectOps = written?.["encounter.effectOps"] as CombatEffectOp[];
+    expect(effectOps.filter((operation) => operation.kind === "revoke")).toEqual([
+      expect.objectContaining({ effectId: penalties[0]?.id }),
+      expect.objectContaining({ effectId: penalties[1]?.id }),
+    ]);
+    expect(written?.["encounter.combatants"]).toEqual(live.combatants);
   });
 
   it("fresh-reads and atomically writes a peer combat slice plus Chronicle", async () => {

@@ -85,6 +85,7 @@ import {
   effectsForTarget,
   expiredCombatEffects,
   foldCombatEffectOps,
+  healingBlockedByEffects,
   maxHpDeltaForEffect,
   resolvePersistentDamage,
   resolvePersistentHit,
@@ -871,6 +872,9 @@ export interface DeclaredCombatContext {
   action: LocText;
   round: number;
   pcTargets: ReadonlyArray<DeclaredPcTargetSnapshot>;
+  /** Exact one-shot standing-effect occurrences consumed by this resolution. They
+   * commit in the same transaction as HP, conditions, and Chronicle provenance. */
+  consumeEffectIds?: ReadonlyArray<string>;
   /** Successful attack-hit targets. Kept separate from damage so a 0-damage hit
    * can still trigger deterministic reactions. */
   hitTargetIds?: ReadonlyArray<string>;
@@ -982,6 +986,7 @@ export function reduceDirectPcEffects(
       continue;
     }
     if (effect.kind === "healing") {
+      if (healingBlockedByEffects(provenance.persistentEffects ?? [])) continue;
       const before = current;
       current = Math.min(target.maxHp, current + amount);
       const landed = current - before;
@@ -1112,7 +1117,7 @@ export async function applyDeclaredCombatEffects(
       applicable.push({ kind: "damage", targetId, amount: 0 });
     }
   }
-  if (applicable.length === 0) return;
+  if (applicable.length === 0 && (context?.consumeEffectIds?.length ?? 0) === 0) return;
   if (devBypassEnabled()) {
     return applyDeclaredEffectsOptimistic(campaignId, applicable, context);
   }
@@ -1263,6 +1268,7 @@ export async function applyDeclaredCombatEffects(
         nextEffectOps = appendCombatEffectOp(nextEffectOps, operation) ?? nextEffectOps;
       }
     };
+    consume(context?.consumeEffectIds ?? []);
     const enqueueTransfers = (
       transfers: DirectPcEffectResult["transfers"],
       path: ReadonlySet<string> = new Set()
@@ -1280,7 +1286,15 @@ export async function applyDeclaredCombatEffects(
         chronicle = reduceDeclaredEffects(
           chronicle,
           [effect],
-          context ? { actorId: context.actorId, action: context.action } : undefined
+          context ? { actorId: context.actorId, action: context.action } : undefined,
+          effectsForTarget(
+            nextEffectOps,
+            effect.targetId,
+            undefined,
+            effect.kind === "condition" || effect.kind === "granted-die"
+              ? undefined
+              : effect.tokenIndex
+          )
         );
         continue;
       }
@@ -2072,7 +2086,8 @@ function reducePersistentMonsterDamage(
 export function reduceDeclaredEffects(
   encounter: EncounterState,
   effects: ReadonlyArray<DeclaredCombatEffect>,
-  provenance?: { actorId: string; action: LocText }
+  provenance?: { actorId: string; action: LocText },
+  persistentEffects: ReadonlyArray<ActiveCombatEffect> = []
 ): EncounterState {
   let next = encounter;
   for (const effect of effects) {
@@ -2137,7 +2152,7 @@ export function reduceDeclaredEffects(
     const tokenIndex = legacyIndex ?? firstLiveTokenIndex(monster.tokens);
     if (effect.kind === "damage") {
       next = recordMonsterDamage(next, storedTargetId, tokenIndex, effect.amount);
-    } else {
+    } else if (!healingBlockedByEffects(persistentEffects)) {
       const value = (monster.tokens[tokenIndex] ?? 0) + effect.amount;
       next = recordMonsterHp(next, storedTargetId, tokenIndex, value);
     }
@@ -2184,6 +2199,7 @@ function applyDeclaredEffectsOptimistic(
       nextEffectOps = appendCombatEffectOp(nextEffectOps, operation) ?? nextEffectOps;
     }
   };
+  consume(context?.consumeEffectIds ?? []);
   const enqueueTransfers = (
     transfers: DirectPcEffectResult["transfers"],
     path: ReadonlySet<string> = new Set()
@@ -2304,7 +2320,15 @@ function applyDeclaredEffectsOptimistic(
       next = reduceDeclaredEffects(
         next,
         [effect],
-        context ? { actorId: context.actorId, action: context.action } : undefined
+        context ? { actorId: context.actorId, action: context.action } : undefined,
+        effectsForTarget(
+          nextEffectOps,
+          effect.targetId,
+          undefined,
+          effect.kind === "condition" || effect.kind === "granted-die"
+            ? undefined
+            : effect.tokenIndex
+        )
       );
       continue;
     }

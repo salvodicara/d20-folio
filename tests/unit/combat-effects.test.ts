@@ -4,11 +4,14 @@ import {
   endedEffectSuccessor,
   effectsForTarget,
   foldCombatEffectOps,
+  healingBlockedByEffects,
   effectsByActorSource,
   expiredCombatEffects,
   maxHpDeltaForEffect,
   markedTargetForActor,
   resolvePersistentDamage,
+  speedAdjustmentByEffects,
+  turnBoundaryAfter,
 } from "@/lib/combat-effects";
 import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 import { evaluateGrants } from "@/lib/grants";
@@ -91,6 +94,19 @@ describe("persistent combat effects", () => {
     expect(effectsByActorSource(operations, "caster", "heroism")).toHaveLength(2);
   });
 
+  it("projects Chill Touch healing prevention and Ray of Frost speed loss generically", () => {
+    const chill = effect("chill", {
+      source: { kind: "spell", id: "chill-touch", actionId: "spell-chill-touch" },
+      payload: { kind: "grant-group", activeKey: "spell-chill-touch" },
+    });
+    const frost = effect("frost", {
+      source: { kind: "spell", id: "ray-of-frost", actionId: "spell-ray-of-frost" },
+      payload: { kind: "grant-group", activeKey: "spell-ray-of-frost" },
+    });
+    expect(healingBlockedByEffects([chill, frost])).toBe(true);
+    expect(speedAdjustmentByEffects([chill, frost])).toBe(-10);
+  });
+
   it("keeps legacy grouped-monster tokens as distinct targets", () => {
     const first = effect("first", {
       target: { kind: "monster", combatantId: "goblins", tokenIndex: 0 },
@@ -134,6 +150,33 @@ describe("persistent combat effects", () => {
         phase: "turn-end",
       })
     ).toEqual([]);
+  });
+
+  it("resolves relative boundaries against exact turn order and phase", () => {
+    const position = {
+      order: ["ally", "caster", "enemy"],
+      round: 4,
+      currentCombatantId: "ally",
+      phase: "turn-start" as const,
+    };
+    expect(turnBoundaryAfter("caster", 1, "turn-start", position)).toEqual({
+      kind: "turn-boundary",
+      combatantId: "caster",
+      round: 4,
+      phase: "turn-start",
+    });
+    expect(
+      turnBoundaryAfter("caster", 1, "turn-end", {
+        ...position,
+        currentCombatantId: "caster",
+        phase: "turn-end",
+      })
+    ).toEqual({
+      kind: "turn-boundary",
+      combatantId: "caster",
+      round: 5,
+      phase: "turn-end",
+    });
   });
 
   it("binds source values and cast-level scaling without reading recipient stats", () => {

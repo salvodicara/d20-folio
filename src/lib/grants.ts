@@ -115,6 +115,17 @@ export type WhileActiveDuration =
       kind: "timed";
       minutes: number;
       maxRounds?: number;
+    }
+  | {
+      /**
+       * Expires at the named boundary of the owner's future turn. Unlike a
+       * round countdown, this preserves exact timing across encounter order,
+       * navigation, reload and offline resume (Shield: next turn start).
+       */
+      kind: "turn-boundary";
+      phase: "turn-start" | "turn-end";
+      turns: number;
+      maxRounds?: never;
     };
 
 /** A numeric grant value resolved from facts frozen on the originating effect. */
@@ -264,6 +275,12 @@ export type Grant =
        * Activation ends the currently held spell through the shared
        * concentration transaction; undo restores it atomically. */
       type: "concentration-blocked";
+    }
+  | {
+      /** The active state forbids regaining Hit Points (Chill Touch). Damage,
+       * Temporary HP, condition removal, and every other consequence remain
+       * independent. Shared and solo HP reducers consume this same flag. */
+      type: "healing-blocked";
     }
   | {
       /**
@@ -2037,6 +2054,16 @@ export type Grant =
       description?: BiText;
     }
   | {
+      /** A physical die adjustment to a roll. The engine never rolls it; it
+       * surfaces the formula and `consume: "next"` lets the combat resolver
+       * retire the target-bound occurrence after that roll is adjudicated. */
+      type: "roll-die-adjustment";
+      rollType: "check" | "save" | "attack";
+      operation: "add" | "subtract";
+      dice: string;
+      consume: "next";
+    }
+  | {
       /**
        * A SELF-side downside marker: while this grant is in effect, attack rolls
        * AGAINST the character have Advantage. Barbarian Reckless Attack (L2): the
@@ -3701,6 +3728,16 @@ export interface RollFloorClause {
   whileActiveKey?: string;
 }
 
+/** A resolved physical die adjustment. Dice stay table-entered; the stable
+ * source id and consume policy make target-bound one-shot effects reversible. */
+export interface RollDieAdjustmentClause {
+  sourceId: string;
+  rollType: "check" | "save" | "attack";
+  operation: "add" | "subtract";
+  dice: string;
+  consume: "next";
+}
+
 /**
  * A resolved SELF-side downside (Barbarian Reckless Attack): while in effect,
  * attack rolls AGAINST the character have Advantage. The consumer surfaces it as
@@ -3822,6 +3859,8 @@ export interface AggregatedGrants {
   spellcastingBlocked: boolean;
   /** True while any active grant forbids maintaining Concentration. */
   concentrationBlocked: boolean;
+  /** True while active effects forbid regaining Hit Points. */
+  healingBlocked: boolean;
   /**
    * Damage SOURCES the character resists (Abjurer Spell Resistance → `"spell"`).
    * Orthogonal to `damageResistances` (which keys on `DamageType`): a source
@@ -4385,6 +4424,8 @@ export interface AggregatedGrants {
   disadvantages: ReadonlyArray<AdvantageClause>;
   /** Roll floors (Rogue Reliable Talent): treat a d20 below `floor` as `floor`. */
   rollFloors: ReadonlyArray<RollFloorClause>;
+  /** Physical add/subtract dice attached to a roll (Mind Sliver: next save −1d4). */
+  rollDieAdjustments: ReadonlyArray<RollDieAdjustmentClause>;
   /**
    * SELF-side downsides (Barbarian Reckless Attack): while in effect, attack
    * rolls AGAINST the character have Advantage. Rendered as a defensive Disadv.
@@ -4596,6 +4637,7 @@ export function emptyAggregate(): AggregatedGrants {
     conditionImmunities: new Set(),
     spellcastingBlocked: false,
     concentrationBlocked: false,
+    healingBlocked: false,
     damageSourceResistances: new Set(),
     flatDamageReductions: [],
     speedBonusFt: 0,
@@ -4682,6 +4724,7 @@ export function emptyAggregate(): AggregatedGrants {
     advantages: [],
     disadvantages: [],
     rollFloors: [],
+    rollDieAdjustments: [],
     incomingAttackAdvantages: [],
     incomingAttackDisadvantages: [],
     defenseNotes: [],
@@ -4817,6 +4860,7 @@ export function evaluateGrants(
   const conditionImmunities = new Set<ConditionId>();
   let spellcastingBlocked = false;
   let concentrationBlocked = false;
+  let healingBlocked = false;
   const damageSourceResistances = new Set<DamageSource>();
   const flatDamageReductions: AggregatedGrants["flatDamageReductions"][number][] = [];
 
@@ -4952,6 +4996,7 @@ export function evaluateGrants(
   const advantages: AdvantageClause[] = [];
   const disadvantages: AdvantageClause[] = [];
   const rollFloors: RollFloorClause[] = [];
+  const rollDieAdjustments: RollDieAdjustmentClause[] = [];
   const incomingAttackAdvantages: IncomingAttackClause[] = [];
   const incomingAttackDisadvantages: IncomingAttackClause[] = [];
   const defenseNotes: IncomingAttackClause[] = [];
@@ -5721,6 +5766,15 @@ export function evaluateGrants(
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
         });
         break;
+      case "roll-die-adjustment":
+        rollDieAdjustments.push({
+          sourceId,
+          rollType: g.rollType,
+          operation: g.operation,
+          dice: g.dice,
+          consume: g.consume,
+        });
+        break;
       case "incoming-attack-advantage":
         // SELF-side downside (Reckless Attack): when it arrives through a
         // `while-active` block, `activeKey` marks it "· active" — same as the
@@ -6240,6 +6294,9 @@ export function evaluateGrants(
       case "concentration-blocked":
         concentrationBlocked = true;
         break;
+      case "healing-blocked":
+        healingBlocked = true;
+        break;
 
       // ── Exhaustiveness guard — a future un-cased Grant kind is a compile
       //    error (g narrows to `never` here only if all members are handled). ─
@@ -6280,6 +6337,7 @@ export function evaluateGrants(
     conditionImmunities,
     spellcastingBlocked,
     concentrationBlocked,
+    healingBlocked,
     damageSourceResistances,
     flatDamageReductions,
     speedBonusFt,
@@ -6366,6 +6424,7 @@ export function evaluateGrants(
     advantages,
     disadvantages,
     rollFloors,
+    rollDieAdjustments,
     incomingAttackAdvantages,
     incomingAttackDisadvantages,
     defenseNotes,

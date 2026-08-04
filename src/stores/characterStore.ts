@@ -31,6 +31,7 @@ import {
   getSpellSlotTrackerRecovery,
   resolvePerTurnRecoveryTrackerIds,
   resolveActiveTimedEffects,
+  resolveActiveBoundaryEffects,
   resolveActiveStatesEndingOn,
   advanceEffectTimers as advanceEffectTimersEngine,
   resolveTrackers,
@@ -396,6 +397,19 @@ interface CharacterState {
   setActiveSpellCastLevel: (key: string, level?: number) => void;
   /** Arm/replace one deterministic round timer and return its exact inverse. */
   armEffectTimer: (key: string, rounds: number) => (() => void) | null;
+  /** Persist an exact future owner-turn boundary and return its surgical inverse. */
+  armEffectBoundary: (
+    key: string,
+    boundary: { round: number; phase: "turn-start" | "turn-end" }
+  ) => (() => void) | null;
+  /** Drop every active state whose persisted boundary has been reached. */
+  expireEffectBoundaries: (position: {
+    round: number;
+    phase: "turn-start" | "turn-end";
+  }) => {
+    expired: ReadonlyArray<{ activeKey: string; sourceId: string }>;
+    restore: () => void;
+  };
   /**
    * FRONTIER-S3 — reset every `recovery: "per-turn"` tracker with a spent use
    * (Sneak Attack) to full, run at the owner's turn start (the End-Turn seam).
@@ -1056,9 +1070,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return null;
     const before = get().character;
     if (!before) return null;
+    const healingBlocked = aggregateCharacterGrants(
+      before.character,
+      before.session
+    ).healingBlocked;
     const damageTakenBefore = useCombatStore.getState().damageTakenThisRound;
     if (effects.damage) get().applyDamage(effects.damage);
-    if (effects.healing) get().applyHealing(effects.healing);
+    if (effects.healing && !healingBlocked) get().applyHealing(effects.healing);
     if (effects.tempHp) get().gainTempHp(effects.tempHp);
     if (effects.bardicInspirationDie !== undefined)
       get().setBardicInspirationDie(effects.bardicInspirationDie);
@@ -2026,6 +2044,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const timers = Object.fromEntries(
       Object.entries(previousTimers).filter(([timerKey]) => timerKey !== key)
     );
+    const boundaries = Object.fromEntries(
+      Object.entries(character.session.effectBoundaries ?? {}).filter(
+        ([boundaryKey]) => boundaryKey !== key
+      )
+    );
     let updated: CharacterDoc = {
       ...character,
       session: {
@@ -2034,6 +2057,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         activeSpellCastLevels:
           levels && Object.keys(levels).length > 0 ? levels : undefined,
         effectTimers: Object.keys(timers).length > 0 ? timers : undefined,
+        effectBoundaries: Object.keys(boundaries).length > 0 ? boundaries : undefined,
       },
     };
     if (isActive) {
@@ -2153,6 +2177,113 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           },
         },
       });
+    };
+  },
+
+  armEffectBoundary: (key, boundary) => {
+    if (get().readonly) return null;
+    const character = get().character;
+    if (!character || !Number.isFinite(boundary.round) || boundary.round < 1) return null;
+    const previous = character.session.effectBoundaries?.[key];
+    set({
+      character: {
+        ...character,
+        session: {
+          ...character.session,
+          effectBoundaries: {
+            ...(character.session.effectBoundaries ?? {}),
+            [key]: { round: Math.round(boundary.round), phase: boundary.phase },
+          },
+        },
+      },
+    });
+    return () => {
+      const current = get().character;
+      if (!current) return;
+      const boundaries = previous
+        ? { ...(current.session.effectBoundaries ?? {}), [key]: previous }
+        : Object.fromEntries(
+            Object.entries(current.session.effectBoundaries ?? {}).filter(
+              ([boundaryKey]) => boundaryKey !== key
+            )
+          );
+      set({
+        character: {
+          ...current,
+          session: {
+            ...current.session,
+            effectBoundaries: Object.keys(boundaries).length > 0 ? boundaries : undefined,
+          },
+        },
+      });
+    };
+  },
+
+  expireEffectBoundaries: (position) => {
+    const noop = { expired: [] as ReadonlyArray<never>, restore: () => {} };
+    if (get().readonly) return noop;
+    const character = get().character;
+    if (!character) return noop;
+    const priorBoundaries = character.session.effectBoundaries;
+    if (!priorBoundaries) return noop;
+    const sources = new Map(
+      resolveActiveBoundaryEffects(character).map((effect) => [
+        effect.activeKey,
+        effect.sourceId,
+      ])
+    );
+    const phaseIndex = position.phase === "turn-start" ? 0 : 1;
+    const expired = Object.entries(priorBoundaries).flatMap(([activeKey, boundary]) =>
+      position.round > boundary.round ||
+      (position.round === boundary.round &&
+        phaseIndex >= (boundary.phase === "turn-start" ? 0 : 1))
+        ? [{ activeKey, sourceId: sources.get(activeKey) ?? activeKey }]
+        : []
+    );
+    if (expired.length === 0) return noop;
+    const expiredKeys = new Set(expired.map((effect) => effect.activeKey));
+    const priorActive = character.session.activeFeatures ?? [];
+    const priorCastLevels = character.session.activeSpellCastLevels;
+    const boundaries = Object.fromEntries(
+      Object.entries(priorBoundaries).filter(([key]) => !expiredKeys.has(key))
+    );
+    const activeFeatures = priorActive.filter((key) => !expiredKeys.has(key));
+    const castLevels = Object.fromEntries(
+      Object.entries(priorCastLevels ?? {}).filter(([key]) => !expiredKeys.has(key))
+    );
+    set({
+      character: {
+        ...character,
+        session: {
+          ...character.session,
+          activeFeatures,
+          activeSpellCastLevels:
+            Object.keys(castLevels).length > 0 ? castLevels : undefined,
+          effectBoundaries: Object.keys(boundaries).length > 0 ? boundaries : undefined,
+        },
+      },
+    });
+    const logIds = expired.map((effect) =>
+      get().logEvent({ kind: "effect-expired", sourceId: effect.sourceId })
+    );
+    return {
+      expired,
+      restore: () => {
+        logIds.forEach((id) => get().removeLogEntry(id));
+        const current = get().character;
+        if (!current) return;
+        set({
+          character: {
+            ...current,
+            session: {
+              ...current.session,
+              activeFeatures: priorActive,
+              activeSpellCastLevels: priorCastLevels,
+              effectBoundaries: priorBoundaries,
+            },
+          },
+        });
+      },
     };
   },
 

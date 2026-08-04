@@ -1026,6 +1026,7 @@ function sessionToState(s: SessionState): Record<string, unknown> {
   if (isNonEmptyRecord(s.activeSpellCastLevels))
     state.activeSpellCastLevels = s.activeSpellCastLevels;
   if (isNonEmptyRecord(s.effectTimers)) state.effectTimers = s.effectTimers;
+  if (isNonEmptyRecord(s.effectBoundaries)) state.effectBoundaries = s.effectBoundaries;
   if (isNonEmptyRecord(s.grantBundleChoices))
     state.grantBundleChoices = s.grantBundleChoices;
   if (isNonEmptyRecord(s.companionHp)) state.companionHp = s.companionHp;
@@ -1134,6 +1135,21 @@ function stateToSession(state: Record<string, unknown>): Partial<SessionState> {
       }
     }
     if (Object.keys(timers).length > 0) s.effectTimers = timers;
+  }
+  if (isRecord(state.effectBoundaries)) {
+    const boundaries: NonNullable<SessionState["effectBoundaries"]> = {};
+    for (const [key, value] of Object.entries(state.effectBoundaries)) {
+      if (
+        isRecord(value) &&
+        typeof value.round === "number" &&
+        Number.isFinite(value.round) &&
+        value.round >= 1 &&
+        (value.phase === "turn-start" || value.phase === "turn-end")
+      ) {
+        boundaries[key] = { round: Math.round(value.round), phase: value.phase };
+      }
+    }
+    if (Object.keys(boundaries).length > 0) s.effectBoundaries = boundaries;
   }
   if (isRecord(state.companionHp)) {
     s.companionHp = state.companionHp as SessionState["companionHp"];

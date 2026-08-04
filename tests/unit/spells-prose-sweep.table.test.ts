@@ -28,6 +28,11 @@ interface StandingSpellExpectation {
  * grant models every clause of the spell or whether the resolver persists it.
  */
 const STANDING_SPELLS = [
+  {
+    id: "chill-touch",
+    recipient: "selected",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+  },
   { id: "divine-favor", recipient: "caster" },
   {
     id: "heroism",
@@ -85,6 +90,11 @@ const STANDING_SPELLS = [
     id: "protection-from-energy",
     recipient: "selected",
     targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  {
+    id: "ray-of-frost",
+    recipient: "selected",
+    targeting: { affinity: "enemy", maxTargets: 1 },
   },
   {
     id: "death-ward",

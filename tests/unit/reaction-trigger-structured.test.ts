@@ -214,6 +214,13 @@ interface SpellReactionRow {
   token: string | undefined; // the backfilled structured token
 }
 
+// Accuracy corrections discovered after parser retirement. The old Shield row
+// had no trigger because its casting-time field is intentionally normalized to
+// "reaction"; structured data now carries the actual 2024 trigger instead.
+const CORRECTED_SPELL_TRIGGERS: Readonly<Record<string, string>> = {
+  shield: "an attack hits you or Magic Missile targets you",
+};
+
 // Every reaction spell — the smart-tracker derives a `"reaction"` action TYPE from
 // a `castingTime` that includes "reaction", which is exactly when it consulted the
 // retired parser. Mirror that gate here so the oracle runs on the same set.
@@ -221,7 +228,7 @@ const SPELL_ROWS: SpellReactionRow[] = spells
   .filter((s) => s.castingTime.toLowerCase().includes("reaction"))
   .map((s) => ({
     spellId: s.id,
-    expectedEn: oracleSpellTrigger(s.castingTime),
+    expectedEn: CORRECTED_SPELL_TRIGGERS[s.id] ?? oracleSpellTrigger(s.castingTime),
     token: s.reactionTrigger,
   }));
 

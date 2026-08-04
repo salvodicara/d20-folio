@@ -1283,6 +1283,12 @@ compact target card. Encounter-owned allies repeat that state as a small badge o
 put the DM correction inside details-on-demand; PCs spend it from the existing resource rail. No parallel
 resource panel or explanatory prose is added.
 
+**Deterministic target state (2026-08-04).** The same compact target card includes only active facts
+that can change the current decision: conditions, held Bardic die, next-roll die modifiers, blocked HP
+recovery and temporary Speed deltas. Results repeat a next-save modifier beside its outcome controls.
+No tutorial copy or separate effect inspector is added; the user still chooses targets first and edits
+all table-supplied outcomes before the single Apply action.
+
 - **Solo↔encounter band precedence** (`.turn[data-phase]`; owner-ratified 2026-07-03, the ONE seam
   `useTurnState` → `useSheetCombat`, `turn-state.ts`): when the OPEN hero is a combatant in its encounter the
   solo lifecycle YIELDS — `data-phase` drives the treatment and End Combat is absent. **`gathering`** (pre-Begin):

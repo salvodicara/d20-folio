@@ -110,7 +110,17 @@ Long Rest. A generic recorded-roll tracker now stores one bounded value per rema
 exact chosen result with correction/undo, survives navigation plus schema-3 export/import, and clears
 through the normal recovery seam. The app still never rolls dice. The same opt-in is available to
 homebrew feature trackers, and the real Wizard/Diviner fixture locks the 2→3/LR d20 contract. The
-fixture's combat-spell audit remains open as the next Wizard milestone; Rogue/Paladin follow.
+fixture's combat-spell audit is closed in the next milestone below; Rogue/Paladin follow.
+
+**Live-team truth audit — Wizard combat-spell contract CLOSED on branch (2026-08-04):** Briox's full
+prepared combat loadout now has a fixture-level resolver contract. Shield declares its real trigger and
+expires at the exact next turn-start with composite undo. Mind Sliver persists a typed −1d4 on the exact
+target's next save, shows it during target review, consumes it only when that save is adjudicated and
+restores it on undo. The audit also caught two omitted cantrip riders: Chill Touch now blocks HP recovery
+for PCs (including offline peers) and exact monster instances without blocking condition cures; Ray of
+Frost projects its −10 ft/−3 m Speed until the caster's next turn. Ice Knife, Sleep, Magic Missile and
+Cloud of Daggers are locked to their attack/save, free-target, instance and recurrence shapes; Misty Step
+and Mage Hand correctly remain table-positioning actions because the app is not a VTT.
 
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark

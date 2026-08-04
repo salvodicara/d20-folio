@@ -604,6 +604,24 @@ describe("codec — state restoration", () => {
     expect(serializeCharacter(lift(parseCharacter(x)))).toBe(x);
   });
 
+  it("round-trips exact active-state turn boundaries", () => {
+    const doc: CharacterDoc = {
+      ...MOCK_CHARACTER,
+      session: {
+        ...MOCK_CHARACTER.session,
+        activeFeatures: ["spell-shield"],
+        effectBoundaries: {
+          "spell-shield": { round: 4, phase: "turn-start" },
+        },
+      },
+    };
+    const restored = lift(parseCharacter(serializeCharacter(doc)));
+    expect(restored.session.effectBoundaries).toEqual({
+      "spell-shield": { round: 4, phase: "turn-start" },
+    });
+    expect(serializeCharacter(restored)).toBe(serializeCharacter(doc));
+  });
+
   it("round-trips persistent spell cast levels for later deterministic uses", () => {
     const doc: CharacterDoc = {
       ...MOCK_CHARACTER,

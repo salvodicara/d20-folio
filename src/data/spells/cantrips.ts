@@ -30,6 +30,16 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "necrotic",
     damageDice: "1d10",
     attackType: "melee",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-chill-touch",
+        recipient: "selected",
+        grants: [{ type: "healing-blocked" }],
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+      },
+    ],
     source: "SRD",
   },
   {
@@ -219,6 +229,7 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "fire",
     damageDice: "1d8",
     attackType: "ranged",
+    targeting: { affinity: "enemy", maxTargets: 1 },
     source: "SRD",
   },
   {
@@ -234,6 +245,16 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "cold",
     damageDice: "1d8",
     attackType: "ranged",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-ray-of-frost",
+        recipient: "selected",
+        grants: [{ type: "speed", amount: -10 }],
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+      },
+    ],
     source: "SRD",
   },
   {

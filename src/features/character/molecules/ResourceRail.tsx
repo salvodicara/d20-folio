@@ -848,6 +848,9 @@ export function ResourceRail() {
 
       {/* ── Status — concentration + conditions + exhaustion ─────────────── */}
       <RailSection rubric={t("character.hud.status")}>
+        {aggregate.healingBlocked && (
+          <p className="mb-2 text-sm text-danger">{t("combat.resolveHealingBlocked")}</p>
+        )}
         {concentration && (
           <div className="conc-pill" style={{ marginBottom: "var(--sp-2)" }}>
             <FocusMark label={t("combat.concentration")} />
@@ -1007,6 +1010,7 @@ export function ResourceRail() {
           attack-roll ones live inline on the action cards, so they're filtered out
           above. Hidden entirely when the character has none. ── */}
       {(advChips.length > 0 ||
+        aggregate.rollDieAdjustments.length > 0 ||
         incomingAttackNotes.length > 0 ||
         incomingDefenseNotes.length > 0) && (
         <RailSection rubric={t("abilities.advantages")}>
@@ -1023,6 +1027,17 @@ export function ResourceRail() {
                     ? `${c.description} · ${t("combat.whileActiveNote")}`
                     : c.description
                 }
+              />
+            ))}
+            {aggregate.rollDieAdjustments.map((adjustment, index) => (
+              <DefenseRow
+                key={`${adjustment.sourceId}-roll-adjustment-${index}`}
+                label={t(`combat.resolveRoll_${adjustment.rollType}`)}
+                value={t("combat.resolveNextRollAdjustment", {
+                  roll: t(`combat.resolveRoll_${adjustment.rollType}`),
+                  sign: adjustment.operation === "add" ? "+" : "−",
+                  dice: adjustment.dice,
+                })}
               />
             ))}
             {/* SELF-side combat downsides (Reckless Attack): framed as a Disadv.

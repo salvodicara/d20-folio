@@ -233,7 +233,8 @@ a spent migration is removed COMPLETELY; git history preserves `scripts/migrate-
 | `log`           | `[ {event, ts, id} ]`          | the session log — a structured `CombatEvent` (ids/tokens, localized at render), never raw text                          |
 
 Play-state also carries several **additive-only optional** keys, each absent on a doc that never
-uses it (so the envelope stays byte-identical): `activeFeatures`, `effectTimers`, `grantBundleChoices`,
+uses it (so the envelope stays byte-identical): `activeFeatures`, `effectTimers`, `effectBoundaries`
+(`{ activeKey: { round, phase: "turn-start"|"turn-end" } }` for exact self-effect expiry), `grantBundleChoices`,
 `companionHp` (summoned-companion current HP, keyed by granting source id), `companionVariant`
 (Beast Master's chosen `variantId`, keyed by feature id), `familiar`
 (`{ monsterId, creatureType: celestial|fey|fiend, dismissed? }` — the Find Familiar summon; its
