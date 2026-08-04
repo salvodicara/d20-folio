@@ -158,6 +158,7 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   // ASI-level character (Rogue 7→8) to the boon step's feat morph list.
   { slug: "level-up", route: "/characters/mock-1/level-up" },
   { slug: "level-up-boon", route: "/characters/scn-soulknife-rogue/level-up" },
+  { slug: "level-up-skilled", route: "/characters/scn-fighter-3/level-up" },
   // P7 — the SUBCLASS step's hero altar (the chosen oath enthroned with its
   // granted features + bonus spells) on a subclass-due Paladin 2→3.
   {

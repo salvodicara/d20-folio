@@ -13,6 +13,8 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ExpertiseChoicePicker } from "@/components/sheet/ExpertiseChoicePicker";
 import { SkillChoicePicker } from "@/components/sheet/SkillChoicePicker";
+import { SkillOrToolPicker } from "@/components/sheet/SkillOrToolPicker";
+import { LanguageChoicePicker } from "@/components/sheet/LanguageChoicePicker";
 
 describe("ExpertiseChoicePicker — unified boxless picker", () => {
   const slots = [{ slotId: "slot-0", amount: 1 }] as const;
@@ -116,5 +118,50 @@ describe("SkillChoicePicker — folio card recipe", () => {
     const arcana = screen.getByRole("button", { name: /arcana/i });
     fireEvent.click(arcana);
     expect(onChange).toHaveBeenCalledWith({ "slot-0": ["arcana"] });
+  });
+});
+
+describe("picker icon semantics — hierarchy before decoration", () => {
+  it("groups a heterogeneous skill/tool pool and reserves seals for tool subtypes", () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <SkillOrToolPicker
+        slots={[{ slotId: "slot-0", amount: 3 }]}
+        picks={{}}
+        onChange={onChange}
+        existingSkillIds={new Set()}
+      />
+    );
+
+    expect(screen.getByText("Skills", { selector: ".wiz-group" })).toBeInTheDocument();
+    expect(screen.getByText("Tools", { selector: ".wiz-group" })).toBeInTheDocument();
+
+    const skillRow = screen.getByRole("button", { name: /acrobatics/i });
+    expect(skillRow.querySelector(".wiz-socket")).toBeNull();
+    const toolRow = screen.getByRole("button", { name: /bagpipes/i });
+    expect(toolRow.querySelector(".wiz-socket")).not.toBeNull();
+
+    fireEvent.click(skillRow);
+    expect(onChange).toHaveBeenCalledWith({ "slot-0": ["acrobatics"] });
+    expect(container.querySelectorAll(".wiz-group")).toHaveLength(2);
+  });
+
+  it("does not repeat a Languages seal inside a homogeneous language pool", () => {
+    const { container } = render(
+      <LanguageChoicePicker
+        slots={[
+          {
+            slotId: "slot-0",
+            amount: 1,
+            options: ["common", "elvish"],
+          },
+        ]}
+        picks={{}}
+        onChange={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: /common/i })).toBeInTheDocument();
+    expect(container.querySelector(".wiz-socket")).toBeNull();
   });
 });

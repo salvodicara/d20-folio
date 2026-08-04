@@ -2753,8 +2753,13 @@ is attractive:
 removed?” If the answer is “none,” remove it. In particular, a homogeneous fact pool (all skills, all
 languages, all tools) does not repeat one category seal on every row: common region, alignment and the
 pool heading already establish the category, while the repeated mark creates visual noise and falsely
-suggests entity-level meaning. A mixed pool may use category seals only when they visibly distinguish
-its families. An object sign (ring, weapon, armor), an outcome/state sign (miss, selected, disabled),
+suggests entity-level meaning. A mixed pool first uses explicit localized group headings: proximity,
+common region and alignment establish the families without making the player decode a legend. A row
+seal remains only when it communicates a useful level below that heading (for example an instrument,
+gaming set or artisan tool inside **Tools**); a generic family seal repeated beside every member is
+still redundant. Search indexes both the localized and English group names, and a filtered result
+retains its group heading so context never disappears. An object sign (ring, weapon, armor), an
+outcome/state sign (miss, selected, disabled),
 and an action sign (add, edit, delete) must not share a glyph within the same task context. Reuse across
 surfaces is desirable only when the referent or verb is unchanged.
 

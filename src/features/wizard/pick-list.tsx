@@ -18,7 +18,7 @@
  * re-renders the full pool (the D smoothness fix — the 300ms long task on the
  * old full-list re-render).
  */
-import { memo, useCallback, useRef, useState, type ReactNode } from "react";
+import { Fragment, memo, useCallback, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BookOpenText, Check, ChevronDown } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
@@ -42,6 +42,8 @@ export interface WizardPickOption {
   description?: string;
   /** Golden seal glyph slot (`KindSeal` / `SpellLevelSeal`). */
   seal?: ReactNode;
+  /** Visible family heading for a heterogeneous pool (for example Skills / Tools). */
+  group?: string;
   /** Bilingual tier-1 search anchor (localized + EN name); defaults to `name`. */
   searchText?: string;
   /** Bilingual tier-2 search corpus (localized + EN description) — when set,
@@ -147,28 +149,32 @@ export function WizardPickList({
         />
       )}
       <div className={cn("wiz-list", factGrid && "wiz-list-grid")} ref={scopeRef}>
-        {visible.map((o) => (
-          <PickRow
-            key={o.id}
-            opt={o}
-            picked={selected.includes(o.id)}
-            open={focusId === o.id}
-            removing={removing}
-            chooseText={
-              chooseLabel ? chooseLabel(o.name) : t("wizard.choose", { name: o.name })
-            }
-            removeText={t("common.remove")}
-            readText={
-              onRead
-                ? readLabel
-                  ? readLabel(o.name)
-                  : t("wizard.readSpell", { name: o.name })
-                : undefined
-            }
-            onHeader={onHeader}
-            onCommit={onCommit}
-            onRead={onRead}
-          />
+        {visible.map((o, index) => (
+          <Fragment key={o.id}>
+            {o.group && o.group !== visible[index - 1]?.group && (
+              <p className="wiz-group">{o.group}</p>
+            )}
+            <PickRow
+              opt={o}
+              picked={selected.includes(o.id)}
+              open={focusId === o.id}
+              removing={removing}
+              chooseText={
+                chooseLabel ? chooseLabel(o.name) : t("wizard.choose", { name: o.name })
+              }
+              removeText={t("common.remove")}
+              readText={
+                onRead
+                  ? readLabel
+                    ? readLabel(o.name)
+                    : t("wizard.readSpell", { name: o.name })
+                  : undefined
+              }
+              onHeader={onHeader}
+              onCommit={onCommit}
+              onRead={onRead}
+            />
+          </Fragment>
         ))}
         {visible.length === 0 && <p className="wiz-empty">{t("common.noResults")}</p>}
       </div>

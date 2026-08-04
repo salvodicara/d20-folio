@@ -127,8 +127,7 @@ restyle was added. Verification: screenshots 6/6, axe 4/4, i18n 4/4, mobile layo
 Gestalt contract before any fantasy asset can graduate from study to production. The first
 contextual audit separated useful consistency from visual repetition: homogeneous skill and
 expertise grids no longer stamp the same `Target` seal on every row, because heading, enclosure and
-alignment already communicate the shared category and the glyph distinguished nothing. The mixed
-skill-or-tool picker retains category seals because they separate two real families. Combat's
+alignment already communicate the shared category and the glyph distinguished nothing. Combat's
 `Miss` outcome now uses a failure sign instead of `CircleDot`, removing its collision with the
 neutral unselected-target control and the current ring fallback. Focused render tests pin both
 decisions; creation/level-up evidence remains the blocking visual gate before integration. Ring,
@@ -149,6 +148,16 @@ attribution. The remaining item glyphs stay unchanged unless they fail the same 
 Verification: expanded-filter before/after screenshots 6/6 across light/dark and desktop/mobile,
 legal attribution screenshots 5/5, focused unit/route/i18n guards 12/12, targeted axe 4/4, locale
 sweep 4/4, mobile layout 2/2, typecheck + zero-warning targeted lint green.
+**Wave 13 mixed-pool information architecture (2026-08-04):** the Skilled feat's heterogeneous
+skill-or-tool pool no longer asks a repeated `Target` glyph to mean “skill.” It now exposes explicit,
+localized **Skills / Tools** group headings inside the same selection budget and search, using
+proximity and common region for the family distinction; skill rows stay typographic, while tool
+glyphs remain only because they communicate the useful tool subtype below that heading. Group names
+are indexed bilingually and survive filtered results. The homogeneous language picker also drops its
+repeated Languages seal. Focused render tests pin both semantic levels and unchanged selection
+behaviour; the level-up Skilled surface is now first-class screenshot evidence across light/dark,
+desktop/mobile and EN/IT. Verification: Skilled screenshots 5/5; focused picker tests 7/7;
+typecheck + formatting green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 

@@ -750,6 +750,22 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       await page.waitForTimeout(200);
     },
   },
+  "level-up-skilled": {
+    edit: false,
+    ready: readyText(/Bram/),
+    prepare: async (page) => {
+      await page.locator(".wiz-pager-btn.next").click(); // hp → ASI / feat
+      await page.locator(".wiz-fork-tab").nth(2).click(); // feat mode
+      await page.locator(".wiz-search input").fill("Skilled");
+      const entry = page.locator('.wiz-entry[data-fid="skilled"]');
+      await entry.scrollIntoViewIfNeeded();
+      await entry.locator(".wiz-row").click();
+      await entry.locator(".wiz-spread-act button").click();
+      await page.locator('.wiz-entry[data-chosen][data-fid="skilled"]').waitFor({
+        timeout: 5000,
+      });
+    },
+  },
   // P7 — the subclass step's hero altar: hp → subclass, then enthrone the
   // first oath plaque (locale-invariant by position).
   "level-up-subclass": {
