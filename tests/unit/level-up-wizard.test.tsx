@@ -266,9 +266,18 @@ describe("LevelUpWizard — the boon feat's asks expand INSIDE its entry, attrib
   }
 
   function openAndChoose(name: string) {
-    const row = screen
-      .getAllByRole("button")
-      .find((b) => b.classList.contains("wiz-row") && b.textContent.includes(name));
+    const findRow = () =>
+      screen
+        .getAllByRole("button")
+        .find((b) => b.classList.contains("wiz-row") && b.textContent.includes(name));
+    let row = findRow();
+    if (!row) {
+      const showMore = screen.queryByRole("button", { name: "Show more" });
+      if (showMore) {
+        fireEvent.click(showMore);
+        row = findRow();
+      }
+    }
     if (!row) throw new Error(`row not found: ${name}`);
     fireEvent.click(row); // read
     fireEvent.click(screen.getByRole("button", { name: `Choose ${name}` })); // commit
