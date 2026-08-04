@@ -136,6 +136,19 @@ staff/wand and other weak item fallbacks remain under contextual review rather t
 merely because a fantasy source glyph is attractive. Verification: skill screenshots 3/3 and live
 combat-resolver screenshots 2/2 across light/dark and desktop/mobile evidence; focused render tests
 30/30; targeted axe 2/2, i18n 2/2, mobile layout 1/1; typecheck + zero-warning targeted lint green.
+**Wave 12 contextual item icon proof (2026-08-04):** the Add Item filter disclosure is now a
+first-class surface, because the resting dialog hid the exact simultaneous icon set under review.
+Real 12–14px light/dark and desktop/mobile evidence rejected a nominally correct Winged Scepter — it
+read as a trophy/cup in situ — and admitted only two exact, licensed gap-fillers from Game Icons:
+Delapouite's Diamond Ring replaces the control-like `CircleDot`, while Lorc's Wizard Staff separates
+Staff from the adjacent Wand without changing the established Lucide vocabulary elsewhere. The
+original geometry is preserved behind the single item resolver; only the source background is
+removed and foreground mapped to `currentColor`. Rod/Staff/Wand uniqueness is unit-pinned, source
+and normalization live beside the vectors, and `/legal` carries the authors plus CC BY 3.0
+attribution. The remaining item glyphs stay unchanged unless they fail the same real-context test.
+Verification: expanded-filter before/after screenshots 6/6 across light/dark and desktop/mobile,
+legal attribution screenshots 5/5, focused unit/route/i18n guards 12/12, targeted axe 4/4, locale
+sweep 4/4, mobile layout 2/2, typecheck + zero-warning targeted lint green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 

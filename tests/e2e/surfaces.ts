@@ -440,6 +440,20 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
     },
   },
+  "character-item-filters": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyByName,
+    prepare: async (page) => {
+      await page.getByRole("button", { name: /add item|aggiungi oggetto/i }).click();
+      const dialog = page.getByRole("dialog").first();
+      await dialog.waitFor({ timeout: 15000 });
+      await dialog.getByRole("button", { name: /filters|filtri/i }).click();
+      await dialog
+        .getByRole("button", { name: /^(ring|anello)$/i })
+        .waitFor({ timeout: 5000 });
+    },
+  },
   "character-feature-add": {
     edit: true,
     variants: OVERLAY_VARIANTS,

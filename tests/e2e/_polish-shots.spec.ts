@@ -46,6 +46,7 @@
  *     spell-add         spells (edit) → Add Spell modal
  *     spell-cast        spells (play) → Cast / upcast (CastLevel) modal  [best-effort]
  *     item-add          equipment (edit) → unified Add Item modal (Items · Custom)
+ *     item-filters      Add Item → Filters expanded (the simultaneous item-kind icon set)
  *     feature-add       features (edit) → Add Feature modal
  *     mobile-drawer     mobile → MobileGameDrawer bottom sheet (expanded)
  *     hp-popover        TABLET band → header HP pill → damage/heal/temp popover

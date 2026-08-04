@@ -45,7 +45,9 @@ import { useBackWithFallback } from "@/hooks/useBackWithFallback";
 const SRD_URL = "https://www.dndbeyond.com/srd";
 const SRD51_URL = "https://dnd.wizards.com/resources/systems-reference-document";
 const CCBY_URL = "https://creativecommons.org/licenses/by/4.0/legalcode";
+const CCBY3_URL = "https://creativecommons.org/licenses/by/3.0/";
 const AGPL_URL = "https://www.gnu.org/licenses/agpl-3.0.html";
+const GAME_ICONS_URL = "https://game-icons.net";
 
 /** A gilt outbound link with the shared trailing external-link glyph. */
 function OutLink({ href, label }: { href: string; label: string }) {
@@ -128,6 +130,11 @@ export function LegalPage() {
               </dd>
             </div>
           </dl>
+          <p className="colophon-body">
+            {t("legal.licenses.iconsDesc")}{" "}
+            <OutLink href={GAME_ICONS_URL} label={t("legal.links.gameIcons")} /> ·{" "}
+            <OutLink href={CCBY3_URL} label={t("legal.links.ccby3")} />
+          </p>
         </section>
 
         {/* ── The bottom register — Trademarks · The App, side by side at desktop ── */}

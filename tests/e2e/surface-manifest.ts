@@ -77,6 +77,7 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   // surface, not adequately covered by its resting cockpit tab.
   { slug: "character-spell-add", route: "/characters/mock-1?tab=spells" },
   { slug: "character-item-add", route: "/characters/mock-1?tab=inventory" },
+  { slug: "character-item-filters", route: "/characters/mock-1?tab=inventory" },
   { slug: "character-feature-add", route: "/characters/mock-1?tab=features" },
   // Persistent sheet actions whose dialogs can open from the living cockpit.
   { slug: "character-rest", route: "/characters/mock-1" },

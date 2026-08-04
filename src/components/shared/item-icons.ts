@@ -7,8 +7,10 @@
  * with the SAME glyph everywhere (consistency by design) and a tweak propagates
  * from one place.
  *
- * All glyphs are REUSED lucide icons (no generated art). Icon-only helpers (no
- * JSX) so callers wrap them in `<KindSeal>` / `<Icon>` / `<UniversalCard sealIcon>`.
+ * Lucide remains the baseline. A proven semantic gap may use one normalized,
+ * attributed fantasy glyph behind this same resolver; consumers never import it
+ * directly. Icon-only helpers (no JSX) so callers wrap them in `<KindSeal>` /
+ * `<Icon>` / `<UniversalCard sealIcon>`.
  */
 import type { ComponentType, SVGProps } from "react";
 import {
@@ -56,10 +58,10 @@ import {
   Anchor,
   PenTool,
   Drama,
-  CircleDot,
   Wand,
   Wand2,
 } from "lucide-react";
+import { DiamondRingIcon, WizardStaffIcon } from "@/components/shared/fantasy-icons";
 import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_TOOLS_2024, type ToolCategory } from "@/lib/feat-skill-tool-choices";
 import type { SrdEquipmentData, EquipmentCategory, MagicItemType } from "@/data/types";
@@ -234,12 +236,13 @@ export function magicItemSealIcon(type: MagicItemType): ItemGlyph {
     case "potion":
       return FlaskRound;
     case "ring":
-      return CircleDot;
+      return DiamondRingIcon;
     case "rod":
       return Wand;
     case "scroll":
       return ScrollText;
     case "staff":
+      return WizardStaffIcon;
     case "wand":
       return Wand2;
     case "wondrous":
