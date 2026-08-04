@@ -1922,12 +1922,15 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         onCancel={() => setCastRequest(null)}
       />
 
-      {/* S4 — Arcane Recovery guided picker (enforces the ⌈level/2⌉ cap). */}
-      <ArcaneRecoveryModal
-        request={arcaneRecoveryRequest}
-        onConfirm={handleArcaneRecoveryConfirm}
-        onCancel={() => setArcaneRecoveryRequest(null)}
-      />
+      {/* S4 — Arcane Recovery guided picker (enforces the ⌈level/2⌉ cap).
+          Conditional mounting gives every use a fresh, cancel-safe draft. */}
+      {arcaneRecoveryRequest && (
+        <ArcaneRecoveryModal
+          request={arcaneRecoveryRequest}
+          onConfirm={handleArcaneRecoveryConfirm}
+          onCancel={() => setArcaneRecoveryRequest(null)}
+        />
+      )}
 
       {/* S6 — alternate-payment picker: every legal way to pay for an action, the
           primary cost + any `alternateCost`. Commits the chosen payment with undo. */}

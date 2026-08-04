@@ -84,6 +84,10 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   { slug: "character-share", route: "/characters/mock-1" },
   { slug: "character-share-live", route: "/characters/mock-1" },
   { slug: "character-cast-level", route: "/characters/mock-1" },
+  {
+    slug: "character-arcane-recovery",
+    route: "/characters/scn-wizard-18",
+  },
   // P2 — the glossary POPOVER open on a cockpit vital (the AC label trigger):
   // the shared GlossaryTip overlay state, swept for a11y + locale completeness.
   { slug: "glossary-popover", route: "/characters/mock-1" },
