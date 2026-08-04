@@ -74,6 +74,15 @@ found a real light-theme defect: the compact forward pager caption was 4.04:1 on
 field. Its shared light recipe now uses the existing field-safe warm ink while the gilt seal keeps
 the primary hierarchy. Verification: semantic Languages/Spells screenshots 6/6, their axe matrix
 4/4, mobile layout 2/2, route/recipe guards 19/19, typecheck + targeted lint green.
+**Wave 6 decision-surface audit (2026-08-04):** the five high-frequency cockpit dialogs — Add Spell,
+Add Item, Add Feature, Rest, and History — now participate as first-class screenshot/a11y/i18n/mobile
+surfaces instead of being inferred from their resting tabs. Their fresh 15-shot matrix found the
+shared dialog construction already coherent in both themes and at phone width, so no speculative
+restyle was added. The review harness itself was corrected to frame overlays by viewport while pages
+and inline states remain full-document: mobile Rest evidence shrank from a noisy 5,994px underlay
+capture to the truthful 390×844 dialog composition; desktop History from 4,325px to 900px. The mobile
+History driver now traverses the real Signet → More actions → History path. Verification: screenshots
+15/15, axe 10/10, i18n 10/10, mobile layout 5/5, typecheck + targeted lint green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 

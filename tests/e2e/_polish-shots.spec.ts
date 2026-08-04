@@ -95,6 +95,7 @@ import {
   seedLang,
   seedUI,
   settleForShot,
+  surfaceCaptureFullPage,
 } from "./surfaces";
 
 const SHOT_DIR = process.env.POLISH_SHOT_DIR;
@@ -141,7 +142,10 @@ for (const surface of SURFACES) {
       await settleForShot(page);
 
       const file = `${surface.slug}-${variant.locale}-${variant.theme}-${variant.device}.png`;
-      await page.screenshot({ path: path.join(dir, file), fullPage: true });
+      await page.screenshot({
+        path: path.join(dir, file),
+        fullPage: surfaceCaptureFullPage(surface),
+      });
     });
   }
 }

@@ -2428,6 +2428,10 @@ trigger each state).
   page/form/prompt → add its screenshot" keeps visual coverage honest. The signed-out login is a
   first-class `SURFACES` entry too: its dev-only route query asks the bypass to settle signed out, so
   the harness photographs the real welcome instead of silently following its authenticated redirect.
+  High-frequency sheet decisions (Add Spell · Add Item · Add Feature · Rest · History) are distinct
+  overlay surfaces, not implied by their resting tabs. Pages and inline states capture the full
+  document; modal/menu/popover surfaces capture the viewport that actually frames the overlay, never
+  thousands of obscured underlay pixels.
 - **Contrast unit tests** (e.g. `verdict-ink-contrast`, `bg-recessed`, the seal-ink test) guard the
   per-hue AA math; keep them green when tuning any domain or `-ink` token.
 - **Pure-modules guard:** keep CI-pure lib modules free of Firebase imports.
