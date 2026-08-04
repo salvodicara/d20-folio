@@ -1,5 +1,5 @@
 /**
- * E2E AUDIT: "Ask the Folio" keyboard navigation can never go dead (#75 / #76).
+ * E2E AUDIT: "Search the Folio" keyboard navigation can never go dead (#75 / #76).
  *
  * Both reported incidents reduced to ONE root: focus not being on the palette while
  * it's open, so ↑↓/↵ had nowhere to land. This spec locks the structural guarantees

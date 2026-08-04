@@ -1,10 +1,9 @@
 {
   "palette": {
     "title": "Cerca nel Folio",
-    "rubric": "Chiedi al Folio",
-    "trigger": "Chiedi al Folio",
-    "description": "Trova un personaggio, un incantesimo o oggetto, o salta a una sezione.",
-    "placeholder": "Personaggi, incantesimi, oggetti, sezioni…",
+    "rubric": "Accesso rapido",
+    "description": "Trova personaggi, campagne, regole e comandi ovunque ti trovi.",
+    "placeholder": "Personaggi, regole e comandi…",
     "empty": "Nessuna corrispondenza",
     "groupQuick": "Azioni rapide",
     "groupSections": "Sezioni",

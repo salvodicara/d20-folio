@@ -239,7 +239,7 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   { slug: "error-fullscreen", route: "/_crash-root" },
 
   // ─── Global shell overlays ───────────────────────────────────────────────────
-  { slug: "command-palette", route: "/characters" }, // "Ask the Folio" palette
+  { slug: "command-palette", route: "/characters" }, // "Search the Folio" palette
   { slug: "admin-page", route: "/admin" },
   { slug: "account-menu", route: "/characters" }, // account + theme dropdown (topbar)
   { slug: "roster-card-menu", route: "/characters" }, // roster card overflow ("⋯") row-actions menu

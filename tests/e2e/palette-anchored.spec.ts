@@ -1,5 +1,5 @@
 /**
- * E2E: the "Ask the Folio" palette is TOP-ANCHORED (owner 2026-06-07).
+ * E2E: the "Search the Folio" palette is TOP-ANCHORED (owner 2026-06-07).
  *
  * The palette used to sit in the centered scrim, so as the result count changed the
  * box grew/shrank symmetrically and the header + search bar drifted up and down. Now

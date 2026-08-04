@@ -1,5 +1,5 @@
 /**
- * CommandPalette — "Ask the Folio" universal search (N-E / D16) + the original C7
+ * CommandPalette — "Search the Folio" universal search (N-E / D16) + the original C7
  * gate behavior. An empty query is a Sections navigator (role-gated Admin entry,
  * aria-current on the active realm, bilingual filtering); a query fans out into
  * grouped results across the live CHARACTER roster and the whole SRD COMPENDIUM.
@@ -81,6 +81,13 @@ beforeEach(() => {
 });
 
 describe("CommandPalette — sections navigator (C7)", () => {
+  it("names itself as global search, never as an assistant", () => {
+    renderPalette();
+    expect(screen.getByRole("dialog", { name: "Search the Folio" })).toBeInTheDocument();
+    expect(screen.getByText("Quick access")).toBeInTheDocument();
+    expect(screen.queryByText(/ask the folio/i)).not.toBeInTheDocument();
+  });
+
   it("hides the Admin entry for non-admins and shows it for admins", () => {
     renderPalette();
     expect(screen.queryByRole("option", { name: /admin/i })).not.toBeInTheDocument();

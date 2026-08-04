@@ -49,7 +49,7 @@ export function CampaignsListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  // OWN-28d — "Ask the Folio → Create a campaign" deep-links here with `?new=1`.
+  // OWN-28d — "Search the Folio → Create a campaign" deep-links here with `?new=1`.
   // Seed the create modal open from that param on mount (a lazy initializer, so no
   // setState-in-effect); the param is stripped when the modal closes (below) so a
   // refresh / back won't silently re-open it.

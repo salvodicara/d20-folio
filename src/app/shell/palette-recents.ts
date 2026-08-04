@@ -1,5 +1,5 @@
 /**
- * Recently-used "Ask the Folio" actions (OWN-33).
+ * Recently-used "Search the Folio" actions (OWN-33).
  *
  * The palette's empty state is a BOUNDED launcher: it shows a few recents + the
  * (stable, few) sections, and reveals everything else on type — so the entry

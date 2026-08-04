@@ -1,7 +1,7 @@
 /**
  * AppShell — the global shell for the "Illuminated Folio — Evolved" rewrite.
  *
- * Carries ONLY global chrome: the flat-hub Topbar, the "Ask the Folio"
+ * Carries ONLY global chrome: the flat-hub Topbar, the "Search the Folio"
  * CommandPalette, the mobile bottom-nav, and the routed <Outlet>. The character
  * cockpit / HUDs are composed INSIDE the character route (not here) — this shell is
  * realm-agnostic (see docs/ARCHITECTURE.md). Realm navigation is
@@ -140,7 +140,7 @@ export function AppShell() {
       {/* Discreet global legal-attribution footer (D32). */}
       <SiteFooter />
 
-      {/* Global "Ask the Folio" palette. The other global overlays (UndoToasts,
+      {/* Global "Search the Folio" palette. The other global overlays (UndoToasts,
           ConfirmDialog) are lifted here from the router body during the Step-2
           router swap. */}
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />

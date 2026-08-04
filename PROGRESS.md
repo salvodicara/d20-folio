@@ -227,6 +227,16 @@ is now 1,929px, 67.3% shorter, with the IT leaf at 2,001px; dark/light and deskt
 that the information model and full catalogue remain intact. Verification: focused Play economy
 tests 15/15 including the zero-pin edge; axe dark/light 2/2; locale sweep EN/IT 2/2; mobile overflow
 1/1; six fresh screenshots across EN/IT, dark/light and desktop/mobile; typecheck green.
+**Wave 21 global-search trust contract (2026-08-04):** the command palette no longer promises “Ask
+the Folio” / “Chiedi al Folio,” language that implied an assistant the product deliberately does not
+have. The same universal finder now presents the familiar, literal **Search the Folio / Cerca nel
+Folio** model everywhere from one canonical title key, with **Quick access / Accesso rapido** as its rubric and concise copy that
+truthfully covers characters, campaigns, rules and commands. No interaction, index, shortcut or
+navigation seam changed. The screenshot harness also proved why parallel worktrees must use isolated
+`E2E_PORT`s: its first run reused another task's stale 5174 server and was rejected rather than
+accepted as evidence. Verification: focused shell/palette tests 43/43; fresh command-palette
+screenshots 3/3 across EN/IT, light desktop and dark mobile; axe dark/light 2/2; locale sweep EN/IT
+2/2; mobile overflow 1/1; real compendium-hit navigation 1/1; typecheck and lint green.
 **Owner continuation mandate (2026-08-04):** the visual approval closes only this ornament fork.
 The whole-app UI/UX elevation remains active and exhaustive: audit every surface and recurring flow,
 then simplify, clarify or deepen it where evidence shows friction. Nothing is exempt because it is

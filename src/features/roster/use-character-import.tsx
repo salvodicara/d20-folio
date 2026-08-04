@@ -2,7 +2,7 @@
  * useCharacterImport — the reusable core of "import a character from JSON".
  *
  * Extracted from <ImportJsonButton> so the SAME flow can be driven from more than
- * one entry point (the roster header button AND the "Ask the Folio" command palette,
+ * one entry point (the roster header button AND the "Search the Folio" command palette,
  * OWN-28d) without forking the logic. It owns the hidden file input, the toasts, and
  * the dev-bypass guard; callers render `element` and call `open()` from a user
  * gesture to launch the OS picker.

@@ -1,7 +1,7 @@
 /**
  * Topbar — the flat global hub (D&D-Beyond-style), per docs/PRODUCT_CONSTITUTION.md (nav IA).
  *
- * Brand · My Characters / Campaigns / Compendium · ⌕ Ask the Folio · account menu.
+ * Brand · My Characters / Campaigns / Compendium · ⌕ Search the Folio · account menu.
  * Realms are flat topbar peers (nav ≠ data hierarchy). Theme/appearance live in
  * the reused `SettingsDropdown` (account menu) — driven by the immutable
  * `uiStore`, so the theme toggle works without any store change. On mobile the hub
@@ -34,7 +34,7 @@ const CombatPip = lazy(() =>
 );
 
 export interface TopbarProps {
-  /** Opens the global "Ask the Folio" command palette. */
+  /** Opens the global "Search the Folio" command palette. */
   onOpenPalette: () => void;
 }
 
@@ -91,7 +91,7 @@ export function Topbar({ onOpenPalette }: TopbarProps) {
           logged-out viewer the bar collapses to the SOTA public shape — wordmark
           left, one primary action right (see the anon cluster below), content the
           hero. Hub tabs are desktop chrome; below md they'd overflow the bar, so
-          they collapse and the "Ask the Folio" trigger becomes the mobile
+          they collapse and the "Search the Folio" trigger becomes the mobile
           navigator (it lists every realm). */}
       {user && (
         <nav aria-label={t("nav.primary")} className="hidden self-stretch md:flex">
@@ -123,12 +123,12 @@ export function Topbar({ onOpenPalette }: TopbarProps) {
         <button
           type="button"
           onClick={onOpenPalette}
-          aria-label={t("palette.trigger")}
+          aria-label={t("palette.title")}
           aria-keyshortcuts="Meta+K Control+K"
           className="topbar-ask"
         >
           <Icon as={Search} size="sm" decorative className="topbar-ask-icon" />
-          <span className="hidden sm:inline">{t("palette.trigger")}</span>
+          <span className="hidden sm:inline">{t("palette.title")}</span>
           {!coarsePointer && (
             <Kbd aria-hidden className="ml-1 hidden sm:inline-block">
               {shortcutLabel("K")}

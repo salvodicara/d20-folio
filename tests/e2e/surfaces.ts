@@ -1057,7 +1057,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     ready: readyByName,
     prepare: async (page) => {
       const trigger = page
-        .getByRole("button", { name: /ask the folio|chiedi al folio/i })
+        .getByRole("button", { name: /search the folio|cerca nel folio/i })
         .first();
       if (await trigger.isVisible({ timeout: 4000 }).catch(() => false)) {
         await trigger.click().catch(() => {});
@@ -1105,7 +1105,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       }
     },
   },
-  // OWN-37 — the in-app bug/feature reporter, reached by typing "bug" in the "Ask
+  // OWN-37 — the in-app bug/feature reporter, reached by typing "bug" in the "Search
   // the Folio" palette. Locks the OPEN reporter (its on-rails pickers + fields) as
   // axe-covered in dark + light. The DETAILS textarea is unique to this dialog (the
   // palette has none), so it's a locale-robust "the reporter painted" signal.
@@ -1114,7 +1114,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     variants: OVERLAY_VARIANTS,
     ready: readyByName,
     prepare: async (page) => {
-      const trigger = page.getByRole("button", { name: /ask the folio/i }).first();
+      const trigger = page.getByRole("button", { name: /search the folio/i }).first();
       if (await trigger.isVisible({ timeout: 4000 }).catch(() => false)) {
         await trigger.click().catch(() => {});
         await page.keyboard.type("bug");

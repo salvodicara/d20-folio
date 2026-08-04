@@ -360,7 +360,7 @@ test.describe("Compendium browse", () => {
     page,
   }) => {
     // The hub realm tabs are desktop-only chrome (they collapse below md into
-    // "Ask the Folio").
+    // "Search the Folio").
     test.skip(
       (page.viewportSize()?.width ?? 0) < 768,
       "the hub nav tabs are desktop-only chrome"

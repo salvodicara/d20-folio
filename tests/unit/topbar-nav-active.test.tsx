@@ -110,7 +110,7 @@ describe("Topbar — anonymous-viewer chrome (public /view + /legal)", () => {
     // The hub navigator is a signed-in affordance; an anon viewer gets none of it.
     expect(screen.queryByRole("link", { name: "Characters" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Campaigns" })).toBeNull();
-    expect(screen.queryByRole("button", { name: /ask the folio/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /search the folio/i })).toBeNull();
     expect(screen.queryByTestId("acct")).toBeNull();
     // The wordmark still anchors the left.
     expect(screen.getByRole("link", { name: "d20 Folio" })).toBeInTheDocument();

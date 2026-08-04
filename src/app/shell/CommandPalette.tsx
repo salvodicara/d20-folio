@@ -1,5 +1,5 @@
 /**
- * CommandPalette — "Ask the Folio", a universal ⌘K quick-switcher (N-E / D16).
+ * CommandPalette — "Search the Folio", a universal ⌘K quick-switcher (N-E / D16).
  *
  * Its PURPOSE (owner-chosen): type to find ANYTHING — your CHARACTERS (→ open the
  * cockpit), the whole COMPENDIUM (spells · items · feats · maneuvers … → open the
@@ -672,7 +672,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
     return (ranked.length > 0 ? ranked : infix).slice(0, 8).map((e, i) => ({
       key: `cmp:${e.typeId}:${e.id}:${i}`,
       // OWN-25e — deep-link straight to the entry's DETAIL page (`?sel=`), not the
-      // filtered list, so "Ask the Folio" → a spell/item opens it ready to read.
+      // filtered list, so "Search the Folio" → a spell/item opens it ready to read.
       to: `/compendium?type=${e.typeId}&sel=${encodeURIComponent(e.id)}`,
       label: e.name,
       sub: e.typeLabel,

@@ -1,5 +1,5 @@
 /**
- * E2E: "Ask the Folio" keeps full keyboard control when opened OVER another modal (#75).
+ * E2E: "Search the Folio" keeps full keyboard control when opened OVER another modal (#75).
  *
  * The bug (owner): open the palette on top of a modal (e.g. the weapon-mastery /
  * level-up dialog) and arrow-key navigation was dead. Root cause — initial focus
