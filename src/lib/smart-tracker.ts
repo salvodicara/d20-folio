@@ -7472,6 +7472,32 @@ export function resolveActiveStatesEndingOn(
   return [...ended];
 }
 
+/** Active states whose declared lifetime cannot survive a completed rest.
+ * Unknown/homebrew toggles and indefinite states are preserved: the engine only
+ * ends what the data proves has elapsed. */
+export function resolveActiveStatesEndingOnRest(
+  character: CharacterDoc,
+  rest: "short" | "long"
+): string[] {
+  const active = new Set(character.session.activeFeatures ?? []);
+  const restMinutes = rest === "short" ? 60 : 8 * 60;
+  const ended = new Set<string>();
+  for (const source of resolveAllGrantSources(character.character)) {
+    for (const grant of source.grants ?? []) {
+      if (grant.type !== "while-active" || !active.has(grant.activeKey)) continue;
+      const duration = grant.duration;
+      if (
+        duration?.kind === "maintained" ||
+        duration?.kind === "turn-boundary" ||
+        (duration?.kind === "timed" && duration.minutes <= restMinutes)
+      ) {
+        ended.add(grant.activeKey);
+      }
+    }
+  }
+  return [...ended];
+}
+
 /** One cast-law query shared by the Play and Spells surfaces. */
 export function isSpellcastingBlocked(character: CharacterDoc): boolean {
   return aggregateCharacterGrants(character.character, character.session)

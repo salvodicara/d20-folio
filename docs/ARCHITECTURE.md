@@ -460,6 +460,12 @@ states declare immediate-drop triggers in `duration.endsEarlyOn`; `resolveActive
 entry and `resolveActiveStatesEndingOn` lets the condition and equipment mutation seams retract every
 matching active key. This keeps Rage's 2024 Heavy-armor/Incapacitated and no-spells/no-Concentration
 rules generic rather than branching on `barbarian-rage`.
+Completed rests consume the same declared lifetimes. `resolveActiveStatesEndingOnRest` retracts
+maintained states, owner-turn-boundary states, and timed states whose minutes fit inside the completed
+rest; it also removes their timer/boundary/cast-level metadata while preserving unknown homebrew and
+indefinite toggles. A Long Rest first routes held Concentration through the canonical teardown, so
+concentration-bound grants and a self-Polymorph body cannot survive the sleep path. Resource recovery
+and effect expiry therefore rebuild one coherent post-rest session rather than updating counters only.
 Maintenance reads `SelectedAction.triggerEvents`, not whether an Action slot happens to be occupied:
 weapon/spell attacks and target-saving-throw actions stamp `"attack"`, while Dash/Help/other actions
 do not. The receipt is persisted with turn economy, so navigation cannot change the verdict.

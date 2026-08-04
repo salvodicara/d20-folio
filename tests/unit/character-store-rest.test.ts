@@ -244,16 +244,37 @@ describe("shortRest — tracker recovery", () => {
     expect(trk["fighter-indomitable"]).toEqual({ used: 1 }); // long-rest → untouched
   });
 
-  it("preserves concentration through a short rest (RAW 2024)", () => {
-    // Regression: short rest used to auto-clear concentration, which
-    // silently dropped long-duration spells (Find Familiar, Hex, Tiny Hut,
-    // Fly at high levels). Per PHB 2024 p.235 the only triggers are casting
-    // another concentration spell, failing a CON save after damage, being
-    // incapacitated, or dying — none of which a 1-hour light-activity rest
-    // fires. The Long Rest path (sleep = incapacitated) still clears it.
-    store().setCharacter(mk({}, { concentration: conc("fly") }));
+  it("preserves an indefinite homebrew concentration through a short rest", () => {
+    // A rest only ends an effect whose structured lifetime proves it elapsed.
+    // Unknown/homebrew concentration remains override-first instead of being
+    // guessed from a display string. Long Rest still ends all Concentration.
+    store().setCharacter(mk({}, { concentration: conc("custom:Table Aura") }));
     store().shortRest();
-    expect(store().character?.session.concentration).toBe(conc("fly"));
+    expect(store().character?.session.concentration).toBe(conc("custom:Table Aura"));
+  });
+
+  it("ends Santaera's maintained Rage while recovering exactly one use", () => {
+    store().setCharacter(
+      mk(
+        {
+          class: "barbarian",
+          level: 3,
+          features: [{ srdId: "barbarian-rage" }],
+        },
+        {
+          trackers: { "barbarian-rage": { used: 3 } },
+          activeFeatures: ["barbarian-rage", "custom:table-aura"],
+          effectTimers: { "barbarian-rage": { roundsLeft: 72 } },
+        }
+      )
+    );
+
+    store().shortRest();
+
+    const session = store().character?.session;
+    expect(session?.trackers["barbarian-rage"]).toEqual({ used: 2 });
+    expect(session?.activeFeatures).toEqual(["custom:table-aura"]);
+    expect(session?.effectTimers?.["barbarian-rage"]).toBeUndefined();
   });
 
   it("Pact Magic slots reset on a short rest — and ONLY them (B3: pact keys `pact-N`, normal slots persist)", () => {
@@ -322,6 +343,34 @@ describe("longRest", () => {
     store().setCharacter(mk({}, { bardicInspirationDie: "d8" }));
     store().longRest();
     expect(store().character?.session.bardicInspirationDie).toBe("");
+  });
+
+  it("ends declared temporary states but preserves an unknown homebrew toggle", () => {
+    store().setCharacter(
+      mk(
+        {
+          class: "sorcerer",
+          level: 1,
+          features: [{ srdId: "sorcerer-innate-sorcery" }],
+        },
+        {
+          activeFeatures: ["sorcerer-innate-sorcery", "custom:table-aura"],
+          activeSpellCastLevels: { "sorcerer-innate-sorcery": 1 },
+          effectTimers: { "sorcerer-innate-sorcery": { roundsLeft: 4 } },
+          effectBoundaries: {
+            "sorcerer-innate-sorcery": { round: 2, phase: "turn-end" },
+          },
+        }
+      )
+    );
+
+    store().longRest();
+
+    const session = store().character?.session;
+    expect(session?.activeFeatures).toEqual(["custom:table-aura"]);
+    expect(session?.activeSpellCastLevels).toBeUndefined();
+    expect(session?.effectTimers).toBeUndefined();
+    expect(session?.effectBoundaries).toBeUndefined();
   });
 
   it("restores HP to max, clears slots/trackers (NOT conditions), reduces exhaustion by 1", () => {

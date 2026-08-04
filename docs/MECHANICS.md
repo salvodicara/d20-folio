@@ -490,6 +490,13 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   mutations (`heavy-armor`, `incapacitated`) without naming Rage in UI/store code. Unknown homebrew
   tokens remain manual overrides. Maintainers consume persisted action `triggerEvents`; merely spending
   the Action slot (Dash, Help) never impersonates an attack/save event.
+- **Rest lifetime seam.** A completed rest also advances declared active-state time: maintained and
+  owner-turn-boundary states always end; a `timed` state ends when its declared minutes fit within the
+  Short/Long Rest. The store retracts the toggle and its timer, boundary and cast-level provenance as
+  one state transition. Unknown/homebrew and indefinite toggles remain untouched. Long Rest clears
+  Concentration through the canonical concentration teardown first, including self-Polymorph reversion.
+  Resource recovery and state expiry are deliberately separate facts resolved in the same post-rest
+  snapshot (Rage regains one use on a Short Rest but is no longer active afterward).
 - **USE-APPLIES seam.** Using an action AUTO-APPLIES its deterministic (dice-free) effects with the
   immediate-commit-with-undo model: a `temp-hp` grant carrying a `slot` (Orc Adrenaline Rush, Shifter
   Shifting, Chef) emits a resolved number applied on use; a `while-active.duration` lets the End-Turn

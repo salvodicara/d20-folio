@@ -2444,6 +2444,12 @@ describe("characterStore — S1 concentration drop/swap clears the buff chip", (
     const character = concentratingOnShieldOfFaith();
     character.session.concentrationCastLevel = 3;
     character.session.activeSpellCastLevels = { "spell-shield-of-faith": 3 };
+    character.session.effectTimers = {
+      "spell-shield-of-faith": { roundsLeft: 80 },
+    };
+    character.session.effectBoundaries = {
+      "spell-shield-of-faith": { round: 9, phase: "turn-end" },
+    };
     useCharacterStore.getState().setCharacter(character);
 
     useCharacterStore.getState().setConcentration("");
@@ -2455,6 +2461,10 @@ describe("characterStore — S1 concentration drop/swap clears the buff chip", (
     ).toBeUndefined();
     expect(
       useCharacterStore.getState().character?.session.activeSpellCastLevels
+    ).toBeUndefined();
+    expect(useCharacterStore.getState().character?.session.effectTimers).toBeUndefined();
+    expect(
+      useCharacterStore.getState().character?.session.effectBoundaries
     ).toBeUndefined();
 
     // The stopped-concentrating UNDO toast restores BOTH atomically.
@@ -2475,6 +2485,12 @@ describe("characterStore — S1 concentration drop/swap clears the buff chip", (
         "spell-shield-of-faith": 3,
       }
     );
+    expect(useCharacterStore.getState().character?.session.effectTimers).toEqual({
+      "spell-shield-of-faith": { roundsLeft: 80 },
+    });
+    expect(useCharacterStore.getState().character?.session.effectBoundaries).toEqual({
+      "spell-shield-of-faith": { round: 9, phase: "turn-end" },
+    });
   });
 
   it("on swap, strips ONLY the OLD spell's chip — the new spell's chip stays the player's manual act", () => {

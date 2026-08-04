@@ -296,6 +296,20 @@ describe("C1 — losing Concentration ends the Polymorph form", () => {
     expect(restored.session.hp.temp).toBe(bearHp);
     expect(restored.session.concentration).toBe("polymorph");
   });
+
+  it("a Long Rest uses the same teardown and cannot leave the transformed body behind", () => {
+    const { bodyScores, bodyAc } = assumeBear();
+
+    useCharacterStore.getState().longRest();
+
+    const after = useCharacterStore.getState().character;
+    if (!after) throw new Error("no doc");
+    expect(after.session.polymorphForm).toBeUndefined();
+    expect(after.character.abilityScores).toEqual(bodyScores);
+    expect(after.character.acOverride ?? null).toBe(bodyAc);
+    expect(after.session.concentration).toBe("");
+    expect(after.session.hp.temp).toBe(0);
+  });
 });
 
 // ── C2 — the form ends when Temporary HP is depleted (2024 RAW's PRIMARY

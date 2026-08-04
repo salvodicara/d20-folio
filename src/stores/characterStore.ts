@@ -33,6 +33,7 @@ import {
   resolveActiveTimedEffects,
   resolveActiveBoundaryEffects,
   resolveActiveStatesEndingOn,
+  resolveActiveStatesEndingOnRest,
   advanceEffectTimers as advanceEffectTimersEngine,
   resolveTrackers,
   potionDurationRounds,
@@ -126,6 +127,15 @@ function trackerStateEquals(a: TrackerState | undefined, b: TrackerState): boole
     aRolls.length === bRolls.length &&
     aRolls.every((roll, index) => roll === bRolls[index])
   );
+}
+
+function omitStateKeys<T>(
+  record: Record<string, T> | undefined,
+  keys: ReadonlySet<string>
+): Record<string, T> | undefined {
+  if (!record || keys.size === 0) return record;
+  const kept = Object.entries(record).filter(([key]) => !keys.has(key));
+  return kept.length > 0 ? Object.fromEntries(kept) : undefined;
 }
 
 interface CharacterState {
@@ -1433,6 +1443,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         ? priorActive.filter((k) => !droppedActiveKeys.includes(k))
         : priorActive;
     const priorActiveSpellCastLevels = character.session.activeSpellCastLevels;
+    const droppedActiveKeySet = new Set(droppedActiveKeys);
     const nextActiveSpellCastLevels = droppedActiveKeys.reduce<
       Record<string, number> | undefined
     >((levels, key) => {
@@ -1442,6 +1453,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       );
       return Object.keys(next).length > 0 ? next : undefined;
     }, priorActiveSpellCastLevels);
+    const priorEffectTimers = character.session.effectTimers;
+    const nextEffectTimers = omitStateKeys(priorEffectTimers, droppedActiveKeySet);
+    const priorEffectBoundaries = character.session.effectBoundaries;
+    const nextEffectBoundaries = omitStateKeys(
+      priorEffectBoundaries,
+      droppedActiveKeySet
+    );
     const priorConcentrationConditions = character.session.concentrationConditions;
     const nextConcentrationConditions =
       prev && prev !== spell ? undefined : priorConcentrationConditions;
@@ -1477,6 +1495,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
                 : undefined,
             activeFeatures: nextActive,
             activeSpellCastLevels: nextActiveSpellCastLevels,
+            effectTimers: nextEffectTimers,
+            effectBoundaries: nextEffectBoundaries,
             concentrationConditions: nextConcentrationConditions,
             // S7 — drop the form + retract the Beast Temp HP to the caster's own.
             ...(retractForm
@@ -1534,6 +1554,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
                   // cast-undo + `advanceEffectTimers` revert).
                   activeFeatures: priorActive,
                   activeSpellCastLevels: priorActiveSpellCastLevels,
+                  effectTimers: priorEffectTimers,
+                  effectBoundaries: priorEffectBoundaries,
                   concentrationConditions: priorConcentrationConditions,
                 },
               },
@@ -1870,6 +1892,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
   longRest: () => {
     if (get().readonly) return;
+    // Sleep ends Concentration. Route through the ONE concentration teardown so
+    // its active grants, cast-level provenance, target conditions, and a possible
+    // self-Polymorph form are retracted atomically before the rest baseline is
+    // rebuilt. Silent + non-undoable because the rest itself is the undo fence.
+    if (get().character?.session.concentration) {
+      get().setConcentration("", { undoable: false, silent: true });
+    }
     const { character } = get();
     if (!character) return;
     // D1 — a Long Rest restores HP to the EFFECTIVE max (stored base + hp-flat boons
@@ -1934,6 +1963,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         if (used > 0) trackers[id] = { used };
       }
     }
+    const endedActiveKeys = new Set(resolveActiveStatesEndingOnRest(character, "long"));
     set({
       character: {
         ...character,
@@ -1945,6 +1975,20 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           spellSlots: {},
           trackers,
           concentration: "",
+          concentrationCastLevel: undefined,
+          concentrationConditions: undefined,
+          activeFeatures: (character.session.activeFeatures ?? []).filter(
+            (key) => !endedActiveKeys.has(key)
+          ),
+          activeSpellCastLevels: omitStateKeys(
+            character.session.activeSpellCastLevels,
+            endedActiveKeys
+          ),
+          effectTimers: omitStateKeys(character.session.effectTimers, endedActiveKeys),
+          effectBoundaries: omitStateKeys(
+            character.session.effectBoundaries,
+            endedActiveKeys
+          ),
           exhaustion: Math.max(0, character.session.exhaustion - exhaustionRemoved),
           inspiration: gainsInspiration,
           // A Bardic Inspiration die lasts at most 1 hour; a Long Rest always
@@ -1970,6 +2014,21 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
   shortRest: () => {
     if (get().readonly) return;
+    const beforeRest = get().character;
+    if (!beforeRest) return;
+    const initiallyEndedKeys = new Set(
+      resolveActiveStatesEndingOnRest(beforeRest, "short")
+    );
+    const concentrationKeys = beforeRest.session.concentration
+      ? activeKeysForConcentration(
+          beforeRest.character,
+          beforeRest.session,
+          beforeRest.session.concentration
+        )
+      : [];
+    if (concentrationKeys.some((key) => initiallyEndedKeys.has(key))) {
+      get().setConcentration("", { undoable: false, silent: true });
+    }
     const { character } = get();
     if (!character) return;
 
@@ -2010,6 +2069,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // returns the post-rest level (current minus the recovery, floored at 0); a
     // character without the grant is unchanged.
     const newExhaustion = applyShortRestExhaustion(character);
+    const endedActiveKeys = new Set(resolveActiveStatesEndingOnRest(character, "short"));
 
     // RAW 2024 (PHB p.235): concentration ends only on
     //   • casting another concentration spell
@@ -2031,6 +2091,18 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           trackers: newTrackers,
           spellSlots: newSpellSlots,
           exhaustion: newExhaustion,
+          activeFeatures: (character.session.activeFeatures ?? []).filter(
+            (key) => !endedActiveKeys.has(key)
+          ),
+          activeSpellCastLevels: omitStateKeys(
+            character.session.activeSpellCastLevels,
+            endedActiveKeys
+          ),
+          effectTimers: omitStateKeys(character.session.effectTimers, endedActiveKeys),
+          effectBoundaries: omitStateKeys(
+            character.session.effectBoundaries,
+            endedActiveKeys
+          ),
           // A Short Rest lasts 1 hour, exhausting the held die's maximum duration.
           bardicInspirationDie: "",
         },

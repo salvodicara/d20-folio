@@ -3357,6 +3357,15 @@ weaponAttackAbilities, isMonkMelee})` (`compute.ts`, REPLACING `resolveWeaponSta
       Sacred Flame cantrip options), `spells-page.test.tsx` (cantrip + Quickened debits SP, no slot, undoes).
       6 team fixtures byte-identical — none is a Sorcerer (`git status content-pack/fixtures/team/` clean).
 
+- [x] **Live-team resource lifecycle + rest-state reconciliation (2026-08-04)** — the six composed
+      fixtures now form an executable resource contract: every paid action must resolve its tracker;
+      Focus, Bardic Inspiration, Musician, Lucky, Lay on Hands, Channel Divinity, Portent, Rage and the
+      Healer's Kit are pinned through spend/recovery/manual/recorded-roll lifecycles. The audit found and
+      fixed a real state split: rests recovered Rage uses but could leave Rage (or another temporary
+      state) active. Rest completion now expires declared lifetimes generically, clears their timer /
+      boundary / cast-level provenance, preserves unknown homebrew toggles, and runs Long-Rest
+      Concentration through the canonical teardown so self-Polymorph cannot survive sleep.
+
 ## Deferred / owner-gated
 
 - **DM toolkit** (constitution §2.9 — optional, complements Owlbear/the in-person table, no battle
