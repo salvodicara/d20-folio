@@ -12,6 +12,7 @@ import {
   Wrench,
   FlaskRound,
   Box,
+  Target,
 } from "lucide-react";
 import {
   weaponSealIcon,
@@ -22,7 +23,12 @@ import {
   equipmentSealIconById,
   equipmentCategoryIcon,
 } from "@/components/shared/item-icons";
-import { DiamondRingIcon, WizardStaffIcon } from "@/components/shared/fantasy-icons";
+import {
+  DartIcon,
+  DiamondRingIcon,
+  GlaiveIcon,
+  WizardStaffIcon,
+} from "@/components/shared/fantasy-icons";
 import type { SrdEquipmentData } from "@/data/types";
 
 const item = (
@@ -41,6 +47,9 @@ describe("weaponSealIcon", () => {
     expect(weaponSealIcon("light-crossbow")).toBe(BowArrow);
     expect(weaponSealIcon("musket")).toBe(Crosshair);
     expect(weaponSealIcon("greataxe")).toBe(Axe);
+    expect(weaponSealIcon("glaive")).toBe(GlaiveIcon);
+    expect(weaponSealIcon("dart")).toBe(DartIcon);
+    expect(weaponSealIcon("dart")).not.toBe(Target);
     // The owner's reported collision is fixed: a bow no longer reads as a blade.
     expect(weaponSealIcon("shortbow")).not.toBe(weaponSealIcon("longsword"));
   });

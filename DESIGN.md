@@ -2782,13 +2782,15 @@ color or icon alone.
 the first source; a small vendored SVG subset fills proven semantic gaps behind that resolver, and
 consumers never import asset paths directly. A pack is a source catalogue, never a wholesale visual
 replacement or a new runtime dependency.
-The first contextual proof keeps exactly two normalized Game Icons glyphs in
+The contextual proof keeps four normalized Game Icons glyphs in
 `src/components/shared/fantasy-icons.tsx`: Delapouite's **Diamond Ring** replaces the control-like
-`CircleDot` ring fallback, and Lorc's **Wizard Staff** separates Staff from the adjacent Wand facet.
-Both preserve their original geometry; normalization only removes the catalogue background and maps
-the foreground to `currentColor`. A tested simultaneous-set invariant keeps Rod, Staff and Wand
-distinct. The rejected Winged Scepter candidate is intentionally absent: at real chip size its wings
-collapsed into a trophy/cup reading, despite its nominally correct source name.
+`CircleDot` ring fallback; Lorc's **Wizard Staff** separates Staff from the adjacent Wand facet;
+Delapouite's **Dart** removes the target/selection collision; and Delapouite's **Glaive** stops that
+polearm reading as an axe. All preserve their original geometry; normalization only removes the
+catalogue background and maps the foreground to `currentColor`. Tested invariants keep Rod, Staff
+and Wand distinct and keep Dart distinct from Target. The rejected Winged Scepter candidate is
+intentionally absent: at real chip size its wings collapsed into a trophy/cup reading, despite its
+nominally correct source name.
 Illustrations resolve from the entity's immutable corpus kind + id through one asset manifest. Image
 references never enter `CharacterDoc`, exports, Firestore, or localized catalogues, so adding/remastering
 art cannot migrate user data or fork SRD/pack rendering.
