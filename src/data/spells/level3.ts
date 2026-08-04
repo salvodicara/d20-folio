@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
   {
@@ -226,7 +227,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-fly",
-        duration: { kind: "timed", minutes: 10, maxRounds: 100 },
+        duration: timedSpellDuration(10),
         recipient: "selected",
         grants: [{ type: "fly-speed", amount: 60 }],
       },
@@ -253,7 +254,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-haste",
-        duration: { kind: "timed", minutes: 1, maxRounds: 10 },
+        duration: timedSpellDuration(1),
         recipient: "selected",
         grants: [
           { type: "speed-multiplier", factor: 2 },
@@ -395,7 +396,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-protection-from-energy",
-        duration: { kind: "timed", minutes: 60, maxRounds: 600 },
+        duration: timedSpellDuration(60),
         recipient: "selected",
         grants: [
           {

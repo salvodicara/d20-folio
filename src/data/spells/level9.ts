@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
   {
@@ -38,7 +39,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-foresight",
-        duration: { kind: "timed", minutes: 480, maxRounds: 4_800 },
+        duration: timedSpellDuration(480),
         recipient: "selected",
         grants: [
           { type: "advantage-on", rollType: "check", vs: "foresight" },

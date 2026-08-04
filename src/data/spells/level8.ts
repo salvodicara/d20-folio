@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
   {
@@ -153,7 +154,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-mind-blank",
-        duration: { kind: "timed", minutes: 1_440, maxRounds: 14_400 },
+        duration: timedSpellDuration(1_440),
         recipient: "selected",
         grants: [
           { type: "damage-immunity", damageType: "psychic" },

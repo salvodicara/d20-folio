@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   {
@@ -139,7 +140,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-death-ward",
-        duration: { kind: "timed", minutes: 480, maxRounds: 4_800 },
+        duration: timedSpellDuration(480),
         recipient: "selected",
         grants: [{ type: "zero-hp-floor", hitPoints: 1 }],
       },
@@ -222,7 +223,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-fire-shield",
-        duration: { kind: "timed", minutes: 10, maxRounds: 100 },
+        duration: timedSpellDuration(10),
         grants: [
           {
             type: "choice-grant-bundle",
@@ -261,7 +262,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-freedom-of-movement",
-        duration: { kind: "timed", minutes: 60, maxRounds: 600 },
+        duration: timedSpellDuration(60),
         recipient: "selected",
         grants: [
           { type: "condition-immunity", condition: "paralyzed" },
@@ -426,7 +427,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-stoneskin",
-        duration: { kind: "timed", minutes: 60, maxRounds: 600 },
+        duration: timedSpellDuration(60),
         recipient: "selected",
         grants: [
           { type: "damage-resistance", damageType: "bludgeoning" },

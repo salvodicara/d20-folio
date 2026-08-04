@@ -416,7 +416,10 @@ const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see AR
 // 2026-08-04 (condition provenance): raised 8508 → 8512 after source-owned
 // condition lifecycle grew existing lazy JS chunks to 8508.63 KiB / 321 entries.
 // No new entry or asset family; +~3 KiB deterministic headroom.
-const PRECACHE_CEILING_KIB = 8512;
+// 2026-08-04 (persistent spell lifetimes): raised 8512 → 8515 after 42 persistent
+// spells gained structured timers/upcast tiers in existing JS chunks. Shared duration
+// construction trimmed 1.2 KiB first; measured 8512.79 KiB / 317 entries, +0 entries.
+const PRECACHE_CEILING_KIB = 8515;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

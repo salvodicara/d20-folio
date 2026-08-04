@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
   {
@@ -313,7 +314,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-true-seeing",
-        duration: { kind: "timed", minutes: 60, maxRounds: 600 },
+        duration: timedSpellDuration(60),
         recipient: "selected",
         grants: [{ type: "truesight", range: 120 }],
       },

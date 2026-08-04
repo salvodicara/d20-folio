@@ -498,7 +498,7 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   Resource recovery and state expiry are deliberately separate facts resolved in the same post-rest
   snapshot (Rage regains one use on a Short Rest but is no longer active afterward).
 - **Spell duration tiers.** Every spell-owned `while-active` wrapper declares its structured lifetime;
-  fixed durations use `minutes` + `maxRounds`, while the two duration-upcast families declare ascending
+  `timedSpellDuration` derives the combat-round ceiling from printed minutes, while the two duration-upcast families declare ascending
   `byCastLevel` replacements. `whileActiveDurationAtCastLevel` is the only selector, shared by action
   emission, target-bound encounter effects, self timers and rest expiry. Display duration prose remains
   localization-only and is never parsed. A derived whole-catalogue guard rejects an undated persistent
