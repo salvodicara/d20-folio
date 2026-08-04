@@ -17,6 +17,7 @@ import type { Locale, PickerDetailView } from "./types";
 export function CompendiumDetailBody({
   view,
   locale,
+  showEntryArt = false,
 }: {
   view: PickerDetailView;
   /** When present, the DESCRIPTION's prose is run through `highlightRulesText` —
@@ -25,11 +26,11 @@ export function CompendiumDetailBody({
    *  untouched (range/duration already live there as labelled fields). Omitted ⇒
    *  the description renders plain. */
   locale?: Locale;
+  /** The page leaf opts in; add/select modals keep the dense no-art anatomy. */
+  showEntryArt?: boolean;
 }) {
-  return (
-    // The read column the host's flex card scrolls inside — `ModalScrollColumn`
-    // owns the scroll + keyboard-reachability contract (see its docblock).
-    <ModalScrollColumn>
+  const body = (
+    <>
       {view.eyebrow && (
         <div className="mb-3 flex flex-wrap items-center gap-2 text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">
           {view.eyebrow}
@@ -81,6 +82,21 @@ export function CompendiumDetailBody({
       )}
 
       {view.extras}
+    </>
+  );
+
+  return (
+    // The read column the host's flex card scrolls inside — `ModalScrollColumn`
+    // owns the scroll + keyboard-reachability contract (see its docblock).
+    <ModalScrollColumn>
+      {showEntryArt && view.entryArt ? (
+        <div className="cmp-entry-layout">
+          {view.entryArt}
+          <div className="cmp-entry-copy">{body}</div>
+        </div>
+      ) : (
+        body
+      )}
     </ModalScrollColumn>
   );
 }

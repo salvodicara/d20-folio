@@ -10750,6 +10750,62 @@ button.create-need:focus-visible .create-need-chev {
   max-width: 34rem;
 }
 
+/* ITEM-ART — a reading-leaf bookplate, never list furniture. The copy remains
+   first in reading order while the illustration occupies a restrained facing
+   column. Missing art removes the entire grid via the React seam: no blank well,
+   fallback tile, or layout shift is invented. */
+.cmp-entry-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(10.5rem, 31%, 14rem);
+  grid-template-areas: "copy art";
+  align-items: start;
+  gap: clamp(var(--sp-4), 3vw, var(--sp-6));
+}
+.cmp-entry-copy {
+  grid-area: copy;
+  min-width: 0;
+}
+.cmp-entry-art {
+  grid-area: art;
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--accent-primary) 48%, var(--border-medium));
+  border-radius: var(--radius-lg);
+  background: #100d09;
+  box-shadow:
+    var(--elev-recessed),
+    0 12px 28px color-mix(in oklab, #000 28%, transparent);
+}
+.cmp-entry-art::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid color-mix(in oklab, var(--accent-primary) 24%, transparent);
+  border-radius: calc(var(--radius-lg) - 3px);
+  pointer-events: none;
+}
+.cmp-entry-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 720px) {
+  .cmp-entry-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sp-4);
+  }
+  .cmp-entry-art {
+    order: -1;
+    width: min(10.5rem, 56vw);
+    margin-inline: auto;
+  }
+}
+
 /* Entrance — the leaf settles in like a turned page. Motion-safe only; the
    list↔detail remount is the only trigger (never on scroll/typing). */
 @media (prefers-reduced-motion: no-preference) {

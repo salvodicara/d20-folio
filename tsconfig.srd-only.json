@@ -1,6 +1,6 @@
 {
   /* The SRD-only typecheck lane (`pnpm typecheck:srd-only`): the app WITHOUT the
-     private content pack — `@pack` plus its two bestiary sub-entries pinned to
+     private content pack — `@pack` plus its catalogue sub-entries pinned to
      the typed-empty stub and the
      `content-pack/` tree excluded, exactly what the public repo snapshot
      compiles. Keep in lockstep with tsconfig.app.json (this only overrides the
@@ -10,6 +10,7 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.srd-only.tsbuildinfo",
     "paths": {
       "@/*": ["./src/*"],
+      "@pack/item-art": ["./src/data/pack-empty.ts"],
       "@pack/monster-art": ["./src/data/pack-empty.ts"],
       "@pack/monsters": ["./src/data/pack-empty.ts"],
       "@pack": ["./src/data/pack-empty.ts"],

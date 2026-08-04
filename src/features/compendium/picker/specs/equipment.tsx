@@ -8,6 +8,7 @@
 
 import { Backpack } from "lucide-react";
 import { SRD_EQUIPMENT } from "@/data/equipment";
+import { itemArtUrl } from "@/data/item-art";
 import { equipmentSealIcon, equipmentCategoryIcon } from "@/components/shared/item-icons";
 import { addEquipmentRef, addWeaponRef } from "@/lib/equipment-add";
 import { formatWeight } from "@/lib/utils";
@@ -16,6 +17,7 @@ import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { useCharacterStore } from "@/stores/characterStore";
 import { Icon } from "@/components/ui/icon";
+import { ItemArtPlate } from "@/components/shared/ItemArtPlate";
 import { FilterChip } from "@/components/sheet/picker-parts";
 import type { SrdEquipmentData, EquipmentCategory } from "@/data/types";
 import type { SrdEquipmentRef, SrdWeaponRef } from "@/types/character";
@@ -145,6 +147,7 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
   }),
 
   detail: (item, { t, locale }) => {
+    const artUrl = itemArtUrl("equipment", item.id);
     const meta: { label: string; value: string }[] = [
       { label: t("equipment.cost"), value: formatCost(item) },
     ];
@@ -197,6 +200,7 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
       description: hasSrd("equipment", item.id, "description", locale)
         ? itemText(item, "description", locale)
         : undefined,
+      entryArt: artUrl ? <ItemArtPlate src={artUrl} /> : undefined,
       extras:
         item.properties && item.properties.length > 0 ? (
           <div className="mb-4">

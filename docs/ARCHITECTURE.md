@@ -82,8 +82,8 @@ The SRD layer is PARTITIONED for licensing: `src/data` + `src/i18n/*/srd` carry 
 (CC-BY-4.0) content, so the repo can be snapshotted into a public repo; everything else (2024-PHB +
 setting content, the personal team fixtures, the pack dev scenarios) lives in the top-level
 **`content-pack/`** package (unlicensed, personal-use — see its README). One build-time alias
-**`@pack`** plus the two lazy bestiary sub-entries (`@pack/monsters` and
-`@pack/monster-art`) is the whole seam:
+**`@pack`** plus narrow catalogue sub-entries (`@pack/monsters`,
+`@pack/monster-art`, and `@pack/item-art`) is the whole seam:
 
 - **Resolution** (`scripts/content-pack-mode.ts`, consumed by `vite.config.ts` + `vitest.config.ts`
   - the tsconfig `paths` fallback): `content-pack/index.ts` when the directory exists and
@@ -121,6 +121,19 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   stay out of the PWA first-install precache, and
   enter a one-year CacheFirst runtime cache only when viewed. Database art is derived at render
   from `srdId`, never copied into Firestore; custom monster uploads remain encounter/library data.
+- **`@pack/item-art` — optional private item-illustration URLs**
+  (`packItemArtAliasTarget()`; pack mode → `content-pack/data/item-art.ts`, SRD-only →
+  `pack-empty.ts`). The public aggregate `src/data/item-art.ts` keys every optional plate by
+  **typed corpus id** (`equipment:<id>` / `magic:<id>`) so identically named mundane and magic
+  objects cannot collide. Public files live as `{kind}--{id}.webp` in
+  `assets/items/{equipment,magic}/`; private files use the mirrored
+  `content-pack/assets/items/{equipment,magic}/` tree. The kind prefix deliberately survives
+  Rolldown's flattened asset metadata so emitted files keep the correct runtime-cache family. The
+  Compendium resolves art only
+  for an opened reading leaf: dense lists and Add Item modals remain icon-led and make zero image
+  requests. Missing art removes the visual column entirely. Plates are 672×840 WebP at ≤45,000
+  bytes, excluded from first-install precache and cached CacheFirst for one year on first view;
+  immutable ids, not image URLs, remain the only persisted item references.
 - **Merge points** — every per-category aggregate composes `public + pack` through
   `src/lib/pack-merge.ts` (an id collision or an overlay patch aimed at a missing entry THROWS at
   module init): `data/spells.ts`, `feats.ts`, `races.ts`, `backgrounds.ts`,

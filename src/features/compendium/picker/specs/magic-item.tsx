@@ -9,11 +9,13 @@
 
 import { Gem } from "lucide-react";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
+import { itemArtUrl } from "@/data/item-art";
 import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/stores/characterStore";
 import { parseMagicItemAcBonus, parseMagicItemCharges } from "@/lib/magic-item-utils";
 import { addEquipmentRef } from "@/lib/equipment-add";
 import { magicItemSealIcon } from "@/components/shared/item-icons";
+import { ItemArtPlate } from "@/components/shared/ItemArtPlate";
 import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { Icon } from "@/components/ui/icon";
@@ -195,6 +197,7 @@ export const magicItemSpec: CompendiumPickerSpec<SrdMagicItemData> = {
   }),
 
   detail: (item, { t, locale }) => {
+    const artUrl = itemArtUrl("magic", item.id);
     // P9 — the typed-document facts a reader wants pinned above the prose (the
     // P2/P7 anatomy): the parsed engine facts (charges pool, AC bonus) as meta
     // rows. Rarity/type/attunement already read at a glance in the eyebrow.
@@ -234,6 +237,7 @@ export const magicItemSpec: CompendiumPickerSpec<SrdMagicItemData> = {
       ),
       meta: meta.length > 0 ? meta : undefined,
       description: miText(item, "description", locale),
+      entryArt: artUrl ? <ItemArtPlate src={artUrl} /> : undefined,
       // D3 — the raw `properties` tags ("+1 AC", "charges: 7", "duration: 1 hour", …)
       // are free-form ENGLISH (105 distinct tokens, no IT) and leaked untranslated into
       // the IT detail; they're also redundant with the fully-bilingual description that

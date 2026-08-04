@@ -259,6 +259,16 @@ amounts now use each metal's existing deep ink in light while border/wash retain
 Verification: initial inline-state screenshots 12/12 plus final Treasury screenshots 3/3 across
 EN/IT, light desktop and dark mobile; campaign/currency/route/i18n tests 29/29; final axe 8/8, locale sweep
 8/8, mobile overflow 4/4; typecheck and lint green.
+**Wave 24 Compendium item-art pilot (2026-08-04):** the unified Items browser now has honest
+first-class reading surfaces for mundane equipment, magic items and the no-art fallback. A typed
+`equipment:<id>` / `magic:<id>` manifest composes public and private art without touching character
+data, and the full reading leaf alone opts into a restrained 4:5 bookplate; catalogue rows and Add
+Item dialogs remain the existing semantic-icon system with no raster fetch. The initial Longsword
+and Ring of Protection plates are original 672×840 WebPs under the 45 KB detail budget and deliberately
+separate mundane from magical affordance. Item art is excluded from first-install precache and enters
+a bounded one-year CacheFirst cache only after inspection. The Club surface locks the optional no-art
+path so missing coverage never creates an empty well. Pending owner screenshot approval before broad
+corpus generation.
 **Owner continuation mandate (2026-08-04):** the visual approval closes only this ornament fork.
 The whole-app UI/UX elevation remains active and exhaustive: audit every surface and recurring flow,
 then simplify, clarify or deepen it where evidence shows friction. Nothing is exempt because it is
