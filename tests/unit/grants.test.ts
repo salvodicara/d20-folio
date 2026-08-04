@@ -72,6 +72,36 @@ describe("evaluateGrants — damage resistances (union, deduped)", () => {
   });
 });
 
+describe("evaluateGrants — source-qualified condition immunities", () => {
+  it("keeps a source-specific immunity separate from blanket condition immunity", () => {
+    const out = evaluateGrants([
+      make("fey-ancestry", [
+        {
+          type: "condition-immunity",
+          condition: "unconscious",
+          sourceId: "sleep",
+        },
+      ]),
+    ]);
+
+    expect(out.conditionImmunities.has("unconscious")).toBe(false);
+    expect(out.sourceConditionImmunities).toEqual([
+      { condition: "unconscious", sourceId: "sleep" },
+    ]);
+  });
+
+  it("deduplicates identical source-specific clauses", () => {
+    const grant: Grant = {
+      type: "condition-immunity",
+      condition: "unconscious",
+      sourceId: "sleep",
+    };
+    const out = evaluateGrants([make("elf-a", [grant]), make("elf-b", [grant])]);
+
+    expect(out.sourceConditionImmunities).toHaveLength(1);
+  });
+});
+
 describe("evaluateGrants — numeric aggregates sum, ability/skill grants set-union", () => {
   it("speed + AC bonus + HP/level all add", () => {
     const out = evaluateGrants([

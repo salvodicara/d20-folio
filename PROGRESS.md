@@ -86,6 +86,14 @@ action undo restores the exact prior tracker state. Resolved trackers, custom/ho
 compendium copy and the live feature ledger all share the primitive, and the real Santaera fixture at
 level 6 proves activation, recovery metadata and reversal without any Barbarian-specific store code.
 
+**Live-team truth audit — source-qualified condition immunity CLOSED on branch (2026-08-04):**
+Chiaviddu's Fey Ancestry now models immunity to the `sleep` spell's Unconscious effect without granting
+blanket immunity to Unconscious. `condition-immunity.sourceId` is a generic data primitive carried from
+the grant aggregate through live party stats and encounter target snapshots. The universal resolver
+uses it only to suppress the safe automatic default; the target card labels the immunity and still lets
+the table explicitly apply the condition as an override. Public evaluator/resolver regressions and the
+real Chiaviddu fixture lock the distinction without an Elf- or spell-name branch in React.
+
 **Persistent-spell lifetime contract CLOSED on branch (2026-08-04):** the composed-catalogue census
 found 34 persistent spell effects whose mechanical grants could activate but had no structured expiry.
 Every spell-owned `while-active` state now declares its real fixed lifetime; Hex and Hunter's Mark add

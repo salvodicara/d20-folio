@@ -63,14 +63,19 @@ const PUBLIC_RACES: SrdRaceData[] = [
       {
         id: "fey-ancestry",
         // Permanent condition-save Advantage → `advantage-on` (rollType "save"),
-        // surfaced as a save chip near the Abilities block — the same pattern
-        // Sorcerer Aberrant Sorcery / Barbarian Rage already use. The
-        // "can't be put to sleep" half stays descriptive (no condition for it).
+        // surfaced as a save chip near the Abilities block. Magical Sleep is a
+        // source-qualified Unconscious immunity, not blanket immunity to being
+        // knocked Unconscious by damage or another effect.
         grants: [
           {
             type: "advantage-on",
             rollType: "save",
             vs: "charmed",
+          },
+          {
+            type: "condition-immunity",
+            condition: "unconscious",
+            sourceId: "sleep",
           },
         ],
       },

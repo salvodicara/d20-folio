@@ -311,7 +311,15 @@ export type Grant =
     }
   | { type: "damage-immunity"; damageType: DamageType }
   | { type: "damage-vulnerability"; damageType: DamageType }
-  | { type: "condition-immunity"; condition: ConditionId }
+  | {
+      type: "condition-immunity";
+      condition: ConditionId;
+      /** Optional exact rules source whose condition application is ignored.
+       * Omit for unconditional immunity. This keeps effects such as Fey
+       * Ancestry's immunity to magical Sleep distinct from blanket immunity
+       * to the Unconscious condition. */
+      sourceId?: string;
+    }
   | {
       /** The active state forbids casting spells (Barbarian Rage, Wild Shape).
        * This is a deterministic self-side rule, so cast surfaces consume one
@@ -3908,6 +3916,13 @@ export interface ResourceConversionEntry {
   maxSlotLevel?: number;
 }
 
+/** A condition immunity that applies only when one exact modeled source tries
+ * to apply the condition. Stable source ids keep this generic and data-driven. */
+export interface SourceConditionImmunity {
+  condition: ConditionId;
+  sourceId: string;
+}
+
 /** The normalised view a renderer/consumer reads. */
 export interface AggregatedGrants {
   // Senses
@@ -3931,6 +3946,7 @@ export interface AggregatedGrants {
   damageImmunities: ReadonlySet<DamageType>;
   damageVulnerabilities: ReadonlySet<DamageType>;
   conditionImmunities: ReadonlySet<ConditionId>;
+  sourceConditionImmunities: readonly SourceConditionImmunity[];
   /** True while any active grant forbids casting spells. */
   spellcastingBlocked: boolean;
   /** True while any active grant forbids maintaining Concentration. */
@@ -4727,6 +4743,7 @@ export function emptyAggregate(): AggregatedGrants {
     damageImmunities: new Set(),
     damageVulnerabilities: new Set(),
     conditionImmunities: new Set(),
+    sourceConditionImmunities: [],
     spellcastingBlocked: false,
     concentrationBlocked: false,
     healingBlocked: false,
@@ -4952,6 +4969,7 @@ export function evaluateGrants(
   const damageImmunities = new Set<DamageType>();
   const damageVulnerabilities = new Set<DamageType>();
   const conditionImmunities = new Set<ConditionId>();
+  const sourceConditionImmunities = new Map<string, SourceConditionImmunity>();
   let spellcastingBlocked = false;
   let concentrationBlocked = false;
   let healingBlocked = false;
@@ -5210,7 +5228,14 @@ export function evaluateGrants(
         damageVulnerabilities.add(g.damageType);
         break;
       case "condition-immunity":
-        conditionImmunities.add(g.condition);
+        if (g.sourceId) {
+          sourceConditionImmunities.set(`${g.condition}\u0000${g.sourceId}`, {
+            condition: g.condition,
+            sourceId: g.sourceId,
+          });
+        } else {
+          conditionImmunities.add(g.condition);
+        }
         break;
       case "damage-resistance-source":
         // Resistance keyed to a damage SOURCE (Abjurer Spell Resistance →
@@ -6444,6 +6469,7 @@ export function evaluateGrants(
     damageImmunities,
     damageVulnerabilities,
     conditionImmunities,
+    sourceConditionImmunities: [...sourceConditionImmunities.values()],
     spellcastingBlocked,
     concentrationBlocked,
     healingBlocked,

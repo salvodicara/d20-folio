@@ -657,6 +657,12 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   post-defense damage. Per-roll damage bonuses stay in each instance formula; a bonus that applies to one
   roll of a cast is a separate fixed component assigned to exactly one reviewed target, so a multi-instance
   spell cannot multiply it accidentally. Every successful target still permits an explicit condition override.
+  Condition immunity follows the same override-first rule. An unconditional `condition-immunity`
+  contributes to the target's effective immunity set; a grant with `sourceId` contributes one exact
+  source-qualified clause (Fey Ancestry: Unconscious only from `sleep`). Both travel through the live-PC
+  presenter into target review. The resolver omits an immune modeled condition from its automatic
+  defaults and labels the choice, but keeps manual selection available for a table ruling or homebrew;
+  there is no race/spell branch and the state reducer never turns an advisory into an unoverridable gate.
   Outcome modifiers are grant-driven too: `spell-damage-outcome` changes the consequence of a declared
   miss/save without an Evoker or spell-id branch (Potent Cantrip is half damage, with additional effects
   still gated by the original successful outcome).

@@ -65,9 +65,10 @@ import {
   turnBoundaryAfter,
   type ActiveRollDieAdjustment,
 } from "@/lib/combat-effects";
-import { maximizeDiceFormula } from "@/lib/grants";
+import { maximizeDiceFormula, type SourceConditionImmunity } from "@/lib/grants";
 import { localeDistance } from "@/lib/utils";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import { deriveDefenseKind } from "@/lib/views/sheet-view";
 import type { PreparedCommit } from "./useTurnEconomy";
 import "./CombatResolver.css";
 
@@ -101,6 +102,7 @@ interface TargetChoice {
   heroicInspiration: boolean;
   defenses: DamageDefenses;
   conditionImmunities: ReadonlySet<ConditionId>;
+  sourceConditionImmunities: readonly SourceConditionImmunity[];
   qualifiedDefenseCount: number;
   creatureType?: CreatureType;
   healingBlocked: boolean;
@@ -167,6 +169,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         heroicInspiration: row.heroicInspiration ?? false,
         defenses: row.defenses ?? NO_DEFENSES,
         conditionImmunities: row.conditionImmunities ?? new Set(),
+        sourceConditionImmunities: row.sourceConditionImmunities ?? [],
         qualifiedDefenseCount: row.qualifiedDefenseCount ?? 0,
         creatureType: row.creatureType,
         ...effectStateFor(row.id, index),
@@ -198,6 +201,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         heroicInspiration: row.heroicInspiration ?? false,
         defenses: row.defenses ?? NO_DEFENSES,
         conditionImmunities: row.conditionImmunities ?? new Set(),
+        sourceConditionImmunities: row.sourceConditionImmunities ?? [],
         qualifiedDefenseCount: row.qualifiedDefenseCount ?? 0,
         creatureType: row.creatureType,
         ...effectStateFor(row.id),
@@ -233,9 +237,10 @@ export function CombatResolver({
   const conditionLifetimeFor = (conditionId: string) =>
     spec.conditionApplication?.lifetimes?.[conditionId] ??
     spec.conditionApplication?.lifetime;
+  const actionSourceId = action.spellId ?? action.standingEffect?.sourceId ?? action.id;
   const conditionSourceId =
     spec.conditionApplication?.lifetime || spec.conditionApplication?.lifetimes
-      ? (action.spellId ?? action.standingEffect?.sourceId ?? action.id)
+      ? actionSourceId
       : null;
   type EffectMode = "damage" | "healing" | "temp-hp";
   const effectModes = useMemo<EffectMode[]>(
@@ -275,7 +280,14 @@ export function CombatResolver({
             conditions: effectiveSessionConditions(character.session),
             heroicInspiration: character.session.inspiration,
             defenses: NO_DEFENSES,
-            conditionImmunities: new Set(),
+            conditionImmunities: new Set(
+              deriveDefenseKind(
+                ownAggregate?.conditionImmunities ?? new Set(),
+                character.character.conditionImmunityOverrides,
+                character.session.sessionDefenses?.conditionImmunity
+              ).effective as ConditionId[]
+            ),
+            sourceConditionImmunities: ownAggregate?.sourceConditionImmunities ?? [],
             qualifiedDefenseCount: 0,
             healingBlocked: ownAggregate?.healingBlocked ?? false,
             speedAdjustmentFt: speedAdjustmentByEffects(
@@ -405,6 +417,13 @@ export function CombatResolver({
     ? oneRollBonusTarget
     : oneRollEligibleTargets[0];
 
+  const conditionIsImmune = (target: TargetChoice, conditionId: string): boolean =>
+    target.conditionImmunities.has(conditionId as ConditionId) ||
+    target.sourceConditionImmunities.some(
+      (immunity) =>
+        immunity.condition === conditionId && immunity.sourceId === actionSourceId
+    );
+
   const syncModeledConditions = (target: TargetChoice, applies: boolean): void => {
     const modeled = spec.conditionApplication?.options ?? [];
     if (modeled.length === 0) return;
@@ -414,9 +433,7 @@ export function CombatResolver({
       );
       const defaults =
         applies && !spec.conditionApplication?.max
-          ? modeled.filter(
-              (conditionId) => !target.conditionImmunities.has(conditionId as ConditionId)
-            )
+          ? modeled.filter((conditionId) => !conditionIsImmune(target, conditionId))
           : [];
       return { ...current, [target.key]: [...new Set([...manual, ...defaults])] };
     });
@@ -455,7 +472,7 @@ export function CombatResolver({
         (spec.conditionApplication?.max
           ? []
           : (spec.conditionApplication?.options ?? []).filter(
-              (conditionId) => !target.conditionImmunities.has(conditionId as ConditionId)
+              (conditionId) => !conditionIsImmune(target, conditionId)
             )),
     }));
     setConditionRemovals((current) => {
@@ -2008,7 +2025,7 @@ export function CombatResolver({
                         {conditionChoices.map((condition) => (
                           <option key={condition.id} value={condition.id}>
                             {condition.label}
-                            {target.conditionImmunities.has(condition.id as ConditionId)
+                            {conditionIsImmune(target, condition.id)
                               ? ` — ${t("combat.resolveConditionImmune")}`
                               : ""}
                           </option>
@@ -2024,9 +2041,7 @@ export function CombatResolver({
                             type="button"
                             className="combat-condition-chip"
                             data-immune={
-                              target.conditionImmunities.has(
-                                conditionId as ConditionId
-                              ) || undefined
+                              conditionIsImmune(target, conditionId) || undefined
                             }
                             aria-label={t("combat.resolveRemoveCondition", {
                               condition: label,

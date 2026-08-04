@@ -47,6 +47,12 @@ languages.
 **Provenance** — every grant tracks its source feature id, so the UI renders "Darkvision 60 ft (from
 Elf)" rather than a bare value.
 
+**Source-qualified condition immunity** — `condition-immunity` without `sourceId` remains a blanket
+set-union defense. With `sourceId`, it aggregates as an exact `(condition, source)` clause instead:
+Fey Ancestry blocks only `sleep` applying Unconscious, never damage or an unrelated effect applying
+Unconscious. Target review omits qualified immunities from its automatic condition defaults and labels
+them as immune; explicit selection remains available as the table/homebrew override.
+
 ---
 
 ## The Grant kind domains (index — detail lives in `src/lib/grants.ts`)

@@ -43,6 +43,7 @@ import type { ConditionId } from "@/data/types";
 import type { DamageDefenses } from "@/lib/damage-intake";
 import { effectsForTarget } from "@/lib/combat-effects";
 import { projectedEncounterConditions } from "@/lib/effective-conditions";
+import type { SourceConditionImmunity } from "@/lib/grants";
 
 /** Convert encounter-owned monster defense facts into the shared damage engine shape. */
 export function monsterDamageDefenses(
@@ -91,6 +92,7 @@ export interface PcLive {
   /** Effective live defenses derived through the same seam as the character sheet. */
   defenses?: DamageDefenses;
   conditionImmunities?: ReadonlySet<ConditionId>;
+  sourceConditionImmunities?: readonly SourceConditionImmunity[];
 }
 
 /** One render-ready combatant row — a flat, localized-at-the-edge view-model. PC rows
@@ -132,6 +134,7 @@ export interface EncounterCombatantView {
   portraitCrop?: PortraitCrop | null;
   defenses?: DamageDefenses;
   conditionImmunities?: ReadonlySet<ConditionId>;
+  sourceConditionImmunities?: readonly SourceConditionImmunity[];
   /** Conditional monster defenses require an explicit table declaration. */
   qualifiedDefenseCount?: number;
   // ── Monster state (present on `kind === "monster"`) ──
@@ -206,6 +209,7 @@ export function buildEncounterView(
         portraitCrop: live?.portraitCrop ?? null,
         defenses: live?.defenses,
         conditionImmunities: live?.conditionImmunities,
+        sourceConditionImmunities: live?.sourceConditionImmunities,
       });
     } else {
       const currentHp = c.tokens.reduce((sum, hp) => sum + hp, 0);
@@ -237,6 +241,7 @@ export function buildEncounterView(
               )
             )
           : undefined,
+        sourceConditionImmunities: [],
         qualifiedDefenseCount: c.defenses?.qualifiedDefenses?.length ?? 0,
       });
     }

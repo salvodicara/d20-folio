@@ -53,6 +53,7 @@ import type { CharacterDoc } from "@/types/character";
 import type { AbilityCode } from "@/data/types";
 import type { ConditionId } from "@/data/types";
 import type { DamageDefenses } from "@/lib/damage-intake";
+import type { SourceConditionImmunity } from "@/lib/grants";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
 /** One saving throw, ready for the dashboard's expanded detail. */
@@ -99,6 +100,7 @@ export interface PartyMemberStats {
   conditions: string[];
   defenses: DamageDefenses;
   conditionImmunities: ReadonlySet<ConditionId>;
+  sourceConditionImmunities: readonly SourceConditionImmunity[];
 }
 
 /**
@@ -235,6 +237,7 @@ export function derivePartyMemberStats(doc: CharacterDoc): PartyMemberStats {
     conditions: effectiveSessionConditions(session),
     defenses,
     conditionImmunities,
+    sourceConditionImmunities: aggregate.sourceConditionImmunities,
   };
 }
 
@@ -300,6 +303,7 @@ export function derivePcLive(
     portraitCrop: doc.portraitCrop,
     defenses: stats.defenses,
     conditionImmunities: stats.conditionImmunities,
+    sourceConditionImmunities: stats.sourceConditionImmunities,
   };
 }
 

@@ -127,6 +127,33 @@ function healingPoolAction(): ResolvedAction {
   };
 }
 
+function sleepAction(): ResolvedAction {
+  return {
+    ...action({
+      saveAbility: "WIS",
+      saveDC: 14,
+      targeting: { affinity: "any", maxTargets: Infinity },
+      conditionApplication: {
+        options: ["unconscious"],
+        on: "failed-save",
+        lifetime: { kind: "source" },
+      },
+    }),
+    id: "spell-sleep",
+    spellId: "sleep",
+    spellLevel: 1,
+    slotLevel: 1,
+    concentration: true,
+  };
+}
+
+function feySleepImmuneAlly(): EncounterCombatantView {
+  return {
+    ...allyPc(),
+    sourceConditionImmunities: [{ condition: "unconscious", sourceId: "sleep" }],
+  };
+}
+
 const applyMock = vi.mocked(applyDeclaredCombatEffects);
 const appendPersistentMock = vi.mocked(appendPersistentCombatEffect);
 const revokePersistentMock = vi.mocked(revokePersistentCombatEffect);
@@ -1352,6 +1379,56 @@ describe("universal combat resolution", () => {
         active: true,
       },
     ]);
+  });
+
+  it("does not auto-apply a condition when this exact source is immune", () => {
+    render(
+      <CombatResolver
+        action={sleepAction()}
+        sheetCombat={combat([pc(), feySleepImmuneAlly()])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /borin/i }));
+    expect(
+      screen.getByRole("option", { name: /unconscious — immune/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /remove unconscious from borin/i })
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expect(applyMock).not.toHaveBeenCalled();
+    expect(appendPersistentMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps a source-qualified immunity explicitly overridable by the table", async () => {
+    render(
+      <CombatResolver
+        action={sleepAction()}
+        sheetCombat={combat([pc(), feySleepImmuneAlly()])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /borin/i }));
+    fireEvent.change(screen.getByRole("combobox", { name: /condition to borin/i }), {
+      target: { value: "unconscious" },
+    });
+    expect(
+      screen.getByRole("button", { name: /remove unconscious from borin/i })
+    ).toHaveAttribute("data-immune", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    await waitFor(() => expect(appendPersistentMock).toHaveBeenCalledTimes(1));
+    expect(appendPersistentMock.mock.calls[0]?.[1]).toMatchObject({
+      source: { id: "sleep" },
+      target: { combatantId: "pc-u2" },
+      payload: { kind: "condition", conditionId: "unconscious" },
+    });
   });
 
   it("stores a concentration condition as a source-owned encounter occurrence", async () => {
