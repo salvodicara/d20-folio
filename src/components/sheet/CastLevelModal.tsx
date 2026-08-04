@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { spellLevelVar } from "@/components/shared/folio-colors";
 // The discriminated union (slot / free-cast / mastery) is owned by the engine —
 // the resolver produces it, this modal only renders it. Importing it from the
 // engine keeps the dependency direction one-way (UI → engine, never reverse).
@@ -110,11 +111,6 @@ export interface CastLevelModalProps {
    */
   onConfirm: (level: number, opt: CastLevelOption, metamagicIds: string[]) => void;
   onCancel: () => void;
-}
-
-/** Cantrip uses --sl-c; levelled slots use --sl-N. */
-function slotVar(level: number): string {
-  return level <= 0 ? "var(--sl-c)" : `var(--sl-${level})`;
 }
 
 export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalProps) {
@@ -269,7 +265,7 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
                     key={`${opt.level}-${opt.pactMagic === true ? "p" : "r"}`}
                     type="button"
                     className="cl-opt cl-slot"
-                    style={{ ["--sl" as string]: slotVar(opt.level) }}
+                    style={{ ["--sl" as string]: spellLevelVar(opt.level) }}
                     onClick={() => onConfirm(opt.level, opt, selectedMetamagic)}
                   >
                     <span className="cl-seal" aria-hidden>

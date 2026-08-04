@@ -346,6 +346,20 @@ const GUIDED_STEP_TARGETS: Record<string, GuidedStepTarget> = {
   "create-guided-review": { label: /^(review|revisione)$/i },
 };
 
+/** Open the sheet's shared extras menu through whichever management home the
+ * current viewport owns: desktop Binder's Fob or mobile Signet. */
+async function openSheetExtrasMenu(page: Page): Promise<void> {
+  const moreActions = page.getByRole("button", {
+    name: /more actions|altre azioni/i,
+  });
+  if ((await moreActions.count()) === 0) {
+    await page
+      .getByRole("button", { name: /sheet tools|strumenti della scheda/i })
+      .click();
+  }
+  await moreActions.last().click();
+}
+
 export interface Surface extends SurfaceRoute {
   /** Edit mode on/off (seeded into uiStore). */
   edit: boolean;
@@ -451,19 +465,42 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     variants: DESKTOP_OVERLAY_VARIANTS,
     ready: readyByName,
     prepare: async (page) => {
-      const moreActions = page.getByRole("button", {
-        name: /more actions|altre azioni/i,
-      });
-      // Desktop keeps the extras coin in the Binder's Fob. Mobile correctly
-      // mounts it only after the compact Signet blooms; traverse that real path
-      // so manifest-wide mobile checks can exercise History too.
-      if ((await moreActions.count()) === 0) {
-        await page
-          .getByRole("button", { name: /sheet tools|strumenti della scheda/i })
-          .click();
-      }
-      await moreActions.last().click();
+      await openSheetExtrasMenu(page);
       await page.getByRole("menuitem", { name: /history|cronologia/i }).click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
+    },
+  },
+  "character-share": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyByName,
+    prepare: async (page) => {
+      await openSheetExtrasMenu(page);
+      await page.getByRole("menuitem", { name: /^(share|condividi)$/i }).click();
+      await page.locator(".share-pop").waitFor({ timeout: 15000 });
+    },
+  },
+  "character-share-live": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyByName,
+    prepare: async (page) => {
+      await openSheetExtrasMenu(page);
+      await page.getByRole("menuitem", { name: /^(share|condividi)$/i }).click();
+      const popover = page.locator(".share-pop");
+      await popover.waitFor({ timeout: 15000 });
+      await popover.getByRole("switch").click();
+      await popover.locator(".share-pop-link").waitFor({ timeout: 15000 });
+    },
+  },
+  "character-cast-level": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyByName,
+    prepare: async (page) => {
+      await page
+        .getByRole("button", { name: /^(cast: thunderwave|lancia: onda tonante)$/i })
+        .click();
       await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
     },
   },
