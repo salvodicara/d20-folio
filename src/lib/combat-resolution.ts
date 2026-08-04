@@ -41,6 +41,7 @@ export interface CombatResolutionSpec {
   hasDamage: boolean;
   hasHealing: boolean;
   hasTempHp: boolean;
+  hasGrantedDie: boolean;
   conditionRemoval?: { options: string[]; max?: number };
   /** A variable healing pool paid by the reviewed outcome itself. Dice pools are
    * configured before this resolver; HP pools derive their exact debit here. */
@@ -166,6 +167,7 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
   const hasDamage = actionHasDamage(action);
   const hasHealing = actionHasHealing(action);
   const hasTempHp = actionHasTempHp(action);
+  const hasGrantedDie = s.grantedDie !== undefined;
   const poolSpend =
     s.poolSpendEffect === "healing" && action.costTrackerIsPool && s.uses
       ? {
@@ -239,6 +241,7 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     hasDamage,
     hasHealing,
     hasTempHp,
+    hasGrantedDie,
     ...(s.healingMode === "full" || s.healingMode === "maximum"
       ? { healingMode: s.healingMode }
       : {}),
@@ -265,6 +268,7 @@ export function shouldResolveCombatAction(action: ResolvedAction): boolean {
     spec.hasDamage ||
     spec.hasHealing ||
     spec.hasTempHp ||
+    spec.hasGrantedDie ||
     spec.conditionRemoval ||
     spec.conditionApplication ||
     spec.standingEffect ||
@@ -280,8 +284,10 @@ export function shouldResolveSoloAction(action: ResolvedAction): boolean {
   const spec = combatResolutionSpec(action);
   return (
     spec.targetAffinity !== "enemy" &&
+    !(spec.excludeSelf && spec.targetAffinity === "ally") &&
     (spec.hasHealing ||
       spec.hasTempHp ||
+      spec.hasGrantedDie ||
       spec.conditionRemoval !== undefined ||
       spec.conditionApplication !== undefined)
   );

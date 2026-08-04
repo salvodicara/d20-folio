@@ -240,6 +240,8 @@ export interface ResolvedTracker {
 export interface ActionSummary {
   /** Attack bonus: +9 to hit */
   attackBonus?: number;
+  /** A deterministic held die delivered to the reviewed target. */
+  grantedDie?: { kind: "bardic-inspiration"; die: string };
   conditionApplication?: CombatConditionApplication;
   /** Damage formula: "8d6", "1d8+5", "3×(1d4+1)" */
   damage?: string;
@@ -4495,6 +4497,10 @@ function applyActionEffectSummary(
     summary.heal = resolveActionHeal(action.heal, sourceId, character, ctx.abilityScores);
   }
   if (action.trackerTopUp) summary.trackerTopUp = action.trackerTopUp;
+  if (action.grantDie) {
+    const die = resolveActionDie(action.grantDie.die, sourceId, character);
+    if (die) summary.grantedDie = { kind: action.grantDie.kind, die };
+  }
   if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
   if (
     action.conditionRemoval &&

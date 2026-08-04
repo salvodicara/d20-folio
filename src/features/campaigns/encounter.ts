@@ -522,6 +522,21 @@ export function setMonsterNotes(
   });
 }
 
+/** Set or clear the held Bardic Inspiration die on an encounter-owned creature. */
+export function setMonsterBardicInspirationDie(
+  state: EncounterState,
+  id: string,
+  die: string
+): EncounterState {
+  return mapCombatant(state, id, (combatant) => {
+    if (combatant.kind === "pc") return combatant;
+    if ((combatant.bardicInspirationDie ?? "") === die) return combatant;
+    const next: EncounterMonster = { ...combatant, bardicInspirationDie: die };
+    if (!die) delete next.bardicInspirationDie;
+    return next;
+  });
+}
+
 // ─── Turn order ─────────────────────────────────────────────────────────────
 
 /**

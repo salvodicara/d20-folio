@@ -283,6 +283,7 @@ export function derivePcLive(
     currentHp: stats.currentHp,
     tempHp: stats.tempHp,
     conditions: stats.conditions,
+    bardicInspirationDie: hydrated.session.bardicInspirationDie,
     initiative: roll === null ? null : roll + stats.initiativeBonus,
     // The roll widget needs the bonus + the RAW roll separately from the total.
     initiativeBonus: stats.initiativeBonus,

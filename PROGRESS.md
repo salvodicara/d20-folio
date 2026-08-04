@@ -77,7 +77,7 @@ stable source id, and stale commit/redo proposals cannot overdraw live slots or 
 deterministic corpus audit follows as separate, truth-gated milestones; queued UI dogfood remains after
 engine closure. Nothing from this sweep merges to `main` without the owner's final permission.
 
-**Live-team truth audit — Rage contract CLOSED on branch (2026-08-04):** the Santaera fixture exposed
+**Live-team truth audit — Rage contract CLOSED on branch (2026-08-04):** the Barbarian fixture exposed
 a stale 2014 maintainer and two missing 2024 restrictions. Rage now declares no-spell/no-Concentration
 and Heavy-armor/Incapacitated incompatibilities as generic active-state data. Every cast route is
 hard-gated, activation ends held Concentration with exact undo, condition/equipment changes end the
@@ -85,7 +85,7 @@ state, and taking damage no longer falsely maintains it. Fixture-driven regressi
 duration, blockers, aggregate effects and the composite undo. Bard/Wizard/Rogue/Paladin fixture audits
 continue as separate truth-gated milestones.
 
-**Live-team truth audit — Monk/Bo contract CLOSED on branch (2026-08-04):** the fixture exposed a
+**Live-team truth audit — Monk contract CLOSED on branch (2026-08-04):** the fixture exposed a
 false-positive automation claim: Uncanny Metabolism restored Focus on every Initiative without spending
 its 1/LR use and never applied its heal. It is now one optional atomic action that spends the use,
 restores Focus, resolves the entered Martial Arts die + Monk level as healing, persists immediately and
@@ -93,6 +93,16 @@ undoes exactly. The generic action schema now supports tracker top-ups (includin
 and the target compiler no longer misclassifies explicit self-target effects as enemy-only in solo play.
 Step of the Wind now exposes both the free Dash and the 1-Focus Dash+Disengage/double-jump variant. The
 real Bo fixture proves the rendered action → target review → healing/resource commit → undo path.
+
+**Live-team truth audit — Bard contract CLOSED on branch (2026-08-04):** Bardic Inspiration
+previously spent the Bard's use but delivered no die. It is now one typed ally-target effect: the
+level-scaled die reaches an online or offline party member, or an encounter-owned NPC ally, through the
+same reviewed transaction as other combat effects; persists in the recipient's `combat/state`; appears
+in target context; logs exact actor/action provenance; and has explicit spend/correction and rest expiry.
+The additive read fallback preserves existing held dice while establishing the subdoc as the only new
+write home. Pure support actions no longer create fake attack declarations. The real team fixture
+locks CHA uses, d6 scaling and the ally/exclude-self target contract. Wizard/Rogue/Paladin fixture audits
+continue as separate truth-gated milestones.
 
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark

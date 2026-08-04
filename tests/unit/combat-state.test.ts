@@ -118,6 +118,7 @@ describe("combat-state — session → CombatState projection", () => {
       conditions: ["poisoned"],
       initiativeRoll: 15,
       deathSaves: { successes: 1, failures: 2 },
+      bardicInspirationDie: "",
       round: 1,
       recentActions: [],
     });
@@ -136,6 +137,7 @@ describe("combat-state — omitCombatTrio (the parent-doc serialization boundary
       initiative: "17",
       deathSucc: 1,
       deathFail: 2,
+      bardicInspirationDie: "d6",
       currency: { gp: 5 },
       round: 3,
       notes: "keep me",
@@ -199,6 +201,19 @@ describe("combat-state — applyCombatToSession (the ONE trio-hydration merge)",
     const merged = applyCombatToSession(s, null, 20);
     expect(merged.notes).toBe("keep me");
     expect(merged.hitDice).toBe(s.hitDice);
+  });
+
+  it("moves a held Bardic Inspiration die to combat state without dropping a legacy value", () => {
+    const legacy = session({ bardicInspirationDie: "d8" });
+    expect(sessionToCombatState(legacy).bardicInspirationDie).toBe("d8");
+    expect(
+      applyCombatToSession(legacy, { ...baseCombat, bardicInspirationDie: undefined }, 20)
+        .bardicInspirationDie
+    ).toBe("d8");
+    expect(
+      applyCombatToSession(legacy, { ...baseCombat, bardicInspirationDie: "" }, 20)
+        .bardicInspirationDie
+    ).toBe("");
   });
 
   // RA-12 — the Hide find-DC (`hiddenDc`) rides the parent doc, but `invisible`
@@ -733,6 +748,7 @@ describe("combat-state-io — base-reducing op helpers (offline-safe whole-objec
       { merge: boolean },
     ];
     expect(Object.keys(payload).sort()).toEqual([
+      "bardicInspirationDie",
       "conditions",
       "deathSaves",
       "hp",

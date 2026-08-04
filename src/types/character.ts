@@ -354,6 +354,8 @@ export interface ActionData {
   poolSpendEffect?: "healing";
   /** Restore another tracked resource as part of this action's atomic commit. */
   trackerTopUp?: { trackerId: string; upTo: number | "full" };
+  /** Grant a held die to the selected creature. */
+  grantDie?: { kind: "bardic-inspiration"; die: string };
   /** Rolled healing applied by the shared target resolver. */
   heal?: ActionHeal;
   /** Rolled Temporary HP applied by the shared target resolver. */

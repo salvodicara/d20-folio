@@ -192,6 +192,12 @@ describe("long-rest tracker recovery", () => {
 });
 
 describe("shortRest — tracker recovery", () => {
+  it("clears a held Bardic Inspiration die after its one-hour duration", () => {
+    store().setCharacter(mk({}, { bardicInspirationDie: "d8" }));
+    store().shortRest();
+    expect(store().character?.session.bardicInspirationDie).toBe("");
+  });
+
   it("short rest: full-recovery resets, partial-recovery reduces by N, long-rest untouched", () => {
     store().setCharacter(
       mk(
@@ -292,6 +298,12 @@ describe("shortRest — tracker recovery", () => {
 });
 
 describe("longRest", () => {
+  it("clears a held Bardic Inspiration die", () => {
+    store().setCharacter(mk({}, { bardicInspirationDie: "d8" }));
+    store().longRest();
+    expect(store().character?.session.bardicInspirationDie).toBe("");
+  });
+
   it("restores HP to max, clears slots/trackers (NOT conditions), reduces exhaustion by 1", () => {
     store().setCharacter(
       mk(

@@ -101,10 +101,10 @@ export function useCharacterSubscription(characterId: string | undefined): void 
   const isFromServerRef = useRef(false);
 
   /**
-   * True while the combat-mutable trio is being hydrated from the `combat/state`
+   * True while the combat-mutable slice is being hydrated from the `combat/state`
    * subdoc into the in-memory session. The parent-doc auto-save subscriber checks it
    * (alongside `isFromServerRef`) so a combat-doc echo never re-persists the parent
-   * doc (the snapshot → save → snapshot loop). The combat trio itself no longer has a
+   * doc (the snapshot → save → snapshot loop). The combat slice itself no longer has a
    * blanket writer: each store mutator self-persists its op through the injected
    * {@link CombatPersistence} (see below), so there is exactly ONE write per op.
    */
@@ -224,7 +224,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     useCharacterStore
       .getState()
       .setParentPersistenceFlush(() => void debouncedSaveRef.current?.flush());
-    // The combat-mutable trio persists to its own `combat/state` subdoc (not the
+    // The combat-mutable slice persists to its own `combat/state` subdoc (not the
     // parent char doc), through the injected persistence seam below.
     const uid = user.uid;
     // Inject the (uid, charId)-bound combat-state persistence. The store computes the
@@ -377,8 +377,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     };
   }, [user, characterId, setCharacter, setLoading, setError]);
 
-  // Auto-save the PARENT character doc on a NON-combat change. The combat trio
-  // (HP / conditions / initiative / death saves) is stripped from this payload —
+  // Auto-save the PARENT character doc on a NON-combat change. The combat slice
+  // (HP / conditions / held dice / initiative / death saves) is stripped from this payload —
   // it persists to the `combat/state` subdoc instead (the subscriber below) — and a
   // trio-ONLY change is skipped here entirely, so an HP tap never writes the parent.
   useEffect(() => {
@@ -418,7 +418,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           const charData = state.character.character;
           const stampedAc = effectiveAC(charData, state.character.session);
           // Always save both together to prevent snapshot-overwrite races. The combat
-          // trio (HP/conditions/initiative/death saves) is omitted from the parent doc at
+          // combat slice (HP/conditions/held dice/initiative/death saves) is omitted from the parent doc at
           // the Firestore serialization boundary (`toStoredPayload`) — it lives ONLY in
           // the `combat/state` subdoc (the writer below).
           debouncedSaveRef.current.save({
@@ -449,8 +449,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     return unsubscribe;
   }, []);
 
-  // NB: the combat trio (HP / conditions / initiative / death saves) is NOT persisted by
-  // a blanket store subscriber. Each trio mutator self-persists the WHOLE resulting state
+  // NB: the combat slice (HP / conditions / held dice / initiative / death saves) is NOT persisted by
+  // a blanket store subscriber. Each combat mutator self-persists the WHOLE resulting state
   // through the injected `CombatPersistence.write` (see the subscribe effect above) — one
   // offline-queueable `setDoc(merge)` per op (whole-object last-write-wins; a fresh
   // subscription-hydrated base makes different-field / different-time edits compose). The

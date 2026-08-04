@@ -110,6 +110,13 @@ export function localizeChronicleEvent(
             current: event.current,
             max: event.max,
           });
+    case "resource-grant":
+      return t("combatChronicle.bardicInspirationGrant", {
+        actor: resolveName(event.actorId),
+        target: resolveName(event.targetId),
+        value: event.value,
+        ...(event.action ? { action: resolveAction(event.action) } : {}),
+      });
     case "attack-miss":
       return t(event.action ? "combatChronicle.missByAction" : "combatChronicle.missBy", {
         attacker: resolveName(event.attackerId),

@@ -1204,6 +1204,9 @@ export interface SrdActionDef {
    * `upTo` is the minimum remaining amount; `"full"` restores the pool.
    */
   trackerTopUp?: { trackerId: string; upTo: number | "full" };
+  /** Grant a held die to the selected creature. The die may use a class-table
+   * sentinel such as `classSpecific:bardicInspirationDie`. */
+  grantDie?: { kind: "bardic-inspiration"; die: string };
   /** A variable pool whose spend produces healing.
    * Its tracker owns cost, unit, die, and remaining amount. */
   poolSpendEffect?: "healing";

@@ -81,6 +81,7 @@ interface TargetChoice {
   portraitUrl: string | null;
   portraitCrop: PortraitCrop | null;
   conditions: string[];
+  bardicInspirationDie?: string;
   defenses: DamageDefenses;
   conditionImmunities: ReadonlySet<ConditionId>;
   qualifiedDefenseCount: number;
@@ -111,6 +112,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
           : (row.portraitUrl ?? null),
         portraitCrop: row.srdId ? null : (row.portraitCrop ?? null),
         conditions: row.conditions,
+        bardicInspirationDie: row.bardicInspirationDie,
         defenses: row.defenses ?? NO_DEFENSES,
         conditionImmunities: row.conditionImmunities ?? new Set(),
         qualifiedDefenseCount: row.qualifiedDefenseCount ?? 0,
@@ -137,6 +139,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         portraitCrop:
           row.kind === "monster" && row.srdId ? null : (row.portraitCrop ?? null),
         conditions: row.conditions,
+        bardicInspirationDie: row.bardicInspirationDie,
         defenses: row.defenses ?? NO_DEFENSES,
         conditionImmunities: row.conditionImmunities ?? new Set(),
         qualifiedDefenseCount: row.qualifiedDefenseCount ?? 0,
@@ -678,7 +681,22 @@ export function CombatResolver({
             active: false,
           })
         );
-        return [...hpEffect, ...conditionEffects, ...removalEffects];
+        const grantedDieEffects = action.summary.grantedDie
+          ? [
+              {
+                kind: "granted-die" as const,
+                targetId: target.targetId,
+                dieKind: action.summary.grantedDie.kind,
+                die: action.summary.grantedDie.die,
+              },
+            ]
+          : [];
+        return [
+          ...hpEffect,
+          ...conditionEffects,
+          ...removalEffects,
+          ...grantedDieEffects,
+        ];
       });
       const hitTargetIds = successful.flatMap(({ target, outcomes, mode }) =>
         mode === "damage" &&
@@ -704,6 +722,7 @@ export function CombatResolver({
                   tempHp: target.tempHp,
                   maxHp: target.maxHp,
                   conditions: target.conditions,
+                  bardicInspirationDie: target.bardicInspirationDie,
                   defenses: target.defenses,
                 },
               ]
@@ -840,12 +859,15 @@ export function CombatResolver({
               ...(own && conditionRemovals[own.target.key]?.length
                 ? { removeConditions: conditionRemovals[own.target.key] }
                 : {}),
+              ...(own && action.summary.grantedDie
+                ? { bardicInspirationDie: action.summary.grantedDie.die }
+                : {}),
             })
           : null;
       const appliedRiders = [
         ...new Set(choices.flatMap(({ target }) => conditions[target.key] ?? [])),
       ];
-      if (sheetCombat) {
+      if (sheetCombat && (spec.hasDamage || appliedRiders.length > 0)) {
         declareAttack({
           action: action.nameLoc,
           outcome: successful.length > 0 ? "hit" : "miss",
@@ -908,6 +930,9 @@ export function CombatResolver({
       : null,
     action.summary.healing
       ? t("combat.resolveHealingFormula", { formula: action.summary.healing })
+      : null,
+    action.summary.grantedDie
+      ? t("combat.resolveGrantDie", { die: action.summary.grantedDie.die })
       : null,
     action.summary.effect ?? null,
     action.summary.range ?? null,
@@ -990,6 +1015,13 @@ export function CombatResolver({
                             })
                           : t("combat.resolvePlayerCharacter")}
                       </span>
+                      {target.bardicInspirationDie && (
+                        <small>
+                          {t("combat.resolveHeldBardicDie", {
+                            die: target.bardicInspirationDie,
+                          })}
+                        </small>
+                      )}
                     </span>
                     <span className="combat-target-check" aria-hidden>
                       {chosen ? <Check /> : <CircleDot />}

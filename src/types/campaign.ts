@@ -223,6 +223,8 @@ export interface EncounterMonster extends EncounterCombatantBase {
   portraitCrop?: PortraitCrop;
   /** Defenses seeded from the statblock/custom template for deterministic damage math. */
   defenses?: CombatDefenseSnapshot;
+  /** Held Bardic Inspiration die granted during this encounter. */
+  bardicInspirationDie?: string;
 }
 
 /**

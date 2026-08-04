@@ -805,13 +805,9 @@ export function ResourceRail() {
                   registerUndoableToast(
                     { message },
                     () => {
-                      useCharacterStore
-                        .getState()
-                        .updateSession({ bardicInspirationDie: "" });
+                      useCharacterStore.getState().setBardicInspirationDie("");
                       return () =>
-                        useCharacterStore
-                          .getState()
-                          .updateSession({ bardicInspirationDie: heldDie });
+                        useCharacterStore.getState().setBardicInspirationDie(heldDie);
                     },
                     { turnScoped: false }
                   );
@@ -834,9 +830,7 @@ export function ResourceRail() {
                         die,
                       })}
                       onClick={() =>
-                        useCharacterStore
-                          .getState()
-                          .updateSession({ bardicInspirationDie: die })
+                        useCharacterStore.getState().setBardicInspirationDie(die)
                       }
                     >
                       {die}

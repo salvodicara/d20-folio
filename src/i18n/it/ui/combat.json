@@ -26,6 +26,8 @@
     "resolveEnemiesOnly": "Solo nemici",
     "resolveAlliesOnly": "Solo alleati",
     "resolvePlayerCharacter": "Personaggio giocante",
+    "resolveHeldBardicDie": "Ha Ispirazione Bardica {{die}}",
+    "resolveGrantDie": "Concede Ispirazione Bardica {{die}}",
     "resolveHp": "{{current}}/{{max}} PF",
     "resolveResults": "Risolvi gli esiti",
     "resolveInstances": "Istanze",

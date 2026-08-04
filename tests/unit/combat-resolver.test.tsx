@@ -619,6 +619,32 @@ describe("universal combat resolution", () => {
     expectApplied([{ kind: "healing", targetId: "pc-u2", amount: 9 }]);
   });
 
+  it("delivers a held Bardic Inspiration die to the reviewed ally", () => {
+    render(
+      <CombatResolver
+        action={action({
+          grantedDie: { kind: "bardic-inspiration", die: "d6" },
+          targeting: { affinity: "ally", maxTargets: 1, excludeSelf: true },
+        })}
+        sheetCombat={combat([pc(), allyPc()])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    expect(screen.queryByText("Lyra")).toBeNull();
+    fireEvent.click(screen.getByText("Borin"));
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+    expectApplied([
+      {
+        kind: "granted-die",
+        targetId: "pc-u2",
+        dieKind: "bardic-inspiration",
+        die: "d6",
+      },
+    ]);
+  });
+
   it("heals and ends a peer condition in one reviewed feature action", () => {
     const ally: EncounterCombatantView = {
       ...allyPc(),

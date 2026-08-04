@@ -125,6 +125,8 @@
     "encounterSide": "Schieramento",
     "encounterEnemy": "Nemico",
     "encounterAlly": "Alleato",
+    "encounterBardicInspiration": "Ispirazione Bardica {{die}}",
+    "encounterSpendBardicInspiration": "Spendi Ispirazione Bardica {{die}}",
     "encounterMakeAlly": "Rendi alleato",
     "encounterMakeEnemy": "Rendi nemico",
     "encounterMonsterName": "Nome del mostro",

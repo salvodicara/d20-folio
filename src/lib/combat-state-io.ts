@@ -1,7 +1,7 @@
 /**
  * combat-state-io — Firestore IO for the per-character `combat/state` subdoc.
  *
- * The combat-mutable trio (HP / conditions / initiative / death saves) is persisted
+ * The combat-mutable slice (HP / conditions / held dice / initiative / death saves) is persisted
  * to `users/{uid}/characters/{charId}/combat/state` instead of the parent character
  * doc, so the cockpit sheet AND the in-hub encounter row read+write ONE document and
  * stay aligned by construction. See `src/types/combat-state.ts`.
@@ -29,7 +29,7 @@
  * `attachedCampaignId`, never a stored grant). Manual owner/DM corrections still use the
  * full offline-queueable writer and are whole-object last-write-wins. A reviewed action
  * against a peer does NOT use that path: `campaign-io.applyDeclaredCombatEffects` fresh-
- * reads and transactionally merges only HP/temp/conditions/death-save fields. Therefore
+ * reads and transactionally merges only HP/temp/conditions/held-die/death-save fields. Therefore
  * the acting device must be online to commit the shared action, but the target client does
  * not need to be online and an unrelated field cannot be clobbered.
  *
@@ -88,6 +88,7 @@ export function combatStateWriteData(state: CombatState): Record<string, unknown
   return {
     hp: { current: state.hp.current, temp: state.hp.temp },
     conditions: state.conditions,
+    bardicInspirationDie: state.bardicInspirationDie ?? "",
     initiativeRoll: state.initiativeRoll,
     deathSaves: {
       successes: state.deathSaves.successes,
@@ -121,6 +122,9 @@ export function parseCombatState(data: Record<string, unknown>): CombatState {
     conditions: Array.isArray(data.conditions)
       ? data.conditions.filter((c): c is string => typeof c === "string")
       : [],
+    ...(typeof data.bardicInspirationDie === "string"
+      ? { bardicInspirationDie: data.bardicInspirationDie }
+      : {}),
     initiativeRoll: typeof data.initiativeRoll === "number" ? data.initiativeRoll : null,
     deathSaves: { successes: num(ds.successes, 0), failures: num(ds.failures, 0) },
     // Absence-safe: a subdoc written before `round` moved here (or a fresh one) reads as

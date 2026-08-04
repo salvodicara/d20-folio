@@ -134,6 +134,7 @@ import {
   setInitiative,
   setMonsterName,
   setMonsterNotes,
+  setMonsterBardicInspirationDie,
   setMonsterSide,
   setMonsterTempHp,
   setRevealed,
@@ -1628,7 +1629,7 @@ export function MonsterCard({
     ) : null;
 
   const badges =
-    down || monster.hidden || monster.side === "ally" ? (
+    down || monster.hidden || monster.side === "ally" || monster.bardicInspirationDie ? (
       <div className="flex flex-wrap gap-1.5">
         {monster.side === "ally" && (
           <Badge variant="outline" color="var(--semantic-success)" size="sm">
@@ -1654,6 +1655,13 @@ export function MonsterCard({
             style={{ ["--bd-ink" as string]: "var(--accent-text)" }}
           >
             {t("campaignHub.encounterHidden")}
+          </Badge>
+        )}
+        {monster.bardicInspirationDie && (
+          <Badge variant="outline" color="var(--accent-primary)" size="sm">
+            {t("campaignHub.encounterBardicInspiration", {
+              die: monster.bardicInspirationDie,
+            })}
           </Badge>
         )}
       </div>
@@ -1752,6 +1760,22 @@ export function MonsterCard({
           )
         }
       />
+
+      {monster.bardicInspirationDie && (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() =>
+            apply((encounter) =>
+              setMonsterBardicInspirationDie(encounter, monster.id, "")
+            )
+          }
+        >
+          {t("campaignHub.encounterSpendBardicInspiration", {
+            die: monster.bardicInspirationDie,
+          })}
+        </Button>
+      )}
 
       {/* DM-only free-text notes — tactics, legendary-resistance tally, spell list,
           motivations. Lives INSIDE the DM disclosure body, so it's never visible to a

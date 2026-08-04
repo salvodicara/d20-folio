@@ -245,7 +245,11 @@ the table's rolled total. Both revalidate the live pool at commit/redo. The same
 custom `ActionData`, preserving homebrew parity without duplicating a second resolver.
 Peer-PC effects do not depend on the recipient client. The acting client fresh-reads the peer's narrow
 `combat/state` inside the same transaction that records the Chronicle, applies typed HP/temp/condition
-changes, and merges only that slice. Current campaign membership authorizes the combat subdoc while the
+changes or a held-die grant, and merges only that slice. `grantDie` is the generic action capability:
+its die may scale from class data, the reviewed target receives it as durable combat state, and the
+Chronicle records the grant without pretending the later table roll has already happened. Bardic
+Inspiration is its first consumer; the same field exists on custom actions for homebrew parity. Current
+campaign membership authorizes the combat subdoc while the
 parent build/inventory remains owner-only; transaction retry composes simultaneous effects. See
 `docs/ARCHITECTURE.md` → “The Combat Chronicle event seam”. Target allegiance is also structural:
 PCs and `side:"ally"` NPCs are allies, absent monster side means enemy, and **Any creature** remains the

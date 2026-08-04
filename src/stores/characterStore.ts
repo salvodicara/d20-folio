@@ -201,6 +201,8 @@ interface CharacterState {
   hydrateCombatState: (combat: CombatState | null) => void;
   // Session state mutations (immediate, used outside combat)
   updateSession: (partial: Partial<SessionState>) => void;
+  /** Replace/clear the held Bardic Inspiration die in the combat-state SSOT. */
+  setBardicInspirationDie: (die: string) => void;
   /**
    * Set current HP to an exact value (rest / undo / level-up / heal-from-0 reset).
    * `opts.persist: false` applies the optimistic in-memory change ONLY — used by
@@ -278,6 +280,7 @@ interface CharacterState {
     tempHp?: number;
     addConditions?: string[];
     removeConditions?: string[];
+    bardicInspirationDie?: string;
   }) => (() => void) | null;
   /**
    * Expend one spell slot at `level`. `pactMagic` selects the Warlock Pact-Magic
@@ -671,6 +674,19 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     });
   },
 
+  setBardicInspirationDie: (die) => {
+    if (get().readonly) return;
+    const { character } = get();
+    if (!character || (character.session.bardicInspirationDie ?? "") === die) return;
+    set({
+      character: {
+        ...character,
+        session: { ...character.session, bardicInspirationDie: die },
+      },
+    });
+    persistCombat(get);
+  },
+
   setHP: (current, opts) => {
     // Note: callers applying *damage* must use `applyDamage(amount)` instead
     // — that path computes concentration-save DCs from the **total** incoming
@@ -1029,6 +1045,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (effects.damage) get().applyDamage(effects.damage);
     if (effects.healing) get().applyHealing(effects.healing);
     if (effects.tempHp) get().gainTempHp(effects.tempHp);
+    if (effects.bardicInspirationDie !== undefined)
+      get().setBardicInspirationDie(effects.bardicInspirationDie);
     for (const condition of effects.addConditions ?? [])
       get().addCondition(condition, { registerConcentrationUndo: false });
     for (const condition of effects.removeConditions ?? [])
@@ -1752,6 +1770,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           concentration: "",
           exhaustion: Math.max(0, character.session.exhaustion - exhaustionRemoved),
           inspiration: gainsInspiration,
+          // A Bardic Inspiration die lasts at most 1 hour; a Long Rest always
+          // outlasts it, so the combat-state SSOT clears deterministically.
+          bardicInspirationDie: "",
           deathSucc: 0,
           deathFail: 0,
         },
@@ -1833,11 +1854,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           trackers: newTrackers,
           spellSlots: newSpellSlots,
           exhaustion: newExhaustion,
+          // A Short Rest lasts 1 hour, exhausting the held die's maximum duration.
+          bardicInspirationDie: "",
         },
       },
     });
     // Events-as-data: a Short Rest is a story beat.
     get().logEvent({ kind: "rest", restKind: "short" });
+    persistCombat(get);
     // Undo-stack FENCE (§5.4 case 9): a rest rewrites the resource baseline (pact
     // slots + short-rest trackers + exhaustion), so a pre-rest reverse-applier would
     // restore a stale spend against the new baseline. Drop the stack.

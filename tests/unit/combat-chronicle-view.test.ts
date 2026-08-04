@@ -97,6 +97,14 @@ const SAMPLES: Record<CombatChronicleEventKind, CombatChronicleEvent> = {
     targetId: "pc-mara",
     conditionId: "frightened",
   },
+  "resource-grant": {
+    ...base,
+    kind: "resource-grant",
+    targetId: "pc-mara",
+    resource: "bardic-inspiration-die",
+    value: "d6",
+    actorId: "pc-catalion",
+  },
 };
 
 describe("localizeChronicleEvent — every kind routes to a distinct non-empty line", () => {

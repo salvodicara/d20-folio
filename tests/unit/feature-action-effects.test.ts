@@ -4,6 +4,23 @@ import { resolveActions } from "@/lib/smart-tracker";
 import { makeCharacterDoc } from "./_helpers";
 
 describe("feature action effect contract", () => {
+  it("projects Bardic Inspiration as a one-target held-die grant", () => {
+    const action = resolveActions(
+      makeCharacterDoc({
+        classId: "bard",
+        level: 3,
+        features: [{ srdId: "bard-bardic-inspiration" }],
+      })
+    ).find((candidate) => candidate.id === "bard-bardic-inspiration-bonus");
+
+    expect(action).toMatchObject({
+      summary: {
+        grantedDie: { kind: "bardic-inspiration", die: "d6" },
+        targeting: { affinity: "ally", maxTargets: 1, excludeSelf: true },
+      },
+    });
+  });
+
   it("projects Uncanny Metabolism as one paid heal + Focus restore action", () => {
     const actions = resolveActions(
       makeCharacterDoc(

@@ -143,7 +143,7 @@
     "name": "Aumento dei Punteggi di Caratteristica"
   },
   "bard-bardic-inspiration": {
-    "description": "Puoi ispirare gli altri con parole o musica. Come azione bonus, dai a una creatura entro 18 metri un dado di Ispirazione Bardica. La creatura può aggiungere il dado a una prova di caratteristica, tiro per colpire o tiro salvezza entro 10 minuti. Puoi usarlo un numero di volte pari al tuo modificatore di Carisma (minimo 1), recuperando tutti gli usi con un riposo lungo.",
+    "description": "Come Azione Bonus, ispiri un'altra creatura entro 18 metri che possa vederti o sentirti. La creatura conserva un dado di Ispirazione Bardica per un massimo di 1 ora. Dopo aver fallito un Test del d20, può tirare il dado e sommarlo al d20, trasformando potenzialmente il fallimento in successo. Una creatura può conservare un solo dado alla volta. Puoi usare questo privilegio un numero di volte pari al tuo modificatore di Carisma (minimo 1).",
     "name": "Ispirazione Bardica"
   },
   "bard-bardic-inspiration.mechanics.actions.0": {

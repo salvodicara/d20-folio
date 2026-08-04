@@ -288,6 +288,73 @@ describe("campaign-io — reviewed combat effects", () => {
     ]);
   });
 
+  it("delivers Bardic Inspiration to an offline PC as typed combat state", () => {
+    const result = reduceDirectPcEffects(
+      {
+        targetId: "pc-a",
+        memberUid: "a",
+        characterId: "char-a",
+        currentHp: 20,
+        tempHp: 0,
+        maxHp: 20,
+        conditions: [],
+        defenses: NO_DEFENSES,
+      },
+      [
+        {
+          kind: "granted-die",
+          targetId: "pc-a",
+          dieKind: "bardic-inspiration",
+          die: "d6",
+        },
+      ],
+      {
+        actorId: "pc-catalion",
+        action: {
+          srd: {
+            kind: "class-feature",
+            key: "bard-bardic-inspiration",
+            field: "name",
+          },
+        },
+        round: 2,
+      }
+    );
+
+    expect(result?.bardicInspirationDie).toBe("d6");
+    expect(result?.events).toEqual([
+      expect.objectContaining({
+        kind: "resource-grant",
+        actorId: "pc-catalion",
+        targetId: "pc-a",
+        value: "d6",
+      }),
+    ]);
+  });
+
+  it("tracks Bardic Inspiration on an NPC ally and records the grant", () => {
+    const next = reduceDeclaredEffects(
+      encounter,
+      [
+        {
+          kind: "granted-die",
+          targetId: "monster-1",
+          dieKind: "bardic-inspiration",
+          die: "d6",
+        },
+      ],
+      { actorId: "pc-a", action: { custom: "Bardic Inspiration" } }
+    );
+    const goblin = next.combatants.find((combatant) => combatant.id === "monster-1");
+    expect(goblin?.kind === "monster" ? goblin.bardicInspirationDie : null).toBe("d6");
+    expect(next.events?.at(-1)).toMatchObject({
+      kind: "resource-grant",
+      actorId: "pc-a",
+      targetId: "monster-1",
+      value: "d6",
+    });
+  });
+
   it("consumes a remote Death Ward and leaves its PC at exactly 1 HP", () => {
     const ward: ActiveCombatEffect = {
       id: "death-ward:1",

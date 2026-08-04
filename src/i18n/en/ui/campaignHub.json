@@ -125,6 +125,8 @@
     "encounterSide": "Side",
     "encounterEnemy": "Enemy",
     "encounterAlly": "Ally",
+    "encounterBardicInspiration": "Bardic Inspiration {{die}}",
+    "encounterSpendBardicInspiration": "Spend Bardic Inspiration {{die}}",
     "encounterMakeAlly": "Make ally",
     "encounterMakeEnemy": "Make enemy",
     "encounterMonsterName": "Monster name",

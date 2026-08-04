@@ -166,6 +166,15 @@ export type CombatChronicleEvent =
       conditionId: string;
       actorId?: string;
       action?: LocText;
+    } & ChronicleEventBase)
+  /** A creature received a held combat resource from another creature. */
+  | ({
+      kind: "resource-grant";
+      targetId: string;
+      resource: "bardic-inspiration-die";
+      value: string;
+      actorId: string;
+      action?: LocText;
     } & ChronicleEventBase);
 
 /** Every `CombatChronicleEvent.kind` discriminant (for the presenter's exhaustiveness). */

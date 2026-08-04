@@ -1,7 +1,7 @@
 /**
  * CombatState — the per-character COMBAT-MUTABLE state that gets ONE model home.
  *
- * HP (current/temp), conditions, initiative, and death saves are the facts that
+ * HP (current/temp), conditions, held dice, initiative, and death saves are the facts that
  * change moment-to-moment in play and must stay aligned across every surface that
  * shows them (the cockpit sheet today; the in-hub encounter row in a later chunk).
  * They live in a dedicated per-character Firestore SUBDOC at
@@ -129,6 +129,9 @@ export interface PersistedTurnEconomy {
 export interface CombatState {
   hp: { current: number; temp: number };
   conditions: string[];
+  /** Held Bardic Inspiration die. Optional distinguishes a legacy subdoc from an
+   * explicit empty-string clear during the additive state migration. */
+  bardicInspirationDie?: string;
   /** The SOLO-play raw d20 initiative ROLL the player typed (`null` = not yet rolled).
    *  NEVER the total — consumers add the engine initiative bonus at the edge. A campaign
    *  encounter's roll lives in `CampaignDoc.encounterInit` instead (the initiative SSOT). */
@@ -156,16 +159,16 @@ export interface CombatState {
 
 /**
  * The session shape actually PERSISTED to the parent character doc: a full
- * {@link SessionState} MINUS the combat-mutable trio (HP / conditions / initiative /
- * death saves), which now lives only in the `combat/state` subdoc. Used by the
+ * {@link SessionState} MINUS the combat-mutable slice (HP / conditions / held dice /
+ * initiative / death saves), which now lives only in the `combat/state` subdoc. Used by the
  * char-doc auto-save so the parent doc never carries the moved fields.
  *
  * Physically omitting them keeps the two homes from drifting: the parent doc can no
- * longer encode an HP/conditions/initiative/death-save value at all.
+ * longer encode an HP/conditions/held-die/initiative/death-save value at all.
  */
 export type PersistedSession = Omit<
   SessionState,
-  "hp" | "conditions" | "initiative" | "deathSucc" | "deathFail"
+  "hp" | "conditions" | "initiative" | "deathSucc" | "deathFail" | "bardicInspirationDie"
 >;
 
 /**

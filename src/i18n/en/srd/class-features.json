@@ -143,7 +143,7 @@
     "name": "Ability Score Improvement"
   },
   "bard-bardic-inspiration": {
-    "description": "You can inspire others through stirring words or music. As a bonus action, you give one creature within 60 feet a Bardic Inspiration die. The creature can add the die to one ability check, attack roll, or saving throw within 10 minutes. You can use this a number of times equal to your Charisma modifier (minimum 1), regaining all uses on a long rest.",
+    "description": "As a Bonus Action, you inspire another creature within 60 feet that can see or hear you. It holds one Bardic Inspiration die for up to 1 hour. After it fails a D20 Test, it can roll the die and add it to the d20, potentially turning the failure into a success. A creature can hold only one die at a time. You can use this feature a number of times equal to your Charisma modifier (minimum 1).",
     "name": "Bardic Inspiration"
   },
   "bard-bardic-inspiration.mechanics.actions.0": {

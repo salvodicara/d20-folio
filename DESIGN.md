@@ -1273,6 +1273,12 @@ the initiative clear flows through the sanctioned explicit-clear path (the chara
 subdoc) and, being solo-only, never touches shared encounter state. **There is no re-arm button** — mis-tap
 recovery lives on the coins (below).
 
+**Held-die target context (2026-08-04).** Target review keeps overview first but exposes the one fact
+that changes a Bardic Inspiration decision: a creature already holding the die says so directly on its
+compact target card. Encounter-owned allies repeat that state as a small badge on their combat row and
+put the DM correction inside details-on-demand; PCs spend it from the existing resource rail. No parallel
+resource panel or explanatory prose is added.
+
 - **Solo↔encounter band precedence** (`.turn[data-phase]`; owner-ratified 2026-07-03, the ONE seam
   `useTurnState` → `useSheetCombat`, `turn-state.ts`): when the OPEN hero is a combatant in its encounter the
   solo lifecycle YIELDS — `data-phase` drives the treatment and End Combat is absent. **`gathering`** (pre-Begin):

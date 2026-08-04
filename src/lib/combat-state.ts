@@ -4,17 +4,17 @@
  * `src/types/combat-state.ts`).
  *
  * This module owns the seam between the in-memory {@link SessionState} (which keeps
- * the combat trio for every existing reader — compute / use-hp-controls / level-up /
+ * the combat slice for every existing reader — compute / use-hp-controls / level-up /
  * rest) and the canonical {@link CombatState} written to the subdoc:
  *
  *  - the initiative-ROLL STRING ↔ NUMBER conversion (cockpit keeps `""`/`"15"` as the
  *    raw d20 roll; the subdoc carries the canonical `null`/`15` on `initiativeRoll`);
  *  - the projection `session → CombatState` (what gets written);
  *  - the cheap change detectors the auto-save subscribers use to route a store
- *    transition to the RIGHT doc (combat trio → subdoc; everything else → parent).
+ *    transition to the RIGHT doc (combat slice → subdoc; everything else → parent).
  *
  * The `combat/state` subdoc is the SOLE persisted home of the combat-mutable state:
- * the Firestore parent character doc carries NO combat trio (the serialization boundary
+ * the Firestore parent character doc carries NO combat slice (the serialization boundary
  * `toStoredPayload` omits {@link COMBAT_SESSION_KEYS} from `state`), and readers hydrate
  * the subdoc, falling to {@link defaultCombatState} (full HP) only when it is absent.
  *
@@ -63,6 +63,7 @@ export function combatTrioDiffers(
     deathSucc: number;
     deathFail: number;
     conditions: string[];
+    bardicInspirationDie?: string;
   },
   combat: CombatState
 ): boolean {
@@ -71,7 +72,8 @@ export function combatTrioDiffers(
     session.hp.temp !== combat.hp.temp ||
     session.deathSucc !== combat.deathSaves.successes ||
     session.deathFail !== combat.deathSaves.failures ||
-    session.conditions.join(",") !== combat.conditions.join(",")
+    session.conditions.join(",") !== combat.conditions.join(",") ||
+    (session.bardicInspirationDie ?? "") !== (combat.bardicInspirationDie ?? "")
   );
 }
 
@@ -88,12 +90,13 @@ export const COMBAT_SESSION_KEYS = [
   "initiative",
   "deathSucc",
   "deathFail",
+  "bardicInspirationDie",
 ] as const satisfies ReadonlyArray<keyof SessionState>;
 
 const COMBAT_KEY_SET: ReadonlySet<string> = new Set(COMBAT_SESSION_KEYS);
 
 /**
- * Drop the combat trio from a SERIALIZED `state` map (the codec's `sessionToState`
+ * Drop the combat slice from a SERIALIZED `state` map (the codec's `sessionToState`
  * output) — the Firestore parent-doc write omits it because the combat-mutable state
  * lives in the `combat/state` subdoc as its SOLE persisted home (golden rule 10). Pure;
  * reuses {@link COMBAT_SESSION_KEYS} (the serialized keys share the session names) so it
@@ -137,6 +140,7 @@ export function sessionToCombatState(
     conditions: session.conditions,
     initiativeRoll: initiativeToNumber(session.initiative),
     deathSaves: { successes: session.deathSucc, failures: session.deathFail },
+    bardicInspirationDie: session.bardicInspirationDie ?? "",
     round,
     recentActions,
     ...(appliedEncounterEffects ? { appliedEncounterEffects } : {}),
@@ -173,6 +177,8 @@ export function applyCombatToSession(
         initiative: initiativeToString(combat.initiativeRoll),
         deathSucc: clampDeath(combat.deathSaves.successes),
         deathFail: clampDeath(combat.deathSaves.failures),
+        bardicInspirationDie:
+          combat.bardicInspirationDie ?? session.bardicInspirationDie ?? "",
       }
     : {
         // Absent subdoc (a genuinely fresh/undamaged char): full HP, never 0.
@@ -181,6 +187,7 @@ export function applyCombatToSession(
         initiative: "",
         deathSucc: 0,
         deathFail: 0,
+        bardicInspirationDie: session.bardicInspirationDie ?? "",
       };
   const merged: SessionState = { ...session, ...trio };
   // RA-12 — the Hide action's find-DC (`hiddenDc`) rides the PARENT doc, but its
@@ -345,9 +352,9 @@ export function setInitiativeAbsolute(s: CombatState, roll: number | null): Comb
 
 /**
  * Did any NON-combat session field change between two snapshots? Reference/value
- * compare over every key EXCEPT the trio. When true (or `character.character`
+ * compare over every key EXCEPT the combat slice. When true (or `character.character`
  * changed), the parent-doc writer persists the session (the serialization boundary
- * omits the combat trio) — so a trio-ONLY change (an HP tap, a condition toggle) never
+ * omits the combat slice) — so a combat-only change (an HP tap, a condition toggle) never
  * triggers a redundant parent write.
  */
 export function nonCombatSessionChanged(a: SessionState, b: SessionState): boolean {

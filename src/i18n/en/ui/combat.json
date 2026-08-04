@@ -26,6 +26,8 @@
     "resolveEnemiesOnly": "Enemies only",
     "resolveAlliesOnly": "Allies only",
     "resolvePlayerCharacter": "Player character",
+    "resolveHeldBardicDie": "Holds Bardic Inspiration {{die}}",
+    "resolveGrantDie": "Grant Bardic Inspiration {{die}}",
     "resolveHp": "{{current}}/{{max}} HP",
     "resolveResults": "Resolve outcomes",
     "resolveInstances": "Instances",

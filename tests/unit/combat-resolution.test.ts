@@ -144,6 +144,21 @@ describe("combatResolutionSpec — target shape and outcome", () => {
     ).toBe("any");
   });
 
+  it("resolves a held-die grant in encounters but keeps another-creature grants manual in solo", () => {
+    const inspiration = makeAction("feature", {
+      grantedDie: { kind: "bardic-inspiration", die: "d6" },
+      targeting: { affinity: "ally", maxTargets: 1, excludeSelf: true },
+    });
+    expect(combatResolutionSpec(inspiration)).toMatchObject({
+      hasGrantedDie: true,
+      targetAffinity: "ally",
+      excludeSelf: true,
+      targetCap: 1,
+    });
+    expect(shouldResolveCombatAction(inspiration)).toBe(true);
+    expect(shouldResolveSoloAction(inspiration)).toBe(false);
+  });
+
   it("plans a target-bound standing grant by catalogue reference", () => {
     const action: ResolvedAction = {
       ...makeAction("spell", {}),
