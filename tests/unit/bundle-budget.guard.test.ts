@@ -422,10 +422,10 @@ const EAGER_CEILING_KB = 792; // baseline 727.1 → ~+9% (near budget — see AR
 // 2026-08-04 (persistent spell lifetimes): raised 8512 → 8515 after 42 persistent
 // spells gained structured timers/upcast tiers in existing JS chunks. Shared duration
 // construction trimmed 1.2 KiB first; measured 8512.79 KiB / 317 entries, +0 entries.
-// 2026-08-04 (condition/effect occurrence runtime): raised 8515 → 8527 after
-// source-owned local effects, exact condition lifetimes, cast-level expiry and
-// Rage upkeep grew existing chunks to 8523.14 KiB / the same 317 entries.
-const PRECACHE_CEILING_KIB = 8527;
+// 2026-08-04 (incoming-damage reactions): raised 8527 → 8534 after the generic
+// reduction transaction and durable success receipt grew existing chunks to
+// 8530.75 KiB / the same 317 entries; +~3 KiB deterministic headroom.
+const PRECACHE_CEILING_KIB = 8534;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

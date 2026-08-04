@@ -213,6 +213,26 @@ describe("combatResolutionSpec — target shape and outcome", () => {
     expect(shouldResolveSoloAction(stabilize)).toBe(true);
   });
 
+  it("routes observed incoming damage through the self resolver", () => {
+    const deflect = makeAction("feature", {
+      damageReduction: {
+        dice: "1d10",
+        bonus: 6,
+        damageTypes: ["bludgeoning", "piercing", "slashing"],
+      },
+      targeting: { affinity: "self", maxTargets: 1 },
+    });
+    expect(combatResolutionSpec(deflect)).toMatchObject({
+      kind: "automatic",
+      targetAffinity: "self",
+      targetCap: 1,
+      hasDamage: true,
+      damageReduction: { dice: "1d10", bonus: 6 },
+    });
+    expect(shouldResolveCombatAction(deflect)).toBe(true);
+    expect(shouldResolveSoloAction(deflect)).toBe(true);
+  });
+
   it("plans a target-bound standing grant by catalogue reference", () => {
     const action: ResolvedAction = {
       ...makeAction("spell", {}),

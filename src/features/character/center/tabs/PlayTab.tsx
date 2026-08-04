@@ -125,6 +125,7 @@ import {
   localizeTrackerUnit,
 } from "@/lib/views/tracker-view";
 import { useTurnEconomy, getEconomySlot, type PreparedCommit } from "../useTurnEconomy";
+import { successfulActionPrerequisiteMet } from "@/lib/combat-economy";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
 import {
@@ -321,6 +322,9 @@ export function PlayTab() {
   const attackSwingIds = useCombatStore((s) => s.attackSwingIds);
   const reactionUsed = useCombatStore((s) => s.reactionUsed);
   const reactionUsedId = useCombatStore((s) => s.reactionUsedId);
+  const reactionResolutionSucceeded = useCombatStore(
+    (s) => s.reactionResolutionSucceeded
+  );
   const round = useCombatStore((s) => s.round);
   const nextAttackAdvantage = useCombatStore((s) => s.nextAttackAdvantage);
   const movementUsedFt = useCombatStore((s) => s.movementUsedFt);
@@ -818,6 +822,15 @@ export function PlayTab() {
         return t("combat.blockedReasonPrerequisiteAction");
       }
       if (
+        action.requiresSuccessfulActionThisTurn &&
+        !successfulActionPrerequisiteMet(action, committed, {
+          id: reactionUsedId,
+          resolutionSucceeded: reactionResolutionSucceeded,
+        })
+      ) {
+        return t("combat.blockedReasonSuccessfulPrerequisiteAction");
+      }
+      if (
         action.requiresActionCategoryThisTurn &&
         !committed.some(
           (entry) => entry.economyCategory === action.requiresActionCategoryThisTurn
@@ -882,6 +895,8 @@ export function PlayTab() {
       weaponAdvisoryFor,
       movementUsedFt,
       selected,
+      reactionUsedId,
+      reactionResolutionSucceeded,
     ]
   );
 

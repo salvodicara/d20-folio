@@ -54,6 +54,7 @@ function persistedAction(action: SelectedAction): PersistedTurnAction {
     ...(action.isAttackGroup ? { isAttackGroup: true } : {}),
     ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
     ...(action.triggerEvents?.length ? { triggerEvents: action.triggerEvents } : {}),
+    ...(action.resolutionSucceeded ? { resolutionSucceeded: true } : {}),
   };
 }
 
@@ -75,6 +76,7 @@ export function snapshotTurnEconomy(
     attackSwingIds: state.attackSwingIds,
     reactionUsed: state.reactionUsed,
     reactionUsedId: state.reactionUsedId,
+    ...(state.reactionResolutionSucceeded ? { reactionResolutionSucceeded: true } : {}),
     movementUsedFt: state.movementUsedFt,
     dashesThisTurn: state.dashesThisTurn,
     spellSlotCastsThisTurn: state.spellSlotCastsThisTurn,
@@ -93,6 +95,7 @@ function selectedAction(action: PersistedTurnAction, locale: Locale): SelectedAc
     ...(action.isAttackGroup ? { isAttackGroup: true } : {}),
     ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
     ...(action.triggerEvents?.length ? { triggerEvents: action.triggerEvents } : {}),
+    ...(action.resolutionSucceeded ? { resolutionSucceeded: true } : {}),
   };
 }
 
@@ -110,6 +113,7 @@ function restoreTurnEconomy(
     attackSwingIds: snapshot.attackSwingIds,
     reactionUsed: snapshot.reactionUsed,
     reactionUsedId: snapshot.reactionUsedId,
+    reactionResolutionSucceeded: snapshot.reactionResolutionSucceeded ?? false,
     movementUsedFt: snapshot.movementUsedFt,
     dashesThisTurn: snapshot.dashesThisTurn,
     spellSlotCastsThisTurn: snapshot.spellSlotCastsThisTurn,

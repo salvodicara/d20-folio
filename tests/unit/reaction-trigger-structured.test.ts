@@ -117,17 +117,18 @@ function collectReactionRows(): ReactionRow[] {
 
 const ROWS = collectReactionRows();
 
-// Three features whose RETIRED-parser output was WRONG — the mechanics audit
+// Features whose RETIRED-parser output was WRONG — the mechanics audit
 // (M06 World Tree, M09 Chilling Retribution, M21 Beguiling Twist) found the prose
 // parser mis-derived the trigger (each matched the generic "saving throw" pattern
 // and emitted "ally fails save"). Their structured token now intentionally
 // CORRECTS the parser rather than reproducing it, so the equivalence check asserts
-// the corrected EN for these three, not the (buggy) oracle output.
+// the corrected EN instead of the (buggy) oracle output.
 const CORRECTED_TRIGGERS: Record<string, string> = {
   "bard-lore-cutting-words": "creature succeeds on a check or attack, or rolls damage",
   "barbarian-world-tree-branches-of-the-tree": "creature starts its turn near you",
   "ranger-fey-wanderer-beguiling-twist": "creature resists charm or fear",
   "ranger-winter-walker-chilling-retribution": "take damage",
+  "monk-deflect-attacks": "an attack hits you",
 };
 
 describe("structured reaction trigger — equivalence with the retired parser", () => {
@@ -144,7 +145,7 @@ describe("structured reaction trigger — equivalence with the retired parser", 
       const structuredEn = row.token
         ? localizeText(uiText(`combat.reactionTrigger_${row.token}`), "en")
         : undefined;
-      // For the three audit-corrected features the structured token deliberately
+      // For audit-corrected features the structured token deliberately
       // diverges from the (wrong) parser output — assert the corrected EN instead.
       const expectedEn = CORRECTED_TRIGGERS[row.featureId] ?? row.expectedEn;
       expect(

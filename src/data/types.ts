@@ -141,6 +141,7 @@ export type ReactionTrigger =
   // its turn within 30 ft of you while your Rage is active.
   | "creatureStartsTurnNear"
   | "enemyEndsTurnNear"
+  | "hitByAttack"
   | "hitOrMagicMissileTarget"
   // Ranger Fey Wanderer "Beguiling Twist": you or a creature within 120 ft
   // SUCCEEDS on a save to avoid or end the Charmed or Frightened condition.
@@ -157,6 +158,7 @@ export const ALL_REACTION_TRIGGERS = [
   "creatureSucceedsRollOrDealsDamage",
   "creatureStartsTurnNear",
   "enemyEndsTurnNear",
+  "hitByAttack",
   "hitOrMagicMissileTarget",
   "savedVsCharmOrFear",
   "targetAttacks",
@@ -171,6 +173,7 @@ export const ALL_REACTION_TRIGGERS = [
     "creatureSucceedsRollOrDealsDamage",
     "creatureStartsTurnNear",
     "enemyEndsTurnNear",
+    "hitByAttack",
     "hitOrMagicMissileTarget",
     "savedVsCharmOrFear",
     "targetAttacks",
@@ -1238,6 +1241,17 @@ export interface ActionHeal {
   plus?: HealTerm;
 }
 
+/** A reaction that reduces one observed incoming damage instance. The table
+ * supplies the rolled die and incoming amount; the engine owns every fixed
+ * term, eligible damage type and the resulting HP mutation. */
+export interface ActionDamageReduction {
+  dice: string;
+  addAbility?: AbilityCode;
+  /** Add the owning class's level (Deflect Attacks). */
+  addLevel?: boolean;
+  damageTypesByLevel: Readonly<Record<number, ReadonlyArray<DamageType>>>;
+}
+
 /** Stable semantic category used by restricted/alternate combat-economy actions. */
 export type ActionEconomyCategory = "attack" | "dash" | "disengage" | "hide" | "utilize";
 
@@ -1258,6 +1272,9 @@ export interface SrdActionDef {
    * Used for follow-ups/replacements such as Hand of Healing inside Flurry of
    * Blows; the turn receipt survives route changes. */
   requiresActionThisTurn?: string;
+  /** Like `requiresActionThisTurn`, but the prerequisite receipt must record a
+   * successful resolution (Deflect Attacks reduced its incoming damage to 0). */
+  requiresSuccessfulActionThisTurn?: string;
   /** A previously committed action in this rules category must exist this turn.
    * Unlike an id prerequisite, this accepts any weapon/unarmed/cantrip Attack. */
   requiresActionCategoryThisTurn?: ActionEconomyCategory;
@@ -1288,6 +1305,7 @@ export interface SrdActionDef {
    * non-reaction actions.
    */
   trigger?: ReactionTrigger;
+  damageReduction?: ActionDamageReduction;
   /**
    * Declarative heal amount surfaced as the action's heal chip (Second Wind:
    * `{ dice: "1d10", plus: { kind: "class-level", classId: "fighter" } }`). When

@@ -12,6 +12,7 @@ import type {
   ActionEconomyCategory,
   ActionType,
   ActionCureCondition,
+  ActionDamageReduction,
   ActionHeal,
   ActionTargeting,
   ActionTempHpRoll,
@@ -358,6 +359,7 @@ export interface ActionData {
   costTracker?: string;
   /** Stable prerequisite receipt and per-turn cap, matching SrdActionDef. */
   requiresActionThisTurn?: string;
+  requiresSuccessfulActionThisTurn?: string;
   requiresActionCategoryThisTurn?: ActionEconomyCategory;
   maxUsesPerTurn?: number;
   attackSequence?: SrdActionDef["attackSequence"];
@@ -371,6 +373,7 @@ export interface ActionData {
   grantHeroicInspiration?: true;
   /** Rolled healing applied by the shared target resolver. */
   heal?: ActionHeal;
+  damageReduction?: ActionDamageReduction;
   /** Rolled Temporary HP applied by the shared target resolver. */
   tempHpRoll?: Omit<ActionTempHpRoll, "fromLevel">;
   /** Structured target defaults; the table can still override them at resolution. */

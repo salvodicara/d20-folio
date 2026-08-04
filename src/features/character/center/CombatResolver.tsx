@@ -48,7 +48,11 @@ import {
   type CombatDamagePartSpec,
   type CombatTargetOutcome,
 } from "@/lib/combat-resolution";
-import { NO_DEFENSES, type DamageDefenses } from "@/lib/damage-intake";
+import {
+  NO_DEFENSES,
+  resolveDamageIntake,
+  type DamageDefenses,
+} from "@/lib/damage-intake";
 import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
 import { resolveTrackers, type ResolvedAction } from "@/lib/smart-tracker";
 import type { PortraitCrop } from "@/types/character";
@@ -68,7 +72,10 @@ import {
 import { maximizeDiceFormula, type SourceConditionImmunity } from "@/lib/grants";
 import { localeDistance } from "@/lib/utils";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
-import { deriveDefenseKind } from "@/lib/views/sheet-view";
+import { deriveDamageDefenses, deriveDefenseKind } from "@/lib/views/sheet-view";
+import { effectiveProficiencyBonus, isHeavyArmorEquipped } from "@/lib/compute";
+import { totalLevel } from "@/lib/classes";
+import { getEquipment } from "@/data/equipment";
 import type { PreparedCommit } from "./useTurnEconomy";
 import "./CombatResolver.css";
 
@@ -260,6 +267,23 @@ export function CombatResolver({
   const ownAggregate = character
     ? aggregateCharacterGrants(character.character, character.session)
     : null;
+  const ownDefenses =
+    character && ownAggregate
+      ? deriveDamageDefenses(
+          ownAggregate,
+          {
+            resistance: character.character.damageResistanceOverrides,
+            immunity: character.character.damageImmunityOverrides,
+            vulnerability: character.character.damageVulnerabilityOverrides,
+          },
+          character.session.sessionDefenses,
+          effectiveProficiencyBonus(
+            totalLevel(character.character),
+            character.character.proficiencyBonusOverride
+          ),
+          isHeavyArmorEquipped(character.character.equipment, getEquipment)
+        )
+      : NO_DEFENSES;
   const targets: TargetChoice[] = sheetCombat
     ? encounterTargets(sheetCombat)
     : character
@@ -279,7 +303,7 @@ export function CombatResolver({
             portraitCrop: character.portraitCrop,
             conditions: effectiveSessionConditions(character.session),
             heroicInspiration: character.session.inspiration,
-            defenses: NO_DEFENSES,
+            defenses: ownDefenses,
             conditionImmunities: new Set(
               deriveDefenseKind(
                 ownAggregate?.conditionImmunities ?? new Set(),
@@ -317,7 +341,12 @@ export function CombatResolver({
     ? activeRollDieAdjustments(actorEffects)
     : (ownAggregate?.rollDieAdjustments ?? []);
   const [showAll, setShowAll] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(() => {
+    if (!spec.damageReduction) return [];
+    const selfId = sheetCombat?.myId ?? "self";
+    const self = targets.find((target) => target.targetId === selfId);
+    return self ? [self.key] : [];
+  });
   const [attackOutcomes, setAttackOutcomes] = useState<Record<string, "hit" | "miss">>(
     {}
   );
@@ -325,6 +354,7 @@ export function CombatResolver({
     Record<string, "failed-save" | "saved">
   >({});
   const [damage, setDamage] = useState<Record<string, number>>({});
+  const [reductionRolls, setReductionRolls] = useState<Record<string, number>>({});
   const [allocations, setAllocations] = useState<Record<string, number>>({});
   const [hitCounts, setHitCounts] = useState<Record<string, number>>({});
   const [conditions, setConditions] = useState<Record<string, string[]>>({});
@@ -353,7 +383,7 @@ export function CombatResolver({
   const appliesTempHp = spec.hasTempHp && effectMode === "temp-hp";
   const activeAffinity = mixedEffects
     ? "any"
-    : appliesDamage
+    : appliesDamage && !spec.damageReduction
       ? "enemy"
       : spec.targetAffinity;
 
@@ -568,9 +598,32 @@ export function CombatResolver({
     );
   };
 
+  const damageReductionFor = (key: string) => {
+    const target = byKey.get(key);
+    const reduction = spec.damageReduction;
+    if (!target || !reduction) return null;
+    const incoming = Math.max(0, damage[key] ?? 0);
+    const rolled = Math.max(0, reductionRolls[key] ?? 0);
+    const remainingBeforeDefenses = Math.max(0, incoming - rolled - reduction.bonus);
+    const type = partTypes[`${key}:damage-reduction`];
+    return {
+      incoming,
+      rolled,
+      remainingBeforeDefenses,
+      resolved: resolveDamageIntake(
+        remainingBeforeDefenses > 0
+          ? [{ amount: remainingBeforeDefenses, ...(type ? { type } : {}) }]
+          : [],
+        target.defenses
+      ),
+    };
+  };
+
   const damageResolutionFor = (key: string) => {
     const target = byKey.get(key);
     if (!target) return null;
+    const reduced = damageReductionFor(key);
+    if (reduced) return reduced.resolved;
     return resolveCombatDamage(
       damagePartsForTarget(key).flatMap((part) =>
         Array.from({ length: damagePartCount(key, part) }, (_, instance) => ({
@@ -747,18 +800,25 @@ export function CombatResolver({
   const missingDamageType = selected.some(
     (key) =>
       modeForTarget(key) === "damage" &&
-      relevantDamageParts(key).some((part) => {
-        const hasPositiveAmount = Array.from(
-          { length: damagePartCount(key, part) },
-          (_, instance) =>
-            part.fixedAmount ?? partAmounts[damageValueKey(key, part, instance)] ?? 0
-        ).some((amount) => amount > 0);
-        return (
-          part.typeMode !== "fixed" &&
-          hasPositiveAmount &&
-          damageTypeFor(key, part) === undefined
-        );
-      })
+      ((spec.damageReduction !== undefined &&
+        (damage[key] ?? 0) > 0 &&
+        partTypes[`${key}:damage-reduction`] === undefined) ||
+        relevantDamageParts(key).some((part) => {
+          const hasPositiveAmount = Array.from(
+            { length: damagePartCount(key, part) },
+            (_, instance) =>
+              part.fixedAmount ?? partAmounts[damageValueKey(key, part, instance)] ?? 0
+          ).some((amount) => amount > 0);
+          return (
+            part.typeMode !== "fixed" &&
+            hasPositiveAmount &&
+            damageTypeFor(key, part) === undefined
+          );
+        }))
+  );
+  const missingReductionFacts = Boolean(
+    spec.damageReduction &&
+    selected.some((key) => (damage[key] ?? 0) <= 0 || (reductionRolls[key] ?? 0) <= 0)
   );
   // A consumable on-hit rider is selected by entering a positive rolled amount.
   // Its resource is spent exactly once even on a multi-target/multi-instance
@@ -860,6 +920,15 @@ export function CombatResolver({
         : undefined;
     const committedAction: ResolvedAction = {
       ...action,
+      ...(spec.damageReduction &&
+      choices.every(({ key }) => {
+        const reduction = damageReductionFor(key);
+        return Boolean(
+          reduction && reduction.incoming > 0 && reduction.remainingBeforeDefenses === 0
+        );
+      })
+        ? { resolutionSucceeded: true as const }
+        : {}),
       ...(dynamicHpPool ? { trackerCost: totalPoolCost } : {}),
       ...(markTransferEffect
         ? {
@@ -1316,7 +1385,10 @@ export function CombatResolver({
       const appliedRiders = [
         ...new Set(choices.flatMap(({ target }) => conditions[target.key] ?? [])),
       ];
-      if (sheetCombat && (spec.hasDamage || appliedRiders.length > 0)) {
+      if (
+        sheetCombat &&
+        ((!spec.damageReduction && spec.hasDamage) || appliedRiders.length > 0)
+      ) {
         declareAttack({
           action: action.nameLoc,
           outcome: successful.length > 0 ? "hit" : "miss",
@@ -1422,6 +1494,12 @@ export function CombatResolver({
       : null,
     action.summary.damage
       ? t("combat.resolveDamageFormula", { formula: action.summary.damage })
+      : null,
+    action.summary.damageReduction
+      ? t("combat.resolveDamageReductionFormula", {
+          dice: action.summary.damageReduction.dice,
+          bonus: action.summary.damageReduction.bonus,
+        })
       : null,
     action.summary.oneRollDamageBonus
       ? t("combat.resolveOneRollBonus", {
@@ -1880,6 +1958,81 @@ export function CombatResolver({
                       </div>
                     )}
 
+                    {targetAppliesDamage && spec.damageReduction && (
+                      <div className="combat-damage-parts">
+                        <div className="combat-damage-entry">
+                          <span>{t("combat.resolveIncomingDamage")}</span>
+                          <NumberStepper
+                            compact
+                            digits={3}
+                            min={0}
+                            value={damage[key] ?? 0}
+                            onChange={(value) =>
+                              setDamage((current) => ({ ...current, [key]: value }))
+                            }
+                            ariaLabel={t("combat.resolveIncomingDamageForAria", {
+                              name: target.label,
+                            })}
+                            decrementLabel={t("common.decrease")}
+                            incrementLabel={t("common.increase")}
+                          />
+                        </div>
+                        <div className="combat-damage-entry">
+                          <span>{t("familiar.damageConversion")}</span>
+                          <select
+                            value={partTypes[`${key}:damage-reduction`] ?? ""}
+                            aria-label={t("combat.resolveDamageTypeAria", {
+                              name: target.label,
+                            })}
+                            onChange={(event) =>
+                              setPartTypes((current) => ({
+                                ...current,
+                                [`${key}:damage-reduction`]: event.target
+                                  .value as DamageType,
+                              }))
+                            }
+                          >
+                            <option value="">
+                              {t("combat.resolveChooseDamageType")}
+                            </option>
+                            {spec.damageReduction.damageTypes.map((type) => (
+                              <option key={type} value={type}>
+                                {t(`srd.damage_${type}`)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="combat-damage-entry">
+                          <span>
+                            {t("combat.resolveReductionRoll")}
+                            <small>
+                              {t("combat.resolveDamageReductionFormula", {
+                                dice: spec.damageReduction.dice,
+                                bonus: spec.damageReduction.bonus,
+                              })}
+                            </small>
+                          </span>
+                          <NumberStepper
+                            compact
+                            digits={3}
+                            min={0}
+                            value={reductionRolls[key] ?? 0}
+                            onChange={(value) =>
+                              setReductionRolls((current) => ({
+                                ...current,
+                                [key]: value,
+                              }))
+                            }
+                            ariaLabel={t("combat.resolveReductionRollForAria", {
+                              name: target.label,
+                            })}
+                            decrementLabel={t("common.decrease")}
+                            incrementLabel={t("common.increase")}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {!spec.sharedAmount &&
                       (targetAppliesHealing || targetAppliesTempHp) &&
                       spec.healingMode !== "full" &&
@@ -2108,6 +2261,7 @@ export function CombatResolver({
           disabled={
             selected.length === 0 ||
             missingDamageType ||
+            missingReductionFacts ||
             missingRiderResource ||
             (dynamicHpPool &&
               (totalPoolCost <= 0 || totalPoolCost > (spec.poolSpend?.remaining ?? 0)))

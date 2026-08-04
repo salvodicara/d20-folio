@@ -186,6 +186,9 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
               ...(action.isAttackGroup === true ? { isAttackGroup: true } : {}),
               ...(economyCategory ? { economyCategory } : {}),
               ...(triggerEvents.length ? { triggerEvents } : {}),
+              ...(action.resolutionSucceeded === true
+                ? { resolutionSucceeded: true as const }
+                : {}),
             },
           ];
         })
@@ -207,6 +210,9 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
       : [],
     reactionUsed: row.reactionUsed === true,
     reactionUsedId: typeof row.reactionUsedId === "string" ? row.reactionUsedId : null,
+    ...(row.reactionResolutionSucceeded === true
+      ? { reactionResolutionSucceeded: true }
+      : {}),
     movementUsedFt: number(row.movementUsedFt),
     dashesThisTurn: number(row.dashesThisTurn),
     spellSlotCastsThisTurn: number(row.spellSlotCastsThisTurn),

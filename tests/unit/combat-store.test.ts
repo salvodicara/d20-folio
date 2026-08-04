@@ -199,13 +199,15 @@ describe("combatStore", () => {
   });
 
   it("useReaction / resetReaction toggle reactionUsed AND record the occupant id", () => {
-    s().useReaction("shield");
+    s().useReaction("shield", true);
     expect(s().reactionUsed).toBe(true);
     // CTA grammar — the spending reaction's id is the group's ring occupant.
     expect(s().reactionUsedId).toBe("shield");
+    expect(s().reactionResolutionSucceeded).toBe(true);
     s().resetReaction();
     expect(s().reactionUsed).toBe(false);
     expect(s().reactionUsedId).toBeNull();
+    expect(s().reactionResolutionSucceeded).toBe(false);
   });
 
   it("resetTurn clears selections + budget + reaction but keeps the round", () => {

@@ -102,6 +102,7 @@ export interface PersistedTurnAction {
   isAttackGroup?: boolean;
   economyCategory?: EconomyActionCategory;
   triggerEvents?: ReadonlyArray<"attack" | "bonus-extend">;
+  resolutionSucceeded?: true;
 }
 
 /**
@@ -121,6 +122,7 @@ export interface PersistedTurnEconomy {
   attackSwingIds: string[];
   reactionUsed: boolean;
   reactionUsedId: string | null;
+  reactionResolutionSucceeded?: boolean;
   movementUsedFt: number;
   dashesThisTurn: number;
   spellSlotCastsThisTurn: number;

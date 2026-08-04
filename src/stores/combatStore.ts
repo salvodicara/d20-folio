@@ -71,6 +71,8 @@ export interface SelectedAction {
   /** Deterministic turn events this committed action produced. Active-state
    * duration rules consume these persisted facts after route changes. */
   triggerEvents?: ReadonlyArray<"attack" | "bonus-extend">;
+  /** A reviewed prerequisite achieved its deterministic success condition. */
+  resolutionSucceeded?: true;
   /** What resource this action consumed when used (deducted immediately). */
   cost?: {
     type: "spell-slot" | "tracker" | "equipment" | "none";
@@ -162,6 +164,8 @@ interface CombatState {
    * never persisted (only round/initiative persist).
    */
   reactionUsedId: string | null;
+  /** Outcome receipt for the spent reaction, used by deterministic follow-ups. */
+  reactionResolutionSucceeded: boolean;
   /** Movement spent this turn, in feet (the move-bar depletes by 5-ft segments). */
   movementUsedFt: number;
   /**
@@ -269,7 +273,7 @@ interface CombatState {
    * the spending reaction's action id — recorded as `reactionUsedId` so its card
    * keeps the occupant ring while the rest of the group greys to "Used".
    */
-  useReaction: (id: string) => void;
+  useReaction: (id: string, resolutionSucceeded?: boolean) => void;
   /** Undo reaction use — resets reactionUsed without touching selections */
   resetReaction: () => void;
   /** Reset turn without advancing round (clear selections for undo) */
@@ -319,6 +323,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   attackSwingIds: [],
   reactionUsed: false,
   reactionUsedId: null,
+  reactionResolutionSucceeded: false,
   movementUsedFt: 0,
   dashesThisTurn: 0,
   spellSlotCastsThisTurn: 0,
@@ -476,14 +481,22 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     }
   },
 
-  useReaction: (id) => {
+  useReaction: (id, resolutionSucceeded = false) => {
     if (sheetReadonly()) return;
-    set({ reactionUsed: true, reactionUsedId: id });
+    set({
+      reactionUsed: true,
+      reactionUsedId: id,
+      reactionResolutionSucceeded: resolutionSucceeded,
+    });
   },
 
   resetReaction: () => {
     if (sheetReadonly()) return;
-    set({ reactionUsed: false, reactionUsedId: null });
+    set({
+      reactionUsed: false,
+      reactionUsedId: null,
+      reactionResolutionSucceeded: false,
+    });
   },
 
   resetTurn: () =>
@@ -495,6 +508,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       attackSwingIds: [],
       reactionUsed: false,
       reactionUsedId: null,
+      reactionResolutionSucceeded: false,
       movementUsedFt: 0,
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,
@@ -513,6 +527,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       attackSwingIds: [],
       reactionUsed: false,
       reactionUsedId: null,
+      reactionResolutionSucceeded: false,
       movementUsedFt: 0,
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,
@@ -541,6 +556,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       attackSwingIds: [],
       reactionUsed: false,
       reactionUsedId: null,
+      reactionResolutionSucceeded: false,
       movementUsedFt: 0,
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,

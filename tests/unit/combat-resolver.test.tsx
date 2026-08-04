@@ -23,6 +23,7 @@ import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import { buildScenario } from "@/lib/dev-scenarios";
+import { NO_DEFENSES } from "@/lib/damage-intake";
 
 function monster(id: string, name: string, tokens = [7]): EncounterCombatantView {
   return {
@@ -147,6 +148,23 @@ function sleepAction(): ResolvedAction {
   };
 }
 
+function deflectAction(): ResolvedAction {
+  return {
+    ...action({
+      damageReduction: {
+        dice: "1d10",
+        bonus: 6,
+        damageTypes: ["bludgeoning", "piercing", "slashing"],
+      },
+      targeting: { affinity: "self", maxTargets: 1 },
+    }),
+    id: "monk-deflect-attacks-reaction",
+    type: "reaction",
+    source: "feature",
+    spellLevel: null,
+  };
+}
+
 function feySleepImmuneAlly(): EncounterCombatantView {
   return {
     ...allyPc(),
@@ -186,6 +204,75 @@ beforeEach(() => {
 });
 
 describe("universal combat resolution", () => {
+  it("records a successful Deflect Attacks reduction without inventing an attack", () => {
+    let committed: ResolvedAction | undefined;
+    const before = useCharacterStore.getState().character?.session.hp.current;
+    render(
+      <CombatResolver
+        action={deflectAction()}
+        sheetCombat={combat([pc()])}
+        onCommit={(afterCommit, actionOverride) => {
+          committed = actionOverride;
+          afterCommit();
+        }}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.change(
+      screen.getByRole("spinbutton", { name: /incoming damage for lyra/i }),
+      { target: { value: "10" } }
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: /damage type.*lyra/i }), {
+      target: { value: "slashing" },
+    });
+    fireEvent.change(
+      screen.getByRole("spinbutton", { name: /damage-reduction roll for lyra/i }),
+      { target: { value: "4" } }
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expect(committed?.resolutionSucceeded).toBe(true);
+    expect(useCharacterStore.getState().character?.session.hp.current).toBe(before);
+    expect(useCharacterStore.getState().combatRecentActions).toEqual([]);
+  });
+
+  it("applies only the post-reduction, post-resistance damage", () => {
+    const resistant = {
+      ...pc(),
+      defenses: {
+        ...NO_DEFENSES,
+        resistances: new Set(["slashing" as const]),
+      },
+    };
+    const beforeHp = useCharacterStore.getState().character?.session.hp;
+    const beforeTotal = (beforeHp?.current ?? 0) + (beforeHp?.temp ?? 0);
+    render(
+      <CombatResolver
+        action={deflectAction()}
+        sheetCombat={combat([resistant])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.change(
+      screen.getByRole("spinbutton", { name: /incoming damage for lyra/i }),
+      { target: { value: "15" } }
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: /damage type.*lyra/i }), {
+      target: { value: "slashing" },
+    });
+    fireEvent.change(
+      screen.getByRole("spinbutton", { name: /damage-reduction roll for lyra/i }),
+      { target: { value: "4" } }
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    const after = useCharacterStore.getState().character?.session.hp;
+    expect((after?.current ?? 0) + (after?.temp ?? 0)).toBe(beforeTotal - 2);
+  });
+
   it("renders canonical monster art in target choices, with initials only as fallback", () => {
     render(
       <CombatResolver

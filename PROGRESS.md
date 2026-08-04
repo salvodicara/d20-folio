@@ -128,11 +128,14 @@ weapon and Unarmed Strike parity. The six-fixture deterministic census continues
 **Live-team truth audit — Barbarian/Monk follow-up CLOSED on branch (2026-08-04):** two remaining L3
 facts that were still prose now use reusable engine primitives. Primal Knowledge projects a typed
 optional STR ability onto its five active checks only while Rage is active; the cockpit and PDF share
-the same derivation and passives remain unchanged. Deflect Attacks now exposes its 1-Focus redirect only
-after the reaction was committed, then uses the ordinary free-target → DEX-save → entered-damage →
-resource/log/undo flow. Martial Arts dice scale by Monk level and Deflect Energy widens the triggering
-damage-type choices at L13 through the generic level-threshold resolver. Public unit contracts and the
-real Santaera/Bo fixtures lock both behaviors; the wider deterministic corpus audit continues.
+the same derivation and passives remain unchanged. Deflect Attacks now asks for the observed incoming
+amount/type and physical d10 roll, adds DEX + Monk level, routes only the remainder through the ordinary
+defense/Temporary-HP/undo pipeline and exposes its 1-Focus redirect only when that reduction reached 0.
+The successful Reaction receipt survives navigation/reload. Redirect then uses the ordinary free-target
+→ DEX-save → entered-damage → resource/log/undo flow. Martial Arts dice scale by Monk level and Deflect
+Energy widens eligible types at L13 (every damage type) through the generic level-threshold resolver.
+Public unit contracts and the real Santaera/Bo fixtures lock both behaviors; the wider deterministic
+corpus audit continues.
 
 **Live-team truth audit — Rage contract CLOSED on branch (2026-08-04):** the Barbarian fixture exposed
 a stale 2014 maintainer and two missing 2024 restrictions. Rage now declares no-spell/no-Concentration

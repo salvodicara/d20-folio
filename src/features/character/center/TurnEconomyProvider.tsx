@@ -74,6 +74,7 @@ import {
   canAssignActionClaims,
   economyActionCategory,
   economyClaimsForTurn,
+  successfulActionPrerequisiteMet,
 } from "@/lib/combat-economy";
 import type { RiderVM } from "@/lib/views/rider-view";
 import type { CunningStrikeVM } from "@/lib/views/cunning-strike-view";
@@ -362,6 +363,15 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       !committed.some((entry) => entry.id === action.requiresActionThisTurn)
     ) {
       return t("combat.blockedReasonPrerequisiteAction");
+    }
+    if (
+      action.requiresSuccessfulActionThisTurn &&
+      !successfulActionPrerequisiteMet(action, committed, {
+        id: useCombatStore.getState().reactionUsedId,
+        resolutionSucceeded: useCombatStore.getState().reactionResolutionSucceeded,
+      })
+    ) {
+      return t("combat.blockedReasonSuccessfulPrerequisiteAction");
     }
     if (
       action.requiresActionCategoryThisTurn &&
@@ -953,6 +963,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         : action.summary.attackBonus != null || action.summary.saveAbility != null
           ? { triggerEvents: ["attack"] as const }
           : {}),
+      ...(action.resolutionSucceeded ? { resolutionSucceeded: true as const } : {}),
       cost,
     };
   }
@@ -1633,7 +1644,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       registerUndoableToast(
         { message },
         () => {
-          markReactionUsed(action.id);
+          markReactionUsed(action.id, action.resolutionSucceeded);
           const characterStore = useCharacterStore.getState();
           // Resolve the slot pool once (normal vs Pact for a pure Warlock) so the
           // spend and the reverse hit the SAME counter (B3).
@@ -1959,6 +1970,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       // multi-action economy (an Action Surge turn stays a 2-action turn on undo).
       budget: c.budget,
       reactionUsed: c.reactionUsed,
+      reactionUsedId: c.reactionUsedId,
+      reactionResolutionSucceeded: c.reactionResolutionSucceeded,
       movementUsedFt: c.movementUsedFt,
       // Restored on Undo-End-Turn so the maintained-state check re-evaluates the
       // SAME round identically (a hit round stays a hit round through undo).

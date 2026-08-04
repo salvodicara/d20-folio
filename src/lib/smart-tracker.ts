@@ -262,6 +262,13 @@ export interface ActionSummary {
   conditionApplication?: CombatConditionApplication;
   /** Damage formula: "8d6", "1d8+5", "3×(1d4+1)" */
   damage?: string;
+  /** One observed incoming damage instance reduced by a physical roll plus a
+   * deterministic bonus. The resolver applies the remainder through defenses. */
+  damageReduction?: {
+    dice: string;
+    bonus: number;
+    damageTypes: ReadonlyArray<DamageType>;
+  };
   /** How a successful attack reaches its target. This is a deterministic trigger
    * fact for reactive effects; geometry and a thrown-weapon override stay at the table. */
   attackMode?: "melee" | "ranged";
@@ -643,8 +650,11 @@ export interface ResolvedAction {
   grantsNextAttackAdvantage?: true;
   locksMovement?: true;
   requiresActionThisTurn?: string;
+  requiresSuccessfulActionThisTurn?: string;
   requiresActionCategoryThisTurn?: ActionEconomyCategory;
   maxUsesPerTurn?: number;
+  /** Set only on the committed receipt after a reviewed resolution succeeds. */
+  resolutionSucceeded?: true;
   /** Active state this action explicitly maintains for the current round. */
   maintainsActiveKey?: string;
   economyCategory?: ActionEconomyCategory;
@@ -4717,6 +4727,23 @@ function applyActionEffectSummary(
   if (action.heal) {
     summary.heal = resolveActionHeal(action.heal, sourceId, character, ctx.abilityScores);
   }
+  if (action.damageReduction) {
+    const die = resolveActionDie(action.damageReduction.dice, sourceId, character);
+    const damageTypes = pickByLevel(
+      action.damageReduction.damageTypesByLevel,
+      scalingLevel
+    );
+    if (die && damageTypes) {
+      summary.damageReduction = {
+        dice: die,
+        bonus:
+          (action.damageReduction.addAbility
+            ? abilityModifier(ctx.abilityScores[action.damageReduction.addAbility])
+            : 0) + (action.damageReduction.addLevel ? scalingLevel : 0),
+        damageTypes,
+      };
+    }
+  }
   if (action.trackerTopUp) summary.trackerTopUp = action.trackerTopUp;
   if (action.grantDie) {
     const die = resolveActionDie(action.grantDie.die, sourceId, character);
@@ -4765,6 +4792,37 @@ function applyActionEffectSummary(
   applySaveAttackSummary(summary, action, character, ctx, scalingLevel);
 }
 
+function actionTurnConstraints(
+  action: Pick<
+    SrdActionDef,
+    | "requiresActionThisTurn"
+    | "requiresSuccessfulActionThisTurn"
+    | "requiresActionCategoryThisTurn"
+    | "maxUsesPerTurn"
+  >
+): Pick<
+  ResolvedAction,
+  | "requiresActionThisTurn"
+  | "requiresSuccessfulActionThisTurn"
+  | "requiresActionCategoryThisTurn"
+  | "maxUsesPerTurn"
+> {
+  return {
+    ...(action.requiresActionThisTurn
+      ? { requiresActionThisTurn: action.requiresActionThisTurn }
+      : {}),
+    ...(action.requiresSuccessfulActionThisTurn
+      ? { requiresSuccessfulActionThisTurn: action.requiresSuccessfulActionThisTurn }
+      : {}),
+    ...(action.requiresActionCategoryThisTurn
+      ? { requiresActionCategoryThisTurn: action.requiresActionCategoryThisTurn }
+      : {}),
+    ...(action.maxUsesPerTurn !== undefined
+      ? { maxUsesPerTurn: action.maxUsesPerTurn }
+      : {}),
+  };
+}
+
 /** Ordinary equipment actions use the same authored action projection and tracker
  * transaction as features. The resolver has no item-id branch; the catalogue owns
  * action economy, targeting, effect and use count. */
@@ -4803,6 +4861,7 @@ function resolveEquipmentActions(
         description: srdText("equipment", item.id, "description"),
         type: action.type,
         ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+        ...actionTurnConstraints(action),
         source: "feature",
         spellLevel: null,
         concentration: false,
@@ -4899,15 +4958,7 @@ function resolveFeatureActions(
             pinned: pinnedSet.has(id),
             defaultPinned: false,
             description: customText(a.description),
-            ...(a.requiresActionThisTurn
-              ? { requiresActionThisTurn: a.requiresActionThisTurn }
-              : {}),
-            ...(a.requiresActionCategoryThisTurn
-              ? { requiresActionCategoryThisTurn: a.requiresActionCategoryThisTurn }
-              : {}),
-            ...(a.maxUsesPerTurn !== undefined
-              ? { maxUsesPerTurn: a.maxUsesPerTurn }
-              : {}),
+            ...actionTurnConstraints(a),
           });
         }
       }
@@ -5179,15 +5230,7 @@ function resolveFeatureActions(
           ? { grantsNextAttackAdvantage: true as const }
           : {}),
         ...(action.locksMovement ? { locksMovement: true as const } : {}),
-        ...(action.requiresActionThisTurn
-          ? { requiresActionThisTurn: action.requiresActionThisTurn }
-          : {}),
-        ...(action.requiresActionCategoryThisTurn
-          ? { requiresActionCategoryThisTurn: action.requiresActionCategoryThisTurn }
-          : {}),
-        ...(action.maxUsesPerTurn !== undefined
-          ? { maxUsesPerTurn: action.maxUsesPerTurn }
-          : {}),
+        ...actionTurnConstraints(action),
         ...(action.maintainsActiveKey
           ? { maintainsActiveKey: action.maintainsActiveKey }
           : {}),
@@ -5294,15 +5337,7 @@ function resolveFeatureActions(
           defaultPinned: false,
           description: raceTraitLoc(raceForActions.id, trait, "description"),
           ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
-          ...(action.requiresActionThisTurn
-            ? { requiresActionThisTurn: action.requiresActionThisTurn }
-            : {}),
-          ...(action.requiresActionCategoryThisTurn
-            ? { requiresActionCategoryThisTurn: action.requiresActionCategoryThisTurn }
-            : {}),
-          ...(action.maxUsesPerTurn !== undefined
-            ? { maxUsesPerTurn: action.maxUsesPerTurn }
-            : {}),
+          ...actionTurnConstraints(action),
           // USE-APPLIES — Orc Adrenaline Rush: the bonus-action Dash grants PB
           // temp HP (its same-trait `temp-hp` grant carries `slot: "bonus"`).
           ...(() => {
@@ -5366,15 +5401,7 @@ function resolveFeatureActions(
           defaultPinned: false,
           description: srdText("invocation", inv.id, "description"),
           ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
-          ...(action.requiresActionThisTurn
-            ? { requiresActionThisTurn: action.requiresActionThisTurn }
-            : {}),
-          ...(action.requiresActionCategoryThisTurn
-            ? { requiresActionCategoryThisTurn: action.requiresActionCategoryThisTurn }
-            : {}),
-          ...(action.maxUsesPerTurn !== undefined
-            ? { maxUsesPerTurn: action.maxUsesPerTurn }
-            : {}),
+          ...actionTurnConstraints(action),
           ...(() => {
             const eff = resolveActionUseEffects(
               inv.grants,

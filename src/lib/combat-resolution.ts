@@ -46,6 +46,7 @@ export interface CombatResolutionSpec {
   targetCap: number;
   area: boolean;
   hasDamage: boolean;
+  damageReduction?: NonNullable<ResolvedAction["summary"]["damageReduction"]>;
   hasHealing: boolean;
   hasTempHp: boolean;
   hasGrantedDie: boolean;
@@ -189,7 +190,7 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     : hasSave
       ? "save"
       : "automatic";
-  const hasDamage = actionHasDamage(action);
+  const hasDamage = actionHasDamage(action) || s.damageReduction !== undefined;
   const hasHealing = actionHasHealing(action);
   const hasTempHp = actionHasTempHp(action);
   const hasGrantedDie = s.grantedDie !== undefined;
@@ -276,6 +277,7 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
               : instances)),
     area,
     hasDamage,
+    ...(s.damageReduction ? { damageReduction: s.damageReduction } : {}),
     hasHealing,
     hasTempHp,
     hasGrantedDie,
@@ -335,6 +337,7 @@ export function shouldResolveSoloAction(action: ResolvedAction): boolean {
       spec.hasGrantedDie ||
       spec.hasHeroicInspiration ||
       spec.stabilizes ||
+      spec.damageReduction !== undefined ||
       spec.conditionRemoval !== undefined ||
       spec.conditionApplication !== undefined)
   );

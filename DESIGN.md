@@ -2136,6 +2136,9 @@ test.ts` READS the live `.cp-dest-chip` declaration out of `folio.css`, resolves
      Any creature still exposes the deliberate override instead of silently retargeting it. The
      footer sits against the content—never a tall empty pseudo-page—and the same hierarchy survives
      dark/light and desktop/mobile. Slot level and other cast configuration always precede target choice;
+     an incoming-damage reaction preselects its deterministic self target and reuses the result row for
+     exactly three table facts—amount, type and physical reduction roll—then previews the post-defense
+     total; no redundant target tap, explanatory banner or second modal.
      a charged-item level row reuses the slot seal and scaled damage/healing facts, adding only its exact
      charge cost and remaining pool—decision-critical information, never explanatory helper copy;
      a persistent spell's later use is a terse active action (no second slot ceremony), not another cast.

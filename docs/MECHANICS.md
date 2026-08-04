@@ -580,6 +580,12 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
     The HP popover offers type chips ONLY for defended types (minimum interaction), previews the
     math live with the same functions the commit applies, and an untyped amount passes verbatim
     (override-first). The store receives the NET total.
+  - **Incoming-damage reactions.** `SrdActionDef.damageReduction` declares a physical die, optional
+    ability/owning-class-level bonus and level-scaled eligible types. The shared resolver asks only for
+    the observed incoming amount/type and rolled die, subtracts the modeled bonus, then sends the
+    remainder through the same defense/Temporary-HP pipeline above. A separate durable success receipt
+    gates `requiresSuccessfulActionThisTurn` follow-ups and survives route/reload; it is true only when
+    the reaction itself reduced the pre-defense remainder to 0.
   - **0-HP rules** (`characterStore.applyDamage(amount, { crit })`). Crossing to 0 = a fresh dying
     state (track reset 0/0) + the Unconscious condition (SRD "Falling Unconscious"; shed by the
     heal-from-0 seam in `setHP` and by the at-zero "drop to 1 instead" interrupt); remainder past

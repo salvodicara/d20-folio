@@ -120,6 +120,7 @@ describe("Combat sync — async character arrival", () => {
       nameLoc: { custom: "Vicious Mockery" },
       slot: "action",
       triggerEvents: ["attack"],
+      resolutionSucceeded: true,
     });
     useCombatStore.getState().selectAction({
       id: "barbarian-rage-extend",
@@ -128,7 +129,7 @@ describe("Combat sync — async character arrival", () => {
       slot: "bonus",
       triggerEvents: ["bonus-extend"],
     });
-    useCombatStore.getState().useReaction("cutting-words");
+    useCombatStore.getState().useReaction("cutting-words", true);
     useCombatStore.getState().setMovementUsed(15);
     useCombatStore.getState().grantNextAttackAdvantage();
     useCombatStore.getState().lockMovement();
@@ -142,8 +143,10 @@ describe("Combat sync — async character arrival", () => {
       "vicious-mockery",
     ]);
     expect(restored.selected.action[0]?.triggerEvents).toEqual(["attack"]);
+    expect(restored.selected.action[0]?.resolutionSucceeded).toBe(true);
     expect(restored.selected.bonus[0]?.triggerEvents).toEqual(["bonus-extend"]);
     expect(restored.reactionUsedId).toBe("cutting-words");
+    expect(restored.reactionResolutionSucceeded).toBe(true);
     expect(restored.movementUsedFt).toBe(15);
     expect(restored.nextAttackAdvantage).toBe(true);
     expect(restored.movementLocked).toBe(true);
