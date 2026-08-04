@@ -31,6 +31,17 @@ describe("MobileBottomNav", () => {
       "href",
       "/compendium"
     );
+    expect(
+      screen
+        .getByRole("link", { name: /characters/i })
+        .querySelector(".lucide-scroll-text")
+    ).not.toBeNull();
+    expect(
+      screen.getByRole("link", { name: /campaigns/i }).querySelector(".lucide-tent")
+    ).not.toBeNull();
+    expect(
+      screen.getByRole("link", { name: /compendium/i }).querySelector(".lucide-book-open")
+    ).not.toBeNull();
   });
 
   it("keeps Characters active on a cockpit sub-route", () => {

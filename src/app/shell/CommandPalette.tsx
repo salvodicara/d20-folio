@@ -58,9 +58,9 @@ import { ModalScroll } from "@/components/ui/modal-head";
 import { useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
-  Users,
-  Swords,
   BookOpen,
+  UserRound,
+  Map as MapIcon,
   SlidersHorizontal,
   Shield,
   SearchX,
@@ -92,6 +92,7 @@ import { signOut } from "@/lib/auth";
 import { localizeClassName } from "@/lib/views/srd-i18n";
 import { ensureSrdKind } from "@/i18n";
 import { primaryClassId, totalLevel } from "@/lib/classes";
+import { REALM_ICONS } from "./realm-icons";
 // COMPENDIUM_SPECS pull the whole SRD. The palette is always-mounted (⌘K), so a
 // STATIC import would weigh the SRD onto the initial bundle (#59/#78). It's instead
 // dynamically imported when PaletteBody mounts (palette opens) — type-only here.
@@ -296,19 +297,19 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         to: "/characters",
         label: t("nav.characters"),
         labelEn: "Characters",
-        icon: Users,
+        icon: REALM_ICONS.characters,
       },
       {
         to: "/campaigns",
         label: t("nav.campaigns"),
         labelEn: "Campaigns",
-        icon: Swords,
+        icon: REALM_ICONS.campaigns,
       },
       {
         to: "/compendium",
         label: t("nav.compendium"),
         labelEn: "Compendium",
-        icon: BookOpen,
+        icon: REALM_ICONS.compendium,
       },
       {
         to: "/settings",
@@ -496,7 +497,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         to: `/characters/${c.id}`,
         label: c.character.name,
         sub: cls ? `${cls} ${totalLevel(c.character)}` : undefined,
-        icon: Users,
+        icon: UserRound,
       }));
   }, [characters, q, locale]);
 
@@ -510,7 +511,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         key: `camp:${c.id}`,
         to: `/campaigns/${c.id}`,
         label: c.name,
-        icon: Swords,
+        icon: MapIcon,
       }));
   }, [campaigns, q]);
 

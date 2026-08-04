@@ -2764,6 +2764,12 @@ outcome/state sign (miss, selected, disabled),
 and an action sign (add, edit, delete) must not share a glyph within the same task context. Reuse across
 surfaces is desirable only when the referent or verb is unchanged.
 
+**Realm vocabulary.** The three top-level destinations read from the one
+`src/app/shell/realm-icons.ts` map everywhere a glyph is shown: Scroll Text = character
+sheets/Characters, Tent = Campaigns, Book Open = Compendium. Search results use the entity level
+instead (User Round = one character, Map = one campaign). A combat sign such as crossed swords never
+stands in for Campaigns merely because combat may happen inside a campaign.
+
 **Gestalt + recognition test.** Proximity and common region group related facts; alignment makes rows
 scannable; similarity is reserved for things that behave alike; contrast and enclosure mark hierarchy
 or state, never ornament. Before a new glyph ships, review it at its real 16/20/24px size, monochrome,

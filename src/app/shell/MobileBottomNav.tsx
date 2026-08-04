@@ -9,17 +9,17 @@
  */
 import { NavLink } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ScrollText, Tent, BookOpen } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { realmTarget } from "@/lib/realm-memory";
 import { cn } from "@/lib/utils";
+import { REALM_ICONS } from "./realm-icons";
 
 export function MobileBottomNav() {
   const { t } = useTranslation();
   const items = [
-    { to: "/characters", label: t("nav.characters"), icon: ScrollText },
-    { to: "/campaigns", label: t("nav.campaigns"), icon: Tent },
-    { to: "/compendium", label: t("nav.compendium"), icon: BookOpen },
+    { to: "/characters", label: t("nav.characters"), icon: REALM_ICONS.characters },
+    { to: "/campaigns", label: t("nav.campaigns"), icon: REALM_ICONS.campaigns },
+    { to: "/compendium", label: t("nav.compendium"), icon: REALM_ICONS.compendium },
   ];
   return (
     <nav className="m-nav md:hidden" aria-label={t("nav.primary")}>
