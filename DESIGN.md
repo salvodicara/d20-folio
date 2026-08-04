@@ -270,6 +270,8 @@ fails contrast on gold-tinted light surfaces (the "yellow-on-yellow" failure). F
 
 **The Ink-Variant Rule.** A saturated domain hue is the 3:1 graphic (chip border, icon). Its `-ink`
 variant is the >=4.5:1 label text. Never set small text in a raw domain hue.
+On pale/translucent hue tints, keep the label in `--text-primary`; the hue remains the graphic
+signal in the border and wash because a gem-safe `-ink` is not necessarily safe on a tinted field.
 
 **The Token-Only Rule.** Components reference token names only. Literal hex in component code is
 prohibited; the only source of truth for values is `src/index.css`.
@@ -364,6 +366,10 @@ instead of `text-overflow: ellipsis`. Canonical examples: the topbar account tri
 `settings-dropdown.test.tsx`), and the cockpit header name (`CombatHeader` h1 — wraps at spaces,
 balanced, one type step down on phones, `break-words` only for a pathological single-word name;
 guarded in `combat-header.test.tsx`).
+
+For translated action titles, prefer natural concise copy over shrinking the shared type ramp or
+leaving a preposition/ellipsis orphaned on its own line; context rubrics and option rows should not
+be repeated inside the title.
 
 **Card/row names — "names wrap, chips don't"** (the rule's recipe for the two list families,
 CARD-NAMES 2026-06-12). A `UniversalCard` name (`.uc-name`) renders INLINE inside its cell so the

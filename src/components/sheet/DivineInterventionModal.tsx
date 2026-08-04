@@ -24,6 +24,7 @@ import { ModalScroll, ModalStage } from "@/components/ui/modal-head";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { SearchField } from "@/components/shared/SearchField";
+import { spellLevelVar } from "@/components/shared/folio-colors";
 import { matchesSearch } from "@/lib/search";
 import { spellIndex } from "@/data/spells";
 import { getMagicItem } from "@/data/magic-items";
@@ -39,11 +40,6 @@ export interface DivineInterventionModalProps {
   /** Confirm: the chosen spell id to cast (the parent debits the tracker, with undo). */
   onCast: (spellId: string) => void;
   onCancel: () => void;
-}
-
-/** Cantrip uses --sl-c; levelled slots use --sl-N (the chromatic slot seal). */
-function slotVar(level: number): string {
-  return level <= 0 ? "var(--sl-c)" : `var(--sl-${level})`;
 }
 
 /**
@@ -168,7 +164,7 @@ export function DivineInterventionModal({
                   type="button"
                   role="listitem"
                   className="cl-opt cl-slot"
-                  style={{ ["--sl" as string]: slotVar(r.level) }}
+                  style={{ ["--sl" as string]: spellLevelVar(r.level) }}
                   disabled={disabled}
                   aria-disabled={disabled}
                   onClick={() => onCast(r.id)}

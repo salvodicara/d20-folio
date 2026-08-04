@@ -83,6 +83,16 @@ and inline states remain full-document: mobile Rest evidence shrank from a noisy
 capture to the truthful 390×844 dialog composition; desktop History from 4,325px to 900px. The mobile
 History driver now traverses the real Signet → More actions → History path. Verification: screenshots
 15/15, axe 10/10, i18n 10/10, mobile layout 5/5, typecheck + targeted lint green.
+**Wave 7 action-choice audit (2026-08-04):** character sharing and the cast/upcast level chooser now
+join the first-class surface census. Sharing already follows the familiar Docs/Notion switch model
+cleanly in both themes and at phone width, so its construction stays unchanged. The real Italian
+cast chooser exposed one typographic defect at 390px: `Lancia Onda Tonante a…` orphaned `a…` onto a
+line by itself. The localized title is now the natural, complete `Lancia Onda Tonante`; the existing
+rubric and level rows already carry the destination context, avoiding a modal-width hack or a smaller
+shared heading. Axe also exposed the raw spell-level hue being reused as 11px damage text: the hue
+now stays in the chip border/wash while the value uses theme-safe primary ink. Both spell pickers now
+consume the existing shared spell-level token helper instead of maintaining duplicate local functions.
+Verification: screenshots 9/9, axe 6/6, i18n 6/6, mobile layout 3/3, typecheck + targeted lint green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 

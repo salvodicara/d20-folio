@@ -9124,7 +9124,7 @@ button.create-need:focus-visible .create-need-chev {
   letter-spacing: 0.02em;
   padding: 1px 6px;
   border-radius: 3px;
-  color: var(--sl, var(--text-secondary));
+  color: var(--text-primary);
   border: 1px solid color-mix(in oklab, var(--sl, var(--border-strong)) 45%, transparent);
   background: color-mix(in oklab, var(--sl, var(--bg-surface-2)) 14%, transparent);
 }

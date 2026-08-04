@@ -148,7 +148,7 @@
     "clearTempToast": "Rimossi {{val}} PF temp",
     "castToast": "Lanciato {{name}} (slot {{level}})",
     "cantripCastToast": "Lanciato {{name}}",
-    "castLevelTitle": "Lancia {{name}} a…",
+    "castLevelTitle": "Lancia {{name}}",
     "castLevelHint": "Scegli il livello dello slot da spendere.",
     "castLevelBase": "Livello {{level}} (base)",
     "castLevelUp": "Livello {{level}} (potenziato)",
