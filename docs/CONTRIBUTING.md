@@ -371,6 +371,11 @@ in `DESIGN.md` (the single design + UX system of record) + the canonical tokens 
      • _polish-shots.spec.ts captures it for the human-review polish loop.
 ```
 
+Page and inline-state captures are full-document. Overlay surfaces are deliberately
+viewport captures: the viewport is the modal/menu/popover's composition frame, while a
+full-page shot would mostly record obscured content beneath it. `overlay: false` keeps a
+variant-limited inline state (such as an unfolded wizard step) on the full-page path.
+
 > **The final gate (design / i18n / surface work):** the pre-push hook no longer runs e2e
 > (it moved to the deploy lane — see "The gate split"), so before you DEPLOY design / i18n /
 > surface work, run the full both-project suite — `pnpm test:e2e:all` (chromium **and** the

@@ -38,7 +38,14 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { SURFACES, VARIANTS, freezeMotion, seedLang, seedUI } from "./surfaces";
+import {
+  SURFACES,
+  VARIANTS,
+  freezeMotion,
+  seedLang,
+  seedUI,
+  surfaceCaptureFullPage,
+} from "./surfaces";
 import { shouldAssertSnapshots } from "./visual-gate";
 
 /**
@@ -128,7 +135,7 @@ for (const surface of SURFACES) {
         await expect(page).toHaveScreenshot(
           `${surface.slug}-${variant.locale}-${variant.theme}-${variant.device}.png`,
           {
-            fullPage: true,
+            fullPage: surfaceCaptureFullPage(surface),
             // Cross-render font/antialias tolerance.
             maxDiffPixelRatio: 0.02,
           }

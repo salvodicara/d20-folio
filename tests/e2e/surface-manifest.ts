@@ -73,6 +73,14 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   { slug: "character-inventory", route: "/characters/mock-1?tab=inventory" }, // Inventory tab
   { slug: "character-spells", route: "/characters/mock-1?tab=spells" }, // Spells tab
   { slug: "character-edit", route: "/characters/mock-1" }, // cockpit in EDIT mode — frame + banner (#60)
+  // The three high-frequency add-library dialogs: each is a distinct decision
+  // surface, not adequately covered by its resting cockpit tab.
+  { slug: "character-spell-add", route: "/characters/mock-1?tab=spells" },
+  { slug: "character-item-add", route: "/characters/mock-1?tab=inventory" },
+  { slug: "character-feature-add", route: "/characters/mock-1?tab=features" },
+  // Persistent sheet actions whose dialogs can open from the living cockpit.
+  { slug: "character-rest", route: "/characters/mock-1" },
+  { slug: "character-history", route: "/characters/mock-1" },
   // P2 — the glossary POPOVER open on a cockpit vital (the AC label trigger):
   // the shared GlossaryTip overlay state, swept for a11y + locale completeness.
   { slug: "glossary-popover", route: "/characters/mock-1" },

@@ -374,6 +374,17 @@ export interface Surface extends SurfaceRoute {
   shellless?: true;
 }
 
+/** Pages and inline states need the whole document; a modal/menu/popover review
+ * needs the viewport that frames the overlay, not thousands of obscured pixels
+ * from the page underneath it. `overlay:false` is the explicit inline-state mark. */
+export function surfaceCaptureFullPage(surface: Surface): boolean {
+  return !(
+    surface.variants != null &&
+    surface.prepare != null &&
+    surface.overlay !== false
+  );
+}
+
 type SurfaceRuntime = Omit<Surface, "slug" | "route">;
 
 const RUNTIME: Record<string, SurfaceRuntime> = {
@@ -397,6 +408,65 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   // Cockpit in EDIT mode (#60): seeds sheetMode "edit" so the design-source amber
   // frame + the textual "Editing" banner are present for the axe scan.
   "character-edit": { edit: true, ready: readyByName },
+  "character-spell-add": {
+    edit: true,
+    variants: OVERLAY_VARIANTS,
+    ready: readyByName,
+    prepare: async (page) => {
+      await page.getByRole("button", { name: /add spell|aggiungi incantesimo/i }).click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
+    },
+  },
+  "character-item-add": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyByName,
+    prepare: async (page) => {
+      await page.getByRole("button", { name: /add item|aggiungi oggetto/i }).click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
+    },
+  },
+  "character-feature-add": {
+    edit: true,
+    variants: OVERLAY_VARIANTS,
+    ready: readyByName,
+    prepare: async (page) => {
+      await page
+        .getByRole("button", { name: /add feature|aggiungi privilegio/i })
+        .click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
+    },
+  },
+  "character-rest": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyByName,
+    prepare: async (page) => {
+      await page.getByRole("button", { name: /^(rest|riposo)$/i }).click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
+    },
+  },
+  "character-history": {
+    edit: false,
+    variants: DESKTOP_OVERLAY_VARIANTS,
+    ready: readyByName,
+    prepare: async (page) => {
+      const moreActions = page.getByRole("button", {
+        name: /more actions|altre azioni/i,
+      });
+      // Desktop keeps the extras coin in the Binder's Fob. Mobile correctly
+      // mounts it only after the compact Signet blooms; traverse that real path
+      // so manifest-wide mobile checks can exercise History too.
+      if ((await moreActions.count()) === 0) {
+        await page
+          .getByRole("button", { name: /sheet tools|strumenti della scheda/i })
+          .click();
+      }
+      await moreActions.last().click();
+      await page.getByRole("menuitem", { name: /history|cronologia/i }).click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
+    },
+  },
   // P2 — the glossary popover (GlossaryTip) open on the AC vital label. Keys on
   // the stable `.glossary-term` class inside a `.vital` (locale-invariant), then
   // waits for the branded `.glossary-pop` overlay so axe + the locale sweep see

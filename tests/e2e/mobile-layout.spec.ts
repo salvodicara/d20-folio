@@ -13,8 +13,8 @@
  *
  *  2. **The realm bottom-nav is present + fully in the viewport** — the m-nav
  *     shows on EVERY signed-in route, wizards included (owner fb3, 2026-06-11:
- *     "the wizards are routes, not jails"); the login screen is the only
- *     sanctioned exception (no signed-in shell, and no manifest entry).
+ *     "the wizards are routes, not jails"); shell-less manifest surfaces such
+ *     as login are the sanctioned exception because no signed-in shell exists.
  *
  *  3. **Content clears the nav** — the AppShell reserves `--m-nav-h` bottom
  *     padding (the `.pwa-dock` clearance contract, DESIGN.md §11) so a page's
@@ -115,8 +115,8 @@ for (const surface of SURFACES) {
     ).toBeLessThanOrEqual(1);
 
     // 2 — the realm bottom-nav is mounted, visible, and fully inside the viewport
-    // on every signed-in surface (login excepted — it has no manifest entry;
-    // `shellless` surfaces render ABOVE the router, where the nav cannot exist
+    // on every signed-in surface. `shellless` manifest surfaces render ABOVE
+    // the router, where the nav cannot exist
     // by construction — the no-h-overflow assertion above still applies to them).
     if (surface.shellless) return;
     const nav = page.locator(".m-nav");
