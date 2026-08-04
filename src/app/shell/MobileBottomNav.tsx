@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/components/ui/icon";
 import { realmTarget } from "@/lib/realm-memory";
 import { cn } from "@/lib/utils";
-import { REALM_ICONS } from "./realm-icons";
+import { REALM_ICONS } from "@/components/shared/realm-icons";
 
 export function MobileBottomNav() {
   const { t } = useTranslation();

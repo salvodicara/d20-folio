@@ -19,6 +19,8 @@ export interface BadgeProps {
   children: ReactNode;
   /** CSS color (raw token, e.g. `var(--dmg-fire)`). Defaults to the gold accent. */
   color?: string;
+  /** AA-safe label ink paired with a saturated `color` token. */
+  ink?: string;
   variant?: BadgeVariant;
   size?: BadgeSize;
   /** Show a small leading dot in the chip color. */
@@ -44,6 +46,7 @@ const VARIANT_CLASS: Record<BadgeVariant, string> = {
 export function Badge({
   children,
   color,
+  ink,
   variant = "tonal",
   size = "md",
   dot,
@@ -63,7 +66,15 @@ export function Badge({
         size === "lg" && "lg",
         className
       )}
-      style={color ? { ["--bd-c" as string]: color, ...style } : style}
+      style={
+        color || ink
+          ? {
+              ...(color ? { ["--bd-c" as string]: color } : {}),
+              ...(ink ? { ["--bd-ink" as string]: ink } : {}),
+              ...style,
+            }
+          : style
+      }
       title={title}
     >
       {dot ? <span className="bd-dot" aria-hidden="true" /> : null}

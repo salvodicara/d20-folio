@@ -611,7 +611,9 @@ applies) loading and error states. Affordances are consistent across every surfa
   surface; border is the full `--bd-c`; label is `--bd-ink` (the AA-safe variant) for domain colors.
   Mono uppercase, 11px, 4px facet radius.
 - **Variants:** `emphasized` (22% tint + glow), `solid` (gradient fill, inverse text), `outline`
-  (transparent), `muted` (neutral). Any domain-colored badge must pass `--bd-ink`.
+  (transparent), `muted` (neutral). Any domain-colored badge passes the `Badge` atom's `ink` prop;
+  the shared `--semantic-*-ink` pairs are light-on-dark in the dark theme and reuse the deep semantic
+  hue in light. Border identity and readable label value therefore remain independent.
 
 ### Combat pip (topbar combat indicator)
 
@@ -2765,7 +2767,7 @@ and an action sign (add, edit, delete) must not share a glyph within the same ta
 surfaces is desirable only when the referent or verb is unchanged.
 
 **Realm vocabulary.** The three top-level destinations read from the one
-`src/app/shell/realm-icons.ts` map everywhere a glyph is shown: Scroll Text = character
+`src/components/shared/realm-icons.ts` map everywhere a glyph is shown: Scroll Text = character
 sheets/Characters, Tent = Campaigns, Book Open = Compendium. Search results use the entity level
 instead (User Round = one character, Map = one campaign). A combat sign such as crossed swords never
 stands in for Campaigns merely because combat may happen inside a campaign.

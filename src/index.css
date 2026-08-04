@@ -421,6 +421,10 @@
   --semantic-danger: var(--vermilion-300);
   --semantic-warning: var(--gold-leaf-300);
   --semantic-info: var(--lapis-300);
+  --semantic-success-ink: var(--verdigris-100);
+  --semantic-danger-ink: var(--vermilion-100);
+  --semantic-warning-ink: var(--gold-leaf-100);
+  --semantic-info-ink: var(--lapis-100);
   /* ONE edit-mode voice (amber/gold) — the EditingPill is the sole visual edit
      indicator. Distinct from --semantic-success (reserved for SaveIndicator). */
   --edit-accent: var(--gold-leaf-300);
@@ -884,6 +888,10 @@
      not brown). Used both as a chip ink and as bare text on the field. */
   --semantic-warning: #6a4a0c;
   --semantic-info: var(--lapis-700);
+  --semantic-success-ink: var(--semantic-success);
+  --semantic-danger-ink: var(--semantic-danger);
+  --semantic-warning-ink: var(--semantic-warning);
+  --semantic-info-ink: var(--semantic-info);
   /* edit-mode voice (light) — deep gold so it reads on vellum (not yellow-on-gold). */
   --edit-accent: var(--gold-leaf-900);
 

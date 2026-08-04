@@ -1077,6 +1077,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       }
     },
   },
+  "admin-page": { edit: false, ready: readyByH1 },
   "account-menu": {
     edit: false,
     variants: DESKTOP_OVERLAY_VARIANTS,
