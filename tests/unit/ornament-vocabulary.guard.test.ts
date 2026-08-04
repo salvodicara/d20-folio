@@ -13,8 +13,8 @@ const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8
  * can't silently drop or re-add a piece:
  *   - selection is marked by the silver-over-bronze `--frame-selected` gradient
  *     (both themes), NOT by decorative diamonds;
- *   - the ONE divider fades at both tips and is NODELESS — the section rubric's
- *     leading `.sec-diamond` is the divider's marker;
+ *   - ordinary section dividers fade at both tips and stay NODELESS — the
+ *     ceremonial hero/modal seat alone earns the shared traced weave;
  *   - the decorative diamonds trimmed in the ornament simplification stay gone
  *     (frame-corner pieces, selection/commit crest nodes, divider-centre node,
  *     scrollbar finials);
@@ -35,14 +35,16 @@ describe("ornament vocabulary (T5)", () => {
 
   it("wires the binding corners + engraved titling in BOTH themes", () => {
     // The binding-corner fitting (the CC0 spandrel silhouette) ships as FOUR
-    // external mask assets — one per orientation — painted with the hero
-    // frame's own border ink mix, so fitting and frame share one colour by
-    // construction in every theme (2026-07-31; replaced the reliquary
-    // border-image diamonds). The engraved titling stays per-theme.
+    // external mask assets — one per orientation — struck with the warm
+    // gold→bronze ramp approved for the current+B+BG3 hybrid. The cold silver
+    // frame remains selection-only. The engraved titling stays per-theme.
     for (const k of ["tl", "tr", "bl", "br"]) {
       expect(folioCss).toContain(`url("/assets/ornaments/corner-${k}.svg")`);
     }
     expect(folioCss).toMatch(/mask-image:[\s\S]*?corner-tl\.svg[\s\S]*?corner-br\.svg/);
+    expect(folioCss).toMatch(
+      /background:\s*linear-gradient\(\s*180deg,\s*var\(--accent-primary-bright\),\s*var\(--metal-bronze\) 52%,\s*var\(--accent-primary\)\s*\)/
+    );
     expect(indexCss.match(/--engrave-title:/g)?.length).toBe(2);
     expect(folioCss).toMatch(/text-shadow:\s*var\(--engrave-title\)/);
   });
@@ -80,6 +82,23 @@ describe("ornament vocabulary (T5)", () => {
       "overflow: hidden"
     );
     expect(folioCss).toMatch(/\.page-head-crest\s*\{[^}]*inset: 0/);
+    expect(folioCss).toMatch(/\.page-head-crest\s*\{[^}]*opacity: 0\.055/);
+    expect(folioCss).toMatch(
+      /\[data-theme="light"\] \.page-head-crest\s*\{[^}]*opacity: 0\.14/
+    );
+  });
+
+  it("spends the traced open weave only on hero and dialog seat lines", () => {
+    const weave = folioCss.match(
+      /\.page-head\.framed::after,\n\.modal-head::before \{[\s\S]*?\n\}/
+    )?.[0];
+    expect(weave).toBeTruthy();
+    expect(weave).toContain("background: var(--wb-knot) center / contain no-repeat");
+    expect(weave).toContain("width: 72px");
+    expect(weave).toContain("height: 25px");
+    expect(folioCss).toMatch(/\.modal-head::before \{[^}]*width: 56px[^}]*height: 20px/);
+    // BLIND SPOT: this source guard pins homes and geometry, not rendered
+    // registration; the identity screenshot sweep covers the actual seat.
   });
 
   it("marks selection with the frame gradient (altar + chosen plaque), not diamonds", () => {
@@ -100,7 +119,7 @@ describe("ornament vocabulary (T5)", () => {
     );
   });
 
-  it("keeps the ONE divider anatomy: both tips fade, NODELESS (leading .sec-diamond marks it)", () => {
+  it("keeps ordinary section dividers tip-faded and nodeless", () => {
     const rule = folioCss.slice(
       folioCss.indexOf(".sec-rule {"),
       folioCss.indexOf('[data-theme="light"] .sec-rule')

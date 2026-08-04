@@ -204,6 +204,23 @@ overlay drivers that still searched only for the English Create/Join actions. Th
 the real EN/IT labels and fail directly when the trigger or dialog is absent instead of swallowing
 the missed interaction and relying on the later overlay assertion. Campaign Create and Join are
 again truthful review surfaces in every declared locale variant.
+**Wave 19 owner-ratified binding hybrid (2026-08-04):** the owner approved the focused
+current-vs-hybrid browser comparison. The existing CC0 spandrel pennacchio remains the structural
+corner silhouette; a restrained warm gold→bronze strike supplies BG3 material depth without the
+rejected solid-plate mass; the already-ratified CC0 open-loop ricalco supplies B's negative-space
+seat on framed realm mastheads and dialog heads. The d20 frontispiece remains, deliberately reduced
+to a dark 0.055 / light 0.14 filigree so it supports rather than competes with title and actions.
+The shared recipe, not per-page overrides, carries the decision across both themes. Verification:
+identity sweep 56/56 across the 10 major surfaces, dark/light, desktop/mobile, IT spot checks and
+dialog chrome; focused ornament/crest/creation regression family 17/17; full unit suite
+17,177/17,177; typecheck, zero-warning lint and production build green. The sweep also repaired two
+stale tests so they assert the current progressive-disclosure and bounded-discovery contracts
+instead of removed presentation copy or catalogue ordering.
+**Owner continuation mandate (2026-08-04):** the visual approval closes only this ornament fork.
+The whole-app UI/UX elevation remains active and exhaustive: audit every surface and recurring flow,
+then simplify, clarify or deepen it where evidence shows friction. Nothing is exempt because it is
+already functional; efficiency, familiarity, predictability, progressive disclosure and premium
+craft remain joint acceptance criteria. Continue in owner-reviewable screenshot checkpoints.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 

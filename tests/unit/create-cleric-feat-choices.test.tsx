@@ -242,9 +242,18 @@ describe("CreationWizard — Cleric / Magic-Initiate feat-choices", () => {
       expect(asks).toHaveTextContent(/Pick 2/);
       expect(asks).toHaveTextContent(/Pick 1/);
       // …while the BACKGROUND feat's (Acolyte → Magic Initiate Cleric) slots
-      // stay OUTSIDE the entry, in the shared feature-choices section.
+      // stay OUTSIDE the entry, attributed in the Spells chapter. Quick Start's
+      // progressive chapters deliberately have no legacy global
+      // "Feature Choices" heading, so assert the actual ownership seam rather
+      // than presentation copy.
       expect(asks).not.toHaveTextContent(/Magic Initiate \(Cleric\)/);
-      expect(screen.getByText("Feature Choices")).toBeInTheDocument();
+      const backgroundAttributions = screen.getAllByText("Magic Initiate (Cleric)", {
+        selector: ".opt-head-chip",
+      });
+      expect(backgroundAttributions.length).toBeGreaterThan(0);
+      for (const attribution of backgroundAttributions) {
+        expect(entry).not.toContainElement(attribution);
+      }
     },
     SUITE_TIMEOUT
   );
