@@ -56,6 +56,10 @@ export type CastLevelOption =
       total: number;
       /** Rest cadence — "long" or "short". */
       rest: "short" | "long";
+      /** Tracker units spent by this cast option. */
+      cost: number;
+      /** The source explicitly declares a level→cost schedule (charged item). */
+      explicitCost?: true;
     }
   | {
       /**
@@ -289,6 +293,8 @@ export interface FreeCastSource {
   usesPerRest: number;
   usedNow: number;
   rest: "short" | "long";
+  /** Allowed cast levels and their tracker cost; omitted means base level for 1. */
+  castLevels?: ReadonlyArray<{ level: number; cost: number }>;
 }
 
 /**
@@ -344,15 +350,21 @@ export function buildCastOptions(
   for (const src of freeCastSources) {
     const remaining = src.usesPerRest - src.usedNow;
     if (remaining <= 0) continue;
-    freeCasts.push({
-      kind: "free-cast",
-      sourceId: src.sourceId,
-      sourceName: src.sourceName,
-      level: baseLevel,
-      remaining,
-      total: src.usesPerRest,
-      rest: src.rest,
-    });
+    const levels = src.castLevels ?? [{ level: baseLevel, cost: 1 }];
+    for (const { level, cost } of levels) {
+      if (level < baseLevel || cost < 1 || remaining < cost) continue;
+      freeCasts.push({
+        kind: "free-cast",
+        sourceId: src.sourceId,
+        sourceName: src.sourceName,
+        level,
+        remaining,
+        total: src.usesPerRest,
+        rest: src.rest,
+        cost,
+        ...(src.castLevels ? { explicitCost: true as const } : {}),
+      });
+    }
   }
   // Scoped extra slots (heritage-feat spellcasting): a single tracker-backed,
   // upcast-capable slot at its resolved level. Surfaced as a `free-cast` row
@@ -370,6 +382,7 @@ export function buildCastOptions(
       remaining: 1,
       total: 1,
       rest: src.rest,
+      cost: 1,
     });
   }
   const masteries: CastLevelOption[] = masterySources.map((src) => ({

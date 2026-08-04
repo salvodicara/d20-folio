@@ -966,20 +966,19 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-25 — the charge counter was hidden in prose.
     properties: ["charges: 3"],
-    // S9 — single-fixed-spell caster (NON-wand wondrous; IDENTICAL mechanic to the
-    // wand family). RAW: "expend 1 or more charges to cast Charm Person (save DC 13)
-    // … the lenses regain all expended charges daily at dawn" (3-charge pool). Same
-    // pair as Wand of Magic Missiles (which is likewise upcastable): the
-    // `always-prepared-spell` surfaces the cast; the `free-cast-spell` debits the
-    // `eyes-of-charming` charge tracker. The per-charge UPCAST ("increase the level
-    // by one per extra charge") stays the player's manual spend, exactly as for the
-    // upcastable wands — only the base CAST affordance + the charge pool are modeled.
+    // Charm Person can be cast at levels 1–3 for the same number of charges.
+    // `castLevels` drives the shared cast picker and exact charge debit.
     grants: [
       { type: "always-prepared-spell", spellId: "charm-person" },
       {
         type: "free-cast-spell",
         spellId: "charm-person",
         chargesPerRest: 3,
+        castLevels: [
+          { level: 1, cost: 1 },
+          { level: 2, cost: 2 },
+          { level: 3, cost: 3 },
+        ],
         rest: "long",
       },
     ],

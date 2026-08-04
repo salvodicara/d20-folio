@@ -237,15 +237,36 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
                 // Free-cast (feat-granted) row — gold tint; the parent pattern-
                 // matches `kind === "free-cast"` for the tracker pathway.
                 if (opt.kind === "free-cast") {
+                  const dmg = damageAtLevel(opt.level);
+                  const heal = healAtLevel(opt.level);
                   return (
                     <button
                       key={`fc-${opt.sourceId}-${idx}`}
                       type="button"
-                      className="cl-opt cl-free"
+                      className="cl-opt cl-slot cl-free"
+                      style={{ ["--sl" as string]: slotVar(opt.level) }}
                       onClick={() => onConfirm(opt.level, opt, selectedMetamagic)}
                     >
+                      <span className="cl-seal" aria-hidden>
+                        {opt.level}
+                      </span>
                       <span className="cl-tag">{t("combat.freeCastBadge")}</span>
-                      <span className="cl-name">{opt.sourceName}</span>
+                      <span className="cl-name">
+                        {opt.sourceName}
+                        <span className="sr-only">
+                          {" · "}
+                          {opt.level === request.baseLevel
+                            ? t("combat.castLevelBase", { level: opt.level })
+                            : t("combat.castLevelUp", { level: opt.level })}
+                        </span>
+                      </span>
+                      {dmg && <span className="cl-dmg">{dmg}</span>}
+                      {heal && <span className="cl-heal">{heal}</span>}
+                      {opt.explicitCost && (
+                        <span className="cl-cost">
+                          {t("combat.itemPoolChargeCost", { n: opt.cost })}
+                        </span>
+                      )}
                       <span className="cl-rest">
                         {opt.rest === "long"
                           ? t("combat.perLongRest")

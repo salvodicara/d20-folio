@@ -269,7 +269,7 @@ Each kind documents its evaluator merge rule:
 | { type: "speed";            amount: number }                // sum
 | { type: "ac-bonus";         amount: number }                // sum
 | { type: "fly-speed";        amount: number | "equal-to-walking" }  // max
-| { type: "free-cast-spell";  spellId; chargesPerRest; rest }
+| { type: "free-cast-spell";  spellId; chargesPerRest; rest; castLevels? }
 …
 ```
 
@@ -334,6 +334,11 @@ one key (a shared `forEachFeatFreeCast` iterator builds the row + the recovery s
 A **single**-free-cast source keeps its bare-id `mechanics.tracker`. Spell SLOTS, like every tracker,
 are now manually editable on the rail (tap a gem to spend, a spent socket to restore) — override-first
 (golden rule 8), so any mis-spend is correctable, not just within the cast's undo window.
+
+A charged single-spell item may declare `castLevels: [{ level, cost }]` on that same grant. The shared
+`resolveSpellCastOptions` path expands only affordable rows, the cast-level modal shows the scaled spell
+facts plus the exact charge cost, and both Play and encounter commits debit/undo that cost through the
+same tracker transaction. Omitting the schedule preserves the ordinary fixed-level, one-use free cast.
 
 ### Riders (passive scaling chips)
 
@@ -566,8 +571,8 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   parallel solo rules engine and no fake battlefield model.
 
   The resolver is a **true commit boundary**. `TurnEconomyProvider.prepareResolution` resolves slot level,
-  upcast scaling, instance count, free-cast source and metamagic **before** target selection, so targets see
-  the real cast-level facts. It then holds the resolution callback until the cast-option/reaction/action
+  item charge cost, upcast scaling, instance count, free-cast source and metamagic **before** target selection,
+  so targets see the real cast-level facts. It then holds the resolution callback until the cast-option/reaction/action
   transaction actually commits, so cancelling an upcast,
   concentration choice or nested picker spends nothing and applies nothing. Only then does one generic
   `DeclaredCombatEffect` batch (`damage | healing | temp-hp | condition`) cross the Firebase-free dynamic bridge to

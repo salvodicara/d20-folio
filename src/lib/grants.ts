@@ -1205,6 +1205,12 @@ export type Grant =
        * case (1× LR).
        */
       chargesFormula?: string;
+      /**
+       * Item-provided cast levels and their charge costs. Omit for the ordinary
+       * base-level, one-charge free cast. A charged item can expose only the
+       * levels its rule permits (Wand of Fireballs: 3/4/5 for 1/2/3 charges).
+       */
+      castLevels?: ReadonlyArray<{ level: number; cost: number }>;
       rest: "short" | "long";
       // Full AbilityCode range — most feats use INT/WIS/CHA but a handful
       // (Mark of Passage: DEX) pin a physical ability for casting.
@@ -2921,6 +2927,8 @@ export interface FreeCastEntry {
    *  resolved by the consumer via `resolveChargesFormula`; overrides
    *  `chargesPerRest` when set. See the `free-cast-spell` grant's `chargesFormula`. */
   chargesFormula?: string;
+  /** Allowed cast levels and their tracker cost; omitted means base level for 1. */
+  castLevels?: ReadonlyArray<{ level: number; cost: number }>;
   rest: "short" | "long";
   casterAbility?: AbilityCode;
   /** Character-level gate — the free cast is only offered at/above this level. */
@@ -5568,6 +5576,7 @@ export function evaluateGrants(
           spellId: g.spellId,
           chargesPerRest: g.chargesPerRest,
           ...(g.chargesFormula ? { chargesFormula: g.chargesFormula } : {}),
+          ...(g.castLevels ? { castLevels: g.castLevels } : {}),
           rest: g.rest,
           casterAbility: g.casterAbility,
           ...(g.minLevel != null ? { minLevel: g.minLevel } : {}),

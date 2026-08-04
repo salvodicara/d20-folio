@@ -76,6 +76,10 @@ in the SESSION TRACKER keyed by the item id — the counter the cast flow debits
 the Inventory row reads + spends (`ChargesVM.trackerId`; the add flow seeds no `ref.charges` for
 these) — while NON-cast charged items ride `SrdEquipmentRef.charges` + `parseMagicItemCharges` (not
 a Grant kind). The shared cap derivation is `freeCastItemChargeMax` (smart-tracker).
+When one fixed spell can be cast at several item-defined levels, its SAME `free-cast-spell` grant carries
+`castLevels: [{ level, cost }]`. The shared cast-option builder exposes only affordable levels, previews
+the level-scaled damage/healing, and debits/undoes the declared charge cost in both solo and encounter
+play. No schedule means the existing base-level, cost-1 behavior, so feats and species grants do not fork.
 **Magic-item activity is player-set from the Inventory tab:** the Attune affordance (+ the
 "Attuned n / cap" chip) derives from the SRD row's `attunement: true` — never from the stored ref's
 shape (`refRequiresAttunement`, inventory-view; a minimally-stored ref still offers it, the first

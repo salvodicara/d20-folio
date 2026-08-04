@@ -96,6 +96,7 @@ export function freeCastSourcesForSpell(
       usesPerRest: charges,
       usedNow,
       rest: entry.rest,
+      ...(entry.castLevels ? { castLevels: entry.castLevels } : {}),
     });
   }
 

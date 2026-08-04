@@ -60,6 +60,15 @@ blocking on owner screenshots):
 
 ## Current state
 
+**Deterministic automation gap sweep — ACTIVE (2026-08-04):** the persistent/reactive-effect lifecycle
+and target-bound on-hit retaliation are closed and branch-pushed. The current item-casting milestone now
+models the five public variable-level charge schedules (Magic Missiles, Fireballs, Lightning Bolts, Eyes
+of Charming, Staff of Healing) through the existing `free-cast-spell` seam: level and exact affordable
+charge cost are selected before targets, scaled spell facts reach the resolver, and solo/encounter spend
+plus undo share one transaction path. Item activation/cooldowns and the remaining deterministic corpus
+audit follow as separate, truth-gated milestones; queued UI dogfood remains after engine closure. Nothing
+from this sweep merges to `main` without the owner's final permission.
+
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark
 ink for its nested glyph/count despite the carved socket's correct fixed ink, and the end-encounter

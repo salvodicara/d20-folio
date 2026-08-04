@@ -454,10 +454,11 @@ export function SpellsTab() {
       concentration: boolean;
       sourceId: string;
       sourceName: string;
+      cost: number;
       spellId?: string;
       metamagicIds?: ReadonlyArray<string>;
     }) => {
-      const { displayName, concentration, sourceId, sourceName, spellId } = args;
+      const { displayName, concentration, sourceId, sourceName, spellId, cost } = args;
       const { metamagicIds = [] } = args;
       const prevConc = character?.session.concentration ?? "";
       const message = t("combat.freeCastToast", {
@@ -467,7 +468,7 @@ export function SpellsTab() {
       registerUndoableToast(
         { message },
         () => {
-          spendTracker(sourceId, 1);
+          spendTracker(sourceId, cost);
           const undoMetamagic = applyMetamagic(metamagicIds);
           // SRD spell → stable id; custom → authored name behind the marker (rule 7).
           if (concentration)
@@ -477,7 +478,7 @@ export function SpellsTab() {
                 : customConcentrationValue(displayName)
             );
           return () => {
-            spendTracker(sourceId, -1);
+            spendTracker(sourceId, -cost);
             undoMetamagic();
             if (concentration) setConcentration(prevConc);
           };
@@ -593,6 +594,7 @@ export function SpellsTab() {
             concentration: spell.concentration,
             sourceId: opt.sourceId,
             sourceName: opt.sourceName,
+            cost: opt.cost,
             spellId: spell.id,
             metamagicIds,
           });

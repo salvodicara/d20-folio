@@ -123,6 +123,63 @@ describe("S9 — charged-item cast rows via the spell-cast-sources seam", () => 
     c.session.trackers = { "wand-of-magic-missiles": { used: 7 } };
     expect(freeCastSourcesForSpell(c, "magic-missile", "en", "SIG")).toEqual([]);
   });
+
+  it.each([
+    {
+      itemId: "wand-of-magic-missiles",
+      spellId: "magic-missile",
+      castLevels: [
+        { level: 1, cost: 1 },
+        { level: 2, cost: 2 },
+        { level: 3, cost: 3 },
+      ],
+    },
+    {
+      itemId: "wand-of-fireballs",
+      spellId: "fireball",
+      castLevels: [
+        { level: 3, cost: 1 },
+        { level: 4, cost: 2 },
+        { level: 5, cost: 3 },
+      ],
+    },
+    {
+      itemId: "wand-of-lightning-bolts",
+      spellId: "lightning-bolt",
+      castLevels: [
+        { level: 3, cost: 1 },
+        { level: 4, cost: 2 },
+        { level: 5, cost: 3 },
+      ],
+    },
+    {
+      itemId: "eyes-of-charming",
+      spellId: "charm-person",
+      castLevels: [
+        { level: 1, cost: 1 },
+        { level: 2, cost: 2 },
+        { level: 3, cost: 3 },
+      ],
+    },
+    {
+      itemId: "staff-of-healing",
+      spellId: "cure-wounds",
+      castLevels: [
+        { level: 1, cost: 1 },
+        { level: 2, cost: 2 },
+        { level: 3, cost: 3 },
+        { level: 4, cost: 4 },
+      ],
+    },
+  ])("$itemId carries its complete cast-level charge schedule", (spec) => {
+    const source = freeCastSourcesForSpell(
+      withItem(spec.itemId),
+      spec.spellId,
+      "en",
+      "SIG"
+    ).find((entry) => entry.sourceId === spec.itemId);
+    expect(source?.castLevels).toEqual(spec.castLevels);
+  });
 });
 
 // LEAK GUARD — a free-cast cast row must display a LOCALIZED source NAME, never the

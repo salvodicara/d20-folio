@@ -120,6 +120,49 @@ describe("CastLevelModal — upcast damage preview (S12c)", () => {
     // No "NdM" damage chip anywhere in the rendered rows.
     expect(screen.queryByText(/^\d+d\d+$/)).toBeNull();
   });
+
+  it("shows an item's cast level and exact charge cost before committing", () => {
+    render(
+      <CastLevelModal
+        request={{
+          spellName: "Fireball",
+          baseLevel: 3,
+          options: [
+            {
+              kind: "free-cast",
+              sourceId: "wand-of-fireballs",
+              sourceName: "Wand of Fireballs",
+              level: 3,
+              remaining: 7,
+              total: 7,
+              rest: "long",
+              cost: 1,
+              explicitCost: true,
+            },
+            {
+              kind: "free-cast",
+              sourceId: "wand-of-fireballs",
+              sourceName: "Wand of Fireballs",
+              level: 5,
+              remaining: 7,
+              total: 7,
+              rest: "long",
+              cost: 3,
+              explicitCost: true,
+            },
+          ],
+          upcast: upcastFacts("fireball"),
+        }}
+        onConfirm={() => {}}
+        onCancel={() => {}}
+      />
+    );
+    expect(screen.getByText("1 ch.")).toBeInTheDocument();
+    expect(screen.getByText("3 ch.")).toBeInTheDocument();
+    expect(screen.getByText("3", { selector: ".cl-seal" })).toBeInTheDocument();
+    expect(screen.getByText("5", { selector: ".cl-seal" })).toBeInTheDocument();
+    expect(screen.getByText("10d6")).toBeInTheDocument();
+  });
 });
 
 describe("RA-07 — the SRD heal family carries its 2024 upcast increment", () => {

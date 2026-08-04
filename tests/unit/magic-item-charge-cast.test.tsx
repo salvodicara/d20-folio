@@ -7,9 +7,9 @@
  * An injected character holding an equipped Wand of Magic Missiles (a charged
  * item carrying a `free-cast-spell` grant) surfaces a castable Magic Missile row
  * on the Play board; tapping it commits through the existing cast/cost flow and
- * DEBITS the item-charge tracker (`wand-of-magic-missiles`) by one — with undo
- * restoring the charge. The character has NO spell slots, so the wand's free
- * cast is the SOLE option and auto-commits (no modal), exercising the seam.
+ * DEBITS the item-charge tracker (`wand-of-magic-missiles`) by the selected cast
+ * level — with undo restoring the exact amount. The character has NO spell slots,
+ * so every offered option comes from the wand.
  */
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
@@ -68,7 +68,7 @@ describe("S9 — magic-item charge-cast (Wand of Magic Missiles)", () => {
     useConfirmStore.setState({ open: false, options: null, _resolve: null });
   });
 
-  it("shows a castable Magic Missile row and a tap debits the charge tracker (with undo)", async () => {
+  it("casts Magic Missile at level 3 for 3 charges and undo restores all 3", async () => {
     loadWandWielder();
     renderPage();
 
@@ -76,10 +76,13 @@ describe("S9 — magic-item charge-cast (Wand of Magic Missiles)", () => {
     const cta = await screen.findByLabelText("Cast: Magic Missile");
     expect(charges()).toBe(0); // no charge spent yet
 
-    // Tap → the SOLE cast option is the wand's free cast → auto-commit, which
-    // debits the item-charge tracker by one (no spell slot exists to upcast).
+    // Tap opens the shared level picker because this item permits levels 1–3.
     fireEvent.click(cta);
-    await waitFor(() => expect(charges()).toBe(1));
+    const cost = await screen.findByText("3 ch.");
+    const levelThree = cost.closest("button");
+    if (!levelThree) throw new Error("level-3 item cast row is missing");
+    fireEvent.click(levelThree);
+    await waitFor(() => expect(charges()).toBe(3));
 
     // The committed card disables to "Used" (the CTA grammar); undo via the
     // act's live snackbar → the charge is restored.

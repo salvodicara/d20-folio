@@ -120,7 +120,49 @@ describe("buildCastOptions", () => {
         expect(last.total).toBe(1);
         expect(last.rest).toBe("long");
         expect(last.level).toBe(2);
+        expect(last.cost).toBe(1);
       }
+    });
+
+    it("offers only affordable item-provided cast levels at their exact cost", () => {
+      const opts = buildCastOptions([], {}, 3, [
+        {
+          sourceId: "wand-of-fireballs",
+          sourceName: "Wand of Fireballs",
+          usesPerRest: 7,
+          usedNow: 5,
+          rest: "long",
+          castLevels: [
+            { level: 3, cost: 1 },
+            { level: 4, cost: 2 },
+            { level: 5, cost: 3 },
+          ],
+        },
+      ]);
+      expect(opts).toEqual([
+        {
+          kind: "free-cast",
+          sourceId: "wand-of-fireballs",
+          sourceName: "Wand of Fireballs",
+          level: 3,
+          remaining: 2,
+          total: 7,
+          rest: "long",
+          cost: 1,
+          explicitCost: true,
+        },
+        {
+          kind: "free-cast",
+          sourceId: "wand-of-fireballs",
+          sourceName: "Wand of Fireballs",
+          level: 4,
+          remaining: 2,
+          total: 7,
+          rest: "long",
+          cost: 2,
+          explicitCost: true,
+        },
+      ]);
     });
 
     it("drops a free-cast source whose tracker is already fully spent", () => {

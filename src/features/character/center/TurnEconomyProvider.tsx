@@ -919,7 +919,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             ? cs.character?.session.activeSpellCastLevels?.[action.activatesKey]
             : undefined;
           if (opt.kind === "slot") cs.useSpellSlot(opt.level, opt.pactMagic);
-          else if (opt.kind === "free-cast") cs.useTracker(opt.sourceId, 1);
+          else if (opt.kind === "free-cast") cs.useTracker(opt.sourceId, opt.cost);
           // RA-08 — a SLOT-paid cast counts toward the 2024 one-spell-slot-per-turn
           // advisory (cantrips + free casts spend no slot, so they don't count). The
           // banner surfaces a hint when >1 has been spent — never a block; undo below
@@ -988,7 +988,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           const undoLegs = () => {
             const c2 = useCharacterStore.getState();
             if (opt.kind === "slot") c2.restoreSpellSlot(opt.level, opt.pactMagic);
-            else if (opt.kind === "free-cast") c2.restoreTracker(opt.sourceId, 1);
+            else if (opt.kind === "free-cast") c2.restoreTracker(opt.sourceId, opt.cost);
             // RA-08 — decrement the one-slot-per-turn advisory counter on undo.
             restoreSlotCast?.();
             if (metamagicCost > 0)
@@ -1411,7 +1411,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           if (cast?.option.kind === "slot") {
             characterStore.useSpellSlot(cast.option.level, cast.option.pactMagic);
           } else if (cast?.option.kind === "free-cast") {
-            characterStore.useTracker(cast.option.sourceId, 1);
+            characterStore.useTracker(cast.option.sourceId, cast.option.cost);
           } else if (!cast && action.costsSlot && action.slotLevel != null) {
             characterStore.useSpellSlot(action.slotLevel, reactionSlotIsPact);
           } else if (action.costTracker) {
@@ -1471,7 +1471,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             if (cast?.option.kind === "slot") {
               c2.restoreSpellSlot(cast.option.level, cast.option.pactMagic);
             } else if (cast?.option.kind === "free-cast") {
-              c2.restoreTracker(cast.option.sourceId, 1);
+              c2.restoreTracker(cast.option.sourceId, cast.option.cost);
             } else if (!cast && action.costsSlot && action.slotLevel != null) {
               c2.restoreSpellSlot(action.slotLevel, reactionSlotIsPact);
             } else if (action.costTracker) {

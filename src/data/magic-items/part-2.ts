@@ -191,19 +191,19 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: false,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
-    // S9 — the wand casts Magic Missile from its 7-charge pool (1 charge per
-    // cast; the cast surfaces on the Play board via the SAME free-cast-spell
-    // seam feats use, debiting the `wand-of-magic-missiles` charge tracker).
-    // `rest: "long"` models the "regains charges daily at dawn" cadence. The
-    // paired `always-prepared-spell` makes the granted spell castable on the
-    // Play board even when the wielder doesn't otherwise know it (the same
-    // pairing every free-cast feat uses), without writing it into `spells[]`.
+    // Magic Missile can be cast at levels 1–3 for 1–3 charges. The paired
+    // prepared grant surfaces it for any wielder without copying it into spells[].
     grants: [
       { type: "always-prepared-spell", spellId: "magic-missile" },
       {
         type: "free-cast-spell",
         spellId: "magic-missile",
         chargesPerRest: 7,
+        castLevels: [
+          { level: 1, cost: 1 },
+          { level: 2, cost: 2 },
+          { level: 3, cost: 3 },
+        ],
         rest: "long",
       },
     ],
@@ -833,9 +833,8 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 10"],
-    // The base Cure Wounds cast and the two fixed-cost spells share the same
-    // 10-charge item tracker. Cure Wounds' variable-cost upcast remains a
-    // separate cast-level/cost primitive gap; its level-1 cast costs 1 here.
+    // Cure Wounds levels 1–4 cost their cast level; the fixed-cost spells share
+    // the same 10-charge tracker through the list-pool sibling.
     grants: [
       { type: "always-prepared-spell", spellId: "cure-wounds" },
       { type: "always-prepared-spell", spellId: "lesser-restoration" },
@@ -844,6 +843,12 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-spell",
         spellId: "cure-wounds",
         chargesPerRest: 10,
+        castLevels: [
+          { level: 1, cost: 1 },
+          { level: 2, cost: 2 },
+          { level: 3, cost: 3 },
+          { level: 4, cost: 4 },
+        ],
         rest: "long",
       },
       {
@@ -1052,19 +1057,18 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
-    // S9 — single-fixed-spell wand: casts Fireball from its 7-charge pool. The
-    // BASE cast is 1 charge (level-3 Fireball, RAW save DC 15 in the item prose);
-    // the "expend up to 3 charges to upcast" clause stays the player's manual
-    // charge spend (same as Wand of Magic Missiles' upcast). Same pipeline: the
-    // paired `always-prepared-spell` makes Fireball castable on the Play board,
-    // the `free-cast-spell` debits the `wand-of-fireballs` tracker, `rest: "long"`
-    // = "regains daily at dawn".
+    // Fireball levels 3–5 cost 1–3 charges through the shared cast picker.
     grants: [
       { type: "always-prepared-spell", spellId: "fireball" },
       {
         type: "free-cast-spell",
         spellId: "fireball",
         chargesPerRest: 7,
+        castLevels: [
+          { level: 3, cost: 1 },
+          { level: 4, cost: 2 },
+          { level: 5, cost: 3 },
+        ],
         rest: "long",
       },
     ],
@@ -1079,18 +1083,18 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
-    // S9 — single-fixed-spell wand: casts Lightning Bolt from its 7-charge pool.
-    // BASE cast = 1 charge (level-3, RAW save DC 15 in the item prose); the
-    // up-to-3-charge upcast stays the player's manual spend (as Wand of Magic
-    // Missiles). Same pipeline: paired `always-prepared-spell` makes it castable
-    // on the Play board; the `free-cast-spell` debits the `wand-of-lightning-bolts`
-    // tracker; `rest: "long"` = "regains daily at dawn".
+    // Lightning Bolt levels 3–5 cost 1–3 charges through the same picker.
     grants: [
       { type: "always-prepared-spell", spellId: "lightning-bolt" },
       {
         type: "free-cast-spell",
         spellId: "lightning-bolt",
         chargesPerRest: 7,
+        castLevels: [
+          { level: 3, cost: 1 },
+          { level: 4, cost: 2 },
+          { level: 5, cost: 3 },
+        ],
         rest: "long",
       },
     ],

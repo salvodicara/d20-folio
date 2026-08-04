@@ -2097,6 +2097,8 @@ test.ts` READS the live `.cp-dest-chip` declaration out of `folio.css`, resolves
      targeting is the safe default; **Any creature** is the explicit table/homebrew escape hatch. The
      footer sits against the content—never a tall empty pseudo-page—and the same hierarchy survives
      dark/light and desktop/mobile. Slot level and other cast configuration always precede target choice;
+     a charged-item level row reuses the slot seal and scaled damage/healing facts, adding only its exact
+     charge cost and remaining pool—decision-critical information, never explanatory helper copy;
      a persistent spell's later use is a terse active action (no second slot ceremony), not another cast.
      SOLO uses the identical surface only for consequences the app can apply to the current hero.
 7. **Forbidden:** hard-coding a theme value; a light-only/dark-only component; `--accent-primary` for
