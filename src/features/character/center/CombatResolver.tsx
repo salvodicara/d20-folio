@@ -226,11 +226,15 @@ export function CombatResolver({
   const applyResolvedCombatEffects = useCharacterStore(
     (s) => s.applyResolvedCombatEffects
   );
+  const applySoloCombatEffects = useCharacterStore((s) => s.applySoloCombatEffects);
   const showToast = useToastStore((s) => s.showToast);
   const soloRound = useCombatStore((s) => s.round);
   const spec = useMemo(() => combatResolutionSpec(action), [action]);
-  const sourceLinkedConditionId =
-    spec.conditionApplication && action.concentration
+  const conditionLifetimeFor = (conditionId: string) =>
+    spec.conditionApplication?.lifetimes?.[conditionId] ??
+    spec.conditionApplication?.lifetime;
+  const conditionSourceId =
+    spec.conditionApplication?.lifetime || spec.conditionApplication?.lifetimes
       ? (action.spellId ?? action.standingEffect?.sourceId ?? action.id)
       : null;
   type EffectMode = "damage" | "healing" | "temp-hp";
@@ -959,14 +963,14 @@ export function CombatResolver({
                 },
               ]
             : [];
-        const conditionEffects = sourceLinkedConditionId
-          ? []
-          : (conditions[target.key] ?? []).map((conditionId) => ({
-              kind: "condition" as const,
-              targetId: target.targetId,
-              conditionId,
-              active: true,
-            }));
+        const conditionEffects = (conditions[target.key] ?? [])
+          .filter((conditionId) => !conditionLifetimeFor(conditionId))
+          .map((conditionId) => ({
+            kind: "condition" as const,
+            targetId: target.targetId,
+            conditionId,
+            active: true,
+          }));
         const removalEffects = (conditionRemovals[target.key] ?? []).map(
           (conditionId) => ({
             kind: "condition" as const,
@@ -1079,10 +1083,30 @@ export function CombatResolver({
               memberUid: actor.memberUid,
               characterId: actor.characterId,
             }
-          : null;
+          : !sheetCombat && character
+            ? {
+                kind: "pc",
+                combatantId: "self",
+                memberUid: "self",
+                characterId: character.id,
+              }
+            : null;
+      const effectPosition = sheetCombat
+        ? {
+            round: sheetCombat.round,
+            currentCombatantId: sheetCombat.encounter.currentCombatantId,
+            phase: "turn-start" as const,
+            order: sheetCombat.encounter.order ?? sheetCombat.view.turnOrderIds,
+          }
+        : {
+            round: soloRound,
+            currentCombatantId: "self",
+            phase: "turn-start" as const,
+            order: ["self"],
+          };
       const standingEffect = spec.standingEffect;
       const persistentEffects: ActiveCombatEffect[] =
-        sheetCombat && actorRef && (standingEffect || sourceLinkedConditionId)
+        actorRef && (standingEffect || conditionSourceId)
           ? successful.flatMap(({ target, mode, amount }) => {
               if (
                 standingEffect?.requiresAppliedTempHp &&
@@ -1090,8 +1114,9 @@ export function CombatResolver({
               ) {
                 return [];
               }
-              const targetRef: CombatantRef | null =
-                target.kind === "monster"
+              const targetRef: CombatantRef | null = !sheetCombat
+                ? actorRef
+                : target.kind === "monster"
                   ? {
                       kind: "monster",
                       combatantId: target.targetId,
@@ -1113,12 +1138,7 @@ export function CombatResolver({
                     actorRef.combatantId,
                     standingEffect.lifetime.turnBoundary.turns,
                     standingEffect.lifetime.turnBoundary.phase,
-                    {
-                      round: sheetCombat.round,
-                      currentCombatantId: sheetCombat.encounter.currentCombatantId,
-                      phase: "turn-start",
-                      order: sheetCombat.encounter.order ?? sheetCombat.view.turnOrderIds,
-                    }
+                    effectPosition
                   )
                 : null;
               const standingDuration: ActiveCombatEffect["duration"] = markTransferEffect
@@ -1135,7 +1155,7 @@ export function CombatResolver({
                       ? {
                           kind: "turn-boundary",
                           combatantId: actorRef.combatantId,
-                          round: sheetCombat.round + standingEffect.lifetime.maxRounds,
+                          round: effectPosition.round + standingEffect.lifetime.maxRounds,
                           phase: "turn-end",
                         }
                       : { kind: "encounter" };
@@ -1151,28 +1171,59 @@ export function CombatResolver({
                     } satisfies ActiveCombatEffect,
                   ]
                 : [];
-              const sourceConditions = sourceLinkedConditionId
-                ? (conditions[target.key] ?? []).map(
-                    (conditionId): ActiveCombatEffect => ({
-                      id: crypto.randomUUID(),
-                      actor: actorRef,
-                      target: targetRef,
-                      source: {
-                        kind: action.source === "spell" ? "spell" : "feature",
-                        id: sourceLinkedConditionId,
-                        actionId: action.id,
-                        ...(action.slotLevel !== undefined
-                          ? { castLevel: action.slotLevel }
-                          : {}),
-                      },
-                      payload: { kind: "condition", conditionId },
-                      duration: {
-                        kind: "concentration",
-                        actorId: actorRef.combatantId,
-                        sourceId: sourceLinkedConditionId,
-                      },
-                    })
-                  )
+              const sourceConditions = conditionSourceId
+                ? (conditions[target.key] ?? []).flatMap((conditionId) => {
+                    const conditionLifetime = conditionLifetimeFor(conditionId);
+                    if (!conditionLifetime) return [];
+                    const conditionBoundary =
+                      conditionLifetime.kind === "turn-boundary"
+                        ? turnBoundaryAfter(
+                            conditionLifetime.anchor === "target"
+                              ? targetRef.combatantId
+                              : actorRef.combatantId,
+                            conditionLifetime.turns,
+                            conditionLifetime.phase,
+                            effectPosition
+                          )
+                        : null;
+                    return [
+                      {
+                        id: crypto.randomUUID(),
+                        actor: actorRef,
+                        target: targetRef,
+                        source: {
+                          kind: action.source === "spell" ? "spell" : "feature",
+                          id: conditionSourceId,
+                          actionId: action.id,
+                          ...(action.slotLevel !== undefined
+                            ? { castLevel: action.slotLevel }
+                            : {}),
+                        },
+                        payload: { kind: "condition", conditionId },
+                        duration:
+                          conditionLifetime.kind === "source" && action.concentration
+                            ? {
+                                kind: "concentration",
+                                actorId: actorRef.combatantId,
+                                sourceId: conditionSourceId,
+                              }
+                            : conditionLifetime.kind === "manual"
+                              ? { kind: "encounter" }
+                              : conditionBoundary
+                                ? conditionBoundary
+                                : {
+                                    kind: "turn-boundary",
+                                    combatantId: actorRef.combatantId,
+                                    round:
+                                      effectPosition.round +
+                                      (conditionLifetime.kind === "timed"
+                                        ? conditionLifetime.maxRounds
+                                        : 0),
+                                    phase: "turn-end",
+                                  },
+                      } satisfies ActiveCombatEffect,
+                    ];
+                  })
                 : [];
               return [...standing, ...sourceConditions];
             })
@@ -1202,6 +1253,10 @@ export function CombatResolver({
           showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
         });
       }
+      const undoSoloEffects =
+        !sheetCombat && persistentEffects.length > 0
+          ? applySoloCombatEffects(persistentEffects)
+          : null;
       // Own-sheet effects apply locally for immediate solo feedback. In an encounter the
       // shared batch above writes table-mates' narrow combat slices transactionally, so a
       // target need not be online; the local branch only avoids applying the actor twice.
@@ -1209,6 +1264,9 @@ export function CombatResolver({
         ({ target }) => !sheetCombat || target.targetId === sheetCombat.myId
       );
       const ownConditions = own ? (conditions[own.target.key] ?? []) : [];
+      const ownDirectConditions = ownConditions.filter(
+        (conditionId) => !conditionLifetimeFor(conditionId)
+      );
       const undoOwn =
         own || linkedSelfHealing > 0
           ? applyResolvedCombatEffects({
@@ -1223,14 +1281,8 @@ export function CombatResolver({
               ...((own?.amount ?? 0) > 0 && own?.mode === "damage"
                 ? { damage: own.amount }
                 : {}),
-              ...(own && ownConditions.length
-                ? sourceLinkedConditionId && !sheetCombat
-                  ? {
-                      addConcentrationConditions: ownConditions,
-                    }
-                  : !sourceLinkedConditionId
-                    ? { addConditions: ownConditions }
-                    : {}
+              ...(ownDirectConditions.length
+                ? { addConditions: ownDirectConditions }
                 : {}),
               ...(own && conditionRemovals[own.target.key]?.length
                 ? { removeConditions: conditionRemovals[own.target.key] }
@@ -1324,6 +1376,7 @@ export function CombatResolver({
             }
           : null;
       return undoOwn ||
+        undoSoloEffects ||
         undoPersistent ||
         undoConsumedSaveAdjustments ||
         undoEndedRecurringEffect ||
@@ -1333,6 +1386,7 @@ export function CombatResolver({
             undoConsumedSaveAdjustments?.();
             undoEndedRecurringEffect?.();
             undoOwn?.();
+            undoSoloEffects?.();
             for (const undo of riderUndo) undo();
           }
         : undefined;

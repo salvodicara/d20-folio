@@ -944,9 +944,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       nameLoc: action.nameLoc,
       slot,
       ...(economyCategory ? { economyCategory } : {}),
-      ...(action.summary.attackBonus != null || action.summary.saveAbility != null
-        ? { triggerEvents: ["attack"] as const }
-        : {}),
+      ...(action.maintainsActiveKey
+        ? { triggerEvents: ["bonus-extend"] as const }
+        : action.summary.attackBonus != null || action.summary.saveAbility != null
+          ? { triggerEvents: ["attack"] as const }
+          : {}),
       cost,
     };
   }

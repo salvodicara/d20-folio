@@ -35,6 +35,7 @@
 import type { SessionState } from "@/types/character";
 import type { LocText } from "@/lib/loc-text";
 import type { EconomyActionCategory } from "@/lib/combat-economy";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 /**
  * A player-DECLARED attack in a live campaign encounter — the target(s) the player
@@ -100,7 +101,7 @@ export interface PersistedTurnAction {
   slot: "action" | "bonus" | "free";
   isAttackGroup?: boolean;
   economyCategory?: EconomyActionCategory;
-  triggerEvents?: ReadonlyArray<"attack">;
+  triggerEvents?: ReadonlyArray<"attack" | "bonus-extend">;
 }
 
 /**
@@ -156,6 +157,9 @@ export interface CombatState {
    * `[]` outside an encounter (SOLO never declares).
    */
   recentActions: RecentAttack[];
+  /** Source-owned effects applied to this character outside a campaign encounter.
+   * They use the same occurrence model and lifetime algebra as shared encounters. */
+  activeEffects?: ActiveCombatEffect[];
   /** Idempotency receipt for PC-targeted effects delivered through the current
    * campaign encounter. A new encounter epoch replaces the receipt. */
   appliedEncounterEffects?: { epoch: number; ids: string[] };

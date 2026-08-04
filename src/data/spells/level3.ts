@@ -183,7 +183,19 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     effectTag: "control",
     saveAbility: "WIS",
     area: true,
-    conditionApplication: { options: ["frightened"], on: "failed-save" },
+    conditionApplication: {
+      options: ["frightened"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-fear",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -292,7 +304,19 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     effectTag: "control",
     saveAbility: "WIS",
     area: true,
-    conditionApplication: { options: ["charmed", "incapacitated"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed", "incapacitated"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-hypnotic-pattern",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -512,9 +536,26 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     concentration: true,
     saveAbility: "CON",
     area: true,
-    conditionApplication: { options: ["incapacitated"], on: "failed-save" },
+    conditionApplication: {
+      options: ["incapacitated"],
+      on: "failed-save",
+      lifetime: {
+        kind: "turn-boundary",
+        phase: "turn-start",
+        turns: 1,
+        anchor: "target",
+      },
+    },
     recurrence: "start-of-turn",
     resolveOnCast: false,
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-stinking-cloud",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -670,9 +711,21 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     concentration: true,
     saveAbility: "DEX",
     area: true,
-    conditionApplication: { options: ["prone"], on: "failed-save" },
+    conditionApplication: {
+      options: ["prone"],
+      on: "failed-save",
+      lifetime: { kind: "manual" },
+    },
     recurrence: "on-enter-or-start-turn",
     resolveOnCast: false,
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-sleet-storm",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {

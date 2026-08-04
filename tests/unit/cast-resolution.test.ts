@@ -110,4 +110,31 @@ describe("actionAtCastLevel", () => {
       actionAtCastLevel(base, getSpellById("hunters-mark"), 5).activeDurationRounds
     ).toBe(14_400);
   });
+
+  it("resolves Dominate Person's maximum from the slot before target selection", () => {
+    const spell = getSpellById("dominate-person");
+    const base = action("dominate-person", {
+      conditionApplication: spell?.conditionApplication,
+    });
+    base.activatesKey = "spell-dominate-person";
+    base.activeDurationRounds = 10;
+
+    expect(actionAtCastLevel(base, spell, 6).activeDurationRounds).toBe(100);
+    expect(actionAtCastLevel(base, spell, 7).activeDurationRounds).toBe(600);
+    expect(actionAtCastLevel(base, spell, 8).activeDurationRounds).toBe(4_800);
+  });
+
+  it("resolves Geas from thirty days through its indefinite ninth-level form", () => {
+    const spell = getSpellById("geas");
+    const base = action("geas", {
+      conditionApplication: spell?.conditionApplication,
+    });
+
+    expect(
+      actionAtCastLevel(base, spell, 7).summary.conditionApplication?.lifetime
+    ).toMatchObject({ kind: "timed", minutes: 365 * 24 * 60 });
+    expect(
+      actionAtCastLevel(base, spell, 9).summary.conditionApplication?.lifetime
+    ).toEqual({ kind: "manual" });
+  });
 });

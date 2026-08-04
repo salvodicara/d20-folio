@@ -1,5 +1,5 @@
 import type { SrdSpellData } from "../types";
-import { timedSpellDuration } from "./duration";
+import { timedConditionLifetime, timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
   {
@@ -70,7 +70,19 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "WIS",
-    conditionApplication: { options: ["charmed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-dominate-monster",
+        duration: timedSpellDuration(60),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -88,7 +100,19 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     concentration: true,
     saveAbility: "DEX",
     area: true,
-    conditionApplication: { options: ["prone"], on: "failed-save" },
+    conditionApplication: {
+      options: ["prone"],
+      on: "failed-save",
+      lifetime: { kind: "manual" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-earthquake",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -174,7 +198,11 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     components: { v: true, s: false, m: false },
     concentration: false,
     instantaneous: true,
-    conditionApplication: { options: ["stunned"], on: "automatic" },
+    conditionApplication: {
+      options: ["stunned"],
+      on: "automatic",
+      lifetime: { kind: "manual" },
+    },
     targeting: { affinity: "enemy", maxTargets: 1 },
     source: "SRD",
   },
@@ -251,7 +279,11 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     damageType: "radiant",
     damageDice: "12d6",
     saveAbility: "CON",
-    conditionApplication: { options: ["blinded"], on: "failed-save" },
+    conditionApplication: {
+      options: ["blinded"],
+      on: "failed-save",
+      lifetime: timedConditionLifetime(1),
+    },
     area: true,
     damageOnSave: "half",
     source: "SRD",

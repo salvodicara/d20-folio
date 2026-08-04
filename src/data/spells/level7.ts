@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedConditionLifetime } from "./duration";
 
 export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
   {
@@ -299,7 +300,11 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
-    conditionApplication: { options: ["invisible"], on: "automatic" },
+    conditionApplication: {
+      options: ["invisible", "unconscious"],
+      on: "automatic",
+      lifetime: { kind: "manual" },
+    },
     targeting: { affinity: "ally", maxTargets: 1 },
     source: "SRD",
   },
@@ -324,6 +329,12 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
       options: ["frightened", "incapacitated", "unconscious", "stunned"],
       max: 1,
       on: "failed-save",
+      lifetimes: {
+        frightened: timedConditionLifetime(1),
+        incapacitated: timedConditionLifetime(1),
+        unconscious: timedConditionLifetime(10),
+        stunned: timedConditionLifetime(1),
+      },
     },
     source: "SRD",
   },

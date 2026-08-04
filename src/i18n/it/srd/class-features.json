@@ -107,6 +107,11 @@
     "label": "Ira",
     "summary": "Entra in Ira (estendibile fino a 10 minuti)"
   },
+  "barbarian-rage.mechanics.actions.1": {
+    "description": "Spendi un'Azione Bonus per estendere l'Ira attiva fino al tuo prossimo turno.",
+    "name": "Estendi Ira",
+    "summary": "Estendi l'Ira attiva"
+  },
   "barbarian-rage.mechanics.rider": {
     "label": "Danno da Ira"
   },

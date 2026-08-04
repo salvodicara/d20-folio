@@ -238,8 +238,20 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     damageType: "psychic",
     damageDice: "8d12",
     saveAbility: "WIS",
-    conditionApplication: { options: ["frightened"], on: "failed-save" },
+    conditionApplication: {
+      options: ["frightened"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
     area: true,
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-weird",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     damageOnSave: "half",
     source: "SRD",
   },

@@ -33,7 +33,7 @@ import { findBackground } from "@/data/backgrounds";
 import { getClassTable } from "@/data/classes";
 import type { ToolChoiceContext } from "@/data/background-equipment";
 import { toolEnNameById, umbrellaToolChoiceOptions } from "@/lib/tool-names";
-import type { SrdRaceTrait } from "@/data/types";
+import type { SrdRaceTrait, SrdSpellData } from "@/data/types";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 const INVOCATION_BY_ID = new Map(SRD_INVOCATIONS.map((inv) => [inv.id, inv]));
@@ -190,17 +190,40 @@ export function resolveGrantSourcesForEquipment(
  * duration (Mage Armor's AC formula, Fly's Fly Speed, Stoneskin's resistances,
  * Foresight's advantage, …) carries those facts as `while-active` grants on
  * its `SrdSpellData.grants`. A PREPARED (or always-prepared) spell whose data
- * carries grants becomes a source, which lands its toggle in
+ * carries a caster-side active state becomes a source, which lands its toggle in
  * `activatableGroups` — the SAME ActivatableFeaturesBar/`session.activeFeatures`
- * seam items like Boots of Speed already use. Default off → casting is still
- * the player's act; flipping the toggle applies the standing effect for the
- * duration (override-first; the engine never tracks the clock).
+ * seam items like Boots of Speed already use. Duration-only wrappers stay out of
+ * the rail: their lifecycle belongs to the effect occurrence / Concentration.
+ * Default off → casting is still the player's act; flipping the toggle applies
+ * the standing effect for the duration. The lifecycle engine tracks declared
+ * durations separately, including wrappers that deliberately stay out of this
+ * user-facing resolver.
  *
  * Cast-time effects (damage/heal/single saves) stay on the structured spell
  * fields the cast model consumes — NOT duplicated here (spell discipline (b)).
  */
 export function resolveGrantSourcesForSpells(
   spells: ReadonlyArray<SrdSpellRef | CustomSpell>
+): GrantSource[] {
+  return resolveSpellGrantSources(spells, (spell) =>
+    spell.grants?.filter((grant) => spellGrantSurfacesActiveControl(spell, grant))
+  );
+}
+
+/** Engine-only spell wrappers whose active keys own a deterministic lifetime.
+ * Kept separate from the user-facing resolver so a duration-only spell can arm
+ * and expire its timer without becoming a redundant feature-rail toggle. */
+export function resolveGrantSourcesForSpellLifecycles(
+  spells: ReadonlyArray<SrdSpellRef | CustomSpell>
+): GrantSource[] {
+  return resolveSpellGrantSources(spells, (spell) =>
+    spell.grants?.filter((grant) => grant.type === "while-active")
+  );
+}
+
+function resolveSpellGrantSources(
+  spells: ReadonlyArray<SrdSpellRef | CustomSpell>,
+  selectGrants: (spell: SrdSpellData) => ReadonlyArray<Grant> | undefined
 ): GrantSource[] {
   const sources: GrantSource[] = [];
   const seen = new Set<string>();
@@ -210,14 +233,37 @@ export function resolveGrantSourcesForSpells(
     if (seen.has(s.srdId)) continue;
     const spell = getSpellById(s.srdId);
     if (!spell?.grants?.length) continue;
+    const selectedGrants = selectGrants(spell);
+    if (!selectedGrants?.length) continue;
     seen.add(s.srdId);
     sources.push({
       id: spell.id,
-      grants: spell.grants,
+      grants: selectedGrants,
       ref: { kind: "spell", key: spell.id },
     });
   }
   return sources;
+}
+
+/**
+ * A `while-active` wrapper can own either a user-facing mechanical state or an
+ * engine-only lifetime. Only the former belongs in the feature rail. Empty
+ * concentration wrappers still receive a hidden `session.activeFeatures` key so
+ * their maximum duration can expire deterministically; they simply do not become
+ * redundant user controls. A non-Concentration recurring effect (Searing Smite)
+ * surfaces because its durable key owns the follow-up lifecycle.
+ */
+export function spellGrantSurfacesActiveControl(
+  spell: SrdSpellData,
+  grant: Grant
+): grant is WhileActiveGrant {
+  if (grant.type !== "while-active") return false;
+  if (grant.grants.length > 0) return true;
+  return (
+    !spell.concentration &&
+    grant.recipient !== "selected" &&
+    (spell.recurrence !== undefined || spell.followUp !== undefined)
+  );
 }
 
 export type WhileActiveGrant = Extract<Grant, { type: "while-active" }>;

@@ -12,6 +12,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SessionState } from "@/types/character";
 import type { CombatState } from "@/types/combat-state";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 import {
   initiativeToNumber,
   initiativeToString,
@@ -50,6 +51,27 @@ function session(overrides: Partial<SessionState> = {}): SessionState {
     notes: "",
     logEntries: [],
     ...overrides,
+  };
+}
+
+function localEffect(): ActiveCombatEffect {
+  return {
+    id: "local-heroism",
+    actor: {
+      kind: "pc",
+      combatantId: "self",
+      memberUid: "self",
+      characterId: "char-1",
+    },
+    target: {
+      kind: "pc",
+      combatantId: "self",
+      memberUid: "self",
+      characterId: "char-1",
+    },
+    source: { kind: "spell", id: "heroism", actionId: "spell-heroism", castLevel: 1 },
+    payload: { kind: "grant-group", activeKey: "spell-heroism" },
+    duration: { kind: "concentration", actorId: "self", sourceId: "heroism" },
   };
 }
 
@@ -127,6 +149,12 @@ describe("combat-state — session → CombatState projection", () => {
 
   it("maps a blank initiative to canonical null", () => {
     expect(sessionToCombatState(session({ initiative: "" })).initiativeRoll).toBeNull();
+  });
+
+  it("carries character-owned effects in the combat-state projection", () => {
+    expect(
+      sessionToCombatState(session(), 3, [], undefined, undefined, [localEffect()])
+    ).toMatchObject({ round: 3, activeEffects: [localEffect()] });
   });
 });
 
@@ -610,6 +638,14 @@ describe("combat-state-io — write (last-write-wins overwrite)", () => {
     expect(setDocMock).not.toHaveBeenCalled();
   });
 
+  it("writes character-owned effect occurrences with the combat slice", async () => {
+    await writeCombatState("u1", "c1", {
+      ...COMBAT,
+      activeEffects: [localEffect()],
+    });
+    expect(lastSetPayload()).toMatchObject({ activeEffects: [localEffect()] });
+  });
+
   it("merges only round + turn economy for high-frequency turn persistence", async () => {
     await writeCombatTurnEconomy("u1", "c1", 3, {
       key: "encounter:c1:3",
@@ -715,6 +751,26 @@ describe("combat-state-io — subscribe", () => {
     };
     subscribeCombatState("u1", "c1", (s) => received.push(s));
     expect(received[0]?.recentActions).toEqual([]);
+  });
+
+  it("parses valid local effects and drops malformed occurrences", () => {
+    const received: Array<CombatState | null> = [];
+    onSnapshotImpl = (_ref, next) => {
+      next({
+        exists: () => true,
+        data: () => ({
+          hp: { current: 5, temp: 0 },
+          conditions: [],
+          initiativeRoll: null,
+          deathSaves: { successes: 0, failures: 0 },
+          activeEffects: [localEffect(), { id: "broken" }],
+        }),
+        metadata: { hasPendingWrites: false },
+      });
+      return () => {};
+    };
+    subscribeCombatState("u1", "c1", (s) => received.push(s));
+    expect(received[0]?.activeEffects).toEqual([localEffect()]);
   });
 
   it("delivers null for an ABSENT doc (caller defaults to full HP)", () => {

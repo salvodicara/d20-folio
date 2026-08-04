@@ -204,6 +204,11 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
         {
           type: "bonus",
         },
+        {
+          id: "extend",
+          type: "bonus",
+          maintainsActiveKey: "barbarian-rage",
+        },
       ],
       rider: {
         sourceKey: "rageDamage",

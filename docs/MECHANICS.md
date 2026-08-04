@@ -316,6 +316,23 @@ successful-save ending removes the caster state and every source-owned occurrenc
 Clearing or undoing that state retracts/restores the level atomically. This covers repeated damage, attacks,
 saves, healing and conditions with the same generic resolver rather than spell-name cases.
 
+Inflicted conditions carry a `CombatConditionLifetime`, never an inferred prose duration. `source`
+binds the exact occurrence to its active source; `timed` stores both printed minutes and the derived
+round ceiling (plus optional cast-level tiers); `turn-boundary` names actor/target, phase and turn
+distance; `manual` marks a deterministic condition whose earlier end depends on a table fact the app
+cannot observe. `conditionApplication.lifetimes` overrides the shared lifetime per option. Encounter
+conditions enter the same target-bound ledger as other persistent effects; solo occurrences use the
+same `ActiveCombatEffect` shape in `combat/state`, while the sheet composes local and encounter
+occurrences into one runtime projection. The older `concentrationConditions` field remains only as an
+additive-compatible read layer. Early saves/damage/help/geometry remain one-tap corrections, not
+guessed automation.
+
+Maintained states may expose a normal action with `maintainsActiveKey`. It exists only while that state
+is active, never spends the source's use tracker, and records the corresponding durable maintenance
+event in the turn receipt. Rage's **Extend Rage** is the first consumer: it truly occupies the Bonus
+Action and survives navigation/reload, while an attack/save is still inferred from the committed action
+and the manual keep control remains the override for off-app play.
+
 Target-bound duration uses `ActiveCombatEffect`, not a parallel spell model: stable actor/target/source
 (spell or feature), `grant-group | target-mark` payload, frozen cast bindings and
 `encounter | concentration | turn-boundary` duration. An append-only apply/revoke ledger projects the referenced catalogue grants onto PCs and exact

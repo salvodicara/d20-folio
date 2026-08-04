@@ -107,6 +107,11 @@
     "label": "Rage",
     "summary": "Enter a Rage (extendable up to 10 minutes)"
   },
+  "barbarian-rage.mechanics.actions.1": {
+    "description": "Spend a Bonus Action to extend your active Rage through your next turn.",
+    "name": "Extend Rage",
+    "summary": "Extend the active Rage"
+  },
   "barbarian-rage.mechanics.rider": {
     "label": "Rage Damage"
   },

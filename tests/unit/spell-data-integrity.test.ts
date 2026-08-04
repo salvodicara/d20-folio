@@ -23,6 +23,23 @@ import { SRD_SPELLS_LEVEL6 } from "@/data/spells/level6";
 import { SRD_SPELLS_LEVEL7 } from "@/data/spells/level7";
 import { SRD_SPELLS_LEVEL8 } from "@/data/spells/level8";
 import { SRD_SPELLS_LEVEL9 } from "@/data/spells/level9";
+import type { SrdSpellData } from "@/data/types";
+
+function conditionLifetimeGaps(entries: readonly SrdSpellData[]): string[] {
+  return entries.flatMap((spell) => {
+    const applications = [
+      spell.conditionApplication,
+      spell.followUp?.conditionApplication,
+    ];
+    return applications.flatMap((application) => {
+      if (!application) return [];
+      const allClassified = application.lifetime
+        ? true
+        : application.options.every((condition) => application.lifetimes?.[condition]);
+      return allClassified ? [] : [spell.id];
+    });
+  });
+}
 
 describe("spell-data integrity", () => {
   it("every persistent spell grant declares one enforceable structured lifetime", () => {
@@ -51,6 +68,55 @@ describe("spell-data integrity", () => {
         }
       }
     }
+  });
+
+  it("classifies every SRD spell condition lifetime and every source-owned maximum", () => {
+    const publicSpells = spells.filter((spell) => spell.source === "SRD");
+    expect(conditionLifetimeGaps(publicSpells)).toEqual([]);
+
+    for (const spell of publicSpells) {
+      for (const application of [
+        spell.conditionApplication,
+        spell.followUp?.conditionApplication,
+      ]) {
+        if (!application) continue;
+        const lifetimes = application.lifetime
+          ? [application.lifetime]
+          : Object.values(application.lifetimes ?? {});
+        for (const lifetime of lifetimes) {
+          if (lifetime.kind === "timed") {
+            expect(lifetime.maxRounds, spell.id).toBe(lifetime.minutes * 10);
+            for (const tier of lifetime.byCastLevel ?? []) {
+              if (tier.indefinite) continue;
+              expect(tier.maxRounds, `${spell.id} L${tier.minLevel}`).toBe(
+                (tier.minutes ?? 0) * 10
+              );
+            }
+          }
+          if (lifetime.kind !== "source") continue;
+          expect(spell.concentration, `${spell.id} source lifetime`).toBe(true);
+          expect(
+            spell.grants?.some(
+              (grant) => grant.type === "while-active" && grant.duration
+            ),
+            `${spell.id} concentration maximum`
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("fails the condition-lifetime guard when one classified spell regresses", () => {
+    const animalFriendship = getSpellById("animal-friendship");
+    if (!animalFriendship?.conditionApplication) throw new Error("missing fixture");
+    const regressed: SrdSpellData = {
+      ...animalFriendship,
+      conditionApplication: {
+        ...animalFriendship.conditionApplication,
+        lifetime: undefined,
+      },
+    };
+    expect(conditionLifetimeGaps([regressed])).toEqual(["animal-friendship"]);
   });
 
   it("models Vampiric Touch's linked healing as a deterministic combat effect", () => {
@@ -178,6 +244,7 @@ describe("spell-data integrity", () => {
     expect(ray?.conditionApplication).toEqual({
       options: ["poisoned"],
       on: "failed-save",
+      lifetime: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
     });
   });
 

@@ -827,11 +827,9 @@ export interface SessionState {
     current: number;
     temp: number;
   };
-  /**
-   * Active campaign effects projected onto this open sheet at runtime. The campaign
-   * encounter remains their sole persisted home; the character codec deliberately
-   * never serializes this field.
-   */
+  /** Active source occurrences projected onto this open sheet at runtime. Campaign
+   * occurrences stay in the encounter ledger; solo occurrences stay in `combat/state`.
+   * The character codec deliberately never serializes this composed read field. */
   encounterEffects?: ReadonlyArray<ActiveCombatEffect>;
   /** Conditions owned by the current solo concentration. `conditions` remains
    * the manual/base layer; consumers read their union through the shared projection. */

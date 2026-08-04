@@ -153,6 +153,7 @@ beforeEach(() => {
     character: { ...MOCK_CHARACTER },
     readonly: false,
     combatRecentActions: [],
+    combatActiveEffects: [],
     combatPersistence: null,
   });
 });
@@ -1110,6 +1111,73 @@ describe("universal combat resolution", () => {
     ]);
   });
 
+  it("persists a bounded solo condition as a source-owned occurrence and undoes it", () => {
+    const charmPerson: ResolvedAction = {
+      ...action({
+        saveAbility: "WIS",
+        saveDC: 14,
+        targeting: { affinity: "any", maxTargets: 1 },
+        conditionApplication: {
+          options: ["charmed"],
+          on: "failed-save",
+          lifetime: { kind: "timed", minutes: 60, maxRounds: 600 },
+        },
+      }),
+      id: "spell-charm-person",
+      spellId: "charm-person",
+      spellLevel: 1,
+      slotLevel: 1,
+    };
+    let undo: (() => void) | undefined;
+    render(
+      <CombatResolver
+        action={charmPerson}
+        sheetCombat={null}
+        onCommit={(afterCommit) => {
+          undo = afterCommit();
+        }}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /lyra voss/i }));
+    fireEvent.click(screen.getByRole("button", { name: /failed save/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expect(useCharacterStore.getState().combatActiveEffects).toEqual([
+      expect.objectContaining({
+        actor: {
+          kind: "pc",
+          combatantId: "self",
+          memberUid: "self",
+          characterId: MOCK_CHARACTER.id,
+        },
+        target: {
+          kind: "pc",
+          combatantId: "self",
+          memberUid: "self",
+          characterId: MOCK_CHARACTER.id,
+        },
+        payload: { kind: "condition", conditionId: "charmed" },
+        duration: {
+          kind: "turn-boundary",
+          combatantId: "self",
+          round: 601,
+          phase: "turn-end",
+        },
+      }),
+    ]);
+    expect(useCharacterStore.getState().character?.session.encounterEffects).toHaveLength(
+      1
+    );
+    expect(useCharacterStore.getState().character?.session.conditions).not.toContain(
+      "charmed"
+    );
+
+    undo?.();
+    expect(useCharacterStore.getState().combatActiveEffects).toEqual([]);
+  });
+
   it("maximizes spell healing and applies one linked self-heal for another target", () => {
     const wounded = structuredClone(MOCK_CHARACTER);
     wounded.session.hp.current = 10;
@@ -1259,6 +1327,7 @@ describe("universal combat resolution", () => {
         conditionApplication: {
           options: ["paralyzed"],
           on: "failed-save",
+          lifetime: { kind: "source" },
         },
       }),
       id: "spell-hold-person",
@@ -1296,6 +1365,152 @@ describe("universal combat resolution", () => {
         kind: "concentration",
         actorId: "pc-u1",
         sourceId: "hold-person",
+      },
+    });
+  });
+
+  it("stores a bounded non-concentration condition until its exact encounter round", async () => {
+    const charmPerson: ResolvedAction = {
+      ...action({
+        saveAbility: "WIS",
+        saveDC: 14,
+        conditionApplication: {
+          options: ["charmed"],
+          on: "failed-save",
+          lifetime: { kind: "timed", minutes: 60, maxRounds: 600 },
+        },
+      }),
+      id: "spell-charm-person",
+      spellId: "charm-person",
+      spellLevel: 1,
+      slotLevel: 1,
+    };
+    render(
+      <CombatResolver
+        action={charmPerson}
+        sheetCombat={combat([pc(), monster("monster-1", "Goblin")])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    await waitFor(() => expect(appendPersistentMock).toHaveBeenCalledTimes(1));
+    expect(applyMock).not.toHaveBeenCalled();
+    expect(appendPersistentMock.mock.calls[0]?.[1]).toMatchObject({
+      actor: { combatantId: "pc-u1" },
+      target: { combatantId: "monster-1" },
+      source: {
+        kind: "spell",
+        id: "charm-person",
+        actionId: "spell-charm-person",
+        castLevel: 1,
+      },
+      payload: { kind: "condition", conditionId: "charmed" },
+      duration: {
+        kind: "turn-boundary",
+        combatantId: "pc-u1",
+        round: 602,
+        phase: "turn-end",
+      },
+    });
+  });
+
+  it("anchors a condition boundary to the selected target's exact turn", async () => {
+    const battle = combat([pc(), monster("monster-1", "Goblin")]);
+    battle.encounter = {
+      currentCombatantId: "pc-u1",
+      order: ["pc-u1", "monster-1"],
+    } as GlobalCombat["encounter"];
+    const searingOrb: ResolvedAction = {
+      ...action({
+        saveAbility: "DEX",
+        saveDC: 14,
+        conditionApplication: {
+          options: ["blinded"],
+          on: "failed-save",
+          lifetime: {
+            kind: "turn-boundary",
+            phase: "turn-end",
+            turns: 1,
+            anchor: "target",
+          },
+        },
+      }),
+      id: "spell-searing-orb",
+      spellId: "searing-orb",
+      spellLevel: 2,
+      slotLevel: 2,
+    };
+    render(
+      <CombatResolver
+        action={searingOrb}
+        sheetCombat={battle}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    await waitFor(() => expect(appendPersistentMock).toHaveBeenCalledTimes(1));
+    expect(appendPersistentMock.mock.calls[0]?.[1]).toMatchObject({
+      target: { combatantId: "monster-1" },
+      payload: { kind: "condition", conditionId: "blinded" },
+      duration: {
+        kind: "turn-boundary",
+        combatantId: "monster-1",
+        round: 2,
+        phase: "turn-end",
+      },
+    });
+  });
+
+  it("uses the chosen condition's own lifetime when one spell has several", async () => {
+    const symbol: ResolvedAction = {
+      ...action({
+        saveAbility: "WIS",
+        saveDC: 14,
+        conditionApplication: {
+          options: ["frightened", "unconscious"],
+          max: 1,
+          on: "failed-save",
+          lifetimes: {
+            frightened: { kind: "timed", minutes: 1, maxRounds: 10 },
+            unconscious: { kind: "timed", minutes: 10, maxRounds: 100 },
+          },
+        },
+      }),
+      id: "spell-symbol",
+      spellId: "symbol",
+      spellLevel: 7,
+      slotLevel: 7,
+    };
+    render(
+      <CombatResolver
+        action={symbol}
+        sheetCombat={combat([pc(), monster("monster-1", "Goblin")])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    fireEvent.change(screen.getByRole("combobox", { name: /condition to goblin/i }), {
+      target: { value: "unconscious" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    await waitFor(() => expect(appendPersistentMock).toHaveBeenCalledTimes(1));
+    expect(appendPersistentMock.mock.calls[0]?.[1]).toMatchObject({
+      payload: { kind: "condition", conditionId: "unconscious" },
+      duration: {
+        kind: "turn-boundary",
+        round: 102,
+        phase: "turn-end",
       },
     });
   });

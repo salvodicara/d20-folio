@@ -8,7 +8,12 @@
  * participate in the rules math, so every surface consumes the same plan.
  */
 
-import type { CreatureType, DamageSource, DamageType } from "@/data/types";
+import type {
+  CombatConditionLifetime,
+  CreatureType,
+  DamageSource,
+  DamageType,
+} from "@/data/types";
 import {
   NO_DEFENSES,
   resolveDamageIntake,
@@ -63,6 +68,8 @@ export interface CombatResolutionSpec {
     options: string[];
     max?: number;
     on: "hit" | "failed-save" | "automatic";
+    lifetime?: CombatConditionLifetime;
+    lifetimes?: Partial<Record<string, CombatConditionLifetime>>;
   };
   standingEffect?: CombatStandingEffectSpec;
   /** What a successful save does to the entered damage. Default is no damage. */

@@ -131,7 +131,10 @@ const ENTRY_CEILING_KB = 65; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // the active locale) plus the shared `WhyProse` component and the tip's
 // accordion. Structurally clean: the SAME 14 eager chunk families on both sides,
 // so no lazy chunk became statically reachable. → ~1.3 KB headroom.
-const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see ARCHITECTURE P3 frontier #1)
+// 2026-08-04: raised 790 → 792 for the condition/effect occurrence runtime and
+// hidden spell-lifecycle expiry. Measured 790.32 KB gz across the SAME 14 eager
+// chunks; +~1.7 KB deterministic headroom, with no new eager family.
+const EAGER_CEILING_KB = 792; // baseline 727.1 → ~+9% (near budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
 // on demand from the PDF export flow) and correctly precached for offline-first.
@@ -419,7 +422,10 @@ const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see AR
 // 2026-08-04 (persistent spell lifetimes): raised 8512 → 8515 after 42 persistent
 // spells gained structured timers/upcast tiers in existing JS chunks. Shared duration
 // construction trimmed 1.2 KiB first; measured 8512.79 KiB / 317 entries, +0 entries.
-const PRECACHE_CEILING_KIB = 8515;
+// 2026-08-04 (condition/effect occurrence runtime): raised 8515 → 8527 after
+// source-owned local effects, exact condition lifetimes, cast-level expiry and
+// Rage upkeep grew existing chunks to 8523.14 KiB / the same 317 entries.
+const PRECACHE_CEILING_KIB = 8527;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

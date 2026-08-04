@@ -719,10 +719,42 @@ export type SpellRecurrence =
  * source-specific branches. */
 export type CombatResolutionGate = "attack" | "save" | "automatic";
 
+/** How an inflicted condition is owned after the initial resolution. Omit for
+ * consequences the table ends directly (Prone from Grease, Stunned until a
+ * successful repeat save, or geometry-bound area effects). */
+export type CombatConditionLifetime =
+  | { kind: "source" }
+  | { kind: "manual" }
+  | {
+      kind: "timed";
+      minutes: number;
+      maxRounds: number;
+      byCastLevel?: ReadonlyArray<{
+        minLevel: number;
+        minutes?: number;
+        maxRounds?: number;
+        indefinite?: true;
+      }>;
+    }
+  | {
+      kind: "turn-boundary";
+      phase: "turn-start" | "turn-end";
+      turns: number;
+      /** Whose future turn owns the boundary. Defaults to the effect's actor. */
+      anchor?: "actor" | "target";
+    };
+
 export interface CombatConditionApplication {
   options: ConditionId[];
   max?: number;
   on: "hit" | "failed-save" | "automatic";
+  /** Typed maximum lifetime for this exact condition occurrence. Early exits
+   * (repeat saves, damage, assistance, leaving an area) remain explicit table
+   * corrections because this companion cannot observe them. */
+  lifetime?: CombatConditionLifetime;
+  /** Per-condition overrides for spells such as Symbol whose mutually exclusive
+   * outcomes have different maximum lifetimes. */
+  lifetimes?: Partial<Record<ConditionId, CombatConditionLifetime>>;
 }
 
 export interface CombatTargeting {
@@ -1222,6 +1254,11 @@ export interface SrdActionDef {
   requiresActionCategoryThisTurn?: ActionEconomyCategory;
   /** Hard per-turn cap for an otherwise-unbounded Free Action. */
   maxUsesPerTurn?: number;
+  /** This action maintains an already-active state for the current round. It is
+   * emitted only while that state is active and never spends the source's use
+   * tracker. A Bonus Action records the generic `bonus-extend` event consumed by
+   * maintained durations such as Rage. */
+  maintainsActiveKey?: string;
   /** Resolve this feature use through the same attack profile as a normal attack
    * row. The resolver owns target allocation and entered hit/damage facts; the
    * feature only declares which canonical attack is repeated and how often. */

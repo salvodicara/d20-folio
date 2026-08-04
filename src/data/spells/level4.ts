@@ -1,5 +1,5 @@
 import type { SrdSpellData } from "../types";
-import { timedSpellDuration } from "./duration";
+import { timedConditionLifetime, timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   {
@@ -187,7 +187,19 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "WIS",
-    conditionApplication: { options: ["charmed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-dominate-beast",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -282,8 +294,20 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
-    conditionApplication: { options: ["invisible"], on: "automatic" },
+    conditionApplication: {
+      options: ["invisible"],
+      on: "automatic",
+      lifetime: { kind: "source" },
+    },
     targeting: { affinity: "ally", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-greater-invisibility",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -385,7 +409,19 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDice: "4d10",
     damageDicePerUpcast: "1d10",
     saveAbility: "WIS",
-    conditionApplication: { options: ["frightened"], on: "failed-save" },
+    conditionApplication: {
+      options: ["frightened"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-phantasmal-killer",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -480,7 +516,11 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     saveAbility: "WIS",
-    conditionApplication: { options: ["charmed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: timedConditionLifetime(60),
+    },
     targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
@@ -519,9 +559,21 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDice: "3d6",
     saveAbility: "DEX",
     area: true,
-    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    conditionApplication: {
+      options: ["restrained"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
     recurrence: "on-enter-or-end-turn",
     resolveOnCast: false,
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-evards-black-tentacles",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {

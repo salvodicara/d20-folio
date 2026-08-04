@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedConditionLifetime, timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
   {
@@ -97,9 +98,21 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     saveAbility: "DEX",
     area: true,
     damageOnSave: "half",
-    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    conditionApplication: {
+      options: ["restrained"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
     recurrence: "on-enter-or-start-turn",
     resolveOnCast: false,
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-conjure-elemental",
+        duration: timedSpellDuration(10),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -154,7 +167,23 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "WIS",
-    conditionApplication: { options: ["charmed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-dominate-person",
+        duration: timedSpellDuration(1, [
+          { minLevel: 6, minutes: 10 },
+          { minLevel: 7, minutes: 60 },
+          { minLevel: 8, minutes: 8 * 60 },
+        ]),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -207,7 +236,14 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     damageType: "psychic",
     damageDice: "5d10",
     saveAbility: "WIS",
-    conditionApplication: { options: ["charmed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: timedConditionLifetime(30 * 24 * 60, [
+        { minLevel: 7, minutes: 365 * 24 * 60 },
+        { minLevel: 9, indefinite: true },
+      ]),
+    },
     source: "SRD",
   },
   {
@@ -261,8 +297,20 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     concentration: true,
     effectTag: "control",
     saveAbility: "WIS",
-    conditionApplication: { options: ["paralyzed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["paralyzed"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
     targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-hold-monster",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -509,7 +557,19 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     saveAbility: "WIS",
-    conditionApplication: { options: ["charmed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-modify-memory",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {

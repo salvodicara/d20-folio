@@ -70,7 +70,7 @@ export interface SelectedAction {
   economyCategory?: EconomyActionCategory;
   /** Deterministic turn events this committed action produced. Active-state
    * duration rules consume these persisted facts after route changes. */
-  triggerEvents?: ReadonlyArray<"attack">;
+  triggerEvents?: ReadonlyArray<"attack" | "bonus-extend">;
   /** What resource this action consumed when used (deducted immediately). */
   cost?: {
     type: "spell-slot" | "tracker" | "equipment" | "none";

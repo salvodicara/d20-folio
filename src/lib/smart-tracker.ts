@@ -57,6 +57,7 @@ import {
   evaluateGrants,
   countTopLevelFreeCasts,
   type Grant,
+  type GrantSource,
   type AggregatedGrants,
   type AdvantageClause,
   type DamageDieModifierEntry,
@@ -77,6 +78,7 @@ import {
   resolveGrantSourcesForRace,
   resolveGrantSourcesForInvocations,
   resolveGrantSourcesForSpells,
+  resolveGrantSourcesForSpellLifecycles,
   resolveGrantSourcesForEquipment,
   resolveAllGrantSources,
   raceTraitSessionId,
@@ -639,6 +641,8 @@ export interface ResolvedAction {
   requiresActionThisTurn?: string;
   requiresActionCategoryThisTurn?: ActionEconomyCategory;
   maxUsesPerTurn?: number;
+  /** Active state this action explicitly maintains for the current round. */
+  maintainsActiveKey?: string;
   economyCategory?: ActionEconomyCategory;
   /** Structured summary for at-a-glance display */
   summary: ActionSummary;
@@ -4929,6 +4933,11 @@ function resolveFeatureActions(
         ) ?? featureRef.actionOverrides?.[actionIndex];
       const action = { ...authoredAction, ...actionOverride } as SrdActionDef &
         Partial<Pick<ActionData, "label" | "description">>;
+      if (
+        action.maintainsActiveKey &&
+        !(session.activeFeatures ?? []).includes(action.maintainsActiveKey)
+      )
+        continue;
       const id = `${srdFeature.id}-${action.id ?? action.type}`;
       // Build structured summary for feature action
       const summary: RawActionSummary = {};
@@ -4975,7 +4984,7 @@ function resolveFeatureActions(
 
       // If a tracker exists, show uses remaining + die. The override extra wins
       // over the primary tracker for the uses/die summary.
-      if (overrideExtra) {
+      if (overrideExtra && !action.maintainsActiveKey) {
         const extra = resolveTrackerSpec(overrideExtra, scalingLevel);
         const total = resolveTrackerTotal(extra.total, character, scalingLevel);
         const used = session.trackers[overrideExtra.id]?.used ?? 0;
@@ -4986,7 +4995,7 @@ function resolveFeatureActions(
           unit: extra.unit,
         };
         if (extra.die) summary.die = extra.die;
-      } else if (resolvedTracker) {
+      } else if (resolvedTracker && !action.maintainsActiveKey) {
         const effectiveTracker = applyTrackerOverrides(
           resolvedTracker,
           featureRef.trackerOverrides
@@ -5048,17 +5057,17 @@ function resolveFeatureActions(
       let actionCostIsPool: boolean | undefined;
       let actionCostUnit: TrackerUnit | undefined;
 
-      if (overrideExtra) {
+      if (overrideExtra && !action.maintainsActiveKey) {
         // Bound to a specific extra tracker on this feature.
         actionCostTracker = overrideExtra.id;
         actionCostIsPool = overrideExtra.isPool;
         actionCostUnit = overrideExtra.unit;
-      } else if (resolvedTracker) {
+      } else if (resolvedTracker && !action.maintainsActiveKey) {
         // Feature has its own tracker — use it
         actionCostTracker = srdFeature.id;
         actionCostIsPool = resolvedTracker.isPool;
         actionCostUnit = resolvedTracker.unit;
-      } else if (action.costTracker) {
+      } else if (action.costTracker && !action.maintainsActiveKey) {
         // Action references another feature's tracker (e.g. monk-focus)
         actionCostTracker = action.costTracker;
         const crossFeature = getSrdFeatureSource(action.costTracker);
@@ -5132,7 +5141,7 @@ function resolveFeatureActions(
         // can offer it as a second payment route (Wild Companion: slot OR Wild Shape).
         ...(action.alternateCost ? { alternateCost: action.alternateCost } : {}),
         // Using this action establishes its feature's while-active state (Rage).
-        ...(activatesKey ? { activatesKey } : {}),
+        ...(activatesKey && !action.maintainsActiveKey ? { activatesKey } : {}),
         ...(activationEndsEarlyOn?.length ? { activationEndsEarlyOn } : {}),
         ...(activeTurnBoundary ? { activeTurnBoundary } : {}),
         ...(action.grantsNextAttackAdvantage
@@ -5147,6 +5156,9 @@ function resolveFeatureActions(
           : {}),
         ...(action.maxUsesPerTurn !== undefined
           ? { maxUsesPerTurn: action.maxUsesPerTurn }
+          : {}),
+        ...(action.maintainsActiveKey
+          ? { maintainsActiveKey: action.maintainsActiveKey }
           : {}),
         ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
         ...(action.targetMark
@@ -7426,6 +7438,16 @@ export interface ActiveMaintainedEffect {
  * vocabulary is data-owned (`WhileActiveDuration.endsEarlyOn`), not feature ids. */
 export type ActiveStateBlocker = "heavy-armor" | "incapacitated";
 
+/** Full mechanical sources plus hidden spell-lifecycle wrappers. The latter do
+ * not surface in the feature rail, but their active keys still own timers and
+ * deterministic expiry. Callers dedupe by active key. */
+function resolveLifecycleGrantSources(character: CharacterDoc): GrantSource[] {
+  return [
+    ...resolveAllGrantSources(character.character),
+    ...resolveGrantSourcesForSpellLifecycles(character.character.spells),
+  ];
+}
+
 /** Resolve the first currently-known fact that prevents an action's active
  * state. Unknown/homebrew trigger tokens stay override-first and never block. */
 export function resolveActiveStateBlocker(
@@ -7457,7 +7479,7 @@ export function resolveActiveStatesEndingOn(
 ): string[] {
   const active = new Set(character.session.activeFeatures ?? []);
   const ended = new Set<string>();
-  for (const source of resolveAllGrantSources(character.character)) {
+  for (const source of resolveLifecycleGrantSources(character)) {
     for (const grant of source.grants ?? []) {
       if (
         grant.type === "while-active" &&
@@ -7482,7 +7504,7 @@ export function resolveActiveStatesEndingOnRest(
   const active = new Set(character.session.activeFeatures ?? []);
   const restMinutes = rest === "short" ? 60 : 8 * 60;
   const ended = new Set<string>();
-  for (const source of resolveAllGrantSources(character.character)) {
+  for (const source of resolveLifecycleGrantSources(character)) {
     for (const grant of source.grants ?? []) {
       if (grant.type !== "while-active" || !active.has(grant.activeKey)) continue;
       const duration = whileActiveDurationAtCastLevel(
@@ -7524,7 +7546,7 @@ export function resolveActiveMaintainedEffects(
   if (active.size === 0) return [];
   const seen = new Set<string>();
   const out: ActiveMaintainedEffect[] = [];
-  for (const source of resolveAllGrantSources(character.character)) {
+  for (const source of resolveLifecycleGrantSources(character)) {
     for (const g of source.grants ?? []) {
       if (g.type !== "while-active" || g.duration?.kind !== "maintained") continue;
       if (!active.has(g.activeKey) || seen.has(g.activeKey)) continue;
@@ -7598,7 +7620,7 @@ export function resolveActiveBoundaryEffects(
   if (active.size === 0) return [];
   const seen = new Set<string>();
   const out: ActiveBoundaryEffect[] = [];
-  for (const source of resolveAllGrantSources(character.character)) {
+  for (const source of resolveLifecycleGrantSources(character)) {
     for (const grant of source.grants ?? []) {
       if (
         grant.type !== "while-active" ||
@@ -7633,7 +7655,7 @@ export function resolveActiveTimedEffects(character: CharacterDoc): ActiveTimedE
   if (active.size === 0) return [];
   const seen = new Set<string>();
   const out: ActiveTimedEffect[] = [];
-  for (const source of resolveAllGrantSources(character.character)) {
+  for (const source of resolveLifecycleGrantSources(character)) {
     for (const g of source.grants ?? []) {
       if (g.type !== "while-active") continue;
       if (!active.has(g.activeKey) || seen.has(g.activeKey)) continue;

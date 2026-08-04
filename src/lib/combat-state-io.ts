@@ -64,6 +64,7 @@ import {
   setTempAbsolute,
 } from "@/lib/combat-state";
 import type { CombatState, PersistedTurnEconomy } from "@/types/combat-state";
+import { conformActiveCombatEffects } from "@/lib/combat-effect-io";
 
 const DEV_COMBAT_COLLECTION = "combat-state";
 
@@ -99,6 +100,7 @@ export function combatStateWriteData(state: CombatState): Record<string, unknown
     },
     round: state.round,
     recentActions: state.recentActions,
+    ...(state.activeEffects?.length ? { activeEffects: state.activeEffects } : {}),
     ...(state.appliedEncounterEffects
       ? { appliedEncounterEffects: state.appliedEncounterEffects }
       : {}),
@@ -120,6 +122,7 @@ export function parseCombatState(data: Record<string, unknown>): CombatState {
     typeof v === "number" && Number.isFinite(v) ? v : fallback;
   const applied = parseAppliedEncounterEffects(data.appliedEncounterEffects);
   const turnEconomy = parseTurnEconomy(data.turnEconomy);
+  const activeEffects = conformActiveCombatEffects(data.activeEffects);
   return {
     hp: { current: num(hp.current, 0), temp: num(hp.temp, 0) },
     conditions: Array.isArray(data.conditions)
@@ -137,6 +140,7 @@ export function parseCombatState(data: Record<string, unknown>): CombatState {
     // round 1 — a natural default, never a permanent read-shim (rule 10).
     round: num(data.round, 1),
     recentActions: parseRecentActions(data.recentActions),
+    ...(activeEffects.length ? { activeEffects } : {}),
     ...(applied ? { appliedEncounterEffects: applied } : {}),
     ...(turnEconomy ? { turnEconomy } : {}),
   };
@@ -170,7 +174,8 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
               : undefined;
           const triggerEvents = Array.isArray(action.triggerEvents)
             ? action.triggerEvents.filter(
-                (event): event is "attack" => event === "attack"
+                (event): event is "attack" | "bonus-extend" =>
+                  event === "attack" || event === "bonus-extend"
               )
             : [];
           return [

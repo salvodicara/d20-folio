@@ -137,7 +137,8 @@ export function sessionToCombatState(
   round = 1,
   recentActions: RecentAttack[] = [],
   appliedEncounterEffects?: CombatState["appliedEncounterEffects"],
-  turnEconomy?: CombatState["turnEconomy"]
+  turnEconomy?: CombatState["turnEconomy"],
+  activeEffects?: CombatState["activeEffects"]
 ): CombatState {
   return {
     hp: { current: session.hp.current, temp: session.hp.temp },
@@ -148,6 +149,7 @@ export function sessionToCombatState(
     heroicInspiration: session.inspiration,
     round,
     recentActions,
+    ...(activeEffects?.length ? { activeEffects } : {}),
     ...(appliedEncounterEffects ? { appliedEncounterEffects } : {}),
     ...(turnEconomy ? { turnEconomy } : {}),
   };

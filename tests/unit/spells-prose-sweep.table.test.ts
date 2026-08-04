@@ -13,7 +13,10 @@ import { describe, expect, it } from "vitest";
 import { getSpellById, spells } from "@/data/spells";
 import type { CombatTargeting } from "@/data/types";
 import { evaluateGrants, type Grant } from "@/lib/grants";
-import { resolveGrantSourcesForSpells } from "@/lib/resolve-grant-sources";
+import {
+  resolveGrantSourcesForSpells,
+  spellGrantSurfacesActiveControl,
+} from "@/lib/resolve-grant-sources";
 
 interface StandingSpellExpectation {
   id: string;
@@ -175,12 +178,12 @@ describe("PROSE sweep — standing buff spells carry while-active grants", () =>
     }
   );
 
-  it("covers every public-SRD top-level while-active spell", () => {
+  it("covers every public-SRD spell that owns a caster-side active state", () => {
     const actual = spells
       .filter(
         (spell) =>
           spell.source === "SRD" &&
-          spell.grants?.some((grant) => grant.type === "while-active")
+          spell.grants?.some((grant) => spellGrantSurfacesActiveControl(spell, grant))
       )
       .map((spell) => spell.id)
       .sort();
@@ -225,6 +228,16 @@ describe("PROSE sweep — prepared spells become grant sources", () => {
     ]);
     expect(sources.map((s) => s.id).sort()).toEqual(["haste", "mage-armor"]);
     expect(sources.every((s) => s.ref?.kind === "spell")).toBe(true);
+  });
+
+  it("duration-only condition wrappers never become feature-rail controls", () => {
+    const sources = resolveGrantSourcesForSpells([
+      { srdId: "sleep", prepared: true },
+      { srdId: "eyebite", prepared: true },
+      { srdId: "searing-smite", prepared: true },
+    ]);
+    expect(sources.map((source) => source.id)).toEqual(["searing-smite"]);
+    expect(sources[0]?.grants).toHaveLength(1);
   });
 
   it("Haste active: +2 AC, Speed ×2, DEX-save advantage flow into the aggregate", () => {

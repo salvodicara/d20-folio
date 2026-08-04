@@ -130,10 +130,20 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     concentration: true,
     saveAbility: "WIS",
     conditionApplication: {
-      options: ["unconscious", "frightened"],
+      options: ["unconscious", "frightened", "poisoned"],
       max: 1,
       on: "failed-save",
+      lifetime: { kind: "source" },
     },
+    recurrence: "action-retrigger",
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-eyebite",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -288,9 +298,22 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageType: "radiant",
     damageDice: "6d8",
     saveAbility: "CON",
-    conditionApplication: { options: ["blinded"], on: "failed-save" },
+    conditionApplication: {
+      options: ["blinded"],
+      on: "failed-save",
+      lifetime: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+    },
     area: true,
     damageOnSave: "half",
+    recurrence: "action-retrigger",
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-sunbeam",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -388,7 +411,19 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "CON",
-    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    conditionApplication: {
+      options: ["restrained"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-flesh-to-stone",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {

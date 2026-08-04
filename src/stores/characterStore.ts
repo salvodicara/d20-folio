@@ -89,6 +89,11 @@ import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast, useUndoStore } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
+import {
+  endedEffectSuccessor,
+  isEffectActiveAtEncounterPosition,
+  mergeActiveCombatEffects,
+} from "@/lib/combat-effects";
 
 /**
  * Hard cap on the PERSISTED/synced log array. The log is append-only and never
@@ -186,6 +191,8 @@ interface CharacterState {
    * {@link declareAttack}. Empty outside a live encounter.
    */
   combatRecentActions: RecentAttack[];
+  /** Character-owned effect occurrences persisted in the combat subdoc. */
+  combatActiveEffects: ActiveCombatEffect[];
   combatAppliedEncounterEffects: CombatState["appliedEncounterEffects"];
   combatTurnEconomy: CombatState["turnEconomy"];
   /** Campaign-owned effects currently projected onto one character id. */
@@ -201,6 +208,10 @@ interface CharacterState {
     characterId: string | null,
     effects?: ReadonlyArray<ActiveCombatEffect>
   ) => void;
+  /** Apply source-owned SOLO effects and return their exact inverse. */
+  applySoloCombatEffects: (
+    effects: ReadonlyArray<ActiveCombatEffect>
+  ) => (() => void) | null;
   /** Inject (or clear) the combat-state persistence seam — the subscription lifecycle. */
   setCombatPersistence: (persistence: CombatPersistence | null) => void;
   setParentPersistenceFlush: (flush: (() => void) | null) => void;
@@ -619,7 +630,8 @@ function persistCombat(get: () => CharacterState): void {
       get().combatRound,
       get().combatRecentActions,
       get().combatAppliedEncounterEffects,
-      get().combatTurnEconomy
+      get().combatTurnEconomy,
+      get().combatActiveEffects
     )
   );
 }
@@ -639,16 +651,18 @@ function flushParentPersistence(get: () => CharacterState): void {
 
 function attachEncounterEffects(
   character: CharacterDoc,
-  projection: CharacterState["encounterEffectProjection"]
+  projection: CharacterState["encounterEffectProjection"],
+  localEffects: ReadonlyArray<ActiveCombatEffect>
 ): void {
+  const effects = [
+    ...localEffects,
+    ...(projection && projection.characterId === character.id ? projection.effects : []),
+  ];
   Object.defineProperty(character.session, "encounterEffects", {
     configurable: true,
     enumerable: false,
     writable: true,
-    value:
-      projection && projection.characterId === character.id
-        ? projection.effects
-        : undefined,
+    value: effects.length > 0 ? effects : undefined,
   });
 }
 
@@ -661,21 +675,42 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   parentPersistenceFlush: null,
   combatRound: 1,
   combatRecentActions: [],
+  combatActiveEffects: [],
   combatAppliedEncounterEffects: undefined,
   combatTurnEconomy: undefined,
   encounterEffectProjection: null,
 
   // The normal owner-edit load path — always clears read-only (so re-entering a
   // sheet you own after viewing someone else's is fully editable again).
-  setCharacter: (doc) => set({ character: doc, error: null, readonly: false }),
+  setCharacter: (doc) =>
+    set({
+      character: doc,
+      error: null,
+      readonly: false,
+      combatActiveEffects: [],
+    }),
   setEncounterEffects: (characterId, effects = []) => {
     const projection = characterId ? { characterId, effects } : null;
     const { character } = get();
-    if (character) attachEncounterEffects(character, projection);
     set({
       encounterEffectProjection: projection,
       ...(character ? { character: { ...character } } : {}),
     });
+  },
+  applySoloCombatEffects: (effects) => {
+    if (get().readonly || effects.length === 0) return null;
+    const character = get().character;
+    if (!character) return null;
+    const previous = get().combatActiveEffects;
+    const next = mergeActiveCombatEffects(previous, effects);
+    set({ combatActiveEffects: next, character: { ...character } });
+    persistCombat(get);
+    return () => {
+      const current = get().character;
+      if (!current) return;
+      set({ combatActiveEffects: previous, character: { ...current } });
+      persistCombat(get);
+    };
   },
   loadReadonly: (doc) => set({ character: doc, error: null, readonly: true }),
   setCombatPersistence: (persistence) => set({ combatPersistence: persistence }),
@@ -690,18 +725,23 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // Aid), the same ceiling every write path uses (rule 6 — one source for max).
     // The trio-merge math itself lives ONCE in `applyCombatToSession` (reused by the
     // in-hub party/encounter live read).
-    const max = effectiveMaxHp(character.character, character.session);
+    const activeEffects = combat?.activeEffects ?? [];
+    const projected = { ...character, session: { ...character.session } };
+    attachEncounterEffects(projected, get().encounterEffectProjection, activeEffects);
+    const max = effectiveMaxHp(projected.character, projected.session);
+    const hydrated = {
+      ...projected,
+      session: applyCombatToSession(projected.session, combat, max),
+    };
     set({
-      character: {
-        ...character,
-        session: applyCombatToSession(character.session, combat, max),
-      },
+      character: hydrated,
       // Mirror the subdoc's SOLO round so a later whole-object write carries it; `1` when
       // the subdoc is absent (a fresh char) — the turn engine seeds from this on hydrate.
       combatRound: combat?.round ?? 1,
       // Mirror the declared-attack ring so a later whole-object write preserves it (the
       // OVERWRITE write would otherwise drop a declaration made from another surface).
       combatRecentActions: combat?.recentActions ?? [],
+      combatActiveEffects: activeEffects,
       combatAppliedEncounterEffects: combat?.appliedEncounterEffects,
       combatTurnEconomy: combat?.turnEconomy,
     });
@@ -1463,6 +1503,29 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const priorConcentrationConditions = character.session.concentrationConditions;
     const nextConcentrationConditions =
       prev && prev !== spell ? undefined : priorConcentrationConditions;
+    const priorLocalEffects = get().combatActiveEffects;
+    const endedLocalEffects =
+      prev && prev !== spell
+        ? priorLocalEffects.filter(
+            (effect) =>
+              effect.duration.kind === "concentration" && effect.source.id === prev
+          )
+        : [];
+    const soloPosition = {
+      round: get().combatRound,
+      currentCombatantId: "self",
+      phase: "turn-start" as const,
+      order: ["self"],
+    };
+    const nextLocalEffects = mergeActiveCombatEffects(
+      priorLocalEffects.filter(
+        (effect) => !endedLocalEffects.some((ended) => ended.id === effect.id)
+      ),
+      endedLocalEffects.flatMap((effect) => {
+        const successor = endedEffectSuccessor(effect, soloPosition);
+        return successor ? [successor] : [];
+      })
+    );
     // RAW 2024 (PHB p.235): when you start casting another spell that
     // requires Concentration, your existing concentration ends. We
     // perform the swap silently in the store (the caller already knows
@@ -1480,6 +1543,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // CLEAR case can run it inside an undo-stack `execute` (redo re-applies it).
     const applyChange = (): string[] => {
       set({
+        combatActiveEffects: nextLocalEffects,
         character: {
           ...character,
           // S7 — fold the body-restore patch when the form is retracted.
@@ -1508,6 +1572,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           },
         },
       });
+      persistCombat(get);
       flushParentPersistence(get);
       if (opts?.silent) return [];
       const loggedIds: string[] = [];
@@ -1538,11 +1603,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
             // (Beast build + Temp HP + form) is the atomic undo target — a partial
             // concentration-only restore would leave the reverted body behind.
             if (retractForm) {
-              set({ character: before });
+              set({ character: before, combatActiveEffects: priorLocalEffects });
+              persistCombat(get);
               flushParentPersistence(get);
               return;
             }
             set({
+              combatActiveEffects: priorLocalEffects,
               character: {
                 ...cur,
                 session: {
@@ -1560,6 +1627,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
                 },
               },
             });
+            persistCombat(get);
             flushParentPersistence(get);
           };
         },
@@ -1670,11 +1738,17 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!effectiveSessionConditions(character.session).includes(condition)) return null;
     const prevConditions = character.session.conditions;
     const prevConcentrationConditions = character.session.concentrationConditions;
+    const prevLocalEffects = get().combatActiveEffects;
+    const nextLocalEffects = prevLocalEffects.filter(
+      (effect) =>
+        effect.payload.kind !== "condition" || effect.payload.conditionId !== condition
+    );
     // RA-12 — dropping Invisible ends the hidden state: the remembered find-DC
     // goes with it (and comes back on undo).
     const prevHiddenDc = character.session.hiddenDc;
     const clearsHiddenDc = condition === "invisible" && prevHiddenDc !== undefined;
     set({
+      combatActiveEffects: nextLocalEffects,
       character: {
         ...character,
         session: {
@@ -1701,6 +1775,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       const cur = get().character;
       if (!cur) return;
       set({
+        combatActiveEffects: prevLocalEffects,
         character: {
           ...cur,
           session: {
@@ -1818,7 +1893,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       get().combatRound,
       get().combatRecentActions,
       get().combatAppliedEncounterEffects,
-      get().combatTurnEconomy
+      get().combatTurnEconomy,
+      get().combatActiveEffects
     );
     set({ combatRecentActions: pushRecentAttack(base, entry).recentActions });
     persistCombat(get);
@@ -2353,7 +2429,25 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const character = get().character;
     if (!character) return noop;
     const priorBoundaries = character.session.effectBoundaries;
-    if (!priorBoundaries) return noop;
+    const priorLocalEffects = get().combatActiveEffects;
+    const localPosition = {
+      ...position,
+      currentCombatantId: "self",
+      order: ["self"],
+    };
+    const expiredLocalEffects = priorLocalEffects.filter(
+      (effect) => !isEffectActiveAtEncounterPosition(effect, localPosition)
+    );
+    const survivingLocalEffects = priorLocalEffects.filter((effect) =>
+      isEffectActiveAtEncounterPosition(effect, localPosition)
+    );
+    const nextLocalEffects = mergeActiveCombatEffects(
+      survivingLocalEffects,
+      expiredLocalEffects.flatMap((effect) => {
+        const successor = endedEffectSuccessor(effect, localPosition);
+        return successor ? [successor] : [];
+      })
+    );
     const sources = new Map(
       resolveActiveBoundaryEffects(character).map((effect) => [
         effect.activeKey,
@@ -2361,25 +2455,40 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       ])
     );
     const phaseIndex = position.phase === "turn-start" ? 0 : 1;
-    const expired = Object.entries(priorBoundaries).flatMap(([activeKey, boundary]) =>
-      position.round > boundary.round ||
-      (position.round === boundary.round &&
-        phaseIndex >= (boundary.phase === "turn-start" ? 0 : 1))
-        ? [{ activeKey, sourceId: sources.get(activeKey) ?? activeKey }]
-        : []
+    const expired = Object.entries(priorBoundaries ?? {}).flatMap(
+      ([activeKey, boundary]) =>
+        position.round > boundary.round ||
+        (position.round === boundary.round &&
+          phaseIndex >= (boundary.phase === "turn-start" ? 0 : 1))
+          ? [{ activeKey, sourceId: sources.get(activeKey) ?? activeKey }]
+          : []
     );
-    if (expired.length === 0) return noop;
+    if (expired.length === 0 && expiredLocalEffects.length === 0) return noop;
     const expiredKeys = new Set(expired.map((effect) => effect.activeKey));
     const priorActive = character.session.activeFeatures ?? [];
     const priorCastLevels = character.session.activeSpellCastLevels;
+    const priorConcentration = character.session.concentration;
+    const priorConcentrationCastLevel = character.session.concentrationCastLevel;
+    const priorConcentrationConditions = character.session.concentrationConditions;
+    const concentrationActiveKeys = new Set(
+      activeKeysForConcentration(
+        character.character,
+        character.session,
+        priorConcentration
+      )
+    );
+    const concentrationExpired =
+      priorConcentration !== "" &&
+      expired.some((effect) => concentrationActiveKeys.has(effect.activeKey));
     const boundaries = Object.fromEntries(
-      Object.entries(priorBoundaries).filter(([key]) => !expiredKeys.has(key))
+      Object.entries(priorBoundaries ?? {}).filter(([key]) => !expiredKeys.has(key))
     );
     const activeFeatures = priorActive.filter((key) => !expiredKeys.has(key));
     const castLevels = Object.fromEntries(
       Object.entries(priorCastLevels ?? {}).filter(([key]) => !expiredKeys.has(key))
     );
     set({
+      combatActiveEffects: nextLocalEffects,
       character: {
         ...character,
         session: {
@@ -2391,16 +2500,35 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         },
       },
     });
+    const concentrationLogIds = concentrationExpired
+      ? get().setConcentration("", { undoable: false })
+      : [];
     const logIds = expired.map((effect) =>
       get().logEvent({ kind: "effect-expired", sourceId: effect.sourceId })
     );
+    const localLogIds = expiredLocalEffects.map((effect) =>
+      get().logEvent({ kind: "effect-expired", sourceId: effect.source.id })
+    );
+    persistCombat(get);
     return {
-      expired,
+      expired: [
+        ...expired,
+        ...expiredLocalEffects.map((effect) => ({
+          activeKey:
+            effect.payload.kind === "condition"
+              ? `condition:${effect.payload.conditionId}`
+              : effect.payload.activeKey,
+          sourceId: effect.source.id,
+        })),
+      ],
       restore: () => {
+        concentrationLogIds.forEach((id) => get().removeLogEntry(id));
         logIds.forEach((id) => get().removeLogEntry(id));
+        localLogIds.forEach((id) => get().removeLogEntry(id));
         const current = get().character;
         if (!current) return;
         set({
+          combatActiveEffects: priorLocalEffects,
           character: {
             ...current,
             session: {
@@ -2408,9 +2536,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
               activeFeatures: priorActive,
               activeSpellCastLevels: priorCastLevels,
               effectBoundaries: priorBoundaries,
+              concentration: priorConcentration,
+              concentrationCastLevel: priorConcentrationCastLevel,
+              concentrationConditions: priorConcentrationConditions,
             },
           },
         });
+        persistCombat(get);
       },
     };
   },
@@ -2432,6 +2564,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const priorTimers = character.session.effectTimers;
     const priorActive = character.session.activeFeatures ?? [];
     const priorCastLevels = character.session.activeSpellCastLevels;
+    const priorConcentration = character.session.concentration;
+    const priorConcentrationCastLevel = character.session.concentrationCastLevel;
+    const priorConcentrationConditions = character.session.concentrationConditions;
+    const concentrationExpired =
+      priorConcentration !== "" &&
+      expired.some((effect) => effect.sourceId === priorConcentration);
     // Drop each expired state's toggle (every while-active grant retracts) and
     // emit its expiry log line.
     const expiredKeys = new Set(expired.map((effect) => effect.activeKey));
@@ -2451,6 +2589,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         },
       },
     });
+    const concentrationLogIds = concentrationExpired
+      ? get().setConcentration("", { undoable: false })
+      : [];
     const logIds: (string | null)[] = expired.map((e) =>
       get().logEvent({ kind: "effect-expired", sourceId: e.sourceId })
     );
@@ -2458,6 +2599,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       // Remove the expiry log lines FIRST (each its own `set`), THEN read fresh
       // state for the timer/toggle restore — reading `cur` before `removeLogEntry`
       // and setting after would re-write the just-removed log line back.
+      concentrationLogIds.forEach((id) => get().removeLogEntry(id));
       logIds.forEach((id) => get().removeLogEntry(id));
       const cur = get().character;
       if (!cur) return;
@@ -2473,6 +2615,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
               : { effectTimers: priorTimers }),
             activeFeatures: priorActive,
             activeSpellCastLevels: priorCastLevels,
+            concentration: priorConcentration,
+            concentrationCastLevel: priorConcentrationCastLevel,
+            concentrationConditions: priorConcentrationConditions,
           },
         },
       });
@@ -3034,6 +3179,10 @@ useCharacterStore.subscribe((state, previous) => {
     (state.character !== previous.character ||
       state.encounterEffectProjection !== previous.encounterEffectProjection)
   ) {
-    attachEncounterEffects(state.character, state.encounterEffectProjection);
+    attachEncounterEffects(
+      state.character,
+      state.encounterEffectProjection,
+      state.combatActiveEffects
+    );
   }
 });

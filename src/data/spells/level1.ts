@@ -1,5 +1,5 @@
 import type { SrdSpellData } from "../types";
-import { timedSpellDuration } from "./duration";
+import { timedConditionLifetime, timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
   {
@@ -31,7 +31,11 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: false,
     saveAbility: "WIS",
-    conditionApplication: { options: ["charmed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: timedConditionLifetime(24 * 60),
+    },
     source: "SRD",
   },
   {
@@ -145,7 +149,11 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     effectTag: "control",
     saveAbility: "WIS",
-    conditionApplication: { options: ["charmed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: timedConditionLifetime(60),
+    },
     targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
@@ -308,7 +316,19 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: true,
     saveAbility: "STR",
     area: true,
-    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    conditionApplication: {
+      options: ["restrained"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-entangle",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -848,7 +868,19 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     effectTag: "control",
     saveAbility: "WIS",
     area: true,
-    conditionApplication: { options: ["unconscious"], on: "failed-save" },
+    conditionApplication: {
+      options: ["unconscious"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-sleep",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -876,7 +908,19 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "WIS",
-    conditionApplication: { options: ["prone", "incapacitated"], on: "failed-save" },
+    conditionApplication: {
+      options: ["prone", "incapacitated"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-tashas-hideous-laughter",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -935,7 +979,11 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     instantaneous: true,
     saveAbility: "CON",
     area: true,
-    conditionApplication: { options: ["blinded"], on: "failed-save" },
+    conditionApplication: {
+      options: ["blinded"],
+      on: "failed-save",
+      lifetime: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
+    },
     source: "SRD",
   },
   {
@@ -993,7 +1041,19 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "1d6",
     damageDicePerUpcast: "1d6",
     saveAbility: "STR",
-    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    conditionApplication: {
+      options: ["restrained"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-ensnaring-strike",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -1011,7 +1071,11 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     saveAbility: "DEX",
     area: true,
-    conditionApplication: { options: ["prone"], on: "failed-save" },
+    conditionApplication: {
+      options: ["prone"],
+      on: "failed-save",
+      lifetime: { kind: "manual" },
+    },
     source: "SRD",
   },
   {
@@ -1075,7 +1139,11 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDicePerUpcast: "1d8",
     attackType: "ranged",
     saveAbility: "CON",
-    conditionApplication: { options: ["poisoned"], on: "failed-save" },
+    conditionApplication: {
+      options: ["poisoned"],
+      on: "failed-save",
+      lifetime: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
+    },
     source: "SRD",
   },
   {

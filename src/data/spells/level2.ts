@@ -1,5 +1,5 @@
 import type { SrdSpellData } from "../types";
-import { timedSpellDuration } from "./duration";
+import { timedConditionLifetime, timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
   {
@@ -119,7 +119,12 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     components: { v: true, s: false, m: false },
     concentration: false,
     saveAbility: "CON",
-    conditionApplication: { options: ["blinded", "deafened"], max: 1, on: "failed-save" },
+    conditionApplication: {
+      options: ["blinded", "deafened"],
+      max: 1,
+      on: "failed-save",
+      lifetime: timedConditionLifetime(1),
+    },
     targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
@@ -356,7 +361,19 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "WIS",
-    conditionApplication: { options: ["paralyzed"], on: "failed-save" },
+    conditionApplication: {
+      options: ["paralyzed"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-hold-person",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -372,12 +389,24 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
-    conditionApplication: { options: ["invisible"], on: "automatic" },
+    conditionApplication: {
+      options: ["invisible"],
+      on: "automatic",
+      lifetime: { kind: "source" },
+    },
     targeting: {
       affinity: "ally",
       maxTargets: 1,
       maxTargetsPerUpcast: 1,
     },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-invisibility",
+        duration: timedSpellDuration(60),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -598,8 +627,20 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: true,
     components: { v: true, s: true, m: false },
     concentration: true,
-    conditionApplication: { options: ["deafened"], on: "automatic" },
+    conditionApplication: {
+      options: ["deafened"],
+      on: "automatic",
+      lifetime: { kind: "source" },
+    },
     targeting: { affinity: "any" },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-silence",
+        duration: timedSpellDuration(10),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -734,9 +775,21 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     concentration: true,
     saveAbility: "DEX",
     area: true,
-    conditionApplication: { options: ["restrained"], on: "failed-save" },
+    conditionApplication: {
+      options: ["restrained"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
     recurrence: "on-enter-or-start-turn",
     resolveOnCast: false,
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-web",
+        duration: timedSpellDuration(60),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {

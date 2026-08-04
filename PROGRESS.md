@@ -85,6 +85,20 @@ exact-target encounter effects and Short/Long Rest expiry from the stored cast l
 guard (mutation-proved against Bane) prevents any future persistent spell from shipping without an
 enforceable duration or with inconsistent minute/round math. The six-fixture feature audit continues.
 
+**Condition-lifetime + explicit Rage maintenance CLOSED on branch (2026-08-04):** every condition
+application in the composed spell catalogue now declares a typed maximum: source/Concentration,
+fixed time, exact actor/target turn boundary, or manual table-observed end, with per-condition
+overrides and slot tiers where RAW differs. Encounter occurrences expire independently; Geas resolves
+30 days / 365 days / indefinite before target review; Symbol keeps its 1- versus 10-minute outcomes;
+solo casts persist the same occurrence shape in `combat/state`, survive route/reload, compose with the
+campaign projection and expire at the same exact boundary. Expired source state ends Concentration and
+one undo restores the full timer/cast/log projection. Whole-catalogue guards cover initial and recurring
+applications. The same audit found that Rage's documented
+Bonus-Action maintenance was only a cost-free override: Santaera now gets a real **Extend Rage** action,
+available only while raging, occupying the durable Bonus slot without consuming another Rage use.
+Feign Death now projects Speed 0, Poisoned immunity and every non-Psychic resistance in addition to its
+two conditions. The non-VTT early exits remain explicit corrections rather than fabricated observation.
+
 **Live-team truth audit — Barbarian/Monk follow-up CLOSED on branch (2026-08-04):** two remaining L3
 facts that were still prose now use reusable engine primitives. Primal Knowledge projects a typed
 optional STR ability onto its five active checks only while Rage is active; the cockpit and PDF share

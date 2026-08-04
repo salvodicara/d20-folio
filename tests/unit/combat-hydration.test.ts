@@ -112,7 +112,7 @@ describe("Combat sync — async character arrival", () => {
     expect(useCombatStore.getState().initiative).toBe("");
   });
 
-  it("restores a spent action, reaction, and movement for the exact same turn", () => {
+  it("restores spent actions, maintenance events, reaction, and movement", () => {
     const key = "encounter:camp:9:3:pc-member";
     useCombatStore.getState().selectAction({
       id: "vicious-mockery",
@@ -120,6 +120,13 @@ describe("Combat sync — async character arrival", () => {
       nameLoc: { custom: "Vicious Mockery" },
       slot: "action",
       triggerEvents: ["attack"],
+    });
+    useCombatStore.getState().selectAction({
+      id: "barbarian-rage-extend",
+      name: "Extend Rage",
+      nameLoc: { custom: "Extend Rage" },
+      slot: "bonus",
+      triggerEvents: ["bonus-extend"],
     });
     useCombatStore.getState().useReaction("cutting-words");
     useCombatStore.getState().setMovementUsed(15);
@@ -135,6 +142,7 @@ describe("Combat sync — async character arrival", () => {
       "vicious-mockery",
     ]);
     expect(restored.selected.action[0]?.triggerEvents).toEqual(["attack"]);
+    expect(restored.selected.bonus[0]?.triggerEvents).toEqual(["bonus-extend"]);
     expect(restored.reactionUsedId).toBe("cutting-words");
     expect(restored.movementUsedFt).toBe(15);
     expect(restored.nextAttackAdvantage).toBe(true);

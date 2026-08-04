@@ -54,6 +54,21 @@ function stackingKey(effect: ActiveCombatEffect): string {
   ].join("\u0000");
 }
 
+/** Apply the same occurrence stacking rules to a character's local effects that
+ * the campaign append-only ledger uses. */
+export function mergeActiveCombatEffects(
+  current: ReadonlyArray<ActiveCombatEffect>,
+  additions: ReadonlyArray<ActiveCombatEffect>
+): ActiveCombatEffect[] {
+  return foldCombatEffectOps(
+    [...current, ...additions].map((effect) => ({
+      id: `apply:${effect.id}`,
+      kind: "apply" as const,
+      effect,
+    }))
+  );
+}
+
 function scaledHpFlatForEffect(
   effect: ActiveCombatEffect,
   include: (grant: Extract<Grant, { type: "hp-flat" }>) => boolean
