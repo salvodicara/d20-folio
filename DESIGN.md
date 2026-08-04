@@ -650,7 +650,7 @@ applies) loading and error states. Affordances are consistent across every surfa
   are axe-clean both themes.
 - **The pip is the topbar's ONE flexible element — the brand/search/account are fixed-size invariants**
   (owner 2026-07-11: "The INVARIANTS (logo, search bar, profile) cannot change or users will be wtf. If
-  anything has to adapt on mobile it's the ENCOUNTER CHIPS"). The brand lockup, the "Ask the Folio" search
+  anything has to adapt on mobile it's the ENCOUNTER CHIPS"). The brand lockup, the "Search the Folio" search
   trigger, and the account cluster carry `flex-shrink: 0` and NEVER resize or shift when combat starts; the
   pip lives in the topbar's `flex: 1` spacer (`min-width: 0`) and absorbs the slack. At ≤640px the pip
   collapses to a single **glyph+count** tap target — `⚔ {round}` (the reused `.cp-dest-lead` inside the
@@ -711,7 +711,7 @@ Figma / Canva): **wordmark left, ONE sign-in action right, content the hero, no 
 
 **THE RULE (owner gate 2026-07-31): it is the SAME bar in both auth states — identical brand,
 height, background, border, spacing.** The ONLY difference logged-out is that the auth-gated **right
-cluster** (the hub tabs + the "Ask the Folio" palette + the account menu) is **replaced, IN THE SAME
+cluster** (the hub tabs + the "Search the Folio" palette + the account menu) is **replaced, IN THE SAME
 SLOT,** by ONE sign-in button. Nothing else moves. The Topbar keys purely on `!user`:
 
 - **The brand is one element, rendered unconditionally** — the exact `<BrandMark variant="gilt"
@@ -1214,11 +1214,15 @@ in a void: last ink → panel edge = strip → panel edge.
     neutral and are named by an explicit Default/Alternate tag. Never reuse a chromatic spell-slot
     or free-cast class merely to manufacture that hierarchy: the semantic class must describe the
     decision the player is making.
-- **Command palette ("Ask the Folio"):** a floating panel (`--bg-surface-2` + `--elev-floating`,
+- **Command palette ("Search the Folio"):** a floating panel (`--bg-surface-2` + `--elev-floating`,
   `--z-overlay`, scrim) with a carved search field and keyboard-navigable result rows (hover/selected
   → `--bg-surface-3` + a left `--accent-primary` marker), section eyebrows, and `aria-current` on the
   active route. Search is bilingual + accent-insensitive + token-based (`matchesSearch`), never raw
-  `includes()`.
+  `includes()`. Its promise is literal: trigger and title say **Search the Folio** / **Cerca nel
+  Folio**, with a **Quick access** rubric and a bounded placeholder naming people, rules and commands.
+  Never call this palette “Ask” or frame it as an assistant — the product has no AI surface, and a
+  familiar global-search model is both more trustworthy and faster to parse. Topbar trigger and dialog
+  title consume the one canonical `palette.title` key; never fork that promise into duplicate copy.
 
 ### Glossary terms (`GlossaryTip`)
 

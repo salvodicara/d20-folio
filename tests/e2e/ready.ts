@@ -234,7 +234,7 @@ export async function openChronicleEditor(page: Page): Promise<Locator> {
 }
 
 /**
- * Guarantee the ⌘K "Ask the Folio" palette's SEARCH FIELD holds focus after the
+ * Guarantee the ⌘K "Search the Folio" palette's SEARCH FIELD holds focus after the
  * palette is open — pointer-appropriately, on BOTH the `chromium` and `mobile`
  * projects.
  *

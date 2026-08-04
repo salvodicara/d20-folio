@@ -1,7 +1,7 @@
 /**
  * ReportDialog — the in-app bug / feature reporter (OWN-37).
  *
- * Reachable from "Ask the Folio" (⌘K → "bug" / "report" / "feature" / "segnala"),
+ * Reachable from "Search the Folio" (⌘K → "bug" / "report" / "feature" / "segnala"),
  * the account menu ("Report a bug"), and the crash screens ("Report this
  * problem", pre-filled via `crash-report.ts`) — the entry-point list lives in
  * docs/BUG_REPORTING.md. It puts the user ON RAILS: pick a Type and Severity from carved

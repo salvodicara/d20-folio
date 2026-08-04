@@ -1,5 +1,5 @@
 /**
- * E2E: opening "Ask the Folio" (⌘K) must not RESIZE the page on touch (owner:
+ * E2E: opening "Search the Folio" (⌘K) must not RESIZE the page on touch (owner:
  * "opening the command palette resizes the page, mainly on mobile").
  *
  * Root cause split by device:

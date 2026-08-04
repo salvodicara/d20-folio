@@ -1,6 +1,6 @@
 /**
  * ImportCharacterHost — mounts the shared character-import flow at the SHELL level so
- * the "Ask the Folio" command palette can launch it from anywhere (OWN-28d). It owns
+ * the "Search the Folio" command palette can launch it from anywhere (OWN-28d). It owns
  * the hidden file input + review modal via {@link useCharacterImport}, and registers
  * its picker-opener in the {@link import-trigger} bridge for the palette to call.
  *

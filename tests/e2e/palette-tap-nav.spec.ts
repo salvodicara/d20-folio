@@ -3,7 +3,7 @@
  * "on mobile, searching a spell in the palette shows results — but tapping a
  * result does not lead to the compendium").
  *
- * Drives the REAL mobile flow: tap the topbar trigger to open "Ask the Folio",
+ * Drives the REAL mobile flow: tap the topbar trigger to open "Search the Folio",
  * tap the search field (this is what focuses it on touch — coarse pointers skip
  * the open auto-focus), type a query, then TAP a compendium hit. The assertion is
  * the user-visible outcome: the URL deep-links to the entry (`?type=…&sel=…`) and
@@ -24,7 +24,7 @@ import { test, expect, type Page } from "@playwright/test";
 async function openPaletteViaTrigger(page: Page, tap: boolean) {
   await page.goto("/characters/mock-1");
   await expect(page.getByText("Lyra Voss").first()).toBeVisible();
-  const trigger = page.getByRole("button", { name: /ask the folio/i });
+  const trigger = page.getByRole("button", { name: /search the folio/i });
   if (tap) await trigger.tap();
   else await trigger.click();
   await expect(page.locator('[role="combobox"]')).toBeVisible();

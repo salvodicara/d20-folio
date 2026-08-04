@@ -37,7 +37,7 @@ import {
 } from "@/lib/shortcuts";
 
 export interface GlobalShortcutsOptions {
-  /** Toggle/open the "Ask the Folio" palette (owned by AppShell state). */
+  /** Toggle/open the "Search the Folio" palette (owned by AppShell state). */
   setPaletteOpen: Dispatch<SetStateAction<boolean>>;
 }
 

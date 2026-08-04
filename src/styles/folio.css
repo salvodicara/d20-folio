@@ -5920,7 +5920,7 @@ button.trk-pip:active {
   flex: none;
 }
 
-/* "Ask the Folio" command-palette trigger (#24). A quiet recessed pill at rest
+/* "Search the Folio" command-palette trigger (#24). A quiet recessed pill at rest
    that LIGHTS UP on hover/focus — gilt edge + gold icon + the gold illumination
    halo on keyboard focus — so the app's global search reads as a premium, clearly
    interactive affordance (was a flat grey bordered button). */
@@ -5979,7 +5979,7 @@ button.trk-pip:active {
 /* ─────────────────── ANONYMOUS-VIEWER CHROME (public /view + /legal) ───────────────────
    The header is the SAME bar in both auth states (owner gate 2026-07-31): identical
    brand, height, background, border, spacing. The ONLY difference logged-out is that the
-   auth-gated right cluster (hub nav + "Ask the Folio" palette + account menu) is REPLACED,
+   auth-gated right cluster (hub nav + "Search the Folio" palette + account menu) is REPLACED,
    IN THE SAME SLOT, by ONE sign-in button. `.topbar-anon` is a byte-for-byte mirror of the
    account cluster's box (`.topbar-user`) — same display / alignment / flex-shrink invariant
    / 8px gap — so nothing but the contents moves. Auth is Google-only and sign-in IS sign-up,
@@ -7852,7 +7852,7 @@ button.create-need:focus-visible .create-need-chev {
    name; the quietest possible "you're safe" signal (Google-Drive calm). */
 /* D20 — the status pip is an INLAID JEWEL: a status-coloured gem SET into a small
    carved brass socket (the gilt-rimmed well), so it reads as part of the
-   Illuminated-Folio chrome — matching the gilt "Ask the Folio" + avatar beside it —
+   Illuminated-Folio chrome — matching the gilt "Search the Folio" + avatar beside it —
    not a bare floating dot. The socket recedes; the gem catches a top-light facet. */
 .save-ind--dot {
   display: inline-flex;
@@ -8713,7 +8713,7 @@ button.create-need:focus-visible .create-need-chev {
   box-shadow: 0 0 5px color-mix(in oklab, var(--accent-glow) 55%, transparent);
 }
 
-/* N-E — "Ask the Folio" universal palette: grouped results (Sections · Characters ·
+/* N-E — "Search the Folio" universal palette: grouped results (Sections · Characters ·
    Compendium). Each row reuses `.menu-item`; the group heading is a quiet gilt
    rubric and the trailing `.palette-sub` carries the type / class·level at a glance. */
 .palette-group {

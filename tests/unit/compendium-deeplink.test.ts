@@ -1,7 +1,7 @@
 /**
  * Compendium deep-link seed (OWN-25e) — `useCompendiumPicker({ initialSelectedId })`
  * opens straight on an entry's DETAIL, regardless of the facets (which start open).
- * This is the engine half of "Ask the Folio → a spell/item opens it ready to read":
+ * This is the engine half of "Search the Folio → a spell/item opens it ready to read":
  * the palette emits `/compendium?type=…&sel=<id>` and the page seeds the picker here.
  */
 import { describe, it, expect } from "vitest";

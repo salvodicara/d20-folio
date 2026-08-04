@@ -10,7 +10,7 @@ interface UIState {
   sheetMode: SheetMode;
   /**
    * Whether the global bug/feature report dialog is open (OWN-37). A transient
-   * UI flag (NOT persisted) — the "Ask the Folio" palette flips it on, the
+   * UI flag (NOT persisted) — the "Search the Folio" palette flips it on, the
    * AppShell-hosted ReportDialog reads it. Kept here (vs. local AppShell state)
    * so the palette can open the dialog without prop-drilling or a context.
    */

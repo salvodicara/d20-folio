@@ -1,10 +1,9 @@
 {
   "palette": {
     "title": "Search the Folio",
-    "rubric": "Ask the Folio",
-    "trigger": "Ask the Folio",
-    "description": "Find a character, a spell or item, or jump to a section.",
-    "placeholder": "Characters, spells, items, sections…",
+    "rubric": "Quick access",
+    "description": "Find characters, campaigns, rules, and commands from anywhere.",
+    "placeholder": "Characters, rules, and commands…",
     "empty": "No matches",
     "groupQuick": "Quick actions",
     "groupSections": "Sections",
