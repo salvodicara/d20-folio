@@ -167,10 +167,17 @@ describe("Treasury", () => {
   });
 
   it("adds coins via the fastest path: Add coins → amount → one commit", () => {
-    render(<Treasury />);
+    const { container } = render(<Treasury />);
     // Intent is declared by the opening tap (TREASURY-UX), so the disclosed form
     // has ONE commit button — also labeled "Add coins".
     fireEvent.click(screen.getByRole("button", { name: /add coins/i }));
+    // The fixed balance row itself becomes the denomination picker; entering a
+    // transaction must not duplicate the same five coin values underneath it.
+    expect(container.querySelectorAll(".cur-tok")).toHaveLength(5);
+    expect(screen.getByRole("button", { name: /gp/i })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
     fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "10" } });
     fireEvent.click(screen.getByRole("button", { name: /add coins/i }));
     const c = useCampaignStore.getState().campaign;

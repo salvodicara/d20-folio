@@ -247,6 +247,18 @@ store or danger flow; non-managers still render nothing. The representative EN p
 Verification: collapsed screenshots 5/5 and expanded screenshots 3/3 across EN/IT, dark/light and
 desktop/mobile; focused DM/section/route/i18n guards 22/22; collapsed+expanded axe 4/4, locale sweep 4/4,
 mobile overflow 2/2; typecheck green.
+**Wave 23 campaign inline-work audit (2026-08-04):** Chronicle edit, Session-summary edit,
+Shared-note edit, and Treasury Add now join the first-class surface census instead of being inferred
+from the resting hub. Real screenshots confirmed the three prose editors already use coherent
+in-place drafts, Save/Cancel hierarchy and bounded page flow, so no speculative redesign was added.
+The Treasury state exposed one real duplication: it printed the same five balances as a static row
+and again as a denomination picker. The fixed row now becomes selectable during Add/Take, preserving
+the same currency state and commit path while deleting the second visual model. The new light-state
+axe leg then found gold at 4.42:1 and silver at 4.23:1 on the recessed button fill; selectable token
+amounts now use each metal's existing deep ink in light while border/wash retain metal identity.
+Verification: initial inline-state screenshots 12/12 plus final Treasury screenshots 3/3 across
+EN/IT, light desktop and dark mobile; campaign/currency/route/i18n tests 29/29; final axe 8/8, locale sweep
+8/8, mobile overflow 4/4; typecheck and lint green.
 **Owner continuation mandate (2026-08-04):** the visual approval closes only this ornament fork.
 The whole-app UI/UX elevation remains active and exhaustive: audit every surface and recurring flow,
 then simplify, clarify or deepen it where evidence shows friction. Nothing is exempt because it is

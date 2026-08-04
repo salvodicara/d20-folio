@@ -1688,6 +1688,13 @@ canonical recipes, never re-rolled:
   removal and deletion live together in the standard `SectionPanel` detail, closed by default and sticky
   per campaign. The controls and their confirmation seams are unchanged when opened. Never keep a danger
   zone expanded in the campaign's everyday story/session reading path.
+- **Campaign inline work states are part of the surface, not implementation detail** (2026-08-04):
+  Chronicle edit, Session-summary edit, Shared-note edit, and Treasury transaction each participate in
+  the screenshot/axe/i18n/mobile census. They transform their existing card in place; none opens a
+  parallel modal. In Treasury, the fixed `CurrencyTokens` balance row itself becomes the denomination
+  picker during Add/Take — never render an identical second coin row. Selectable tokens keep bright metal
+  identity in their border/wash, but on LIGHT their amount uses the existing `--cur-*-deep` sibling because
+  the recessed input fill is deeper than the plain panel where the regular ramps were tuned.
 - **Chronicle book-spread** (`.chronicle-spread`, `.chronicle-rail`): on the full-width hub band the
   reading view is a book SPREAD — a reading column (its prose still clamped to the ~72ch `--measure`
   reading measure; the extra band width buys the rail, NOT longer lines) beside a vertical chapter

@@ -16999,6 +16999,13 @@ button.econ-tok-filter:active .econ-disc {
     inset 0 1px 0 var(--emboss-sheen, rgba(245, 230, 180, 0.18)),
     var(--elev-resting);
 }
+/* A selectable token sits on `--input-fill`, deeper than the plain panel where
+   the regular metal ramps were tuned. On light, gold and silver missed AA by
+   0.08 / 0.27; use each metal's existing deep sibling as the text ink while the
+   border/wash keeps the brighter metal identity. Dark keeps the bright ramp. */
+[data-theme="light"] .cur-tok-btn .cur-amt {
+  color: var(--cm-deep);
+}
 .cur-tok-btn:focus-visible {
   outline: none;
   border-color: var(--accent-primary);
