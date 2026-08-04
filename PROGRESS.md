@@ -8,7 +8,46 @@
 > - **The open gap frontier** (per-seam, per-entity) → `docs/AUTOMATION_BACKLOG.md`.
 > - **How it works today** (incl. the architecture invariants the R1–R8 campaign locked in) → `docs/ARCHITECTURE.md`.
 
-## Active epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
+## Active epic — UI/UX perfection: the open-source D&D Beyond alternative (owner-ratified 2026-08-04)
+
+The owner has reopened the WHOLE product experience for a fresh, evidence-led redesign campaign:
+the shipped app is a strong baseline, but no prior attempt to “elevate” it is authoritative. Audit
+every user-facing surface and interaction against current best practice, **Baldur's Gate 3** as the
+craft/interaction north star, and **D&D Beyond** as the direct product benchmark. The destination is
+the familiar, predictable, exceptionally efficient open-source alternative to D&D Beyond, with a
+single premium design vision and no tolerance for visual or UX weirdness.
+
+The campaign's first-class workstreams are:
+
+- a complete dark/light × desktop/mobile × EN/IT surface audit before implementation, preserving
+  only decisions that survive fresh scrutiny;
+- a genuinely desirable LIGHT theme designed as its own daylight world at full parity with the dark
+  flagship — removal is only a last resort after visual evidence, not the plan;
+- a Lucide-first recognition system: preserve the app's existing icon grammar and cherry-pick a
+  tiny, licensed fantasy-SVG subset only for proven semantic gaps, with minimal normalization and
+  at-a-glance recognition taking precedence over decoration;
+- original item/weapon/armor imagery for compendium discovery and reading surfaces, progressively
+  loaded and never allowed to reduce in-session speed, clarity, accessibility or offline discipline;
+- quick dark/light previews before any broad design-direction implementation, then one bounded
+  surface wave at a time behind golden rule 25's blocking screenshot approval.
+
+**Wave 1 direction approved (owner, 2026-08-04):** **Shaded Scriptorium** replaces the washed
+golden-hour light field. The same daylight scenes now frame a neutral stone/linen work plane in
+controlled architectural shade; warm vellum and ivory are reserved for working/decision surfaces,
+and gold returns to edge/state/ceremony. The first 58-surface light desktop sweep is green, as are
+the 205 semantic contrast pairs. The visual-harness defect that treated all nine inline Guided
+creation steps as overlays is fixed at their shared surface builder (`overlay: false`, 9/9 green).
+**Wave 2 implemented; screenshot approval pending (2026-08-04):** Creation preserves the existing
+single-source form state and Guided gates while Quick Start now folds completed decisions into
+summary chapters, keeps only the name visible, and pairs them with a sticky live character/choices
+rail on desktop (in-flow on mobile). Summary and missing-requirement rows reopen the owning chapter;
+real blockers force that chapter open. The initial preset now fits in one desktop viewport instead
+of a multi-screen all-at-once form. Verification: creation unit family 184/184, theme contrast and
+backdrop guards 221/221, Quick screenshots 5/5 across the canonical EN/IT × dark/light ×
+desktop/mobile variants, targeted axe 2/2, mobile overflow/navigation 1/1. Rule 25 blocks merge until
+the owner approves the delivered before/after screenshots.
+
+## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 
 > **Phase-3 rollout status (2026-07-31):** Sheet ✓ · Compendium ✓ (protruding index tabs, one
 > construction) · Campaigns ✓ · dialogs/portals ✓ (wb-scoped shells, leather plates, the

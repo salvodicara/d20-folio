@@ -217,6 +217,24 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
         "to a flat opaque gradient without it."
     ).toBe(true);
   });
+
+  it("#14 — Shaded Scriptorium keeps scene, work plane, and ivory surfaces in distinct bands", () => {
+    const palette =
+      /\[data-theme="light"\][^{]*\{[^}]*--bg-page:\s*#948f84[^}]*--bg-surface-1:\s*#e9dec6[^}]*--bg-surface-2:\s*#f6ecd6/;
+    expect(
+      palette.test(indexCss),
+      "MISSING: the owner-approved Shaded Scriptorium light palette. Reusing the old honey " +
+        "field collapses scene, work plane, and decision surfaces into one beige band."
+    ).toBe(true);
+
+    const painter =
+      /\[data-theme="light"\] body::after \{[^}]*filter:\s*brightness\(0\.56\) saturate\(0\.72\) contrast\(1\.12\) sepia\(0\.03\)[^}]*rgba\(0, 0, 0, 0\.3\) 100%/;
+    expect(
+      painter.test(indexCss),
+      "MISSING: the Shaded Scriptorium daylight grading + retained atmospheric tail. " +
+        "Without both, light returns to a washed scene or a flat long-page floor."
+    ).toBe(true);
+  });
 });
 
 /**

@@ -678,22 +678,15 @@
      darker field also lifts text contrast and makes the vellum-grain texture read.
      Surface-1/2 are nudged a touch brighter so the card→field separation is
      unmistakable; --bg-recessed is held (the muted/faint text AA is tuned to it). */
-  /* DEEP-PARCHMENT light (owner-picked direction A): a deep aged-leather field so the
-     bright ivory cards FLOAT off it with real drama — the light-mode answer to the dark
-     theme's near-black-field pop. The field opens a wide value canyon (~L*72 field vs
-     ~L*95 cards) so every panel reads as a struck tile floating above the tome (BG3
-     aged-parchment depth, not flat AI-cream). The field is only a backdrop — recessed
-     wells live INSIDE cards, so their carve relationship is to surface-1, not the page.
-     The bare field carries chrome + the home-hero backdrop; the deepened inks above
-     (text + accent gold + warning amber) are all tuned to clear AA ON this ground. */
-  --bg-page: #bca268; /* deep burnished parchment field — cards float hard, field text AA-safe */
-  /* Cards stay BRIGHT gilt-ivory (NOT darkened) — the whole drama is the value gap
-     between the deep field and the bright cards. The top-lit surface-2 → surface-1
-     gradient reads as a struck ivory tile catching light. */
-  --bg-surface-1: #f6ead0; /* primary card — bright gilt-ivory, floats off the deep field */
-  --bg-surface-2: #fdf6df; /* the lightest raised tier — near-ivory gilt */
-  --bg-surface-3: #e2d2a8; /* nested surface — above the deep field, below the card */
-  --bg-recessed: #cdbb8e; /* carved-channel fill (inside cards) — deepened to keep its carve */
+  /* SHADED SCRIPTORIUM (owner-approved 2026-08-04): daylight belongs to the
+     environment, while the folio rests in controlled architectural shade. The
+     page field is neutral stone/linen rather than honey, so scene, work plane,
+     and decision surface occupy three distinct value/temperature bands. */
+  --bg-page: #948f84;
+  --bg-surface-1: #e9dec6;
+  --bg-surface-2: #f6ecd6;
+  --bg-surface-3: #d2c5a9;
+  --bg-recessed: #bdb097;
   /* Warm umber (not black) so the `.input` recessed gradient reads as a pressed
      vellum channel; mixing the tan fill toward black went muddy-olive (the dirty
      textarea / dropdown boxes). See the dark-theme note. */
@@ -704,7 +697,7 @@
   /* Clean light parchment writing-field (see the dark-theme note). Sits just below
      the cards so the inset shadow still reads as carved, without the muddy mid-tan
      of --bg-recessed at field size. Dark text on it clears AA comfortably. */
-  --input-fill: #e7dab4;
+  --input-fill: #ded2b8;
   /* avatar-placeholder well (light vellum) — see the dark-theme note. */
   --portrait-well: radial-gradient(
     circle at 35% 28%,
@@ -724,18 +717,18 @@
      "special is the more-luminous lit register"), yet still unmistakably INK,
      not the gold FILL (--accent-primary) or the gold RUBRIC (--accent-text).
      Clears AA on EVERY ground it can sit on: 10.2:1 on surface-1 / 8.2:1 on
-     surface-3 / 4.95:1 even on the bare deep-parchment field. The prior #33260a
+     surface-3 and on the bare neutral work field. The prior #33260a
      sat a hair off --text-primary (no visible lit register); this is the
      designed sibling. */
   --text-special: #4a3006;
-  /* Inks for the DEEP-PARCHMENT field (--bg-page #bca268): secondary/muted/faint
+  /* Inks for the Shaded Scriptorium field: secondary/muted/faint
      labels sit directly on the page (wizard `.field-label`, section labels), so they
      must clear AA on that deep ground. Darker warm-brown ink on the bright ivory cards
      only reads richer (illuminated-manuscript ink), so darkening is safe app-wide in
      light. #342912 / #322710 clear ≥4.5:1 on the field AND on every brighter card and
      the deepest well (--bg-recessed). */
   /* Deepened one crisp step (light-craft audit): loose eyebrows / italic
-     descriptors on the BARE deep-parchment field (#bca268) — wizard rubrics,
+     descriptors on the BARE neutral field — wizard rubrics,
      settings helper text, the 404 body — read muddy at the prior values, sitting
      too near the field's own value. A small darkening lands them crisp on the
      field (and only richer as illuminated-manuscript ink on the bright ivory
@@ -745,7 +738,7 @@
   --text-faint: #291e0a;
   --text-inverse: #fbf4df;
   /* Text that sits DIRECTLY on the candlelit backdrop (not on a card). The inks
-     above were tuned for the BARE field (#bca268), but the prominent 0.55 art
+     above were tuned for the BARE field, but the prominent atmospheric art
      layer paints OVER the field and darkens the void to a deep candlelit brown —
      so dark ink vanishes there (loose section labels, wizard headings/hints, etc.).
      This is the ONE "perfect" on-backdrop colour: a warm illuminated-parchment that
@@ -795,11 +788,10 @@
   --asset-roster-scene: url("/assets/backgrounds/roster-scene-light.webp");
   --asset-creation-scene: url("/assets/backgrounds/creation-scene-light.webp");
 
-  /* OWN-36 — the atmospheric backdrop sits at the SAME prominence as the dark
-     theme (0.55) so the background art is as visible + amazing in light as in
-     dark (owner mandate). The warm parchment field hosts it; content cards float
-     over it. */
-  --app-bg-art-opacity: 0.55;
+  /* The daylight scene is deliberately present, then graded into shade in the
+     shared painter below. Opacity provides detail; luminance separation comes
+     from the theme filter, not from washing the art into the page field. */
+  --app-bg-art-opacity: 0.78;
 
   /* MORNING-LIGHT TRANSLUCENCY — the daylight sibling of dark's candlelit
      translucency (T3): the same page-level surfaces (the `.folio-panel`
@@ -810,12 +802,12 @@
      at 0.94 the worst composite (deep ink on a panel over the plate's darkest
      honey patch) still clears AA with >2x headroom. Nested content surfaces
      stay opaque — translucency never compounds (same rule as dark). */
-  --panel-alpha: 0.94;
+  --panel-alpha: 0.97;
 
-  --border-soft: #d8caa0;
-  --border-medium: #b8a878;
-  --border-strong: #8a7848;
-  --border-accent: #6a4e18;
+  --border-soft: #c8bda5;
+  --border-medium: #97886a;
+  --border-strong: #706044;
+  --border-accent: #614a1d;
 
   /* Empty/spent PIP recipe — MIRROR dark's hollow-outline SEMANTICS on vellum.
      The prior light recipe filled the socket with the solid muddy-khaki
@@ -834,7 +826,7 @@
   --pip-empty-fill: color-mix(in oklab, var(--bg-recessed) 26%, transparent);
 
   /* The single gold UI-fill (buttons / selection / active-nav) doubles as small gold
-     UI-text on the bare DEEP-PARCHMENT field (--bg-page #bca268), so it must clear AA
+     UI-text on the bare neutral work field, so it must clear AA
      there. #4a380c clears ≥4.5:1 on the field and reads as a rich antique gold on the
      fills; lighter antique-gold stops (gold-700 #7a5f24, #6b5219, #54400f) all landed
      under 4.5:1 on this deep ground. The deep gold-900 --accent-text stays the
@@ -1138,39 +1130,22 @@
     rgba(74, 52, 16, 0.05) 100%
   );
 
-  /* Light vellum: a gilt pool top-left + a faint lapis pool bottom-right + a warm
-     umber vignette so aged parchment reads at the edges (the page is the deeper
-     vellum field; the vignette deepens its corners without dulling the cards). */
-  /* Stronger pools in light than the prior near-invisible set — gold-on-cream reads
-     far more faintly than gold-on-black, so light needs a bolder atmosphere to feel
-     as rich as dark (#62): a confident gilt pool top-left, a cool lapis pool bottom-
-     right, and a deeper umber vignette so the aged parchment reads with real depth at
-     the edges. Tuned to stay clear of the field text's AA (the tints are corner-
-     weighted; text-primary on the warmed cream still clears 4.5:1). */
-  /* D47 full-pass — a WARMER candlelit field: the gilt pool is brighter + reaches
-     further, with a second soft golden hearth-glow low-centre, so the light room
-     reads candlelit (not even cream). Corner/edge-weighted, so field text AA holds. */
+  /* Shaded Scriptorium field: warm daylight enters from the upper right, a faint
+     verdigris-cool pool anchors the opposite edge, and a neutral architectural
+     vignette holds the long-page floor. No global sepia wash. */
   --vellum-grain:
     radial-gradient(
-      ellipse 96% 76% at 9% -3%,
-      rgba(188, 142, 48, 0.3) 0%,
-      transparent 58%
+      ellipse 88% 72% at 78% -8%,
+      rgba(222, 198, 144, 0.36),
+      transparent 62%
     ),
+    radial-gradient(ellipse 72% 88% at -8% 56%, rgba(53, 72, 69, 0.2), transparent 68%),
     radial-gradient(
-      ellipse 70% 50% at 50% 116%,
-      rgba(196, 150, 52, 0.14) 0%,
-      transparent 60%
+      ellipse 120% 100% at 50% 40%,
+      transparent 44%,
+      rgba(45, 40, 31, 0.34) 100%
     ),
-    radial-gradient(
-      ellipse 90% 72% at 92% 104%,
-      rgba(38, 70, 132, 0.11) 0%,
-      transparent 58%
-    ),
-    radial-gradient(
-      ellipse 150% 130% at 50% 40%,
-      transparent 46%,
-      rgba(58, 40, 10, 0.34) 100%
-    );
+    linear-gradient(145deg, #aaa394 0%, #928e84 52%, #77756f 100%);
 
   /* Light glows pull a BRIGHTER struck gold than the AA-constrained UI-fill: gold-300
      (#d4ac4d) visibly blooms on cream where `--accent-primary` (#4a380c, deep umber for
@@ -1421,38 +1396,25 @@ body::after {
   transform: scale(var(--app-bg-art-scale, 1));
   pointer-events: none;
 }
-/* Daylight sibling plates — the light backdrop is now the theme's OWN daylight
-   plate (P9 daylight study via the light `--asset-home-hero`), pre-graded into
-   the honey band the deep-parchment field hosts, so the old colour-lift filter
-   (a compensation for borrowing the DARK candlelit art) is retired: the plate
-   renders in its native grade, exactly like dark renders its own. */
+/* Shaded Scriptorium painter. The source remains a daylight scene, but the folio
+   sits in cool architectural shade: detail stays present while brightness and
+   saturation retreat behind the work plane. The tail never disappears into a
+   flat field; it settles to a low atmospheric presence for long pages. */
 [data-theme="light"] body::after {
-  /* THE seam fix (light-craft audit — three independent sightings: campaign hub,
-     member sheet, wizard, create). On dark the art's dark lower band blends into
-     the near-black field, so it fades smoothly; on light the lower band would
-     otherwise hard-CUT against the parchment field mid-viewport, a visible
-     horizontal tone-step. Dissolve the art's lower region into transparency with
-     a designed vertical mask so it melts into `--bg-page` (the field shows
-     through the tail) with no tone-step — the light sibling of dark's natural
-     blend. This changes per-pixel MASK alpha (a dissolve), NOT the owner-ratified
-     0.55 layer opacity, which still governs the art's overall presence above.
-     Kept for the daylight plate too: its honey tones sit near the field so the
-     dissolve is gentle, and it is what keeps ARBITRARY user campaign art (any
-     brightness) from ever cutting a hard edge against the light field. Dark is
-     untouched (this rule is light-only). */
+  filter: brightness(0.56) saturate(0.72) contrast(1.12) sepia(0.03);
   -webkit-mask-image: linear-gradient(
     to bottom,
     #000 0%,
-    #000 40%,
-    rgba(0, 0, 0, 0.35) 78%,
-    transparent 100%
+    #000 42%,
+    rgba(0, 0, 0, 0.68) 78%,
+    rgba(0, 0, 0, 0.3) 100%
   );
   mask-image: linear-gradient(
     to bottom,
     #000 0%,
-    #000 40%,
-    rgba(0, 0, 0, 0.35) 78%,
-    transparent 100%
+    #000 42%,
+    rgba(0, 0, 0, 0.68) 78%,
+    rgba(0, 0, 0, 0.3) 100%
   );
 }
 /* USER-UPLOADED campaign art under light chrome (the hub raises
@@ -1481,6 +1443,7 @@ body::after {
     ),
     var(--app-bg-art, var(--asset-home-hero));
   filter: saturate(0.82) contrast(0.94);
+  opacity: 0.55;
 }
 @media (prefers-reduced-motion: no-preference) {
   /* A whisper of parallax-free settle on first paint only (no scroll-jank): the

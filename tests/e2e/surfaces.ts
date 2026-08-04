@@ -908,6 +908,7 @@ function buildSurfaces(): Surface[] {
         route,
         edit: false,
         variants: OVERLAY_VARIANTS,
+        overlay: false,
         ready: readyCreate,
         prepare: async (page) => {
           await gotoGuidedStep(page, stepIndex);

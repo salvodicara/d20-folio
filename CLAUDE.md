@@ -38,11 +38,14 @@ later, EXCEPT the subset the **soft-launch charter** (owner-ratified 2026-08-02,
 promotes to "blocking the first community post": budget rethreshold to £10–15 · App Check +
 quotas · privacy/terms pages · a pre-post export + minimal error watch · trademark-safe
 nominative-use post copy (IT-first; composed-build exposure = owner-accepted risk with the
-two-site fallback documented) (the light theme is at FULL parity: the depth-parity
-rebuild shipped 2026-07-09, the owner-ratified "Daylight Sibling Plates" art direction shipped
-2026-07-10, and the owner-ratified "Ember Penumbra" lit-magic grammar shipped 2026-07-11 — per-theme
-scene art, the P8 panel material wired, the custom-art veil, the glow-below gilt grammar, no open
-light-theme work). Roadmap + open decisions: `PROGRESS.md`; competitive positioning vs D&D Beyond: `docs/POSITIONING.md`; the closed automation-audit ledger: `docs/AUTOMATION_BACKLOG.md`.
+two-site fallback documented). The forward UI frontier reopened owner-ratified 2026-08-04: the
+whole-product UI/UX perfection epic now targets the open-source D&D Beyond alternative, with BG3 as
+the craft/interaction north star. Its first approved wave is the **Shaded Scriptorium** light-theme
+rebuild (neutral stone/linen work plane, daylight scene in controlled shade, warm ivory decision
+surfaces), followed by Creation progressive disclosure and the curated icon/item-art recognition
+system; `PROGRESS.md` is the live ledger. Roadmap + open decisions: `PROGRESS.md`; competitive
+positioning vs D&D Beyond: `docs/POSITIONING.md`; the closed automation-audit ledger:
+`docs/AUTOMATION_BACKLOG.md`.
 
 ## Canonical doc index
 

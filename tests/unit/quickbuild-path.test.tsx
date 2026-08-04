@@ -55,6 +55,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import type { User } from "firebase/auth";
 import type { CharacterData } from "@/types/character";
+import type { GuidedStep } from "@/features/creation/steps/steps";
 
 // Mounting the full wizard eagerly loads all SRD data — matching the documented
 // headroom in the sibling creation suites.
@@ -82,7 +83,19 @@ function randomizeButton(): HTMLElement {
   return screen.getByRole("button", { name: "Randomize" });
 }
 
+function openChapter(step: GuidedStep): HTMLButtonElement {
+  const toggle = document.getElementById(`quick-chapter-${step}-toggle`);
+  if (!(toggle instanceof HTMLButtonElement)) {
+    throw new Error(`missing Quick Start chapter: ${step}`);
+  }
+  if (toggle.getAttribute("aria-expanded") === "false") fireEvent.click(toggle);
+  return toggle;
+}
+
 function selectValue(name: RegExp): string {
+  const pattern = name.source.toLowerCase();
+  if (pattern.includes("species")) openChapter("race");
+  if (pattern.includes("background")) openChapter("background");
   const el = screen.getByRole("combobox", { name });
   if (!(el instanceof HTMLSelectElement)) throw new Error("expected a <select>");
   return el.value;
@@ -90,6 +103,7 @@ function selectValue(name: RegExp): string {
 
 /** Any species option the sheet is NOT currently on. */
 function otherSpecies(): string {
+  openChapter("race");
   const el = screen.getByRole("combobox", { name: /species/i });
   if (!(el instanceof HTMLSelectElement)) throw new Error("expected a <select>");
   const other = [...el.options].map((o) => o.value).find((v) => v !== el.value);
@@ -99,8 +113,20 @@ function otherSpecies(): string {
 
 /** Pick a class on the one-page sheet (the plaque grid IS the class control). */
 function pickClass(classId: string) {
+  const quickToggle = document.getElementById("quick-chapter-class-toggle");
+  if (
+    quickToggle instanceof HTMLButtonElement &&
+    quickToggle.getAttribute("aria-expanded") === "false"
+  ) {
+    fireEvent.click(quickToggle);
+  }
   const label = presClassName(classId, "en");
   fireEvent.click(screen.getByRole("option", { name: new RegExp(`^${label}`) }));
+}
+
+function expectPointBuyComplete() {
+  openChapter("abilities");
+  expect(screen.getByText(/all spent/i)).toBeInTheDocument();
 }
 
 const presets = Object.entries(QUICKBUILD_PRESETS);
@@ -134,11 +160,50 @@ describe("CreationWizard — Quick Start opens complete", () => {
       ).toHaveAttribute("aria-selected", "true");
       expect(selectValue(/species/i)).toBe(DEFAULT_QUICKBUILD_PRESET.raceId);
       expect(selectValue(/background/i)).toBe(DEFAULT_QUICKBUILD_PRESET.backgroundId);
-      expect(screen.getByText(/all spent/i)).toBeInTheDocument();
+      expectPointBuyComplete();
       // …with only the name outstanding.
       expect(screen.getByRole("status")).toHaveTextContent(/name/i);
       expect(createButton()).toBeDisabled();
       unmount();
+    },
+    SUITE_TIMEOUT
+  );
+
+  it(
+    "folds complete choices into accessible chapters and keeps incomplete ones open",
+    async () => {
+      await renderPage();
+
+      expect(screen.getByPlaceholderText(/enter name/i)).toBeInTheDocument();
+      const collapsedClass = document.getElementById("quick-chapter-class-toggle");
+      expect(collapsedClass).toHaveAttribute("aria-expanded", "false");
+      expect(collapsedClass).not.toHaveAttribute("aria-disabled");
+      expect(document.getElementById("quick-chapter-review-toggle")).toHaveAttribute(
+        "aria-expanded",
+        "false"
+      );
+
+      const classToggle = openChapter("class");
+      expect(classToggle).toHaveAttribute("aria-controls", "quick-chapter-class");
+      expect(classToggle).toHaveAttribute("aria-expanded", "true");
+      fireEvent.change(screen.getByRole("spinbutton", { name: /level/i }), {
+        target: { value: "5" },
+      });
+      expect(classToggle).toHaveAttribute("aria-disabled", "true");
+      fireEvent.click(classToggle);
+      expect(classToggle).toHaveAttribute("aria-expanded", "true");
+
+      const raceToggle = document.getElementById("quick-chapter-race-toggle");
+      expect(raceToggle).toHaveAttribute("aria-expanded", "false");
+      fireEvent.click(raceToggle as HTMLButtonElement);
+      expect(raceToggle).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByRole("combobox", { name: /species/i })).toBeInTheDocument();
+      fireEvent.click(raceToggle as HTMLButtonElement);
+      expect(raceToggle).toHaveAttribute("aria-expanded", "false");
+
+      expect(
+        screen.getByRole("complementary", { name: /your choices/i })
+      ).toBeInTheDocument();
     },
     SUITE_TIMEOUT
   );
@@ -152,7 +217,7 @@ describe("CreationWizard — Quick Start opens complete", () => {
 
         expect(selectValue(/species/i)).toBe(preset.raceId);
         expect(selectValue(/background/i)).toBe(preset.backgroundId);
-        expect(screen.getByText(/all spent/i)).toBeInTheDocument();
+        expectPointBuyComplete();
 
         expect(screen.getByRole("status")).toHaveTextContent(/name/i);
         expect(createButton()).toBeDisabled();
@@ -269,6 +334,7 @@ describe("CreationWizard — Quick Start opens complete", () => {
       await renderPage();
       pickClass("bard");
       // A hand edit — the build is the player's now, not the preset's.
+      openChapter("race");
       fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
         target: { value: "orc" },
       });
@@ -306,6 +372,7 @@ describe("CreationWizard — Quick Start opens complete", () => {
       fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
         target: { value: "Thornwake" },
       });
+      openChapter("race");
       fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
         target: { value: "orc" },
       });
@@ -342,6 +409,7 @@ describe("CreationWizard — Quick Start opens complete", () => {
       // The presets are level-1 builds by charter; raising the level re-opens
       // the decisions that level brings (a subclass, more spells) and the gate
       // says so rather than quietly minting an under-built character.
+      openChapter("class");
       fireEvent.change(screen.getByRole("spinbutton", { name: /level/i }), {
         target: { value: "5" },
       });
@@ -439,18 +507,21 @@ describe("CreationWizard — Quick Start opens complete", () => {
       // for the new background instead — neither is ever named as missing.
       // (Asks the new background BRINGS, like the Acolyte's Magic Initiate, are
       // a different matter: those are new decisions, and the gate says so.)
+      openChapter("background");
       fireEvent.change(screen.getByRole("combobox", { name: /background/i }), {
         target: { value: "acolyte" },
       });
-      expect(screen.getByText(/all spent/i)).toBeInTheDocument();
+      expectPointBuyComplete();
       expect(screen.queryByText(/background ability boosts/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/choose your class skills/i)).not.toBeInTheDocument();
 
       // Once the player has sculpted something, the swap still clears — there
       // is no conventional build left to preserve.
+      openChapter("race");
       fireEvent.change(screen.getByRole("combobox", { name: /species/i }), {
         target: { value: "orc" },
       });
+      openChapter("background");
       fireEvent.change(screen.getByRole("combobox", { name: /background/i }), {
         target: { value: "criminal" },
       });

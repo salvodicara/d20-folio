@@ -45,6 +45,13 @@ describe("anti-FOUC boot background stays in sync with --bg-page (#59)", () => {
     expect(m?.[1]?.toLowerCase(), "light boot bg present").toBe(lightPage);
   });
 
+  it("the light boot splash equals the light --bg-page token", () => {
+    const m = html.match(
+      /html\[data-theme="light"\]\s+\.boot-splash\s*\{\s*background-color:\s*(#[0-9a-fA-F]{3,8})/i
+    );
+    expect(m?.[1]?.toLowerCase(), "light splash bg present").toBe(lightPage);
+  });
+
   it("the dark theme-color meta equals the dark --bg-page token", () => {
     const m = html.match(/name="theme-color"\s+content="(#[0-9a-fA-F]{3,8})"/i);
     expect(m?.[1]?.toLowerCase(), "theme-color meta present").toBe(darkPage);
