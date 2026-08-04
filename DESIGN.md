@@ -1206,6 +1206,12 @@ in a void: last ink → panel edge = strip → panel edge.
     request exists (or explicitly resets against a stable request key), so Cancel/Escape discards
     provisional steppers, selections, and filters. Reopening starts from the current committed
     character state; hidden mounted modal state must never become a phantom choice.
+  - **Payment hierarchy follows meaning, not borrowed colour classes.** In a constrained resource
+    picker, every legal payment remains a whole-row action and unaffordable choices stay visible but
+    disabled. The declared default alone receives the restrained gilt field; alternatives remain
+    neutral and are named by an explicit Default/Alternate tag. Never reuse a chromatic spell-slot
+    or free-cast class merely to manufacture that hierarchy: the semantic class must describe the
+    decision the player is making.
 - **Command palette ("Ask the Folio"):** a floating panel (`--bg-surface-2` + `--elev-floating`,
   `--z-overlay`, scrim) with a carved search field and keyboard-navigable result rows (hover/selected
   → `--bg-surface-3` + a left `--accent-primary` marker), section eyebrows, and `aria-current` on the

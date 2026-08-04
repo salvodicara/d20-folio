@@ -103,6 +103,16 @@ increment → Cancel → reopen and asserts the full `9 of 9` budget before ever
 showed the compact two-row picker already coherent in both themes and at phone width, so its layout
 stays unchanged. Verification: screenshots 3/3, axe 2/2, i18n 2/2, mobile layout 1/1, typecheck +
 targeted lint green.
+**Wave 9 resource-choice audit (2026-08-04):** variable pool spending (Lay on Hands) and alternate
+payment (Wild Companion) now join the first-class surface census through existing public SRD
+scenarios. Their fresh EN/IT × light/dark × desktop/mobile evidence confirms that the compact dialog,
+direct numeric field, constrained disabled state, and whole-row choices already follow familiar
+table-speed patterns. One semantic hierarchy defect was corrected without a new component: the
+payment picker had borrowed cast-level classes, leaving the declared default neutral while tinting
+the alternate like a free cast. A dedicated semantic variant now gives restrained gilt emphasis only
+to the named default and keeps alternatives neutral; focused component tests pin the hierarchy,
+disabled state, confirm, and cancel behavior. Verification: screenshots 6/6, axe 4/4, focused modal
+tests 9/9, i18n 4/4, mobile layout 2/2, typecheck + targeted zero-warning lint green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 
