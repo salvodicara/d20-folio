@@ -80,6 +80,23 @@ export function exhaustionSpeedReductionFt(level: number): number {
   return clampExhaustion(level) * 5;
 }
 
+/** Resolve an optional alternate ability for a skill check. Optional rules use
+ * the better modifier; ties keep the skill's ordinary ability. */
+export function effectiveSkillAbility(
+  skillId: string,
+  base: AbilityCode,
+  options: ReadonlyArray<{ skills: ReadonlyArray<string>; ability: AbilityCode }>,
+  scores: Readonly<Record<AbilityCode, number>>
+): AbilityCode {
+  return options.reduce(
+    (best, option) =>
+      option.skills.includes(skillId) && scores[option.ability] > scores[best]
+        ? option.ability
+        : best,
+    base
+  );
+}
+
 /**
  * Compute AC from equipped armor + DEX modifier + shield + item bonuses.
  *

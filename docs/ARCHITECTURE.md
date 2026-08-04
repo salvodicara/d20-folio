@@ -472,6 +472,13 @@ ordinary player-chosen actions rather than the unconditional `initiative-tracker
 `targeting.affinity:"self"` is preserved by `combatResolutionSpec`, so self-heals enter the same resolver
 in solo and encounter play instead of being misclassified as enemy actions.
 
+Conditional follow-ups use action provenance, not feature-specific UI state. An authored action can
+declare `requiresActionThisTurn` with the stable id of its prerequisite; the persisted turn receipt keeps
+the follow-up unavailable until that action was committed and keeps the gate intact across navigation.
+Its damage/save/target/resource facts then compile through the ordinary resolver. Level-dependent option
+sets use the generic `pickByLevel` threshold helper shared with dice scaling, so Deflect Attacks' redirect
+widens its eligible damage types at Deflect Energy without a Monk branch in the resolver or UI.
+
 Turn-action facts that must survive navigation live beside the persisted economy receipt:
 `nextAttackAdvantage` and `movementLocked` make Steady Aim's pending roll and Speed-0 consequence
 durable and exactly undoable. Authored actions describe rules identity through `economyCategory`, not
@@ -2296,6 +2303,13 @@ banner lines), `weapon-facts-view.ts` (the **unified weapon facts VM** — `buil
 `WeaponFactsVM` rendered by the SAME shared `WeaponFacts` component on BOTH the Combat and Inventory
 tabs, so the two weapon cards are identical by construction; a mastery chip appears only for an OWNED
 mastery), and `toast-intent.ts` (the toasts-as-data localizer).
+
+Skill ability substitution also terminates at this one presenter seam. The grant aggregate carries
+locale-free `skill-ability-option` facts; `deriveSavesAndChecks` chooses the better effective modifier
+for each named active check and exposes the resulting ability + bonus together. PDF export calls the
+same pure helper, so it cannot disagree with the cockpit. Passive scores intentionally stay on the
+skill's ordinary ability because an optional ability used when making a check is not a standing passive
+replacement. No class id or localized skill name participates in the decision.
 
 **`LocText` — the engine's localizable text REFERENCE (`src/lib/loc-text.ts`).** Engine-core carries a
 display string it cannot materialize (it has no IT and must not read the active locale) as a

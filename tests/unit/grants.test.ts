@@ -201,6 +201,7 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
     { type: "spell-attack-bonus", amount: 1, scope: "all" },
     { type: "save-bonus", ability: "CHA", min: 1 },
     { type: "ability-check-bonus", appliesTo: "all-checks", value: 1, min: 0 },
+    { type: "skill-ability-option", skills: ["stealth"], ability: "STR" },
     { type: "initiative-bonus", amount: 2 },
     {
       type: "damage-rider",
@@ -325,7 +326,7 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
   it("covers exactly the 70 distinct Grant kinds (roster guard)", () => {
     const kinds = new Set(sample.map((g) => g.type));
     expect(kinds.size).toBe(sample.length); // no duplicate kinds in the roster
-    expect(kinds.size).toBe(70);
+    expect(kinds.size).toBe(71);
   });
 
   it("each kind writes its expected aggregate field (nothing silently dropped)", () => {
@@ -382,6 +383,7 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
     expect(out.spellAttackBonus).toHaveLength(1);
     expect(out.saveBonusAbilities).toHaveLength(1);
     expect(out.abilityCheckBonuses).toHaveLength(1);
+    expect(out.skillAbilityOptions).toEqual([{ skills: ["stealth"], ability: "STR" }]);
     expect(out.initiativeBonusFlat).toBe(2);
     expect(out.damageRiders).toHaveLength(1);
     expect(out.spellDamageBonuses).toHaveLength(1);

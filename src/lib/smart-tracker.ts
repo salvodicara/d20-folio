@@ -104,6 +104,7 @@ import {
   appendAbilityModToDice,
   scaleCantripDice,
   scaleUpcastDice,
+  pickByLevel,
   pickDiceByLevel,
   spellInstanceCount,
 } from "@/lib/utils";
@@ -4514,15 +4515,20 @@ function applySaveAttackSummary(
     if (attack.resolution) summary.damageResolution = attack.resolution;
     if (attack.damageType) {
       summary.damageType = attack.damageType;
-    } else if (attack.damageTypeChoices && attack.damageTypeChoices.length > 0) {
-      // Player picks one each use — surface every option (the chip joins them
-      // "/"); the primary `damageType` keeps the damage chip + facts row lit.
-      summary.damageType = attack.damageTypeChoices[0];
-      summary.damageTypes = [...attack.damageTypeChoices];
-      summary.multiDamageTypeFlavor = "choice";
-    } else if (attack.damageTypeFromBundle) {
-      const derived = resolveBundleDamageType(attack.damageTypeFromBundle, character);
-      if (derived) summary.damageType = derived;
+    } else {
+      const damageTypeChoices =
+        pickByLevel(attack.damageTypeChoicesByLevel, scalingLevel) ??
+        attack.damageTypeChoices;
+      if (damageTypeChoices && damageTypeChoices.length > 0) {
+        // Player picks one each use — surface every option (the chip joins them
+        // "/"); the primary `damageType` keeps the damage chip + facts row lit.
+        summary.damageType = damageTypeChoices[0];
+        summary.damageTypes = [...damageTypeChoices];
+        summary.multiDamageTypeFlavor = "choice";
+      } else if (attack.damageTypeFromBundle) {
+        const derived = resolveBundleDamageType(attack.damageTypeFromBundle, character);
+        if (derived) summary.damageType = derived;
+      }
     }
     // S11b — heal-or-damage (Divine Spark): the SAME resolved total is ALSO a heal
     // the player may apply instead. Surface BOTH chips on the one card — the heal

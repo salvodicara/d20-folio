@@ -33,6 +33,7 @@ import {
   passiveScore,
   passiveAdvantageStep,
   effectiveAbilityScores,
+  effectiveSkillAbility,
   resolveAbilityCheckBonus,
   computeInitiative,
   characterHasFeat,
@@ -473,22 +474,28 @@ export function buildCharacterPdfViewModel(
 
   // ── skills (override-first; auto unless a manual override) ──
   const skills: PdfSkillVM[] = ALL_SKILLS.map((skill): PdfSkillVM => {
+    const ability = effectiveSkillAbility(
+      skill.id,
+      skill.ability,
+      fullAggregate.skillAbilityOptions,
+      effectiveScores
+    );
     const proficiency: SkillProficiency | null = displayedSkills[skill.id] ?? null;
     const override = charData.skillBonusOverrides?.[skill.id] ?? null;
     const auto = skillBonus(
-      effectiveScores[skill.ability],
+      effectiveScores[ability],
       level,
       proficiency,
       null,
       exhaustion,
       pb,
-      checkBonusFor(skill.id, skill.ability)
+      checkBonusFor(skill.id, ability)
     );
     return {
       id: skill.id,
       name: t(`skills.${skill.id}`),
-      ability: skill.ability,
-      abilityShort: t(`abilities.${skill.ability}_short`),
+      ability,
+      abilityShort: t(`abilities.${ability}_short`),
       bonus: fmtMod(override ?? auto),
       state: proficiency ? DOT_STATE[proficiency] : "none",
     };

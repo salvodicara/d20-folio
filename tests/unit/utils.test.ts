@@ -14,6 +14,7 @@ import {
   spellInstanceCount,
   scaleUpcastDice,
   pickDiceByLevel,
+  pickByLevel,
 } from "@/lib/utils";
 import { ALIGNMENTS, isStandardAlignment } from "@/lib/lore-utils";
 
@@ -407,5 +408,12 @@ describe("pickDiceByLevel (S12b — level-keyed dice, shared aura/form-attack/ac
   it("returns undefined below the first threshold or with no map (caller floors)", () => {
     expect(pickDiceByLevel(stars, 2)).toBeUndefined();
     expect(pickDiceByLevel(undefined, 10)).toBeUndefined();
+  });
+});
+
+describe("pickByLevel", () => {
+  it("selects non-dice level-scaled values with the same threshold rule", () => {
+    expect(pickByLevel({ 1: ["a"], 13: ["a", "b"] }, 12)).toEqual(["a"]);
+    expect(pickByLevel({ 1: ["a"], 13: ["a", "b"] }, 13)).toEqual(["a", "b"]);
   });
 });

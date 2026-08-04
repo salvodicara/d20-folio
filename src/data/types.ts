@@ -1503,6 +1503,9 @@ export interface ActionAttack {
    * `multiDamageTypeFlavor: "choice"`. Mutually exclusive with `damageType`.
    */
   damageTypeChoices?: ReadonlyArray<DamageType>;
+  /** Level-scaled variant of `damageTypeChoices` for a rule whose eligible
+   * triggering types expand later (Deflect Energy). Highest threshold wins. */
+  damageTypeChoicesByLevel?: Readonly<Record<number, ReadonlyArray<DamageType>>>;
   /**
    * Derive the damage type from the chosen option of a `choice-grant-bundle` on
    * the SAME source — the `bundleKey` (Breath Weapon: `"dragonborn-ancestry"`).

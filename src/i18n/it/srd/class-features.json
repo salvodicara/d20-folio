@@ -86,6 +86,9 @@
     "description": "Ottieni competenza in un'abilità a tua scelta tra quelle disponibili ai Barbari al 1° livello. Inoltre, mentre la tua Ira è attiva, puoi incanalare il potere primordiale: ogni volta che effettui una prova di abilità con Acrobazia, Intimidire, Percezione, Furtività o Sopravvivenza, puoi effettuarla come prova di Forza anche se normalmente usa una caratteristica diversa.",
     "name": "Conoscenza Primordiale"
   },
+  "barbarian-primal-knowledge.grants.1": {
+    "label": "Conoscenza Primordiale"
+  },
   "barbarian-rage": {
     "description": "Nel tuo turno, puoi entrare in Ira come Azione Bonus. Mentre sei in preda all'Ira, ottieni i seguenti benefici: hai Vantaggio alle prove e ai tiri salvezza di Forza, quando effettui un attacco basato sulla Forza infliggi danni bonus pari al tuo danno dell'Ira, e hai Resistenza ai danni Contundenti, Perforanti e Taglienti. La tua Ira dura fino alla fine del tuo turno successivo e puoi estenderla round dopo round (fino a un massimo di 10 minuti) effettuando un tiro per colpire contro un nemico, costringendo un nemico a effettuare un tiro salvezza o usando un'Azione Bonus per mantenerla. Recuperi un uso speso di Ira con un Riposo Breve e tutti con un Riposo Lungo.",
     "name": "Ira"
@@ -572,6 +575,11 @@
   },
   "monk-deflect-attacks.mechanics.actions.0": {
     "description": "Riduci il danno di un attacco di 1d10 + mod DES + livello Monaco."
+  },
+  "monk-deflect-attacks.mechanics.actions.1": {
+    "description": "Dopo aver ridotto il danno a 0, spendi 1 Punto Concentrazione. Il bersaglio effettua un TS su Destrezza o subisce 2 dadi Arti Marziali + mod DES danni del tipo innescante.",
+    "name": "Devia Attacco",
+    "summary": "A 0 danni: 1 Concentrazione · TS DES · 2 dadi marziali + DES"
   },
   "monk-deflect-energy": {
     "description": "Ora puoi usare la tua capacità Deviare Attacchi contro qualsiasi tipo di danno, non solo i danni dagli attacchi con arma.",

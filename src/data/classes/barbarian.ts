@@ -245,8 +245,7 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     // is NO second skill at Level 10 (the gap's claim was a 2014-ism — verified
     // against the Barbarian Features table, where Level 10 is "Subclass feature"
     // only). The prior description's "At 10th level, you gain proficiency in
-    // another such skill" clause was wrong and is removed. The Strength-check-
-    // while-Raging ability has no D20-derived grant kind and stays as prose.
+    // another such skill" clause was wrong and is removed.
     grants: [
       {
         type: "choice-skill-proficiency",
@@ -259,6 +258,17 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
           "survival",
         ],
         amount: 1,
+      },
+      {
+        type: "while-active",
+        activeKey: "barbarian-rage",
+        grants: [
+          {
+            type: "skill-ability-option",
+            skills: ["acrobatics", "intimidation", "perception", "stealth", "survival"],
+            ability: "STR",
+          },
+        ],
       },
     ],
     source: "SRD",

@@ -52,6 +52,31 @@ describe("feature action effect contract", () => {
     });
   });
 
+  it("scales Deflect Attacks redirect dice and eligible damage types", () => {
+    const redirectAt = (level: number) =>
+      resolveActions(
+        makeCharacterDoc({
+          classId: "monk",
+          level,
+          features: [{ srdId: "monk-focus" }, { srdId: "monk-deflect-attacks" }],
+        })
+      ).find((candidate) => candidate.id === "monk-deflect-attacks-redirect");
+
+    expect(redirectAt(3)).toMatchObject({
+      summary: {
+        damage: "2d6+2",
+        damageTypes: ["bludgeoning", "piercing", "slashing"],
+        saveAbility: "DEX",
+        targeting: { affinity: "any", maxTargets: 1 },
+      },
+    });
+    const level13 = redirectAt(13);
+    expect(level13?.summary.damage).toBe("2d10+2");
+    expect(level13?.summary.damageTypes).toEqual(
+      expect.arrayContaining(["acid", "force", "radiant", "thunder"])
+    );
+  });
+
   it("keeps same-economy homebrew actions distinct and resolves their effects", () => {
     const actions = resolveActions(
       makeCharacterDoc({

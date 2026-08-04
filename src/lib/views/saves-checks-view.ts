@@ -34,6 +34,7 @@ import {
   buildSkillBreakdown,
   buildPassiveBreakdown,
   effectiveAbilityScores,
+  effectiveSkillAbility,
   resolveAbilityCheckBonus,
   flatSaveBonus,
   type ProficiencyTier,
@@ -275,11 +276,17 @@ export function deriveSavesAndChecks(
   });
 
   const skills: SaveCheckSkillRow[] = ALL_SKILLS.map((skill) => {
+    const ability = effectiveSkillAbility(
+      skill.id,
+      skill.ability,
+      fullAggregate.skillAbilityOptions,
+      effectiveScores
+    );
     const proficiency: ProficiencyTier = displayedSkills[skill.id] ?? null;
     const override = charData.skillBonusOverrides?.[skill.id] ?? null;
-    const checkBonus = checkBonusFor(skill.id, skill.ability);
+    const checkBonus = checkBonusFor(skill.id, ability);
     const auto = skillBonus(
-      effectiveScores[skill.ability],
+      effectiveScores[ability],
       level,
       proficiency,
       null,
@@ -289,14 +296,14 @@ export function deriveSavesAndChecks(
     );
     return {
       id: skill.id,
-      ability: skill.ability,
+      ability,
       proficiency,
       bonus: override ?? auto,
       auto,
       override,
       breakdownParts: buildSkillBreakdown({
-        ability: skill.ability,
-        abilityScore: effectiveScores[skill.ability],
+        ability,
+        abilityScore: effectiveScores[ability],
         level,
         proficiency,
         override,

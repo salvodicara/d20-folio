@@ -1519,6 +1519,14 @@ export type Grant =
       min?: number;
     }
   | {
+      /** Offer a different ability for named skill checks. The consumer chooses
+       * the better modifier because the rule is optional (Primal Knowledge lets
+       * a raging Barbarian make five skill checks as Strength checks). */
+      type: "skill-ability-option";
+      skills: ReadonlyArray<string>;
+      ability: AbilityCode;
+    }
+  | {
       /**
        * Adds a bonus to Initiative. `ability` → add that ability's modifier
        * (Gloom Stalker's Dread Ambusher: WIS); `amount` → a flat bonus. The
@@ -4218,6 +4226,11 @@ export interface AggregatedGrants {
     value: "modifier" | number;
     min: number;
   }>;
+  /** Optional alternate abilities for named skill checks. */
+  skillAbilityOptions: ReadonlyArray<{
+    skills: ReadonlyArray<string>;
+    ability: AbilityCode;
+  }>;
   /** Ability modifiers added to Initiative (consumer resolves each). */
   initiativeBonusAbilities: ReadonlyArray<AbilityCode>;
   /** Flat numeric bonus added to Initiative. */
@@ -4716,6 +4729,7 @@ export function emptyAggregate(): AggregatedGrants {
     concentrationSaveBonusAbilities: [],
     concentrationSaveBonusFlat: 0,
     abilityCheckBonuses: [],
+    skillAbilityOptions: [],
     initiativeBonusAbilities: [],
     initiativeBonusFlat: 0,
     damageRiders: [],
@@ -4966,6 +4980,7 @@ export function evaluateGrants(
     value: "modifier" | number;
     min: number;
   }[] = [];
+  const skillAbilityOptions: AggregatedGrants["skillAbilityOptions"][number][] = [];
   const initiativeBonusAbilities: AbilityCode[] = [];
   let initiativeBonusFlat = 0;
   const damageRiders: AggregatedGrants["damageRiders"][number][] = [];
@@ -5425,6 +5440,9 @@ export function evaluateGrants(
           value: g.value ?? "modifier",
           min: g.min ?? 0,
         });
+        break;
+      case "skill-ability-option":
+        skillAbilityOptions.push({ skills: g.skills, ability: g.ability });
         break;
       case "initiative-bonus":
         if (g.ability) {
@@ -6423,6 +6441,7 @@ export function evaluateGrants(
     concentrationSaveBonusAbilities,
     concentrationSaveBonusFlat,
     abilityCheckBonuses,
+    skillAbilityOptions,
     initiativeBonusAbilities,
     initiativeBonusFlat,
     damageRiders,

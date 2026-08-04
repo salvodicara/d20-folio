@@ -86,6 +86,9 @@
     "description": "You gain proficiency in one skill of your choice from the list available to Barbarians at level 1. In addition, while your Rage is active, you can channel primal power: whenever you make an ability check using Acrobatics, Intimidation, Perception, Stealth, or Survival, you can make it as a Strength check even if it normally uses a different ability.",
     "name": "Primal Knowledge"
   },
+  "barbarian-primal-knowledge.grants.1": {
+    "label": "Primal Knowledge"
+  },
   "barbarian-rage": {
     "description": "On your turn, you can enter a Rage as a Bonus Action. While raging, you gain the following benefits: you have Advantage on Strength checks and saves, when you make a Strength-based attack you deal bonus damage equal to your Rage Damage, and you have Resistance to Bludgeoning, Piercing, and Slashing damage. Your Rage lasts until the end of your next turn, and you can extend it round by round (up to a maximum of 10 minutes) by making an attack roll against an enemy, forcing an enemy to make a saving throw, or using a Bonus Action to maintain it. You regain one expended use of Rage on a Short Rest and all of them on a Long Rest.",
     "name": "Rage"
@@ -572,6 +575,11 @@
   },
   "monk-deflect-attacks.mechanics.actions.0": {
     "description": "Reduce damage from an attack by 1d10 + DEX mod + Monk level."
+  },
+  "monk-deflect-attacks.mechanics.actions.1": {
+    "description": "After reducing the damage to 0, spend 1 Focus Point. The target makes a Dexterity save or takes 2 Martial Arts dice + DEX modifier damage of the triggering type.",
+    "name": "Redirect Attack",
+    "summary": "At 0 damage: 1 Focus · DEX save · 2 Martial Arts dice + DEX"
   },
   "monk-deflect-energy": {
     "description": "You can now use your Deflect Attacks feature against any damage type, not just the damage from weapon attacks.",

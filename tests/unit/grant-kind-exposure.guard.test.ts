@@ -155,6 +155,10 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "resolveAbilityCheckBonus",
     consumer: "src/lib/views/saves-checks-view.ts",
   },
+  "skill-ability-option": {
+    via: "effectiveSkillAbility",
+    consumer: "src/lib/views/saves-checks-view.ts",
+  },
   "initiative-bonus": {
     via: "initiativeBonusAbilities",
     consumer: "src/features/character/center/ThisTurnTracker.tsx",
