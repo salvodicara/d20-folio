@@ -1347,6 +1347,30 @@ describe("characterStore — rest mechanics", () => {
   });
 
   describe("trackers", () => {
+    function recordedRollCharacter(): CharacterDoc {
+      const char = mockCharacter();
+      char.character.features = [
+        {
+          custom: true,
+          title: "Foretelling",
+          emoji: "",
+          source: "Homebrew",
+          tags: [],
+          contentBlocks: [],
+          trackers: [
+            {
+              id: "foretelling",
+              label: "Foretelling",
+              total: "2",
+              recovery: "long-rest",
+              recordedRolls: { min: 1, max: 20 },
+            },
+          ],
+        },
+      ];
+      return char;
+    }
+
     it("uses a tracker", () => {
       const char = mockCharacter();
       useCharacterStore.getState().setCharacter(char);
@@ -1395,6 +1419,58 @@ describe("characterStore — rest mechanics", () => {
       expect(
         useCharacterStore.getState().character?.session.trackers["monk-focus"]
       ).toEqual({ used: 1 });
+    });
+
+    it("records, spends, and exactly restores a physical tracker roll", () => {
+      useCharacterStore.getState().setCharacter(recordedRollCharacter());
+      useCharacterStore.getState().setTrackerRoll("foretelling", 0, 17);
+      expect(
+        useCharacterStore.getState().character?.session.trackers.foretelling
+      ).toEqual({ used: 0, rolls: [17, null] });
+
+      const undo = useCharacterStore.getState().spendTrackerRoll("foretelling", 0);
+      expect(
+        useCharacterStore.getState().character?.session.trackers.foretelling
+      ).toEqual({ used: 1, rolls: [null] });
+
+      undo?.();
+      expect(
+        useCharacterStore.getState().character?.session.trackers.foretelling
+      ).toEqual({ used: 0, rolls: [17, null] });
+    });
+
+    it("drops placeholder-only roll state after the last entered value is cleared", () => {
+      useCharacterStore.getState().setCharacter(recordedRollCharacter());
+      useCharacterStore.getState().setTrackerRoll("foretelling", 0, 17);
+      useCharacterStore.getState().setTrackerRoll("foretelling", 0, null);
+
+      expect(
+        useCharacterStore.getState().character?.session.trackers.foretelling
+      ).toBeUndefined();
+    });
+
+    it("does not let a stale recorded-roll undo overwrite a later correction", () => {
+      useCharacterStore.getState().setCharacter(recordedRollCharacter());
+      useCharacterStore.getState().setTrackerRoll("foretelling", 0, 17);
+      useCharacterStore.getState().setTrackerRoll("foretelling", 1, 4);
+      const undo = useCharacterStore.getState().spendTrackerRoll("foretelling", 0);
+
+      useCharacterStore.getState().setTrackerRoll("foretelling", 0, 9);
+      undo?.();
+
+      expect(
+        useCharacterStore.getState().character?.session.trackers.foretelling
+      ).toEqual({ used: 1, rolls: [9] });
+    });
+
+    it("clamps entered rolls and ordinary corrections preserve them", () => {
+      useCharacterStore.getState().setCharacter(recordedRollCharacter());
+      useCharacterStore.getState().setTrackerRoll("foretelling", 0, 99);
+      useCharacterStore.getState().useTracker("foretelling");
+      useCharacterStore.getState().restoreTracker("foretelling");
+      expect(
+        useCharacterStore.getState().character?.session.trackers.foretelling
+      ).toEqual({ used: 0, rolls: [20, null] });
     });
   });
 

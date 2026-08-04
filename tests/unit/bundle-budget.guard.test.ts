@@ -393,7 +393,11 @@ const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see AR
 // peer-combat transaction projection, Chronicle event, and bilingual target context grew
 // existing JS/i18n chunks to 8469.84 KiB / 321 entries. No new entry or asset family;
 // +~3 KiB deterministic headroom.
-const PRECACHE_CEILING_KIB = 8473;
+// 2026-08-04 (recorded physical rolls): raised 8473 → 8479 after the generic
+// recorded-roll tracker contract, compact editor/rail controls, portable-state codec,
+// and bilingual labels grew existing JS/i18n chunks to 8475.57 KiB / 321 entries.
+// No new entry or asset family; +~3 KiB deterministic headroom.
+const PRECACHE_CEILING_KIB = 8479;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

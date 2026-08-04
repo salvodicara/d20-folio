@@ -230,6 +230,12 @@ export interface TrackerSpec {
   longRestRecovery?: number;
   /** Die type if applicable: "d6", "d8", "d10", "d12" */
   die?: string;
+  /**
+   * The table rolls and records one numeric result for each available use.
+   * The app stores and spends those entered results but never rolls them.
+   * Portent is the canonical consumer; the range keeps homebrew trackers valid.
+   */
+  recordedRolls?: { min: number; max: number };
   /** Whether this is a spendable pool resource (ki points, sorcery points, HP) */
   isPool?: boolean;
   /** Stable unit token, e.g. 'hp' | 'points' | 'uses' — localized at the render boundary. */

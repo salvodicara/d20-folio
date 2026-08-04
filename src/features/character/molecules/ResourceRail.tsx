@@ -1585,6 +1585,8 @@ function RailTracker({ tracker }: { tracker: ResolvedTracker }) {
   const { t } = useTranslation();
   const spendTracker = useCharacterStore((s) => s.useTracker);
   const restoreTracker = useCharacterStore((s) => s.restoreTracker);
+  const setTrackerRoll = useCharacterStore((s) => s.setTrackerRoll);
+  const spendTrackerRoll = useCharacterStore((s) => s.spendTrackerRoll);
   const recoverTrackerFromSpellSlot = useCharacterStore(
     (s) => s.recoverTrackerFromSpellSlot
   );
@@ -1692,6 +1694,16 @@ function RailTracker({ tracker }: { tracker: ResolvedTracker }) {
     restoreTracker(tracker.id, 1);
   }
 
+  function spendRoll(index: number) {
+    const roll = tracker.rolls?.[index];
+    if (typeof roll !== "number") return;
+    registerUndoableToast(
+      { message: t("combat.trackerRollSpend", { name: tracker.label, roll }) },
+      () => spendTrackerRoll(tracker.id, index) ?? (() => {}),
+      { turnScoped: false }
+    );
+  }
+
   return (
     <div className="trk">
       {/* D37 — the hover tooltip reminds what the resource does (e.g. Bardic /
@@ -1709,7 +1721,52 @@ function RailTracker({ tracker }: { tracker: ResolvedTracker }) {
           {recoveryLabel}
         </span>
       )}
-      {usePips ? (
+      {tracker.recordedRolls ? (
+        <span
+          className="trk-rolls"
+          role="group"
+          aria-label={t("combat.recordedRolls", { name: tracker.label })}
+        >
+          {Array.from({ length: available }).map((_, index) => {
+            const roll = tracker.rolls?.[index];
+            return (
+              <span className="trk-roll" key={index}>
+                <input
+                  type="number"
+                  min={tracker.recordedRolls?.min}
+                  max={tracker.recordedRolls?.max}
+                  inputMode="numeric"
+                  value={roll ?? ""}
+                  placeholder="—"
+                  aria-label={t("combat.recordedRollSlot", {
+                    name: tracker.label,
+                    slot: index + 1,
+                  })}
+                  onChange={(event) => {
+                    const raw = event.currentTarget.value;
+                    setTrackerRoll(tracker.id, index, raw === "" ? null : Number(raw));
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={typeof roll !== "number"}
+                  aria-label={t("combat.spendRecordedRoll", {
+                    name: tracker.label,
+                    roll: roll ?? "",
+                  })}
+                  title={t("combat.spendRecordedRoll", {
+                    name: tracker.label,
+                    roll: roll ?? "",
+                  })}
+                  onClick={() => spendRoll(index)}
+                >
+                  <Icon as={Minus} size="xs" decorative />
+                </button>
+              </span>
+            );
+          })}
+        </span>
+      ) : usePips ? (
         <TrackerPips
           total={tracker.total}
           available={available}

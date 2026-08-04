@@ -306,6 +306,8 @@ export interface TrackerData {
   recovery: Recovery;
   /** Die type if applicable: "d6", "d8" */
   die?: string;
+  /** Numeric results rolled at the table and held until this tracker spends them. */
+  recordedRolls?: { min: number; max: number };
   /** Whether this is a pool resource */
   isPool?: boolean;
   /** Stable unit token for pool resources (localized at the render boundary). */
@@ -805,6 +807,12 @@ export type SessionDefenseKind =
   | "vulnerability"
   | "conditionImmunity";
 
+export interface TrackerState {
+  used: number;
+  /** Physical results waiting to be spent; `null` is an unfilled available slot. */
+  rolls?: ReadonlyArray<number | null>;
+}
+
 export interface SessionState {
   hp: {
     current: number;
@@ -819,8 +827,8 @@ export interface SessionState {
   hitDice: {
     used: number;
   };
-  /** Tracker usage state, keyed by tracker ID */
-  trackers: Record<string, { used: number }>;
+  /** Tracker usage and optional table-entered rolls, keyed by tracker ID. */
+  trackers: Record<string, TrackerState>;
   /** Spell slot usage state, keyed by slot level */
   spellSlots: Record<string, { used: number }>;
   currency: {

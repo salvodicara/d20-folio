@@ -530,7 +530,10 @@ describe("codec — state restoration", () => {
         conditions: ["poisoned"],
         exhaustion: 2,
         spellSlots: { "1": { used: 2 }, "2": { used: 0 } },
-        trackers: { "bard-bardic-inspiration": { used: 1 } },
+        trackers: {
+          "bard-bardic-inspiration": { used: 1 },
+          "wizard-diviner-portent": { used: 0, rolls: [17, null] },
+        },
         concentration: conc("hold-monster"),
         inspiration: true,
         logEntries: [
@@ -559,6 +562,10 @@ describe("codec — state restoration", () => {
     expect(s.spellSlots["1"]).toEqual({ used: 2 });
     expect(s.spellSlots["2"]).toBeUndefined(); // spent 0 → omitted, re-defaults absent
     expect(s.trackers["bard-bardic-inspiration"]).toEqual({ used: 1 });
+    expect(s.trackers["wizard-diviner-portent"]).toEqual({
+      used: 0,
+      rolls: [17, null],
+    });
     expect(s.concentration).toBe(conc("hold-monster"));
     expect(s.inspiration).toBe(true);
     expect(s.logEntries[0]).toMatchObject({

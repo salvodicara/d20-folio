@@ -100,7 +100,15 @@ toggle writes `attuned: true`) — and any non-consumable magic item whose effec
 (a race trait carries the same `{ tracker?, actions? }` shape outside `features[]`, and — since
 S10, Gaze of Two Minds — an Eldritch Invocation can carry `mechanics.actions` too, resolved by its
 own sibling pass in `resolveFeatureActions` at the Warlock owning-class level) —
-see `docs/ARCHITECTURE.md` (Trackers · Actions · Combat model). An action's **heal** (`ActionHeal`)
+see `docs/ARCHITECTURE.md` (Trackers · Actions · Combat model).
+
+A tracker may declare **`recordedRolls: { min, max }`** when its uses represent physical dice
+rolled now and spent later (Diviner Portent). The app never generates the values: the resource rail
+records one bounded number per remaining use, persists the exact results, consumes the chosen result
+with undo, and clears them on the tracker's declared recovery. The same field is available on custom
+feature trackers, so homebrew uses the identical resolver/state/codec path.
+
+An action's **heal** (`ActionHeal`)
 carries a fixed `dice` ("1d10") or a VARIABLE die count **`diceCount` + `dieFace`** — a `DiceCount` =
 `"PB"` (G18 — the pack species' Healing Hands "PB d4s") **or an `AbilityCode`** (S11b — the ability MODIFIER,
 floored at 1), multiplied out to a concrete "3d4"/"3d8" at emission by the shared `resolveDiceCount` so

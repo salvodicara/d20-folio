@@ -929,23 +929,45 @@ function parseEquipment(raw: unknown): Array<SrdEquipmentRef | CustomEquipment> 
 
 // ── state reshape (session ⇄ minimal `state`) ────────────────────────────────
 
-/** Flatten `{ id: { used } }` to `{ id: used }`, keeping only spent (>0) entries. */
-function flattenUsed(map: unknown): Record<string, number> {
-  const out: Record<string, number> = {};
+type CompactTrackerState = number | { used?: number; rolls: Array<number | null> };
+
+function recordedRolls(value: unknown): Array<number | null> {
+  if (!Array.isArray(value)) return [];
+  return (value as unknown[]).map((roll) =>
+    roll === null || (typeof roll === "number" && Number.isFinite(roll)) ? roll : null
+  );
+}
+
+/** Keep ordinary counters compact while preserving optional table-recorded rolls. */
+function flattenUsed(map: unknown): Record<string, CompactTrackerState> {
+  const out: Record<string, CompactTrackerState> = {};
   if (!isRecord(map)) return out;
   for (const [k, v] of Object.entries(map)) {
     const used = isRecord(v) && typeof v.used === "number" ? v.used : 0;
-    if (used > 0) out[k] = used;
+    const validRolls = recordedRolls(isRecord(v) ? v.rolls : undefined);
+    if (validRolls.some((roll) => typeof roll === "number")) {
+      out[k] = { ...(used > 0 ? { used } : {}), rolls: validRolls };
+    } else if (used > 0) {
+      out[k] = used;
+    }
   }
   return out;
 }
 
-/** Expand `{ id: used }` back to `{ id: { used } }`. */
-function expandUsed(map: unknown): Record<string, { used: number }> {
-  const out: Record<string, { used: number }> = {};
+/** Expand compact numeric counters and additive recorded-roll entries. */
+function expandUsed(
+  map: unknown
+): Record<string, { used: number; rolls?: Array<number | null> }> {
+  const out: Record<string, { used: number; rolls?: Array<number | null> }> = {};
   if (!isRecord(map)) return out;
   for (const [k, v] of Object.entries(map)) {
     if (typeof v === "number") out[k] = { used: v };
+    else if (isRecord(v) && Array.isArray(v.rolls)) {
+      out[k] = {
+        used: numOr(v.used, 0),
+        rolls: recordedRolls(v.rolls),
+      };
+    }
   }
   return out;
 }

@@ -1256,6 +1256,10 @@ in a void: last ink → panel edge = strip → panel edge.
   chromatic `--sl-*` gem. **Trackers** = pips when max ≤ 5, a pool bar when > 5 (`Tracker` auto-mode),
   with a die badge + recovery chip (LR/SR). Immediate commit means these pips show only the persisted
   resource count; there is no separate “pending spend” appearance derived from the turn receipt.
+- **Recorded-roll trackers = compact numbered sockets:** each remaining use owns one recessed numeric
+  field and a separate consume control. Editing never spends; spending never opens another dialog;
+  both have explicit focus/accessible labels and the exact consumed value is undoable. This is the
+  only extra chrome: no Portent-specific card, tutorial copy, or duplicate resource panel.
 
 ### "This Turn" action-economy band
 

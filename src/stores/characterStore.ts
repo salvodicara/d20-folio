@@ -12,6 +12,7 @@ import type {
   LogEntry,
   SessionDefenseKind,
   SessionState,
+  TrackerState,
 } from "@/types/character";
 import type { CombatEvent } from "@/types/combat-log";
 import type { CombatState, CombatPersistence, RecentAttack } from "@/types/combat-state";
@@ -103,16 +104,26 @@ export const MAX_LOG = 200;
  * "unspent" state). Avoids a dynamic `delete` (lint-clean, immutable).
  */
 function restoreTrackerEntry(
-  trackers: Record<string, { used: number }>,
+  trackers: Record<string, TrackerState>,
   trackerId: string,
-  prior: { used: number } | undefined
-): Record<string, { used: number }> {
+  prior: TrackerState | undefined
+): Record<string, TrackerState> {
   if (prior !== undefined) return { ...trackers, [trackerId]: prior };
-  const next: Record<string, { used: number }> = {};
+  const next: Record<string, TrackerState> = {};
   for (const [k, v] of Object.entries(trackers)) {
     if (k !== trackerId) next[k] = v;
   }
   return next;
+}
+
+function trackerStateEquals(a: TrackerState | undefined, b: TrackerState): boolean {
+  if (!a || a.used !== b.used) return false;
+  const aRolls = a.rolls ?? [];
+  const bRolls = b.rolls ?? [];
+  return (
+    aRolls.length === bRolls.length &&
+    aRolls.every((roll, index) => roll === bRolls[index])
+  );
 }
 
 interface CharacterState {
@@ -292,6 +303,10 @@ interface CharacterState {
   restoreSpellSlot: (level: number, pactMagic?: boolean) => void;
   useTracker: (trackerId: string, amount?: number) => void;
   restoreTracker: (trackerId: string, amount?: number) => void;
+  /** Record or clear one table-rolled value in an available tracker slot. */
+  setTrackerRoll: (trackerId: string, index: number, value: number | null) => void;
+  /** Spend one exact recorded value and return an inverse restoring it. */
+  spendTrackerRoll: (trackerId: string, index: number) => (() => void) | null;
   /** Restore a tracker to a remaining-use floor and return an exact, stale-safe undo. */
   topUpTracker: (trackerId: string, upTo: number | "full") => (() => void) | null;
   /** Decrement a tracked equipment item by 1; removes the entry entirely when quantity hits 0. */
@@ -1104,7 +1119,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-    const current = character.session.trackers[trackerId]?.used ?? 0;
+    const entry = character.session.trackers[trackerId];
+    const current = entry?.used ?? 0;
     set({
       character: {
         ...character,
@@ -1112,7 +1128,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           ...character.session,
           trackers: {
             ...character.session.trackers,
-            [trackerId]: { used: current + amount },
+            [trackerId]: { ...entry, used: current + amount },
           },
         },
       },
@@ -1124,7 +1140,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-    const current = character.session.trackers[trackerId]?.used ?? 0;
+    const entry = character.session.trackers[trackerId];
+    const current = entry?.used ?? 0;
     set({
       character: {
         ...character,
@@ -1132,12 +1149,98 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           ...character.session,
           trackers: {
             ...character.session.trackers,
-            [trackerId]: { used: Math.max(0, current - amount) },
+            [trackerId]: { ...entry, used: Math.max(0, current - amount) },
           },
         },
       },
     });
     flushParentPersistence(get);
+  },
+
+  setTrackerRoll: (trackerId, index, value) => {
+    if (get().readonly || index < 0 || !Number.isInteger(index)) return;
+    const character = get().character;
+    if (!character) return;
+    const tracker = resolveTrackers(character).find((entry) => entry.id === trackerId);
+    if (!tracker?.recordedRolls) return;
+    const available = Math.max(0, tracker.total - tracker.used);
+    if (index >= available) return;
+    const normalized =
+      value === null || !Number.isFinite(value)
+        ? null
+        : Math.min(
+            tracker.recordedRolls.max,
+            Math.max(tracker.recordedRolls.min, Math.round(value))
+          );
+    const prior = character.session.trackers[trackerId];
+    const rolls = Array.from({ length: available }, (_, slot): number | null =>
+      slot === index ? normalized : (prior?.rolls?.[slot] ?? null)
+    );
+    const used = prior?.used ?? 0;
+    const nextEntry: TrackerState | undefined = rolls.some(
+      (roll): roll is number => typeof roll === "number"
+    )
+      ? { used, rolls }
+      : used > 0
+        ? { used }
+        : undefined;
+    set({
+      character: {
+        ...character,
+        session: {
+          ...character.session,
+          trackers: restoreTrackerEntry(character.session.trackers, trackerId, nextEntry),
+        },
+      },
+    });
+    flushParentPersistence(get);
+  },
+
+  spendTrackerRoll: (trackerId, index) => {
+    if (get().readonly || index < 0 || !Number.isInteger(index)) return null;
+    const character = get().character;
+    if (!character) return null;
+    const tracker = resolveTrackers(character).find((entry) => entry.id === trackerId);
+    const prior = character.session.trackers[trackerId];
+    if (
+      !tracker?.recordedRolls ||
+      !prior ||
+      prior.used >= tracker.total ||
+      index >= tracker.total - prior.used ||
+      typeof prior.rolls?.[index] !== "number"
+    ) {
+      return null;
+    }
+    const rolls = [...prior.rolls];
+    rolls.splice(index, 1);
+    const next: TrackerState = {
+      used: Math.min(tracker.total, prior.used + 1),
+      ...(rolls.length > 0 ? { rolls } : {}),
+    };
+    set({
+      character: {
+        ...character,
+        session: {
+          ...character.session,
+          trackers: { ...character.session.trackers, [trackerId]: next },
+        },
+      },
+    });
+    flushParentPersistence(get);
+    return () => {
+      const live = get().character;
+      if (!live || !trackerStateEquals(live.session.trackers[trackerId], next)) return;
+      set({
+        character: {
+          ...live,
+          session: {
+            ...live.session,
+            trackers: restoreTrackerEntry(live.session.trackers, trackerId, prior),
+          },
+        },
+      });
+      flushParentPersistence(get);
+    };
   },
 
   topUpTracker: (trackerId, upTo) => {

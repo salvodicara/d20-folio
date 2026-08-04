@@ -163,7 +163,26 @@ describe("long-rest tracker recovery", () => {
             { srdId: "eyes-of-charming", equipped: true, quantity: 1 },
             { srdId: "spirit-board", equipped: true, quantity: 1 },
           ],
-          features: [{ srdId: "fighter-second-wind" }],
+          features: [
+            { srdId: "fighter-second-wind" },
+            {
+              custom: true,
+              title: "Foretelling",
+              emoji: "",
+              source: "Homebrew",
+              tags: [],
+              contentBlocks: [],
+              trackers: [
+                {
+                  id: "foretelling",
+                  label: "Foretelling",
+                  total: "2",
+                  recovery: "long-rest",
+                  recordedRolls: { min: 1, max: 20 },
+                },
+              ],
+            },
+          ],
         },
         {
           trackers: {
@@ -173,6 +192,7 @@ describe("long-rest tracker recovery", () => {
             "eyes-of-charming": { used: 2 },
             "spirit-board": { used: 2 },
             "fighter-second-wind": { used: 1 },
+            foretelling: { used: 0, rolls: [17, 4] },
           },
         }
       )

@@ -104,6 +104,14 @@ write home. Pure support actions no longer create fake attack declarations. The 
 locks CHA uses, d6 scaling and the ally/exclude-self target contract. Wizard/Rogue/Paladin fixture audits
 continue as separate truth-gated milestones.
 
+**Live-team truth audit — Diviner Portent contract CLOSED on branch (2026-08-04):** the tracker
+previously counted uses but discarded the two d20 results the player must physically roll after a
+Long Rest. A generic recorded-roll tracker now stores one bounded value per remaining use, spends the
+exact chosen result with correction/undo, survives navigation plus schema-3 export/import, and clears
+through the normal recovery seam. The app still never rolls dice. The same opt-in is available to
+homebrew feature trackers, and the real Wizard/Diviner fixture locks the 2→3/LR d20 contract. The
+fixture's combat-spell audit remains open as the next Wizard milestone; Rogue/Paladin follow.
+
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark
 ink for its nested glyph/count despite the carved socket's correct fixed ink, and the end-encounter

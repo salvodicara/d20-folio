@@ -204,6 +204,10 @@ export interface ResolvedTracker {
   longRestRecovery?: number;
   /** Die type (optional) */
   die?: string;
+  /** Range for physical rolls the player records and later spends individually. */
+  recordedRolls?: { min: number; max: number };
+  /** Current entered results; `null` is an available slot not filled yet. */
+  rolls?: ReadonlyArray<number | null>;
   /** Whether this is a pool (HP-like) resource */
   isPool?: boolean;
   /** Stable unit token for pools (localized at the render boundary). */
@@ -1654,8 +1658,8 @@ function nonZeroAltRecovery(cost: AltRecoveryCost): AltRecoveryCost | undefined 
 
 /**
  * Merge per-character `trackerOverrides` onto an already level-resolved spec.
- * Every defined override field (total / recovery / die / isPool / unit /
- * shortRestRecovery) wins over the base. Applied ON TOP of the level-resolved
+ * Every defined override field (total / recovery / die / recordedRolls / isPool /
+ * unit / shortRestRecovery) wins over the base. Applied ON TOP of the level-resolved
  * base — do NOT re-run `resolveTrackerSpec` after this, or the feature's
  * `levels[]` would clobber a user's die/total override on a scaling tracker.
  */
@@ -1669,6 +1673,9 @@ function applyTrackerOverrides(
     ...(overrides.total !== undefined && { total: overrides.total }),
     ...(overrides.recovery !== undefined && { recovery: overrides.recovery }),
     ...(overrides.die !== undefined && { die: overrides.die }),
+    ...(overrides.recordedRolls !== undefined && {
+      recordedRolls: overrides.recordedRolls,
+    }),
     ...(overrides.isPool !== undefined && { isPool: overrides.isPool }),
     ...(overrides.unit !== undefined && { unit: overrides.unit }),
     ...(overrides.shortRestRecovery !== undefined && {
@@ -3003,6 +3010,8 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
             total: resolveTrackerTotal(t.total, character),
             recovery: t.recovery,
             die: t.die,
+            recordedRolls: t.recordedRolls,
+            rolls: session.trackers[t.id]?.rolls,
             isPool: t.isPool,
             unit: t.unit,
             ...(t.altRecoveryCost &&
@@ -3073,6 +3082,8 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
         ? { longRestRecovery: tracker.longRestRecovery }
         : {}),
       die: tracker.die,
+      recordedRolls: tracker.recordedRolls,
+      rolls: session.trackers[srdFeature.id]?.rolls,
       isPool: tracker.isPool,
       unit: tracker.unit,
       shortRestRecovery: tracker.shortRestRecovery,
@@ -3108,6 +3119,8 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
           ? { longRestRecovery: extra.longRestRecovery }
           : {}),
         die: extra.die,
+        recordedRolls: extra.recordedRolls,
+        rolls: session.trackers[extraSpec.id]?.rolls,
         isPool: extra.isPool,
         unit: extra.unit,
         shortRestRecovery: extra.shortRestRecovery,
@@ -3155,6 +3168,8 @@ function resolveRaceTrackers(
           ? { longRestRecovery: spec.longRestRecovery }
           : {}),
         die: spec.die,
+        recordedRolls: spec.recordedRolls,
+        rolls: session.trackers[id]?.rolls,
         isPool: spec.isPool,
         unit: spec.unit,
         shortRestRecovery: spec.shortRestRecovery,
