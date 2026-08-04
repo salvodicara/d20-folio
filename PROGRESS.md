@@ -158,6 +158,15 @@ repeated Languages seal. Focused render tests pin both semantic levels and uncha
 behaviour; the level-up Skilled surface is now first-class screenshot evidence across light/dark,
 desktop/mobile and EN/IT. Verification: Skilled screenshots 5/5; focused picker tests 7/7;
 typecheck + formatting green.
+**Wave 14 homogeneous choice declutter (2026-08-04):** the same information test now covers prose
+choices and post-creation re-pickers, not only compact fact rows. Maneuvers, metamagic, invocations
+and fighting styles no longer repeat one group-level Swords/Sparkles/Wand/Eye seal on every option:
+their localized modal/list title and common region already establish the family, while the repeated
+mark consumed the highest-value scan column without identifying an entity. Per-option encodings remain
+intact — weapon-type seals and spell-level seals still distinguish real facts. The maneuver re-picker
+joins the first-class surface census and shows more named options in the same modal height in both
+themes and at phone width. Verification: maneuver before/after screenshots 6/6; focused re-picker
+tests 7/7; targeted axe 4/4, locale sweep 4/4, mobile layout 2/2; typecheck + targeted lint green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 

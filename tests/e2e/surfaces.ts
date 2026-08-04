@@ -658,6 +658,23 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       }
     },
   },
+  "maneuver-picker": {
+    edit: true,
+    variants: OVERLAY_VARIANTS,
+    ready: readyText(/Garran/),
+    prepare: async (page) => {
+      const rePickCta = /modifica|change|scegli|choose/i;
+      const section = page
+        .locator("div", {
+          has: page.getByRole("heading", { name: /manovre|maneuvers/i }),
+        })
+        .filter({ has: page.getByRole("button", { name: rePickCta }) })
+        .last();
+      const trigger = section.getByRole("button", { name: rePickCta }).first();
+      await trigger.click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 5000 });
+    },
+  },
   // The maneuver-Fighter's PLAY tab — renders the Second Wind heal chip so
   // the IT sweep asserts it reads "1d10 + livello da Guerriero", never the English
   // "Fighter level" the old prose-regex leaked (HEAL-SEAM P1). Anchors on the

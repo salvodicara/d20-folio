@@ -1761,7 +1761,6 @@ export function LevelUpWizard() {
                     name: vm.label,
                     description: vm.meta,
                     gloss: vm.note,
-                    seal: <SocketSeal icon={Sparkles} />,
                     searchText: `${vm.label} ${vm.searchEn}`,
                     searchDesc: vm.searchDesc,
                   })
@@ -1788,7 +1787,6 @@ export function LevelUpWizard() {
                     id: vm.id,
                     name: vm.label,
                     description: vm.meta,
-                    seal: <SocketSeal icon={Swords} />,
                     searchText: `${vm.label} ${vm.searchEn}`,
                     searchDesc: vm.searchDesc,
                   })
@@ -1813,7 +1811,6 @@ export function LevelUpWizard() {
                       name: vm.label,
                       description: vm.meta,
                       gloss: t("levelUp.metamagicCost", { cost: vm.cost }),
-                      seal: <SocketSeal icon={Sparkles} />,
                       searchText: `${vm.label} ${vm.searchEn}`,
                       searchDesc: vm.searchDesc,
                     })
@@ -1967,7 +1964,6 @@ export function LevelUpWizard() {
                       id: vm.id,
                       name: vm.label,
                       description: vm.meta,
-                      seal: <SocketSeal icon={Swords} />,
                       searchText: `${vm.label} ${vm.searchEn}`,
                       searchDesc: vm.searchDesc,
                     })

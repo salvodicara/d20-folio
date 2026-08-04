@@ -6,8 +6,8 @@
  * all: the host passes the eligible options + the level's known total + the current set,
  * and gets back the new selection (capped at the total).
  *
- * It renders the SAME unified seal-card picker as the creation / level-up wizards
- * (`OptionGrid` card mode — leading {@link KindSeal}, gold-on-select, FIFO past the limit),
+ * It renders the SAME unified card picker as the creation / level-up wizards
+ * (`OptionGrid` card mode — gold-on-select, FIFO past the limit),
  * so a non-in-place choice reads as one family across the app (the owner's "few elements,
  * reused" rule). When the host supplies `detailFor`, a selected card shows a discreet
  * "More" button that opens the entry's FULL detail — reusing the compendium read view
@@ -31,8 +31,8 @@ export interface ChoiceRePickerOption {
   searchText?: string;
   /** Optional caveat line under the label (e.g. an invocation prerequisite). */
   note?: ReactNode;
-  /** Optional PER-OPTION seal medallion, overriding the group `seal` (e.g. a
-   *  per-weapon-type glyph in the weapon-mastery re-pick). */
+  /** Optional PER-OPTION seal medallion (e.g. a per-weapon-type glyph in the
+   *  weapon-mastery re-pick). Homogeneous groups do not repeat a category seal. */
   chip?: ReactNode;
 }
 
@@ -52,8 +52,6 @@ interface ChoiceRePickerProps {
   /** The OptionGrid instruction label (e.g. "Choose your maneuvers"). */
   label: string;
   searchPlaceholder?: string;
-  /** The leading seal medallion painted on every card (shared {@link KindSeal}). */
-  seal?: ReactNode;
   /** Full-detail body for the "More" modal; presence enables the "More" affordance. */
   detailFor?: (id: string) => ReactNode;
   /** Title for the "More" detail modal (the entry's localized name). */
@@ -71,7 +69,6 @@ export function ChoiceRePicker({
   title,
   label,
   searchPlaceholder,
-  seal,
   detailFor,
   detailTitleFor,
 }: ChoiceRePickerProps) {
@@ -89,7 +86,7 @@ export function ChoiceRePicker({
     id: o.id,
     label: o.label,
     searchText: o.searchText ?? o.label,
-    chip: o.chip ?? seal,
+    chip: o.chip,
     note: o.note,
   }));
 
@@ -117,8 +114,8 @@ export function ChoiceRePicker({
           selected={selected}
           onToggle={toggle}
           cols={1}
-          // Unified seal-card rendering. `onMore` (when there's a detail to read) shows
-          // the "More" button on selected cards; otherwise plain seal cards (`card`).
+          // Unified card rendering. `onMore` (when there's a detail to read) shows
+          // the "More" button on selected cards; otherwise plain cards (`card`).
           card
           // Grow with the content (the `.modal-body` owns the scroll) so the list fills
           // the modal naturally instead of nesting a tiny inner scroll box.

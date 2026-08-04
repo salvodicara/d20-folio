@@ -112,6 +112,10 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
     slug: "weapon-mastery-picker",
     route: "/characters/scn-battlemaster-fighter?tab=features",
   },
+  {
+    slug: "maneuver-picker",
+    route: "/characters/scn-battlemaster-fighter?tab=features",
+  },
   // The maneuver-Fighter's PLAY tab — surfaces the Second Wind heal chip,
   // which the IT locale-sweep asserts reads "1d10 + livello da Guerriero", never
   // the English "Fighter level" the OLD prose-regex leaked (HEAL-SEAM P1). The

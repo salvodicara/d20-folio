@@ -101,7 +101,7 @@ import { InlineMarkdown } from "@/components/shared/InlineMarkdown";
 import { highlightRulesText } from "@/components/shared/highlightRulesText";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
-import { Swords, Wand2, Eye, Sword, Gem } from "lucide-react";
+import { Gem } from "lucide-react";
 import { KindSeal } from "@/components/shared/KindSeal";
 import { weaponSealIcon } from "@/components/shared/item-icons";
 import {
@@ -233,8 +233,6 @@ export function FeaturesTab() {
       max: number;
       current: string[];
       options: { id: string; label: string; searchText?: string; note?: string }[];
-      /** The leading {@link KindSeal} medallion painted on every card. */
-      seal: React.ReactNode;
       /** "More" detail renderers (spec-driven groups); omitted for weapon mastery. */
       detailFor?: (id: string) => React.ReactNode;
       detailTitleFor?: (id: string) => string;
@@ -262,7 +260,6 @@ export function FeaturesTab() {
             id: m.id,
             ...srdOptionParts("maneuver", m.id, locale),
           })),
-          seal: <KindSeal kind="weapon" icon={Swords} />,
           ...specDetailRenderers(maneuverSpec, entries, pickerCtx),
           field: "maneuverChoices",
         });
@@ -284,7 +281,6 @@ export function FeaturesTab() {
             id: m.id,
             ...srdOptionParts("metamagic", m.id, locale),
           })),
-          seal: <KindSeal kind="feat" icon={Wand2} />,
           ...specDetailRenderers(metamagicSpec, entries, pickerCtx),
           field: "metamagicChoices",
         });
@@ -317,7 +313,6 @@ export function FeaturesTab() {
               ? localizeSrd("invocation", inv.id, "prerequisite", locale)
               : undefined,
           })),
-          seal: <KindSeal kind="feat" icon={Eye} />,
           ...specDetailRenderers(invocationSpec, entries, pickerCtx),
           field: "invocationChoices",
         });
@@ -354,7 +349,6 @@ export function FeaturesTab() {
             // like the inventory/combat rows instead of one generic sword.
             chip: <KindSeal kind="weapon" icon={weaponSealIcon(w.id)} />,
           })),
-          seal: <KindSeal kind="weapon" icon={Sword} />,
           // N-B / OWN-9 — "More" opens the weapon's FULL compendium page (damage,
           // properties, mastery, cost, weight) by reusing the equipment compendium spec
           // + read view, so a player can inspect a weapon before mastering it. No new
@@ -874,7 +868,6 @@ export function FeaturesTab() {
               title={g.title}
               label={g.label}
               searchPlaceholder={t("rePick.search")}
-              seal={g.seal}
               detailFor={g.detailFor}
               detailTitleFor={g.detailTitleFor}
             />
