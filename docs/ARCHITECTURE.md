@@ -591,6 +591,14 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   receives HP, and `maximize-spell-healing` turns a scaled healing formula into its deterministic maximum
   before the same target/effect transaction. Slot-level configuration therefore precedes both calculations.
 
+  Variable healing pools use the same boundary. `poolSpendEffect:"healing"` names only the effect;
+  the referenced tracker remains the single source for unit, die and remaining amount. An HP pool derives
+  its exact debit from the reviewed healing plus selected cure costs (Lay On Hands), while a dice pool asks
+  for the die count first, materializes `NdX`, then asks for the rolled total (Recover Vitality). The live
+  pool is re-read inside commit and redo, so a stale review cannot overdraw it. Optional `ActionData`
+  fields expose the identical path to inline homebrew actions; custom actions resolve the tracker they
+  actually name rather than assuming the feature's first tracker.
+
   The boundary is deliberate: the table declares facts the SPA cannot observe (targets, hit/save results,
   rolled totals, range/line-of-sight and geometry); the engine resolves every modeled deterministic
   consequence. In a live encounter, targets are stable PC/monster instance ids and the Chronicle records

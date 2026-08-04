@@ -107,6 +107,23 @@ function action(summary: ResolvedAction["summary"]): ResolvedAction {
   };
 }
 
+function healingPoolAction(): ResolvedAction {
+  return {
+    ...action({
+      poolSpendEffect: "healing",
+      uses: { current: 20, total: 20, isPool: true, unit: "hp" },
+      targeting: { affinity: "ally", maxTargets: 1 },
+      cureOptions: [{ condition: "poisoned", costHp: 5 }],
+    }),
+    id: "paladin-lay-on-hands-bonus",
+    source: "feature",
+    spellLevel: null,
+    costTracker: "paladin-lay-on-hands",
+    costTrackerIsPool: true,
+    costTrackerUnit: "hp",
+  };
+}
+
 const applyMock = vi.mocked(applyDeclaredCombatEffects);
 const appendPersistentMock = vi.mocked(appendPersistentCombatEffect);
 const revokePersistentMock = vi.mocked(revokePersistentCombatEffect);
@@ -583,6 +600,86 @@ describe("universal combat resolution", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
     expectApplied([{ kind: "healing", targetId: "pc-u2", amount: 9 }]);
+  });
+
+  it("spends one HP pool atomically across ally healing and paid condition cures", () => {
+    const ally: EncounterCombatantView = {
+      ...allyPc(),
+      currentHp: 8,
+      conditions: ["poisoned"],
+    };
+    const layOnHands = healingPoolAction();
+    let committed: ResolvedAction | undefined;
+    render(
+      <CombatResolver
+        action={layOnHands}
+        sheetCombat={combat([pc(), ally])}
+        onCommit={(afterCommit, actionOverride) => {
+          committed = actionOverride;
+          afterCommit();
+        }}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /borin/i }));
+    const cure = screen.getByRole("button", { name: /cure poisoned/i });
+    expect(cure).toHaveAttribute("aria-pressed", "false");
+    fireEvent.change(screen.getByRole("spinbutton", { name: /healing for borin/i }), {
+      target: { value: "7" },
+    });
+    fireEvent.click(cure);
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expect(committed?.trackerCost).toBe(12);
+    expectApplied([
+      { kind: "healing", targetId: "pc-u2", amount: 7 },
+      {
+        kind: "condition",
+        targetId: "pc-u2",
+        conditionId: "poisoned",
+        active: false,
+      },
+    ]);
+  });
+
+  it("heals and cures the solo character through the same pool resolver and undo", () => {
+    const wounded = structuredClone(MOCK_CHARACTER);
+    wounded.session.hp.current = 10;
+    wounded.session.conditions = ["poisoned"];
+    useCharacterStore.setState({ character: wounded });
+    const layOnHands = healingPoolAction();
+    let committed: ResolvedAction | undefined;
+    let undo: (() => void) | undefined;
+    render(
+      <CombatResolver
+        action={layOnHands}
+        sheetCombat={null}
+        onCommit={(afterCommit, actionOverride) => {
+          committed = actionOverride;
+          undo = afterCommit();
+        }}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /lyra voss/i }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: /healing for lyra voss/i }), {
+      target: { value: "7" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /cure poisoned/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expect(committed?.trackerCost).toBe(12);
+    expect(useCharacterStore.getState().character?.session.hp.current).toBe(17);
+    expect(useCharacterStore.getState().character?.session.conditions).toEqual([]);
+    expect(applyMock).not.toHaveBeenCalled();
+
+    undo?.();
+    expect(useCharacterStore.getState().character?.session.hp.current).toBe(10);
+    expect(useCharacterStore.getState().character?.session.conditions).toEqual([
+      "poisoned",
+    ]);
   });
 
   it("maximizes spell healing and applies one linked self-heal for another target", () => {

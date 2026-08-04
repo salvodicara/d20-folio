@@ -1181,6 +1181,9 @@ export interface SrdActionDef {
    * Guerriero" chip. Omitted for non-healing actions.
    */
   heal?: ActionHeal;
+  /** A variable pool whose spend produces healing.
+   * Its tracker owns cost, unit, die, and remaining amount. */
+  poolSpendEffect?: "healing";
   /**
    * Number of tracker uses consumed when this action fires.
    * 1 is the implicit default. Set > 1 for abilities that cost multiple

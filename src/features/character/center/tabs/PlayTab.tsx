@@ -120,7 +120,7 @@ import {
   conditionLabel,
   localizeTrackerUnit,
 } from "@/lib/views/tracker-view";
-import { useTurnEconomy, getEconomySlot } from "../useTurnEconomy";
+import { useTurnEconomy, getEconomySlot, type PreparedCommit } from "../useTurnEconomy";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
 import {
@@ -332,7 +332,7 @@ export function PlayTab() {
   const sheetCombat = useSheetCombat();
   const [declaring, setDeclaring] = useState<{
     action: ResolvedAction;
-    commit: (afterCommit: () => (() => void) | undefined) => void;
+    commit: PreparedCommit;
   } | null>(null);
   const commitAction = useCallback(
     (action: ResolvedAction) => {
@@ -360,7 +360,8 @@ export function PlayTab() {
         ) {
           setDeclaring({
             action: targetReady,
-            commit: (afterCommit) => commit(afterCommit, targetReady),
+            commit: (afterCommit, actionOverride) =>
+              commit(afterCommit, actionOverride ?? targetReady),
           });
           return;
         }

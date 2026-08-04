@@ -859,8 +859,13 @@ forgotten).
       (owning-class) level so a low-level Paladin sees the Poisoned cure ALONE. Ids only (golden rule 7) —
       the engine resolves it onto `summary.cureOptions` (locale-free condition ids), the presenter
       (PlayTab gloss + accordion fact) localizes each via `conditionLabel` + `combat.cureConditions`/
-      `cureConditionsLabel` (en+it). The pool is never auto-debited (override-first). Regression:
-      `s10-data-wiring.table.test.ts` Family G (L2–3 → Poisoned only; L14 → all 7, 5 HP each), fail-before
+      `cureConditionsLabel` (en+it). **Execution closure 2026-08-04:** the generic
+      `poolSpendEffect:"healing"` path now lets the player assign healing and/or cures to one reviewed
+      target, debits their exact combined HP cost only on Apply, updates an offline table-mate through the
+      shared combat transaction, and reverses self effects/resource/economy through the ordinary undo;
+      commit and redo re-read the live pool. Regression:
+      `s10-data-wiring.table.test.ts` Family G (L2–3 → Poisoned only; L14 → all 7, 5 HP each),
+      `combat-resolver.test.tsx` (ally + solo healing/cure/cost/undo), fail-before
       proven (no field → `cureOptions` undefined). Verified against the LIVE Paladin fixture (Oath of
       Vengeance L3): Lay on Hands now exposes exactly `[{poisoned, 5 HP}]`, RAW-correct (Restoring Touch
       gated out). The conformance dump is round-trip-stable (reads `cureOptions`, no golden file) — NO dump

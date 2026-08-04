@@ -9,6 +9,8 @@
 import type {
   AbilityCode,
   ActionType,
+  ActionCureCondition,
+  CombatTargeting,
   DamageType,
   Recovery,
   SpellSchool,
@@ -343,6 +345,12 @@ export interface ActionData {
    * → Monk Focus) survives both custom features and `actionOverrides`.
    */
   costTracker?: string;
+  /** A variable pool whose selected spend is applied as healing. */
+  poolSpendEffect?: "healing";
+  /** Structured target defaults; the table can still override them at resolution. */
+  targeting?: CombatTargeting;
+  /** Conditions this homebrew action can cure by paying from its HP pool. */
+  cureConditions?: ReadonlyArray<Omit<ActionCureCondition, "fromLevel">>;
 }
 
 /** Content block within a feature */

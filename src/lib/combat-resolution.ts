@@ -42,6 +42,13 @@ export interface CombatResolutionSpec {
   hasHealing: boolean;
   hasTempHp: boolean;
   conditionRemoval?: { options: string[]; max?: number };
+  /** A variable healing pool paid by the reviewed outcome itself. Dice pools are
+   * configured before this resolver; HP pools derive their exact debit here. */
+  poolSpend?: {
+    remaining: number;
+    unit?: string;
+    conditionCosts: Readonly<Record<string, number>>;
+  };
   healingMode?: "full" | "maximum";
   effectPool?: number;
   sharedAmount: boolean;
@@ -114,7 +121,11 @@ function actionHasHealing(action: ResolvedAction): boolean {
   const s = action.summary;
   return Boolean(
     s.healingMode !== "consumable" &&
-    (s.healing || s.healApply || s.healingMode === "full" || s.healingPool !== undefined)
+    (s.healing ||
+      s.healApply ||
+      s.poolSpendEffect === "healing" ||
+      s.healingMode === "full" ||
+      s.healingPool !== undefined)
   );
 }
 
@@ -143,11 +154,26 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
   const hasDamage = actionHasDamage(action);
   const hasHealing = actionHasHealing(action);
   const hasTempHp = actionHasTempHp(action);
+  const poolSpend =
+    s.poolSpendEffect === "healing" && action.costTrackerIsPool && s.uses
+      ? {
+          remaining: s.uses.current,
+          ...(action.costTrackerUnit ? { unit: action.costTrackerUnit } : {}),
+          conditionCosts: Object.fromEntries(
+            (s.cureOptions ?? []).map(({ condition, costHp }) => [condition, costHp])
+          ),
+        }
+      : undefined;
   const masteryRiders = actionRiderConditions(action);
   const conditionApplication =
     s.conditionApplication ??
     (masteryRiders.length > 0
       ? { options: masteryRiders, on: "hit" as const }
+      : undefined);
+  const conditionRemoval =
+    s.conditionRemoval ??
+    (s.cureOptions?.length
+      ? { options: s.cureOptions.map(({ condition }) => condition) }
       : undefined);
   const standingEffect = action.standingEffect
     ? {
@@ -206,7 +232,8 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
       ? { effectPool: s.healingPool ?? s.tempHpPool }
       : {}),
     sharedAmount: s.area === true || s.targeting?.sharedAmount === true,
-    ...(s.conditionRemoval ? { conditionRemoval: s.conditionRemoval } : {}),
+    ...(conditionRemoval ? { conditionRemoval } : {}),
+    ...(poolSpend ? { poolSpend } : {}),
     ...(conditionApplication ? { conditionApplication } : {}),
     ...(standingEffect ? { standingEffect } : {}),
     targetAffinity,

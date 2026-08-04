@@ -60,9 +60,14 @@ blocking on owner screenshots):
 
 ## Current state
 
-**Deterministic automation gap sweep — ACTIVE (2026-08-04):** five truth-gated milestones are closed and
+**Deterministic automation gap sweep — ACTIVE (2026-08-04):** six truth-gated milestones are closed and
 branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level
-charged-item casts, activated-item tracker/timer lifecycle, and bounded spell-pool execution. Divine
+charged-item casts, activated-item tracker/timer lifecycle, bounded spell-pool execution, and variable
+healing-pool execution. Lay On Hands now applies reviewed healing and paid condition cures together with
+one exact live-validated pool debit; Recover Vitality chooses its d10 count before target review, then
+heals from the entered roll. Both share solo/encounter targeting, peer-offline delivery, exact resource
+undo and stale-redo guards; own-sheet effects reverse with that same undo, and inline homebrew actions use
+the same typed capability. Divine
 Intervention, War God's Blessing and multi-spell items now rejoin the ordinary resolved-spell pipeline after
 the spell pick: configuration precedes target review; action economy, deterministic effects, concentration,
 structured log/Chronicle provenance, exact tracker payment and undo share one path. Typed source overrides
@@ -3089,7 +3094,8 @@ weaponAttackAbilities, isMonkMelee})` (`compute.ts`, REPLACING `resolveWeaponSta
       it still fails)" (en+it); Tactical Shift stays narrative. **G19 Paladin Lay On Hands** — a new
       `SrdActionDef.cureConditions` field (id-keyed, `fromLevel`-gated): base 5-HP cure-**Poisoned** + L14
       Restoring Touch's six extra conditions (5 HP each), resolved onto `summary.cureOptions` and localized
-      via `conditionLabel` + `combat.cureConditions` (en+it); pool never auto-debited (override-first). All
+      via `conditionLabel` + `combat.cureConditions` (en+it). The later variable-pool execution milestone
+      routes those choices through `CombatResolutionSpec`, combining healing + cures into one exact debit. All
       three pinned in `s10-data-wiring.table.test.ts` Family G (cheapest engine-fact pin, golden rule 13),
       fail-before proven for each. The LIVE Paladin fixture (Oath of Vengeance L3): Lay on Hands now
       exposes `[{poisoned, 5 HP}]` (Restoring Touch correctly gated out at L3). 6 team fixtures byte-identical;

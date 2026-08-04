@@ -127,7 +127,8 @@ roll-entry — the app never rolls). An action's **`cureConditions: [{ condition
 (G19 — Paladin Lay On Hands) declares conditions it can neutralize by expending pool HP (5 HP ends
 Poisoned; `fromLevel:14` gates Restoring Touch's six extra conditions on the owning-class level);
 condition **ids** only (golden rule 7), localized at the render edge via `conditionLabel`, resolved
-onto `summary.cureOptions` — the pool is never auto-debited (override-first). An action's
+onto `summary.cureOptions`; with `poolSpendEffect:"healing"`, the resolver combines selected cure costs
+with reviewed healing and debits the exact pool total on Apply. An action's
 **`tempHpRoll: { rolls, die, fromLevel? }`** (G22 — Monk Heightened Focus) declares a die-rolled
 Temporary-HP gain that RIDES the action (spend a Focus Point on Patient Defense → Temp HP equal to two
 rolls of the Martial Arts die); `die` is a fixed face OR the `"classSpecific:<key>"` sentinel resolved
@@ -223,6 +224,11 @@ Healing riders use the same pipeline: `self-heal-on-other` adds one cast-level-s
 least one other creature actually receives healing, while `maximize-spell-healing` replaces each healing
 die with its maximum face through the pure `maximizeDiceFormula` helper. The resulting number still passes
 through the normal reviewed target, apply and undo flow.
+Variable resource healing is an action capability, not a feature-name special case:
+`poolSpendEffect:"healing"` joins the tracker and resolver. HP pools debit reviewed healing plus typed
+condition-cure costs; dice pools choose a count before target review and expose that concrete formula for
+the table's rolled total. Both revalidate the live pool at commit/redo. The same optional fields exist on
+custom `ActionData`, preserving homebrew parity without duplicating a second resolver.
 Peer-PC effects do not depend on the recipient client. The acting client fresh-reads the peer's narrow
 `combat/state` inside the same transaction that records the Chronicle, applies typed HP/temp/condition
 changes, and merges only that slice. Current campaign membership authorizes the combat subdoc while the

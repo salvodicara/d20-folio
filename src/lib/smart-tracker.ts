@@ -382,6 +382,8 @@ export interface ActionSummary {
   trigger?: string;
   /** Healing formula: "1d10+9", "5×level" */
   healing?: string;
+  /** A variable pool whose selected spend becomes this action's healing result. */
+  poolSpendEffect?: "healing";
   /** Target-facing conditions this action can end. */
   conditionRemoval?: { options: ConditionId[]; max?: number };
   targeting?: CombatTargeting;
@@ -4463,20 +4465,23 @@ function resolveFeatureActions(
           // fit the collapsed card, and the full text stays in the accordion.
           summary.effect = customText(a.description);
           // Check for custom trackers
-          if (featureRef.trackers && featureRef.trackers.length > 0) {
-            const cTracker = featureRef.trackers[0];
-            if (cTracker) {
-              const total = resolveTrackerTotal(cTracker.total, character);
-              const used = session.trackers[cTracker.id]?.used ?? 0;
-              summary.uses = {
-                current: Math.max(0, total - used),
-                total,
-                isPool: cTracker.isPool,
-                unit: cTracker.unit,
-              };
-              if (cTracker.die) summary.die = cTracker.die;
-            }
+          const cTracker =
+            featureRef.trackers?.find((tracker) => tracker.id === a.costTracker) ??
+            featureRef.trackers?.[0];
+          if (cTracker) {
+            const total = resolveTrackerTotal(cTracker.total, character);
+            const used = session.trackers[cTracker.id]?.used ?? 0;
+            summary.uses = {
+              current: Math.max(0, total - used),
+              total,
+              isPool: cTracker.isPool,
+              unit: cTracker.unit,
+            };
+            if (cTracker.die) summary.die = cTracker.die;
           }
+          if (a.poolSpendEffect) summary.poolSpendEffect = a.poolSpendEffect;
+          if (a.targeting) summary.targeting = a.targeting;
+          if (a.cureConditions) summary.cureOptions = [...a.cureConditions];
           // CQ8 — honor ActionData.costTracker / trackerCost (added in the
           // unification). If the custom action doesn't specify a costTracker
           // but the feature has trackers, fall back to the first one (mirrors
@@ -4492,6 +4497,8 @@ function resolveFeatureActions(
             costsSlot: false,
             costTracker: a.costTracker ?? featureRef.trackers?.[0]?.id,
             trackerCost: a.trackerCost,
+            costTrackerIsPool: cTracker?.isPool,
+            costTrackerUnit: cTracker?.unit,
             pinned: pinnedSet.has(id),
             defaultPinned: false,
             description: customText(a.description),
@@ -4633,6 +4640,7 @@ function resolveFeatureActions(
       if (action.heal) {
         summary.heal = resolveActionHeal(action.heal, charData, ctx.abilityScores);
       }
+      if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
 
       // G23 — Tactical Mind: spend a Second Wind use to add 1d10 to a FAILED
       // ability check (refunded if the check still fails). Carried verbatim onto
@@ -4838,6 +4846,7 @@ function resolveFeatureActions(
         if (action.heal) {
           summary.heal = resolveActionHeal(action.heal, charData, ctx.abilityScores);
         }
+        if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
         // S11 — a race-trait action's save + declarative save-based ATTACK
         // (Dragonborn Breath Weapon → 1d10→4d10 by CHARACTER level on a DEX save,
         // damage type from the chosen Draconic Ancestry; Lupin Howl → WIS save vs
@@ -4926,6 +4935,7 @@ function resolveFeatureActions(
         if (action.heal) {
           summary.heal = resolveActionHeal(action.heal, charData, ctx.abilityScores);
         }
+        if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
         applySaveAttackSummary(summary, action, character, ctx, warlockLevel);
         actions.push({
           id,

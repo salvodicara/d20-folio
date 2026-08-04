@@ -52,6 +52,7 @@ import type { PortraitCrop } from "@/types/character";
 import type { ConditionId, DamageType } from "@/data/types";
 import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 import { maximizeDiceFormula } from "@/lib/grants";
+import type { PreparedCommit } from "./useTurnEconomy";
 import "./CombatResolver.css";
 
 type TargetOutcome = "hit" | "miss" | "failed-save" | "saved";
@@ -152,7 +153,7 @@ export function CombatResolver({
   action: ResolvedAction;
   sheetCombat: GlobalCombat | null;
   /** Commits action economy/resources only after the resolution is complete. */
-  onCommit: (afterCommit: () => (() => void) | undefined) => void;
+  onCommit: PreparedCommit;
   /** Cancel or successful apply. Cancel deliberately commits nothing. */
   onDone: () => void;
 }) {
@@ -328,9 +329,11 @@ export function CombatResolver({
       const eligible = target.conditions.filter((condition) =>
         spec.conditionRemoval?.options.includes(condition)
       );
-      const defaults = spec.conditionRemoval?.max
-        ? eligible.slice(0, spec.conditionRemoval.max)
-        : eligible;
+      const defaults = spec.poolSpend
+        ? []
+        : spec.conditionRemoval?.max
+          ? eligible.slice(0, spec.conditionRemoval.max)
+          : eligible;
       return { ...current, [target.key]: defaults };
     });
   };
@@ -428,6 +431,64 @@ export function CombatResolver({
     }
     const rolled = spec.sharedAmount ? areaDamage : (damage[key] ?? 0);
     return rolled;
+  };
+
+  const dynamicHpPool = spec.poolSpend?.unit === "hp" && action.trackerCost == null;
+  const removalCostFor = (key: string, removals = conditionRemovals[key] ?? []): number =>
+    removals.reduce(
+      (sum, conditionId) => sum + (spec.poolSpend?.conditionCosts[conditionId] ?? 0),
+      0
+    );
+  const totalRemovalCost = selected.reduce((sum, key) => sum + removalCostFor(key), 0);
+  const totalPoolCost = dynamicHpPool
+    ? selected.reduce(
+        (sum, key) => sum + (modeForTarget(key) === "healing" ? amountFor(key) : 0),
+        totalRemovalCost
+      )
+    : 0;
+  const healingCostExcept = (key: string): number =>
+    selected.reduce(
+      (sum, selectedKey) =>
+        sum +
+        (selectedKey !== key && modeForTarget(selectedKey) === "healing"
+          ? amountFor(selectedKey)
+          : 0),
+      0
+    );
+  const poolHealingMaxFor = (key: string): number | undefined => {
+    if (!dynamicHpPool || !spec.poolSpend) return undefined;
+    return Math.max(
+      0,
+      spec.poolSpend.remaining - totalRemovalCost - healingCostExcept(key)
+    );
+  };
+  const toggleConditionRemoval = (key: string, conditionId: string): void => {
+    const current = conditionRemovals[key] ?? [];
+    if (current.includes(conditionId)) {
+      setConditionRemovals((all) => ({
+        ...all,
+        [key]: current.filter((value) => value !== conditionId),
+      }));
+      return;
+    }
+    const max = spec.conditionRemoval?.max;
+    const next = max ? [...current, conditionId].slice(-max) : [...current, conditionId];
+    if (dynamicHpPool && spec.poolSpend) {
+      const nextRemovalTotal = selected.reduce(
+        (sum, selectedKey) =>
+          sum + removalCostFor(selectedKey, selectedKey === key ? next : undefined),
+        0
+      );
+      const availableForThisTarget = Math.max(
+        0,
+        spec.poolSpend.remaining - nextRemovalTotal - healingCostExcept(key)
+      );
+      setDamage((all) => ({
+        ...all,
+        [key]: Math.min(all[key] ?? 0, availableForThisTarget),
+      }));
+    }
+    setConditionRemovals((all) => ({ ...all, [key]: next }));
   };
 
   const relevantDamageParts = (key: string): CombatDamagePartSpec[] =>
@@ -571,6 +632,9 @@ export function CombatResolver({
     // target state untouched.
     let sharedEffectsApplied = false;
     let closed = false;
+    const committedAction = dynamicHpPool
+      ? { ...action, trackerCost: totalPoolCost }
+      : action;
     onCommit(() => {
       const effects = choices.flatMap(({ target, amount, mode }) => {
         if (!sheetCombat || target.targetId === sheetCombat.myId) return [];
@@ -745,9 +809,9 @@ export function CombatResolver({
           showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
         });
       }
-      // The owner can mutate their own live PC state directly. Peer PC effects remain a
-      // structured declaration because Firestore correctly forbids players writing one
-      // another's character; the DM/recipient can always correct the live sheet.
+      // Own-sheet effects apply locally for immediate solo feedback. In an encounter the
+      // shared batch above writes table-mates' narrow combat slices transactionally, so a
+      // target need not be online; the local branch only avoids applying the actor twice.
       const own = choices.find(
         ({ target }) => !sheetCombat || target.targetId === sheetCombat.myId
       );
@@ -816,7 +880,7 @@ export function CombatResolver({
             undoOwn?.();
           }
         : undefined;
-    });
+    }, committedAction);
   };
 
   const summary = [
@@ -1199,7 +1263,8 @@ export function CombatResolver({
                             digits={3}
                             min={0}
                             max={
-                              spec.effectPool !== undefined
+                              poolHealingMaxFor(key) ??
+                              (spec.effectPool !== undefined
                                 ? Math.max(
                                     0,
                                     spec.effectPool -
@@ -1212,7 +1277,7 @@ export function CombatResolver({
                                         0
                                       )
                                   )
-                                : undefined
+                                : undefined)
                             }
                             value={damage[key] ?? 0}
                             onChange={(value) =>
@@ -1287,25 +1352,7 @@ export function CombatResolver({
                                 className="combat-condition-chip"
                                 data-selected={selectedForRemoval || undefined}
                                 aria-pressed={selectedForRemoval}
-                                onClick={() =>
-                                  setConditionRemovals((current) => {
-                                    const selected = current[key] ?? [];
-                                    if (selected.includes(conditionId))
-                                      return {
-                                        ...current,
-                                        [key]: selected.filter(
-                                          (value) => value !== conditionId
-                                        ),
-                                      };
-                                    const max = spec.conditionRemoval?.max;
-                                    return {
-                                      ...current,
-                                      [key]: max
-                                        ? [...selected, conditionId].slice(-max)
-                                        : [...selected, conditionId],
-                                    };
-                                  })
-                                }
+                                onClick={() => toggleConditionRemoval(key, conditionId)}
                               >
                                 {t("combat.resolveCureCondition", { condition: label })}
                                 {selectedForRemoval && (
@@ -1424,7 +1471,15 @@ export function CombatResolver({
         <Button variant="secondary" onClick={onDone}>
           {t("common.cancel")}
         </Button>
-        <Button onClick={apply} disabled={selected.length === 0 || missingDamageType}>
+        <Button
+          onClick={apply}
+          disabled={
+            selected.length === 0 ||
+            missingDamageType ||
+            (dynamicHpPool &&
+              (totalPoolCost <= 0 || totalPoolCost > (spec.poolSpend?.remaining ?? 0)))
+          }
+        >
           <Icon as={Swords} size="sm" decorative />
           {t("combat.resolveApply")}
         </Button>

@@ -263,13 +263,19 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   const resetTurn = useCombatStore((s) => s.resetTurn);
   const showToast = useToastStore((s) => s.showToast);
 
-  // Pool spend prompt state. Immediate-commit model: a variable-cost (pool)
-  // action prompts for its amount AT SELECT TIME, then commits.
+  // Pool-spend prompt state. Ordinary variable-cost actions commit after the
+  // amount; dice-healing pools configure their concrete roll first, then rejoin
+  // the shared target resolver before any resource is spent.
   const [poolSpendRequest, setPoolSpendRequest] = useState<PoolSpendRequest | null>(null);
-  const [pendingSelect, setPendingSelect] = useState<{
-    action: ResolvedAction;
-    slot: EconomySlot;
-  } | null>(null);
+  const [pendingPoolSpend, setPendingPoolSpend] = useState<
+    | { kind: "commit"; action: ResolvedAction; slot: EconomySlot }
+    | {
+        kind: "prepare";
+        action: ResolvedAction;
+        onPrepared: (action: ResolvedAction, commit: PreparedCommit) => void;
+      }
+    | null
+  >(null);
   // Per-COMMIT reverse-appliers live on the session UNDO STACK (`undoStore`) —
   // one entry per act (a slot commit, an attack swing, a reaction), each
   // individually undoable via the toast / the topbar control / ⌘Z. An entry
@@ -899,6 +905,14 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       registerUndoableToast(
         { message },
         () => {
+          if (action.costTracker && action.costTrackerIsPool) {
+            const cost = trackerAmount ?? action.trackerCost ?? 1;
+            const live = useCharacterStore.getState().character;
+            const tracker = live
+              ? resolveTrackers(live).find((entry) => entry.id === action.costTracker)
+              : undefined;
+            if (!tracker || tracker.total - tracker.used < cost) return null;
+          }
           const undoCost = commitAction(action, trackerAmount);
           if (!appendWithinActionRules(toSelectedAction(action, slot))) {
             undoCost();
@@ -1345,7 +1359,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     if (action.costTracker && action.costTrackerIsPool && !action.trackerCost) {
       const tracker = trackerMap.get(action.costTracker);
       if (tracker) {
-        setPendingSelect({ action, slot });
+        setPendingPoolSpend({ kind: "commit", action, slot });
         setPoolSpendRequest({
           featureName: action.name,
           unit: action.costTrackerUnit ?? "uses",
@@ -1793,18 +1807,42 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  // Pool spend confirm — the player chose the amount for a variable-cost action
-  // at SELECT time; commit it now into its slot.
+  // Pool-spend confirm. A plain pool commits now; a dice-healing pool turns the
+  // selected dice into a concrete roll formula and continues to target review.
+  function commitPreparedAction(defaultAction: ResolvedAction): PreparedCommit {
+    return (afterCommit, actionOverride) => {
+      const action = actionOverride ?? defaultAction;
+      return action.type === "reaction"
+        ? void handleUseReaction(action, afterCommit)
+        : handleSelect(action, afterCommit);
+    };
+  }
+
   function handlePoolSpendConfirm(amount: number) {
-    const pending = pendingSelect;
-    setPendingSelect(null);
+    const pending = pendingPoolSpend;
+    setPendingPoolSpend(null);
     setPoolSpendRequest(null);
-    if (pending) void commitIntoSlot(pending.action, pending.slot, amount);
+    if (!pending) return;
+    if (pending.kind === "commit") {
+      void commitIntoSlot(pending.action, pending.slot, amount);
+      return;
+    }
+    const die = pending.action.summary.die;
+    if (!die) return;
+    const prepared: ResolvedAction = {
+      ...pending.action,
+      trackerCost: amount,
+      summary: {
+        ...pending.action.summary,
+        healApply: { dice: `${amount}${die}`, bonus: 0 },
+      },
+    };
+    pending.onPrepared(prepared, commitPreparedAction(prepared));
   }
 
   // Pool spend cancel — dismiss the prompt; nothing was committed.
   function handlePoolSpendCancel() {
-    setPendingSelect(null);
+    setPendingPoolSpend(null);
     setPoolSpendRequest(null);
   }
 
@@ -1990,6 +2028,25 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       }
     }
     if (
+      action.summary.poolSpendEffect === "healing" &&
+      action.costTracker &&
+      action.costTrackerIsPool &&
+      action.costTrackerUnit === "dice" &&
+      !action.trackerCost &&
+      action.summary.die
+    ) {
+      const tracker = trackerMap.get(action.costTracker);
+      if (tracker) {
+        setPendingPoolSpend({ kind: "prepare", action, onPrepared });
+        setPoolSpendRequest({
+          featureName: action.name,
+          unit: action.costTrackerUnit,
+          max: Math.max(1, tracker.total - tracker.used),
+        });
+        return;
+      }
+    }
+    if (
       configureSpellCast(action, slot, ridesPip, (finalAction, option, metamagicIds) =>
         onPrepared(finalAction, (afterCommit, actionOverride) => {
           const committedAction = actionOverride ?? finalAction;
@@ -2010,12 +2067,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     )
       return;
 
-    onPrepared(action, (afterCommit, actionOverride) => {
-      const committedAction = actionOverride ?? action;
-      return committedAction.type === "reaction"
-        ? void handleUseReaction(committedAction, afterCommit)
-        : handleSelect(committedAction, afterCommit);
-    });
+    onPrepared(action, commitPreparedAction(action));
   }
 
   // The async reaction handler is exposed as a fire-and-forget `() => void` on
