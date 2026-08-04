@@ -8,6 +8,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NO_DEFENSES } from "@/lib/damage-intake";
 
 vi.mock("@/lib/dev-bypass", () => ({ DEV_BYPASS_AUTH: true }));
 
@@ -121,6 +122,7 @@ describe("campaign-io under dev bypass", () => {
             tempHp: 4,
             maxHp: 20,
             conditions: [],
+            defenses: NO_DEFENSES,
           },
         ],
       }
@@ -220,6 +222,7 @@ describe("campaign-io under dev bypass", () => {
             tempHp: 0,
             maxHp: 20,
             conditions: [],
+            defenses: NO_DEFENSES,
           },
           {
             targetId: "pc-b",
@@ -229,6 +232,7 @@ describe("campaign-io under dev bypass", () => {
             tempHp: 0,
             maxHp: 20,
             conditions: [],
+            defenses: NO_DEFENSES,
           },
         ],
       }

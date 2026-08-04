@@ -30,10 +30,12 @@ export interface CombatStandingEffectSpec {
     concentration: boolean;
     maxRounds?: number;
   };
+  requiresAppliedTempHp?: true;
 }
 
 export interface CombatResolutionSpec {
   kind: CombatResolutionKind;
+  attackMode?: "melee" | "ranged";
   targetCap: number;
   area: boolean;
   hasDamage: boolean;
@@ -165,6 +167,9 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
             ? { maxRounds: action.standingEffect.maxRounds }
             : {}),
         },
+        ...(action.standingEffect.requiresAppliedTempHp
+          ? { requiresAppliedTempHp: true as const }
+          : {}),
       }
     : undefined;
   const targetAffinity: CombatTargetAffinity =
@@ -180,6 +185,7 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
 
   return {
     kind,
+    ...(s.attackMode ? { attackMode: s.attackMode } : {}),
     targetCap:
       targetAffinity === "self"
         ? 1

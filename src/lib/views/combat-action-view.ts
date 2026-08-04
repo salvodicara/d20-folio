@@ -299,6 +299,7 @@ function localizeSummary(
     : proneEffect;
   return {
     ...rest,
+    ...(weaponRange && !rest.attackMode ? { attackMode: weaponRange.kind } : {}),
     ...(healingChip ? { healing: healingChip } : {}),
     ...(healingBreakdown ? { healingBreakdown } : {}),
     ...(healApply ? { healApply } : {}),

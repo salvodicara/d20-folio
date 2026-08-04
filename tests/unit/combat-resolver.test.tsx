@@ -320,7 +320,7 @@ describe("universal combat resolution", () => {
     const onCommit = vi.fn(commitNow);
     render(
       <CombatResolver
-        action={action({ damage: "1d8", attackBonus: 6 })}
+        action={action({ damage: "1d8", attackBonus: 6, attackMode: "melee" })}
         sheetCombat={combat([monster("monster-1", "Goblin")], 3)}
         onCommit={onCommit}
         onDone={() => {}}
@@ -333,6 +333,14 @@ describe("universal combat resolution", () => {
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
     expect(onCommit).toHaveBeenCalledTimes(1);
     expectApplied([{ kind: "damage", targetId: "monster-1", amount: 7 }]);
+    expect(applyMock).toHaveBeenCalledWith(
+      "camp1",
+      [{ kind: "damage", targetId: "monster-1", amount: 7 }],
+      expect.objectContaining({
+        hitTargetIds: ["monster-1"],
+        attackMode: "melee",
+      })
+    );
     expect(useCharacterStore.getState().combatRecentActions).toEqual([
       {
         id: "1",

@@ -229,6 +229,9 @@ export interface ActionSummary {
   conditionApplication?: CombatConditionApplication;
   /** Damage formula: "8d6", "1d8+5", "3×(1d4+1)" */
   damage?: string;
+  /** How a successful attack reaches its target. This is a deterministic trigger
+   * fact for reactive effects; geometry and a thrown-weapon override stay at the table. */
+  attackMode?: "melee" | "ranged";
   /** Flat bonus that applies to exactly one damage roll of this cast. Kept separate
    * for multi-instance spells so the resolver cannot multiply it across darts/rays. */
   oneRollDamageBonus?: number;
@@ -653,6 +656,9 @@ export interface ResolvedAction {
     excludeSelf?: boolean;
     /** Deterministic combat cap declared by the while-active grant, when any. */
     maxRounds?: number;
+    /** The effect occurrence exists only when this cast's Temporary HP replace the
+     * target's current pool. */
+    requiresAppliedTempHp?: true;
   };
   /**
    * USE-APPLIES (2026-06-12) — deterministic, dice-free effects this action
@@ -5094,6 +5100,7 @@ function resolveSpellActions(
     // Attack bonus (for attack spells)
     if (spell.attackType && spellAtkBonus != null) {
       summary.attackBonus = spellAtkBonus;
+      summary.attackMode = spell.attackType;
     }
 
     // Damage + damage type. A spell exposes ONE of three facets (see
@@ -5405,6 +5412,9 @@ function resolveSpellActions(
           ...(spell.targeting?.excludeSelf ? { excludeSelf: true } : {}),
           ...(g.duration?.maxRounds !== undefined
             ? { maxRounds: g.duration.maxRounds }
+            : {}),
+          ...(g.grants.some((inner) => inner.type === "damage-retaliation")
+            ? { requiresAppliedTempHp: true }
             : {}),
         };
       } else {

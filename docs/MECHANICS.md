@@ -134,6 +134,13 @@ a MAXIMIZING at-will source (Warlock **Fiendish Vigor** → the invocation's `au
 → `atWillCasts[].autoMaxTempHp` 12), the engine emits a dice-FREE `{ bonus:12 }` and the card one-taps
 that deterministic maximum instead of a roll (S8). `tempHpApply` is locale-free, so it flows through the
 summary spread untouched (no view derivation, unlike `healApply`). Rendered on the PlayTab spell card.
+An active Temp-HP defense can add **`damage-retaliation`** inside its target-bound `while-active`
+group. It declares only flat typed damage plus optional cast-level scaling; the grant kind itself means
+“on a melee hit while its Temporary HP remain.” The encounter ledger owns the exact effect occurrence and
+the resolver supplies the exact attacker. Successful hit and damage are separate facts, so retaliation
+still resolves on a zero-damage melee hit. Depleting the enabling Temp HP or replacing it with a stronger
+pool revokes that occurrence. The primitive is source-neutral; Armor of Agathys is its first pack data
+consumer, not an engine branch.
 A RECURRING per-turn temp-HP (Heroism: "Temporary Hit Points equal to your spellcasting ability
 modifier at the start of each of its turns") rides the start-of-turn cadence primitive
 `regen-at-turn-start` (Champion Heroic Rally's start-of-turn heal) via an optional **`asTempHp`** flag:

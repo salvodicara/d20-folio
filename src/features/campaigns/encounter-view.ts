@@ -30,11 +30,31 @@ import {
   type BudgetVerdict,
   type XpBudget,
 } from "@/lib/encounter-difficulty";
-import type { EncounterMonster, EncounterState } from "@/types/campaign";
+import type {
+  CombatDefenseSnapshot,
+  EncounterMonster,
+  EncounterState,
+} from "@/types/campaign";
 import type { ClassEntry, PortraitCrop } from "@/types/character";
 import type { RaceId } from "@/types/ids";
 import type { ConditionId } from "@/data/types";
 import type { DamageDefenses } from "@/lib/damage-intake";
+
+/** Convert encounter-owned monster defense facts into the shared damage engine shape. */
+export function monsterDamageDefenses(
+  defenses: CombatDefenseSnapshot | undefined
+): DamageDefenses | undefined {
+  return defenses
+    ? {
+        allDamageResistance: false,
+        resistances: new Set(defenses.damageResistances ?? []),
+        immunities: new Set(defenses.damageImmunities ?? []),
+        vulnerabilities: new Set(defenses.damageVulnerabilities ?? []),
+        sourceResistances: new Set(),
+        flatReductions: [],
+      }
+    : undefined;
+}
 
 /**
  * The LIVE facts for one PC, assembled by the caller from the member's character doc
@@ -189,16 +209,7 @@ export function buildEncounterView(
         portraitUrl: c.portraitUrl ?? null,
         portraitCrop: c.portraitCrop ?? null,
         tokens: c.tokens,
-        defenses: c.defenses
-          ? {
-              allDamageResistance: false,
-              resistances: new Set(c.defenses.damageResistances ?? []),
-              immunities: new Set(c.defenses.damageImmunities ?? []),
-              vulnerabilities: new Set(c.defenses.damageVulnerabilities ?? []),
-              sourceResistances: new Set(),
-              flatReductions: [],
-            }
-          : undefined,
+        defenses: monsterDamageDefenses(c.defenses),
         conditionImmunities: c.defenses?.conditionImmunities
           ? new Set(
               c.defenses.conditionImmunities.flatMap((entry) =>

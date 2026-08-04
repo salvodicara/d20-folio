@@ -87,6 +87,10 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "resolvePersistentDamage",
     consumer: "src/features/campaigns/campaign-io.ts",
   },
+  "damage-retaliation": {
+    via: "resolvePersistentHit",
+    consumer: "src/features/campaigns/campaign-io.ts",
+  },
   "damage-immunity": {
     via: "damageImmunities",
     consumer: "src/features/character/molecules/ResourceRail.tsx",

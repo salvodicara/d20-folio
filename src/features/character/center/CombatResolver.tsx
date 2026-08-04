@@ -611,13 +611,21 @@ export function CombatResolver({
         );
         return [...hpEffect, ...conditionEffects, ...removalEffects];
       });
-      if (sheetCombat && effects.length > 0 && !sharedEffectsApplied) {
+      const hitTargetIds = successful.flatMap(({ target, outcomes, mode }) =>
+        mode === "damage" &&
+        (spec.kind === "attack" || spec.kind === "attack-save") &&
+        outcomes.attack === "hit"
+          ? [target.targetId]
+          : []
+      );
+      if (
+        sheetCombat &&
+        (effects.length > 0 || hitTargetIds.length > 0) &&
+        !sharedEffectsApplied
+      ) {
         sharedEffectsApplied = true;
-        const pcTargets = choices.flatMap(({ target }) =>
-          target.kind === "pc" &&
-          target.targetId !== sheetCombat.myId &&
-          target.memberUid &&
-          target.characterId
+        const pcTargets = targets.flatMap((target) =>
+          target.kind === "pc" && target.memberUid && target.characterId
             ? [
                 {
                   targetId: target.targetId,
@@ -627,6 +635,7 @@ export function CombatResolver({
                   tempHp: target.tempHp,
                   maxHp: target.maxHp,
                   conditions: target.conditions,
+                  defenses: target.defenses,
                 },
               ]
             : []
@@ -636,6 +645,8 @@ export function CombatResolver({
           action: action.nameLoc,
           round: sheetCombat.round,
           pcTargets,
+          ...(hitTargetIds.length > 0 ? { hitTargetIds } : {}),
+          ...(spec.attackMode ? { attackMode: spec.attackMode } : {}),
         }).catch(() => {
           sharedEffectsApplied = false;
           showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
@@ -656,7 +667,13 @@ export function CombatResolver({
       const standingEffect = spec.standingEffect;
       const persistentEffects: ActiveCombatEffect[] =
         sheetCombat && actorRef && standingEffect
-          ? successful.flatMap(({ target }) => {
+          ? successful.flatMap(({ target, mode, amount }) => {
+              if (
+                standingEffect.requiresAppliedTempHp &&
+                (mode !== "temp-hp" || amount <= target.tempHp)
+              ) {
+                return [];
+              }
               const targetRef: CombatantRef | null =
                 target.kind === "monster"
                   ? {

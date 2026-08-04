@@ -240,6 +240,15 @@ export type Grant =
       type: "damage-transfer";
       to: "effect-source";
     }
+  | {
+      /** Flat damage dealt back to the creature that landed a matching hit while
+       * this standing effect is active. The encounter supplies the exact attacker;
+       * the grant owns only deterministic rules data. */
+      type: "damage-retaliation";
+      amount: number;
+      damageType: DamageType;
+      castLevelScaling?: CastLevelScaling;
+    }
   | { type: "damage-immunity"; damageType: DamageType }
   | { type: "damage-vulnerability"; damageType: DamageType }
   | { type: "condition-immunity"; condition: ConditionId }
@@ -4989,6 +4998,10 @@ export function evaluateGrants(
       case "damage-transfer":
         // The persistent-damage reducer owns this because it needs the exact
         // effect-source combatant, which a sheet-wide aggregate intentionally lacks.
+        break;
+      case "damage-retaliation":
+        // The persistent-hit reducer owns this because it needs the exact incoming
+        // attacker and this effect occurrence's snapshotted cast level.
         break;
       case "damage-immunity":
         damageImmunities.add(g.damageType);

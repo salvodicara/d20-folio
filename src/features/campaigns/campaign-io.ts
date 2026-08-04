@@ -58,7 +58,7 @@ import {
 import { attachViolatesOneCampaign } from "@/features/campaigns/attach-guard";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { pushVersion } from "@/features/campaigns/chronicle-versions";
-import type { EncounterMonster, EncounterState } from "@/types/campaign";
+import type { EncounterMonster, EncounterPc, EncounterState } from "@/types/campaign";
 import {
   makeDevCampaign,
   makeDevNotes,
@@ -85,6 +85,8 @@ import {
   foldCombatEffectOps,
   maxHpDeltaForEffect,
   resolvePersistentDamage,
+  resolvePersistentHit,
+  tempHpBoundEffectIds,
 } from "@/lib/combat-effects";
 import { defaultCombatState, reduceMemberCombatEffects } from "@/lib/combat-state";
 import {
@@ -114,13 +116,16 @@ import type { CombatChronicleEvent } from "@/types/combat-chronicle";
 function devBypassEnabled(): boolean {
   return import.meta.env.PROD ? false : IMPORTED_DEV_BYPASS_AUTH;
 }
-import type { LocText } from "@/lib/loc-text";
+import { srdText, type LocText } from "@/lib/loc-text";
 import type {
   ActiveCombatEffect,
   CombatantRef,
   CombatEffectOp,
 } from "@/types/combat-effect";
 import type { CombatState } from "@/types/combat-state";
+import type { DamageSource, DamageType } from "@/data/types";
+import { NO_DEFENSES, type DamageDefenses } from "@/lib/damage-intake";
+import { monsterDamageDefenses } from "@/features/campaigns/encounter-view";
 import {
   createDebouncedWriter,
   type DebouncedWriter,
@@ -799,6 +804,17 @@ function firstLiveTokenIndex(tokens: ReadonlyArray<number>): number {
   return i < 0 ? 0 : i;
 }
 
+function pcCombatantRef(combatant: EncounterPc | undefined): CombatantRef | null {
+  return combatant
+    ? {
+        kind: "pc",
+        combatantId: combatant.id,
+        memberUid: combatant.memberUid,
+        characterId: combatant.characterId,
+      }
+    : null;
+}
+
 /** Shared numeric shape for reviewed monster HP changes. */
 interface DeclaredAmountEffect {
   targetId: string;
@@ -808,13 +824,19 @@ interface DeclaredAmountEffect {
   tokenIndex?: number;
 }
 
-type DeclaredDamageEffect = DeclaredAmountEffect & { kind: "damage" };
+type DeclaredDamageEffect = DeclaredAmountEffect & {
+  kind: "damage";
+  damageType?: DamageType;
+  damageSource?: DamageSource;
+};
 
 /** One target-facing consequence confirmed in the universal combat resolver. Damage,
  * healing, and conditions share one transaction so a multi-effect action lands as one
  * reviewable change. */
 export type DeclaredCombatEffect =
-  | ({ kind: "damage" | "healing" | "temp-hp" } & DeclaredAmountEffect)
+  | DeclaredDamageEffect
+  | ({ kind: "healing" } & DeclaredAmountEffect)
+  | ({ kind: "temp-hp" } & DeclaredAmountEffect)
   | {
       kind: "condition";
       targetId: string;
@@ -831,6 +853,7 @@ export interface DeclaredPcTargetSnapshot {
   tempHp: number;
   maxHp: number;
   conditions: string[];
+  defenses: DamageDefenses;
 }
 
 /** Provenance + target snapshots for one reviewed action resolution. */
@@ -839,6 +862,10 @@ export interface DeclaredCombatContext {
   action: LocText;
   round: number;
   pcTargets: ReadonlyArray<DeclaredPcTargetSnapshot>;
+  /** Successful attack-hit targets. Kept separate from damage so a 0-damage hit
+   * can still trigger deterministic reactions. */
+  hitTargetIds?: ReadonlyArray<string>;
+  attackMode?: "melee" | "ranged";
 }
 
 type UnstampedCombatChronicleEvent<T = CombatChronicleEvent> =
@@ -850,7 +877,15 @@ interface DirectPcEffectResult {
   conditions: string[];
   resetDeathSaves: boolean;
   events: CombatChronicleEvent[];
-  transfers: Array<{ target: CombatantRef; amount: number; effectId: string }>;
+  transfers: Array<{
+    target: CombatantRef;
+    amount: number;
+    effectId: string;
+    actorId?: string;
+    action?: LocText;
+    damageType?: DamageType;
+    damageSource?: DamageSource;
+  }>;
   consumedEffectIds: string[];
 }
 
@@ -867,6 +902,7 @@ export function reduceDirectPcEffects(
     action: LocText;
     round: number;
     persistentEffects?: ReadonlyArray<ActiveCombatEffect>;
+    hit?: { attacker: CombatantRef | null; attackMode?: "melee" | "ranged" };
   }
 ): DirectPcEffectResult | null {
   let current = Math.max(0, Math.min(target.maxHp, Math.round(target.currentHp)));
@@ -910,6 +946,11 @@ export function reduceDirectPcEffects(
     let amount = Math.max(0, Math.round(effect.amount));
     if (amount === 0) continue;
     if (effect.kind === "temp-hp") {
+      if (amount > temp) {
+        for (const effectId of tempHpBoundEffectIds(provenance.persistentEffects ?? [])) {
+          consumedEffectIds.add(effectId);
+        }
+      }
       temp = Math.max(temp, amount);
       continue;
     }
@@ -940,7 +981,18 @@ export function reduceDirectPcEffects(
       (provenance.persistentEffects ?? []).filter(
         (active) => !consumedEffectIds.has(active.id)
       ),
-      { currentHp: current, tempHp: temp, incomingDamage: amount }
+      {
+        currentHp: current,
+        tempHp: temp,
+        incomingDamage: amount,
+        ...(effect.damageType
+          ? {
+              damageType: effect.damageType,
+              damageSource: effect.damageSource,
+              defenses: target.defenses,
+            }
+          : {}),
+      }
     );
     amount = outcome.targetDamage;
     transfers.push(...outcome.transfers);
@@ -968,6 +1020,25 @@ export function reduceDirectPcEffects(
         events.push(stamp({ kind: "down", targetId: target.targetId }));
       }
     }
+  }
+
+  if (provenance.hit) {
+    const retaliations = resolvePersistentHit(provenance.persistentEffects ?? [], {
+      attacker: provenance.hit.attacker,
+      attackMode: provenance.hit.attackMode,
+      tempHp: target.tempHp,
+    });
+    transfers.push(
+      ...retaliations.map((retaliation) => ({
+        target: retaliation.target,
+        amount: retaliation.amount,
+        effectId: retaliation.effectId,
+        actorId: retaliation.actor.combatantId,
+        action: srdText("spell", retaliation.sourceId, "name"),
+        damageType: retaliation.damageType,
+        damageSource: "spell" as const,
+      }))
+    );
   }
 
   const changed =
@@ -999,9 +1070,18 @@ export async function applyDeclaredCombatEffects(
   effects: ReadonlyArray<DeclaredCombatEffect>,
   context?: DeclaredCombatContext
 ): Promise<void> {
-  const applicable = effects.filter(
+  const applicable: DeclaredCombatEffect[] = effects.filter(
     (effect) => effect.kind === "condition" || effect.amount > 0
   );
+  for (const targetId of context?.hitTargetIds ?? []) {
+    if (
+      !applicable.some(
+        (effect) => effect.kind === "damage" && effect.targetId === targetId
+      )
+    ) {
+      applicable.push({ kind: "damage", targetId, amount: 0 });
+    }
+  }
   if (applicable.length === 0) return;
   if (devBypassEnabled()) {
     return applyDeclaredEffectsOptimistic(campaignId, applicable, context);
@@ -1016,13 +1096,38 @@ export async function applyDeclaredCombatEffects(
       ? encounter.combatants.find((combatant) => combatant.id === context.actorId)
       : undefined;
     if (context && actor?.kind !== "pc") return;
+    const attackerRef = pcCombatantRef(actor?.kind === "pc" ? actor : undefined);
+    const hitTargetIds = new Set(context?.hitTargetIds ?? []);
 
     // Read every declared PC plus every PC that can receive a persistent transfer.
     // Firestore requires all reads before the first write; the transaction retries when
     // either the encounter or any involved combat slice changes underneath it.
+    const relevantPcIds = new Set(applicable.map((effect) => effect.targetId));
+    if (actor?.kind === "pc") relevantPcIds.add(actor.id);
+    for (const effect of foldCombatEffectOps(encounter.effectOps)) {
+      if (effect.actor.kind === "pc") relevantPcIds.add(effect.actor.combatantId);
+      if (effect.target.kind === "pc") relevantPcIds.add(effect.target.combatantId);
+    }
     const pcTargetMap = new Map(
-      (context?.pcTargets ?? []).map((target) => [target.targetId, target])
+      (context?.pcTargets ?? [])
+        .filter((target) => relevantPcIds.has(target.targetId))
+        .map((target) => [target.targetId, target])
     );
+    if (actor?.kind === "pc" && !pcTargetMap.has(actor.id)) {
+      const actorMax = campaignMemberHpMax(campaign, actor.memberUid);
+      if (typeof actorMax === "number" && Number.isFinite(actorMax) && actorMax > 0) {
+        pcTargetMap.set(actor.id, {
+          targetId: actor.id,
+          memberUid: actor.memberUid,
+          characterId: actor.characterId,
+          currentHp: actorMax,
+          tempHp: 0,
+          maxHp: actorMax,
+          conditions: [],
+          defenses: NO_DEFENSES,
+        });
+      }
+    }
     for (const effect of foldCombatEffectOps(encounter.effectOps)) {
       for (const participant of [effect.actor, effect.target]) {
         if (participant.kind !== "pc" || pcTargetMap.has(participant.combatantId))
@@ -1044,6 +1149,7 @@ export async function applyDeclaredCombatEffects(
           tempHp: 0,
           maxHp: max,
           conditions: [],
+          defenses: NO_DEFENSES,
         });
       }
     }
@@ -1102,7 +1208,7 @@ export async function applyDeclaredCombatEffects(
       validTargets.map((entry) => [entry.target.targetId, entry])
     );
     const directTargetIds = new Set(
-      (context?.pcTargets ?? [])
+      applicable
         .map(({ targetId }) => targetId)
         .filter((targetId) => validById.has(targetId))
     );
@@ -1146,7 +1252,11 @@ export async function applyDeclaredCombatEffects(
       const result = reducePersistentMonsterDamage(
         chronicle,
         { ...effect, kind: "damage" },
-        nextEffectOps
+        nextEffectOps,
+        hitTargetIds.has(effect.targetId)
+          ? { attacker: attackerRef, attackMode: context?.attackMode }
+          : undefined,
+        { actorId: context?.actorId, action: context?.action }
       );
       chronicle = result.encounter;
       enqueueTransfers(result.transfers);
@@ -1180,6 +1290,9 @@ export async function applyDeclaredCombatEffects(
         action: context?.action ?? { custom: "" },
         round: encounter.round,
         persistentEffects: effectsForTarget(nextEffectOps, targetId),
+        ...(hitTargetIds.has(targetId)
+          ? { hit: { attacker: attackerRef, attackMode: context?.attackMode } }
+          : {}),
       });
       if (!result) continue;
       landPcResult(result);
@@ -1201,11 +1314,13 @@ export async function applyDeclaredCombatEffects(
               kind: "damage",
               targetId: target.targetId,
               amount: transfer.amount,
+              ...(transfer.damageType ? { damageType: transfer.damageType } : {}),
+              ...(transfer.damageSource ? { damageSource: transfer.damageSource } : {}),
             },
           ],
           {
-            actorId: context?.actorId ?? "",
-            action: context?.action ?? { custom: "" },
+            actorId: transfer.actorId ?? context?.actorId ?? "",
+            action: transfer.action ?? context?.action ?? { custom: "" },
             round: encounter.round,
             persistentEffects: effectsForTarget(nextEffectOps, target.targetId),
           }
@@ -1218,11 +1333,18 @@ export async function applyDeclaredCombatEffects(
             kind: "damage",
             targetId: transfer.target.combatantId,
             amount: transfer.amount,
+            ...(transfer.damageType ? { damageType: transfer.damageType } : {}),
+            ...(transfer.damageSource ? { damageSource: transfer.damageSource } : {}),
             ...(transfer.target.tokenIndex !== undefined
               ? { tokenIndex: transfer.target.tokenIndex }
               : {}),
           },
-          nextEffectOps
+          nextEffectOps,
+          undefined,
+          {
+            actorId: transfer.actorId ?? context?.actorId,
+            action: transfer.action ?? context?.action,
+          }
         );
         chronicle = result.encounter;
         enqueueTransfers(result.transfers, transfer.path);
@@ -1830,7 +1952,9 @@ interface PersistentMonsterDamageResult {
 function reducePersistentMonsterDamage(
   encounter: EncounterState,
   effect: DeclaredDamageEffect,
-  effectOps: ReadonlyArray<CombatEffectOp>
+  effectOps: ReadonlyArray<CombatEffectOp>,
+  hit?: { attacker: CombatantRef | null; attackMode?: "melee" | "ranged" },
+  provenance?: { actorId?: string; action?: LocText }
 ): PersistentMonsterDamageResult {
   let storedTargetId = effect.targetId;
   let tokenIndex = effect.tokenIndex;
@@ -1853,24 +1977,52 @@ function reducePersistentMonsterDamage(
   const resolvedTokenIndex = tokenIndex ?? firstLiveTokenIndex(monster.tokens);
   const currentHp = monster.tokens[resolvedTokenIndex];
   if (currentHp === undefined) return { encounter, transfers: [], consumedEffectIds: [] };
-  const outcome = resolvePersistentDamage(
-    effectsForTarget(effectOps, effect.targetId, undefined, effect.tokenIndex),
-    {
-      currentHp,
-      tempHp: monster.tempHp ?? 0,
-      incomingDamage: effect.amount,
-    }
+  const persistentEffects = effectsForTarget(
+    effectOps,
+    effect.targetId,
+    undefined,
+    effect.tokenIndex
   );
+  const retaliations = hit
+    ? resolvePersistentHit(persistentEffects, {
+        attacker: hit.attacker,
+        attackMode: hit.attackMode,
+        tempHp: monster.tempHp ?? 0,
+      })
+    : [];
+  const outcome = resolvePersistentDamage(persistentEffects, {
+    currentHp,
+    tempHp: monster.tempHp ?? 0,
+    incomingDamage: effect.amount,
+    ...(effect.damageType
+      ? {
+          damageType: effect.damageType,
+          damageSource: effect.damageSource,
+          defenses: monsterDamageDefenses(monster.defenses) ?? NO_DEFENSES,
+        }
+      : {}),
+  });
   return {
-    encounter: reduceDeclaredEffects(encounter, [
-      {
-        ...effect,
-        targetId: storedTargetId,
-        tokenIndex: resolvedTokenIndex,
-        amount: outcome.targetDamage,
-      },
-    ]),
-    transfers: [...outcome.transfers],
+    encounter: recordMonsterDamage(
+      encounter,
+      storedTargetId,
+      resolvedTokenIndex,
+      outcome.targetDamage,
+      provenance?.actorId,
+      provenance?.action
+    ),
+    transfers: [
+      ...outcome.transfers,
+      ...retaliations.map((entry) => ({
+        target: entry.target,
+        amount: entry.amount,
+        effectId: entry.effectId,
+        actorId: entry.actor.combatantId,
+        action: srdText("spell", entry.sourceId, "name"),
+        damageType: entry.damageType,
+        damageSource: "spell" as const,
+      })),
+    ],
     consumedEffectIds: [...outcome.consumedEffectIds],
   };
 }
@@ -1949,6 +2101,8 @@ function applyDeclaredEffectsOptimistic(
     ? campaign.encounter.combatants.find((combatant) => combatant.id === context.actorId)
     : undefined;
   if (context && actor?.kind !== "pc") return;
+  const attackerRef = pcCombatantRef(actor?.kind === "pc" ? actor : undefined);
+  const hitTargetIds = new Set(context?.hitTargetIds ?? []);
 
   let next = campaign.encounter;
   const initialEffectOps = next.effectOps ?? [];
@@ -1956,7 +2110,11 @@ function applyDeclaredEffectsOptimistic(
   const declaredTargets = new Map(
     (context?.pcTargets ?? []).map((target) => [target.targetId, target])
   );
-  const directTargetIds = new Set(declaredTargets.keys());
+  const directTargetIds = new Set(
+    effects
+      .map(({ targetId }) => targetId)
+      .filter((targetId) => declaredTargets.has(targetId))
+  );
   const transferQueue: Array<
     DirectPcEffectResult["transfers"][number] & { path: ReadonlySet<string> }
   > = [];
@@ -1982,7 +2140,9 @@ function applyDeclaredEffectsOptimistic(
   const landPcEffects = (
     targetRef: Extract<CombatantRef, { kind: "pc" }>,
     targetEffects: ReadonlyArray<DeclaredCombatEffect>,
-    path: ReadonlySet<string> = new Set()
+    path: ReadonlySet<string> = new Set(),
+    chainedProvenance?: { actorId?: string; action?: LocText },
+    includeOriginalHit = true
   ): void => {
     const combatant = next.combatants.find(
       (candidate) => candidate.id === targetRef.combatantId
@@ -2029,13 +2189,17 @@ function applyDeclaredEffectsOptimistic(
             currentHp: current.hp.current,
             tempHp: current.hp.temp,
             conditions: current.conditions,
+            defenses: declared?.defenses ?? NO_DEFENSES,
           },
           targetEffects,
           {
-            actorId: context?.actorId ?? "",
-            action: context?.action ?? { custom: "" },
+            actorId: chainedProvenance?.actorId ?? context?.actorId ?? "",
+            action: chainedProvenance?.action ?? context?.action ?? { custom: "" },
             round: next.round,
             persistentEffects: effectsForTarget(nextEffectOps, targetRef.combatantId),
+            ...(includeOriginalHit && hitTargetIds.has(targetRef.combatantId)
+              ? { hit: { attacker: attackerRef, attackMode: context?.attackMode } }
+              : {}),
           }
         );
         if (!result) return current;
@@ -2056,7 +2220,9 @@ function applyDeclaredEffectsOptimistic(
     consume(landed.result.consumedEffectIds);
   };
 
-  for (const target of declaredTargets.values()) {
+  for (const targetId of directTargetIds) {
+    const target = declaredTargets.get(targetId);
+    if (!target) continue;
     landPcEffects(
       {
         kind: "pc",
@@ -2078,7 +2244,11 @@ function applyDeclaredEffectsOptimistic(
     const result = reducePersistentMonsterDamage(
       next,
       { ...effect, kind: "damage" },
-      nextEffectOps
+      nextEffectOps,
+      hitTargetIds.has(effect.targetId)
+        ? { attacker: attackerRef, attackMode: context?.attackMode }
+        : undefined,
+      { actorId: context?.actorId, action: context?.action }
     );
     next = result.encounter;
     enqueueTransfers(result.transfers);
@@ -2096,9 +2266,13 @@ function applyDeclaredEffectsOptimistic(
             kind: "damage",
             targetId: transfer.target.combatantId,
             amount: transfer.amount,
+            ...(transfer.damageType ? { damageType: transfer.damageType } : {}),
+            ...(transfer.damageSource ? { damageSource: transfer.damageSource } : {}),
           },
         ],
-        transfer.path
+        transfer.path,
+        { actorId: transfer.actorId, action: transfer.action },
+        false
       );
       continue;
     }
@@ -2108,11 +2282,18 @@ function applyDeclaredEffectsOptimistic(
         kind: "damage",
         targetId: transfer.target.combatantId,
         amount: transfer.amount,
+        ...(transfer.damageType ? { damageType: transfer.damageType } : {}),
+        ...(transfer.damageSource ? { damageSource: transfer.damageSource } : {}),
         ...(transfer.target.tokenIndex !== undefined
           ? { tokenIndex: transfer.target.tokenIndex }
           : {}),
       },
-      nextEffectOps
+      nextEffectOps,
+      undefined,
+      {
+        actorId: transfer.actorId ?? context?.actorId,
+        action: transfer.action ?? context?.action,
+      }
     );
     next = result.encounter;
     enqueueTransfers(result.transfers, transfer.path);

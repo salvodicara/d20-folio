@@ -13,6 +13,7 @@
  *   • updateCampaign — writes the shared artifacts with a server `updatedAt`.
  */
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
+import { NO_DEFENSES } from "@/lib/damage-intake";
 
 const {
   setDocMock,
@@ -248,6 +249,7 @@ describe("campaign-io — reviewed combat effects", () => {
         tempHp: 3,
         maxHp: 20,
         conditions: ["unconscious", "poisoned"],
+        defenses: NO_DEFENSES,
       },
       [
         { kind: "healing", targetId: "pc-a", amount: 7 },
@@ -314,6 +316,7 @@ describe("campaign-io — reviewed combat effects", () => {
         tempHp: 0,
         maxHp: 20,
         conditions: [],
+        defenses: NO_DEFENSES,
       },
       [{ kind: "damage", targetId: "pc-a", amount: 20 }],
       {
@@ -359,6 +362,7 @@ describe("campaign-io — reviewed combat effects", () => {
         tempHp: 0,
         maxHp: 20,
         conditions: [],
+        defenses: NO_DEFENSES,
       },
       [{ kind: "damage", targetId: "pc-a", amount: 9 }],
       {
@@ -385,6 +389,7 @@ describe("campaign-io — reviewed combat effects", () => {
         tempHp: 0,
         maxHp: 25,
         conditions: [],
+        defenses: NO_DEFENSES,
       },
       [{ kind: "damage", targetId: "pc-a", amount: 1 }],
       { actorId: "monster-1", action: { custom: "table action" }, round: 2 }
@@ -595,6 +600,7 @@ describe("campaign-io — reviewed combat effects", () => {
             tempHp: 4,
             maxHp: 20,
             conditions: [],
+            defenses: NO_DEFENSES,
           },
         ],
       }

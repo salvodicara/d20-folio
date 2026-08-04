@@ -593,6 +593,12 @@ follows the visual sign-off.
   reloads; duration/concentration revocation, max-HP deltas, universal resistance, shared damage,
   drop-to-1 consumption and Haste's restricted extra action/aftereffect resolve through typed primitives,
   never spell-name branches. The recipient's prepared copy cannot be accidentally activated or doubled.
+- **Reactive hit lifecycle (2026-08-04)** — successful attack hits now remain distinct from their
+  damage amount and carry melee/ranged mode into the same persistent-effect transaction. The new generic
+  `damage-retaliation` grant resolves the exact attacker, stored cast-level scaling and Chronicle action
+  provenance; its Temp-HP-bound occurrence expires when that pool is depleted or replaced. Armor of
+  Agathys is wired as pack data through this seam, including zero-damage melee hits, with no spell-id
+  branch. SOLO still shows/applies its self Temp HP but cannot mutate an enemy it does not model.
 - **The write (permissions — the careful part)** — reviewed monster effects land on the encounter (a
   CAMPAIGN doc the player doesn't own) via one NARROW cross-user transaction
   `campaign-io.applyDeclaredCombatEffects` (reached through the Firebase-free `apply-damage.ts` bridge),

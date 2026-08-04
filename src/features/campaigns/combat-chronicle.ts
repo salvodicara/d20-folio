@@ -121,7 +121,8 @@ export function recordMonsterDamage(
   monsterId: string,
   tokenIndex: number,
   amount: number,
-  attackerId?: string
+  attackerId?: string,
+  action?: LocText
 ): EncounterState {
   const before = state.combatants.find((c) => c.id === monsterId);
   if (!before || before.kind !== "monster" || amount <= 0) return state;
@@ -147,6 +148,7 @@ export function recordMonsterDamage(
     max: after.maxHp,
     ...(tempAbsorbed > 0 ? { tempAbsorbed } : {}),
     ...(attackerId ? { attackerId } : {}),
+    ...(action ? { action } : {}),
   });
   if (!isDown(before) && isDown(after)) {
     out = appendEvent(out, { kind: "down", targetId: monsterId });

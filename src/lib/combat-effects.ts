@@ -11,6 +11,18 @@ import {
   resolveCombatEffectGrants,
 } from "@/lib/resolve-grant-sources";
 import type { Grant } from "@/lib/grants";
+import { resolveDamageIntake, type DamageDefenses } from "@/lib/damage-intake";
+import type { DamageSource, DamageType } from "@/data/types";
+
+function scaledFlatAmount(
+  amount: number,
+  scaling: { baseLevel: number; perLevel: number } | undefined,
+  castLevel?: number
+): number {
+  if (!scaling) return amount;
+  const level = castLevel ?? scaling.baseLevel;
+  return amount + Math.max(0, level - scaling.baseLevel) * scaling.perLevel;
+}
 
 function stackingKey(effect: ActiveCombatEffect): string {
   if (effect.payload.kind === "target-mark") {
@@ -31,16 +43,6 @@ function stackingKey(effect: ActiveCombatEffect): string {
   ].join("\u0000");
 }
 
-function scaledHpFlat(grant: Extract<Grant, { type: "hp-flat" }>, castLevel?: number) {
-  if (!grant.castLevelScaling) return grant.amount;
-  const level = castLevel ?? grant.castLevelScaling.baseLevel;
-  return (
-    grant.amount +
-    Math.max(0, level - grant.castLevelScaling.baseLevel) *
-      grant.castLevelScaling.perLevel
-  );
-}
-
 function scaledHpFlatForEffect(
   effect: ActiveCombatEffect,
   include: (grant: Extract<Grant, { type: "hp-flat" }>) => boolean
@@ -50,7 +52,8 @@ function scaledHpFlatForEffect(
   return resolveCombatEffectGrants(effect).reduce(
     (sum, grant) =>
       grant.type === "hp-flat" && include(grant)
-        ? sum + scaledHpFlat(grant, effect.source.castLevel)
+        ? sum +
+          scaledFlatAmount(grant.amount, grant.castLevelScaling, effect.source.castLevel)
         : sum,
     0
   );
@@ -71,6 +74,11 @@ export interface PersistentDamageInput {
   currentHp: number;
   tempHp: number;
   incomingDamage: number;
+  /** Raw typed damage from a chained rule. Direct resolver damage is already
+   * defense-adjusted and deliberately leaves these absent. */
+  damageType?: DamageType;
+  damageSource?: DamageSource;
+  defenses?: DamageDefenses;
 }
 
 export interface PersistentDamageOutcome {
@@ -84,6 +92,65 @@ export interface PersistentDamageOutcome {
   }>;
   /** Exact one-shot instances to revoke atomically with the damage. */
   consumedEffectIds: ReadonlyArray<string>;
+}
+
+export interface PersistentHitInput {
+  attacker: CombatantRef | null;
+  attackMode?: "melee" | "ranged";
+  tempHp: number;
+}
+
+type PersistentRetaliation = {
+  actor: CombatantRef;
+  target: CombatantRef;
+  amount: number;
+  damageType: Extract<Grant, { type: "damage-retaliation" }>["damageType"];
+  effectId: string;
+  sourceId: string;
+};
+
+/** Active effect occurrences whose rule explicitly depends on their Temporary HP
+ * pool. A stronger replacement pool ends these occurrences. */
+export function tempHpBoundEffectIds(
+  effects: ReadonlyArray<ActiveCombatEffect>
+): string[] {
+  return effects.flatMap((effect) =>
+    resolveCombatEffectGrants(effect).some((grant) => grant.type === "damage-retaliation")
+      ? [effect.id]
+      : []
+  );
+}
+
+/** Resolve deterministic consequences of a successful attack hit. Damage itself is
+ * reduced separately: retaliation can trigger even when the hit ultimately lands 0. */
+export function resolvePersistentHit(
+  effects: ReadonlyArray<ActiveCombatEffect>,
+  input: PersistentHitInput
+): ReadonlyArray<PersistentRetaliation> {
+  if (!input.attacker || input.attackMode !== "melee" || input.tempHp <= 0) {
+    return [];
+  }
+  const attacker = input.attacker;
+  return effects.flatMap((effect) =>
+    resolveCombatEffectGrants(effect).flatMap((grant) =>
+      grant.type === "damage-retaliation"
+        ? [
+            {
+              actor: effect.target,
+              target: attacker,
+              amount: scaledFlatAmount(
+                grant.amount,
+                grant.castLevelScaling,
+                effect.source.castLevel
+              ),
+              damageType: grant.damageType,
+              effectId: effect.id,
+              sourceId: effect.source.id,
+            },
+          ]
+        : []
+    )
+  );
 }
 
 /** Apply persistent incoming-damage rules without knowing any spell ids. */
@@ -101,7 +168,23 @@ export function resolvePersistentDamage(
   const resistsAll = rules.some(({ grants }) =>
     grants.some((grant) => grant.type === "all-damage-resistance")
   );
-  const postResistance = resistsAll ? Math.floor(incomingDamage / 2) : incomingDamage;
+  const postResistance = input.defenses
+    ? resolveDamageIntake(
+        [
+          {
+            amount: incomingDamage,
+            ...(input.damageType ? { type: input.damageType } : {}),
+            ...(input.damageSource ? { source: input.damageSource } : {}),
+          },
+        ],
+        {
+          ...input.defenses,
+          allDamageResistance: input.defenses.allDamageResistance || resistsAll,
+        }
+      ).netTotal
+    : resistsAll
+      ? Math.floor(incomingDamage / 2)
+      : incomingDamage;
   const transfers = rules.flatMap(({ effect, grants }) =>
     postResistance > 0 && grants.some((grant) => grant.type === "damage-transfer")
       ? [{ target: effect.actor, amount: postResistance, effectId: effect.id }]
@@ -122,13 +205,19 @@ export function resolvePersistentDamage(
     postResistance > tempHp &&
     postResistance - tempHp >= currentHp
   );
+  const targetDamage =
+    triggersFloor && floor
+      ? tempHp + Math.max(0, currentHp - floor.hitPoints)
+      : postResistance;
+  const tempHpDepleted = tempHp > 0 && targetDamage >= tempHp;
+  const depletedTempHpEffectIds = tempHpDepleted ? tempHpBoundEffectIds(effects) : [];
   return {
-    targetDamage:
-      triggersFloor && floor
-        ? tempHp + Math.max(0, currentHp - floor.hitPoints)
-        : postResistance,
+    targetDamage,
     transfers,
-    consumedEffectIds: triggersFloor && floor ? [floor.effect.id] : [],
+    consumedEffectIds: [
+      ...(triggersFloor && floor ? [floor.effect.id] : []),
+      ...depletedTempHpEffectIds,
+    ],
   };
 }
 

@@ -13,6 +13,7 @@ import {
 import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 import { evaluateGrants } from "@/lib/grants";
 import { resolveCombatEffectGrantSources } from "@/lib/resolve-grant-sources";
+import { NO_DEFENSES } from "@/lib/damage-intake";
 
 function effect(
   id: string,
@@ -194,6 +195,30 @@ describe("persistent combat effects", () => {
         },
       ],
       consumedEffectIds: ["ward"],
+    });
+
+    expect(
+      resolvePersistentDamage([bond], {
+        currentHp: 20,
+        tempHp: 0,
+        incomingDamage: 9,
+        damageType: "cold",
+        damageSource: "spell",
+        defenses: {
+          ...NO_DEFENSES,
+          resistances: new Set(["cold"]),
+        },
+      })
+    ).toEqual({
+      targetDamage: 4,
+      transfers: [
+        {
+          target: { kind: "monster", combatantId: "bond-source" },
+          amount: 4,
+          effectId: "bond",
+        },
+      ],
+      consumedEffectIds: [],
     });
   });
 
