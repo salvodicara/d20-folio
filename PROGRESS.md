@@ -237,6 +237,16 @@ navigation seam changed. The screenshot harness also proved why parallel worktre
 accepted as evidence. Verification: focused shell/palette tests 43/43; fresh command-palette
 screenshots 3/3 across EN/IT, light desktop and dark mobile; axe dark/light 2/2; locale sweep EN/IT
 2/2; mobile overflow 1/1; real compendium-hit navigation 1/1; typecheck and lint green.
+**Wave 22 campaign danger disclosure (2026-08-04):** the campaign hub's lowest-frequency,
+destructive block no longer keeps DM-role transfer, member removal and campaign deletion expanded
+through the everyday Party → Chronicle → Sessions reading path. DM Tools now uses the existing
+`SectionPanel` model honestly: one always-visible scope summary plus one sticky, closed-by-default
+detail containing the unchanged control grid and confirmations. This introduces no second accordion,
+store or danger flow; non-managers still render nothing. The representative EN phone leaf drops from
+3,359px to 3,009px, while a new first-class expanded surface proves every control remains reachable.
+Verification: collapsed screenshots 5/5 and expanded screenshots 3/3 across EN/IT, dark/light and
+desktop/mobile; focused DM/section/route/i18n guards 22/22; collapsed+expanded axe 4/4, locale sweep 4/4,
+mobile overflow 2/2; typecheck green.
 **Owner continuation mandate (2026-08-04):** the visual approval closes only this ornament fork.
 The whole-app UI/UX elevation remains active and exhaustive: audit every surface and recurring flow,
 then simplify, clarify or deepen it where evidence shows friction. Nothing is exempt because it is

@@ -870,6 +870,23 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   // campaign resolves — so it is both locale-invariant and proof the hub body
   // painted (not the loading spinner).
   "campaign-hub": { edit: false, ready: readyText(/starless keep/i) },
+  "campaign-hub-dm-tools": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    ready: readyText(/starless keep/i),
+    prepare: async (page) => {
+      const disclosure = page
+        .getByRole("button", {
+          name: /show dm tools|mostra gli strumenti del dm/i,
+        })
+        .first();
+      await disclosure.click();
+      await page
+        .getByRole("button", { name: /delete campaign|elimina campagna/i })
+        .waitFor({ timeout: 5000 });
+    },
+  },
   // T4 — the DM's read-only member-sheet view. Under dev-bypass the bypass user
   // (`mock-uid`) IS the seeded campaign's DM, and `member-mara`'s attached
   // character resolves to the team-bard PACK fixture — so the cockpit paints

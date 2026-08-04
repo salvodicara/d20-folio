@@ -1683,7 +1683,11 @@ canonical recipes, never re-rolled:
   add pair) → **Treasury | Access** (the compact utility pair) → **DM Tools** (full-width foot,
   role/danger only — renders null for a non-manager, so the page just ends at the utility pair with no
   phantom cell). Chronicle + DM Tools span both tracks via `lg:col-span-2` on their own panel root;
-  every grid child is pinned `min-width: 0` so a wide child never forces a sideways scroll.
+  every grid child is pinned `min-width: 0` so a wide child never forces a sideways scroll. **DM Tools
+  is low-frequency and destructive:** its fixed panel is one plain-language scope summary; transfer,
+  removal and deletion live together in the standard `SectionPanel` detail, closed by default and sticky
+  per campaign. The controls and their confirmation seams are unchanged when opened. Never keep a danger
+  zone expanded in the campaign's everyday story/session reading path.
 - **Chronicle book-spread** (`.chronicle-spread`, `.chronicle-rail`): on the full-width hub band the
   reading view is a book SPREAD — a reading column (its prose still clamped to the ~72ch `--measure`
   reading measure; the extra band width buys the rail, NOT longer lines) beside a vertical chapter

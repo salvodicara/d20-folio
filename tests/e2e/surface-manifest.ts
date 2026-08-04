@@ -177,6 +177,10 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   // The campaign hub — the unified Party section rests on the party OVERVIEW by
   // default (the dev fixture seeds no encounter).
   { slug: "campaign-hub", route: "/campaigns/mock-1" },
+  // The low-frequency DM role/member/danger controls intentionally rest folded;
+  // this inline twin opens the real SectionPanel disclosure so both states remain
+  // first-class screenshot/a11y/i18n/mobile evidence.
+  { slug: "campaign-hub-dm-tools", route: "/campaigns/mock-1" },
   // The SAME hub with a running encounter: the Party section becomes the inline
   // initiative tracker. The prepare seeds the `d20-dev-encounter` flag + reloads so
   // the dev fixture seeds a mid-combat encounter — both states sweep on one route.
