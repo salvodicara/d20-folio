@@ -60,6 +60,8 @@ const GUIDED_STEP_SLUGS = [
  * load-bearing. Each `route` MUST be reachable from `src/app/router.tsx`.
  */
 export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
+  // ─── Pre-auth ───────────────────────────────────────────────────────────────
+  { slug: "login", route: "/login?devSignedOut=1" }, // signed-out welcome + Google CTA
   // ─── Shell realms (Phase-1: stubs + re-mounted creation) ─────────────────────
   { slug: "home", route: "/characters" }, // My Characters roster (canonical; `/` redirects here)
   { slug: "character", route: "/characters/mock-1" }, // character cockpit (Play tab — default)

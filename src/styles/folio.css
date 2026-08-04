@@ -9675,6 +9675,23 @@ button.create-need:focus-visible .create-need-chev {
   margin-bottom: -2px;
 }
 
+/* COCKPIT WAYFINDING — the five sheet destinations remain reachable while the
+   active leaf scrolls. Play and Spells are multi-screen working documents; making
+   people return to the masthead merely to change leaf is needless navigation.
+   Keep the EXISTING ARIA tablist (one state owner, one keyboard model) sticky
+   directly beneath the global topbar — the standard local-tabs pattern, not a
+   second mobile-only navigator. The translucent ground is necessary once the
+   tabs detach from the page edge: text scrolling underneath must never show
+   through the 5px tab gaps. At rest it reads as the same calm scene field, so the
+   protruding-index-tab silhouette and active-tab fusion stay unchanged. */
+.wb .content > .tabstrip-shell {
+  position: sticky;
+  top: var(--topbar-h);
+  z-index: calc(var(--z-sticky) - 1);
+  background: color-mix(in oklab, var(--bg-page) 90%, transparent);
+  backdrop-filter: blur(10px);
+}
+
 .cmp-ribbon-shell[data-fade="l"] .cmp-ribbon,
 .tabstrip-shell[data-fade="l"] .tabstrip {
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px);
