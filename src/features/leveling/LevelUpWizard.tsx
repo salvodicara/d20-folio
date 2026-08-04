@@ -160,7 +160,6 @@ import { learnableSpellVMs } from "@/lib/views/spell-pick-view";
 import { widenedSpellListsAtLevel } from "@/lib/feat-spell-choices";
 import { classRoleSeal } from "@/features/creation/steps/class-roles";
 import { weaponSealIcon } from "@/components/shared/item-icons";
-import { Target } from "lucide-react";
 import { LevelUpFeatureCards } from "@/components/sheet/level-up/LevelUpFeatureCards";
 import {
   WizardFrame,
@@ -1690,7 +1689,6 @@ export function LevelUpWizard() {
                   (id): WizardPickOption => ({
                     id,
                     name: t(`skills.${id}`),
-                    seal: <SocketSeal icon={Target} />,
                   })
                 )}
                 selected={mcSkillPicks}
@@ -1861,7 +1859,6 @@ export function LevelUpWizard() {
                   (skillId): WizardPickOption => ({
                     id: skillId,
                     name: t(`skills.${skillId}`),
-                    seal: <SocketSeal icon={Target} />,
                   })
                 )}
                 selected={expertisePicks}

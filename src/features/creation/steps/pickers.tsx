@@ -5,9 +5,7 @@
  * (`ClassGallery`, `WizardFeatList`).
  */
 import { useTranslation } from "react-i18next";
-import { Target } from "lucide-react";
 import { WizardPickList, type WizardPickOption } from "@/features/wizard/pick-list";
-import { SocketSeal } from "@/features/wizard/seals";
 
 export function SkillsPickerSection({
   bgSkillIds,
@@ -36,7 +34,6 @@ export function SkillsPickerSection({
         (id): WizardPickOption => ({
           id,
           name: t(`skills.${id}`),
-          seal: <SocketSeal icon={Target} />,
         })
       )}
       selected={selectedClassSkills}

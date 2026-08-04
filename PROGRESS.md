@@ -123,6 +123,19 @@ the corrected exact-zero path now guards that distinction. Fresh evidence found 
 shared editor coherent and safe in light/dark, EN/IT, and phone/desktop, so no speculative visual
 restyle was added. Verification: screenshots 6/6, axe 4/4, i18n 4/4, mobile layout 2/2, route guard
 4/4.
+**Wave 11 recognition semantics (2026-08-04):** the icon programme now has an explicit semiotic and
+Gestalt contract before any fantasy asset can graduate from study to production. The first
+contextual audit separated useful consistency from visual repetition: homogeneous skill and
+expertise grids no longer stamp the same `Target` seal on every row, because heading, enclosure and
+alignment already communicate the shared category and the glyph distinguished nothing. The mixed
+skill-or-tool picker retains category seals because they separate two real families. Combat's
+`Miss` outcome now uses a failure sign instead of `CircleDot`, removing its collision with the
+neutral unselected-target control and the current ring fallback. Focused render tests pin both
+decisions; creation/level-up evidence remains the blocking visual gate before integration. Ring,
+staff/wand and other weak item fallbacks remain under contextual review rather than being replaced
+merely because a fantasy source glyph is attractive. Verification: skill screenshots 3/3 and live
+combat-resolver screenshots 2/2 across light/dark and desktop/mobile evidence; focused render tests
+30/30; targeted axe 2/2, i18n 2/2, mobile layout 1/1; typecheck + zero-warning targeted lint green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 
