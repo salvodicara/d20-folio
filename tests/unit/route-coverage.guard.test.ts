@@ -50,12 +50,6 @@ const EXEMPT_ROUTES: { route: string; reason: string }[] = [
       "surface). `/` carries no visual baseline of its own.",
   },
   {
-    route: "/login",
-    reason:
-      "Unreachable under the dev-bypass the harness uses (a mock user is injected at " +
-      "boot, so /login redirects to /). Covered by its own RTL/visual baseline.",
-  },
-  {
     route: "/admin",
     reason:
       "Admin-only console gated on the user's admin role (features/account/AdminPage); not " +
@@ -148,7 +142,7 @@ function isCovered(route: string): boolean {
     return SURFACE_ROUTES.some((s) => s.route === NOT_FOUND_PROBE);
   }
   const target = concretise(route);
-  return SURFACE_ROUTES.some((s) => s.route === target);
+  return SURFACE_ROUTES.some((s) => s.route.split("?", 1)[0] === target);
 }
 
 describe("visual surface coverage — router ↔ surface manifest", () => {

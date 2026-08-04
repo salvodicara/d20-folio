@@ -27,7 +27,7 @@ test.skip(!OUT, "shot harness — set SHOT_DIR to run");
 
 /** The major surfaces of the identity sweep. */
 const SURFACES: ReadonlyArray<{ slug: string; route: string; fullPage?: boolean }> = [
-  { slug: "login", route: "/login" },
+  { slug: "login", route: "/login?devSignedOut=1" },
   { slug: "roster", route: "/characters" },
   { slug: "cockpit", route: "/characters/mock-1" },
   { slug: "creation", route: "/characters/new" },

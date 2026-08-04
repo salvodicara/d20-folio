@@ -207,6 +207,13 @@ async function probeOnArtInk(
         const el = textNode.parentElement;
         if (!el || seen.has(el) || SKIP_TAGS.has(el.tagName)) continue;
         seen.add(el);
+        // Inline SVG text is part of an authored graphic, not loose document ink.
+        // Its backing may be a preceding sibling shape inside the SAME SVG (the
+        // gilt BrandMark's dark carved "20" sits on its bright central polygon),
+        // which an ancestor-only DOM probe cannot model. Treating it as raw-art
+        // text false-flags a visibly high-contrast composite — the visual matrix
+        // remains the correct guard for SVG-internal paint order.
+        if (el instanceof SVGTextElement) continue;
         // Visible? (display/visibility/opacity chain + a real text box.)
         if (!el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) {
           continue;

@@ -355,10 +355,10 @@ export interface Surface extends SurfaceRoute {
    */
   overlay?: false;
   /**
-   * The surface renders OUTSIDE the app shell, so the realm bottom-nav cannot
-   * exist there by construction. Today that is ONLY the app-root crash fallback
-   * (`error-fullscreen`): it mounts ABOVE the router precisely so it survives a
-   * shell crash, and its recovery actions (Reload / Back) are its navigation.
+   * The surface renders OUTSIDE the signed-in app shell, so the realm bottom-nav
+   * cannot exist there by construction. This covers the pre-auth `login` welcome
+   * and the app-root crash fallback (`error-fullscreen`, mounted above the router
+   * precisely so it survives a shell crash); each carries its own navigation.
    * The mobile-layout gate still asserts no-h-overflow on shell-less surfaces;
    * it skips only the m-nav assertions.
    */
@@ -368,6 +368,14 @@ export interface Surface extends SurfaceRoute {
 type SurfaceRuntime = Omit<Surface, "slug" | "route">;
 
 const RUNTIME: Record<string, SurfaceRuntime> = {
+  // ─── Pre-auth ───────────────────────────────────────────────────────────────
+  login: {
+    edit: false,
+    shellless: true,
+    ready: async (page) => {
+      await page.locator(".btn-google").waitFor({ timeout: 15000 });
+    },
+  },
   // ─── Shell realms (Phase-1 stubs + re-mounted creation) ──────────────────────
   // Roster: anchor on the seeded character card (proper noun, never translated)
   // rather than the EN "Your characters" heading — proves the list resolved too.

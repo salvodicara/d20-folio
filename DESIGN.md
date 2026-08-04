@@ -1149,6 +1149,11 @@ Selecting a tab that sits past the edge REVEALS it by scrolling only the strip's
 `focus({ preventScroll: true })` — so a tap or arrow-key on an off-screen tab can never jump the page
 (the same anti-jump seam backs the compendium `.cmp-ribbon`). The same one tab primitive serves the
 campaign hub if it adopts tabbed IA — never re-roll a second tab look.
+The cockpit shell stays **sticky directly beneath `--topbar-h`** while its active leaf scrolls: Combat
+and Spells are multi-screen working documents, so changing leaf never requires a return trip to the
+masthead. This is the same ARIA tablist and the same state owner, not a second mobile navigation system;
+its translucent scene-ground only prevents scrolling prose from showing through the gaps after the
+tabs detach from the page edge.
 
 **The grammar reaches every surface (owner, 2026-07-31 — "niente escluso"):** every page root AND
 every PORTAL root carries the `wb` scope — portals (dialogs, popovers, tooltips, toasts) mount on
@@ -2145,14 +2150,15 @@ queries mirror these tokens — keep them in lockstep so ribbon-hide / drawer-sh
 flip at one coherent width.
 
 - **Hierarchy preserved — regions recompose, never vanish:**
-  - **Top:** context (character + campaign chip) + search.
-  - **Vitals strip (always on screen):** HP (tap = control) + AC + the **This Turn** economy
-    (`⚔ / ✦ / ⟲ / ◇` + Movement). This is the deliberate mobile fix over D&D Beyond — the two
-    table-critical things never leave the screen.
-  - **Center:** the active tab's content, full-width cards (progressive-disclosure stacks).
-  - **Bottom nav (`.m-nav`):** the current view's primary destinations (Play · Spells · Inventory ·
-    Features · More), Play orb centered. It is a realm/destination switcher, not a shrunk rail.
-  - **Right HUD → a one-tap "Resources" bottom-sheet; Left HUD → a one-tap "Stats" sheet.**
+  - **Top:** the persistent realm bar, then the character identity + tappable HP and compact vitals.
+  - **Stats + Resources:** the desktop rails become two co-located one-tap disclosures before the
+    active leaf; neither rail's information disappears.
+  - **Center:** the active leaf's full-width progressive-disclosure stack. Its five-destination
+    tablist scrolls horizontally when necessary and remains sticky beneath the realm bar while the
+    long leaf scrolls.
+  - **Bottom nav (`.m-nav`):** exactly the three product realms (Characters · Campaigns ·
+    Compendium). It is a realm switcher, not a duplicate sheet-tab bar; local character destinations
+    stay in the sticky tablist above.
 - **Touch:** targets ≥ `--touch-min` 44px; `--safe-bottom` (notch inset) respected on all fixed
   bottom chrome; pages add `--m-nav-h` (58px) + `--safe-bottom` as bottom padding so fixed chrome
   never occludes the last row. The PWA dock (offline strip / install prompt, `.pwa-dock`) joins the
@@ -2412,7 +2418,9 @@ trigger each state).
 - **A11y surface gate:** `tests/e2e/a11y.spec.ts` iterates SURFACES × dark/light and fails on
   serious/critical axe violations; the app is axe-clean. **Re-run after ANY light-token change.**
 - **E2E coverage gate:** a guard test maps router surfaces → harness entries; the rule "new
-  page/form/prompt → add its screenshot" keeps visual coverage honest.
+  page/form/prompt → add its screenshot" keeps visual coverage honest. The signed-out login is a
+  first-class `SURFACES` entry too: its dev-only route query asks the bypass to settle signed out, so
+  the harness photographs the real welcome instead of silently following its authenticated redirect.
 - **Contrast unit tests** (e.g. `verdict-ink-contrast`, `bg-recessed`, the seal-ink test) guard the
   per-hue AA math; keep them green when tuning any domain or `-ink` token.
 - **Pure-modules guard:** keep CI-pure lib modules free of Firebase imports.
@@ -2516,8 +2524,9 @@ SRD 5.2.1 → Asmodee Italia → reputable community ≥2 → AI-translated with
 ### 15.10 Production Polish
 
 Full density (no extra whitespace that makes the app feel sparse or unfinished); refined depth +
-motion; consistent inline-SVG icons (never mixed icon libraries); honest blanks (empty states explain
-the state + offer a next action). Every surface reads as a shipping product, not a prototype.
+motion; one optically normalized inline-SVG vocabulary (never raw mixed-library styles); honest blanks
+(empty states explain the state + offer a next action). Every surface reads as a shipping product,
+not a prototype.
 
 ### 15.11 Verification Loop
 

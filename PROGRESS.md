@@ -46,6 +46,15 @@ of a multi-screen all-at-once form. Verification: creation unit family 184/184, 
 backdrop guards 221/221, Quick screenshots 5/5 across the canonical EN/IT × dark/light ×
 desktop/mobile variants, targeted axe 2/2, mobile overflow/navigation 1/1. Rule 25 blocks merge until
 the owner approves the delivered before/after screenshots.
+**Wave 3 implemented; screenshot approval pending (2026-08-04):** the character cockpit's existing
+ARIA tablist now remains docked beneath the global topbar while long Combat/Spells/Features leaves
+scroll, preserving the same tab state, horizontal-overflow cue, keyboard model, and zero-jump
+contract instead of adding a duplicate mobile navigator. The visual inventory also gained the real
+signed-out login surface: a dev-only pre-boot seam prevents the usual bypass-user redirect, so the
+welcome now participates in the shared dark/light screenshots, axe, mobile-layout, i18n, and on-art
+guards. Verification: tab no-jump 5/5; login screenshots 5/5; login axe 2/2, mobile 1/1, i18n 2/2,
+on-art 1/1; shared-browser dark/light identity sweep 1/1; tab/route/login unit family 16/16;
+typecheck + zero-warning lint green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 

@@ -164,6 +164,16 @@ export function initAuthListener(): () => void {
   // this whole branch is tree-shaken from production.
   if (DEV_BYPASS_AUTH) {
     const store = useAuthStore.getState();
+    // VISUAL-HARNESS seam: the normal bypass injects a user synchronously, which
+    // makes `/login` redirect before Playwright can inspect the real pre-auth
+    // surface. Its DEV-ONLY query asks this one navigation to settle signed out.
+    // Production never enters the bypass branch; ordinary dev and every
+    // authenticated e2e surface keep the existing mock user.
+    if (new URLSearchParams(window.location.search).has("devSignedOut")) {
+      store.reset();
+      store.setInitialized(true);
+      return () => {};
+    }
     const bypassUid = devActAsUid() ?? "mock-uid";
     store.setUser({
       uid: bypassUid,
