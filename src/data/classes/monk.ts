@@ -138,6 +138,9 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "bonus",
+          requiresActionCategoryThisTurn: "attack",
+          maxUsesPerTurn: 1,
+          attackSequence: { attackId: "unarmed-strike", instances: 1 },
         },
       ],
       rider: {
@@ -235,6 +238,11 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
           type: "bonus",
           costTracker: "monk-focus",
           trackerCost: 1,
+          attackSequence: {
+            attackId: "unarmed-strike",
+            instances: 2,
+            instancesByLevel: { 10: 3 },
+          },
         },
       ],
     },

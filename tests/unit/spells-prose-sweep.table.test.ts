@@ -30,6 +30,11 @@ interface StandingSpellExpectation {
  */
 const STANDING_SPELLS = [
   {
+    id: "bane",
+    recipient: "selected",
+    targeting: { affinity: "enemy", maxTargets: 3, maxTargetsPerUpcast: 1 },
+  },
+  {
     id: "bless",
     recipient: "selected",
     targeting: { affinity: "ally", maxTargets: 3, maxTargetsPerUpcast: 1 },
@@ -45,8 +50,17 @@ const STANDING_SPELLS = [
     recipient: "selected",
     targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
   },
-  { id: "hex", recipient: "caster" },
-  { id: "hunters-mark", recipient: "caster" },
+  { id: "hex", recipient: "caster", targeting: { affinity: "enemy", maxTargets: 1 } },
+  {
+    id: "hunters-mark",
+    recipient: "caster",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+  },
+  {
+    id: "faerie-fire",
+    recipient: "selected",
+    targeting: { affinity: "enemy" },
+  },
   {
     id: "longstrider",
     recipient: "selected",
@@ -58,6 +72,11 @@ const STANDING_SPELLS = [
     targeting: { affinity: "ally", maxTargets: 1 },
   },
   { id: "shield", recipient: "caster" },
+  {
+    id: "vicious-mockery",
+    recipient: "selected",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+  },
   {
     id: "searing-smite",
     recipient: "caster",

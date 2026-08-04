@@ -144,6 +144,18 @@ ends both sides on a successful save and restores them on undo. Compelled Duel n
 failed-save target for the Concentration lifetime. The real fixture locks CA 20, Lay On Hands 15, Channel
 Divinity 2, Lucky 2 and every resolved target contract. The final six-fixture conformance pass follows.
 
+**Live-team truth audit — six-fixture combat conformance CLOSED on branch (2026-08-04):** the final
+Carretto pass imports all six real portable characters and pins every battle-bearing action they expose.
+Any character now gets one resolved Unarmed Strike; Martial Arts and Flurry reuse that compiler, enforce
+their prior-Attack/once-per-turn rules and emit the real one/two-strike sequence (three from Monk 10).
+Reckless Attack is one reversible free action ending at the next turn start; Danger Sense is declaratively
+suspended by Incapacitated. Bane/Bless affect exact targets' attack/save rolls, Faerie Fire affects
+incoming attacks against freely selected failed-save targets, and Vicious Mockery affects only the
+target's next attack. Hex/Hunter's Mark are target marks, not fake immediate damage. Species/feat spells
+derive DC and spell attack from their own ability even without a class Spellcasting block (Chiaviddu's
+Drow Faerie Fire = CHA DC 12). Contracts cover the Bard, Diviner, Assassin, Vengeance Paladin, Mercy
+Monk and Zealot Barbarian; condition lifetime and remaining corpus seams continue separately.
+
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark
 ink for its nested glyph/count despite the carved socket's correct fixed ink, and the end-encounter

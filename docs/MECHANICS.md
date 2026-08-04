@@ -556,6 +556,9 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
    owning class is derived from the spell's `classes[]` membership (`lib/spell-owning-class.ts`), so a
    Cleric/Wizard's Guiding Bolt uses WIS and their Fireball INT — one character, two DCs; a per-spell
    `spellAbilityOverride` (Magic Initiate) or a global DC/attack override wins (override-first).
+   A species/feat spell remains a complete casting source when the character has no class
+   `spellcasting` block: its pinned/deferred ability derives the normal PB-based DC and attack bonus
+   (Drow Rogue Faerie Fire), without inventing a class-slot route.
 8. **Multiclassing facts live on the class tables (#36).** The 13+ prerequisite reads `primaryAbility`
    - `primaryAbilityMode`; the partial "As a Multiclass Character" proficiency set is the table's
      `multiclass` field. The gate is `src/lib/multiclass.ts` (prerequisite both ways; illegal classes

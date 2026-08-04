@@ -46,6 +46,8 @@ export type AggregationSession = Pick<
   CharacterDoc["session"],
   "activeFeatures" | "grantBundleChoices"
 > & {
+  /** Live conditions can suspend condition-gated grants (Danger Sense). */
+  conditions?: ReadonlyArray<string>;
   /** Ephemeral campaign projection; never part of a portable character document. */
   encounterEffects?: ReadonlyArray<ActiveCombatEffect>;
 };
@@ -64,7 +66,8 @@ export function aggregateCharacterGrants(
   return evaluateGrants(
     [...resolveAllGrantSources(character), ...encounterSources],
     new Set(session.activeFeatures ?? []),
-    new Map(Object.entries(session.grantBundleChoices ?? {}))
+    new Map(Object.entries(session.grantBundleChoices ?? {})),
+    { conditions: new Set(session.conditions ?? []) }
   );
 }
 

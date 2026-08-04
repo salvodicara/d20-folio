@@ -49,6 +49,29 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     effectTag: "debuff",
     saveAbility: "CHA",
     targeting: { affinity: "enemy", maxTargets: 3, maxTargetsPerUpcast: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-bane",
+        recipient: "selected",
+        grants: [
+          {
+            type: "roll-die-adjustment",
+            rollType: "attack",
+            operation: "subtract",
+            dice: "1d4",
+            consume: "each",
+          },
+          {
+            type: "roll-die-adjustment",
+            rollType: "save",
+            operation: "subtract",
+            dice: "1d4",
+            consume: "each",
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -307,6 +330,15 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     effectTag: "advantage",
     saveAbility: "DEX",
     area: true,
+    targeting: { affinity: "enemy" },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-faerie-fire",
+        recipient: "selected",
+        grants: [{ type: "incoming-attack-advantage" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -497,6 +529,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: true,
     damageType: "necrotic",
     damageDice: "1d6",
+    resolveOnCast: false,
+    targeting: { affinity: "enemy", maxTargets: 1 },
     grants: [
       // S10 MARKED-TARGET MODEL — the +1d6 Necrotic applies ONLY when you hit the
       // cursed target with an attack roll, not every attack. Modeled as a
@@ -541,6 +575,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     // The die is UPGRADED to d10 by Ranger Foe Slayer (PRIM-spell-die-augment) —
     // which augments THIS `damageDice` chip (the rider's own die stays 1d6).
     damageDice: "1d6",
+    resolveOnCast: false,
+    targeting: { affinity: "enemy", maxTargets: 1 },
     grants: [
       // S10 MARKED-TARGET MODEL — the +1d6 Force applies ONLY when you hit the
       // marked target with an attack roll, not every attack. Modeled as a

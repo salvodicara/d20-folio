@@ -136,6 +136,7 @@ export type ReactionTrigger =
   | "creatureCastsSpell"
   | "creatureEntersReach"
   | "creatureHitsOther"
+  | "creatureSucceedsRollOrDealsDamage"
   // Barbarian World Tree "Branches of the Tree": a creature you can see starts
   // its turn within 30 ft of you while your Rage is active.
   | "creatureStartsTurnNear"
@@ -153,6 +154,7 @@ export const ALL_REACTION_TRIGGERS = [
   "creatureCastsSpell",
   "creatureEntersReach",
   "creatureHitsOther",
+  "creatureSucceedsRollOrDealsDamage",
   "creatureStartsTurnNear",
   "enemyEndsTurnNear",
   "hitOrMagicMissileTarget",
@@ -166,6 +168,7 @@ export const ALL_REACTION_TRIGGERS = [
     "creatureCastsSpell",
     "creatureEntersReach",
     "creatureHitsOther",
+    "creatureSucceedsRollOrDealsDamage",
     "creatureStartsTurnNear",
     "enemyEndsTurnNear",
     "hitOrMagicMissileTarget",
@@ -1210,6 +1213,23 @@ export interface SrdActionDef {
   grantsNextAttackAdvantage?: true;
   /** This use sets the actor's Speed to 0 for the rest of the current turn. */
   locksMovement?: true;
+  /** Another stable action id that must already have been committed this turn.
+   * Used for follow-ups/replacements such as Hand of Healing inside Flurry of
+   * Blows; the turn receipt survives route changes. */
+  requiresActionThisTurn?: string;
+  /** A previously committed action in this rules category must exist this turn.
+   * Unlike an id prerequisite, this accepts any weapon/unarmed/cantrip Attack. */
+  requiresActionCategoryThisTurn?: ActionEconomyCategory;
+  /** Hard per-turn cap for an otherwise-unbounded Free Action. */
+  maxUsesPerTurn?: number;
+  /** Resolve this feature use through the same attack profile as a normal attack
+   * row. The resolver owns target allocation and entered hit/damage facts; the
+   * feature only declares which canonical attack is repeated and how often. */
+  attackSequence?: {
+    attackId: "unarmed-strike";
+    instances: number;
+    instancesByLevel?: Readonly<Record<number, number>>;
+  };
   /** Use the caster's spell attack modifier for this granted action. */
   attackType?: "melee" | "ranged";
   /**

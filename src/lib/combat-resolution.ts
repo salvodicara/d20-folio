@@ -124,6 +124,13 @@ export interface CombatTargetOutcome {
 }
 
 function actionHasDamage(action: ResolvedAction): boolean {
+  if (
+    action.summary.resolveOnCast === false &&
+    !action.summary.recurringUse &&
+    action.standingEffect
+  ) {
+    return false;
+  }
   const s = action.summary;
   return Boolean(
     s.damage ||
@@ -280,7 +287,11 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
 
 /** Open a resolver whenever an action has a target-facing or self-applied consequence. */
 export function shouldResolveCombatAction(action: ResolvedAction): boolean {
-  if (action.summary.resolveOnCast === false && !action.summary.recurringUse)
+  if (
+    action.summary.resolveOnCast === false &&
+    !action.summary.recurringUse &&
+    !action.standingEffect
+  )
     return false;
   const spec = combatResolutionSpec(action);
   return Boolean(
@@ -331,6 +342,12 @@ function damageTypeShape(
 /** The damage entry rows for an action. Every typed component remains separate so
  * resistance/immunity/vulnerability math is applied per component, never to a sum. */
 export function combatDamageParts(action: ResolvedAction): CombatDamagePartSpec[] {
+  if (
+    action.summary.resolveOnCast === false &&
+    !action.summary.recurringUse &&
+    action.standingEffect
+  )
+    return [];
   const s = action.summary;
   const source: DamageSource | undefined =
     action.source === "spell" ? "spell" : undefined;

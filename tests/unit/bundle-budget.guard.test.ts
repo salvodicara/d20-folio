@@ -409,7 +409,11 @@ const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see AR
 // feature/spell effects, recurring-save lifecycle, creature-type damage and their
 // bilingual labels grew the same chunks to 8496.63 KiB / 321 entries. No new entry
 // or asset family; +~3 KiB deterministic headroom.
-const PRECACHE_CEILING_KIB = 8500;
+// 2026-08-04 (six-fixture combat conformance): raised 8500 → 8508 after universal
+// unarmed strikes, semantic action prerequisites, and target-bound roll effects grew
+// the same chunks to 8504.83 KiB / 321 entries. No new entry or asset family;
+// +~3 KiB deterministic headroom.
+const PRECACHE_CEILING_KIB = 8508;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

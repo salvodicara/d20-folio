@@ -9,6 +9,7 @@
 import type {
   AbilityCode,
   ActionConditionRemoval,
+  ActionEconomyCategory,
   ActionType,
   ActionCureCondition,
   ActionHeal,
@@ -17,6 +18,7 @@ import type {
   DamageType,
   Recovery,
   SpellSchool,
+  SrdActionDef,
   TrackerUnit,
 } from "@/data/types";
 import type { CombatEvent } from "@/types/combat-log";
@@ -352,6 +354,11 @@ export interface ActionData {
    * → Monk Focus) survives both custom features and `actionOverrides`.
    */
   costTracker?: string;
+  /** Stable prerequisite receipt and per-turn cap, matching SrdActionDef. */
+  requiresActionThisTurn?: string;
+  requiresActionCategoryThisTurn?: ActionEconomyCategory;
+  maxUsesPerTurn?: number;
+  attackSequence?: SrdActionDef["attackSequence"];
   /** A variable pool whose selected spend is applied as healing. */
   poolSpendEffect?: "healing";
   /** Restore another tracked resource as part of this action's atomic commit. */

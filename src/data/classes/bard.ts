@@ -337,6 +337,7 @@ export const BARD_FEATURES: SrdClassFeatureData[] = [
         {
           type: "reaction",
           costTracker: "bard-bardic-inspiration",
+          trigger: "creatureSucceedsRollOrDealsDamage",
         },
       ],
     },

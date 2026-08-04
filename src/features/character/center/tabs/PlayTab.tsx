@@ -807,6 +807,28 @@ export function PlayTab() {
 
   const blockedReasonFor_ = useCallback(
     (action: ResolvedAction, depleted: boolean): string | null => {
+      const committed = Object.values(selected).flat();
+      if (
+        action.requiresActionThisTurn &&
+        !committed.some((entry) => entry.id === action.requiresActionThisTurn)
+      ) {
+        return t("combat.blockedReasonPrerequisiteAction");
+      }
+      if (
+        action.requiresActionCategoryThisTurn &&
+        !committed.some(
+          (entry) => entry.economyCategory === action.requiresActionCategoryThisTurn
+        )
+      ) {
+        return t("combat.blockedReasonPrerequisiteCategory");
+      }
+      if (
+        action.maxUsesPerTurn !== undefined &&
+        committed.filter((entry) => entry.id === action.id).length >=
+          action.maxUsesPerTurn
+      ) {
+        return t("combat.blockedReasonPerTurnLimit");
+      }
       if (action.locksMovement && movementUsedFt > 0) {
         return t("combat.blockedReasonAlreadyMoved");
       }
@@ -856,6 +878,7 @@ export function PlayTab() {
       locale,
       weaponAdvisoryFor,
       movementUsedFt,
+      selected,
     ]
   );
 

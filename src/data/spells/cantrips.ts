@@ -408,6 +408,24 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "psychic",
     damageDice: "1d6",
     saveAbility: "WIS",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-vicious-mockery",
+        recipient: "selected",
+        grants: [
+          {
+            type: "disadvantage-on",
+            rollType: "attack",
+            scope: "all",
+            vs: "next-attack-roll",
+            consume: "next",
+          },
+        ],
+        duration: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
+      },
+    ],
     source: "SRD",
   },
 ];

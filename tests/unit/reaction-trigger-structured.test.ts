@@ -124,6 +124,7 @@ const ROWS = collectReactionRows();
 // CORRECTS the parser rather than reproducing it, so the equivalence check asserts
 // the corrected EN for these three, not the (buggy) oracle output.
 const CORRECTED_TRIGGERS: Record<string, string> = {
+  "bard-lore-cutting-words": "creature succeeds on a check or attack, or rolls damage",
   "barbarian-world-tree-branches-of-the-tree": "creature starts its turn near you",
   "ranger-fey-wanderer-beguiling-twist": "creature resists charm or fear",
   "ranger-winter-walker-chilling-retribution": "take damage",

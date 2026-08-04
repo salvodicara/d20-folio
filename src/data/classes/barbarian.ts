@@ -267,14 +267,15 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     id: "barbarian-danger-sense",
     class: "barbarian",
     level: 2,
-    // 2024 RAW: Advantage on DEX saves, suppressed only while Incapacitated (2014
-    // also listed Blinded/Deafened). The engine can't auto-suppress it — that caveat
-    // stays in the prose. Surfaced in the rail's Advantages section via `deriveAdvantageChips`.
+    // 2024 RAW: Advantage on DEX saves, suspended while Incapacitated. The live
+    // condition set gates the clause generically; the feature remains owned and
+    // returns automatically when Incapacitated ends.
     grants: [
       {
         type: "advantage-on",
         rollType: "save",
         vs: "dex-save",
+        suppressedByConditions: ["incapacitated"],
       },
     ],
     source: "SRD",
@@ -291,10 +292,14 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     // lights BOTH: the offensive `advantage-on` STR-attack chip AND the SELF-side
     // `incoming-attack-advantage` downside reminder (attacks against you have
     // Advantage). The downside is a player-facing note — no enemy/target modeling.
+    mechanics: {
+      actions: [{ type: "free", maxUsesPerTurn: 1 }],
+    },
     grants: [
       {
         type: "while-active",
         activeKey: "barbarian-reckless-attack",
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
         grants: [
           {
             type: "advantage-on",

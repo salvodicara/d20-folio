@@ -132,7 +132,12 @@ describe("Warding Bond — target-only +1 AC + +1 saves", () => {
       maxRounds: 600,
     });
     expect(hex?.activatesKey).toBe("spell-hex");
-    expect(hex?.standingEffect).toBeUndefined();
+    expect(hex?.standingEffect).toEqual({
+      sourceId: "hex",
+      activeKey: "spell-hex",
+      markScope: "cursed",
+      targetAffinity: "enemy",
+    });
   });
 
   it("projected effect → +1 to the AC bonus (ac-bonus channel)", () => {

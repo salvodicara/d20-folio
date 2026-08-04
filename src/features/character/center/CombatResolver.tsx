@@ -56,6 +56,8 @@ import type { ConditionId, CreatureType, DamageType } from "@/data/types";
 import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 import {
   activeRollDieAdjustments,
+  activeIncomingAttackModeAdjustments,
+  activeRollModeAdjustments,
   effectsByActorSource,
   effectsForTarget,
   healingBlockedByEffects,
@@ -103,6 +105,7 @@ interface TargetChoice {
   rollDieAdjustments: Array<
     Omit<ActiveRollDieAdjustment, "effect"> & { effect?: ActiveCombatEffect }
   >;
+  incomingAttackModes: Array<"advantage" | "disadvantage">;
   markScopes: Array<"marked" | "cursed" | "vowed">;
 }
 
@@ -124,6 +127,9 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
       healingBlocked: healingBlockedByEffects(effects),
       speedAdjustmentFt: speedAdjustmentByEffects(effects),
       rollDieAdjustments: activeRollDieAdjustments(effects),
+      incomingAttackModes: activeIncomingAttackModeAdjustments(effects).map(
+        ({ mode }) => mode
+      ),
       markScopes: effects.flatMap((effect) =>
         effect.payload.kind === "target-mark" ? [effect.payload.scope] : []
       ),
@@ -263,12 +269,24 @@ export function CombatResolver({
                 ...adjustment,
               })
             ),
+            incomingAttackModes: [],
             markScopes: (character.session.encounterEffects ?? []).flatMap((effect) =>
               effect.payload.kind === "target-mark" ? [effect.payload.scope] : []
             ),
           },
         ]
       : [];
+  const actorEffects = sheetCombat
+    ? effectsForTarget(sheetCombat.encounter.effectOps, sheetCombat.myId, {
+        round: sheetCombat.round,
+        currentCombatantId: sheetCombat.encounter.currentCombatantId,
+        phase: "turn-start",
+        order: sheetCombat.encounter.order ?? sheetCombat.view.turnOrderIds,
+      })
+    : (character?.session.encounterEffects ?? []);
+  const actorRollDieAdjustments = sheetCombat
+    ? activeRollDieAdjustments(actorEffects)
+    : (ownAggregate?.rollDieAdjustments ?? []);
   const [showAll, setShowAll] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [attackOutcomes, setAttackOutcomes] = useState<Record<string, "hit" | "miss">>(
@@ -815,9 +833,18 @@ export function CombatResolver({
           }
         : {}),
     };
-    let consumableSaveEffects = [
-      ...new Map(
-        spec.kind === "save" || spec.kind === "attack-save"
+    const consumableActorAttackEffects =
+      spec.kind === "attack" || spec.kind === "attack-save"
+        ? [
+            ...activeRollModeAdjustments(actorEffects, "attack"),
+            ...activeRollDieAdjustments(actorEffects, "attack"),
+          ].flatMap((adjustment) =>
+            adjustment.consume === "next" ? [adjustment.effect] : []
+          )
+        : [];
+    let consumableRollEffects = [
+      ...new Map([
+        ...(spec.kind === "save" || spec.kind === "attack-save"
           ? choices.flatMap(({ target }) =>
               target.rollDieAdjustments.flatMap((adjustment) =>
                 adjustment.rollType === "save" &&
@@ -827,11 +854,12 @@ export function CombatResolver({
                   : []
               )
             )
-          : []
-      ).values(),
+          : []),
+        ...consumableActorAttackEffects.map((effect) => [effect.id, effect] as const),
+      ]).values(),
     ];
     onCommit(() => {
-      const consumedSaveEffects = consumableSaveEffects;
+      const consumedRollEffects = consumableRollEffects;
       const endingActiveKey = action.endsActiveKeyOnSuccessfulSave;
       const endsOnSave =
         Boolean(endingActiveKey && action.spellId) &&
@@ -958,7 +986,7 @@ export function CombatResolver({
         sheetCombat &&
         (effects.length > 0 ||
           hitTargetIds.length > 0 ||
-          consumedSaveEffects.length > 0) &&
+          consumedRollEffects.length > 0) &&
         !sharedEffectsApplied
       ) {
         sharedEffectsApplied = true;
@@ -987,8 +1015,8 @@ export function CombatResolver({
             action: action.nameLoc,
             round: sheetCombat.round,
             pcTargets,
-            ...(consumedSaveEffects.length > 0
-              ? { consumeEffectIds: consumedSaveEffects.map(({ id }) => id) }
+            ...(consumedRollEffects.length > 0
+              ? { consumeEffectIds: consumedRollEffects.map(({ id }) => id) }
               : {}),
             ...(hitTargetIds.length > 0 ? { hitTargetIds } : {}),
             ...(spec.attackMode ? { attackMode: spec.attackMode } : {}),
@@ -999,7 +1027,7 @@ export function CombatResolver({
           showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
         });
         consumeSaveAdjustments =
-          consumedSaveEffects.length > 0 ? sharedEffectsApply : null;
+          consumedRollEffects.length > 0 ? sharedEffectsApply : null;
       }
       const actor = sheetCombat
         ? targets.find((target) => target.targetId === sheetCombat.myId)
@@ -1183,14 +1211,14 @@ export function CombatResolver({
           ? () => {
               void consumeSaveAdjustments
                 .then(async () => {
-                  const restored = consumedSaveEffects.map((effect) => ({
+                  const restored = consumedRollEffects.map((effect) => ({
                     ...effect,
                     id: crypto.randomUUID(),
                   }));
                   for (const effect of restored) {
                     await appendPersistentCombatEffect(sheetCombat.campaignId, effect);
                   }
-                  consumableSaveEffects = restored;
+                  consumableRollEffects = restored;
                 })
                 .catch(() => {
                   showToast({
@@ -1471,6 +1499,33 @@ export function CombatResolver({
                       {target.qualifiedDefenseCount > 0 && targetAppliesDamage && (
                         <small>{t("combat.resolveConditionalDefense")}</small>
                       )}
+                      {needsAttackOutcome &&
+                        target.incomingAttackModes.map((mode) => (
+                          <Badge key={mode} color="var(--semantic-warning)" size="sm">
+                            {t(`combat.resolveAttackMode_${mode}`)}
+                          </Badge>
+                        ))}
+                      {needsAttackOutcome &&
+                        actorRollDieAdjustments
+                          .filter((adjustment) => adjustment.rollType === "attack")
+                          .map((adjustment, index) => (
+                            <Badge
+                              key={`${adjustment.sourceId}-attack-${index}`}
+                              color="var(--semantic-warning)"
+                              size="sm"
+                            >
+                              {t(
+                                adjustment.consume === "next"
+                                  ? "combat.resolveNextRollAdjustment"
+                                  : "combat.resolveEachRollAdjustment",
+                                {
+                                  roll: t("combat.resolveRoll_attack"),
+                                  sign: adjustment.operation === "add" ? "+" : "−",
+                                  dice: adjustment.dice,
+                                }
+                              )}
+                            </Badge>
+                          ))}
                       {needsSaveOutcome &&
                         target.rollDieAdjustments
                           .filter((adjustment) => adjustment.rollType === "save")

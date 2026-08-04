@@ -109,6 +109,20 @@ export interface ActiveRollDieAdjustment {
   consume: "next" | "each";
 }
 
+export interface ActiveRollModeAdjustment {
+  effect: ActiveCombatEffect;
+  sourceId: string;
+  rollType: "save" | "check" | "attack" | "initiative";
+  mode: "advantage" | "disadvantage";
+  consume: "next" | "each";
+}
+
+export interface ActiveIncomingAttackModeAdjustment {
+  effect: ActiveCombatEffect;
+  sourceId: string;
+  mode: "advantage" | "disadvantage";
+}
+
 /** Physical roll adjustments projected by live target effects. */
 export function activeRollDieAdjustments(
   effects: ReadonlyArray<ActiveCombatEffect>,
@@ -119,6 +133,61 @@ export function activeRollDieAdjustments(
       grant.type === "roll-die-adjustment" &&
       (rollType === undefined || grant.rollType === rollType)
         ? [{ effect, sourceId: effect.source.id, ...grant }]
+        : []
+    )
+  );
+}
+
+/** Advantage/disadvantage projected by live target effects. Passive character
+ * clauses keep using the aggregate; this occurrence-aware view exists so a
+ * `next` rule can be retired and restored atomically with the roll it affected. */
+export function activeRollModeAdjustments(
+  effects: ReadonlyArray<ActiveCombatEffect>,
+  rollType?: ActiveRollModeAdjustment["rollType"]
+): ActiveRollModeAdjustment[] {
+  return effects.flatMap((effect) =>
+    resolveCombatEffectGrants(effect).flatMap((grant) => {
+      if (
+        (grant.type !== "advantage-on" && grant.type !== "disadvantage-on") ||
+        (rollType !== undefined && grant.rollType !== rollType)
+      ) {
+        return [];
+      }
+      return [
+        {
+          effect,
+          sourceId: effect.source.id,
+          rollType: grant.rollType,
+          mode:
+            grant.type === "advantage-on"
+              ? ("advantage" as const)
+              : ("disadvantage" as const),
+          consume: grant.type === "disadvantage-on" ? (grant.consume ?? "each") : "each",
+        },
+      ];
+    })
+  );
+}
+
+/** Attack-roll mode imposed by effects on the selected target. Kept separate
+ * from the actor's own roll clauses so Reckless/Faerie Fire can never invert. */
+export function activeIncomingAttackModeAdjustments(
+  effects: ReadonlyArray<ActiveCombatEffect>
+): ActiveIncomingAttackModeAdjustment[] {
+  return effects.flatMap((effect) =>
+    resolveCombatEffectGrants(effect).flatMap((grant) =>
+      grant.type === "incoming-attack-advantage" ||
+      grant.type === "incoming-attack-disadvantage"
+        ? [
+            {
+              effect,
+              sourceId: effect.source.id,
+              mode:
+                grant.type === "incoming-attack-advantage"
+                  ? ("advantage" as const)
+                  : ("disadvantage" as const),
+            },
+          ]
         : []
     )
   );

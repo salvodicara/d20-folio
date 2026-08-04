@@ -128,7 +128,7 @@ describe("sortActions — D8 within-group ordering", () => {
     expect(actionSortTier({ source: "feature" } as ResolvedAction)).toBe(3);
   });
 
-  it("weapons are tier-0 and alpha-sorted (Dagger → Quarterstaff → Rapier → Shortbow)", () => {
+  it("weapons are tier-0 and alpha-sorted, including the universal Unarmed Strike", () => {
     const weapons = sorted.filter((a) => a.source === "weapon").map((a) => a.name);
     // The dual-wield "Dagger (off-hand)" sits alpha-adjacent to "Dagger" in the
     // pure list; the board hides it until a Light-weapon attack commits (a stateful
@@ -138,6 +138,7 @@ describe("sortActions — D8 within-group ordering", () => {
       "Quarterstaff",
       "Rapier",
       "Shortbow",
+      "Unarmed Strike",
     ]);
   });
 

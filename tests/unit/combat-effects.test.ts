@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  activeRollModeAdjustments,
   currentHpDeltaForEffect,
   endedEffectSuccessor,
   effectsForTarget,
@@ -350,5 +351,36 @@ describe("persistent combat effects", () => {
         currentCombatantId: "target",
       })
     ).toEqual([after]);
+  });
+
+  it("projects Vicious Mockery as one consumable attack Disadvantage", () => {
+    const mockery = effect("mockery", {
+      source: {
+        kind: "spell",
+        id: "vicious-mockery",
+        actionId: "spell-vicious-mockery",
+      },
+      payload: { kind: "grant-group", activeKey: "spell-vicious-mockery" },
+    });
+    expect(activeRollModeAdjustments([mockery], "attack")).toEqual([
+      {
+        effect: mockery,
+        sourceId: "vicious-mockery",
+        rollType: "attack",
+        mode: "disadvantage",
+        consume: "next",
+      },
+    ]);
+    expect(
+      evaluateGrants(resolveCombatEffectGrantSources([mockery])).disadvantages
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sourceId: "combat-effect:mockery",
+          rollType: "attack",
+          consume: "next",
+        }),
+      ])
+    );
   });
 });

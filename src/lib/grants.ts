@@ -1607,6 +1607,7 @@ export type Grant =
        * Which attacks the rider rides:
        *   - `"melee-weapon"` — any Melee weapon OR an Unarmed Strike (skips Ranged).
        *   - `"weapon"` — any WEAPON attack (melee or ranged); not an Unarmed Strike.
+       *   - `"unarmed"` — an Unarmed Strike only; never a carried weapon.
        *   - `"one-handed-melee"` — a Melee weapon held in ONE hand: skips Ranged AND
        *     Two-Handed-property weapons, and never an Unarmed Strike (Dueling: "a
        *     Melee weapon in one hand and no other weapons"). A Versatile weapon
@@ -1621,6 +1622,7 @@ export type Grant =
       appliesTo:
         | "melee-weapon"
         | "weapon"
+        | "unarmed"
         | "finesse-or-ranged-weapon"
         | "one-handed-melee"
         | "attack-or-spell";
@@ -2023,11 +2025,19 @@ export type Grant =
       type: "advantage-on";
       vs: string;
       round1?: boolean;
+      /** Conditions that suspend this benefit without removing its source.
+       * The character aggregate supplies the live condition ids; omitted means
+       * the clause is never condition-suppressed. */
+      suppressedByConditions?: ReadonlyArray<ConditionId>;
       description?: BiText;
     } & AttackScopedRoll)
   | ({
       type: "disadvantage-on";
       vs: string;
+      /** A target-bound occurrence may retire after the affected creature makes
+       * its next matching roll (Vicious Mockery). Omitted keeps the established
+       * passive/standing clause semantics. */
+      consume?: "next" | "each";
       description?: BiText;
     } & AttackScopedRoll)
   | {
@@ -3715,6 +3725,8 @@ export interface AdvantageClause {
    * sentence instead.
    */
   scope?: AttackClauseScope;
+  /** Target-bound one-shot policy. Passive clauses omit it. */
+  consume?: "next" | "each";
 }
 
 /**
@@ -4233,6 +4245,7 @@ export interface AggregatedGrants {
     appliesTo:
       | "melee-weapon"
       | "weapon"
+      | "unarmed"
       | "finesse-or-ranged-weapon"
       | "one-handed-melee"
       | "attack-or-spell";
@@ -4855,7 +4868,8 @@ export function freeCastTrackerKey(
 export function evaluateGrants(
   sources: ReadonlyArray<GrantSource>,
   activeKeys: ReadonlySet<string> = new Set(),
-  bundleChoices: ReadonlyMap<string, string> = new Map()
+  bundleChoices: ReadonlyMap<string, string> = new Map(),
+  context: { conditions?: ReadonlySet<string> } = {}
 ): AggregatedGrants {
   // Senses
   let darkvisionFt = 0;
@@ -5744,6 +5758,7 @@ export function evaluateGrants(
 
       // ── Advantage / disadvantage clauses ────────────────────────────
       case "advantage-on":
+        if (g.suppressedByConditions?.some((id) => context.conditions?.has(id))) break;
         // `activeKey` (set when this clause arrived through a `while-active`
         // block) marks the chip as a conditional, currently-active source —
         // mirrors `weapon-damage-bonus` (Rage's STR advantage · active).
@@ -5764,6 +5779,7 @@ export function evaluateGrants(
           vs: g.vs,
           description: grantField(gref, "description", g.description),
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
+          ...(g.consume ? { consume: g.consume } : {}),
           ...narrowedScope(g),
         });
         break;

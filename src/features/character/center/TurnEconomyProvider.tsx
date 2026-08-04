@@ -351,6 +351,27 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
    * the same reason, while every commit entry point repeats the guard so stale
    * UI and prepared target flows cannot bypass it. */
   function actionStateBlockMessage(action: ResolvedAction): string | null {
+    const committed = Object.values(useCombatStore.getState().selected).flat();
+    if (
+      action.requiresActionThisTurn &&
+      !committed.some((entry) => entry.id === action.requiresActionThisTurn)
+    ) {
+      return t("combat.blockedReasonPrerequisiteAction");
+    }
+    if (
+      action.requiresActionCategoryThisTurn &&
+      !committed.some(
+        (entry) => entry.economyCategory === action.requiresActionCategoryThisTurn
+      )
+    ) {
+      return t("combat.blockedReasonPrerequisiteCategory");
+    }
+    if (
+      action.maxUsesPerTurn !== undefined &&
+      committed.filter((entry) => entry.id === action.id).length >= action.maxUsesPerTurn
+    ) {
+      return t("combat.blockedReasonPerTurnLimit");
+    }
     const live = useCharacterStore.getState().character;
     if (!live) return null;
     if (action.locksMovement && useCombatStore.getState().movementUsedFt > 0) {
@@ -2214,6 +2235,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     action: ResolvedAction,
     onPrepared: (action: ResolvedAction, commit: PreparedCommit) => void
   ): void {
+    if (!guardActionState(action)) return;
     const slot = getEconomySlot(action);
     const ridesPip = isPipAttack(action);
     if (action.castPoolSourceId && action.costTracker && character) {

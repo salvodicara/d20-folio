@@ -111,6 +111,11 @@
     "description": "Puoi abbandonare ogni cautela difensiva per attaccare con maggiore ferocia. Quando effettui il tuo primo tiro per colpire nel turno, puoi decidere di attaccare spericolatamente, ottenendo Vantaggio ai tiri per colpire con Forza fino all'inizio del tuo prossimo turno, ma i tiri per colpire contro di te hanno Vantaggio per la stessa durata.",
     "name": "Attacco Irruento"
   },
+  "barbarian-reckless-attack.mechanics.actions.0": {
+    "description": "Dichiara Attacco Irruento per i tuoi attacchi con Forza fino all'inizio del tuo prossimo turno.",
+    "label": "Attacco Irruento",
+    "summary": "Dichiara Attacco Irruento"
+  },
   "barbarian-reckless-attack.grants.0": {
     "label": "Attacco Irruento"
   },

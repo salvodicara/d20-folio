@@ -326,6 +326,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
           actions: [
             {
               type: "bonus",
+              economyCategory: "dash",
             },
           ],
         },

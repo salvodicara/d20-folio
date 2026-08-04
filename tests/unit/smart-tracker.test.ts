@@ -564,6 +564,20 @@ describe("resolveActions — base actions", () => {
     expect(ids).toContain("base-shove");
   });
 
+  it("always includes the Unarmed Strike damage option", () => {
+    const unarmed = localizeActions(makeChar(), "en").find(
+      (action) => action.id === "unarmed-strike"
+    );
+    expect(unarmed).toMatchObject({
+      source: "weapon",
+      summary: {
+        attackBonus: 6,
+        damage: "4",
+        damageType: "bludgeoning",
+      },
+    });
+  });
+
   // RA-04 — Grapple/Shove are 2024 Unarmed Strike OPTIONS resolved by a target's
   // save vs DC 8 + STR mod + PB (wiring the previously-dead `unarmedStrikeSaveDc`),
   // NOT the 2014 "STR contest". The concrete DC rides the card as a save chip.
@@ -1292,7 +1306,11 @@ describe("resolveActions — S1 while-active spell ownership", () => {
     // +1d4 radiant weapon rider for the duration → lights on cast.
     { srdId: "divine-favor", activatesKey: "spell-divine-favor" },
     // Hex selects a cursed target, but its attack rider remains caster-owned.
-    { srdId: "hex", activatesKey: "spell-hex" },
+    {
+      srdId: "hex",
+      activatesKey: "spell-hex",
+      standingEffectKey: "spell-hex",
+    },
     // AC formula belongs to the chosen ally.
     { srdId: "mage-armor", standingEffectKey: "spell-mage-armor" },
     // Plain damage spell — no standing effect → lights NOTHING.

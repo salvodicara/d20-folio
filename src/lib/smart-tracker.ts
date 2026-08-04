@@ -629,6 +629,9 @@ export interface ResolvedAction {
   /** Turn-scoped deterministic effects produced by this use. */
   grantsNextAttackAdvantage?: true;
   locksMovement?: true;
+  requiresActionThisTurn?: string;
+  requiresActionCategoryThisTurn?: ActionEconomyCategory;
+  maxUsesPerTurn?: number;
   economyCategory?: ActionEconomyCategory;
   /** Structured summary for at-a-glance display */
   summary: ActionSummary;
@@ -3358,6 +3361,7 @@ export function resolveRiderDice(
  *     Unarmed Strike; skips a Ranged weapon.
  *   - `"weapon"` — any WEAPON attack (melee or ranged). Does NOT ride an Unarmed
  *     Strike (it isn't a weapon).
+ *   - `"unarmed"` — an Unarmed Strike only. Never rides a carried weapon.
  *   - `"one-handed-melee"` — a Melee weapon held in ONE hand (Dueling): rides a
  *     melee weapon that is NEITHER Ranged NOR a Two-Handed-property weapon, and
  *     NEVER an Unarmed Strike. A Versatile weapon qualifies via its one-handed
@@ -3389,7 +3393,9 @@ export function resolveAttackDamageRiders(
   return damageRiders
     .filter((r) => {
       if (r.appliesTo === "attack-or-spell") return false;
-      if (target.kind === "unarmed") return r.appliesTo === "melee-weapon";
+      if (target.kind === "unarmed")
+        return r.appliesTo === "melee-weapon" || r.appliesTo === "unarmed";
+      if (r.appliesTo === "unarmed") return false;
       if (r.appliesTo === "finesse-or-ranged-weapon")
         return target.isFinesse === true || target.isRanged;
       // Carried weapon. "one-handed-melee" (Dueling): a melee weapon that isn't
@@ -4552,6 +4558,56 @@ function resolveActionTargeting(
   };
 }
 
+/** One canonical Unarmed Strike profile for both the ordinary attack row and
+ * feature-owned sequences such as Martial Arts and Flurry of Blows. */
+function resolveUnarmedAttackSummary(
+  character: CharacterDoc,
+  ctx: ActionResolveCtx,
+  aggregate: AggregatedGrants
+): RawActionSummary {
+  const deferredResolve = (sourceId: string | undefined, key: string) =>
+    sourceId ? featureClassRow(sourceId, character)?.[key] : undefined;
+  const profile = effectiveUnarmedStrike(
+    aggregate.unarmedStrikeDice,
+    ctx.abilityScores,
+    ctx.level,
+    deferredResolve,
+    ctx.charData.proficiencyBonusOverride
+  );
+  const altTypes = aggregate.unarmedStrikeDamageTypeOptions.filter(
+    (type) => type !== profile.damageType
+  );
+  const extraDamage = resolveAttackDamageRiders(
+    aggregate.damageRiders,
+    { kind: "unarmed", damageType: profile.damageType },
+    character,
+    ctx.abilityScores
+  );
+  const { reachBonusFt } = resolveMeleeReachBonus(aggregate.weaponReachBonuses, false);
+  const name = litText({ en: "Unarmed Strike", it: "Colpo Senz'armi" });
+  const damageBreakdown = buildUnarmedDamageBreakdown(
+    profile,
+    name,
+    ctx.abilityScores,
+    character
+  );
+  return {
+    attackBonus: profile.attackBonus + ctx.exPenalty,
+    damage: profile.damage,
+    ...(damageBreakdown.length > 0 ? { damageBreakdown } : {}),
+    damageType: profile.damageType,
+    weaponRange: { kind: "melee", reachFt: 5 + reachBonusFt },
+    ...(aggregate.critThreshold < 20 ? { critRange: aggregate.critThreshold } : {}),
+    ...(extraDamage.length > 0 ? { extraDamage } : {}),
+    ...(altTypes.length > 0
+      ? {
+          damageTypes: [profile.damageType, ...altTypes],
+          multiDamageTypeFlavor: "choice" as const,
+        }
+      : {}),
+  };
+}
+
 /** Apply every target-facing capability authored on a feature/homebrew action.
  * All source kinds use this one projection before entering CombatResolver. */
 function applyActionEffectSummary(
@@ -4562,6 +4618,17 @@ function applyActionEffectSummary(
   ctx: ActionResolveCtx,
   scalingLevel: number
 ): void {
+  if (action.attackSequence?.attackId === "unarmed-strike") {
+    const aggregate = aggregateCharacterGrants(character.character, character.session);
+    Object.assign(summary, resolveUnarmedAttackSummary(character, ctx, aggregate));
+    const scaled = Object.entries(action.attackSequence.instancesByLevel ?? {})
+      .map(([level, instances]) => [Number(level), instances] as const)
+      .filter(([level]) => level <= scalingLevel)
+      .sort(([a], [b]) => b - a)[0]?.[1];
+    summary.instances = scaled ?? action.attackSequence.instances;
+    summary.targeting = { affinity: "enemy", maxTargets: summary.instances };
+    summary.attackMode = "melee";
+  }
   if (action.heal) {
     summary.heal = resolveActionHeal(action.heal, sourceId, character, ctx.abilityScores);
   }
@@ -4686,6 +4753,15 @@ function resolveFeatureActions(
             pinned: pinnedSet.has(id),
             defaultPinned: false,
             description: customText(a.description),
+            ...(a.requiresActionThisTurn
+              ? { requiresActionThisTurn: a.requiresActionThisTurn }
+              : {}),
+            ...(a.requiresActionCategoryThisTurn
+              ? { requiresActionCategoryThisTurn: a.requiresActionCategoryThisTurn }
+              : {}),
+            ...(a.maxUsesPerTurn !== undefined
+              ? { maxUsesPerTurn: a.maxUsesPerTurn }
+              : {}),
           });
         }
       }
@@ -4897,6 +4973,11 @@ function resolveFeatureActions(
             isPool: crossFeature.mechanics.tracker.isPool,
             unit: crossFeature.mechanics.tracker.unit,
           };
+          const crossSpec = resolveTrackerSpec(
+            crossFeature.mechanics.tracker,
+            featureScalingLevel(action.costTracker, character)
+          );
+          if (crossSpec.die) summary.die = crossSpec.die;
         }
       }
 
@@ -4947,6 +5028,15 @@ function resolveFeatureActions(
           ? { grantsNextAttackAdvantage: true as const }
           : {}),
         ...(action.locksMovement ? { locksMovement: true as const } : {}),
+        ...(action.requiresActionThisTurn
+          ? { requiresActionThisTurn: action.requiresActionThisTurn }
+          : {}),
+        ...(action.requiresActionCategoryThisTurn
+          ? { requiresActionCategoryThisTurn: action.requiresActionCategoryThisTurn }
+          : {}),
+        ...(action.maxUsesPerTurn !== undefined
+          ? { maxUsesPerTurn: action.maxUsesPerTurn }
+          : {}),
         ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
         ...(action.targetMark
           ? {
@@ -5050,6 +5140,15 @@ function resolveFeatureActions(
           defaultPinned: false,
           description: raceTraitLoc(raceForActions.id, trait, "description"),
           ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+          ...(action.requiresActionThisTurn
+            ? { requiresActionThisTurn: action.requiresActionThisTurn }
+            : {}),
+          ...(action.requiresActionCategoryThisTurn
+            ? { requiresActionCategoryThisTurn: action.requiresActionCategoryThisTurn }
+            : {}),
+          ...(action.maxUsesPerTurn !== undefined
+            ? { maxUsesPerTurn: action.maxUsesPerTurn }
+            : {}),
           // USE-APPLIES — Orc Adrenaline Rush: the bonus-action Dash grants PB
           // temp HP (its same-trait `temp-hp` grant carries `slot: "bonus"`).
           ...(() => {
@@ -5113,6 +5212,15 @@ function resolveFeatureActions(
           defaultPinned: false,
           description: srdText("invocation", inv.id, "description"),
           ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+          ...(action.requiresActionThisTurn
+            ? { requiresActionThisTurn: action.requiresActionThisTurn }
+            : {}),
+          ...(action.requiresActionCategoryThisTurn
+            ? { requiresActionCategoryThisTurn: action.requiresActionCategoryThisTurn }
+            : {}),
+          ...(action.maxUsesPerTurn !== undefined
+            ? { maxUsesPerTurn: action.maxUsesPerTurn }
+            : {}),
           ...(() => {
             const eff = resolveActionUseEffects(
               inv.grants,
@@ -5333,33 +5441,37 @@ function resolveSpellActions(
     // casting ability (multiclass / item-granted spell with its own ability).
     const spellCastScore = ctx.abilityScores[spellCastAbility];
     const sc = charData.spellcasting;
-    const spellDc =
-      spellDiverges && sc
-        ? effectiveSpellSaveDc(
-            level,
-            spellCastScore,
-            resolveCastingModifier(
-              spellGrantAggregate.spellSaveDcBonus,
-              spellOwningClassId
-            ),
-            sc.saveDCOverride,
-            charData.proficiencyBonusOverride
-          )
-        : dc;
-    const spellAtkBonus =
-      spellDiverges && sc
-        ? effectiveSpellAttackBonus(
-            level,
-            spellCastScore,
-            resolveCastingModifier(
-              spellGrantAggregate.spellAttackBonus,
-              spellOwningClassId
-            ),
-            sc.attackBonusOverride,
-            session.exhaustion,
-            charData.proficiencyBonusOverride
-          )
-        : atkBonus;
+    // A species/feat-granted spell is a complete casting source even when the
+    // character has no class Spellcasting block (Drow Rogue → Faerie Fire,
+    // Magic Initiate on a martial, etc.). Derive from the per-spell ability in
+    // that case instead of silently dropping the DC/attack bonus. The optional
+    // class block contributes only its global manual overrides.
+    const recomputeSpellNumbers = spellDiverges || sc == null;
+    const spellDc = recomputeSpellNumbers
+      ? effectiveSpellSaveDc(
+          level,
+          spellCastScore,
+          resolveCastingModifier(
+            spellGrantAggregate.spellSaveDcBonus,
+            spellOwningClassId
+          ),
+          sc?.saveDCOverride,
+          charData.proficiencyBonusOverride
+        )
+      : dc;
+    const spellAtkBonus = recomputeSpellNumbers
+      ? effectiveSpellAttackBonus(
+          level,
+          spellCastScore,
+          resolveCastingModifier(
+            spellGrantAggregate.spellAttackBonus,
+            spellOwningClassId
+          ),
+          sc?.attackBonusOverride,
+          session.exhaustion,
+          charData.proficiencyBonusOverride
+        )
+      : atkBonus;
 
     // Determine action type from casting time
     let actionType: ActionType = "action";
@@ -5742,10 +5854,12 @@ function resolveSpellActions(
     for (const g of spell.grants ?? []) {
       if (g.type !== "while-active") continue;
       const targetsSelectedCreature = g.recipient === "selected";
-      if (targetsSelectedCreature) {
+      const bindsSelectedTarget = targetsSelectedCreature || g.targetScope !== undefined;
+      if (bindsSelectedTarget) {
         standingEffect = {
           sourceId: spell.id,
           activeKey: g.activeKey,
+          ...(g.targetScope ? { markScope: g.targetScope } : {}),
           targetAffinity: spell.targeting?.affinity ?? "ally",
           ...(spell.targeting?.excludeSelf ? { excludeSelf: true } : {}),
           ...(g.duration?.maxRounds !== undefined
@@ -5763,7 +5877,8 @@ function resolveSpellActions(
             ? { requiresAppliedTempHp: true }
             : {}),
         };
-      } else {
+      }
+      if (!targetsSelectedCreature) {
         spellActivatesKey = g.activeKey;
         spellActiveDurationRounds = g.duration?.maxRounds;
         if (g.duration?.kind === "turn-boundary") {
@@ -6610,81 +6725,15 @@ function resolveWeaponActions(
     if (row) actions.push(row);
   }
 
-  // 4c. Unarmed Strike from an `unarmed-strike-die` upgrade (Monk Martial Arts,
-  //     College of Dance Bardic Damage). A Monk's Unarmed Strike is their MAIN
-  //     attack, yet no carried "weapon" produces a row — so without this a Monk
-  //     had no attack row in Combat at all (the Martial Arts die only showed as a
-  //     Features-page chip). `effectiveUnarmedStrike` resolves the best die +
-  //     attack ability (DEX vs STR) + scaled `classSpecific:martialArtsDie`.
+  // 4c. Universal Unarmed Strike, optionally upgraded by an
+  //     `unarmed-strike-die` grant (Monk Martial Arts, College of Dance Bardic
+  //     Damage). Every creature can choose the damage option (1 + STR Bldg), so
+  //     the row must exist even with no upgrade; `effectiveUnarmedStrike` owns
+  //     that base formula and upgrades it to the best die/ability when present.
   //     Skipped when 4b already produced an Unarmed Strike row (Unarmed Fighting).
-  if (
-    grantAgg.unarmedStrikeDice.length > 0 &&
-    !actions.some((a) => a.id === "unarmed-strike")
-  ) {
-    // Resolve each upgrade's deferred `classSpecific:<key>` die against ITS OWN
-    // source feature's owning class at the character's level in that class (Monk
-    // Martial Arts → Monk level, College of Dance → Bard level) — never one
-    // shared primary-class row read at the total character level (multiclass-
-    // correct). `featureClassRow` already does the per-class own-level lookup.
-    const deferredResolve = (sourceId: string | undefined, key: string) =>
-      sourceId ? featureClassRow(sourceId, character)?.[key] : undefined;
-    const profile = effectiveUnarmedStrike(
-      grantAgg.unarmedStrikeDice,
-      ctx.abilityScores, // D2 — effective scores (set-score floors)
-      level,
-      deferredResolve,
-      charData.proficiencyBonusOverride
-    );
+  if (!actions.some((a) => a.id === "unarmed-strike")) {
     const id = "unarmed-strike";
-    // Empowered Strikes (Monk L6) etc. let the strike deal an ALTERNATE type at the
-    // player's choice — fold the options into a damage-type CHOICE chip (reusing the
-    // multi/choice rendering), so the row reads "d8+4 Bldg/Force". Dedup the base.
-    const altTypes = grantAgg.unarmedStrikeDamageTypeOptions.filter(
-      (t) => t !== profile.damageType
-    );
-    // G25 — self-contained damage riders that ride the Unarmed Strike too, via the
-    // SAME `resolveAttackDamageRiders` the carried-weapon row uses (golden rule 6):
-    // a "melee-weapon" rider ("a weapon OR an Unarmed Strike" — Zealot Divine Fury)
-    // DOES ride; a "weapon"-only rider does NOT (an Unarmed Strike isn't a weapon).
-    const extraDamage = resolveAttackDamageRiders(
-      grantAgg.damageRiders,
-      { kind: "unarmed", damageType: profile.damageType },
-      character,
-      ctx.abilityScores
-    );
-    // Elemental Attunement (+10 ft while active) — a `weapon-reach-bonus` rider
-    // rides the Unarmed Strike too (RAW: the reach buff names Unarmed Strikes).
-    // An Unarmed Strike is never Heavy/Versatile, so only `all-melee` riders apply.
-    const { reachBonusFt } = resolveMeleeReachBonus(grantAgg.weaponReachBonuses, false);
-    // The Monk's Unarmed Strike is their MAIN attack, and BOTH of its numbers are
-    // the product of a silent rule: the feature die REPLACES the plain strike's
-    // flat 1 damage, and its damage ability may be DEX where the base strike uses
-    // STR. So the row carries the SAME damage breakdown a carried weapon does —
-    // built by the ONE builder (golden rule 6) — with both substitutions
-    // explained. Only when an upgrade actually applied: a plain "1 + STR" strike
-    // has no composition worth a tip.
     const unarmedName = litText({ en: "Unarmed Strike", it: "Colpo Senz'armi" });
-    const damageBreakdown = buildUnarmedDamageBreakdown(
-      profile,
-      unarmedName,
-      ctx.abilityScores,
-      character
-    );
-    const summary: RawActionSummary = {
-      attackBonus: profile.attackBonus + exPenalty,
-      damage: profile.damage,
-      ...(damageBreakdown.length > 0 ? { damageBreakdown } : {}),
-      damageType: profile.damageType,
-      // Melee reach — 5 ft base + any active reach rider; the view formats it.
-      weaponRange: { kind: "melee", reachFt: 5 + reachBonusFt },
-      // 2024 Improved/Superior Critical covers Unarmed Strikes too.
-      ...(grantAgg.critThreshold < 20 ? { critRange: grantAgg.critThreshold } : {}),
-      ...(extraDamage.length > 0 ? { extraDamage } : {}),
-    };
-    if (altTypes.length > 0) {
-      summary.damageTypes = [profile.damageType, ...altTypes];
-      summary.multiDamageTypeFlavor = "choice";
-    }
     actions.push({
       id,
       name: unarmedName,
@@ -6692,7 +6741,7 @@ function resolveWeaponActions(
       source: "weapon",
       spellLevel: null,
       concentration: false,
-      summary,
+      summary: resolveUnarmedAttackSummary(character, ctx, grantAgg),
       costsSlot: false,
       pinned: !unpinnedSet.has(id),
       defaultPinned: true,
