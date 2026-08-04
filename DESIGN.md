@@ -36,18 +36,18 @@ colors:
   border-accent-dark: "#6b562f"
   accent-primary-dark: "#b8923d"
   accent-text-dark: "#d4ac4d"
-  # Light theme — "golden-hour" deep-parchment (OWN-36; mirrors src/index.css, the authority)
-  bg-page-light: "#bca268" # deep burnished parchment field — ivory cards float off it
-  bg-surface-1-light: "#f6ead0"
-  bg-surface-2-light: "#fdf6df"
-  bg-surface-3-light: "#e2d2a8"
-  bg-recessed-light: "#cdbb8e"
+  # Light theme — "Shaded Scriptorium" (owner-approved 2026-08-04; src/index.css is authoritative)
+  bg-page-light: "#948f84" # neutral stone/linen work field — distinct from scene and ivory plates
+  bg-surface-1-light: "#e9dec6"
+  bg-surface-2-light: "#f6ecd6"
+  bg-surface-3-light: "#d2c5a9"
+  bg-recessed-light: "#bdb097"
   text-primary-light: "#241d12"
   text-special-light: "#4a3006" # lit-emphasis sibling — designed gilt-espresso rubrication (light-parity)
   text-secondary-light: "#342912"
   text-muted-light: "#322710"
-  border-medium-light: "#b8a878"
-  border-accent-light: "#6a4e18"
+  border-medium-light: "#97886a"
+  border-accent-light: "#614a1d"
   accent-primary-light: "#4a380c" # rich antique gold — AA-safe on the deep field
   accent-text-light: "#3d2f12" # gold-leaf-900 — gold text on tinted card backgrounds
   # Semantic anchors (verdigris / vermilion / gold / lapis)
@@ -222,12 +222,12 @@ five saturated pigment ramps assigned to roles per theme.
 
 ### Neutral
 
-- **Ink Charcoal / Deep Parchment** (`bg-page`: `#0c0a07` dark / `#bca268` light): the page field,
-  always wearing the `--vellum-grain` texture. In light it is a deep burnished parchment so the bright
-  ivory cards float off it (the golden-hour answer to dark's near-black-field pop — see §10).
-- **Warm Surfaces** (`bg-surface-1/2/3`: `#15110b`-`#2a2317` dark / `#f6ead0`-`#e2d2a8` light): the
-  three raised tiers for panels, cards, and shadow surfaces. Light's cards are bright gilt-ivory.
-- **Recessed** (`bg-recessed`: `#0a0705` dark / `#cdbb8e` light): the carved-channel fill for inputs
+- **Ink Charcoal / Shaded Stone-Linen** (`bg-page`: `#0c0a07` dark / `#948f84` light): the page
+  field, always wearing the `--vellum-grain` atmosphere. Light uses a neutral work plane between the
+  daylight scene and ivory cards (see §10).
+- **Warm Surfaces** (`bg-surface-1/2/3`: `#15110b`-`#2a2317` dark / `#e9dec6`-`#d2c5a9` light): the
+  three raised tiers for panels, cards, and shadow surfaces. Light's cards are warm gilt-ivory.
+- **Recessed** (`bg-recessed`: `#0a0705` dark / `#bdb097` light): the carved-channel fill for inputs
   and inset wells (writable fields use the cleaner `--input-fill`).
 - **Parchment Inks** (`text-primary/secondary/muted`: `#f0e4cb`/`#c4b89e`/`#988b6e` dark /
   `#241d12`/`#342912`/`#322710` light): reading text and labels, all tuned to clear AA on their
@@ -242,7 +242,7 @@ five saturated pigment ramps assigned to roles per theme.
   body, so an open/active title glows like illuminated-manuscript rubrication rather than flattening
   into `--text-primary` (the prior `#33260a` sat a hair off body ink). Always the more-luminous "lit"
   ink of the pair (guarded), clearing AA on EVERY ground: ≥13:1 dark / 10.2:1 surface-1 · 8.2:1
-  surface-3 · 4.95:1 even on the bare deep-parchment field in light (contrast-test guarded).
+  surface-3 and on the bare light work field (contrast-test guarded).
 - **Brass Edges** (`border-soft` to `border-accent`: dark brass / tan to deep-gold in light): 1px
   carved edges, escalating to gold-touched.
 
@@ -1403,6 +1403,13 @@ treatment, in the token's own semantic hue, never monochrome gold — the disc g
 
 ### Wizard pick lists — the morph-list (signature interaction)
 
+**Quick Start composition.** Quick Start is the Guided journey folded, never a parallel form. The
+character name remains the one compact always-visible input; every completed `GuidedStep` becomes a
+44px summary chapter, and only a genuinely unresolved decision is forced open. Desktop pairs the
+chapters with a sticky live character/choices rail; mobile keeps that rail in document flow. Summary
+rows reopen their owning chapter. Completion is derived from the existing Guided gates plus final
+requirements — no second store, context, validation model, or duplicated business logic.
+
 The ONE F-family picker for every in-wizard choice pool (`WizardPickList` in
 `src/features/wizard/pick-list.tsx`; its large-feat-pool sibling `feat-list.tsx`; spells in
 `spell-list.tsx`). It implements the Picker Doctrine (Constitution §2.7) as one recipe:
@@ -1854,7 +1861,7 @@ would flag that are **intended**. Filing them as defects violates the identity g
 
 1. **Candlelit translucent panels over atmospheric art + struck-gold gradients + carved/embossed
    elevation everywhere** — the committed skeuomorphic identity (the dark flagship glows over the
-   owner-generated painted darkness; light wears its golden-hour parchment). Never flatten or
+   owner-generated painted darkness; light wears its Shaded Scriptorium materials). Never flatten or
    de-parchment.
 2. **The Cinzel / Alegreya / Source Serif 4 triad** (ceremonial Cinzel titling on the four
    ceremonial surfaces, Alegreya headings + body prose, Source Serif 4 tabular-lining numbers and
@@ -1932,24 +1939,21 @@ setting (there is **no in-app animations toggle** — removed 2026-06-07), writt
 
 ## 10. Light ↔ Dark Parity
 
-1. **Structurally identical.** Dark and light share **identical token names**, component recipes,
-   surface hierarchy, elevation semantics, motion, spacing, radii, and typography. **Only the values
-   inside `[data-theme="dark"]` / `[data-theme="light"]` differ** (driven by `uiStore.applyTheme`).
-   Switching theme is a value swap with zero structural change — because components reference token
-   _names_, never hex.
-2. **Same world, two times of day.** Both are warm gold-leaf on vellum: dark = ink/charcoal vellum;
-   light = the **golden-hour sibling** of dark (the binding OWN-36 mandate) — NOT a bright/pale
-   light-mode and NOT a parchment-first system. Light keeps dark's exact grammar (art at full
-   prominence, glowing gold, deep gradients, carved depth) and remaps only the base key:
-   near-black → warm-parchment field, with dark espresso ink on bright ivory cards. The deep-parchment
-   field (`--bg-page #bca268`) opens a wide value canyon so the bright ivory cards (`--bg-surface-1
-#f6ead0`) float off it with real drama — the light-mode answer to dark's near-black-field pop.
-   Since the daylight-sibling-plates batch this is LITERAL: the three scene plates each ship a
-   candlelit night original (dark) and a daylight twin of the same room (light), riding the
-   per-theme `--asset-home-hero` / `--asset-login` / `--asset-campaign-backdrop` tokens (§13) — the
-   theme switch swaps the hour, never the world.
-3. **Theming is a derivation architecture.** Dark is the base grammar; each theme is a palette-key
-   remap, so future themes drop in cheaply. Light's depth is engineered, not adapted: light inverts
+1. **Structurally coherent, not mechanically identical.** Dark and light share token names,
+   component contracts, information hierarchy, motion, spacing, radii, and typography. Theme deltas
+   stay in tokens and tightly scoped material recipes, never component hex or duplicated JSX. The
+   construction may re-light differently where physical plausibility requires it; semantic meaning
+   and geometry do not drift.
+2. **Same world, two times of day — Shaded Scriptorium.** Dark is the candlelit flagship. Light is
+   late-morning daylight in the SAME room, while the folio itself rests in cool architectural shade.
+   Its three physical bands must remain distinct even in grayscale: the environment is a detailed
+   stone/bronze scene, the work plane is neutral stone/linen (`--bg-page #948f84`), and decision
+   surfaces are warm vellum/ivory (`--bg-surface-1 #e9dec6`, `--bg-surface-2 #f6ecd6`). Gold catches
+   edges and state; it never washes the whole viewport. The paired scene assets still make the theme
+   switch change the hour rather than the world, but the daylight plates are graded into controlled
+   shade instead of rendered as a global honey veil.
+3. **Theming is a derivation architecture.** Dark is the base grammar; each theme is a semantic
+   palette/material remap. Light's depth is engineered, not adapted: light inverts
    shadow direction (warm-umber insets + a warm-near-white `--emboss-sheen` highlight), and ships its
    own `--gilt-gradient`, `--surface-sheen`, `--gilt-glow`, and `--illumination`.
    - **EMBER PENUMBRA — light's lit-magic grammar (owner-ratified 2026-07-11).** On dark, magic is
@@ -1973,7 +1977,7 @@ setting (there is **no in-app animations toggle** — removed 2026-06-07), writt
      `tests/unit/light-theme-backdrop-legibility.guard.test.ts` (the ember-penumbra grammar block).
    - **Glow ≠ fill — `--accent-glow` is the glow-only gold.** The UI-fill/ink gold (`--accent-primary`)
      is AA-constrained: on light it is a deep umber (`#4a380c`) so small gold UI-text clears 4.5:1 on
-     the bare deep-parchment field. A deep umber **cannot glow** on cream, so every halo/drop-shadow
+     the bare neutral work field. A deep umber **cannot glow** on vellum, so every halo/drop-shadow
      routes through the dedicated **`--accent-glow`** token instead — a BRIGHT struck gold
      (light `--gold-leaf-300`, dark `--gold-leaf-500`). On light the `--gilt-glow` / `--gilt-glow-sm`
      aura tokens now spend `--accent-glow` only on the tight struck-gold hairline and pool the
@@ -2118,12 +2122,11 @@ test.ts` READS the live `.cp-dest-chip` declaration out of `folio.css`, resolves
      on light ground.
    - **Floating chrome separates.** Light `--elev-floating` gains a hairline umber definition ring +
      deepened drops so menus/popovers lift off the parchment.
-   - **The backdrop dissolve.** `[data-theme="light"] body::after` carries a vertical `mask-image` that
-     dissolves the candlelit art's lower band into `--bg-page` so it melts into the field with no
-     horizontal tone-step (dark blends naturally against near-black). This is a per-pixel MASK dissolve,
-     NOT a change to the owner-ratified 0.55 art opacity.
+   - **The backdrop settle.** `[data-theme="light"] body::after` grades the daylight scene into cool
+     shade and carries a vertical `mask-image` whose tail settles at 0.3 rather than disappearing.
+     Long pages retain atmosphere without a horizontal seam or a flat honey floor.
    - **On-field inks + foil.** The light muted/faint/secondary inks are deepened one crisp step (loose
-     labels on the bare deep-parchment field read crisp; every AA pin only gains headroom). The on-art
+     labels on the bare neutral work field read crisp; every AA pin only gains headroom). The on-art
      gold-foil section titles (`.on-art-scope .sec-title`) take a tight crisp outline + warm sheen
      instead of the body-tuned soft-blur halo that smudged, and the treasury GP-total cartouche
      (`.on-art-scope .badge.muted`) self-backs on a warm plate + gilt edge so its gold reads struck, not
@@ -2284,14 +2287,16 @@ visually-transparent minimum first and re-baseline the ceiling only for delibera
   centres preserved).
 - **North star.** The D&D-Beyond-splash / BG3-menu grammar stated above — warm amber + one lapis
   accent, a calm dark centre, edges that recede. Every new plate holds to it.
-- **Daylight Sibling Plates (owner-ratified, the light-theme art direction).** Each of the three
+- **Daylight Sibling Plates + Shaded Scriptorium grading (owner-ratified).** Each of the three
   SCENE plates is a per-theme PAIR: the candlelit night original (dark) and a daylight twin of the
   SAME room (light) — same composition, same calm-centre rules, lit by morning sun — so switching
   theme reads as _the same world at a different hour_, never a different app. The pair rides ONE
   per-theme token each (`--asset-home-hero` / `--asset-login` / `--asset-campaign-backdrop`,
   `src/index.css`: dark values in `:root`, light re-points in `[data-theme="light"]`), and because
   CSS only fetches the value a rule actually applies, **each theme downloads only its own plates**.
-  The material textures (panel leather/light, vellum/parchment) were already per-theme.
+  The light painter grades those daylight sources into cool architectural shade so the scene stays
+  distinct from the neutral work plane and ivory decision surfaces. The material textures (panel
+  leather/light, vellum/parchment) remain per-theme.
 - **Light theme never blocks on art.** The light theme is designed from tokens and must never wait
   on new art.
 - **Ornament reference board (not a bundled asset).** The P7 ornament style board (corner
@@ -2302,7 +2307,7 @@ visually-transparent minimum first and re-baseline the ceiling only for delibera
 | Asset (exact path)                                                              | Size / format       | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------------------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `public/assets/backgrounds/home-hero.webp`                                      | 1672×941, < 320 KB  | App-wide atmospheric backdrop (`--asset-home-hero`), behind every page — the DARK plate of the pair. The Batch-4 v2 candlelit-study plate (owner-generated P12, full-BG3 push 2026-07-17): richly painted edges at BG3 main-menu confidence — a three-flame brass candelabrum with warm gold bloom left, gold-tooled bookshelves + suspended orrery right, armillary sphere and grimoires below, one lapis inkwell accent — while the middle half stays dead-calm warm near-black (centre mean `#0d0602`, σ4 — panels and text sit there). Ships ~80 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `public/assets/backgrounds/home-hero-light.webp`                                | 1672×941, < 320 KB  | The **daylight sibling** of `home-hero.webp` (owner-generated P13, Batch-4 v2 2026-07-17) — the LIGHT theme's app-wide backdrop via the light `--asset-home-hero`. Unmistakably the same v2 study at morning: the candelabrum unlit by a high sun-flooded window, the same shelves/orrery/armillary richly painted, golden shafts full of dust motes, the middle half a calm honey mid-tone (centre mean `#bb843d`, σ23 — never near-white, ivory cards still pop), one lapis inkwell remnant. Renders native at the same 0.55 prominence, dissolving into the field at its foot. Ships ~113 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `public/assets/backgrounds/home-hero-light.webp`                                | 1672×941, < 320 KB  | The **daylight sibling** of `home-hero.webp` (owner-generated P13, Batch-4 v2 2026-07-17) — the LIGHT theme's app-wide backdrop via the light `--asset-home-hero`. Unmistakably the same v2 study at morning: the candelabrum unlit by a high sun-flooded window, the same shelves/orrery/armillary richly painted, golden shafts full of dust motes, one lapis inkwell remnant. The Shaded Scriptorium painter preserves the detail at 0.78 layer opacity while grading brightness/saturation down and retaining a 0.3 atmospheric tail, so the room frames the ivory work surfaces instead of becoming a honey wash. Ships ~113 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `public/assets/backgrounds/login.webp`                                          | 1672×941, < 320 KB  | Sign-in splash — the DARK plate of the pair, via `--asset-login`. The Batch-4 v2 grimoire-altar plate (owner-generated P14, full-BG3 push 2026-07-17): the ancient open grimoire RIGHT-of-centre is genuinely the light source of the whole painting — golden magical bloom off the pages, one lapis energy wisp curling into the dark, a single candle at the far right, carved stone + chains + a lapis banner in Rembrandt chiaroscuro behind — while the ENTIRE LEFT THIRD stays deliberate calm near-black negative space (mean `#060402`, σ2) for the sign-in lockup. Desktop (≥1024px) seats the brand column in that void under the LEFT-anchored scrim wash that fades before the book; narrow crops (<1024px) centre book + lockup + scrim (`.login-splash`, folio.css). Ships ~78 KB at q75 + sharp_yuv. **Shipped.**                                                                                                                                                                                                                                                                                                                                                  |
 | `public/assets/backgrounds/login-light.webp`                                    | 1672×941, < 320 KB  | The **dawn sibling** of `login.webp` (owner-generated P11) — the LIGHT login splash via the light `--asset-login`. The same altar and book at first light: pale golden rays and dust motes entering the chamber, the pages still glowing with their own magic (deliberately dawn-dim — the magic persists into morning), lapis energy curling, the LEFT THIRD calm and softly shadowed for the sign-in column. The light scrims are warm-umber morning washes (folio.css) — they steady the calm void for the bright-ink copy without impersonating night. Ships ~108 KB at q85. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `public/assets/backgrounds/campaign-backdrop.webp`                              | 1672×941, < 120 KB  | The campaign default art (DESIGN Law 6) — the DARK plate of the pair, via `--asset-campaign-backdrop`: the campaign HUB backdrop (`--app-bg-art`) AND the campaign LIST-card banner (`.cmp-banner`, **16:9** — the asset's native ratio, shown whole) when the DM hasn't set custom art. The owner-generated plate (P5): a candlelit war table under a blank aged map holding a calm low-contrast centre (panels overlay it), brass astrolabe + lantern at the edges, one lapis banner blurred behind. Ships ~72 KB at q85. **Shipped.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -2682,10 +2687,53 @@ lives INSIDE plates, not between them.
 
 ### 16.9 Light theme
 
-The daylight sibling doctrine holds (§10): same construction, re-lit — parchment field, the
-line ramp DEEPENS one step for contrast (lines draw with `--wb-line-900/700`), plates go
-translucent ivory, the dome and pools stay. Every 16.x rule must land in BOTH themes in the
-same motion, AA-verified.
+The Shaded Scriptorium doctrine holds (§10): the same semantic construction is re-lit over a neutral
+stone/linen work field; the line ramp DEEPENS one step for contrast (lines draw with
+`--wb-line-900/700`), plates go translucent ivory, and directional light replaces the global honey
+wash. Every 16.x rule must land in BOTH themes in the same motion, AA-verified.
+
+## 17. Recognition System — curated icons + compendium illustration (owner epic, 2026-08-04)
+
+Visual richness follows a strict recognition ladder; an asset never earns space merely because it
+is attractive:
+
+1. **Control glyphs** communicate universal actions (search, close, add, edit). Keep Lucide where it
+   is already the clearest familiar sign; do not custom-style familiarity away.
+2. **Folio category seals** communicate stable game concepts (spell, weapon, armor, maneuver,
+   metamagic, invocation, monster, action/resource/state). The shipped Lucide vocabulary is the
+   baseline and remains untouched wherever it already reads clearly. A curated licensed fantasy SVG
+   may replace only a demonstrably weak fallback, with minimal normalization (`currentColor`, shared
+   view box/optical scale) rather than stylistic redrawing. It must remain legible at 16px and in
+   monochrome. Every seal has one stable semantic id and one resolver.
+3. **Entity glyphs** may distinguish high-frequency spells/items when repetition teaches genuine
+   recognition. Missing art always falls back to the category sigil; no blank wells, initials, or
+   layout shifts. A unique icon is not evidence that a row should become icon-only: operational lists
+   retain the localized name and decisive facts.
+4. **Entity illustration** belongs to discovery/reading surfaces (Compendium detail, an inspect
+   sheet, earned hero moments), never dense combat rows, picker facets, or navigation. Illustration is
+   optional enrichment, not data required for correctness.
+
+**One seam.** `src/components/shared/item-icons.ts` remains the public resolver contract. Lucide is
+the first source; a small vendored SVG subset fills proven semantic gaps behind that resolver, and
+consumers never import asset paths directly. A pack is a source catalogue, never a wholesale visual
+replacement or a new runtime dependency.
+Illustrations resolve from the entity's immutable corpus kind + id through one asset manifest. Image
+references never enter `CharacterDoc`, exports, Firestore, or localized catalogues, so adding/remastering
+art cannot migrate user data or fork SRD/pack rendering.
+
+**Performance/offline contract.** Category sigils are code/vector and effectively free. Entity raster
+art is WebP/AVIF with intrinsic dimensions, lazy decode, a reserved aspect-ratio well, and no eager
+Compendium-list fetch. Item-art directories are excluded from the install precache and use a bounded
+CacheFirst runtime cache, matching monster-art behavior: an inspected item remains offline; an unseen
+gallery is never force-downloaded. Initial targets: ≤12 KiB thumbnail, ≤45 KiB 512px detail; re-baseline
+only with measured visual benefit. The no-art path is first-class and screenshot-tested.
+
+**Accessibility + provenance.** Icons adjacent to text are decorative; icon-only controls keep a
+localized accessible name and 44px target. Color is never the only classifier. Every vendored glyph
+records source, author, license and any normalization; required attribution appears in `/legal`.
+Every shipped image is original or carries repository-safe provenance; BG3 assets remain private
+study material and are never traced, bundled, or redistributed. No generated text, logos, copied
+silhouettes, fake runes, or baked UI frames inside entity art.
 
 ## Post-v0.22.0 feature layer (visual-rollback appendix, 2026-07-30)
 

@@ -6,6 +6,7 @@
  * Display names arrive already localized; the class seal glyph is the
  * component-layer `classRoleSeal`. No SRD-string reads.
  */
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { BookMarked, ListChecks, ChevronRight, ShieldCheck } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
@@ -37,6 +38,7 @@ export function ReviewLedger({
   onJump: (step: GuidedStep) => void;
 }) {
   const { t } = useTranslation();
+  const descriptionId = useId();
   if (rows.length === 0) return null;
   return (
     <div className="create-needs review-ledger">
@@ -47,9 +49,17 @@ export function ReviewLedger({
       <ul className="create-needs-list">
         {rows.map((r) => (
           <li key={r.step}>
-            <button type="button" className="create-need" onClick={() => onJump(r.step)}>
+            <button
+              type="button"
+              className="create-need"
+              aria-label={r.label}
+              aria-describedby={`${descriptionId}-${r.step}`}
+              onClick={() => onJump(r.step)}
+            >
               <span className="review-ledger-k">{r.label}</span>
-              <span className="create-need-label">{r.value}</span>
+              <span id={`${descriptionId}-${r.step}`} className="create-need-label">
+                {r.value}
+              </span>
               <Icon as={ChevronRight} className="create-need-chev" decorative />
             </button>
           </li>

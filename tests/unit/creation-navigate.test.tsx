@@ -11,7 +11,7 @@
  * navigate are mocked so the test never touches Firestore or the real history.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 
 const { createMock, navigateMock } = vi.hoisted(() => ({
   createMock: vi.fn<(uid: string, data: unknown) => Promise<string>>(),
@@ -226,15 +226,18 @@ describe("CreationWizard — create-success navigation", () => {
     renderWizard();
     fireEvent.click(screen.getAllByRole("button", { name: /guided/i })[0] as HTMLElement);
     fireEvent.click(screen.getByRole("button", { name: "Review" }));
-    expect(screen.getByText(/your choices/i)).toBeInTheDocument();
+    const ledgerHeading = screen.getByText(/your choices/i);
+    const ledger = ledgerHeading.closest(".review-ledger");
+    expect(ledger).not.toBeNull();
     // The background row carries the choice AND its granted feat, attributed.
-    const bgRow = screen.getByRole("button", {
-      name: /Soldier · Savage Attacker/,
+    const bgRow = within(ledger as HTMLElement).getByRole("button", {
+      name: "Background",
     });
+    expect(bgRow).toHaveAccessibleDescription(/Soldier · Savage Attacker/);
     // The skills row lists the background-granted proficiencies first.
     expect(
-      screen.getByRole("button", { name: /Athletics · Intimidation/ })
-    ).toBeInTheDocument();
+      within(ledger as HTMLElement).getByRole("button", { name: "Skills" })
+    ).toHaveAccessibleDescription(/Athletics · Intimidation/);
     // One tap = back on the owning step.
     fireEvent.click(bgRow);
     expect(

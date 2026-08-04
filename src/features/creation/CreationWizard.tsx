@@ -164,6 +164,7 @@ import {
 } from "./steps/ReviewStep";
 import { SkillsPickerSection } from "./steps/pickers";
 import { ClassGallery, ClassPlaques } from "./steps/ClassGallery";
+import { QuickChapter } from "./steps/QuickChapter";
 
 // ─── Starting equipment → character ──────────────────────────────────────────
 
@@ -250,6 +251,7 @@ export function CreationWizard() {
 
   const [mode, setMode] = useState<Mode>("quick");
   const [guidedStep, setGuidedStep] = useState<GuidedStep>("class");
+  const [quickOpenSteps, setQuickOpenSteps] = useState<Set<GuidedStep>>(() => new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -1554,6 +1556,37 @@ export function CreationWizard() {
     return rows.filter((r) => r.value !== "" && activeGuidedSteps.includes(r.step));
   })();
 
+  // Quick Start is the same journey folded into progressive chapters. The
+  // Guided gates and the final create requirements remain the only completion
+  // facts; no second validation model is introduced here.
+  const quickStepComplete = Object.fromEntries(
+    GUIDED_STEPS.map((step) => [
+      step,
+      (step === "review" || !stepNextDisabled[step]) &&
+        !missingRequirements.some(
+          (item) => item.step === step && !(step === "class" && item.key === "name")
+        ),
+    ])
+  ) as Record<GuidedStep, boolean>;
+
+  function toggleQuickStep(step: GuidedStep) {
+    setQuickOpenSteps((current) => {
+      const next = new Set(current);
+      if (next.has(step)) next.delete(step);
+      else next.add(step);
+      return next;
+    });
+  }
+
+  function openQuickStep(step: GuidedStep) {
+    setQuickOpenSteps((current) => new Set(current).add(step));
+    document.getElementById(`quick-chapter-${step}-toggle`)?.focus();
+  }
+
+  function quickSummary(step: GuidedStep): string | undefined {
+    return reviewLedgerRows.find((row) => row.step === step)?.value;
+  }
+
   const lineageAsks =
     lineageBundles.length > 0 ? (
       <div className="space-y-3">
@@ -1671,246 +1704,325 @@ export function CreationWizard() {
             title={t("create.title")}
             hint={t("wizard.quickGloss")}
           />
-          <div className="mx-auto flex w-full max-w-[860px] flex-1 flex-col gap-6">
-            {/* Name */}
-            <FormField label={t("create.nameLabel")} required>
-              <Input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t("create.namePlaceholder")}
-                className="w-full"
-                autoFocus
-              />
-            </FormField>
-
-            {/* Randomize — offered once a quickbuild landed here: keep the class
-                you chose, draw the rest of the sheet again. */}
-            <div className="wiz-reroll -mt-3 flex items-center justify-end gap-3">
-              <p className="on-art text-xs text-text-muted">
-                {t("create.randomizeHint")}
-              </p>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={randomizeQuickbuild}
-                title={t("create.randomizeHint")}
-              >
-                <Icon as={Shuffle} size="sm" decorative />
-                {t("create.randomize")}
-              </Button>
-            </div>
-
-            {/* Class — picking one rebuilds the sheet from its preset. */}
-            <FormField label={t("create.classLabel")}>
-              <ClassPlaques selected={selectedClass} onPick={requestClassPrefill} />
-            </FormField>
-
-            {/* Level + Subclass row */}
-            <div className="grid gap-3 grid-cols-[96px_1fr]">
-              <FormField label={t("common.level")}>
-                <NumberStepper
-                  value={level}
-                  onChange={onLevelChange}
-                  min={1}
-                  max={20}
-                  digits={2}
-                  compact
-                  ariaLabel={t("common.level")}
-                  decrementLabel={t("common.decrease")}
-                  incrementLabel={t("common.increase")}
+          <div className="quick-layout">
+            <div className="quick-main">
+              <FormField label={t("create.nameLabel")} required>
+                <Input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t("create.namePlaceholder")}
+                  className="w-full"
+                  autoFocus
                 />
               </FormField>
-              {subclassSelect}
-            </div>
 
-            {/* Race + Background + Alignment */}
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label={t("create.speciesLabel")}>
-                <Select
-                  aria-label={t("create.speciesLabel")}
-                  value={selectedRace}
-                  onChange={(e) => onRaceChange(e.target.value)}
+              <div className="quick-chapters">
+                <QuickChapter
+                  step="class"
+                  title={t(GUIDED_STEP_KEYS.class)}
+                  summary={quickSummary("class")}
+                  complete={quickStepComplete.class}
+                  open={!quickStepComplete.class || quickOpenSteps.has("class")}
+                  onToggle={() => toggleQuickStep("class")}
                 >
-                  {raceOptionVMs.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.label}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              {lineageBundles.map((b) => (
-                <FormField key={b.bundleKey} label={b.label}>
-                  <Select
-                    aria-label={b.label}
-                    value={lineageChoices[b.bundleKey] ?? ""}
-                    onChange={(e) =>
-                      setLineageChoices((prev) => ({
-                        ...prev,
-                        [b.bundleKey]: e.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">{t("create.lineagePlaceholder")}</option>
-                    {b.options.map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.label}
-                      </option>
+                  <div className="wiz-reroll flex items-center justify-end gap-3">
+                    <p className="on-art text-xs text-text-muted">
+                      {t("create.randomizeHint")}
+                    </p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={randomizeQuickbuild}
+                      title={t("create.randomizeHint")}
+                    >
+                      <Icon as={Shuffle} size="sm" decorative />
+                      {t("create.randomize")}
+                    </Button>
+                  </div>
+                  <FormField label={t("create.classLabel")}>
+                    <ClassPlaques selected={selectedClass} onPick={requestClassPrefill} />
+                  </FormField>
+                  <div className="grid grid-cols-[96px_1fr] gap-3">
+                    <FormField label={t("common.level")}>
+                      <NumberStepper
+                        value={level}
+                        onChange={onLevelChange}
+                        min={1}
+                        max={20}
+                        digits={2}
+                        compact
+                        ariaLabel={t("common.level")}
+                        decrementLabel={t("common.decrease")}
+                        incrementLabel={t("common.increase")}
+                      />
+                    </FormField>
+                    {subclassSelect}
+                  </div>
+                </QuickChapter>
+
+                <QuickChapter
+                  step="race"
+                  title={t(GUIDED_STEP_KEYS.race)}
+                  summary={quickSummary("race")}
+                  complete={quickStepComplete.race}
+                  open={!quickStepComplete.race || quickOpenSteps.has("race")}
+                  onToggle={() => toggleQuickStep("race")}
+                >
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label={t("create.speciesLabel")}>
+                      <Select
+                        aria-label={t("create.speciesLabel")}
+                        value={selectedRace}
+                        onChange={(e) => onRaceChange(e.target.value)}
+                      >
+                        {raceOptionVMs.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormField>
+                    {lineageBundles.map((bundle) => (
+                      <FormField key={bundle.bundleKey} label={bundle.label}>
+                        <Select
+                          aria-label={bundle.label}
+                          value={lineageChoices[bundle.bundleKey] ?? ""}
+                          onChange={(e) =>
+                            setLineageChoices((previous) => ({
+                              ...previous,
+                              [bundle.bundleKey]: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">{t("create.lineagePlaceholder")}</option>
+                          {bundle.options.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormField>
                     ))}
-                  </Select>
-                </FormField>
-              ))}
-              <FormField label={t("create.backgroundLabel")}>
-                <Select
-                  aria-label={t("create.backgroundLabel")}
-                  value={selectedBackground}
-                  onChange={(e) => changeBackground(e.target.value)}
+                  </div>
+                  {humanFeatList}
+                </QuickChapter>
+
+                <QuickChapter
+                  step="background"
+                  title={t(GUIDED_STEP_KEYS.background)}
+                  summary={quickSummary("background")}
+                  complete={quickStepComplete.background}
+                  open={!quickStepComplete.background || quickOpenSteps.has("background")}
+                  onToggle={() => toggleQuickStep("background")}
                 >
-                  {bgOptionVMs.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.label}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
+                  <FormField label={t("create.backgroundLabel")}>
+                    <Select
+                      aria-label={t("create.backgroundLabel")}
+                      value={selectedBackground}
+                      onChange={(e) => changeBackground(e.target.value)}
+                    >
+                      {bgOptionVMs.map((background) => (
+                        <option key={background.id} value={background.id}>
+                          {background.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                  <FormField label={t("lore.alignment")}>{alignmentSelect}</FormField>
+                </QuickChapter>
+
+                <QuickChapter
+                  step="languages"
+                  title={t(GUIDED_STEP_KEYS.languages)}
+                  summary={quickSummary("languages")}
+                  complete={quickStepComplete.languages}
+                  open={!quickStepComplete.languages || quickOpenSteps.has("languages")}
+                  onToggle={() => toggleQuickStep("languages")}
+                >
+                  <LanguageChoicePicker
+                    slots={ORIGIN_LANGUAGE_SLOTS}
+                    picks={languagePicks}
+                    onChange={setLanguagePicks}
+                  />
+                </QuickChapter>
+
+                {classSkillCount > 0 && (
+                  <QuickChapter
+                    step="skills"
+                    title={t(GUIDED_STEP_KEYS.skills)}
+                    summary={quickSummary("skills")}
+                    complete={quickStepComplete.skills}
+                    open={!quickStepComplete.skills || quickOpenSteps.has("skills")}
+                    onToggle={() => toggleQuickStep("skills")}
+                  >
+                    <SkillsPickerSection
+                      bgSkillIds={bgSkillIds}
+                      classSkillPool={classSkillPool}
+                      classSkillCount={classSkillCount}
+                      selectedClassSkills={selectedClassSkills}
+                      onToggle={toggleClassSkill}
+                    />
+                  </QuickChapter>
+                )}
+
+                {activeGuidedSteps.includes("spells") && (
+                  <QuickChapter
+                    step="spells"
+                    title={t(GUIDED_STEP_KEYS.spells)}
+                    summary={quickSummary("spells")}
+                    complete={quickStepComplete.spells}
+                    open={!quickStepComplete.spells || quickOpenSteps.has("spells")}
+                    onToggle={() => toggleQuickStep("spells")}
+                  >
+                    {showSpellStep && spellListSlots.length > 0 && (
+                      <WizardSpellList
+                        slots={spellListSlots}
+                        picks={{ cantrips: selectedCantrips, spells: selectedSpells }}
+                        onToggle={(slotId, spellId, limit) => {
+                          if (slotId === "cantrips") {
+                            setSelectedCantrips((previous) =>
+                              togglePick(previous, spellId, limit)
+                            );
+                          } else {
+                            setSelectedSpells((previous) =>
+                              togglePick(previous, spellId, limit)
+                            );
+                          }
+                        }}
+                      />
+                    )}
+                    {creationRestSlots.spell.length > 0 && (
+                      <FeatSpellChoicesPicker
+                        slots={creationRestSlots.spell}
+                        picks={activeCreationChoicePicks.spell}
+                        onChange={(spell) =>
+                          setCreationChoicePicks({ ...activeCreationChoicePicks, spell })
+                        }
+                        existingSpellIds={classSpellIds}
+                      />
+                    )}
+                  </QuickChapter>
+                )}
+
+                {hasStartingEquipment && (
+                  <QuickChapter
+                    step="equipment"
+                    title={t(GUIDED_STEP_KEYS.equipment)}
+                    summary={quickSummary("equipment")}
+                    complete={quickStepComplete.equipment}
+                    open={!quickStepComplete.equipment || quickOpenSteps.has("equipment")}
+                    onToggle={() => toggleQuickStep("equipment")}
+                  >
+                    <EquipmentPickerSection
+                      classOptions={classEquipVMs}
+                      bgOptions={bgEquipVMs}
+                      classChosen={effClassEquipLabel}
+                      bgChosen={effBgEquipLabel}
+                      onChooseClass={setClassEquipLabel}
+                      onChooseBg={setBgEquipLabel}
+                    />
+                  </QuickChapter>
+                )}
+
+                <QuickChapter
+                  step="bg-asi"
+                  title={t(GUIDED_STEP_KEYS["bg-asi"])}
+                  summary={quickSummary("bg-asi")}
+                  complete={quickStepComplete["bg-asi"]}
+                  open={!quickStepComplete["bg-asi"] || quickOpenSteps.has("bg-asi")}
+                  onToggle={() => toggleQuickStep("bg-asi")}
+                >
+                  <BgAsiPicker
+                    baseScores={abilityScores}
+                    mode={bgAsiMode}
+                    choices={bgAsiChoices}
+                    abilityOptions={selectedBgData?.abilityOptions ?? []}
+                    backgroundName={bgDisplay}
+                    onSwitchMode={switchBgAsiMode}
+                    onToggle={toggleBgAsi}
+                    isValid={bgAsiIsValid}
+                  />
+                </QuickChapter>
+
+                <QuickChapter
+                  step="abilities"
+                  title={t(GUIDED_STEP_KEYS.abilities)}
+                  complete={quickStepComplete.abilities}
+                  open={!quickStepComplete.abilities || quickOpenSteps.has("abilities")}
+                  onToggle={() => toggleQuickStep("abilities")}
+                >
+                  <div
+                    className="wiz-fork"
+                    role="group"
+                    aria-label={t("create.abilityMethod")}
+                  >
+                    <WizardForkTab
+                      active={usePointBuy}
+                      onClick={() => setUsePointBuy(true)}
+                    >
+                      {t("create.pointBuy")}
+                    </WizardForkTab>
+                    <WizardForkTab
+                      active={!usePointBuy}
+                      onClick={() => setUsePointBuy(false)}
+                    >
+                      {t("create.manual")}
+                    </WizardForkTab>
+                  </div>
+                  <WizardPointBuy
+                    scores={abilityScores}
+                    boosts={bgAsiChoices}
+                    onChange={setAbilityScores}
+                    manual={!usePointBuy}
+                  />
+                </QuickChapter>
+
+                <QuickChapter
+                  step="review"
+                  title={t(GUIDED_STEP_KEYS.review)}
+                  complete={quickStepComplete.review}
+                  open={!quickStepComplete.review || quickOpenSteps.has("review")}
+                  onToggle={() => toggleQuickStep("review")}
+                >
+                  {hasAnyChoiceSlots(reviewChoiceSlots) && (
+                    <FormField label={t("levelUp.featureChoices")}>
+                      {featChoicesHint && (
+                        <p className="on-art mb-2 text-xs text-text-muted">
+                          {featChoicesHint}
+                        </p>
+                      )}
+                      <FeatureChoicesSection
+                        slots={reviewChoiceSlots}
+                        picks={activeCreationChoicePicks}
+                        onChange={setCreationChoicePicks}
+                        existingSkillIds={
+                          new Set([...selectedClassSkills, ...bgSkillIds])
+                        }
+                        existingSpellIds={classSpellIds}
+                        proficientSkillIds={
+                          new Set([...selectedClassSkills, ...bgSkillIds])
+                        }
+                      />
+                    </FormField>
+                  )}
+                  <FormField label={t("create.hpLabel")}>
+                    <HpModeSelector
+                      mode={hpMode}
+                      onModeChange={setHpMode}
+                      rolledHp={rolledHp}
+                      onRolledHpChange={setRolledHp}
+                      averageHp={averageHP}
+                      hpBonus={perLevelHpBonus}
+                      hitDie={classHitDie}
+                      level={level}
+                    />
+                  </FormField>
+                </QuickChapter>
+              </div>
             </div>
 
-            {/* Alignment */}
-            <FormField label={t("lore.alignment")}>{alignmentSelect}</FormField>
-
-            {/* RA-28 — origin languages (Common + 2 of your choice, SRD standard table). */}
-            <FormField label={t("create.stepLanguages")}>
-              <LanguageChoicePicker
-                slots={ORIGIN_LANGUAGE_SLOTS}
-                picks={languagePicks}
-                onChange={setLanguagePicks}
-              />
-            </FormField>
-
-            {/* Skills */}
-            {classSkillCount > 0 && (
-              <FormField label={t("create.stepSkills")}>
-                <SkillsPickerSection
-                  bgSkillIds={bgSkillIds}
-                  classSkillPool={classSkillPool}
-                  classSkillCount={classSkillCount}
-                  selectedClassSkills={selectedClassSkills}
-                  onToggle={toggleClassSkill}
-                />
-              </FormField>
-            )}
-
-            {/* Human Versatile: second Origin feat (the morph list). */}
-            {humanFeatList}
-
-            {/* Origin-feat choices (Background feat + class features). */}
-            {hasAnyChoiceSlots(creationRestSlots) && (
-              <FormField label={t("levelUp.featureChoices")}>
-                {featChoicesHint && (
-                  <p className="on-art mb-2 text-xs text-text-muted">{featChoicesHint}</p>
-                )}
-                <FeatureChoicesSection
-                  slots={creationRestSlots}
-                  picks={activeCreationChoicePicks}
-                  onChange={setCreationChoicePicks}
-                  existingSkillIds={new Set([...selectedClassSkills, ...bgSkillIds])}
-                  existingSpellIds={classSpellIds}
-                  proficientSkillIds={new Set([...selectedClassSkills, ...bgSkillIds])}
-                />
-              </FormField>
-            )}
-
-            {/* Spells — the read-then-Learn list. */}
-            {showSpellStep && spellListSlots.length > 0 && (
-              <FormField label={t("create.stepSpells")}>
-                <WizardSpellList
-                  slots={spellListSlots}
-                  picks={{ cantrips: selectedCantrips, spells: selectedSpells }}
-                  onToggle={(slotId, spellId, limit) => {
-                    if (slotId === "cantrips") {
-                      setSelectedCantrips((prev) => togglePick(prev, spellId, limit));
-                    } else {
-                      setSelectedSpells((prev) => togglePick(prev, spellId, limit));
-                    }
-                  }}
-                />
-              </FormField>
-            )}
-
-            {/* Starting Equipment */}
-            {hasStartingEquipment && (
-              <FormField label={t("create.stepEquipment")}>
-                <EquipmentPickerSection
-                  classOptions={classEquipVMs}
-                  bgOptions={bgEquipVMs}
-                  classChosen={effClassEquipLabel}
-                  bgChosen={effBgEquipLabel}
-                  onChooseClass={setClassEquipLabel}
-                  onChooseBg={setBgEquipLabel}
-                />
-              </FormField>
-            )}
-
-            {/* Background ASI */}
-            <FormField label={t("create.stepBgAsi")}>
-              <BgAsiPicker
-                baseScores={abilityScores}
-                mode={bgAsiMode}
-                choices={bgAsiChoices}
-                abilityOptions={selectedBgData?.abilityOptions ?? []}
-                backgroundName={bgDisplay}
-                onSwitchMode={switchBgAsiMode}
-                onToggle={toggleBgAsi}
-                isValid={bgAsiIsValid}
-              />
-            </FormField>
-
-            {/* Ability Scores — ONE cartouche family; the method fork wears the
-                wizard's tab recipe (owner 2026-06-11: consistent + premium). */}
-            <FormField label={t("create.abilityScores")}>
-              <div
-                className="wiz-fork mb-3"
-                role="group"
-                aria-label={t("create.abilityMethod")}
-              >
-                <WizardForkTab active={usePointBuy} onClick={() => setUsePointBuy(true)}>
-                  {t("create.pointBuy")}
-                </WizardForkTab>
-                <WizardForkTab
-                  active={!usePointBuy}
-                  onClick={() => setUsePointBuy(false)}
-                >
-                  {t("create.manual")}
-                </WizardForkTab>
-              </div>
-              <WizardPointBuy
-                scores={abilityScores}
-                boosts={bgAsiChoices}
-                onChange={setAbilityScores}
-                manual={!usePointBuy}
-              />
-            </FormField>
-
-            {/* HP Mode */}
-            <FormField label={t("create.hpLabel")}>
-              <HpModeSelector
-                mode={hpMode}
-                onModeChange={setHpMode}
-                rolledHp={rolledHp}
-                onRolledHpChange={setRolledHp}
-                averageHp={averageHP}
-                hpBonus={perLevelHpBonus}
-                hitDie={classHitDie}
-                level={level}
-              />
-            </FormField>
-
-            {/* Errors + what's left — the create CTA lives in the fixed bar. */}
-            {error && <p className="text-sm text-error">{error}</p>}
-            {!saving && <MissingRequirements items={missingRequirements} />}
-
-            {/* Preview card */}
-            <div className="mx-auto w-full max-w-[420px]">
+            <aside className="quick-aside" aria-label={t("common.reviewChoices")}>
               <CharacterPreviewCard
                 name={name}
                 className={classDisplay}
@@ -1926,7 +2038,12 @@ export function CreationWizard() {
                 tip={tipText}
                 savingThrows={classTable?.savingThrows ?? []}
               />
-            </div>
+              <ReviewLedger rows={reviewLedgerRows} onJump={openQuickStep} />
+              {error && <p className="text-sm text-error">{error}</p>}
+              {!saving && (
+                <MissingRequirements items={missingRequirements} onJump={openQuickStep} />
+              )}
+            </aside>
           </div>
         </>
       ) : (
