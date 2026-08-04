@@ -167,6 +167,16 @@ intact — weapon-type seals and spell-level seals still distinguish real facts.
 joins the first-class surface census and shows more named options in the same modal height in both
 themes and at phone width. Verification: maneuver before/after screenshots 6/6; focused re-picker
 tests 7/7; targeted axe 4/4, locale sweep 4/4, mobile layout 2/2; typecheck + targeted lint green.
+**Wave 15 realm-sign consistency (2026-08-04):** global navigation no longer chooses different
+near-synonyms for the same destination. One tiny `REALM_ICONS` seam now keeps Characters as the
+character-sheet scroll, Campaigns as the tent and Compendium as the open book across the mobile bar
+and command palette. Palette entity hits deliberately step down one semantic level: a single person
+for a character and a map for a campaign; crossed swords return to combat rather than standing for
+the whole Campaigns realm. Tests pin both navigation surfaces and both entity-result types. The
+visual harness also fixed an English-only palette trigger that had silently missed the Italian
+overlay. Verification: command-palette screenshots 3/3 across EN/IT, light/dark and desktop/mobile;
+focused shell tests 36/36; targeted axe 2/2, locale sweep 2/2, mobile layout 1/1; typecheck + targeted
+lint green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 

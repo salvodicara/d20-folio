@@ -106,6 +106,23 @@ describe("CommandPalette — sections navigator (C7)", () => {
     );
   });
 
+  it("uses the same stable realm signs as the mobile navigator", () => {
+    renderPalette();
+    expect(
+      screen
+        .getByRole("option", { name: /characters/i })
+        .querySelector(".lucide-scroll-text")
+    ).not.toBeNull();
+    expect(
+      screen.getByRole("option", { name: /campaigns/i }).querySelector(".lucide-tent")
+    ).not.toBeNull();
+    expect(
+      screen
+        .getByRole("option", { name: /compendium/i })
+        .querySelector(".lucide-book-open")
+    ).not.toBeNull();
+  });
+
   it("offers Legal as an (ungated) section so every routed surface is reachable (D7)", () => {
     renderPalette();
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "legal" } });
@@ -133,6 +150,11 @@ describe("CommandPalette — universal search (N-E)", () => {
     expect(screen.getByText("Characters")).toBeInTheDocument();
     expect(screen.getByText("Lyra Voss")).toBeInTheDocument();
     expect(screen.getByText(/Bard 9/i)).toBeInTheDocument();
+    expect(
+      screen
+        .getByRole("option", { name: /lyra voss/i })
+        .querySelector(".lucide-user-round")
+    ).not.toBeNull();
   });
 
   it("finds a character by their CLASS, not only their name (§2.5)", () => {
@@ -426,6 +448,7 @@ describe("CommandPalette — campaign index (OWN-28c)", () => {
     renderPalette();
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "keep" } });
     const hit = await screen.findByRole("option", { name: /curse of the keep/i });
+    expect(hit.querySelector(".lucide-map")).not.toBeNull();
     fireEvent.click(hit);
     // Deferred until the sentinel's back() traversal lands (B21).
     await waitFor(() => expect(locationText()).toBe("/campaigns/camp-keep"));

@@ -1064,7 +1064,9 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     variants: OVERLAY_VARIANTS,
     ready: readyByName,
     prepare: async (page) => {
-      const trigger = page.getByRole("button", { name: /ask the folio/i }).first();
+      const trigger = page
+        .getByRole("button", { name: /ask the folio|chiedi al folio/i })
+        .first();
       if (await trigger.isVisible({ timeout: 4000 }).catch(() => false)) {
         await trigger.click().catch(() => {});
         await page
