@@ -697,6 +697,13 @@ follows the visual sign-off.
   reloads; duration/concentration revocation, max-HP deltas, universal resistance, shared damage,
   drop-to-1 consumption and Haste's restricted extra action/aftereffect resolve through typed primitives,
   never spell-name branches. The recipient's prepared copy cannot be accidentally activated or doubled.
+- **Source-owned condition lifecycle (2026-08-04)** — concentrated conditions are now exact
+  actor/source/target occurrences in both solo and encounter play instead of destructive writes into a
+  shared condition array. Overlapping casters coexist; breaking one concentration removes only its own
+  effects; cures and DM overrides clear every matching source occurrence plus manual state; party cards
+  and the cockpit read the same effective projection. A PC going to 0 HP loses all concentration-owned
+  effects transactionally even while offline, reconnect clears stale concentration, and Firestore
+  emulator coverage proves the production permission contract accepts the structured payload.
 - **Reactive hit lifecycle (2026-08-04)** — successful attack hits now remain distinct from their
   damage amount and carry melee/ranged mode into the same persistent-effect transaction. The new generic
   `damage-retaliation` grant resolves the exact attacker, stored cast-level scaling and Chronicle action

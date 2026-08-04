@@ -67,6 +67,7 @@ import {
 } from "@/lib/combat-effects";
 import { maximizeDiceFormula } from "@/lib/grants";
 import { localeDistance } from "@/lib/utils";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import type { PreparedCommit } from "./useTurnEconomy";
 import "./CombatResolver.css";
 
@@ -222,6 +223,10 @@ export function CombatResolver({
   const showToast = useToastStore((s) => s.showToast);
   const soloRound = useCombatStore((s) => s.round);
   const spec = useMemo(() => combatResolutionSpec(action), [action]);
+  const sourceLinkedConditionId =
+    spec.conditionApplication && action.concentration
+      ? (action.spellId ?? action.standingEffect?.sourceId ?? action.id)
+      : null;
   type EffectMode = "damage" | "healing" | "temp-hp";
   const effectModes = useMemo<EffectMode[]>(
     () => [
@@ -256,7 +261,7 @@ export function CombatResolver({
             down: character.session.hp.current <= 0,
             portraitUrl: character.portraitUrl,
             portraitCrop: character.portraitCrop,
-            conditions: character.session.conditions,
+            conditions: effectiveSessionConditions(character.session),
             defenses: NO_DEFENSES,
             conditionImmunities: new Set(),
             qualifiedDefenseCount: 0,
@@ -943,12 +948,14 @@ export function CombatResolver({
                 },
               ]
             : [];
-        const conditionEffects = (conditions[target.key] ?? []).map((conditionId) => ({
-          kind: "condition" as const,
-          targetId: target.targetId,
-          conditionId,
-          active: true,
-        }));
+        const conditionEffects = sourceLinkedConditionId
+          ? []
+          : (conditions[target.key] ?? []).map((conditionId) => ({
+              kind: "condition" as const,
+              targetId: target.targetId,
+              conditionId,
+              active: true,
+            }));
         const removalEffects = (conditionRemovals[target.key] ?? []).map(
           (conditionId) => ({
             kind: "condition" as const,
@@ -1043,10 +1050,10 @@ export function CombatResolver({
           : null;
       const standingEffect = spec.standingEffect;
       const persistentEffects: ActiveCombatEffect[] =
-        sheetCombat && actorRef && standingEffect
+        sheetCombat && actorRef && (standingEffect || sourceLinkedConditionId)
           ? successful.flatMap(({ target, mode, amount }) => {
               if (
-                standingEffect.requiresAppliedTempHp &&
+                standingEffect?.requiresAppliedTempHp &&
                 (mode !== "temp-hp" || amount <= target.tempHp)
               ) {
                 return [];
@@ -1069,8 +1076,7 @@ export function CombatResolver({
                       }
                     : null;
               if (!targetRef) return [];
-              const id = crypto.randomUUID();
-              const relativeBoundary = standingEffect.lifetime.turnBoundary
+              const relativeBoundary = standingEffect?.lifetime.turnBoundary
                 ? turnBoundaryAfter(
                     actorRef.combatantId,
                     standingEffect.lifetime.turnBoundary.turns,
@@ -1083,9 +1089,9 @@ export function CombatResolver({
                     }
                   )
                 : null;
-              const duration: ActiveCombatEffect["duration"] = markTransferEffect
+              const standingDuration: ActiveCombatEffect["duration"] = markTransferEffect
                 ? markTransferEffect.duration
-                : standingEffect.lifetime.concentration
+                : standingEffect?.lifetime.concentration
                   ? {
                       kind: "concentration",
                       actorId: actorRef.combatantId,
@@ -1093,7 +1099,7 @@ export function CombatResolver({
                     }
                   : relativeBoundary
                     ? relativeBoundary
-                    : standingEffect.lifetime.maxRounds !== undefined
+                    : standingEffect?.lifetime.maxRounds !== undefined
                       ? {
                           kind: "turn-boundary",
                           combatantId: actorRef.combatantId,
@@ -1101,16 +1107,42 @@ export function CombatResolver({
                           phase: "turn-end",
                         }
                       : { kind: "encounter" };
-              return [
-                {
-                  id,
-                  actor: actorRef,
-                  target: targetRef,
-                  source: standingEffect.source,
-                  payload: standingEffect.payload,
-                  duration,
-                },
-              ];
+              const standing = standingEffect
+                ? [
+                    {
+                      id: crypto.randomUUID(),
+                      actor: actorRef,
+                      target: targetRef,
+                      source: standingEffect.source,
+                      payload: standingEffect.payload,
+                      duration: standingDuration,
+                    } satisfies ActiveCombatEffect,
+                  ]
+                : [];
+              const sourceConditions = sourceLinkedConditionId
+                ? (conditions[target.key] ?? []).map(
+                    (conditionId): ActiveCombatEffect => ({
+                      id: crypto.randomUUID(),
+                      actor: actorRef,
+                      target: targetRef,
+                      source: {
+                        kind: action.source === "spell" ? "spell" : "feature",
+                        id: sourceLinkedConditionId,
+                        actionId: action.id,
+                        ...(action.slotLevel !== undefined
+                          ? { castLevel: action.slotLevel }
+                          : {}),
+                      },
+                      payload: { kind: "condition", conditionId },
+                      duration: {
+                        kind: "concentration",
+                        actorId: actorRef.combatantId,
+                        sourceId: sourceLinkedConditionId,
+                      },
+                    })
+                  )
+                : [];
+              return [...standing, ...sourceConditions];
             })
           : [];
       const persistentApply =
@@ -1144,6 +1176,7 @@ export function CombatResolver({
       const own = choices.find(
         ({ target }) => !sheetCombat || target.targetId === sheetCombat.myId
       );
+      const ownConditions = own ? (conditions[own.target.key] ?? []) : [];
       const undoOwn =
         own || linkedSelfHealing > 0
           ? applyResolvedCombatEffects({
@@ -1158,8 +1191,14 @@ export function CombatResolver({
               ...((own?.amount ?? 0) > 0 && own?.mode === "damage"
                 ? { damage: own.amount }
                 : {}),
-              ...(own && conditions[own.target.key]?.length
-                ? { addConditions: conditions[own.target.key] }
+              ...(own && ownConditions.length
+                ? sourceLinkedConditionId && !sheetCombat
+                  ? {
+                      addConcentrationConditions: ownConditions,
+                    }
+                  : !sourceLinkedConditionId
+                    ? { addConditions: ownConditions }
+                    : {}
                 : {}),
               ...(own && conditionRemovals[own.target.key]?.length
                 ? { removeConditions: conditionRemovals[own.target.key] }

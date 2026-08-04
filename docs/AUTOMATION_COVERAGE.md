@@ -30,6 +30,11 @@
 > OPEN item in the BACKLOG; adding a kind without registering it fails CI). That guard's table is
 > the single source of truth for per-kind exposure — it is not duplicated in either doc.
 
+> **Condition lifecycle closure (2026-08-04).** Condition-bearing actions now preserve source
+> provenance in solo and encounter play. Manual/homebrew state, overlapping casters, concentration
+> revocation, cures, DM override, offline-PC knockout and reconnect all resolve through one effective
+> condition projection; this changes execution reliability, not the per-entity classifications below.
+
 ## Coverage totals
 
 > **The classification-unit counts are GUARD-DERIVED, not hand-maintained.** Earlier revisions of

@@ -358,7 +358,11 @@ export function setInitiativeAbsolute(s: CombatState, roll: number | null): Comb
  * triggers a redundant parent write.
  */
 export function nonCombatSessionChanged(a: SessionState, b: SessionState): boolean {
-  for (const key of Object.keys(a) as Array<keyof SessionState>) {
+  const keys = new Set([
+    ...(Object.keys(a) as Array<keyof SessionState>),
+    ...(Object.keys(b) as Array<keyof SessionState>),
+  ]);
+  for (const key of keys) {
     if (COMBAT_KEY_SET.has(key)) continue;
     if (a[key] !== b[key]) return true;
   }

@@ -64,6 +64,7 @@ import {
   conditionBreaksConcentration,
   hasConcentrationSaveAdvantage,
 } from "@/lib/condition-effects";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { evaluateGrants } from "@/lib/grants";
 import { slotUsageKey } from "@/lib/cast-options";
 import {
@@ -291,6 +292,7 @@ interface CharacterState {
     healing?: number;
     tempHp?: number;
     addConditions?: string[];
+    addConcentrationConditions?: string[];
     removeConditions?: string[];
     bardicInspirationDie?: string;
   }) => (() => void) | null;
@@ -1080,14 +1082,31 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (effects.tempHp) get().gainTempHp(effects.tempHp);
     if (effects.bardicInspirationDie !== undefined)
       get().setBardicInspirationDie(effects.bardicInspirationDie);
+    if (effects.addConcentrationConditions?.length) {
+      const current = get().character;
+      if (current)
+        set({
+          character: {
+            ...current,
+            session: {
+              ...current.session,
+              concentrationConditions: effects.addConcentrationConditions,
+            },
+          },
+        });
+    }
     for (const condition of effects.addConditions ?? [])
       get().addCondition(condition, { registerConcentrationUndo: false });
-    for (const condition of effects.removeConditions ?? [])
+    for (const condition of effects.removeConditions ?? []) {
       get().removeConditionSilent(condition);
+    }
+    if (effects.addConcentrationConditions?.length || effects.removeConditions?.length)
+      flushParentPersistence(get);
     return () => {
       set({ character: before });
       useCombatStore.setState({ damageTakenThisRound: damageTakenBefore });
       persistCombat(get);
+      flushParentPersistence(get);
     };
   },
 
@@ -1401,6 +1420,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       );
       return Object.keys(next).length > 0 ? next : undefined;
     }, priorActiveSpellCastLevels);
+    const priorConcentrationConditions = character.session.concentrationConditions;
+    const nextConcentrationConditions =
+      prev && prev !== spell ? undefined : priorConcentrationConditions;
     // RAW 2024 (PHB p.235): when you start casting another spell that
     // requires Concentration, your existing concentration ends. We
     // perform the swap silently in the store (the caller already knows
@@ -1433,6 +1455,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
                 : undefined,
             activeFeatures: nextActive,
             activeSpellCastLevels: nextActiveSpellCastLevels,
+            concentrationConditions: nextConcentrationConditions,
             // S7 — drop the form + retract the Beast Temp HP to the caster's own.
             ...(retractForm
               ? {
@@ -1443,6 +1466,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           },
         },
       });
+      flushParentPersistence(get);
       if (opts?.silent) return [];
       const loggedIds: string[] = [];
       if (prev && prev !== spell) {
@@ -1473,6 +1497,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
             // concentration-only restore would leave the reverted body behind.
             if (retractForm) {
               set({ character: before });
+              flushParentPersistence(get);
               return;
             }
             set({
@@ -1487,9 +1512,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
                   // cast-undo + `advanceEffectTimers` revert).
                   activeFeatures: priorActive,
                   activeSpellCastLevels: priorActiveSpellCastLevels,
+                  concentrationConditions: priorConcentrationConditions,
                 },
               },
             });
+            flushParentPersistence(get);
           };
         },
         { turnScoped: false }
@@ -1596,8 +1623,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return null;
     const { character } = get();
     if (!character) return null;
-    if (!character.session.conditions.includes(condition)) return null;
+    if (!effectiveSessionConditions(character.session).includes(condition)) return null;
     const prevConditions = character.session.conditions;
+    const prevConcentrationConditions = character.session.concentrationConditions;
     // RA-12 — dropping Invisible ends the hidden state: the remembered find-DC
     // goes with it (and comes back on undo).
     const prevHiddenDc = character.session.hiddenDc;
@@ -1608,6 +1636,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         session: {
           ...character.session,
           conditions: prevConditions.filter((c) => c !== condition),
+          concentrationConditions: prevConcentrationConditions?.filter(
+            (id) => id !== condition
+          ),
           ...(clearsHiddenDc ? { hiddenDc: undefined } : {}),
         },
       },
@@ -1621,6 +1652,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     });
     // Persist the whole resulting combat state (offline-safe).
     persistCombat(get);
+    flushParentPersistence(get);
     return () => {
       const cur = get().character;
       if (!cur) return;
@@ -1630,6 +1662,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           session: {
             ...cur.session,
             conditions: prevConditions,
+            concentrationConditions: prevConcentrationConditions,
             ...(clearsHiddenDc ? { hiddenDc: prevHiddenDc } : {}),
           },
         },
@@ -1637,6 +1670,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       get().removeLogEntry(lossLogId);
       // Re-persist the restored trio so the subdoc converges with the undo.
       persistCombat(get);
+      flushParentPersistence(get);
     };
   },
 

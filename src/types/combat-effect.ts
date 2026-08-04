@@ -60,6 +60,12 @@ export type CombatEffectPayload =
       kind: "target-mark";
       activeKey: string;
       scope: "marked" | "cursed" | "vowed";
+    }
+  | {
+      /** A condition projected by this exact source occurrence. Manual conditions
+       * remain in the combat-state list and are never removed with this effect. */
+      kind: "condition";
+      conditionId: string;
     };
 
 export interface ActiveCombatEffect {

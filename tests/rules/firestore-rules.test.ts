@@ -807,6 +807,40 @@ describe("firestore.rules — /campaigns access", () => {
       );
     });
 
+    it("accepts a caster-owned condition occurrence", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            {
+              ...persistentApply,
+              effect: {
+                ...persistentApply.effect,
+                payload: { kind: "condition", conditionId: "paralyzed" },
+              },
+            },
+          ],
+        })
+      );
+    });
+
+    it("rejects a condition occurrence without a stable condition id", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            {
+              ...persistentApply,
+              effect: {
+                ...persistentApply.effect,
+                payload: { kind: "condition", conditionId: "" },
+              },
+            },
+          ],
+        })
+      );
+    });
+
     it("accepts a feature-owned vowed-target payload", async () => {
       const db = testEnv.authenticatedContext("member").firestore();
       await assertSucceeds(

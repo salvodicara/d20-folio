@@ -528,6 +528,7 @@ describe("codec — state restoration", () => {
         hp: { current: 31, temp: 5 },
         currency: { pp: 1, gp: 27, ep: 0, sp: 4, cp: 0 },
         conditions: ["poisoned"],
+        concentrationConditions: ["paralyzed"],
         exhaustion: 2,
         spellSlots: { "1": { used: 2 }, "2": { used: 0 } },
         trackers: {
@@ -558,6 +559,7 @@ describe("codec — state restoration", () => {
     expect(s.hp.temp).toBe(5);
     expect(s.currency).toEqual({ pp: 1, gp: 27, ep: 0, sp: 4, cp: 0 });
     expect(s.conditions).toEqual(["poisoned"]);
+    expect(s.concentrationConditions).toEqual(["paralyzed"]);
     expect(s.exhaustion).toBe(2);
     expect(s.spellSlots["1"]).toEqual({ used: 2 });
     expect(s.spellSlots["2"]).toBeUndefined(); // spent 0 → omitted, re-defaults absent

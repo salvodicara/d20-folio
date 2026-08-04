@@ -51,6 +51,7 @@ import {
 } from "@/features/campaigns/global-combat-context";
 import { useLocale } from "@/hooks/useLocale";
 import { resolveConditionEffects } from "@/lib/condition-effects";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import {
   resolveTrackers,
   resolveActiveMaintainedEffects,
@@ -1478,7 +1479,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
 
     // Condition gate — the Incapacitated family forbids the slot.
     const blockedSlots = resolveConditionEffects(
-      character?.session.conditions ?? []
+      character ? effectiveSessionConditions(character.session) : []
     ).blockedSlots;
     if (slot !== "free" && blockedSlots.has(slot)) {
       showToast({ message: t("combat.slotBlockedByCondition"), duration: 2500 });
@@ -1609,7 +1610,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     if (useCombatStore.getState().reactionUsed) return;
     // Incapacitated and its kin forbid reactions too.
     const blockedSlots = resolveConditionEffects(
-      character?.session.conditions ?? []
+      character ? effectiveSessionConditions(character.session) : []
     ).blockedSlots;
     if (blockedSlots.has("reaction")) {
       showToast({ message: t("combat.slotBlockedByCondition"), duration: 2500 });

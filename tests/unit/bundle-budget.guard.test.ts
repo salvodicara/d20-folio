@@ -413,7 +413,10 @@ const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see AR
 // unarmed strikes, semantic action prerequisites, and target-bound roll effects grew
 // the same chunks to 8504.83 KiB / 321 entries. No new entry or asset family;
 // +~3 KiB deterministic headroom.
-const PRECACHE_CEILING_KIB = 8508;
+// 2026-08-04 (condition provenance): raised 8508 → 8512 after source-owned
+// condition lifecycle grew existing lazy JS chunks to 8508.63 KiB / 321 entries.
+// No new entry or asset family; +~3 KiB deterministic headroom.
+const PRECACHE_CEILING_KIB = 8512;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

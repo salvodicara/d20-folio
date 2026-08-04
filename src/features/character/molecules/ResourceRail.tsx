@@ -18,6 +18,7 @@ import { primaryClassId, totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import { Plus, Minus, X, Skull, Sparkles } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useLocale } from "@/hooks/useLocale";
@@ -32,6 +33,9 @@ import {
   armorDisadvantageClauses,
 } from "@/lib/smart-tracker";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import { effectsForTarget } from "@/lib/combat-effects";
+import { useGlobalCombat } from "@/features/campaigns/global-combat-context";
 import { ConditionEditor } from "./ConditionEditor";
 import { slotUsageKey } from "@/lib/cast-options";
 import type { AggregatedGrants } from "@/lib/grants";
@@ -153,6 +157,8 @@ export function ResourceRail() {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
+  const globalCombat = useGlobalCombat();
+  const showToast = useToastStore((s) => s.showToast);
   const sheetMode = useUIStore((s) => s.sheetMode);
   const isEdit = sheetMode === "edit";
   const setCompanionHp = useCharacterStore((s) => s.setCompanionHp);
@@ -257,6 +263,9 @@ export function ResourceRail() {
     [aggregate]
   );
 
+  const sheetCombat =
+    character && globalCombat?.characterId === character.id ? globalCombat : null;
+
   if (!character || !aggregate) return null;
 
   const { character: charData, session } = character;
@@ -272,7 +281,7 @@ export function ResourceRail() {
   );
   const spellSlots = charData.spellSlots;
   const concentration = session.concentration;
-  const conditions = session.conditions;
+  const conditions = effectiveSessionConditions(session);
   const exhaustion = session.exhaustion;
   const inspiration = session.inspiration;
   // D37 — the Bardic Inspiration die the character is HOLDING (granted by an ally
@@ -280,6 +289,35 @@ export function ResourceRail() {
   const heldDie = session.bardicInspirationDie ?? "";
   const INSPIRATION_DICE = ["d6", "d8", "d10", "d12"] as const;
   const hasResources = spellSlots.length > 0 || trackers.length > 0;
+
+  const toggleCondition = (id: string): void => {
+    const store = useCharacterStore.getState();
+    if (!conditions.includes(id)) {
+      store.addCondition(id);
+      return;
+    }
+    store.removeCondition(id);
+    if (!sheetCombat) return;
+    const effectIds = effectsForTarget(
+      sheetCombat.encounter.effectOps,
+      sheetCombat.myId
+    ).flatMap((effect) =>
+      effect.payload.kind === "condition" && effect.payload.conditionId === id
+        ? [effect.id]
+        : []
+    );
+    if (effectIds.length === 0) return;
+    void import("@/features/campaigns/campaign-io")
+      .then(async ({ revokePersistentCombatEffect }) => {
+        for (const effectId of effectIds) {
+          await revokePersistentCombatEffect(sheetCombat.campaignId, effectId);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error("Combat condition override failed", error);
+        showToast({ message: t("campaignHub.combatWriteFailed"), duration: 6000 });
+      });
+  };
 
   // Defenses (#68 override-first + PLAY-NO-EDIT session overlay): each kind's
   // PERMANENT set = (grant-computed ∪ added) \ removed via the build override
@@ -865,7 +903,11 @@ export function ResourceRail() {
             </button>
           </div>
         )}
-        <ConditionStrip conditions={conditions} hiddenDc={session.hiddenDc} />
+        <ConditionStrip
+          conditions={conditions}
+          hiddenDc={session.hiddenDc}
+          onToggle={toggleCondition}
+        />
         <ExhaustionTrack value={exhaustion} />
       </RailSection>
 
@@ -1446,10 +1488,12 @@ function AddDefensePicker({
 function ConditionStrip({
   conditions,
   hiddenDc,
+  onToggle,
 }: {
   conditions: string[];
   /** RA-12 — the Hide action's find-DC, suffixed onto the Invisible chip. */
   hiddenDc?: number;
+  onToggle: (conditionId: string) => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -1457,11 +1501,7 @@ function ConditionStrip({
       conditions={conditions}
       hiddenDc={hiddenDc}
       emptyLabel={t("character.noConditions")}
-      onToggle={(id) => {
-        const store = useCharacterStore.getState();
-        if (conditions.includes(id)) store.removeCondition(id);
-        else store.addCondition(id);
-      }}
+      onToggle={onToggle}
     />
   );
 }

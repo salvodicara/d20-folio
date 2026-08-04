@@ -64,6 +64,8 @@ import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import type { CampaignDoc, EncounterPc } from "@/types/campaign";
 import { effectsForTarget } from "@/lib/combat-effects";
 import { useCharacterStore } from "@/stores/characterStore";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import { conditionBreaksConcentration } from "@/lib/condition-effects";
 
 /** Renderless: subscribes the shell-level combat status + pip model and publishes them. */
 export function GlobalCombatMount(): null {
@@ -209,15 +211,26 @@ export function GlobalCombatMount(): null {
       setEncounterEffects(null);
       return;
     }
-    setEncounterEffects(
-      status.characterId,
-      effectsForTarget(live.encounter.effectOps, status.myId, {
-        round: live.encounter.round,
-        currentCombatantId: live.encounter.currentCombatantId,
-        phase: "turn-start",
-        order: live.encounter.order ?? live.view.turnOrderIds,
-      })
-    );
+    const effects = effectsForTarget(live.encounter.effectOps, status.myId, {
+      round: live.encounter.round,
+      currentCombatantId: live.encounter.currentCombatantId,
+      phase: "turn-start",
+      order: live.encounter.order ?? live.view.turnOrderIds,
+    });
+    setEncounterEffects(status.characterId, effects);
+    const current = useCharacterStore.getState().character;
+    const ownRow = live.view.rows.find((row) => row.id === status.myId);
+    if (
+      current?.id === status.characterId &&
+      current.session.concentration &&
+      (ownRow?.currentHp === 0 ||
+        effectiveSessionConditions({
+          ...current.session,
+          encounterEffects: effects,
+        }).some(conditionBreaksConcentration))
+    ) {
+      useCharacterStore.getState().setConcentration("", { undoable: false });
+    }
   }, [status, live, setEncounterEffects]);
 
   // Concentration is character-owned state; standing target effects are campaign-owned.

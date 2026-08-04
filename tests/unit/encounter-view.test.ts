@@ -110,6 +110,46 @@ describe("buildEncounterView — live merge + sort + current pointer", () => {
     });
   });
 
+  it("projects source-owned conditions without mutating manual condition state", () => {
+    const source = encounter({
+      effectOps: [
+        {
+          id: "apply:hold-1",
+          kind: "apply",
+          effect: {
+            id: "hold-1",
+            actor: {
+              kind: "pc",
+              combatantId: "pc-mara",
+              memberUid: "mara",
+              characterId: "char-mara",
+            },
+            target: { kind: "monster", combatantId: "monster-1" },
+            source: {
+              kind: "spell",
+              id: "hold-person",
+              actionId: "spell-hold-person",
+            },
+            payload: { kind: "condition", conditionId: "paralyzed" },
+            duration: {
+              kind: "concentration",
+              actorId: "pc-mara",
+              sourceId: "hold-person",
+            },
+          },
+        },
+      ],
+    });
+
+    const view = buildEncounterView(source, { "pc-mara": pcLive() }, true);
+    expect(view.rows.find((row) => row.id === "monster-1")?.conditions).toEqual([
+      "prone",
+      "paralyzed",
+    ]);
+    const stored = source.combatants.find((combatant) => combatant.id === "monster-1");
+    expect(stored?.kind === "monster" ? stored.conditions : undefined).toEqual(["prone"]);
+  });
+
   it("orders by LIVE initiative (DESC, blanks last) and keeps `currentId` STABLE under a reorder", () => {
     // mara 18, goblin 14, bren blank → order mara, goblin, bren.
     const a = buildEncounterView(

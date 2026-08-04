@@ -245,6 +245,88 @@ describe("campaign-io under dev bypass", () => {
     );
   });
 
+  it("revokes an offline PC's concentration effects when damage drops them to zero", async () => {
+    const campaign = makeDevCampaign();
+    const caster = {
+      kind: "pc" as const,
+      combatantId: "pc-a",
+      memberUid: "a",
+      characterId: "char-a",
+    };
+    const attacker = {
+      kind: "pc" as const,
+      id: "pc-b",
+      memberUid: "b",
+      characterId: "char-b",
+    };
+    const held: ActiveCombatEffect = {
+      id: "hold:offline",
+      actor: caster,
+      target: { kind: "monster", combatantId: "goblin" },
+      source: { kind: "spell", id: "hold-person", actionId: "cast-hold" },
+      payload: { kind: "condition", conditionId: "paralyzed" },
+      duration: {
+        kind: "concentration",
+        actorId: caster.combatantId,
+        sourceId: "hold-person",
+      },
+    };
+    campaign.encounter = {
+      round: 1,
+      currentCombatantId: attacker.id,
+      order: [attacker.id, caster.combatantId, "goblin"],
+      epoch: 1,
+      status: "active",
+      combatants: [
+        attacker,
+        { kind: "pc", id: caster.combatantId, memberUid: "a", characterId: "char-a" },
+        {
+          kind: "monster",
+          id: "goblin",
+          name: "Goblin",
+          ac: 12,
+          initiative: 8,
+          conditions: [],
+          maxHp: 7,
+          tokens: [7],
+        },
+      ],
+      effectOps: [{ id: "apply:hold", kind: "apply", effect: held }],
+    };
+    useCampaignStore.setState({ campaign });
+    writeDevDocument("combat-state", "a/char-a", {
+      ...defaultDevCombatState,
+      hp: { current: 5, temp: 0 },
+    });
+
+    await applyDeclaredCombatEffects(
+      campaign.id,
+      [{ kind: "damage", targetId: caster.combatantId, amount: 5 }],
+      {
+        actorId: attacker.id,
+        action: { custom: "table attack" },
+        round: 1,
+        pcTargets: [
+          {
+            targetId: caster.combatantId,
+            memberUid: caster.memberUid,
+            characterId: caster.characterId,
+            currentHp: 5,
+            tempHp: 0,
+            maxHp: 20,
+            conditions: [],
+            defenses: NO_DEFENSES,
+          },
+        ],
+      }
+    );
+
+    expect(readDevDocument<CombatState>("combat-state", "a/char-a")?.hp.current).toBe(0);
+    expect(useCampaignStore.getState().campaign?.encounter?.effectOps).toContainEqual(
+      expect.objectContaining({ kind: "revoke", effectId: held.id })
+    );
+  });
+
   it("advances turn-bound effects and creates their aftereffect in dev bypass", async () => {
     const campaign = makeDevCampaign();
     const haste: ActiveCombatEffect = {
@@ -426,6 +508,69 @@ describe("campaign-io under dev bypass", () => {
         target: { kind: "monster", combatantId: "goblins", tokenIndex: 2 },
       })
     ).rejects.toThrow("Combat effect participant mismatch");
+  });
+
+  it("a condition cure removes both the manual layer and every source-owned occurrence", async () => {
+    const campaign = makeDevCampaign();
+    campaign.encounter = {
+      round: 1,
+      currentCombatantId: "pc-u1",
+      epoch: 1,
+      status: "active",
+      combatants: [
+        { kind: "pc", id: "pc-u1", memberUid: "u1", characterId: "char-u1" },
+        {
+          kind: "monster",
+          id: "monster-1",
+          name: "Cultist",
+          ac: 12,
+          initiative: 8,
+          conditions: ["paralyzed"],
+          maxHp: 9,
+          tokens: [9],
+        },
+      ],
+    };
+    useCampaignStore.setState({ campaign });
+    await appendPersistentCombatEffect(campaign.id, {
+      id: "hold:1",
+      actor: {
+        kind: "pc",
+        combatantId: "pc-u1",
+        memberUid: "u1",
+        characterId: "char-u1",
+      },
+      target: { kind: "monster", combatantId: "monster-1" },
+      source: { kind: "spell", id: "hold-person", actionId: "spell-hold-person" },
+      payload: { kind: "condition", conditionId: "paralyzed" },
+      duration: {
+        kind: "concentration",
+        actorId: "pc-u1",
+        sourceId: "hold-person",
+      },
+    });
+
+    await applyDeclaredCombatEffects(campaign.id, [
+      {
+        kind: "condition",
+        targetId: "monster-1",
+        conditionId: "paralyzed",
+        active: false,
+      },
+    ]);
+
+    const encounter = useCampaignStore.getState().campaign?.encounter;
+    const target = encounter?.combatants.find(
+      (combatant) => combatant.id === "monster-1"
+    );
+    expect(target?.kind === "monster" ? target.conditions : undefined).toEqual([]);
+    expect(encounter?.effectOps).toContainEqual({
+      id: "revoke:hold:1",
+      kind: "revoke",
+      effectId: "hold:1",
+      actorId: "pc-u1",
+      targetId: "monster-1",
+    });
   });
 });
 

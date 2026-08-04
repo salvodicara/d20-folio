@@ -138,7 +138,7 @@ import {
   setMonsterSide,
   setMonsterTempHp,
   setRevealed,
-  toggleCondition,
+  setMonsterCondition,
   monsterInstanceName,
 } from "@/features/campaigns/encounter";
 import {
@@ -149,6 +149,7 @@ import {
 } from "@/features/campaigns/combat-chronicle";
 import { setEncounterInitiative } from "@/features/campaigns/campaign-io";
 import { reduceHpDelta, defaultCombatState } from "@/lib/combat-state";
+import { revokeConditionEffectOps } from "@/lib/combat-effects";
 import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
 import type { BudgetVerdict } from "@/lib/encounter-difficulty";
 import {
@@ -508,6 +509,7 @@ export function PcCombatantCard({
   isMe,
   isDm,
   combat,
+  encounterConditions,
   inCombat,
   initLocked,
   initRoll,
@@ -529,6 +531,8 @@ export function PcCombatantCard({
   /** The member's live combat trio (`null` = absent subdoc → full HP; `undefined` =
    *  still loading → the parent-doc default until it lands). */
   combat: CombatState | null | undefined;
+  /** Effective encounter conditions, including source-owned occurrences. */
+  encounterConditions?: string[];
   /** An encounter is running — surfaces the leading INIT roll-to-total chip. */
   inCombat: boolean;
   /** C3 — turns have BEGUN (the order is frozen): the initiative chip goes READ-ONLY (the
@@ -554,6 +558,7 @@ export function PcCombatantCard({
       <PcReadyCard
         doc={state.doc}
         combat={combat ?? null}
+        encounterConditions={encounterConditions}
         memberUid={memberUid}
         campaignId={campaignId}
         isMe={isMe}
@@ -668,6 +673,7 @@ function DocStateNote({ loading }: { loading: boolean }) {
 function PcReadyCard({
   doc,
   combat,
+  encounterConditions,
   memberUid,
   campaignId,
   isMe,
@@ -682,6 +688,7 @@ function PcReadyCard({
 }: {
   doc: CharacterDoc;
   combat: CombatState | null;
+  encounterConditions?: string[];
   memberUid: string;
   campaignId: string;
   isMe: boolean;
@@ -719,7 +726,7 @@ function PcReadyCard({
   const stats = useMemo(() => derivePartyMemberStats(hydrated), [hydrated]);
   const charId = doc.id;
   const maxHp = stats.maxHp;
-  const conditionList = stats.conditions;
+  const conditionList = encounterConditions ?? stats.conditions;
   const deathSaves = combat?.deathSaves ?? { successes: 0, failures: 0 };
   // The LIVE base every combat-state write reduces over: the member's `combat/state`
   // subdoc, or `null` when it is absent — the IO helper then seeds the full-HP default
@@ -830,6 +837,7 @@ function PcReadyCard({
           currentHp={stats.currentHp}
           maxHp={maxHp}
           conditions={conditionList}
+          baseConditions={stats.conditions}
           deathSaves={deathSaves}
           write={write}
           combatantId={`pc-${memberUid}`}
@@ -1152,6 +1160,7 @@ function PcCombatExtras({
   currentHp,
   maxHp,
   conditions,
+  baseConditions,
   deathSaves,
   write,
   combatantId,
@@ -1163,6 +1172,8 @@ function PcCombatExtras({
   currentHp: number;
   maxHp: number;
   conditions: string[];
+  /** Conditions persisted on the PC combat slice, excluding encounter-owned effects. */
+  baseConditions: string[];
   deathSaves: { successes: number; failures: number };
   write: CombatWrite;
   /** This PC's combatant id (`pc-<uid>`) — the target of a recorded chronicle beat. */
@@ -1178,17 +1189,31 @@ function PcCombatExtras({
         conditions={conditions}
         onToggle={(conditionId) => {
           const added = !conditions.includes(conditionId);
-          write(() =>
-            setCombatCondition(
-              uid,
-              charId,
-              base,
-              { kind: added ? "add" : "remove", conditionId },
-              maxHp
-            )
-          );
+          if (added || baseConditions.includes(conditionId)) {
+            write(() =>
+              setCombatCondition(
+                uid,
+                charId,
+                base,
+                { kind: added ? "add" : "remove", conditionId },
+                maxHp
+              )
+            );
+          }
           if (recordEvent) {
-            recordEvent((e) => recordCondition(e, combatantId, conditionId, added));
+            recordEvent((e) => {
+              const withSourceOverride = added
+                ? e
+                : {
+                    ...e,
+                    effectOps: revokeConditionEffectOps(
+                      e.effectOps,
+                      combatantId,
+                      conditionId
+                    ),
+                  };
+              return recordCondition(withSourceOverride, combatantId, conditionId, added);
+            });
           }
         }}
       />
@@ -1750,14 +1775,25 @@ export function MonsterCard({
       <ConditionEditor
         conditions={monster.conditions}
         onToggle={(conditionId) =>
-          apply((e) =>
-            recordCondition(
-              toggleCondition(e, monster.id, conditionId),
+          apply((e) => {
+            const active = monster.conditions.includes(conditionId);
+            const withSourceOverride = active
+              ? {
+                  ...e,
+                  effectOps: revokeConditionEffectOps(
+                    e.effectOps,
+                    monster.id,
+                    conditionId
+                  ),
+                }
+              : e;
+            return recordCondition(
+              setMonsterCondition(withSourceOverride, monster.id, conditionId, !active),
               monster.id,
               conditionId,
-              !monster.conditions.includes(conditionId)
-            )
-          )
+              !active
+            );
+          })
         }
       />
 

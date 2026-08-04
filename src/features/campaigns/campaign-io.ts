@@ -79,6 +79,7 @@ import { withTimeout } from "@/lib/promise-timeout";
 import { timestampsToDates } from "@/lib/timestamps-to-dates";
 import { nonEmptyString } from "@/lib/non-empty-string";
 import {
+  concentrationEffectIdsOwnedBy,
   currentHpDeltaForEffect,
   endedEffectSuccessor,
   effectsByActorSource,
@@ -276,15 +277,16 @@ function isActiveCombatEffect(value: unknown): value is ActiveCombatEffect {
   const payload = value.payload;
   const validPayload =
     isRecord(payload) &&
-    isString(payload.activeKey) &&
-    ((payload.kind === "grant-group" &&
-      (payload.phase === undefined ||
-        payload.phase === "active" ||
-        payload.phase === "aftereffect")) ||
-      (payload.kind === "target-mark" &&
-        (payload.scope === "marked" ||
-          payload.scope === "cursed" ||
-          payload.scope === "vowed")));
+    ((payload.kind === "condition" && isString(payload.conditionId)) ||
+      (isString(payload.activeKey) &&
+        ((payload.kind === "grant-group" &&
+          (payload.phase === undefined ||
+            payload.phase === "active" ||
+            payload.phase === "aftereffect")) ||
+          (payload.kind === "target-mark" &&
+            (payload.scope === "marked" ||
+              payload.scope === "cursed" ||
+              payload.scope === "vowed")))));
   const validBindings =
     value.bindings === undefined ||
     (isRecord(value.bindings) &&
@@ -883,6 +885,31 @@ export interface DeclaredCombatContext {
   attackMode?: "melee" | "ranged";
 }
 
+/** Source-owned condition occurrences cured by an explicit condition removal.
+ * The manual/base condition is reduced separately; revoking every matching
+ * occurrence makes Lesser Restoration and table overrides definitive. */
+function conditionEffectIdsRemovedBy(
+  effects: ReadonlyArray<DeclaredCombatEffect>,
+  operations: ReadonlyArray<CombatEffectOp> | undefined
+): string[] {
+  const removals = effects.filter(
+    (effect): effect is Extract<DeclaredCombatEffect, { kind: "condition" }> =>
+      effect.kind === "condition" && !effect.active
+  );
+  if (removals.length === 0) return [];
+  return foldCombatEffectOps(operations).flatMap((active) => {
+    if (active.payload.kind !== "condition") return [];
+    const conditionId = active.payload.conditionId;
+    return removals.some(
+      (removal) =>
+        removal.targetId === active.target.combatantId &&
+        removal.conditionId === conditionId
+    )
+      ? [active.id]
+      : [];
+  });
+}
+
 type UnstampedCombatChronicleEvent<T = CombatChronicleEvent> =
   T extends CombatChronicleEvent ? Omit<T, "id" | "round"> : never;
 
@@ -1270,7 +1297,10 @@ export async function applyDeclaredCombatEffects(
         nextEffectOps = appendCombatEffectOp(nextEffectOps, operation) ?? nextEffectOps;
       }
     };
-    consume(context?.consumeEffectIds ?? []);
+    consume([
+      ...(context?.consumeEffectIds ?? []),
+      ...conditionEffectIdsRemovedBy(applicable, nextEffectOps),
+    ]);
     const enqueueTransfers = (
       transfers: DirectPcEffectResult["transfers"],
       path: ReadonlySet<string> = new Set()
@@ -1331,6 +1361,9 @@ export async function applyDeclaredCombatEffects(
       chronicle = recordDirectPcEffectEvents(chronicle, result.events);
       enqueueTransfers(result.transfers, path);
       consume(result.consumedEffectIds);
+      if (result.hp.current === 0) {
+        consume(concentrationEffectIdsOwnedBy(nextEffectOps, result.target.targetId));
+      }
     };
 
     for (const targetId of directTargetIds) {
@@ -2201,7 +2234,10 @@ function applyDeclaredEffectsOptimistic(
       nextEffectOps = appendCombatEffectOp(nextEffectOps, operation) ?? nextEffectOps;
     }
   };
-  consume(context?.consumeEffectIds ?? []);
+  consume([
+    ...(context?.consumeEffectIds ?? []),
+    ...conditionEffectIdsRemovedBy(effects, nextEffectOps),
+  ]);
   const enqueueTransfers = (
     transfers: DirectPcEffectResult["transfers"],
     path: ReadonlySet<string> = new Set()
@@ -2299,6 +2335,11 @@ function applyDeclaredEffectsOptimistic(
     next = recordDirectPcEffectEvents(next, landed.result.events);
     enqueueTransfers(landed.result.transfers, path);
     consume(landed.result.consumedEffectIds);
+    if (landed.result.hp.current === 0) {
+      consume(
+        concentrationEffectIdsOwnedBy(nextEffectOps, landed.result.target.targetId)
+      );
+    }
   };
 
   for (const targetId of directTargetIds) {

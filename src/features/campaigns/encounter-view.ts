@@ -40,6 +40,8 @@ import type { ClassEntry, PortraitCrop } from "@/types/character";
 import type { RaceId } from "@/types/ids";
 import type { ConditionId } from "@/data/types";
 import type { DamageDefenses } from "@/lib/damage-intake";
+import { effectsForTarget } from "@/lib/combat-effects";
+import { projectedEncounterConditions } from "@/lib/effective-conditions";
 
 /** Convert encounter-owned monster defense facts into the shared damage engine shape. */
 export function monsterDamageDefenses(
@@ -168,6 +170,9 @@ export function buildEncounterView(
   // the display list is filtered afterwards. Hidden is a display filter, not a turn filter.
   const allRows: EncounterCombatantView[] = [];
   for (const c of encounter.combatants) {
+    const projectedConditions = projectedEncounterConditions(
+      effectsForTarget(encounter.effectOps, c.id)
+    );
     if (c.kind === "pc") {
       const live = pcLiveById[c.id];
       allRows.push({
@@ -179,7 +184,7 @@ export function buildEncounterView(
         initiative: live?.initiative ?? null,
         initiativeBonus: live?.initiativeBonus ?? 0,
         initiativeRoll: live?.initiativeRoll ?? null,
-        conditions: live?.conditions ?? [],
+        conditions: [...new Set([...(live?.conditions ?? []), ...projectedConditions])],
         bardicInspirationDie: live?.bardicInspirationDie,
         currentHp: live?.currentHp ?? 0,
         maxHp: live?.maxHp ?? 0,
@@ -204,7 +209,7 @@ export function buildEncounterView(
         name: monsterInstanceName(c),
         ac: c.ac,
         initiative: c.initiative,
-        conditions: c.conditions,
+        conditions: [...new Set([...c.conditions, ...projectedConditions])],
         bardicInspirationDie: c.bardicInspirationDie,
         currentHp,
         maxHp: c.maxHp * c.tokens.length,

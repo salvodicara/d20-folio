@@ -277,7 +277,7 @@ describe("GlobalCombatMount — concentration-owned persistent effects", () => {
     });
   }
 
-  function activate(campaign: CampaignDoc): void {
+  function activate(campaign: CampaignDoc, currentHp = 20): void {
     const encounter = campaign.encounter;
     if (!encounter) throw new Error("expected encounter fixture");
     encounter.order = [`pc-${UID}`];
@@ -290,7 +290,7 @@ describe("GlobalCombatMount — concentration-owned persistent effects", () => {
             name: "Hero",
             ac: 16,
             maxHp: 20,
-            currentHp: 20,
+            currentHp,
             tempHp: 0,
             conditions: [],
             initiative: 12,
@@ -323,6 +323,16 @@ describe("GlobalCombatMount — concentration-owned persistent effects", () => {
         actorId: `pc-${UID}`,
         sourceId: "heroism",
       })
+    );
+  });
+
+  it("clears stale character concentration after an offline knockout", async () => {
+    const campaign = campWithEnc("c1", "char-1", 500, { [UID]: 12 }, `pc-${UID}`);
+    setCharacterConcentration("char-1", "hold-person");
+    mount();
+    activate(campaign, 0);
+    await waitFor(() =>
+      expect(useCharacterStore.getState().character?.session.concentration).toBe("")
     );
   });
 

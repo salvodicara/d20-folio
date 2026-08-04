@@ -21,7 +21,7 @@
  */
 
 import type { AbilityCode } from "@/data/types";
-import type { CharacterData } from "@/types/character";
+import type { CharacterData, SessionState } from "@/types/character";
 import type { RawBreakdownPart } from "@/lib/value-breakdown";
 import {
   ALL_ABILITIES,
@@ -44,6 +44,7 @@ import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import { mergeSkillProficiencies, mergeSaveProficiencies } from "@/lib/views/sheet-view";
 import { resolveConditionEffects } from "@/lib/condition-effects";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
 /**
  * The narrow slice of session state the derivation reads — a structural subset
@@ -55,6 +56,9 @@ export interface SavesChecksSession {
   exhaustion: number;
   activeFeatures?: string[];
   conditions?: string[];
+  concentrationConditions?: SessionState["concentrationConditions"];
+  encounterEffects?: SessionState["encounterEffects"];
+  concentration?: SessionState["concentration"];
   grantBundleChoices?: Record<string, string>;
 }
 
@@ -177,7 +181,12 @@ export function deriveSavesAndChecks(
 ): SavesAndChecks {
   const { exhaustion } = session;
   const activeFeatures = session.activeFeatures;
-  const conditions = session.conditions ?? [];
+  const conditions = effectiveSessionConditions({
+    conditions: session.conditions ?? [],
+    concentration: session.concentration ?? "",
+    concentrationConditions: session.concentrationConditions,
+    encounterEffects: session.encounterEffects,
+  });
   const pbOverride = charData.proficiencyBonusOverride;
   const level = totalLevel(charData);
 

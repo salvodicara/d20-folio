@@ -126,6 +126,7 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
         : undefined,
     initiative: session.initiative ?? "",
     conditions: session.conditions ?? [],
+    concentrationConditions: session.concentrationConditions,
     deathSucc: session.deathSucc ?? 0,
     deathFail: session.deathFail ?? 0,
     inspiration: session.inspiration ?? false,

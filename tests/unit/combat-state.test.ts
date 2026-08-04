@@ -483,6 +483,12 @@ describe("combat-state — nonCombatSessionChanged routes a transition to the ri
     expect(nonCombatSessionChanged(a, { ...a, conditions: ["prone"] })).toBe(false);
     expect(nonCombatSessionChanged(a, { ...a, initiative: "9" })).toBe(false);
     expect(nonCombatSessionChanged(a, { ...a, deathSucc: 3 })).toBe(false);
+    expect(
+      nonCombatSessionChanged(a, {
+        ...a,
+        concentrationConditions: ["invisible"],
+      })
+    ).toBe(true);
   });
 });
 

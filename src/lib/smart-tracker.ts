@@ -157,6 +157,7 @@ import {
   conditionBreaksConcentration,
   resolveArmorEffects,
 } from "@/lib/condition-effects";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { effectiveArmorProficiencies } from "@/lib/feat-prereq";
 import type { CostSpec } from "@/lib/cost-engine";
 
@@ -7331,7 +7332,7 @@ export function resolveActiveStateBlocker(
     }
     if (
       trigger === "incapacitated" &&
-      character.session.conditions.some(conditionBreaksConcentration)
+      effectiveSessionConditions(character.session).some(conditionBreaksConcentration)
     ) {
       return "incapacitated";
     }

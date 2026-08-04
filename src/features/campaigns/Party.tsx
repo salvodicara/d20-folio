@@ -973,6 +973,7 @@ function CombatLayer({
                 uid={uid}
                 m={m}
                 ctx={ctx}
+                encounterConditions={row.conditions}
                 isCurrent={row.id === view.currentId}
                 reorder={reorderFor(row.id)}
               />
@@ -983,7 +984,7 @@ function CombatLayer({
           return (
             <MonsterCard
               key={row.id}
-              monster={monster}
+              monster={{ ...monster, conditions: row.conditions }}
               isCurrent={row.id === view.currentId}
               initLocked={!gathering}
               apply={apply}
@@ -1052,12 +1053,15 @@ function MemberCard({
   uid,
   m,
   ctx,
+  encounterConditions,
   isCurrent,
   reorder,
 }: {
   uid: string;
   m: CampaignMember;
   ctx: MemberCardCtx;
+  /** Effective conditions from the encounter presenter, including source-owned effects. */
+  encounterConditions?: string[];
   isCurrent?: boolean;
   /** C3 — DM drag-to-reorder controls for this combat row (combat layer only). */
   reorder?: ReorderRow;
@@ -1163,6 +1167,7 @@ function MemberCard({
         isMe={isMe}
         isDm={ctx.isDm}
         combat={ctx.combatStates[uid]}
+        encounterConditions={encounterConditions}
         inCombat={inCombat}
         initLocked={ctx.initLocked}
         initRoll={encounterRollFor(ctx.encounterInit, uid)}

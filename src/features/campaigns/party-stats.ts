@@ -53,6 +53,7 @@ import type { CharacterDoc } from "@/types/character";
 import type { AbilityCode } from "@/data/types";
 import type { ConditionId } from "@/data/types";
 import type { DamageDefenses } from "@/lib/damage-intake";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
 /** One saving throw, ready for the dashboard's expanded detail. */
 export interface PartyMemberSave {
@@ -231,7 +232,7 @@ export function derivePartyMemberStats(doc: CharacterDoc): PartyMemberStats {
     speeds,
     walkingSpeedFt,
     initiativeBonus,
-    conditions: session.conditions,
+    conditions: effectiveSessionConditions(session),
     defenses,
     conditionImmunities,
   };

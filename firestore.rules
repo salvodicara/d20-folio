@@ -344,16 +344,21 @@ service cloud.firestore {
           && nonEmptyEffectString(source.get('actionId', ''))
           && source.keys().hasOnly(['kind', 'id', 'actionId', 'castLevel'])
           && payload is map
-          && nonEmptyEffectString(payload.get('activeKey', ''))
           && (
             (source.get('kind', '') == 'spell'
               && payload.get('kind', '') == 'grant-group'
+              && nonEmptyEffectString(payload.get('activeKey', ''))
               && payload.get('phase', 'active') in ['active', 'aftereffect']
               && payload.keys().hasOnly(['kind', 'activeKey', 'phase']))
             ||
             (payload.get('kind', '') == 'target-mark'
+              && nonEmptyEffectString(payload.get('activeKey', ''))
               && payload.get('scope', '') in ['marked', 'cursed', 'vowed']
               && payload.keys().hasOnly(['kind', 'activeKey', 'scope']))
+            ||
+            (payload.get('kind', '') == 'condition'
+              && nonEmptyEffectString(payload.get('conditionId', ''))
+              && payload.keys().hasOnly(['kind', 'conditionId']))
           )
           && (bindings == null
             || (bindings is map

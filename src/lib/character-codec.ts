@@ -529,6 +529,11 @@ function isFamiliarCreatureType(v: unknown): v is FamiliarCreatureType {
 function asString(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
+function stringArray(v: unknown): string[] {
+  return Array.isArray(v)
+    ? v.filter((item): item is string => typeof item === "string")
+    : [];
+}
 function numOr(v: unknown, fallback: number): number {
   return typeof v === "number" && Number.isFinite(v) ? v : fallback;
 }
@@ -864,9 +869,7 @@ function buildToMin(build: Record<string, unknown>): MinimalCharacter {
     }
   }
   if (features.length > 0) min.features = features;
-  min.customConditions = Array.isArray(customs.conditions)
-    ? customs.conditions.filter((c): c is string => typeof c === "string")
-    : [];
+  min.customConditions = stringArray(customs.conditions);
 
   // Items: validate/reconstruct via the reused parsers.
   min.skills = isRecord(build.skills) ? build.skills : {};
@@ -1010,6 +1013,8 @@ function sessionToState(s: SessionState): Record<string, unknown> {
     state.concentrationCastLevel = s.concentrationCastLevel;
   if (s.initiative !== "") state.initiative = s.initiative;
   if (s.conditions.length > 0) state.conditions = s.conditions;
+  if (s.concentrationConditions?.length)
+    state.concentrationConditions = s.concentrationConditions;
   // RA-12 — the Hide action's find-DC (meaningful only alongside `invisible`).
   if (typeof s.hiddenDc === "number") state.hiddenDc = s.hiddenDc;
   if (s.deathSucc !== 0) state.deathSucc = s.deathSucc;
@@ -1088,22 +1093,18 @@ function stateToSession(state: Record<string, unknown>): Partial<SessionState> {
     s.concentrationCastLevel = Math.round(state.concentrationCastLevel);
   }
   s.initiative = asString(state.initiative);
-  s.conditions = Array.isArray(state.conditions)
-    ? state.conditions.filter((c): c is string => typeof c === "string")
-    : [];
+  s.conditions = stringArray(state.conditions);
+  if (Array.isArray(state.concentrationConditions))
+    s.concentrationConditions = stringArray(state.concentrationConditions);
   // RA-12 — the Hide action's find-DC.
   if (typeof state.hiddenDc === "number") s.hiddenDc = state.hiddenDc;
   s.deathSucc = numOr(state.deathSucc, 0);
   s.deathFail = numOr(state.deathFail, 0);
   s.inspiration = state.inspiration === true;
   s.exhaustion = numOr(state.exhaustion, 0);
-  s.pinnedActions = Array.isArray(state.pinnedActions)
-    ? state.pinnedActions.filter((a): a is string => typeof a === "string")
-    : [];
+  s.pinnedActions = stringArray(state.pinnedActions);
   if (Array.isArray(state.unpinnedActions)) {
-    s.unpinnedActions = state.unpinnedActions.filter(
-      (a): a is string => typeof a === "string"
-    );
+    s.unpinnedActions = stringArray(state.unpinnedActions);
   }
   s.notes = asString(state.notes);
   // `log` carries current-shape entries; the sanitizer normalizes + validates them.
@@ -1114,9 +1115,7 @@ function stateToSession(state: Record<string, unknown>): Partial<SessionState> {
     s.grantBundleChoices = state.grantBundleChoices as Record<string, string>;
   }
   if (Array.isArray(state.activeFeatures)) {
-    s.activeFeatures = state.activeFeatures.filter(
-      (a): a is string => typeof a === "string"
-    );
+    s.activeFeatures = stringArray(state.activeFeatures);
   }
   if (isRecord(state.activeSpellCastLevels)) {
     s.activeSpellCastLevels = Object.fromEntries(

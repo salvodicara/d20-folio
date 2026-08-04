@@ -226,12 +226,14 @@ export type WhileActiveGrant = Extract<Grant, { type: "while-active" }>;
 export function resolveCombatEffectGrantGroup(
   effect: ActiveCombatEffect
 ): WhileActiveGrant | null {
-  if (effect.source.kind !== "spell") return null;
+  if (effect.source.kind !== "spell" || effect.payload.kind !== "grant-group")
+    return null;
   const spell = getSpellById(effect.source.id);
+  const activeKey = effect.payload.activeKey;
   return (
     spell?.grants?.find(
       (grant): grant is WhileActiveGrant =>
-        grant.type === "while-active" && grant.activeKey === effect.payload.activeKey
+        grant.type === "while-active" && grant.activeKey === activeKey
     ) ?? null
   );
 }

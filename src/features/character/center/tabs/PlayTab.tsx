@@ -59,6 +59,7 @@ import {
   resolveSpellCastOptions,
 } from "@/lib/views/spell-cast-sources";
 import { resolveConditionEffects } from "@/lib/condition-effects";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import {
   attackScopeReachesCard,
   deriveAdvantageChips,
@@ -432,7 +433,7 @@ export function PlayTab() {
         ? deriveSavesAndChecks(character.character, {
             exhaustion: character.session.exhaustion,
             activeFeatures: character.session.activeFeatures,
-            conditions: character.session.conditions,
+            conditions: effectiveSessionConditions(character.session),
             grantBundleChoices: character.session.grantBundleChoices,
           }).skills
         : [],
@@ -452,7 +453,7 @@ export function PlayTab() {
   const attackRoll = useMemo<AttackRollView>(() => {
     if (!character) return NO_ATTACK_ROLL;
     const aggregate = aggregateCharacterGrants(character.character, character.session);
-    const cond = resolveConditionEffects(character.session.conditions);
+    const cond = resolveConditionEffects(effectiveSessionConditions(character.session));
     // S13 — wearing armor the class lacks proficiency with imposes Disadvantage on
     // STR/DEX attacks (+ checks/saves); merged like the condition clauses so it
     // nets into the attack-roll state alongside Frightened/Poisoned/etc.
@@ -765,7 +766,9 @@ export function PlayTab() {
   // B2 — the single self-side condition resolver read ONCE at the board root, so
   // every card knows its condition-blocked state BEFORE a tap (today the toast
   // only fires AFTER a wasted tap). Memoized on the session's conditions.
-  const conditions = character?.session.conditions ?? EMPTY_CONDITIONS;
+  const conditions = character
+    ? effectiveSessionConditions(character.session)
+    : EMPTY_CONDITIONS;
   const conditionEffects: ResolvedConditionEffects = useMemo(
     () => resolveConditionEffects(conditions),
     [conditions]

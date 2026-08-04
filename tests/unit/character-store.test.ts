@@ -14,6 +14,7 @@ import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { nonCombatSessionChanged } from "@/lib/combat-state";
 import { serializeCharacter } from "@/lib/character-codec";
 import { castSourceActiveKey } from "@/lib/smart-tracker";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
 /**
  * Creates a minimal mock character for testing store operations.
@@ -466,6 +467,25 @@ describe("characterStore — rest mechanics", () => {
       undo?.();
       expect(sess()?.hp).toEqual({ current: 20, temp: 3 });
       expect(sess()?.conditions).toEqual(["frightened"]);
+    });
+
+    it("keeps a solo concentration condition source-owned and makes it inert on drop", () => {
+      seed({ current: 20, conditions: ["prone"] });
+      store().setConcentration(conc("invisibility"), { silent: true });
+      const undo = store().applyResolvedCombatEffects({
+        addConcentrationConditions: ["invisible"],
+      });
+
+      expect(sess()?.conditions).toEqual(["prone"]);
+      expect(
+        effectiveSessionConditions(store().character?.session ?? mockCharacter().session)
+      ).toEqual(["prone", "invisible"]);
+      store().setConcentration("", { silent: true });
+      expect(
+        effectiveSessionConditions(store().character?.session ?? mockCharacter().session)
+      ).toEqual(["prone"]);
+      undo?.();
+      expect(sess()?.concentrationConditions).toBeUndefined();
     });
 
     it("blocks solo healing while a projected Chill Touch effect is active", () => {

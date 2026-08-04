@@ -831,6 +831,9 @@ export interface SessionState {
    * never serializes this field.
    */
   encounterEffects?: ReadonlyArray<ActiveCombatEffect>;
+  /** Conditions owned by the current solo concentration. `conditions` remains
+   * the manual/base layer; consumers read their union through the shared projection. */
+  concentrationConditions?: ReadonlyArray<string>;
   hitDice: {
     used: number;
   };

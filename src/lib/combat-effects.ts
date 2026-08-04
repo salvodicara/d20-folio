@@ -33,6 +33,17 @@ function stackingKey(effect: ActiveCombatEffect): string {
       effect.payload.scope,
     ].join("\u0000");
   }
+  if (effect.payload.kind === "condition") {
+    return [
+      effect.target.combatantId,
+      effect.target.kind === "monster" ? (effect.target.tokenIndex ?? "") : "",
+      effect.actor.combatantId,
+      effect.source.kind,
+      effect.source.id,
+      effect.payload.kind,
+      effect.payload.conditionId,
+    ].join("\u0000");
+  }
   return [
     effect.target.combatantId,
     effect.target.kind === "monster" ? (effect.target.tokenIndex ?? "") : "",
@@ -422,6 +433,47 @@ export function effectsByActorSource(
   return foldCombatEffectOps(operations).filter(
     (effect) => effect.actor.combatantId === actorId && effect.source.id === sourceId
   );
+}
+
+/** Live concentration-owned occurrences that must end when their actor becomes
+ * incapacitated. The effect payload is deliberately irrelevant: one lifecycle
+ * rule covers grants, marks, conditions, and future payload kinds. */
+export function concentrationEffectIdsOwnedBy(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  actorId: string
+): string[] {
+  return foldCombatEffectOps(operations).flatMap((effect) =>
+    effect.actor.combatantId === actorId && effect.duration.kind === "concentration"
+      ? [effect.id]
+      : []
+  );
+}
+
+/** Revoke every live occurrence projecting one condition onto a target. This is
+ * the pure DM-override/cure twin of the transactional IO path: manual/base state
+ * is handled by its own reducer, while exact source occurrences get inverse ops. */
+export function revokeConditionEffectOps(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  targetId: string,
+  conditionId: string
+): CombatEffectOp[] {
+  const current = operations ?? [];
+  const inverses = foldCombatEffectOps(current).flatMap((effect) =>
+    effect.target.combatantId === targetId &&
+    effect.payload.kind === "condition" &&
+    effect.payload.conditionId === conditionId
+      ? [
+          {
+            id: `revoke:${effect.id}`,
+            kind: "revoke" as const,
+            effectId: effect.id,
+            actorId: effect.actor.combatantId,
+            targetId: effect.target.combatantId,
+          },
+        ]
+      : []
+  );
+  return inverses.length > 0 ? [...current, ...inverses] : [...current];
 }
 
 /** Live instances that crossed a deterministic turn boundary at this position. */

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 vi.mock("@/lib/firebase", () => ({}));
 vi.mock("@/features/character/center/apply-damage", () => ({
@@ -1219,6 +1219,55 @@ describe("universal combat resolution", () => {
         active: true,
       },
     ]);
+  });
+
+  it("stores a concentration condition as a source-owned encounter occurrence", async () => {
+    const holdPerson: ResolvedAction = {
+      ...action({
+        saveAbility: "WIS",
+        saveDC: 14,
+        conditionApplication: {
+          options: ["paralyzed"],
+          on: "failed-save",
+        },
+      }),
+      id: "spell-hold-person",
+      spellId: "hold-person",
+      spellLevel: 2,
+      slotLevel: 2,
+      concentration: true,
+    };
+    render(
+      <CombatResolver
+        action={holdPerson}
+        sheetCombat={combat([pc(), monster("monster-1", "Goblin")])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    await waitFor(() => expect(appendPersistentMock).toHaveBeenCalledTimes(1));
+    expect(applyMock).not.toHaveBeenCalled();
+    const persisted = appendPersistentMock.mock.calls[0]?.[1];
+    expect(persisted).toMatchObject({
+      actor: { combatantId: "pc-u1" },
+      target: { combatantId: "monster-1" },
+      source: {
+        kind: "spell",
+        id: "hold-person",
+        actionId: "spell-hold-person",
+        castLevel: 2,
+      },
+      payload: { kind: "condition", conditionId: "paralyzed" },
+      duration: {
+        kind: "concentration",
+        actorId: "pc-u1",
+        sourceId: "hold-person",
+      },
+    });
   });
 
   it("clears an automatic condition on a successful save but permits a table override", () => {

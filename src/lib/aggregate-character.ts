@@ -39,18 +39,19 @@ import { getEquipment } from "@/data/equipment";
 import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import type { CharacterDoc } from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
-import type { ActiveCombatEffect } from "@/types/combat-effect";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
 /** The session slices that feed sheet-wide grant aggregation. */
 export type AggregationSession = Pick<
   CharacterDoc["session"],
   "activeFeatures" | "grantBundleChoices"
-> & {
-  /** Live conditions can suspend condition-gated grants (Danger Sense). */
-  conditions?: ReadonlyArray<string>;
-  /** Ephemeral campaign projection; never part of a portable character document. */
-  encounterEffects?: ReadonlyArray<ActiveCombatEffect>;
-};
+> &
+  Partial<
+    Pick<
+      CharacterDoc["session"],
+      "conditions" | "concentrationConditions" | "encounterEffects" | "concentration"
+    >
+  >;
 
 /**
  * Aggregate every grant the character receives, threading the session's
@@ -67,7 +68,16 @@ export function aggregateCharacterGrants(
     [...resolveAllGrantSources(character), ...encounterSources],
     new Set(session.activeFeatures ?? []),
     new Map(Object.entries(session.grantBundleChoices ?? {})),
-    { conditions: new Set(session.conditions ?? []) }
+    {
+      conditions: new Set(
+        effectiveSessionConditions({
+          conditions: session.conditions ?? [],
+          concentration: session.concentration ?? "",
+          concentrationConditions: session.concentrationConditions,
+          encounterEffects: session.encounterEffects,
+        })
+      ),
+    }
   );
 }
 

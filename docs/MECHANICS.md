@@ -102,6 +102,14 @@ S10, Gaze of Two Minds — an Eldritch Invocation can carry `mechanics.actions` 
 own sibling pass in `resolveFeatureActions` at the Warlock owning-class level) —
 see `docs/ARCHITECTURE.md` (Trackers · Actions · Combat model).
 
+**Source-owned conditions** use one provenance-preserving lifecycle. A concentrated action creates a
+typed condition occurrence per exact target; the effective condition set is the union of manual state,
+the current solo source occurrences and live encounter occurrences. Identical conditions from different
+casters do not collapse at storage, concentration loss revokes only the owning actor/source, and cure /
+DM override removes all matching occurrences plus the manual layer. Incapacitation and 0 HP end every
+payload owned by that concentration (grant, mark or condition) through the same generic rule. No spell id,
+localized name or prose participates in this lifecycle.
+
 A tracker may declare **`recordedRolls: { min, max }`** when its uses represent physical dice
 rolled now and spent later (Diviner Portent). The app never generates the values: the resource rail
 records one bounded number per remaining use, persists the exact results, consumes the chosen result

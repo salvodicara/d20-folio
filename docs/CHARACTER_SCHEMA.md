@@ -220,21 +220,23 @@ a spent migration is removed COMPLETELY; git history preserves `scripts/migrate-
 
 ## `state` — the exported play-moment (only non-default)
 
-| Key             | Type                           | Notes                                                                                                                   |
-| --------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `hp`            | `{ current, temp? }`           | `max` is derived; omit `temp` when 0                                                                                    |
-| `currency`      | `{ gp?, sp?, … }`              | only non-zero coins                                                                                                     |
-| `conditions`    | `[ … ]`                        | active conditions; omit when none                                                                                       |
-| `exhaustion`    | int?                           | omit when 0                                                                                                             |
-| `usedSlots`     | `{ "1": n, … }`                | spell slots SPENT; omit empties                                                                                         |
-| `trackers`      | `{ id: spent\|{used?,rolls} }` | resource uses; ordinary counters stay numeric, while recorded physical results use the additive object; omit zero/empty |
-| `concentration` | string?                        | the concentrated spell; omit when none                                                                                  |
-| `inspiration`   | bool?                          | omit when false                                                                                                         |
-| `log`           | `[ {event, ts, id} ]`          | the session log — a structured `CombatEvent` (ids/tokens, localized at render), never raw text                          |
+| Key                       | Type                           | Notes                                                                                                                   |
+| ------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `hp`                      | `{ current, temp? }`           | `max` is derived; omit `temp` when 0                                                                                    |
+| `currency`                | `{ gp?, sp?, … }`              | only non-zero coins                                                                                                     |
+| `conditions`              | `[ … ]`                        | active conditions; omit when none                                                                                       |
+| `concentrationConditions` | `[ conditionId, … ]`           | conditions owned by the current solo concentration; omit when none                                                      |
+| `exhaustion`              | int?                           | omit when 0                                                                                                             |
+| `usedSlots`               | `{ "1": n, … }`                | spell slots SPENT; omit empties                                                                                         |
+| `trackers`                | `{ id: spent\|{used?,rolls} }` | resource uses; ordinary counters stay numeric, while recorded physical results use the additive object; omit zero/empty |
+| `concentration`           | string?                        | the concentrated spell; omit when none                                                                                  |
+| `inspiration`             | bool?                          | omit when false                                                                                                         |
+| `log`                     | `[ {event, ts, id} ]`          | the session log — a structured `CombatEvent` (ids/tokens, localized at render), never raw text                          |
 
 Play-state also carries several **additive-only optional** keys, each absent on a doc that never
 uses it (so the envelope stays byte-identical): `activeFeatures`, `effectTimers`, `effectBoundaries`
 (`{ activeKey: { round, phase: "turn-start"|"turn-end" } }` for exact self-effect expiry), `grantBundleChoices`,
+`concentrationConditions` (conditions owned by the current solo concentration),
 `companionHp` (summoned-companion current HP, keyed by granting source id), `companionVariant`
 (Beast Master's chosen `variantId`, keyed by feature id), `familiar`
 (`{ monsterId, creatureType: celestial|fey|fiend, dismissed? }` — the Find Familiar summon; its

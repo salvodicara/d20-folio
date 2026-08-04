@@ -49,6 +49,7 @@ import { RailSection } from "../RailSection";
 import { patchCharacter } from "../patch-character";
 import type { AbilityCode } from "@/data/types";
 import type { CharacterData } from "@/types/character";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
 type SkillProficiency = "proficient" | "expertise" | "halfProficiency";
 
@@ -82,7 +83,9 @@ export function LeftHud() {
   // banner consume the SAME resolver in ThisTurnTracker (one function, no
   // per-surface re-derivation — shared-seam "resolveConditionEffects single
   // consumer").
-  const conditions = useCharacterStore((s) => s.character?.session.conditions);
+  const conditions = characterDoc
+    ? effectiveSessionConditions(characterDoc.session)
+    : undefined;
   // Chosen lineage/circle bundles — feeds the FULL aggregate so a picked Elven
   // Lineage's darkvision/spells/resistances reach the Senses rail (#90).
   const grantBundleChoices = useCharacterStore(

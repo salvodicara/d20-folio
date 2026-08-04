@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   activeRollModeAdjustments,
+  concentrationEffectIdsOwnedBy,
   currentHpDeltaForEffect,
   endedEffectSuccessor,
   effectsForTarget,
@@ -11,6 +12,7 @@ import {
   maxHpDeltaForEffect,
   markedTargetForActor,
   resolvePersistentDamage,
+  revokeConditionEffectOps,
   speedAdjustmentByEffects,
   turnBoundaryAfter,
 } from "@/lib/combat-effects";
@@ -93,6 +95,88 @@ describe("persistent combat effects", () => {
     expect(effectsForTarget(operations, "target")).toHaveLength(2);
     expect(effectsForTarget(operations, "other")).toHaveLength(1);
     expect(effectsByActorSource(operations, "caster", "heroism")).toHaveLength(2);
+  });
+
+  it("finds every concentration occurrence owned by an incapacitated actor", () => {
+    const second = effect("two", {
+      target: { kind: "monster", combatantId: "second-target" },
+      source: { kind: "spell", id: "bless", actionId: "spell-bless" },
+      payload: { kind: "grant-group", activeKey: "spell-bless" },
+      duration: { kind: "concentration", actorId: "caster", sourceId: "bless" },
+    });
+    const otherActor = effect("other-actor", {
+      actor: { kind: "monster", combatantId: "other" },
+      target: { kind: "monster", combatantId: "third-target" },
+    });
+    const encounterEffect = effect("encounter", {
+      source: { kind: "spell", id: "aid", actionId: "spell-aid" },
+      payload: { kind: "grant-group", activeKey: "spell-aid" },
+      duration: { kind: "encounter" },
+    });
+    expect(
+      concentrationEffectIdsOwnedBy(
+        [
+          apply("one"),
+          apply("two", second),
+          apply("other-actor", otherActor),
+          apply("encounter", encounterEffect),
+        ],
+        "caster"
+      )
+    ).toEqual(["one", "two"]);
+  });
+
+  it("keeps identical conditions from different casters independently source-owned", () => {
+    const first = effect("first", {
+      payload: { kind: "condition", conditionId: "paralyzed" },
+      source: { kind: "spell", id: "hold-person", actionId: "first-cast" },
+    });
+    const second = effect("second", {
+      actor: { kind: "monster", combatantId: "other-caster" },
+      payload: { kind: "condition", conditionId: "paralyzed" },
+      source: { kind: "spell", id: "hold-person", actionId: "second-cast" },
+    });
+    const operations: CombatEffectOp[] = [apply("first", first), apply("second", second)];
+
+    expect(foldCombatEffectOps(operations)).toEqual([first, second]);
+    operations.push({
+      id: "revoke-first",
+      kind: "revoke",
+      effectId: "first",
+      actorId: "caster",
+      targetId: "target",
+    });
+    expect(foldCombatEffectOps(operations)).toEqual([second]);
+  });
+
+  it("builds exact inverse ops for every matching condition occurrence", () => {
+    const first = effect("first", {
+      payload: { kind: "condition", conditionId: "paralyzed" },
+    });
+    const second = effect("second", {
+      actor: { kind: "monster", combatantId: "other-caster" },
+      payload: { kind: "condition", conditionId: "paralyzed" },
+    });
+    const operations = [apply("first", first), apply("second", second)];
+    const next = revokeConditionEffectOps(operations, "target", "paralyzed");
+
+    expect(foldCombatEffectOps(next)).toEqual([]);
+    expect(next.slice(2)).toEqual([
+      {
+        id: "revoke:first",
+        kind: "revoke",
+        effectId: "first",
+        actorId: "caster",
+        targetId: "target",
+      },
+      {
+        id: "revoke:second",
+        kind: "revoke",
+        effectId: "second",
+        actorId: "other-caster",
+        targetId: "target",
+      },
+    ]);
   });
 
   it("projects Chill Touch healing prevention and Ray of Frost speed loss generically", () => {
