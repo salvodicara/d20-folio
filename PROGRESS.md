@@ -177,6 +177,15 @@ visual harness also fixed an English-only palette trigger that had silently miss
 overlay. Verification: command-palette screenshots 3/3 across EN/IT, light/dark and desktop/mobile;
 focused shell tests 36/36; targeted axe 2/2, locale sweep 2/2, mobile layout 1/1; typecheck + targeted
 lint green.
+**Wave 16 contextual weapon glyphs (2026-08-04):** the existing Weapon Mastery re-picker now serves
+as the real-size acceptance surface for weapon-family candidates. Two high-confidence Game Icons
+gap-fillers graduated through the shared item resolver: Delapouite's Dart replaces the `Target`
+collision (an object no longer looks like a selection state), and Delapouite's Glaive replaces the
+generic Axe fallback. Both remain labelled, monochrome and legible at the actual 12–16px seal size;
+source geometry is unchanged beyond background removal and `currentColor`. Other nominal candidates
+remain outside production until their own contextual proof. EN/IT legal attribution now names all
+four vendored glyphs. Verification: weapon before/after screenshots 6/6 and legal screenshots 5/5;
+focused icon/i18n tests 72/72; targeted axe 4/4, locale sweep 4/4, mobile layout 2/2; typecheck green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 

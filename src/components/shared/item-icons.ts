@@ -61,7 +61,12 @@ import {
   Wand,
   Wand2,
 } from "lucide-react";
-import { DiamondRingIcon, WizardStaffIcon } from "@/components/shared/fantasy-icons";
+import {
+  DartIcon,
+  DiamondRingIcon,
+  GlaiveIcon,
+  WizardStaffIcon,
+} from "@/components/shared/fantasy-icons";
 import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_TOOLS_2024, type ToolCategory } from "@/lib/feat-skill-tool-choices";
 import type { SrdEquipmentData, EquipmentCategory, MagicItemType } from "@/data/types";
@@ -84,7 +89,7 @@ const WEAPON_ICON: Record<string, ItemGlyph> = {
   handaxe: Axe,
   battleaxe: Axe,
   greataxe: Axe,
-  glaive: Axe,
+  glaive: GlaiveIcon,
   halberd: Axe,
   // Hammers
   "light-hammer": Hammer,
@@ -116,7 +121,7 @@ const WEAPON_ICON: Record<string, ItemGlyph> = {
   blowgun: Crosshair,
   // Thrown / sling
   sling: Target,
-  dart: Target,
+  dart: DartIcon,
   javelin: Target,
   // Lash
   whip: Zap,
