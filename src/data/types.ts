@@ -708,6 +708,8 @@ export interface CombatConditionApplication {
 
 export interface CombatTargeting {
   affinity: "ally" | "enemy" | "any";
+  /** The caster is not a legal target even when they match the affinity. */
+  excludeSelf?: boolean;
   maxTargets?: number;
   maxTargetsPerUpcast?: number;
   sharedAmount?: boolean;

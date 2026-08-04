@@ -523,6 +523,7 @@ vi.mock("@/lib/dev-bypass", () => ({
 
 import {
   writeCombatState,
+  writeCombatTurnEconomy,
   subscribeCombatState,
   combatStateRef,
   applyHpDelta,
@@ -571,6 +572,34 @@ describe("combat-state-io — write (last-write-wins overwrite)", () => {
     devBypass.value = true;
     await writeCombatState("u1", "c1", COMBAT);
     expect(setDocMock).not.toHaveBeenCalled();
+  });
+
+  it("merges only round + turn economy for high-frequency turn persistence", async () => {
+    await writeCombatTurnEconomy("u1", "c1", 3, {
+      key: "encounter:c1:3",
+      selected: { action: [], bonus: [], free: [] },
+      attacksUsed: 1,
+      attackSwingIds: ["swing-1"],
+      reactionUsed: false,
+      reactionUsedId: null,
+      movementUsedFt: 4,
+      dashesThisTurn: 0,
+      spellSlotCastsThisTurn: 0,
+      damageTakenThisRound: false,
+    });
+
+    const [ref, payload, options] = setDocMock.mock.calls[0] as unknown as [
+      { path: string },
+      Record<string, unknown>,
+      { merge: boolean },
+    ];
+    expect(ref).toEqual({ path: "users/u1/characters/c1/combat/state" });
+    expect(payload).toMatchObject({
+      round: 3,
+      turnEconomy: { attacksUsed: 1, movementUsedFt: 4 },
+      updatedAt: "server-ts",
+    });
+    expect(options).toEqual({ merge: true });
   });
 });
 

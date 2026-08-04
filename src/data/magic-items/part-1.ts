@@ -400,12 +400,14 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     // `speed-multiplier` (factor 2), which the `effectiveWalkingSpeedFt` consumer
     // applies to the character's REAL base+bonus Speed. This correctly doubles a
     // 25-, 30-, or 40-ft Speed (the old `{type:"speed",amount:30}` hack only
-    // doubled the default 30-ft case). The 10-minute timer + Long-Rest recharge +
-    // the Opportunity-Attack disadvantage stay descriptive (no engine field).
+    // doubled the default 30-ft case). The timed effect is wired below; the
+    // Long-Rest activation and Opportunity-Attack disadvantage lack item-use
+    // and against-you attack primitives.
     grants: [
       {
         type: "while-active",
         activeKey: "boots-of-speed",
+        duration: { kind: "timed", minutes: 10, maxRounds: 100 },
         grants: [{ type: "speed-multiplier", factor: 2 }],
       },
     ],
@@ -593,12 +595,13 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     properties: ["fly speed: 30 ft", "charges: 4", "recharge: 1d4 / dawn"],
     // ALL-IN: the activated Fly Speed is modeled behind a while-active toggle.
     // 2024 value = Fly 30 ft (DMG scrape; supersedes the legacy "equal to your
-    // walking speed" text). Charges (4, regain 1d4/dawn) + the 1-hour duration
-    // stay manual — the engine doesn't tick charges or durations.
+    // walking speed" text). The timed effect is wired below; the 4-use pool and
+    // variable 1d4-at-dawn recovery still lack an item-activation resource seam.
     grants: [
       {
         type: "while-active",
         activeKey: "winged-boots",
+        duration: { kind: "timed", minutes: 60, maxRounds: 600 },
         grants: [{ type: "fly-speed", amount: 30 }],
       },
     ],
@@ -611,6 +614,15 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: false,
     price: "3000 GP",
     properties: ["Dimension Door 1/dawn"],
+    grants: [
+      { type: "always-prepared-spell", spellId: "dimension-door" },
+      {
+        type: "free-cast-spell",
+        spellId: "dimension-door",
+        chargesPerRest: 1,
+        rest: "long",
+      },
+    ],
     source: "SRD",
   },
   {
@@ -859,6 +871,15 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
+    grants: [
+      { type: "always-prepared-spell", spellId: "scorching-ray" },
+      {
+        type: "free-cast-spell",
+        spellId: "scorching-ray",
+        chargesPerRest: 1,
+        rest: "long",
+      },
+    ],
     source: "SRD",
   },
   {
@@ -1062,6 +1083,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: true,
+    grants: [{ type: "at-will-cast-spell", spellId: "disguise-self" }],
     source: "SRD",
   },
   {
@@ -1071,6 +1093,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
+    grants: [{ type: "at-will-cast-spell", spellId: "comprehend-languages" }],
     source: "SRD",
   },
   {

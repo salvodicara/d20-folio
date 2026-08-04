@@ -79,6 +79,14 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "damageResistances",
     consumer: "src/features/character/molecules/ResourceRail.tsx",
   },
+  "all-damage-resistance": {
+    via: "resolvePersistentDamage",
+    consumer: "src/features/campaigns/campaign-io.ts",
+  },
+  "damage-transfer": {
+    via: "resolvePersistentDamage",
+    consumer: "src/features/campaigns/campaign-io.ts",
+  },
   "damage-immunity": {
     via: "damageImmunities",
     consumer: "src/features/character/molecules/ResourceRail.tsx",
@@ -108,6 +116,7 @@ const EXPOSURE: Record<string, Exposure> = {
   speed: { via: "speedBonusFt", consumer: "src/lib/smart-tracker.ts" },
   "speed-multiplier": { via: "speedMultiplier", consumer: "src/lib/smart-tracker.ts" },
   "speed-floor": { via: "speedFloorFt", consumer: "src/lib/smart-tracker.ts" },
+  "speed-cap": { via: "speedCapFt", consumer: "src/lib/smart-tracker.ts" },
   "fly-speed": {
     via: "deriveSensesAndSpeeds",
     consumer: "src/features/character/hud/LeftHud.tsx",
@@ -321,6 +330,10 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "extraActionsThisTurn",
     consumer: "src/features/character/center/TurnEconomyProvider.tsx",
   },
+  "turn-economy-block": {
+    via: "isTurnEconomyBlocked",
+    consumer: "src/features/character/center/TurnEconomyProvider.tsx",
+  },
   "manifested-weapon": { via: "manifestedWeapons", consumer: "src/lib/smart-tracker.ts" },
   "form-attack": { via: "formAttacks", consumer: "src/lib/smart-tracker.ts" },
   "pact-weapon": { via: "pactWeapons", consumer: "src/lib/smart-tracker.ts" },
@@ -363,6 +376,10 @@ const EXPOSURE: Record<string, Exposure> = {
   "at-zero-hp-interrupt": {
     via: "atZeroHpInterrupts",
     consumer: "src/lib/smart-tracker.ts",
+  },
+  "zero-hp-floor": {
+    via: "resolvePersistentDamage",
+    consumer: "src/features/campaigns/campaign-io.ts",
   },
   "spell-slot-tracker-recovery": {
     via: "spellSlotTrackerRecoveries",

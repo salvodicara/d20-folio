@@ -34,6 +34,7 @@
  */
 import type { SessionState } from "@/types/character";
 import type { LocText } from "@/lib/loc-text";
+import type { EconomyActionCategory } from "@/lib/combat-economy";
 
 /**
  * A player-DECLARED attack in a live campaign encounter — the target(s) the player
@@ -92,6 +93,38 @@ export interface RecentAttack {
   riders?: string[];
 }
 
+/** Durable identity of one action-economy occupant for the current turn. */
+export interface PersistedTurnAction {
+  id: string;
+  name: LocText;
+  slot: "action" | "bonus" | "free";
+  isAttackGroup?: boolean;
+  economyCategory?: EconomyActionCategory;
+}
+
+/**
+ * The transient-looking turn facts that must nevertheless survive route changes and
+ * reloads. `key` binds the snapshot to one exact encounter pointer (or solo round), so
+ * a stale spent Action can never leak into a later turn while the sheet was unmounted.
+ * Budgets stay derived from grants and are intentionally absent.
+ */
+export interface PersistedTurnEconomy {
+  key: string;
+  selected: {
+    action: PersistedTurnAction[];
+    bonus: PersistedTurnAction[];
+    free: PersistedTurnAction[];
+  };
+  attacksUsed: number;
+  attackSwingIds: string[];
+  reactionUsed: boolean;
+  reactionUsedId: string | null;
+  movementUsedFt: number;
+  dashesThisTurn: number;
+  spellSlotCastsThisTurn: number;
+  damageTakenThisRound: boolean;
+}
+
 export interface CombatState {
   hp: { current: number; temp: number };
   conditions: string[];
@@ -116,6 +149,8 @@ export interface CombatState {
   /** Idempotency receipt for PC-targeted effects delivered through the current
    * campaign encounter. A new encounter epoch replaces the receipt. */
   appliedEncounterEffects?: { epoch: number; ids: string[] };
+  /** Current-turn economy, fenced by an exact encounter/solo turn key. */
+  turnEconomy?: PersistedTurnEconomy;
 }
 
 /**
@@ -140,15 +175,14 @@ export type PersistedSession = Omit<
  * it on subscribe; `null` (the default, and dev/bypass) means optimistic-store-only — no
  * persistence — so dev + e2e never touch the network and the 6 fixtures stay byte-identical.
  *
- * ONE method: the store already computes the optimistic NEXT {@link CombatState} for every
- * op (HP damage/heal · temp · condition · death save · initiative · Long Rest · at-0-HP
- * interrupt), so it persists THAT whole object — a single computation feeds both the UI and
- * the durable write, and `writeCombatState` (`setDoc(merge)`) queues it offline. Concurrency
- * is whole-object last-write-wins (see `combat-state-io.ts`); no per-op split is needed
- * because a fresh subscription-hydrated base makes different-field / different-time edits
- * compose anyway.
+ * The store computes the optimistic NEXT {@link CombatState} for combat mutations and routes
+ * it through `write`. Turn economy is the deliberate exception: it changes frequently while
+ * another campaign member may atomically damage/heal this PC, so `writeTurnEconomy` patches only
+ * `round + turnEconomy` and cannot overwrite fresh HP/conditions from that peer transaction.
  */
 export interface CombatPersistence {
   /** Persist the whole optimistically-computed next combat state (offline-safe). */
   write(state: CombatState): void;
+  /** Persist only the navigation-stable per-turn budget (offline-safe merge). */
+  writeTurnEconomy(round: number, turnEconomy: PersistedTurnEconomy): void;
 }

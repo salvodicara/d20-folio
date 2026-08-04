@@ -4,11 +4,17 @@ import { fireEvent, render, screen } from "@testing-library/react";
 vi.mock("@/lib/firebase", () => ({}));
 vi.mock("@/features/character/center/apply-damage", () => ({
   applyDeclaredCombatEffects: vi.fn(() => Promise.resolve()),
+  appendPersistentCombatEffect: vi.fn(() => Promise.resolve()),
+  revokePersistentCombatEffect: vi.fn(() => Promise.resolve()),
 }));
 
 import "@/i18n";
 import { CombatResolver } from "@/features/character/center/CombatResolver";
-import { applyDeclaredCombatEffects } from "@/features/character/center/apply-damage";
+import {
+  appendPersistentCombatEffect,
+  applyDeclaredCombatEffects,
+  revokePersistentCombatEffect,
+} from "@/features/character/center/apply-damage";
 import { useCharacterStore } from "@/stores/characterStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
@@ -50,6 +56,26 @@ function pc(): EncounterCombatantView {
   };
 }
 
+function allyPc(): EncounterCombatantView {
+  return {
+    ...pc(),
+    id: "pc-u2",
+    name: "Borin",
+    memberUid: "u2",
+    characterId: "char-u2",
+  };
+}
+
+function secondAllyPc(): EncounterCombatantView {
+  return {
+    ...pc(),
+    id: "pc-u3",
+    name: "Cora",
+    memberUid: "u3",
+    characterId: "char-u3",
+  };
+}
+
 function combat(rows: EncounterCombatantView[], round = 2): GlobalCombat {
   return {
     campaignId: "camp1",
@@ -82,10 +108,25 @@ function action(summary: ResolvedAction["summary"]): ResolvedAction {
 }
 
 const applyMock = vi.mocked(applyDeclaredCombatEffects);
+const appendPersistentMock = vi.mocked(appendPersistentCombatEffect);
+const revokePersistentMock = vi.mocked(revokePersistentCombatEffect);
 const commitNow = (afterCommit: () => void) => afterCommit();
+
+function expectApplied(effects: unknown[]): void {
+  expect(applyMock).toHaveBeenCalledWith(
+    "camp1",
+    effects,
+    expect.objectContaining({
+      actorId: "pc-u1",
+      action: { custom: "Test action" },
+    })
+  );
+}
 
 beforeEach(() => {
   applyMock.mockClear();
+  appendPersistentMock.mockClear();
+  revokePersistentMock.mockClear();
   useCharacterStore.setState({
     character: { ...MOCK_CHARACTER },
     readonly: false,
@@ -128,7 +169,151 @@ describe("universal combat resolution", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onCommit).not.toHaveBeenCalled();
     expect(applyMock).not.toHaveBeenCalled();
+    expect(appendPersistentMock).not.toHaveBeenCalled();
     expect(useCharacterStore.getState().combatRecentActions).toEqual([]);
+  });
+
+  it("applies Warding Bond to one other ally and undo revokes that exact occurrence", async () => {
+    const randomUuid = vi
+      .spyOn(globalThis.crypto, "randomUUID")
+      .mockReturnValueOnce("00000000-0000-4000-8000-000000000001")
+      .mockReturnValueOnce("00000000-0000-4000-8000-000000000002");
+    const wardingBond: ResolvedAction = {
+      ...action({
+        targeting: { affinity: "ally", excludeSelf: true, maxTargets: 1 },
+      }),
+      id: "spell-warding-bond",
+      spellId: "warding-bond",
+      spellLevel: 2,
+      slotLevel: 2,
+      standingEffect: {
+        sourceId: "warding-bond",
+        activeKey: "spell-warding-bond",
+        targetAffinity: "ally",
+        excludeSelf: true,
+        maxRounds: 600,
+      },
+    };
+    let execute: (() => (() => void) | undefined) | undefined;
+    let undo: (() => void) | undefined;
+    render(
+      <CombatResolver
+        action={wardingBond}
+        sheetCombat={combat([pc(), allyPc()], 4)}
+        onCommit={(afterCommit) => {
+          execute = afterCommit;
+          undo = afterCommit();
+        }}
+        onDone={() => {}}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: "Lyra" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /borin/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expect(appendPersistentMock).toHaveBeenCalledWith(
+      "camp1",
+      expect.objectContaining({
+        id: "00000000-0000-4000-8000-000000000001",
+        actor: {
+          kind: "pc",
+          combatantId: "pc-u1",
+          memberUid: "u1",
+          characterId: MOCK_CHARACTER.id,
+        },
+        target: {
+          kind: "pc",
+          combatantId: "pc-u2",
+          memberUid: "u2",
+          characterId: "char-u2",
+        },
+        payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+        duration: {
+          kind: "turn-boundary",
+          combatantId: "pc-u1",
+          round: 604,
+          phase: "turn-end",
+        },
+      })
+    );
+
+    undo?.();
+    await vi.waitFor(() =>
+      expect(revokePersistentMock).toHaveBeenCalledWith(
+        "camp1",
+        "00000000-0000-4000-8000-000000000001"
+      )
+    );
+
+    const undoRedo = execute?.();
+    await vi.waitFor(() =>
+      expect(appendPersistentMock).toHaveBeenLastCalledWith(
+        "camp1",
+        expect.objectContaining({ id: "00000000-0000-4000-8000-000000000002" })
+      )
+    );
+    undoRedo?.();
+    randomUuid.mockRestore();
+  });
+
+  it("compensates every intended target when a multi-target persistent append partially fails", async () => {
+    const randomUuid = vi
+      .spyOn(globalThis.crypto, "randomUUID")
+      .mockReturnValueOnce("00000000-0000-4000-8000-000000000011")
+      .mockReturnValueOnce("00000000-0000-4000-8000-000000000012");
+    appendPersistentMock
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("second target rejected"));
+    const sharedWard: ResolvedAction = {
+      ...action({ targeting: { affinity: "ally", excludeSelf: true, maxTargets: 2 } }),
+      id: "spell-shared-ward",
+      spellId: "shared-ward",
+      spellLevel: 2,
+      slotLevel: 2,
+      standingEffect: {
+        sourceId: "shared-ward",
+        activeKey: "spell-shared-ward",
+        targetAffinity: "ally",
+        excludeSelf: true,
+        maxRounds: 10,
+      },
+    };
+
+    render(
+      <CombatResolver
+        action={sharedWard}
+        sheetCombat={combat([pc(), allyPc(), secondAllyPc()], 4)}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /borin/i }));
+    fireEvent.click(screen.getByRole("button", { name: /cora/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    await vi.waitFor(() => expect(appendPersistentMock).toHaveBeenCalledTimes(2));
+    expect(appendPersistentMock.mock.calls.map(([, effect]) => effect.target)).toEqual([
+      {
+        kind: "pc",
+        combatantId: "pc-u2",
+        memberUid: "u2",
+        characterId: "char-u2",
+      },
+      {
+        kind: "pc",
+        combatantId: "pc-u3",
+        memberUid: "u3",
+        characterId: "char-u3",
+      },
+    ]);
+    await vi.waitFor(() =>
+      expect(revokePersistentMock.mock.calls).toEqual([
+        ["camp1", "00000000-0000-4000-8000-000000000011"],
+        ["camp1", "00000000-0000-4000-8000-000000000012"],
+      ])
+    );
+    randomUuid.mockRestore();
   });
 
   it("commits once and applies the entered damage to the selected creature", () => {
@@ -147,9 +332,7 @@ describe("universal combat resolution", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
     expect(onCommit).toHaveBeenCalledTimes(1);
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
-      { kind: "damage", targetId: "monster-1", amount: 7 },
-    ]);
+    expectApplied([{ kind: "damage", targetId: "monster-1", amount: 7 }]);
     expect(useCharacterStore.getState().combatRecentActions).toEqual([
       {
         id: "1",
@@ -195,7 +378,7 @@ describe("universal combat resolution", () => {
     if (!saved) throw new Error("Ogre save control missing");
     fireEvent.click(saved);
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
+    expectApplied([
       { kind: "damage", targetId: "monster-1", amount: 25 },
       { kind: "damage", targetId: "monster-2", amount: 12 },
     ]);
@@ -226,9 +409,7 @@ describe("universal combat resolution", () => {
     fireEvent.change(firstDamageRoll, { target: { value: "5" } });
     fireEvent.change(secondDamageRoll, { target: { value: "6" } });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
-      { kind: "damage", targetId: "monster-1", amount: 11 },
-    ]);
+    expectApplied([{ kind: "damage", targetId: "monster-1", amount: 11 }]);
   });
 
   it("applies a one-roll bonus to exactly one chosen target", () => {
@@ -262,7 +443,7 @@ describe("universal combat resolution", () => {
       target: { value: "3" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
+    expectApplied([
       { kind: "damage", targetId: "monster-1", amount: 2 },
       { kind: "damage", targetId: "monster-2", amount: 7 },
     ]);
@@ -310,7 +491,7 @@ describe("universal combat resolution", () => {
       target: { value: "7" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
+    expectApplied([
       { kind: "damage", targetId: "monster-1", amount: 15 },
       { kind: "damage", targetId: "monster-2", amount: 7 },
     ]);
@@ -393,9 +574,7 @@ describe("universal combat resolution", () => {
       target: { value: "9" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
-      { kind: "healing", targetId: "pc-u2", amount: 9 },
-    ]);
+    expectApplied([{ kind: "healing", targetId: "pc-u2", amount: 9 }]);
   });
 
   it("maximizes spell healing and applies one linked self-heal for another target", () => {
@@ -428,9 +607,7 @@ describe("universal combat resolution", () => {
     ).toBeNull();
     expect(screen.getByText("Heal yourself 5")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
-      { kind: "healing", targetId: "pc-u2", amount: 21 },
-    ]);
+    expectApplied([{ kind: "healing", targetId: "pc-u2", amount: 21 }]);
     expect(useCharacterStore.getState().character?.session.hp.current).toBe(15);
   });
 
@@ -500,7 +677,7 @@ describe("universal combat resolution", () => {
       target: { value: "prone" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
+    expectApplied([
       {
         kind: "condition",
         targetId: "monster-1",
@@ -531,7 +708,7 @@ describe("universal combat resolution", () => {
       screen.getByRole("group", { name: /saving throw result for goblin/i })
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
+    expectApplied([
       {
         kind: "condition",
         targetId: "monster-1",
@@ -572,7 +749,7 @@ describe("universal combat resolution", () => {
       target: { value: "frightened" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
+    expectApplied([
       {
         kind: "condition",
         targetId: "monster-1",
@@ -601,6 +778,30 @@ describe("universal combat resolution", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
     expect(useCharacterStore.getState().character?.session.hp.current).toBe(16);
+  });
+
+  it("treats an allied NPC as a healing target and excludes enemy creatures", () => {
+    const ally = {
+      ...monster("monster-ally", "Squire"),
+      side: "ally" as const,
+      currentHp: 3,
+    };
+    render(
+      <CombatResolver
+        action={action({ healing: "1d8+3" })}
+        sheetCombat={combat([ally, monster("monster-enemy", "Goblin")])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: /goblin/i })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /squire/i }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: /healing for squire/i }), {
+      target: { value: "4" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+    expectApplied([{ kind: "healing", targetId: "monster-ally", amount: 4 }]);
   });
 
   it("fully heals without exposing a meaningless roll input", () => {
@@ -647,9 +848,7 @@ describe("universal combat resolution", () => {
       target: { value: "7" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
-      { kind: "healing", targetId: "pc-u2", amount: 7 },
-    ]);
+    expectApplied([{ kind: "healing", targetId: "pc-u2", amount: 7 }]);
   });
 
   it("resolves heal-or-harm per target in one casting", () => {
@@ -679,9 +878,7 @@ describe("universal combat resolution", () => {
       target: { value: "5" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
-      { kind: "damage", targetId: "monster-1", amount: 8 },
-    ]);
+    expectApplied([{ kind: "damage", targetId: "monster-1", amount: 8 }]);
     expect(useCharacterStore.getState().character?.session.hp.current).toBe(15);
   });
 
@@ -708,9 +905,7 @@ describe("universal combat resolution", () => {
     });
     expect(screen.getByText("Heal yourself 4")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
-      { kind: "damage", targetId: "monster-1", amount: 8 },
-    ]);
+    expectApplied([{ kind: "damage", targetId: "monster-1", amount: 8 }]);
     expect(useCharacterStore.getState().character?.session.hp.current).toBe(14);
   });
 
@@ -745,9 +940,7 @@ describe("universal combat resolution", () => {
       }
     );
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
-      { kind: "temp-hp", targetId: "pc-u2", amount: 3 },
-    ]);
+    expectApplied([{ kind: "temp-hp", targetId: "pc-u2", amount: 3 }]);
     expect(useCharacterStore.getState().character?.session.hp.temp).toBe(7);
   });
 
@@ -781,8 +974,6 @@ describe("universal combat resolution", () => {
     fireEvent.change(lyraHealing, { target: { value: "7" } });
     fireEvent.change(grimaldoHealing, { target: { value: "7" } });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expect(applyMock).toHaveBeenCalledWith("camp1", [
-      { kind: "healing", targetId: "pc-u2", amount: 3 },
-    ]);
+    expectApplied([{ kind: "healing", targetId: "pc-u2", amount: 3 }]);
   });
 });

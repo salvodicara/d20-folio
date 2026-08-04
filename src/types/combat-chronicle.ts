@@ -79,6 +79,10 @@ export type CombatChronicleEvent =
       amount: number;
       current: number;
       max: number;
+      /** The creature that caused the healing, when it came from a resolved action. */
+      actorId?: string;
+      /** Exact resolved action (spell/feature/item), kept locale-independent. */
+      action?: LocText;
     } & ChronicleEventBase)
   /** A combatant dropped (crossed to 0 HP — a PC downed, a monster group defeated). */
   | ({ kind: "down"; targetId: string } & ChronicleEventBase)
@@ -160,6 +164,8 @@ export type CombatChronicleEvent =
       kind: "condition-loss";
       targetId: string;
       conditionId: string;
+      actorId?: string;
+      action?: LocText;
     } & ChronicleEventBase);
 
 /** Every `CombatChronicleEvent.kind` discriminant (for the presenter's exhaustiveness). */

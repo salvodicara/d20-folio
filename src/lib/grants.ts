@@ -38,6 +38,7 @@ import { srdEn } from "@/i18n/srd-en";
 import { srdKey, srdGrantSegment } from "@/i18n/srd-key";
 import type { LocText } from "@/lib/loc-text";
 import { srdText, litText } from "@/lib/loc-text";
+import type { CombatEffectBindings } from "@/types/combat-effect";
 
 /**
  * How a {@link Grant} `scoped-extra-spell-slot`'s level scales with the
@@ -114,6 +115,27 @@ export type WhileActiveDuration =
       minutes: number;
       maxRounds?: number;
     };
+
+/** A numeric grant value resolved from facts frozen on the originating effect. */
+export type EffectBoundAmount = { binding: keyof CombatEffectBindings };
+
+/** Linear spell-slot scaling for a standing numeric grant. */
+export interface CastLevelScaling {
+  /** The slot level at which `amount` is the printed base value. */
+  baseLevel: number;
+  /** Added once per slot level above `baseLevel`. */
+  perLevel: number;
+}
+
+/** A short, target-owned state that begins when its parent active state ends. */
+export interface WhileActiveAfterEffect {
+  duration: {
+    kind: "target-turn-boundary";
+    turns: number;
+    phase: "turn-start" | "turn-end";
+  };
+  grants: ReadonlyArray<Grant>;
+}
 
 /**
  * PS-J — the closed vocabulary of SCOPES an attack-side effect can be limited to.
@@ -207,6 +229,17 @@ export type Grant =
 
   // ── Defensive (merge: set-union per kind) ────────────────────────────────
   | { type: "damage-resistance"; damageType: DamageType }
+  | {
+      /** Resistance to every damage type. Kept distinct from the per-type set so
+       * consumers never invent a pseudo damage-type id. Multiple sources do not stack. */
+      type: "all-damage-resistance";
+    }
+  | {
+      /** After this effect's recipient takes damage, its source takes the same
+       * post-mitigation amount. The active effect supplies the exact source identity. */
+      type: "damage-transfer";
+      to: "effect-source";
+    }
   | { type: "damage-immunity"; damageType: DamageType }
   | { type: "damage-vulnerability"; damageType: DamageType }
   | { type: "condition-immunity"; condition: ConditionId }
@@ -379,6 +412,12 @@ export type Grant =
       type: "speed-floor";
       minFt: number;
     }
+  | {
+      /** Upper bound on walking Speed while an effect is active. MIN wins; `0`
+       * expresses a state that prevents movement without rewriting stored Speed. */
+      type: "speed-cap";
+      maxFt: number;
+    }
 
   // ── Derived stats (merge: sum) ───────────────────────────────────────────
   | {
@@ -439,7 +478,7 @@ export type Grant =
        * is up.
        */
       type: "regen-at-turn-start";
-      amount: string;
+      amount: string | EffectBoundAmount;
       condition: "bloodied" | "always";
       requiresMinHp?: boolean;
       asTempHp?: boolean;
@@ -580,6 +619,18 @@ export type Grant =
       type: "extra-action";
       slot: "action" | "bonus";
       count: number;
+      /** Stable action-category ids legal for a limited extra action. Omitted means
+       * the ordinary unrestricted slot. */
+      allowedActions?: ReadonlyArray<
+        "attack" | "dash" | "disengage" | "hide" | "utilize"
+      >;
+      /** Maximum weapon attacks the granted slot may contain. */
+      maxAttacks?: number;
+    }
+  | {
+      /** Prevents spending ordinary combat-economy slots for this effect's lifetime
+       * without fabricating a rules condition (Haste's end-state lethargy). */
+      type: "turn-economy-block";
     }
   | {
       /**
@@ -616,6 +667,12 @@ export type Grant =
       trackerId: string;
     }
   | {
+      /** One-shot remote-safe HP floor. The owning persistent effect is consumed when
+       * incoming damage would reduce the recipient below `hitPoints`. */
+      type: "zero-hp-floor";
+      hitPoints: number;
+    }
+  | {
       /**
        * One-shot flat HP bonus, NOT per level (Boon of Fortitude / Bountiful
        * Health, Draconic Sorcerer's Draconic Resilience). Merge: sum. Distinct
@@ -623,6 +680,10 @@ export type Grant =
        */
       type: "hp-flat";
       amount: number;
+      castLevelScaling?: CastLevelScaling;
+      /** The same resolved amount changes current HP when the standing effect starts
+       * and is removed through its persisted exact inverse when it ends. */
+      adjustsCurrentHp?: boolean;
     }
   | {
       /**
@@ -1971,13 +2032,11 @@ export type Grant =
   | {
       /**
        * A SELF-side DEFENSIVE reminder LINE — a bilingual prose note rendered in
-       * the rail's Defenses section (Warding Bond: "Resistance to all damage; the
-       * bonded creature takes the same damage you take"). For defensive facts that
-       * carry no clean numeric/typed primitive (a resistance-to-ALL + a
-       * shared-damage clause), where the mechanically-valued legs are modeled
-       * separately (Warding Bond's +1 AC + +1 saves) and this captures the residual
-       * RAW as an informational line — the engine subtracts nothing (golden rule
-       * 21). Wrap it in a `while-active` toggle so it lights/clears with the buff;
+       * the rail's Defenses section (Mirror Image's duplicate interception rule).
+       * Use this only for defensive facts that carry no clean numeric/typed
+       * primitive; universal resistance and damage transfer have their own grants
+       * and must never be downgraded to prose. The engine subtracts nothing for a
+       * note (golden rule 21). Wrap it in a `while-active` toggle so it lights/clears with the buff;
        * `description` is the bilingual blurb; collected into `defenseNotes`.
        */
       type: "defense-note";
@@ -2039,18 +2098,16 @@ export type Grant =
        * lifetime (a permanent stance toggle).
        */
       duration?: WhileActiveDuration;
-      /**
-       * S1 opt-out for a TARGET-ONLY buff spell (Warding Bond: "You touch ANOTHER
-       * creature… it gains +1 AC and saves" — the CASTER never benefits). By
-       * default, casting a `while-active` buff spell auto-lights its chip (the S1
-       * cast→toggle link, correct for SELF buffs: Shield of Faith, Blur, Mage
-       * Armor). `autoActivateOnCast: false` suppresses that stamp — the action
-       * resolver never derives `activatesKey` from this grant, so the cast-commit
-       * seam lights nothing on the caster. The toggle stays MANUALLY light-able
-       * from the rail (override-first) — that is how a WARDED creature's own sheet
-       * turns the buff on. Omitted = `true` (auto-light, the self-buff default).
-       */
-      autoActivateOnCast?: boolean;
+      /** Who receives this standing grant when its action commits. Omitted/`caster`
+       * keeps the established self-activation path. `selected` sends the catalogue
+       * grant to the resolver's explicitly selected creature(s); targeting metadata
+       * alone never changes grant ownership. */
+      recipient?: "caster" | "selected";
+      /** Caster-owned rider whose selected creature identity must remain attached to
+       * the active state. The registry stores that target; the grant stays on caster. */
+      targetScope?: MarkedTargetScope;
+      /** Data-driven successor projected after this state ends (Haste lethargy). */
+      afterEffect?: WhileActiveAfterEffect;
     }
 
   // ── Single-select variant chooser (L12 choice-grant-bundle) ──────────────
@@ -2727,6 +2784,12 @@ export interface GrantSource {
    * invocation/maneuver/background/magic-item sources set it.
    */
   ref?: { kind: SrdKind; key: string };
+  /** Immutable facts captured when a remote standing effect was created. Omitted
+   * for ordinary catalogue/build sources. */
+  runtime?: {
+    castLevel?: number;
+    bindings?: CombatEffectBindings;
+  };
 }
 
 // ─── Aggregated effects after evaluation ────────────────────────────────────
@@ -3689,6 +3752,8 @@ export interface AggregatedGrants {
   // Defensive
   /** Set of canonical 2024 damage types the character resists permanently. */
   damageResistances: ReadonlySet<DamageType>;
+  /** True when one active source grants resistance to every damage type. */
+  allDamageResistance: boolean;
   damageImmunities: ReadonlySet<DamageType>;
   damageVulnerabilities: ReadonlySet<DamageType>;
   conditionImmunities: ReadonlySet<ConditionId>;
@@ -3761,6 +3826,8 @@ export interface AggregatedGrants {
    * walking Speed to at least this value ("Speed becomes N unless higher").
    */
   speedFloorFt: number;
+  /** Tightest active walking-Speed ceiling; `null` means no ceiling. */
+  speedCapFt: number | null;
 
   // Derived stats
   /** Sum of AC bonuses from items / class features. */
@@ -3896,6 +3963,13 @@ export interface AggregatedGrants {
    * which offers the prompt only when the tracker has an unspent use.
    */
   atZeroHpInterrupts: ReadonlyArray<{ trackerId: string; sourceId: string }>;
+  /** Persistent one-shot HP floors, carrying the active key so the owning effect can
+   * be consumed instead of spending a character tracker. */
+  zeroHpFloors: ReadonlyArray<{
+    sourceId: string;
+    activeKey: string;
+    hitPoints: number;
+  }>;
   /**
    * Number of EXTRA weapon attacks granted with a single Attack action (the
    * "Extra Attack" feature). 0 when no source grants it. MAX across `extra-attack`
@@ -3904,6 +3978,16 @@ export interface AggregatedGrants {
    * extraAttacks)`; the `attacksPerAction` consumer resolves that.
    */
   extraAttacks: number;
+  /** Additional turn-economy slots, including any data-declared restrictions. */
+  extraActions: ReadonlyArray<{
+    sourceId: string;
+    slot: "action" | "bonus";
+    count: number;
+    allowedActions?: ReadonlyArray<"attack" | "dash" | "disengage" | "hide" | "utilize">;
+    maxAttacks?: number;
+  }>;
+  /** True when an active effect prevents actions for the current turn. */
+  turnEconomyBlocked: boolean;
   /**
    * `true` when a source lets the character give themself Heroic Inspiration at
    * the start of each combat turn if they lack it (Champion Heroic Warrior,
@@ -4249,9 +4333,9 @@ export interface AggregatedGrants {
    */
   incomingAttackDisadvantages: ReadonlyArray<IncomingAttackClause>;
   /**
-   * SELF-side defensive reminder LINES (Warding Bond's shared-damage / resistance
-   * posture). Bilingual prose surfaced in the rail's Defenses section — a
-   * reminder, never damage math (golden rule 21).
+   * SELF-side defensive reminder LINES (Mirror Image's duplicates). Bilingual
+   * prose surfaced in the rail's Defenses section — a reminder, never damage math
+   * (golden rule 21). Mechanically representable defenses use typed grants instead.
    */
   defenseNotes: ReadonlyArray<IncomingAttackClause>;
 
@@ -4441,6 +4525,7 @@ export function emptyAggregate(): AggregatedGrants {
     truesightFt: 0,
     seeInvisibleFt: 0,
     damageResistances: new Set(),
+    allDamageResistance: false,
     damageImmunities: new Set(),
     damageVulnerabilities: new Set(),
     conditionImmunities: new Set(),
@@ -4455,6 +4540,7 @@ export function emptyAggregate(): AggregatedGrants {
     climbSpeed: null,
     speedMultiplier: 1,
     speedFloorFt: 0,
+    speedCapFt: null,
     acBonus: 0,
     acBonusAbilities: [],
     acFormulas: [],
@@ -4472,7 +4558,10 @@ export function emptyAggregate(): AggregatedGrants {
     spellSlotTrackerRecoveries: [],
     initiativeTrackerTopUps: [],
     atZeroHpInterrupts: [],
+    zeroHpFloors: [],
     extraAttacks: 0,
+    extraActions: [],
+    turnEconomyBlocked: false,
     heroicInspirationAtTurnStart: false,
     heroicInspirationOnLongRest: false,
     attunementSlots: 3,
@@ -4655,6 +4744,7 @@ export function evaluateGrants(
 
   // Defensive
   const damageResistances = new Set<DamageType>();
+  let allDamageResistance = false;
   const damageImmunities = new Set<DamageType>();
   const damageVulnerabilities = new Set<DamageType>();
   const conditionImmunities = new Set<ConditionId>();
@@ -4671,6 +4761,7 @@ export function evaluateGrants(
   let climbSpeed: NonWalkingSpeed | null = null;
   let speedMultiplier = 1;
   let speedFloorFt = 0;
+  let speedCapFt: number | null = null;
 
   // Derived stats
   let acBonus = 0;
@@ -4692,7 +4783,10 @@ export function evaluateGrants(
   const initiativeTrackerTopUps: AggregatedGrants["initiativeTrackerTopUps"][number][] =
     [];
   const atZeroHpInterrupts: AggregatedGrants["atZeroHpInterrupts"][number][] = [];
+  const zeroHpFloors: AggregatedGrants["zeroHpFloors"][number][] = [];
   let extraAttacks = 0;
+  const extraActions: AggregatedGrants["extraActions"][number][] = [];
+  let turnEconomyBlocked = false;
   let heroicInspirationAtTurnStart = false;
   let heroicInspirationOnLongRest = false;
   let attunementSlots = 3;
@@ -4860,7 +4954,8 @@ export function evaluateGrants(
     sourceId: string,
     gref: GrantRef,
     sourceRef: { kind: SrdKind; key: string } | undefined,
-    activeKey?: string
+    activeKey?: string,
+    runtime?: GrantSource["runtime"]
   ): void {
     switch (g.type) {
       // ── Senses ──────────────────────────────────────────────────────
@@ -4887,6 +4982,13 @@ export function evaluateGrants(
       // ── Defensive ───────────────────────────────────────────────────
       case "damage-resistance":
         damageResistances.add(g.damageType);
+        break;
+      case "all-damage-resistance":
+        allDamageResistance = true;
+        break;
+      case "damage-transfer":
+        // The persistent-damage reducer owns this because it needs the exact
+        // effect-source combatant, which a sheet-wide aggregate intentionally lacks.
         break;
       case "damage-immunity":
         damageImmunities.add(g.damageType);
@@ -4947,6 +5049,9 @@ export function evaluateGrants(
         // MAX floor wins — floors never stack ("Speed becomes N unless higher").
         if (g.minFt > speedFloorFt) speedFloorFt = g.minFt;
         break;
+      case "speed-cap":
+        if (speedCapFt === null || g.maxFt < speedCapFt) speedCapFt = g.maxFt;
+        break;
 
       // ── Derived stats ───────────────────────────────────────────────
       case "ac-bonus":
@@ -4982,15 +5087,25 @@ export function evaluateGrants(
       case "hp-per-level":
         hpPerLevel += g.amount;
         break;
-      case "hp-flat":
-        hpFlat += g.amount;
+      case "hp-flat": {
+        const amount = g.castLevelScaling
+          ? g.amount +
+            Math.max(
+              0,
+              (runtime?.castLevel ?? g.castLevelScaling.baseLevel) -
+                g.castLevelScaling.baseLevel
+            ) *
+              g.castLevelScaling.perLevel
+          : g.amount;
+        hpFlat += amount;
         // Attribute at the source of truth: the breakdown tip MAPS these instead
         // of re-walking sources, so it inherits the exact while-active descent
         // `hpFlat` gets (Aid's `hp-flat:5` lands here only when its toggle is lit)
         // and `sum(amount) === hpFlat` holds by construction (golden rule 6).
         // `sourceRef` is the source NAME ref (the same the old top-level walk used).
-        if (sourceRef) hpFlatParts.push({ ref: sourceRef, amount: g.amount });
+        if (sourceRef) hpFlatParts.push({ ref: sourceRef, amount });
         break;
+      }
       case "attunement-slots":
         if (g.amount > attunementSlots) attunementSlots = g.amount;
         break;
@@ -5009,15 +5124,19 @@ export function evaluateGrants(
         // The most generous (lowest) threshold wins (mirrors `crit-range`).
         if (g.threshold < deathSaveCritThreshold) deathSaveCritThreshold = g.threshold;
         break;
-      case "regen-at-turn-start":
+      case "regen-at-turn-start": {
+        const amount =
+          typeof g.amount === "string" ? g.amount : runtime?.bindings?.[g.amount.binding];
+        if (amount === undefined) break;
         startOfTurnRegen.push({
           sourceId,
-          amount: g.amount,
+          amount: String(amount),
           condition: g.condition,
           requiresMinHp: g.requiresMinHp ?? true,
           asTempHp: g.asTempHp ?? false,
         });
         break;
+      }
       case "on-crit-movement-rider":
         onCritMovement.push({
           sourceId,
@@ -5067,6 +5186,11 @@ export function evaluateGrants(
         break;
       case "at-zero-hp-interrupt":
         atZeroHpInterrupts.push({ trackerId: g.trackerId, sourceId });
+        break;
+      case "zero-hp-floor":
+        if (activeKey) {
+          zeroHpFloors.push({ sourceId, activeKey, hitPoints: g.hitPoints });
+        }
         break;
       case "extra-attack":
         // Extra Attack never stacks (multiclass) and Devouring Blade UPGRADES
@@ -5722,7 +5846,8 @@ export function evaluateGrants(
               sourceId,
               childGrantRef(gref, inner, i),
               sourceRef,
-              g.activeKey
+              g.activeKey,
+              runtime
             );
           }
         }
@@ -5777,7 +5902,8 @@ export function evaluateGrants(
               // Arcane Armor) carries `activeKey` so a `form-attack` in the chosen
               // option stays gated by BOTH the toggle AND the model choice. Plain
               // (un-nested) bundles pass `undefined`, unchanged.
-              activeKey
+              activeKey,
+              runtime
             );
           }
         }
@@ -6022,11 +6148,16 @@ export function evaluateGrants(
 
       // ── Extra economy-slot grant (B6 — Action Surge / Haste) ──────────
       case "extra-action":
-        // No-op in the GLOBAL aggregate: the per-turn action/bonus budget is a
-        // combat-only concern, derived on demand by `extraActionsThisTurn`
-        // (smart-tracker) from the ACTIVE while-active sources — never folded
-        // into every surface's character aggregate (YAGNI; declare-the-least).
-        // Cased here only to satisfy the exhaustiveness guard.
+        extraActions.push({
+          sourceId,
+          slot: g.slot,
+          count: g.count,
+          ...(g.allowedActions ? { allowedActions: g.allowedActions } : {}),
+          ...(g.maxAttacks !== undefined ? { maxAttacks: g.maxAttacks } : {}),
+        });
+        break;
+      case "turn-economy-block":
+        turnEconomyBlocked = true;
         break;
 
       // ── Exhaustiveness guard — a future un-cased Grant kind is a compile
@@ -6047,7 +6178,7 @@ export function evaluateGrants(
             key: srdKey(src.ref.key, srdGrantSegment(grantSegmentArgs(g), i)),
           }
         : undefined;
-      applyGrant(g, src.id, gref, src.ref);
+      applyGrant(g, src.id, gref, src.ref, undefined, src.runtime);
     }
   }
 
@@ -6062,6 +6193,7 @@ export function evaluateGrants(
     truesightFt,
     seeInvisibleFt,
     damageResistances,
+    allDamageResistance,
     damageImmunities,
     damageVulnerabilities,
     conditionImmunities,
@@ -6076,6 +6208,7 @@ export function evaluateGrants(
     climbSpeed,
     speedMultiplier,
     speedFloorFt,
+    speedCapFt,
     acBonus,
     acBonusAbilities,
     acFormulas,
@@ -6093,7 +6226,10 @@ export function evaluateGrants(
     spellSlotTrackerRecoveries,
     initiativeTrackerTopUps,
     atZeroHpInterrupts,
+    zeroHpFloors,
     extraAttacks,
+    extraActions,
+    turnEconomyBlocked,
     heroicInspirationAtTurnStart,
     heroicInspirationOnLongRest,
     attunementSlots,

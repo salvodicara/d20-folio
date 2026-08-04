@@ -18,7 +18,6 @@ import { primaryClassId, totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import { Plus, Minus, X, Skull, Sparkles } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
-import { useCombatStore } from "@/stores/combatStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useLocale } from "@/hooks/useLocale";
@@ -34,7 +33,7 @@ import {
 } from "@/lib/smart-tracker";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { ConditionEditor } from "./ConditionEditor";
-import { slotUsageKey, bareSlotIsPact } from "@/lib/cast-options";
+import { slotUsageKey } from "@/lib/cast-options";
 import type { AggregatedGrants } from "@/lib/grants";
 import { localizeText } from "@/lib/views/srd-i18n";
 import {
@@ -154,7 +153,6 @@ export function ResourceRail() {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
-  const combatSelected = useCombatStore((s) => s.selected);
   const sheetMode = useUIStore((s) => s.sheetMode);
   const isEdit = sheetMode === "edit";
   const setCompanionHp = useCharacterStore((s) => s.setCompanionHp);
@@ -258,36 +256,6 @@ export function ResourceRail() {
       aggregate ? aggregate.grantBundles.filter((b) => b.choiceFrequency === "rest") : [],
     [aggregate]
   );
-
-  // Pending spend preview from the active combat selection (read-only; empty
-  // until Phase 4 wires the action economy).
-  const slotTable = character?.character.spellSlots;
-  const { pendingSlots, pendingTrackers } = useMemo(() => {
-    // B3 — key the preview by the canonical `slotUsageKey` (the SAME key the real
-    // spend writes), resolving the pool the bare-level cost will draw from via
-    // `bareSlotIsPact`. Otherwise a Sorlock queuing a normal L1 cast over-previews a
-    // pending dot on BOTH same-level rows (normal AND pact); now it lands only on the
-    // row that will actually be spent.
-    const table = slotTable ?? [];
-    const slots: Record<string, number> = {};
-    const tkrs: Record<string, number> = {};
-    // B6 — each slot holds a LIST of committed actions this turn (Action Surge /
-    // Haste); sum the pending cost across every one.
-    for (const slot of ["action", "bonus", "free"] as const) {
-      for (const action of combatSelected[slot]) {
-        if (!action.cost) continue;
-        if (action.cost.type === "spell-slot" && action.cost.key != null) {
-          const level = action.cost.key as number;
-          const key = slotUsageKey({ level, pactMagic: bareSlotIsPact(table, level) });
-          slots[key] = (slots[key] ?? 0) + 1;
-        } else if (action.cost.type === "tracker" && action.cost.key != null) {
-          const id = action.cost.key as string;
-          tkrs[id] = (tkrs[id] ?? 0) + 1;
-        }
-      }
-    }
-    return { pendingSlots: slots, pendingTrackers: tkrs };
-  }, [combatSelected, slotTable]);
 
   if (!character || !aggregate) return null;
 
@@ -535,31 +503,13 @@ export function ResourceRail() {
                 <div className="slot-grid">
                   {spellSlots.map((slot) => {
                     const used = session.spellSlots[slotUsageKey(slot)]?.used ?? 0;
-                    const available = Math.max(0, slot.total - used);
-                    return (
-                      <RailSlot
-                        key={slotUsageKey(slot)}
-                        slot={slot}
-                        used={used}
-                        pending={Math.min(
-                          pendingSlots[slotUsageKey(slot)] ?? 0,
-                          available
-                        )}
-                      />
-                    );
+                    return <RailSlot key={slotUsageKey(slot)} slot={slot} used={used} />;
                   })}
                 </div>
               </div>
             )}
             {trackers.map((tracker) => (
-              <RailTracker
-                key={tracker.id}
-                tracker={tracker}
-                pendingSpend={Math.min(
-                  pendingTrackers[tracker.id] ?? 0,
-                  Math.max(0, tracker.total - tracker.used)
-                )}
-              />
+              <RailTracker key={tracker.id} tracker={tracker} />
             ))}
             {/* PRIM-resource-conversion (closes needs-UI:resource-conversion-
                 action) — Font of Magic SP ⇄ slots, Nature Magician Wild Shape →
@@ -1520,11 +1470,9 @@ function ConditionStrip({
 function RailSlot({
   slot,
   used,
-  pending,
 }: {
   slot: { level: number; total: number; pactMagic?: boolean };
   used: number;
-  pending: number;
 }) {
   const { t } = useTranslation();
   const spendSlot = useCharacterStore((s) => s.useSpellSlot);
@@ -1568,17 +1516,12 @@ function RailSlot({
         })}
       >
         {Array.from({ length: total }).map((_, i) => {
-          const isOn = i < available - pending;
-          const isPending = i >= available - pending && i < available;
+          const isOn = i < available;
           return (
             <button
               key={i}
               type="button"
-              className={cn(
-                "sc-pip",
-                isPending && "pending",
-                !isOn && !isPending && "used"
-              )}
+              className={cn("sc-pip", !isOn && "used")}
               aria-label={
                 isOn
                   ? t("character.slotSpendAria", { level: slot.level })
@@ -1602,7 +1545,6 @@ function RailSlot({
 function TrackerPips({
   total,
   available,
-  pendingSpend = 0,
   label,
   spendAria,
   restoreAria,
@@ -1612,7 +1554,6 @@ function TrackerPips({
 }: {
   total: number;
   available: number;
-  pendingSpend?: number;
   label: string;
   spendAria: string;
   /** Aria for tapping an EMPTY pip; omit when the empty state is unreachable. */
@@ -1625,13 +1566,12 @@ function TrackerPips({
   return (
     <span className="trk-pips" role="group" aria-label={label}>
       {Array.from({ length: total }).map((_, i) => {
-        const isOn = i < available - pendingSpend;
-        const isPending = i >= available - pendingSpend && i < available;
+        const isOn = i < available;
         return (
           <button
             key={i}
             type="button"
-            className={cn("trk-pip", isOn && "on", isPending && "pending")}
+            className={cn("trk-pip", isOn && "on")}
             aria-label={isOn ? spendAria : (restoreAria ?? spendAria)}
             onClick={isOn ? onSpend : onRestore}
             disabled={isOn ? false : restoreDisabled || !onRestore}
@@ -1647,13 +1587,7 @@ function TrackerPips({
  * ARE the spend/restore affordance (tap filled = spend, empty = restore, with an
  * undo toast); pools (>5) use a +/- stepper.
  */
-function RailTracker({
-  tracker,
-  pendingSpend,
-}: {
-  tracker: ResolvedTracker;
-  pendingSpend: number;
-}) {
+function RailTracker({ tracker }: { tracker: ResolvedTracker }) {
   const { t } = useTranslation();
   const spendTracker = useCharacterStore((s) => s.useTracker);
   const restoreTracker = useCharacterStore((s) => s.restoreTracker);
@@ -1785,7 +1719,6 @@ function RailTracker({
         <TrackerPips
           total={tracker.total}
           available={available}
-          pendingSpend={pendingSpend}
           label={tracker.label}
           spendAria={`${t("combat.spend")} ${tracker.label}`}
           restoreAria={`${t("combat.restore")} ${tracker.label}`}

@@ -121,8 +121,10 @@ service cloud.firestore {
     // ACL, nothing to go stale):
     //   - READ:  the OWNER, the admin, OR any CURRENT MEMBER of the attached
     //     campaign (every campaign peer may watch a teammate's live combat state).
-    //   - WRITE: the OWNER, the admin, OR the attached campaign's CURRENT DM
-    //     (`dmUid`) — a co-member may READ a peer's combat but NOT write it.
+    //   - WRITE: the OWNER, the admin, OR any CURRENT MEMBER of the attached
+    //     campaign. This grant is deliberately limited to the tiny combat subdoc:
+    //     confirmed table effects must land even while the target player's client is
+    //     offline, but a peer still cannot touch the character build/inventory parent.
     // The OR is ordered so the cheap owner check short-circuits BEFORE any get();
     // a cross-user request costs at most two extra gets (parent char + campaign,
     // deduped per request), well under the 10-get cap.
@@ -131,8 +133,8 @@ service cloud.firestore {
     // (`keys().hasOnly([...])`) rejected EVERY combat write whenever the DEPLOYED
     // rules lagged the client's payload by a single field — the "initiative never
     // saves" production outage (new client wrote `round`; prod rules didn't allow
-    // the key yet) — and every writer here is already trusted (owner / admin / the
-    // campaign's own DM) while the client parses the doc DEFENSIVELY on read
+    // the key yet) — and every writer here is already table-authorized (owner /
+    // admin / a current campaign member) while the client parses the doc DEFENSIVELY on read
     // (`combat-state-io.parseCombatState`). The lock bought no real safety and
     // carried a standing whole-feature outage class; authorization is the rule's
     // job, shape tolerance is the client's.
@@ -154,7 +156,7 @@ service cloud.firestore {
       allow write: if isNotBlocked() && (
         request.auth.uid == uid
         || isAdmin()
-        || (hasAttachedCampaign() && request.auth.uid == parentCampaign().dmUid)
+        || (hasAttachedCampaign() && request.auth.uid in parentCampaign().members)
       );
     }
 
@@ -247,7 +249,8 @@ service cloud.firestore {
       }
 
       // COMBAT RESOLUTION: a player who confirms a reviewed target effect AUTO-APPLIES
-      // monster damage, healing, and conditions to the shared encounter, so a
+      // monster damage, healing, conditions, and standing-effect operations to the
+      // shared encounter, so a
       // regular member's update is ALSO allowed when the encounter diff touches ONLY
       // `combatants` (the monster HP) + `events` (the appended chronicle beats) — every
       // OTHER encounter field (round · order · currentCombatantId · status · epoch) stays
@@ -255,9 +258,9 @@ service cloud.firestore {
       // or end it through this path. The encounter must EXIST on both sides (a member
       // can't conjure or clear a fight). TWO cheap structural guards keep it scoped: the
       // combatants COUNT is unchanged (no add/remove — a member only edits existing token
-      // HP), and the events array only GROWS (append-only — a member can never delete the
-      // DM's chronicle lines; edit/undo of a line stays DM-only, the unconstrained isDm()
-      // branch). Like `turnFieldsOnlyChanged()` this is intentionally COARSE — the rules
+      // HP), the events/member-delivery arrays only GROW, and every old standing-effect
+      // operation remains present in a bounded ledger (the exact inverse is another
+      // operation, never a shared-snapshot restore). Like `turnFieldsOnlyChanged()` this is intentionally COARSE — the rules
       // cannot iterate the combatants array to prove ONLY a token dropped, so a member
       // could in principle over-edit a monster's HP, which is exactly the DM-remediable,
       // low-risk case the owner's remediability mandate covers. Same
@@ -266,13 +269,235 @@ service cloud.firestore {
         return resource.data.get('encounter', null) != null
           && request.resource.data.get('encounter', null) != null
           && request.resource.data.encounter.diff(resource.data.encounter)
-               .affectedKeys().hasOnly(['combatants', 'events', 'memberEffects'])
+               .affectedKeys().hasOnly(['combatants', 'events', 'memberEffects', 'effectOps', 'currentCombatantId', 'round'])
           && request.resource.data.encounter.combatants.size()
                == resource.data.encounter.combatants.size()
           && request.resource.data.encounter.get('events', []).size()
                >= resource.data.encounter.get('events', []).size()
           && request.resource.data.encounter.get('memberEffects', []).size()
-               >= resource.data.encounter.get('memberEffects', []).size();
+               >= resource.data.encounter.get('memberEffects', []).size()
+          && validCombatEffectOpsChange();
+      }
+
+      function nonEmptyEffectString(value) {
+        return value is string && value.size() > 0 && value.size() <= 256;
+      }
+
+      function validCombatantRef(ref) {
+        return ref is map
+          && nonEmptyEffectString(ref.get('combatantId', ''))
+          && (
+            (ref.get('kind', '') == 'monster'
+              && (ref.get('tokenIndex', null) == null
+                || (ref.get('tokenIndex', -1) is int
+                  && ref.get('tokenIndex', -1) >= 0))
+              && ref.keys().hasOnly(['kind', 'combatantId', 'tokenIndex']))
+            ||
+            (ref.get('kind', '') == 'pc'
+              && nonEmptyEffectString(ref.get('memberUid', ''))
+              && nonEmptyEffectString(ref.get('characterId', ''))
+              && ref.keys().hasOnly(['kind', 'combatantId', 'memberUid', 'characterId']))
+          );
+      }
+
+      function validEffectDuration(effectDuration) {
+        return effectDuration is map && (
+          (effectDuration.get('kind', '') == 'encounter'
+            && effectDuration.keys().hasOnly(['kind']))
+          ||
+          (effectDuration.get('kind', '') == 'concentration'
+            && nonEmptyEffectString(effectDuration.get('actorId', ''))
+            && nonEmptyEffectString(effectDuration.get('sourceId', ''))
+            && effectDuration.keys().hasOnly(['kind', 'actorId', 'sourceId']))
+          ||
+          (effectDuration.get('kind', '') == 'turn-boundary'
+            && nonEmptyEffectString(effectDuration.get('combatantId', ''))
+            && effectDuration.get('round', -1) is number
+            && effectDuration.get('phase', '') in ['turn-start', 'turn-end']
+            && effectDuration.keys().hasOnly(['kind', 'combatantId', 'round', 'phase']))
+        );
+      }
+
+      function validMemberApplyOperation(operation) {
+        let effect = operation.get('effect', {});
+        let actor = effect.get('actor', {});
+        let source = effect.get('source', {});
+        let payload = effect.get('payload', {});
+        let bindings = effect.get('bindings', null);
+        let applied = effect.get('applied', null);
+        return operation is map
+          && operation.keys().hasOnly(['id', 'kind', 'effect'])
+          && nonEmptyEffectString(operation.get('id', ''))
+          && operation.get('kind', '') == 'apply'
+          && effect is map
+          && effect.keys().hasOnly(['id', 'actor', 'target', 'source', 'payload', 'bindings', 'applied', 'duration'])
+          && nonEmptyEffectString(effect.get('id', ''))
+          && actor is map
+          && actor.get('kind', '') == 'pc'
+          && actor.get('memberUid', '') == request.auth.uid
+          && actor.get('combatantId', '') == 'pc-' + request.auth.uid
+          && validCombatantRef(actor)
+          && validCombatantRef(effect.get('target', {}))
+          && source is map
+          && source.get('kind', '') == 'spell'
+          && nonEmptyEffectString(source.get('id', ''))
+          && nonEmptyEffectString(source.get('actionId', ''))
+          && source.keys().hasOnly(['kind', 'id', 'actionId', 'castLevel'])
+          && payload is map
+          && nonEmptyEffectString(payload.get('activeKey', ''))
+          && (
+            (payload.get('kind', '') == 'grant-group'
+              && payload.get('phase', 'active') in ['active', 'aftereffect']
+              && payload.keys().hasOnly(['kind', 'activeKey', 'phase']))
+            ||
+            (payload.get('kind', '') == 'target-mark'
+              && payload.get('scope', '') in ['marked', 'cursed']
+              && payload.keys().hasOnly(['kind', 'activeKey', 'scope']))
+          )
+          && (bindings == null
+            || (bindings is map
+              && bindings.keys().hasOnly(['spellcastingModifier'])
+              && bindings.get('spellcastingModifier', 0) is number))
+          && (applied == null
+            || (applied is map
+              && applied.keys().hasOnly(['currentHpDelta'])
+              && applied.get('currentHpDelta', 0) is number
+              && applied.get('currentHpDelta', 0) >= -10000
+              && applied.get('currentHpDelta', 0) <= 10000))
+          && validEffectDuration(effect.get('duration', {}));
+      }
+
+      function validMemberRevokeOperation(operation) {
+        return operation is map
+          && operation.keys().hasOnly(['id', 'kind', 'effectId', 'actorId', 'targetId'])
+          && nonEmptyEffectString(operation.get('id', ''))
+          && operation.get('kind', '') == 'revoke'
+          && nonEmptyEffectString(operation.get('effectId', ''))
+          && nonEmptyEffectString(operation.get('actorId', ''))
+          && nonEmptyEffectString(operation.get('targetId', ''));
+      }
+
+      function validMemberEffectOperation(operation) {
+        return validMemberApplyOperation(operation) || validMemberRevokeOperation(operation);
+      }
+
+      function validMemberBulkRevokeOperation(operation) {
+        return operation is map
+          && operation.keys().hasOnly(['id', 'kind', 'effectId', 'actorId', 'targetId'])
+          && operation.get('kind', '') == 'revoke'
+          && operation.get('id', null) is string
+          && operation.get('effectId', null) is string
+          && operation.get('actorId', null) is string
+          && operation.get('targetId', null) is string;
+      }
+
+      // An end-state lifecycle pair is always `revoke + data-derived successor`. Keep
+      // this narrow validator below Firestore Rules' 1000-expression ceiling; the
+      // tolerant client boundary still drops malformed nested catalogue references.
+      function validLifecycleSuccessorOperation(operation) {
+        let effect = operation.get('effect', {});
+        let source = effect.get('source', {});
+        let payload = effect.get('payload', {});
+        return operation is map
+          && operation.keys().hasOnly(['id', 'kind', 'effect'])
+          && operation.get('kind', '') == 'apply'
+          && nonEmptyEffectString(operation.get('id', ''))
+          && effect is map
+          && nonEmptyEffectString(effect.get('id', ''))
+          && validCombatantRef(effect.get('actor', {}))
+          && validCombatantRef(effect.get('target', {}))
+          && source is map
+          && source.get('kind', '') == 'spell'
+          && nonEmptyEffectString(source.get('id', ''))
+          && payload is map
+          && payload.get('kind', '') == 'grant-group'
+          && payload.get('phase', '') == 'aftereffect'
+          && validEffectDuration(effect.get('duration', {}));
+      }
+
+      // One reviewed multi-target action can consume several one-shot protections
+      // (for example, multiple Death Wards) in the SAME atomic campaign update. Those
+      // batches contain revokes only; support the resolver's bounded target fan-out
+      // without weakening apply provenance or allowing arbitrary operation payloads.
+      function validMemberRevokeBatch(after, before, start, added) {
+        return (
+            added == 2
+            && after.removeAll([after[start], after[start + 1]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+          ) || (
+            added == 3
+            && after.removeAll([after[start], after[start + 1], after[start + 2]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+            && validMemberBulkRevokeOperation(after[start + 2])
+          ) || (
+            added == 4
+            && after.removeAll([after[start], after[start + 1], after[start + 2], after[start + 3]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+            && validMemberBulkRevokeOperation(after[start + 2])
+            && validMemberBulkRevokeOperation(after[start + 3])
+          ) || (
+            added == 5
+            && after.removeAll([after[start], after[start + 1], after[start + 2], after[start + 3], after[start + 4]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+            && validMemberBulkRevokeOperation(after[start + 2])
+            && validMemberBulkRevokeOperation(after[start + 3])
+            && validMemberBulkRevokeOperation(after[start + 4])
+          ) || (
+            added == 6
+            && after.removeAll([after[start], after[start + 1], after[start + 2], after[start + 3], after[start + 4], after[start + 5]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+            && validMemberBulkRevokeOperation(after[start + 2])
+            && validMemberBulkRevokeOperation(after[start + 3])
+            && validMemberBulkRevokeOperation(after[start + 4])
+            && validMemberBulkRevokeOperation(after[start + 5])
+          ) || (
+            added == 7
+            && after.removeAll([after[start], after[start + 1], after[start + 2], after[start + 3], after[start + 4], after[start + 5], after[start + 6]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+            && validMemberBulkRevokeOperation(after[start + 2])
+            && validMemberBulkRevokeOperation(after[start + 3])
+            && validMemberBulkRevokeOperation(after[start + 4])
+            && validMemberBulkRevokeOperation(after[start + 5])
+            && validMemberBulkRevokeOperation(after[start + 6])
+          ) || (
+            added == 8
+            && after.removeAll([after[start], after[start + 1], after[start + 2], after[start + 3], after[start + 4], after[start + 5], after[start + 6], after[start + 7]]) == before
+            && validMemberBulkRevokeOperation(after[start])
+            && validMemberBulkRevokeOperation(after[start + 1])
+            && validMemberBulkRevokeOperation(after[start + 2])
+            && validMemberBulkRevokeOperation(after[start + 3])
+            && validMemberBulkRevokeOperation(after[start + 4])
+            && validMemberBulkRevokeOperation(after[start + 5])
+            && validMemberBulkRevokeOperation(after[start + 6])
+            && validMemberBulkRevokeOperation(after[start + 7])
+          );
+      }
+
+      function validCombatEffectOpsChange() {
+        let before = resource.data.encounter.get('effectOps', []);
+        let after = request.resource.data.encounter.get('effectOps', []);
+        let added = after.size() - before.size();
+        let start = before.size();
+        return after is list
+          && before is list
+          && after.size() <= 512
+          && (
+            (added == 0 && after == before)
+            || (added == 1
+              && after.removeAll([after[start]]) == before
+              && validMemberEffectOperation(after[start]))
+            || (added == 2
+              && after.removeAll([after[start], after[start + 1]]) == before
+              && validMemberRevokeOperation(after[start])
+              && validLifecycleSuccessorOperation(after[start + 1]))
+            || validMemberRevokeBatch(after, before, start, added)
+          );
       }
 
       // INIT-SSOT — the `encounterInit` initiative table (`uid → raw d20 roll`, the
@@ -289,6 +514,15 @@ service cloud.firestore {
       function encounterInitOwnEntryOnly() {
         return request.resource.data.get('encounterInit', {})
           .diff(resource.data.get('encounterInit', {}))
+          .affectedKeys().hasOnly([request.auth.uid]);
+      }
+
+      // ENCOUNTER PARTICIPATION — a member may opt only themselves out/in while
+      // gathering. The DM/admin branch below may mark absent players when beginning
+      // turns. Per-key map diffs compose and reset atomically with each encounter.
+      function encounterSkippedOwnEntryOnly() {
+        return request.resource.data.get('encounterSkipped', {})
+          .diff(resource.data.get('encounterSkipped', {}))
           .affectedKeys().hasOnly([request.auth.uid]);
       }
 
@@ -325,6 +559,8 @@ service cloud.firestore {
           && request.resource.data.status == resource.data.status
           && request.resource.data.get('joinsLocked', false)
                == resource.data.get('joinsLocked', false)
+          && request.resource.data.get('encounterSkipped', {})
+               == resource.data.get('encounterSkipped', {})
           && request.resource.data.name == resource.data.name;
       }
 
@@ -348,7 +584,7 @@ service cloud.firestore {
       // own member entry; the DM manages the roster + the encounter tracker; the
       // admin may write any DM-tool field; a non-member may self-join. Only the DM
       // may delete the campaign.
-      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || combatEffectFieldsOnlyChanged()) && encounterInitOwnEntryOnly() && joinsLockedUnchanged())
+      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || combatEffectFieldsOnlyChanged()) && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged())
         || isDm()
         || isAdmin()
         || isSelfJoin();

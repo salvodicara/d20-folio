@@ -23,6 +23,7 @@ import type {
 } from "@/types/ids";
 import type { NonEmptyString } from "@/lib/non-empty-string";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 // ============================================================
 // SRD Reference Types (stored on character, resolved at render)
@@ -786,6 +787,12 @@ export interface SessionState {
     current: number;
     temp: number;
   };
+  /**
+   * Active campaign effects projected onto this open sheet at runtime. The campaign
+   * encounter remains their sole persisted home; the character codec deliberately
+   * never serializes this field.
+   */
+  encounterEffects?: ReadonlyArray<ActiveCombatEffect>;
   hitDice: {
     used: number;
   };

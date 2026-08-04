@@ -16,7 +16,10 @@
  * existing engine (views still only read + dispatch).
  */
 import { evaluateGrants, type AggregatedGrants } from "@/lib/grants";
-import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
+import {
+  resolveAllGrantSources,
+  resolveCombatEffectGrantSources,
+} from "@/lib/resolve-grant-sources";
 import {
   computeAC,
   computeACDetailed,
@@ -36,12 +39,16 @@ import { getEquipment } from "@/data/equipment";
 import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import type { CharacterDoc } from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 /** The session slices that feed sheet-wide grant aggregation. */
 export type AggregationSession = Pick<
   CharacterDoc["session"],
   "activeFeatures" | "grantBundleChoices"
->;
+> & {
+  /** Ephemeral campaign projection; never part of a portable character document. */
+  encounterEffects?: ReadonlyArray<ActiveCombatEffect>;
+};
 
 /**
  * Aggregate every grant the character receives, threading the session's
@@ -53,8 +60,9 @@ export function aggregateCharacterGrants(
   character: CharacterDoc["character"],
   session: AggregationSession
 ): AggregatedGrants {
+  const encounterSources = resolveCombatEffectGrantSources(session.encounterEffects);
   return evaluateGrants(
-    resolveAllGrantSources(character),
+    [...resolveAllGrantSources(character), ...encounterSources],
     new Set(session.activeFeatures ?? []),
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   );

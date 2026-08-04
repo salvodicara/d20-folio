@@ -39,6 +39,28 @@ describe("longRest — magic-item charges recovery", () => {
     expect(wand && "charges" in wand && wand.charges?.current).toBe(7);
   });
 
+  it("restores dawn charges on the Long Rest boundary", () => {
+    const char = makeCharacterDoc();
+    char.character.equipment = [
+      ...char.character.equipment,
+      {
+        custom: true,
+        name: "Dawn Wand",
+        notes: "",
+        quantity: 1,
+        equipped: true,
+        charges: { current: 1, max: 7, recovery: "dawn" },
+      },
+    ];
+    useCharacterStore.getState().setCharacter(char);
+    useCharacterStore.getState().longRest();
+    const after = useCharacterStore.getState().character;
+    const wand = after?.character.equipment.find(
+      (e) => "custom" in e && e.name === "Dawn Wand"
+    );
+    expect(wand && "charges" in wand && wand.charges?.current).toBe(7);
+  });
+
   it("does not bump charges that are already at max (idempotent)", () => {
     const char = makeCharacterDoc();
     char.character.equipment = [

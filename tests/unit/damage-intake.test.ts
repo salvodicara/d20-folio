@@ -33,9 +33,11 @@ function defenses(d: {
   immune?: DamageType[];
   vuln?: DamageType[];
   sources?: Array<"spell">;
+  all?: boolean;
   flat?: Array<{ types: DamageType[]; amount: number }>;
 }): DamageDefenses {
   return {
+    allDamageResistance: d.all ?? false,
     resistances: new Set(d.resist ?? []),
     immunities: new Set(d.immune ?? []),
     vulnerabilities: new Set(d.vuln ?? []),
@@ -71,6 +73,16 @@ describe("resolveDamagePart — RAW order of application", () => {
       defenses({ resist: ["slashing"] })
     );
     expect(p).toMatchObject({ resisted: true, net: 3 });
+  });
+
+  it("all-damage resistance halves typed and untyped damage", () => {
+    expect(resolveDamagePart({ amount: 11 }, defenses({ all: true }))).toMatchObject({
+      resisted: true,
+      net: 5,
+    });
+    expect(
+      resolveDamagePart({ amount: 12, type: "force" }, defenses({ all: true }))
+    ).toMatchObject({ resisted: true, net: 6 });
   });
 
   it("immunity zeroes the part outright", () => {

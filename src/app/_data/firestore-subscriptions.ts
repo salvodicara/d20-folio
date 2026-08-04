@@ -17,7 +17,8 @@
  *     and ONLY THEN is the listener detached;
  *   • an incoming server snapshot is applied behind a loop guard so it can never
  *     echo back out as a save (the classic snapshot → save → snapshot loop);
- *   • `DEV_BYPASS_AUTH` opens no real listener at all.
+ *   • `DEV_BYPASS_AUTH` may inject a local document replica with the SAME lifecycle;
+ *     otherwise it opens no listener at all.
  *
  * It is deliberately generic and Firebase-free: the caller injects the
  * document-specific `subscribe` / `createSave` boundary (a thin wrapper over
@@ -146,6 +147,10 @@ export interface DocumentSubscriptionConfig<TDoc, TState, TSave> {
   selectSave?: (state: TState, prev: TState) => TSave | null;
   /** Optional: dev-bypass loader — called instead of opening any real listener. */
   loadDevBypass?: () => void;
+  /** Optional dev-bypass snapshot adapter (normally the local document replica). */
+  subscribeDevBypass?: DocumentSubscriptionConfig<TDoc, TState, TSave>["subscribe"];
+  /** Optional dev-bypass writer paired with `subscribeDevBypass`. */
+  createDevBypassSave?: DocumentSubscriptionConfig<TDoc, TState, TSave>["createSave"];
 }
 
 /**
@@ -169,6 +174,8 @@ export function useDocumentSubscription<TDoc, TState, TSave>(
     storeSubscribe,
     selectSave,
     loadDevBypass,
+    subscribeDevBypass,
+    createDevBypassSave,
   } = config;
 
   const writerRef = useRef<DebouncedWriter<TSave> | null>(null);
@@ -183,8 +190,8 @@ export function useDocumentSubscription<TDoc, TState, TSave>(
 
   // ── Listener + writer lifecycle ────────────────────────────────────────────
   useEffect(() => {
-    if (DEV_BYPASS_AUTH) {
-      // Dev bypass opens NO real listener.
+    if (DEV_BYPASS_AUTH && !subscribeDevBypass) {
+      // Simple fixture-only bypass: no document lifecycle requested.
       loadDevBypass?.();
       return;
     }
@@ -194,9 +201,13 @@ export function useDocumentSubscription<TDoc, TState, TSave>(
     }
 
     onSubscribeStart?.();
-    writerRef.current = createSave ? createSave(uid, docId) : null;
+    const activeSubscribe =
+      DEV_BYPASS_AUTH && subscribeDevBypass ? subscribeDevBypass : subscribe;
+    const activeCreateSave =
+      DEV_BYPASS_AUTH && createDevBypassSave ? createDevBypassSave : createSave;
+    writerRef.current = activeCreateSave ? activeCreateSave(uid, docId) : null;
 
-    const unsubscribe = subscribe(
+    const unsubscribe = activeSubscribe(
       uid,
       docId,
       (doc) => {
@@ -231,6 +242,8 @@ export function useDocumentSubscription<TDoc, TState, TSave>(
     onSubscribeStart,
     onError,
     loadDevBypass,
+    subscribeDevBypass,
+    createDevBypassSave,
     flushPending,
   ]);
 
@@ -240,7 +253,6 @@ export function useDocumentSubscription<TDoc, TState, TSave>(
     if (!storeSubscribe || !selectSave) return;
     return storeSubscribe((state, prev) => {
       if (isFromServerRef.current) return; // server-sourced → skip (loop guard)
-      if (DEV_BYPASS_AUTH) return; // no real persistence in dev bypass
       const payload = selectSave(state, prev);
       if (payload !== null && writerRef.current) writerRef.current.save(payload);
     });

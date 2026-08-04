@@ -354,6 +354,7 @@
     "critHit": "Critical hit",
     "zeroHpDamageHint": "Damage at 0 HP marks death-save failures",
     "damageTypeGroupAria": "Damage type (applies your defenses)",
+    "allDamageResistance": "Resistance to all damage",
     "damageUntyped": "Untyped",
     "addDamagePart": "Add another",
     "removeDamagePart": "Remove {{label}} damage",

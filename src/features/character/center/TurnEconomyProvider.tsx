@@ -32,7 +32,11 @@ import {
   type EconomySlot,
   type SelectedAction,
 } from "@/stores/combatStore";
-import { syncCombatFromSession } from "@/features/character/center/combat-hydration";
+import {
+  snapshotTurnEconomy,
+  syncCombatFromSession,
+  turnEconomyKey,
+} from "@/features/character/center/combat-hydration";
 import { useToastStore } from "@/stores/toastStore";
 import {
   useUndoStore,
@@ -52,6 +56,8 @@ import {
   resolveActiveMaintainedEffects,
   getActionCostOptions,
   extraActionsThisTurn,
+  extraActionRulesThisTurn,
+  isTurnEconomyBlocked,
   attacksPerActionForCharacter,
   resolveReplaceAttackWithCast,
   resolveFreeCastFromList,
@@ -60,6 +66,11 @@ import {
   type ActionCostOption,
   type FreeCastFromListPool,
 } from "@/lib/smart-tracker";
+import {
+  canAssignActionClaims,
+  economyActionCategory,
+  economyClaimsForTurn,
+} from "@/lib/combat-economy";
 import type { RiderVM } from "@/lib/views/rider-view";
 import type { CunningStrikeVM } from "@/lib/views/cunning-strike-view";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
@@ -116,6 +127,26 @@ import {
 /** The Wizard Arcane Recovery feature's stable srdId (its tracker id too). */
 const ARCANE_RECOVERY_FEATURE_ID = "wizard-arcane-recovery";
 
+/** Turn facts whose mutation must survive a route change. Derived budgets/initiative are
+ * intentionally excluded. Reference equality is sufficient because every store mutation
+ * replaces the touched array. */
+function durableTurnChanged(
+  state: ReturnType<typeof useCombatStore.getState>,
+  prev: ReturnType<typeof useCombatStore.getState>
+): boolean {
+  return (
+    state.selected !== prev.selected ||
+    state.attacksUsed !== prev.attacksUsed ||
+    state.attackSwingIds !== prev.attackSwingIds ||
+    state.reactionUsed !== prev.reactionUsed ||
+    state.reactionUsedId !== prev.reactionUsedId ||
+    state.movementUsedFt !== prev.movementUsedFt ||
+    state.dashesThisTurn !== prev.dashesThisTurn ||
+    state.spellSlotCastsThisTurn !== prev.spellSlotCastsThisTurn ||
+    state.damageTakenThisRound !== prev.damageTakenThisRound
+  );
+}
+
 /** The Rogue Sneak Attack feature's stable srdId — its once-per-turn use tracker
  *  is the resource a Cunning Strike option debits (golden rule 7 — a stable id). */
 const SNEAK_ATTACK_TRACKER_ID = "rogue-sneak-attack";
@@ -161,7 +192,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
-  const selectAction = useCombatStore((s) => s.selectAction);
+  const appendSelectedAction = useCombatStore((s) => s.selectAction);
   const deselectAction = useCombatStore((s) => s.deselectAction);
   const setBudget = useCombatStore((s) => s.setBudget);
   const setAttackBudget = useCombatStore((s) => s.setAttackBudget);
@@ -303,14 +334,23 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   };
   useEffect(() => {
     if (!character) return;
+    const characterStore = useCharacterStore.getState();
+    const key = turnEconomyKey(
+      useCombatStatusStore.getState().status,
+      character.id,
+      characterStore.combatRound
+    );
     const fresh = syncCombatFromSession(
       character.id,
       // The SOLO round now lives in the `combat/state` subdoc, mirrored onto the character
       // store as `combatRound` (the session no longer carries it); initiative reconciles
       // from the same subdoc via `session.initiative`.
-      useCharacterStore.getState().combatRound,
+      characterStore.combatRound,
       character.session.initiative,
-      hydratedCharIdRef.current
+      hydratedCharIdRef.current,
+      characterStore.combatTurnEconomy,
+      key,
+      locale
     );
     if (fresh) {
       // Switching characters finalizes the previous character's turn: clear the
@@ -320,7 +360,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       useUndoStore.getState().clear(character.id);
       hydratedCharIdRef.current = character.id;
     }
-  }, [character]);
+  }, [character, locale]);
 
   // COMBAT-DUP — persist round / initiative back to the `combat/state` subdoc whenever
   // combat advances. A NON-reactive store subscription (not a selector) so this provider
@@ -330,12 +370,24 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // parent doc), so each persists through its dedicated combat-state write.
   useEffect(() => {
     return useCombatStore.subscribe((state, prev) => {
-      if (state.round === prev.round && state.initiative === prev.initiative) return;
+      const turnChanged = durableTurnChanged(state, prev);
+      if (
+        state.round === prev.round &&
+        state.initiative === prev.initiative &&
+        !turnChanged
+      )
+        return;
       const cs = useCharacterStore.getState();
       if (!cs.character) return;
-      // Round: mirror + persist to the subdoc (only when it actually changed).
-      if (state.round !== prev.round && cs.combatRound !== state.round) {
-        cs.persistCombatRound(state.round);
+      // Round + current-turn economy share one write. The exact turn key fences the
+      // snapshot from every later actor/round while keeping group↔sheet navigation stable.
+      if (state.round !== prev.round || turnChanged) {
+        const key = turnEconomyKey(
+          useCombatStatusStore.getState().status,
+          cs.character.id,
+          state.round
+        );
+        cs.persistCombatTurnState(state.round, snapshotTurnEconomy(state, key));
       }
       // Initiative: mirror onto the session (its in-memory home) + persist op-wise to the
       // subdoc (only when it actually changed, so a round-only step costs no init write).
@@ -421,6 +473,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     if (!character) {
       setBudget({ action: 1, bonus: 1 });
       setAttackBudget(1);
+      return;
+    }
+    if (isTurnEconomyBlocked(character)) {
+      setBudget({ action: 0, bonus: 0 });
+      setAttackBudget(0);
       return;
     }
     const extra = extraActionsThisTurn(character);
@@ -624,10 +681,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
 
   // Display record for the economy slot.
   function toSelectedAction(action: ResolvedAction, slot: EconomySlot): SelectedAction {
+    const economyCategory = economyActionCategory(action);
     return {
       id: action.id,
       name: action.name,
+      nameLoc: action.nameLoc,
       slot,
+      ...(economyCategory ? { economyCategory } : {}),
       cost: action.costsSlot
         ? { type: "spell-slot", key: action.slotLevel }
         : action.costTracker
@@ -642,6 +702,29 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             ? { type: "equipment", key: action.costEquipment }
             : undefined,
     };
+  }
+
+  /** Allocate a proposed Action against the live mix of ordinary and restricted
+   * slots. The assignment is order-independent: a Haste-legal Dash taken first
+   * cannot accidentally consume the only unrestricted Action needed by a spell. */
+  function appendWithinActionRules(action: SelectedAction): boolean {
+    if (action.slot !== "action") return appendSelectedAction(action);
+    const doc = useCharacterStore.getState().character;
+    if (!doc) return false;
+    const state = useCombatStore.getState();
+    const claims = economyClaimsForTurn(
+      state.selected.action,
+      state.attacksUsed,
+      state.attackBudget
+    );
+    const proposed = {
+      category: action.economyCategory ?? null,
+      ...(action.economyCategory === "attack" ? { attackCount: 1 } : {}),
+    };
+    if (!canAssignActionClaims([...claims, proposed], extraActionRulesThisTurn(doc))) {
+      return false;
+    }
+    return appendSelectedAction(action);
   }
 
   // ATTACK-PIPS — the highest spell level the character may replace an attack with
@@ -671,7 +754,17 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const s = useCombatStore.getState();
     if (s.attackBudget <= 1) return false;
     const midAction = s.attacksUsed % s.attackBudget !== 0;
-    return midAction || s.selected.action.length < s.budget.action;
+    if (!midAction && s.selected.action.length >= s.budget.action) return false;
+    const doc = useCharacterStore.getState().character;
+    if (!doc) return false;
+    const actions = midAction
+      ? s.selected.action
+      : [
+          ...s.selected.action,
+          { isAttackGroup: true, economyCategory: "attack" as const },
+        ];
+    const claims = economyClaimsForTurn(actions, s.attacksUsed + 1, s.attackBudget);
+    return canAssignActionClaims(claims, extraActionRulesThisTurn(doc));
   }
 
   // ATTACK-PIPS — commit ONE WEAPON attack swing: log it via the shared
@@ -702,8 +795,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           const groupEntry: SelectedAction = {
             id: "attack-group",
             name: t("combat.attackAction"),
+            nameLoc: { ui: "combat.attackAction" },
             slot: "action",
             isAttackGroup: true,
+            economyCategory: "attack",
           };
           if (
             useCombatStore.getState().commitAttackSwing(groupEntry, action.id) === null
@@ -754,7 +849,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         { message },
         () => {
           const undoCost = commitAction(action, trackerAmount);
-          if (!selectAction(toSelectedAction(action, slot))) {
+          if (!appendWithinActionRules(toSelectedAction(action, slot))) {
             undoCost();
             return null;
           }
@@ -922,8 +1017,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             const groupEntry: SelectedAction = {
               id: "attack-group",
               name: t("combat.attackAction"),
+              nameLoc: { ui: "combat.attackAction" },
               slot: "action",
               isAttackGroup: true,
+              economyCategory: "attack",
             };
             if (
               useCombatStore.getState().commitAttackSwing(groupEntry, action.id) === null
@@ -937,7 +1034,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             }, applyResolution);
           }
           // Append into the slot; bail (refunding) if the budget is already full.
-          if (!selectAction(toSelectedAction(action, slot))) {
+          if (!appendWithinActionRules(toSelectedAction(action, slot))) {
             undoLegs();
             return null;
           }

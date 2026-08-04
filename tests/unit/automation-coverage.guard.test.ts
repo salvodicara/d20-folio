@@ -54,15 +54,11 @@ const DELIBERATE_RESIDUALS = new Set<string>([
   // (all *-epic-boon features are now SYSTEM_HANDLED — feat pick via the L19 asi flag)
   "wizard-memorize-spell", // 2024: free prepared-spell swap each Short Rest (a player action, no auto-computed grant/cap)
   "bard-expertise", // expertise picker
-  "paladin-fighting-style-defense",
   // ── Situational per-turn / per-cast combat choices (no passive grant) ──
-  "barbarian-reckless-attack",
   "barbarian-instinctive-pounce",
   "barbarian-brutal-strike",
   "barbarian-improved-brutal-strike",
   "barbarian-greater-brutal-strike",
-  "fighter-tactical-mind",
-  "fighter-studied-attacks",
   "fighter-tactical-shift",
   "fighter-tactical-master",
   "rogue-improved-cunning-strike",
@@ -80,20 +76,13 @@ const DELIBERATE_RESIDUALS = new Set<string>([
   "monk-self-restoration",
   // ── Per-use utility / movement / resource niceties (prose) ──
   "monk-acrobatic-movement",
-  "monk-slow-fall",
   "monk-heightened-focus",
-  "rogue-thief-fast-hands",
   "rogue-thief-reflexes",
-  "ranger-foe-slayer", // Hunter's Mark die upgrade — no spell-damage seam (§A)
   "ranger-hunter-hunters-lore",
-  "bard-lore-peerless-skill",
   // (cleric-sear-undead is now AUTOMATED — S11b surfaces its WIS-many d8 Radiant
   //  damage card; it left the residual set.)
-  "cleric-improved-blessed-strikes",
   "cleric-improved-divine-intervention",
   "druid-improved-elemental-fury",
-  "druid-archdruid",
-  "barbarian-persistent-rage",
   "barbarian-indomitable-might",
   "paladin-aura-expansion", // aura RADIUS bump — party-scope (Phase-2)
   // ── Sorcerer per-use / SP-spend effects (prose) ──
@@ -127,9 +116,9 @@ describe("automation coverage — every public class feature is automated, syste
     expect(ratio).toBeGreaterThanOrEqual(0.66);
   });
 
-  it("every listed residual id actually exists in the public corpus (no stale entries)", () => {
-    const allIds = new Set(publicFeatures.map((f) => f.id));
-    const stale = [...DELIBERATE_RESIDUALS].filter((id) => !allIds.has(id));
+  it("every listed public residual still exists and is actually bare", () => {
+    const bareIds = new Set(bare.map((f) => f.id));
+    const stale = [...DELIBERATE_RESIDUALS].filter((id) => !bareIds.has(id));
     expect(stale).toEqual([]);
   });
 });

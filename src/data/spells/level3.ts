@@ -220,11 +220,13 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Fly Speed 60 for the duration.
       {
         type: "while-active",
         activeKey: "spell-fly",
+        recipient: "selected",
         grants: [{ type: "fly-speed", amount: 60 }],
       },
     ],
@@ -243,17 +245,30 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
-      // PROSE-SWEPT 2026-06-10 — standing package: Speed ×2, +2 AC, Advantage
-      // on DEX saves (the extra limited action stays descriptive).
+      // Standing package: Speed ×2, +2 AC, Advantage on DEX saves, and one
+      // limited extra action. Ending the effect projects its one-turn lethargy.
       {
         type: "while-active",
         activeKey: "spell-haste",
+        recipient: "selected",
         grants: [
           { type: "speed-multiplier", factor: 2 },
           { type: "ac-bonus", amount: 2 },
           { type: "advantage-on", rollType: "save", vs: "dex-save" },
+          {
+            type: "extra-action",
+            slot: "action",
+            count: 1,
+            allowedActions: ["attack", "dash", "disengage", "hide", "utilize"],
+            maxAttacks: 1,
+          },
         ],
+        afterEffect: {
+          duration: { kind: "target-turn-boundary", turns: 1, phase: "turn-end" },
+          grants: [{ type: "turn-economy-block" }, { type: "speed-cap", maxFt: 0 }],
+        },
       },
     ],
     source: "SRD",
@@ -371,12 +386,14 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Resistance to ONE of five energy types,
       // chosen at cast time (re-pickable choice-resistance).
       {
         type: "while-active",
         activeKey: "spell-protection-from-energy",
+        recipient: "selected",
         grants: [
           {
             type: "choice-resistance",

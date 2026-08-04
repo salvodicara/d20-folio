@@ -716,17 +716,21 @@ describe("Party combat — C3 freeze / lock / reorder (DM)", () => {
     return enc;
   }
 
-  it("Begin-turns is DISABLED until every combatant has an initiative (the gate)", async () => {
+  it("lets the DM begin with the rolled combatants and skips the unrolled ones", async () => {
     setCampaign(monstersOnlyGathering(false)); // the Orc is un-rolled → partial set
     renderParty();
-    const begin = await screen.findByRole("button", { name: /begin turns/i });
-    expect(begin).toBeDisabled();
-    // The BLANK monster chip wears the same urgent cue an un-rolled PC does (B8), so
-    // the DM can find which entry blocks the gate at a glance; the rolled one is quiet.
+    const begin = await screen.findByRole("button", { name: /begin with 1\/2/i });
+    expect(begin).not.toBeDisabled();
+    // Blank initiative remains visually obvious, but no longer traps the table.
     const orcChip = screen.getByRole("button", { name: /initiative for orc/i });
     expect(orcChip).toHaveAttribute("data-urgent");
     const goblinChip = screen.getByRole("button", { name: /initiative for goblin/i });
     expect(goblinChip).not.toHaveAttribute("data-urgent");
+    fireEvent.click(begin);
+    await waitFor(() => {
+      expect(currentEncounter().order).toEqual(["monster-1"]);
+      expect(currentEncounter().currentCombatantId).toBe("monster-1");
+    });
   });
 
   it("Begin-turns enables once all have initiative and FREEZES the order onto the doc", async () => {

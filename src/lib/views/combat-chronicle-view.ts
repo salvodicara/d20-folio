@@ -95,12 +95,21 @@ export function localizeChronicleEvent(
             max: event.max,
           });
     case "hp-heal":
-      return t("combatChronicle.heal", {
-        target: resolveName(event.targetId),
-        amount: event.amount,
-        current: event.current,
-        max: event.max,
-      });
+      return event.actorId
+        ? t(event.action ? "combatChronicle.healByAction" : "combatChronicle.healBy", {
+            actor: resolveName(event.actorId),
+            target: resolveName(event.targetId),
+            amount: event.amount,
+            current: event.current,
+            max: event.max,
+            ...(event.action ? { action: resolveAction(event.action) } : {}),
+          })
+        : t("combatChronicle.heal", {
+            target: resolveName(event.targetId),
+            amount: event.amount,
+            current: event.current,
+            max: event.max,
+          });
     case "attack-miss":
       return t(event.action ? "combatChronicle.missByAction" : "combatChronicle.missBy", {
         attacker: resolveName(event.attackerId),
@@ -219,10 +228,22 @@ export function localizeChronicleEvent(
             condition: resolveCondition(event.conditionId),
           });
     case "condition-loss":
-      return t("combatChronicle.conditionLoss", {
-        target: resolveName(event.targetId),
-        condition: resolveCondition(event.conditionId),
-      });
+      return event.actorId
+        ? t(
+            event.action
+              ? "combatChronicle.conditionLossByAction"
+              : "combatChronicle.conditionLossBy",
+            {
+              actor: resolveName(event.actorId),
+              target: resolveName(event.targetId),
+              condition: resolveCondition(event.conditionId),
+              ...(event.action ? { action: resolveAction(event.action) } : {}),
+            }
+          )
+        : t("combatChronicle.conditionLoss", {
+            target: resolveName(event.targetId),
+            condition: resolveCondition(event.conditionId),
+          });
   }
 }
 

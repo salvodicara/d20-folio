@@ -31,7 +31,11 @@ import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
-import { subscribeToSharedCampaigns } from "@/features/campaigns/campaign-io";
+import {
+  deliverQueuedMemberEffects,
+  revokePersistentCombatEffectsBySource,
+  subscribeToSharedCampaigns,
+} from "@/features/campaigns/campaign-io";
 import { viewerActiveEncounters } from "@/features/campaigns/encounter";
 import { useLiveEncounter } from "@/features/campaigns/useLiveEncounter";
 import {
@@ -58,6 +62,8 @@ import {
 } from "@/features/campaigns/combat-reconcile";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import type { CampaignDoc, EncounterPc } from "@/types/campaign";
+import { effectsForTarget } from "@/lib/combat-effects";
+import { useCharacterStore } from "@/stores/characterStore";
 
 /** Renderless: subscribes the shell-level combat status + pip model and publishes them. */
 export function GlobalCombatMount(): null {
@@ -71,8 +77,17 @@ export function GlobalCombatMount(): null {
   // that stops a lagging listener regressing the optimistic advance to "your turn".
   const pendingTurn = useCombatStatusStore((s) => s.pendingTurn);
   const clearPendingTurn = useCombatStatusStore((s) => s.clearPendingTurn);
+  const setEncounterEffects = useCharacterStore((s) => s.setEncounterEffects);
+  const openCharacterId = useCharacterStore((s) => s.character?.id ?? null);
+  const concentration = useCharacterStore(
+    (s) => s.character?.session.concentration ?? ""
+  );
   const [campaigns, setCampaigns] = useState<CampaignDoc[]>([]);
   const deliveringEffects = useRef<string | null>(null);
+  const observedConcentration = useRef<{
+    scope: string;
+    sourceId: string;
+  } | null>(null);
   // The OPTIMISTIC open campaign (the hub the viewer is on, if any) — `null` off the hub.
   // Overlaid below so the pip reflects the viewer's OWN start/end/begin-turns in the same
   // tick, not ~2 s later when the autosave-debounced write echoes (the pip's "no echo lag").
@@ -163,7 +178,7 @@ export function GlobalCombatMount(): null {
   const status = useMemo<GlobalCombat | null>(() => {
     if (devCombat) return devCombat; // dev seed: the combat-chronicle sheet-banner fight
     if (devPip) return devStatus; // dev seed: needs-roll publishes a status, others null
-    if (!uid || !primaryId || primaryIsDm || !live) return null;
+    if (!uid || !primaryId || !live) return null;
     const myId = `pc-${uid}`;
     const myCombatant = live.encounter.combatants.find(
       (c): c is EncounterPc => c.kind === "pc" && c.memberUid === uid
@@ -184,15 +199,71 @@ export function GlobalCombatMount(): null {
       initiativeRoll: myRow?.initiativeRoll ?? null,
       round: live.encounter.round,
     };
-  }, [devCombat, devPip, devStatus, uid, primaryId, primaryIsDm, live]);
+  }, [devCombat, devPip, devStatus, uid, primaryId, live]);
 
-  // PC-targeted healing/damage/conditions are delivered through the encounter because
-  // a player must never write another user's character doc. The target owner applies the
-  // queued ids once to their own combat/state; the persisted receipt makes reload/offline
-  // replay idempotent.
+  // Project campaign-owned standing effects onto the viewer's own open character.
+  // This reuses the primary encounter listener above; the character store scopes the
+  // projection by character id and the character codec never persists it.
   useEffect(() => {
-    if (!uid || !status || !live || live.myMaxHp <= 0 || live.myCombatState === undefined)
+    if (!status || !live) {
+      setEncounterEffects(null);
       return;
+    }
+    setEncounterEffects(
+      status.characterId,
+      effectsForTarget(live.encounter.effectOps, status.myId, {
+        round: live.encounter.round,
+        currentCombatantId: live.encounter.currentCombatantId,
+        phase: "turn-start",
+        order: live.encounter.order ?? live.view.turnOrderIds,
+      })
+    );
+  }, [status, live, setEncounterEffects]);
+
+  // Concentration is character-owned state; standing target effects are campaign-owned.
+  // Bridge the two at this existing shell listener only when the OPEN character is the
+  // viewer's PC in the primary encounter. The first observation of each
+  // campaign/epoch/actor scope is a silent prime (reload/hydration is not a drop). A
+  // subsequent clear or swap appends exact inverse operations for the previous source.
+  useEffect(() => {
+    if (!status || !live || openCharacterId !== status.characterId) {
+      observedConcentration.current = null;
+      return;
+    }
+    const activeScope = `${status.campaignId}:${live.encounter.epoch}:${status.myId}`;
+
+    const current = concentration as string;
+    const previous = observedConcentration.current;
+    observedConcentration.current = { scope: activeScope, sourceId: current };
+    if (
+      !previous ||
+      previous.scope !== activeScope ||
+      !previous.sourceId ||
+      previous.sourceId === current
+    ) {
+      return;
+    }
+
+    const { campaignId, myId } = status;
+    void revokePersistentCombatEffectsBySource(campaignId, {
+      actorId: myId,
+      sourceId: previous.sourceId,
+    }).catch(() => {
+      if (
+        observedConcentration.current?.scope === activeScope &&
+        observedConcentration.current.sourceId === current
+      ) {
+        observedConcentration.current = previous;
+      }
+      showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+    });
+  }, [status, live, openCharacterId, concentration, showToast, t]);
+
+  // Transitional drain for effects queued by the previous deployed owner-client model.
+  // New actions write the target's narrow combat subdoc directly and never depend on
+  // this client being online; this only preserves already-running encounter data.
+  useEffect(() => {
+    if (!uid || !status || !live || live.myMaxHp <= 0) return;
     const pending = (live.encounter.memberEffects ?? []).filter(
       (effect) => effect.targetId === status.myId
     );
@@ -200,21 +271,16 @@ export function GlobalCombatMount(): null {
     const key = `${live.encounter.epoch}:${pending.map((effect) => effect.id).join(",")}`;
     if (deliveringEffects.current === key) return;
     deliveringEffects.current = key;
-    void import("@/features/campaigns/deliver-member-effects")
-      .then(({ deliverMemberEffects }) =>
-        deliverMemberEffects({
-          uid,
-          characterId: status.characterId,
-          epoch: live.encounter.epoch,
-          effects: pending,
-          maxHp: live.myMaxHp,
-          combatState: live.myCombatState ?? null,
-        })
-      )
-      .catch(() => {
-        deliveringEffects.current = null;
-        showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
-      });
+    void deliverQueuedMemberEffects({
+      campaignId: status.campaignId,
+      uid,
+      characterId: status.characterId,
+      targetId: status.myId,
+      maxHp: live.myMaxHp,
+    }).catch(() => {
+      deliveringEffects.current = null;
+      showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+    });
   }, [uid, status, live, showToast, t]);
 
   // The pip model — the dev seed wins; otherwise every active encounter reduced to a

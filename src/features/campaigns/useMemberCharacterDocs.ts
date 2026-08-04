@@ -37,6 +37,7 @@ import { MOCK_CHARACTER } from "@/lib/mock";
 import { isDevFixtureId, loadDevFixture } from "@/lib/dev-fixtures";
 import { isDevScenarioRouteId } from "@/lib/dev-scenario-id";
 import type { CharacterDoc } from "@/types/character";
+import { readDevCharacter } from "@/lib/dev-character-document";
 
 /** One member's attached character to resolve (uid + the attached character id). */
 export interface MemberCharacterRef {
@@ -53,16 +54,21 @@ export type MemberDocState =
 /** Resolve one member's full doc under dev-bypass through the fixture/scenario seam.
  *  Shared with {@link "@/features/campaigns/usePartyCombatStates"} (whose live combat
  *  listener no-ops under bypass) so both party reads resolve the SAME dev doc. */
-export async function resolveDevDoc(characterId: string): Promise<CharacterDoc> {
+export async function resolveDevDoc(
+  characterId: string,
+  uid = "mock-uid"
+): Promise<CharacterDoc> {
+  let seed: CharacterDoc;
   if (isDevFixtureId(characterId)) {
     const doc = await loadDevFixture(characterId);
-    return doc ?? { ...MOCK_CHARACTER, id: characterId };
-  }
-  if (isDevScenarioRouteId(characterId)) {
+    seed = doc ?? { ...MOCK_CHARACTER, id: characterId };
+  } else if (isDevScenarioRouteId(characterId)) {
     const { buildDevScenario } = await import("@/lib/dev-scenarios");
-    return buildDevScenario(characterId) ?? { ...MOCK_CHARACTER, id: characterId };
+    seed = buildDevScenario(characterId) ?? { ...MOCK_CHARACTER, id: characterId };
+  } else {
+    seed = { ...MOCK_CHARACTER, id: characterId };
   }
-  return { ...MOCK_CHARACTER, id: characterId };
+  return readDevCharacter(uid, seed);
 }
 
 /**
@@ -96,7 +102,7 @@ export function useMemberCharacterDocs(
         if (!cancelled) setResolved((prev) => ({ ...prev, [pair]: state }));
       };
       const load = DEV_BYPASS_AUTH
-        ? resolveDevDoc(characterId)
+        ? resolveDevDoc(characterId, uid)
         : getFullCharacter(uid, characterId);
       load
         .then((doc) => settle(doc ? { status: "ready", doc } : { status: "error" }))

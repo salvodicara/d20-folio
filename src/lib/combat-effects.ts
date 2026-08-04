@@ -1,0 +1,299 @@
+/** Pure lifecycle algebra for campaign-scoped persistent combat effects. */
+
+import type {
+  ActiveCombatEffect,
+  CombatantRef,
+  CombatEffectOp,
+  EncounterPosition,
+} from "@/types/combat-effect";
+import {
+  resolveCombatEffectGrantGroup,
+  resolveCombatEffectGrants,
+} from "@/lib/resolve-grant-sources";
+import type { Grant } from "@/lib/grants";
+
+function stackingKey(effect: ActiveCombatEffect): string {
+  if (effect.payload.kind === "target-mark") {
+    return [
+      effect.actor.combatantId,
+      effect.source.kind,
+      effect.source.id,
+      effect.payload.scope,
+    ].join("\u0000");
+  }
+  return [
+    effect.target.combatantId,
+    effect.target.kind === "monster" ? (effect.target.tokenIndex ?? "") : "",
+    effect.source.kind,
+    effect.source.id,
+    effect.payload.kind,
+    effect.payload.activeKey,
+  ].join("\u0000");
+}
+
+function scaledHpFlat(grant: Extract<Grant, { type: "hp-flat" }>, castLevel?: number) {
+  if (!grant.castLevelScaling) return grant.amount;
+  const level = castLevel ?? grant.castLevelScaling.baseLevel;
+  return (
+    grant.amount +
+    Math.max(0, level - grant.castLevelScaling.baseLevel) *
+      grant.castLevelScaling.perLevel
+  );
+}
+
+function scaledHpFlatForEffect(
+  effect: ActiveCombatEffect,
+  include: (grant: Extract<Grant, { type: "hp-flat" }>) => boolean
+): number {
+  if (effect.payload.kind !== "grant-group" || effect.payload.phase === "aftereffect")
+    return 0;
+  return resolveCombatEffectGrants(effect).reduce(
+    (sum, grant) =>
+      grant.type === "hp-flat" && include(grant)
+        ? sum + scaledHpFlat(grant, effect.source.castLevel)
+        : sum,
+    0
+  );
+}
+
+/** Maximum-HP delta projected by this exact effect occurrence. */
+export function maxHpDeltaForEffect(effect: ActiveCombatEffect): number {
+  return scaledHpFlatForEffect(effect, () => true);
+}
+
+/** Expected current-HP delta at application time. IO persists the actually landed
+ * value on `effect.applied.currentHpDelta`; revocation uses that stored inverse. */
+export function currentHpDeltaForEffect(effect: ActiveCombatEffect): number {
+  return scaledHpFlatForEffect(effect, (grant) => grant.adjustsCurrentHp === true);
+}
+
+export interface PersistentDamageInput {
+  currentHp: number;
+  tempHp: number;
+  incomingDamage: number;
+}
+
+export interface PersistentDamageOutcome {
+  /** Damage delivered to the ordinary temp-HP/current-HP reducer. */
+  targetDamage: number;
+  /** Remote source-side damage caused by target effects such as Warding Bond. */
+  transfers: ReadonlyArray<{
+    target: CombatantRef;
+    amount: number;
+    effectId: string;
+  }>;
+  /** Exact one-shot instances to revoke atomically with the damage. */
+  consumedEffectIds: ReadonlyArray<string>;
+}
+
+/** Apply persistent incoming-damage rules without knowing any spell ids. */
+export function resolvePersistentDamage(
+  effects: ReadonlyArray<ActiveCombatEffect>,
+  input: PersistentDamageInput
+): PersistentDamageOutcome {
+  const incomingDamage = Math.max(0, Math.round(input.incomingDamage));
+  const currentHp = Math.max(0, Math.round(input.currentHp));
+  const tempHp = Math.max(0, Math.round(input.tempHp));
+  const rules = effects.map((effect) => ({
+    effect,
+    grants: resolveCombatEffectGrants(effect),
+  }));
+  const resistsAll = rules.some(({ grants }) =>
+    grants.some((grant) => grant.type === "all-damage-resistance")
+  );
+  const postResistance = resistsAll ? Math.floor(incomingDamage / 2) : incomingDamage;
+  const transfers = rules.flatMap(({ effect, grants }) =>
+    postResistance > 0 && grants.some((grant) => grant.type === "damage-transfer")
+      ? [{ target: effect.actor, amount: postResistance, effectId: effect.id }]
+      : []
+  );
+  const floor = rules
+    .flatMap(({ effect, grants }) =>
+      grants.flatMap((grant) =>
+        grant.type === "zero-hp-floor"
+          ? [{ effect, hitPoints: Math.max(1, Math.round(grant.hitPoints)) }]
+          : []
+      )
+    )
+    .sort((a, b) => b.hitPoints - a.hitPoints)[0];
+  const triggersFloor = Boolean(
+    floor &&
+    currentHp > 0 &&
+    postResistance > tempHp &&
+    postResistance - tempHp >= currentHp
+  );
+  return {
+    targetDamage:
+      triggersFloor && floor
+        ? tempHp + Math.max(0, currentHp - floor.hitPoints)
+        : postResistance,
+    transfers,
+    consumedEffectIds: triggersFloor && floor ? [floor.effect.id] : [],
+  };
+}
+
+/**
+ * Whether an effect has not yet reached its deterministic turn boundary.
+ * Concentration and encounter lifetimes end through explicit revoke/clear.
+ */
+export function isEffectActiveAtEncounterPosition(
+  effect: ActiveCombatEffect,
+  position?: EncounterPosition
+): boolean {
+  if (!position || effect.duration.kind !== "turn-boundary") return true;
+  const boundaryIndex = position.order.indexOf(effect.duration.combatantId);
+  const currentIndex = position.currentCombatantId
+    ? position.order.indexOf(position.currentCombatantId)
+    : -1;
+  if (boundaryIndex < 0 || currentIndex < 0) return true;
+
+  if (position.round !== effect.duration.round) {
+    return position.round < effect.duration.round;
+  }
+  if (currentIndex !== boundaryIndex) return currentIndex < boundaryIndex;
+  const phaseIndex = position.phase === "turn-start" ? 0 : 1;
+  const boundaryPhaseIndex = effect.duration.phase === "turn-start" ? 0 : 1;
+  return phaseIndex < boundaryPhaseIndex;
+}
+
+/**
+ * Fold the append-only log into effective instances. Duplicate operation/effect ids
+ * are harmless. Same-source effects do not stack; a newer instance permanently
+ * supersedes the previous one, so revoking the replacement never resurrects stale
+ * bonuses from an earlier cast.
+ */
+export function foldCombatEffectOps(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  position?: EncounterPosition
+): ActiveCombatEffect[] {
+  const seenOps = new Set<string>();
+  const seenEffects = new Set<string>();
+  const revoked = new Set<string>();
+  const live = new Map<string, ActiveCombatEffect>();
+  const latestByStackingKey = new Map<string, string>();
+
+  for (const operation of operations ?? []) {
+    if (seenOps.has(operation.id)) continue;
+    seenOps.add(operation.id);
+    if (operation.kind === "revoke") {
+      revoked.add(operation.effectId);
+      live.delete(operation.effectId);
+      continue;
+    }
+    if (seenEffects.has(operation.effect.id)) continue;
+    seenEffects.add(operation.effect.id);
+    const key = stackingKey(operation.effect);
+    const previousId = latestByStackingKey.get(key);
+    if (previousId) live.delete(previousId);
+    latestByStackingKey.set(key, operation.effect.id);
+    if (!revoked.has(operation.effect.id))
+      live.set(operation.effect.id, operation.effect);
+  }
+
+  return [...live.values()].filter((effect) =>
+    isEffectActiveAtEncounterPosition(effect, position)
+  );
+}
+
+export function effectsForTarget(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  targetId: string,
+  position?: EncounterPosition,
+  tokenIndex?: number
+): ActiveCombatEffect[] {
+  return foldCombatEffectOps(operations, position).filter(
+    (effect) =>
+      effect.target.combatantId === targetId &&
+      (effect.target.kind !== "monster" || effect.target.tokenIndex === tokenIndex)
+  );
+}
+
+export function effectsByActorSource(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  actorId: string,
+  sourceId: string
+): ActiveCombatEffect[] {
+  return foldCombatEffectOps(operations).filter(
+    (effect) => effect.actor.combatantId === actorId && effect.source.id === sourceId
+  );
+}
+
+/** Live instances that crossed a deterministic turn boundary at this position. */
+export function expiredCombatEffects(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  position: EncounterPosition
+): ActiveCombatEffect[] {
+  return foldCombatEffectOps(operations).filter(
+    (effect) => !isEffectActiveAtEncounterPosition(effect, position)
+  );
+}
+
+/** Exact selected creature for an actor's live marked/cursed rider. */
+export function markedTargetForActor(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  actorId: string,
+  scope: "marked" | "cursed",
+  position?: EncounterPosition
+): CombatantRef | null {
+  const effect = foldCombatEffectOps(operations, position).find(
+    (candidate) =>
+      candidate.actor.combatantId === actorId &&
+      candidate.payload.kind === "target-mark" &&
+      candidate.payload.scope === scope
+  );
+  return effect?.target ?? null;
+}
+
+function turnBoundaryAfter(
+  targetId: string,
+  turns: number,
+  phase: "turn-start" | "turn-end",
+  position: EncounterPosition
+): Extract<ActiveCombatEffect["duration"], { kind: "turn-boundary" }> | null {
+  const targetIndex = position.order.indexOf(targetId);
+  const currentIndex = position.currentCombatantId
+    ? position.order.indexOf(position.currentCombatantId)
+    : -1;
+  if (targetIndex < 0 || currentIndex < 0 || turns < 1) return null;
+  const phaseIndex = phase === "turn-start" ? 0 : 1;
+  const currentPhaseIndex = position.phase === "turn-start" ? 0 : 1;
+  const stillAhead =
+    targetIndex > currentIndex ||
+    (targetIndex === currentIndex && phaseIndex > currentPhaseIndex);
+  return {
+    kind: "turn-boundary",
+    combatantId: targetId,
+    round: position.round + (stillAhead ? 0 : 1) + turns - 1,
+    phase,
+  };
+}
+
+/** Data-declared successor created when an active effect ends (for example Haste's
+ * one-turn lethargy). Returns null when the source has no aftereffect or the target
+ * is absent from the encounter order. */
+export function endedEffectSuccessor(
+  effect: ActiveCombatEffect,
+  position: EncounterPosition
+): ActiveCombatEffect | null {
+  if (effect.payload.kind !== "grant-group" || effect.payload.phase === "aftereffect")
+    return null;
+  const group = resolveCombatEffectGrantGroup(effect);
+  const after = group?.afterEffect;
+  if (!after) return null;
+  const duration = turnBoundaryAfter(
+    effect.target.combatantId,
+    after.duration.turns,
+    after.duration.phase,
+    position
+  );
+  if (!duration) return null;
+  return {
+    id: `${effect.id}:aftereffect`,
+    actor: effect.actor,
+    target: effect.target,
+    source: effect.source,
+    payload: { ...effect.payload, phase: "aftereffect" },
+    ...(effect.bindings ? { bindings: effect.bindings } : {}),
+    duration,
+  };
+}

@@ -48,6 +48,8 @@ export interface DamageInstance {
  * renders, so the math can never disagree with the displayed chips).
  */
 export interface DamageDefenses {
+  /** One active source grants resistance to every damage instance, typed or not. */
+  allDamageResistance: boolean;
   resistances: ReadonlySet<DamageType>;
   immunities: ReadonlySet<DamageType>;
   vulnerabilities: ReadonlySet<DamageType>;
@@ -62,6 +64,7 @@ export interface DamageDefenses {
 
 /** A `DamageDefenses` with nothing in it (the no-defense fast path). */
 export const NO_DEFENSES: DamageDefenses = {
+  allDamageResistance: false,
   resistances: new Set(),
   immunities: new Set(),
   vulnerabilities: new Set(),
@@ -131,6 +134,7 @@ export function resolveDamagePart(
   // Resistance halves ONCE — a type resistance and a source resistance never
   // stack (SRD: multiple instances count as one).
   const resisted =
+    defenses.allDamageResistance ||
     (part.type !== undefined && defenses.resistances.has(part.type)) ||
     (part.source !== undefined && defenses.sourceResistances.has(part.source));
   if (resisted) net = Math.floor(net / 2);

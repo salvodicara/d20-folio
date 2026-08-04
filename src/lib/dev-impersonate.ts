@@ -18,7 +18,7 @@
  * `devActAsUid()` early-returns `null` unless `import.meta.env.DEV` (statically `false`
  * in any production build), so the whole helper folds to `return null` and the auth.ts
  * branch that calls it is dead-code-eliminated from the prod bundle. Pair it with the
- * `content-pack/scripts/dev-seed-sandbox.ts` emulator seed.
+ * `scripts/dev-seed-sandbox.ts` emulator seed.
  */
 export function devActAsUid(): string | null {
   if (!import.meta.env.DEV) return null;

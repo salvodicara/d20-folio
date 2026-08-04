@@ -120,10 +120,13 @@ vi.mock("@/lib/storage", () => ({
 
 import {
   advanceEncounterTurn,
+  appendPersistentCombatEffect,
+  applyDeclaredCombatEffects,
   applyTreasuryDelta,
   attachMemberCharacter,
   commitChronicleEdit,
   appendChronicleChapter,
+  conformCombatEffectOps,
   joinChronicleText,
   createCampaign,
   createCampaignSave,
@@ -136,6 +139,9 @@ import {
   updateCampaign,
   removeMember,
   reduceDeclaredEffects,
+  reduceDirectPcEffects,
+  revokePersistentCombatEffect,
+  revokePersistentCombatEffectsBySource,
   setJoinsLocked,
   deleteSession,
   updateSession,
@@ -151,6 +157,7 @@ import type {
   EncounterState,
   TreasuryLogEntry,
 } from "@/types/campaign";
+import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -217,7 +224,7 @@ describe("campaign-io — reviewed combat effects", () => {
     expect(twice.events).toHaveLength(1);
   });
 
-  it("queues PC effects with deterministic ids instead of mutating a peer character", () => {
+  it("leaves PC state to the direct combat-subdocument reducer", () => {
     const next = reduceDeclaredEffects(encounter, [
       { kind: "healing", targetId: "pc-a", amount: 6 },
       { kind: "temp-hp", targetId: "pc-a", amount: 9 },
@@ -228,17 +235,406 @@ describe("campaign-io — reviewed combat effects", () => {
         active: false,
       },
     ]);
-    expect(next.memberEffects).toEqual([
-      { id: "1:0", kind: "healing", targetId: "pc-a", amount: 6 },
-      { id: "1:1", kind: "temp-hp", targetId: "pc-a", amount: 9 },
+    expect(next).toBe(encounter);
+  });
+
+  it("heals an offline table-mate, cures the condition, and emits exact provenance", () => {
+    const result = reduceDirectPcEffects(
       {
-        id: "1:2",
-        kind: "condition",
         targetId: "pc-a",
-        conditionId: "poisoned",
-        active: false,
+        memberUid: "a",
+        characterId: "char-a",
+        currentHp: 0,
+        tempHp: 3,
+        maxHp: 20,
+        conditions: ["unconscious", "poisoned"],
       },
+      [
+        { kind: "healing", targetId: "pc-a", amount: 7 },
+        {
+          kind: "condition",
+          targetId: "pc-a",
+          conditionId: "poisoned",
+          active: false,
+        },
+      ],
+      {
+        actorId: "pc-b",
+        action: { srd: { kind: "spell", key: "lesser-restoration", field: "name" } },
+        round: 2,
+      }
+    );
+
+    expect(result).toMatchObject({
+      hp: { current: 7, temp: 3 },
+      conditions: [],
+      resetDeathSaves: true,
+    });
+    expect(result?.events).toEqual([
+      expect.objectContaining({
+        kind: "hp-heal",
+        targetId: "pc-a",
+        actorId: "pc-b",
+        amount: 7,
+      }),
+      expect.objectContaining({
+        kind: "condition-loss",
+        targetId: "pc-a",
+        actorId: "pc-b",
+        conditionId: "poisoned",
+      }),
     ]);
+  });
+
+  it("consumes a remote Death Ward and leaves its PC at exactly 1 HP", () => {
+    const ward: ActiveCombatEffect = {
+      id: "death-ward:1",
+      actor: {
+        kind: "pc",
+        combatantId: "pc-b",
+        memberUid: "b",
+        characterId: "char-b",
+      },
+      target: {
+        kind: "pc",
+        combatantId: "pc-a",
+        memberUid: "a",
+        characterId: "char-a",
+      },
+      source: { kind: "spell", id: "death-ward", actionId: "cast-ward" },
+      payload: { kind: "grant-group", activeKey: "spell-death-ward" },
+      duration: { kind: "encounter" },
+    };
+    const result = reduceDirectPcEffects(
+      {
+        targetId: "pc-a",
+        memberUid: "a",
+        characterId: "char-a",
+        currentHp: 8,
+        tempHp: 0,
+        maxHp: 20,
+        conditions: [],
+      },
+      [{ kind: "damage", targetId: "pc-a", amount: 20 }],
+      {
+        actorId: "monster-1",
+        action: { custom: "table action" },
+        round: 2,
+        persistentEffects: [ward],
+      }
+    );
+
+    expect(result).toMatchObject({
+      hp: { current: 1, temp: 0 },
+      consumedEffectIds: [ward.id],
+    });
+    expect(result?.events.some((event) => event.kind === "down")).toBe(false);
+  });
+
+  it("applies Warding Bond resistance and transfers the post-resistance damage", () => {
+    const bond: ActiveCombatEffect = {
+      id: "warding-bond:1",
+      actor: {
+        kind: "pc",
+        combatantId: "pc-b",
+        memberUid: "b",
+        characterId: "char-b",
+      },
+      target: {
+        kind: "pc",
+        combatantId: "pc-a",
+        memberUid: "a",
+        characterId: "char-a",
+      },
+      source: { kind: "spell", id: "warding-bond", actionId: "cast-bond" },
+      payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+      duration: { kind: "encounter" },
+    };
+    const result = reduceDirectPcEffects(
+      {
+        targetId: "pc-a",
+        memberUid: "a",
+        characterId: "char-a",
+        currentHp: 20,
+        tempHp: 0,
+        maxHp: 20,
+        conditions: [],
+      },
+      [{ kind: "damage", targetId: "pc-a", amount: 9 }],
+      {
+        actorId: "monster-1",
+        action: { custom: "table action" },
+        round: 2,
+        persistentEffects: [bond],
+      }
+    );
+
+    expect(result).toMatchObject({
+      hp: { current: 16, temp: 0 },
+      transfers: [{ target: bond.actor, amount: 4, effectId: bond.id }],
+    });
+  });
+
+  it("does not clamp an Aided PC back to its base max before applying damage", () => {
+    const result = reduceDirectPcEffects(
+      {
+        targetId: "pc-a",
+        memberUid: "a",
+        characterId: "char-a",
+        currentHp: 25,
+        tempHp: 0,
+        maxHp: 25,
+        conditions: [],
+      },
+      [{ kind: "damage", targetId: "pc-a", amount: 1 }],
+      { actorId: "monster-1", action: { custom: "table action" }, round: 2 }
+    );
+    expect(result?.hp).toEqual({ current: 24, temp: 0 });
+  });
+
+  it("resolves monster resistance, Death Ward, transfer, and consume atomically", async () => {
+    const warded = { kind: "monster" as const, combatantId: "warded" };
+    const caster = { kind: "monster" as const, combatantId: "caster" };
+    const bond: ActiveCombatEffect = {
+      id: "bond:monster",
+      actor: caster,
+      target: warded,
+      source: { kind: "spell", id: "warding-bond", actionId: "cast-bond" },
+      payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+      duration: { kind: "encounter" },
+    };
+    const deathWard: ActiveCombatEffect = {
+      id: "death-ward:monster",
+      actor: caster,
+      target: warded,
+      source: { kind: "spell", id: "death-ward", actionId: "cast-ward" },
+      payload: { kind: "grant-group", activeKey: "spell-death-ward" },
+      duration: { kind: "encounter" },
+    };
+    const live: EncounterState = {
+      round: 1,
+      currentCombatantId: "caster",
+      order: ["caster", "warded"],
+      epoch: 1,
+      status: "active",
+      combatants: [
+        {
+          kind: "monster",
+          id: "caster",
+          name: "Caster",
+          ac: 12,
+          initiative: 10,
+          conditions: [],
+          maxHp: 30,
+          tokens: [30],
+        },
+        {
+          kind: "monster",
+          id: "warded",
+          name: "Warded",
+          ac: 12,
+          initiative: 9,
+          conditions: [],
+          maxHp: 20,
+          tokens: [20],
+        },
+      ],
+      effectOps: [
+        { id: "apply:bond", kind: "apply", effect: bond },
+        { id: "apply:death-ward", kind: "apply", effect: deathWard },
+      ],
+    };
+    const update = vi.fn<(ref: unknown, data: Record<string, unknown>) => void>();
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: () => Promise.resolve({ data: () => ({ encounter: live }) }),
+        update,
+      })
+    );
+
+    await applyDeclaredCombatEffects("camp1", [
+      { kind: "damage", targetId: "warded", amount: 50 },
+    ]);
+
+    expect(update.mock.calls[0]?.[1]).toMatchObject({
+      "encounter.combatants": [
+        expect.objectContaining({ id: "caster", tokens: [5] }),
+        expect.objectContaining({ id: "warded", tokens: [1] }),
+      ],
+      "encounter.effectOps": [
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ kind: "revoke", effectId: deathWard.id }),
+      ],
+    });
+  });
+
+  it("consumes multiple one-shot wards in one multi-target action", async () => {
+    const monsters = ["warded-a", "warded-b"];
+    const wards: ActiveCombatEffect[] = monsters.map((combatantId) => ({
+      id: `death-ward:${combatantId}`,
+      actor: { kind: "monster", combatantId: "caster" },
+      target: { kind: "monster", combatantId },
+      source: { kind: "spell", id: "death-ward", actionId: "cast-ward" },
+      payload: { kind: "grant-group", activeKey: "spell-death-ward" },
+      duration: { kind: "encounter" },
+    }));
+    const live: EncounterState = {
+      round: 1,
+      currentCombatantId: "caster",
+      order: ["caster", ...monsters],
+      epoch: 1,
+      status: "active",
+      combatants: [
+        {
+          kind: "monster",
+          id: "caster",
+          name: "Caster",
+          ac: 12,
+          initiative: 10,
+          conditions: [],
+          maxHp: 30,
+          tokens: [30],
+        },
+        ...monsters.map((id, index) => ({
+          kind: "monster" as const,
+          id,
+          name: `Warded ${index + 1}`,
+          ac: 12,
+          initiative: 9 - index,
+          conditions: [],
+          maxHp: 8,
+          tokens: [8],
+        })),
+      ],
+      effectOps: wards.map((effect) => ({
+        id: `apply:${effect.id}`,
+        kind: "apply" as const,
+        effect,
+      })),
+    };
+    const update = vi.fn<(ref: unknown, data: Record<string, unknown>) => void>();
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: () => Promise.resolve({ data: () => ({ encounter: live }) }),
+        update,
+      })
+    );
+
+    await applyDeclaredCombatEffects(
+      "camp1",
+      monsters.map((targetId) => ({ kind: "damage", targetId, amount: 50 }))
+    );
+
+    const written = update.mock.calls[0]?.[1];
+    const combatants = written?.["encounter.combatants"] as EncounterState["combatants"];
+    expect(
+      combatants
+        .filter((combatant) => monsters.includes(combatant.id))
+        .map((combatant) => (combatant.kind === "monster" ? combatant.tokens[0] : null))
+    ).toEqual([1, 1]);
+    const effectOps = written?.["encounter.effectOps"] as CombatEffectOp[];
+    expect(effectOps.filter((operation) => operation.kind === "revoke")).toHaveLength(2);
+  });
+
+  it("fresh-reads and atomically writes a peer combat slice plus Chronicle", async () => {
+    const set = vi.fn();
+    const update = vi.fn();
+    const liveEncounter: EncounterState = {
+      ...encounter,
+      combatants: [
+        ...encounter.combatants,
+        { kind: "pc", id: "pc-b", memberUid: "b", characterId: "char-b" },
+      ],
+    };
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: (ref: { __doc?: unknown[] }) => {
+          const path = ref.__doc?.slice(1).join("/");
+          if (path === "campaigns/camp-1") {
+            return Promise.resolve({ data: () => ({ encounter: liveEncounter }) });
+          }
+          return Promise.resolve({
+            exists: () => true,
+            data: () => ({
+              hp: { current: 2, temp: 0 },
+              conditions: ["poisoned"],
+              initiativeRoll: null,
+              deathSaves: { successes: 0, failures: 1 },
+              round: 2,
+              recentActions: [],
+            }),
+          });
+        },
+        set,
+        update,
+      })
+    );
+
+    await applyDeclaredCombatEffects(
+      "camp-1",
+      [
+        { kind: "healing", targetId: "pc-a", amount: 5 },
+        {
+          kind: "condition",
+          targetId: "pc-a",
+          conditionId: "poisoned",
+          active: false,
+        },
+      ],
+      {
+        actorId: "pc-b",
+        action: { custom: "Healing Word" },
+        round: 2,
+        pcTargets: [
+          {
+            targetId: "pc-a",
+            memberUid: "a",
+            characterId: "char-a",
+            currentHp: 19,
+            tempHp: 4,
+            maxHp: 20,
+            conditions: [],
+          },
+        ],
+      }
+    );
+
+    // The stale values shown when the dialog opened are ignored: the transaction's
+    // fresh 2 HP / poisoned snapshot is the reduction base.
+    expect(set).toHaveBeenCalledWith(
+      {
+        __doc: [{ __db: true }, "users", "a", "characters", "char-a", "combat", "state"],
+      },
+      expect.objectContaining({
+        hp: { current: 7, temp: 0 },
+        conditions: [],
+        updatedAt: { __serverTimestamp: true },
+      }),
+      { merge: true }
+    );
+    const [campaignRef, campaignUpdate] = update.mock.calls[0] as unknown as [
+      unknown,
+      Record<string, unknown>,
+    ];
+    expect(campaignRef).toEqual({ __doc: [{ __db: true }, "campaigns", "camp-1"] });
+    const events = campaignUpdate["encounter.events"];
+    expect(Array.isArray(events)).toBe(true);
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "hp-heal",
+          targetId: "pc-a",
+          amount: 5,
+          action: { custom: "Healing Word" },
+        }),
+        expect.objectContaining({
+          kind: "condition-loss",
+          targetId: "pc-a",
+          conditionId: "poisoned",
+        }),
+      ])
+    );
   });
 
   it("applies Temporary HP to monsters with max-wins semantics and consumes it first", () => {
@@ -260,6 +656,593 @@ describe("campaign-io — reviewed combat effects", () => {
       amount: 6,
       tempAbsorbed: 4,
     });
+  });
+});
+
+describe("campaign-io — persistent combat-effect operation log", () => {
+  const effect: ActiveCombatEffect = {
+    id: "heroism:cast-1:pc-a",
+    actor: {
+      kind: "pc",
+      combatantId: "pc-b",
+      memberUid: "b",
+      characterId: "char-b",
+    },
+    target: {
+      kind: "pc",
+      combatantId: "pc-a",
+      memberUid: "a",
+      characterId: "char-a",
+    },
+    source: { kind: "spell", id: "heroism", actionId: "cast-1" },
+    payload: { kind: "grant-group", activeKey: "heroism-active" },
+    duration: { kind: "concentration", actorId: "pc-b", sourceId: "heroism" },
+  };
+
+  function runEffectTransaction(effectOps: CombatEffectOp[] = []) {
+    const update = vi.fn();
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: () =>
+          Promise.resolve({
+            data: () => ({
+              encounter: {
+                effectOps,
+                combatants: [
+                  {
+                    kind: "pc",
+                    id: "pc-a",
+                    memberUid: "a",
+                    characterId: "char-a",
+                  },
+                  {
+                    kind: "pc",
+                    id: "pc-b",
+                    memberUid: "b",
+                    characterId: "char-b",
+                  },
+                ],
+              },
+            }),
+          }),
+        update,
+      })
+    );
+    return update;
+  }
+
+  it("appends one sanitized apply operation with a stable occurrence id", async () => {
+    const update = runEffectTransaction();
+    await appendPersistentCombatEffect("camp1", effect);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update.mock.calls[0]?.[1]).toMatchObject({
+      "encounter.effectOps": [{ id: `apply:${effect.id}`, kind: "apply", effect }],
+      updatedAt: { __serverTimestamp: true },
+    });
+  });
+
+  it("is idempotent when the same effect occurrence is replayed", async () => {
+    const update = runEffectTransaction([
+      { id: `apply:${effect.id}`, kind: "apply", effect },
+    ]);
+    await appendPersistentCombatEffect("camp1", effect);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("applies and revokes Aid's exact current-HP delta in the same transaction", async () => {
+    const aid: ActiveCombatEffect = {
+      ...effect,
+      id: "aid:cast-1:pc-a",
+      source: { kind: "spell", id: "aid", actionId: "cast-1", castLevel: 4 },
+      payload: { kind: "grant-group", activeKey: "spell-aid" },
+      duration: { kind: "encounter" },
+    };
+    const set = vi.fn();
+    const update = vi.fn();
+    const campaign = {
+      memberDetails: {
+        a: {
+          characterId: "char-a",
+          role: "player",
+          displayName: "A",
+          character: { hpMax: 20 },
+        },
+      },
+      encounter: {
+        effectOps: [],
+        combatants: [
+          { kind: "pc", id: "pc-a", memberUid: "a", characterId: "char-a" },
+          { kind: "pc", id: "pc-b", memberUid: "b", characterId: "char-b" },
+        ],
+      },
+    };
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: (ref: { __doc?: unknown[] }) =>
+          ref.__doc?.includes("combat")
+            ? Promise.resolve({
+                exists: () => true,
+                data: () => ({
+                  hp: { current: 10, temp: 0 },
+                  conditions: [],
+                  initiativeRoll: null,
+                  deathSaves: { successes: 0, failures: 0 },
+                  round: 1,
+                  recentActions: [],
+                }),
+              })
+            : Promise.resolve({ data: () => campaign }),
+        set,
+        update,
+      })
+    );
+
+    await appendPersistentCombatEffect("camp1", aid);
+
+    const applied = (update.mock.calls[0]?.[1] as Record<string, unknown>)[
+      "encounter.effectOps"
+    ] as CombatEffectOp[];
+    expect(applied[0]).toMatchObject({
+      kind: "apply",
+      effect: { id: aid.id, applied: { currentHpDelta: 15 } },
+    });
+    expect(set).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ hp: { current: 25, temp: 0 } })
+    );
+
+    set.mockClear();
+    update.mockClear();
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: (ref: { __doc?: unknown[] }) =>
+          ref.__doc?.includes("combat")
+            ? Promise.resolve({
+                exists: () => true,
+                data: () => ({
+                  hp: { current: 25, temp: 0 },
+                  conditions: [],
+                  initiativeRoll: null,
+                  deathSaves: { successes: 0, failures: 0 },
+                  round: 1,
+                  recentActions: [],
+                }),
+              })
+            : Promise.resolve({
+                data: () => ({
+                  ...campaign,
+                  encounter: { ...campaign.encounter, effectOps: applied },
+                }),
+              }),
+        set,
+        update,
+      })
+    );
+
+    await revokePersistentCombatEffect("camp1", aid.id);
+    expect(set).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ hp: { current: 10, temp: 0 } })
+    );
+    expect(update.mock.calls[0]?.[1]).toMatchObject({
+      "encounter.effectOps": [applied[0], { kind: "revoke", effectId: aid.id }],
+    });
+  });
+
+  it("reconciles a superseded monster Aid without stacking max or current HP", async () => {
+    const target = { kind: "monster" as const, combatantId: "monster-1" };
+    const oldAid: ActiveCombatEffect = {
+      ...effect,
+      id: "aid:old",
+      target,
+      source: { kind: "spell", id: "aid", actionId: "old", castLevel: 2 },
+      payload: { kind: "grant-group", activeKey: "spell-aid" },
+      applied: { currentHpDelta: 5 },
+      duration: { kind: "encounter" },
+    };
+    const oldAidInput = { ...oldAid };
+    delete oldAidInput.applied;
+    const stronger: ActiveCombatEffect = {
+      ...oldAidInput,
+      id: "aid:new",
+      source: { ...oldAid.source, actionId: "new", castLevel: 4 },
+    };
+    const update = vi.fn<(ref: unknown, data: Record<string, unknown>) => void>();
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: () =>
+          Promise.resolve({
+            data: () => ({
+              encounter: {
+                effectOps: [{ id: "apply:old", kind: "apply", effect: oldAid }],
+                combatants: [
+                  { kind: "pc", id: "pc-b", memberUid: "b", characterId: "char-b" },
+                  {
+                    kind: "monster",
+                    id: "monster-1",
+                    name: "Goblin",
+                    ac: 13,
+                    initiative: 8,
+                    conditions: [],
+                    maxHp: 12,
+                    tokens: [12],
+                  },
+                ],
+              },
+            }),
+          }),
+        update,
+      })
+    );
+
+    await appendPersistentCombatEffect("camp1", stronger);
+
+    const written = update.mock.calls[0]?.[1];
+    expect(written).toMatchObject({
+      "encounter.combatants": [
+        expect.anything(),
+        expect.objectContaining({ maxHp: 22, tokens: [22] }),
+      ],
+    });
+    const writtenOps = written?.["encounter.effectOps"] as CombatEffectOp[];
+    const applied = writtenOps.find(
+      (operation) => operation.kind === "apply" && operation.effect.id === stronger.id
+    );
+    expect(applied?.kind === "apply" ? applied.effect.applied : null).toEqual({
+      currentHpDelta: 15,
+    });
+  });
+
+  it("rejects missing, kind-mismatched, or spoofed encounter participants", async () => {
+    const missingUpdate = runEffectTransaction();
+    await expect(
+      appendPersistentCombatEffect("camp1", {
+        ...effect,
+        target: { kind: "monster", combatantId: "missing" },
+      })
+    ).rejects.toThrow("Combat effect participant mismatch");
+    expect(missingUpdate).not.toHaveBeenCalled();
+
+    const spoofedUpdate = runEffectTransaction();
+    await expect(
+      appendPersistentCombatEffect("camp1", {
+        ...effect,
+        actor: {
+          kind: "pc",
+          combatantId: "pc-b",
+          memberUid: "b",
+          characterId: "someone-elses-character",
+        },
+      })
+    ).rejects.toThrow("Combat effect participant mismatch");
+    expect(spoofedUpdate).not.toHaveBeenCalled();
+
+    const wrongKindUpdate = runEffectTransaction();
+    await expect(
+      appendPersistentCombatEffect("camp1", {
+        ...effect,
+        target: { kind: "monster", combatantId: "pc-a" },
+      })
+    ).rejects.toThrow("Combat effect participant mismatch");
+    expect(wrongKindUpdate).not.toHaveBeenCalled();
+  });
+
+  it("validates monster token slots and legacy conformed instance ids", async () => {
+    const update = vi.fn<(ref: unknown, data: Record<string, unknown>) => void>();
+    runTransactionMock.mockImplementation(async (_db, fn) =>
+      fn({
+        get: () =>
+          Promise.resolve({
+            data: () => ({
+              encounter: {
+                effectOps: [],
+                combatants: [
+                  {
+                    kind: "pc",
+                    id: "pc-b",
+                    memberUid: "b",
+                    characterId: "char-b",
+                  },
+                  {
+                    kind: "monster",
+                    id: "goblins",
+                    name: "Goblin",
+                    ac: 13,
+                    initiative: 8,
+                    conditions: [],
+                    maxHp: 7,
+                    tokens: [7, 7],
+                  },
+                ],
+              },
+            }),
+          }),
+        update,
+      })
+    );
+
+    await appendPersistentCombatEffect("camp1", {
+      ...effect,
+      target: { kind: "monster", combatantId: "goblins", tokenIndex: 1 },
+    });
+    await appendPersistentCombatEffect("camp1", {
+      ...effect,
+      id: "legacy-instance",
+      target: { kind: "monster", combatantId: "goblins~2" },
+    });
+    expect(update).toHaveBeenCalledTimes(2);
+
+    await expect(
+      appendPersistentCombatEffect("camp1", {
+        ...effect,
+        id: "bad-slot",
+        target: { kind: "monster", combatantId: "goblins", tokenIndex: 2 },
+      })
+    ).rejects.toThrow("Combat effect participant mismatch");
+  });
+
+  it("appends an exact revoke using provenance from the stored application", async () => {
+    const apply: CombatEffectOp = {
+      id: `apply:${effect.id}`,
+      kind: "apply",
+      effect,
+    };
+    const update = runEffectTransaction([apply]);
+    await revokePersistentCombatEffect("camp1", effect.id);
+    expect(update.mock.calls[0]?.[1]).toMatchObject({
+      "encounter.effectOps": [
+        apply,
+        {
+          id: `revoke:${effect.id}`,
+          kind: "revoke",
+          effectId: effect.id,
+          actorId: "pc-b",
+          targetId: "pc-a",
+        },
+      ],
+    });
+  });
+
+  it("treats a missing or already-revoked occurrence as a no-op", async () => {
+    const missingUpdate = runEffectTransaction();
+    await revokePersistentCombatEffect("camp1", "missing");
+    expect(missingUpdate).not.toHaveBeenCalled();
+
+    const revoke: CombatEffectOp = {
+      id: `revoke:${effect.id}`,
+      kind: "revoke",
+      effectId: effect.id,
+      actorId: "pc-b",
+      targetId: "pc-a",
+    };
+    const duplicateUpdate = runEffectTransaction([
+      { id: `apply:${effect.id}`, kind: "apply", effect },
+      revoke,
+    ]);
+    await revokePersistentCombatEffect("camp1", effect.id);
+    expect(duplicateUpdate).not.toHaveBeenCalled();
+  });
+
+  it("fails before exceeding the bounded campaign-document ledger", async () => {
+    const full = Array.from(
+      { length: 512 },
+      (_, index): CombatEffectOp => ({
+        id: `apply:${index}`,
+        kind: "apply",
+        effect: { ...effect, id: String(index) },
+      })
+    );
+    const update = runEffectTransaction(full);
+    await expect(appendPersistentCombatEffect("camp1", effect)).rejects.toThrow(
+      "Combat effect operation limit reached"
+    );
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("drops malformed legacy operations before engine consumers see them", () => {
+    expect(
+      conformCombatEffectOps([
+        { id: "broken", kind: "apply", effect: { id: "missing-nested-shapes" } },
+        { id: "also-broken", kind: "revoke", effectId: 42 },
+        { id: "wrong-kind", kind: "surprise" },
+      ])
+    ).toEqual([]);
+  });
+
+  it("accepts only absent or non-negative integer monster token indexes", () => {
+    const tokenEffect = (tokenIndex: number | undefined): ActiveCombatEffect => ({
+      ...effect,
+      id: `token:${String(tokenIndex)}`,
+      target: {
+        kind: "monster",
+        combatantId: "goblin-group",
+        ...(tokenIndex === undefined ? {} : { tokenIndex }),
+      },
+    });
+    const valid = tokenEffect(1);
+    expect(
+      conformCombatEffectOps([
+        { id: "valid", kind: "apply", effect: valid },
+        { id: "negative", kind: "apply", effect: tokenEffect(-1) },
+        { id: "fraction", kind: "apply", effect: tokenEffect(1.5) },
+      ])
+    ).toEqual([{ id: "valid", kind: "apply", effect: valid }]);
+  });
+
+  it("drops a revoke whose actor/target provenance does not match its apply", () => {
+    const apply: CombatEffectOp = {
+      id: `apply:${effect.id}`,
+      kind: "apply",
+      effect,
+    };
+    expect(
+      conformCombatEffectOps([
+        apply,
+        {
+          id: `revoke:${effect.id}`,
+          kind: "revoke",
+          effectId: effect.id,
+          actorId: "pc-spoofed",
+          targetId: "pc-a",
+        },
+      ])
+    ).toEqual([apply]);
+  });
+
+  it("preserves a valid application and its exact inverse", () => {
+    const operations: CombatEffectOp[] = [
+      { id: `apply:${effect.id}`, kind: "apply", effect },
+      {
+        id: `revoke:${effect.id}`,
+        kind: "revoke",
+        effectId: effect.id,
+        actorId: "pc-b",
+        targetId: "pc-a",
+      },
+    ];
+    expect(conformCombatEffectOps(operations)).toEqual(operations);
+  });
+
+  it("revokes every active occurrence for one actor/source with fresh exact appends", async () => {
+    const older = { ...effect, id: "heroism:older" };
+    const newer = { ...effect, id: "heroism:newer" };
+    const unrelated = {
+      ...effect,
+      id: "bless:1",
+      source: { ...effect.source, id: "bless" },
+    };
+    let effectOps: CombatEffectOp[] = [
+      { id: "apply:older", kind: "apply", effect: older },
+      { id: "apply:newer", kind: "apply", effect: newer },
+      { id: "apply:unrelated", kind: "apply", effect: unrelated },
+    ];
+    const updates: Record<string, unknown>[] = [];
+    runTransactionMock.mockImplementation(async (_db, fn) =>
+      fn({
+        get: () => Promise.resolve({ data: () => ({ encounter: { effectOps } }) }),
+        update: (_ref: unknown, data: Record<string, unknown>) => {
+          updates.push(data);
+          effectOps = data["encounter.effectOps"] as CombatEffectOp[];
+        },
+      })
+    );
+
+    await revokePersistentCombatEffectsBySource("camp1", {
+      actorId: "pc-b",
+      sourceId: "heroism",
+    });
+
+    expect(updates).toHaveLength(1);
+    expect(effectOps.filter((operation) => operation.kind === "revoke")).toMatchObject([
+      { effectId: "heroism:newer", actorId: "pc-b", targetId: "pc-a" },
+    ]);
+    expect(effectOps).toContainEqual({
+      id: "apply:unrelated",
+      kind: "apply",
+      effect: unrelated,
+    });
+  });
+
+  it("replaying actor/source revocation reads fresh state and appends nothing", async () => {
+    const applied: CombatEffectOp = {
+      id: `apply:${effect.id}`,
+      kind: "apply",
+      effect,
+    };
+    const revoked: CombatEffectOp = {
+      id: `revoke:${effect.id}`,
+      kind: "revoke",
+      effectId: effect.id,
+      actorId: "pc-b",
+      targetId: "pc-a",
+    };
+    const update = vi.fn();
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: () =>
+          Promise.resolve({
+            data: () => ({ encounter: { effectOps: [applied, revoked] } }),
+          }),
+        update,
+      })
+    );
+
+    await revokePersistentCombatEffectsBySource("camp1", {
+      actorId: "pc-b",
+      sourceId: "heroism",
+    });
+    expect(update).not.toHaveBeenCalled();
+    expect(runTransactionMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("ending concentration leaves Haste's aftereffect live", async () => {
+    const haste: ActiveCombatEffect = {
+      id: "haste:concentration",
+      actor: { kind: "monster", combatantId: "caster" },
+      target: { kind: "monster", combatantId: "target" },
+      source: { kind: "spell", id: "haste", actionId: "cast-haste" },
+      payload: { kind: "grant-group", activeKey: "spell-haste" },
+      duration: { kind: "concentration", actorId: "caster", sourceId: "haste" },
+    };
+    let effectOps: CombatEffectOp[] = [
+      { id: "apply:haste", kind: "apply", effect: haste },
+    ];
+    const encounter = {
+      round: 1,
+      currentCombatantId: "caster",
+      order: ["caster", "target"],
+      combatants: [
+        {
+          kind: "monster",
+          id: "caster",
+          name: "Caster",
+          ac: 12,
+          initiative: 10,
+          conditions: [],
+          maxHp: 20,
+          tokens: [20],
+        },
+        {
+          kind: "monster",
+          id: "target",
+          name: "Target",
+          ac: 12,
+          initiative: 9,
+          conditions: [],
+          maxHp: 20,
+          tokens: [20],
+        },
+      ],
+      effectOps,
+    };
+    runTransactionMock.mockImplementation(async (_db, fn) =>
+      fn({
+        get: () =>
+          Promise.resolve({ data: () => ({ encounter: { ...encounter, effectOps } }) }),
+        update: (_ref: unknown, data: Record<string, unknown>) => {
+          effectOps = data["encounter.effectOps"] as CombatEffectOp[];
+        },
+      })
+    );
+
+    await revokePersistentCombatEffectsBySource("camp1", {
+      actorId: "caster",
+      sourceId: "haste",
+    });
+
+    expect(effectOps).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "revoke", effectId: haste.id }),
+      ])
+    );
+    const successor = effectOps.find(
+      (operation) =>
+        operation.kind === "apply" && operation.effect.id === `${haste.id}:aftereffect`
+    );
+    expect(successor?.kind === "apply" ? successor.effect.payload : null).toMatchObject({
+      phase: "aftereffect",
+    });
+    expect(runTransactionMock).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -292,7 +1275,7 @@ describe("campaign-io — advanceEncounterTurn (P2 scoped turn write)", () => {
   function runWith(seed: EncounterState | undefined): {
     update: ReturnType<typeof vi.fn>;
   } {
-    const update = vi.fn();
+    const update = vi.fn<(ref: unknown, data: Record<string, unknown>) => void>();
     runTransactionMock.mockImplementation(async (_db, fn) =>
       fn({
         get: () => Promise.resolve({ data: () => ({ encounter: seed }) }),
@@ -301,6 +1284,79 @@ describe("campaign-io — advanceEncounterTurn (P2 scoped turn write)", () => {
     );
     return { update };
   }
+
+  it("atomically revokes an expired effect and creates its data-declared aftereffect", async () => {
+    const haste: ActiveCombatEffect = {
+      id: "haste:1",
+      actor: { kind: "monster", combatantId: "caster" },
+      target: { kind: "monster", combatantId: "target" },
+      source: { kind: "spell", id: "haste", actionId: "cast-haste" },
+      payload: { kind: "grant-group", activeKey: "spell-haste" },
+      duration: {
+        kind: "turn-boundary",
+        combatantId: "target",
+        round: 1,
+        phase: "turn-start",
+      },
+    };
+    const live: EncounterState = {
+      round: 1,
+      currentCombatantId: "caster",
+      order: ["caster", "target"],
+      epoch: 1,
+      status: "active",
+      combatants: [
+        {
+          kind: "monster",
+          id: "caster",
+          name: "Caster",
+          ac: 12,
+          initiative: 10,
+          conditions: [],
+          maxHp: 20,
+          tokens: [20],
+        },
+        {
+          kind: "monster",
+          id: "target",
+          name: "Target",
+          ac: 12,
+          initiative: 9,
+          conditions: [],
+          maxHp: 20,
+          tokens: [20],
+        },
+      ],
+      effectOps: [{ id: "apply:haste:1", kind: "apply", effect: haste }],
+    };
+    const update = vi.fn<(ref: unknown, data: Record<string, unknown>) => void>();
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: () => Promise.resolve({ data: () => ({ encounter: live }) }),
+        update,
+      })
+    );
+
+    await advanceEncounterTurn("camp1", "next", { uid: "dm", isDm: true }, "caster");
+
+    const written = update.mock.calls[0]?.[1];
+    expect(written).toMatchObject({
+      "encounter.currentCombatantId": "target",
+    });
+    const writtenOps = written?.["encounter.effectOps"] as CombatEffectOp[];
+    expect(writtenOps).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "revoke", effectId: haste.id }),
+      ])
+    );
+    const successor = writtenOps.find(
+      (operation) =>
+        operation.kind === "apply" && operation.effect.id === `${haste.id}:aftereffect`
+    );
+    expect(successor?.kind === "apply" ? successor.effect.payload : null).toMatchObject({
+      phase: "aftereffect",
+    });
+  });
 
   it("advances ONLY the two turn fields with a dot-path update (diff-scoped)", async () => {
     const { update } = runWith(encounter);

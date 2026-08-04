@@ -184,6 +184,8 @@ export interface MonsterInput {
   count: number;
   /** Typed initiative for the group; `null` = blank. */
   initiative: number | null;
+  /** Which side this creature fights for. Defaults to enemy for old callers/data. */
+  side?: "ally" | "enemy";
   /** Optional DM free-text notes (omitted/empty → no `notes` field is stored). */
   notes?: string;
   /** Optional bestiary reference — set by the picker; omitted → no field stored. */
@@ -222,6 +224,7 @@ export function addMonster(state: EncounterState, input: MonsterInput): Encounte
   const groupId = nextMonsterId(state.combatants);
   const base: Omit<EncounterMonster, "id" | "tokens"> = {
     kind: "monster",
+    ...(input.side === "ally" ? { side: "ally" as const } : {}),
     name: input.name,
     ac: input.ac,
     initiative: input.initiative === null ? null : Math.round(input.initiative),
@@ -321,6 +324,22 @@ export function setRevealed(
   revealed: boolean
 ): EncounterState {
   return mapCombatant(state, id, (c) => (c.kind === "pc" ? c : { ...c, revealed }));
+}
+
+/** Reclassify an NPC at the table without rebuilding it. Allegiance is always a DM
+ * override and never inferred from creature type. */
+export function setMonsterSide(
+  state: EncounterState,
+  id: string,
+  side: "ally" | "enemy"
+): EncounterState {
+  return mapCombatant(state, id, (combatant) => {
+    if (combatant.kind === "pc") return combatant;
+    if (side === "ally") return { ...combatant, side };
+    const enemy = { ...combatant };
+    delete enemy.side;
+    return enemy;
+  });
 }
 
 // ─── Per-combatant edits ────────────────────────────────────────────────────
@@ -778,7 +797,13 @@ export function viewerActiveEncounters(
   campaigns: ReadonlyArray<
     Pick<
       CampaignDoc,
-      "id" | "name" | "dmUid" | "memberDetails" | "encounter" | "encounterInit"
+      | "id"
+      | "name"
+      | "dmUid"
+      | "memberDetails"
+      | "encounter"
+      | "encounterInit"
+      | "encounterSkipped"
     >
   >,
   uid: string,
@@ -792,6 +817,7 @@ export function viewerActiveEncounters(
       (c): c is EncounterPc => c.kind === "pc" && c.memberUid === uid
     );
     const viewerIsDm = campaign.dmUid === uid || isAdmin;
+    if (myPc && campaign.encounterSkipped?.[uid]) continue;
     if (!myPc && !viewerIsDm) continue;
     out.push({
       campaignId: campaign.id,

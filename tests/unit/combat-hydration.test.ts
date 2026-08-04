@@ -20,7 +20,11 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { useCombatStore } from "@/stores/combatStore";
-import { syncCombatFromSession } from "@/features/character/center/combat-hydration";
+import {
+  snapshotTurnEconomy,
+  syncCombatFromSession,
+} from "@/features/character/center/combat-hydration";
+import type { CombatState } from "@/types/combat-state";
 
 /**
  * Thin wrapper around the real policy that tracks the "already hydrated" id the way
@@ -29,8 +33,21 @@ import { syncCombatFromSession } from "@/features/character/center/combat-hydrat
  */
 function makeArriver() {
   let hydratedId: string | null = null;
-  return function arrive(id: string, round: number, init: string): boolean {
-    const fresh = syncCombatFromSession(id, round, init, hydratedId);
+  return function arrive(
+    id: string,
+    round: number,
+    init: string,
+    turnEconomy?: CombatState["turnEconomy"],
+    currentTurnKey?: string
+  ): boolean {
+    const fresh = syncCombatFromSession(
+      id,
+      round,
+      init,
+      hydratedId,
+      turnEconomy,
+      currentTurnKey
+    );
     if (fresh) hydratedId = id;
     return fresh;
   };
@@ -93,6 +110,49 @@ describe("Combat sync — async character arrival", () => {
     expect(arrive("char-1", 7, "")).toBe(true);
     expect(useCombatStore.getState().round).toBe(7);
     expect(useCombatStore.getState().initiative).toBe("");
+  });
+
+  it("restores a spent action, reaction, and movement for the exact same turn", () => {
+    const key = "encounter:camp:9:3:pc-member";
+    useCombatStore.getState().selectAction({
+      id: "vicious-mockery",
+      name: "Vicious Mockery",
+      nameLoc: { custom: "Vicious Mockery" },
+      slot: "action",
+    });
+    useCombatStore.getState().useReaction("cutting-words");
+    useCombatStore.getState().setMovementUsed(15);
+    const persisted = snapshotTurnEconomy(useCombatStore.getState(), key);
+    useCombatStore.getState().endCombat();
+
+    const arrive = makeArriver();
+    arrive("char-1", 1, "", persisted, key);
+    const restored = useCombatStore.getState();
+    expect(restored.selected.action.map((action) => action.id)).toEqual([
+      "vicious-mockery",
+    ]);
+    expect(restored.reactionUsedId).toBe("cutting-words");
+    expect(restored.movementUsedFt).toBe(15);
+  });
+
+  it("never restores a spent action into a different turn pointer", () => {
+    const persisted = {
+      ...snapshotTurnEconomy(useCombatStore.getState(), "encounter:camp:9:3:pc-member"),
+      selected: {
+        action: [
+          {
+            id: "attack",
+            name: { custom: "Attack" },
+            slot: "action" as const,
+          },
+        ],
+        bonus: [],
+        free: [],
+      },
+    };
+    const arrive = makeArriver();
+    arrive("char-1", 1, "", persisted, "encounter:camp:9:3:monster-1");
+    expect(useCombatStore.getState().selected.action).toEqual([]);
   });
 });
 

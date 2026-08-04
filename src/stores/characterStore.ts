@@ -83,6 +83,7 @@ import {
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast, useUndoStore } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 /**
  * Hard cap on the PERSISTED/synced log array. The log is append-only and never
@@ -140,6 +141,9 @@ interface CharacterState {
    * unit-testable. See {@link CombatPersistence}.
    */
   combatPersistence: CombatPersistence | null;
+  /** Flush the already-scheduled parent-character save after a play-resource mutation.
+   * Injected by the subscription so this store remains Firebase-free. */
+  parentPersistenceFlush: (() => void) | null;
   /**
    * The SOLO combat `round` hydrated from the `combat/state` subdoc — the round's
    * in-store mirror (the parallel of {@link combatEpoch}). The SESSION no longer carries
@@ -159,11 +163,23 @@ interface CharacterState {
    */
   combatRecentActions: RecentAttack[];
   combatAppliedEncounterEffects: CombatState["appliedEncounterEffects"];
+  combatTurnEconomy: CombatState["turnEconomy"];
+  /** Campaign-owned effects currently projected onto one character id. */
+  encounterEffectProjection: {
+    characterId: string;
+    effects: ReadonlyArray<ActiveCombatEffect>;
+  } | null;
 
   // Actions
   setCharacter: (doc: CharacterDoc | null) => void;
+  /** Project campaign-owned effects without adding them to character persistence. */
+  setEncounterEffects: (
+    characterId: string | null,
+    effects?: ReadonlyArray<ActiveCombatEffect>
+  ) => void;
   /** Inject (or clear) the combat-state persistence seam — the subscription lifecycle. */
   setCombatPersistence: (persistence: CombatPersistence | null) => void;
+  setParentPersistenceFlush: (flush: (() => void) | null) => void;
   /** T4 — load a sheet in read-only mode (DM viewing a member's character). */
   loadReadonly: (doc: CharacterDoc | null) => void;
   setLoading: (loading: boolean) => void;
@@ -208,6 +224,11 @@ interface CharacterState {
    * A no-op without an injected persistence.
    */
   persistCombatRound: (round: number) => void;
+  /** Persist the current turn's spent economy together with its solo-round mirror. */
+  persistCombatTurnState: (
+    round: number,
+    turnEconomy: NonNullable<CombatState["turnEconomy"]>
+  ) => void;
   /**
    * Record a player-DECLARED in-encounter attack (target(s) + the HIT/MISS tapped after
    * rolling) into the `recentActions` ring and persist the whole combat state — the
@@ -551,9 +572,38 @@ function persistCombat(get: () => CharacterState): void {
       cur.session,
       get().combatRound,
       get().combatRecentActions,
-      get().combatAppliedEncounterEffects
+      get().combatAppliedEncounterEffects,
+      get().combatTurnEconomy
     )
   );
+}
+
+/** Resource mutations schedule the ordinary parent autosave synchronously through the
+ * store subscriber. Flush it in a microtask so a composite cast can finish every
+ * slot/tracker/concentration/log mutation first, then persist the final snapshot once. */
+let parentFlushQueued = false;
+function flushParentPersistence(get: () => CharacterState): void {
+  if (parentFlushQueued) return;
+  parentFlushQueued = true;
+  queueMicrotask(() => {
+    parentFlushQueued = false;
+    get().parentPersistenceFlush?.();
+  });
+}
+
+function attachEncounterEffects(
+  character: CharacterDoc,
+  projection: CharacterState["encounterEffectProjection"]
+): void {
+  Object.defineProperty(character.session, "encounterEffects", {
+    configurable: true,
+    enumerable: false,
+    writable: true,
+    value:
+      projection && projection.characterId === character.id
+        ? projection.effects
+        : undefined,
+  });
 }
 
 export const useCharacterStore = create<CharacterState>()((set, get) => ({
@@ -562,15 +612,28 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   error: null,
   readonly: false,
   combatPersistence: null,
+  parentPersistenceFlush: null,
   combatRound: 1,
   combatRecentActions: [],
   combatAppliedEncounterEffects: undefined,
+  combatTurnEconomy: undefined,
+  encounterEffectProjection: null,
 
   // The normal owner-edit load path — always clears read-only (so re-entering a
   // sheet you own after viewing someone else's is fully editable again).
   setCharacter: (doc) => set({ character: doc, error: null, readonly: false }),
+  setEncounterEffects: (characterId, effects = []) => {
+    const projection = characterId ? { characterId, effects } : null;
+    const { character } = get();
+    if (character) attachEncounterEffects(character, projection);
+    set({
+      encounterEffectProjection: projection,
+      ...(character ? { character: { ...character } } : {}),
+    });
+  },
   loadReadonly: (doc) => set({ character: doc, error: null, readonly: true }),
   setCombatPersistence: (persistence) => set({ combatPersistence: persistence }),
+  setParentPersistenceFlush: (flush) => set({ parentPersistenceFlush: flush }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 
@@ -594,6 +657,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       // OVERWRITE write would otherwise drop a declaration made from another surface).
       combatRecentActions: combat?.recentActions ?? [],
       combatAppliedEncounterEffects: combat?.appliedEncounterEffects,
+      combatTurnEconomy: combat?.turnEconomy,
     });
   },
 
@@ -996,6 +1060,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         },
       },
     });
+    flushParentPersistence(get);
   },
 
   restoreSpellSlot: (level, pactMagic = false) => {
@@ -1016,6 +1081,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         },
       },
     });
+    flushParentPersistence(get);
   },
 
   useTracker: (trackerId, amount = 1) => {
@@ -1035,6 +1101,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         },
       },
     });
+    flushParentPersistence(get);
   },
 
   restoreTracker: (trackerId, amount = 1) => {
@@ -1054,6 +1121,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         },
       },
     });
+    flushParentPersistence(get);
   },
 
   useEquipmentItem: (equipmentKey) => {
@@ -1452,6 +1520,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     persistCombat(get);
   },
 
+  persistCombatTurnState: (round, turnEconomy) => {
+    if (get().readonly || !get().character) return;
+    set({ combatRound: round, combatTurnEconomy: turnEconomy });
+    get().combatPersistence?.writeTurnEconomy(round, turnEconomy);
+  },
+
   declareAttack: (entry) => {
     if (get().readonly) return;
     const character = get().character;
@@ -1463,7 +1537,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       character.session,
       get().combatRound,
       get().combatRecentActions,
-      get().combatAppliedEncounterEffects
+      get().combatAppliedEncounterEffects,
+      get().combatTurnEconomy
     );
     set({ combatRecentActions: pushRecentAttack(base, entry).recentActions });
     persistCombat(get);
@@ -1565,7 +1640,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // recharge wands, daily-cooldown rods) are left alone here.
     const newEquipment = character.character.equipment.map((ref) => {
       if (!ref.charges) return ref;
-      if (ref.charges.recovery !== undefined && ref.charges.recovery !== "long-rest") {
+      if (
+        ref.charges.recovery !== undefined &&
+        ref.charges.recovery !== "long-rest" &&
+        ref.charges.recovery !== "dawn"
+      ) {
         return ref;
       }
       if (ref.charges.current === ref.charges.max) return ref;
@@ -2459,3 +2538,16 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     void clearLogFromIDB(character.id);
   },
 }));
+
+// Registered before UI/auto-save subscribers: every immutable session replacement is
+// decorated for render without becoming enumerable/persistable. This also reattaches a
+// projection after a same-character Firestore hydration.
+useCharacterStore.subscribe((state, previous) => {
+  if (
+    state.character &&
+    (state.character !== previous.character ||
+      state.encounterEffectProjection !== previous.encounterEffectProjection)
+  ) {
+    attachEncounterEffects(state.character, state.encounterEffectProjection);
+  }
+});

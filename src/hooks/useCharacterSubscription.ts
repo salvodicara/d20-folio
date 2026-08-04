@@ -29,7 +29,11 @@ import {
   saveStatusCallbacks,
   type DebouncedSaveHandle,
 } from "@/lib/firestore";
-import { subscribeCombatState, writeCombatState } from "@/lib/combat-state-io";
+import {
+  subscribeCombatState,
+  writeCombatState,
+  writeCombatTurnEconomy,
+} from "@/lib/combat-state-io";
 import {
   nonCombatSessionChanged,
   combatTrioDiffers,
@@ -38,18 +42,36 @@ import {
 import { loadLogFromIDB } from "@/lib/log-persistence";
 import { normalizeLogEntry } from "@/lib/sanitize-session";
 import { normalizeLogEntryConcentration } from "@/lib/concentration";
-import type { LogEntry } from "@/types/character";
+import type { CharacterDoc, LogEntry } from "@/types/character";
 import type { CombatState, CombatPersistence } from "@/types/combat-state";
 import { effectiveAC } from "@/lib/aggregate-character";
-import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
+import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { MOCK_CHARACTER, MOCK_COMBAT_ROUND } from "@/lib/mock";
 import { isDevFixtureId, loadDevFixture } from "@/lib/dev-fixtures";
 import { isDevScenarioRouteId } from "@/lib/dev-scenario-id";
+import {
+  readDevDocument,
+  subscribeDevDocument,
+  writeDevDocument,
+} from "@/lib/dev-document-store";
+import {
+  DEV_CHARACTER_COLLECTION,
+  devCharacterDocumentId,
+  mergeDevCharacterParent,
+  projectDevCharacterParent,
+  type DevCharacterParent,
+} from "@/lib/dev-character-document";
 import {
   createAttachedCampaignTracker,
   refreshAttachedSheets,
   type AttachedCampaignTracker,
 } from "@/features/campaigns/refresh-attached-sheets";
+
+// Keep unit-test mocking and dev dogfood intact, while letting the production build
+// erase the local document-replica path (and its fixture-only dependencies).
+function devBypassEnabled(): boolean {
+  return import.meta.env.PROD ? false : IMPORTED_DEV_BYPASS_AUTH;
+}
 
 /**
  * Subscribe to a character document in Firestore.
@@ -90,23 +112,83 @@ export function useCharacterSubscription(characterId: string | undefined): void 
 
   // Set up subscription (or load mock in dev bypass mode)
   useEffect(() => {
-    // Dev bypass: load mock character directly, no Firestore
-    if (DEV_BYPASS_AUTH) {
+    // Dev bypass: fixtures are only the initial seed. The same parent + combat/state
+    // document split then runs through the local replica, including optimistic echoes,
+    // reload survival, and cross-tab updates.
+    if (devBypassEnabled()) {
       const id = characterId ?? "mock-1";
+      const uid = user?.uid ?? "mock-uid";
+      const storageId = devCharacterDocumentId(uid, id);
+      let cancelled = false;
+      let unsubscribeParent = () => {};
+      let unsubscribeCombat = () => {};
+
+      const activate = (seed: CharacterDoc, seedRound = 1): void => {
+        if (cancelled) return;
+        const persisted = readDevDocument<DevCharacterParent>(
+          DEV_CHARACTER_COLLECTION,
+          storageId
+        );
+        const initial = persisted ? mergeDevCharacterParent(seed, persisted) : seed;
+        isFromServerRef.current = true;
+        setCharacter(initial);
+        isFromServerRef.current = false;
+
+        // Seed the combat subdoc once, then use the exact injected persistence seam the
+        // production store mutators call. A reload never rebuilds spent resources/turns.
+        const existingCombat = readDevDocument<CombatState>("combat-state", storageId);
+        if (!existingCombat) {
+          void writeCombatState(
+            uid,
+            id,
+            sessionToCombatState(initial.session, seedRound)
+          );
+        }
+        useCharacterStore.getState().setCombatPersistence({
+          write: (state) => void writeCombatState(uid, id, state),
+          writeTurnEconomy: (round, turnEconomy) =>
+            void writeCombatTurnEconomy(uid, id, round, turnEconomy),
+        });
+
+        unsubscribeParent = subscribeDevDocument<DevCharacterParent>(
+          DEV_CHARACTER_COLLECTION,
+          storageId,
+          (parent) => {
+            if (!parent) return;
+            const current = useCharacterStore.getState().character;
+            if (!current || current.id !== id) return;
+            isFromServerRef.current = true;
+            setCharacter(mergeDevCharacterParent(current, parent));
+            isFromServerRef.current = false;
+          }
+        );
+        unsubscribeCombat = subscribeCombatState(uid, id, (combat) => {
+          if (!combat) return;
+          isFromCombatRef.current = true;
+          useCharacterStore.getState().hydrateCombatState(combat);
+          isFromCombatRef.current = false;
+        });
+        setLoading(false);
+      };
+
+      const cleanup = (): void => {
+        cancelled = true;
+        unsubscribeParent();
+        unsubscribeCombat();
+        useCharacterStore.getState().setCombatPersistence(null);
+        useCharacterStore.getState().setParentPersistenceFlush(null);
+        setCharacter(null);
+      };
+
       // A `team-<kebab>` id loads one of the 6 real team fixtures (async — the
       // importer + JSON are lazy chunks). Every other id keeps the unchanged
       // synchronous MOCK path so existing previews/tests are untouched.
       if (isDevFixtureId(id)) {
         setLoading(true);
-        let cancelled = false;
         void loadDevFixture(id).then((doc) => {
-          if (cancelled) return;
-          setCharacter(doc ?? { ...MOCK_CHARACTER, id });
-          setLoading(false);
+          activate(doc ?? { ...MOCK_CHARACTER, id });
         });
-        return () => {
-          cancelled = true;
-        };
+        return cleanup;
       }
       // A `scn-<name>` id BUILDS one of the registered dev scenarios (any
       // class/subclass/level) from a concise spec — the general counterpart of
@@ -116,30 +198,13 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         // The scenario builder + the engine it pulls are dev-only — lazy-import so
         // they never weigh on the eager cockpit bundle (mirrors the fixture path).
         setLoading(true);
-        let cancelled = false;
         void import("@/lib/dev-scenarios").then(({ buildDevScenario }) => {
-          if (cancelled) return;
-          setCharacter(buildDevScenario(id) ?? { ...MOCK_CHARACTER, id });
-          setLoading(false);
+          activate(buildDevScenario(id) ?? { ...MOCK_CHARACTER, id });
         });
-        return () => {
-          cancelled = true;
-        };
+        return cleanup;
       }
-      setCharacter({ ...MOCK_CHARACTER, id });
-      // Dev-bypass loads no `combat/state` subdoc, so the mock's persisted SOLO round
-      // (Lyra is mid-combat at round 5) would never reach the turn engine — it would
-      // read the round-1 default. Mirror prod: hydrate a combat state derived from the
-      // mock session + its canonical round, so the meter seeds `combatStore.round` like
-      // a real loaded character. Round-trips the trio identically (same HP/conditions),
-      // so only the round differs from the default.
-      useCharacterStore
-        .getState()
-        .hydrateCombatState(
-          sessionToCombatState(MOCK_CHARACTER.session, MOCK_COMBAT_ROUND)
-        );
-      setLoading(false);
-      return;
+      activate({ ...MOCK_CHARACTER, id }, MOCK_COMBAT_ROUND);
+      return cleanup;
     }
 
     if (!user || !characterId) {
@@ -153,6 +218,12 @@ export function useCharacterSubscription(characterId: string | undefined): void 
 
     // Create debounced save for auto-persistence
     debouncedSaveRef.current = createDebouncedSave(user.uid, characterId);
+    // Slot/tracker mutators request this AFTER their synchronous composite action.
+    // The microtask in characterStore lets the autosave subscriber arm the latest
+    // full payload first, then this flush makes the play resource durable immediately.
+    useCharacterStore
+      .getState()
+      .setParentPersistenceFlush(() => void debouncedSaveRef.current?.flush());
     // The combat-mutable trio persists to its own `combat/state` subdoc (not the
     // parent char doc), through the injected persistence seam below.
     const uid = user.uid;
@@ -168,6 +239,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     };
     const persistence: CombatPersistence = {
       write: (state) => void writeCombatState(uid, characterId, state).catch(logWrite),
+      writeTurnEconomy: (round, turnEconomy) =>
+        void writeCombatTurnEconomy(uid, characterId, round, turnEconomy).catch(logWrite),
     };
     useCharacterStore.getState().setCombatPersistence(persistence);
     // T4 — the lazy attached-campaign resolver for the DM-sheet fan-out (one
@@ -298,6 +371,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       // Clear the injected persistence so a later (uid/char)-less render never writes
       // to a stale subdoc; the trio mutators fall back to optimistic-only.
       useCharacterStore.getState().setCombatPersistence(null);
+      useCharacterStore.getState().setParentPersistenceFlush(null);
       attachedCampaignsRef.current = null;
       setCharacter(null);
     };
@@ -319,8 +393,15 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         (nonCombatSessionChanged(prevState.character.session, state.character.session) ||
           state.character.character !== prevState.character.character)
       ) {
-        if (DEV_BYPASS_AUTH) {
-          // Simulate save status transitions in dev bypass mode
+        if (devBypassEnabled()) {
+          // Persist the same parent/non-combat projection production sends to Firestore.
+          const uid = useAuthStore.getState().user?.uid ?? "mock-uid";
+          writeDevDocument(
+            DEV_CHARACTER_COLLECTION,
+            devCharacterDocumentId(uid, state.character.id),
+            projectDevCharacterParent(state.character)
+          );
+          // Simulate save status transitions in dev bypass mode.
           saveStatusCallbacks.onPending();
           setTimeout(() => {
             saveStatusCallbacks.onSaving();

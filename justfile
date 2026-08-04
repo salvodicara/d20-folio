@@ -19,9 +19,11 @@ setup:
 dev:
     pnpm dev --open
 
-# Start dev server with Firebase emulators
+# Start the complete seeded local sandbox (Auth + Firestore + Storage + Functions).
+# One process owns the emulator lifecycle, seeds deterministic users/campaign data,
+# starts Vite, and shuts everything down together on Ctrl-C.
 dev-emulators:
-    pnpm dev:emulators --open
+    pnpm dev:emulators
 
 # Preview production build locally
 preview: build
@@ -75,9 +77,8 @@ build:
 # MANDATORILY before a user sees the code. Deploys are ALWAYS explicitly
 # owner-triggered (golden rule 22) — never ambient, never on push.
 #
-# THIS recipe is the PRIMARY deploy path (local); the remote twin is
-# `gh workflow run deploy.yml --ref main` (the same gate + deploy on a GitHub
-# runner — see .github/workflows/deploy.yml):
+# GitHub's tag-pinned release workflow is the default deploy path. This recipe is the
+# local/manual fallback; `gh workflow run deploy.yml --ref main` is the remote fallback:
 #
 #   just deploy                   full gate + full e2e matrix + firebase deploy
 #   FOLIO_SKIP_E2E=1 just deploy  skip the local e2e (use ONLY when this exact
@@ -99,7 +100,7 @@ deploy: ci
     firebase deploy --only hosting,firestore:rules,storage --project d20-folio
 
 # ─── Release (owner-triggered, agent-executed — THE release flow, permanently) ─
-# There is no release workflow in CI: the changelog section is SYNTHESIZED —
+# There is no automated versioning workflow: the changelog section is SYNTHESIZED —
 # curated grouped entries (golden rule 17), a judgment step no version-PR bot
 # can perform — so the agent runs the whole ritual locally on the owner's go.
 # This recipe encodes the MECHANICAL steps; the two judgment gates — SYNTHESIZING
@@ -111,8 +112,7 @@ deploy: ci
 #                         synthesis, tag + push the tag, open the GitHub release
 #
 # Order: (1) bump+consume changesets → (2) PAUSE to synthesize the CHANGELOG.md
-# section + commit → (3) tag & push → (4) gh release → then deploy SEPARATELY
-# with `just deploy`.
+# section + commit → (3) tag & push → (4) gh release → the tag-pinned deploy starts.
 release:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -134,8 +134,8 @@ release:
     node scripts/release-notes.mjs "${version#v}" > "$notes_file"
     gh release create "$version" --title "$version" --notes-file "$notes_file"
     echo ""
-    echo "✓ $version tagged + released. FINAL STEP (separate): deploy ONLY with explicit"
-    echo "  owner permission (golden rule 22) — 'just deploy'."
+    echo "✓ $version tagged + released. The tag-pinned GitHub deploy has been triggered."
+    echo "  Manual fallback: gh workflow run deploy.yml --ref $version (or just deploy)."
 
 # ─── SAFE-01 billing kill-switch (arm · status · restore) ─────────────────────
 # One script (scripts/safe-01.sh) wraps the whole £15-cap lifecycle. Every recipe is

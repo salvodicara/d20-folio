@@ -90,8 +90,34 @@ one slot-scaled self-heal only when another creature is healed, and Supreme Heal
 maximum with no fake roll input. Unit, rules and focused Chromium regressions cover the seams. Not merged pending
 the visual gate (golden rule 25).
 
-**Released on `main` at v0.22.0** — the same version **deployed to production**
-(https://d20-folio.web.app, owner-confirmed live 2026-07-23), so `main` and live are currently **in
+**URGENT dogfood corrections — CODE-COMPLETE, HELD for owner visual approval (2026-08-03):**
+peer healing/damage/conditions now fresh-read and update the recipient's narrow `combat/state` directly
+in the same transaction as the Chronicle, so the recipient may be offline; campaign membership rules
+permit only that combat slice and revoke immediately on removal. Turn economy persists under an exact
+fight/round/actor key through a field-scoped writer, so group↔sheet navigation neither resets actions nor
+clobbers concurrent HP. The resource rail also dropped its obsolete pre-commit preview: a committed cast
+now has one slot debit and one durable turn receipt, never a second “pending” gem after navigation.
+Slot/tracker mutations also coalesce an immediate save flush after the composite cast, closing the
+short receipt-vs-resource race without making ordinary text editing write on every keystroke.
+The bypass dev runtime now reproduces the production document lifecycle instead of mixing regenerated
+fixtures with no-op persistence: one versioned local replica backs character parent state, the separate
+combat subdoc and campaigns, including optimistic/local echoes, cross-tab snapshots and hard-reload
+survival. Fixtures are seed-only and `?reset-dev=1` explicitly reseeds them. Real-browser proof casts Bane
+(L1 2/4 → 1/4), hard-navigates sheet→campaign→sheet and reloads again; the spent slot and durable “Used”
+turn receipt remain aligned on every mount (the former bypass reset reproduced 2/4 + available).
+Manual dogfood now has a stronger one-command lane too: `pnpm dev:emulators` starts and owns a seeded,
+demo-project-only Auth/Firestore/Storage/Functions sandbox, auto-signs into a real local Auth account and
+runs the production adapters/rules/listeners/transactions instead of any bypass. The local replica remains
+only the fast screenshot/E2E lane; permission, multi-client, offline, Storage and callable checks use the
+emulator sandbox.
+Gathering adds explicit self skip/rejoin and DM partial begin; NPC allies are
+first-class, targetable, budget-neutral combatants with one reversible side field. Legal composes the
+Compendium tome texture in both themes. Publishing a GitHub Release now triggers the tag-pinned deploy;
+manual dispatch/local deploy remain fallbacks and ordinary pushes never ship. Emulator rules (134) plus
+focused state/engine/UI regressions are green; screenshot matrix and full gates remain before merge.
+
+**Released on `main` at v0.23.1** — the same version **deployed to production**
+(https://d20-folio.web.app, workflow-confirmed live 2026-08-03), so `main` and live are currently **in
 step**. Deploys stay owner-gated (golden rule 22), so `main` may run ahead of live at any time.
 **6 real users** have been playing since 2026-06-08. The repo went **open-source + split-repo**
 (2026-07-17), the **full-BG3 identity pivot** is **COMPLETE** (asset integration closed 2026-07-24 —
@@ -561,16 +587,20 @@ follows the visual sign-off.
 - **Persistent actions (2026-08-03)** — placement-only zones no longer pretend to damage on cast;
   `recurrence`/`followUp` emits a later active row with the right action economy, no second slot and the
   original upcast level. Concentration/active-state undo restores the exact spell, toggle and cast level.
+- **Target-bound standing effects (2026-08-04)** — exact PC/monster-instance effects now live in one
+  append-only encounter ledger and project catalogue grants onto the recipient. Aid, Heroism, Warding
+  Bond, Death Ward, Haste and marked-target effects therefore survive offline peers, navigation and
+  reloads; duration/concentration revocation, max-HP deltas, universal resistance, shared damage,
+  drop-to-1 consumption and Haste's restricted extra action/aftereffect resolve through typed primitives,
+  never spell-name branches. The recipient's prepared copy cannot be accidentally activated or doubled.
 - **The write (permissions — the careful part)** — reviewed monster effects land on the encounter (a
   CAMPAIGN doc the player doesn't own) via one NARROW cross-user transaction
   `campaign-io.applyDeclaredCombatEffects` (reached through the Firebase-free `apply-damage.ts` bridge),
-  writing ONLY `encounter.{combatants, events, memberEffects}` — exact-instance
-  damage/healing/Temporary-HP/condition changes plus
-  their structured events. `firestore.rules` `combatEffectFieldsOnlyChanged()` grants a member exactly that diff
-  (`affectedKeys().hasOnly(['combatants','events','memberEffects'])` + combatants count fixed +
-  events/effects append-only), the
-  SAME diff-scoped idiom as the turn-pointer grant. **Proven with a real two-user topology** (DM owns the
-  campaign, a member applies) in `tests/rules/firestore-rules.test.ts`.
+  writing ONLY `encounter.{combatants, events, effectOps}` plus the exact peer `combat/state` slices —
+  exact-instance damage/healing/Temporary-HP/condition changes, standing-effect operations and their
+  structured events. Current table membership grants only those narrow combat surfaces; parent character
+  data remains owner-only. **Proven with a real two-user topology** (DM owns the campaign, a member applies
+  to an offline peer) in `tests/rules/firestore-rules.test.ts`.
 - **Reconcile is UNCHANGED** — the amount already came from the `hp-damage` event; only the WRITER flipped
   (player, not DM), so the whole fusion pipeline (single/multi/save/rider) is untouched.
 - **DM remediability is airtight** (owner — "mistakes should always be remediable") — the DM freely
@@ -2328,9 +2358,11 @@ documented in `docs/MECHANICS.md` + `DESIGN.md`.
    max-wins `gainTempHp` seam, one-tap start-of-turn banner). **Wild Magic Surge on-cast SHIPPED
    2026-07-09** (a third `onCast` effect kind `wild-magic-surge` — a display-only post-cast reminder
    toast, no roll). **The defensive-buff consumers SHIPPED 2026-07-09** — Blur (new
-   `incoming-attack-disadvantage` grant), Warding Bond (+1 AC/+1 saves + a `defense-note` line), Death
-   Ward (a deterministic 0-HP interrupt in `applyDamage`, undoable), Mirror Image (a `defense-note`
-   three-duplicate reminder) — all display-only, no rolls. **Death Strike SHIPPED 2026-07-09** — a new
+   `incoming-attack-disadvantage` grant), Warding Bond (+1 AC/+1 saves), Death Ward (a deterministic
+   0-HP interrupt, undoable), Mirror Image (a `defense-note` three-duplicate reminder). Warding Bond and
+   Death Ward were later promoted from self-side reminders/toggles to the 2026-08-04 target-bound typed
+   effect runtime above; Mirror Image remains table-managed because interception requires a die roll.
+   **Death Strike SHIPPED 2026-07-09** — a new
    `round1-damage-double` grant kind surfaces a round-1-gated "DC N CON save or double damage" reminder in
    the turn tracker (never auto-doubles). **The new-primitive tier is now CLOSED.**
    **Two fast-follows on the shipped marked-target model (tasks #26/#27) — BOTH SHIPPED.**

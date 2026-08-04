@@ -129,7 +129,8 @@ export function sessionToCombatState(
   session: SessionState,
   round = 1,
   recentActions: RecentAttack[] = [],
-  appliedEncounterEffects?: CombatState["appliedEncounterEffects"]
+  appliedEncounterEffects?: CombatState["appliedEncounterEffects"],
+  turnEconomy?: CombatState["turnEconomy"]
 ): CombatState {
   return {
     hp: { current: session.hp.current, temp: session.hp.temp },
@@ -139,6 +140,7 @@ export function sessionToCombatState(
     round,
     recentActions,
     ...(appliedEncounterEffects ? { appliedEncounterEffects } : {}),
+    ...(turnEconomy ? { turnEconomy } : {}),
   };
 }
 

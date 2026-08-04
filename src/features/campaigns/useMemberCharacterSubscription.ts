@@ -26,12 +26,11 @@
 import { useEffect } from "react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { subscribeToCharacter } from "@/lib/firestore";
-import { subscribeCombatState } from "@/lib/combat-state-io";
+import { subscribeCombatState, writeCombatState } from "@/lib/combat-state-io";
+import { sessionToCombatState } from "@/lib/combat-state";
 import type { CombatState } from "@/types/combat-state";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
-import { MOCK_CHARACTER } from "@/lib/mock";
-import { isDevFixtureId, loadDevFixture } from "@/lib/dev-fixtures";
-import { isDevScenarioRouteId } from "@/lib/dev-scenario-id";
+import { resolveDevDoc } from "@/features/campaigns/useMemberCharacterDocs";
 
 /**
  * Subscribe (read-only) to a party member's character document.
@@ -52,41 +51,34 @@ export function useMemberCharacterSubscription(
   const setError = useCharacterStore((s) => s.setError);
 
   useEffect(() => {
-    // Dev-bypass: no Firestore. Resolve the member's character through the same
-    // fixture/scenario seam the owner-edit subscription uses, loaded READ-ONLY so
-    // the viewer's affordances are hidden + writes are inert. `characterId` (from
-    // the dev campaign fixture) is the fixture/scenario id; falls back to the mock.
+    // Dev-bypass: resolve the same persisted parent + combat/state replica the owner
+    // uses. The fixture is only the seed; read-only peer views now survive reloads and
+    // observe another tab's combat updates like production.
     if (DEV_BYPASS_AUTH) {
       const id = characterId ?? "mock-1";
-      if (isDevFixtureId(id)) {
-        setLoading(true);
-        let cancelled = false;
-        void loadDevFixture(id).then((doc) => {
+      const uid = memberUid ?? "mock-uid";
+      let cancelled = false;
+      let unsubscribeCombat = () => {};
+      setLoading(true);
+      void resolveDevDoc(id, uid).then((doc) => {
+        if (cancelled) return;
+        loadReadonly(doc);
+        let seeded = false;
+        unsubscribeCombat = subscribeCombatState(uid, id, (combat) => {
           if (cancelled) return;
-          loadReadonly(doc ?? { ...MOCK_CHARACTER, id });
-          setLoading(false);
+          if (!combat && !seeded) {
+            seeded = true;
+            void writeCombatState(uid, id, sessionToCombatState(doc.session));
+            return;
+          }
+          useCharacterStore.getState().hydrateCombatState(combat);
         });
-        return () => {
-          cancelled = true;
-        };
-      }
-      if (isDevScenarioRouteId(id)) {
-        // Lazy-load the dev-only scenario builder so it never weighs on the eager
-        // bundle (mirrors the fixture path above).
-        setLoading(true);
-        let cancelled = false;
-        void import("@/lib/dev-scenarios").then(({ buildDevScenario }) => {
-          if (cancelled) return;
-          loadReadonly(buildDevScenario(id) ?? { ...MOCK_CHARACTER, id });
-          setLoading(false);
-        });
-        return () => {
-          cancelled = true;
-        };
-      }
-      loadReadonly({ ...MOCK_CHARACTER, id });
-      setLoading(false);
-      return;
+        setLoading(false);
+      });
+      return () => {
+        cancelled = true;
+        unsubscribeCombat();
+      };
     }
 
     if (!memberUid || !characterId) {

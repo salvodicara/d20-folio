@@ -130,7 +130,7 @@ describe("RA-07 — the SRD heal family carries its 2024 upcast increment", () =
   it.each([
     ["cure-wounds", "2d8"],
     ["healing-word", "2d4"],
-    ["prayer-of-healing", "2d8"],
+    ["prayer-of-healing", "1d8"],
     ["mass-healing-word", "1d4"],
     ["mass-cure-wounds", "1d8"],
   ])("%s scales by %s per slot above its own level", (id, inc) => {

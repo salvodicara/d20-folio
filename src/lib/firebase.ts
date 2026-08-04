@@ -18,6 +18,7 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
+const useEmulators = import.meta.env.VITE_USE_EMULATORS === "true";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -26,7 +27,9 @@ export const app = initializeApp(firebaseConfig);
 // zero new network calls. The key is a reCAPTCHA ENTERPRISE score key (the one
 // kind provisionable headlessly via gcloud; token TTL 24h keeps the Enterprise
 // free tier roomy) — provisioned 2026-08-02, see the rollout runbook.
-const appCheckSiteKey = import.meta.env.VITE_APPCHECK_SITE_KEY;
+// Emulator traffic never needs a production reCAPTCHA token. Disabling App Check in
+// the sandbox also prevents `.env.local`'s live site key from making any external call.
+const appCheckSiteKey = useEmulators ? undefined : import.meta.env.VITE_APPCHECK_SITE_KEY;
 if (appCheckSiteKey) {
   if (import.meta.env.VITE_APPCHECK_DEBUG === "true") {
     // Debug-token escape hatch (dev/CI/e2e) — must be set BEFORE initializeAppCheck.
@@ -63,7 +66,7 @@ export const storage = getStorage(app);
 export const functions = getFunctions(app, "europe-west1");
 
 // Connect to emulators in development
-if (import.meta.env.VITE_USE_EMULATORS === "true") {
+if (useEmulators) {
   connectAuthEmulator(auth, "http://localhost:9099");
   connectFirestoreEmulator(db, "localhost", 8080);
   connectStorageEmulator(storage, "localhost", 9199);

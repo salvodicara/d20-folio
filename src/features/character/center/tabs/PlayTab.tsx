@@ -339,15 +339,27 @@ export function PlayTab() {
   } | null>(null);
   const commitAction = useCallback(
     (action: ResolvedAction) => {
+      // Outside an encounter the open sheet is the only modeled creature. A
+      // selected-recipient buff therefore applies to self without a pointless
+      // one-option target picker. Encounter play keeps the standing-effect spec
+      // intact so the real ally is selected and updated transactionally.
+      const preparedAction =
+        !sheetCombat && action.standingEffect && !action.standingEffect.excludeSelf
+          ? {
+              ...action,
+              activatesKey: action.standingEffect.activeKey,
+              standingEffect: undefined,
+            }
+          : action;
       if (
-        (sheetCombat && shouldResolveCombatAction(action)) ||
-        (!sheetCombat && shouldResolveSoloAction(action))
+        (sheetCombat && shouldResolveCombatAction(preparedAction)) ||
+        (!sheetCombat && shouldResolveSoloAction(preparedAction))
       )
-        prepareResolution(action, (prepared, commit) =>
+        prepareResolution(preparedAction, (prepared, commit) =>
           setDeclaring({ action: prepared, commit })
         );
-      else if (action.type === "reaction") handleUseReaction(action);
-      else handleSelect(action);
+      else if (preparedAction.type === "reaction") handleUseReaction(preparedAction);
+      else handleSelect(preparedAction);
     },
     [handleSelect, handleUseReaction, prepareResolution, sheetCombat]
   );

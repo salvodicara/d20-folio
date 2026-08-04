@@ -31,6 +31,8 @@
 
 import { create } from "zustand";
 import type { TrackerUnit } from "@/data/types";
+import type { LocText } from "@/lib/loc-text";
+import type { EconomyActionCategory } from "@/lib/combat-economy";
 import { useCharacterStore } from "@/stores/characterStore";
 
 /**
@@ -49,8 +51,10 @@ export type EconomySlot = "action" | "bonus" | "free";
 /** A selected combat action (spell, attack, feature use, etc.) */
 export interface SelectedAction {
   id: string;
-  /** Display name */
+  /** Current-locale display name. */
   name: string;
+  /** Stable persisted name; re-localized when a turn is hydrated on another surface. */
+  nameLoc?: LocText;
   /** Which economy slot this occupies */
   slot: EconomySlot;
   /**
@@ -61,6 +65,9 @@ export interface SelectedAction {
    * release the exact group entry when a swing crosses back over a budget multiple.
    */
   isAttackGroup?: boolean;
+  /** Rules category used to allocate restricted extra actions (for example Haste).
+   * Persisted with the turn so route changes cannot reopen an illegal action. */
+  economyCategory?: EconomyActionCategory;
   /** What resource this action consumed when used (deducted immediately). */
   cost?: {
     type: "spell-slot" | "tracker" | "equipment" | "none";

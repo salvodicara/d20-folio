@@ -318,8 +318,8 @@ export function makeDevNotes(): SharedNote[] {
 
 /**
  * The dev `encounterInit` roll table for the BEGUN encounter demo (`d20-dev-encounter`
- * = `"1"`): with turns begun the order is FROZEN, a state production only reaches once
- * EVERY combatant has rolled (Begin-turns hard-gates on it) — so the dev campaign doc
+ * = `"1"`): with turns begun the order is FROZEN; this all-participants demo therefore
+ * carries every combatant's roll, so the dev campaign doc
  * must carry the members' rolls, or the demo shows an impossible mid-fight "INIT —" +
  * a misleading red needs-roll pip. Rides the campaign doc exactly like production (the
  * initiative SSOT); `{}` in every other mode (gathering keeps its un-rolled urgency

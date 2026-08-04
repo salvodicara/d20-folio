@@ -42,6 +42,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "CHA",
+    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -127,19 +128,19 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1 },
     // 2024 (spell:death-ward): "The first time the target would drop to 0 Hit
     // Points before the spell ends, the target instead drops to 1 Hit Point, and
     // the spell ends." Modeled as a `while-active` toggle (auto-lit on cast via S1)
-    // whose stable key `spell-death-ward` the store's `applyDamage` reads: when the
-    // ward is lit and damage would cross to 0, it clamps HP to 1 and ends the ward
-    // (deterministic RAW, not a roll — golden rule 21; undoable at the HP control).
-    // The inner `defense-note` both registers the toggle chip and surfaces the RAW
-    // as a reminder line. The instant-death-effect negation clause stays narrative.
+    // whose stable key `spell-death-ward` projects a one-shot remote-safe HP floor.
+    // The damage transaction consumes the exact effect when it clamps HP to 1.
+    // The instant-death-effect negation clause stays narrative.
     grants: [
       {
         type: "while-active",
         activeKey: "spell-death-ward",
-        grants: [{ type: "defense-note" }],
+        recipient: "selected",
+        grants: [{ type: "zero-hp-floor", hitPoints: 1 }],
       },
     ],
     source: "SRD",
@@ -250,6 +251,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — magic can't Paralyze/Restrain the target and
       // it gains a Swim Speed equal to its Speed (the from-magic-only caveat
@@ -257,6 +259,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-freedom-of-movement",
+        recipient: "selected",
         grants: [
           { type: "condition-immunity", condition: "paralyzed" },
           { type: "condition-immunity", condition: "restrained" },
@@ -413,12 +416,14 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       consumed: true,
     },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Resistance to Bludgeoning, Piercing, and
       // Slashing for the duration (2024 dropped the nonmagical caveat).
       {
         type: "while-active",
         activeKey: "spell-stoneskin",
+        recipient: "selected",
         grants: [
           { type: "damage-resistance", damageType: "bludgeoning" },
           { type: "damage-resistance", damageType: "piercing" },
@@ -471,6 +476,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     concentration: false,
     saveAbility: "WIS",
     conditionApplication: { options: ["charmed"], on: "failed-save" },
+    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {

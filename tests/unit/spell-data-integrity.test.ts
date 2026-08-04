@@ -507,7 +507,7 @@ describe("spell-data integrity", () => {
       ["cure-wounds", 1, "2d8"], // base
       ["cure-wounds", 3, "6d8"], // +2×2d8
       ["healing-word", 4, "8d4"], // L1 base 2d4, +3×2d4
-      ["prayer-of-healing", 4, "6d8"], // L2 base 2d8, +2×2d8
+      ["prayer-of-healing", 4, "4d8"], // L2 base 2d8, +2×1d8
       ["mass-healing-word", 5, "4d4"], // L3 base 2d4, +2×1d4
       ["mass-cure-wounds", 7, "7d8"], // L5 base 5d8, +2×1d8
     ];
@@ -600,7 +600,6 @@ describe("spell-data integrity", () => {
       "healing-word",
       "mass-healing-word",
       "mass-cure-wounds",
-      "prayer-of-healing",
     ];
     for (const id of addsMod) {
       expect(getSpellById(id)?.healAddsCastMod, id).toBe(true);
@@ -613,8 +612,74 @@ describe("spell-data integrity", () => {
       "heal",
       "mass-heal",
       "goodberry",
+      "prayer-of-healing",
     ]) {
       expect(getSpellById(id)?.healAddsCastMod ?? false, id).toBe(false);
+    }
+  });
+
+  it("derives every +1-target-per-upcast spell's target shape from its EN rules", () => {
+    const NUMBER_WORDS: Readonly<Record<string, number>> = {
+      one: 1,
+      two: 2,
+      three: 3,
+      four: 4,
+      five: 5,
+      six: 6,
+    };
+    const candidates = spells.filter(
+      (spell) =>
+        spell.source === "SRD" &&
+        /(?:target|affect) one additional creature/i.test(
+          srd("spell", spell.id, "higherLevels", "en")
+        )
+    );
+    expect(candidates.length).toBeGreaterThan(0);
+    for (const spell of candidates) {
+      const description = srd("spell", spell.id, "description", "en");
+      const explicitCount = /up to (one|two|three|four|five|six) creatures?/i.exec(
+        description
+      )?.[1];
+      expect(spell.targeting, spell.id).toEqual({
+        affinity: spell.saveAbility ? "enemy" : "ally",
+        maxTargets: explicitCount ? NUMBER_WORDS[explicitCount.toLowerCase()] : 1,
+        maxTargetsPerUpcast: 1,
+      });
+    }
+  });
+
+  it("derives the exceptional fixed multi-target spell shapes from their EN rules", () => {
+    const splitCantrips = spells.filter(
+      (spell) =>
+        spell.source === "SRD" &&
+        /choose one creature[^.]+or choose two creatures/i.test(
+          srd("spell", spell.id, "description", "en")
+        )
+    );
+    expect(splitCantrips.length).toBeGreaterThan(0);
+    for (const spell of splitCantrips) {
+      expect(spell.targeting, spell.id).toEqual({
+        affinity: "enemy",
+        maxTargets: 2,
+        sharedAmount: true,
+      });
+    }
+
+    const boltSpells = spells.filter(
+      (spell) =>
+        spell.source === "SRD" &&
+        /one additional bolt leaps from the first target/i.test(
+          srd("spell", spell.id, "higherLevels", "en")
+        )
+    );
+    expect(boltSpells.length).toBeGreaterThan(0);
+    for (const spell of boltSpells) {
+      expect(spell.targeting, spell.id).toEqual({
+        affinity: "enemy",
+        maxTargets: 4,
+        maxTargetsPerUpcast: 1,
+        sharedAmount: true,
+      });
     }
   });
 

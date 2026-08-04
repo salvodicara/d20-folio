@@ -16,10 +16,21 @@ import {
   type ResolvedDamageIntake,
 } from "@/lib/damage-intake";
 import type { ResolvedAction } from "@/lib/smart-tracker";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 export type CombatResolutionKind = "attack" | "save" | "attack-save" | "automatic";
-export type CombatTargetAffinity = "enemy" | "ally" | "self";
+export type CombatTargetAffinity = "enemy" | "ally" | "self" | "any";
 export type SaveDamageOutcome = "half" | "none";
+
+export interface CombatStandingEffectSpec {
+  source: ActiveCombatEffect["source"];
+  payload: ActiveCombatEffect["payload"];
+  /** Encounter IO turns these relative lifetime facts into the stored duration. */
+  lifetime: {
+    concentration: boolean;
+    maxRounds?: number;
+  };
+}
 
 export interface CombatResolutionSpec {
   kind: CombatResolutionKind;
@@ -33,11 +44,13 @@ export interface CombatResolutionSpec {
   effectPool?: number;
   sharedAmount: boolean;
   targetAffinity: CombatTargetAffinity;
+  excludeSelf: boolean;
   conditionApplication?: {
     options: string[];
     max?: number;
     on: "hit" | "failed-save" | "automatic";
   };
+  standingEffect?: CombatStandingEffectSpec;
   /** What a successful save does to the entered damage. Default is no damage. */
   damageOnSave: SaveDamageOutcome;
 }
@@ -134,13 +147,36 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     (masteryRiders.length > 0
       ? { options: masteryRiders, on: "hit" as const }
       : undefined);
+  const standingEffect = action.standingEffect
+    ? {
+        source: {
+          kind: "spell" as const,
+          id: action.standingEffect.sourceId,
+          actionId: action.id,
+          ...(action.slotLevel !== undefined ? { castLevel: action.slotLevel } : {}),
+        },
+        payload: {
+          kind: "grant-group" as const,
+          activeKey: action.standingEffect.activeKey,
+        },
+        lifetime: {
+          concentration: action.concentration,
+          ...(action.standingEffect.maxRounds !== undefined
+            ? { maxRounds: action.standingEffect.maxRounds }
+            : {}),
+        },
+      }
+    : undefined;
   const targetAffinity: CombatTargetAffinity =
-    s.targeting?.affinity === "ally" ||
+    action.standingEffect?.targetAffinity ??
+    (s.targeting?.affinity === "ally" ||
     (!s.targeting && (hasHealing || s.conditionRemoval !== undefined))
       ? "ally"
       : hasTempHp && !s.targeting
         ? "self"
-        : "enemy";
+        : s.targeting?.affinity === "any"
+          ? "any"
+          : "enemy");
 
   return {
     kind,
@@ -166,7 +202,9 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     sharedAmount: s.area === true || s.targeting?.sharedAmount === true,
     ...(s.conditionRemoval ? { conditionRemoval: s.conditionRemoval } : {}),
     ...(conditionApplication ? { conditionApplication } : {}),
+    ...(standingEffect ? { standingEffect } : {}),
     targetAffinity,
+    excludeSelf: action.standingEffect?.excludeSelf ?? s.targeting?.excludeSelf === true,
     damageOnSave: s.damageOnSave ?? "none",
   };
 }
@@ -182,6 +220,7 @@ export function shouldResolveCombatAction(action: ResolvedAction): boolean {
     spec.hasTempHp ||
     spec.conditionRemoval ||
     spec.conditionApplication ||
+    spec.standingEffect ||
     spec.kind !== "automatic"
   );
 }

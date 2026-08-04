@@ -98,7 +98,6 @@ import { primaryClassId, totalLevel } from "@/lib/classes";
 type CompendiumSpec =
   (typeof import("@/features/compendium/picker/specs"))["COMPENDIUM_SPECS"][number];
 import type { PickerCtx } from "@/features/compendium/picker";
-import { listSharedCampaigns } from "@/features/campaigns/campaign-io";
 import { PERSONAL_CAMPAIGN_ID } from "@/app/_data/personal-campaign";
 import { triggerCharacterImport } from "@/features/roster/import-trigger";
 import { openReport } from "@/features/report/open-report";
@@ -253,7 +252,10 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (!uid) return;
     let alive = true;
-    void listSharedCampaigns(uid)
+    // The palette is eager shell chrome, but campaign IO includes the full encounter
+    // transaction engine. Load that boundary only when the palette actually opens.
+    void import("@/features/campaigns/campaign-io")
+      .then(({ listSharedCampaigns }) => listSharedCampaigns(uid))
       .then((cs) => {
         if (alive) setCampaigns(cs.filter((c) => c.id !== PERSONAL_CAMPAIGN_ID));
       })

@@ -32,7 +32,7 @@
 
 import { lazy, Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Crown, Lock, Plus, Swords, UserRound } from "lucide-react";
+import { Crown, Plus, Swords, UserRound } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/shared/ModalShell";
@@ -57,6 +57,7 @@ import {
   persistBeginTurns,
   persistStartEncounter,
   persistEndEncounter,
+  setEncounterParticipation,
   appendChronicleChapter,
 } from "@/features/campaigns/campaign-io";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
@@ -339,7 +340,12 @@ export function Party() {
     // Optimistic: encounter + table reset land together locally too (dev-bypass's only
     // update). The immediate write is the durable one; the debounced writer the store
     // update arms re-lands the same encounter content (harmless).
-    setCampaign({ ...campaign, encounter: fresh, encounterInit: {} });
+    setCampaign({
+      ...campaign,
+      encounter: fresh,
+      encounterInit: {},
+      encounterSkipped: {},
+    });
     void persistStartEncounter(campaign.id, fresh).catch((e: unknown) => {
       console.error("Start-encounter write failed", e);
     });
@@ -351,7 +357,12 @@ export function Party() {
   // so no separate confirm prompt.
   function endEncounter(): void {
     if (!campaign) return;
-    setCampaign({ ...campaign, encounter: null, encounterInit: {} });
+    setCampaign({
+      ...campaign,
+      encounter: null,
+      encounterInit: {},
+      encounterSkipped: {},
+    });
     void persistEndEncounter(campaign.id).catch((e: unknown) => {
       console.error("End-encounter write failed", e);
     });
@@ -460,6 +471,24 @@ export function Party() {
           pcLiveById={pcLiveById}
           dmName={dmName}
           memberDetails={campaign.memberDetails}
+          skipped={campaign.encounterSkipped ?? {}}
+          onParticipationChange={(participating) => {
+            if (!currentUid) return;
+            const encounterSkipped = participating
+              ? Object.fromEntries(
+                  Object.entries(campaign.encounterSkipped ?? {}).filter(
+                    ([uid]) => uid !== currentUid
+                  )
+                )
+              : { ...(campaign.encounterSkipped ?? {}), [currentUid]: true };
+            setCampaign({ ...campaign, encounterSkipped });
+            void setEncounterParticipation(campaign.id, currentUid, participating).catch(
+              (error: unknown) => {
+                console.error("Encounter participation write failed", error);
+                setCampaign(campaign);
+              }
+            );
+          }}
           onEnd={endEncounter}
         />
       ) : (
@@ -531,6 +560,8 @@ function CombatLayer({
   pcLiveById,
   dmName,
   memberDetails,
+  skipped,
+  onParticipationChange,
   onEnd,
 }: {
   encounter: EncounterState;
@@ -547,6 +578,8 @@ function CombatLayer({
   pcLiveById: Record<string, PcLive>;
   dmName: string;
   memberDetails: CampaignDocMemberDetails;
+  skipped: Record<string, boolean>;
+  onParticipationChange: (participating: boolean) => void;
   onEnd: () => void;
 }) {
   const { t } = useTranslation();
@@ -568,20 +601,23 @@ function CombatLayer({
   // The FULL live turn order INCLUDING hidden (hidden is a display filter, not a turn
   // filter), so the DM and a player step the identical order and a staged ambush still
   // takes its turn.
-  const orderedIds = view.turnOrderIds;
+  const participatingIds = view.turnOrderIds.filter((id) => {
+    const combatant = encounter.combatants.find((candidate) => candidate.id === id);
+    return combatant?.kind !== "pc" || !skipped[combatant.memberUid];
+  });
   const empty = encounter.combatants.length === 0;
   // The "gathering initiative" phase — players roll, then the DM begins the turn order. A
   // NULLISH pointer (null OR a legacy doc's missing field) is gathering (see `initLocked`).
   const gathering = encounter.currentCombatantId == null;
-  // FIX 2 (owner 2026-06-29, REVERSES the prior tolerant hybrid) — begin-turns now
-  // HARD-DISABLES until EVERY combatant has rolled. Count how many have an initiative
-  // (PC roll-to-total OR monster entry); a partial set shows a disabled secondary
-  // button with the `rolled/total` readout + a locked tooltip. The reducer still sorts
-  // blank-initiative rows last (kept), but the button no longer lets the DM start early.
+  // Every participant may opt out explicitly; the DM may also begin with only the rows
+  // that have rolled. Unrolled PCs are marked skipped (still targetable/correctable),
+  // while the frozen order contains exactly the participating rows shown by the CTA.
   const initByRowId = new Map(view.rows.map((r) => [r.id, r.initiative]));
-  const total = orderedIds.length;
-  const rolled = orderedIds.filter((id) => initByRowId.get(id) != null).length;
+  const total = participatingIds.length;
+  const rolledIds = participatingIds.filter((id) => initByRowId.get(id) != null);
+  const rolled = rolledIds.length;
   const allRolled = rolled === total;
+  const viewerSkipped = !!(ctx.currentUid && skipped[ctx.currentUid]);
   // Resolve a monster's full editable state by id (the view row carries the aggregate;
   // editing needs the per-token array off the encounter doc).
   const monsterById = new Map<string, EncounterMonster>(
@@ -651,8 +687,23 @@ function CombatLayer({
   // DM-only structural action (the DM owns the encounter), routed through the optimistic
   // store path; tolerant of missing rolls (un-rolled PCs simply sort last).
   const beginTurns = (): void => {
-    if (!apply) return;
-    apply((e) => beginEncounterTurns(e, orderedIds));
+    if (!apply || rolledIds.length === 0) return;
+    // Starting with a partial table is the DM's explicit skip: unrolled PCs remain in
+    // the encounter for targeting/late correction but do not enter the frozen order.
+    const skippedAtStart = { ...skipped };
+    for (const combatant of encounter.combatants) {
+      if (combatant.kind === "pc" && !rolledIds.includes(combatant.id)) {
+        skippedAtStart[combatant.memberUid] = true;
+      }
+    }
+    apply((e) => beginEncounterTurns(e, rolledIds));
+    const campaignStore = useCampaignStore.getState();
+    if (campaignStore.campaign) {
+      campaignStore.setCampaign({
+        ...campaignStore.campaign,
+        encounterSkipped: skippedAtStart,
+      });
+    }
     // B15 — persist the turn START immediately (NOT via the 2s debounced writer): a Next
     // pressed within that window would otherwise read the still-null server pointer and
     // silently no-op (offline it rejected). Read the begun encounter back off the store
@@ -665,6 +716,7 @@ function CombatLayer({
         order: enc.order ?? [],
         currentCombatantId: enc.currentCombatantId,
         round: enc.round,
+        skipped: skippedAtStart,
       }).catch((e: unknown) => {
         console.error("Begin-turns write failed", e);
         useToastStore.getState().showToast({
@@ -800,38 +852,41 @@ function CombatLayer({
         dmName={dmName}
         isDmViewer={isDm}
         controls={
-          apply ? (
+          apply || (gathering && ctx.currentUid) ? (
             <>
-              <Button
-                variant="secondary"
-                onClick={() => setPickerOpen(true)}
-                // Warm the lazy chunk + monster catalogue the moment the DM aims at the
-                // trigger, so open is instant and the Suspense fallback never paints.
-                onPointerEnter={preloadBestiary}
-                onFocus={preloadBestiary}
-                onPointerDown={preloadBestiary}
-                aria-haspopup="dialog"
-              >
-                <Icon as={Plus} size="sm" decorative />
-                {t("campaignHub.encounterAddMonster")}
-              </Button>
-              {gathering ? (
+              {apply && (
+                <Button
+                  variant="secondary"
+                  onClick={() => setPickerOpen(true)}
+                  onPointerEnter={preloadBestiary}
+                  onFocus={preloadBestiary}
+                  onPointerDown={preloadBestiary}
+                  aria-haspopup="dialog"
+                >
+                  <Icon as={Plus} size="sm" decorative />
+                  {t("campaignHub.encounterAddMonster")}
+                </Button>
+              )}
+              {apply && gathering ? (
                 <Button
                   variant={allRolled ? "primary" : "secondary"}
                   onClick={beginTurns}
-                  disabled={!allRolled || empty}
-                  title={
-                    !allRolled
-                      ? t("campaignHub.encounterBeginTurnsLockedHint")
-                      : undefined
-                  }
+                  disabled={rolled === 0 || empty}
                 >
-                  {/* FIX 2 — a Lock glyph (not the crossed swords) while disabled so the
-                      locked state reads at a glance; swords return once all have rolled. */}
-                  <Icon as={allRolled ? Swords : Lock} size="sm" decorative />
+                  <Icon as={Swords} size="sm" decorative />
                   {allRolled
                     ? t("campaignHub.encounterBeginTurns")
-                    : t("campaignHub.encounterBeginTurnsPartial", { rolled, total })}
+                    : t("campaignHub.encounterBeginTurnsWith", { rolled, total })}
+                </Button>
+              ) : null}
+              {!isDm && gathering && ctx.currentUid ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => onParticipationChange(viewerSkipped)}
+                >
+                  {viewerSkipped
+                    ? t("campaignHub.encounterJoin")
+                    : t("campaignHub.encounterSkip")}
                 </Button>
               ) : null}
             </>

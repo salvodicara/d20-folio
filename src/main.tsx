@@ -34,6 +34,26 @@ import { installDomResilience } from "./lib/dom-resilience";
 import { recoverFromChunkPreloadError, CHUNK_RELOAD_FLAG } from "./lib/chunk-recovery";
 import { installErrorLog } from "./features/report/error-log";
 import { App } from "./App";
+import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "./lib/dev-bypass";
+
+function devBypassEnabled(): boolean {
+  return import.meta.env.PROD ? false : IMPORTED_DEV_BYPASS_AUTH;
+}
+
+// Dev-only escape hatch: append `?reset-dev=1` to any preview URL to discard the
+// persisted local replicas and reseed from today's fixtures. Remove only that param so
+// route/scenario query state survives. Keep the local-replica implementation behind a
+// dynamic import: it is dev-only and must not inflate production's eager entry chunk.
+const devResetReady =
+  devBypassEnabled() &&
+  new URLSearchParams(window.location.search).get("reset-dev") === "1"
+    ? import("./lib/dev-document-store").then(({ clearDevDocuments }) => {
+        clearDevDocuments();
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("reset-dev");
+        window.history.replaceState(null, "", cleanUrl);
+      })
+    : Promise.resolve();
 
 // DOM-boundary resilience adapters (issue #24): tolerant removeChild/insertBefore
 // wrappers so external DOM mutation (browser auto-translate, grammar/password
@@ -67,7 +87,7 @@ if (!rootEl) throw new Error("Root element not found");
  *  route loads (see the comment at the clear below). */
 const CHUNK_RELOAD_LATCH_CLEAR_MS = 15_000;
 
-void i18nReady.then(() => {
+void Promise.all([i18nReady, devResetReady]).then(() => {
   createRoot(rootEl).render(
     <StrictMode>
       <App />

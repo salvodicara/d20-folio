@@ -31,12 +31,14 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Advantage on D20 Tests for the duration
       // (attackers' Disadvantage is an enemy-roll effect — descriptive).
       {
         type: "while-active",
         activeKey: "spell-foresight",
+        recipient: "selected",
         grants: [
           { type: "advantage-on", rollType: "check", vs: "foresight" },
           { type: "advantage-on", rollType: "save", vs: "foresight" },

@@ -195,6 +195,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "ring",
     attunement: true,
+    grants: [{ type: "at-will-cast-spell", spellId: "telekinesis" }],
     source: "SRD",
   },
   {
@@ -311,10 +312,19 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "staff",
     attunement: true,
-    // Static "Resistance to Fire damage while you hold this staff" is modeled
-    // (mirrors Frost Brand). The charge-gated Burning Hands / Fireball / Wall of
-    // Fire casting + recharge stay descriptive (charges ride the tracker seam).
-    grants: [{ type: "damage-resistance", damageType: "fire" }],
+    grants: [
+      { type: "damage-resistance", damageType: "fire" },
+      { type: "always-prepared-spell", spellId: "burning-hands" },
+      { type: "always-prepared-spell", spellId: "fireball" },
+      { type: "always-prepared-spell", spellId: "wall-of-fire" },
+      {
+        type: "free-cast-from-list",
+        spellIds: ["burning-hands", "fireball", "wall-of-fire"],
+        spellCosts: { "burning-hands": 1, fireball: 3, "wall-of-fire": 4 },
+        chargesPerRest: 10,
+        rest: "long",
+      },
+    ],
     properties: ["charges: 10"],
     source: "SRD",
   },
@@ -325,10 +335,25 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "staff",
     attunement: true,
-    // Static "Resistance to Cold damage while you hold this staff" is modeled
-    // (mirrors Frost Brand). The charge-gated Cone of Cold / Fog Cloud / Ice
-    // Storm / Wall of Ice casting + recharge stay descriptive.
-    grants: [{ type: "damage-resistance", damageType: "cold" }],
+    grants: [
+      { type: "damage-resistance", damageType: "cold" },
+      { type: "always-prepared-spell", spellId: "cone-of-cold" },
+      { type: "always-prepared-spell", spellId: "fog-cloud" },
+      { type: "always-prepared-spell", spellId: "ice-storm" },
+      { type: "always-prepared-spell", spellId: "wall-of-ice" },
+      {
+        type: "free-cast-from-list",
+        spellIds: ["cone-of-cold", "fog-cloud", "ice-storm", "wall-of-ice"],
+        spellCosts: {
+          "cone-of-cold": 5,
+          "fog-cloud": 1,
+          "ice-storm": 4,
+          "wall-of-ice": 4,
+        },
+        chargesPerRest: 10,
+        rest: "long",
+      },
+    ],
     properties: ["charges: 10"],
     source: "SRD",
   },
@@ -432,9 +457,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     type: "armor",
     attunement: true,
     // Always-on B/P/S resistance; the 10-minute B/P/S Immunity is the "Metal
-    // Shell" activated property (1/dawn) — ALL-IN: modeled behind a while-active
-    // toggle. Charges/duration stay manual (the engine doesn't tick the dawn
-    // recharge or the 10-minute timer).
+    // Shell" activated property (1/dawn) — ALL-IN: modeled behind a timed
+    // while-active toggle. The dawn activation still lacks an item-use resource
+    // seam.
     grants: [
       { type: "damage-resistance", damageType: "bludgeoning" },
       { type: "damage-resistance", damageType: "piercing" },
@@ -442,6 +467,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
       {
         type: "while-active",
         activeKey: "armor-of-invulnerability-metal-shell",
+        duration: { kind: "timed", minutes: 10, maxRounds: 100 },
         grants: [
           { type: "damage-immunity", damageType: "bludgeoning" },
           { type: "damage-immunity", damageType: "piercing" },
@@ -469,6 +495,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "wondrous",
     attunement: true,
+    grants: [{ type: "at-will-cast-spell", spellId: "scrying" }],
     source: "SRD",
   },
   {
@@ -478,6 +505,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "wondrous",
     attunement: true,
+    grants: [{ type: "at-will-cast-spell", spellId: "scrying" }],
     source: "SRD",
   },
   {
@@ -487,6 +515,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "wondrous",
     attunement: true,
+    grants: [{ type: "at-will-cast-spell", spellId: "scrying" }],
     source: "SRD",
   },
   {
@@ -844,6 +873,39 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wondrous",
     attunement: true,
+    properties: ["charges: 10"],
+    grants: [
+      { type: "always-prepared-spell", spellId: "mage-armor" },
+      { type: "always-prepared-spell", spellId: "shield" },
+      { type: "always-prepared-spell", spellId: "leomunds-tiny-hut" },
+      {
+        type: "always-prepared-spell",
+        spellId: "mordenkainens-private-sanctum",
+      },
+      { type: "always-prepared-spell", spellId: "otilukes-resilient-sphere" },
+      { type: "always-prepared-spell", spellId: "wall-of-force" },
+      {
+        type: "free-cast-from-list",
+        spellIds: [
+          "mage-armor",
+          "shield",
+          "leomunds-tiny-hut",
+          "mordenkainens-private-sanctum",
+          "otilukes-resilient-sphere",
+          "wall-of-force",
+        ],
+        spellCosts: {
+          "mage-armor": 1,
+          shield: 1,
+          "leomunds-tiny-hut": 3,
+          "mordenkainens-private-sanctum": 4,
+          "otilukes-resilient-sphere": 4,
+          "wall-of-force": 5,
+        },
+        chargesPerRest: 10,
+        rest: "long",
+      },
+    ],
     source: "SRD",
   },
   {
@@ -893,9 +955,10 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     // Per-element focus modelled as a single-select choice-grant-bundle keyed by
     // the ring's linked plane. The selector surfaces once the ring is equipped +
     // attuned (equipment grant seam — `attunement: true`). Each option grants the
-    // plane's language + damage resistance/immunity + movement. Elemental Bane
-    // (Advantage on attacks vs Elementals — a creature-type-conditional with no
-    // deterministic consumer) and the Spellcasting charges stay descriptive.
+    // plane's language + damage resistance/immunity + movement and its own
+    // spell list. Feather Fall costs 0 charges, so it is an at-will cast; every
+    // other spell debits the selected plane's shared 5-charge item pool.
+    // Elemental Bane remains a creature-type-conditional consumer gap.
     grants: [
       {
         type: "choice-grant-bundle",
@@ -907,6 +970,17 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
               { type: "language", language: "Auran" },
               { type: "damage-resistance", damageType: "lightning" },
               { type: "fly-speed", amount: "equal-to-walking" },
+              { type: "at-will-cast-spell", spellId: "feather-fall" },
+              { type: "always-prepared-spell", spellId: "chain-lightning" },
+              { type: "always-prepared-spell", spellId: "gust-of-wind" },
+              { type: "always-prepared-spell", spellId: "wind-wall" },
+              {
+                type: "free-cast-from-list",
+                spellIds: ["chain-lightning", "gust-of-wind", "wind-wall"],
+                spellCosts: { "chain-lightning": 3, "gust-of-wind": 2, "wind-wall": 1 },
+                chargesPerRest: 5,
+                rest: "long",
+              },
             ],
           },
           {
@@ -914,6 +988,22 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
             grants: [
               { type: "language", language: "Terran" },
               { type: "damage-resistance", damageType: "acid" },
+              { type: "always-prepared-spell", spellId: "earthquake" },
+              { type: "always-prepared-spell", spellId: "stone-shape" },
+              { type: "always-prepared-spell", spellId: "stoneskin" },
+              { type: "always-prepared-spell", spellId: "wall-of-stone" },
+              {
+                type: "free-cast-from-list",
+                spellIds: ["earthquake", "stone-shape", "stoneskin", "wall-of-stone"],
+                spellCosts: {
+                  earthquake: 5,
+                  "stone-shape": 2,
+                  stoneskin: 3,
+                  "wall-of-stone": 3,
+                },
+                chargesPerRest: 5,
+                rest: "long",
+              },
             ],
           },
           {
@@ -921,6 +1011,22 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
             grants: [
               { type: "language", language: "Ignan" },
               { type: "damage-immunity", damageType: "fire" },
+              { type: "always-prepared-spell", spellId: "burning-hands" },
+              { type: "always-prepared-spell", spellId: "fireball" },
+              { type: "always-prepared-spell", spellId: "fire-storm" },
+              { type: "always-prepared-spell", spellId: "wall-of-fire" },
+              {
+                type: "free-cast-from-list",
+                spellIds: ["burning-hands", "fireball", "fire-storm", "wall-of-fire"],
+                spellCosts: {
+                  "burning-hands": 1,
+                  fireball: 2,
+                  "fire-storm": 4,
+                  "wall-of-fire": 3,
+                },
+                chargesPerRest: 5,
+                rest: "long",
+              },
             ],
           },
           {
@@ -928,6 +1034,30 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
             grants: [
               { type: "language", language: "Aquan" },
               { type: "swim-speed", amount: 60 },
+              { type: "always-prepared-spell", spellId: "create-or-destroy-water" },
+              { type: "always-prepared-spell", spellId: "ice-storm" },
+              { type: "always-prepared-spell", spellId: "tsunami" },
+              { type: "always-prepared-spell", spellId: "wall-of-ice" },
+              { type: "always-prepared-spell", spellId: "water-walk" },
+              {
+                type: "free-cast-from-list",
+                spellIds: [
+                  "create-or-destroy-water",
+                  "ice-storm",
+                  "tsunami",
+                  "wall-of-ice",
+                  "water-walk",
+                ],
+                spellCosts: {
+                  "create-or-destroy-water": 1,
+                  "ice-storm": 2,
+                  tsunami: 5,
+                  "wall-of-ice": 3,
+                  "water-walk": 2,
+                },
+                chargesPerRest: 5,
+                rest: "long",
+              },
             ],
           },
         ],

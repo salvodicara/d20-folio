@@ -324,4 +324,18 @@ describe("inferOutcome — victory only when every monster is down", () => {
     const s = startEncounter({ mara: { characterId: "c" } }, ["mara"], 1);
     expect(inferOutcome(s)).toBe("ended");
   });
+
+  it("ignores a standing NPC ally when every enemy is defeated", () => {
+    let s = fight();
+    s = {
+      ...s,
+      combatants: s.combatants.map((combatant) =>
+        combatant.kind === "monster" && combatant.id === "monster-1~3"
+          ? { ...combatant, side: "ally" }
+          : combatant
+      ),
+    };
+    for (const id of ["monster-1", "monster-1~2"]) s = setHp(s, id, 0, 0);
+    expect(inferOutcome(s)).toBe("victory");
+  });
 });

@@ -4955,19 +4955,11 @@ button.sc-pip:active {
 button.sc-pip:disabled {
   cursor: default;
 }
-.sc-pip.pending {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--semantic-warning) 70%, white),
-    var(--semantic-warning)
-  );
-  border-color: var(--semantic-warning);
-}
 /* LIGHT ember — each lit slot gem casts its own COLORED ember on the card below it
    (heat, in the gem's own level hue mixed toward burnt umber), so the jewel reads
    as a hot stone on ivory instead of a flat tinted diamond (grammar "Ember
    Penumbra"). The level hue stays the gem's voice; only the pooled heat is added. */
-[data-theme="light"] .sc-pip:not(.used):not(.pending) {
+[data-theme="light"] .sc-pip:not(.used) {
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.6),
     0 2px 5px
@@ -5156,14 +5148,6 @@ button.trk-pip:active {
 }
 /* The light lit-pip ember lives with the other light gold-glow parity recipes in
    the OWN-15 block below (one source of truth for the struck tracker jewel). */
-.trk-pip.pending {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--semantic-warning) 70%, white),
-    var(--semantic-warning)
-  );
-  border-color: var(--semantic-warning);
-}
 .trk-pool {
   margin-left: auto;
   display: inline-flex;

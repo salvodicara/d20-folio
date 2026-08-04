@@ -14,13 +14,23 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 3 },
     grants: [
-      // PROSE-SWEPT 2026-06-10 — +5 HP maximum (and current) for the duration
-      // (the +5-per-upcast-level scaling stays descriptive).
+      // +5 HP maximum and current for the duration, plus 5 for every slot level
+      // above 2. The effect registry snapshots the cast level and applies/revokes
+      // the exact current-HP delta together with the standing max-HP projection.
       {
         type: "while-active",
         activeKey: "spell-aid",
-        grants: [{ type: "hp-flat", amount: 5 }],
+        recipient: "selected",
+        grants: [
+          {
+            type: "hp-flat",
+            amount: 5,
+            castLevelScaling: { baseLevel: 2, perLevel: 5 },
+            adjustsCurrentHp: true,
+          },
+        ],
       },
     ],
     source: "SRD",
@@ -83,12 +93,14 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — "an Armor Class of 17 if its AC is lower":
       // an AC floor; computeAC picks the highest applicable formula.
       {
         type: "while-active",
         activeKey: "spell-barkskin",
+        recipient: "selected",
         grants: [{ type: "ac-formula", base: 17, bonuses: [], condition: "always" }],
       },
     ],
@@ -105,6 +117,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     concentration: false,
     saveAbility: "CON",
     conditionApplication: { options: ["blinded", "deafened"], max: 1, on: "failed-save" },
+    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -171,11 +184,13 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Darkvision 150 ft for the duration (2024).
       {
         type: "while-active",
         activeKey: "spell-darkvision",
+        recipient: "selected",
         grants: [{ type: "darkvision", range: 150 }],
       },
     ],
@@ -210,6 +225,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -504,9 +520,9 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     concentration: false,
     instantaneous: true,
     healDice: "2d8",
-    // RA-07 — 2024: healing increases by 2d8 per slot level above 2 (Prayer of Healing).
-    healDicePerUpcast: "2d8",
-    healAddsCastMod: true,
+    // 2024: the five targets regain 2d8; upcasting adds 1d8 per slot above 2.
+    // The separate Short Rest benefit is not a healing amount.
+    healDicePerUpcast: "1d8",
     effectTag: "heal",
     targeting: { affinity: "ally", maxTargets: 5, sharedAmount: true },
     source: "SRD",
@@ -593,11 +609,13 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Climb Speed equal to walking for the duration.
       {
         type: "while-active",
         activeKey: "spell-spider-climb",
+        recipient: "selected",
         grants: [{ type: "climb-speed", amount: "equal-to-walking" }],
       },
     ],
@@ -667,26 +685,28 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       costGp: 50,
     },
     concentration: false,
+    targeting: { affinity: "ally", excludeSelf: true, maxTargets: 1 },
     // 2024 (spell:warding-bond): "You touch ANOTHER creature… While the target is
     // within 60 feet of you, it gains a +1 bonus to AC and saving throws, and it
     // has Resistance to all damage. Also, each time it takes damage, you take the
     // same amount." TARGET-ONLY — the CASTER never gains the buff (they only share
-    // the damage), so `autoActivateOnCast: false` suppresses the S1 cast→toggle
-    // auto-light: casting never self-buffs. The WARDED creature's own sheet lights
-    // the toggle manually from the rail (override-first), gaining +1 AC
-    // (`ac-bonus`) + +1 to all saves (`save-bonus`); the resistance-to-all +
-    // shared-damage posture (no clean numeric primitive) surfaces as a
-    // `defense-note` reminder line worded neutrally so it reads correctly on
-    // whichever sheet has it lit. No damage math (golden rule 21).
+    // the damage). `recipient: "selected"` routes this standing grant to the one
+    // explicitly selected ally; targeting metadata alone never changes ownership.
+    // The caster therefore never self-buffs, while the recipient gains +1 AC
+    // (`ac-bonus`) + +1 to all saves (`save-bonus`). The registry-owned effect
+    // supplies the recipient/source identities required by resistance and exact
+    // post-mitigation damage transfer.
     grants: [
       {
         type: "while-active",
         activeKey: "spell-warding-bond",
-        autoActivateOnCast: false,
+        recipient: "selected",
+        duration: { kind: "timed", minutes: 60, maxRounds: 600 },
         grants: [
           { type: "ac-bonus", amount: 1 },
           { type: "save-bonus", amount: 1 },
-          { type: "defense-note" },
+          { type: "all-damage-resistance" },
+          { type: "damage-transfer", to: "effect-source" },
         ],
       },
     ],

@@ -38,7 +38,7 @@ on the local critical path, never twice.
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | -------------------------- |
 | **pre-commit**           | doc-guard + `lint-staged` + fast unit lane                                                                                       | ~5 s                           | `.githooks/pre-commit`     |
 | **pre-push**             | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e** | ~2 min (max of three, not sum) | `.githooks/pre-push`       |
-| **deploy** (owner-fired) | the FULL gate + the **full Playwright e2e matrix** — primary: `just deploy` (local); remote twin: `gh workflow run deploy.yml`   | full matrix, once per deploy   | `justfile`/`deploy.yml`    |
+| **deploy** (owner-fired) | the FULL gate + the **full Playwright e2e matrix** — default: published Release; manual: workflow dispatch / `just deploy`       | full matrix, once per deploy   | `justfile`/`deploy.yml`    |
 | **remote CI** (`ci.yml`) | typecheck + lint + unit + build + budget on every push to `main` and every PR — **live since the repo went public (2026-07-17)** | one runner per event           | `.github/workflows/ci.yml` |
 
 > **Why `workers: 1` in CI, not 2.** A 2nd Playwright worker was measured and REJECTED: on the
@@ -75,12 +75,12 @@ deploy paths run the full e2e matrix as their gate. So the behavioural suite sti
 before a user sees the code — just once per deploy instead of once per push. Nothing is lost; the
 heavy lane moved to the deploy seam.
 
-**How to deploy (owner-fired, always).** The **primary path is local**: `just deploy` — the full
-gate + the full Playwright e2e matrix + `firebase deploy --only hosting,firestore:rules,storage`,
-run on the owner's machine. The remote twin is `gh workflow run deploy.yml --ref main`
-(dispatch-only; same recipe on a GitHub runner, composing the private content pack first — see
-`deploy.yml`'s header). When the exact SHA already has a green remote run, skip the redundant
-local e2e with `FOLIO_SKIP_E2E=1 just deploy` — ONE flow, no double-running (golden rule 14).
+**How to deploy (owner-fired, always).** Publishing a GitHub Release is the default trigger: the
+release act is the owner authorization and the workflow checks out its immutable app tag, composes the
+private content pack, runs the full gate + Playwright matrix, then deploys. Ordinary pushes never deploy.
+`gh workflow run deploy.yml --ref <tag-or-main>` and local `just deploy` are manual fallbacks. When the
+exact SHA already has a green remote run, `FOLIO_SKIP_E2E=1 just deploy` avoids rerunning the same matrix
+(golden rule 14).
 
 **Remote CI (`ci.yml`) is ambient only where it's free.** The LOCAL gate is the authoritative
 enforcer. `ci.yml` runs typecheck + lint + unit + build + budget on every push to `main` and every
@@ -392,6 +392,26 @@ not capturable (e.g. `/login` is unreachable under the dev-bypass), add it to th
 > for verification, never a second mock. Production never loads them (the only caller is the dead
 > `DEV_BYPASS_AUTH` branch).
 
+> **Two dev lanes, one deliberate boundary.** Use `pnpm dev:emulators` for manual dogfood: one command
+> builds Functions, starts Auth + Firestore + Storage + Functions emulators on the isolated
+> `demo-d20folio` project, seeds deterministic users/characters plus `/campaigns/SANDBOX`, signs the app
+> into the local owner account, and opens Vite. This is the production-parity lane: the real Firebase
+> adapters, auth token, rules, listeners, transactions, offline queue, Storage and callable endpoints run;
+> Ctrl-C shuts the whole sandbox down. The `?devActAs=<uid>` dock can open the seeded party seats in
+> separate windows. No `.env.local` production project or owner uid is used.
+>
+> Use `DEV_BYPASS_AUTH` only for fast screenshot/E2E/scenario work where starting Firebase is needless.
+> A bypass fixture is only the first seed. Character
+> parent state, its separate `combat/state`, and campaign state then persist through the single local
+> document adapter (`src/lib/dev-document-store.ts`), including reload/navigation survival and cross-tab
+> snapshots. This is intentional: dogfooding in dev must reproduce Firestore's document lifecycle instead
+> of silently resetting spent slots, actions, HP, conditions, or an encounter. To discard local dogfood
+> state after changing a fixture, append `?reset-dev=1` to ANY preview URL once (for example,
+> `/characters/mock-1?reset-dev=1`); boot removes the parameter and reseeds. Do not add a feature-specific
+> localStorage cache/no-op bypass — add the document to this adapter and keep the production projection.
+> The replica tests client lifecycle; the emulator sandbox is authoritative whenever permissions,
+> multiple users, transactions, Storage, Functions, or true offline replay matter.
+
 ### I want to SELF-VALIDATE a mechanic on any class/subclass (screenshot proof)
 
 > **The mock is a single Bard — that is never a reason to ask the owner to build a character.**
@@ -573,8 +593,8 @@ git push origin main vX.Y.Z
 
 Releases are owner-triggered and agent-executed with `just release` (the changelog entry is a
 synthesized thematic section, never the raw changeset dump — golden rule 17; there is deliberately
-no release workflow in CI) and deployed separately, only on explicit owner go:
-`just deploy` (primary, local) or `gh workflow run deploy.yml` (the remote twin).
+no automated versioning workflow). Publishing the GitHub Release triggers the tag-pinned deploy;
+workflow dispatch and `just deploy` are manual fallbacks.
 
 ---
 
@@ -620,14 +640,13 @@ workflows live in `.github/workflows/`:
   mirror** (`if: !github.event.repository.private`) and has been live since the repo went public
   (2026-07-17), gating every push/PR on the free public-repo Actions tier; the pre-push hook
   remains the authoritative local gate.
-- **Deploy** (`deploy.yml`) — `workflow_dispatch` ONLY, owner-fired (golden rule 22; never on
-  push). It mirrors `just deploy` on a runner: compose the private content pack
+- **Deploy** (`deploy.yml`) — published Release by default, with `workflow_dispatch` fallback;
+  owner-authorized and never on push (golden rule 22). It composes the private content pack
   (`salvodicara/d20-folio-content` via the `CONTENT_PACK_TOKEN` secret), full gate, full Playwright
   e2e matrix, then `firebase deploy --only hosting,firestore:rules,storage` with the
-  `FIREBASE_SERVICE_ACCOUNT` secret. **The primary deploy path stays local** (`just deploy`); this
-  is the remote equivalent for when a runner is preferable.
+  `FIREBASE_SERVICE_ACCOUNT` secret. Local `just deploy` remains the break-glass fallback.
 
-There is deliberately **no release workflow** — releases are owner-triggered, agent-executed
+There is deliberately **no automated versioning workflow** — releases are owner-triggered, agent-executed
 (`just release`, synthesized changelog — golden rule 17). There is no remote pixel-diff or
 baseline-regen workflow either: the visual lane is on-demand and local (`VISUAL=1`, no committed
 baselines — see "Visual baselines" above), and the rules-emulator suite gates at pre-push.

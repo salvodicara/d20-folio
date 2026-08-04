@@ -218,7 +218,10 @@ export function HpEditPopover({
   // something (minimum interaction — everyone else keeps the plain editor).
   // Null when inactive, so every consumer below narrows in one expression.
   const activeDefenses =
-    defenses !== undefined && (defendedTypes.length > 0 || resistedSources.length > 0)
+    defenses !== undefined &&
+    (defenses.allDamageResistance ||
+      defendedTypes.length > 0 ||
+      resistedSources.length > 0)
       ? defenses
       : null;
 
@@ -440,6 +443,11 @@ export function HpEditPopover({
                 aria-label={t("combat.damageTypeGroupAria")}
                 className="flex flex-wrap items-center gap-1.5"
               >
+                {activeDefenses.allDamageResistance && (
+                  <span className="rounded-md border border-accent/50 bg-accent/10 px-2 py-0.5 text-[length:var(--text-micro)] font-semibold text-accent-text">
+                    {t("combat.allDamageResistance")}
+                  </span>
+                )}
                 {defendedTypes.map((dt) => (
                   <ToggleChip
                     key={dt}

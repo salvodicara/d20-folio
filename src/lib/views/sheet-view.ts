@@ -541,6 +541,7 @@ export function deriveDamageDefenses(
   heavyArmorEquipped: boolean
 ): DamageDefenses {
   return {
+    allDamageResistance: aggregate.allDamageResistance,
     resistances: new Set(
       deriveDefenseKind(
         aggregate.damageResistances,

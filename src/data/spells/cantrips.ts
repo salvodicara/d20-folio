@@ -14,6 +14,7 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "acid",
     damageDice: "1d6",
     saveAbility: "DEX",
+    targeting: { affinity: "enemy", maxTargets: 2, sharedAmount: true },
     source: "SRD",
   },
   {

@@ -134,6 +134,7 @@ import {
   setInitiative,
   setMonsterName,
   setMonsterNotes,
+  setMonsterSide,
   setMonsterTempHp,
   setRevealed,
   toggleCondition,
@@ -1611,8 +1612,9 @@ export function MonsterCard({
   const groupCurrent = monster.tokens.reduce((sum, hp) => sum + hp, 0);
   const groupMax = monster.maxHp * monster.tokens.length;
   const aliveTokens = monster.tokens.filter((hp) => hp > 0).length;
-  // The DM/admin always sees the exact number; a player only when the DM has revealed it.
-  const showExactHp = editable || !!monster.revealed;
+  // Allies are table-facing participants, so their exact state is visible like a PC's.
+  // Enemy HP stays concealed until the DM explicitly reveals it.
+  const showExactHp = editable || monster.side === "ally" || !!monster.revealed;
   const hasConditions = monster.conditions.length > 0;
 
   const subline =
@@ -1626,8 +1628,13 @@ export function MonsterCard({
     ) : null;
 
   const badges =
-    down || monster.hidden ? (
+    down || monster.hidden || monster.side === "ally" ? (
       <div className="flex flex-wrap gap-1.5">
+        {monster.side === "ally" && (
+          <Badge variant="outline" color="var(--semantic-success)" size="sm">
+            {t("campaignHub.encounterAlly")}
+          </Badge>
+        )}
         {down && (
           <Badge
             variant="solid"
@@ -1760,6 +1767,28 @@ export function MonsterCard({
       />
 
       <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            apply((encounter) =>
+              setMonsterSide(
+                encounter,
+                monster.id,
+                monster.side === "ally" ? "enemy" : "ally"
+              )
+            )
+          }
+        >
+          <Icon
+            as={monster.side === "ally" ? Swords : ShieldCheck}
+            size="sm"
+            decorative
+          />
+          {monster.side === "ally"
+            ? t("campaignHub.encounterMakeEnemy")
+            : t("campaignHub.encounterMakeAlly")}
+        </Button>
         {/* DM-only statblock disclosure (§C.2) — only for a picker-added monster
             (`srdId` present); a hand-typed monster keeps today's exact card. Present
             regardless of whether the id will resolve — the modal owns the degrade. */}
@@ -1808,7 +1837,7 @@ export function MonsterCard({
   return (
     <>
       <CombatantCard
-        side="enemy"
+        side={monster.side ?? "enemy"}
         isCurrent={isCurrent}
         dimmed={down}
         dashed={monster.hidden}

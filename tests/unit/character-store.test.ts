@@ -10,6 +10,9 @@ import type { CharacterDoc } from "@/types/character";
 import type { CombatPersistence, CombatState } from "@/types/combat-state";
 import { makeCharacterDoc } from "./_helpers";
 import { conc } from "./__helpers__/concentration";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
+import { nonCombatSessionChanged } from "@/lib/combat-state";
+import { serializeCharacter } from "@/lib/character-codec";
 
 /**
  * Creates a minimal mock character for testing store operations.
@@ -92,6 +95,82 @@ function mockCharacter(overrides?: Partial<CharacterDoc>): CharacterDoc {
     ...overrides,
   };
 }
+
+function projectedEffect(targetId = "pc-u1"): ActiveCombatEffect {
+  return {
+    id: "effect-heroism",
+    actor: { kind: "monster", combatantId: "caster" },
+    target: {
+      kind: "pc",
+      combatantId: targetId,
+      memberUid: "u1",
+      characterId: "test-char-1",
+    },
+    source: { kind: "spell", id: "heroism", actionId: "spell-heroism" },
+    payload: { kind: "grant-group", activeKey: "spell-heroism" },
+    duration: { kind: "encounter" },
+  };
+}
+
+describe("characterStore — campaign effect projection", () => {
+  beforeEach(() => {
+    useCharacterStore.setState({ encounterEffectProjection: null });
+    useCharacterStore.getState().setCharacter(null);
+  });
+
+  it("survives same-character hydration and ordinary session mutations", () => {
+    const effect = projectedEffect();
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    useCharacterStore.getState().setEncounterEffects("test-char-1", [effect]);
+    useCharacterStore.getState().updateSession({ inspiration: true });
+    useCharacterStore.getState().setCharacter(mockCharacter());
+
+    expect(useCharacterStore.getState().character?.session.encounterEffects).toEqual([
+      effect,
+    ]);
+  });
+
+  it("never projects onto another character and clears when the encounter clears", () => {
+    const effect = projectedEffect();
+    useCharacterStore.getState().setEncounterEffects("test-char-1", [effect]);
+    useCharacterStore.getState().setCharacter(mockCharacter({ id: "other-char" }));
+    expect(
+      useCharacterStore.getState().character?.session.encounterEffects
+    ).toBeUndefined();
+
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    expect(useCharacterStore.getState().character?.session.encounterEffects).toEqual([
+      effect,
+    ]);
+    useCharacterStore.getState().setEncounterEffects(null);
+    expect(
+      useCharacterStore.getState().character?.session.encounterEffects
+    ).toBeUndefined();
+  });
+
+  it("does not trigger a parent-save diff and is absent from portable JSON", () => {
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    let parentDiffs = 0;
+    const unsubscribe = useCharacterStore.subscribe((state, previous) => {
+      if (
+        state.character &&
+        previous.character &&
+        nonCombatSessionChanged(previous.character.session, state.character.session)
+      ) {
+        parentDiffs += 1;
+      }
+    });
+
+    useCharacterStore.getState().setEncounterEffects("test-char-1", [projectedEffect()]);
+    unsubscribe();
+
+    expect(parentDiffs).toBe(0);
+    const character = useCharacterStore.getState().character;
+    if (!character) throw new Error("expected projected character");
+    expect(Object.keys(character.session)).not.toContain("encounterEffects");
+    expect(serializeCharacter(character)).not.toContain("encounterEffects");
+  });
+});
 
 describe("characterStore — rest mechanics", () => {
   beforeEach(() => {
@@ -911,6 +990,19 @@ describe("characterStore — rest mechanics", () => {
   });
 
   describe("spell slots", () => {
+    it("coalesces play-resource changes into one immediate parent save flush", async () => {
+      const flush = vi.fn();
+      useCharacterStore.getState().setCharacter(mockCharacter());
+      useCharacterStore.getState().setParentPersistenceFlush(flush);
+
+      useCharacterStore.getState().useSpellSlot(1);
+      useCharacterStore.getState().useTracker("test-resource", 1);
+
+      expect(flush).not.toHaveBeenCalled();
+      await Promise.resolve();
+      expect(flush).toHaveBeenCalledTimes(1);
+    });
+
     it("uses a spell slot", () => {
       const char = mockCharacter();
       useCharacterStore.getState().setCharacter(char);
@@ -2184,7 +2276,10 @@ describe("characterStore — S1 concentration drop/swap clears the buff chip", (
 // damage / heal / condition / death-save durably queued instead of silently lost.
 describe("characterStore — combat-state persistence (C7 offline-safe write seam)", () => {
   function spyPersistence() {
-    return { write: vi.fn<CombatPersistence["write"]>() };
+    return {
+      write: vi.fn<CombatPersistence["write"]>(),
+      writeTurnEconomy: vi.fn<CombatPersistence["writeTurnEconomy"]>(),
+    };
   }
   let persistence: ReturnType<typeof spyPersistence>;
   /** The most recent CombatState handed to `write`. */

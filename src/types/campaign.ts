@@ -17,6 +17,7 @@ import type { PortraitCrop, ClassEntry } from "@/types/character";
 import type { NonEmptyString } from "@/lib/non-empty-string";
 import type { RaceId } from "@/types/ids";
 import type { CombatChronicleEvent } from "@/types/combat-chronicle";
+import type { CombatEffectOp } from "@/types/combat-effect";
 
 // ============================================================
 // Campaign Document
@@ -134,6 +135,9 @@ export interface EncounterPc extends EncounterCombatantBase {
  */
 export interface EncounterMonster extends EncounterCombatantBase {
   kind: "monster";
+  /** Table allegiance, independent of creature kind. NPC allies use the exact same
+   * combatant model and automation as enemies; absent on existing encounters means enemy. */
+  side?: "ally" | "enemy";
   /** User content — the monster/NPC name the DM types (never an SRD label). */
   name: string;
   /**
@@ -324,6 +328,8 @@ export interface EncounterState {
   /** Reviewed effects aimed at a PC. The campaign carries delivery; the owning
    * character client applies each id once to its authorized combat/state doc. */
   memberEffects?: MemberCombatEffect[];
+  /** Append-only source of truth for standing, target-bound combat effects. */
+  effectOps?: CombatEffectOp[];
 }
 
 export type MemberCombatEffect =
@@ -430,6 +436,10 @@ export interface CampaignDoc {
    * structure).
    */
   encounterInit?: Record<string, number>;
+  /** Per-encounter participation opt-out (`uid → true`). A player may change only their
+   * own entry; the DM may also omit unrolled PCs when beginning turns. Reset with every
+   * start/end, so an old skip never leaks into the next encounter. */
+  encounterSkipped?: Record<string, boolean>;
   /**
    * DM-only kill switch for the invite link. OPTIONAL + additive — absent/`false`
    * means joins are OPEN; `true` INVALIDATES the invite: the `firestore.rules`

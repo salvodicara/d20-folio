@@ -442,6 +442,21 @@ describe("buildBudgetView — SRD Step 2/3 grading off live levels + seeded XP",
     expect(view.uncostedGroups).toBe(0);
   });
 
+  it("counts NPC allies as party-side participants, never enemy XP", () => {
+    const view = buildBudgetView(
+      encounter({
+        combatants: [
+          pcMara,
+          mon("monster-ally", { xp: 700, side: "ally" }),
+          mon("monster-enemy", { xp: 100 }),
+        ],
+      }),
+      { "pc-mara": pcLive() }
+    );
+    expect(view.costedXp).toBe(100);
+    expect(view.uncostedGroups).toBe(0);
+  });
+
   it("a group without XP is counted as un-costed, separate from the costed sum", () => {
     const view = buildBudgetView(
       encounter({

@@ -214,6 +214,41 @@ describe("firestore.rules — /campaigns access", () => {
     );
   });
 
+  it("a member may opt only themselves out of encounter participation", async () => {
+    const member = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(
+      updateDoc(doc(member, "campaigns", "camp1"), {
+        "encounterSkipped.member": true,
+      })
+    );
+    await assertSucceeds(
+      updateDoc(doc(member, "campaigns", "camp1"), {
+        "encounterSkipped.member": deleteField(),
+      })
+    );
+    await assertFails(
+      updateDoc(doc(member, "campaigns", "camp1"), {
+        "encounterSkipped.dm": true,
+      })
+    );
+  });
+
+  it("encounter participation stays member-scoped; the DM may correct anyone", async () => {
+    const outsider = testEnv.authenticatedContext("outsider").firestore();
+    await assertFails(
+      updateDoc(doc(outsider, "campaigns", "camp1"), {
+        "encounterSkipped.outsider": true,
+      })
+    );
+
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertSucceeds(
+      updateDoc(doc(dm, "campaigns", "camp1"), {
+        "encounterSkipped.member": true,
+      })
+    );
+  });
+
   it("a blocked user is denied", async () => {
     const db = testEnv.authenticatedContext("blocked").firestore();
     await assertFails(getDoc(doc(db, "campaigns", "camp1")));
@@ -576,10 +611,10 @@ describe("firestore.rules — /campaigns access", () => {
   // rolled writes the target MONSTER's HP + the appended chronicle events on the
   // CAMPAIGN doc the DM owns. The two-user topology is exactly DM (owns camp1) + a
   // MEMBER-owned PC applying to it. A member may write ONLY `encounter.{combatants,
-  // events,memberEffects}` (the `combatEffectFieldsOnlyChanged()` grant): monster HP,
-  // chronicle events, or an append-only PC effect delivery
-  // append, and the combatants COUNT is unchanged (no add/remove) while events only
-  // GROW (no deleting the DM's lines). Any other encounter edit, a combatant add/remove,
+  // events}` for new actions (the `combatEffectFieldsOnlyChanged()` grant): monster HP
+  // plus chronicle events. Legacy `memberEffects` remains append-only solely for
+  // transition draining. The combatants COUNT is unchanged (no add/remove) while events
+  // only GROW (no deleting the DM's lines). Any other encounter edit, a combatant add/remove,
   // or an events shrink stays DM-only; a non-member is denied outright.
   describe("a player applies reviewed combat effects (diff-scoped member grant)", () => {
     beforeEach(async () => {
@@ -598,6 +633,27 @@ describe("firestore.rules — /campaigns access", () => {
       amount: 1,
       current: 6,
       max: 7,
+    };
+    const persistentApply = {
+      id: "apply:heroism:1",
+      kind: "apply",
+      effect: {
+        id: "heroism:1",
+        actor: {
+          kind: "pc",
+          combatantId: "pc-member",
+          memberUid: "member",
+          characterId: "char-member",
+        },
+        target: { kind: "monster", combatantId: "monster-1" },
+        source: { kind: "spell", id: "heroism", actionId: "cast-1" },
+        payload: { kind: "grant-group", activeKey: "heroism-active" },
+        duration: {
+          kind: "concentration",
+          actorId: "pc-member",
+          sourceId: "heroism",
+        },
+      },
     };
 
     it("a member MAY apply damage (writes only encounter.combatants + events)", async () => {
@@ -663,6 +719,320 @@ describe("firestore.rules — /campaigns access", () => {
       await assertFails(
         updateDoc(doc(db, "campaigns", "camp1"), {
           "encounter.memberEffects": [],
+        })
+      );
+    });
+
+    it("a member MAY append apply/revoke operations without rewriting prior history", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [persistentApply],
+        })
+      );
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            persistentApply,
+            {
+              id: "revoke:heroism:1",
+              kind: "revoke",
+              effectId: "heroism:1",
+              actorId: "pc-member",
+              targetId: "monster-1",
+            },
+          ],
+        })
+      );
+    });
+
+    it("accepts bounded effect bindings/applied deltas and rejects an amplified HP delta", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      const aid = {
+        ...persistentApply,
+        effect: {
+          ...persistentApply.effect,
+          id: "aid:1",
+          source: { kind: "spell", id: "aid", actionId: "cast-aid", castLevel: 4 },
+          payload: {
+            kind: "grant-group",
+            activeKey: "spell-aid",
+            phase: "active",
+          },
+          bindings: { spellcastingModifier: 4 },
+          applied: { currentHpDelta: 15 },
+        },
+      };
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [aid],
+        })
+      );
+
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
+          "encounter.effectOps": [],
+        });
+      });
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            {
+              ...aid,
+              effect: { ...aid.effect, applied: { currentHpDelta: 10001 } },
+            },
+          ],
+        })
+      );
+    });
+
+    it("accepts a caster-owned marked-target payload", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            {
+              ...persistentApply,
+              effect: {
+                ...persistentApply.effect,
+                payload: {
+                  kind: "target-mark",
+                  activeKey: "spell-hunters-mark",
+                  scope: "marked",
+                },
+              },
+            },
+          ],
+        })
+      );
+    });
+
+    it("a member CANNOT append a malformed or actor-spoofed application", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            {
+              ...persistentApply,
+              effect: { id: "missing-required-nested-fields" },
+            },
+          ],
+        })
+      );
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            {
+              ...persistentApply,
+              effect: {
+                ...persistentApply.effect,
+                actor: {
+                  ...persistentApply.effect.actor,
+                  memberUid: "peer",
+                  combatantId: "pc-peer",
+                },
+              },
+            },
+          ],
+        })
+      );
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            {
+              ...persistentApply,
+              effect: {
+                ...persistentApply.effect,
+                actor: { kind: "monster", combatantId: "monster-1" },
+              },
+            },
+          ],
+        })
+      );
+    });
+
+    it("accepts a concrete monster token target and rejects invalid indexes", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      const withToken = {
+        ...persistentApply,
+        effect: {
+          ...persistentApply.effect,
+          target: {
+            kind: "monster",
+            combatantId: "monster-1",
+            tokenIndex: 1,
+          },
+        },
+      };
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [withToken],
+        })
+      );
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
+          "encounter.effectOps": [],
+        });
+      });
+      for (const tokenIndex of [-1, 1.5]) {
+        await assertFails(
+          updateDoc(doc(db, "campaigns", "camp1"), {
+            "encounter.effectOps": [
+              {
+                ...withToken,
+                effect: {
+                  ...withToken.effect,
+                  target: { ...withToken.effect.target, tokenIndex },
+                },
+              },
+            ],
+          })
+        );
+      }
+    });
+
+    it("a member may append a bounded lifecycle batch but not malformed provenance", async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
+          "encounter.effectOps": [persistentApply],
+        });
+      });
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            persistentApply,
+            {
+              id: "revoke:heroism:1",
+              kind: "revoke",
+              effectId: "heroism:1",
+              actorId: "",
+              targetId: "monster-1",
+            },
+          ],
+        })
+      );
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            persistentApply,
+            {
+              id: "revoke:heroism:1",
+              kind: "revoke",
+              effectId: "heroism:1",
+              actorId: "pc-member",
+              targetId: "monster-1",
+            },
+            {
+              ...persistentApply,
+              id: "apply:heroism:aftereffect",
+              effect: {
+                ...persistentApply.effect,
+                id: "heroism:aftereffect",
+                payload: { ...persistentApply.effect.payload, phase: "aftereffect" },
+              },
+            },
+          ],
+        })
+      );
+    });
+
+    it("a member may atomically consume several one-shot effects", async () => {
+      const applied = Array.from({ length: 8 }, (_, index) => ({
+        ...persistentApply,
+        id: `apply:ward:${index}`,
+        effect: { ...persistentApply.effect, id: `ward:${index}` },
+      }));
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
+          "encounter.effectOps": applied,
+        });
+      });
+      const revokes = applied.map((operation, index) => ({
+        id: `revoke:ward:${index}`,
+        kind: "revoke",
+        effectId: operation.effect.id,
+        actorId: "pc-member",
+        targetId: "monster-1",
+      }));
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            ...applied,
+            ...revokes.slice(0, -1),
+            { ...revokes.at(-1), actorId: 42 },
+          ],
+        })
+      );
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [...applied, ...revokes],
+        })
+      );
+    });
+
+    it("a member CANNOT reorder prior operations while appending a new one", async () => {
+      const first = persistentApply;
+      const second = {
+        ...persistentApply,
+        id: "apply:heroism:2",
+        effect: { ...persistentApply.effect, id: "heroism:2" },
+      };
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
+          "encounter.effectOps": [first, second],
+        });
+      });
+      const db = testEnv.authenticatedContext("member").firestore();
+      const third = {
+        ...persistentApply,
+        id: "apply:heroism:3",
+        effect: { ...persistentApply.effect, id: "heroism:3" },
+      };
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [second, first, third],
+        })
+      );
+    });
+
+    it("a member CANNOT replace or remove prior persistent-effect operations", async () => {
+      const applied = {
+        id: "apply:heroism:1",
+        kind: "apply",
+        effect: { id: "heroism:1" },
+      };
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
+          "encounter.effectOps": [applied],
+        });
+      });
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            { id: "apply:bless:1", kind: "apply", effect: { id: "bless:1" } },
+          ],
+        })
+      );
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [],
+        })
+      );
+    });
+
+    it("a member CANNOT grow the persistent-effect ledger beyond its document cap", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      const oversized = Array.from({ length: 513 }, (_, index) => ({
+        id: `apply:${index}`,
+        kind: "apply",
+        effect: { id: String(index) },
+      }));
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": oversized,
         })
       );
     });
@@ -1037,10 +1407,10 @@ describe("firestore.rules — public share links: ANONYMOUS get of a shared char
   });
 });
 
-describe("firestore.rules — combat/state subdoc: LIVE-derived member READ + DM WRITE", () => {
+describe("firestore.rules — combat/state subdoc: LIVE-derived table-member access", () => {
   // The subdoc grants derive from the parent char's `attachedCampaignId` pointer +
   // the campaign doc, exactly like the char-doc read above: READ = any current
-  // member; WRITE = the campaign's CURRENT `dmUid` (plus owner/admin). No stored
+  // member; WRITE = any current table member (plus owner/admin). No stored
   // grant, no shape validation (see the version-skew class guard below).
   const COMBAT_PATH = [
     "users",
@@ -1097,10 +1467,10 @@ describe("firestore.rules — combat/state subdoc: LIVE-derived member READ + DM
     );
   });
 
-  it("a CO-MEMBER (not the DM) MAY READ but may NOT WRITE (read-superset / write-subset split)", async () => {
+  it("a co-member may apply combat state while the target client is offline", async () => {
     const peer = testEnv.authenticatedContext("peer").firestore();
     await assertSucceeds(getDoc(doc(peer, ...COMBAT_PATH)));
-    await assertFails(
+    await assertSucceeds(
       setDoc(doc(peer, ...COMBAT_PATH), combatState({ conditions: ["prone"] }))
     );
   });
@@ -1111,17 +1481,16 @@ describe("firestore.rules — combat/state subdoc: LIVE-derived member READ + DM
     await assertFails(setDoc(doc(stranger, ...COMBAT_PATH), combatState()));
   });
 
-  it("a DM TRANSFER is effective IMMEDIATELY: the ex-DM loses WRITE, the new DM gains it — no client reconcile", async () => {
-    // The exact convergence the old dmReaders machinery kept failing at. Flip
-    // `dmUid` on the campaign doc alone; both writers' authority flips on their
-    // very next request.
+  it("removing a table member revokes their combat-state write immediately", async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), "campaigns", "campA"), { dmUid: "peer" });
+      const db = ctx.firestore();
+      await updateDoc(doc(db, "campaigns", "campA"), {
+        members: ["dm", "member"],
+        "memberDetails.peer": deleteField(),
+      });
     });
-    const exDm = testEnv.authenticatedContext("dm").firestore();
-    await assertFails(setDoc(doc(exDm, ...COMBAT_PATH), combatState()));
-    const newDm = testEnv.authenticatedContext("peer").firestore();
-    await assertSucceeds(setDoc(doc(newDm, ...COMBAT_PATH), combatState()));
+    const peer = testEnv.authenticatedContext("peer").firestore();
+    await assertFails(setDoc(doc(peer, ...COMBAT_PATH), combatState()));
   });
 
   it("the DM STILL cannot write the PARENT character doc (owner-only rule untouched)", async () => {

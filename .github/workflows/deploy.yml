@@ -1,10 +1,9 @@
 name: Deploy
 
-# Owner-fired, dispatch-ONLY — never on push (golden rule 22: deploys are always
-# explicitly owner-triggered). The PRIMARY deploy path is LOCAL: `just deploy`
-# (full gate + full Playwright e2e matrix + `firebase deploy`, run on the
-# owner's machine). This workflow is the remote equivalent of that exact recipe
-# for when a runner is preferable:  gh workflow run deploy.yml --ref main
+# Owner-authorized, never on push. Publishing a GitHub Release is the default deploy
+# trigger: the release itself is the explicit owner gate and its tag pins the exact
+# reproducible commit. workflow_dispatch remains the remote/manual fallback; `just deploy`
+# remains the local break-glass fallback.
 #
 # It composes the maintainer's PRIVATE content pack before building: the pack
 # repo (salvodicara/d20-folio-content) keeps the pack under `content-pack/`,
@@ -16,6 +15,8 @@ name: Deploy
 # plus the VITE_FIREBASE_* build secrets below.
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -38,6 +39,9 @@ jobs:
       VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          # A release deploys its immutable tag; a manual run deploys the selected ref.
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
 
       - name: Checkout the private content pack
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4

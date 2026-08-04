@@ -250,7 +250,9 @@ describe("dev-scenarios — stays OFF the eager bundle (lazy-loaded)", () => {
   const HOOKS = [
     "../../src/hooks/useCharacterSubscription.ts",
     "../../src/hooks/useCharacters.ts",
-    "../../src/features/campaigns/useMemberCharacterSubscription.ts",
+    // The peer subscription and party dashboard share this ONE resolver now; pin
+    // the resolver that actually owns the lazy boundary, not each consumer.
+    "../../src/features/campaigns/useMemberCharacterDocs.ts",
   ];
   const STATIC_IMPORT = /from\s+["']@\/lib\/dev-scenarios["']/;
 

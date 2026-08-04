@@ -204,9 +204,13 @@ Healing riders use the same pipeline: `self-heal-on-other` adds one cast-level-s
 least one other creature actually receives healing, while `maximize-spell-healing` replaces each healing
 die with its maximum face through the pure `maximizeDiceFormula` helper. The resulting number still passes
 through the normal reviewed target, apply and undo flow.
-Peer-PC effects cross an append-only encounter command queue and are applied exactly once by the recipient
-to their own combat subdocument. See
-`docs/ARCHITECTURE.md` → “The Combat Chronicle event seam”.
+Peer-PC effects do not depend on the recipient client. The acting client fresh-reads the peer's narrow
+`combat/state` inside the same transaction that records the Chronicle, applies typed HP/temp/condition
+changes, and merges only that slice. Current campaign membership authorizes the combat subdoc while the
+parent build/inventory remains owner-only; transaction retry composes simultaneous effects. See
+`docs/ARCHITECTURE.md` → “The Combat Chronicle event seam”. Target allegiance is also structural:
+PCs and `side:"ally"` NPCs are allies, absent monster side means enemy, and **Any creature** remains the
+explicit override for friendly fire, homebrew and table rulings.
 
 The capability boundary is shared by SOLO and encounters. The table supplies targets, hit/save outcomes,
 rolls and battlefield geometry; the engine applies typed damage defenses, Temporary-HP absorption/max-wins,
@@ -220,6 +224,14 @@ defines a mechanically different action granted while active. The chosen cast le
 concentration or stable active key, so every later action reuses its upcast formula without spending another
 slot. Clearing or undoing that state retracts/restores the level atomically. This covers repeated damage,
 attacks, saves, healing and conditions with the same generic resolver rather than spell-name cases.
+
+Target-bound duration uses `ActiveCombatEffect`, not a parallel spell model: stable actor/target/source,
+`grant-group | target-mark` payload, frozen cast bindings and `encounter | concentration | turn-boundary`
+duration. An append-only apply/revoke ledger projects the referenced catalogue grants onto PCs and exact
+monster instances. Typed grants own the deterministic legs (`hp-flat`, `hp-current-on-apply`, recurring
+Temp HP, all-damage resistance, damage transfer, zero-HP floor, extra-action restrictions and aftereffects);
+the campaign reducer owns lifecycle and atomic cross-document writes. Aid, Heroism, Warding Bond, Death
+Ward and Haste are examples, not branches. The table can still revoke or correct any instance.
 
 `spellInstanceCount(spell, castLevel)` resolves the count at the cast level (base at the spell's own
 level); both surfaces render `N × {dice}` via `spells.multiInstance`, with the per-instance `damageDice`

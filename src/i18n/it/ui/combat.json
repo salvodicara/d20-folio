@@ -354,6 +354,7 @@
     "critHit": "Colpo critico",
     "zeroHpDamageHint": "I danni a 0 PF segnano fallimenti nei TS contro morte",
     "damageTypeGroupAria": "Tipo di danno (applica le tue difese)",
+    "allDamageResistance": "Resistenza a tutti i danni",
     "damageUntyped": "Senza tipo",
     "addDamagePart": "Aggiungi altro",
     "removeDamagePart": "Rimuovi danni {{label}}",

@@ -201,8 +201,8 @@ renumber it into the 1–4 sequence. -->
 
 14. **Every check runs once, in its one lane.** pre-commit is FAST (~5 s: changeset doc-guard +
     lint-staged + fast unit lane); pre-push is the FULL authoritative gate (typecheck ∥ lint ∥
-    coverage, then build); deploy runs the full Playwright e2e matrix (LOCAL-primary
-    `just deploy`; `deploy.yml` is its dispatch-only remote twin); remote CI is the lean `ci.yml`
+    coverage, then build); deploy runs the full Playwright e2e matrix (published Release by default;
+    `deploy.yml` dispatch / local `just deploy` are fallbacks); remote CI is the lean `ci.yml`
     push/PR gate — ambient only where it's free (self-skipping while the repo is private).
     Never add a slow check to a hook "to be safe" — move it to the deploy/CI lane; never run a
     check twice on one path; **never `--no-verify`**. Lane detail + CI economy:
@@ -367,8 +367,10 @@ rule 25 is the standing mandate that the screenshots ALWAYS precede the merge. (
     never auto-rolled.
 22. **Deploys are owner-gated; live-data migrations run autonomously under a safety net.** NEVER
     deploy without explicit, per-change owner permission — a one-time OK is not standing
-    authorization; merges accumulate on `main` UNDEPLOYED; report "ready to deploy" and WAIT;
-    never deploy inside any loop or automation. Production Firestore/Storage MIGRATIONS are the
+    authorization; merges accumulate on `main` UNDEPLOYED. Publishing a GitHub Release IS the
+    explicit per-version authorization and automatically triggers the tag-pinned deploy workflow;
+    ordinary pushes never deploy. Manual dispatch / `just deploy` remain owner-authorized fallbacks.
+    Production Firestore/Storage MIGRATIONS are the
     exception (owner, 2026-07-07): they run AUTONOMOUSLY — no per-change OK, no ping; the owner
     sees them in the changelog — but ALWAYS under the mandatory safety protocol: self-verify with
     a dry-run / `--check` pass → SNAPSHOT the affected docs to a local backup → apply idempotently

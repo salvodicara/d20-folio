@@ -19,12 +19,13 @@ While at **0.x** (pre-1.0), breaking changes may land in any _minor_ bump. The l
 ## Releasing — `just release`
 
 **`just release` is THE release flow, permanently — by design: owner-triggered, agent-executed
-end to end.** There is no release workflow in CI: the changelog section is **synthesized** (golden
+end to end.** There is no automated versioning workflow: the changelog section is **synthesized** (golden
 rule 17) — a judgment step no "Version Packages" bot can perform — so the agent runs the whole
 ritual deliberately, on the owner's go. The owner may review and adjust
 wording before it publishes, but never writes it (the owner writes nothing —
-`docs/GOLDEN_RULES.md` → Philosophy). Deploys ship separately — the owner fires `just deploy`
-(the primary, local deploy) or `gh workflow run deploy.yml` (the remote twin).
+`docs/GOLDEN_RULES.md` → Philosophy). Publishing the GitHub Release triggers the default
+tag-pinned deploy workflow. `gh workflow run deploy.yml` and local `just deploy` remain manual
+fallbacks; deploys never run from an ordinary push.
 
 `just release` drives `@changesets/cli` and enforces golden rule 17. The steps:
 
@@ -62,16 +63,15 @@ one — reproject with the same script:
 node scripts/release-notes.mjs 0.16.5 > /tmp/rn.md && gh release edit v0.16.5 --notes-file /tmp/rn.md
 ```
 
-## Deploying — `just deploy`
+## Deploying — release by default, manual fallback
 
-`just deploy` runs the full gate + the Playwright e2e matrix, then `firebase deploy`
-(hosting + Firestore/Storage rules). **Only with explicit owner permission** (golden rule 22) — never
-deploy on your own initiative.
+Publishing a GitHub Release triggers `.github/workflows/deploy.yml` for that immutable release tag.
+The release publication is the explicit owner authorization (golden rule 22); ordinary pushes never
+deploy. The workflow composes the private content pack, runs the full gate + Playwright matrix, then
+deploys Hosting and Firestore/Storage rules.
 
-**Local is the primary path.** `just deploy` on the owner's machine is THE ship mechanism;
-`gh workflow run deploy.yml` is its remote twin (the same recipe on a GitHub runner — it composes
-the private content pack first; see `deploy.yml`'s header). While a repo is private, free-tier
-Actions minutes exhaust constantly, so never lean on the remote path to ship there.
+**Manual fallbacks:** `gh workflow run deploy.yml --ref <tag-or-main>` reruns the remote recipe;
+`just deploy` runs the same gate and deploy locally when Actions is unavailable.
 `FOLIO_SKIP_E2E=1 just deploy` is allowed **only when that exact commit already has a green full
 e2e run**; otherwise run the full `just deploy`, which executes the whole Playwright e2e matrix
 locally before `firebase deploy`.

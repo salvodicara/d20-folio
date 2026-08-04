@@ -32,7 +32,11 @@ import { useToastStore } from "@/stores/toastStore";
 import { useLocale } from "@/hooks/useLocale";
 import { conditionOptions } from "@/lib/views/tracker-view";
 import { monsterPortraitUrl } from "@/data/monster-art";
-import { applyDeclaredCombatEffects } from "./apply-damage";
+import {
+  appendPersistentCombatEffect,
+  applyDeclaredCombatEffects,
+  revokePersistentCombatEffect,
+} from "./apply-damage";
 import {
   combatDamageParts,
   combatDamagePartApplies,
@@ -46,6 +50,7 @@ import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { PortraitCrop } from "@/types/character";
 import type { ConditionId, DamageType } from "@/data/types";
+import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 import { maximizeDiceFormula } from "@/lib/grants";
 import "./CombatResolver.css";
 
@@ -64,7 +69,11 @@ interface TargetChoice {
   tokenIndex?: number;
   label: string;
   kind: "pc" | "monster";
+  side: "ally" | "enemy";
+  memberUid?: string;
+  characterId?: string;
   currentHp: number;
+  tempHp: number;
   maxHp: number;
   down: boolean;
   portraitUrl: string | null;
@@ -87,7 +96,12 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         tokenIndex: index,
         label: `${row.name} ${index + 1}`,
         kind: row.kind,
+        side: row.side ?? (row.kind === "pc" ? "ally" : "enemy"),
+        ...(row.kind === "pc" && row.memberUid && row.characterId
+          ? { memberUid: row.memberUid, characterId: row.characterId }
+          : {}),
         currentHp: hp,
+        tempHp: row.tempHp,
         maxHp: row.maxHp / tokens.length,
         down: hp <= 0,
         portraitUrl: row.srdId
@@ -106,7 +120,12 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         targetId: row.id,
         label: row.name,
         kind: row.kind,
+        side: row.side ?? (row.kind === "pc" ? "ally" : "enemy"),
+        ...(row.kind === "pc" && row.memberUid && row.characterId
+          ? { memberUid: row.memberUid, characterId: row.characterId }
+          : {}),
         currentHp: row.currentHp,
+        tempHp: row.tempHp,
         maxHp: row.maxHp,
         down: row.down,
         portraitUrl:
@@ -170,7 +189,9 @@ export function CombatResolver({
             targetId: "self",
             label: character.character.name,
             kind: "pc",
+            side: "ally",
             currentHp: character.session.hp.current,
+            tempHp: character.session.hp.temp,
             maxHp: effectiveMaxHp(character.character, character.session),
             down: character.session.hp.current <= 0,
             portraitUrl: character.portraitUrl,
@@ -213,16 +234,21 @@ export function CombatResolver({
       ? "enemy"
       : spec.targetAffinity;
 
-  const visibleTargets =
+  const affinityTargets =
     showAll || activeAffinity === "any"
       ? targets
       : targets.filter((target) =>
           activeAffinity === "self"
             ? target.targetId === (sheetCombat?.myId ?? "self")
             : activeAffinity === "ally"
-              ? target.kind === "pc"
-              : target.kind === "monster"
+              ? target.side === "ally"
+              : target.side === "enemy"
         );
+  const visibleTargets = spec.excludeSelf
+    ? affinityTargets.filter(
+        (target) => target.targetId !== (sheetCombat?.myId ?? "self")
+      )
+    : affinityTargets;
   const byKey = new Map(targets.map((target) => [target.key, target]));
   const allocationTotal = selected.reduce((sum, key) => sum + (allocations[key] ?? 1), 0);
   const atCap = Number.isFinite(spec.targetCap) && allocationTotal >= spec.targetCap;
@@ -231,8 +257,8 @@ export function CombatResolver({
     const explicit = targetModes[key];
     if (explicit) return explicit;
     const target = byKey.get(key);
-    if (target?.kind === "pc" && spec.hasHealing) return "healing";
-    if (target?.kind === "pc" && spec.hasTempHp) return "temp-hp";
+    if (target?.side === "ally" && spec.hasHealing) return "healing";
+    if (target?.side === "ally" && spec.hasTempHp) return "temp-hp";
     return effectMode;
   };
   const oneRollEligibleTargets = selected.filter(
@@ -284,7 +310,7 @@ export function CombatResolver({
         ...current,
         [target.key]:
           current[target.key] ??
-          (target.kind === "pc" && spec.hasHealing ? "healing" : "damage"),
+          (target.side === "ally" && spec.hasHealing ? "healing" : "damage"),
       }));
     }
     setConditions((current) => ({
@@ -587,8 +613,118 @@ export function CombatResolver({
       });
       if (sheetCombat && effects.length > 0 && !sharedEffectsApplied) {
         sharedEffectsApplied = true;
-        void applyDeclaredCombatEffects(sheetCombat.campaignId, effects).catch(() => {
+        const pcTargets = choices.flatMap(({ target }) =>
+          target.kind === "pc" &&
+          target.targetId !== sheetCombat.myId &&
+          target.memberUid &&
+          target.characterId
+            ? [
+                {
+                  targetId: target.targetId,
+                  memberUid: target.memberUid,
+                  characterId: target.characterId,
+                  currentHp: target.currentHp,
+                  tempHp: target.tempHp,
+                  maxHp: target.maxHp,
+                  conditions: target.conditions,
+                },
+              ]
+            : []
+        );
+        void applyDeclaredCombatEffects(sheetCombat.campaignId, effects, {
+          actorId: sheetCombat.myId,
+          action: action.nameLoc,
+          round: sheetCombat.round,
+          pcTargets,
+        }).catch(() => {
           sharedEffectsApplied = false;
+          showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+        });
+      }
+      const actor = sheetCombat
+        ? targets.find((target) => target.targetId === sheetCombat.myId)
+        : undefined;
+      const actorRef: CombatantRef | null =
+        actor?.kind === "pc" && actor.memberUid && actor.characterId
+          ? {
+              kind: "pc",
+              combatantId: actor.targetId,
+              memberUid: actor.memberUid,
+              characterId: actor.characterId,
+            }
+          : null;
+      const standingEffect = spec.standingEffect;
+      const persistentEffects: ActiveCombatEffect[] =
+        sheetCombat && actorRef && standingEffect
+          ? successful.flatMap(({ target }) => {
+              const targetRef: CombatantRef | null =
+                target.kind === "monster"
+                  ? {
+                      kind: "monster",
+                      combatantId: target.targetId,
+                      ...(target.tokenIndex !== undefined
+                        ? { tokenIndex: target.tokenIndex }
+                        : {}),
+                    }
+                  : target.memberUid && target.characterId
+                    ? {
+                        kind: "pc",
+                        combatantId: target.targetId,
+                        memberUid: target.memberUid,
+                        characterId: target.characterId,
+                      }
+                    : null;
+              if (!targetRef) return [];
+              const id = crypto.randomUUID();
+              const duration: ActiveCombatEffect["duration"] = standingEffect.lifetime
+                .concentration
+                ? {
+                    kind: "concentration",
+                    actorId: actorRef.combatantId,
+                    sourceId: standingEffect.source.id,
+                  }
+                : standingEffect.lifetime.maxRounds !== undefined
+                  ? {
+                      kind: "turn-boundary",
+                      combatantId: actorRef.combatantId,
+                      round: sheetCombat.round + standingEffect.lifetime.maxRounds,
+                      phase: "turn-end",
+                    }
+                  : { kind: "encounter" };
+              return [
+                {
+                  id,
+                  actor: actorRef,
+                  target: targetRef,
+                  source: standingEffect.source,
+                  payload: standingEffect.payload,
+                  duration,
+                },
+              ];
+            })
+          : [];
+      const persistentApply =
+        sheetCombat && persistentEffects.length > 0
+          ? (async () => {
+              try {
+                // Sequential by design: if one target fails, no later append can race
+                // the compensation and land after it. Revoking the whole intended batch
+                // is safe because a missing occurrence is an idempotent no-op.
+                for (const effect of persistentEffects) {
+                  await appendPersistentCombatEffect(sheetCombat.campaignId, effect);
+                }
+              } catch (error) {
+                await Promise.allSettled(
+                  persistentEffects.map((effect) =>
+                    revokePersistentCombatEffect(sheetCombat.campaignId, effect.id)
+                  )
+                );
+                throw error;
+              }
+            })()
+          : null;
+      if (persistentApply) {
+        void persistentApply.catch(() => {
           showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
         });
       }
@@ -640,7 +776,29 @@ export function CombatResolver({
         closed = true;
         onDone();
       }
-      return undoOwn ?? undefined;
+      const undoPersistent =
+        sheetCombat && persistentApply
+          ? () => {
+              void persistentApply
+                .catch(() => undefined)
+                .then(() =>
+                  Promise.all(
+                    persistentEffects.map((effect) =>
+                      revokePersistentCombatEffect(sheetCombat.campaignId, effect.id)
+                    )
+                  )
+                )
+                .catch(() => {
+                  showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+                });
+            }
+          : null;
+      return undoOwn || undoPersistent
+        ? () => {
+            undoPersistent?.();
+            undoOwn?.();
+          }
+        : undefined;
     });
   };
 

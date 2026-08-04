@@ -71,6 +71,8 @@ export interface PcLive {
 export interface EncounterCombatantView {
   id: string;
   kind: "pc" | "monster";
+  /** Explicit table allegiance; older/test view rows fall back from kind. */
+  side?: "ally" | "enemy";
   name: string;
   ac: number;
   initiative: number | null;
@@ -147,6 +149,7 @@ export function buildEncounterView(
       allRows.push({
         id: c.id,
         kind: "pc",
+        side: "ally",
         name: live?.name ?? "",
         ac: live?.ac ?? 0,
         initiative: live?.initiative ?? null,
@@ -172,6 +175,7 @@ export function buildEncounterView(
       allRows.push({
         id: c.id,
         kind: "monster",
+        side: c.side ?? "enemy",
         name: monsterInstanceName(c),
         ac: c.ac,
         initiative: c.initiative,
@@ -187,6 +191,7 @@ export function buildEncounterView(
         tokens: c.tokens,
         defenses: c.defenses
           ? {
+              allDamageResistance: false,
               resistances: new Set(c.defenses.damageResistances ?? []),
               immunities: new Set(c.defenses.damageImmunities ?? []),
               vulnerabilities: new Set(c.defenses.damageVulnerabilities ?? []),
@@ -291,7 +296,7 @@ export function buildBudgetView(
       const classes = pcLiveById[c.id]?.classes;
       if (classes === undefined) pendingPcs += 1;
       else levels.push(totalLevel({ classes }));
-    } else {
+    } else if ((c.side ?? "enemy") === "enemy") {
       monsterGroups.push({ xp: c.xp, count: c.tokens.length });
     }
   }

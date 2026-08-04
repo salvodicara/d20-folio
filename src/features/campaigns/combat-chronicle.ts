@@ -20,6 +20,7 @@
 
 import type { EncounterState, EncounterMonster } from "@/types/campaign";
 import type { CombatChronicleEvent, EncounterOutcome } from "@/types/combat-chronicle";
+import type { LocText } from "@/lib/loc-text";
 import {
   setHp,
   applyHp,
@@ -174,6 +175,10 @@ export function recordPcHp(
     max: number;
     /** The attributed attacker (a damage tap sets it); absent = unattributed. */
     attackerId?: string;
+    /** Healing provenance; optional for manual DM edits. */
+    actorId?: string;
+    action?: LocText;
+    tempAbsorbed?: number;
   }
 ): EncounterState {
   if (args.amount <= 0) return state;
@@ -185,7 +190,9 @@ export function recordPcHp(
           amount: args.amount,
           current: args.postCurrent,
           max: args.max,
+          ...(args.tempAbsorbed ? { tempAbsorbed: args.tempAbsorbed } : {}),
           ...(args.attackerId ? { attackerId: args.attackerId } : {}),
+          ...(args.action ? { action: args.action } : {}),
         })
       : appendEvent(state, {
           kind: "hp-heal",
@@ -193,6 +200,8 @@ export function recordPcHp(
           amount: args.amount,
           current: args.postCurrent,
           max: args.max,
+          ...(args.actorId ? { actorId: args.actorId } : {}),
+          ...(args.action ? { action: args.action } : {}),
         });
   if (args.kind === "damage" && args.preCurrent > 0 && args.postCurrent === 0) {
     out = appendEvent(out, { kind: "down", targetId: args.targetId });
@@ -205,12 +214,16 @@ export function recordCondition(
   state: EncounterState,
   targetId: string,
   conditionId: string,
-  added: boolean
+  added: boolean,
+  provenance?: { actorId?: string; action?: LocText }
 ): EncounterState {
   return appendEvent(state, {
     kind: added ? "condition-gain" : "condition-loss",
     targetId,
     conditionId,
+    ...(added && provenance?.actorId ? { attackerId: provenance.actorId } : {}),
+    ...(!added && provenance?.actorId ? { actorId: provenance.actorId } : {}),
+    ...(provenance?.action ? { action: provenance.action } : {}),
   });
 }
 
@@ -342,7 +355,7 @@ export function skipEventAttacker(
  */
 export function inferOutcome(state: EncounterState): EncounterOutcome {
   const monsters = state.combatants.filter(
-    (c): c is EncounterMonster => c.kind === "monster"
+    (c): c is EncounterMonster => c.kind === "monster" && (c.side ?? "enemy") === "enemy"
   );
   return monsters.length > 0 && monsters.every(isDown) ? "victory" : "ended";
 }

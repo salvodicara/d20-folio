@@ -1259,7 +1259,7 @@ describe("resolveActions — custom spells", () => {
   });
 });
 
-describe("resolveActions — S1 while-active buff spell auto-light (activatesKey)", () => {
+describe("resolveActions — S1 while-active spell ownership", () => {
   function makeSpellcaster(): CharacterDoc {
     return makeChar({
       classes: [{ classId: "bard", level: 5 }],
@@ -1278,30 +1278,39 @@ describe("resolveActions — S1 while-active buff spell auto-light (activatesKey
     });
   }
 
-  // A while-active BUFF spell carries its standing effect as a `while-active`
-  // grant on `spell.grants` whose stable `activeKey` is `spell-<id>`; a normal
-  // damage/utility spell carries no such grant. The cast action must mirror the
-  // FEATURE path (Rage/Bladesong) and stamp `activatesKey` so the combat commit
-  // auto-lights the rail chip — only for the buffs.
-  const cases: ReadonlyArray<{ srdId: string; activeKey: string | undefined }> = [
-    // +2 AC for the duration → its chip lights on cast.
-    { srdId: "shield-of-faith", activeKey: "spell-shield-of-faith" },
+  // A while-active spell carries its standing effect on `spell.grants` under a
+  // stable `spell-<id>` key. Caster-owned grants mirror Rage/Bladesong and stamp
+  // `activatesKey`; selected-recipient grants expose `standingEffect` instead.
+  // Ordinary damage/utility spells expose neither.
+  const cases: ReadonlyArray<{
+    srdId: string;
+    activatesKey?: string;
+    standingEffectKey?: string;
+  }> = [
+    // +2 AC belongs to the chosen ally, not automatically to the caster.
+    { srdId: "shield-of-faith", standingEffectKey: "spell-shield-of-faith" },
     // +1d4 radiant weapon rider for the duration → lights on cast.
-    { srdId: "divine-favor", activeKey: "spell-divine-favor" },
-    // AC formula for the duration → lights on cast.
-    { srdId: "mage-armor", activeKey: "spell-mage-armor" },
+    { srdId: "divine-favor", activatesKey: "spell-divine-favor" },
+    // Hex selects a cursed target, but its attack rider remains caster-owned.
+    { srdId: "hex", activatesKey: "spell-hex" },
+    // AC formula belongs to the chosen ally.
+    { srdId: "mage-armor", standingEffectKey: "spell-mage-armor" },
     // Plain damage spell — no standing effect → lights NOTHING.
-    { srdId: "fireball", activeKey: undefined },
+    { srdId: "fireball" },
   ];
 
-  it.each(cases)("$srdId → activatesKey = $activeKey", ({ srdId, activeKey }) => {
-    const char = makeSpellcaster();
-    char.character.spells = [{ srdId }];
-    const actions = localizeActions(char, "en");
-    const spell = actions.find((a) => a.id === `spell-${srdId}`);
-    expect(spell).toBeDefined();
-    expect(spell?.activatesKey).toBe(activeKey);
-  });
+  it.each(cases)(
+    "$srdId keeps its standing grant on the declared recipient",
+    ({ srdId, activatesKey, standingEffectKey }) => {
+      const char = makeSpellcaster();
+      char.character.spells = [{ srdId }];
+      const actions = localizeActions(char, "en");
+      const spell = actions.find((a) => a.id === `spell-${srdId}`);
+      expect(spell).toBeDefined();
+      expect(spell?.activatesKey).toBe(activatesKey);
+      expect(spell?.standingEffect?.activeKey).toBe(standingEffectKey);
+    }
+  );
 });
 
 describe("resolveActions — multiclass per-spell DC/attack (2024 RAW)", () => {
@@ -1718,6 +1727,15 @@ describe("resolveActions — S12b multi-instance spell damage (Magic Missile / S
       (a) => a.spellId === "magic-missile"
     );
     expect(mm?.summary.area).toBeUndefined();
+  });
+
+  it("projects area targeting for non-damaging control spells too", () => {
+    for (const id of ["hypnotic-pattern", "faerie-fire"]) {
+      const action = localizeActions(makeWizard(id), "en").find(
+        (candidate) => candidate.spellId === id
+      );
+      expect(action?.summary.area, id).toBe(true);
+    }
   });
 
   it("Scorching Ray carries instances=3 (2d6 each); upcast +1 ray per slot above 2nd (4 at L3)", () => {

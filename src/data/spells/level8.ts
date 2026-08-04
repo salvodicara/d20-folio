@@ -146,12 +146,14 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Immunity to Psychic damage and the Charmed
       // condition for the duration (the divination-proofing stays descriptive).
       {
         type: "while-active",
         activeKey: "spell-mind-blank",
+        recipient: "selected",
         grants: [
           { type: "damage-immunity", damageType: "psychic" },
           { type: "condition-immunity", condition: "charmed" },

@@ -122,7 +122,7 @@ asdf install         # installs Node 24.16.0 + Temurin 25 from .tool-versions
 pnpm install         # install root app dependencies
 
 pnpm dev             # Vite dev server (real Firebase, no emulators)
-pnpm dev:emulators   # dev against Firebase emulators (sets VITE_USE_EMULATORS=true)
+pnpm dev:emulators   # one-command seeded Auth/Firestore/Storage/Functions sandbox
 
 pnpm test            # Vitest unit run
 pnpm test:e2e        # Playwright E2E (chromium)
@@ -141,7 +141,7 @@ Git hooks in `.githooks/` enforce this: pre-commit is fast (staged-file lint plu
 
 ### Deployment
 
-The app deploys to Firebase Hosting at [d20-folio.web.app](https://d20-folio.web.app) (project `d20-folio`, region `europe-west1`). Deploys are always explicitly owner-triggered (never on push): `just deploy` runs the full gate + e2e matrix locally and deploys, or `gh workflow run deploy.yml` runs the same recipe on a GitHub runner. Hosting serves `dist/` as an SPA (rewrites `**` to `/index.html`), with `firestore.rules` and `storage.rules` for security; Cloud Functions deploy separately.
+The app deploys to Firebase Hosting at [d20-folio.web.app](https://d20-folio.web.app) (project `d20-folio`, region `europe-west1`). Deploys are always explicitly owner-triggered and never run on push: publishing a GitHub Release triggers the tag-pinned full gate + e2e + deploy workflow; workflow dispatch and local `just deploy` are manual fallbacks. Hosting serves `dist/` as an SPA (rewrites `**` to `/index.html`), with `firestore.rules` and `storage.rules` for security; Cloud Functions deploy separately.
 
 ## Documentation
 

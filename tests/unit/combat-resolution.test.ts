@@ -133,6 +133,52 @@ describe("combatResolutionSpec — target shape and outcome", () => {
     });
   });
 
+  it("preserves an explicit any-creature target affinity", () => {
+    expect(
+      combatResolutionSpec(
+        makeAction("spell", {
+          targeting: { affinity: "any", maxTargets: 1 },
+          conditionApplication: { options: ["invisible"], on: "automatic" },
+        })
+      ).targetAffinity
+    ).toBe("any");
+  });
+
+  it("plans a target-bound standing grant by catalogue reference", () => {
+    const action: ResolvedAction = {
+      ...makeAction("spell", {}),
+      id: "spell-warding-bond",
+      spellId: "warding-bond",
+      slotLevel: 3,
+      concentration: true,
+      standingEffect: {
+        sourceId: "warding-bond",
+        activeKey: "spell-warding-bond",
+        targetAffinity: "ally",
+        excludeSelf: true,
+        maxRounds: 10,
+      },
+    };
+
+    expect(combatResolutionSpec(action)).toMatchObject({
+      targetAffinity: "ally",
+      excludeSelf: true,
+      targetCap: 1,
+      standingEffect: {
+        source: {
+          kind: "spell",
+          id: "warding-bond",
+          actionId: "spell-warding-bond",
+          castLevel: 3,
+        },
+        payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+        lifetime: { concentration: true, maxRounds: 10 },
+      },
+    });
+    expect(shouldResolveCombatAction(action)).toBe(true);
+    expect(shouldResolveSoloAction(action)).toBe(false);
+  });
+
   it("models a distributed healing pool independently from target count", () => {
     const spec = combatResolutionSpec(
       makeAction("spell", {
@@ -320,6 +366,7 @@ describe("shouldResolveCombatAction — which commits open the resolver", () => 
 
 describe("resolveCombatDamage — typed deterministic consequences", () => {
   const defenses: DamageDefenses = {
+    allDamageResistance: false,
     resistances: new Set(["fire"]),
     immunities: new Set(["cold"]),
     vulnerabilities: new Set(["radiant"]),

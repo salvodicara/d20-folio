@@ -377,7 +377,15 @@ const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see AR
 // raw (≈ the +2.90 KB gz the eager closure grew by). Entry count unchanged and no
 // new asset family entered the precache — it is the WHY layer's own bytes. (The
 // 8376.51 figure recorded on 2026-08-03 drifted +0.62 KiB on main since.)
-const PRECACHE_CEILING_KIB = 8392;
+// 2026-08-04 (persistent encounter effects + production-faithful dev replica): raised
+// 8392 → 8447 only after removing campaign IO from the eager shell. A composed A/B
+// measured origin/main at 8390.11 KiB / 321 entries and this branch at 8434.77 KiB /
+// 321 entries (+44.66 KiB, +0 entries): typed effect/economy reducers, cross-user
+// transaction logic, and the local replica grow existing offline chunks, not an asset
+// family. The Command Palette and roster delete path now dynamically import campaign IO,
+// dropping the feature build to 55.52 KB entry / 781.64 KB eager across the same 14
+// families; +~12 KiB never-exact-fit precache headroom → 8447.
+const PRECACHE_CEILING_KIB = 8447;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

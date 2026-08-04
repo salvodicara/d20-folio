@@ -641,6 +641,20 @@ export interface ResolvedAction {
    */
   activatesKey?: string;
   /**
+   * A standing spell grant that belongs on the selected creature rather than on
+   * the caster. The action carries only the catalogue reference; the encounter
+   * resolver creates the target-bound lifetime record after target selection.
+   * Grants themselves stay owned by the spell data.
+   */
+  standingEffect?: {
+    sourceId: string;
+    activeKey: string;
+    targetAffinity: CombatTargeting["affinity"];
+    excludeSelf?: boolean;
+    /** Deterministic combat cap declared by the while-active grant, when any. */
+    maxRounds?: number;
+  };
+  /**
    * USE-APPLIES (2026-06-12) — deterministic, dice-free effects this action
    * AUTO-APPLIES to session state on use (Task 1): a same-source slot-gated
    * `temp-hp` grant resolved to a number (Orc Adrenaline Rush → PB temp HP).
@@ -5146,10 +5160,9 @@ function resolveSpellActions(
       const instances = spellInstanceCount(spell);
       if (instances && instances > 1) summary.instances = instances;
 
-      // S13 — an AREA save-for-half spell (Fireball class) carries the `area` shape
-      // signal through so the in-encounter capture opens a MULTI-target SAVE
-      // declaration (damaged/resisted per target) rather than a single hit/miss.
-      if (spell.area) summary.area = true;
+      // Damage-only outcome facts stay inside the damage facet. The generic AREA
+      // shape is projected below because control spells such as Hypnotic Pattern
+      // and Faerie Fire have no damage facet but still need free multi-selection.
       if (spell.damageOnSave) summary.damageOnSave = spell.damageOnSave;
       if (spell.damageOnMiss) summary.damageOnMiss = spell.damageOnMiss;
       for (const outcome of spellGrantAggregate.spellDamageOutcomes) {
@@ -5159,7 +5172,6 @@ function resolveSpellActions(
         if (outcome.damageOnMiss) summary.damageOnMiss = outcome.damageOnMiss;
       }
       if (spell.damageResolution) summary.damageResolution = spell.damageResolution;
-      if (spell.primaryTargetOnly) summary.primaryTargetOnly = true;
 
       // Dual-damage-instance spells (Ice Storm 2d10 Bldg + 4d6 Cold, Ice Knife
       // 1d10 Prc + 2d6 Cold, Meteor Swarm 20d6 Fire + 20d6 Bldg) carry a SECOND
@@ -5222,6 +5234,13 @@ function resolveSpellActions(
         }
       }
     }
+
+    // AREA is target geometry, not a damage capability. Carry it for every area
+    // spell — including condition-only/control spells — so a physical-table user
+    // freely declares every creature caught without the app pretending to know
+    // positions. A true single-target ranged spell remains capped at one.
+    if (spell.area) summary.area = true;
+    if (spell.primaryTargetOnly) summary.primaryTargetOnly = true;
 
     // Marked-target rider on a SPELL ATTACK row (Eldritch Blast + Hex, a spell
     // attack + Hunter's Mark). RAW: Hex / Hunter's Mark deal their extra die "each
@@ -5370,15 +5389,28 @@ function resolveSpellActions(
     // lights nothing. Read the grant's stable `activeKey`, NEVER the spell name
     // (golden rule 7). Mirrors the feature derivation at :3033-3041; a
     // spell's `grants` is a plain optional array (no `in` narrowing needed).
-    // A TARGET-ONLY buff (Warding Bond — the CASTER never benefits) opts out via
-    // `autoActivateOnCast: false`: no key is stamped, so casting never self-buffs;
-    // the warded creature's sheet lights the toggle manually from the rail.
+    // A selected-recipient buff (Warding Bond — the CASTER never benefits) declares
+    // that ownership on the grant itself. Targeting metadata describes legal targets;
+    // it never silently re-homes an otherwise caster-owned standing grant.
     let spellActivatesKey: string | undefined;
+    let standingEffect: ResolvedAction["standingEffect"];
     for (const g of spell.grants ?? []) {
-      if (g.type === "while-active" && g.autoActivateOnCast !== false) {
+      if (g.type !== "while-active") continue;
+      const targetsSelectedCreature = g.recipient === "selected";
+      if (targetsSelectedCreature) {
+        standingEffect = {
+          sourceId: spell.id,
+          activeKey: g.activeKey,
+          targetAffinity: spell.targeting?.affinity ?? "ally",
+          ...(spell.targeting?.excludeSelf ? { excludeSelf: true } : {}),
+          ...(g.duration?.maxRounds !== undefined
+            ? { maxRounds: g.duration.maxRounds }
+            : {}),
+        };
+      } else {
         spellActivatesKey = g.activeKey;
-        break;
       }
+      break;
     }
 
     const castAction: RawResolvedAction = {
@@ -5397,6 +5429,7 @@ function resolveSpellActions(
       description: srdText("spell", spell.id, "description"),
       // Casting establishes the spell's while-active state (Shield of Faith's AC).
       ...(spellActivatesKey ? { activatesKey: spellActivatesKey } : {}),
+      ...(standingEffect ? { standingEffect } : {}),
     };
     actions.push(castAction);
 
@@ -7032,6 +7065,21 @@ export interface ExtraActionBudget {
   bonus: number;
 }
 
+/** One active extra-action grant with its data-declared legal-action limits. */
+export type ExtraActionRule = AggregatedGrants["extraActions"][number];
+
+/**
+ * Full extra-action rules active this turn. Unlike the compact meter budget, this
+ * preserves Haste's allowed action categories and one-attack ceiling for the
+ * commit gate. Campaign-projected effects and caster-owned toggles share the same
+ * aggregate, so a remote Haste is indistinguishable from any other active source.
+ */
+export function extraActionRulesThisTurn(
+  character: CharacterDoc
+): ReadonlyArray<ExtraActionRule> {
+  return aggregateCharacterGrants(character.character, character.session).extraActions;
+}
+
 /**
  * The EXTRA action/bonus economy slots the character has THIS turn, summed from
  * every CURRENTLY-ACTIVE source that declares an `extra-action` grant (Fighter
@@ -7048,23 +7096,22 @@ export interface ExtraActionBudget {
  * character without one keeps the default single-slot economy with zero new code.
  */
 export function extraActionsThisTurn(character: CharacterDoc): ExtraActionBudget {
-  const active = new Set(character.session.activeFeatures ?? []);
   let action = 0;
   let bonus = 0;
-  if (active.size === 0) return { action, bonus };
-  for (const source of resolveAllGrantSources(character.character)) {
-    for (const g of source.grants ?? []) {
-      // `extra-action` always rides a `while-active` toggle (the budget counts
-      // only while the source is lit) — match the nesting, gated by the key.
-      if (g.type !== "while-active" || !active.has(g.activeKey)) continue;
-      for (const inner of g.grants) {
-        if (inner.type !== "extra-action") continue;
-        if (inner.slot === "action") action += inner.count;
-        else bonus += inner.count;
-      }
-    }
+  for (const rule of extraActionRulesThisTurn(character)) {
+    if (rule.slot === "action") action += rule.count;
+    else bonus += rule.count;
   }
   return { action, bonus };
+}
+
+/** Whether an active projected effect blocks the character's ordinary action
+ * and bonus-action economy this turn (Haste's one-turn end-state). Kept
+ * condition-free: Haste does not impose Incapacitated and therefore must not
+ * acquire that condition's extra concentration or reaction semantics. */
+export function isTurnEconomyBlocked(character: CharacterDoc): boolean {
+  return aggregateCharacterGrants(character.character, character.session)
+    .turnEconomyBlocked;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -7110,11 +7157,7 @@ export function effectiveWalkingSpeedFt(
 
   // Whole-character aggregate (sees EQUIPPED items) so item-sourced speed bonuses
   // AND the Boots-of-Speed `speed-multiplier` are honoured, not just feature ones.
-  const agg = evaluateGrants(
-    resolveAllGrantSources(charData),
-    new Set(character.session.activeFeatures ?? []),
-    new Map(Object.entries(character.session.grantBundleChoices ?? {}))
-  );
+  const agg = aggregateCharacterGrants(charData, character.session);
   let bonus = agg.speedBonusFt;
 
   // Conditional `no-heavy-armor` bonus: apply unless we can confirm Heavy armor
@@ -7151,7 +7194,8 @@ export function effectiveWalkingSpeedFt(
   // N unless it is already higher" — a MAX applied LAST, after the additive
   // bonuses, multiplier, and flat reductions, so an exhausted / armor-penalised
   // Speed still floors back up to `speedFloorFt`. Default 0 = no floor.
-  return Math.max(0, resolved, agg.speedFloorFt);
+  const floored = Math.max(0, resolved, agg.speedFloorFt);
+  return agg.speedCapFt === null ? floored : Math.min(floored, agg.speedCapFt);
 }
 
 /**

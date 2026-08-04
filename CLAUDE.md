@@ -104,9 +104,9 @@ layer** (`src/components/ui/*` — hand-written folio components on Radix primit
 tooltip, checkbox, radio-group, switch, slot). NOT shadcn/ui — no `shadcn` package is installed.
 Zustand state · React Router v7 · Firebase (Auth Google-only, Firestore, Storage, Hosting) ·
 Vite PWA (Workbox) · react-i18next (EN + IT) · Vitest (unit) + Playwright (E2E) · ESLint + Prettier ·
-`@changesets/cli` · GitHub Actions (two lean workflows: `ci.yml` — push/PR gate, LIVE since the
-repo went public 2026-07-17; `deploy.yml` — the dispatch-only remote twin of `just deploy`. The
-local hook gate is authoritative; deploys are LOCAL-primary, `docs/RELEASE.md`). No server/SSR —
+`@changesets/cli` · GitHub Actions (two lean workflows: `ci.yml` — push/PR gate; `deploy.yml` —
+tag-pinned on published GitHub Releases, with manual dispatch / `just deploy` fallbacks. The
+local hook gate remains authoritative; `docs/RELEASE.md`). No server/SSR —
 client-side SPA.
 
 **Toolchain pinned via asdf** (`.tool-versions`): **Node 24.16.0** + **Temurin 25** (the JDK the
@@ -191,8 +191,8 @@ read those rather than duplicating them here.
   pre-v3 imports are rejected with a friendly message (no read-time upgrade shim); any one-off data
   migration runs AUTONOMOUSLY under a snapshot-verify safety net, lives in `scripts/`, and is
   `git rm`'d once spent (golden rules 10 + 22, `docs/CHARACTER_SCHEMA.md`).
-  Deploys are owner-triggered only (`gh workflow run deploy.yml` / `just deploy` — golden rule 22,
-  never on push); never break the deployed app.
+  Publishing a GitHub Release is the owner-triggered default deploy; manual workflow dispatch /
+  `just deploy` are fallbacks (golden rule 22, never on ordinary push). Never break the deployed app.
 
 ## Golden rules + philosophy → `docs/GOLDEN_RULES.md`
 
@@ -213,7 +213,8 @@ PRODUCT/UX/design rules live in `docs/PRODUCT_CONSTITUTION.md`. Violating one is
 - **No pull requests.** Finish line = gate green → independent `ponytail-review` convergence
   (golden rule 12) → rebase onto latest `origin/main` → `git push origin HEAD:main` → poll origin
   for the SHA → `just wt-rm`. The merge push is the ONLY push. Full recipe: `docs/WORKTREES.md`.
-  `main` integrates; users only get code via an owner-fired deploy (golden rule 22).
+  `main` integrates; users only get code via an owner-published release or owner-fired manual
+  deploy (golden rule 22).
 - **Git hooks** (`git config core.hooksPath .githooks` or `just setup`): **pre-commit FAST (~5s)**
   — changeset doc-guard + `lint-staged` + fast unit lane; **pre-push = the FULL authoritative
   gate** — typecheck ∥ `lint --max-warnings 0` ∥ `test:coverage` (≥80% lines/stmts/fns, ≥75%

@@ -833,16 +833,23 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 10"],
-    // S9 — the staff casts Cure Wounds from its 10-charge pool (1 charge per
-    // base cast). Surfaces on the Play board via the free-cast-spell seam,
-    // debiting the `staff-of-healing` charge tracker. Regains at dawn (long).
-    // The paired `always-prepared-spell` makes it castable on the Play board
-    // for any wielder (same pairing as the free-cast feats).
+    // The base Cure Wounds cast and the two fixed-cost spells share the same
+    // 10-charge item tracker. Cure Wounds' variable-cost upcast remains a
+    // separate cast-level/cost primitive gap; its level-1 cast costs 1 here.
     grants: [
       { type: "always-prepared-spell", spellId: "cure-wounds" },
+      { type: "always-prepared-spell", spellId: "lesser-restoration" },
+      { type: "always-prepared-spell", spellId: "mass-cure-wounds" },
       {
         type: "free-cast-spell",
         spellId: "cure-wounds",
+        chargesPerRest: 10,
+        rest: "long",
+      },
+      {
+        type: "free-cast-from-list",
+        spellIds: ["lesser-restoration", "mass-cure-wounds"],
+        spellCosts: { "lesser-restoration": 2, "mass-cure-wounds": 5 },
         chargesPerRest: 10,
         rest: "long",
       },
@@ -858,6 +865,17 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 10"],
+    grants: [
+      { type: "always-prepared-spell", spellId: "giant-insect" },
+      { type: "always-prepared-spell", spellId: "insect-plague" },
+      {
+        type: "free-cast-from-list",
+        spellIds: ["giant-insect", "insect-plague"],
+        spellCosts: { "giant-insect": 4, "insect-plague": 5 },
+        chargesPerRest: 10,
+        rest: "long",
+      },
+    ],
     source: "SRD",
   },
   {
@@ -872,7 +890,42 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     // (the quarterstaff's own +2 attack/damage stays the item-bound weapon
     // bonus model gap — per-weapon attackBonusOverride is the seam today).
     properties: ["charges: 6"],
-    grants: [{ type: "spell-attack-bonus", amount: 2, scope: "all" }],
+    grants: [
+      { type: "spell-attack-bonus", amount: 2, scope: "all" },
+      { type: "always-prepared-spell", spellId: "animal-friendship" },
+      { type: "always-prepared-spell", spellId: "awaken" },
+      { type: "always-prepared-spell", spellId: "barkskin" },
+      { type: "always-prepared-spell", spellId: "locate-animals-or-plants" },
+      { type: "always-prepared-spell", spellId: "pass-without-trace" },
+      { type: "always-prepared-spell", spellId: "speak-with-animals" },
+      { type: "always-prepared-spell", spellId: "speak-with-plants" },
+      { type: "always-prepared-spell", spellId: "wall-of-thorns" },
+      {
+        type: "free-cast-from-list",
+        spellIds: [
+          "animal-friendship",
+          "awaken",
+          "barkskin",
+          "locate-animals-or-plants",
+          "pass-without-trace",
+          "speak-with-animals",
+          "speak-with-plants",
+          "wall-of-thorns",
+        ],
+        spellCosts: {
+          "animal-friendship": 1,
+          awaken: 5,
+          barkskin: 2,
+          "locate-animals-or-plants": 2,
+          "pass-without-trace": 2,
+          "speak-with-animals": 1,
+          "speak-with-plants": 3,
+          "wall-of-thorns": 6,
+        },
+        chargesPerRest: 6,
+        rest: "long",
+      },
+    ],
     source: "SRD",
   },
   {
@@ -1072,13 +1125,14 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wondrous",
     attunement: true,
-    // ALL-IN: the activated wings are modeled behind a while-active toggle.
-    // Fly 60 ft. The 1-hour duration + the 1d12-hour cooldown stay manual (the
-    // engine doesn't tick durations or cooldowns).
+    // ALL-IN: the activated wings are modeled behind a timed while-active
+    // toggle. Fly 60 ft. The variable 1d12-hour cooldown still lacks an
+    // item-activation cooldown primitive.
     grants: [
       {
         type: "while-active",
         activeKey: "wings-of-flying",
+        duration: { kind: "timed", minutes: 60, maxRounds: 600 },
         grants: [{ type: "fly-speed", amount: 60 }],
       },
     ],
@@ -1127,12 +1181,19 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: true,
-    // Poison Resistance + Spider Climb (Climb Speed equal to walking speed),
-    // both always-on while worn. The Spider Walk (web immunity) clause + the
-    // 1/dawn Web cast stay descriptive.
+    // Poison Resistance + Spider Climb are always on while worn. The once-per-
+    // dawn Web cast rides the standard item free-cast pool; only the doubled-area
+    // geometry and Spider Walk remain table-facing.
     grants: [
       { type: "damage-resistance", damageType: "poison" },
       { type: "climb-speed", amount: "equal-to-walking" },
+      { type: "always-prepared-spell", spellId: "web" },
+      {
+        type: "free-cast-spell",
+        spellId: "web",
+        chargesPerRest: 1,
+        rest: "long",
+      },
     ],
     source: "SRD",
   },
@@ -1143,6 +1204,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: true,
+    grants: [{ type: "at-will-cast-spell", spellId: "scrying" }],
     source: "SRD",
   },
   {

@@ -17,6 +17,7 @@ import {
   setInitiative,
   setMonsterName,
   setMonsterNotes,
+  setMonsterSide,
   setMonsterXp,
   setRevealed,
   applyHp,
@@ -195,6 +196,15 @@ describe("addMonster — first-class creature instances", () => {
     expect(monster(goblins(twoPcs(), { notes: "   " }), "monster-1")).not.toHaveProperty(
       "notes"
     );
+  });
+
+  it("models allied NPCs with one reversible allegiance field", () => {
+    const allied = goblins(twoPcs(), { count: 1, side: "ally" });
+    expect(monster(allied, "monster-1").side).toBe("ally");
+
+    const corrected = setMonsterSide(allied, "monster-1", "enemy");
+    // Enemy is the wire default, so correction removes the optional field.
+    expect(monster(corrected, "monster-1")).not.toHaveProperty("side");
   });
 
   it("accepts a blank initiative and floors count to 1", () => {
@@ -937,7 +947,7 @@ describe("uidEncounterCampaignId", () => {
 describe("viewerActiveEncounters", () => {
   type FullCamp = Pick<
     CampaignDoc,
-    "id" | "name" | "dmUid" | "memberDetails" | "encounter"
+    "id" | "name" | "dmUid" | "memberDetails" | "encounter" | "encounterSkipped"
   >;
   /** A campaign with member snapshots so a PC actor's name resolves off the doc. */
   function full(over: Partial<FullCamp> = {}): FullCamp {
@@ -981,6 +991,12 @@ describe("viewerActiveEncounters", () => {
       gathering: true, // twoPcs starts pre-Begin (currentCombatantId null)
       isMyTurn: false,
     });
+  });
+
+  it("omits a player who opted out while keeping the DM's table entry", () => {
+    const campaign = full({ encounterSkipped: { mara: true } });
+    expect(viewerActiveEncounters([campaign], "mara", false)).toEqual([]);
+    expect(one(viewerActiveEncounters([campaign], "dm", false)).role).toBe("dm");
   });
 
   it("flags my-turn + resolves a PC actor's name off the member snapshot", () => {

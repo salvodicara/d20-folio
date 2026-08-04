@@ -16,14 +16,13 @@
  * on unmount / roster change / character swap (the effect re-runs only when the
  * serialized `(uid, characterId)` set changes; the cleanup unsubscribes every one).
  *
- * Dev path: `subscribeCombatState` is a no-op under `DEV_BYPASS_AUTH` (no real
- * listener), so under bypass the hook resolves each ref's dev fixture doc ONCE and
- * projects its in-memory session as the "live" combat ({@link sessionToCombatState}) —
- * keeping the e2e / screenshot harness rendering live HP/conditions with no Firestore.
+ * Dev path: the same listener runs against the local replica. A missing document is
+ * seeded once from the fixture, after which reloads and multiple tabs behave like the
+ * production combat subdoc.
  */
 
 import { useEffect, useState } from "react";
-import { subscribeCombatState } from "@/lib/combat-state-io";
+import { subscribeCombatState, writeCombatState } from "@/lib/combat-state-io";
 import { sessionToCombatState } from "@/lib/combat-state";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { devDeclarations } from "@/features/campaigns/dev-fixture";
@@ -56,20 +55,30 @@ export function usePartyCombatStates(
     };
 
     if (DEV_BYPASS_AUTH) {
-      // No real listeners under bypass — project each dev fixture doc's session once.
-      // (Encounter initiative is NOT here: it rides the dev campaign's `encounterInit`
-      // table, the same doc production reads — the initiative SSOT.)
-      // The combat-chronicle demo seams the party's DECLARED attacks here (the
-      // dev-bypass stand-in for the players' live `combat/state` rings) so the DM feed's
-      // reconciliation fuses them with the DM's live-booked HP for real (`devDeclarations`).
+      const unsubs: Array<() => void> = [];
       const seededDeclarations = devDeclarations();
       for (const { uid, characterId } of current) {
-        void resolveDevDoc(characterId).then((doc) =>
-          settle(uid, sessionToCombatState(doc.session, 1, seededDeclarations[uid] ?? []))
-        );
+        let seeded = false;
+        const unsubscribe = subscribeCombatState(uid, characterId, (combat) => {
+          if (combat || seeded) {
+            settle(uid, combat);
+            return;
+          }
+          seeded = true;
+          void resolveDevDoc(characterId, uid).then((doc) => {
+            if (cancelled) return;
+            void writeCombatState(
+              uid,
+              characterId,
+              sessionToCombatState(doc.session, 1, seededDeclarations[uid] ?? [])
+            );
+          });
+        });
+        unsubs.push(unsubscribe);
       }
       return () => {
         cancelled = true;
+        for (const unsubscribe of unsubs) unsubscribe();
       };
     }
 

@@ -13,6 +13,7 @@ import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { evaluateGrants } from "@/lib/grants";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 const elf = MOCK_CHARACTER.character; // race "Elf" — carries the elf-lineage bundle
 
@@ -55,5 +56,64 @@ describe("aggregateCharacterGrants — lineage bundle flows into the aggregate (
       grantBundleChoices: undefined,
     });
     expect(agg.darkvisionFt).toBe(60);
+  });
+
+  it("projects a target-bound spell grant the recipient does not know", () => {
+    const heroism: ActiveCombatEffect = {
+      id: "effect-heroism",
+      actor: { kind: "monster", combatantId: "caster" },
+      target: {
+        kind: "pc",
+        combatantId: "pc-recipient",
+        memberUid: "recipient",
+        characterId: "character-1",
+      },
+      source: {
+        kind: "spell",
+        id: "heroism",
+        actionId: "spell-heroism",
+      },
+      payload: { kind: "grant-group", activeKey: "spell-heroism" },
+      duration: {
+        kind: "concentration",
+        actorId: "caster",
+        sourceId: "heroism",
+      },
+    };
+    const character = {
+      ...elf,
+      spells: [],
+    };
+    const agg = aggregateCharacterGrants(character, {
+      activeFeatures: [],
+      grantBundleChoices: {},
+      encounterEffects: [heroism],
+    });
+    expect(agg.conditionImmunities.has("frightened")).toBe(true);
+  });
+
+  it("does not stack duplicate projections of the same spell group", () => {
+    const aid = (id: string): ActiveCombatEffect => ({
+      id,
+      actor: { kind: "monster", combatantId: `caster-${id}` },
+      target: {
+        kind: "pc",
+        combatantId: "pc-recipient",
+        memberUid: "recipient",
+        characterId: "character-1",
+      },
+      source: { kind: "spell", id: "aid", actionId: "spell-aid" },
+      payload: { kind: "grant-group", activeKey: "spell-aid" },
+      duration: { kind: "encounter" },
+    });
+    const agg = aggregateCharacterGrants(
+      { ...elf, spells: [] },
+      {
+        activeFeatures: [],
+        grantBundleChoices: {},
+        encounterEffects: [aid("one"), aid("two")],
+      }
+    );
+    expect(agg.hpFlat).toBe(5);
   });
 });

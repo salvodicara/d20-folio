@@ -34,6 +34,7 @@ import { getClassTable } from "@/data/classes";
 import type { ToolChoiceContext } from "@/data/background-equipment";
 import { toolEnNameById, umbrellaToolChoiceOptions } from "@/lib/tool-names";
 import type { SrdRaceTrait } from "@/data/types";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 const INVOCATION_BY_ID = new Map(SRD_INVOCATIONS.map((inv) => [inv.id, inv]));
 const MANEUVER_BY_ID = new Map(SRD_MANEUVERS.map((m) => [m.id, m]));
@@ -214,6 +215,73 @@ export function resolveGrantSourcesForSpells(
       id: spell.id,
       grants: spell.grants,
       ref: { kind: "spell", key: spell.id },
+    });
+  }
+  return sources;
+}
+
+export type WhileActiveGrant = Extract<Grant, { type: "while-active" }>;
+
+/** Resolve one persistent instance to its catalogue-owned standing rule. */
+export function resolveCombatEffectGrantGroup(
+  effect: ActiveCombatEffect
+): WhileActiveGrant | null {
+  const spell = getSpellById(effect.source.id);
+  return (
+    spell?.grants?.find(
+      (grant): grant is WhileActiveGrant =>
+        grant.type === "while-active" && grant.activeKey === effect.payload.activeKey
+    ) ?? null
+  );
+}
+
+/** Inner grants active for this instance phase. Target marks carry identity only. */
+export function resolveCombatEffectGrants(
+  effect: ActiveCombatEffect
+): ReadonlyArray<Grant> {
+  if (effect.payload.kind !== "grant-group") return [];
+  const group = resolveCombatEffectGrantGroup(effect);
+  if (!group) return [];
+  return effect.payload.phase === "aftereffect"
+    ? (group.afterEffect?.grants ?? [])
+    : group.grants;
+}
+
+/**
+ * Resolve campaign-owned target effects back to their catalogue grant group.
+ * The registry stores only stable references, so a rules/data correction updates
+ * every live projection without copying or migrating Grant payloads.
+ */
+export function resolveCombatEffectGrantSources(
+  effects: ReadonlyArray<ActiveCombatEffect> | undefined
+): GrantSource[] {
+  const sources: GrantSource[] = [];
+  const seen = new Set<string>();
+  for (const effect of effects ?? []) {
+    if (effect.payload.kind !== "grant-group") continue;
+    const phase = effect.payload.phase ?? "active";
+    const key = `${effect.source.kind}:${effect.source.id}:${effect.payload.activeKey}:${phase}`;
+    if (seen.has(key)) continue;
+    const spell = getSpellById(effect.source.id);
+    const group = resolveCombatEffectGrantGroup(effect);
+    if (!spell || !group) continue;
+    const grants = resolveCombatEffectGrants(effect);
+    if (grants.length === 0) continue;
+    seen.add(key);
+    sources.push({
+      id: `combat-effect:${effect.id}`,
+      // A persisted effect is already active by definition. Project its inner
+      // grants directly instead of replaying the catalogue's `while-active`
+      // wrapper: lighting that shared key would also activate a prepared copy
+      // of the same spell on the recipient and apply the bonus twice.
+      grants,
+      ref: { kind: "spell", key: spell.id },
+      runtime: {
+        ...(effect.source.castLevel !== undefined
+          ? { castLevel: effect.source.castLevel }
+          : {}),
+        ...(effect.bindings ? { bindings: effect.bindings } : {}),
+      },
     });
   }
   return sources;

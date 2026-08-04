@@ -262,6 +262,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     effectTag: "control",
     saveAbility: "WIS",
     conditionApplication: { options: ["paralyzed"], on: "failed-save" },
+    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {

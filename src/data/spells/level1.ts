@@ -48,6 +48,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: true,
     effectTag: "debuff",
     saveAbility: "CHA",
+    targeting: { affinity: "enemy", maxTargets: 3, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -63,6 +64,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 3, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -95,6 +97,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     effectTag: "control",
     saveAbility: "WIS",
     conditionApplication: { options: ["charmed"], on: "failed-save" },
+    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -108,6 +111,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     instantaneous: true,
     saveAbility: "WIS",
+    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -273,6 +277,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: true,
     effectTag: "advantage",
     saveAbility: "DEX",
+    area: true,
     source: "SRD",
   },
   {
@@ -420,6 +425,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     // SRD 2024 — "A willing creature you touch is imbued with bravery. Until the
     // spell ends, the creature is immune to the Frightened condition and gains
     // Temporary Hit Points equal to your spellcasting ability modifier at the start
@@ -427,18 +433,18 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     // (lit on cast via S1, cleared on concentration drop):
     //   • Frightened-immunity → `condition-immunity`.
     //   • The recurring per-turn Temp HP → `regen-at-turn-start` with `asTempHp`.
-    //     Self-cast modeling: both classes that learn Heroism (Bard, Paladin) cast
-    //     with CHA, so the deterministic amount is the CHA modifier. The turn-start
-    //     banner one-taps it through the max-wins `gainTempHp` seam (undoable).
+    //     The turn-start banner one-taps it through the max-wins `gainTempHp` seam
+    //     (undoable).
     grants: [
       {
         type: "while-active",
         activeKey: "spell-heroism",
+        recipient: "selected",
         grants: [
           { type: "condition-immunity", condition: "frightened" },
           {
             type: "regen-at-turn-start",
-            amount: "CHA",
+            amount: { binding: "spellcastingModifier" },
             condition: "always",
             asTempHp: true,
           },
@@ -478,6 +484,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-hex",
+        targetScope: "cursed",
         grants: [
           {
             type: "damage-rider",
@@ -518,6 +525,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-hunters-mark",
+        targetScope: "marked",
         grants: [
           {
             type: "damage-rider",
@@ -605,11 +613,13 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — +10 ft Speed for the duration.
       {
         type: "while-active",
         activeKey: "spell-longstrider",
+        recipient: "selected",
         grants: [{ type: "speed", amount: 10 }],
       },
     ],
@@ -628,12 +638,14 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — standing effect while the spell runs:
       // base AC 13 + DEX while unarmored.
       {
         type: "while-active",
         activeKey: "spell-mage-armor",
+        recipient: "selected",
         grants: [
           { type: "ac-formula", base: 13, bonuses: ["DEX"], condition: "no-armor" },
         ],
@@ -723,11 +735,13 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — +2 AC for the duration.
       {
         type: "while-active",
         activeKey: "spell-shield-of-faith",
+        recipient: "selected",
         grants: [{ type: "ac-bonus", amount: 2 }],
       },
     ],

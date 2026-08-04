@@ -38,6 +38,12 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     saveAbility: "DEX",
     area: true,
     damageOnSave: "half",
+    targeting: {
+      affinity: "enemy",
+      maxTargets: 4,
+      maxTargetsPerUpcast: 1,
+      sharedAmount: true,
+    },
     source: "SRD",
   },
   {
@@ -301,11 +307,13 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
+    targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Truesight 120 ft for the duration.
       {
         type: "while-active",
         activeKey: "spell-true-seeing",
+        recipient: "selected",
         grants: [{ type: "truesight", range: 120 }],
       },
     ],
