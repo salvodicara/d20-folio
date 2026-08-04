@@ -285,6 +285,17 @@ describe("Badge", () => {
     expect(badge.style.getPropertyValue("--bd-c")).toBe("var(--dmg-fire)");
   });
 
+  it("accepts a separate AA-safe label ink without changing the border hue", () => {
+    render(
+      <Badge color="var(--semantic-info)" ink="var(--semantic-info-ink)">
+        You
+      </Badge>
+    );
+    const badge = screen.getByText("You");
+    expect(badge.style.getPropertyValue("--bd-c")).toBe("var(--semantic-info)");
+    expect(badge.style.getPropertyValue("--bd-ink")).toBe("var(--semantic-info-ink)");
+  });
+
   it("variant + size modifiers map to folio classes", () => {
     render(
       <Badge variant="solid" size="lg">

@@ -240,6 +240,7 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
 
   // ─── Global shell overlays ───────────────────────────────────────────────────
   { slug: "command-palette", route: "/characters" }, // "Ask the Folio" palette
+  { slug: "admin-page", route: "/admin" },
   { slug: "account-menu", route: "/characters" }, // account + theme dropdown (topbar)
   { slug: "roster-card-menu", route: "/characters" }, // roster card overflow ("⋯") row-actions menu
   { slug: "report-dialog", route: "/characters" }, // OWN-37 bug/feature reporter (palette → "bug")

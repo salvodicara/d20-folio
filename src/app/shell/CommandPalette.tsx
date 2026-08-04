@@ -92,7 +92,7 @@ import { signOut } from "@/lib/auth";
 import { localizeClassName } from "@/lib/views/srd-i18n";
 import { ensureSrdKind } from "@/i18n";
 import { primaryClassId, totalLevel } from "@/lib/classes";
-import { REALM_ICONS } from "./realm-icons";
+import { REALM_ICONS } from "@/components/shared/realm-icons";
 // COMPENDIUM_SPECS pull the whole SRD. The palette is always-mounted (⌘K), so a
 // STATIC import would weigh the SRD onto the initial bundle (#59/#78). It's instead
 // dynamically imported when PaletteBody mounts (palette opens) — type-only here.

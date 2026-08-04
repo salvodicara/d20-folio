@@ -28,8 +28,8 @@ import {
   ShieldOff,
   RefreshCw,
   Users,
-  Swords,
   Map,
+  UserRound,
   Crown,
   Home,
   Trash2,
@@ -40,6 +40,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { REALM_ICONS } from "@/components/shared/realm-icons";
 import { useAuthStore } from "@/stores/authStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -388,7 +389,7 @@ export function AdminPage() {
           <StatCard
             label={t("admin.totalCharacters")}
             value={totalCharacters ?? "—"}
-            icon={Swords}
+            icon={REALM_ICONS.characters}
             tone="text-accent"
           />
           <StatCard
@@ -675,17 +676,29 @@ function UserRow({
               </span>
               {isAdminUser && <Badge size="sm">{t("admin.adminTag")}</Badge>}
               {isYou && (
-                <Badge size="sm" color="var(--semantic-info)">
+                <Badge
+                  size="sm"
+                  color="var(--semantic-info)"
+                  ink="var(--semantic-info-ink)"
+                >
                   {t("admin.you")}
                 </Badge>
               )}
               {isNew && (
-                <Badge size="sm" color="var(--semantic-success)">
+                <Badge
+                  size="sm"
+                  color="var(--semantic-success)"
+                  ink="var(--semantic-success-ink)"
+                >
                   {t("admin.newTag")}
                 </Badge>
               )}
               {u.status === "blocked" && (
-                <Badge size="sm" color="var(--semantic-danger)">
+                <Badge
+                  size="sm"
+                  color="var(--semantic-danger)"
+                  ink="var(--semantic-danger-ink)"
+                >
                   {t("admin.blocked")}
                 </Badge>
               )}
@@ -694,7 +707,7 @@ function UserRow({
 
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <MetricChip
-                icon={Swords}
+                icon={REALM_ICONS.characters}
                 value={metrics.characters}
                 label={t("admin.metricCharacters", { count: metrics.characters ?? 0 })}
                 srLabel={t("admin.charactersAria", {
@@ -728,7 +741,7 @@ function UserRow({
                   }
                 >
                   <Icon
-                    as={matchHint.kind === "character" ? Swords : Map}
+                    as={matchHint.kind === "character" ? UserRound : Map}
                     size="xs"
                     decorative
                   />
@@ -1004,15 +1017,27 @@ function BugInbox({
                     </span>
                     <Badge size="sm">{t(`report.types.${r.type}`)}</Badge>
                     {r.status === "error" ? (
-                      <Badge size="sm" color="var(--semantic-danger)">
+                      <Badge
+                        size="sm"
+                        color="var(--semantic-danger)"
+                        ink="var(--semantic-danger-ink)"
+                      >
                         {t("admin.bugStatusError")}
                       </Badge>
                     ) : r.status === "opened" ? (
-                      <Badge size="sm" color="var(--semantic-success)">
+                      <Badge
+                        size="sm"
+                        color="var(--semantic-success)"
+                        ink="var(--semantic-success-ink)"
+                      >
                         {t("admin.bugStatusOpened")}
                       </Badge>
                     ) : (
-                      <Badge size="sm" color="var(--semantic-info)">
+                      <Badge
+                        size="sm"
+                        color="var(--semantic-info)"
+                        ink="var(--semantic-info-ink)"
+                      >
                         {t("admin.bugStatusNew")}
                       </Badge>
                     )}

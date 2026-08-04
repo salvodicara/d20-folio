@@ -242,7 +242,9 @@ describe("AdminPage", () => {
     renderPage();
     // Bob (u2): 5 characters, member of both campaigns, DMs one. The aria-labels
     // carry the full reading; the visible chips are abbreviated.
-    expect(await screen.findByLabelText("Characters: 5")).toBeInTheDocument();
+    const characterMetric = await screen.findByLabelText("Characters: 5");
+    expect(characterMetric).toBeInTheDocument();
+    expect(characterMetric.querySelector(".lucide-scroll-text")).not.toBeNull();
     expect(screen.getByLabelText("Campaigns: 2")).toBeInTheDocument();
     // Two DMs in the fixture (the admin and Bob); Eve DMs none, so no DM chip there.
     expect(screen.getAllByLabelText(/dungeon master of 1/i)).toHaveLength(2);

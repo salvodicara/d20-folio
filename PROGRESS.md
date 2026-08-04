@@ -186,6 +186,16 @@ source geometry is unchanged beyond background removal and `currentColor`. Other
 remain outside production until their own contextual proof. EN/IT legal attribution now names all
 four vendored glyphs. Verification: weapon before/after screenshots 6/6 and legal screenshots 5/5;
 focused icon/i18n tests 72/72; targeted axe 4/4, locale sweep 4/4, mobile layout 2/2; typecheck green.
+**Wave 17 admin recognition + coverage (2026-08-04):** Admin is now a first-class full-page surface
+instead of an inferred route. Its character totals and per-user character counts consume the shared
+Characters scroll sign; an individual character search match uses the singular person, so crossed
+swords no longer mean “character” in this final holdout. The realm vocabulary moved from shell-local
+to `components/shared` because Admin is a feature consumer, preserving dependency direction. Fresh
+dark-theme axe coverage then exposed the `YOU` and `BLOCKED` 10px badges at 4.26:1 and 4.24:1. The
+shared `Badge` now has an explicit `ink` prop and theme-paired semantic ink tokens, keeping hue on the
+border while lifting only label value; every semantic Admin badge uses the pair. Verification: final
+Admin screenshots 5/5 across EN/IT, light/dark and desktop/mobile; focused atom/Admin tests 45/45;
+targeted axe 2/2, locale sweep 2/2, mobile layout 1/1; typecheck green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 
