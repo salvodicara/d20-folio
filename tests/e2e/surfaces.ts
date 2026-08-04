@@ -504,6 +504,36 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
     },
   },
+  "character-hp-editor": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyByName,
+    prepare: async (page) => {
+      await page.locator("button.vital-hp").click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
+    },
+  },
+  "character-hp-dying-editor": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyByName,
+    prepare: async (page) => {
+      await page.locator("button.vital-hp").click();
+      const healthyEditor = page.getByRole("dialog").first();
+      await healthyEditor.waitFor({ timeout: 15000 });
+      // Lyra starts at 38 HP + 5 temp: 43 drops her to exactly 0 without
+      // crossing the massive-damage instant-death threshold.
+      await healthyEditor.getByRole("spinbutton").fill("43");
+      await healthyEditor.getByRole("button", { name: /^(damage|danno)$/i }).click();
+
+      await page.locator('button.vital-hp[data-state="dying"]').click();
+      const dyingEditor = page.getByRole("dialog").first();
+      await dyingEditor.waitFor({ timeout: 15000 });
+      await expect(
+        dyingEditor.getByRole("button", { name: /^(critical hit|colpo critico)$/i })
+      ).toBeVisible();
+    },
+  },
   "character-arcane-recovery": {
     edit: false,
     variants: OVERLAY_VARIANTS,
