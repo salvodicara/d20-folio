@@ -289,10 +289,9 @@ export const DESKTOP_OVERLAY_VARIANTS = [
 ];
 
 /**
- * Jump the guided create wizard to a step by clicking the wizard-F progress ORB
- * at the given 0-based index (locale-invariant by position — creation orbs are
- * free-jump, and all NINE steps are present under the wizard's defaults).
- * First clicks the Guided mode plaque.
+ * Jump the guided create wizard to a step by its semantic, localized ORB label.
+ * First clicks the Guided mode plaque. The spell surface deliberately selects a
+ * caster first because the journey correctly omits Spells for a non-caster.
  *
  * STATE-SIGNAL waits only (the 1d3667d2 contention-hardening pattern; F1 P3
  * flake-watch on `create-guided-background [it]`, 2026-06-12): the old helper
@@ -304,37 +303,47 @@ export const DESKTOP_OVERLAY_VARIANTS = [
  * `aria-current="step"` on the target orb — and a miss FAILS the surface instead
  * of capturing something it isn't. No retries, no timing sleeps.
  */
-async function gotoGuidedStep(page: Page, stepIndex: number): Promise<void> {
+interface GuidedStepTarget {
+  label: RegExp;
+  /** Makes the conditional Spells step part of the real journey. */
+  needsCaster?: true;
+}
+
+async function gotoGuidedStep(page: Page, target: GuidedStepTarget): Promise<void> {
   await page
     .getByRole("button", { name: /guided|guidat/i })
     .first()
     .click();
-  const orbs = page.locator(".wiz-orb");
+  const orbs = page.locator(".wiz-orbs");
   // The wizard chrome committed: the class step's orb is current.
-  await expect(orbs.first()).toHaveAttribute("aria-current", "step", {
+  await expect(orbs.locator(".wiz-orb").first()).toHaveAttribute("aria-current", "step", {
     timeout: 15000,
   });
-  if (stepIndex > 0) {
-    await orbs.nth(stepIndex).click();
-    // The jump committed: the clicked orb IS the current step (sync re-render,
-    // but anchored — never assumed — so starvation cannot outrun it).
-    await expect(orbs.nth(stepIndex)).toHaveAttribute("aria-current", "step", {
-      timeout: 15000,
-    });
+
+  if (target.needsCaster) {
+    await page.getByRole("option", { name: /^(wizard|mago)\b/i }).click();
   }
+
+  const targetOrb = orbs.getByRole("button", { name: target.label });
+  await expect(targetOrb).toBeVisible({ timeout: 15000 });
+  if ((await targetOrb.getAttribute("aria-current")) !== "step") await targetOrb.click();
+  // The jump committed to the SEMANTIC target. A stale step order or a missing
+  // conditional step now fails instead of capturing a differently named page.
+  await expect(targetOrb).toHaveAttribute("aria-current", "step", { timeout: 15000 });
 }
 
-/** The 0-based stepper index for each guided-create step slug. */
-const GUIDED_STEP_INDEX: Record<string, number> = {
-  "create-guided": 0,
-  "create-guided-race": 1,
-  "create-guided-background": 2,
-  "create-guided-skills": 3,
-  "create-guided-spells": 4,
-  "create-guided-equipment": 5,
-  "create-guided-bgasi": 6,
-  "create-guided-abilities": 7,
-  "create-guided-review": 8,
+/** Semantic target for each guided-create surface — never positional. */
+const GUIDED_STEP_TARGETS: Record<string, GuidedStepTarget> = {
+  "create-guided": { label: /^(class|classe)$/i },
+  "create-guided-race": { label: /^(species|specie)$/i },
+  "create-guided-background": { label: /^background$/i },
+  "create-guided-languages": { label: /^(languages|lingue)$/i },
+  "create-guided-skills": { label: /^(skills|competenze)$/i },
+  "create-guided-spells": { label: /^(spells|incantesimi)$/i, needsCaster: true },
+  "create-guided-equipment": { label: /^(equipment|equipaggiamento)$/i },
+  "create-guided-bgasi": { label: /^(ability boosts|aumenti di caratteristica)$/i },
+  "create-guided-abilities": { label: /^(abilities|caratteristiche)$/i },
+  "create-guided-review": { label: /^(review|revisione)$/i },
 };
 
 export interface Surface extends SurfaceRoute {
@@ -904,13 +913,14 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
 
 /**
  * Build the full SURFACES array by merging each manifest `{ slug, route }` with
- * its runtime def. Guided-create steps get their stepper-jump `prepare` injected
- * by index here. Throws at load time if a manifest slug has no runtime.
+ * its runtime def. Guided-create steps get their semantic step-jump `prepare`
+ * injected here. Throws at load time if a manifest slug has no runtime.
  */
 function buildSurfaces(): Surface[] {
   return SURFACE_ROUTES.map(({ slug, route }): Surface => {
-    if (slug in GUIDED_STEP_INDEX) {
-      const stepIndex = GUIDED_STEP_INDEX[slug] ?? 0;
+    if (slug in GUIDED_STEP_TARGETS) {
+      const target = GUIDED_STEP_TARGETS[slug];
+      if (!target) throw new Error(`Guided surface "${slug}" has no semantic target.`);
       return {
         slug,
         route,
@@ -919,7 +929,7 @@ function buildSurfaces(): Surface[] {
         overlay: false,
         ready: readyCreate,
         prepare: async (page) => {
-          await gotoGuidedStep(page, stepIndex);
+          await gotoGuidedStep(page, target);
         },
       };
     }

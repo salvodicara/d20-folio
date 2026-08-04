@@ -361,7 +361,9 @@ in `DESIGN.md` (the single design + UX system of record) + the canonical tokens 
    variants? }. `ready` is a locator that proves the surface painted; `prepare`
    opens the overlay / drives the state; `variants` restricts the locale×theme×
    viewport matrix for overlays whose trigger only exists at some breakpoints
-   (omit it for full pages — they run the whole cross).
+   (omit it for full pages — they run the whole cross). Drive wizard states by
+   semantic accessible labels/state signals, never by a positional step index:
+   conditional steps can otherwise make a correctly named capture show the wrong page.
 4. That's it — both visual suites pick it up automatically:
      • visual-full.spec.ts drives it (navigate-only by default; a pixel
        baseline per surface × {dark,light}×{desktop,mobile}×{en,it} under
@@ -382,7 +384,7 @@ in `DESIGN.md` (the single design + UX system of record) + the canonical tokens 
 **Why a guard:** `tests/unit/route-coverage.guard.test.ts` (a pure unit test) enumerates
 the routes in `src/app/router.tsx` and fails if any navigable route has NO surface in the
 manifest — so a new page can't ship with zero visual coverage. If a route is genuinely
-not capturable (e.g. `/login` is unreachable under the dev-bypass), add it to that test's
+not capturable, add it to that test's
 `EXEMPT_ROUTES` **with a reason** — the test also asserts every exemption is justified.
 
 > **Dev fixture loader.** In the `DEV_BYPASS_AUTH` preview, `/characters/mock-1` (any non-fixture

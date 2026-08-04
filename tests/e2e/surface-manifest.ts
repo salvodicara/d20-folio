@@ -47,6 +47,7 @@ const GUIDED_STEP_SLUGS = [
   "create-guided",
   "create-guided-race",
   "create-guided-background",
+  "create-guided-languages",
   "create-guided-skills",
   "create-guided-spells",
   "create-guided-equipment",

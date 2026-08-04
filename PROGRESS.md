@@ -63,6 +63,17 @@ surface is 1,665px after the change (about 80% shorter) with the existing page s
 untouched — no virtualizer, dependency, nested scroll region, or parallel selection state.
 Verification: canonical level-up-boon screenshots 5/5 across EN/IT × dark/light × desktop/mobile;
 targeted feat-list behavior 3/3; targeted axe and mobile-layout green.
+**Wave 5 audit correction (2026-08-04):** the creation surface census had silently drifted after
+the conditional Languages/Spells journey evolved: positional orb indices made the screenshot named
+`create-guided-spells` photograph Skills, while Languages had no first-class surface at all. Guided
+captures now navigate by their localized accessible step label; the Spells capture first selects a
+real caster so the conditional step exists; Languages joins the manifest; and stale login inventory
+notes are reconciled with the signed-out harness seam. A future order/condition change now fails the
+capture instead of producing false visual coverage. The newly honest Languages surface immediately
+found a real light-theme defect: the compact forward pager caption was 4.04:1 on the neutral work
+field. Its shared light recipe now uses the existing field-safe warm ink while the gilt seal keeps
+the primary hierarchy. Verification: semantic Languages/Spells screenshots 6/6, their axe matrix
+4/4, mobile layout 2/2, route/recipe guards 19/19, typecheck + targeted lint green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 

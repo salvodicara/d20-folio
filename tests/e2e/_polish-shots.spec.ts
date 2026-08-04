@@ -32,7 +32,7 @@
  *     home-delete       "/" + ⋯ → Delete         delete-character confirm dialog
  *     create            "/characters/new"        Quick Start single-page form (default mode)
  *     create-guided     "/characters/new" → Guided  guided wizard step 1 (Class)
- *     create-guided-race / -background / -skills / -spells / -equipment /
+ *     create-guided-race / -background / -languages / -skills / -spells / -equipment /
  *       -bgasi / -abilities / -review            each guided step (jumped via the stepper)
  *
  *   Sheet tabs ("/characters/mock-1/…")  — all 9, each + edit variant where it has one
@@ -78,10 +78,10 @@
  * so "/" lands on the authenticated character list and "mock-1" resolves to
  * MOCK_CHARACTER (Lyra Voss, Bard 9) without Firebase.
  *
- * NOTE — Login is intentionally NOT in this inventory. The dev bypass injects a
- * mock user synchronously at boot, and `/login` redirects to "/" whenever
- * `initialized && user` — so under the bypass the sign-in surface is unreachable
- * by design. It is reviewed via its own RTL/visual baseline, not this harness.
+ * Login participates in this inventory through `/login?devSignedOut=1`: the
+ * development-only query asks the auth bypass to settle signed out before the
+ * router redirects, so the real welcome shares the same screenshot/a11y/i18n
+ * coverage as the signed-in surfaces.
  */
 
 import { test, expect } from "@playwright/test";
