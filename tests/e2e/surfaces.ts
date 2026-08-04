@@ -840,18 +840,14 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     ready: readyText(/Starless Keep/),
     prepare: async (page) => {
       // The populated realm shows the header "New campaign"; match it (or the
-      // empty-state "Create a campaign" if ever empty).
+      // empty-state "Create a campaign" if ever empty), in either locale.
       const trigger = page
-        .getByRole("button", { name: /new campaign|create a campaign/i })
+        .getByRole("button", {
+          name: /new campaign|create a campaign|nuova campagna|crea una campagna/i,
+        })
         .first();
-      if (await trigger.isVisible({ timeout: 4000 }).catch(() => false)) {
-        await trigger.click().catch(() => {});
-        await page
-          .getByRole("dialog")
-          .first()
-          .waitFor({ timeout: 5000 })
-          .catch(() => {});
-      }
+      await trigger.click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 5000 });
     },
   },
   "campaign-join": {
@@ -861,16 +857,12 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     prepare: async (page) => {
       // The populated realm shows the header "Join" (or empty-state "Join with a link").
       const trigger = page
-        .getByRole("button", { name: /^join$|join with a link/i })
+        .getByRole("button", {
+          name: /^join$|join with a link|^unisciti$|unisciti con un link/i,
+        })
         .first();
-      if (await trigger.isVisible({ timeout: 4000 }).catch(() => false)) {
-        await trigger.click().catch(() => {});
-        await page
-          .getByRole("dialog")
-          .first()
-          .waitFor({ timeout: 5000 })
-          .catch(() => {});
-      }
+      await trigger.click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 5000 });
     },
   },
   // Campaign hub: the page <h1> IS the seeded campaign name "The Starless Keep"

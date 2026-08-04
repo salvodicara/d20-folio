@@ -186,6 +186,9 @@ source geometry is unchanged beyond background removal and `currentColor`. Other
 remain outside production until their own contextual proof. EN/IT legal attribution now names all
 four vendored glyphs. Verification: weapon before/after screenshots 6/6 and legal screenshots 5/5;
 focused icon/i18n tests 72/72; targeted axe 4/4, locale sweep 4/4, mobile layout 2/2; typecheck green.
+**Owner visual gate (2026-08-04):** Waves 11–16 are approved from the delivered contextual
+before/after comparisons. The approval covers the semantic icon/choice changes shown there; it does
+not close the broader whole-app UI/UX epic or pre-approve the header-ornament direction below.
 **Wave 17 admin recognition + coverage (2026-08-04):** Admin is now a first-class full-page surface
 instead of an inferred route. Its character totals and per-user character counts consume the shared
 Characters scroll sign; an individual character search match uses the singular person, so crossed
@@ -196,6 +199,11 @@ shared `Badge` now has an explicit `ink` prop and theme-paired semantic ink toke
 border while lifting only label value; every semantic Admin badge uses the pair. Verification: final
 Admin screenshots 5/5 across EN/IT, light/dark and desktop/mobile; focused atom/Admin tests 45/45;
 targeted axe 2/2, locale sweep 2/2, mobile layout 1/1; typecheck green.
+**Wave 18 audit-harness repair (2026-08-04):** the macro surface census exposed two campaign
+overlay drivers that still searched only for the English Create/Join actions. The drivers now use
+the real EN/IT labels and fail directly when the trigger or dialog is absent instead of swallowing
+the missed interaction and relying on the later overlay assertion. Campaign Create and Join are
+again truthful review surfaces in every declared locale variant.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 
