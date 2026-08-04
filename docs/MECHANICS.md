@@ -264,10 +264,12 @@ the table's rolled total. Both revalidate the live pool at commit/redo. The same
 custom `ActionData`, preserving homebrew parity without duplicating a second resolver.
 Peer-PC effects do not depend on the recipient client. The acting client fresh-reads the peer's narrow
 `combat/state` inside the same transaction that records the Chronicle, applies typed HP/temp/condition
-changes or a held-die grant, and merges only that slice. `grantDie` is the generic action capability:
+changes or a held-resource grant, and merges only that slice. `grantDie` is the generic action capability:
 its die may scale from class data, the reviewed target receives it as durable combat state, and the
 Chronicle records the grant without pretending the later table roll has already happened. Bardic
-Inspiration is its first consumer; the same field exists on custom actions for homebrew parity. Current
+Inspiration is its first consumer. `grantHeroicInspiration` is the non-stacking boolean twin; Musician's
+Encouraging Song combines it with `maxTargets:"PB"`, resolved to the actor's current Proficiency Bonus
+before target review. Both capabilities exist on custom actions for homebrew parity. Current
 campaign membership authorizes the combat subdoc while the
 parent build/inventory remains owner-only; transaction retry composes simultaneous effects. See
 `docs/ARCHITECTURE.md` → “The Combat Chronicle event seam”. Target allegiance is also structural:

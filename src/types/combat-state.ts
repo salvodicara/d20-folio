@@ -135,6 +135,9 @@ export interface CombatState {
   /** Held Bardic Inspiration die. Optional distinguishes a legacy subdoc from an
    * explicit empty-string clear during the additive state migration. */
   bardicInspirationDie?: string;
+  /** Held Heroic Inspiration. Optional preserves a legacy parent-doc value until
+   * the first combat-state write crosses the additive migration boundary. */
+  heroicInspiration?: boolean;
   /** The SOLO-play raw d20 initiative ROLL the player typed (`null` = not yet rolled).
    *  NEVER the total — consumers add the engine initiative bonus at the edge. A campaign
    *  encounter's roll lives in `CampaignDoc.encounterInit` instead (the initiative SSOT). */
@@ -171,7 +174,13 @@ export interface CombatState {
  */
 export type PersistedSession = Omit<
   SessionState,
-  "hp" | "conditions" | "initiative" | "deathSucc" | "deathFail" | "bardicInspirationDie"
+  | "hp"
+  | "conditions"
+  | "initiative"
+  | "deathSucc"
+  | "deathFail"
+  | "bardicInspirationDie"
+  | "inspiration"
 >;
 
 /**

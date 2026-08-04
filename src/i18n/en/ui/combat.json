@@ -38,6 +38,8 @@
     "resolveRoll_check": "check",
     "resolveRoll_save": "save",
     "resolveGrantDie": "Grant Bardic Inspiration {{die}}",
+    "resolveGrantHeroicInspiration": "Grant Heroic Inspiration",
+    "resolveHeldHeroicInspiration": "Has Heroic Inspiration",
     "resolveHp": "{{current}}/{{max}} HP",
     "resolveResults": "Resolve outcomes",
     "resolveInstances": "Instances",

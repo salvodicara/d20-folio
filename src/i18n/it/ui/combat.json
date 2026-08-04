@@ -38,6 +38,8 @@
     "resolveRoll_check": "prova",
     "resolveRoll_save": "TS",
     "resolveGrantDie": "Concede Ispirazione Bardica {{die}}",
+    "resolveGrantHeroicInspiration": "Concede Ispirazione Eroica",
+    "resolveHeldHeroicInspiration": "Ha Ispirazione Eroica",
     "resolveHp": "{{current}}/{{max}} PF",
     "resolveResults": "Risolvi gli esiti",
     "resolveInstances": "Istanze",

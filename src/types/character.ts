@@ -365,6 +365,8 @@ export interface ActionData {
   trackerTopUp?: { trackerId: string; upTo: number | "full" };
   /** Grant a held die to the selected creature. */
   grantDie?: { kind: "bardic-inspiration"; die: string };
+  /** Give Heroic Inspiration to each reviewed target. It never stacks. */
+  grantHeroicInspiration?: true;
   /** Rolled healing applied by the shared target resolver. */
   heal?: ActionHeal;
   /** Rolled Temporary HP applied by the shared target resolver. */

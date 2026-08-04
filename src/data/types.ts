@@ -737,7 +737,7 @@ export interface CombatTargeting {
 /** Authored target count for feature/homebrew actions. The runtime resolves the
  * ability form to a concrete {@link CombatTargeting.maxTargets} before rendering. */
 export interface ActionTargeting extends Omit<CombatTargeting, "maxTargets"> {
-  maxTargets?: number | AbilityCode;
+  maxTargets?: number | AbilityCode | "PB";
 }
 
 /** Conditions a feature/homebrew action can end, optionally unlocked by its
@@ -1258,6 +1258,8 @@ export interface SrdActionDef {
   /** Grant a held die to the selected creature. The die may use a class-table
    * sentinel such as `classSpecific:bardicInspirationDie`. */
   grantDie?: { kind: "bardic-inspiration"; die: string };
+  /** Give Heroic Inspiration to each reviewed target. It never stacks. */
+  grantHeroicInspiration?: true;
   /** A variable pool whose spend produces healing.
    * Its tracker owns cost, unit, die, and remaining amount. */
   poolSpendEffect?: "healing";

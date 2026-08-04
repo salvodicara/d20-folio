@@ -128,6 +128,18 @@ describe("localizeChronicleEvent — every kind routes to a distinct non-empty l
     expect(localize(attributed)).toContain("combatChronicle.damageBy");
   });
 
+  it("uses the Heroic Inspiration line for that resource grant", () => {
+    expect(
+      localize({
+        ...base,
+        kind: "resource-grant",
+        targetId: "pc-mara",
+        resource: "heroic-inspiration",
+        actorId: "pc-catalion",
+      })
+    ).toContain("combatChronicle.heroicInspirationGrant");
+  });
+
   it("a player-declared miss uses missBy with the attacker + target", () => {
     const line = localize(SAMPLES["attack-miss"]);
     expect(line).toContain("combatChronicle.missBy");

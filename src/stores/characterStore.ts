@@ -214,6 +214,8 @@ interface CharacterState {
   hydrateCombatState: (combat: CombatState | null) => void;
   // Session state mutations (immediate, used outside combat)
   updateSession: (partial: Partial<SessionState>) => void;
+  /** Set the held Heroic Inspiration token in the combat-state SSOT. */
+  setHeroicInspiration: (held: boolean) => void;
   /** Replace/clear the held Bardic Inspiration die in the combat-state SSOT. */
   setBardicInspirationDie: (die: string) => void;
   /**
@@ -295,6 +297,7 @@ interface CharacterState {
     addConcentrationConditions?: string[];
     removeConditions?: string[];
     bardicInspirationDie?: string;
+    heroicInspiration?: boolean;
   }) => (() => void) | null;
   /**
    * Expend one spell slot at `level`. `pactMagic` selects the Warlock Pact-Magic
@@ -705,6 +708,19 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     });
   },
 
+  setHeroicInspiration: (held) => {
+    if (get().readonly) return;
+    const { character } = get();
+    if (!character || character.session.inspiration === held) return;
+    set({
+      character: {
+        ...character,
+        session: { ...character.session, inspiration: held },
+      },
+    });
+    persistCombat(get);
+  },
+
   setBardicInspirationDie: (die) => {
     if (get().readonly) return;
     const { character } = get();
@@ -1082,6 +1098,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (effects.tempHp) get().gainTempHp(effects.tempHp);
     if (effects.bardicInspirationDie !== undefined)
       get().setBardicInspirationDie(effects.bardicInspirationDie);
+    if (effects.heroicInspiration !== undefined)
+      get().setHeroicInspiration(effects.heroicInspiration);
     if (effects.addConcentrationConditions?.length) {
       const current = get().character;
       if (current)

@@ -159,6 +159,21 @@ describe("combatResolutionSpec — target shape and outcome", () => {
     expect(shouldResolveSoloAction(inspiration)).toBe(false);
   });
 
+  it("resolves a non-stacking Heroic Inspiration grant through the same ally target seam", () => {
+    const inspiration = makeAction("feature", {
+      grantsHeroicInspiration: true,
+      targeting: { affinity: "ally", maxTargets: 2, excludeSelf: true },
+    });
+    expect(combatResolutionSpec(inspiration)).toMatchObject({
+      hasHeroicInspiration: true,
+      targetAffinity: "ally",
+      excludeSelf: true,
+      targetCap: 2,
+    });
+    expect(shouldResolveCombatAction(inspiration)).toBe(true);
+    expect(shouldResolveSoloAction(inspiration)).toBe(false);
+  });
+
   it("plans a target-bound standing grant by catalogue reference", () => {
     const action: ResolvedAction = {
       ...makeAction("spell", {}),

@@ -225,6 +225,8 @@ export interface EncounterMonster extends EncounterCombatantBase {
   defenses?: CombatDefenseSnapshot;
   /** Held Bardic Inspiration die granted during this encounter. */
   bardicInspirationDie?: string;
+  /** Held Heroic Inspiration for non-PC combatants. PCs read combat/state. */
+  heroicInspiration?: boolean;
 }
 
 /**

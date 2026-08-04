@@ -119,6 +119,7 @@ describe("combat-state — session → CombatState projection", () => {
       initiativeRoll: 15,
       deathSaves: { successes: 1, failures: 2 },
       bardicInspirationDie: "",
+      heroicInspiration: false,
       round: 1,
       recentActions: [],
     });
@@ -138,6 +139,7 @@ describe("combat-state — omitCombatTrio (the parent-doc serialization boundary
       deathSucc: 1,
       deathFail: 2,
       bardicInspirationDie: "d6",
+      inspiration: true,
       currency: { gp: 5 },
       round: 3,
       notes: "keep me",
@@ -214,6 +216,19 @@ describe("combat-state — applyCombatToSession (the ONE trio-hydration merge)",
       applyCombatToSession(legacy, { ...baseCombat, bardicInspirationDie: "" }, 20)
         .bardicInspirationDie
     ).toBe("");
+  });
+
+  it("moves Heroic Inspiration to combat state without dropping a legacy parent value", () => {
+    const legacy = session({ inspiration: true });
+    expect(sessionToCombatState(legacy).heroicInspiration).toBe(true);
+    expect(
+      applyCombatToSession(legacy, { ...baseCombat, heroicInspiration: undefined }, 20)
+        .inspiration
+    ).toBe(true);
+    expect(
+      applyCombatToSession(legacy, { ...baseCombat, heroicInspiration: false }, 20)
+        .inspiration
+    ).toBe(false);
   });
 
   // RA-12 — the Hide find-DC (`hiddenDc`) rides the parent doc, but `invisible`

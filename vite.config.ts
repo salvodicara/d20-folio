@@ -142,6 +142,10 @@ export default defineConfig({
         // CacheFirst rule below), so offline export still works after one online use.
         globIgnores: [
           "**/character-pdf-*.js",
+          // PNG launch icons are the installed/offline artifacts. Keep the editable
+          // SVG siblings hosted (and the scalable manifest fallback reachable) but
+          // do not duplicate all four source plates in every app-shell precache.
+          "**/icons/*.svg",
           // The variable-font packages (Cinzel/Alegreya) reference EVERY script
           // subset from one index.css (unicode-range keeps browsers on
           // latin/latin-ext for EN+IT) — keep the never-rendered subsets out of

@@ -250,6 +250,8 @@ export interface ActionSummary {
   attackBonus?: number;
   /** A deterministic held die delivered to the reviewed target. */
   grantedDie?: { kind: "bardic-inspiration"; die: string };
+  /** A deterministic, non-stacking Heroic Inspiration grant. */
+  grantsHeroicInspiration?: true;
   conditionApplication?: CombatConditionApplication;
   /** Damage formula: "8d6", "1d8+5", "3×(1d4+1)" */
   damage?: string;
@@ -4557,11 +4559,13 @@ function resolveActionTargeting(
     ...targeting,
     ...(typeof maxTargets === "number"
       ? { maxTargets }
-      : maxTargets
-        ? {
-            maxTargets: Math.max(1, abilityModifier(ctx.abilityScores[maxTargets])),
-          }
-        : {}),
+      : maxTargets === "PB"
+        ? { maxTargets: ctx.pb }
+        : maxTargets
+          ? {
+              maxTargets: Math.max(1, abilityModifier(ctx.abilityScores[maxTargets])),
+            }
+          : {}),
   };
 }
 
@@ -4644,6 +4648,7 @@ function applyActionEffectSummary(
     const die = resolveActionDie(action.grantDie.die, sourceId, character);
     if (die) summary.grantedDie = { kind: action.grantDie.kind, die };
   }
+  if (action.grantHeroicInspiration) summary.grantsHeroicInspiration = true;
   if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
   if (action.skillCheck) summary.skillCheck = action.skillCheck;
   if (

@@ -74,6 +74,7 @@ export interface PcLive {
   tempHp: number;
   conditions: string[];
   bardicInspirationDie?: string;
+  heroicInspiration?: boolean;
   initiative: number | null;
   /** The engine initiative BONUS (override-first); the pip's roll widget adds the typed
    *  d20 to it. */
@@ -108,6 +109,7 @@ export interface EncounterCombatantView {
   initiativeRoll?: number | null;
   conditions: string[];
   bardicInspirationDie?: string;
+  heroicInspiration?: boolean;
   /** PC: live current HP. Monster: summed token HP. */
   currentHp: number;
   /** PC: effective max HP. Monster: `maxHp × tokenCount`. */
@@ -186,6 +188,7 @@ export function buildEncounterView(
         initiativeRoll: live?.initiativeRoll ?? null,
         conditions: [...new Set([...(live?.conditions ?? []), ...projectedConditions])],
         bardicInspirationDie: live?.bardicInspirationDie,
+        heroicInspiration: live?.heroicInspiration,
         currentHp: live?.currentHp ?? 0,
         maxHp: live?.maxHp ?? 0,
         tempHp: live?.tempHp ?? 0,
@@ -211,6 +214,7 @@ export function buildEncounterView(
         initiative: c.initiative,
         conditions: [...new Set([...c.conditions, ...projectedConditions])],
         bardicInspirationDie: c.bardicInspirationDie,
+        heroicInspiration: c.heroicInspiration,
         currentHp,
         maxHp: c.maxHp * c.tokens.length,
         tempHp: c.tempHp ?? 0,

@@ -648,7 +648,7 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
 
   Rolled feature effects use the same path: `SrdActionDef` / homebrew `ActionData` project structured
   healing, Temporary HP, condition removal and targeting into the flat action summary before React sees
-  them. Class-table dice sentinels and ability-derived target limits resolve to concrete values at that
+  them. Class-table dice sentinels and ability/PB-derived target limits resolve to concrete values at that
   boundary; one shared roll may then heal or ward several reviewed targets. Stable per-action ids permit
   multiple variants with the same action economy and let `actionOverrides` replace labels, effects and
   targets without a feature-name branch. The v3 codec preserves those overrides even when the base class
@@ -666,11 +666,11 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   so targets see the real cast-level facts. It then holds the resolution callback until the cast-option/reaction/action
   transaction actually commits, so cancelling an upcast,
   concentration choice or nested picker spends nothing and applies nothing. Only then does one generic
-  `DeclaredCombatEffect` batch (`damage | healing | temp-hp | condition | granted-die`) cross the Firebase-free dynamic bridge to
+  `DeclaredCombatEffect` batch (`damage | healing | temp-hp | condition | granted-die | heroic-inspiration`) cross the Firebase-free dynamic bridge to
   `campaign-io.applyDeclaredCombatEffects`, which re-reads the encounter and applies the reviewed effects
   in one transaction. Self effects use the character store. Effects aimed at another PC are applied by
   the acting client in the SAME fresh-read transaction as the Chronicle update: it reads the exact target
-  `combat/state`, reduces typed HP/temp/condition/held-die effects, and merges only those combat fields. The target
+  `combat/state`, reduces typed HP/temp/condition/held-resource effects, and merges only those combat fields. The target
   client may be offline. Firestore authorizes this narrow subdocument to current table members while the
   parent character/build/inventory remains owner-only; roster removal revokes the grant immediately.
   Transaction retries compose simultaneous effects from fresh target state, so the app cannot report a
@@ -1359,14 +1359,14 @@ produced by `serializeCharacterEnvelope` (`src/lib/character-codec.ts`, the shar
 ### Combat-mutable state lives in a per-character subdoc (`combat/state`)
 
 The character's combat-mutable state — HP `{ current, temp }`, `conditions[]`, held Bardic Inspiration
-die, death saves, the SOLO `round`, and the SOLO `initiative` roll — has ONE persisted home: a
+die, held Heroic Inspiration, death saves, the SOLO `round`, and the SOLO `initiative` roll — has ONE persisted home: a
 per-character Firestore subdoc at
 `users/{uid}/characters/{charId}/combat/state` (`CombatState`, `src/types/combat-state.ts`) — its SOLE
 representation (golden rule 10). A CAMPAIGN ENCOUNTER's initiative is NOT here — it lives in the
 campaign's `encounterInit` table (the initiative SSOT — see the dedicated bullet below). The subdoc is
 **physically absent from the parent character doc**: the Firestore serialization boundary
 (`toStoredPayload`) omits the trio from `state` via `omitCombatTrio`, so the parent `state` carries no
-HP/conditions/initiative/death-save/held-die field. (The self-contained portable v3 EXPORT, which has no
+HP/conditions/initiative/death-save/held-resource field. (The self-contained portable v3 EXPORT, which has no
 subdoc, still keeps the combat slice inline — see `docs/CHARACTER_SCHEMA.md`.) The subdoc is a tiny, SRD-free,
 id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-state seam that touches
 `firebase/firestore`, kept light off the always-eager bundle.
@@ -1379,6 +1379,11 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
   from the ordinary resource rail; short/long rest clears it because its 2024 duration is one hour. The
   optional subdoc field falls back to a legacy parent value only when absent; an explicit empty string is
   a real clear, so old characters migrate additively without creating two writable homes.
+- **Heroic Inspiration** — a reviewed `heroic-inspiration` effect uses the same peer transaction and
+  non-stacking state rule. Musician's Encouraging Song is a generic 1/Short-or-Long-Rest action capped at
+  the actor's resolved PB allies; an offline PC or encounter-owned NPC receives the token and Chronicle
+  provenance atomically. The optional subdoc boolean falls back to a legacy parent value only until the
+  first explicit write, after which receive/spend/correction all use this one home.
 - **In-memory** — `SessionState` still carries the trio, so every existing reader (compute /
   use-hp-controls / rest / level-up / smart-tracker) is unchanged. The store stays Firebase-free: it
   does the optimistic in-memory update (immediate UI) + side effects (concentration save, death-save
@@ -2154,6 +2159,12 @@ The 2026-08-04 condition-provenance wave raised only the precache ceiling 8508 �
 reducing solo state to the single-concentration invariant. The composed build measures
 **8508.63 KiB / 321 entries**: source-owned condition lifecycle grew existing lazy JS chunks only.
 No new entry or asset family appears, and the ceiling retains ~3 KiB of deterministic headroom.
+
+The Heroic-Inspiration delivery wave keeps that ceiling unchanged. Resource delivery now shares
+one typed combat-effect seam, and the PWA no longer precaches the four editable SVG launch-icon
+siblings alongside their installed PNGs. The SVGs remain hosted (including the scalable manifest
+fallback); removing only that duplicate first-install payload restores budget headroom without
+weakening offline play or raising the ratchet.
 
 The 2026-08-03 universal-combat wave raised these three ceilings only after feature CSS was split
 behind the campaign/resolver lazy boundaries and `PROMPT_28` was re-encoded from 86 KiB to

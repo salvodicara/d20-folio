@@ -110,7 +110,12 @@ same reviewed transaction as other combat effects; persists in the recipient's `
 in target context; logs exact actor/action provenance; and has explicit spend/correction and rest expiry.
 The additive read fallback preserves existing held dice while establishing the subdoc as the only new
 write home. Pure support actions no longer create fake attack declarations. The real team fixture
-locks CHA uses, d6 scaling and the ally/exclude-self target contract. Wizard/Rogue/Paladin fixture audits
+locks CHA uses, d6 scaling and the ally/exclude-self target contract. The live Bard's Musician feat now
+models Encouraging Song as a 1/rest generic resource action: its `PB` target cap resolves before review,
+Heroic Inspiration reaches online/offline PCs or NPC allies without stacking, the target card exposes an
+already-held token, and the Chronicle records actor + action provenance. Heroic Inspiration now shares the
+combat-state SSOT and additive legacy fallback used by held Bardic dice, so spending and peer delivery cannot
+fork parent/subdoc state. Wizard/Rogue/Paladin fixture audits
 continue as separate truth-gated milestones.
 
 **Live-team truth audit — Diviner Portent contract CLOSED on branch (2026-08-04):** the tracker
@@ -902,13 +907,15 @@ push-drag-lift surfacing, the 2024 languages creation step, travel-pace + mounte
 reference tables, the scoped-Grappled + crit-rule + slot-count-override fixes). Two are **residual
 by design** (reviewer-adjudicated, docs-only): **RA-31** — the self-side Cover AC toggle DECLINED
 (no enforceable lifetime, DM double-count, the settled Dodge precedent; the `COVER_REFERENCE` table
-is the shipped treatment); **RA-35** — Musician's Encouraging Song grants no caster self-inspiration
-(ally-targeted under every reading; the universal insp-toggle already covers the caster). The
+is the shipped treatment); **RA-35** originally recorded only that Musician grants no caster
+self-inspiration (ally-targeted under every reading). The later live-team truth audit closed its deterministic
+ally-delivery residual through the generic Heroic-Inspiration effect; the original self-target verdict remains.
+The
 **W9 reference-disclosure follow-up** made the Combat tab's playbook + rules-reference blocks
 on-demand (its own entry below). The **Hex / Hunter's Mark** marked-target rider (display-only "vs
 marked/cursed target", never auto-summed) landed in the same campaign. The **D11 pack-side handoff
 was executed** the moment the pack was workable — the 17-spell material-cost fill + the IT-lexicon
-sweeps + the RA-35 status-quo residual lock in `content-pack/`. Housekeeping: **`fast-uri` patched**
+sweeps + the original RA-35 self-target verdict lock in `content-pack/`. Housekeeping: **`fast-uri` patched**
 (the Dependabot advisory, entry below). The tracking-doc reconciliation truth-sweep (this wave)
 verified the three tracking docs against the merged code; the forward frontier is now the DDB-parity
 bestiary epic, the react-router advisory triage, and parked backups/observability/legal [since

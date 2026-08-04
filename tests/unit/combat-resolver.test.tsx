@@ -954,10 +954,40 @@ describe("universal combat resolution", () => {
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
     expectApplied([
       {
-        kind: "granted-die",
+        kind: "resource",
         targetId: "pc-u2",
-        dieKind: "bardic-inspiration",
-        die: "d6",
+        resource: { kind: "bardic-inspiration-die", value: "d6" },
+      },
+    ]);
+  });
+
+  it("delivers Heroic Inspiration to every reviewed ally up to the resolved PB cap", () => {
+    render(
+      <CombatResolver
+        action={action({
+          grantsHeroicInspiration: true,
+          targeting: { affinity: "ally", maxTargets: 2, excludeSelf: true },
+        })}
+        sheetCombat={combat([pc(), allyPc(), secondAllyPc()])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    expect(screen.queryByText("Lyra")).toBeNull();
+    fireEvent.click(screen.getByText("Borin"));
+    fireEvent.click(screen.getByText("Cora"));
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+    expectApplied([
+      {
+        kind: "resource",
+        targetId: "pc-u2",
+        resource: { kind: "heroic-inspiration" },
+      },
+      {
+        kind: "resource",
+        targetId: "pc-u3",
+        resource: { kind: "heroic-inspiration" },
       },
     ]);
   });

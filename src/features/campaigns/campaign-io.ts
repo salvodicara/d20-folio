@@ -49,6 +49,7 @@ import {
   removeCombatant,
   setMonsterCondition,
   setMonsterBardicInspirationDie,
+  setMonsterHeroicInspiration,
 } from "@/features/campaigns/encounter";
 import {
   appendEvent,
@@ -851,10 +852,11 @@ export type DeclaredCombatEffect =
       active: boolean;
     }
   | {
-      kind: "granted-die";
+      kind: "resource";
       targetId: string;
-      dieKind: "bardic-inspiration";
-      die: string;
+      resource:
+        | { kind: "bardic-inspiration-die"; value: string }
+        | { kind: "heroic-inspiration" };
     };
 
 /** The live, already-authorized combat slice the resolver shows for a PC target. */
@@ -867,6 +869,7 @@ export interface DeclaredPcTargetSnapshot {
   maxHp: number;
   conditions: string[];
   bardicInspirationDie?: string;
+  heroicInspiration?: boolean;
   defenses: DamageDefenses;
 }
 
@@ -918,6 +921,7 @@ interface DirectPcEffectResult {
   hp: { current: number; temp: number };
   conditions: string[];
   bardicInspirationDie?: string;
+  heroicInspiration?: boolean;
   resetDeathSaves: boolean;
   events: CombatChronicleEvent[];
   transfers: Array<{
@@ -952,6 +956,7 @@ export function reduceDirectPcEffects(
   let temp = Math.max(0, Math.round(target.tempHp));
   let conditions = [...target.conditions];
   let bardicInspirationDie = target.bardicInspirationDie;
+  let heroicInspiration = target.heroicInspiration;
   let resetDeathSaves = false;
   const events: CombatChronicleEvent[] = [];
   const transfers: DirectPcEffectResult["transfers"] = [];
@@ -967,15 +972,32 @@ export function reduceDirectPcEffects(
 
   for (const effect of effects) {
     if (effect.targetId !== target.targetId) continue;
-    if (effect.kind === "granted-die") {
-      if (bardicInspirationDie !== effect.die) {
-        bardicInspirationDie = effect.die;
+    if (effect.kind === "resource") {
+      if (
+        effect.resource.kind === "bardic-inspiration-die" &&
+        bardicInspirationDie !== effect.resource.value
+      ) {
+        bardicInspirationDie = effect.resource.value;
         events.push(
           stamp({
             kind: "resource-grant",
             targetId: target.targetId,
             resource: "bardic-inspiration-die",
-            value: effect.die,
+            value: effect.resource.value,
+            actorId: provenance.actorId,
+            action: provenance.action,
+          })
+        );
+      } else if (
+        effect.resource.kind === "heroic-inspiration" &&
+        heroicInspiration !== true
+      ) {
+        heroicInspiration = true;
+        events.push(
+          stamp({
+            kind: "resource-grant",
+            targetId: target.targetId,
+            resource: "heroic-inspiration",
             actorId: provenance.actorId,
             action: provenance.action,
           })
@@ -1107,6 +1129,7 @@ export function reduceDirectPcEffects(
     temp !== target.tempHp ||
     conditions.join("\u0000") !== target.conditions.join("\u0000") ||
     bardicInspirationDie !== target.bardicInspirationDie ||
+    heroicInspiration !== target.heroicInspiration ||
     transfers.length > 0 ||
     consumedEffectIds.size > 0;
   return changed
@@ -1115,6 +1138,7 @@ export function reduceDirectPcEffects(
         hp: { current, temp },
         conditions,
         ...(bardicInspirationDie !== undefined ? { bardicInspirationDie } : {}),
+        ...(heroicInspiration !== undefined ? { heroicInspiration } : {}),
         resetDeathSaves,
         events,
         transfers,
@@ -1135,7 +1159,7 @@ export async function applyDeclaredCombatEffects(
 ): Promise<void> {
   const applicable: DeclaredCombatEffect[] = effects.filter(
     (effect) =>
-      effect.kind === "condition" || effect.kind === "granted-die" || effect.amount > 0
+      effect.kind === "condition" || effect.kind === "resource" || effect.amount > 0
   );
   for (const targetId of context?.hitTargetIds ?? []) {
     if (
@@ -1262,6 +1286,9 @@ export async function applyDeclaredCombatEffects(
                   tempHp: stored.hp.temp,
                   conditions: stored.conditions,
                   bardicInspirationDie: stored.bardicInspirationDie,
+                  ...(stored.heroicInspiration !== undefined
+                    ? { heroicInspiration: stored.heroicInspiration }
+                    : {}),
                 }
               : {}),
           },
@@ -1323,7 +1350,7 @@ export async function applyDeclaredCombatEffects(
             nextEffectOps,
             effect.targetId,
             undefined,
-            effect.kind === "condition" || effect.kind === "granted-die"
+            effect.kind === "condition" || effect.kind === "resource"
               ? undefined
               : effect.tokenIndex
           )
@@ -1352,6 +1379,12 @@ export async function applyDeclaredCombatEffects(
         currentHp: result.hp.current,
         tempHp: result.hp.temp,
         conditions: result.conditions,
+        ...(result.bardicInspirationDie !== undefined
+          ? { bardicInspirationDie: result.bardicInspirationDie }
+          : {}),
+        ...(result.heroicInspiration !== undefined
+          ? { heroicInspiration: result.heroicInspiration }
+          : {}),
       });
       const previous = changedTargets.get(result.target.targetId);
       changedTargets.set(result.target.targetId, {
@@ -1446,6 +1479,9 @@ export async function applyDeclaredCombatEffects(
           conditions: result.conditions,
           ...(result.bardicInspirationDie !== undefined
             ? { bardicInspirationDie: result.bardicInspirationDie }
+            : {}),
+          ...(result.heroicInspiration !== undefined
+            ? { heroicInspiration: result.heroicInspiration }
             : {}),
           ...(result.resetDeathSaves
             ? { deathSaves: { successes: 0, failures: 0 } }
@@ -2129,7 +2165,7 @@ export function reduceDeclaredEffects(
     const { targetId } = effect;
     let storedTargetId = targetId;
     let legacyIndex =
-      effect.kind === "condition" || effect.kind === "granted-die"
+      effect.kind === "condition" || effect.kind === "resource"
         ? undefined
         : effect.tokenIndex;
     let monster = next.combatants.find((c) => c.id === storedTargetId);
@@ -2150,17 +2186,26 @@ export function reduceDeclaredEffects(
     // the resolver's live target snapshot; this encounter reducer owns monsters only.
     if (monster?.kind === "pc") continue;
     if (!monster) continue;
-    if (effect.kind === "granted-die") {
-      if (monster.bardicInspirationDie === effect.die) {
-        continue;
+    if (effect.kind === "resource") {
+      if (effect.resource.kind === "bardic-inspiration-die") {
+        if (monster.bardicInspirationDie === effect.resource.value) continue;
+        next = setMonsterBardicInspirationDie(
+          next,
+          storedTargetId,
+          effect.resource.value
+        );
+      } else {
+        if (monster.heroicInspiration) continue;
+        next = setMonsterHeroicInspiration(next, storedTargetId, true);
       }
-      next = setMonsterBardicInspirationDie(next, storedTargetId, effect.die);
       if (provenance) {
         next = appendEvent(next, {
           kind: "resource-grant",
           targetId: storedTargetId,
-          resource: "bardic-inspiration-die",
-          value: effect.die,
+          resource: effect.resource.kind,
+          ...(effect.resource.kind === "bardic-inspiration-die"
+            ? { value: effect.resource.value }
+            : {}),
           actorId: provenance.actorId,
           action: provenance.action,
         });
@@ -2303,6 +2348,8 @@ function applyDeclaredEffectsOptimistic(
             tempHp: current.hp.temp,
             conditions: current.conditions,
             bardicInspirationDie: current.bardicInspirationDie,
+            heroicInspiration:
+              current.heroicInspiration ?? declared?.heroicInspiration ?? false,
             defenses: declared?.defenses ?? NO_DEFENSES,
           },
           targetEffects,
@@ -2324,6 +2371,9 @@ function applyDeclaredEffectsOptimistic(
           conditions: result.conditions,
           ...(result.bardicInspirationDie !== undefined
             ? { bardicInspirationDie: result.bardicInspirationDie }
+            : {}),
+          ...(result.heroicInspiration !== undefined
+            ? { heroicInspiration: result.heroicInspiration }
             : {}),
           ...(result.resetDeathSaves
             ? { deathSaves: { successes: 0, failures: 0 } }
@@ -2368,7 +2418,7 @@ function applyDeclaredEffectsOptimistic(
           nextEffectOps,
           effect.targetId,
           undefined,
-          effect.kind === "condition" || effect.kind === "granted-die"
+          effect.kind === "condition" || effect.kind === "resource"
             ? undefined
             : effect.tokenIndex
         )

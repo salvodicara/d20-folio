@@ -97,6 +97,7 @@ interface TargetChoice {
   portraitCrop: PortraitCrop | null;
   conditions: string[];
   bardicInspirationDie?: string;
+  heroicInspiration: boolean;
   defenses: DamageDefenses;
   conditionImmunities: ReadonlySet<ConditionId>;
   qualifiedDefenseCount: number;
@@ -161,6 +162,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         portraitCrop: row.srdId ? null : (row.portraitCrop ?? null),
         conditions: row.conditions,
         bardicInspirationDie: row.bardicInspirationDie,
+        heroicInspiration: row.heroicInspiration ?? false,
         defenses: row.defenses ?? NO_DEFENSES,
         conditionImmunities: row.conditionImmunities ?? new Set(),
         qualifiedDefenseCount: row.qualifiedDefenseCount ?? 0,
@@ -190,6 +192,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
           row.kind === "monster" && row.srdId ? null : (row.portraitCrop ?? null),
         conditions: row.conditions,
         bardicInspirationDie: row.bardicInspirationDie,
+        heroicInspiration: row.heroicInspiration ?? false,
         defenses: row.defenses ?? NO_DEFENSES,
         conditionImmunities: row.conditionImmunities ?? new Set(),
         qualifiedDefenseCount: row.qualifiedDefenseCount ?? 0,
@@ -262,6 +265,7 @@ export function CombatResolver({
             portraitUrl: character.portraitUrl,
             portraitCrop: character.portraitCrop,
             conditions: effectiveSessionConditions(character.session),
+            heroicInspiration: character.session.inspiration,
             defenses: NO_DEFENSES,
             conditionImmunities: new Set(),
             qualifiedDefenseCount: 0,
@@ -964,22 +968,27 @@ export function CombatResolver({
             active: false,
           })
         );
-        const grantedDieEffects = action.summary.grantedDie
+        const resourceEffects = action.summary.grantedDie
           ? [
               {
-                kind: "granted-die" as const,
+                kind: "resource" as const,
                 targetId: target.targetId,
-                dieKind: action.summary.grantedDie.kind,
-                die: action.summary.grantedDie.die,
+                resource: {
+                  kind: "bardic-inspiration-die" as const,
+                  value: action.summary.grantedDie.die,
+                },
               },
             ]
-          : [];
-        return [
-          ...hpEffect,
-          ...conditionEffects,
-          ...removalEffects,
-          ...grantedDieEffects,
-        ];
+          : action.summary.grantsHeroicInspiration
+            ? [
+                {
+                  kind: "resource" as const,
+                  targetId: target.targetId,
+                  resource: { kind: "heroic-inspiration" as const },
+                },
+              ]
+            : [];
+        return [...hpEffect, ...conditionEffects, ...removalEffects, ...resourceEffects];
       });
       const hitTargetIds = successful.flatMap(({ target, outcomes, mode }) =>
         mode === "damage" &&
@@ -1009,6 +1018,7 @@ export function CombatResolver({
                   maxHp: target.maxHp,
                   conditions: target.conditions,
                   bardicInspirationDie: target.bardicInspirationDie,
+                  heroicInspiration: target.heroicInspiration,
                   defenses: target.defenses,
                 },
               ]
@@ -1206,6 +1216,9 @@ export function CombatResolver({
               ...(own && action.summary.grantedDie
                 ? { bardicInspirationDie: action.summary.grantedDie.die }
                 : {}),
+              ...(own && action.summary.grantsHeroicInspiration
+                ? { heroicInspiration: true }
+                : {}),
             })
           : null;
       const appliedRiders = [
@@ -1327,6 +1340,9 @@ export function CombatResolver({
     action.summary.grantedDie
       ? t("combat.resolveGrantDie", { die: action.summary.grantedDie.die })
       : null,
+    action.summary.grantsHeroicInspiration
+      ? t("combat.resolveGrantHeroicInspiration")
+      : null,
     action.summary.effect ?? null,
     action.summary.range ?? null,
   ].filter(Boolean);
@@ -1414,6 +1430,9 @@ export function CombatResolver({
                             die: target.bardicInspirationDie,
                           })}
                         </small>
+                      )}
+                      {target.heroicInspiration && (
+                        <small>{t("combat.resolveHeldHeroicInspiration")}</small>
                       )}
                       {target.markScopes.map((scope) => (
                         <small key={scope}>

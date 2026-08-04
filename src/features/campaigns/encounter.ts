@@ -537,6 +537,21 @@ export function setMonsterBardicInspirationDie(
   });
 }
 
+/** Set or clear Heroic Inspiration on an encounter-owned creature. */
+export function setMonsterHeroicInspiration(
+  state: EncounterState,
+  id: string,
+  held: boolean
+): EncounterState {
+  return mapCombatant(state, id, (combatant) => {
+    if (combatant.kind === "pc") return combatant;
+    if ((combatant.heroicInspiration ?? false) === held) return combatant;
+    const next: EncounterMonster = { ...combatant, heroicInspiration: held };
+    if (!held) delete next.heroicInspiration;
+    return next;
+  });
+}
+
 // ─── Turn order ─────────────────────────────────────────────────────────────
 
 /**

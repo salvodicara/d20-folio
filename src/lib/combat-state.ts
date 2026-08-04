@@ -64,6 +64,7 @@ export function combatTrioDiffers(
     deathFail: number;
     conditions: string[];
     bardicInspirationDie?: string;
+    inspiration?: boolean;
   },
   combat: CombatState
 ): boolean {
@@ -73,7 +74,9 @@ export function combatTrioDiffers(
     session.deathSucc !== combat.deathSaves.successes ||
     session.deathFail !== combat.deathSaves.failures ||
     session.conditions.join(",") !== combat.conditions.join(",") ||
-    (session.bardicInspirationDie ?? "") !== (combat.bardicInspirationDie ?? "")
+    (session.bardicInspirationDie ?? "") !== (combat.bardicInspirationDie ?? "") ||
+    (combat.heroicInspiration !== undefined &&
+      (session.inspiration ?? false) !== combat.heroicInspiration)
   );
 }
 
@@ -91,6 +94,7 @@ export const COMBAT_SESSION_KEYS = [
   "deathSucc",
   "deathFail",
   "bardicInspirationDie",
+  "inspiration",
 ] as const satisfies ReadonlyArray<keyof SessionState>;
 
 const COMBAT_KEY_SET: ReadonlySet<string> = new Set(COMBAT_SESSION_KEYS);
@@ -141,6 +145,7 @@ export function sessionToCombatState(
     initiativeRoll: initiativeToNumber(session.initiative),
     deathSaves: { successes: session.deathSucc, failures: session.deathFail },
     bardicInspirationDie: session.bardicInspirationDie ?? "",
+    heroicInspiration: session.inspiration,
     round,
     recentActions,
     ...(appliedEncounterEffects ? { appliedEncounterEffects } : {}),
@@ -179,6 +184,7 @@ export function applyCombatToSession(
         deathFail: clampDeath(combat.deathSaves.failures),
         bardicInspirationDie:
           combat.bardicInspirationDie ?? session.bardicInspirationDie ?? "",
+        inspiration: combat.heroicInspiration ?? session.inspiration,
       }
     : {
         // Absent subdoc (a genuinely fresh/undamaged char): full HP, never 0.
@@ -188,6 +194,7 @@ export function applyCombatToSession(
         deathSucc: 0,
         deathFail: 0,
         bardicInspirationDie: session.bardicInspirationDie ?? "",
+        inspiration: session.inspiration,
       };
   const merged: SessionState = { ...session, ...trio };
   // RA-12 — the Hide action's find-DC (`hiddenDc`) rides the PARENT doc, but its

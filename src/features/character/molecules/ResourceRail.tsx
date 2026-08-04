@@ -783,7 +783,7 @@ export function ResourceRail() {
               onClick={() => {
                 if (!inspiration) {
                   // Receiving the boon — a plain toggle (not an undoable spend).
-                  useCharacterStore.getState().updateSession({ inspiration: true });
+                  useCharacterStore.getState().setHeroicInspiration(true);
                   return;
                 }
                 // Spending it — immediate-commit with undo (onto the stack).
@@ -791,9 +791,8 @@ export function ResourceRail() {
                 registerUndoableToast(
                   { message },
                   () => {
-                    useCharacterStore.getState().updateSession({ inspiration: false });
-                    return () =>
-                      useCharacterStore.getState().updateSession({ inspiration: true });
+                    useCharacterStore.getState().setHeroicInspiration(false);
+                    return () => useCharacterStore.getState().setHeroicInspiration(true);
                   },
                   { turnScoped: false }
                 );

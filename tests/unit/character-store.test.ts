@@ -2594,6 +2594,14 @@ describe("characterStore — combat-state persistence (C7 offline-safe write sea
     expect(lastWrite().bardicInspirationDie).toBe("");
   });
 
+  it("setHeroicInspiration persists receive and spend in the combat-state SSOT", () => {
+    useCharacterStore.getState().setHeroicInspiration(true);
+    expect(lastWrite().heroicInspiration).toBe(true);
+    expect(useCharacterStore.getState().character?.session.inspiration).toBe(true);
+    useCharacterStore.getState().setHeroicInspiration(false);
+    expect(lastWrite().heroicInspiration).toBe(false);
+  });
+
   it("addCondition / removeCondition persist the whole conditions list (undo restores it)", () => {
     useCharacterStore.getState().addCondition("prone");
     expect(lastWrite().conditions).toEqual(["prone"]);

@@ -57,6 +57,12 @@ describe("combatTrioDiffers — the remote-fence comparison", () => {
     expect(combatTrioDiffers({ ...liveTrio, bardicInspirationDie: "d6" }, combat)).toBe(
       true
     );
+    expect(
+      combatTrioDiffers(
+        { ...liveTrio, inspiration: false },
+        { ...combat, heroicInspiration: true }
+      )
+    ).toBe(true);
   });
 });
 

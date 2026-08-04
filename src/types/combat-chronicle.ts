@@ -171,8 +171,9 @@ export type CombatChronicleEvent =
   | ({
       kind: "resource-grant";
       targetId: string;
-      resource: "bardic-inspiration-die";
-      value: string;
+      resource: "bardic-inspiration-die" | "heroic-inspiration";
+      /** Resource payload when the kind carries one (the Bardic die size). */
+      value?: string;
       actorId: string;
       action?: LocText;
     } & ChronicleEventBase);

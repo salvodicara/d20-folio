@@ -89,6 +89,9 @@ export function combatStateWriteData(state: CombatState): Record<string, unknown
     hp: { current: state.hp.current, temp: state.hp.temp },
     conditions: state.conditions,
     bardicInspirationDie: state.bardicInspirationDie ?? "",
+    ...(state.heroicInspiration !== undefined
+      ? { heroicInspiration: state.heroicInspiration }
+      : {}),
     initiativeRoll: state.initiativeRoll,
     deathSaves: {
       successes: state.deathSaves.successes,
@@ -124,6 +127,9 @@ export function parseCombatState(data: Record<string, unknown>): CombatState {
       : [],
     ...(typeof data.bardicInspirationDie === "string"
       ? { bardicInspirationDie: data.bardicInspirationDie }
+      : {}),
+    ...(typeof data.heroicInspiration === "boolean"
+      ? { heroicInspiration: data.heroicInspiration }
       : {}),
     initiativeRoll: typeof data.initiativeRoll === "number" ? data.initiativeRoll : null,
     deathSaves: { successes: num(ds.successes, 0), failures: num(ds.failures, 0) },

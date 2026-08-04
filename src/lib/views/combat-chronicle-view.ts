@@ -111,12 +111,18 @@ export function localizeChronicleEvent(
             max: event.max,
           });
     case "resource-grant":
-      return t("combatChronicle.bardicInspirationGrant", {
-        actor: resolveName(event.actorId),
-        target: resolveName(event.targetId),
-        value: event.value,
-        ...(event.action ? { action: resolveAction(event.action) } : {}),
-      });
+      return event.resource === "heroic-inspiration"
+        ? t("combatChronicle.heroicInspirationGrant", {
+            actor: resolveName(event.actorId),
+            target: resolveName(event.targetId),
+            ...(event.action ? { action: resolveAction(event.action) } : {}),
+          })
+        : t("combatChronicle.bardicInspirationGrant", {
+            actor: resolveName(event.actorId),
+            target: resolveName(event.targetId),
+            value: event.value ?? "",
+            ...(event.action ? { action: resolveAction(event.action) } : {}),
+          });
     case "attack-miss":
       return t(event.action ? "combatChronicle.missByAction" : "combatChronicle.missBy", {
         attacker: resolveName(event.attackerId),

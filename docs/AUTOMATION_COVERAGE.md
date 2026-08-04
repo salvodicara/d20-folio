@@ -110,6 +110,12 @@
 > optional content pack extends the matrix with its own entities; those rows live in the pack's
 > own docs.
 
+**Live-team pack feat closure (2026-08-04).** Musician's Encouraging Song is automated through the
+generic `grantHeroicInspiration` action effect, a `PB`-resolved ally target cap and a 1/Short-or-Long-Rest
+tracker. Reviewed delivery is non-stacking and atomic for online/offline PCs and encounter NPC allies;
+the compact target context exposes an already-held token and the Chronicle records provenance. The rest
+and hearing trigger remain table-declared facts because the app is not a VTT.
+
 ### class:barbarian
 
 Audited `src/data/classes/barbarian.ts` against `http://dnd2024.wikidot.com/barbarian:main`. Every grant kind cited below is verified present in `src/lib/grants.ts` and consumed by the engine/smart-tracker. "Automated" = a typed Grant evaluated by `evaluateGrants`, or a `mechanics.tracker`/`actions`/`rider` the smart-tracker surfaces (formulas, never dice).

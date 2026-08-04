@@ -22,6 +22,7 @@
     "healBy": "{{actor}} restores {{amount}} HP to {{target}} ({{current}}/{{max}} HP)",
     "healByAction": "{{actor}} uses {{action}} on {{target}}: {{amount}} HP restored ({{current}}/{{max}} HP)",
     "bardicInspirationGrant": "{{actor}} grants {{target}} a {{value}} Bardic Inspiration die",
+    "heroicInspirationGrant": "{{actor}} grants {{target}} Heroic Inspiration",
     "down": "{{target}} falls",
     "conditionGain": "{{target}} is {{condition}}",
     "conditionGainBy": "{{target}} is {{condition}} ({{attacker}})",

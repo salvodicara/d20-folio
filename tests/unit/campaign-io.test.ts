@@ -370,10 +370,9 @@ describe("campaign-io — reviewed combat effects", () => {
       },
       [
         {
-          kind: "granted-die",
+          kind: "resource",
           targetId: "pc-a",
-          dieKind: "bardic-inspiration",
-          die: "d6",
+          resource: { kind: "bardic-inspiration-die", value: "d6" },
         },
       ],
       {
@@ -400,15 +399,67 @@ describe("campaign-io — reviewed combat effects", () => {
     ]);
   });
 
+  it("delivers non-stacking Heroic Inspiration to an offline PC", () => {
+    const target = {
+      targetId: "pc-a",
+      memberUid: "a",
+      characterId: "char-a",
+      currentHp: 20,
+      tempHp: 0,
+      maxHp: 20,
+      conditions: [],
+      heroicInspiration: false,
+      defenses: NO_DEFENSES,
+    };
+    const provenance = {
+      actorId: "pc-catalion",
+      action: { custom: "Encouraging Song" },
+      round: 2,
+    };
+    const result = reduceDirectPcEffects(
+      target,
+      [
+        {
+          kind: "resource",
+          targetId: "pc-a",
+          resource: { kind: "heroic-inspiration" },
+        },
+      ],
+      provenance
+    );
+
+    expect(result?.heroicInspiration).toBe(true);
+    expect(result?.events).toEqual([
+      expect.objectContaining({
+        kind: "resource-grant",
+        resource: "heroic-inspiration",
+        actorId: "pc-catalion",
+        targetId: "pc-a",
+      }),
+    ]);
+    expect(
+      reduceDirectPcEffects(
+        { ...target, heroicInspiration: true },
+        [
+          {
+            kind: "resource",
+            targetId: "pc-a",
+            resource: { kind: "heroic-inspiration" },
+          },
+        ],
+        provenance
+      )
+    ).toBeNull();
+  });
+
   it("tracks Bardic Inspiration on an NPC ally and records the grant", () => {
     const next = reduceDeclaredEffects(
       encounter,
       [
         {
-          kind: "granted-die",
+          kind: "resource",
           targetId: "monster-1",
-          dieKind: "bardic-inspiration",
-          die: "d6",
+          resource: { kind: "bardic-inspiration-die", value: "d6" },
         },
       ],
       { actorId: "pc-a", action: { custom: "Bardic Inspiration" } }
@@ -421,6 +472,37 @@ describe("campaign-io — reviewed combat effects", () => {
       targetId: "monster-1",
       value: "d6",
     });
+  });
+
+  it("tracks Heroic Inspiration on an NPC ally without stacking it", () => {
+    const next = reduceDeclaredEffects(
+      encounter,
+      [
+        {
+          kind: "resource",
+          targetId: "monster-1",
+          resource: { kind: "heroic-inspiration" },
+        },
+      ],
+      { actorId: "pc-a", action: { custom: "Encouraging Song" } }
+    );
+    const goblin = next.combatants.find((combatant) => combatant.id === "monster-1");
+    expect(goblin?.kind === "monster" ? goblin.heroicInspiration : null).toBe(true);
+    expect(next.events?.at(-1)).toMatchObject({
+      kind: "resource-grant",
+      resource: "heroic-inspiration",
+      actorId: "pc-a",
+      targetId: "monster-1",
+    });
+    expect(
+      reduceDeclaredEffects(next, [
+        {
+          kind: "resource",
+          targetId: "monster-1",
+          resource: { kind: "heroic-inspiration" },
+        },
+      ])
+    ).toBe(next);
   });
 
   it("consumes a remote Death Ward and leaves its PC at exactly 1 HP", () => {
