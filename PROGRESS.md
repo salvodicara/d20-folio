@@ -82,8 +82,17 @@ a stale 2014 maintainer and two missing 2024 restrictions. Rage now declares no-
 and Heavy-armor/Incapacitated incompatibilities as generic active-state data. Every cast route is
 hard-gated, activation ends held Concentration with exact undo, condition/equipment changes end the
 state, and taking damage no longer falsely maintains it. Fixture-driven regressions cover activation,
-duration, blockers, aggregate effects and the composite undo. Monk/Bard/Wizard/Rogue/Paladin fixture
-audits continue as separate truth-gated milestones.
+duration, blockers, aggregate effects and the composite undo. Bard/Wizard/Rogue/Paladin fixture audits
+continue as separate truth-gated milestones.
+
+**Live-team truth audit — Monk/Bo contract CLOSED on branch (2026-08-04):** the fixture exposed a
+false-positive automation claim: Uncanny Metabolism restored Focus on every Initiative without spending
+its 1/LR use and never applied its heal. It is now one optional atomic action that spends the use,
+restores Focus, resolves the entered Martial Arts die + Monk level as healing, persists immediately and
+undoes exactly. The generic action schema now supports tracker top-ups (including homebrew overrides),
+and the target compiler no longer misclassifies explicit self-target effects as enemy-only in solo play.
+Step of the Wind now exposes both the free Dash and the 1-Focus Dash+Disengage/double-jump variant. The
+real Bo fixture proves the rendered action → target review → healing/resource commit → undo path.
 
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark

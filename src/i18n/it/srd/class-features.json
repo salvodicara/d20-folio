@@ -682,9 +682,14 @@
     "name": "Passo del Vento"
   },
   "monk-step-of-the-wind.mechanics.actions.0": {
-    "description": "Scatto come Azione Bonus (gratis). Spendi 1 Focus: anche Disimpegno + salto raddoppiato.",
+    "description": "Scatto come Azione Bonus senza spendere Concentrazione.",
     "label": "Passo del Vento",
-    "summary": "Scatto come Azione Bonus; 1 Punto: anche Disimpegno"
+    "summary": "Scatto come Azione Bonus"
+  },
+  "monk-step-of-the-wind.mechanics.actions.1": {
+    "name": "Passo del Vento Focalizzato",
+    "description": "Spendi 1 Punto Concentrazione per Scattare e Disimpegnarti come Azione Bonus; la distanza di salto è raddoppiata per il turno.",
+    "summary": "Scatto + Disimpegno + salto doppio · 1 Punto"
   },
   "monk-stunning-strike": {
     "description": "Una volta per turno quando colpisci una creatura con un'arma da monaco o un Colpo Senz'armi, puoi spendere 1 Punto Concentrazione per tentare un colpo stordente. Il bersaglio deve effettuare un tiro salvezza su Costituzione. Con un fallimento, ha la condizione Stordito fino all'inizio del tuo turno successivo. Con un successo, la sua Velocità è dimezzata fino all'inizio del tuo turno successivo e il prossimo tiro per colpire effettuato contro di esso prima di allora ha Vantaggio.",
@@ -720,6 +725,11 @@
   "monk-uncanny-metabolism": {
     "description": "Quando tiri Iniziativa, puoi recuperare tutti i Punti Concentrazione spesi. Quando lo fai, tira il tuo dado di Arti Marziali e recuperi un numero di Punti Ferita pari al tuo livello da Monaco + il risultato del tiro. Una volta usata questa capacità, non puoi farlo di nuovo fino a un Riposo Lungo.",
     "name": "Metabolismo Straordinario"
+  },
+  "monk-uncanny-metabolism.mechanics.actions.0": {
+    "description": "Dopo aver tirato Iniziativa, recupera tutti i Punti Concentrazione e dado Arti Marziali + livello da Monaco Punti Ferita.",
+    "label": "Metabolismo Straordinario",
+    "summary": "Concentrazione piena + dado Arti Marziali + livello PF"
   },
   "paladin-abjure-foes": {
     "description": "Come azione Magica, puoi spendere un uso di Incanalare Divinità per presentare il tuo simbolo sacro. Ogni nemico entro 18 m deve effettuare un TS di Saggezza o essere Spaventato per 1 minuto (TS pone fine).",

@@ -387,6 +387,8 @@ export interface ActionSummary {
   trigger?: string;
   /** Healing formula: "1d10+9", "5×level" */
   healing?: string;
+  /** A tracked resource restored by this action's atomic commit. */
+  trackerTopUp?: { trackerId: string; upTo: number | "full" };
   /** A variable pool whose selected spend becomes this action's healing result. */
   poolSpendEffect?: "healing";
   /** Target-facing conditions this action can end. */
@@ -4492,6 +4494,7 @@ function applyActionEffectSummary(
   if (action.heal) {
     summary.heal = resolveActionHeal(action.heal, sourceId, character, ctx.abilityScores);
   }
+  if (action.trackerTopUp) summary.trackerTopUp = action.trackerTopUp;
   if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
   if (
     action.conditionRemoval &&

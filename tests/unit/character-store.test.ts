@@ -1377,6 +1377,25 @@ describe("characterStore — rest mechanics", () => {
         0
       );
     });
+
+    it("tops up another pool exactly and a stale undo never clobbers a later spend", () => {
+      const char = mockCharacter();
+      char.character.classes = [{ classId: "monk", level: 3 }];
+      char.character.features = [{ srdId: "monk-focus" }];
+      char.session.trackers = { "monk-focus": { used: 3 } };
+      useCharacterStore.getState().setCharacter(char);
+
+      const undo = useCharacterStore.getState().topUpTracker("monk-focus", "full");
+      expect(
+        useCharacterStore.getState().character?.session.trackers["monk-focus"]
+      ).toBeUndefined();
+
+      useCharacterStore.getState().useTracker("monk-focus");
+      undo?.();
+      expect(
+        useCharacterStore.getState().character?.session.trackers["monk-focus"]
+      ).toEqual({ used: 1 });
+    });
   });
 
   describe("pinnedActions", () => {
@@ -1876,6 +1895,7 @@ describe("characterStore — read-only mode (T4: DM views a member's sheet)", ()
     useCharacterStore.getState().useSpellSlot(1);
     useCharacterStore.getState().useTracker("rage", 1);
     useCharacterStore.getState().restoreTracker("rage", 1);
+    useCharacterStore.getState().topUpTracker("rage", "full");
     useCharacterStore.getState().addCondition("poisoned");
     useCharacterStore.getState().setConcentration(conc("bless"));
     useCharacterStore.getState().updateSession({ inspiration: true });

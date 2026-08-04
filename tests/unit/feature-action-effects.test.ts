@@ -4,6 +4,37 @@ import { resolveActions } from "@/lib/smart-tracker";
 import { makeCharacterDoc } from "./_helpers";
 
 describe("feature action effect contract", () => {
+  it("projects Uncanny Metabolism as one paid heal + Focus restore action", () => {
+    const actions = resolveActions(
+      makeCharacterDoc(
+        {
+          classId: "monk",
+          level: 3,
+          features: [{ srdId: "monk-focus" }, { srdId: "monk-uncanny-metabolism" }],
+        },
+        {
+          hp: { current: 7, temp: 0 },
+          trackers: {
+            "monk-focus": { used: 3 },
+            "monk-uncanny-metabolism": { used: 0 },
+          },
+        }
+      )
+    );
+
+    expect(
+      actions.find((action) => action.id === "monk-uncanny-metabolism-free")
+    ).toMatchObject({
+      costTracker: "monk-uncanny-metabolism",
+      trackerCost: 1,
+      summary: {
+        heal: { dice: "1d6", bonus: 3 },
+        targeting: { affinity: "self", maxTargets: 1 },
+        trackerTopUp: { trackerId: "monk-focus", upTo: "full" },
+      },
+    });
+  });
+
   it("keeps same-economy homebrew actions distinct and resolves their effects", () => {
     const actions = resolveActions(
       makeCharacterDoc({
@@ -67,6 +98,7 @@ describe("feature action effect contract", () => {
               label: "Field Remedy",
               description: "Use the table's alternate recovery.",
               heal: { dice: "1d6", plus: { kind: "flat", value: 2 } },
+              trackerTopUp: { trackerId: "fighter-second-wind", upTo: "full" },
               targeting: {
                 affinity: "any",
                 maxTargets: "WIS",
@@ -87,6 +119,7 @@ describe("feature action effect contract", () => {
         {
           label: "Field Remedy",
           heal: { dice: "1d6", plus: { kind: "flat", value: 2 } },
+          trackerTopUp: { trackerId: "fighter-second-wind", upTo: "full" },
         },
       ],
     });
@@ -104,6 +137,7 @@ describe("feature action effect contract", () => {
       name: { custom: "Field Remedy" },
       summary: {
         heal: { dice: "1d6", bonus: 2 },
+        trackerTopUp: { trackerId: "fighter-second-wind", upTo: "full" },
         targeting: { affinity: "any", maxTargets: 3 },
       },
     });

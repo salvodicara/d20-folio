@@ -207,15 +207,21 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
     id: "monk-uncanny-metabolism",
     class: "monk",
     level: 2,
-    // 2024 RAW (monk:main, Level 2): "When you roll Initiative, you can regain
-    // all expended Focus Points" (once per Long Rest). Wired via the shared
-    // `initiative-tracker-topup` primitive (Bard/Barbarian/Druid) targeting the
-    // `monk-focus` pool — `upTo: 20` caps to the tracker total (= Monk level),
-    // so it restores ALL expended points. The companion Martial-Arts-die + level
-    // HP heal is a dice roll (golden rule 21) and stays override-first/narrative.
-    grants: [{ type: "initiative-tracker-topup", trackerId: "monk-focus", upTo: 20 }],
     mechanics: {
       tracker: { total: "1", recovery: "long-rest" },
+      actions: [
+        {
+          type: "free",
+          costTracker: "monk-uncanny-metabolism",
+          trackerCost: 1,
+          trackerTopUp: { trackerId: "monk-focus", upTo: "full" },
+          heal: {
+            dice: "classSpecific:martialArtsDie",
+            plus: { kind: "class-level", classId: "monk" },
+          },
+          targeting: { affinity: "self", maxTargets: 1 },
+        },
+      ],
     },
     source: "SRD",
   },
@@ -284,6 +290,12 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "bonus",
+        },
+        {
+          id: "focused",
+          type: "bonus",
+          costTracker: "monk-focus",
+          trackerCost: 1,
         },
       ],
     },

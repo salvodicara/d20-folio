@@ -289,6 +289,8 @@ interface CharacterState {
   restoreSpellSlot: (level: number, pactMagic?: boolean) => void;
   useTracker: (trackerId: string, amount?: number) => void;
   restoreTracker: (trackerId: string, amount?: number) => void;
+  /** Restore a tracker to a remaining-use floor and return an exact, stale-safe undo. */
+  topUpTracker: (trackerId: string, upTo: number | "full") => (() => void) | null;
   /** Decrement a tracked equipment item by 1; removes the entry entirely when quantity hits 0. */
   useEquipmentItem: (equipmentKey: string) => void;
   /**
@@ -1118,6 +1120,47 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       },
     });
     flushParentPersistence(get);
+  },
+
+  topUpTracker: (trackerId, upTo) => {
+    if (get().readonly) return null;
+    const character = get().character;
+    if (!character) return null;
+    const tracker = resolveTrackers(character).find((entry) => entry.id === trackerId);
+    if (!tracker) return null;
+    const floor =
+      upTo === "full" ? tracker.total : Math.min(tracker.total, Math.max(0, upTo));
+    const appliedUsed = tracker.total - floor;
+    const prior = character.session.trackers[trackerId];
+    if ((prior?.used ?? 0) <= appliedUsed) return () => {};
+    const trackers =
+      appliedUsed === 0
+        ? restoreTrackerEntry(character.session.trackers, trackerId, undefined)
+        : {
+            ...character.session.trackers,
+            [trackerId]: { used: appliedUsed },
+          };
+    set({
+      character: {
+        ...character,
+        session: { ...character.session, trackers },
+      },
+    });
+    flushParentPersistence(get);
+    return () => {
+      const live = get().character;
+      if (!live || (live.session.trackers[trackerId]?.used ?? 0) !== appliedUsed) return;
+      set({
+        character: {
+          ...live,
+          session: {
+            ...live.session,
+            trackers: restoreTrackerEntry(live.session.trackers, trackerId, prior),
+          },
+        },
+      });
+      flushParentPersistence(get);
+    };
   },
 
   useEquipmentItem: (equipmentKey) => {

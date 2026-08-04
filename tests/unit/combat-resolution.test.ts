@@ -345,6 +345,12 @@ describe("shouldResolveCombatAction — which commits open the resolver", () => 
         makeAction("feature", { healApply: { dice: "1d10", bonus: 5 } })
       )
     ).toBe(true);
+    const selfHeal = makeAction("feature", {
+      healApply: { dice: "1d6", bonus: 3 },
+      targeting: { affinity: "self", maxTargets: 1 },
+    });
+    expect(combatResolutionSpec(selfHeal).targetAffinity).toBe("self");
+    expect(shouldResolveSoloAction(selfHeal)).toBe(true);
     expect(
       shouldResolveSoloAction(
         makeAction("spell", { tempHpApply: { dice: "2d4", bonus: 4 } })

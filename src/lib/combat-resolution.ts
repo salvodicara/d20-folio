@@ -212,14 +212,16 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     : undefined;
   const targetAffinity: CombatTargetAffinity =
     action.standingEffect?.targetAffinity ??
-    (s.targeting?.affinity === "ally" ||
-    (!s.targeting && (hasHealing || s.conditionRemoval !== undefined))
-      ? "ally"
-      : hasTempHp && !s.targeting
-        ? "self"
-        : s.targeting?.affinity === "any"
-          ? "any"
-          : "enemy");
+    (s.targeting?.affinity === "self"
+      ? "self"
+      : s.targeting?.affinity === "ally" ||
+          (!s.targeting && (hasHealing || s.conditionRemoval !== undefined))
+        ? "ally"
+        : hasTempHp && !s.targeting
+          ? "self"
+          : s.targeting?.affinity === "any"
+            ? "any"
+            : "enemy");
 
   return {
     kind,

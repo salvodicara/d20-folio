@@ -1199,6 +1199,11 @@ export interface SrdActionDef {
    * Guerriero" chip. Omitted for non-healing actions.
    */
   heal?: ActionHeal;
+  /**
+   * Restore another tracked resource as part of this action's atomic commit.
+   * `upTo` is the minimum remaining amount; `"full"` restores the pool.
+   */
+  trackerTopUp?: { trackerId: string; upTo: number | "full" };
   /** A variable pool whose spend produces healing.
    * Its tracker owns cost, unit, die, and remaining amount. */
   poolSpendEffect?: "healing";

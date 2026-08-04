@@ -745,6 +745,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     for (const eff of action.useEffects ?? []) {
       cs.gainTempHp(eff.amount);
     }
+    const undoTrackerTopUp = action.summary.trackerTopUp
+      ? cs.topUpTracker(
+          action.summary.trackerTopUp.trackerId,
+          action.summary.trackerTopUp.upTo
+        )
+      : null;
     // Log a STRUCTURED action-use event (no localized text): the semantic effect
     // (drives the GLYPH SHAPE) + the economy slot `action.type` (drives the row
     // COLOUR — action=green, bonus=blue, reaction=red — matching the cockpit
@@ -781,6 +787,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       }
       // RA-09 — undo the Dash's movement-budget extension.
       restoreDash?.();
+      undoTrackerTopUp?.();
       // Clear the state THIS commit lit (never a hand-set one); compute the hand-lit
       // concentration chips the upcoming `setConcentration(prevConc)` LEG-2 clear is
       // about to strip; restore concentration (strips them); then re-add ONLY those —

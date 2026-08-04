@@ -454,6 +454,14 @@ Maintenance reads `SelectedAction.triggerEvents`, not whether an Action slot hap
 weapon/spell attacks and target-saving-throw actions stamp `"attack"`, while Dash/Help/other actions
 do not. The receipt is persisted with turn economy, so navigation cannot change the verdict.
 
+Compound feature actions remain one transaction. A resolved action may carry `trackerTopUp` alongside
+its cost and target consequence; commit spends the source use, restores the live destination pool and
+applies the reviewed consequence, while the shared undo reverses each mutation exactly and refuses to
+overwrite later manual edits. Optional "when you roll Initiative, you can" features therefore surface as
+ordinary player-chosen actions rather than the unconditional `initiative-tracker-topup` seam. Explicit
+`targeting.affinity:"self"` is preserved by `combatResolutionSpec`, so self-heals enter the same resolver
+in solo and encounter play instead of being misclassified as enemy actions.
+
 **Extra Attack is part of the action economy (the BG3 attack grammar — the count lives on the attack
 AFFORDANCE, the economy just spends).** A hero who makes N weapon attacks per Attack action has
 `attackBudget = N` (derived ONCE by `attacksPerActionForCharacter` and pushed into `combatStore` alongside the

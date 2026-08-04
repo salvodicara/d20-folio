@@ -352,6 +352,8 @@ export interface ActionData {
   costTracker?: string;
   /** A variable pool whose selected spend is applied as healing. */
   poolSpendEffect?: "healing";
+  /** Restore another tracked resource as part of this action's atomic commit. */
+  trackerTopUp?: { trackerId: string; upTo: number | "full" };
   /** Rolled healing applied by the shared target resolver. */
   heal?: ActionHeal;
   /** Rolled Temporary HP applied by the shared target resolver. */

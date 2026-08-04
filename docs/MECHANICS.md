@@ -129,6 +129,12 @@ Poisoned; `fromLevel:14` gates Restoring Touch's six extra conditions on the own
 condition **ids** only (golden rule 7), localized at the render edge via `conditionLabel`, resolved
 onto `summary.cureOptions`; with `poolSpendEffect:"healing"`, the resolver combines selected cure costs
 with reviewed healing and debits the exact pool total on Apply. An action's
+**`trackerTopUp: { trackerId, upTo }`** restores another tracked resource (`upTo:"full"` or a numeric
+floor) inside the same action transaction. The mutator resolves the live pool cap, removes a fully
+restored zero-use row, flushes persistence with the other commit effects, and returns a stale-safe exact
+undo. This models optional compound actions such as Monk Uncanny Metabolism without abusing the
+unconditional Initiative-top-up grant; the same field is available to homebrew action overrides.
+An action's
 **`tempHpRoll: { rolls, die, plus?, multiplier?, fromLevel? }`** declares a die-rolled
 Temporary-HP gain that RIDES the action (spend a Focus Point on Patient Defense → Temp HP equal to two
 rolls of the Martial Arts die); `die` is a fixed face OR the `"classSpecific:<key>"` sentinel resolved
