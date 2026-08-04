@@ -1541,6 +1541,15 @@ initiativeBonus` at the display/sort edge, the bonus engine-computed + override-
     round) — the cockpit turn meter routes its commit by phase (encounter → the campaign table; solo → the
     combat store/subdoc), so neither home ever mirrors the other (rule 10). The DM presses **Begin turns**
     (`beginEncounterTurns`) to point the turn at the top of the live order.
+- **Alert Initiative Swap is an encounter decision, never a rewritten roll.** During gathering,
+  `EncounterState.initiativeSwaps` stores `{sourceId,targetId}` pairs for Alert-bearing PCs and willing
+  PC/NPC allies. `buildEncounterView` applies those pairs over the current live-sorted ids, so a late roll
+  still produces the correct preview while `encounterInit` remains raw-d20 truth. `beginEncounterTurns`
+  freezes that resulting sequence into `encounter.order`; from there the ordinary frozen-order contract
+  takes over. Only the DM edits the structural decision, and can replace/remove it until turns begin.
+  Reducers reject self, missing, enemy-target and non-PC-source pairs and remove dangling pairs with a
+  departing combatant. Multiple Alert holders compose in explicit stored order rather than inventing a
+  second initiative model.
 - **The turn order is FROZEN onto the doc at Begin-turns (`EncounterState.order: string[]`).** `Begin turns`
   (`beginEncounterTurns`, DM-only) calls `freezeOrder` to SNAPSHOT the live-sorted ids (including hidden)
   into `encounter.order`, then points `currentCombatantId` at `order[0]`. From there `advanceTurn`/`prevTurn`

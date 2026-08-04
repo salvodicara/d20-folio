@@ -36,6 +36,7 @@ const {
   setMemberCharacterMock,
   attachMemberCharacterMock,
   advanceEncounterTurnMock,
+  alertFixtureEnabled,
 } = vi.hoisted(() => ({
   authUid: { value: "mock-uid" },
   isAdminState: { value: false },
@@ -71,6 +72,7 @@ const {
   advanceEncounterTurnMock: vi.fn<
     typeof import("@/features/campaigns/campaign-io").advanceEncounterTurn
   >(() => Promise.resolve()),
+  alertFixtureEnabled: { value: false },
 }));
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
@@ -112,7 +114,16 @@ vi.mock("@/lib/firestore", async (orig) => {
   return {
     ...actual,
     getFullCharacter: (_uid: string, id: string) =>
-      Promise.resolve({ ...MOCK_CHARACTER, id }),
+      Promise.resolve({
+        ...MOCK_CHARACTER,
+        id,
+        character: alertFixtureEnabled.value
+          ? {
+              ...MOCK_CHARACTER.character,
+              features: [...MOCK_CHARACTER.character.features, { srdId: "alert" }],
+            }
+          : MOCK_CHARACTER.character,
+      }),
   };
 });
 // The live `combat/state` listener is mocked ABSENT (cb(null) → full HP) so the live
@@ -227,6 +238,7 @@ function renderParty() {
 
 beforeEach(() => {
   authUid.value = "mock-uid"; // the fixture DM
+  alertFixtureEnabled.value = false;
   isAdminState.value = false;
   applyHpDeltaMock.mockReset();
   applyHpDeltaMock.mockResolvedValue(undefined);
@@ -715,6 +727,32 @@ describe("Party combat — C3 freeze / lock / reorder (DM)", () => {
     if (!enc) throw new Error("no encounter seeded");
     return enc;
   }
+
+  it("lets the DM apply and remove Alert's willing-ally initiative swap before turns", async () => {
+    alertFixtureEnabled.value = true;
+    const campaign = gatheringEncounterCampaign();
+    setCampaign({
+      ...campaign,
+      encounterInit: { "member-mara": 18, "member-bren": 5 },
+    });
+    renderParty();
+    await screen.findAllByLabelText(/^Armor Class:/);
+
+    fireEvent.click(screen.getByRole("button", { name: /alert swap/i }));
+    const target = await screen.findByRole("combobox", { name: /willing ally/i });
+    fireEvent.change(target, { target: { value: "pc-member-bren" } });
+    fireEvent.click(screen.getByRole("button", { name: /^swap initiative$/i }));
+
+    await waitFor(() =>
+      expect(currentEncounter().initiativeSwaps).toEqual([
+        { sourceId: "pc-member-mara", targetId: "pc-member-bren" },
+      ])
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /alert swap/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /remove swap/i }));
+    await waitFor(() => expect(currentEncounter().initiativeSwaps).toBeUndefined());
+  });
 
   it("lets the DM begin with the rolled combatants and skips the unrolled ones", async () => {
     setCampaign(monstersOnlyGathering(false)); // the Orc is un-rolled → partial set

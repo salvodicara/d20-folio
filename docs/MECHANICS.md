@@ -166,6 +166,16 @@ independent actions; the paid action's `tempHpRoll.fromLevel` adds only the L10 
 declares selectable conditions ended by the
 same reviewed transaction. The identical fields exist on custom `ActionData`; imported action overrides
 merge by stable action id (or authored index for legacy single-action features).
+
+### Encounter-scoped table decisions
+
+Rules that change the table's ordering without changing a character statistic stay outside `Grant` data.
+Alert's Initiative Swap is the reference case: the feat's deterministic +PB remains in
+`computeInitiative`, while the willing-ally choice is stored as `EncounterState.initiativeSwaps` and
+applied to live-sorted combatant ids before `EncounterState.order` freezes. The stored fact is the chosen
+pair, never copied totals or rewritten rolls; that makes corrections, NPC allies, concurrent initiative
+entry and homebrew table rulings compose through one encounter-state seam.
+
 A SPELL's rolled Temp HP uses the twin `SrdSpellData.tempHpRoll: { dice, bonus, bonusPerUpcast? }`
 (False Life: `{ dice:"2d4", bonus:4, bonusPerUpcast:5 }` — "2d4 + 4 Temporary HP", +5/slot level above
 1st) for the SAME dice-free-Grant reason. The engine resolves it onto `summary.tempHpApply: { dice?,

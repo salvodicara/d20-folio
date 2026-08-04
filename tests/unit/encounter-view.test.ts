@@ -259,6 +259,25 @@ describe("buildEncounterView — the FROZEN order locks the display once turns b
     // bren 20, goblin 14, mara 8 → live-sorted, NOT the doc/insertion order.
     expect(view.rows.map((r) => r.id)).toEqual(["pc-bren", "monster-1", "pc-mara"]);
   });
+
+  it("applies an Alert swap over live totals without changing the stored d20 facts", () => {
+    const source = encounter({
+      currentCombatantId: null,
+      initiativeSwaps: [{ sourceId: "pc-mara", targetId: "pc-bren" }],
+    });
+    const view = buildEncounterView(
+      source,
+      {
+        "pc-mara": pcLive({ initiative: 20, initiativeRoll: 18 }),
+        "pc-bren": pcLive({ name: "Bren", initiative: 8, initiativeRoll: 7 }),
+      },
+      true
+    );
+    expect(view.turnOrderIds).toEqual(["pc-bren", "monster-1", "pc-mara"]);
+    expect(view.rows.find((row) => row.id === "pc-mara")?.initiativeRoll).toBe(18);
+    expect(view.rows.find((row) => row.id === "pc-bren")?.initiativeRoll).toBe(7);
+    expect(source.order).toBeUndefined();
+  });
 });
 
 describe("addReinforcement — auto-slot a mid-combat monster into the frozen order (C3)", () => {

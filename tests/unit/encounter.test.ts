@@ -15,6 +15,7 @@ import {
   removeCombatant,
   setHidden,
   setInitiative,
+  setInitiativeSwap,
   setMonsterName,
   setMonsterNotes,
   setMonsterSide,
@@ -25,6 +26,8 @@ import {
   toggleCondition,
   advanceTurn,
   beginEncounterTurns,
+  applyInitiativeSwaps,
+  clearInitiativeSwap,
   freezeOrder,
   prevTurn,
   reorderCombatant,
@@ -333,6 +336,55 @@ describe("setInitiative (monster) + sortByInitiative", () => {
     const before = items.slice();
     sortByInitiative(items);
     expect(items).toEqual(before);
+  });
+});
+
+describe("Alert Initiative Swap", () => {
+  it("stores one replaceable table decision per Alert holder and clears it exactly", () => {
+    const state = twoPcs();
+    const first = setInitiativeSwap(state, "pc-mara", "pc-bren");
+    expect(first.initiativeSwaps).toEqual([{ sourceId: "pc-mara", targetId: "pc-bren" }]);
+    expect(setInitiativeSwap(first, "pc-mara", "pc-bren")).toBe(first);
+    expect(setInitiativeSwap(state, "pc-mara", "pc-mara")).toBe(state);
+    expect(setInitiativeSwap(state, "ghost", "pc-bren")).toBe(state);
+    const cleared = clearInitiativeSwap(first, "pc-mara");
+    expect(cleared.initiativeSwaps).toBeUndefined();
+    expect(clearInitiativeSwap(cleared, "pc-mara")).toBe(cleared);
+  });
+
+  it("accepts only a PC source and willing allies, including allied NPCs", () => {
+    const state = goblins();
+    const enemy = state.combatants.find((combatant) => combatant.kind === "monster");
+    if (!enemy) throw new Error("expected a monster fixture");
+    const enemyId = enemy.id;
+    expect(setInitiativeSwap(state, "pc-mara", enemyId)).toBe(state);
+    expect(setInitiativeSwap(state, enemyId, "pc-mara")).toBe(state);
+
+    const allied = setMonsterSide(state, enemyId, "ally");
+    expect(setInitiativeSwap(allied, "pc-mara", enemyId).initiativeSwaps).toEqual([
+      { sourceId: "pc-mara", targetId: enemyId },
+    ]);
+  });
+
+  it("removes a pending swap when either participant leaves the encounter", () => {
+    const swapped = setInitiativeSwap(twoPcs(), "pc-mara", "pc-bren");
+    expect(removeCombatant(swapped, "pc-bren").initiativeSwaps).toBeUndefined();
+    expect(removeCombatant(swapped, "pc-mara").initiativeSwaps).toBeUndefined();
+  });
+
+  it("swaps positions without mutating raw initiative order and composes sequentially", () => {
+    const order = ["pc-mara", "monster-1", "pc-bren"];
+    expect(
+      applyInitiativeSwaps(order, [{ sourceId: "pc-mara", targetId: "pc-bren" }])
+    ).toEqual(["pc-bren", "monster-1", "pc-mara"]);
+    expect(order).toEqual(["pc-mara", "monster-1", "pc-bren"]);
+    expect(
+      applyInitiativeSwaps(order, [
+        { sourceId: "pc-mara", targetId: "pc-bren" },
+        { sourceId: "pc-bren", targetId: "monster-1" },
+        { sourceId: "ghost", targetId: "pc-mara" },
+      ])
+    ).toEqual(["monster-1", "pc-bren", "pc-mara"]);
   });
 });
 

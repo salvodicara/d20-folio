@@ -16,6 +16,7 @@
 
 import {
   addMonster,
+  applyInitiativeSwaps,
   freezeOrder,
   isDown,
   sortByInitiative,
@@ -249,9 +250,12 @@ export function buildEncounterView(
   // "@/features/campaigns/encounter".reorderCombatant}) is reflected immediately. A combatant
   // missing from the frozen order (a freshly-added reinforcement not yet re-slotted) is
   // appended in its live-sorted position so it is never dropped from the view.
-  const liveSorted = sortByInitiative(
-    allRows.map((r) => ({ id: r.id, initiative: r.initiative }))
-  ).map((o) => o.id);
+  const liveSorted = applyInitiativeSwaps(
+    sortByInitiative(allRows.map((r) => ({ id: r.id, initiative: r.initiative }))).map(
+      (o) => o.id
+    ),
+    encounter.initiativeSwaps
+  );
   const frozen = encounter.order;
   const orderedIds =
     frozen && frozen.length > 0

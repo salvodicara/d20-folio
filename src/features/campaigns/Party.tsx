@@ -32,11 +32,11 @@
 
 import { lazy, Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Crown, Plus, Swords, UserRound } from "lucide-react";
+import { ArrowLeftRight, Crown, Plus, Swords, UserRound } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/shared/ModalShell";
-import { ModalStage } from "@/components/ui/modal-head";
+import { ModalBody, ModalFoot, ModalStage } from "@/components/ui/modal-head";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { ensureSrdKind } from "@/i18n";
 import { Portrait } from "@/components/shared/Portrait";
@@ -78,9 +78,11 @@ import { usePartyCombatStates } from "@/features/campaigns/usePartyCombatStates"
 import {
   advanceTurn,
   beginEncounterTurns,
+  clearInitiativeSwap,
   encounterRollFor,
   prevTurn,
   reorderCombatant,
+  setInitiativeSwap,
   startEncounter,
   type EncounterPcSeed,
 } from "@/features/campaigns/encounter";
@@ -92,6 +94,7 @@ import {
 } from "@/features/campaigns/encounter-view";
 import { useLiftReorder } from "@/features/campaigns/use-lift-reorder";
 import { derivePcLive } from "@/features/campaigns/party-stats";
+import { characterHasFeat } from "@/lib/compute";
 import {
   DmControlBanner,
   EncounterRoundBar,
@@ -598,6 +601,9 @@ function CombatLayer({
   // The Combat-Chronicle end entry — the DM's editable "save this fight" step, opened by
   // the round bar's End action (replaces the old confirm prompt).
   const [endOpen, setEndOpen] = useState(false);
+  const [alertSwapOpen, setAlertSwapOpen] = useState(false);
+  const [alertSourceId, setAlertSourceId] = useState("");
+  const [alertTargetId, setAlertTargetId] = useState("");
   // The FULL live turn order INCLUDING hidden (hidden is a display filter, not a turn
   // filter), so the DM and a player step the identical order and a staged ambush still
   // takes its turn.
@@ -618,6 +624,78 @@ function CombatLayer({
   const rolled = rolledIds.length;
   const allRolled = rolled === total;
   const viewerSkipped = !!(ctx.currentUid && skipped[ctx.currentUid]);
+  const alertSources = view.rows.filter((row) => {
+    if (
+      row.kind !== "pc" ||
+      row.initiative == null ||
+      row.conditions.includes("incapacitated") ||
+      !row.memberUid ||
+      skipped[row.memberUid]
+    ) {
+      return false;
+    }
+    const state = ctx.docs[row.memberUid];
+    if (state?.status !== "ready") return false;
+    const character = state.doc.character;
+    return characterHasFeat("alert", {
+      humanOriginFeat: character.humanOriginFeat,
+      bgFeat: character.bgFeat,
+      features: character.features,
+    });
+  });
+  const alertTargetsFor = (sourceId: string) =>
+    view.rows.filter(
+      (row) =>
+        row.id !== sourceId &&
+        row.side === "ally" &&
+        row.initiative != null &&
+        !row.conditions.includes("incapacitated") &&
+        !(row.kind === "pc" && row.memberUid && skipped[row.memberUid])
+    );
+  const selectedAlertTargets = alertTargetsFor(alertSourceId);
+  const selectedAlertSwap = encounter.initiativeSwaps?.find(
+    (swap) => swap.sourceId === alertSourceId
+  );
+  const alertSelectionValid =
+    alertSources.some((source) => source.id === alertSourceId) &&
+    selectedAlertTargets.some((target) => target.id === alertTargetId);
+  const canSwapAlert = alertSources.some(
+    (source) => alertTargetsFor(source.id).length > 0
+  );
+  const openAlertSwap = (): void => {
+    const existingSourceId = encounter.initiativeSwaps?.find((swap) =>
+      alertSources.some((source) => source.id === swap.sourceId)
+    )?.sourceId;
+    const source =
+      alertSources.find(
+        (candidate) =>
+          candidate.id === existingSourceId && alertTargetsFor(candidate.id).length > 0
+      ) ?? alertSources.find((candidate) => alertTargetsFor(candidate.id).length > 0);
+    if (!source) return;
+    const targets = alertTargetsFor(source.id);
+    const previous = encounter.initiativeSwaps?.find(
+      (swap) => swap.sourceId === source.id
+    )?.targetId;
+    setAlertSourceId(source.id);
+    setAlertTargetId(
+      targets.some((target) => target.id === previous)
+        ? (previous ?? "")
+        : (targets[0]?.id ?? "")
+    );
+    setAlertSwapOpen(true);
+  };
+  const chooseAlertSource = (sourceId: string): void => {
+    const targets = alertTargetsFor(sourceId);
+    const previous = encounter.initiativeSwaps?.find(
+      (swap) => swap.sourceId === sourceId
+    )?.targetId;
+    setAlertSourceId(sourceId);
+    setAlertTargetId(
+      targets.some((target) => target.id === previous)
+        ? (previous ?? "")
+        : (targets[0]?.id ?? "")
+    );
+  };
   // Resolve a monster's full editable state by id (the view row carries the aggregate;
   // editing needs the per-token array off the encounter doc).
   const monsterById = new Map<string, EncounterMonster>(
@@ -868,16 +946,24 @@ function CombatLayer({
                 </Button>
               )}
               {apply && gathering ? (
-                <Button
-                  variant={allRolled ? "primary" : "secondary"}
-                  onClick={beginTurns}
-                  disabled={rolled === 0 || empty}
-                >
-                  <Icon as={Swords} size="sm" decorative />
-                  {allRolled
-                    ? t("campaignHub.encounterBeginTurns")
-                    : t("campaignHub.encounterBeginTurnsWith", { rolled, total })}
-                </Button>
+                <>
+                  {canSwapAlert && (
+                    <Button variant="ghost" onClick={openAlertSwap}>
+                      <Icon as={ArrowLeftRight} size="sm" decorative />
+                      {t("campaignHub.encounterAlertSwap")}
+                    </Button>
+                  )}
+                  <Button
+                    variant={allRolled ? "primary" : "secondary"}
+                    onClick={beginTurns}
+                    disabled={rolled === 0 || empty}
+                  >
+                    <Icon as={Swords} size="sm" decorative />
+                    {allRolled
+                      ? t("campaignHub.encounterBeginTurns")
+                      : t("campaignHub.encounterBeginTurnsWith", { rolled, total })}
+                  </Button>
+                </>
               ) : null}
               {!isDm && gathering && ctx.currentUid ? (
                 <Button
@@ -915,6 +1001,70 @@ function CombatLayer({
               />
             </Suspense>
           </ModalStage>
+        </ModalShell>
+      )}
+
+      {alertSwapOpen && gathering && apply && (
+        <ModalShell
+          open
+          onClose={() => setAlertSwapOpen(false)}
+          title={t("campaignHub.encounterAlertSwapTitle")}
+        >
+          <ModalBody className="flex flex-col gap-5">
+            <label className="flex flex-col gap-2 text-sm font-semibold text-text-primary">
+              {t("campaignHub.encounterAlertSource")}
+              <Select
+                value={alertSourceId}
+                onChange={(event) => chooseAlertSource(event.target.value)}
+              >
+                {alertSources.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.name} · {row.initiative}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-semibold text-text-primary">
+              {t("campaignHub.encounterAlertTarget")}
+              <Select
+                value={alertTargetId}
+                onChange={(event) => setAlertTargetId(event.target.value)}
+              >
+                {selectedAlertTargets.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.name} · {row.initiative}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          </ModalBody>
+          <ModalFoot>
+            {selectedAlertSwap && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  apply((state) => clearInitiativeSwap(state, alertSourceId));
+                  setAlertSwapOpen(false);
+                }}
+              >
+                {t("campaignHub.encounterAlertClear")}
+              </Button>
+            )}
+            <Button variant="secondary" onClick={() => setAlertSwapOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!alertSelectionValid}
+              onClick={() => {
+                apply((state) => setInitiativeSwap(state, alertSourceId, alertTargetId));
+                setAlertSwapOpen(false);
+              }}
+            >
+              <Icon as={ArrowLeftRight} size="sm" decorative />
+              {t("campaignHub.encounterAlertSwapTitle")}
+            </Button>
+          </ModalFoot>
         </ModalShell>
       )}
 

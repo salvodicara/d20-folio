@@ -303,7 +303,19 @@ export function removeCombatant(state: EncounterState, id: string): EncounterSta
         ? (order[removedOrderIndex] ?? order[0] ?? combatants[0]?.id ?? null)
         : (combatants[0]?.id ?? null);
   }
-  return { ...state, combatants, order, currentCombatantId, round };
+  const initiativeSwaps = state.initiativeSwaps?.filter(
+    (swap) => swap.sourceId !== id && swap.targetId !== id
+  );
+  const next: EncounterState = {
+    ...state,
+    combatants,
+    order,
+    currentCombatantId,
+    round,
+  };
+  if (initiativeSwaps?.length) next.initiativeSwaps = initiativeSwaps;
+  else delete next.initiativeSwaps;
+  return next;
 }
 
 /** Set (or clear) the DM-only `hidden` ambush flag on a combatant. */
@@ -366,6 +378,49 @@ export function setInitiative(
   return mapCombatant(state, id, (c) =>
     c.kind === "pc" ? c : { ...c, initiative: value === null ? null : Math.round(value) }
   );
+}
+
+/** Record or replace one Alert holder's willing-ally Initiative Swap. The encounter
+ * stores the table decision, never copied initiative totals; the view reapplies it over
+ * current live rolls until the order freezes. Invalid/self pairs are tolerant no-ops. */
+export function setInitiativeSwap(
+  state: EncounterState,
+  sourceId: string,
+  targetId: string
+): EncounterState {
+  if (sourceId === targetId) return state;
+  const source = state.combatants.find((combatant) => combatant.id === sourceId);
+  const target = state.combatants.find((combatant) => combatant.id === targetId);
+  if (
+    source?.kind !== "pc" ||
+    !target ||
+    (target.kind !== "pc" && target.side !== "ally")
+  ) {
+    return state;
+  }
+  const previous = state.initiativeSwaps ?? [];
+  const current = previous.find((swap) => swap.sourceId === sourceId);
+  if (current?.targetId === targetId) return state;
+  return {
+    ...state,
+    initiativeSwaps: [
+      ...previous.filter((swap) => swap.sourceId !== sourceId),
+      { sourceId, targetId },
+    ],
+  };
+}
+
+/** Remove one Alert holder's pending Initiative Swap. */
+export function clearInitiativeSwap(
+  state: EncounterState,
+  sourceId: string
+): EncounterState {
+  const previous = state.initiativeSwaps ?? [];
+  const initiativeSwaps = previous.filter((swap) => swap.sourceId !== sourceId);
+  if (initiativeSwaps.length === previous.length) return state;
+  const next: EncounterState = { ...state, initiativeSwaps };
+  if (initiativeSwaps.length === 0) delete next.initiativeSwaps;
+  return next;
 }
 
 /** Rename a MONSTER (the one free user string — golden rule 7). Whitespace-only
@@ -575,6 +630,27 @@ export function sortByInitiative<T extends { id: string; initiative: number | nu
     if (a.initiative !== b.initiative) return b.initiative - a.initiative; // higher first
     return a.id.localeCompare(b.id); // equal initiative → deterministic id tiebreak
   });
+}
+
+/** Apply Alert swaps in declaration order to an already-sorted list of combatant ids.
+ * A stale pair is ignored; sequential swaps remain deterministic when several Alert
+ * holders use the feature in the same encounter. Pure; never mutates the input. */
+export function applyInitiativeSwaps(
+  orderedIds: ReadonlyArray<string>,
+  swaps: ReadonlyArray<{ sourceId: string; targetId: string }> | undefined
+): string[] {
+  const next = [...orderedIds];
+  for (const swap of swaps ?? []) {
+    const source = next.indexOf(swap.sourceId);
+    const target = next.indexOf(swap.targetId);
+    if (source < 0 || target < 0 || source === target) continue;
+    const sourceId = next[source];
+    const targetId = next[target];
+    if (sourceId === undefined || targetId === undefined) continue;
+    next[source] = targetId;
+    next[target] = sourceId;
+  }
+  return next;
 }
 
 /** The ids of fully-defeated MONSTERS (every token at 0) — the combatants `advanceTurn`

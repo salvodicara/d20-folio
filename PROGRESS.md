@@ -170,6 +170,16 @@ derive DC and spell attack from their own ability even without a class Spellcast
 Drow Faerie Fire = CHA DC 12). Contracts cover the Bard, Diviner, Assassin, Vengeance Paladin, Mercy
 Monk and Zealot Barbarian; condition lifetime and remaining corpus seams continue separately.
 
+**Live-team truth audit — Alert contract CLOSED on branch (2026-08-04):** Alert's +PB initiative bonus
+was already computed, but its willing-ally Initiative Swap was still prose. During gathering, the DM can
+now choose an Alert-bearing PC and any willing PC/NPC ally with initiative. The encounter stores only
+that reviewed pair, applies it over the live preview without rewriting either raw d20, and freezes the
+result through the existing turn-order SSOT. The choice can be replaced or removed before turns begin;
+invalid/enemy/dangling pairs are rejected or cleaned. UI and reducer/view regressions cover apply,
+reopen, remove, sequential swaps, NPC allies and participant removal; Bo and Chiaviddu's real fixtures
+pin the feat and their exact +PB totals. The real-team long-tail audit continues with Lucky and Savage
+Attacker.
+
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark
 ink for its nested glyph/count despite the carved socket's correct fixed ink, and the end-encounter

@@ -474,6 +474,13 @@ movement for every displaced row. Re-measurement happens after the real scroll b
 can consume only part of the requested delta. The result is a short 220ms spatial explanation instead
 of a premium-breaking jump; `prefers-reduced-motion` skips all animation.
 
+**Alert swaps initiative in context, before turns begin.** When at least one ready, participating
+Alert holder and one willing ally have initiative, the DM banner adds one quiet tertiary action—not a
+per-card control. Its shared modal asks only for the Alert character and ally, includes allied NPCs,
+and exposes Apply / Remove / Cancel. Reopening restores the existing pair even though the preview order
+has changed. The control disappears once order freezes; later corrections use the ordinary DM reorder
+grammar. Raw roll values never visually change, so the UI cannot imply that the dice were edited.
+
 **Every monster is a creature, never an abstract token** (owner 2026-08-03). Adding three Goblins creates
 three independently targetable combatants (`Goblin 1`, `Goblin 2`, `Goblin 3`) with their own stable id,
 initiative, HP, conditions, notes, turn and disclosure. The read boundary conformer expands old grouped

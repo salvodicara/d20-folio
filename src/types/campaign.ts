@@ -306,6 +306,12 @@ export interface EncounterState {
    * order stays DM-only by construction (firestore.rules `turnFieldsOnlyChanged`).
    */
   order?: string[];
+  /** Alert's Initiative Swap choices made while initiative is gathering. Each source
+   *  is an Alert-bearing PC and each target is a willing ally; the view applies the
+   *  swaps over the current live initiative order, then `beginEncounterTurns` freezes
+   *  the resulting ids. Explicit encounter state keeps raw d20 rolls untouched and
+   *  lets the DM correct or remove a table decision before turns begin. */
+  initiativeSwaps?: Array<{ sourceId: string; targetId: string }>;
   /**
    * The per-encounter identity STAMP, set once at {@link startEncounter} (a monotonic
    * `Date.now()`). Identifies ONE fight across surfaces — the pip's "most recently
