@@ -2750,9 +2750,10 @@ is attractive:
    optional enrichment, not data required for correctness.
 
 **Semiotic contract.** Every icon must answer “what information would disappear if this mark were
-removed?” If the answer is “none,” remove it. In particular, a homogeneous fact pool (all skills, all
-languages, all tools) does not repeat one category seal on every row: common region, alignment and the
-pool heading already establish the category, while the repeated mark creates visual noise and falsely
+removed?” If the answer is “none,” remove it. In particular, a homogeneous option pool (all skills,
+languages, maneuvers, metamagic, invocations or fighting styles) does not repeat one category seal on
+every row: common region, alignment and the pool heading already establish the category, while the
+repeated mark creates visual noise, consumes scan width and falsely
 suggests entity-level meaning. A mixed pool first uses explicit localized group headings: proximity,
 common region and alignment establish the families without making the player decode a legend. A row
 seal remains only when it communicates a useful level below that heading (for example an instrument,

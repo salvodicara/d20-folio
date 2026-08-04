@@ -85,4 +85,23 @@ describe("ChoiceRePicker", () => {
     renderPicker({ current: [first.id] });
     expect(screen.queryByRole("button", { name: /^more$/i })).not.toBeInTheDocument();
   });
+
+  it("does not repeat a category seal across a homogeneous option group", () => {
+    renderPicker();
+    expect(document.querySelector(".opt-more-seal")).toBeNull();
+  });
+
+  it("preserves a seal when it distinguishes an individual option", () => {
+    renderPicker({
+      options: [
+        {
+          id: first.id,
+          label: srd("metamagic", first.id, "name", "en"),
+          chip: <span data-testid="specific-seal" />,
+        },
+      ],
+    });
+    expect(screen.getByTestId("specific-seal")).toBeInTheDocument();
+    expect(document.querySelectorAll(".opt-more-seal")).toHaveLength(1);
+  });
 });
