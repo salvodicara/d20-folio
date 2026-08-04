@@ -765,7 +765,7 @@ part) or stay display-only. The app never fabricates a die total.**
 - [x] **One-tap apply for slot-LESS DETERMINISTIC temp-HP grants** (Dark One's Blessing, Celestial Resilience, Vitality of the Tree, Inspiring Leader — all `CHA+level` / `level` / `max(WIS,CHA)+level`, dice-free by construction). The standalone `temphp-<sourceId>` card now carries the resolved amount as a structured `useEffects:[{kind:"temp-hp",amount,sourceId}]`; committing it applies via the store `gainTempHp` seam (ONE max-wins seam, golden rule 6) with the existing undo + `useGainedTempHp` toast — no re-typing. The slot-GATED case (Orc Adrenaline Rush) already auto-applied through its action card (the reference path this mirrors). `smart-tracker.resolveTemporaryHpActions` + `TurnEconomyProvider.commitAction`.
 - [x] **One-tap apply for the regen-at-turn-start banner** (Heroic Rally: 5+CON while Bloodied — DETERMINISTIC). The banner gained a one-tap "Heal N" button (`combat.turnStartRegenApply`) that calls `applyHealing(amount)` (clamped to effective max, logs `hp-heal`) with an undoable heal toast (`onUndo: setHP(prev)`), reusing the `conc-banner-drop` recipe (golden rule 3). `ThisTurnTracker.applyRegen`.
 - [x] **Roll-entry-then-apply for the Second Wind dice heal** (`1d10 + Fighter level` — DICE). The card shows the formula + a roll-entry: the player enters their externally-rolled d10, taps "Heal +N", and the app applies `enteredRoll + level` via `applyHealing` (clamped, undoable). Golden rule 21 — the d10 is NEVER auto-rolled/averaged. The presenter emits a structured `summary.healApply:{dice,bonus}` (the deterministic bonus is multiclass-correct, the owning class level). `combat-action-view` + `PlayTab.HealRollEntry`.
-- [ ] **DEFERRED (DICE — display-only, NOT one-tap):** the pack-species Healing Hands (PB×d4 — now SURFACED via `ActionHeal.diceCount:"PB"`, G18 FIXED 2026-06-25; still display/roll-entry, never auto-applied), Wholeness of Body (Martial Arts die + WIS — not yet surfaced with a `heal:` at all), Form of Dread's Facsimile of Life (`1d10+level` — the engine deliberately omits it from the temp-hp grant grammar), Heightened Focus (buffs Wholeness's dice). These are dice quantities; per golden rule 21 they stay display-only (or would need a roll-entry like Second Wind once surfaced) — auto-apply is forbidden. Note: there are NO deterministic (dice-free) self-HEALS in the data, so the heal side of S8 is correctly roll-entry/display-only, never auto-apply.
+- [ ] **REMAINING DICE-ENTRY GAPS:** Wholeness of Body (Martial Arts die + WIS — not yet surfaced with a `heal:`) and Form of Dread's Facsimile of Life (`1d10+level` — still omitted from the temp-HP action grammar). Healing Hands and Heightened Patient Defense now use the universal roll-entry resolver: the app never rolls, then applies the reviewed result with undo. Dice are therefore not a reason to leave a deterministic consequence display-only.
 
 ### S10 — data-wiring batch _(workstreams A + D; pure declarations on existing kinds)_ **first wave SHIPPED 2026-06-24**
 
@@ -876,15 +876,17 @@ forgotten).
       that grammar is dice-FREE by construction and its consumers resolve a concrete number and
       AUTO-apply it (golden rule 21 forbids auto-applying a die). So it rides its action as a declarative
       roll-entry field, the twin of the sibling G23 `checkBonus` / G19 `cureConditions` action riders: a
-      new `SrdActionDef.tempHpRoll:{rolls,die,fromLevel?}` on the `monk-patient-defense` bonus action,
+      `SrdActionDef.tempHpRoll:{rolls,die,plus?,multiplier?,fromLevel?}` on the distinct paid
+      `monk-patient-defense-focused` action variant,
       `die:"classSpecific:martialArtsDie"` resolved at the Monk OWNING-class level (d8 at L10 → "2d8",
-      scaling to "2d10"/"2d12"), gated `fromLevel:10` so a low-level Monk sees the bare Bonus-Action
-      Patient Defense. The engine resolves it onto `summary.tempHpRoll:{dice}` (locale-free, survives the
+      scaling to "2d10"/"2d12"), with only that rider gated at level 10. A low-level Monk sees the free
+      Disengage and the paid Disengage+Dodge actions, but no Temporary-HP field. The engine resolves it onto
+      `summary.tempHpRoll:{dice,bonus?,multiplier?}` (locale-free, survives the
       summary spread); the presenter (PlayTab gloss + accordion fact) composes "gain 2d8 temporary HP" /
-      "ottieni 2d8 PF temporanei". Override-first — display-only, never auto-applied (temp HP don't
-      stack). Ids only. Regression: `s10-data-wiring.table.test.ts` Family G (L2/3/9 → no field; L10 →
+      "ottieni 2d8 PF temporanei". The reviewed entry applies with max-wins Temporary-HP semantics and
+      undo; the app never rolls. Ids only. Regression: `s10-data-wiring.table.test.ts` Family G (L2/3/9 → no paid action; L10 →
       `{dice:"2d8"}`; L11 → "2d10", L17 → "2d12"; en+it localize), fail-before proven (no field →
-      `tempHpRoll` undefined). Verified against the LIVE Monk fixture (Monk L3): the field is gated out, the
+      `tempHpRoll` undefined). Verified against the LIVE Monk fixture (Monk L3): the paid action is gated out, the
       fixture stays byte-identical. Flurry 2→3 + Step-of-the-Wind drag stay narrative riders.
 - [x] **False Life per-spell temp-HP roll-entry (FIXED 2026-07-07).** False Life (spell:false-life): "You
       gain 2d4 + 4 Temporary Hit Points", +5/slot level above 1st. The SAME dice-free-Grant bar the Monk

@@ -15,7 +15,7 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
-import type { CharacterDoc, TrackerData } from "@/types/character";
+import type { ActionData, CharacterDoc, TrackerData } from "@/types/character";
 import type { ProficiencyToken } from "@/types/ids";
 import type {
   ActionType,
@@ -38,6 +38,8 @@ import type {
   CombatConditionApplication,
   CombatTargeting,
   CombatResolutionGate,
+  ActionTargeting,
+  SrdActionDef,
 } from "@/data/types";
 import { isPoolAltRecovery, isSlotAltRecovery } from "@/data/types";
 import { classFeatureIndex, getClassTable, pactSlotLevel } from "@/data/classes";
@@ -403,14 +405,13 @@ export interface ActionSummary {
    */
   healingBreakdown?: BreakdownLine[];
   /**
-   * S8 ROLL-ENTRY — the self-heal a feature ACTION grants, structured so the card
+   * S8 ROLL-ENTRY — the heal a feature ACTION grants, structured so the card
    * can offer a roll-entry-then-apply affordance (golden rule 21: the app NEVER
    * rolls the die). `dice` is the rolled portion the PLAYER supplies (e.g. "1d10"
    * — Second Wind); `bonus` is the DETERMINISTIC part the engine resolved (the
    * Fighter level), added to the entered roll on apply. Present ONLY when the
-   * action's heal targets the user (a `heal:` declaration, always self) AND carries
-   * a die — a dice-free deterministic heal would be a true one-tap, but no such
-   * self-heal exists in data yet. Mirrors `summary.heal`'s structure but survives
+   * action carries rolled healing. Targeting separately decides whether it affects
+   * self, an ally or any creature. Mirrors `summary.heal`'s structure but survives
    * localization (the raw `heal` does not pass to the display summary). The card
    * applies `enteredRoll + bonus` via the store `applyHealing` seam (clamped, undoable).
    */
@@ -530,11 +531,10 @@ export interface ActionSummary {
    * OWNING-class level and emits the concrete formula (`{ dice: "2d8" }` at Monk
    * L10, "2d10" at L11, …) — a ROLL-ENTRY the player supplies (golden rule 21 —
    * the app never rolls). Level-gated at emission (a Monk below L10 gets no field).
-   * Override-first: the presenter shows the formula; the temp HP is never
-   * auto-applied (temp HP don't stack). Omitted when the action grants no rolled
-   * temp HP.
+   * The presenter shows the formula and the universal resolver applies the reviewed
+   * result with max-wins semantics. Omitted when the action grants no rolled temp HP.
    */
-  tempHpRoll?: { dice: string };
+  tempHpRoll?: { dice: string; bonus?: number; multiplier?: number };
   /**
    * Per-spell Temporary-HP APPLY seam (False Life: 2d4 + 4, +5/slot level above
    * 1st) — the roll-entry-then-apply sibling of {@link healApply}, but for Temp HP.
@@ -751,9 +751,9 @@ export interface ResolvedActionHeal {
  * user-editable (temp HP is an editable rail field). Currently one kind — the
  * slot-gated temp-HP grant (Orc Adrenaline Rush, Shifter Shifting, Chef) — the
  * register the field is built to grow (self-heal, self-condition) without a new
- * commit path. Dice-bearing quantities are NEVER auto-applied (golden rule 21):
- * those stay on the manual path (e.g. Second Wind's `1d10`), so this register
- * carries only the resolved, deterministic amount.
+ * commit path. Dice-bearing quantities never enter this immediate-use register
+ * (golden rule 21): they use the universal roll-entry resolver instead, so this
+ * register carries only a resolved, deterministic amount.
  */
 export type ResolvedUseEffect = {
   /**
@@ -788,6 +788,34 @@ function resolveDiceCount(
   return `${n}${dieFace}`;
 }
 
+function resolveActionDie(
+  die: string | undefined,
+  sourceId: string,
+  character: CharacterDoc
+): string | undefined {
+  if (!die) return undefined;
+  const sentinelKey = /^classSpecific:(.+)$/.exec(die)?.[1];
+  if (!sentinelKey) return die;
+  const resolved = featureClassRow(sourceId, character)?.[sentinelKey];
+  return typeof resolved === "string" && resolved.length > 0 ? resolved : undefined;
+}
+
+function resolveHealTerm(
+  term: HealTerm | undefined,
+  charData: CharacterDoc["character"],
+  scores: Record<AbilityCode, number>
+): number {
+  if (!term) return 0;
+  switch (term.kind) {
+    case "class-level":
+      return classEntryLevel(charData, term.classId);
+    case "ability-mod":
+      return abilityModifier(scores[term.ability]);
+    case "flat":
+      return term.value;
+  }
+}
+
 /**
  * Evaluate a declared heal term against the character — the ONE place an
  * {@link ActionHeal} becomes numbers. The class-level term reads the OWNING
@@ -796,33 +824,27 @@ function resolveDiceCount(
  */
 function resolveActionHeal(
   heal: ActionHeal,
-  charData: CharacterDoc["character"],
+  sourceId: string,
+  character: CharacterDoc,
   // D2 — the EFFECTIVE ability scores (set-score item floors), so a heal-on-action
   // ability term (e.g. +WIS) reflects an equipped set-score item. Passed in from the
   // resolution ctx (the single source).
   scores: Record<AbilityCode, number>
 ): ResolvedActionHeal {
+  const charData = character.character;
   // A VARIABLE die count (PB, or an ability mod ≥1) is multiplied out to a
   // concrete dice string at emission via the shared resolver, so the chip reads
   // "3d4"/"3d8" — a number the player never has to compute (owner 2026-06-12).
-  const dice =
+  const resolvedDice =
     heal.diceCount && heal.dieFace
       ? resolveDiceCount(heal.diceCount, heal.dieFace, charData, scores)
-      : heal.dice;
+      : resolveActionDie(heal.dice, sourceId, character);
+  const dice = resolvedDice?.startsWith("d") ? `1${resolvedDice}` : resolvedDice;
   const term = heal.plus;
-  if (!term) return { dice, bonus: 0 };
-  switch (term.kind) {
-    case "class-level":
-      return { dice, bonus: classEntryLevel(charData, term.classId), term };
-    case "ability-mod":
-      return {
-        dice,
-        bonus: abilityModifier(scores[term.ability]),
-        term,
-      };
-    case "flat":
-      return { dice, bonus: term.value };
-  }
+  const bonus = resolveHealTerm(term, charData, scores);
+  return term?.kind === "class-level" || term?.kind === "ability-mod"
+    ? { dice, bonus, term }
+    : { dice, bonus };
 }
 
 /**
@@ -4355,7 +4377,7 @@ function applySaveAttackSummary(
     saveDcAbility?: AbilityCode;
     attack?: ActionAttack;
     conditionApplication?: CombatConditionApplication;
-    targeting?: CombatTargeting;
+    targeting?: ActionTargeting;
     area?: boolean;
   },
   character: CharacterDoc,
@@ -4376,7 +4398,7 @@ function applySaveAttackSummary(
   }
   if (action.conditionApplication)
     summary.conditionApplication = action.conditionApplication;
-  if (action.targeting) summary.targeting = action.targeting;
+  if (action.targeting) summary.targeting = resolveActionTargeting(action.targeting, ctx);
   if (action.area) summary.area = true;
   // Declarative damage half (S11) — dice scale from the class/feature table at
   // the action's scaling level (golden rule 5 — scale from data, never hardcode);
@@ -4433,6 +4455,77 @@ function applySaveAttackSummary(
   }
 }
 
+/** Collapse authored ability-derived target limits before the action reaches UI. */
+function resolveActionTargeting(
+  authored: ActionTargeting,
+  ctx: ActionResolveCtx
+): CombatTargeting {
+  const { maxTargets, ...targeting } = authored;
+  return {
+    ...targeting,
+    ...(typeof maxTargets === "number"
+      ? { maxTargets }
+      : maxTargets
+        ? {
+            maxTargets: Math.max(1, abilityModifier(ctx.abilityScores[maxTargets])),
+          }
+        : {}),
+  };
+}
+
+/** Apply every target-facing capability authored on a feature/homebrew action.
+ * All source kinds use this one projection before entering CombatResolver. */
+function applyActionEffectSummary(
+  summary: RawActionSummary,
+  action: SrdActionDef,
+  sourceId: string,
+  character: CharacterDoc,
+  ctx: ActionResolveCtx,
+  scalingLevel: number
+): void {
+  if (action.heal) {
+    summary.heal = resolveActionHeal(action.heal, sourceId, character, ctx.abilityScores);
+  }
+  if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
+  if (
+    action.conditionRemoval &&
+    (action.conditionRemoval.fromLevel === undefined ||
+      scalingLevel >= action.conditionRemoval.fromLevel)
+  ) {
+    const { options, max } = action.conditionRemoval;
+    summary.conditionRemoval = { options, ...(max === undefined ? {} : { max }) };
+  }
+  if (action.cureConditions) {
+    const cures = action.cureConditions
+      .filter((c) => c.fromLevel === undefined || scalingLevel >= c.fromLevel)
+      .map((c) => ({ condition: c.condition, costHp: c.costHp }));
+    if (cures.length > 0) summary.cureOptions = cures;
+  }
+  if (
+    action.tempHpRoll &&
+    (action.tempHpRoll.fromLevel === undefined ||
+      scalingLevel >= action.tempHpRoll.fromLevel)
+  ) {
+    const die = resolveActionDie(action.tempHpRoll.die, sourceId, character);
+    if (die) {
+      const bonus = resolveHealTerm(
+        action.tempHpRoll.plus,
+        character.character,
+        ctx.abilityScores
+      );
+      summary.tempHpRoll = {
+        dice: `${action.tempHpRoll.rolls}${die}`,
+        ...(bonus === 0 ? {} : { bonus }),
+        ...(action.tempHpRoll.multiplier === undefined ||
+        action.tempHpRoll.multiplier === 1
+          ? {}
+          : { multiplier: action.tempHpRoll.multiplier }),
+      };
+    }
+  }
+  applySaveAttackSummary(summary, action, character, ctx, scalingLevel);
+}
+
 /** Invocation id → row, for the 1c invocation-action pass below (mirrors the
  *  `INVOCATION_BY_ID` lookup `resolve-grant-sources.ts` builds for the grant seam). */
 const INVOCATION_BY_ID = new Map(SRD_INVOCATIONS.map((inv) => [inv.id, inv]));
@@ -4456,7 +4549,7 @@ function resolveFeatureActions(
     if ("custom" in featureRef) {
       if (featureRef.actions) {
         for (const a of featureRef.actions) {
-          const id = `custom-${featureRef.title}-${a.type}`;
+          const id = `custom-${featureRef.title}-${a.id ?? a.type}`;
           // Build summary from custom feature data. Custom content carries a
           // single user string (no translation); surface it in both locales so
           // the BiText contract holds.
@@ -4480,16 +4573,21 @@ function resolveFeatureActions(
             };
             if (cTracker.die) summary.die = cTracker.die;
           }
-          if (a.poolSpendEffect) summary.poolSpendEffect = a.poolSpendEffect;
-          if (a.targeting) summary.targeting = a.targeting;
-          if (a.cureConditions) summary.cureOptions = [...a.cureConditions];
+          applyActionEffectSummary(
+            summary,
+            a,
+            `custom-${featureRef.title}`,
+            character,
+            ctx,
+            ctx.level
+          );
           // CQ8 — honor ActionData.costTracker / trackerCost (added in the
           // unification). If the custom action doesn't specify a costTracker
           // but the feature has trackers, fall back to the first one (mirrors
           // SRD-feature behavior).
           actions.push({
             id,
-            name: customText(featureRef.title),
+            name: customText(a.label || featureRef.title),
             type: a.type,
             source: "feature",
             spellLevel: null,
@@ -4543,9 +4641,15 @@ function resolveFeatureActions(
       : undefined;
 
     let actionIndex = -1;
-    for (const action of srdFeature.mechanics.actions) {
+    for (const authoredAction of srdFeature.mechanics.actions) {
       actionIndex += 1;
-      const id = `${srdFeature.id}-${action.type}`;
+      const actionOverride =
+        featureRef.actionOverrides?.find(
+          (candidate) => candidate.id && candidate.id === authoredAction.id
+        ) ?? featureRef.actionOverrides?.[actionIndex];
+      const action = { ...authoredAction, ...actionOverride } as SrdActionDef &
+        Partial<Pick<ActionData, "label" | "description">>;
+      const id = `${srdFeature.id}-${action.id ?? action.type}`;
       // Build structured summary for feature action
       const summary: RawActionSummary = {};
 
@@ -4558,7 +4662,9 @@ function resolveFeatureActions(
         "actions",
         String(actionIndex)
       );
-      summary.effect = srdEffectText(featRef.kind, actionDescKey);
+      summary.effect = actionOverride?.description
+        ? customText(actionOverride.description)
+        : srdEffectText(featRef.kind, actionDescKey);
 
       // Per-action NAME — a feature whose mechanics declare MULTIPLE distinct
       // actions (e.g. Polearm Master: a Bonus-Action "Pole Strike" + a Reaction
@@ -4568,9 +4674,11 @@ function resolveFeatureActions(
       // name is a FACT gate via `srdEn`: present ⇒ the per-action name; absent ⇒ the
       // feature name (single-action features keep one card titled by the feature).
       const actionNameEn = srdEn(featRef.kind, actionDescKey, "name");
-      const actionName: LocText = actionNameEn
-        ? srdText(featRef.kind, actionDescKey, "name")
-        : featLoc(srdFeature, "name");
+      const actionName: LocText = actionOverride?.label
+        ? customText(actionOverride.label)
+        : actionNameEn
+          ? srdText(featRef.kind, actionDescKey, "name")
+          : featLoc(srdFeature, "name");
 
       // `costTrackerOverride` binds THIS action to a specific tracker on its own
       // feature (Psi Warrior Telekinetic Movement → the recharge gate) instead
@@ -4632,17 +4740,6 @@ function resolveFeatureActions(
         summary.effect = undefined;
       }
 
-      // Heal chip is DECLARATIVE — and EVALUATED here: the data carries the
-      // i18n-free term (Second Wind: `1d10 + fighter class-level`) and the
-      // engine, which KNOWS the class entry's level / ability mod, resolves it
-      // to a number at emission (chip-compact, owner 2026-06-12: a value the
-      // player must compute is a defect). The provenance term rides along for
-      // the breakdown tip. No prose parsing remains (golden rules 5 + 10).
-      if (action.heal) {
-        summary.heal = resolveActionHeal(action.heal, charData, ctx.abilityScores);
-      }
-      if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
-
       // G23 — Tactical Mind: spend a Second Wind use to add 1d10 to a FAILED
       // ability check (refunded if the check still fails). Carried verbatim onto
       // the summary; the die is roll-entry (golden rule 21) and the presenter
@@ -4656,53 +4753,14 @@ function resolveFeatureActions(
         };
       }
 
-      // G19 — Lay On Hands cure options: expend pool HP to neutralize a condition
-      // (those points don't also restore HP — RAW). Level-gated cures (Restoring
-      // Touch's extra conditions at Paladin 14) surface only at/above their
-      // `fromLevel`, resolved on the action's OWNING-class level (the SAME
-      // `scalingLevel` the tracker uses, so a low-level Paladin sees the base
-      // Poisoned cure alone). Condition ids stay stable (golden rule 7) — the
-      // label is localized at the render edge; the resolver charges the chosen
-      // cure together with any healing as one exact pool debit.
-      if (action.cureConditions) {
-        const cures = action.cureConditions
-          .filter((c) => c.fromLevel === undefined || scalingLevel >= c.fromLevel)
-          .map((c) => ({ condition: c.condition, costHp: c.costHp }));
-        if (cures.length > 0) summary.cureOptions = cures;
-      }
-
-      // G22 — Monk Heightened Focus (L10): spending a Focus Point on Patient
-      // Defense ALSO grants Temporary HP equal to TWO rolls of the Martial Arts
-      // die (RAW, monk:main). The die is roll-entry (golden rule 21 — the app
-      // never rolls); it SCALES with the Monk's level, so the `classSpecific`
-      // sentinel resolves against the OWNING-class table at `scalingLevel` (d8 at
-      // L10 → "2d8", d10 at L11 → "2d10"). Gated by `fromLevel` on the SAME
-      // owning-class level the cures use, so a Monk below L10 gets no field.
-      // Override-first — a display-only formula, never auto-applied (temp HP don't
-      // stack; the player enters the higher pool).
-      if (
-        action.tempHpRoll &&
-        (action.tempHpRoll.fromLevel === undefined ||
-          scalingLevel >= action.tempHpRoll.fromLevel)
-      ) {
-        const sentinelKey = /^classSpecific:(.+)$/.exec(action.tempHpRoll.die)?.[1];
-        const die = sentinelKey
-          ? featureClassRow(featureRef.srdId, character)?.[sentinelKey]
-          : action.tempHpRoll.die;
-        if (typeof die === "string" && die.length > 0) {
-          summary.tempHpRoll = { dice: `${action.tempHpRoll.rolls}${die}` };
-        }
-      }
-
-      // Save-forcing SELF-SIDE affordance (Monk Stunning Strike → CON save vs the
-      // WIS-based DC) + S11 declarative save-based ATTACK (Cleric Divine Spark →
-      // 1d8 Necrotic/Radiant on a CON save; Radiance of the Dawn → 2d10 Radiant on
-      // a CON save). The shared resolver routes the DC through the ONE
-      // `featureSaveDc` formula and the dice through the class/feature table at the
-      // owning-class scaling level; the app never models the enemy (BG3 on-rails —
-      // golden rule 21). Dice scale on `scalingLevel` (owning-class for a class
-      // feature) — Divine Spark's d8 count is the CLERIC level, not the total.
-      applySaveAttackSummary(summary, action, character, ctx, scalingLevel);
+      applyActionEffectSummary(
+        summary,
+        action,
+        featureRef.srdId,
+        character,
+        ctx,
+        scalingLevel
+      );
 
       // Determine cost tracker: an own-feature override (Telekinetic Movement
       // gate), the feature's own primary tracker, or a cross-feature reference.
@@ -4782,7 +4840,9 @@ function resolveFeatureActions(
         trackerCost: action.trackerCost,
         pinned: pinnedSet.has(id),
         defaultPinned: false,
-        description: featLoc(srdFeature, "description"),
+        description: actionOverride?.description
+          ? customText(actionOverride.description)
+          : featLoc(srdFeature, "description"),
         // Alternate-cost primitive — carried verbatim so `getActionCostOptions`
         // can offer it as a second payment route (Wild Companion: slot OR Wild Shape).
         ...(action.alternateCost ? { alternateCost: action.alternateCost } : {}),
@@ -4823,7 +4883,7 @@ function resolveFeatureActions(
         ) {
           continue;
         }
-        const id = `${trackerId}-${action.type}`;
+        const id = `${trackerId}-${action.id ?? action.type}`;
         const summary: RawActionSummary = {
           // Effect = the trait action's summary-or-description ref (never sliced).
           effect: srdEffectText(
@@ -4841,20 +4901,7 @@ function resolveFeatureActions(
             unit: tspec.unit,
           };
         }
-        // G18 — a race-trait action's DECLARATIVE heal (a species healing trait:
-        // PB×d4), resolved to a number string at emission exactly like the
-        // SRD-feature loop (single source — `resolveActionHeal`), so the SAME heal
-        // chip renders "3d4". Without this the race loop dropped `action.heal`.
-        if (action.heal) {
-          summary.heal = resolveActionHeal(action.heal, charData, ctx.abilityScores);
-        }
-        if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
-        // S11 — a race-trait action's save + declarative save-based ATTACK
-        // (Dragonborn Breath Weapon → 1d10→4d10 by CHARACTER level on a DEX save,
-        // damage type from the chosen Draconic Ancestry; Lupin Howl → WIS save vs
-        // the CON-based DC). Race traits scale on the TOTAL character level — the
-        // SAME `featureScalingLevel` fallback (no owning class), passed explicitly.
-        applySaveAttackSummary(summary, action, character, ctx, totalLevel(charData));
+        applyActionEffectSummary(summary, action, trait.id, character, ctx, ctx.level);
         // G14 — the TRANSFORM action (a species revelation's Bonus Action,
         // the activation that picks the form) surfaces the ACTIVE form's
         // once-per-turn +PB `attack-or-spell` rider as a self-side reminder chip:
@@ -4921,7 +4968,7 @@ function resolveFeatureActions(
       let invActionIndex = -1;
       for (const action of inv.mechanics.actions) {
         invActionIndex += 1;
-        const id = `${inv.id}-${action.type}`;
+        const id = `${inv.id}-${action.id ?? action.type}`;
         const summary: RawActionSummary = {
           effect: srdEffectText(
             "invocation",
@@ -4934,11 +4981,7 @@ function resolveFeatureActions(
           }
           summary.effect = undefined;
         }
-        if (action.heal) {
-          summary.heal = resolveActionHeal(action.heal, charData, ctx.abilityScores);
-        }
-        if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
-        applySaveAttackSummary(summary, action, character, ctx, warlockLevel);
+        applyActionEffectSummary(summary, action, inv.id, character, ctx, warlockLevel);
         actions.push({
           id,
           name: srdText("invocation", inv.id, "name"),
@@ -5680,7 +5723,9 @@ function resolveSpellActions(
             ...(follow.conditionApplication
               ? { conditionApplication: follow.conditionApplication }
               : {}),
-            ...(follow.targeting ? { targeting: follow.targeting } : {}),
+            ...(follow.targeting
+              ? { targeting: resolveActionTargeting(follow.targeting, ctx) }
+              : {}),
             ...(follow.area ? { area: true } : {}),
             ...(follow.trigger
               ? { trigger: uiText(`combat.reactionTrigger_${follow.trigger}`) }

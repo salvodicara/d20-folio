@@ -656,9 +656,14 @@
     "name": "Difesa Paziente"
   },
   "monk-patient-defense.mechanics.actions.0": {
-    "description": "Disimpegno come Azione Bonus (gratis). Spendi 1 Focus: anche Schivata.",
+    "description": "Disimpegno come Azione Bonus senza spendere Concentrazione.",
     "label": "Difesa Paziente",
-    "summary": "Disimpegno come Azione Bonus; 1 Punto: anche Schivata"
+    "summary": "Disimpegno come Azione Bonus"
+  },
+  "monk-patient-defense.mechanics.actions.1": {
+    "name": "Difesa Paziente Focalizzata",
+    "description": "Spendi 1 Punto Concentrazione per Disimpegnarti e Schivare come Azione Bonus. Dal livello 10 ottieni anche Punti Ferita Temporanei pari a due tiri del dado delle Arti Marziali.",
+    "summary": "Disimpegno + Schivata · 1 Concentrazione"
   },
   "monk-perfect-focus": {
     "description": "Quando hai meno di 4 Punti Concentrazione all'inizio del tuo turno, recuperi Punti Concentrazione fino ad averne 4.",

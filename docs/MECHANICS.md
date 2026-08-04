@@ -129,14 +129,18 @@ Poisoned; `fromLevel:14` gates Restoring Touch's six extra conditions on the own
 condition **ids** only (golden rule 7), localized at the render edge via `conditionLabel`, resolved
 onto `summary.cureOptions`; with `poolSpendEffect:"healing"`, the resolver combines selected cure costs
 with reviewed healing and debits the exact pool total on Apply. An action's
-**`tempHpRoll: { rolls, die, fromLevel? }`** (G22 — Monk Heightened Focus) declares a die-rolled
+**`tempHpRoll: { rolls, die, plus?, multiplier?, fromLevel? }`** declares a die-rolled
 Temporary-HP gain that RIDES the action (spend a Focus Point on Patient Defense → Temp HP equal to two
 rolls of the Martial Arts die); `die` is a fixed face OR the `"classSpecific:<key>"` sentinel resolved
-at the OWNING-class level (`martialArtsDie` → d8 at Monk L10, scaling), `fromLevel` gates it on that
-same level (10). Resolved onto `summary.tempHpRoll: { dice }` (`"2d8"` → `"2d10"` → `"2d12"`),
-roll-entry (golden rule 21 — the app never rolls) and display-only (temp HP don't stack; never
-auto-applied). A rolled temp-HP rides its action here BECAUSE the `temp-hp` Grant grammar is dice-free —
-its consumers resolve a concrete number and auto-apply, which a die must never do.
+at the OWNING-class level (`martialArtsDie` → d8 at Monk L10, scaling); `plus` is a deterministic
+`HealTerm`, `multiplier` transforms the entered roll, and `fromLevel` gates the rider. The shared resolver
+applies `entered × multiplier + plus` with max-wins Temporary-HP semantics after review; it never rolls.
+Stable `SrdActionDef.id` values allow free Patient Defense and its paid Focus variant to remain
+independent actions; the paid action's `tempHpRoll.fromLevel` adds only the L10 rider.
+`ActionTargeting.maxTargets` can be an ability id (modifier, minimum one), and `conditionRemoval`
+declares selectable conditions ended by the
+same reviewed transaction. The identical fields exist on custom `ActionData`; imported action overrides
+merge by stable action id (or authored index for legacy single-action features).
 A SPELL's rolled Temp HP uses the twin `SrdSpellData.tempHpRoll: { dice, bonus, bonusPerUpcast? }`
 (False Life: `{ dice:"2d4", bonus:4, bonusPerUpcast:5 }` — "2d4 + 4 Temporary HP", +5/slot level above
 1st) for the SAME dice-free-Grant reason. The engine resolves it onto `summary.tempHpApply: { dice?,
@@ -203,11 +207,15 @@ NOT one roll: **multi-instance** (`instances` + `instancesPerUpcast`) — a spel
 damage instances, each rolling `damageDice` on its own (Magic Missile's 3 darts at 1d4+1 each, +1 dart
 per slot above 1st; Scorching Ray's 3 rays at 2d6 each, +1 ray per slot above 2nd). The shared pure
 **Shared combat resolution capability.** `src/lib/combat-resolution.ts` turns structured combat-action facts into one
-`CombatResolutionSpec`: resolution (`attack` / `save` / `automatic`), target affinity, cap/area,
+`CombatResolutionSpec`: resolution (`attack` / `save` / `automatic`), concrete target affinity/cap/area,
 damage, healing, instance count and typed condition riders. It never parses a localized description or
 branches on an action/spell name. The UI can therefore resolve weapon attacks, damaging or non-damaging
 saves, healing, multi-instance and area effects through the same target/outcome/effect grammar, while an
 explicit any-creature filter and per-target condition override preserve table rulings and homebrew.
+Feature actions, race actions, invocations, homebrew and spells enter this same projection; authored
+ability-derived target caps and class-specific dice resolve before UI. Shared healing and rolled
+Temporary HP reuse one entered roll for every selected target while applying each deterministic
+bonus/multiplier exactly once per target.
 Slot/upcast/metamagic configuration resolves before targets, so the spec carries the real cast-level dice
 and instance count. Healing has four structural shapes: ordinary per-target amount, one shared group roll,
 a bounded distributed pool, and full restoration; condition cures declare eligible stable ids; consumable
@@ -406,7 +414,8 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   immediate-commit-with-undo model: a `temp-hp` grant carrying a `slot` (Orc Adrenaline Rush, Shifter
   Shifting, Chef) emits a resolved number applied on use; a `while-active.duration` lets the End-Turn
   loop surface a keep/end prompt for a maintained state (Rage), never silently killing it. Dice-bearing
-  quantities (Second Wind's `1d10`) are NEVER auto-applied (golden rule 21).
+  quantities (Second Wind's `1d10`) are never auto-rolled: the player enters the roll, then the reviewed
+  result is applied through the same undoable resolver (golden rule 21).
 - **Single-select chooser (`choice-grant-bundle`).** Pick exactly one of N named options; that
   option's grants apply (`session.grantBundleChoices` ⇄ `setGrantBundleChoice`). Option spells carry
   `minLevel` so the always-prepared injection level-gates them (Circle of the Land terrain spells).

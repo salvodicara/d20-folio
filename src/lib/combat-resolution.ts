@@ -88,6 +88,18 @@ export interface CombatDamagePartSpec {
   fixedAmount?: number;
 }
 
+/** Human-readable formula for a feature action's rolled Temporary HP. */
+export function tempHpRollFormula(
+  roll: NonNullable<ResolvedAction["summary"]["tempHpRoll"]>
+): string {
+  const multiplied =
+    roll.multiplier !== undefined && roll.multiplier !== 1
+      ? `${roll.multiplier}×(${roll.dice})`
+      : roll.dice;
+  if (!roll.bonus) return multiplied;
+  return `${multiplied}${roll.bonus > 0 ? "+" : ""}${roll.bonus}`;
+}
+
 export interface EnteredCombatDamagePart {
   spec: CombatDamagePartSpec;
   amount: number;

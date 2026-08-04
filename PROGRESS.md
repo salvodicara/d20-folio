@@ -601,6 +601,14 @@ follows the visual sign-off.
   resistance/immunity/vulnerability/flat reduction, PC and monster Temporary HP, healing/condition cures,
   and linked self-healing in one reviewed commit. Grapple/Shove use the same save/condition grammar.
   Geometry, range/LOS and forced movement stay table declarations because this app is not a VTT.
+- **Generic rolled feature effects (2026-08-04)** — class/race/invocation/homebrew actions now project
+  healing, condition removal and Temporary HP through the same resolver as spells, including class-table
+  dice, deterministic bonuses/multipliers, shared rolls and ability-derived target caps. Stable action ids
+  model same-economy variants correctly (Patient Defense stays free; its paid variant spends Focus and
+  gains the Temporary-HP rider at L10),
+  and v3 export/import preserves action overrides on inferred features. Pack data now wires Mantle of
+  Inspiration, Improved Warding Flare, Hand of Healing/Physician's Touch and Fortifying Soul through this
+  contract; movement/reaction choices that require battlefield observation remain table declarations.
 - **Persistent actions (2026-08-03)** — placement-only zones no longer pretend to damage on cast;
   `recurrence`/`followUp` emits a later active row with the right action economy, no second slot and the
   original upcast level. Concentration/active-state undo restores the exact spell, toggle and cast level.

@@ -656,9 +656,14 @@
     "name": "Patient Defense"
   },
   "monk-patient-defense.mechanics.actions.0": {
-    "description": "Disengage as a Bonus Action (free). Spend 1 Focus: also Dodge.",
+    "description": "Disengage as a Bonus Action without spending Focus.",
     "label": "Patient Defense",
-    "summary": "Disengage as a Bonus Action; spend 1 Focus: also Dodge"
+    "summary": "Disengage as a Bonus Action"
+  },
+  "monk-patient-defense.mechanics.actions.1": {
+    "name": "Focused Patient Defense",
+    "description": "Spend 1 Focus Point to Disengage and Dodge as a Bonus Action. From level 10, also gain Temporary Hit Points equal to two rolls of your Martial Arts die.",
+    "summary": "Disengage + Dodge · 1 Focus"
   },
   "monk-perfect-focus": {
     "description": "When you have fewer than 4 Focus Points at the start of your turn, you regain Focus Points until you have 4.",

@@ -41,6 +41,7 @@ import { ThisTurnTracker } from "../ThisTurnTracker";
 import {
   shouldResolveCombatAction,
   shouldResolveSoloAction,
+  tempHpRollFormula,
 } from "@/lib/combat-resolution";
 import { useSheetCombat } from "../turn-state";
 import { CombatAlgorithm } from "./CombatAlgorithm";
@@ -288,14 +289,10 @@ function combatGloss(
   // / to-hit / save / trigger) already describes the action, so we don't double
   // up — e.g. a damage spell keeps its "60 ft · CON save" gloss.
   if (summary.effect && parts.length === 0) parts.push(summary.effect);
-  // G22 — Monk Heightened Focus (L10): spending a Focus Point on Patient Defense
-  // also grants "two rolls of the Martial Arts die" as Temporary HP — a roll-entry
-  // formula the player rolls + enters (golden rule 21). Level-gated at the engine,
-  // so the field is present only at Monk L10+. ADDITIVE — pushed AFTER the base
-  // effect fallback so the Disengage/Dodge description is never dropped at L10+;
-  // the temp-HP note rides alongside the base action gloss, it never replaces it.
+  // Rolled action Temporary HP is additive to the action gloss; the resolver asks
+  // for the roll and applies every deterministic bonus/multiplier after review.
   if (summary.tempHpRoll) {
-    parts.push(t("combat.tempHpRoll", { dice: summary.tempHpRoll.dice }));
+    parts.push(t("combat.tempHpRoll", { dice: tempHpRollFormula(summary.tempHpRoll) }));
   }
   if (concentrating) parts.push(t("combat.concentration"));
   if (summary.uses) {
@@ -1297,12 +1294,13 @@ function combatFacts(
           }),
         }
       : null,
-    // G22 — Heightened Focus's "2 × Martial Arts die" temporary HP as a labeled
-    // accordion fact (roll-entry; the gloss carries the same line).
+    // Rolled Temporary HP as a labeled accordion fact (the gloss carries it too).
     summary.tempHpRoll
       ? {
           label: t("combat.tempHpRollLabel"),
-          value: t("combat.tempHpRoll", { dice: summary.tempHpRoll.dice }),
+          value: t("combat.tempHpRoll", {
+            dice: tempHpRollFormula(summary.tempHpRoll),
+          }),
         }
       : null,
   ].filter((f): f is { label: string; value: string } => f != null);

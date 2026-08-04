@@ -42,6 +42,7 @@ import {
   combatDamagePartApplies,
   combatResolutionSpec,
   resolveCombatDamage,
+  tempHpRollFormula,
   type CombatDamagePartSpec,
   type CombatTargetOutcome,
 } from "@/lib/combat-resolution";
@@ -245,11 +246,12 @@ export function CombatResolver({
               ? target.side === "ally"
               : target.side === "enemy"
         );
-  const visibleTargets = spec.excludeSelf
-    ? affinityTargets.filter(
-        (target) => target.targetId !== (sheetCombat?.myId ?? "self")
-      )
-    : affinityTargets;
+  const visibleTargets =
+    spec.excludeSelf && !showAll
+      ? affinityTargets.filter(
+          (target) => target.targetId !== (sheetCombat?.myId ?? "self")
+        )
+      : affinityTargets;
   const byKey = new Map(targets.map((target) => [target.key, target]));
   const allocationTotal = selected.reduce((sum, key) => sum + (allocations[key] ?? 1), 0);
   const atCap = Number.isFinite(spec.targetCap) && allocationTotal >= spec.targetCap;
@@ -418,18 +420,21 @@ export function CombatResolver({
       return Math.max(0, target.maxHp - target.currentHp);
     if (spec.healingMode === "maximum" && action.summary.healing)
       return maximizeDiceFormula(action.summary.healing);
+    const rolled = spec.sharedAmount ? areaDamage : (damage[key] ?? 0);
     if (mode === "temp-hp") {
       const apply = action.summary.tempHpApply;
-      if (apply) return apply.bonus + (apply.dice ? (damage[key] ?? 0) : 0);
-      return damage[key] ?? 0;
+      if (apply) return apply.bonus + (apply.dice ? rolled : 0);
+      const featureRoll = action.summary.tempHpRoll;
+      if (featureRoll)
+        return rolled * (featureRoll.multiplier ?? 1) + (featureRoll.bonus ?? 0);
+      return rolled;
     }
     if (mode === "healing" && action.summary.healApply) {
-      return action.summary.healApply.bonus + (damage[key] ?? 0);
+      return action.summary.healApply.bonus + rolled;
     }
     if (mode === "damage" && target) {
       return damageResolutionFor(key)?.netTotal ?? 0;
     }
-    const rolled = spec.sharedAmount ? areaDamage : (damage[key] ?? 0);
     return rolled;
   };
 
@@ -1015,7 +1020,9 @@ export function CombatResolver({
                     <small>
                       {appliesTempHp
                         ? (action.summary.tempHpApply?.dice ??
-                          action.summary.tempHpRoll?.dice)
+                          (action.summary.tempHpRoll
+                            ? tempHpRollFormula(action.summary.tempHpRoll)
+                            : undefined))
                         : (action.summary.healApply?.dice ?? action.summary.healing)}
                     </small>
                   </span>

@@ -274,6 +274,11 @@ function parseSrdFeatureRef(obj: Record<string, unknown>): SrdFeatureRef | null 
   const ref: SrdFeatureRef = { srdId: obj.srdId };
   if (typeof obj.notes === "string") ref.notes = obj.notes;
   if (isTagArray(obj.tags)) ref.tags = obj.tags;
+  if (isRecord(obj.trackerOverrides)) ref.trackerOverrides = obj.trackerOverrides;
+  if (Array.isArray(obj.actionOverrides))
+    ref.actionOverrides = obj.actionOverrides as SrdFeatureRef["actionOverrides"];
+  if (Array.isArray(obj.contentOverrides))
+    ref.contentOverrides = obj.contentOverrides as SrdFeatureRef["contentOverrides"];
   if (isRecord(obj.overrides)) ref.overrides = obj.overrides;
   return ref;
 }

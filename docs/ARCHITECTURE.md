@@ -599,6 +599,14 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   fields expose the identical path to inline homebrew actions; custom actions resolve the tracker they
   actually name rather than assuming the feature's first tracker.
 
+  Rolled feature effects use the same path: `SrdActionDef` / homebrew `ActionData` project structured
+  healing, Temporary HP, condition removal and targeting into the flat action summary before React sees
+  them. Class-table dice sentinels and ability-derived target limits resolve to concrete values at that
+  boundary; one shared roll may then heal or ward several reviewed targets. Stable per-action ids permit
+  multiple variants with the same action economy and let `actionOverrides` replace labels, effects and
+  targets without a feature-name branch. The v3 codec preserves those overrides even when the base class
+  feature is otherwise inferred, so reload/export cannot silently revert a homebrew table ruling.
+
   The boundary is deliberate: the table declares facts the SPA cannot observe (targets, hit/save results,
   rolled totals, range/line-of-sight and geometry); the engine resolves every modeled deterministic
   consequence. In a live encounter, targets are stable PC/monster instance ids and the Chronicle records

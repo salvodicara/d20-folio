@@ -8,9 +8,12 @@
 
 import type {
   AbilityCode,
+  ActionConditionRemoval,
   ActionType,
   ActionCureCondition,
-  CombatTargeting,
+  ActionHeal,
+  ActionTargeting,
+  ActionTempHpRoll,
   DamageType,
   Recovery,
   SpellSchool,
@@ -327,6 +330,8 @@ export interface TrackerData {
 
 /** Feature action data */
 export interface ActionData {
+  /** Stable suffix when a homebrew feature has multiple actions of one type. */
+  id?: string;
   /** Action type */
   type: ActionType;
   /** Short label */
@@ -347,8 +352,14 @@ export interface ActionData {
   costTracker?: string;
   /** A variable pool whose selected spend is applied as healing. */
   poolSpendEffect?: "healing";
+  /** Rolled healing applied by the shared target resolver. */
+  heal?: ActionHeal;
+  /** Rolled Temporary HP applied by the shared target resolver. */
+  tempHpRoll?: Omit<ActionTempHpRoll, "fromLevel">;
   /** Structured target defaults; the table can still override them at resolution. */
-  targeting?: CombatTargeting;
+  targeting?: ActionTargeting;
+  /** Conditions this action can end on the selected target. */
+  conditionRemoval?: Omit<ActionConditionRemoval, "fromLevel">;
   /** Conditions this homebrew action can cure by paying from its HP pool. */
   cureConditions?: ReadonlyArray<Omit<ActionCureCondition, "fromLevel">>;
 }

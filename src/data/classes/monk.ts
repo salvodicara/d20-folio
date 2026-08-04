@@ -239,12 +239,8 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
     // Action. Alternatively, you can expend 1 Focus Point to take both the
     // Disengage and the Dodge actions as a Bonus Action." The BASE tier (a
     // free Bonus-Action Disengage) costs NO Focus — only the enhanced
-    // (+Dodge) tier does. The one-action-per-(feature,type) resolver seam has
-    // no way to surface a second, differently-costed Bonus-Action row for the
-    // SAME feature (M19), so the action is modeled cost-free (the always-
-    // available base tier) and the optional Focus spend for the extra Dodge
-    // stays narrative — same "no engine-tracked cost" treatment other
-    // optional, non-computation-affecting enhancements get elsewhere.
+    // (+Dodge) tier does. Both variants are authored explicitly: stable action
+    // ids let the shared resolver keep their costs/effects independent.
     id: "monk-patient-defense",
     class: "monk",
     level: 2,
@@ -252,15 +248,24 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "bonus",
+        },
+        {
+          id: "focused",
+          type: "bonus",
+          costTracker: "monk-focus",
+          trackerCost: 1,
+          targeting: { affinity: "self", maxTargets: 1 },
           // 2024 RAW (monk:main, Level 10 — Heightened Focus): "When you expend a
           // Focus Point to use Patient Defense, you gain a number of Temporary Hit
           // Points equal to TWO rolls of your Martial Arts die." A DIE roll →
           // roll-entry (golden rule 21: the app never rolls). The rider rides this
-          // bonus action, gated by `fromLevel: 10` on the Monk OWNING-class level
-          // (so a low-level Monk never sees it); the die is the scaling
-          // classSpecific Martial Arts die (d8 at L10 → "2d8"). Override-first — a
-          // display-only formula the player rolls + enters (temp HP don't stack).
-          tempHpRoll: { rolls: 2, die: "classSpecific:martialArtsDie", fromLevel: 10 },
+          // The paid Dodge variant exists from L2. Heightened Focus adds the
+          // temp-HP rider at Monk 10 without changing its stable action id.
+          tempHpRoll: {
+            rolls: 2,
+            die: "classSpecific:martialArtsDie",
+            fromLevel: 10,
+          },
         },
       ],
     },

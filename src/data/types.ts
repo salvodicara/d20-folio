@@ -722,6 +722,20 @@ export interface CombatTargeting {
   sharedAmount?: boolean;
 }
 
+/** Authored target count for feature/homebrew actions. The runtime resolves the
+ * ability form to a concrete {@link CombatTargeting.maxTargets} before rendering. */
+export interface ActionTargeting extends Omit<CombatTargeting, "maxTargets"> {
+  maxTargets?: number | AbilityCode;
+}
+
+/** Conditions a feature/homebrew action can end, optionally unlocked by its
+ * owning-class level. */
+export interface ActionConditionRemoval {
+  options: ConditionId[];
+  max?: number;
+  fromLevel?: number;
+}
+
 /**
  * A SECOND, simultaneous damage instance a single casting deals with its OWN
  * dice + type — for the handful of 2024 spells whose two damage components have
@@ -1149,6 +1163,8 @@ export type DiceCount = "PB" | AbilityCode;
  *    word. The class-level term is the multiclass-correct owning-class level.
  */
 export interface ActionHeal {
+  /** Fixed dice formula or a class-table sentinel such as
+   * `classSpecific:martialArtsDie`. */
   dice?: string;
   /** Variable die COUNT — PB or an ability mod (Healing Hands: "PB d4s"). The
    *  resolver multiplies it out to a concrete `dice` string. Pairs with `dieFace`. */
@@ -1159,6 +1175,8 @@ export interface ActionHeal {
 }
 
 export interface SrdActionDef {
+  /** Optional stable suffix when one feature declares several actions of the same type. */
+  id?: string;
   /** Action economy cost */
   type: ActionType;
   /** Use the caster's spell attack modifier for this granted action. */
@@ -1245,7 +1263,8 @@ export interface SrdActionDef {
   saveDcAbility?: AbilityCode;
   /** Structured target/rider facts consumed by the same resolver as spells. */
   conditionApplication?: CombatConditionApplication;
-  targeting?: CombatTargeting;
+  conditionRemoval?: ActionConditionRemoval;
+  targeting?: ActionTargeting;
   area?: boolean;
   /**
    * S11 — the DECLARATIVE save-based ATTACK an action deals (Dragonborn Breath
@@ -1310,10 +1329,10 @@ export interface SrdActionDef {
    * shape {@link ActionCheckBonus} uses for a rolled check bonus. The die is
    * ROLL-ENTRY (the app never rolls); the engine resolves the `die` sentinel at the
    * action's OWNING-class level (Monk d8 at L10 → "2d8") onto
-   * {@link ActionSummary.tempHpRoll} as a display-only formula, gated behind
-   * `fromLevel` on that same level so a low-level Monk never sees it. Override-first
-   * — never auto-applied (D&D temp HP don't stack; the player enters the higher
-   * pool). Omitted for actions with no rolled temp-HP rider.
+   * {@link ActionSummary.tempHpRoll}, gated behind `fromLevel` on that same level
+   * so a low-level Monk never sees it. The shared resolver applies the entered
+   * result with max-wins Temporary-HP semantics. Omitted for actions with no
+   * rolled temp-HP rider.
    */
   tempHpRoll?: ActionTempHpRoll;
 }
@@ -1323,7 +1342,7 @@ export interface SrdActionDef {
  * (Monk Heightened Focus → Patient Defense: two rolls of the Martial Arts die).
  * Pure data; the engine resolves `die` at the owning-class level and emits the
  * concrete formula onto {@link ActionSummary.tempHpRoll}. Roll-entry (golden rule
- * 21 — the app never rolls); the temp HP is never auto-applied (override-first).
+ * 21 — the app never rolls); the shared resolver applies the reviewed result.
  */
 export interface ActionTempHpRoll {
   /** Number of die rolls added as Temporary HP (Heightened Focus: 2). */
@@ -1334,6 +1353,10 @@ export interface ActionTempHpRoll {
    * (Heightened Focus: `"classSpecific:martialArtsDie"` → the scaling Monk die).
    */
   die: string;
+  /** Deterministic additive term after the entered roll. */
+  plus?: HealTerm;
+  /** Multiply the entered roll before adding `plus` (Mantle of Inspiration: 2). */
+  multiplier?: number;
   /**
    * Owning-class level at which this rider unlocks (Heightened Focus: 10). Omit
    * for an always-available rider.

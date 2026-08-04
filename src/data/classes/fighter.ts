@@ -175,6 +175,7 @@ export const FIGHTER_FEATURES: SrdClassFeatureData[] = [
           // OWNING class's level (multiclass-correct) and the presenter localizes
           // the word — "1d10 + Fighter level" / "1d10 + livello da Guerriero".
           heal: { dice: "1d10", plus: { kind: "class-level", classId: "fighter" } },
+          targeting: { affinity: "self", maxTargets: 1 },
         },
       ],
     },

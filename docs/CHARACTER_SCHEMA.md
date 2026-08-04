@@ -109,30 +109,31 @@ read-shim (the migration converted every live main doc + snapshot; golden rule 1
 
 ## `build` — the character definition
 
-| Key                       | Type                                            | Notes                                                                                                                                   |
-| ------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                    | string                                          | the character's name (a choice)                                                                                                         |
-| `player`                  | string?                                         | player name; omit when empty                                                                                                            |
-| `race`                    | id                                              | e.g. `"human"` (not `"Human"`)                                                                                                          |
-| `classes`                 | `ClassEntry[]`                                  | **R4** — one entry per class (single-class = length 1); see below                                                                       |
-| `background`              | id                                              | e.g. `"wayfarer"`                                                                                                                       |
-| `alignment`               | id?                                             | e.g. `"true-neutral"`; omit when unset                                                                                                  |
-| `abilities`               | `{STR,DEX,CON,INT,WIS,CHA}`                     | the chosen base scores                                                                                                                  |
-| `asi`                     | `{ background?: {AB:n} }`                       | the 2024 background ability increases                                                                                                   |
-| `originFeats`             | `{ background?: id, species?: id }`             | only the CHOSEN ones (a fixed-background feat is inferred)                                                                              |
-| `skills`                  | `{ id: "proficient"\|"expertise" }`             | chosen proficiencies; JoaT half-profs are NEVER stored                                                                                  |
-| `toolChoices`             | `{ "<src>::tool-slot-N": id[] }`?               | tool-CHOICE picks as STABLE TOOL IDS (see below); omit when none                                                                        |
-| `languageIds`             | `id[]`?                                         | MANUAL language picks as STABLE SRD ids (see below); omit empty                                                                         |
-| `customLanguages`         | `string[]`?                                     | homebrew languages, VERBATIM label; omit empty                                                                                          |
-| `toolProficiencyIds`      | `id[]`?                                         | MANUAL tool picks as STABLE tool ids (see below); omit empty                                                                            |
-| `customToolProficiencies` | `string[]`?                                     | homebrew tool profs, VERBATIM label; omit empty                                                                                         |
-| `spells`                  | `[ id \| custom ]`                              | only player-chosen / non-inferred spells                                                                                                |
-| `weapons`                 | `[ {id, qty, …} \| custom ]`                    | owned weapons (Talon is the one custom)                                                                                                 |
-| `equipment`               | `[ {id, …} \| custom ]`                         | owned gear / armor / magic items                                                                                                        |
-| `customs`                 | `{ features?: [...], conditions?: [...] }`      | genuine homebrew only; custom feature actions may optionally carry structured targeting, variable-pool healing and paid condition cures |
-| `overrides`               | `{ ac?, speed?, proficiencyBonus?, saves?, … }` | manual deltas; only when set (`speed` = the effective-walking-Speed override; NO `languages`/`tools` strings)                           |
-| `lore`                    | `{ traits?, ideals?, … }`                       | flavor; only non-empty fields                                                                                                           |
-| `quote`                   | string?                                         | omit when empty                                                                                                                         |
+| Key                       | Type                                            | Notes                                                                                                                              |
+| ------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                    | string                                          | the character's name (a choice)                                                                                                    |
+| `player`                  | string?                                         | player name; omit when empty                                                                                                       |
+| `race`                    | id                                              | e.g. `"human"` (not `"Human"`)                                                                                                     |
+| `classes`                 | `ClassEntry[]`                                  | **R4** — one entry per class (single-class = length 1); see below                                                                  |
+| `background`              | id                                              | e.g. `"wayfarer"`                                                                                                                  |
+| `alignment`               | id?                                             | e.g. `"true-neutral"`; omit when unset                                                                                             |
+| `abilities`               | `{STR,DEX,CON,INT,WIS,CHA}`                     | the chosen base scores                                                                                                             |
+| `asi`                     | `{ background?: {AB:n} }`                       | the 2024 background ability increases                                                                                              |
+| `originFeats`             | `{ background?: id, species?: id }`             | only the CHOSEN ones (a fixed-background feat is inferred)                                                                         |
+| `skills`                  | `{ id: "proficient"\|"expertise" }`             | chosen proficiencies; JoaT half-profs are NEVER stored                                                                             |
+| `toolChoices`             | `{ "<src>::tool-slot-N": id[] }`?               | tool-CHOICE picks as STABLE TOOL IDS (see below); omit when none                                                                   |
+| `languageIds`             | `id[]`?                                         | MANUAL language picks as STABLE SRD ids (see below); omit empty                                                                    |
+| `customLanguages`         | `string[]`?                                     | homebrew languages, VERBATIM label; omit empty                                                                                     |
+| `toolProficiencyIds`      | `id[]`?                                         | MANUAL tool picks as STABLE tool ids (see below); omit empty                                                                       |
+| `customToolProficiencies` | `string[]`?                                     | homebrew tool profs, VERBATIM label; omit empty                                                                                    |
+| `spells`                  | `[ id \| custom ]`                              | only player-chosen / non-inferred spells                                                                                           |
+| `weapons`                 | `[ {id, qty, …} \| custom ]`                    | owned weapons (Talon is the one custom)                                                                                            |
+| `equipment`               | `[ {id, …} \| custom ]`                         | owned gear / armor / magic items                                                                                                   |
+| `features`                | `[ { srdId, notes?, actionOverrides?, … } ]`?   | chosen SRD refs and inferred-feature overrides; a bare inferred ref is omitted, but user data is preserved and merged on rehydrate |
+| `customs`                 | `{ features?: [...], conditions?: [...] }`      | genuine homebrew only; custom actions may carry stable ids, dynamic targeting, healing, Temporary HP and condition removal         |
+| `overrides`               | `{ ac?, speed?, proficiencyBonus?, saves?, … }` | manual deltas; only when set (`speed` = the effective-walking-Speed override; NO `languages`/`tools` strings)                      |
+| `lore`                    | `{ traits?, ideals?, … }`                       | flavor; only non-empty fields                                                                                                      |
+| `quote`                   | string?                                         | omit when empty                                                                                                                    |
 
 ### `ClassEntry` (R4 — the multiclass breakdown)
 

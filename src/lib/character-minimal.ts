@@ -173,8 +173,13 @@ function derivedFeatureIds(classes: ClassEntry[]): Set<string> {
 /** A feature ref the minimizer keeps: custom, or an srdId NOT in the derived set. */
 function isStoredFeature(f: unknown, derivedIds: Set<string>): boolean {
   if (f && typeof f === "object" && "custom" in f) return true;
-  const srdId = (f as { srdId?: string }).srdId;
-  return typeof srdId === "string" && !derivedIds.has(srdId);
+  if (!f || typeof f !== "object") return false;
+  const ref = f as Record<string, unknown>;
+  const srdId = ref.srdId;
+  if (typeof srdId !== "string") return false;
+  // A bare inferred ref is reconstructible. Notes and overrides are player data
+  // and must survive the minimal codec even when the engine infers the feature.
+  return !derivedIds.has(srdId) || Object.keys(ref).some((key) => key !== "srdId");
 }
 
 /** The only keys a BARE inferred always-prepared spell ref carries. A ref with
@@ -515,8 +520,19 @@ export function rehydrateCharacter(min: MinimalCharacter): CharacterData {
   // Merge the DERIVED class+subclass features back in front of the stored extras
   // (chosen feats / custom), deduping any stored ref that's also derived.
   // Idempotent — the lossless-on-render invariant.
-  const derived = inferFeatures(classes);
-  const derivedIds = new Set(derived.map((f) => f.srdId));
+  const inferred = inferFeatures(classes);
+  const derivedIds = new Set(inferred.map((f) => f.srdId));
+  const storedDerived = new Map(
+    conformed.flatMap((feature) =>
+      !("custom" in feature) && derivedIds.has(feature.srdId)
+        ? [[feature.srdId, feature] as const]
+        : []
+    )
+  );
+  const derived = inferred.map((feature) => ({
+    ...feature,
+    ...storedDerived.get(feature.srdId),
+  }));
   const seenStored = new Set<string>(derivedIds);
   const storedKept = conformed.filter((f) => {
     if (!isStoredFeature(f, derivedIds)) return false;

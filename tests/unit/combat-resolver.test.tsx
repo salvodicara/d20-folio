@@ -550,6 +550,23 @@ describe("universal combat resolution", () => {
     expect(screen.getByRole("button", { name: /lyra/i })).toBeInTheDocument();
   });
 
+  it("makes an authored self exclusion overridable through Any creature", () => {
+    render(
+      <CombatResolver
+        action={action({
+          tempHpRoll: { dice: "1d8" },
+          targeting: { affinity: "ally", excludeSelf: true, maxTargets: 2 },
+        })}
+        sheetCombat={combat([pc(), allyPc()])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    expect(screen.queryByRole("button", { name: /lyra/i })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Any creature" }));
+    expect(screen.getByRole("button", { name: /lyra/i })).toBeInTheDocument();
+  });
+
   it("actually cures a modeled condition on the caster", () => {
     useCharacterStore.setState({
       character: {
@@ -600,6 +617,44 @@ describe("universal combat resolution", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
     expectApplied([{ kind: "healing", targetId: "pc-u2", amount: 9 }]);
+  });
+
+  it("heals and ends a peer condition in one reviewed feature action", () => {
+    const ally: EncounterCombatantView = {
+      ...allyPc(),
+      currentHp: 8,
+      conditions: ["poisoned"],
+    };
+    render(
+      <CombatResolver
+        action={action({
+          healApply: { dice: "d8", bonus: 3 },
+          conditionRemoval: { options: ["poisoned"], max: 1 },
+          targeting: { affinity: "any", maxTargets: 1 },
+        })}
+        sheetCombat={combat([pc(), ally])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /borin/i }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: /healing for borin/i }), {
+      target: { value: "5" },
+    });
+    expect(screen.getByRole("button", { name: /cure poisoned/i })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+    expectApplied([
+      { kind: "healing", targetId: "pc-u2", amount: 8 },
+      {
+        kind: "condition",
+        targetId: "pc-u2",
+        conditionId: "poisoned",
+        active: false,
+      },
+    ]);
   });
 
   it("spends one HP pool atomically across ally healing and paid condition cures", () => {
@@ -954,6 +1009,69 @@ describe("universal combat resolution", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
     expectApplied([{ kind: "healing", targetId: "pc-u2", amount: 7 }]);
+  });
+
+  it("adds a feature heal's deterministic bonus to one shared roll for every target", () => {
+    const allies = [
+      { ...allyPc(), currentHp: 8 },
+      { ...secondAllyPc(), currentHp: 9 },
+    ];
+    render(
+      <CombatResolver
+        action={action({
+          healApply: { dice: "1d10", bonus: 7 },
+          targeting: {
+            affinity: "ally",
+            excludeSelf: true,
+            maxTargets: 2,
+            sharedAmount: true,
+          },
+        })}
+        sheetCombat={combat([pc(), ...allies])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /borin/i }));
+    fireEvent.click(screen.getByRole("button", { name: /cora/i }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: /healing you rolled/i }), {
+      target: { value: "6" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+    expectApplied([
+      { kind: "healing", targetId: "pc-u2", amount: 13 },
+      { kind: "healing", targetId: "pc-u3", amount: 13 },
+    ]);
+  });
+
+  it("applies a shared multiplied feature roll as Temporary HP", () => {
+    render(
+      <CombatResolver
+        action={action({
+          tempHpRoll: { dice: "1d8", multiplier: 2, bonus: 1 },
+          targeting: {
+            affinity: "ally",
+            excludeSelf: true,
+            maxTargets: 2,
+            sharedAmount: true,
+          },
+        })}
+        sheetCombat={combat([pc(), allyPc(), secondAllyPc()])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /borin/i }));
+    fireEvent.click(screen.getByRole("button", { name: /cora/i }));
+    expect(screen.getByText("2×(1d8)+1")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("spinbutton", { name: /healing you rolled/i }), {
+      target: { value: "4" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+    expectApplied([
+      { kind: "temp-hp", targetId: "pc-u2", amount: 9 },
+      { kind: "temp-hp", targetId: "pc-u3", amount: 9 },
+    ]);
   });
 
   it("resolves heal-or-harm per target in one casting", () => {
