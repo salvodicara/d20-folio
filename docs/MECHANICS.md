@@ -102,6 +102,13 @@ S10, Gaze of Two Minds — an Eldritch Invocation can carry `mechanics.actions` 
 own sibling pass in `resolveFeatureActions` at the Warlock owning-class level) —
 see `docs/ARCHITECTURE.md` (Trackers · Actions · Combat model).
 
+**Chosen-spell provenance repair** is a choice-seam concern, not a new Grant or a read-time guess.
+`incompleteFreeCastChoiceFeatIds` reports a feat only when its declarative spell-choice slots require
+free-cast provenance absent from the stored spell refs. The player resolves the original choice through
+`pendingSpellChoicesForFeat` + `FeatSpellChoicesPicker`; `applySpellChoicePicks` can enrich one existing
+known spell in place and refuses to replace another source's provenance. The resulting spell then uses
+the ordinary free-cast tracker and action transaction.
+
 **Source-owned conditions** use one provenance-preserving lifecycle. A concentrated action creates a
 typed condition occurrence per exact target; the effective condition set is the union of manual state,
 the current solo source occurrences and live encounter occurrences. Identical conditions from different

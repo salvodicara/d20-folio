@@ -155,6 +155,67 @@ describe("applySpellChoicePicks", () => {
       notes: "saved-for-later",
     });
   });
+
+  it("enriches a selected known spell instead of duplicating or losing feat provenance", () => {
+    const slots = pendingSpellChoicesForFeat(
+      FEATS_BY_ID.get("magic-initiate-wizard") ?? {}
+    );
+    const spellSlot = slots.find((slot) => slot.kind === "spell");
+    if (!spellSlot) throw new Error("expected the Magic Initiate spell slot");
+    const existing: SrdSpellRef[] = [
+      { srdId: "shield", prepared: false, notes: "already in the spellbook" },
+    ];
+
+    const after = applySpellChoicePicks(
+      existing,
+      { [spellSlot.slotId]: ["shield"] },
+      slots,
+      { STR: 8, DEX: 14, CON: 12, INT: 18, WIS: 10, CHA: 8 }
+    );
+
+    expect(after).toHaveLength(1);
+    expect(after[0]).toMatchObject({
+      srdId: "shield",
+      prepared: true,
+      alwaysPrepared: true,
+      notes: "already in the spellbook",
+      spellAbilityOverride: "INT",
+      freeCastSource: {
+        sourceId: "magic-initiate-wizard",
+        rest: "long",
+        usesPerRest: 1,
+      },
+    });
+    expect(existing[0]).toMatchObject({ prepared: false });
+  });
+
+  it("never overwrites another feature's recorded free-cast provenance", () => {
+    const slots = pendingSpellChoicesForFeat(
+      FEATS_BY_ID.get("magic-initiate-wizard") ?? {}
+    );
+    const spellSlot = slots.find((slot) => slot.kind === "spell");
+    if (!spellSlot) throw new Error("expected the Magic Initiate spell slot");
+    const existing: SrdSpellRef[] = [
+      {
+        srdId: "shield",
+        prepared: true,
+        freeCastSource: {
+          sourceId: "another-feature:shield",
+          rest: "long",
+          usesPerRest: 1,
+        },
+      },
+    ];
+
+    const after = applySpellChoicePicks(
+      existing,
+      { [spellSlot.slotId]: ["shield"] },
+      slots
+    );
+    expect(after[0]).toMatchObject({
+      freeCastSource: { sourceId: "another-feature:shield" },
+    });
+  });
 });
 
 describe("2024 Magic Initiate — player-chosen casting ability (Int/Wis/Cha)", () => {

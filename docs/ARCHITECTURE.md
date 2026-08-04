@@ -830,6 +830,14 @@ render in ONE container attributed to that cause (the feat's expanded entry, or 
 `FeatChoicesInline` block; every other source's slots render in the shared `FeatureChoicesSection`),
 honoring the ASI cap of 20 standard / 30 Epic Boons (one cause, one container).
 
+Grandfathered spell-choice repair reuses that same acquisition seam. The pure
+`incompleteFreeCastChoiceFeatIds` read boundary detects only a machine-verifiable missing
+`freeCastSource`; it never guesses which spell the player chose. The Features card then opens the
+ordinary `FeatSpellChoicesPicker`, and `applySpellChoicePicks` enriches an already-known selected spell
+in place (preserving notes and identity) or adds it normally. A different source's recorded free-cast
+provenance is never overwritten. Once materialized, the normal spell-card transaction owns casting,
+resource spend, persistence and undo with no repair-specific runtime branch.
+
 `level-up.ts` produces a `LevelUpPreview` with structured `LevelUpChange[]` so the wizard renders
 before-and-after diffs without re-deriving them on the UI side.
 

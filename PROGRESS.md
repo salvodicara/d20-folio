@@ -180,6 +180,15 @@ reopen, remove, sequential swaps, NPC allies and participant removal; Bo and Chi
 pin the feat and their exact +PB totals. The real-team long-tail audit continues with Lucky and Savage
 Attacker.
 
+**Live-team truth audit — Origin-feat follow-up CLOSED on branch (2026-08-04):** Lucky now exposes its
+two distinct PB/Long-Rest spends (grant Advantage to self or impose Disadvantage on an attacker) through
+one shared tracker, while Santaera's Savage Attacker contract is pinned to once per turn and weapon-only.
+Briox then exposed a grandfathered Magic Initiate choice whose known spell had never received its free-cast
+provenance. The engine now detects only that verifiable absence and routes the player through the normal
+feat spell picker; selecting an already-known spell enriches the existing ref without duplication, fixture
+rewrites, guessing or overwriting another feature's provenance. Once complete, the ordinary cast/resource/
+undo pipeline takes over. The six-fixture long-tail audit continues with equipment and item resources.
+
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark
 ink for its nested glyph/count despite the carved socket's correct fixed ink, and the end-encounter

@@ -64,6 +64,7 @@ import { Tracker, type TrackerColor } from "@/components/shared/Tracker";
 import { CollapsibleSearch } from "@/components/shared/CollapsibleSearch";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { FeatureAddModal } from "@/components/sheet/FeatureAddModal";
+import { FeatSpellChoiceRepairModal } from "@/components/sheet/FeatSpellChoiceRepairModal";
 import { PoolSpendModal, type PoolSpendRequest } from "@/components/sheet/PoolSpendModal";
 import {
   UniversalCard,
@@ -113,6 +114,7 @@ import {
   type CompendiumPickerSpec,
   type PickerCtx,
 } from "@/features/compendium/picker";
+import { incompleteFreeCastChoiceFeatIds } from "@/lib/feature-choice-repair";
 
 /**
  * Build the "More" detail renderers for a spec-driven re-pick group — reusing the
@@ -201,6 +203,7 @@ export function FeaturesTab() {
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [featureModalOpen, setFeatureModalOpen] = useState(false);
+  const [repairFeatId, setRepairFeatId] = useState<string | null>(null);
   // U6 — editing an existing custom feature in place (opens the same modal in
   // edit mode, writing back to the stored index).
   const [editCustom, setEditCustom] = useState<{
@@ -634,6 +637,10 @@ export function FeaturesTab() {
     if (!search.trim()) return features;
     return features.filter((f) => matchesSearch(search, f.name, f.nameEn));
   }, [features, search]);
+  const incompleteChoiceFeatIds = useMemo(
+    () => new Set(character ? incompleteFreeCastChoiceFeatIds(character.character) : []),
+    [character]
+  );
 
   /** Group the filtered list into ordered sections for sec-head dividers. */
   const grouped = useMemo(() => {
@@ -670,6 +677,10 @@ export function FeaturesTab() {
   if (!character) return null;
 
   function handleUse(feature: (typeof features)[number]) {
+    if (incompleteChoiceFeatIds.has(feature.id)) {
+      setRepairFeatId(feature.id);
+      return;
+    }
     if (!feature.tracker) return;
     const remaining = feature.tracker.total - feature.tracker.used;
     if (remaining <= 0) return;
@@ -804,6 +815,16 @@ export function FeaturesTab() {
         onClose={() => setFeatureModalOpen(false)}
       />
 
+      {repairFeatId && (
+        <FeatSpellChoiceRepairModal
+          featId={repairFeatId}
+          name={
+            features.find((feature) => feature.id === repairFeatId)?.name ?? repairFeatId
+          }
+          onClose={() => setRepairFeatId(null)}
+        />
+      )}
+
       {/* U6 — edit an existing custom feature in place (same modal, edit mode). */}
       <FeatureAddModal
         open={editCustom != null}
@@ -901,6 +922,7 @@ export function FeaturesTab() {
           <div className="uc-stack">
             {section.items.map((feature) => {
               const tracker = feature.tracker;
+              const needsChoices = incompleteChoiceFeatIds.has(feature.id);
               const hasUses = tracker ? tracker.total - tracker.used > 0 : false;
               const comp = feature.companion;
 
@@ -1108,7 +1130,13 @@ export function FeaturesTab() {
 
                   {/* Foot: Use CTA for tracked features in play; otherwise the
                       honest "always active" hint for passives. */}
-                  {tracker && sheetMode === "play" ? (
+                  {needsChoices ? (
+                    <UniversalCardFoot>
+                      <Button size="sm" onClick={() => setRepairFeatId(feature.id)}>
+                        {t("featChoices.complete")}
+                      </Button>
+                    </UniversalCardFoot>
+                  ) : tracker && sheetMode === "play" ? (
                     <UniversalCardFoot tags={[t("features.tagResource")]}>
                       <Button
                         size="sm"

@@ -1,5 +1,7 @@
 {
   "featChoices": {
+    "complete": "Completa le scelte",
+    "completeTitle": "Completa {{name}}",
     "pickCantrips_one": "Scegli {{count}} trucchetto",
     "pickCantrips_other": "Scegli {{count}} trucchetti",
     "pickSpells_one": "Scegli {{count}} incantesimo",

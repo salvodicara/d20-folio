@@ -1129,6 +1129,12 @@ routes are `React.lazy` + Suspense, so at that instant the page is still the emp
 
 ### Tabs (the character cockpit modes: Play · Spells · Inventory · Features · Bio)
 
+An incomplete feat spell choice is one repair action, not an error lecture. Its expanded Features card
+replaces the unusable generic Use control with **Complete choices**, opening the ordinary spell picker
+inside the shared modal body/footer with only Cancel and Save. Already-known spells remain valid choices;
+completion removes the CTA immediately. No raw feature id, warning paragraph or parallel repair UI is
+exposed.
+
 The cockpit `TabStrip` **is the compendium type ribbon** (owner, 2026-07-31 — one ribbon anatomy
 app-wide), and both are **PROTRUDING INDEX TABS** (owner: "devono sporgere come linguette" — the
 notebook/rubrica metaphor): the tab row floats on the scene ABOVE the page, overlapping the page's
