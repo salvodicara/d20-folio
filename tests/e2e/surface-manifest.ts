@@ -213,6 +213,22 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   // COMPENDIUM-LUX — one entry's READ view (`?sel=` deep link): the illuminated
   // masthead (seal · eyebrow · Cinzel title) is its own surface.
   { slug: "compendium-entry", route: "/compendium?type=spell&sel=fireball" },
+  // ITEM-ART — the mundane and magic-item leaves are distinct visual contracts:
+  // dense catalogue rows stay icon-led, while the opened leaf may carry
+  // recognition art. Keep both enrolled so imagery can never silently crowd the
+  // facts, regress either theme, or disappear at the phone breakpoint.
+  {
+    slug: "compendium-equipment-entry",
+    route: "/compendium?type=items&sel=e:longsword",
+  },
+  {
+    slug: "compendium-magic-item-entry",
+    route: "/compendium?type=items&sel=m:ring-of-protection",
+  },
+  {
+    slug: "compendium-item-entry-no-art",
+    route: "/compendium?type=items&sel=e:club",
+  },
   // COMPENDIUM-LUX — the facet bar UNFOLDED (it starts collapsed behind the
   // Filters disclosure at every width, so the chips need their own swept state).
   { slug: "compendium-filters", route: "/compendium" },

@@ -5,6 +5,7 @@ import { JSDOM_TS_TESTS, PACK_JSDOM_TS_TESTS } from "./tests/lanes";
 import {
   contentPackEnabled,
   packAliasTarget,
+  packItemArtAliasTarget,
   packMonsterArtAliasTarget,
   packMonstersAliasTarget,
 } from "./scripts/content-pack-mode";
@@ -19,6 +20,7 @@ const define = {
 
 const alias = {
   "@": path.resolve(__dirname, "./src"),
+  "@pack/item-art": packItemArtAliasTarget(),
   "@pack/monster-art": packMonsterArtAliasTarget(),
   // The pack's lazy monster sub-entry — mirrors vite.config.ts, and MUST stay
   // ahead of "@pack" (string aliases match by prefix).

@@ -2836,8 +2836,18 @@ art cannot migrate user data or fork SRD/pack rendering.
 art is WebP/AVIF with intrinsic dimensions, lazy decode, a reserved aspect-ratio well, and no eager
 Compendium-list fetch. Item-art directories are excluded from the install precache and use a bounded
 CacheFirst runtime cache, matching monster-art behavior: an inspected item remains offline; an unseen
-gallery is never force-downloaded. Initial targets: ≤12 KiB thumbnail, ≤45 KiB 512px detail; re-baseline
+gallery is never force-downloaded. Initial targets: ≤12 KiB thumbnail, ≤45 KiB 672×840 detail; re-baseline
 only with measured visual benefit. The no-art path is first-class and screenshot-tested.
+
+**Reading-leaf composition (pilot, 2026-08-04).** Item imagery resolves through
+`src/data/item-art.ts` and appears only when the full Compendium leaf is open. At the two-leaf spread
+it occupies a restrained 4:5 facing bookplate beside the facts; on phone it becomes a centred plate
+before the copy so the 2-column fact rubric never compresses beside it. The image is decorative to
+assist recognition—the localized title remains the accessible identity—and uses intrinsic dimensions,
+lazy decode and a fixed aspect ratio. The mundane Longsword and magical Ring of Protection are the
+first contrast pair: the former carries no magic promise; the latter uses only a restrained internal
+amber reflection. A Club leaf permanently covers the no-art path. This is the template for expansion,
+not permission to add imagery to operational rows or selectors.
 
 **Accessibility + provenance.** Icons adjacent to text are decorative; icon-only controls keep a
 localized accessible name and 44px target. Color is never the only classifier. Every vendored glyph

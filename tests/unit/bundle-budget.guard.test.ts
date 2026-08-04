@@ -377,7 +377,14 @@ const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see AR
 // raw (≈ the +2.90 KB gz the eager closure grew by). Entry count unchanged and no
 // new asset family entered the precache — it is the WHY layer's own bytes. (The
 // 8376.51 figure recorded on 2026-08-03 drifted +0.62 KiB on main since.)
-const PRECACHE_CEILING_KIB = 8392;
+// 2026-08-04 (Compendium item-art pilot): raised 8392 → 8420. The 84.1 KiB of
+// Longsword + Ring WebPs are NOT in the manifest (dedicated CacheFirst runtime
+// family); the measured composed precache is 8407.30 KiB / 322 entries. The
+// +15.30 KiB is the typed public/private URL resolver, page-only bookplate UI,
+// and three permanent screenshot-surface contracts; +12.7 KiB headroom keeps
+// the guard off exact-fit noise while any accidental art precache would still
+// exceed it by at least one 41 KiB plate.
+const PRECACHE_CEILING_KIB = 8420;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

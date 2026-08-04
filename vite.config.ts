@@ -9,6 +9,7 @@ import { runI18nChecks } from "./scripts/i18n/check-i18n.ts";
 import {
   fsAllowRoots,
   packAliasTarget,
+  packItemArtAliasTarget,
   packMonsterArtAliasTarget,
   packMonstersAliasTarget,
 } from "./scripts/content-pack-mode.ts";
@@ -170,6 +171,9 @@ export default defineConfig({
           // gallery into every first install would be wasteful. Cache each portrait
           // on first view; a visited monster remains available offline thereafter.
           "**/assets/monsters/*.webp",
+          // Item plates follow the bestiary rule: only an opened leaf pays for
+          // its illustration; the visited object then remains available offline.
+          "**/assets/items/**/*.webp",
         ],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4 MiB — bundle is ~2.1 MiB
         runtimeCaching: [
@@ -180,6 +184,18 @@ export default defineConfig({
               cacheName: "monster-art-cache",
               expiration: {
                 maxEntries: 600,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+                purgeOnQuotaError: true,
+              },
+            },
+          },
+          {
+            urlPattern: /\/assets\/items\/.*\.webp$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "item-art-cache",
+              expiration: {
+                maxEntries: 240,
                 maxAgeSeconds: 60 * 60 * 24 * 365,
                 purgeOnQuotaError: true,
               },
@@ -292,6 +308,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@pack/item-art": packItemArtAliasTarget(),
       "@pack/monster-art": packMonsterArtAliasTarget(),
       // The pack's lazy bestiary-data sub-entry, kept OFF the
       // eager-reachable `@pack` barrel (docs/ARCHITECTURE.md → the content-pack
@@ -316,8 +333,24 @@ export default defineConfig({
     rollupOptions: {
       output: {
         assetFileNames(assetInfo) {
-          // Public source paths are flattened to bare names by Rolldown; every
-          // module-imported WebP is bestiary art (scene art lives in `public/`).
+          // Keep runtime-cached catalogue art in stable families. The item kind
+          // remains in the emitted path too, preserving the typed identity seam
+          // when a mundane and magic object happen to share a file name.
+          const itemKind =
+            assetInfo.originalFileNames
+              .map(
+                (file) =>
+                  file.match(/[\\/]assets[\\/]items[\\/](equipment|magic)[\\/]/)?.[1]
+              )
+              .find(Boolean) ??
+            assetInfo.names
+              .map((name) => name.match(/^(equipment|magic)--/)?.[1])
+              .find(Boolean);
+          if (itemKind) return `assets/items/${itemKind}/[name]-[hash][extname]`;
+
+          // Public source paths can be flattened to bare names by Rolldown; all
+          // remaining module-imported WebPs are bestiary art (scene art lives in
+          // `public/` and keeps its own path).
           const isMonsterPortrait =
             assetInfo.originalFileNames.some((file) =>
               /[\\/]assets[\\/]monsters[\\/]/.test(file)

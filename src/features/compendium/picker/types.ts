@@ -77,6 +77,9 @@ export interface PickerDetailView {
    *  through the shared inline-markdown renderer (one seam for every type), so
    *  specs never wrap it themselves. */
   description?: string;
+  /** Optional illustration for the full Compendium reading leaf only. Picker
+   *  modals deliberately ignore it so operational selection stays compact. */
+  entryArt?: ReactNode;
   /** Type-specific blocks (higher-levels · mechanics · properties · tag chips). */
   extras?: ReactNode;
 }

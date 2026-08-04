@@ -1071,6 +1071,18 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   // masthead title (EN/IT proper noun) so the surface is proof the detail —
   // not just the page chrome — painted.
   "compendium-entry": { edit: false, ready: readyText(/fireball|palla di fuoco/i) },
+  "compendium-equipment-entry": {
+    edit: false,
+    ready: readyText(/longsword|spada lunga/i),
+  },
+  "compendium-magic-item-entry": {
+    edit: false,
+    ready: readyText(/ring of protection|anello (?:della|di) protezione/i),
+  },
+  "compendium-item-entry-no-art": {
+    edit: false,
+    ready: readyText(/club|randello/i),
+  },
   // The deep-linked statblock leaf — anchor on the entry's own masthead noun so
   // the surface proves the statblock painted, THEN on every arm of the rules-text
   // colour grammar. The leaf is `mimic` (same noun in EN + IT) because it is the

@@ -10,9 +10,9 @@
  * (`pnpm test:srd-only` / `pnpm build:srd-only`). Consumed by `vite.config.ts`,
  * `vitest.config.ts`, and the i18n leak-lock (`scripts/i18n/catalogue-io.ts`).
  *
- * The bestiary owns two lazy sub-entries: `@pack/monsters` for statblocks and
- * `@pack/monster-art` for their canonical portrait URLs. Neither may enter the
- * eager `@pack` barrel.
+ * Heavy catalogue art/data owns narrow sub-entries (`@pack/monsters`,
+ * `@pack/monster-art`, `@pack/item-art`) so it never rides the eager `@pack`
+ * barrel merely because the app composes the private corpus.
  */
 import { existsSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -44,6 +44,14 @@ export const CONTENT_PACK_MONSTER_ART_ENTRY = path.join(
   "content-pack",
   "data",
   "monster-art.ts"
+);
+
+/** Absolute path of the pack's optional canonical-item-art module (may not exist). */
+export const CONTENT_PACK_ITEM_ART_ENTRY = path.join(
+  ROOT,
+  "content-pack",
+  "data",
+  "item-art.ts"
 );
 
 /** True when this build/test run composes the private content pack in. */
@@ -81,6 +89,11 @@ export function packMonstersAliasTarget(): string {
 /** The module the `@pack/monster-art` alias resolves to for this run. */
 export function packMonsterArtAliasTarget(): string {
   return contentPackEnabled() ? CONTENT_PACK_MONSTER_ART_ENTRY : PACK_EMPTY_ENTRY;
+}
+
+/** The module the `@pack/item-art` alias resolves to for this run. */
+export function packItemArtAliasTarget(): string {
+  return contentPackEnabled() ? CONTENT_PACK_ITEM_ART_ENTRY : PACK_EMPTY_ENTRY;
 }
 
 /**

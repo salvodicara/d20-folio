@@ -76,7 +76,11 @@ export function EntryView({ spec, entry, ctx, onBack, spread = false }: EntryVie
         )}
       </div>
       {/* The eyebrow moved up into the masthead — don't repeat it in the body. */}
-      <CompendiumDetailBody view={{ ...view, eyebrow: undefined }} locale={ctx.locale} />
+      <CompendiumDetailBody
+        view={{ ...view, eyebrow: undefined }}
+        locale={ctx.locale}
+        showEntryArt
+      />
     </div>
   );
 }

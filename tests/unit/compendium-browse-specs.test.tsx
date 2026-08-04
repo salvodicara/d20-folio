@@ -448,3 +448,25 @@ describe("equipmentSpec — armor AC stat line localizes (row meta + detail)", (
     expect(acDetailValue(mediumDex, "it")).toBe(`${mediumDex.ac?.base} + DES (max ${n})`);
   });
 });
+
+describe("Compendium item art — reading-leaf only data contract", () => {
+  it("supplies a plate only for mapped items and leaves missing art truly absent", () => {
+    const longsword = SRD_EQUIPMENT.find((item) => item.id === "longsword");
+    const club = SRD_EQUIPMENT.find((item) => item.id === "club");
+    const ring = SRD_MAGIC_ITEMS.find((item) => item.id === "ring-of-protection");
+    expect(longsword && club && ring).toBeTruthy();
+    if (!longsword || !club || !ring) return;
+
+    expect(
+      isValidElement(
+        equipmentSpec.detail(longsword, ctx("en"), { added: false }).entryArt
+      )
+    ).toBe(true);
+    expect(
+      equipmentSpec.detail(club, ctx("en"), { added: false }).entryArt
+    ).toBeUndefined();
+    expect(
+      isValidElement(magicItemSpec.detail(ring, ctx("en"), { added: false }).entryArt)
+    ).toBe(true);
+  });
+});
