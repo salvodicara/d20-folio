@@ -7068,7 +7068,7 @@ button.trk-pip:active {
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
   mask-position: center;
-  opacity: 0.11;
+  opacity: 0.055;
   pointer-events: none;
 }
 /* Light ember — the crest reads SCORCHED into the vellum band: struck in the warm
@@ -7076,7 +7076,7 @@ button.trk-pip:active {
    ghost, so the emblem carries real presence — still a watermark behind the title. */
 [data-theme="light"] .page-head-crest {
   background: rgb(var(--ember-umber));
-  opacity: 0.5;
+  opacity: 0.14;
 }
 
 /* The masthead is deliberately STATIC on navigation (owner, 2026-07-10): no
@@ -14383,9 +14383,10 @@ button.party-avatar-btn:focus-visible {
    quel bordo all'angolo, il pennacchio") — the corner fitting is the SILHOUETTE
    of a human-engraved frame-corner spandrel (Openclipart #282416, CC0; vertex
    knot removed by vector surgery; derivation + provenance in the study
-   library), mounted as a CSS MASK painted with the hero-frame border's own ink
-   mix — fitting and frame line share one colour BY CONSTRUCTION in every
-   theme. Tile origin = the outer rule's outer edge; inset -1px seats it
+   library), mounted as a CSS MASK. The approved current+B+BG3 hybrid keeps that
+   silhouette intact and strikes it with a restrained warm gold→bronze ramp:
+   enough material variation to read as metal, never the cold silver reserved
+   for selected state. Tile origin = the outer rule's outer edge; inset -1px seats it
    pixel-coincident ON the host's 1px border. Hosts keep SQUARE corners under
    the fitting (geometric necessity: a rounded line would curve out from under
    the straight fitting and read as a second line). */
@@ -14401,7 +14402,13 @@ button.party-avatar-btn:focus-visible {
   pointer-events: none;
   z-index: 0;
   inset: -1px;
-  background: color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium));
+  background: linear-gradient(
+    180deg,
+    var(--accent-primary-bright),
+    var(--metal-bronze) 52%,
+    var(--accent-primary)
+  );
+  opacity: 0.58;
   mask-image:
     url("/assets/ornaments/corner-tl.svg"), url("/assets/ornaments/corner-tr.svg"),
     url("/assets/ornaments/corner-bl.svg"), url("/assets/ornaments/corner-br.svg");
@@ -14413,10 +14420,41 @@ button.party-avatar-btn:focus-visible {
   mask-size: 48px 48px;
   mask-repeat: no-repeat;
 }
+[data-theme="light"] .page-head.framed::before,
+[data-theme="light"] .folio-panel.gilt-frame::after,
+[data-theme="light"] .modal-head::after {
+  opacity: 0.54;
+}
 /* The dialog head wears the fittings SCALED to its band (owner: "pennacchi
    scalati, proporzionati" — the masthead's 48px would overwhelm the head). */
 .modal-head::after {
   mask-size: 32px 32px;
+}
+
+/* The approved B influence: the already-ratified CC0 centre-loop ricalco
+   (`--wb-knot`, §16.3) now seats ON the lower rule of top-level mastheads and
+   dialog heads. One small weave, never a second separator and never repeated
+   inside ordinary panels. It deliberately reuses the existing traced asset —
+   no new SVG and no parallel ornament vocabulary. */
+.page-head.framed::after,
+.modal-head::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  bottom: -9px;
+  width: 72px;
+  height: 25px;
+  pointer-events: none;
+  transform: translateX(-50%);
+  background: var(--wb-knot) center / contain no-repeat;
+  opacity: 0.62;
+}
+.modal-head::before {
+  bottom: -7px;
+  width: 56px;
+  height: 20px;
+  opacity: 0.54;
 }
 
 /* Engraved ceremonial titling (same push): the Cinzel register reads STRUCK into
