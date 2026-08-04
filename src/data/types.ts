@@ -1295,8 +1295,9 @@ export interface SrdActionDef {
    * `fromLevel` entry surfaces only once the action's OWNING-class level reaches it
    * (the SAME `scalingLevel` the tracker uses), so a low-level Paladin sees the
    * base Poisoned cure alone. The engine resolves it onto
-   * {@link ActionSummary.cureOptions}; the pool is never auto-debited
-   * (override-first). Omitted for actions with no cure clause.
+   * {@link ActionSummary.cureOptions}; the shared combat resolver combines chosen
+   * cures and healing into one exact, live-validated pool debit. Omitted for
+   * actions with no cure clause.
    */
   cureConditions?: ReadonlyArray<ActionCureCondition>;
   /**

@@ -518,7 +518,8 @@ export interface ActionSummary {
    * On Hands: 5 HP ends Poisoned; +Restoring Touch's six conditions at Paladin
    * 14). Locale-FREE: `condition` is a stable {@link ConditionId} the presenter
    * localizes via `conditionLabel`, `costHp` the HP drawn from the pool. The pool
-   * is never auto-debited (override-first). Already filtered to the conditions
+   * is charged by the shared resolver as part of the action's exact pool debit.
+   * Already filtered to the conditions
    * available at the character's level. Omitted when the action cures nothing.
    */
   cureOptions?: Array<{ condition: ConditionId; costHp: number }>;
@@ -4661,7 +4662,8 @@ function resolveFeatureActions(
       // `fromLevel`, resolved on the action's OWNING-class level (the SAME
       // `scalingLevel` the tracker uses, so a low-level Paladin sees the base
       // Poisoned cure alone). Condition ids stay stable (golden rule 7) — the
-      // label is localized at the render edge. The pool is never auto-debited.
+      // label is localized at the render edge; the resolver charges the chosen
+      // cure together with any healing as one exact pool debit.
       if (action.cureConditions) {
         const cures = action.cureConditions
           .filter((c) => c.fromLevel === undefined || scalingLevel >= c.fromLevel)
