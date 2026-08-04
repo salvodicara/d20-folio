@@ -1994,28 +1994,28 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
     });
   });
 
-  describe("armEffectTimers", () => {
-    it("arms an active maxRounds state (Rage → 100) and is idempotent", () => {
-      useCharacterStore
-        .getState()
-        .setCharacter(barbarianDoc({ activeFeatures: ["barbarian-rage"] }));
-      useCharacterStore.getState().armEffectTimers();
-      expect(
-        useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
-      ).toEqual({ roundsLeft: 100 });
-      // Re-arming leaves the existing countdown untouched.
-      useCharacterStore.getState().armEffectTimers();
-      expect(
-        useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
-      ).toEqual({ roundsLeft: 100 });
-    });
-
-    it("no-ops when no maxRounds state is active", () => {
+  describe("active effect timers", () => {
+    it("manual toggles atomically arm, clear, and restart the state's timer", () => {
       useCharacterStore.getState().setCharacter(barbarianDoc());
-      useCharacterStore.getState().armEffectTimers();
+      useCharacterStore.getState().setActiveFeature("barbarian-rage", true);
       expect(
-        useCharacterStore.getState().character?.session.effectTimers
+        useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
+      ).toEqual({ roundsLeft: 100 });
+
+      useCharacterStore.getState().advanceEffectTimers();
+      expect(
+        useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
+      ).toEqual({ roundsLeft: 99 });
+
+      useCharacterStore.getState().setActiveFeature("barbarian-rage", false);
+      expect(
+        useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
       ).toBeUndefined();
+
+      useCharacterStore.getState().setActiveFeature("barbarian-rage", true);
+      expect(
+        useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
+      ).toEqual({ roundsLeft: 100 });
     });
   });
 

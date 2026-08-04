@@ -594,9 +594,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     );
     if (action.activatesKey && activated) {
       cs.setActiveFeature(action.activatesKey, true);
-      // FRONTIER-S3 — arm the round countdown for the state we just lit (Rage →
-      // 10 rounds), so its timer shows immediately and the End-Turn seam ticks it.
-      cs.armEffectTimers();
     }
     if (action.source === "spell" && action.activatesKey)
       cs.setActiveSpellCastLevel(
@@ -972,7 +969,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           );
           if (action.activatesKey && activated) {
             cs.setActiveFeature(action.activatesKey, true);
-            cs.armEffectTimers();
           }
           if (action.activatesKey)
             cs.setActiveSpellCastLevel(action.activatesKey, opt.level);
@@ -1449,7 +1445,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           );
           if (action.activatesKey && activated) {
             characterStore.setActiveFeature(action.activatesKey, true);
-            characterStore.armEffectTimers();
           }
           if (action.activatesKey)
             characterStore.setActiveSpellCastLevel(

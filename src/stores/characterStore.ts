@@ -382,13 +382,6 @@ interface CharacterState {
    */
   recoverPerTurnTrackers: () => (() => void) | null;
   /**
-   * FRONTIER-S3 — arm the round countdown for every active `maxRounds` state that
-   * has no timer yet (Rage just activated → 100 rounds). Idempotent: a state that
-   * already has a timer is left untouched. Called when a state lights so the UI
-   * can show its countdown immediately (the actual decrement happens at End Turn).
-   */
-  armEffectTimers: () => void;
-  /**
    * S9 — drinking a CONSUMED buff potion (Potion of Speed / Giant Strength / …)
    * arms its self-sustaining `potion:<itemId>` round countdown in
    * `session.effectTimers` (reusing the A2 cadence map), so its remaining
@@ -1656,6 +1649,26 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // afterward (a Long Rest never CLEARS an existing Inspiration either).
     const gainsInspiration =
       gainsHeroicInspirationOnLongRest(character) || character.session.inspiration;
+    // A `manual` tracker represents a table/clock/die outcome the app cannot
+    // infer (Wings of Flying's 1d12-hour cooldown, homebrew counters). A Long
+    // Rest recovers every rest-based resource, but must not fabricate that
+    // external event. Preserve only those spent entries; missing stays the
+    // canonical zero-used state for every recoverable tracker.
+    const recoveryByTracker = new Map(
+      resolveTrackers(character).map((tracker) => [tracker.id, tracker] as const)
+    );
+    const trackers: typeof character.session.trackers = {};
+    for (const [id, spent] of Object.entries(character.session.trackers)) {
+      const tracker = recoveryByTracker.get(id);
+      if (tracker?.recovery === "manual" || tracker?.autoRecover === false) {
+        trackers[id] = spent;
+        continue;
+      }
+      if (tracker?.longRestRecovery !== undefined) {
+        const used = Math.max(0, spent.used - tracker.longRestRecovery);
+        if (used > 0) trackers[id] = { used };
+      }
+    }
     set({
       character: {
         ...character,
@@ -1665,7 +1678,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           hp: { current: max, temp: 0 },
           hitDice: { used: newHitDiceUsed },
           spellSlots: {},
-          trackers: {},
+          trackers,
           concentration: "",
           exhaustion: Math.max(0, character.session.exhaustion - exhaustionRemoved),
           inspiration: gainsInspiration,
@@ -1812,17 +1825,38 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
             ([entryKey]) => entryKey !== key
           )
         );
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          activeFeatures: next,
-          activeSpellCastLevels:
-            levels && Object.keys(levels).length > 0 ? levels : undefined,
-        },
+    const previousTimers = character.session.effectTimers ?? {};
+    const timers = Object.fromEntries(
+      Object.entries(previousTimers).filter(([timerKey]) => timerKey !== key)
+    );
+    let updated: CharacterDoc = {
+      ...character,
+      session: {
+        ...character.session,
+        activeFeatures: next,
+        activeSpellCastLevels:
+          levels && Object.keys(levels).length > 0 ? levels : undefined,
+        effectTimers: Object.keys(timers).length > 0 ? timers : undefined,
       },
-    });
+    };
+    if (isActive) {
+      const timed = resolveActiveTimedEffects(updated).find(
+        (effect) => effect.activeKey === key
+      );
+      if (timed) {
+        updated = {
+          ...updated,
+          session: {
+            ...updated.session,
+            effectTimers: {
+              ...(updated.session.effectTimers ?? {}),
+              [key]: { roundsLeft: timed.maxRounds },
+            },
+          },
+        };
+      }
+    }
+    set({ character: updated });
   },
 
   setActiveSpellCastLevel: (key, level) => {
@@ -1881,30 +1915,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         },
       });
     };
-  },
-
-  armEffectTimers: () => {
-    if (get().readonly) return;
-    const character = get().character;
-    if (!character) return;
-    const active = resolveActiveTimedEffects(character);
-    if (active.length === 0) return;
-    const prev = character.session.effectTimers ?? {};
-    let changed = false;
-    const next = { ...prev };
-    for (const eff of active) {
-      if (next[eff.activeKey] === undefined) {
-        next[eff.activeKey] = { roundsLeft: eff.maxRounds };
-        changed = true;
-      }
-    }
-    if (!changed) return;
-    set({
-      character: {
-        ...character,
-        session: { ...character.session, effectTimers: next },
-      },
-    });
   },
 
   consumePotionBuff: (itemId: string) => {

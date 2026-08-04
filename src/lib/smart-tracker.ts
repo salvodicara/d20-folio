@@ -61,6 +61,9 @@ import {
   type PactWeapon,
   type PactWeaponRider,
   type MarkedTargetScope,
+  grantField,
+  hasGrantField,
+  topGrantRef,
 } from "@/lib/grants";
 import {
   resolveGrantSourcesForFeatures,
@@ -188,6 +191,10 @@ export interface ResolvedTracker {
   total: number;
   /** Recovery timing */
   recovery: Recovery;
+  /** Whether a matching rest may refill this tracker without table input. */
+  autoRecover?: false;
+  /** Fixed amount restored at Long Rest/dawn; omitted means full recovery. */
+  longRestRecovery?: number;
   /** Die type (optional) */
   die?: string;
   /** Whether this is a pool (HP-like) resource */
@@ -2546,7 +2553,7 @@ export function resolveTrackers(character: CharacterDoc): RawResolvedTracker[] {
   for (const t of [
     ...resolveSrdTrackers(character),
     ...resolveRaceTrackers(character, level),
-    ...resolveFreeCastItemTrackers(character),
+    ...resolveMagicItemTrackers(character),
     ...resolveFreeCastFeatTrackers(character),
   ]) {
     if (seen.has(t.id)) continue;
@@ -2560,7 +2567,7 @@ export function resolveTrackers(character: CharacterDoc): RawResolvedTracker[] {
  * The largest `free-cast-spell` per-rest charge count on a grant list — a
  * charged magic item's charge-pool CAP (multiple grants on one item share the
  * one pool, first-charge-count wins). ONE derivation shared by the rail's
- * item tracker (`resolveFreeCastItemTrackers`) and the Inventory row's charge
+ * item tracker (`resolveMagicItemTrackers`) and the Inventory row's charge
  * display, so the two surfaces can never disagree (golden rule 6). Returns 0
  * when the grants carry no pool.
  */
@@ -2583,10 +2590,24 @@ export function freeCastItemChargeMax(grants: ReadonlyArray<Grant> | undefined):
 }
 
 /**
+ * One item charge cap for Inventory, Resources, casting, and activation actions.
+ * A mixed item still owns one pool keyed by item id; the largest declaration wins.
+ */
+export function magicItemChargeMax(grants: ReadonlyArray<Grant> | undefined): number {
+  let charges = freeCastItemChargeMax(grants);
+  for (const g of grants ?? []) {
+    if (g.type !== "while-active" || !g.activation?.tracker) continue;
+    const total = Number(g.activation.tracker.total);
+    if (Number.isFinite(total) && total > charges) charges = total;
+  }
+  return charges;
+}
+
+/**
  * S9 — CHARGE trackers for equipped charged magic items (Wand of Magic
- * Missiles, Staff of Healing, …). A charged item carries a `free-cast-spell`
- * grant whose implicit per-rest counter (`chargesPerRest`) IS the item's
- * charge pool; that counter is already created+debited by the cast flow
+ * Missiles, Winged Boots, Staff of Healing, …). A charged item carries a cast
+ * grant or activated-property tracker whose counter IS the item's charge pool;
+ * that counter is created+debited by the shared commit flow
  * (`freeCastSourcesForSpell` + the cost-engine `free-cast` op keyed by the
  * source id), but it never surfaced in the rail. This emits ONE resolved
  * tracker per such grant, keyed by the ITEM id (the same id the cast debits),
@@ -2594,19 +2615,35 @@ export function freeCastItemChargeMax(grants: ReadonlyArray<Grant> | undefined):
  *
  * Walks ONLY equipped, attunement-satisfied magic-item sources (the same gate
  * `resolveGrantSourcesForEquipment` applies for every other item effect), so
- * an unequipped wand contributes no phantom row. Recovery is `dawn` (charged
- * items regain at dawn) — informational; the engine never auto-refills.
+ * an unequipped wand contributes no phantom row. Cast-only pools keep the
+ * established `dawn` default; an activated property may supply an exact tracker
+ * cadence and opt out of automatic refill when the amount needs table input.
  * Deduped by item id at the caller; multiple grants on one item (rare) share
  * the one pool, first-charge-count wins.
  */
-function resolveFreeCastItemTrackers(character: CharacterDoc): RawResolvedTracker[] {
+function resolveMagicItemTrackers(character: CharacterDoc): RawResolvedTracker[] {
   const out: RawResolvedTracker[] = [];
   const seen = new Set<string>();
   for (const source of resolveGrantSourcesForEquipment(character.character.equipment)) {
     if (source.ref?.kind !== "magic-item") continue;
     if (seen.has(source.id)) continue;
-    const charges = freeCastItemChargeMax(source.grants);
+    const charges = magicItemChargeMax(source.grants);
     if (charges <= 0) continue;
+    const activationTracker = (source.grants ?? []).find(
+      (g) => g.type === "while-active" && g.activation?.tracker
+    );
+    const activationSpec =
+      activationTracker?.type === "while-active"
+        ? activationTracker.activation?.tracker
+        : undefined;
+    const castSpec = (source.grants ?? []).find(
+      (g): g is Extract<Grant, { type: "free-cast-spell" | "free-cast-from-list" }> =>
+        (g.type === "free-cast-spell" || g.type === "free-cast-from-list") &&
+        (g.chargesPerRest ?? 0) > 0
+    );
+    const autoRecover = activationSpec?.autoRecover ?? castSpec?.autoRecover;
+    const longRestRecovery =
+      activationSpec?.longRestRecovery ?? castSpec?.longRestRecovery;
     seen.add(source.id);
     out.push({
       id: source.id,
@@ -2614,7 +2651,9 @@ function resolveFreeCastItemTrackers(character: CharacterDoc): RawResolvedTracke
       // the rail and the cast row attribute the same item, golden rule 6).
       label: srdText("magic-item", source.id, "name"),
       total: charges,
-      recovery: "dawn",
+      recovery: activationSpec?.recovery ?? "dawn",
+      ...(autoRecover === false ? { autoRecover: false } : {}),
+      ...(longRestRecovery !== undefined ? { longRestRecovery } : {}),
       isPool: true,
       // No raw `unit`: the rail falls back to the localized "uses"/usesWord word
       // (a charge IS a use of the pool) — keeps the unit i18n-clean (no English
@@ -2626,13 +2665,69 @@ function resolveFreeCastItemTrackers(character: CharacterDoc): RawResolvedTracke
 }
 
 /**
+ * Equipped magic-item activated properties enter the same action → tracker →
+ * active-state → timer pipeline as Rage/Bladesong. The grant is the only source
+ * of the action economy, cost, state key, and duration; no item ids are branched
+ * on here.
+ */
+function resolveMagicItemActivationActions(character: CharacterDoc): RawResolvedAction[] {
+  const { session } = character;
+  const pinnedSet = new Set(session.pinnedActions);
+  const out: RawResolvedAction[] = [];
+  for (const source of resolveGrantSourcesForEquipment(character.character.equipment)) {
+    if (source.ref?.kind !== "magic-item") continue;
+    for (const [grantIndex, grant] of (source.grants ?? []).entries()) {
+      if (grant.type !== "while-active" || !grant.activation) continue;
+      const tracker = grant.activation.tracker;
+      const total = tracker ? resolveTrackerTotal(tracker.total, character) : 0;
+      const used = tracker ? (session.trackers[source.id]?.used ?? 0) : 0;
+      const id = `item-activate-${source.id}-${grant.activeKey}`;
+      const grantRef = topGrantRef(source, grant, grantIndex);
+      out.push({
+        id,
+        name: hasGrantField(grantRef, "label", grant.label)
+          ? grantField(grantRef, "label", grant.label)
+          : srdText("magic-item", source.id, "name"),
+        description: srdText("magic-item", source.id, "description"),
+        type: grant.activation.action,
+        source: "feature",
+        spellLevel: null,
+        concentration: false,
+        costsSlot: false,
+        ...(tracker
+          ? {
+              costTracker: source.id,
+              costTrackerIsPool: tracker.isPool ?? true,
+              trackerCost: 1,
+            }
+          : {}),
+        pinned: pinnedSet.has(id),
+        defaultPinned: false,
+        activatesKey: grant.activeKey,
+        summary: tracker
+          ? {
+              uses: {
+                current: Math.max(0, total - used),
+                total,
+                isPool: tracker.isPool ?? true,
+                unit: tracker.unit,
+              },
+            }
+          : {},
+      });
+    }
+  }
+  return out;
+}
+
+/**
  * S9 — the item→multi-spell-pool ACTION bridge. A charged magic item that casts ONE
  * OF several spells from a shared charge pool (Wand of Binding / Wand of Fear, Ring
  * of Animal Influence, Staff of Charming) carries a `free-cast-from-list` grant but
  * NO `mechanics.actions`, so — unlike a class feature — its pool never surfaces a
  * Play-board card. This emits ONE `RawResolvedAction` per such equipped, attunement-
  * satisfied item, keyed `item-cast-<itemId>` with `costTracker = <itemId>` (the SAME
- * item-charge tracker `resolveFreeCastItemTrackers` surfaces and the cast debits). The
+ * item-charge tracker `resolveMagicItemTrackers` surfaces and the cast debits). The
  * card routes through the EXISTING `costTracker`→`free-cast-from-list` picker seam
  * (`TurnEconomyProvider.handleSelect` → `DivineInterventionModal`), so no new picker
  * is built (golden rule 3). Walks the SAME equipped/attuned gate as every other item
@@ -2693,7 +2788,7 @@ function resolveItemPoolCastActions(character: CharacterDoc): RawResolvedAction[
  *  (a) FIXED `free-cast-spell` grants on a feat/feature/species source (Fey-Touched
  *      Misty Step, a heritage feat's granted spells, Magic Initiate's spell once
  *      its grant is modeled) — NOT magic items (their shared charge pool is
- *      `resolveFreeCastItemTrackers`).
+ *      `resolveMagicItemTrackers`).
  *  (b) CHOSEN free-cast spells (the player's div/ench pick) — stamped on the spell
  *      ref's `freeCastSource` (already `${featId}:${spellId}` at pick time), so
  *      resolved from `character.spells`, not from a grant.
@@ -2764,7 +2859,7 @@ function forEachFeatFreeCast(
  * DERIVED from the grants/stamps (golden rules 2 + 6) rather than a hand-declared
  * `mechanics.tracker` that mirrored "how many free-casts" by hand (which collapsed
  * two spells onto one shared 0/2 pool where casting either locked both). The
- * generalization of `resolveFreeCastItemTrackers` to feats — same RawResolvedTracker
+ * generalization of the magic-item tracker bridge to feats — same RawResolvedTracker
  * shape, same debit key, no new tracker concept. Row label = the SPELL name; the
  * granting feat name rides along as the hover tooltip (`description`).
  */
@@ -2904,6 +2999,10 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
       description: featLoc(srdFeature, "description"),
       total: resolvedTotal,
       recovery: tracker.recovery,
+      ...(tracker.autoRecover === false ? { autoRecover: false } : {}),
+      ...(tracker.longRestRecovery !== undefined
+        ? { longRestRecovery: tracker.longRestRecovery }
+        : {}),
       die: tracker.die,
       isPool: tracker.isPool,
       unit: tracker.unit,
@@ -2935,6 +3034,10 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
         ),
         total: extraTotal,
         recovery: extra.recovery,
+        ...(extra.autoRecover === false ? { autoRecover: false } : {}),
+        ...(extra.longRestRecovery !== undefined
+          ? { longRestRecovery: extra.longRestRecovery }
+          : {}),
         die: extra.die,
         isPool: extra.isPool,
         unit: extra.unit,
@@ -2978,6 +3081,10 @@ function resolveRaceTrackers(
         description: raceTraitLoc(race.id, trait, "description"),
         total,
         recovery: spec.recovery,
+        ...(spec.autoRecover === false ? { autoRecover: false } : {}),
+        ...(spec.longRestRecovery !== undefined
+          ? { longRestRecovery: spec.longRestRecovery }
+          : {}),
         die: spec.die,
         isPool: spec.isPool,
         unit: spec.unit,
@@ -4156,6 +4263,7 @@ export function resolveActions(character: CharacterDoc): RawResolvedAction[] {
     // S9 — charged multi-spell items (Wand of Binding/Fear, Ring of Animal
     // Influence, Staff of Charming) surface a pool-picker cast card.
     ...resolveItemPoolCastActions(character),
+    ...resolveMagicItemActivationActions(character),
   ]) {
     if (seenIds.has(a.id)) continue;
     seenIds.add(a.id);
@@ -6607,6 +6715,7 @@ export function getShortRestRecoveries(
   // `shortRestRecovery` formula's `"level"` term scales correctly for a
   // multiclass character. Returns nothing — only sets the map when applicable.
   const addRecovery = (id: string, spec: TrackerSpec, scalingLevel: number): void => {
+    if (spec.autoRecover === false) return;
     if (
       spec.recovery === "short-rest" ||
       spec.recovery === "short-or-long-rest" ||

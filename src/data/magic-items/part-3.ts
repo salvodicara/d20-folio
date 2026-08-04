@@ -322,6 +322,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
         spellIds: ["burning-hands", "fireball", "wall-of-fire"],
         spellCosts: { "burning-hands": 1, fireball: 3, "wall-of-fire": 4 },
         chargesPerRest: 10,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -351,6 +352,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
           "wall-of-ice": 4,
         },
         chargesPerRest: 10,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -444,6 +446,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
         type: "free-cast-spell",
         spellId: "polymorph",
         chargesPerRest: 7,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -457,9 +460,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     type: "armor",
     attunement: true,
     // Always-on B/P/S resistance; the 10-minute B/P/S Immunity is the "Metal
-    // Shell" activated property (1/dawn) — ALL-IN: modeled behind a timed
-    // while-active toggle. The dawn activation still lacks an item-use resource
-    // seam.
+    // Shell" activated property (1/dawn) — ALL-IN: modeled behind the shared
+    // item action/tracker/timer seam.
     grants: [
       { type: "damage-resistance", damageType: "bludgeoning" },
       { type: "damage-resistance", damageType: "piercing" },
@@ -467,6 +469,10 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
       {
         type: "while-active",
         activeKey: "armor-of-invulnerability-metal-shell",
+        activation: {
+          action: "action",
+          tracker: { total: "1", recovery: "dawn" },
+        },
         duration: { kind: "timed", minutes: 10, maxRounds: 100 },
         grants: [
           { type: "damage-immunity", damageType: "bludgeoning" },
@@ -903,6 +909,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
           "wall-of-force": 5,
         },
         chargesPerRest: 10,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -979,6 +986,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
                 spellIds: ["chain-lightning", "gust-of-wind", "wind-wall"],
                 spellCosts: { "chain-lightning": 3, "gust-of-wind": 2, "wind-wall": 1 },
                 chargesPerRest: 5,
+                autoRecover: false,
                 rest: "long",
               },
             ],
@@ -1002,6 +1010,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
                   "wall-of-stone": 3,
                 },
                 chargesPerRest: 5,
+                autoRecover: false,
                 rest: "long",
               },
             ],
@@ -1025,6 +1034,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
                   "wall-of-fire": 3,
                 },
                 chargesPerRest: 5,
+                autoRecover: false,
                 rest: "long",
               },
             ],
@@ -1056,6 +1066,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
                   "water-walk": 2,
                 },
                 chargesPerRest: 5,
+                autoRecover: false,
                 rest: "long",
               },
             ],

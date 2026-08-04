@@ -78,7 +78,7 @@ import {
   featureClassRow,
   attackStatWhy,
   weaponDieWhy,
-  freeCastItemChargeMax,
+  magicItemChargeMax,
   masteryNumbers,
 } from "@/lib/smart-tracker";
 import { breakdownTotal } from "@/lib/value-breakdown";
@@ -114,7 +114,7 @@ export interface ChargesVM {
   current: number;
   max: number;
   /**
-   * Set when the pool is TRACKER-BACKED (a `free-cast-spell` charge pool keyed
+   * Set when the pool is TRACKER-BACKED (a cast or activated-property pool keyed
    * by the item id — the SAME counter the Play-board cast debits and the rail
    * shows, golden rule 6). The spend affordance then routes to the session
    * tracker; `null` means the pool lives on the stored `ref.charges` (manual /
@@ -703,7 +703,7 @@ function buildItemVM(
   // reads (and spends) THAT, never a parallel `ref.charges` copy that could
   // drift. Items without a tracker pool keep the stored `ref.charges` counter.
   const poolId = !isCustom && magicItem ? ref.srdId : null;
-  const poolMax = poolId && magicItem ? freeCastItemChargeMax(magicItem.grants) : 0;
+  const poolMax = poolId && magicItem ? magicItemChargeMax(magicItem.grants) : 0;
   const charges: ChargesVM | null =
     poolId && poolMax > 0
       ? {

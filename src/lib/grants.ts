@@ -26,6 +26,7 @@ import type {
   DamageType,
   FeatCategory,
   SpellSchool,
+  TrackerSpec,
   WeaponCategory,
   WeaponMastery,
   WeaponType,
@@ -1211,6 +1212,10 @@ export type Grant =
        * levels its rule permits (Wand of Fireballs: 3/4/5 for 1/2/3 charges).
        */
       castLevels?: ReadonlyArray<{ level: number; cost: number }>;
+      /** The cadence is known, but its recovered amount requires table input. */
+      autoRecover?: false;
+      /** Fixed partial amount recovered at the rest/dawn boundary. */
+      longRestRecovery?: number;
       rest: "short" | "long";
       // Full AbilityCode range — most feats use INT/WIS/CHA but a handful
       // (Mark of Passage: DEX) pin a physical ability for casting.
@@ -1275,6 +1280,10 @@ export type Grant =
        * = its own dedicated 1/LR tracker, so `1` is redundant-but-explicit there).
        */
       chargesPerRest?: number;
+      /** The cadence is known, but its recovered amount requires table input. */
+      autoRecover?: false;
+      /** Fixed partial amount recovered at the rest/dawn boundary. */
+      longRestRecovery?: number;
       /** Rest cadence the cap recovers on; defaults to the debited tracker's. */
       rest?: "short" | "long";
       /** The tracker id to debit per use; defaults to the source feature id. */
@@ -2080,6 +2089,19 @@ export type Grant =
       type: "while-active";
       activeKey: string;
       label?: BiText;
+      /**
+       * An equipped magic item's explicit activation contract. Magic items do not
+       * own `mechanics.actions`, so this is the one declarative bridge that lets
+       * the shared action/tracker/undo pipeline surface their activated property.
+       * The optional tracker is the item's existing session pool (keyed by item
+       * id); variable dawn recovery and table-clock cooldowns remain manually
+       * correctable through that same tracker because the app never rolls dice or
+       * owns an out-of-combat clock.
+       */
+      activation?: {
+        action: ActionType;
+        tracker?: TrackerSpec;
+      };
       grants: ReadonlyArray<Grant>;
       /**
        * USE-APPLIES (2026-06-12) — optional duration/maintenance metadata for an

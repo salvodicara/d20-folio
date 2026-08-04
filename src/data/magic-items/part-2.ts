@@ -151,6 +151,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-spell",
         spellId: "dominate-beast",
         chargesPerRest: 3,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -177,6 +178,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-spell",
         spellId: "detect-magic",
         chargesPerRest: 3,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -199,6 +201,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-spell",
         spellId: "magic-missile",
         chargesPerRest: 7,
+        autoRecover: false,
         castLevels: [
           { level: 1, cost: 1 },
           { level: 2, cost: 2 },
@@ -273,6 +276,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-spell",
         spellId: "web",
         chargesPerRest: 7,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -531,6 +535,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-spell",
         spellId: "teleport",
         chargesPerRest: 3,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -682,6 +687,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-from-list",
         spellIds: ["animal-friendship", "speak-with-animals"],
         chargesPerRest: 3,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -819,6 +825,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-from-list",
         spellIds: ["charm-person", "command", "comprehend-languages"],
         chargesPerRest: 10,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -843,6 +850,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-spell",
         spellId: "cure-wounds",
         chargesPerRest: 10,
+        autoRecover: false,
         castLevels: [
           { level: 1, cost: 1 },
           { level: 2, cost: 2 },
@@ -856,6 +864,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         spellIds: ["lesser-restoration", "mass-cure-wounds"],
         spellCosts: { "lesser-restoration": 2, "mass-cure-wounds": 5 },
         chargesPerRest: 10,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -878,6 +887,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         spellIds: ["giant-insect", "insect-plague"],
         spellCosts: { "giant-insect": 4, "insect-plague": 5 },
         chargesPerRest: 10,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -928,6 +938,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
           "wall-of-thorns": 6,
         },
         chargesPerRest: 6,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -1004,6 +1015,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         spellIds: ["hold-monster", "hold-person"],
         spellCosts: { "hold-monster": 5, "hold-person": 2 },
         chargesPerRest: 7,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -1043,6 +1055,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         spellIds: ["command", "fear"],
         spellCosts: { command: 1, fear: 3 },
         chargesPerRest: 7,
+        autoRecover: false,
         rest: "long",
       },
     ],
@@ -1064,6 +1077,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-spell",
         spellId: "fireball",
         chargesPerRest: 7,
+        autoRecover: false,
         castLevels: [
           { level: 3, cost: 1 },
           { level: 4, cost: 2 },
@@ -1090,6 +1104,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-spell",
         spellId: "lightning-bolt",
         chargesPerRest: 7,
+        autoRecover: false,
         castLevels: [
           { level: 3, cost: 1 },
           { level: 4, cost: 2 },
@@ -1130,12 +1145,18 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "wondrous",
     attunement: true,
     // ALL-IN: the activated wings are modeled behind a timed while-active
-    // toggle. Fly 60 ft. The variable 1d12-hour cooldown still lacks an
-    // item-activation cooldown primitive.
+    // toggle. Fly 60 ft. The variable 1d12-hour cooldown is a manual-recovery
+    // tracker: the table rolls it, and the app never fabricates elapsed time.
     grants: [
       {
         type: "while-active",
         activeKey: "wings-of-flying",
+        activation: {
+          action: "action",
+          // The 1d12-hour recharge is rolled at the table; `manual` prevents a
+          // rest from pretending that variable real time has elapsed.
+          tracker: { total: "1", recovery: "manual" },
+        },
         duration: { kind: "timed", minutes: 60, maxRounds: 600 },
         grants: [{ type: "fly-speed", amount: 60 }],
       },

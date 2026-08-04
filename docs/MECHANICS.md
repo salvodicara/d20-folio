@@ -380,6 +380,14 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   `activatesKey` is derived, casting never self-buffs, and the toggle stays MANUALLY light-able from
   the rail (override-first) — how a WARDED creature's own sheet turns the buff on. Omitted = auto-light
   (the self-buff default: Shield of Faith, Blur, Mage Armor).
+  Equipped magic items use the same seam without inventing `mechanics.actions`: an optional
+  `while-active.activation` declares the Action/Bonus Action plus its existing `TrackerSpec` cost.
+  The shared item bridge emits the normal action with `activatesKey`; commit/undo, Resources,
+  Inventory charges, and the timer all share the item-id tracker. Variable recharge dice stay an
+  editable `dawn` tracker with `autoRecover:false`; real-time rolled cooldowns use `manual`. Long
+  Rest resets neither, so it never invents a die result or elapsed table time.
+  A fixed partial refill declares `longRestRecovery:N` (Spirit Board: 1); the ordinary omission means
+  full recovery. The same recovery facts apply to charged casts and activated properties.
 - **USE-APPLIES seam.** Using an action AUTO-APPLIES its deterministic (dice-free) effects with the
   immediate-commit-with-undo model: a `temp-hp` grant carrying a `slot` (Orc Adrenaline Rush, Shifter
   Shifting, Chef) emits a resolved number applied on use; a `while-active.duration` lets the End-Turn
@@ -396,8 +404,9 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
     `resolvePerTurnRecoveryTrackerIds` finds the spent ones; `characterStore.recoverPerTurnTrackers`
     resets them (undoable).
   - **Round timers** (`while-active.duration.maxRounds`). A `maintained` OR `timed` state declaring a
-    `maxRounds` cap (Rage = 10) arms an `effectTimers[activeKey]` countdown when it lights
-    (`armEffectTimers`), which `advanceEffectTimers` decrements each End Turn and AUTO-DROPS at 0 (clears
+    `maxRounds` cap (Rage = 100) arms an `effectTimers[activeKey]` countdown when it lights
+    (`setActiveFeature`), which
+    `advanceEffectTimers` decrements each End Turn and AUTO-DROPS at 0 (clears
     the toggle, logs an `effect-expired` event, fires a toast). The chip shows "N rounds left". Persisted
     in the OPTIONAL `session.effectTimers` (absent = no timers; back-compat). All undoable via the single
     End-Turn undo. **Consumed buff potions** (S9) reuse the SAME map without a `while-active` source: a
@@ -539,11 +548,14 @@ The structural reasons the declarative-grant model is intentionally not the righ
   double-counts. Cover stays reference-only, like Dodge (`base-dodge`), its settled
   universal-defensive sibling: the `COVER_REFERENCE` table renders on-demand in the Play tab's
   "Rules Reference" panel (`SituationalRules`, collapsed by default — blooms on a header click).
-- **Item charge / duration / sentience timing.** The mechanical effect of a while-active item is
-  modeled (Boots of Speed → `speed-multiplier`), but the time-box itself (the timer / per-use charge
-  accounting) stays manual until a charge/duration-aware activation layer exists. A sentient item's own
-  senses / Intelligence / personality are the _item's_ creature-like properties, not bonuses to the
-  wielder → descriptive item text.
+- **Item charge / duration / sentience timing.** Activated while-active items now ride the generic
+  action/tracker/timer seam (Boots of Speed, Winged Boots, Wings of Flying, Armor of Invulnerability;
+  the composed pack adds Mythallar Cloak). Fixed durations and per-activation spends are automatic and
+  undoable; variable recharge dice and external elapsed time remain explicit tracker corrections.
+  Boots of Speed's 10-minute cumulative reservoir is usable in increments across scenes, so its action,
+  live timer, and benefits are wired but the remaining cross-scene reservoir stays table-owned. A
+  sentient item's own senses / Intelligence / personality are the _item's_ creature-like properties,
+  not bonuses to the wielder → descriptive item text.
 - **Hit-Dice-funded recovery.** Trackers restored by spending Hit Dice (some Berserker / Paladin
   variants) rather than a pool stay prose tied to the Hit-Dice pool.
 - **Familiar Reaction-attack (Pact of the Chain).** "When you take the Attack action, you can forgo

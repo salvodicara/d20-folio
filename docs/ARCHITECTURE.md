@@ -311,6 +311,8 @@ trait. The spec:
 interface TrackerSpec {
   total: string; // formula: "PB", "level", "CHA", "1+level", "floor(level/2)"
   recovery: Recovery; // "short-rest" | "long-rest" | "dawn" | "per-turn" | "manual" | …
+  autoRecover?: false; // cadence known; recovered amount requires table input
+  longRestRecovery?: number; // fixed partial amount; omitted means full recovery
   die?: string; // "d6" / "d8" / "d10" / "d12" for inspiration-style
   isPool?: boolean; // pool mode (Sorcery Points)
   unit?: string; // "pts" / "HP" / "uses"
@@ -325,7 +327,8 @@ resolve. Trackers scale via `levels[]` for class-table thresholds (e.g. CD uses 
 per-character `trackerOverrides` overlay the SRD defaults (the universal override pattern).
 
 Some tracker rows are **DERIVED, not hand-declared** (golden rules 2 + 6). A magic item's charge
-pool comes from its `free-cast-spell` grant (`resolveFreeCastItemTrackers`, S9); and a feat/feature that
+pool comes from its cast grant or an activated `while-active.activation.tracker`
+(`resolveMagicItemTrackers`, S9); and a feat/feature that
 grants **≥ 2 free-cast spells** (Fey/Shadow/Vampire-Touched, the multi-spell heritage feats) emits ONE
 INDEPENDENT 1/rest row PER SPELL via `resolveFreeCastFeatTrackers`, keyed `${featId}:${spellId}` — so
 casting one never locks the others (the prior shared-`total:2` counter deadlocked them). The row, the
@@ -339,6 +342,16 @@ A charged single-spell item may declare `castLevels: [{ level, cost }]` on that 
 `resolveSpellCastOptions` path expands only affordable rows, the cast-level modal shows the scaled spell
 facts plus the exact charge cost, and both Play and encounter commits debit/undo that cost through the
 same tracker transaction. Omitting the schedule preserves the ordinary fixed-level, one-use free cast.
+
+An equipped magic item's activated property declares its action economy and optional charge/cooldown
+tracker on the existing `while-active` wrapper. `resolveMagicItemActivationActions` emits an ordinary
+Play action carrying the same item-id tracker and `activatesKey`; the standard commit/undo path spends
+the charge, lights the state, and arms its existing round timer atomically. Inventory, Resources, and
+the action card all read that one tracker. Variable dawn dice use `recovery:"dawn", autoRecover:false`
+and real-time cooldowns use `recovery:"manual"`, because the app neither rolls nor owns the table
+clock; Long Rest deliberately preserves both. A deterministic partial refill declares
+`longRestRecovery:N` and subtracts exactly N spent uses (Spirit Board: 1); omitting it keeps the full
+recovery default.
 
 ### Riders (passive scaling chips)
 
@@ -407,11 +420,13 @@ to fence action availability across navigation; it is never interpreted as a sec
 Slot/tracker mutators coalesce a parent-save flush in a microtask, after the whole synchronous cast
 has updated concentration/log/related resources. Play resources therefore do not wait behind the
 general 2 s edit debounce, while prose fields and other high-frequency edits still do.
-A committed action that ESTABLISHES a while-active state (Rage, Bladesong — its resolved action
+A committed action that ESTABLISHES a while-active state (Rage, Bladesong, an activated magic item — its resolved action
 carries an inferred `activatesKey`, see `docs/MECHANICS.md` "Activation seam") also flips that key
 into `session.activeFeatures` — the rail chip lights automatically, the state's grants (Rage's
 `weapon-damage-bonus`, resistances) flow into every derived figure, undo clears only a commit-lit
-key, and tapping the lit chip ends the state.
+key, and tapping the lit chip ends the state. `setActiveFeature` owns timer lifecycle for every entry:
+turning a state on arms a fresh declared timer and turning it off removes that timer, so action commits,
+undo, and manual correction cannot diverge.
 
 **Extra Attack is part of the action economy (the BG3 attack grammar — the count lives on the attack
 AFFORDANCE, the economy just spends).** A hero who makes N weapon attacks per Attack action has

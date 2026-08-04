@@ -1345,6 +1345,8 @@ treatment, in the token's own semantic hue, never monochrome gold — the disc g
   `src/features/character/center/tabs/combat-card-helpers.ts` — one seam, every card derives the
   same states by construction). Five states, ONE rule a player learns in one encounter:
   - **Usable** → the enabled carved-brass CTA with its verb (Cast / Attack / Use / React).
+    Activated magic items use this exact card/CTA grammar and the existing Resources + Active
+    Features rails; no item-only banner, picker, or duplicate charge control is introduced.
   - **Live Extra-Attack swings** → enabled + struck gold (the Extra-Attack bullet below).
   - **Spent** — the card's economy token is gone (this card committed it, its slot is at budget,
     the Attack action is fully swung, or the round's Reaction is used) → the CTA **DISABLES and

@@ -736,6 +736,9 @@ per-cast form picker + override-first self-swap applicator) landed; see the Poly
 
 ### S9 — item charge-cast pipeline _(workstream A; defects B, C, D)_
 
+- [x] **Activated-item action/tracker/timer closure — SHIPPED 2026-08-04.** `while-active.activation` is the single declarative bridge for equipped magic items that have no `mechanics.actions`: it emits the ordinary Play action, spends an optional item-id tracker, lights the existing state, arms its existing round timer, and reverses those mutations through the standard undo path. Inventory and Resources read the same pool. Wired Boots of Speed, Winged Boots, Wings of Flying, Armor of Invulnerability, plus the composed-pack Mythallar Cloak. Variable dawn dice use `dawn + autoRecover:false`; 1d12-hour real-time cooldowns use `manual`; Long Rest preserves both. Boots of Speed's cumulative, incrementally used 10-minute reservoir stays table-owned rather than being misrepresented as 1/LR. Manual active-state correction clears/restarts the current timer atomically.
+- [x] **Charged-item recovery reconciliation — SHIPPED 2026-08-04.** Every public + pack tracker-backed charged caster whose dawn refill is rolled now declares `autoRecover:false`; Long Rest preserves its spent count for the table's result. Fixed partial recovery uses `longRestRecovery:N` (Spirit Board +1), while true full-refill items keep the default (Eyes of Charming). Corpus guards pin typed data against the EN descriptions in tests only; runtime never parses prose.
+
 Wand/staff charge items now emit a real cast row through the SAME `free-cast-spell` seam feats use,
 debiting an item-charge tracker; consumed buff potions arm a round countdown.
 

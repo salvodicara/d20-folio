@@ -221,6 +221,13 @@ export interface TrackerSpec {
   total: string;
   /** Primary recovery timing */
   recovery: Recovery;
+  /** False when the cadence is known but the recovered amount depends on a die,
+   * table clock, or another external ruling. Rest UI keeps the cadence label,
+   * while automatic recovery preserves the editable spent value. */
+  autoRecover?: false;
+  /** Fixed partial amount restored at the Long-Rest/dawn boundary. Omit for full
+   * recovery; combine with `autoRecover:false` when the amount is table-rolled. */
+  longRestRecovery?: number;
   /** Die type if applicable: "d6", "d8", "d10", "d12" */
   die?: string;
   /** Whether this is a spendable pool resource (ki points, sorcery points, HP) */

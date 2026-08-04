@@ -136,6 +136,58 @@ describe("rests FENCE the undo stack (§5.4 case 9)", () => {
   });
 });
 
+describe("long-rest tracker recovery", () => {
+  it("preserves table-rolled recovery, applies fixed partial recovery, and fully resets the rest", () => {
+    store().setCharacter(
+      mk(
+        {
+          equipment: [
+            {
+              srdId: "wings-of-flying",
+              equipped: true,
+              attuned: true,
+              quantity: 1,
+            },
+            {
+              srdId: "winged-boots",
+              equipped: true,
+              attuned: true,
+              quantity: 1,
+            },
+            {
+              srdId: "wand-of-magic-missiles",
+              equipped: true,
+              quantity: 1,
+            },
+            { srdId: "eyes-of-charming", equipped: true, quantity: 1 },
+            { srdId: "spirit-board", equipped: true, quantity: 1 },
+          ],
+          features: [{ srdId: "fighter-second-wind" }],
+        },
+        {
+          trackers: {
+            "wings-of-flying": { used: 1 },
+            "winged-boots": { used: 2 },
+            "wand-of-magic-missiles": { used: 3 },
+            "eyes-of-charming": { used: 2 },
+            "spirit-board": { used: 2 },
+            "fighter-second-wind": { used: 1 },
+          },
+        }
+      )
+    );
+
+    store().longRest();
+
+    expect(store().character?.session.trackers).toEqual({
+      "wings-of-flying": { used: 1 },
+      "winged-boots": { used: 2 },
+      "wand-of-magic-missiles": { used: 3 },
+      "spirit-board": { used: 1 },
+    });
+  });
+});
+
 describe("shortRest — tracker recovery", () => {
   it("short rest: full-recovery resets, partial-recovery reduces by N, long-rest untouched", () => {
     store().setCharacter(

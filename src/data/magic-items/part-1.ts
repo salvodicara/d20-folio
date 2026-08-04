@@ -400,15 +400,22 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     // `speed-multiplier` (factor 2), which the `effectiveWalkingSpeedFt` consumer
     // applies to the character's REAL base+bonus Speed. This correctly doubles a
     // 25-, 30-, or 40-ft Speed (the old `{type:"speed",amount:30}` hack only
-    // doubled the default 30-ft case). The timed effect is wired below; the
-    // Long-Rest activation and Opportunity-Attack disadvantage lack item-use
-    // and against-you attack primitives.
+    // doubled the default 30-ft case). Activation, Long-Rest use, timer, and the
+    // against-you Opportunity-Attack reminder are all declarative below.
     grants: [
       {
         type: "while-active",
         activeKey: "boots-of-speed",
+        // The 10 minutes are a cumulative reservoir usable in increments, not
+        // one activation. Surface the Bonus Action but do not invent a 1/LR use.
+        activation: { action: "bonus" },
         duration: { kind: "timed", minutes: 10, maxRounds: 100 },
-        grants: [{ type: "speed-multiplier", factor: 2 }],
+        grants: [
+          { type: "speed-multiplier", factor: 2 },
+          {
+            type: "incoming-attack-disadvantage",
+          },
+        ],
       },
     ],
     source: "SRD",
@@ -595,12 +602,17 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     properties: ["fly speed: 30 ft", "charges: 4", "recharge: 1d4 / dawn"],
     // ALL-IN: the activated Fly Speed is modeled behind a while-active toggle.
     // 2024 value = Fly 30 ft (DMG scrape; supersedes the legacy "equal to your
-    // walking speed" text). The timed effect is wired below; the 4-use pool and
-    // variable 1d4-at-dawn recovery still lack an item-activation resource seam.
+    // walking speed" text). The activation action, 4-charge pool, and fixed timer
+    // share the generic item-activation seam. The variable 1d4 dawn refill stays
+    // editable because the app never rolls dice.
     grants: [
       {
         type: "while-active",
         activeKey: "winged-boots",
+        activation: {
+          action: "action",
+          tracker: { total: "4", recovery: "dawn", autoRecover: false },
+        },
         duration: { kind: "timed", minutes: 60, maxRounds: 600 },
         grants: [{ type: "fly-speed", amount: 30 }],
       },
@@ -1143,6 +1155,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
         type: "free-cast-spell",
         spellId: "detect-thoughts",
         chargesPerRest: 5,
+        autoRecover: false,
         rest: "long",
       },
     ],
