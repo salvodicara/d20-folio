@@ -113,6 +113,16 @@ the alternate like a free cast. A dedicated semantic variant now gives restraine
 to the named default and keeps alternatives neutral; focused component tests pin the hierarchy,
 disabled state, confirm, and cancel behavior. Verification: screenshots 6/6, axe 4/4, focused modal
 tests 9/9, i18n 4/4, mobile layout 2/2, typecheck + targeted zero-warning lint green.
+**Wave 10 HP-control audit (2026-08-04):** the shared HP editor now participates as two explicit
+surface states: the everyday wounded editor and the critical transition reached through the real
+38 HP + 5 temporary HP → 43 damage → 0 HP path. The latter keeps the live Dying banner, undo toasts,
+Unconscious state, death-save controls, at-zero damage explanation, and Critical Hit toggle in the
+same evidence instead of mocking an isolated popover. The first attempted driver deliberately
+failed because 999 damage correctly triggered instant death and therefore hid the dying-only toggle;
+the corrected exact-zero path now guards that distinction. Fresh evidence found the existing single
+shared editor coherent and safe in light/dark, EN/IT, and phone/desktop, so no speculative visual
+restyle was added. Verification: screenshots 6/6, axe 4/4, i18n 4/4, mobile layout 2/2, route guard
+4/4.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 

@@ -84,6 +84,8 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   { slug: "character-share", route: "/characters/mock-1" },
   { slug: "character-share-live", route: "/characters/mock-1" },
   { slug: "character-cast-level", route: "/characters/mock-1" },
+  { slug: "character-hp-editor", route: "/characters/mock-1" },
+  { slug: "character-hp-dying-editor", route: "/characters/mock-1" },
   {
     slug: "character-arcane-recovery",
     route: "/characters/scn-wizard-18",
