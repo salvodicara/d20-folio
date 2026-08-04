@@ -174,6 +174,20 @@ describe("combatResolutionSpec — target shape and outcome", () => {
     expect(shouldResolveSoloAction(inspiration)).toBe(false);
   });
 
+  it("routes stabilization through the shared ally resolver in solo and encounters", () => {
+    const stabilize = makeAction("feature", {
+      stabilize: true,
+      targeting: { affinity: "ally", maxTargets: 1 },
+    });
+    expect(combatResolutionSpec(stabilize)).toMatchObject({
+      stabilizes: true,
+      targetAffinity: "ally",
+      targetCap: 1,
+    });
+    expect(shouldResolveCombatAction(stabilize)).toBe(true);
+    expect(shouldResolveSoloAction(stabilize)).toBe(true);
+  });
+
   it("plans a target-bound standing grant by catalogue reference", () => {
     const action: ResolvedAction = {
       ...makeAction("spell", {}),

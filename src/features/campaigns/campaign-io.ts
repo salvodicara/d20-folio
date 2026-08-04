@@ -845,6 +845,7 @@ export type DeclaredCombatEffect =
   | DeclaredDamageEffect
   | ({ kind: "healing" } & DeclaredAmountEffect)
   | ({ kind: "temp-hp" } & DeclaredAmountEffect)
+  | { kind: "stabilize"; targetId: string }
   | {
       kind: "condition";
       targetId: string;
@@ -870,6 +871,7 @@ export interface DeclaredPcTargetSnapshot {
   conditions: string[];
   bardicInspirationDie?: string;
   heroicInspiration?: boolean;
+  deathSaves?: { successes: number; failures: number };
   defenses: DamageDefenses;
 }
 
@@ -922,7 +924,7 @@ interface DirectPcEffectResult {
   conditions: string[];
   bardicInspirationDie?: string;
   heroicInspiration?: boolean;
-  resetDeathSaves: boolean;
+  deathSaves: { successes: number; failures: number } | null;
   events: CombatChronicleEvent[];
   transfers: Array<{
     target: CombatantRef;
@@ -957,7 +959,8 @@ export function reduceDirectPcEffects(
   let conditions = [...target.conditions];
   let bardicInspirationDie = target.bardicInspirationDie;
   let heroicInspiration = target.heroicInspiration;
-  let resetDeathSaves = false;
+  let currentDeathSaves = target.deathSaves ?? { successes: 0, failures: 0 };
+  let deathSaves: DirectPcEffectResult["deathSaves"] = null;
   const events: CombatChronicleEvent[] = [];
   const transfers: DirectPcEffectResult["transfers"] = [];
   const consumedEffectIds = new Set<string>();
@@ -1025,6 +1028,24 @@ export function reduceDirectPcEffects(
       }
       continue;
     }
+    if (effect.kind === "stabilize") {
+      if (
+        current === 0 &&
+        (currentDeathSaves.successes !== 3 || currentDeathSaves.failures !== 0)
+      ) {
+        currentDeathSaves = { successes: 3, failures: 0 };
+        deathSaves = currentDeathSaves;
+        events.push(
+          stamp({
+            kind: "stabilized",
+            targetId: target.targetId,
+            actorId: provenance.actorId,
+            action: provenance.action,
+          })
+        );
+      }
+      continue;
+    }
     let amount = Math.max(0, Math.round(effect.amount));
     if (amount === 0) continue;
     if (effect.kind === "temp-hp") {
@@ -1042,7 +1063,8 @@ export function reduceDirectPcEffects(
       current = Math.min(target.maxHp, current + amount);
       const landed = current - before;
       if (before === 0 && current > 0) {
-        resetDeathSaves = true;
+        currentDeathSaves = { successes: 0, failures: 0 };
+        deathSaves = currentDeathSaves;
         conditions = conditions.filter((condition) => condition !== "unconscious");
       }
       if (landed > 0) {
@@ -1130,6 +1152,7 @@ export function reduceDirectPcEffects(
     conditions.join("\u0000") !== target.conditions.join("\u0000") ||
     bardicInspirationDie !== target.bardicInspirationDie ||
     heroicInspiration !== target.heroicInspiration ||
+    deathSaves !== null ||
     transfers.length > 0 ||
     consumedEffectIds.size > 0;
   return changed
@@ -1139,7 +1162,7 @@ export function reduceDirectPcEffects(
         conditions,
         ...(bardicInspirationDie !== undefined ? { bardicInspirationDie } : {}),
         ...(heroicInspiration !== undefined ? { heroicInspiration } : {}),
-        resetDeathSaves,
+        deathSaves,
         events,
         transfers,
         consumedEffectIds: [...consumedEffectIds],
@@ -1159,7 +1182,10 @@ export async function applyDeclaredCombatEffects(
 ): Promise<void> {
   const applicable: DeclaredCombatEffect[] = effects.filter(
     (effect) =>
-      effect.kind === "condition" || effect.kind === "resource" || effect.amount > 0
+      effect.kind === "condition" ||
+      effect.kind === "resource" ||
+      effect.kind === "stabilize" ||
+      effect.amount > 0
   );
   for (const targetId of context?.hitTargetIds ?? []) {
     if (
@@ -1289,6 +1315,7 @@ export async function applyDeclaredCombatEffects(
                   ...(stored.heroicInspiration !== undefined
                     ? { heroicInspiration: stored.heroicInspiration }
                     : {}),
+                  deathSaves: stored.deathSaves,
                 }
               : {}),
           },
@@ -1350,7 +1377,9 @@ export async function applyDeclaredCombatEffects(
             nextEffectOps,
             effect.targetId,
             undefined,
-            effect.kind === "condition" || effect.kind === "resource"
+            effect.kind === "condition" ||
+              effect.kind === "resource" ||
+              effect.kind === "stabilize"
               ? undefined
               : effect.tokenIndex
           )
@@ -1385,11 +1414,12 @@ export async function applyDeclaredCombatEffects(
         ...(result.heroicInspiration !== undefined
           ? { heroicInspiration: result.heroicInspiration }
           : {}),
+        ...(result.deathSaves ? { deathSaves: result.deathSaves } : {}),
       });
       const previous = changedTargets.get(result.target.targetId);
       changedTargets.set(result.target.targetId, {
         ...result,
-        resetDeathSaves: result.resetDeathSaves || previous?.resetDeathSaves === true,
+        deathSaves: result.deathSaves ?? previous?.deathSaves ?? null,
       });
       chronicle = recordDirectPcEffectEvents(chronicle, result.events);
       enqueueTransfers(result.transfers, path);
@@ -1483,9 +1513,7 @@ export async function applyDeclaredCombatEffects(
           ...(result.heroicInspiration !== undefined
             ? { heroicInspiration: result.heroicInspiration }
             : {}),
-          ...(result.resetDeathSaves
-            ? { deathSaves: { successes: 0, failures: 0 } }
-            : {}),
+          ...(result.deathSaves ? { deathSaves: result.deathSaves } : {}),
           updatedAt: serverTimestamp(),
         },
         { merge: true }
@@ -2165,7 +2193,9 @@ export function reduceDeclaredEffects(
     const { targetId } = effect;
     let storedTargetId = targetId;
     let legacyIndex =
-      effect.kind === "condition" || effect.kind === "resource"
+      effect.kind === "condition" ||
+      effect.kind === "resource" ||
+      effect.kind === "stabilize"
         ? undefined
         : effect.tokenIndex;
     let monster = next.combatants.find((c) => c.id === storedTargetId);
@@ -2220,6 +2250,9 @@ export function reduceDeclaredEffects(
       }
       continue;
     }
+    // Encounter monsters do not model death saves; stabilization is deliberately a
+    // PC-state operation and has already been handled by the direct target reducer.
+    if (effect.kind === "stabilize") continue;
     if (effect.amount <= 0) continue;
     if (effect.kind === "temp-hp") {
       next = setMonsterTempHp(
@@ -2350,6 +2383,7 @@ function applyDeclaredEffectsOptimistic(
             bardicInspirationDie: current.bardicInspirationDie,
             heroicInspiration:
               current.heroicInspiration ?? declared?.heroicInspiration ?? false,
+            deathSaves: current.deathSaves,
             defenses: declared?.defenses ?? NO_DEFENSES,
           },
           targetEffects,
@@ -2375,9 +2409,7 @@ function applyDeclaredEffectsOptimistic(
           ...(result.heroicInspiration !== undefined
             ? { heroicInspiration: result.heroicInspiration }
             : {}),
-          ...(result.resetDeathSaves
-            ? { deathSaves: { successes: 0, failures: 0 } }
-            : {}),
+          ...(result.deathSaves ? { deathSaves: result.deathSaves } : {}),
         };
       }
     );
@@ -2418,7 +2450,9 @@ function applyDeclaredEffectsOptimistic(
           nextEffectOps,
           effect.targetId,
           undefined,
-          effect.kind === "condition" || effect.kind === "resource"
+          effect.kind === "condition" ||
+            effect.kind === "resource" ||
+            effect.kind === "stabilize"
             ? undefined
             : effect.tokenIndex
         )

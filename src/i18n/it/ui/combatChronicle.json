@@ -21,6 +21,8 @@
     "heal": "{{target}} recupera {{amount}} ({{current}}/{{max}} PF)",
     "healBy": "{{actor}} fa recuperare {{amount}} PF a {{target}} ({{current}}/{{max}} PF)",
     "healByAction": "{{actor}} usa {{action}} su {{target}}: {{amount}} PF recuperati ({{current}}/{{max}} PF)",
+    "stabilizedBy": "{{actor}} stabilizza {{target}}",
+    "stabilizedByAction": "{{actor}} usa {{action}} per stabilizzare {{target}}",
     "bardicInspirationGrant": "{{actor}} concede a {{target}} un dado d'Ispirazione Bardica da {{value}}",
     "heroicInspirationGrant": "{{actor}} concede Ispirazione Eroica a {{target}}",
     "down": "{{target}} cade",

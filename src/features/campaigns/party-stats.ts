@@ -286,6 +286,10 @@ export function derivePcLive(
     conditions: stats.conditions,
     bardicInspirationDie: hydrated.session.bardicInspirationDie,
     heroicInspiration: hydrated.session.inspiration,
+    deathSaves: {
+      successes: hydrated.session.deathSucc,
+      failures: hydrated.session.deathFail,
+    },
     initiative: roll === null ? null : roll + stats.initiativeBonus,
     // The roll widget needs the bonus + the RAW roll separately from the total.
     initiativeBonus: stats.initiativeBonus,

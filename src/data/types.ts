@@ -1260,6 +1260,9 @@ export interface SrdActionDef {
   grantDie?: { kind: "bardic-inspiration"; die: string };
   /** Give Heroic Inspiration to each reviewed target. It never stacks. */
   grantHeroicInspiration?: true;
+  /** Set a selected creature at 0 HP to Stable without restoring HP. The target
+   * remains Unconscious; only the death-save state changes. */
+  stabilize?: true;
   /** A variable pool whose spend produces healing.
    * Its tracker owns cost, unit, die, and remaining amount. */
   poolSpendEffect?: "healing";
@@ -2730,6 +2733,13 @@ export interface SrdEquipmentData {
   strengthReq?: number;
   /** Whether this item is consumed on use (potion, acid, etc.) */
   isConsumable?: boolean;
+  /** Optional deterministic actions and use pool owned by the item itself.
+   * Equipment uses the same tracker/action grammar as features, so an item can
+   * spend charges and affect a target without an id-specific runtime branch. */
+  mechanics?: {
+    tracker?: TrackerSpec;
+    actions?: ReadonlyArray<SrdActionDef>;
+  };
   /**
    * Healing potion roll (e.g. "2d4+2"). Structured here so EVERY reference to the
    * item renders the same heal verdict — display is derived from SRD data, never

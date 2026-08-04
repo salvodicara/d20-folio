@@ -469,6 +469,19 @@ describe("characterStore — rest mechanics", () => {
       expect(sess()?.conditions).toEqual(["frightened"]);
     });
 
+    it("stabilizes at 0 HP without healing and reverses the death track exactly", () => {
+      seed({ current: 0, fail: 2, conditions: ["unconscious"] });
+      const undo = store().applyResolvedCombatEffects({ stabilize: true });
+      expect(sess()?.hp.current).toBe(0);
+      expect(sess()?.deathSucc).toBe(3);
+      expect(sess()?.deathFail).toBe(0);
+      expect(sess()?.conditions).toEqual(["unconscious"]);
+      undo?.();
+      expect(sess()?.deathSucc).toBe(0);
+      expect(sess()?.deathFail).toBe(2);
+      expect(sess()?.conditions).toEqual(["unconscious"]);
+    });
+
     it("keeps a solo concentration condition source-owned and makes it inert on drop", () => {
       seed({ current: 20, conditions: ["prone"] });
       store().setConcentration(conc("invisibility"), { silent: true });

@@ -1621,4 +1621,37 @@ describe("universal combat resolution", () => {
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
     expectApplied([{ kind: "healing", targetId: "pc-u2", amount: 3 }]);
   });
+
+  it("offers stabilization only for an unstable 0-HP PC and declares it once", () => {
+    const down = {
+      ...allyPc(),
+      currentHp: 0,
+      down: true,
+      deathSaves: { successes: 1, failures: 2 },
+    };
+    const stable = {
+      ...secondAllyPc(),
+      currentHp: 0,
+      down: true,
+      deathSaves: { successes: 3, failures: 0 },
+    };
+    render(
+      <CombatResolver
+        action={action({
+          stabilize: true,
+          targeting: { affinity: "ally", maxTargets: 1 },
+        })}
+        sheetCombat={combat([pc(), down, stable])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    expect(screen.getByRole("button", { name: /borin/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /cora/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /lyra/i })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /borin/i }));
+    expect(screen.getByText("Stabilize at 0 HP")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+    expectApplied([{ kind: "stabilize", targetId: "pc-u2" }]);
+  });
 });

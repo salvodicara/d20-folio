@@ -132,6 +132,18 @@ export const SRD_GEAR: SrdEquipmentData[] = [
     category: "gear",
     cost: { amount: 5, unit: "gp" },
     weight: 3,
+    mechanics: {
+      tracker: { total: "10", recovery: "manual", isPool: true, unit: "uses" },
+      actions: [
+        {
+          id: "stabilize",
+          type: "action",
+          economyCategory: "utilize",
+          targeting: { affinity: "ally", maxTargets: 1 },
+          stabilize: true,
+        },
+      ],
+    },
     source: "SRD",
   },
   {

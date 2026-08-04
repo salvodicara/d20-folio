@@ -101,6 +101,14 @@ toggle writes `attuned: true`) — and any non-consumable magic item whose effec
 S10, Gaze of Two Minds — an Eldritch Invocation can carry `mechanics.actions` too, resolved by its
 own sibling pass in `resolveFeatureActions` at the Warlock owning-class level) —
 see `docs/ARCHITECTURE.md` (Trackers · Actions · Combat model).
+Ordinary equipment may reuse that exact `{ tracker?, actions? }` declaration under
+`SrdEquipmentData.mechanics`; `resolveEquipmentTrackers` / `resolveEquipmentActions` project it into
+the same resource, economy, target-review, commit and undo seams without an item-id branch. The first
+consumer is the Healer's Kit: a manual ten-use pool plus one Utilize action whose typed `stabilize`
+effect sets an unstable 0-HP PC's death-save state to Stable while leaving HP and Unconscious intact.
+Worn armor's intrinsic `stealthDisadvantage` likewise joins the composed
+`wornArmorDisadvantageClauses` list as a Stealth-check scope; the narrower unproficient-armor resolver
+stays unchanged, while the Inventory fact and play-time roll reminder read the same catalogue bit.
 
 **Chosen-spell provenance repair** is a choice-seam concern, not a new Grant or a read-time guess.
 `incompleteFreeCastChoiceFeatIds` reports a feat only when its declarative spell-choice slots require

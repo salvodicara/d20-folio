@@ -189,6 +189,16 @@ feat spell picker; selecting an already-known spell enriches the existing ref wi
 rewrites, guessing or overwriting another feature's provenance. Once complete, the ordinary cast/resource/
 undo pipeline takes over. The six-fixture long-tail audit continues with equipment and item resources.
 
+**Live-team truth audit — equipment combat contract CLOSED on branch (2026-08-04):** the real fixtures
+now pin the Bard's imported Potion of Healing (Bonus Action, 2d4+2, exact quantity spend), both carried
+shortbows to their exact 20-arrow stocks, the Paladin's custom weapon overrides (+6 / 1d8+4) and
+plate+shield AC 20, plus the worn Half Plate/Plate Stealth Disadvantage. The discovered deterministic
+gap is closed generically: ordinary equipment can own the same declarative tracker/action shape as a
+feature. The Barbarian's Healer's Kit therefore exposes one ten-use Utilize action that targets only an
+unstable 0-HP PC, works for an offline table-mate, preserves 0 HP + Unconscious, sets the death-save track
+to Stable, writes exact Chronicle provenance, survives Long Rest as a manual stock, and undoes exactly.
+The six-fixture long-tail audit continues with remaining inventory/resource lifecycle seams.
+
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark
 ink for its nested glyph/count despite the carved socket's correct fixed ink, and the end-encounter

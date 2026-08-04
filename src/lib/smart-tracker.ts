@@ -252,6 +252,8 @@ export interface ActionSummary {
   grantedDie?: { kind: "bardic-inspiration"; die: string };
   /** A deterministic, non-stacking Heroic Inspiration grant. */
   grantsHeroicInspiration?: true;
+  /** Set the selected 0-HP creature's death-save state to Stable. */
+  stabilize?: true;
   conditionApplication?: CombatConditionApplication;
   /** Damage formula: "8d6", "1d8+5", "3×(1d4+1)" */
   damage?: string;
@@ -2669,12 +2671,47 @@ export function resolveTrackers(character: CharacterDoc): RawResolvedTracker[] {
   for (const t of [
     ...resolveSrdTrackers(character),
     ...resolveRaceTrackers(character, level),
+    ...resolveEquipmentTrackers(character),
     ...resolveMagicItemTrackers(character),
     ...resolveFreeCastFeatTrackers(character),
   ]) {
     if (seen.has(t.id)) continue;
     seen.add(t.id);
     out.push(t);
+  }
+  return out;
+}
+
+/** Declarative use pools owned by ordinary equipment. The stable tracker key is
+ * namespaced from feature/item ids, while the label and rules remain catalogue data. */
+function resolveEquipmentTrackers(character: CharacterDoc): RawResolvedTracker[] {
+  const out: RawResolvedTracker[] = [];
+  for (const ref of character.character.equipment) {
+    if ("custom" in ref || (ref.quantity ?? 1) <= 0) continue;
+    const item = getEquipment(ref.srdId);
+    const spec = item?.mechanics?.tracker;
+    if (!item || !spec) continue;
+    const id = `equipment:${item.id}`;
+    const total = resolveTrackerTotal(spec.total, character);
+    if (total <= 0) continue;
+    out.push({
+      id,
+      label: srdText("equipment", item.id, "name"),
+      description: srdText("equipment", item.id, "description"),
+      total,
+      recovery: spec.recovery,
+      ...(spec.autoRecover === false ? { autoRecover: false } : {}),
+      ...(spec.longRestRecovery !== undefined
+        ? { longRestRecovery: spec.longRestRecovery }
+        : {}),
+      die: spec.die,
+      recordedRolls: spec.recordedRolls,
+      rolls: character.session.trackers[id]?.rolls,
+      isPool: spec.isPool,
+      unit: spec.unit,
+      shortRestRecovery: spec.shortRestRecovery,
+      used: character.session.trackers[id]?.used ?? 0,
+    });
   }
   return out;
 }
@@ -4405,6 +4442,7 @@ export function resolveActions(character: CharacterDoc): RawResolvedAction[] {
   const deduped: RawResolvedAction[] = [];
   for (const a of [
     ...resolveFeatureActions(character, ctx),
+    ...resolveEquipmentActions(character, ctx),
     ...resolveSpellActions(character, ctx),
     ...resolveWeaponActions(character, ctx),
     ...resolveTemporaryHpActions(character, ctx),
@@ -4649,6 +4687,7 @@ function applyActionEffectSummary(
     if (die) summary.grantedDie = { kind: action.grantDie.kind, die };
   }
   if (action.grantHeroicInspiration) summary.grantsHeroicInspiration = true;
+  if (action.stabilize) summary.stabilize = true;
   if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
   if (action.skillCheck) summary.skillCheck = action.skillCheck;
   if (
@@ -4688,6 +4727,65 @@ function applyActionEffectSummary(
     }
   }
   applySaveAttackSummary(summary, action, character, ctx, scalingLevel);
+}
+
+/** Ordinary equipment actions use the same authored action projection and tracker
+ * transaction as features. The resolver has no item-id branch; the catalogue owns
+ * action economy, targeting, effect and use count. */
+function resolveEquipmentActions(
+  character: CharacterDoc,
+  ctx: ActionResolveCtx
+): RawResolvedAction[] {
+  const actions: RawResolvedAction[] = [];
+  for (const ref of character.character.equipment) {
+    if ("custom" in ref || (ref.quantity ?? 1) <= 0) continue;
+    const item = getEquipment(ref.srdId);
+    if (!item?.mechanics?.actions?.length) continue;
+    const tracker = item.mechanics.tracker;
+    const trackerId = tracker ? `equipment:${item.id}` : undefined;
+    const total = tracker ? resolveTrackerTotal(tracker.total, character) : 0;
+    const used = trackerId ? (character.session.trackers[trackerId]?.used ?? 0) : 0;
+    for (const [index, action] of item.mechanics.actions.entries()) {
+      const summary: RawActionSummary = {
+        effect: srdEffectText("equipment", item.id),
+        ...(tracker
+          ? {
+              uses: {
+                current: Math.max(0, total - used),
+                total,
+                isPool: tracker.isPool,
+                unit: tracker.unit,
+              },
+            }
+          : {}),
+      };
+      applyActionEffectSummary(summary, action, item.id, character, ctx, ctx.level);
+      const id = `equipment-action-${item.id}-${action.id ?? index}`;
+      actions.push({
+        id,
+        name: srdText("equipment", item.id, "name"),
+        description: srdText("equipment", item.id, "description"),
+        type: action.type,
+        ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+        source: "feature",
+        spellLevel: null,
+        concentration: false,
+        summary,
+        costsSlot: false,
+        ...(trackerId
+          ? {
+              costTracker: trackerId,
+              trackerCost: action.trackerCost ?? 1,
+              costTrackerIsPool: tracker?.isPool,
+              costTrackerUnit: tracker?.unit,
+            }
+          : {}),
+        pinned: ctx.pinnedSet.has(id),
+        defaultPinned: false,
+      });
+    }
+  }
+  return actions;
 }
 
 /** Invocation id → row, for the 1c invocation-action pass below (mirrors the
@@ -7780,6 +7878,31 @@ export function armorDisadvantageClauses(
     combatAbilityScores(character).STR,
     effectiveArmorProficiencies(charData)
   ).disadvantages;
+}
+
+/** Every disadvantage imposed by armor currently worn. Keeps the narrower
+ * unproficient-armor resolver stable while composing its clauses with an armor
+ * row's intrinsic Stealth penalty for the shared check/save rail. */
+export function wornArmorDisadvantageClauses(
+  character: CharacterDoc
+): ReadonlyArray<AdvantageClause> {
+  const training = armorDisadvantageClauses(character);
+  const { character: charData } = character;
+  const stealth = charData.equipment.flatMap((ref) => {
+    if ("custom" in ref || ref.equipped !== true) return [];
+    const armor = getEquipment(ref.srdId);
+    return armor?.category === "armor" && armor.stealthDisadvantage
+      ? [
+          {
+            sourceId: `armor-stealth:${armor.id}`,
+            rollType: "check" as const,
+            vs: "stealth",
+            description: srdText("equipment", armor.id, "name"),
+          },
+        ]
+      : [];
+  });
+  return [...training, ...stealth];
 }
 
 /** A resolved on-crit movement option (Champion Remarkable Athlete). */

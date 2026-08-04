@@ -93,6 +93,7 @@ interface TargetChoice {
   tempHp: number;
   maxHp: number;
   down: boolean;
+  stable: boolean;
   portraitUrl: string | null;
   portraitCrop: PortraitCrop | null;
   conditions: string[];
@@ -156,6 +157,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         tempHp: row.tempHp,
         maxHp: row.maxHp / tokens.length,
         down: hp <= 0,
+        stable: false,
         portraitUrl: row.srdId
           ? monsterPortraitUrl(row.srdId)
           : (row.portraitUrl ?? null),
@@ -184,6 +186,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         tempHp: row.tempHp,
         maxHp: row.maxHp,
         down: row.down,
+        stable: row.kind === "pc" && row.deathSaves?.successes === 3,
         portraitUrl:
           row.kind === "monster" && row.srdId
             ? monsterPortraitUrl(row.srdId)
@@ -262,6 +265,7 @@ export function CombatResolver({
             tempHp: character.session.hp.temp,
             maxHp: effectiveMaxHp(character.character, character.session),
             down: character.session.hp.current <= 0,
+            stable: character.session.deathSucc >= 3,
             portraitUrl: character.portraitUrl,
             portraitCrop: character.portraitCrop,
             conditions: effectiveSessionConditions(character.session),
@@ -345,9 +349,12 @@ export function CombatResolver({
           action.persistentTargetSourceId
         )
       : [];
+  const eligibleTargets = spec.stabilizes
+    ? targets.filter((target) => target.kind === "pc" && target.down && !target.stable)
+    : targets;
   const actionTargets =
     !showAll && persistentTargetEffects.length > 0
-      ? targets.filter((target) =>
+      ? eligibleTargets.filter((target) =>
           persistentTargetEffects.some(
             (effect) =>
               effect.target.combatantId === target.targetId &&
@@ -355,7 +362,7 @@ export function CombatResolver({
                 effect.target.tokenIndex === target.tokenIndex)
           )
         )
-      : targets;
+      : eligibleTargets;
 
   const affinityTargets =
     showAll || activeAffinity === "any"
@@ -988,7 +995,21 @@ export function CombatResolver({
                 },
               ]
             : [];
-        return [...hpEffect, ...conditionEffects, ...removalEffects, ...resourceEffects];
+        const stabilizationEffects = action.summary.stabilize
+          ? [
+              {
+                kind: "stabilize" as const,
+                targetId: target.targetId,
+              },
+            ]
+          : [];
+        return [
+          ...hpEffect,
+          ...conditionEffects,
+          ...removalEffects,
+          ...resourceEffects,
+          ...stabilizationEffects,
+        ];
       });
       const hitTargetIds = successful.flatMap(({ target, outcomes, mode }) =>
         mode === "damage" &&
@@ -1019,6 +1040,7 @@ export function CombatResolver({
                   conditions: target.conditions,
                   bardicInspirationDie: target.bardicInspirationDie,
                   heroicInspiration: target.heroicInspiration,
+                  ...(target.stable ? { deathSaves: { successes: 3, failures: 0 } } : {}),
                   defenses: target.defenses,
                 },
               ]
@@ -1219,6 +1241,7 @@ export function CombatResolver({
               ...(own && action.summary.grantsHeroicInspiration
                 ? { heroicInspiration: true }
                 : {}),
+              ...(own && action.summary.stabilize ? { stabilize: true } : {}),
             })
           : null;
       const appliedRiders = [
@@ -1343,6 +1366,7 @@ export function CombatResolver({
     action.summary.grantsHeroicInspiration
       ? t("combat.resolveGrantHeroicInspiration")
       : null,
+    action.summary.stabilize ? t("combat.resolveStabilize") : null,
     action.summary.effect ?? null,
     action.summary.range ?? null,
   ].filter(Boolean);

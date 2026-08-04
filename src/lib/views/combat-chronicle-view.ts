@@ -110,6 +110,17 @@ export function localizeChronicleEvent(
             current: event.current,
             max: event.max,
           });
+    case "stabilized":
+      return t(
+        event.action
+          ? "combatChronicle.stabilizedByAction"
+          : "combatChronicle.stabilizedBy",
+        {
+          actor: resolveName(event.actorId),
+          target: resolveName(event.targetId),
+          ...(event.action ? { action: resolveAction(event.action) } : {}),
+        }
+      );
     case "resource-grant":
       return event.resource === "heroic-inspiration"
         ? t("combatChronicle.heroicInspirationGrant", {

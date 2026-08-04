@@ -57,6 +57,13 @@ const SAMPLES: Record<CombatChronicleEventKind, CombatChronicleEvent> = {
     current: 9,
     max: 22,
   },
+  stabilized: {
+    ...base,
+    kind: "stabilized",
+    targetId: "pc-mara",
+    actorId: "pc-ivo",
+    action: { lit: { en: "Healer's Kit", it: "Kit da guaritore" } },
+  },
   down: { ...base, kind: "down", targetId: "monster-1" },
   "attack-miss": {
     ...base,

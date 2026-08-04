@@ -298,6 +298,7 @@ interface CharacterState {
     removeConditions?: string[];
     bardicInspirationDie?: string;
     heroicInspiration?: boolean;
+    stabilize?: boolean;
   }) => (() => void) | null;
   /**
    * Expend one spell slot at `level`. `pactMagic` selects the Warlock Pact-Magic
@@ -1100,6 +1101,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       get().setBardicInspirationDie(effects.bardicInspirationDie);
     if (effects.heroicInspiration !== undefined)
       get().setHeroicInspiration(effects.heroicInspiration);
+    if (effects.stabilize && get().character?.session.hp.current === 0) {
+      get().setDeathSaves(3, 0);
+    }
     if (effects.addConcentrationConditions?.length) {
       const current = get().character;
       if (current)

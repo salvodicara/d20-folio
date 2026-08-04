@@ -30,7 +30,7 @@ import {
   resolveAltRecovery,
   resolveSlotAltRecovery,
   resolveTrackers,
-  armorDisadvantageClauses,
+  wornArmorDisadvantageClauses,
 } from "@/lib/smart-tracker";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
@@ -192,7 +192,7 @@ export function ResourceRail() {
               // S13 — the unproficient-armor Disadvantage (STR/DEX checks + saves;
               // the attack one surfaces inline on action cards) joins this section,
               // derived from the SAME predicate the Inventory "Untrained" gloss uses.
-              disadvantages: armorDisadvantageClauses(character),
+              disadvantages: wornArmorDisadvantageClauses(character),
             }).filter((c) => c.rollType !== "attack"),
             locale
           )

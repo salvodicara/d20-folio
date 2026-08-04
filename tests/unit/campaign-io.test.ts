@@ -294,7 +294,7 @@ describe("campaign-io — reviewed combat effects", () => {
     expect(result).toMatchObject({
       hp: { current: 7, temp: 3 },
       conditions: [],
-      resetDeathSaves: true,
+      deathSaves: { successes: 0, failures: 0 },
     });
     expect(result?.events).toEqual([
       expect.objectContaining({
@@ -310,6 +310,52 @@ describe("campaign-io — reviewed combat effects", () => {
         conditionId: "poisoned",
       }),
     ]);
+  });
+
+  it("stabilizes an offline 0-HP PC without healing or clearing Unconscious", () => {
+    const target = {
+      targetId: "pc-a",
+      memberUid: "a",
+      characterId: "char-a",
+      currentHp: 0,
+      tempHp: 0,
+      maxHp: 20,
+      conditions: ["unconscious"],
+      deathSaves: { successes: 1, failures: 2 },
+      defenses: NO_DEFENSES,
+    };
+    const provenance = {
+      actorId: "pc-b",
+      action: {
+        srd: { kind: "equipment" as const, key: "healers-kit", field: "name" },
+      },
+      round: 2,
+    };
+    const result = reduceDirectPcEffects(
+      target,
+      [{ kind: "stabilize", targetId: "pc-a" }],
+      provenance
+    );
+    expect(result).toMatchObject({
+      hp: { current: 0, temp: 0 },
+      conditions: ["unconscious"],
+      deathSaves: { successes: 3, failures: 0 },
+    });
+    expect(result?.events).toEqual([
+      expect.objectContaining({
+        kind: "stabilized",
+        targetId: "pc-a",
+        actorId: "pc-b",
+      }),
+    ]);
+
+    expect(
+      reduceDirectPcEffects(
+        { ...target, deathSaves: { successes: 3, failures: 0 } },
+        [{ kind: "stabilize", targetId: "pc-a" }],
+        provenance
+      )
+    ).toBeNull();
   });
 
   it("prevents offline PC healing while preserving unrelated condition cures", () => {

@@ -84,6 +84,14 @@ export type CombatChronicleEvent =
       /** Exact resolved action (spell/feature/item), kept locale-independent. */
       action?: LocText;
     } & ChronicleEventBase)
+  /** A 0-HP player character was stabilized without regaining HP. */
+  | ({
+      kind: "stabilized";
+      targetId: string;
+      actorId: string;
+      /** Exact resolved action (feature/item), kept locale-independent. */
+      action?: LocText;
+    } & ChronicleEventBase)
   /** A combatant dropped (crossed to 0 HP — a PC downed, a monster group defeated). */
   | ({ kind: "down"; targetId: string } & ChronicleEventBase)
   /**

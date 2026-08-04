@@ -1445,6 +1445,11 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
     simultaneous effects compose, and the Chronicle cannot claim an effect that failed to land. An emulator
     test pins that a FRESH absent-subdoc full-shape write is authorized for owner/admin/current member (and
     denied immediately after membership removal).
+    Stabilization uses this same typed batch: the transaction reads the target's current death-save state,
+    changes only an unstable 0-HP PC to `{ successes: 3, failures: 0 }`, preserves 0 HP + Unconscious,
+    emits one source/action-attributed Chronicle event, and becomes an idempotent no-op when already Stable.
+    Solo play applies the same effect through `characterStore.applyResolvedCombatEffects`, whose snapshot
+    undo restores the exact prior death track.
   - **Turn economy is field-scoped.** The exact current-turn key plus selected actions, attacks, reaction,
     movement, dashes, slot casts and round damage flag live in optional `turnEconomy`. This makes a
     group↔sheet remount restore the SAME spent budget only when campaign/epoch/round/current-combatant still

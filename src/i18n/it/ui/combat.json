@@ -39,6 +39,7 @@
     "resolveRoll_save": "TS",
     "resolveGrantDie": "Concede Ispirazione Bardica {{die}}",
     "resolveGrantHeroicInspiration": "Concede Ispirazione Eroica",
+    "resolveStabilize": "Stabilizza a 0 PF",
     "resolveHeldHeroicInspiration": "Ha Ispirazione Eroica",
     "resolveHp": "{{current}}/{{max}} PF",
     "resolveResults": "Risolvi gli esiti",

@@ -45,6 +45,7 @@ export interface CombatResolutionSpec {
   hasTempHp: boolean;
   hasGrantedDie: boolean;
   hasHeroicInspiration: boolean;
+  stabilizes: boolean;
   conditionRemoval?: { options: string[]; max?: number };
   /** A variable healing pool paid by the reviewed outcome itself. Dice pools are
    * configured before this resolver; HP pools derive their exact debit here. */
@@ -186,6 +187,7 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
   const hasTempHp = actionHasTempHp(action);
   const hasGrantedDie = s.grantedDie !== undefined;
   const hasHeroicInspiration = s.grantsHeroicInspiration === true;
+  const stabilizes = s.stabilize === true;
   const poolSpend =
     s.poolSpendEffect === "healing" && action.costTrackerIsPool && s.uses
       ? {
@@ -245,7 +247,7 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     (s.targeting?.affinity === "self"
       ? "self"
       : s.targeting?.affinity === "ally" ||
-          (!s.targeting && (hasHealing || s.conditionRemoval !== undefined))
+          (!s.targeting && (hasHealing || stabilizes || s.conditionRemoval !== undefined))
         ? "ally"
         : hasTempHp && !s.targeting
           ? "self"
@@ -271,6 +273,7 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     hasTempHp,
     hasGrantedDie,
     hasHeroicInspiration,
+    stabilizes,
     ...(s.healingMode === "full" || s.healingMode === "maximum"
       ? { healingMode: s.healingMode }
       : {}),
@@ -303,6 +306,7 @@ export function shouldResolveCombatAction(action: ResolvedAction): boolean {
     spec.hasTempHp ||
     spec.hasGrantedDie ||
     spec.hasHeroicInspiration ||
+    spec.stabilizes ||
     spec.conditionRemoval ||
     spec.conditionApplication ||
     spec.standingEffect ||
@@ -323,6 +327,7 @@ export function shouldResolveSoloAction(action: ResolvedAction): boolean {
       spec.hasTempHp ||
       spec.hasGrantedDie ||
       spec.hasHeroicInspiration ||
+      spec.stabilizes ||
       spec.conditionRemoval !== undefined ||
       spec.conditionApplication !== undefined)
   );
