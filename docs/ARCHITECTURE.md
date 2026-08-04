@@ -302,7 +302,7 @@ taxonomy + the per-arm recipe lives in `docs/MECHANICS.md`.
 
 ## Trackers (resource pools)
 
-`src/lib/smart-tracker.ts` exposes `resolveTrackers(character, locale)` which returns the
+`src/lib/smart-tracker.ts` exposes `resolveTrackers(character)` which returns the locale-free
 character's current trackers (Channel Divinity, Bardic Inspiration, Rage uses, Spell
 Slots-as-pool, Sorcery Points, Lucky uses, …).
 
@@ -320,6 +320,7 @@ interface TrackerSpec {
   isPool?: boolean; // pool mode (Sorcery Points)
   unit?: string; // "pts" / "HP" / "uses"
   shortRestRecovery?: number | string; // partial recovery (Second Wind, Wild Shape)
+  refreshOnActivationOf?: string; // full refill when this stable active-state key starts
   levels?: TrackerLevelOverride[]; // per-level overrides for total/die/recovery
 }
 ```
@@ -335,6 +336,14 @@ first consumer). The exact values live beside `used` in `session.trackers`, surv
 export/import, clear with the tracker's normal recovery, and are spent/corrected through the same
 immediate-commit + exact-undo seam as ordinary uses. Custom features expose the same optional range;
 the engine therefore gains one homebrew-capable primitive, not a Portent-specific state branch.
+
+An activation-scoped pool declares `refreshOnActivationOf` with the stable key of its owning state.
+The common action activation transaction refills every matching tracker only when that state was
+previously off; the returned inverse restores the exact pre-activation counters. Reusing an already-lit
+action or a maintenance action cannot refresh it. Fanatical Focus is the first composed consumer
+(`barbarian-rage`), but the field is part of `TrackerSpec`, resolved trackers and portable custom tracker
+data, so future features and homebrew use the same route. `recovery:"manual"` remains the honest rest
+cadence for such a pool; presenter copy names the activation trigger instead of exposing “Manual.”
 
 Some tracker rows are **DERIVED, not hand-declared** (golden rules 2 + 6). A magic item's charge
 pool comes from its cast grant or an activated `while-active.activation.tracker`

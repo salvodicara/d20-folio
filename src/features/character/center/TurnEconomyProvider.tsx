@@ -229,6 +229,9 @@ function activateActionState(
   );
   const activated = !(store.character?.session.activeFeatures ?? []).includes(key);
   if (activated) store.setActiveFeature(key, true);
+  const restoreActivationTrackers = activated
+    ? store.refreshTrackersOnActivation(key)
+    : null;
   if (action.source === "spell") store.setActiveSpellCastLevel(key, castLevel);
   // An activated state can declaratively forbid Concentration (2024 Rage).
   // End the held spell through the ONE concentration seam so its standing chips
@@ -285,6 +288,7 @@ function activateActionState(
       if (action.source === "spell") current.setActiveSpellCastLevel(key, previousLevel);
       restoreTimer?.();
       restoreBoundary?.();
+      restoreActivationTrackers?.();
       if (canRestoreConcentration) {
         current.setConcentration(previousConcentration, {
           castLevel: previousConcentrationCastLevel,

@@ -1273,6 +1273,9 @@ in a void: last ink → panel edge = strip → panel edge.
   field and a separate consume control. Editing never spends; spending never opens another dialog;
   both have explicit focus/accessible labels and the exact consumed value is undoable. This is the
   only extra chrome: no Portent-specific card, tutorial copy, or duplicate resource panel.
+- **Recovery copy names the real trigger:** rest-scoped trackers keep the compact LR/SR grammar;
+  activation-scoped trackers spell out “When {state} starts” / “Quando inizia {stato}” in expanded
+  feature and compendium detail. They never show a misleading rest badge or the fallback “Manual.”
 
 ### "This Turn" action-economy band
 

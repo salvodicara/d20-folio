@@ -209,6 +209,8 @@ export interface TrackerLevelOverride {
   die?: string;
   /** Override for short-rest partial recovery */
   shortRestRecovery?: number | string;
+  /** Override the active state whose fresh activation fully refreshes this tracker. */
+  refreshOnActivationOf?: string;
 }
 
 /**
@@ -253,6 +255,13 @@ export interface TrackerSpec {
    * - number — recover exactly N uses (e.g. 1 for Psionic Energy dice)
    */
   shortRestRecovery?: number | string;
+  /**
+   * Fully refresh this tracker when the named active state starts through its
+   * ordinary action. The active-state key is locale-free and stable (for
+   * example `barbarian-rage`). This models resources scoped to one activation,
+   * such as Fanatical Focus's once-per-Rage use, without feature-specific code.
+   */
+  refreshOnActivationOf?: string;
   /**
    * Level-gated overrides applied in ascending `from` order.
    * The highest matching entry wins and is merged with the base tracker.

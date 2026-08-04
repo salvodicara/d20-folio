@@ -225,6 +225,8 @@ export interface ResolvedTracker {
    * Only meaningful when recovery is "short-rest" or "short-or-long-rest".
    */
   shortRestRecovery?: number | string;
+  /** Active-state start that fully refreshes this tracker. */
+  refreshOnActivationOf?: string;
   /**
    * H10 — Generic scaling-rider chip. A small bilingual label + value
    * surfaced from the class table's `classSpecific` map (e.g. Barbarian
@@ -1697,6 +1699,9 @@ function resolveTrackerSpec(spec: TrackerSpec, level: number): TrackerSpec {
       ...(override.shortRestRecovery !== undefined && {
         shortRestRecovery: override.shortRestRecovery,
       }),
+      ...(override.refreshOnActivationOf !== undefined && {
+        refreshOnActivationOf: override.refreshOnActivationOf,
+      }),
     };
   }
   return result;
@@ -1737,6 +1742,9 @@ function applyTrackerOverrides(
     ...(overrides.unit !== undefined && { unit: overrides.unit }),
     ...(overrides.shortRestRecovery !== undefined && {
       shortRestRecovery: overrides.shortRestRecovery,
+    }),
+    ...(overrides.refreshOnActivationOf !== undefined && {
+      refreshOnActivationOf: overrides.refreshOnActivationOf || undefined,
     }),
     // Override-first for the alternate-recovery cost: a defined override wins.
     // For a pool-funded override, `{ amount: 0 }` is the documented sentinel that
@@ -2731,6 +2739,7 @@ function resolveEquipmentTrackers(character: CharacterDoc): RawResolvedTracker[]
       isPool: spec.isPool,
       unit: spec.unit,
       shortRestRecovery: spec.shortRestRecovery,
+      refreshOnActivationOf: spec.refreshOnActivationOf,
       used: character.session.trackers[id]?.used ?? 0,
     });
   }
@@ -3113,6 +3122,7 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
             rolls: session.trackers[t.id]?.rolls,
             isPool: t.isPool,
             unit: t.unit,
+            refreshOnActivationOf: t.refreshOnActivationOf,
             ...(t.altRecoveryCost &&
               nonZeroAltRecovery(t.altRecoveryCost) && {
                 altRecoveryCost: t.altRecoveryCost,
@@ -3186,6 +3196,7 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
       isPool: tracker.isPool,
       unit: tracker.unit,
       shortRestRecovery: tracker.shortRestRecovery,
+      refreshOnActivationOf: tracker.refreshOnActivationOf,
       rider,
       ...(altRecoveryCost && { altRecoveryCost }),
       used: session.trackers[srdFeature.id]?.used ?? 0,
@@ -3223,6 +3234,7 @@ function resolveSrdTrackers(character: CharacterDoc): RawResolvedTracker[] {
         isPool: extra.isPool,
         unit: extra.unit,
         shortRestRecovery: extra.shortRestRecovery,
+        refreshOnActivationOf: extra.refreshOnActivationOf,
         used: session.trackers[extraSpec.id]?.used ?? 0,
       });
     }
@@ -3272,6 +3284,7 @@ function resolveRaceTrackers(
         isPool: spec.isPool,
         unit: spec.unit,
         shortRestRecovery: spec.shortRestRecovery,
+        refreshOnActivationOf: spec.refreshOnActivationOf,
         used: session.trackers[id]?.used ?? 0,
       });
     }

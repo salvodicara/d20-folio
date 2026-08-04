@@ -77,6 +77,15 @@ stable source id, and stale commit/redo proposals cannot overdraw live slots or 
 deterministic corpus audit follows as separate, truth-gated milestones; queued UI dogfood remains after
 engine closure. Nothing from this sweep merges to `main` without the owner's final permission.
 
+**Live-team truth audit — activation-scoped resources CLOSED on branch (2026-08-04):** Santaera's
+future Zealot progression exposed a false rest approximation: Fanatical Focus is once per Rage, not
+once per Short Rest. `TrackerSpec.refreshOnActivationOf` now declares that lifecycle using the same
+stable active-state key as Rage. A fresh activation refills every linked tracker atomically; repeat
+commits against an already-active state and the explicit Extend Rage action do not. The standard
+action undo restores the exact prior tracker state. Resolved trackers, custom/homebrew tracker data,
+compendium copy and the live feature ledger all share the primitive, and the real Santaera fixture at
+level 6 proves activation, recovery metadata and reversal without any Barbarian-specific store code.
+
 **Persistent-spell lifetime contract CLOSED on branch (2026-08-04):** the composed-catalogue census
 found 34 persistent spell effects whose mechanical grants could activate but had no structured expiry.
 Every spell-owned `while-active` state now declares its real fixed lifetime; Hex and Hunter's Mark add

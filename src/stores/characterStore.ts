@@ -337,6 +337,8 @@ interface CharacterState {
   spendTrackerRoll: (trackerId: string, index: number) => (() => void) | null;
   /** Restore a tracker to a remaining-use floor and return an exact, stale-safe undo. */
   topUpTracker: (trackerId: string, upTo: number | "full") => (() => void) | null;
+  /** Refresh every pool scoped to a newly-started active state; returns exact undo. */
+  refreshTrackersOnActivation: (activeKey: string) => (() => void) | null;
   /** Decrement a tracked equipment item by 1; removes the entry entirely when quantity hits 0. */
   useEquipmentItem: (equipmentKey: string) => void;
   /**
@@ -1390,6 +1392,20 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         },
       });
       flushParentPersistence(get);
+    };
+  },
+
+  refreshTrackersOnActivation: (activeKey) => {
+    if (get().readonly) return null;
+    const character = get().character;
+    if (!character) return null;
+    const restores = resolveTrackers(character)
+      .filter((tracker) => tracker.refreshOnActivationOf === activeKey)
+      .map((tracker) => get().topUpTracker(tracker.id, "full"))
+      .filter((restore): restore is () => void => restore != null);
+    if (restores.length === 0) return null;
+    return () => {
+      for (const restore of restores.toReversed()) restore();
     };
   },
 

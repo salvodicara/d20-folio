@@ -13,7 +13,11 @@ import { FilterChip } from "@/components/sheet/picker-parts";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { highlightRulesText } from "@/components/shared/highlightRulesText";
 import { srdKey } from "@/i18n/srd-key";
-import { localizeTrackerRecovery, localizeTrackerTotal } from "@/lib/views/tracker-view";
+import {
+  grantSourceLabel,
+  localizeTrackerRecovery,
+  localizeTrackerTotal,
+} from "@/lib/views/tracker-view";
 import type { Locale } from "@/lib/locale";
 import type { SrdFeatData, FeatCategory } from "@/data/types";
 import { defineFilter, type CompendiumPickerSpec, type TFn } from "../types";
@@ -110,7 +114,15 @@ export const featSpec: CompendiumPickerSpec<SrdFeatData> = {
       : undefined;
     const tracker = feat.mechanics?.tracker;
     // The recovery code localizes through the one shared presenter.
-    const recovery = tracker ? localizeTrackerRecovery(tracker.recovery, t) : null;
+    const recovery = tracker
+      ? localizeTrackerRecovery(
+          tracker.recovery,
+          t,
+          tracker.refreshOnActivationOf
+            ? grantSourceLabel(tracker.refreshOnActivationOf, locale)
+            : undefined
+        )
+      : null;
     return {
       eyebrow: (
         <span className="inline-flex items-center gap-2">

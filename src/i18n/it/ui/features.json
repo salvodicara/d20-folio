@@ -17,6 +17,7 @@
     "recoverShortRest": "Riposo Breve",
     "recoverLongRest": "Riposo Lungo",
     "recoverManual": "Manuale",
+    "recoverOnActivation": "Quando inizia {{name}}",
     "recoverShortBadge": "RB",
     "recoverLongBadge": "RL",
     "formulaProficiencyBonus": "bonus di competenza",

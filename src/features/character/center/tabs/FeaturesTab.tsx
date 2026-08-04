@@ -43,6 +43,7 @@ import {
   localizeTrackerRecovery,
   trackerRecoveryBadgeBucket,
   copyTargetVMs,
+  grantSourceLabel,
 } from "@/lib/views/tracker-view";
 import { chipText } from "@/lib/views/combat-action-view";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
@@ -928,7 +929,13 @@ export function FeaturesTab() {
 
               // ── Gloss sub-line: source · action type · recovery ──
               const glossParts = [feature.source, actionTypeLabel(feature.actionType)];
-              const recovery = localizeTrackerRecovery(tracker?.recovery, t);
+              const recovery = localizeTrackerRecovery(
+                tracker?.recovery,
+                t,
+                tracker?.refreshOnActivationOf
+                  ? grantSourceLabel(tracker.refreshOnActivationOf, locale)
+                  : undefined
+              );
               if (recovery) glossParts.push(recovery);
               const gloss = glossParts.filter(Boolean).join(" · ");
 
@@ -1088,7 +1095,13 @@ export function FeaturesTab() {
                           color={rec.color}
                           die={tracker.die}
                           recovery={rec.code}
-                          recoveryLabel={localizeTrackerRecovery(tracker.recovery, t)}
+                          recoveryLabel={localizeTrackerRecovery(
+                            tracker.recovery,
+                            t,
+                            tracker.refreshOnActivationOf
+                              ? grantSourceLabel(tracker.refreshOnActivationOf, locale)
+                              : undefined
+                          )}
                           isPool={tracker.isPool}
                           unit={tracker.unit}
                           onSpend={

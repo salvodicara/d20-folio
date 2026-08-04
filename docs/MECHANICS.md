@@ -499,6 +499,10 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   Rest resets neither, so it never invents a die result or elapsed table time.
   A fixed partial refill declares `longRestRecovery:N` (Spirit Board: 1); the ordinary omission means
   full recovery. The same recovery facts apply to charged casts and activated properties.
+  A tracker whose uses belong to one activation declares `refreshOnActivationOf:<activeKey>`.
+  Starting that state through the ordinary action fully refreshes the pool in the same reversible
+  transaction; an already-active state and maintenance actions do nothing. Fanatical Focus uses
+  `barbarian-rage`, and custom/homebrew trackers share the same field — no feature-id branch exists.
 - **Active-state restrictions.** Inner `spellcasting-blocked` and
   `concentration-blocked` grants declare restrictions that exist only while the wrapper is active;
   every cast surface reads the aggregate flag. Activating such a state ends held Concentration in

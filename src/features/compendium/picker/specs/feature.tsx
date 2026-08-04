@@ -20,7 +20,11 @@ import type { Locale } from "@/lib/locale";
 import type { SrdClassFeatureData } from "@/data/types";
 import type { SrdFeatureRef } from "@/types/character";
 import { localizeSubclassName } from "@/lib/views/srd-i18n";
-import { localizeTrackerRecovery, localizeTrackerTotal } from "@/lib/views/tracker-view";
+import {
+  grantSourceLabel,
+  localizeTrackerRecovery,
+  localizeTrackerTotal,
+} from "@/lib/views/tracker-view";
 import { defineFilter, type CompendiumPickerSpec, type PickerCtx } from "../types";
 
 /** Resolve a localized SRD string for a class-feature field (top-level key). */
@@ -184,7 +188,15 @@ export const featureSpec: CompendiumPickerSpec<SrdClassFeatureData> = {
     const tracker = feature.mechanics?.tracker;
     // The recovery TOKEN localizes through the one shared presenter (it printed
     // the raw "Long-Rest" in both locales); null = honest blank (per-turn).
-    const recovery = tracker ? localizeTrackerRecovery(tracker.recovery, t) : null;
+    const recovery = tracker
+      ? localizeTrackerRecovery(
+          tracker.recovery,
+          t,
+          tracker.refreshOnActivationOf
+            ? grantSourceLabel(tracker.refreshOnActivationOf, locale)
+            : undefined
+        )
+      : null;
     return {
       eyebrow: (
         <span className="inline-flex items-center gap-2">

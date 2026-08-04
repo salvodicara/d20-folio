@@ -322,6 +322,8 @@ export interface TrackerData {
    * recovery (Psi Warrior / Soulknife / Wild Shape).
    */
   shortRestRecovery?: number | string;
+  /** Stable active-state key whose fresh activation fully refreshes this pool. */
+  refreshOnActivationOf?: string;
   /**
    * Alternate activation/recovery cost — an exhausted use can be restored by
    * spending `amount` units from the `fromTracker` pool instead of resting

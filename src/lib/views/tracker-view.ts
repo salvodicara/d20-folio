@@ -126,8 +126,12 @@ export function localizeTrackerUnit(unit: TrackerUnit | undefined, t: Translate)
  */
 export function localizeTrackerRecovery(
   recovery: Recovery | undefined,
-  t: Translate
+  t: Translate,
+  activationLabel?: string
 ): string | null {
+  if (activationLabel) {
+    return t("features.recoverOnActivation", { name: activationLabel });
+  }
   switch (recovery) {
     case "short-rest":
     case "short-or-long-rest":
