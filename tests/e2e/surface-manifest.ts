@@ -181,6 +181,13 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   // this inline twin opens the real SectionPanel disclosure so both states remain
   // first-class screenshot/a11y/i18n/mobile evidence.
   { slug: "campaign-hub-dm-tools", route: "/campaigns/mock-1" },
+  // The hub's four everyday inline editing/transaction states. They transform the
+  // existing section in place (no dialog), so each needs its own truthful visual,
+  // a11y, locale, and mobile-layout leg rather than being inferred from rest state.
+  { slug: "campaign-hub-chronicle-edit", route: "/campaigns/mock-1" },
+  { slug: "campaign-hub-session-edit", route: "/campaigns/mock-1" },
+  { slug: "campaign-hub-note-edit", route: "/campaigns/mock-1" },
+  { slug: "campaign-hub-treasury-add", route: "/campaigns/mock-1" },
   // The SAME hub with a running encounter: the Party section becomes the inline
   // initiative tracker. The prepare seeds the `d20-dev-encounter` flag + reloads so
   // the dev fixture seeds a mid-combat encounter — both states sweep on one route.

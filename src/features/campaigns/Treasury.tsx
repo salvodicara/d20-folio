@@ -221,7 +221,12 @@ export function Treasury() {
       <div className="flex flex-col gap-4">
         {/* Coins are the at-a-glance signal (the total lives in the header badge —
             no inline duplicate); the whole ledger sits behind the footer button. */}
-        <CurrencyTokens values={treasury} />
+        <CurrencyTokens
+          values={treasury}
+          selectable={mode !== null}
+          selected={mode !== null ? currency : undefined}
+          onSelect={mode !== null ? selectCurrency : undefined}
+        />
 
         {mode === null ? (
           <div className="flex flex-wrap gap-2">
@@ -236,12 +241,6 @@ export function Treasury() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            <CurrencyTokens
-              selectable
-              values={treasury}
-              selected={currency}
-              onSelect={selectCurrency}
-            />
             <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[10rem_1fr]">
               <NumberStepper
                 value={clampedAmount}

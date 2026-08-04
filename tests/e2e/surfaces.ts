@@ -887,6 +887,69 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
         .waitFor({ timeout: 5000 });
     },
   },
+  "campaign-hub-chronicle-edit": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    ready: readyText(/starless keep/i),
+    prepare: async (page) => {
+      await page
+        .getByRole("button", { name: /^edit$|^modifica$/i })
+        .first()
+        .click();
+      await page.locator("#chronicle-text").waitFor({ timeout: 5000 });
+    },
+  },
+  "campaign-hub-session-edit": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    ready: readyText(/starless keep/i),
+    prepare: async (page) => {
+      await page
+        .getByRole("button", {
+          name: /show session details|mostra i dettagli della sessione/i,
+        })
+        .first()
+        .click();
+      await page
+        .getByRole("button", { name: /edit summary|modifica riassunto/i })
+        .first()
+        .click();
+      await page
+        .getByRole("textbox", { name: /session summary|riassunto della sessione/i })
+        .waitFor({ timeout: 5000 });
+    },
+  },
+  "campaign-hub-note-edit": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    ready: readyText(/starless keep/i),
+    prepare: async (page) => {
+      await page
+        .getByRole("button", { name: /edit note|modifica nota/i })
+        .first()
+        .click();
+      await page
+        .getByRole("button", { name: /^save$|^salva$/i })
+        .first()
+        .waitFor({ timeout: 5000 });
+    },
+  },
+  "campaign-hub-treasury-add": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    ready: readyText(/starless keep/i),
+    prepare: async (page) => {
+      await page
+        .getByRole("button", { name: /^add coins$|^aggiungi monete$/i })
+        .first()
+        .click();
+      await page.getByRole("spinbutton").first().waitFor({ timeout: 5000 });
+    },
+  },
   // T4 — the DM's read-only member-sheet view. Under dev-bypass the bypass user
   // (`mock-uid`) IS the seeded campaign's DM, and `member-mara`'s attached
   // character resolves to the team-bard PACK fixture — so the cockpit paints
