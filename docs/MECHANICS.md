@@ -497,6 +497,12 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   Concentration through the canonical concentration teardown first, including self-Polymorph reversion.
   Resource recovery and state expiry are deliberately separate facts resolved in the same post-rest
   snapshot (Rage regains one use on a Short Rest but is no longer active afterward).
+- **Spell duration tiers.** Every spell-owned `while-active` wrapper declares its structured lifetime;
+  fixed durations use `minutes` + `maxRounds`, while the two duration-upcast families declare ascending
+  `byCastLevel` replacements. `whileActiveDurationAtCastLevel` is the only selector, shared by action
+  emission, target-bound encounter effects, self timers and rest expiry. Display duration prose remains
+  localization-only and is never parsed. A derived whole-catalogue guard rejects an undated persistent
+  spell or inconsistent minute/round tier.
 - **USE-APPLIES seam.** Using an action AUTO-APPLIES its deterministic (dice-free) effects with the
   immediate-commit-with-undo model: a `temp-hp` grant carrying a `slot` (Orc Adrenaline Rush, Shifter
   Shifting, Chef) emits a resolved number applied on use; a `while-active.duration` lets the End-Turn
@@ -524,6 +530,8 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
     (`characterStore.consumePotionBuff`, undoable) that `advanceEffectTimers` carries forward + expires
     exactly like a state timer; the rail shows it as an "Active Potions" banner. Override-first — the
     buff's STATS are never auto-applied.
+    Spell timers read the stored cast level through the same duration selector, so an upcast Hex or
+    Hunter's Mark arms and survives rests at its real 4/8/24-hour tier rather than the base hour.
   - **Round-1 clauses** (`advantage-on { round1: true }`; `damage-rider { round1 }`). A clause that
     applies only in combat round 1 auto-clears afterward. A rider may additionally declare
     `requiresRiderTrackerId`, so Assassinate's flat `{ kind:"class-level", classId:"rogue" }` damage

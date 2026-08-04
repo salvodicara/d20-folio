@@ -25,6 +25,34 @@ import { SRD_SPELLS_LEVEL8 } from "@/data/spells/level8";
 import { SRD_SPELLS_LEVEL9 } from "@/data/spells/level9";
 
 describe("spell-data integrity", () => {
+  it("every persistent spell grant declares one enforceable structured lifetime", () => {
+    // Derived from the whole composed catalogue. This guard proves that a
+    // persistent spell can be expired by the shared engine; it cannot prove the
+    // printed rule's duration or special early-ending clauses, which remain a
+    // source-audit responsibility.
+    for (const spell of spells) {
+      for (const grant of spell.grants ?? []) {
+        if (grant.type !== "while-active") continue;
+        expect(grant.duration, `${spell.id}:${grant.activeKey}`).toBeDefined();
+        if (grant.duration?.kind !== "timed") continue;
+        expect(grant.duration.minutes, `${spell.id} minutes`).toBeGreaterThan(0);
+        expect(grant.duration.maxRounds, `${spell.id} maxRounds`).toBe(
+          grant.duration.minutes * 10
+        );
+        let previousMinLevel = spell.level;
+        for (const tier of grant.duration.byCastLevel ?? []) {
+          expect(tier.minLevel, `${spell.id} cast tier order`).toBeGreaterThan(
+            previousMinLevel
+          );
+          expect(tier.maxRounds, `${spell.id} L${tier.minLevel} maxRounds`).toBe(
+            tier.minutes * 10
+          );
+          previousMinLevel = tier.minLevel;
+        }
+      }
+    }
+  });
+
   it("models Vampiric Touch's linked healing as a deterministic combat effect", () => {
     expect(getSpellById("vampiric-touch")?.selfHealingFromDamage).toEqual({
       fraction: 0.5,

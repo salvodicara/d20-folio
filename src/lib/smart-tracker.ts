@@ -67,6 +67,7 @@ import {
   type MarkedTargetScope,
   type CastSourceOverrides,
   type FreeCastFromListEntry,
+  whileActiveDurationAtCastLevel,
   grantField,
   hasGrantField,
   topGrantRef,
@@ -5965,6 +5966,7 @@ function resolveSpellActions(
       if (g.type !== "while-active") continue;
       const targetsSelectedCreature = g.recipient === "selected";
       const bindsSelectedTarget = targetsSelectedCreature || g.targetScope !== undefined;
+      const duration = whileActiveDurationAtCastLevel(g.duration, spell.level);
       if (bindsSelectedTarget) {
         standingEffect = {
           sourceId: spell.id,
@@ -5972,14 +5974,12 @@ function resolveSpellActions(
           ...(g.targetScope ? { markScope: g.targetScope } : {}),
           targetAffinity: spell.targeting?.affinity ?? "ally",
           ...(spell.targeting?.excludeSelf ? { excludeSelf: true } : {}),
-          ...(g.duration?.maxRounds !== undefined
-            ? { maxRounds: g.duration.maxRounds }
-            : {}),
-          ...(g.duration?.kind === "turn-boundary"
+          ...(duration?.maxRounds !== undefined ? { maxRounds: duration.maxRounds } : {}),
+          ...(duration?.kind === "turn-boundary"
             ? {
                 turnBoundary: {
-                  phase: g.duration.phase,
-                  turns: g.duration.turns,
+                  phase: duration.phase,
+                  turns: duration.turns,
                 },
               }
             : {}),
@@ -5990,11 +5990,11 @@ function resolveSpellActions(
       }
       if (!targetsSelectedCreature) {
         spellActivatesKey = g.activeKey;
-        spellActiveDurationRounds = g.duration?.maxRounds;
-        if (g.duration?.kind === "turn-boundary") {
+        spellActiveDurationRounds = duration?.maxRounds;
+        if (duration?.kind === "turn-boundary") {
           spellActiveTurnBoundary = {
-            phase: g.duration.phase,
-            turns: g.duration.turns,
+            phase: duration.phase,
+            turns: duration.turns,
           };
         }
       }
@@ -7485,7 +7485,10 @@ export function resolveActiveStatesEndingOnRest(
   for (const source of resolveAllGrantSources(character.character)) {
     for (const grant of source.grants ?? []) {
       if (grant.type !== "while-active" || !active.has(grant.activeKey)) continue;
-      const duration = grant.duration;
+      const duration = whileActiveDurationAtCastLevel(
+        grant.duration,
+        character.session.activeSpellCastLevels?.[grant.activeKey]
+      );
       if (
         duration?.kind === "maintained" ||
         duration?.kind === "turn-boundary" ||
@@ -7632,13 +7635,18 @@ export function resolveActiveTimedEffects(character: CharacterDoc): ActiveTimedE
   const out: ActiveTimedEffect[] = [];
   for (const source of resolveAllGrantSources(character.character)) {
     for (const g of source.grants ?? []) {
-      if (g.type !== "while-active" || g.duration?.maxRounds === undefined) continue;
+      if (g.type !== "while-active") continue;
       if (!active.has(g.activeKey) || seen.has(g.activeKey)) continue;
+      const duration = whileActiveDurationAtCastLevel(
+        g.duration,
+        character.session.activeSpellCastLevels?.[g.activeKey]
+      );
+      if (duration?.maxRounds === undefined) continue;
       seen.add(g.activeKey);
       out.push({
         activeKey: g.activeKey,
         sourceId: source.id,
-        maxRounds: g.duration.maxRounds,
+        maxRounds: duration.maxRounds,
       });
     }
   }

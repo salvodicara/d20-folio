@@ -253,6 +253,63 @@ describe("shortRest — tracker recovery", () => {
     expect(store().character?.session.concentration).toBe(conc("custom:Table Aura"));
   });
 
+  it("ends a base-level Hex whose full hour elapses during the short rest", () => {
+    store().setCharacter(
+      mk(
+        {
+          class: "warlock",
+          level: 3,
+          spells: [{ srdId: "hex", prepared: true }],
+        },
+        {
+          concentration: conc("hex"),
+          concentrationCastLevel: 1,
+          activeFeatures: ["spell-hex"],
+          activeSpellCastLevels: { "spell-hex": 1 },
+          effectTimers: { "spell-hex": { roundsLeft: 412 } },
+        }
+      )
+    );
+
+    store().shortRest();
+
+    expect(store().character?.session).toMatchObject({
+      concentration: "",
+      activeFeatures: [],
+    });
+    expect(store().character?.session.activeSpellCastLevels).toBeUndefined();
+    expect(store().character?.session.effectTimers).toBeUndefined();
+  });
+
+  it("preserves an upcast Hex whose structured duration survives the short rest", () => {
+    store().setCharacter(
+      mk(
+        {
+          class: "warlock",
+          level: 3,
+          spells: [{ srdId: "hex", prepared: true }],
+        },
+        {
+          concentration: conc("hex"),
+          concentrationCastLevel: 2,
+          activeFeatures: ["spell-hex"],
+          activeSpellCastLevels: { "spell-hex": 2 },
+          effectTimers: { "spell-hex": { roundsLeft: 2_112 } },
+        }
+      )
+    );
+
+    store().shortRest();
+
+    expect(store().character?.session).toMatchObject({
+      concentration: "hex",
+      concentrationCastLevel: 2,
+      activeFeatures: ["spell-hex"],
+      activeSpellCastLevels: { "spell-hex": 2 },
+      effectTimers: { "spell-hex": { roundsLeft: 2_112 } },
+    });
+  });
+
   it("ends Santaera's maintained Rage while recovering exactly one use", () => {
     store().setCharacter(
       mk(

@@ -1300,26 +1300,40 @@ describe("resolveActions — S1 while-active spell ownership", () => {
     srdId: string;
     activatesKey?: string;
     standingEffectKey?: string;
+    durationRounds?: number;
   }> = [
     // +2 AC belongs to the chosen ally, not automatically to the caster.
-    { srdId: "shield-of-faith", standingEffectKey: "spell-shield-of-faith" },
+    {
+      srdId: "shield-of-faith",
+      standingEffectKey: "spell-shield-of-faith",
+      durationRounds: 100,
+    },
     // +1d4 radiant weapon rider for the duration → lights on cast.
-    { srdId: "divine-favor", activatesKey: "spell-divine-favor" },
+    {
+      srdId: "divine-favor",
+      activatesKey: "spell-divine-favor",
+      durationRounds: 10,
+    },
     // Hex selects a cursed target, but its attack rider remains caster-owned.
     {
       srdId: "hex",
       activatesKey: "spell-hex",
       standingEffectKey: "spell-hex",
+      durationRounds: 600,
     },
     // AC formula belongs to the chosen ally.
-    { srdId: "mage-armor", standingEffectKey: "spell-mage-armor" },
+    {
+      srdId: "mage-armor",
+      standingEffectKey: "spell-mage-armor",
+      durationRounds: 4_800,
+    },
     // Plain damage spell — no standing effect → lights NOTHING.
     { srdId: "fireball" },
   ];
 
   it.each(cases)(
     "$srdId keeps its standing grant on the declared recipient",
-    ({ srdId, activatesKey, standingEffectKey }) => {
+    ({ srdId, activatesKey, standingEffectKey, durationRounds }) => {
       const char = makeSpellcaster();
       char.character.spells = [{ srdId }];
       const actions = localizeActions(char, "en");
@@ -1327,6 +1341,10 @@ describe("resolveActions — S1 while-active spell ownership", () => {
       expect(spell).toBeDefined();
       expect(spell?.activatesKey).toBe(activatesKey);
       expect(spell?.standingEffect?.activeKey).toBe(standingEffectKey);
+      expect(spell?.activeDurationRounds).toBe(activatesKey ? durationRounds : undefined);
+      expect(spell?.standingEffect?.maxRounds).toBe(
+        standingEffectKey ? durationRounds : undefined
+      );
     }
   );
 });

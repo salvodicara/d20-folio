@@ -137,6 +137,7 @@ describe("Warding Bond — target-only +1 AC + +1 saves", () => {
       activeKey: "spell-hex",
       markScope: "cursed",
       targetAffinity: "enemy",
+      maxRounds: 600,
     });
   });
 

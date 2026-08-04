@@ -38,6 +38,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-foresight",
+        duration: { kind: "timed", minutes: 480, maxRounds: 4_800 },
         recipient: "selected",
         grants: [
           { type: "advantage-on", rollType: "check", vs: "foresight" },

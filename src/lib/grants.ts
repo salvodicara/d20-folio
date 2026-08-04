@@ -116,6 +116,14 @@ export type WhileActiveDuration =
       kind: "timed";
       minutes: number;
       maxRounds?: number;
+      /** Duration replacements selected by the spell slot actually spent. The
+       * highest matching threshold wins (Hex / Hunter's Mark). Feature states
+       * omit this because they have no cast level. */
+      byCastLevel?: ReadonlyArray<{
+        minLevel: number;
+        minutes: number;
+        maxRounds: number;
+      }>;
     }
   | {
       /**
@@ -128,6 +136,32 @@ export type WhileActiveDuration =
       turns: number;
       maxRounds?: never;
     };
+
+/** Resolve a timed state's effective lifetime from the slot that created it.
+ * Non-spell states and fixed spell durations pass through unchanged. */
+export function whileActiveDurationAtCastLevel(
+  duration: WhileActiveDuration | undefined,
+  castLevel: number | undefined
+): WhileActiveDuration | undefined {
+  if (duration?.kind !== "timed" || castLevel === undefined) return duration;
+  const tier = duration.byCastLevel?.reduce<
+    NonNullable<typeof duration.byCastLevel>[number] | undefined
+  >(
+    (best, candidate) =>
+      candidate.minLevel <= castLevel &&
+      (best === undefined || candidate.minLevel > best.minLevel)
+        ? candidate
+        : best,
+    undefined
+  );
+  return tier
+    ? {
+        ...duration,
+        minutes: tier.minutes,
+        maxRounds: tier.maxRounds,
+      }
+    : duration;
+}
 
 /** A numeric grant value resolved from facts frozen on the originating effect. */
 export type EffectBoundAmount = { binding: keyof CombatEffectBindings };

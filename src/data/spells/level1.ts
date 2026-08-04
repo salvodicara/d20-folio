@@ -53,6 +53,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-bane",
+        duration: { kind: "timed", minutes: 1, maxRounds: 10 },
         recipient: "selected",
         grants: [
           {
@@ -92,6 +93,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-bless",
+        duration: { kind: "timed", minutes: 1, maxRounds: 10 },
         recipient: "selected",
         grants: [
           {
@@ -258,6 +260,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-divine-favor",
+        duration: { kind: "timed", minutes: 1, maxRounds: 10 },
         grants: [
           {
             type: "damage-rider",
@@ -335,6 +338,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-faerie-fire",
+        duration: { kind: "timed", minutes: 1, maxRounds: 10 },
         recipient: "selected",
         grants: [{ type: "incoming-attack-advantage" }],
       },
@@ -500,6 +504,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-heroism",
+        duration: { kind: "timed", minutes: 1, maxRounds: 10 },
         recipient: "selected",
         grants: [
           { type: "condition-immunity", condition: "frightened" },
@@ -547,6 +552,16 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-hex",
+        duration: {
+          kind: "timed",
+          minutes: 60,
+          maxRounds: 600,
+          byCastLevel: [
+            { minLevel: 2, minutes: 240, maxRounds: 2_400 },
+            { minLevel: 3, minutes: 480, maxRounds: 4_800 },
+            { minLevel: 5, minutes: 1_440, maxRounds: 14_400 },
+          ],
+        },
         targetScope: "cursed",
         grants: [
           {
@@ -590,6 +605,15 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-hunters-mark",
+        duration: {
+          kind: "timed",
+          minutes: 60,
+          maxRounds: 600,
+          byCastLevel: [
+            { minLevel: 3, minutes: 480, maxRounds: 4_800 },
+            { minLevel: 5, minutes: 1_440, maxRounds: 14_400 },
+          ],
+        },
         targetScope: "marked",
         grants: [
           {
@@ -684,6 +708,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-longstrider",
+        duration: { kind: "timed", minutes: 60, maxRounds: 600 },
         recipient: "selected",
         grants: [{ type: "speed", amount: 10 }],
       },
@@ -710,6 +735,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-mage-armor",
+        duration: { kind: "timed", minutes: 480, maxRounds: 4_800 },
         recipient: "selected",
         grants: [
           { type: "ac-formula", base: 13, bonuses: ["DEX"], condition: "no-armor" },
@@ -808,6 +834,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-shield-of-faith",
+        duration: { kind: "timed", minutes: 10, maxRounds: 100 },
         recipient: "selected",
         grants: [{ type: "ac-bonus", amount: 2 }],
       },

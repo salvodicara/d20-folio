@@ -74,4 +74,40 @@ describe("actionAtCastLevel", () => {
       actionAtCastLevel(base, getSpellById("invisibility"), 4).summary.targeting
     ).toMatchObject({ maxTargets: 3, maxTargetsPerUpcast: 1 });
   });
+
+  it("resolves cast-level duration tiers before a persistent target is chosen", () => {
+    const base = action("hex", {});
+    base.activatesKey = "spell-hex";
+    base.activeDurationRounds = 600;
+    base.standingEffect = {
+      sourceId: "hex",
+      activeKey: "spell-hex",
+      markScope: "cursed",
+      targetAffinity: "enemy",
+      maxRounds: 600,
+    };
+
+    expect(actionAtCastLevel(base, getSpellById("hex"), 2)).toMatchObject({
+      slotLevel: 2,
+      activeDurationRounds: 2_400,
+      standingEffect: { maxRounds: 2_400 },
+    });
+    expect(actionAtCastLevel(base, getSpellById("hex"), 5)).toMatchObject({
+      slotLevel: 5,
+      activeDurationRounds: 14_400,
+      standingEffect: { maxRounds: 14_400 },
+    });
+  });
+
+  it("uses Hunter's Mark's distinct level thresholds", () => {
+    const base = action("hunters-mark", {});
+    base.activatesKey = "spell-hunters-mark";
+    base.activeDurationRounds = 600;
+    expect(
+      actionAtCastLevel(base, getSpellById("hunters-mark"), 3).activeDurationRounds
+    ).toBe(4_800);
+    expect(
+      actionAtCastLevel(base, getSpellById("hunters-mark"), 5).activeDurationRounds
+    ).toBe(14_400);
+  });
 });

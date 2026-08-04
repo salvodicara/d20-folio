@@ -466,6 +466,11 @@ rest; it also removes their timer/boundary/cast-level metadata while preserving 
 indefinite toggles. A Long Rest first routes held Concentration through the canonical teardown, so
 concentration-bound grants and a self-Polymorph body cannot survive the sleep path. Resource recovery
 and effect expiry therefore rebuild one coherent post-rest session rather than updating counters only.
+Spell lifetimes use that same declaration: every spell `while-active` grant owns an enforceable
+duration, and optional ascending `byCastLevel` tiers select the lifetime from the slot actually spent.
+The cast compiler resolves the tier before target review, then the self timer, encounter standing
+effect, persisted cast-level provenance and rest-expiry query all consume that one result. Hex and
+Hunter's Mark therefore survive a Short Rest only when their stored upcast tier proves they can.
 Maintenance reads `SelectedAction.triggerEvents`, not whether an Action slot happens to be occupied:
 weapon/spell attacks and target-saving-throw actions stamp `"attack"`, while Dash/Help/other actions
 do not. The receipt is persisted with turn economy, so navigation cannot change the verdict.
@@ -700,7 +705,8 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   the catalogue group's INNER grants directly onto the recipient. It never lights the catalogue's shared
   `activeKey`, so a recipient who also prepared that spell cannot receive a duplicate bonus. The same
   rules compiler also owns short timing and physical-roll modifiers. Catalogue `while-active.duration`
-  can declare an exact relative turn boundary; encounter effects resolve it against frozen turn order,
+  can declare an exact relative turn boundary or a slot-level-dependent round cap; encounter effects
+  resolve it against frozen turn order and the reviewed cast level,
   while self effects persist the resulting `{round, phase}` in additive `session.effectBoundaries`.
   Turn-start/end are the only expiry seams, and their inverse restores the toggle, boundary and log beat
   together. Target grant projection exposes one-shot or every-roll `roll-die-adjustment`, Speed deltas

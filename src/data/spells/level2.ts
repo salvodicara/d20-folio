@@ -22,6 +22,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-aid",
+        duration: { kind: "timed", minutes: 480, maxRounds: 4_800 },
         recipient: "selected",
         grants: [
           {
@@ -100,6 +101,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-barkskin",
+        duration: { kind: "timed", minutes: 60, maxRounds: 600 },
         recipient: "selected",
         grants: [{ type: "ac-formula", base: 17, bonuses: [], condition: "always" }],
       },
@@ -139,6 +141,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-blur",
+        duration: { kind: "timed", minutes: 1, maxRounds: 10 },
         grants: [{ type: "incoming-attack-disadvantage" }],
       },
     ],
@@ -190,6 +193,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-darkvision",
+        duration: { kind: "timed", minutes: 480, maxRounds: 4_800 },
         recipient: "selected",
         grants: [{ type: "darkvision", range: 150 }],
       },
@@ -452,6 +456,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-mirror-image",
+        duration: { kind: "timed", minutes: 1, maxRounds: 10 },
         grants: [{ type: "defense-note" }],
       },
     ],
@@ -615,6 +620,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-spider-climb",
+        duration: { kind: "timed", minutes: 60, maxRounds: 600 },
         recipient: "selected",
         grants: [{ type: "climb-speed", amount: "equal-to-walking" }],
       },

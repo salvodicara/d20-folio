@@ -77,6 +77,14 @@ stable source id, and stale commit/redo proposals cannot overdraw live slots or 
 deterministic corpus audit follows as separate, truth-gated milestones; queued UI dogfood remains after
 engine closure. Nothing from this sweep merges to `main` without the owner's final permission.
 
+**Persistent-spell lifetime contract CLOSED on branch (2026-08-04):** the composed-catalogue census
+found 34 persistent spell effects whose mechanical grants could activate but had no structured expiry.
+Every spell-owned `while-active` state now declares its real fixed lifetime; Hex and Hunter's Mark add
+slot-level duration tiers. One pure selector feeds cast configuration before target review, self timers,
+exact-target encounter effects and Short/Long Rest expiry from the stored cast level. A whole-catalogue
+guard (mutation-proved against Bane) prevents any future persistent spell from shipping without an
+enforceable duration or with inconsistent minute/round math. The six-fixture feature audit continues.
+
 **Live-team truth audit — Barbarian/Monk follow-up CLOSED on branch (2026-08-04):** two remaining L3
 facts that were still prose now use reusable engine primitives. Primal Knowledge projects a typed
 optional STR ability onto its five active checks only while Rage is active; the cockpit and PDF share

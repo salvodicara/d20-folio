@@ -153,6 +153,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-mind-blank",
+        duration: { kind: "timed", minutes: 1_440, maxRounds: 14_400 },
         recipient: "selected",
         grants: [
           { type: "damage-immunity", damageType: "psychic" },
