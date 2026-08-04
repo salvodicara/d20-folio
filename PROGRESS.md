@@ -216,6 +216,17 @@ dialog chrome; focused ornament/crest/creation regression family 17/17; full uni
 17,177/17,177; typecheck, zero-warning lint and production build green. The sweep also repaired two
 stale tests so they assert the current progressive-disclosure and bounded-discovery contracts
 instead of removed presentation copy or catalogue ordering.
+**Wave 20 mobile Play hotbar (2026-08-04):** the highest-frequency phone surface no longer opens as
+a 5,907px undifferentiated action catalogue. At the existing 720px compact breakpoint, Play now
+opens on the character's existing **Pinned** set — the same player-curated action data and the same
+board, not a new hotbar component or state owner — while **All** and every economy type remain one
+tap away in the shared filter strip. Characters with no pinned entries fall through honestly to
+**Actions** (or All if the build has no Action rows), so the convenience never produces an empty
+first view; desktop deliberately retains the full All overview. The representative EN mobile leaf
+is now 1,929px, 67.3% shorter, with the IT leaf at 2,001px; dark/light and desktop evidence confirms
+that the information model and full catalogue remain intact. Verification: focused Play economy
+tests 15/15 including the zero-pin edge; axe dark/light 2/2; locale sweep EN/IT 2/2; mobile overflow
+1/1; six fresh screenshots across EN/IT, dark/light and desktop/mobile; typecheck green.
 **Owner continuation mandate (2026-08-04):** the visual approval closes only this ornament fork.
 The whole-app UI/UX elevation remains active and exhaustive: audit every surface and recurring flow,
 then simplify, clarify or deepen it where evidence shows friction. Nothing is exempt because it is

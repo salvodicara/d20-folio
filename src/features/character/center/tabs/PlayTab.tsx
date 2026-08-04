@@ -66,6 +66,7 @@ import {
 } from "@/lib/views/sheet-view";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import { useToastStore } from "@/stores/toastStore";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   UniversalCard,
   UniversalCardFacts,
@@ -128,7 +129,7 @@ import {
   committedOffHandId,
 } from "./combat-card-helpers";
 
-type FilterType = "all" | "action" | "bonus" | "reaction" | "free";
+type FilterType = "pinned" | "all" | "action" | "bonus" | "reaction" | "free";
 
 /** Stable empty conditions array — keeps the `conditionEffects` memo dep stable
  *  when no character is loaded (a fresh `[]` each render would thrash the memo). */
@@ -306,6 +307,7 @@ function combatGloss(
 export function PlayTab() {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
+  const compactActions = useMediaQuery("(max-width: 720px)");
   const character = useCharacterStore((s) => s.character);
   const selected = useCombatStore((s) => s.selected);
   const budget = useCombatStore((s) => s.budget);
@@ -352,7 +354,12 @@ export function PlayTab() {
     [handleSelect, handleUseReaction, prepareResolution, sheetCombat]
   );
 
-  const [filter, setFilter] = useState<FilterType>("all");
+  // Mobile opens on the player's curated hotbar, not a seven-screen catalogue.
+  // Desktop keeps the overview. The choice is made only on mount: rotating or
+  // resizing never overrides a filter the player already selected.
+  const [filter, setFilter] = useState<FilterType>(() =>
+    compactActions ? "pinned" : "all"
+  );
   const [search, setSearch] = useState("");
   // Single-open accordion across the whole board (one expanded action card at a
   // time), matching the Spells / Inventory / Features tabs — opening one card
@@ -553,6 +560,16 @@ export function PlayTab() {
     () => visibleActions.filter((a) => a.pinned && a.type !== "reaction"),
     [visibleActions]
   );
+  // A custom character may have no pinned actions yet. In that case the mobile
+  // default falls through to Actions (or All when the build has no Action rows)
+  // instead of presenting a mysterious empty page. Once the player explicitly
+  // chooses another chip, that choice remains authoritative.
+  const activeFilter: FilterType =
+    filter === "pinned" && pinnedActions.length === 0
+      ? visibleActions.some((a) => a.type === "action")
+        ? "action"
+        : "all"
+      : filter;
   const reactionActions = useMemo(
     () => visibleActions.filter((a) => a.type === "reaction"),
     [visibleActions]
@@ -577,7 +594,8 @@ export function PlayTab() {
   // Helpers to apply filter + search to a list
   function applyFilter(list: CombatAction[], f: FilterType, q: string) {
     let result = list;
-    if (f !== "all") result = result.filter((a) => a.type === f);
+    if (f === "pinned") result = result.filter((a) => a.pinned);
+    else if (f !== "all") result = result.filter((a) => a.type === f);
     if (q.trim()) {
       // Bilingual: an IT player typing "dash" still finds "Scatto" (and v.v.).
       result = result.filter((a) => matchesSearch(q, a.name, a.nameEn));
@@ -588,12 +606,12 @@ export function PlayTab() {
   // The active filter + search govern EVERY section uniformly (D13), incl. Pinned
   // (so it hides when nothing pinned matches the chosen type) and Reactions.
   const filteredRegular = useMemo(
-    () => applyFilter(unpinnedRegular, filter, search),
-    [unpinnedRegular, filter, search]
+    () => applyFilter(unpinnedRegular, activeFilter, search),
+    [unpinnedRegular, activeFilter, search]
   );
   const filteredBase = useMemo(
-    () => applyFilter(unpinnedBase, filter, search),
-    [unpinnedBase, filter, search]
+    () => applyFilter(unpinnedBase, activeFilter, search),
+    [unpinnedBase, activeFilter, search]
   );
   // Reactions: shown under the All + Reaction filters; search applies, type is fixed.
   const filteredReactions = useMemo(
@@ -603,8 +621,8 @@ export function PlayTab() {
   // Pinned, with the active filter + search applied — the filter narrows the
   // promoted strip to the matching type and empties it when none match.
   const filteredPinned = useMemo(
-    () => applyFilter(pinnedActions, filter, search),
-    [pinnedActions, filter, search]
+    () => applyFilter(pinnedActions, activeFilter, search),
+    [pinnedActions, activeFilter, search]
   );
 
   // D8 — every direct list (single-type board, Base, Reactions, Pinned) routes
@@ -873,9 +891,9 @@ export function PlayTab() {
   // honest empty state replace the old per-section "no actions" copies (D13).
   // The reaction-filtered view always carries the off-list "Mark used" row, so
   // it is never empty.
-  const reactionsVisible = filter === "all" || filter === "reaction";
+  const reactionsVisible = activeFilter === "all" || activeFilter === "reaction";
   const viewEmpty =
-    filter !== "reaction" &&
+    activeFilter !== "reaction" &&
     sortedPinned.length === 0 &&
     filteredRegular.length === 0 &&
     filteredBase.length === 0 &&
@@ -906,8 +924,8 @@ export function PlayTab() {
             (a SPENT token re-arms its slot instead). Solo, the meter also carries the
             "End Combat" control beside End Turn (owner-ratified 2026-07-03). */}
         <ThisTurnTracker
-          activeFilter={filter}
-          onFilterByType={(type) => setFilter((f) => (f === type ? "all" : type))}
+          activeFilter={activeFilter}
+          onFilterByType={(type) => setFilter(activeFilter === type ? "all" : type)}
           attackRollState={attackRoll.state}
         />
         {/* NO separate encounter Prev/Next controls here (removed 2026-08-02): in an
@@ -923,13 +941,20 @@ export function PlayTab() {
           Only shows types that have at least 1 action. */}
       <div className="filters">
         <div className="fchip-group" role="group" aria-label={t("combat.filterByType")}>
-          {(["all", "action", "bonus", "reaction", "free"] as FilterType[])
+          {(["pinned", "all", "action", "bonus", "reaction", "free"] as FilterType[])
             // Availability + count span the VISIBLE actions (so a hidden off-hand
             // doesn't inflate a chip's count) — a type chip stays reachable when its
             // only member is pinned, and the count reflects what the filter surfaces.
-            .filter((f) => f === "all" || visibleActions.some((a) => a.type === f))
+            .filter(
+              (f) =>
+                f === "all" ||
+                (f === "pinned"
+                  ? pinnedActions.length > 0
+                  : visibleActions.some((a) => a.type === f))
+            )
             .map((f) => {
               const filterLabels: Record<FilterType, string> = {
+                pinned: t("common.pinned"),
                 all: t("common.all"),
                 action: t("combat.action"),
                 bonus: t("combat.bonus"),
@@ -939,13 +964,15 @@ export function PlayTab() {
               const count =
                 f === "all"
                   ? visibleActions.length
-                  : visibleActions.filter((a) => a.type === f).length;
+                  : f === "pinned"
+                    ? pinnedActions.length
+                    : visibleActions.filter((a) => a.type === f).length;
               return (
                 <button
                   key={f}
                   type="button"
                   className="fchip"
-                  aria-pressed={filter === f}
+                  aria-pressed={activeFilter === f}
                   onClick={() => setFilter(f)}
                 >
                   {filterLabels[f]}
@@ -1025,7 +1052,7 @@ export function PlayTab() {
           ActionGroup for that one slot, so the header ALWAYS names the active
           filter (D13 — no more a generic "All Actions" over a bonus-only list).
           Reactions + base render in their own sections below. */}
-      {filter === "all"
+      {activeFilter === "all"
         ? regularGroups.map((group) => (
             <ActionGroup
               key={group.slot}
@@ -1050,11 +1077,12 @@ export function PlayTab() {
               onPin={(action) => togglePinnedAction(action.id, action.defaultPinned)}
             />
           ))
-        : filter !== "reaction" &&
+        : activeFilter !== "reaction" &&
+          activeFilter !== "pinned" &&
           sortedRegular.length > 0 && (
             <ActionGroup
-              slot={filter}
-              title={t(groupTitle[filter].key, groupTitle[filter].fallback)}
+              slot={activeFilter}
+              title={t(groupTitle[activeFilter].key, groupTitle[activeFilter].fallback)}
               actions={sortedRegular}
               isSelected={isSelected}
               isDepletedAction={isDepletedAction}
@@ -1081,78 +1109,81 @@ export function PlayTab() {
           except under the Reaction filter, where the section always renders to
           carry the off-list "Mark used" row (the meter's reaction token is a
           pure filter; spending lives HERE, owner verdict 2026-06-11). */}
-      {reactionsVisible && (sortedReactions.length > 0 || filter === "reaction") && (
-        <>
-          {/* Pure rubric — the turn-meter Reaction coin alone carries
+      {reactionsVisible &&
+        (sortedReactions.length > 0 || activeFilter === "reaction") && (
+          <>
+            {/* Pure rubric — the turn-meter Reaction coin alone carries
               availability (a header chip duplicated it, owner order
               2026-07-10); the spent state also reads on every card's CTA. */}
-          <SectionHeader tight data-econ="reaction" title={t("combat.reactions")} />
-          <p className="mb-2 px-1 text-[0.7rem] italic text-text-secondary">
-            {t("combat.reactionsNote")}
-          </p>
-          <div className="uc-stack">
-            {sortedReactions.map((action) => (
-              <ReactionCard
-                key={action.id}
-                action={action}
-                disabled={reactionUsed}
-                committed={reactionUsedId === action.id}
-                blockedReason={blockedReasonFor_(action, false)}
-                slotData={slotPipsFor(action)}
-                attackRoll={attackRoll}
-                higherLevelsFor={higherLevelsFor}
-                open={expandedId === action.id}
-                onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                onUse={() => commitAction(action)}
-              />
-            ))}
-            {/* Off-list reaction bookkeeping — ONE clear "Mark used" row for a
+            <SectionHeader tight data-econ="reaction" title={t("combat.reactions")} />
+            <p className="mb-2 px-1 text-[0.7rem] italic text-text-secondary">
+              {t("combat.reactionsNote")}
+            </p>
+            <div className="uc-stack">
+              {sortedReactions.map((action) => (
+                <ReactionCard
+                  key={action.id}
+                  action={action}
+                  disabled={reactionUsed}
+                  committed={reactionUsedId === action.id}
+                  blockedReason={blockedReasonFor_(action, false)}
+                  slotData={slotPipsFor(action)}
+                  attackRoll={attackRoll}
+                  higherLevelsFor={higherLevelsFor}
+                  open={expandedId === action.id}
+                  onOpenChange={(o) => setExpandedId(o ? action.id : null)}
+                  onUse={() => commitAction(action)}
+                />
+              ))}
+              {/* Off-list reaction bookkeeping — ONE clear "Mark used" row for a
                 reaction resolved verbally at the table (an opportunity attack,
                 a readied action). Commits through the SAME handleUseReaction
                 engine path as every reaction card (immediate-commit + the 5s
                 undo toast), so the meter's reaction disc dims identically. */}
-            {filter === "reaction" && (
-              <OffListReactionRow
-                disabled={reactionUsed}
-                committed={reactionUsedId === offListReaction.id}
-                onUse={() => handleUseReaction(offListReaction)}
-              />
-            )}
-          </div>
-        </>
-      )}
+              {activeFilter === "reaction" && (
+                <OffListReactionRow
+                  disabled={reactionUsed}
+                  committed={reactionUsedId === offListReaction.id}
+                  onUse={() => handleUseReaction(offListReaction)}
+                />
+              )}
+            </div>
+          </>
+        )}
 
       {/* ── Base Actions — universal SRD actions, under any non-reaction filter ── */}
-      {filter !== "reaction" && filteredBase.length > 0 && (
-        <>
-          <SectionHeader tight data-econ="action" title={t("combat.baseActions")} />
-          <div className="uc-stack">
-            {sortedBase.map((action) => (
-              <CombatActionCard
-                key={action.id}
-                action={action}
-                selected={isSelected(action)}
-                depleted={isDepletedAction(action)}
-                blockedReason={blockedReasonFor_(action, isDepletedAction(action))}
-                slotFull={slotFullFor(action)}
-                attackCount={attackCountFor(action)}
-                attackOccupant={attackOccupantFor(action)}
-                slotData={slotPipsFor(action)}
-                attackRoll={attackRoll}
-                higherLevelsFor={higherLevelsFor}
-                onSpendRider={spendRider}
-                depletedTrackers={depletedTrackers}
-                cunningStrike={cunningStrike}
-                skillCheckBonusFor={skillCheckBonusFor}
-                open={expandedId === action.id}
-                onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                onCommit={() => commitAction(action)}
-                onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
-              />
-            ))}
-          </div>
-        </>
-      )}
+      {activeFilter !== "reaction" &&
+        activeFilter !== "pinned" &&
+        filteredBase.length > 0 && (
+          <>
+            <SectionHeader tight data-econ="action" title={t("combat.baseActions")} />
+            <div className="uc-stack">
+              {sortedBase.map((action) => (
+                <CombatActionCard
+                  key={action.id}
+                  action={action}
+                  selected={isSelected(action)}
+                  depleted={isDepletedAction(action)}
+                  blockedReason={blockedReasonFor_(action, isDepletedAction(action))}
+                  slotFull={slotFullFor(action)}
+                  attackCount={attackCountFor(action)}
+                  attackOccupant={attackOccupantFor(action)}
+                  slotData={slotPipsFor(action)}
+                  attackRoll={attackRoll}
+                  higherLevelsFor={higherLevelsFor}
+                  onSpendRider={spendRider}
+                  depletedTrackers={depletedTrackers}
+                  cunningStrike={cunningStrike}
+                  skillCheckBonusFor={skillCheckBonusFor}
+                  open={expandedId === action.id}
+                  onOpenChange={(o) => setExpandedId(o ? action.id : null)}
+                  onCommit={() => commitAction(action)}
+                  onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
       {/* ── Empty state — one honest message when the filter surfaces nothing ── */}
       {viewEmpty && (
