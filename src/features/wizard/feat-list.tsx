@@ -43,6 +43,10 @@ import { useEnthroneAnchor } from "./use-enthrone-anchor";
 import { useIdleMounted } from "./use-idle-mount";
 import { WizardFold } from "./fold";
 
+/** The unfiltered discovery view stays scan-sized. Search/facets always inspect
+ *  the full pool, and an explicit Show more reveals the remainder in place. */
+const INITIAL_FEAT_ROWS = 16;
+
 export function WizardFeatList({
   feats,
   chosenId,
@@ -68,6 +72,12 @@ export function WizardFeatList({
   const remember = useEnthroneAnchor(scopeRef);
   const [query, setQuery] = useState("");
   const [facet, setFacet] = useState<FeatCategory | null>(null);
+  // Preserve an existing deep choice on remount; otherwise start with a bounded
+  // discovery window instead of turning a 100+ feat corpus into an 8,000px page.
+  const [showAll, setShowAll] = useState(
+    () =>
+      chosenId != null && feats.findIndex((f) => f.id === chosenId) >= INITIAL_FEAT_ROWS
+  );
   /** The ONE open entry (reading or chosen-expanded) — a chosen entry starts open. */
   const [focusId, setFocusId] = useState<string | null>(chosenId);
 
@@ -83,9 +93,18 @@ export function WizardFeatList({
     (f) => f.searchDesc
   );
 
+  // Bounding applies only to the undirected "All" browse. A query or category is
+  // already an explicit narrowing action and therefore shows every match. No
+  // virtualization/dependency: collapsed rows are cheap; this limits page length
+  // and cognitive load, not the searchable corpus.
+  const shown =
+    !showAll && query.trim() === "" && activeFacet === null
+      ? visible.slice(0, INITIAL_FEAT_ROWS)
+      : visible;
+
   const chosen = chosenId ? (feats.find((f) => f.id === chosenId) ?? null) : null;
   const keptName =
-    chosen != null && !visible.some((f) => f.id === chosen.id) ? chosen.name : null;
+    chosen != null && !shown.some((f) => f.id === chosen.id) ? chosen.name : null;
 
   /** The Choose button commits; the entry STAYS open (the asks track opens
    *  inside the same height-locked body) and the clicked spot never moves. */
@@ -155,6 +174,7 @@ export function WizardFeatList({
           onClick={() => {
             setQuery("");
             setFacet(null);
+            setShowAll(true);
           }}
         >
           <Icon as={Check} size="xs" decorative />
@@ -165,7 +185,7 @@ export function WizardFeatList({
       {/* A stack of DISCLOSURE entries (header buttons with aria-expanded), not
           a listbox — option semantics would demand role=option children. */}
       <div className="wiz-list" ref={scopeRef} aria-label={t("feats.feats")}>
-        {visible.map((f) => (
+        {shown.map((f) => (
           <FeatEntry
             key={f.id}
             feat={f}
@@ -179,6 +199,13 @@ export function WizardFeatList({
         ))}
         {visible.length === 0 && <p className="wiz-empty">{t("common.noResults")}</p>}
       </div>
+      {shown.length < visible.length && (
+        <div className="mt-4 flex justify-center">
+          <Button variant="ghost" size="sm" onClick={() => setShowAll(true)}>
+            {t("common.showMore")}
+          </Button>
+        </div>
+      )}
     </>
   );
 }

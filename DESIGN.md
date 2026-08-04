@@ -1439,6 +1439,11 @@ The ONE F-family picker for every in-wizard choice pool (`WizardPickList` in
 - **Illegal options are absent, not greyed:** the presenter (`lib/views/feat-pick-view.ts` et al.)
   filters out unmet-prerequisite and already-taken options; the only disabled-row note is a
   blocking reason ("Already taken"). Met preconditions are never announced.
+- **A large feat corpus starts scan-sized, never search-limited:** the unfiltered All view mounts
+  the first 16 entries and one quiet **Show more** action reveals the remainder in place. Search
+  and category facets always inspect and render the full matching corpus; an existing choice
+  beyond the first window opens with the full list available. The page owns the scroll — no nested
+  scroller, virtualizer, dependency, or second pagination model.
 - **The commit moment is marked (the Create ceremony):** the wizard's final commit control — the
   creation "Create Character" and the level-up confirm — is the ONE `WizardNav` next button that
   takes `commit`, whose gold seal emits a single gold-leaf **bloom** on press (an expanding, fading

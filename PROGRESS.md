@@ -55,6 +55,14 @@ welcome now participates in the shared dark/light screenshots, axe, mobile-layou
 guards. Verification: tab no-jump 5/5; login screenshots 5/5; login axe 2/2, mobile 1/1, i18n 2/2,
 on-art 1/1; shared-browser dark/light identity sweep 1/1; tab/route/login unit family 16/16;
 typecheck + zero-warning lint green.
+**Wave 4 implemented; screenshot approval pending (2026-08-04):** the level-up feat catalogue no
+longer turns undirected mobile browsing into an 8,462px document. Its unfiltered All view now starts
+with 16 collapsed entries and one in-place Show more action; search and category facets still query
+the complete corpus, and a saved deep choice remains immediately available. The real EN dark mobile
+surface is 1,665px after the change (about 80% shorter) with the existing page scroll and pager
+untouched — no virtualizer, dependency, nested scroll region, or parallel selection state.
+Verification: canonical level-up-boon screenshots 5/5 across EN/IT × dark/light × desktop/mobile;
+targeted feat-list behavior 3/3; targeted axe and mobile-layout green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 
