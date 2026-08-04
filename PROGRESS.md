@@ -93,6 +93,16 @@ shared heading. Axe also exposed the raw spell-level hue being reused as 11px da
 now stays in the chip border/wash while the value uses theme-safe primary ink. Both spell pickers now
 consume the existing shared spell-level token helper instead of maintaining duplicate local functions.
 Verification: screenshots 9/9, axe 6/6, i18n 6/6, mobile layout 3/3, typecheck + targeted lint green.
+**Wave 8 resource-picker audit (2026-08-04):** Arcane Recovery now participates as a first-class
+EN/IT × light/dark × desktop/mobile surface using the existing Wizard 18 scenario with real expended
+slots. The browser path exposed a transactional-state defect: incrementing a slot, cancelling, and
+reopening preserved the abandoned count and reduced the apparent recovery budget. The modal now
+mounts only for an active request, making each use a fresh draft by construction; its prop contract
+is non-nullable to prevent future always-mounted consumers. The shared surface driver exercises
+increment → Cancel → reopen and asserts the full `9 of 9` budget before every capture. Fresh visuals
+showed the compact two-row picker already coherent in both themes and at phone width, so its layout
+stays unchanged. Verification: screenshots 3/3, axe 2/2, i18n 2/2, mobile layout 1/1, typecheck +
+targeted lint green.
 
 ## Shipped epic — The BG3 corpus-studied visual identity (owner-ratified 2026-07-30)
 

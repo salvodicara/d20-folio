@@ -504,6 +504,35 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
     },
   },
+  "character-arcane-recovery": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyText(/Archmage Velt/),
+    prepare: async (page) => {
+      const useArcaneRecovery = page.getByRole("button", {
+        name: /^(use: arcane recovery|usa: recupero arcano)$/i,
+      });
+
+      // Regression path: a cancelled draft must never leak into the next use.
+      await useArcaneRecovery.click();
+      const firstDialog = page.getByRole("dialog").first();
+      await firstDialog.waitFor({ timeout: 15000 });
+      await firstDialog
+        .getByRole("button", { name: /^(increase|aumenta)$/i })
+        .first()
+        .click();
+      await firstDialog.getByRole("button", { name: /^(cancel|annulla)$/i }).click();
+
+      await useArcaneRecovery.click();
+      const reopenedDialog = page.getByRole("dialog").first();
+      await reopenedDialog.waitFor({ timeout: 15000 });
+      await expect(
+        reopenedDialog.getByText(
+          /^(9 of 9 slot-levels left|9 di 9 livelli di slot rimasti)$/i
+        )
+      ).toBeVisible();
+    },
+  },
   // P2 — the glossary popover (GlossaryTip) open on the AC vital label. Keys on
   // the stable `.glossary-term` class inside a `.vital` (locale-invariant), then
   // waits for the branded `.glossary-pop` overlay so axe + the locale sweep see

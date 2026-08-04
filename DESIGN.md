@@ -1202,6 +1202,10 @@ in a void: last ink → panel edge = strip → panel edge.
     host from the source tree, rejects a missing body primitive and raw nested scrollers, and keeps
     `ModalStage` behind a reasoned exact allowlist — so a new dialog cannot silently lose the
     frame's safe field, dissolve, keyboard scroll, or footer rhythm.
+  - **Cancelled drafts do not survive reopening.** A transactional picker mounts only while its
+    request exists (or explicitly resets against a stable request key), so Cancel/Escape discards
+    provisional steppers, selections, and filters. Reopening starts from the current committed
+    character state; hidden mounted modal state must never become a phantom choice.
 - **Command palette ("Ask the Folio"):** a floating panel (`--bg-surface-2` + `--elev-floating`,
   `--z-overlay`, scrim) with a carved search field and keyboard-navigable result rows (hover/selected
   → `--bg-surface-3` + a left `--accent-primary` marker), section eyebrows, and `aria-current` on the

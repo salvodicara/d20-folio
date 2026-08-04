@@ -30,7 +30,8 @@ export interface ArcaneRecoveryRequest {
 }
 
 export interface ArcaneRecoveryModalProps {
-  request: ArcaneRecoveryRequest | null;
+  /** The parent mounts the modal only for an active request, resetting draft counts per use. */
+  request: ArcaneRecoveryRequest;
   /** Confirm: the flattened slot-levels chosen (e.g. [2, 1] = one 2nd + one 1st). */
   onConfirm: (slotLevels: number[]) => void;
   onCancel: () => void;
@@ -45,11 +46,11 @@ export function ArcaneRecoveryModal({
   // One restore-count per eligible slot level (keyed by level), starting at 0.
   const [counts, setCounts] = useState<Record<number, number>>({});
 
-  const cap = request ? arcaneRecoveryCap(request.wizardLevel) : 0;
+  const cap = arcaneRecoveryCap(request.wizardLevel);
   // Eligible levels: expended AND ≤ the RAW max (5th). Sorted ascending.
   const rows = useMemo(
     () =>
-      (request?.expended ?? [])
+      request.expended
         .filter((e) => e.expended > 0 && e.level <= ARCANE_RECOVERY_MAX_SLOT_LEVEL)
         .sort((a, b) => a.level - b.level),
     [request]
@@ -58,8 +59,6 @@ export function ArcaneRecoveryModal({
   const usedLevels = rows.reduce((sum, r) => sum + r.level * (counts[r.level] ?? 0), 0);
   const remainingBudget = cap - usedLevels;
   const chosenAny = usedLevels > 0;
-
-  if (!request) return null;
 
   /** Max count selectable at a level: bounded by expended AND the remaining budget. */
   function maxAt(level: number, expended: number): number {
