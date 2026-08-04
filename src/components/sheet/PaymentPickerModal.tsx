@@ -6,7 +6,8 @@
  * primary tracker OR a Psionic Energy Die; Wild Companion: a Wild Shape use OR a
  * spell slot). It lists every payment as a chromatic option row (reusing the SAME
  * `.cl-opts` / `.cl-opt` recipe the {@link CastLevelModal} uses, golden rule 3),
- * each disabled when its resource is unaffordable (constrained input — golden
+ * with a semantic `cl-payment-primary` treatment for the declared default. Each
+ * row is disabled when its resource is unaffordable (constrained input — golden
  * rule 20). Choosing one resolves with that payment index; cancelling resolves
  * null. The parent commits the chosen `CostSpec` through the cost-engine with undo.
  *
@@ -70,7 +71,7 @@ export function PaymentPickerModal({
                 <button
                   key={row.index}
                   type="button"
-                  className={`cl-opt ${row.primary ? "cl-slot" : "cl-free"}`}
+                  className={`cl-opt${row.primary ? " cl-payment-primary" : ""}`}
                   disabled={!row.affordable}
                   onClick={() => onConfirm(row.index)}
                 >

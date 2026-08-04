@@ -9184,12 +9184,16 @@ button.create-need:focus-visible .create-need-chev {
 .cl-slot .cl-tag {
   color: var(--accent-text);
 }
-/* Free-cast row — gold gilt tint. */
-.cl-free {
+/* Free-cast row — gold gilt tint. The payment picker uses the same MATERIAL for
+   its declared default, but keeps a semantic class: a payment is not a free cast,
+   and the alternate choice must never look more recommended than the default. */
+.cl-free,
+.cl-payment-primary {
   border-color: var(--border-accent);
   background: color-mix(in oklab, var(--accent-glow) 8%, var(--bg-surface-1));
 }
-.cl-free .cl-tag {
+.cl-free .cl-tag,
+.cl-payment-primary .cl-tag {
   color: var(--accent-text);
 }
 

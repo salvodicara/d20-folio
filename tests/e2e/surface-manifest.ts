@@ -88,6 +88,14 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
     slug: "character-arcane-recovery",
     route: "/characters/scn-wizard-18",
   },
+  {
+    slug: "character-pool-spend",
+    route: "/characters/scn-devotion-paladin",
+  },
+  {
+    slug: "character-payment-picker",
+    route: "/characters/scn-potent-druid",
+  },
   // P2 — the glossary POPOVER open on a cockpit vital (the AC label trigger):
   // the shared GlossaryTip overlay state, swept for a11y + locale completeness.
   { slug: "glossary-popover", route: "/characters/mock-1" },

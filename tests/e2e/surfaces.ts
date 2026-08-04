@@ -533,6 +533,32 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       ).toBeVisible();
     },
   },
+  "character-pool-spend": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyText(/Auriel, Oath of Devotion/),
+    prepare: async (page) => {
+      await page
+        .getByRole("button", {
+          name: /^(use: lay on hands|usa: imposizione delle mani)$/i,
+        })
+        .click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
+    },
+  },
+  "character-payment-picker": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyText(/Maelis, Elemental Druid/),
+    prepare: async (page) => {
+      await page
+        .getByRole("button", {
+          name: /^(use: wild companion|usa: compagno selvatico)$/i,
+        })
+        .click();
+      await page.getByRole("dialog").first().waitFor({ timeout: 15000 });
+    },
+  },
   // P2 — the glossary popover (GlossaryTip) open on the AC vital label. Keys on
   // the stable `.glossary-term` class inside a `.vital` (locale-invariant), then
   // waits for the branded `.glossary-pop` overlay so axe + the locale sweep see
