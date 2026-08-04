@@ -17,6 +17,10 @@ import type { RiderVM } from "@/lib/views/rider-view";
 import type { CunningStrikeVM } from "@/lib/views/cunning-strike-view";
 
 type CommitEffect = () => (() => void) | undefined;
+export type PreparedCommit = (
+  afterCommit: CommitEffect,
+  actionOverride?: ResolvedAction
+) => void;
 
 /** The economy commit surface shared by the center meter + the Play-tab cards. */
 export interface TurnEconomyApi {
@@ -27,10 +31,7 @@ export interface TurnEconomyApi {
    */
   prepareResolution: (
     action: ResolvedAction,
-    onPrepared: (
-      action: ResolvedAction,
-      commit: (afterCommit: CommitEffect) => void
-    ) => void
+    onPrepared: (action: ResolvedAction, commit: PreparedCommit) => void
   ) => void;
   /** Tap an action card: commit its cost immediately (reversal lives on the
    *  session undo system — 5s toast · masthead · ⌘Z; the CTA grammar). */

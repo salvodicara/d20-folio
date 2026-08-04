@@ -43,6 +43,7 @@ describe("S9 — item-pool cast action bridge", () => {
     const [card] = cards;
     expect(card?.id).toBe("item-cast-wand-of-binding");
     expect(card?.costTracker).toBe("wand-of-binding");
+    expect(card?.castPoolSourceId).toBe("wand-of-binding");
     expect(card?.type).toBe("action");
     expect(card?.costsSlot).toBe(false);
     // The charge pool is the card's uses chip (7 charges, none spent yet).
@@ -84,6 +85,7 @@ describe("S9 — item-pool cast action bridge", () => {
     expect(pool?.trackerId).toBe("wand-of-binding");
     expect(pool?.charges).toBe(7);
     expect(pool?.remaining).toBe(4);
+    expect(pool?.castOverrides).toEqual({ saveDC: 17 });
     expect(pool?.costBySpell).toEqual({ "hold-monster": 5, "hold-person": 2 });
     expect([...(pool?.spellIds ?? [])].sort()).toEqual(["hold-monster", "hold-person"]);
   });

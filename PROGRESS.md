@@ -60,14 +60,17 @@ blocking on owner screenshots):
 
 ## Current state
 
-**Deterministic automation gap sweep — ACTIVE (2026-08-04):** the persistent/reactive-effect lifecycle
-and target-bound on-hit retaliation are closed and branch-pushed. The current item-casting milestone now
-models the five public variable-level charge schedules (Magic Missiles, Fireballs, Lightning Bolts, Eyes
-of Charming, Staff of Healing) through the existing `free-cast-spell` seam: level and exact affordable
-charge cost are selected before targets, scaled spell facts reach the resolver, and solo/encounter spend
-plus undo share one transaction path. Item activation/cooldowns and the remaining deterministic corpus
-audit follow as separate, truth-gated milestones; queued UI dogfood remains after engine closure. Nothing
-from this sweep merges to `main` without the owner's final permission.
+**Deterministic automation gap sweep — ACTIVE (2026-08-04):** five truth-gated milestones are closed and
+branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level
+charged-item casts, activated-item tracker/timer lifecycle, and bounded spell-pool execution. Divine
+Intervention, War God's Blessing and multi-spell items now rejoin the ordinary resolved-spell pipeline after
+the spell pick: configuration precedes target review; action economy, deterministic effects, concentration,
+structured log/Chronicle provenance, exact tracker payment and undo share one path. Typed source overrides
+also preserve fixed save DCs and War God's Blessing's concentration-free 10-round persistent/recurring
+state. Item-only spell visibility cannot invent a class-slot route, shared-resource homebrew pools select by
+stable source id, and stale commit/redo proposals cannot overdraw live slots or charges. The remaining
+deterministic corpus audit follows as separate, truth-gated milestones; queued UI dogfood remains after
+engine closure. Nothing from this sweep merges to `main` without the owner's final permission.
 
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark

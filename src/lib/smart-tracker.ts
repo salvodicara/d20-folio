@@ -61,6 +61,8 @@ import {
   type PactWeapon,
   type PactWeaponRider,
   type MarkedTargetScope,
+  type CastSourceOverrides,
+  type FreeCastFromListEntry,
   grantField,
   hasGrantField,
   topGrantRef,
@@ -607,6 +609,10 @@ export interface ResolvedAction {
   slotLevel?: number;
   /** Tracker ID consumed (if feature with tracker) */
   costTracker?: string;
+  /** Stable source id of the bounded spell pool this action opens. Kept separate
+   * from `costTracker`: homebrew features may share one resource without sharing
+   * their eligible spell lists. */
+  castPoolSourceId?: string;
   /** Whether the associated tracker is a pool resource (Lay on Hands, etc.) */
   costTrackerIsPool?: boolean;
   /** Stable pool unit token (e.g. "hp", "points") — localized at the render boundary. */
@@ -650,6 +656,9 @@ export interface ResolvedAction {
    * state. Omitted for actions on features with no `while-active` grant.
    */
   activatesKey?: string;
+  /** Source-specific duration for an activated cast state (for example War
+   * God's Blessing's concentration-free 1-minute spell). */
+  activeDurationRounds?: number;
   /**
    * A standing spell grant that belongs on the selected creature rather than on
    * the caster. The action carries only the catalogue reference; the encounter
@@ -2359,6 +2368,36 @@ export interface FreeCastFromListPool {
    */
   costBySpell: Record<string, number>;
   casterAbility?: AbilityCode;
+  castOverrides?: CastSourceOverrides;
+}
+
+export const CAST_SOURCE_ACTIVE_PREFIX = "cast-source:";
+
+/** Stable active/timer key for a source-specific persistent spell cast. */
+export function castSourceActiveKey(sourceId: string, spellId: string): string {
+  return `${CAST_SOURCE_ACTIVE_PREFIX}${sourceId}:${spellId}`;
+}
+
+function castSourceIdFromActiveKey(key: string): string | null {
+  if (!key.startsWith(CAST_SOURCE_ACTIVE_PREFIX)) return null;
+  const spellSeparator = key.lastIndexOf(":");
+  return spellSeparator > CAST_SOURCE_ACTIVE_PREFIX.length
+    ? key.slice(CAST_SOURCE_ACTIVE_PREFIX.length, spellSeparator)
+    : null;
+}
+
+/** Whether a source pool admits this spell, for both fixed and class-list pools. */
+function freeCastEntryIncludesSpell(
+  entry: FreeCastFromListEntry,
+  spell: (typeof spells)[number]
+): boolean {
+  return entry.spellIds
+    ? entry.spellIds.includes(spell.id)
+    : spell.level >= 1 &&
+        spell.level <= (entry.maxSpellLevel ?? 0) &&
+        spell.classes.some(
+          (classId) => classId.toLowerCase() === entry.spellList?.toLowerCase()
+        );
 }
 
 /**
@@ -2392,16 +2431,9 @@ export function resolveFreeCastFromList(character: CharacterDoc): FreeCastFromLi
   return agg.freeCastFromList.map((entry) => {
     // Two pool shapes: a FIXED set of named ids (War God's Blessing) or a class
     // list ≤ a level cap (Divine Intervention).
-    const eligible = entry.spellIds
-      ? entry.spellIds.filter((id) => spellIndex.has(id))
-      : spells
-          .filter(
-            (s) =>
-              s.level >= 1 &&
-              s.level <= (entry.maxSpellLevel ?? 0) &&
-              s.classes.some((c) => c.toLowerCase() === entry.spellList?.toLowerCase())
-          )
-          .map((s) => s.id);
+    const eligible = spells
+      .filter((spell) => freeCastEntryIncludesSpell(entry, spell))
+      .map((spell) => spell.id);
     // L20 — Greater Divine Intervention's Wish addition (a 9th-level spell off the
     // Cleric list, so it isn't picked up by the class-list filter above).
     if (
@@ -2447,6 +2479,7 @@ export function resolveFreeCastFromList(character: CharacterDoc): FreeCastFromLi
       remaining: Math.max(0, charges - used),
       costBySpell,
       ...(entry.casterAbility ? { casterAbility: entry.casterAbility } : {}),
+      ...(entry.castOverrides ? { castOverrides: entry.castOverrides } : {}),
     };
   });
 }
@@ -2765,6 +2798,7 @@ function resolveItemPoolCastActions(character: CharacterDoc): RawResolvedAction[
       // The pool spends item CHARGES, never a spell slot.
       costsSlot: false,
       costTracker: source.id,
+      castPoolSourceId: source.id,
       costTrackerIsPool: true,
       pinned: pinnedSet.has(id),
       defaultPinned: false,
@@ -4725,6 +4759,14 @@ function resolveFeatureActions(
         summary,
         costsSlot: false,
         costTracker: actionCostTracker,
+        ...("grants" in srdFeature &&
+        (srdFeature.grants ?? []).some(
+          (grant) =>
+            grant.type === "free-cast-from-list" &&
+            (grant.trackerId ?? srdFeature.id) === actionCostTracker
+        )
+          ? { castPoolSourceId: srdFeature.id }
+          : {}),
         costTrackerIsPool: actionCostIsPool,
         costTrackerUnit: actionCostUnit,
         trackerCost: action.trackerCost,
@@ -4945,9 +4987,10 @@ function resolveSpellActions(
   // assembler (features + equipped/attuned items + invocations + background +
   // standing spell buffs), so item-borne casting riders (Rod of the Pact Keeper)
   // reach the combat cards too — previously features+invocations only.
+  const activeFeatureKeys = new Set(session.activeFeatures ?? []);
   const spellGrantAggregate = evaluateGrants(
     resolveAllGrantSources(charData),
-    new Set(session.activeFeatures ?? []),
+    activeFeatureKeys,
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   );
 
@@ -5555,18 +5598,27 @@ function resolveSpellActions(
     // established effect without spending another slot or restarting concentration.
     // The stored cast level preserves upcast math across later turns. Geometry and
     // timing remain table declarations; every consequence still uses CombatResolver.
+    const sourceCast = spellGrantAggregate.freeCastFromList.find(
+      (entry) =>
+        entry.castOverrides?.maxRounds !== undefined &&
+        freeCastEntryIncludesSpell(entry, spell) &&
+        activeFeatureKeys.has(castSourceActiveKey(entry.sourceId, spell.id))
+    );
+    const sourceCastActiveKey = sourceCast
+      ? castSourceActiveKey(sourceCast.sourceId, spell.id)
+      : undefined;
+    const recurringActiveKey = [spellActivatesKey, sourceCastActiveKey].find(
+      (key) => key !== undefined && activeFeatureKeys.has(key)
+    );
     const persistentSpellActive =
-      session.concentration === spell.id ||
-      Boolean(
-        spellActivatesKey && (session.activeFeatures ?? []).includes(spellActivatesKey)
-      );
+      session.concentration === spell.id || recurringActiveKey !== undefined;
     if ((spell.recurrence || spell.followUp) && persistentSpellActive) {
       const castLevel = Math.max(
         spell.level,
         session.concentration === spell.id
           ? (session.concentrationCastLevel ?? spell.level)
-          : spellActivatesKey
-            ? (session.activeSpellCastLevels?.[spellActivatesKey] ?? spell.level)
+          : recurringActiveKey
+            ? (session.activeSpellCastLevels?.[recurringActiveKey] ?? spell.level)
             : spell.level
       );
       const type: ActionType = spell.followUp
@@ -5608,7 +5660,10 @@ function resolveSpellActions(
               ? { damageResolution: follow.attack.resolution }
               : {}),
             ...(follow.saveAbility && spellDc != null
-              ? { saveAbility: follow.saveAbility, saveDC: spellDc }
+              ? {
+                  saveAbility: follow.saveAbility,
+                  saveDC: sourceCast?.castOverrides?.saveDC ?? spellDc,
+                }
               : {}),
             ...(follow.conditionApplication
               ? { conditionApplication: follow.conditionApplication }
@@ -7130,17 +7185,21 @@ export function advanceEffectTimers(character: CharacterDoc): {
       next[eff.activeKey] = { roundsLeft };
     }
   }
-  // S9 — SELF-SUSTAINING potion timers (`potion:<itemId>`): a consumed buff
-  // potion has no persistent `while-active` source, so its countdown lives
-  // PURELY in `effectTimers`. Carry every existing potion timer forward here,
-  // decrementing + expiring it exactly like a while-active state. The expiry's
-  // `sourceId` is the item id (parsed off the key) so the expiry log line
-  // attributes the potion. Already-counted keys (a future overlap) are skipped.
+  // Self-sustaining timers have no `while-active` grant from which to recover
+  // their duration: consumed potions live only in `effectTimers`; a source cast
+  // (War God's Blessing) additionally stays valid while its active key is lit.
   for (const [key, timer] of Object.entries(prev)) {
-    if (!key.startsWith(POTION_TIMER_PREFIX) || next[key] !== undefined) continue;
+    if (next[key] !== undefined || expired.some((effect) => effect.activeKey === key))
+      continue;
+    const sourceId = key.startsWith(POTION_TIMER_PREFIX)
+      ? key.slice(POTION_TIMER_PREFIX.length)
+      : (character.session.activeFeatures ?? []).includes(key)
+        ? castSourceIdFromActiveKey(key)
+        : null;
+    if (!sourceId) continue;
     const roundsLeft = timer.roundsLeft - 1;
     if (roundsLeft <= 0) {
-      expired.push({ activeKey: key, sourceId: key.slice(POTION_TIMER_PREFIX.length) });
+      expired.push({ activeKey: key, sourceId });
     } else {
       next[key] = { roundsLeft };
     }

@@ -13,6 +13,7 @@ import { conc } from "./__helpers__/concentration";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { nonCombatSessionChanged } from "@/lib/combat-state";
 import { serializeCharacter } from "@/lib/character-codec";
+import { castSourceActiveKey } from "@/lib/smart-tracker";
 
 /**
  * Creates a minimal mock character for testing store operations.
@@ -2068,6 +2069,54 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
         roundsLeft: 1,
       });
       expect(restored?.session.logEntries.length).toBe(logBefore);
+    });
+
+    it("expires and restores a source-specific concentration-free spell state", () => {
+      const key = castSourceActiveKey("cleric-war-war-gods-blessing", "spiritual-weapon");
+      useCharacterStore.getState().setCharacter(
+        mockCharacter({
+          session: {
+            ...mockCharacter().session,
+            activeFeatures: [key],
+            activeSpellCastLevels: { [key]: 2 },
+            effectTimers: { [key]: { roundsLeft: 1 } },
+          },
+        })
+      );
+
+      const { expired, restore } = useCharacterStore.getState().advanceEffectTimers();
+      expect(expired).toEqual([
+        {
+          activeKey: key,
+          sourceId: "cleric-war-war-gods-blessing",
+        },
+      ]);
+      expect(useCharacterStore.getState().character?.session.activeFeatures).toEqual([]);
+      expect(
+        useCharacterStore.getState().character?.session.activeSpellCastLevels
+      ).toBeUndefined();
+
+      restore();
+      expect(useCharacterStore.getState().character?.session.activeFeatures).toEqual([
+        key,
+      ]);
+      expect(
+        useCharacterStore.getState().character?.session.activeSpellCastLevels?.[key]
+      ).toBe(2);
+      expect(useCharacterStore.getState().character?.session.effectTimers?.[key]).toEqual(
+        { roundsLeft: 1 }
+      );
+    });
+
+    it("arming one timer returns an inverse that preserves later timers", () => {
+      useCharacterStore.getState().setCharacter(mockCharacter());
+      const restore = useCharacterStore.getState().armEffectTimer("first", 10);
+      useCharacterStore.getState().armEffectTimer("later", 3);
+
+      restore?.();
+      expect(useCharacterStore.getState().character?.session.effectTimers).toEqual({
+        later: { roundsLeft: 3 },
+      });
     });
   });
 

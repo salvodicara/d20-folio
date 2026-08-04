@@ -370,7 +370,9 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
     act(() => snapshotCb()(doc()));
     debouncedSave.mockClear();
 
-    act(() => useCharacterStore.getState().setConcentration(conc("fly")));
+    act(() => {
+      useCharacterStore.getState().setConcentration(conc("fly"));
+    });
 
     const payload = debouncedSave.mock.calls[0]?.[0] as {
       session: unknown;

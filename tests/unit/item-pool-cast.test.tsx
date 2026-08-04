@@ -9,9 +9,42 @@
  */
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+const encounterMode = vi.hoisted(() => ({ active: false }));
 // PlayTab mounts the shared InitVital → combat-state-io → Firebase; mock it so the
 // unit stays CI-pure (the env keys are unset in CI).
 vi.mock("@/lib/firebase", () => ({}));
+vi.mock("@/features/character/center/turn-state", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/features/character/center/turn-state")>();
+  return {
+    ...actual,
+    useSheetCombat: () => (encounterMode.active ? ({} as never) : null),
+  };
+});
+vi.mock("@/features/character/center/CombatResolver", () => ({
+  CombatResolver: ({
+    action,
+    onCommit,
+    onDone,
+  }: {
+    action: { name: string; concentration: boolean; summary: { saveDC?: number } };
+    onCommit: (apply: () => undefined) => void;
+    onDone: () => void;
+  }) => (
+    <div role="dialog" aria-label={`Resolve ${action.name}`}>
+      <span>{`DC ${action.summary.saveDC ?? "—"}`}</span>
+      <span>{action.concentration ? "Concentration" : "No concentration"}</span>
+      <button
+        onClick={() => {
+          onCommit(() => undefined);
+          onDone();
+        }}
+      >
+        Apply {action.name}
+      </button>
+    </div>
+  ),
+}));
 import { MemoryRouter } from "react-router";
 import { PlayTab } from "@/features/character/center/tabs/PlayTab";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
@@ -20,6 +53,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useConfirmStore } from "@/stores/confirmStore";
+import { useUndoStore } from "@/stores/undoStore";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { makeCharacterDoc } from "./_helpers";
 import type { SrdEquipmentRef } from "@/types/character";
@@ -53,6 +87,7 @@ function undoLastToast(): void {
 
 describe("S9 — multi-spell item-cast (shared charge pool)", () => {
   beforeEach(() => {
+    encounterMode.active = false;
     useCharacterStore.setState({ character: null, loading: false, error: null });
     useUIStore.setState({ sheetMode: "play" });
     useToastStore.setState({ toasts: [], timers: {} });
@@ -65,6 +100,7 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
       damageTakenThisRound: false,
     });
     useConfirmStore.setState({ open: false, options: null, _resolve: null });
+    useUndoStore.setState({ characterId: null, past: [], future: [] });
   });
 
   it("Wand of Binding: casting Hold Person debits EXACTLY 2 charges, undo restores 2", async () => {
@@ -86,10 +122,35 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
     // Choosing Hold Person (cost 2) debits exactly 2 charges.
     fireEvent.click(within(dialog).getByText("Hold Person"));
     await waitFor(() => expect(used("wand-of-binding")).toBe(2));
+    expect(
+      useCombatStore
+        .getState()
+        .selected.action.find((action) => action.id === "spell-hold-person")?.cost
+    ).toMatchObject({
+      type: "tracker",
+      key: "wand-of-binding",
+      trackerAmount: 2,
+    });
+    expect(
+      useCharacterStore.getState().character?.session.logEntries.at(-1)?.event
+    ).toMatchObject({
+      kind: "action-use",
+      action: { srd: { kind: "spell", key: "hold-person", field: "name" } },
+      slot: "action",
+    });
 
-    // The undo toast restores EXACTLY the variable cost (2), not a hardcoded 1.
+    // The ONE undo restores the exact cost, economy claim, and structured spell log.
     undoLastToast();
     expect(used("wand-of-binding")).toBe(2 - 2);
+    expect(useCombatStore.getState().selected.action).toEqual([]);
+    expect(useCharacterStore.getState().character?.session.logEntries ?? []).toEqual([]);
+
+    // Redo revalidates the LIVE pool. If those charges were spent elsewhere after
+    // undo, replay bails without overdrawing or resurrecting the action.
+    useCharacterStore.getState().useTracker("wand-of-binding", 7);
+    expect(useUndoStore.getState().redo()).toBe(false);
+    expect(used("wand-of-binding")).toBe(7);
+    expect(useCombatStore.getState().selected.action).toEqual([]);
   });
 
   it("Staff of Charming: a uniform-cost pick debits EXACTLY 1 charge", async () => {
@@ -106,5 +167,28 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
 
     undoLastToast();
     expect(used("staff-of-charming")).toBe(0);
+  });
+
+  it("resolves the chosen spell and targets before spending in an encounter", async () => {
+    encounterMode.active = true;
+    loadWielder([
+      { srdId: "wand-of-binding", equipped: true, attuned: true, quantity: 1 },
+    ]);
+    renderPage();
+
+    fireEvent.click(await screen.findByLabelText("Cast a spell from Wand of Binding"));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByText("Hold Person"));
+
+    const resolver = await screen.findByRole("dialog", { name: "Resolve Hold Person" });
+    expect(within(resolver).getByText("DC 17")).toBeInTheDocument();
+    expect(within(resolver).getByText("Concentration")).toBeInTheDocument();
+    expect(used("wand-of-binding")).toBe(0);
+    expect(useCombatStore.getState().selected.action).toEqual([]);
+
+    fireEvent.click(within(resolver).getByRole("button", { name: "Apply Hold Person" }));
+    await waitFor(() => expect(used("wand-of-binding")).toBe(2));
+    expect(useCombatStore.getState().selected.action).toContainEqual(
+      expect.objectContaining({ id: "spell-hold-person" })
+    );
   });
 });

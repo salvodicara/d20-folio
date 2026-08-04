@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { getMagicItem } from "@/data/magic-items";
 import { asRaceId } from "@/data/srd-names";
 import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
@@ -179,12 +180,14 @@ describe("long-rest tracker recovery", () => {
 
     store().longRest();
 
-    expect(store().character?.session.trackers).toEqual({
+    const expectedTrackers: SessionState["trackers"] = {
       "wings-of-flying": { used: 1 },
       "winged-boots": { used: 2 },
       "wand-of-magic-missiles": { used: 3 },
-      "spirit-board": { used: 1 },
-    });
+    };
+    if (getMagicItem("spirit-board")) expectedTrackers["spirit-board"] = { used: 1 };
+
+    expect(store().character?.session.trackers).toEqual(expectedTrackers);
   });
 });
 

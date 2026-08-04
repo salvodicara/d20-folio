@@ -30,6 +30,7 @@ import { totalLevel as characterLevel } from "@/lib/classes";
 import { resolveTrackers, resolveChargesFormula } from "@/lib/smart-tracker";
 import { spellIndex } from "@/data/spells";
 import { FEATS_BY_ID } from "@/data/feats";
+import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 
 /** The Sorcery-Point pool tracker every Sorcerer Metamagic use debits. */
 const SORCERY_POINT_TRACKER_ID = "sorcerer-font-of-magic";
@@ -38,6 +39,20 @@ const SORCERY_POINT_TRACKER_ID = "sorcerer-font-of-magic";
 export interface CastBadgeLabels {
   mastery: string;
   signature: string;
+}
+
+/**
+ * Whether `spellId` remains available when equipped items are removed from the
+ * character. Magic-item `always-prepared-spell` grants are a visibility bridge
+ * for their own charge-backed cast route; they never grant permission to spend
+ * the bearer's class slots. A genuinely known/prepared copy still survives this
+ * projection and therefore keeps both routes.
+ */
+export function canCastSpellWithSlots(character: CharacterDoc, spellId: string): boolean {
+  return resolveEffectiveSpells(
+    { ...character.character, equipment: [] },
+    character.session
+  ).some((spell) => !("custom" in spell) && spell.srdId === spellId);
 }
 
 /**
@@ -278,7 +293,7 @@ export function resolveSpellCastOptions(
   // reach — `buildCastOptions` drops it when the slot level < base level.
   const scopedSlots = scopedSlotSourcesForSpell(character, spellId, locale);
   return buildCastOptions(
-    character.character.spellSlots,
+    canCastSpellWithSlots(character, spellId) ? character.character.spellSlots : [],
     character.session.spellSlots,
     baseLevel,
     freeCasts,

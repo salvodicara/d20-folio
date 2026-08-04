@@ -1290,6 +1290,9 @@ export type Grant =
       trackerId?: string;
       /** Spellcasting ability override for this cast (defaults to the caster's). */
       casterAbility?: AbilityCode;
+      /** Source-specific spell facts that replace the catalogue defaults for this
+       * route (fixed-DC wands; War God's Blessing's no-concentration minute). */
+      castOverrides?: CastSourceOverrides;
     }
   | {
       /**
@@ -2985,6 +2988,14 @@ export interface FreeCastFromListEntry {
   /** Tracker to debit per use (the source feature's own tracker). */
   trackerId: string;
   casterAbility?: AbilityCode;
+  castOverrides?: CastSourceOverrides;
+}
+
+/** Typed facts a cast source changes without forking the underlying spell. */
+export interface CastSourceOverrides {
+  saveDC?: number;
+  concentration?: boolean;
+  maxRounds?: number;
 }
 
 /**
@@ -5618,6 +5629,7 @@ export function evaluateGrants(
           ...(g.rest ? { rest: g.rest } : {}),
           trackerId: g.trackerId ?? sourceId,
           ...(g.casterAbility ? { casterAbility: g.casterAbility } : {}),
+          ...(g.castOverrides ? { castOverrides: g.castOverrides } : {}),
         });
         break;
       case "at-will-cast-spell":

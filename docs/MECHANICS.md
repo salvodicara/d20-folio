@@ -80,6 +80,14 @@ When one fixed spell can be cast at several item-defined levels, its SAME `free-
 `castLevels: [{ level, cost }]`. The shared cast-option builder exposes only affordable levels, previews
 the level-scaled damage/healing, and debits/undoes the declared charge cost in both solo and encounter
 play. No schedule means the existing base-level, cost-1 behavior, so feats and species grants do not fork.
+For a bounded multi-spell source, `free-cast-from-list` keeps eligibility (`sourceId`) separate from
+payment (`trackerId`) and may declare `spellCosts`. Picking a spell creates the same `ResolvedAction` an
+ordinary cast uses; it is not a tracker-only shortcut. Cast configuration, target resolution, deterministic
+effects, concentration, action economy, structured log/Chronicle provenance and undo therefore share one
+pipeline. Item-only visibility never grants a class-slot route, and every commit/redo rechecks live
+affordability before spending. `castOverrides` declares only source-specific facts (`saveDC`,
+`concentration`, `maxRounds`); a persistent concentration-free cast uses a source+spell active key and the
+shared round timer, preserving recurring actions until expiry.
 **Magic-item activity is player-set from the Inventory tab:** the Attune affordance (+ the
 "Attuned n / cap" chip) derives from the SRD row's `attunement: true` — never from the stored ref's
 shape (`refRequiresAttunement`, inventory-view; a minimally-stored ref still offers it, the first

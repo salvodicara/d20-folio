@@ -167,6 +167,7 @@ describe("D4 — fixed-set free-cast-from-list (evaluator)", () => {
             type: "free-cast-from-list",
             spellIds: ["shield-of-faith", "spiritual-weapon"],
             trackerId: "cleric-channel-divinity",
+            castOverrides: { concentration: false, maxRounds: 10 },
           },
         ],
       },
@@ -175,6 +176,7 @@ describe("D4 — fixed-set free-cast-from-list (evaluator)", () => {
     const entry = agg.freeCastFromList[0];
     expect(entry?.spellIds).toEqual(["shield-of-faith", "spiritual-weapon"]);
     expect(entry?.trackerId).toBe("cleric-channel-divinity");
+    expect(entry?.castOverrides).toEqual({ concentration: false, maxRounds: 10 });
     expect(entry?.spellList).toBeUndefined();
     expect(entry?.chargesPerRest).toBeUndefined();
     expect(entry?.rest).toBeUndefined();

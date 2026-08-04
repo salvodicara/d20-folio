@@ -83,6 +83,15 @@ describe("S9 — magic-item charge-cast (Wand of Magic Missiles)", () => {
     if (!levelThree) throw new Error("level-3 item cast row is missing");
     fireEvent.click(levelThree);
     await waitFor(() => expect(charges()).toBe(3));
+    expect(
+      useCombatStore
+        .getState()
+        .selected.action.find((action) => action.id === "spell-magic-missile")?.cost
+    ).toMatchObject({
+      type: "tracker",
+      key: "wand-of-magic-missiles",
+      trackerAmount: 3,
+    });
 
     // The committed card disables to "Used" (the CTA grammar); undo via the
     // act's live snackbar → the charge is restored.

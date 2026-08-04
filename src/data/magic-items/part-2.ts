@@ -686,6 +686,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
       {
         type: "free-cast-from-list",
         spellIds: ["animal-friendship", "speak-with-animals"],
+        castOverrides: { saveDC: 13 },
         chargesPerRest: 3,
         autoRecover: false,
         rest: "long",
@@ -1014,6 +1015,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-from-list",
         spellIds: ["hold-monster", "hold-person"],
         spellCosts: { "hold-monster": 5, "hold-person": 2 },
+        castOverrides: { saveDC: 17 },
         chargesPerRest: 7,
         autoRecover: false,
         rest: "long",
@@ -1054,6 +1056,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         type: "free-cast-from-list",
         spellIds: ["command", "fear"],
         spellCosts: { command: 1, fear: 3 },
+        castOverrides: { saveDC: 15 },
         chargesPerRest: 7,
         autoRecover: false,
         rest: "long",

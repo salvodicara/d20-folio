@@ -53,7 +53,10 @@ import { formatModifier, localeDistance } from "@/lib/utils";
 import { matchesSearch } from "@/lib/search";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { slotUsageKey } from "@/lib/cast-options";
-import { resolveSpellCastOptions } from "@/lib/views/spell-cast-sources";
+import {
+  canCastSpellWithSlots,
+  resolveSpellCastOptions,
+} from "@/lib/views/spell-cast-sources";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import {
   attackScopeReachesCard,
@@ -322,13 +325,7 @@ export function PlayTab() {
   const togglePinnedAction = useCharacterStore((s) => s.togglePinnedAction);
   // The shared turn-economy owner: commit / undo (one source of the per-slot
   // undo refs), used by BOTH these cards and the center ThisTurnTracker.
-  const {
-    prepareResolution,
-    handleSelect,
-    handleUseReaction,
-    spendRider,
-    applyCunningStrike,
-  } = useTurnEconomy();
+  const { prepareResolution, spendRider, applyCunningStrike } = useTurnEconomy();
 
   // Encounter actions resolve BEFORE they spend anything. The capability model decides
   // whether the shared resolver is needed; names and source type never do.
@@ -343,25 +340,34 @@ export function PlayTab() {
       // selected-recipient buff therefore applies to self without a pointless
       // one-option target picker. Encounter play keeps the standing-effect spec
       // intact so the real ally is selected and updated transactionally.
-      const preparedAction =
-        !sheetCombat && action.standingEffect && !action.standingEffect.excludeSelf
-          ? {
-              ...action,
-              activatesKey: action.standingEffect.activeKey,
-              standingEffect: undefined,
-            }
-          : action;
-      if (
-        (sheetCombat && shouldResolveCombatAction(preparedAction)) ||
-        (!sheetCombat && shouldResolveSoloAction(preparedAction))
-      )
-        prepareResolution(preparedAction, (prepared, commit) =>
-          setDeclaring({ action: prepared, commit })
-        );
-      else if (preparedAction.type === "reaction") handleUseReaction(preparedAction);
-      else handleSelect(preparedAction);
+      // Every action enters the same pre-commit seam. Most pass through
+      // immediately; spells resolve cast level/Metamagic and from-list pools
+      // resolve their chosen spell before target review. Only then can the
+      // capability gate decide whether CombatResolver is needed.
+      prepareResolution(action, (prepared, commit) => {
+        const targetReady =
+          !sheetCombat && prepared.standingEffect && !prepared.standingEffect.excludeSelf
+            ? {
+                ...prepared,
+                activatesKey: prepared.standingEffect.activeKey,
+                activeDurationRounds: prepared.standingEffect.maxRounds,
+                standingEffect: undefined,
+              }
+            : prepared;
+        if (
+          (sheetCombat && shouldResolveCombatAction(targetReady)) ||
+          (!sheetCombat && shouldResolveSoloAction(targetReady))
+        ) {
+          setDeclaring({
+            action: targetReady,
+            commit: (afterCommit) => commit(afterCommit, targetReady),
+          });
+          return;
+        }
+        commit(() => undefined, targetReady);
+      });
     },
-    [handleSelect, handleUseReaction, prepareResolution, sheetCombat]
+    [prepareResolution, sheetCombat]
   );
 
   const [filter, setFilter] = useState<FilterType>("all");
@@ -827,7 +833,14 @@ export function PlayTab() {
     (
       action: ResolvedAction
     ): { level: number; total: number; used: number } | undefined => {
-      if (!character || !action.costsSlot || action.slotLevel == null) return undefined;
+      if (
+        !character ||
+        !action.costsSlot ||
+        action.slotLevel == null ||
+        !action.spellId ||
+        !canCastSpellWithSlots(character, action.spellId)
+      )
+        return undefined;
       const slotData = character.character.spellSlots.find(
         (s) => s.level === action.slotLevel
       );
@@ -1127,7 +1140,7 @@ export function PlayTab() {
               <OffListReactionRow
                 disabled={reactionUsed}
                 committed={reactionUsedId === offListReaction.id}
-                onUse={() => handleUseReaction(offListReaction)}
+                onUse={() => commitAction(offListReaction)}
               />
             )}
           </div>

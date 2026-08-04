@@ -301,8 +301,8 @@ interface CharacterState {
   adjustEquipmentQuantity: (srdId: string, delta: number) => boolean;
   setConcentration: (
     spell: StoredConcentration,
-    opts?: { undoable?: boolean; castLevel?: number }
-  ) => void;
+    opts?: { undoable?: boolean; castLevel?: number; silent?: boolean }
+  ) => string[];
   addCondition: (
     condition: string,
     opts?: { registerConcentrationUndo?: boolean }
@@ -373,6 +373,8 @@ interface CharacterState {
    */
   setActiveFeature: (key: string, active: boolean) => void;
   setActiveSpellCastLevel: (key: string, level?: number) => void;
+  /** Arm/replace one deterministic round timer and return its exact inverse. */
+  armEffectTimer: (key: string, rounds: number) => (() => void) | null;
   /**
    * FRONTIER-S3 — reset every `recovery: "per-turn"` tracker with a spent use
    * (Sneak Attack) to full, run at the owner's turn start (the End-Turn seam).
@@ -1169,10 +1171,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     return true;
   },
 
-  setConcentration: (spell, opts?: { undoable?: boolean; castLevel?: number }) => {
-    if (get().readonly) return;
+  setConcentration: (
+    spell,
+    opts?: { undoable?: boolean; castLevel?: number; silent?: boolean }
+  ) => {
+    if (get().readonly) return [];
     const { character } = get();
-    if (!character) return;
+    if (!character) return [];
     const prev = character.session.concentration;
     // Snapshot the WHOLE prior doc — the clear-case undo target when this
     // concentration change also retracts a Polymorph form (below).
@@ -1218,7 +1223,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // perform the swap silently in the store (the caller already knows
     // they're starting a new concentration spell) but surface a toast so
     // the player isn't blindsided by losing the previous one.
-    if (prev && spell && prev !== spell) {
+    if (prev && spell && prev !== spell && !opts?.silent) {
       useToastStore.getState().showToast({
         intent: { kind: "concentration-replaced", previous: prev, next: spell },
         duration: 5000,
@@ -1228,7 +1233,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // beats: starting (or swapping into) a concentration spell, or ending one. A pure
     // swap (prev → spell) logs the END of the old + the START of the new. Wrapped so the
     // CLEAR case can run it inside an undo-stack `execute` (redo re-applies it).
-    const applyChange = () => {
+    const applyChange = (): string[] => {
       set({
         character: {
           ...character,
@@ -1255,19 +1260,28 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           },
         },
       });
-      if (prev && prev !== spell)
-        get().logEvent({ kind: "concentration-end", spell: prev });
-      if (spell && spell !== prev) get().logEvent({ kind: "concentration-start", spell });
+      if (opts?.silent) return [];
+      const loggedIds: string[] = [];
+      if (prev && prev !== spell) {
+        const id = get().logEvent({ kind: "concentration-end", spell: prev });
+        if (id) loggedIds.push(id);
+      }
+      if (spell && spell !== prev) {
+        const id = get().logEvent({ kind: "concentration-start", spell });
+        if (id) loggedIds.push(id);
+      }
+      return loggedIds;
     };
     // CLEARING concentration (empty spell) is destructive — a mis-tap silently ends an
     // in-combat spell. Route it onto the session undo stack (mirrors the tracker/HP/cast
     // pattern) so every caller — rail, combat, mobile drawer — inherits recovery + redo
     // for free, generalising the undo contract to ALL destructive actions.
-    if (prev && !spell && opts?.undoable !== false) {
+    if (prev && !spell && opts?.undoable !== false && !opts?.silent) {
+      let loggedIds: string[] = [];
       registerUndoableToast(
         { intent: { kind: "stopped-concentrating", spell: prev } },
         () => {
-          applyChange();
+          loggedIds = applyChange();
           return () => {
             const cur = get().character;
             if (!cur) return;
@@ -1297,8 +1311,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         },
         { turnScoped: false }
       );
+      return loggedIds;
     } else {
-      applyChange();
+      return applyChange();
     }
   },
 
@@ -1917,40 +1932,52 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     };
   },
 
-  consumePotionBuff: (itemId: string) => {
+  armEffectTimer: (key: string, rounds: number) => {
     if (get().readonly) return null;
     const character = get().character;
     if (!character) return null;
-    const rounds = potionDurationRounds(itemId);
-    if (rounds === undefined || rounds <= 0) return null; // instant potion — nothing to arm
-    const prev = character.session.effectTimers;
-    const key = potionTimerKey(itemId);
+    if (!Number.isFinite(rounds) || rounds <= 0) return null;
+    const previousTimer = character.session.effectTimers?.[key];
     set({
       character: {
         ...character,
         session: {
           ...character.session,
-          effectTimers: { ...(prev ?? {}), [key]: { roundsLeft: rounds } },
+          effectTimers: {
+            ...(character.session.effectTimers ?? {}),
+            [key]: { roundsLeft: rounds },
+          },
         },
       },
     });
-    // Undo restores the EXACT prior timers map (undefined → drop the field), so
-    // undoing the drink reverts the armed countdown atomically.
+    // Restore only this key so undo cannot overwrite another effect started in
+    // the meantime.
     return () => {
       const cur = get().character;
       if (!cur) return;
+      const timers = previousTimer
+        ? { ...(cur.session.effectTimers ?? {}), [key]: previousTimer }
+        : Object.fromEntries(
+            Object.entries(cur.session.effectTimers ?? {}).filter(
+              ([timerKey]) => timerKey !== key
+            )
+          );
       set({
         character: {
           ...cur,
           session: {
             ...cur.session,
-            ...(prev === undefined
-              ? { effectTimers: undefined }
-              : { effectTimers: prev }),
+            effectTimers: Object.keys(timers).length > 0 ? timers : undefined,
           },
         },
       });
     };
+  },
+
+  consumePotionBuff: (itemId: string) => {
+    const rounds = potionDurationRounds(itemId);
+    if (rounds === undefined) return null; // instant potion — nothing to arm
+    return get().armEffectTimer(potionTimerKey(itemId), rounds);
   },
 
   advanceEffectTimers: () => {
@@ -1959,13 +1986,18 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const character = get().character;
     if (!character) return noop;
     const { timers, expired } = advanceEffectTimersEngine(character);
-    // Snapshot for undo BEFORE mutating: prior timers + active toggles + the log
-    // entries the expiry appends, so Undo-End-Turn reverts the whole step.
+    // Snapshot for undo BEFORE mutating: prior timers + active toggles/cast levels
+    // + the log entries the expiry appends, so Undo-End-Turn reverts the whole step.
     const priorTimers = character.session.effectTimers;
     const priorActive = character.session.activeFeatures ?? [];
+    const priorCastLevels = character.session.activeSpellCastLevels;
     // Drop each expired state's toggle (every while-active grant retracts) and
     // emit its expiry log line.
-    const nextActive = priorActive.filter((k) => !expired.some((e) => e.activeKey === k));
+    const expiredKeys = new Set(expired.map((effect) => effect.activeKey));
+    const nextActive = priorActive.filter((key) => !expiredKeys.has(key));
+    const nextCastLevels = Object.fromEntries(
+      Object.entries(priorCastLevels ?? {}).filter(([key]) => !expiredKeys.has(key))
+    );
     set({
       character: {
         ...character,
@@ -1973,6 +2005,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           ...character.session,
           effectTimers: timers,
           activeFeatures: nextActive,
+          activeSpellCastLevels:
+            Object.keys(nextCastLevels).length > 0 ? nextCastLevels : undefined,
         },
       },
     });
@@ -1991,12 +2025,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           ...cur,
           session: {
             ...cur.session,
-            // Restore the EXACT prior timers (undefined → drop the field) +
-            // active toggles, so the round-counter + state return identically.
+            // Restore the EXACT prior timers (undefined → drop the field), toggles,
+            // and cast levels so the round-counter + state return identically.
             ...(priorTimers === undefined
               ? { effectTimers: undefined }
               : { effectTimers: priorTimers }),
             activeFeatures: priorActive,
+            activeSpellCastLevels: priorCastLevels,
           },
         },
       });

@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  canCastSpellWithSlots,
   resolveSpellCastOptions,
   resolveMetamagicForCast,
   remainingSorceryPoints,
@@ -122,6 +123,27 @@ describe("S9 — charged-item cast rows via the spell-cast-sources seam", () => 
     const c = withItem("wand-of-magic-missiles");
     c.session.trackers = { "wand-of-magic-missiles": { used: 7 } };
     expect(freeCastSourcesForSpell(c, "magic-missile", "en", "SIG")).toEqual([]);
+  });
+
+  it("an item-only spell can spend item charges but never the bearer's slots", () => {
+    const c = withItem("wand-of-magic-missiles");
+    c.character.spellSlots = [{ level: 1, total: 4 }];
+
+    expect(canCastSpellWithSlots(c, "magic-missile")).toBe(false);
+    const options = resolveSpellCastOptions(c, "magic-missile", 1, true, "en", LABELS);
+    expect(options.filter((option) => option.kind === "slot")).toEqual([]);
+    expect(options.filter((option) => option.kind === "free-cast")).toHaveLength(3);
+  });
+
+  it("keeps slot and item routes when the character also knows the spell", () => {
+    const c = withItem("wand-of-magic-missiles");
+    c.character.spellSlots = [{ level: 1, total: 4 }];
+    c.character.spells = [{ srdId: "magic-missile", prepared: true }];
+
+    expect(canCastSpellWithSlots(c, "magic-missile")).toBe(true);
+    const options = resolveSpellCastOptions(c, "magic-missile", 1, true, "en", LABELS);
+    expect(options.some((option) => option.kind === "slot")).toBe(true);
+    expect(options.some((option) => option.kind === "free-cast")).toBe(true);
   });
 
   it.each([

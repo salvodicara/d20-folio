@@ -342,6 +342,19 @@ A charged single-spell item may declare `castLevels: [{ level, cost }]` on that 
 `resolveSpellCastOptions` path expands only affordable rows, the cast-level modal shows the scaled spell
 facts plus the exact charge cost, and both Play and encounter commits debit/undo that cost through the
 same tracker transaction. Omitting the schedule preserves the ordinary fixed-level, one-use free cast.
+An item-provided `always-prepared-spell` is only the visibility bridge for that item route: removing
+equipped items must leave the spell independently known before normal character slots are offered.
+
+A `free-cast-from-list` action carries both its spell-pool source id and its payment tracker id. The
+source id selects the exact eligible list even when homebrew pools share a resource; after the spell pick,
+the provider materializes the ordinary resolved spell action and rejoins the same cast-level → target
+resolver → commit path. The selected turn record therefore names the spell and the actual charge payment,
+while action economy, effects, concentration, Chronicle provenance and undo are identical to an ordinary
+cast. Optional typed source overrides replace only the declared cast facts (fixed save DC, concentration,
+maximum duration). A concentration-free persistent source cast owns one source+spell active key and round
+timer, so recurring actions remain available until deterministic expiry without pretending the spell still
+uses Concentration. Confirmation and redo revalidate the live eligible pool and remaining resource before
+mutating.
 
 An equipped magic item's activated property declares its action economy and optional charge/cooldown
 tracker on the existing `while-active` wrapper. `resolveMagicItemActivationActions` emits an ordinary
@@ -599,6 +612,10 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   parent character/build/inventory remains owner-only; roster removal revokes the grant immediately.
   Transaction retries compose simultaneous effects from fresh target state, so the app cannot report a
   heal that failed to land (or vice versa).
+
+  Composite cast undo is event-exact: the cast transaction captures its own concentration start/end event
+  ids, restores the prior concentration silently (without nesting another undo), and removes only those
+  captured events. Manual log edits and unrelated events made after the cast are never snapshot-clobbered.
 
   **Target-bound standing effects use one append-only ledger.** `EncounterState.effectOps` stores only
   typed apply/revoke operations over stable actor + exact target references (including a monster instance
