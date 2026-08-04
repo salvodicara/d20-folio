@@ -124,6 +124,9 @@ export interface PersistedTurnEconomy {
   dashesThisTurn: number;
   spellSlotCastsThisTurn: number;
   damageTakenThisRound: boolean;
+  /** Optional for additive compatibility with turn snapshots written before this field. */
+  nextAttackAdvantage?: boolean;
+  movementLocked?: boolean;
 }
 
 export interface CombatState {

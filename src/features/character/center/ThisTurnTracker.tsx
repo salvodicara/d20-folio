@@ -125,6 +125,7 @@ export function ThisTurnTracker({
   // stored value (golden rule 6). Solo keeps `combatStore.initiative` → the subdoc.
   const gc = useSheetCombat();
   const movementUsedFt = useCombatStore((s) => s.movementUsedFt);
+  const movementLocked = useCombatStore((s) => s.movementLocked);
   const setMovementUsed = useCombatStore((s) => s.setMovementUsed);
   // RA-09 — Dash commits this turn; each extends the movement budget by one Speed.
   const dashesThisTurn = useCombatStore((s) => s.dashesThisTurn);
@@ -626,7 +627,7 @@ export function ThisTurnTracker({
               usedFt={movementUsedFt}
               onChange={setMovementUsed}
               locale={locale}
-              speedZero={conditionEffects.speedZero}
+              speedZero={conditionEffects.speedZero || movementLocked}
             />
           </span>
         </div>

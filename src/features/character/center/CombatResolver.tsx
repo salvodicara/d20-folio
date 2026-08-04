@@ -29,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCharacterStore } from "@/stores/characterStore";
 import { aggregateCharacterGrants, effectiveMaxHp } from "@/lib/aggregate-character";
 import { useToastStore } from "@/stores/toastStore";
+import { useCombatStore } from "@/stores/combatStore";
 import { useLocale } from "@/hooks/useLocale";
 import { conditionOptions } from "@/lib/views/tracker-view";
 import { monsterPortraitUrl } from "@/data/monster-art";
@@ -48,7 +49,7 @@ import {
 } from "@/lib/combat-resolution";
 import { NO_DEFENSES, type DamageDefenses } from "@/lib/damage-intake";
 import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
-import type { ResolvedAction } from "@/lib/smart-tracker";
+import { resolveTrackers, type ResolvedAction } from "@/lib/smart-tracker";
 import type { PortraitCrop } from "@/types/character";
 import type { ConditionId, DamageType } from "@/data/types";
 import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
@@ -204,6 +205,7 @@ export function CombatResolver({
     (s) => s.applyResolvedCombatEffects
   );
   const showToast = useToastStore((s) => s.showToast);
+  const soloRound = useCombatStore((s) => s.round);
   const spec = useMemo(() => combatResolutionSpec(action), [action]);
   type EffectMode = "damage" | "healing" | "temp-hp";
   const effectModes = useMemo<EffectMode[]>(
@@ -277,6 +279,16 @@ export function CombatResolver({
   const [oneRollBonusTarget, setOneRollBonusTarget] = useState<string | null>(null);
   const conditionChoices = useMemo(() => conditionOptions(locale), [locale]);
   const damageParts = useMemo(() => combatDamageParts(action), [action]);
+  const trackerUses = useMemo(
+    () =>
+      new Map(
+        (character ? resolveTrackers(character) : []).map((tracker) => [
+          tracker.id,
+          tracker.total - tracker.used,
+        ])
+      ),
+    [character]
+  );
   const appliesDamage = spec.hasDamage && effectMode === "damage";
   const appliesHealing = spec.hasHealing && effectMode === "healing";
   const appliesTempHp = spec.hasTempHp && effectMode === "temp-hp";
@@ -437,12 +449,31 @@ export function CombatResolver({
       : partTypes[`${part.sharedAmount ? "shared" : targetKey}:${part.id}`];
   };
 
+  const partTargets = (key: string, part: CombatDamagePartSpec): boolean =>
+    part.target === "all" ||
+    (part.target === "primary" && selected[0] === key) ||
+    (part.target === "one-roll" && activeOneRollBonusTarget === key);
+
+  const requiredRiderApplied = (key: string, trackerId: string): boolean =>
+    damageParts.some(
+      (candidate) =>
+        candidate.resourceTrackerId === trackerId &&
+        partTargets(key, candidate) &&
+        combatDamagePartApplies(candidate, outcomeFor(key), spec.damageOnSave) &&
+        Array.from({ length: damagePartCount(key, candidate) }, (_, instance) =>
+          candidate.fixedAmount !== undefined
+            ? candidate.fixedAmount
+            : (partAmounts[damageValueKey(key, candidate, instance)] ?? 0)
+        ).some((amount) => amount > 0)
+    );
+
   const damagePartsForTarget = (key: string): CombatDamagePartSpec[] =>
     damageParts.filter(
       (part) =>
-        part.target === "all" ||
-        (part.target === "primary" && selected[0] === key) ||
-        (part.target === "one-roll" && activeOneRollBonusTarget === key)
+        partTargets(key, part) &&
+        (!part.round1 || (sheetCombat?.round ?? soloRound) === 1) &&
+        (!part.requiresRiderTrackerId ||
+          requiredRiderApplied(key, part.requiresRiderTrackerId))
     );
 
   const damageResolutionFor = (key: string) => {
@@ -557,6 +588,7 @@ export function CombatResolver({
     return (
       <div key={`${part.id}:${instance}`} className="combat-damage-entry">
         <span>
+          {part.sourceName ? <small>{part.sourceName} · </small> : null}
           <strong>{part.formula}</strong>
           {damagePartCount(key, part) > 1
             ? ` · ${t("combat.resolveInstanceNumber", { n: instance + 1 })}`
@@ -636,6 +668,31 @@ export function CombatResolver({
         );
       })
   );
+  // A consumable on-hit rider is selected by entering a positive rolled amount.
+  // Its resource is spent exactly once even on a multi-target/multi-instance
+  // action, and only when the declared outcome actually applies that part.
+  const appliedResourceRiders = [
+    ...new Map(
+      selected.flatMap((key) =>
+        modeForTarget(key) !== "damage"
+          ? []
+          : relevantDamageParts(key).flatMap((part) => {
+              if (!part.resourceTrackerId) return [];
+              const used = Array.from(
+                { length: damagePartCount(key, part) },
+                (_, instance) =>
+                  part.fixedAmount ??
+                  partAmounts[damageValueKey(key, part, instance)] ??
+                  0
+              ).some((amount) => amount > 0);
+              return used ? ([[part.resourceTrackerId, part]] as const) : [];
+            })
+      )
+    ).entries(),
+  ];
+  const missingRiderResource = appliedResourceRiders.some(
+    ([trackerId]) => (trackerUses.get(trackerId) ?? 0) <= 0
+  );
 
   const apply = (): void => {
     if (selected.length === 0) return;
@@ -705,6 +762,25 @@ export function CombatResolver({
     ];
     onCommit(() => {
       const consumedSaveEffects = consumableSaveEffects;
+      const riderUndo = appliedResourceRiders.flatMap(([trackerId, part]) => {
+        const cs = useCharacterStore.getState();
+        cs.useTracker(trackerId, 1);
+        const logId = part.sourceLoc
+          ? cs.logEvent({
+              kind: "rider-use",
+              action: action.nameLoc,
+              rider: part.sourceLoc,
+              effect: "damage",
+            })
+          : null;
+        return [
+          () => {
+            const current = useCharacterStore.getState();
+            current.restoreTracker(trackerId, 1);
+            if (logId) current.removeLogEntry(logId);
+          },
+        ];
+      });
       const effects = choices.flatMap(({ target, amount, mode }) => {
         if (!sheetCombat || target.targetId === sheetCombat.myId) return [];
         const shared = {
@@ -1012,11 +1088,12 @@ export function CombatResolver({
                 });
             }
           : null;
-      return undoOwn || undoPersistent || undoConsumedSaveAdjustments
+      return undoOwn || undoPersistent || undoConsumedSaveAdjustments || riderUndo.length
         ? () => {
             undoPersistent?.();
             undoConsumedSaveAdjustments?.();
             undoOwn?.();
+            for (const undo of riderUndo) undo();
           }
         : undefined;
     }, committedAction);
@@ -1673,6 +1750,7 @@ export function CombatResolver({
           disabled={
             selected.length === 0 ||
             missingDamageType ||
+            missingRiderResource ||
             (dynamicHpPool &&
               (totalPoolCost <= 0 || totalPoolCost > (spec.poolSpend?.remaining ?? 0)))
           }

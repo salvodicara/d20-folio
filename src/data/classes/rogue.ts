@@ -141,6 +141,27 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
     id: "rogue-sneak-attack",
     class: "rogue",
     level: 1,
+    grants: [
+      {
+        type: "damage-rider",
+        dice: "1d6",
+        diceByLevel: {
+          3: "2d6",
+          5: "3d6",
+          7: "4d6",
+          9: "5d6",
+          11: "6d6",
+          13: "7d6",
+          15: "8d6",
+          17: "9d6",
+          19: "10d6",
+        },
+        damageType: "same-as-weapon",
+        appliesTo: "finesse-or-ranged-weapon",
+        oncePerTurn: true,
+        resourceCost: { trackerId: "rogue-sneak-attack" },
+      },
+    ],
     mechanics: {
       // Once per turn (the single "use"); the die field carries the scaling damage
       // (⌈level/2⌉d6) so the actual Sneak Attack dice are visible, not a flat "d6".
@@ -193,7 +214,20 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
     mechanics: {
       actions: [
         {
+          id: "dash",
           type: "bonus",
+          economyCategory: "dash",
+        },
+        {
+          id: "disengage",
+          type: "bonus",
+          economyCategory: "disengage",
+        },
+        {
+          id: "hide",
+          type: "bonus",
+          economyCategory: "hide",
+          skillCheck: { dc: 15, skill: "stealth" },
         },
       ],
     },
@@ -207,6 +241,8 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "bonus",
+          grantsNextAttackAdvantage: true,
+          locksMovement: true,
         },
       ],
     },

@@ -17,6 +17,7 @@
 
 import type {
   AbilityCode,
+  ActionEconomyCategory,
   ActionType,
   BiText,
   ClassId,
@@ -660,9 +661,7 @@ export type Grant =
       count: number;
       /** Stable action-category ids legal for a limited extra action. Omitted means
        * the ordinary unrestricted slot. */
-      allowedActions?: ReadonlyArray<
-        "attack" | "dash" | "disengage" | "hide" | "utilize"
-      >;
+      allowedActions?: ReadonlyArray<ActionEconomyCategory>;
       /** Maximum weapon attacks the granted slot may contain. */
       maxAttacks?: number;
     }
@@ -1568,7 +1567,8 @@ export type Grant =
        * attack row as `resourceTrackerId`; the engine never auto-spends it
        * (override-first — the combat UI debits it on use).
        *
-       * `amount: "PB"` (the existing PB sentinel) declares a FLAT Proficiency-Bonus
+       * `amount` declares a FLAT deterministic rider instead of dice: `"PB"`
+       * resolves Proficiency Bonus; `class-level` resolves the named class level.
        * extra-damage rider rather than a die — a species revelation's "extra
        * damage equal to your Proficiency Bonus, once on each of your turns". When
        * set, `dice` is omitted (the consumer surfaces a flat `+N` resolved from PB at
@@ -1596,7 +1596,11 @@ export type Grant =
       type: "damage-rider";
       dice?: string;
       diceByLevel?: Readonly<Record<number, string>>;
-      amount?: "PB";
+      amount?: "PB" | { kind: "class-level"; classId: ClassId };
+      /** This rider exists only during round 1 of combat. */
+      round1?: true;
+      /** Another selected rider must be applied on the same hit. */
+      requiresRiderTrackerId?: string;
       vsMarkedTarget?: MarkedTargetScope;
       damageType: DamageType | "same-as-weapon";
       /**
@@ -1614,7 +1618,12 @@ export type Grant =
        *     first, matching how every holding-state condition is modeled.
        *   - `"attack-or-spell"` — never a per-attack chip (surfaced separately).
        */
-      appliesTo: "melee-weapon" | "weapon" | "one-handed-melee" | "attack-or-spell";
+      appliesTo:
+        | "melee-weapon"
+        | "weapon"
+        | "finesse-or-ranged-weapon"
+        | "one-handed-melee"
+        | "attack-or-spell";
       oncePerTurn?: boolean;
       addAbilityMod?: AbilityCode;
       resourceCost?: { trackerId: string };
@@ -4087,7 +4096,7 @@ export interface AggregatedGrants {
     sourceId: string;
     slot: "action" | "bonus";
     count: number;
-    allowedActions?: ReadonlyArray<"attack" | "dash" | "disengage" | "hide" | "utilize">;
+    allowedActions?: ReadonlyArray<ActionEconomyCategory>;
     maxAttacks?: number;
   }>;
   /** True when an active effect prevents actions for the current turn. */
@@ -4212,14 +4221,21 @@ export interface AggregatedGrants {
     diceByLevel?: Readonly<Record<number, string>>;
     /** Flat PB extra-damage sentinel (a species revelation form) — the consumer
      *  resolves it to a `+N` flat amount; mutually exclusive with `dice`. */
-    amount?: "PB";
+    amount?: "PB" | { kind: "class-level"; classId: ClassId };
+    round1?: true;
+    requiresRiderTrackerId?: string;
     /** Marks a per-hit "vs a specific marked/cursed creature" rider (Hunter's
      *  Mark / Hex) — the consumer surfaces it as a DISPLAY-ONLY chip labeled "vs
      *  marked / cursed target" (never auto-summed); the token drives the localized
      *  label at the render edge. Absent → an always-applies rider. */
     vsMarkedTarget?: MarkedTargetScope;
     damageType: DamageType | "same-as-weapon";
-    appliesTo: "melee-weapon" | "weapon" | "one-handed-melee" | "attack-or-spell";
+    appliesTo:
+      | "melee-weapon"
+      | "weapon"
+      | "finesse-or-ranged-weapon"
+      | "one-handed-melee"
+      | "attack-or-spell";
     oncePerTurn: boolean;
     addAbilityMod?: AbilityCode;
     resourceCost?: { trackerId: string };
@@ -5408,6 +5424,10 @@ export function evaluateGrants(
           ...(g.dice !== undefined ? { dice: g.dice } : {}),
           ...(g.diceByLevel ? { diceByLevel: g.diceByLevel } : {}),
           ...(g.amount ? { amount: g.amount } : {}),
+          ...(g.round1 ? { round1: true as const } : {}),
+          ...(g.requiresRiderTrackerId
+            ? { requiresRiderTrackerId: g.requiresRiderTrackerId }
+            : {}),
           ...(g.vsMarkedTarget ? { vsMarkedTarget: g.vsMarkedTarget } : {}),
           damageType: g.damageType,
           appliesTo: g.appliesTo,

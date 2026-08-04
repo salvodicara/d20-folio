@@ -472,9 +472,15 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
     (`characterStore.consumePotionBuff`, undoable) that `advanceEffectTimers` carries forward + expires
     exactly like a state timer; the rail shows it as an "Active Potions" banner. Override-first — the
     buff's STATS are never auto-applied.
-  - **Round-1 clauses** (`advantage-on { round1: true }`). A clause that applies only in combat round 1
-    (Assassinate's first-round attack advantage); the consumer gates it on `combatStore.round === 1`,
-    then it auto-clears.
+  - **Round-1 clauses** (`advantage-on { round1: true }`; `damage-rider { round1 }`). A clause that
+    applies only in combat round 1 auto-clears afterward. A rider may additionally declare
+    `requiresRiderTrackerId`, so Assassinate's flat `{ kind:"class-level", classId:"rogue" }` damage
+    is included only after Sneak Attack was entered on that same reviewed hit—not merely because a
+    Rogue swung during round 1.
+  - **Semantic action economy.** `SrdActionDef.economyCategory` identifies Dash/Disengage/Hide/Attack/
+    Utilize independently of card ids. Feature and species variants therefore reuse the universal
+    consequences: Cunning Action Dash and Orc Adrenaline Rush extend the same movement budget, while
+    Cunning Action Hide reuses the same structured DC 15 Stealth check as the base Hide action.
 - **The damage-and-dying flow (RA-03/05/10/11, 2026-07-12).** The player enters what their physical
   dice said; the engine computes the consequences (golden rule 21 — no RNG, ever):
   - **Damage intake** (`lib/damage-intake.ts`, pure). An entered hit is one or more

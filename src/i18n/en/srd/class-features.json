@@ -969,8 +969,16 @@
     "name": "Cunning Action"
   },
   "rogue-cunning-action.mechanics.actions.0": {
-    "description": "Dash, Disengage, or Hide as a bonus action.",
-    "label": "Cunning Action"
+    "description": "Double your movement for this turn.",
+    "name": "Cunning Action: Dash"
+  },
+  "rogue-cunning-action.mechanics.actions.1": {
+    "description": "Move without provoking Opportunity Attacks for this turn.",
+    "name": "Cunning Action: Disengage"
+  },
+  "rogue-cunning-action.mechanics.actions.2": {
+    "description": "Make a DC 15 Dexterity (Stealth) check to become Invisible.",
+    "name": "Cunning Action: Hide"
   },
   "rogue-cunning-strike": {
     "description": "When you deal Sneak Attack damage, you can forgo some dice to apply a special effect: Poison (forgo 1d6, CON save or Poisoned), Trip (forgo 1d6, DEX save or knocked Prone), Withdraw (forgo 1d6, Disengage after hit).",

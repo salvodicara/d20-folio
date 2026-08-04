@@ -154,7 +154,9 @@ function durableTurnChanged(
     state.movementUsedFt !== prev.movementUsedFt ||
     state.dashesThisTurn !== prev.dashesThisTurn ||
     state.spellSlotCastsThisTurn !== prev.spellSlotCastsThisTurn ||
-    state.damageTakenThisRound !== prev.damageTakenThisRound
+    state.damageTakenThisRound !== prev.damageTakenThisRound ||
+    state.nextAttackAdvantage !== prev.nextAttackAdvantage ||
+    state.movementLocked !== prev.movementLocked
   );
 }
 
@@ -351,6 +353,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   function actionStateBlockMessage(action: ResolvedAction): string | null {
     const live = useCharacterStore.getState().character;
     if (!live) return null;
+    if (action.locksMovement && useCombatStore.getState().movementUsedFt > 0) {
+      return t("combat.blockedReasonAlreadyMoved");
+    }
     if (action.source === "spell" && isSpellcastingBlocked(live)) {
       return t("combat.blockedReasonSpellcasting");
     }
@@ -772,7 +777,21 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // turn boundary). Future speed riders (Tactical Shift, Cunning-Strike speed)
     // route through the SAME `commitDash` seam.
     const restoreDash =
-      action.id === "base-dash" ? useCombatStore.getState().commitDash() : null;
+      economyActionCategory(action) === "dash"
+        ? useCombatStore.getState().commitDash()
+        : null;
+    const combat = useCombatStore.getState();
+    // Turn-scoped action effects share the durable combat store, so route changes
+    // cannot reopen movement or lose the pending roll state. An attack consumes
+    // the pending Advantage exactly once; every mutation carries its own inverse.
+    const restoreConsumedAttackAdvantage =
+      action.source === "weapon" || action.summary.attackBonus !== undefined
+        ? combat.consumeNextAttackAdvantage()
+        : null;
+    const restoreGrantedAttackAdvantage = action.grantsNextAttackAdvantage
+      ? combat.grantNextAttackAdvantage()
+      : null;
+    const restoreMovementLock = action.locksMovement ? combat.lockMovement() : null;
     // Store the spell's STABLE id (golden rule 7); custom spells carry no id, so
     // custom spells stamp their name behind the `custom:` marker — never a bare SRD
     // name (which would leak the English title in IT).
@@ -845,6 +864,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       }
       // RA-09 — undo the Dash's movement-budget extension.
       restoreDash?.();
+      restoreMovementLock?.();
+      restoreGrantedAttackAdvantage?.();
+      restoreConsumedAttackAdvantage?.();
       undoTrackerTopUp?.();
       // Clear the state THIS commit lit (never a hand-set one); compute the hand-lit
       // concentration chips the upcoming `setConcentration(prevConc)` LEG-2 clear is

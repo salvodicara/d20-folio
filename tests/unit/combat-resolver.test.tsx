@@ -20,6 +20,7 @@ import { MOCK_CHARACTER } from "@/lib/mock";
 import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
 import type { ResolvedAction } from "@/lib/smart-tracker";
+import { buildScenario } from "@/lib/dev-scenarios";
 
 function monster(id: string, name: string, tokens = [7]): EncounterCombatantView {
   return {
@@ -367,6 +368,90 @@ describe("universal combat resolution", () => {
         round: 3,
       },
     ]);
+  });
+
+  it("applies Sneak Attack and its round-1 dependent rider atomically", () => {
+    const doc = buildScenario({
+      name: "Rook",
+      raceId: "human",
+      classId: "rogue",
+      level: 3,
+      background: "criminal",
+      abilityScores: { STR: 10, DEX: 16, CON: 12, INT: 10, WIS: 12, CHA: 8 },
+      weapons: [{ srdId: "rapier", quantity: 1 }],
+    });
+    doc.session.trackers["rogue-sneak-attack"] = { used: 0 };
+    doc.session.logEntries = [];
+    useCharacterStore.setState({ character: doc });
+    let undo: (() => void) | undefined;
+    const sneakAttack = action({
+      damage: "1d8+3",
+      damageType: "piercing",
+      attackBonus: 6,
+      extraDamage: [
+        {
+          dice: "2d6",
+          damageType: "piercing",
+          oncePerTurn: true,
+          sourceName: "Sneak Attack",
+          sourceLoc: {
+            srd: {
+              kind: "class-feature",
+              key: "rogue-sneak-attack",
+              field: "name",
+            },
+          },
+          resourceTrackerId: "rogue-sneak-attack",
+        },
+        {
+          dice: "3",
+          fixedAmount: 3,
+          damageType: "piercing",
+          oncePerTurn: true,
+          sourceName: "Assassinate",
+          round1: true,
+          requiresRiderTrackerId: "rogue-sneak-attack",
+        },
+      ],
+    });
+    render(
+      <CombatResolver
+        action={sneakAttack}
+        sheetCombat={combat([monster("monster-1", "Goblin")], 1)}
+        onCommit={(afterCommit) => {
+          undo = afterCommit();
+        }}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    const amounts = screen.getAllByRole("spinbutton", { name: /damage to goblin/i });
+    const baseAmount = amounts[0];
+    const sneakAmount = amounts[1];
+    if (!baseAmount || !sneakAmount) throw new Error("damage entries missing");
+    expect(screen.getByText(/Sneak Attack/)).toBeInTheDocument();
+    expect(screen.queryByText(/Assassinate/)).not.toBeInTheDocument();
+    fireEvent.change(baseAmount, { target: { value: "6" } });
+    fireEvent.change(sneakAmount, { target: { value: "7" } });
+    expect(screen.getByText(/Assassinate/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expectApplied([{ kind: "damage", targetId: "monster-1", amount: 16 }]);
+    expect(
+      useCharacterStore.getState().character?.session.trackers["rogue-sneak-attack"]?.used
+    ).toBe(1);
+    expect(
+      useCharacterStore
+        .getState()
+        .character?.session.logEntries.some((entry) => entry.event.kind === "rider-use")
+    ).toBe(true);
+
+    undo?.();
+    expect(
+      useCharacterStore.getState().character?.session.trackers["rogue-sneak-attack"]?.used
+    ).toBe(0);
+    expect(useCharacterStore.getState().character?.session.logEntries).toEqual([]);
   });
 
   it("resolves every save target separately and automates area half damage", () => {

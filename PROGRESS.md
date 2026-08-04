@@ -122,6 +122,16 @@ Frost projects its −10 ft/−3 m Speed until the caster's next turn. Ice Knife
 Cloud of Daggers are locked to their attack/save, free-target, instance and recurrence shapes; Misty Step
 and Mage Hand correctly remain table-positioning actions because the app is not a VTT.
 
+**Live-team truth audit — Rogue/Assassin contract CLOSED on branch (2026-08-04):** Chiaviddu exposed
+three prose-shaped seams. Sneak Attack is now a Finesse-or-Ranged `damage-rider` whose per-turn tracker
+is spent only with the reviewed hit and restored by the same undo. Steady Aim persists its one-attack
+Advantage and movement lock through navigation, consumes only the roll on the next attack, and rejects
+use after movement. Cunning Action is three real Bonus Actions—Dash, Disengage, Hide—routing through
+the universal movement/economy/Stealth-check seams. Assassinate's round-1 Rogue-level damage now appears
+only after Sneak Attack is entered on the same hit; the target/order facts remain table-supplied. The
+real fixture locks all four contracts plus Alert and the subclass's scoped initiative/first-strike rules.
+Paladin and the final six-fixture conformance pass follow.
+
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark
 ink for its nested glyph/count despite the carved socket's correct fixed ink, and the end-encounter

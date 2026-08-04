@@ -40,6 +40,7 @@ import type {
   CombatResolutionGate,
   ActionTargeting,
   SrdActionDef,
+  ActionEconomyCategory,
 } from "@/data/types";
 import { isPoolAltRecovery, isSlotAltRecovery } from "@/data/types";
 import { classFeatureIndex, getClassTable, pactSlotLevel } from "@/data/classes";
@@ -334,14 +335,21 @@ export interface ActionSummary {
    */
   extraDamage?: Array<{
     dice: string;
+    fixedAmount?: number;
     damageType: string;
     oncePerTurn: boolean;
+    /** Localized provenance used by the resolution review. */
+    sourceName?: string;
+    /** Stable provenance stored in the structured combat log. */
+    sourceLoc?: LocText;
     /**
      * The tracker this rider spends on each use (Psi Warrior Psionic Strike →
      * Psionic Energy Dice). Present only for riders with a `resourceCost`; the
      * combat UI debits it (the engine never auto-spends — override-first).
      */
     resourceTrackerId?: string;
+    round1?: true;
+    requiresRiderTrackerId?: string;
   }>;
   /**
    * How this weapon's OWN damage dice are manipulated when rolled (Great Weapon
@@ -615,6 +623,10 @@ export interface ResolvedAction {
   formAttack?: boolean;
   /** Is concentration spell */
   concentration: boolean;
+  /** Turn-scoped deterministic effects produced by this use. */
+  grantsNextAttackAdvantage?: true;
+  locksMovement?: true;
+  economyCategory?: ActionEconomyCategory;
   /** Structured summary for at-a-glance display */
   summary: ActionSummary;
   /** Whether it costs a spell slot */
@@ -988,9 +1000,12 @@ export interface RawActionSummary extends Omit<
    */
   extraDamage?: Array<{
     dice: string;
+    fixedAmount?: number;
     damageType: string;
     oncePerTurn: boolean;
     resourceTrackerId?: string;
+    round1?: true;
+    requiresRiderTrackerId?: string;
     /**
      * G14 — an `attack-or-spell` rider is NOT weapon-bound (a celestial-revelation
      * Revelation's +PB): it rides ONE attack OR spell per turn, surfaced as a
@@ -3348,7 +3363,13 @@ export function resolveRiderDice(
 export function resolveAttackDamageRiders(
   damageRiders: AggregatedGrants["damageRiders"],
   target:
-    | { kind: "weapon"; isRanged: boolean; isTwoHanded?: boolean; damageType: DamageType }
+    | {
+        kind: "weapon";
+        isRanged: boolean;
+        isFinesse?: boolean;
+        isTwoHanded?: boolean;
+        damageType: DamageType;
+      }
     | { kind: "unarmed"; damageType: DamageType },
   character: CharacterDoc,
   scores: Record<AbilityCode, number>
@@ -3357,6 +3378,8 @@ export function resolveAttackDamageRiders(
     .filter((r) => {
       if (r.appliesTo === "attack-or-spell") return false;
       if (target.kind === "unarmed") return r.appliesTo === "melee-weapon";
+      if (r.appliesTo === "finesse-or-ranged-weapon")
+        return target.isFinesse === true || target.isRanged;
       // Carried weapon. "one-handed-melee" (Dueling): a melee weapon that isn't
       // Two-Handed (a Versatile weapon's one-handed grip qualifies). "melee-weapon"
       // skips ranged. "weapon" rides all.
@@ -3369,8 +3392,14 @@ export function resolveAttackDamageRiders(
       // Psionic Strike: `1d6` → `1d6+3`); a +0 modifier shows the bare die. A
       // `diceByLevel` rider scales by ITS source feature's OWNING class level
       // (Ranger Colossus Slayer → Ranger 11), not the total character level.
+      const fixedAmount =
+        typeof r.amount === "object"
+          ? classEntryLevel(character.character, r.amount.classId)
+          : undefined;
       const dice = appendAbilityModToDice(
-        resolveRiderDice(r, featureScalingLevel(r.sourceId, character)),
+        fixedAmount === undefined
+          ? resolveRiderDice(r, featureScalingLevel(r.sourceId, character))
+          : String(fixedAmount),
         r.addAbilityMod === undefined
           ? undefined
           : // D2 — effective score (set-score item floor) for the rider's ability mod.
@@ -3380,6 +3409,7 @@ export function resolveAttackDamageRiders(
         r.damageType === "same-as-weapon" ? target.damageType : r.damageType;
       return {
         dice,
+        ...(fixedAmount === undefined ? {} : { fixedAmount }),
         // "same-as-weapon" (Colossus Slayer) resolves to the attack's OWN damage
         // type so the UI receives a real type, never the sentinel.
         damageType,
@@ -3401,6 +3431,10 @@ export function resolveAttackDamageRiders(
         // Each use spends a tracker (Psionic Energy Dice) — surfaced so the combat
         // UI can debit it; the engine never auto-spends (override-first).
         ...(r.resourceCost ? { resourceTrackerId: r.resourceCost.trackerId } : {}),
+        ...(r.round1 ? { round1: true as const } : {}),
+        ...(r.requiresRiderTrackerId
+          ? { requiresRiderTrackerId: r.requiresRiderTrackerId }
+          : {}),
         // Provenance NAME ref (the source feature/feat/invocation) — the view
         // resolves it into the rider token's "(Frenzy)" attribution. A rider with
         // no `sourceId` (defensive — every SRD rider carries one) falls back to a
@@ -3812,6 +3846,7 @@ export function resolveManifestedWeaponAttacks(
             {
               kind: "weapon",
               isRanged,
+              isFinesse: properties.some((p) => p.toLowerCase() === "finesse"),
               isTwoHanded: properties.some((p) => /\btwo-?handed\b/i.test(p)),
               damageType: mw.damageType,
             },
@@ -4524,6 +4559,7 @@ function applyActionEffectSummary(
     if (die) summary.grantedDie = { kind: action.grantDie.kind, die };
   }
   if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
+  if (action.skillCheck) summary.skillCheck = action.skillCheck;
   if (
     action.conditionRemoval &&
     (action.conditionRemoval.fromLevel === undefined ||
@@ -4895,6 +4931,11 @@ function resolveFeatureActions(
         ...(activatesKey ? { activatesKey } : {}),
         ...(activationEndsEarlyOn?.length ? { activationEndsEarlyOn } : {}),
         ...(activeTurnBoundary ? { activeTurnBoundary } : {}),
+        ...(action.grantsNextAttackAdvantage
+          ? { grantsNextAttackAdvantage: true as const }
+          : {}),
+        ...(action.locksMovement ? { locksMovement: true as const } : {}),
+        ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
         // USE-APPLIES — deterministic effects this action auto-applies on use
         // (a slot-gated same-source temp-hp grant: Chef's PB temp HP).
         ...(srdUseEffects.length ? { useEffects: srdUseEffects } : {}),
@@ -4981,6 +5022,7 @@ function resolveFeatureActions(
           pinned: pinnedSet.has(id),
           defaultPinned: false,
           description: raceTraitLoc(raceForActions.id, trait, "description"),
+          ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
           // USE-APPLIES — Orc Adrenaline Rush: the bonus-action Dash grants PB
           // temp HP (its same-trait `temp-hp` grant carries `slot: "bonus"`).
           ...(() => {
@@ -5043,6 +5085,7 @@ function resolveFeatureActions(
           pinned: pinnedSet.has(id),
           defaultPinned: false,
           description: srdText("invocation", inv.id, "description"),
+          ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
           ...(() => {
             const eff = resolveActionUseEffects(
               inv.grants,
@@ -6165,6 +6208,7 @@ function resolveWeaponActions(
       {
         kind: "weapon",
         isRanged: isRangedWeapon,
+        isFinesse: properties.some((p) => p.toLowerCase() === "finesse"),
         isTwoHanded: isTwoHandedOnly,
         damageType,
       },
@@ -6419,17 +6463,27 @@ function resolveWeaponActions(
       // Self-contained damage riders ride the off-hand hit too, through the SAME
       // shared `resolveAttackDamageRiders` the main-hand row uses (golden rule
       // 6b). A light off-hand weapon is always MELEE (the dual-wield gate excludes
-      // ranged), so it sees "weapon" + "melee-weapon" riders alike. We then drop
-      // ONCE-PER-TURN riders (Zealot Divine Fury): they fire once per turn and are
-      // already surfaced on the main row — double-listing them on the off-hand
-      // would wrongly imply they apply on both hits in a turn. PER-HIT riders
-      // (Divine Favor / Hunter's Mark — "each time you hit") correctly ride here.
+      // ranged), so it sees "weapon" + "melee-weapon" riders alike. A TRACKED or
+      // dependency-gated once-per-turn rider must remain available here: a Rogue
+      // who misses with the main hand can still land Sneak Attack (and therefore
+      // Assassinate) with the off hand. Untracked once-per-turn riders stay on the
+      // main row until they gain a generic per-turn receipt; per-hit riders remain.
       const offHandExtraDamage = resolveAttackDamageRiders(
         grantAgg.damageRiders,
-        { kind: "weapon", isRanged: false, damageType: w.damageType },
+        {
+          kind: "weapon",
+          isRanged: false,
+          isFinesse: w.properties.some((p) => p.toLowerCase() === "finesse"),
+          damageType: w.damageType,
+        },
         character,
         ctx.abilityScores
-      ).filter((d) => !d.oncePerTurn);
+      ).filter(
+        (rider) =>
+          !rider.oncePerTurn ||
+          rider.resourceTrackerId !== undefined ||
+          rider.requiresRiderTrackerId !== undefined
+      );
       // RA-13 Nick — SRD "Mastery Properties — Nick": the Light property's extra
       // attack is made AS PART OF the Attack action instead of as a Bonus Action
       // (once per turn). The mastery belongs to the weapon making the attack, so

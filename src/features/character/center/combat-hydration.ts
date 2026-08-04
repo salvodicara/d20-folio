@@ -79,6 +79,8 @@ export function snapshotTurnEconomy(
     dashesThisTurn: state.dashesThisTurn,
     spellSlotCastsThisTurn: state.spellSlotCastsThisTurn,
     damageTakenThisRound: state.damageTakenThisRound,
+    nextAttackAdvantage: state.nextAttackAdvantage,
+    movementLocked: state.movementLocked,
   };
 }
 
@@ -112,6 +114,8 @@ function restoreTurnEconomy(
     dashesThisTurn: snapshot.dashesThisTurn,
     spellSlotCastsThisTurn: snapshot.spellSlotCastsThisTurn,
     damageTakenThisRound: snapshot.damageTakenThisRound,
+    nextAttackAdvantage: snapshot.nextAttackAdvantage ?? false,
+    movementLocked: snapshot.movementLocked ?? false,
   });
 }
 
@@ -126,7 +130,9 @@ function turnIsBaseline(): boolean {
     state.movementUsedFt === 0 &&
     state.dashesThisTurn === 0 &&
     state.spellSlotCastsThisTurn === 0 &&
-    !state.damageTakenThisRound
+    !state.damageTakenThisRound &&
+    !state.nextAttackAdvantage &&
+    !state.movementLocked
   );
 }
 

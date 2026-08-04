@@ -969,8 +969,16 @@
     "name": "Azione Scaltra"
   },
   "rogue-cunning-action.mechanics.actions.0": {
-    "description": "Scatto, Disimpegno o Nascondersi come azione bonus.",
-    "label": "Azione Scaltra"
+    "description": "Raddoppia il movimento per questo turno.",
+    "name": "Azione Scaltra: Scatto"
+  },
+  "rogue-cunning-action.mechanics.actions.1": {
+    "description": "Muoviti senza provocare Attacchi di Opportunità.",
+    "name": "Azione Scaltra: Disimpegno"
+  },
+  "rogue-cunning-action.mechanics.actions.2": {
+    "description": "Furtività CD 15: diventi Invisibile se riesci.",
+    "name": "Azione Scaltra: Nascondersi"
   },
   "rogue-cunning-strike": {
     "description": "Quando infliggi danni da Attacco Furtivo, puoi rinunciare ad alcuni dadi per applicare un effetto speciale: Veleno (rinunci a 1d6, TS COS o Avvelenato), Sgambetto (rinunci a 1d6, TS DES o Prono), Ritirata (rinunci a 1d6, Disimpegno dopo il colpo).",

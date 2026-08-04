@@ -270,6 +270,23 @@ function localizeSummary(
   const healingBreakdown = heal
     ? localizeHealBreakdown(heal, actionName, locale)
     : undefined;
+  // The compact rider strip remains the primary card presentation, but the
+  // resolution review also needs the same typed rider facts so an optional
+  // on-hit spend can be applied atomically with damage. Keep only resolved
+  // display/provenance data here; no raw LocText leaks into visible strings.
+  const extraDamage = summary.extraDamage?.map((rider) => ({
+    dice: rider.dice,
+    ...(rider.fixedAmount !== undefined ? { fixedAmount: rider.fixedAmount } : {}),
+    damageType: rider.damageType,
+    oncePerTurn: rider.oncePerTurn,
+    sourceName: localizeText(rider.source, locale),
+    sourceLoc: rider.source,
+    ...(rider.resourceTrackerId ? { resourceTrackerId: rider.resourceTrackerId } : {}),
+    ...(rider.round1 ? { round1: true as const } : {}),
+    ...(rider.requiresRiderTrackerId
+      ? { requiresRiderTrackerId: rider.requiresRiderTrackerId }
+      : {}),
+  }));
   // S8 ROLL-ENTRY — a feature `heal:` action that rolls a die (Second Wind 1d10 +
   // level) carries a self-applicable heal: surface the dice token (the player
   // rolls + enters it) + the deterministic bonus, so the card can apply
@@ -299,6 +316,7 @@ function localizeSummary(
     : proneEffect;
   return {
     ...rest,
+    ...(extraDamage?.length ? { extraDamage } : {}),
     ...(weaponRange && !rest.attackMode ? { attackMode: weaponRange.kind } : {}),
     ...(healingChip ? { healing: healingChip } : {}),
     ...(healingBreakdown ? { healingBreakdown } : {}),

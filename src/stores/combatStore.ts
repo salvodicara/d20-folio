@@ -189,6 +189,10 @@ interface CombatState {
    * alongside `reactionUsed` / `movementUsedFt`.
    */
   damageTakenThisRound: boolean;
+  /** A turn effect waiting to grant Advantage to the next attack roll. */
+  nextAttackAdvantage: boolean;
+  /** A turn effect has set Speed to 0 until this turn ends. */
+  movementLocked: boolean;
 
   // Actions
   setRound: (round: number) => void;
@@ -209,6 +213,11 @@ interface CombatState {
   commitSpellSlotCast: () => () => void;
   /** Record that the character took damage this round (HP went down). */
   noteDamageTaken: () => void;
+  /** Arm/consume exact next-attack Advantage; both return an undo inverse. */
+  grantNextAttackAdvantage: () => () => void;
+  consumeNextAttackAdvantage: () => (() => void) | null;
+  /** Lock movement for the current turn and return its exact inverse. */
+  lockMovement: () => () => void;
   /**
    * B6 — set the per-turn economy budget (action/bonus slot counts), DERIVED by
    * the economy provider from the active extra-action sources. No-op when
@@ -314,6 +323,8 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   dashesThisTurn: 0,
   spellSlotCastsThisTurn: 0,
   damageTakenThisRound: false,
+  nextAttackAdvantage: false,
+  movementLocked: false,
 
   setRound: (round) => set({ round }),
   setInitiative: (value) => set({ initiative: value }),
@@ -335,6 +346,23 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       }));
   },
   noteDamageTaken: () => set({ damageTakenThisRound: true }),
+  grantNextAttackAdvantage: () => {
+    if (sheetReadonly()) return () => {};
+    const previous = get().nextAttackAdvantage;
+    set({ nextAttackAdvantage: true });
+    return () => set({ nextAttackAdvantage: previous });
+  },
+  consumeNextAttackAdvantage: () => {
+    if (sheetReadonly() || !get().nextAttackAdvantage) return null;
+    set({ nextAttackAdvantage: false });
+    return () => set({ nextAttackAdvantage: true });
+  },
+  lockMovement: () => {
+    if (sheetReadonly()) return () => {};
+    const previous = get().movementLocked;
+    set({ movementLocked: true });
+    return () => set({ movementLocked: previous });
+  },
 
   setBudget: (budget) => {
     const cur = get().budget;
@@ -471,6 +499,8 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,
       damageTakenThisRound: false,
+      nextAttackAdvantage: false,
+      movementLocked: false,
     }),
 
   endCombat: () =>
@@ -487,6 +517,8 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,
       damageTakenThisRound: false,
+      nextAttackAdvantage: false,
+      movementLocked: false,
       initiative: "",
     }),
 
@@ -513,6 +545,8 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,
       damageTakenThisRound: false,
+      nextAttackAdvantage: false,
+      movementLocked: false,
     }));
   },
 }));

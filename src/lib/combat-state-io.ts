@@ -200,6 +200,8 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
     dashesThisTurn: number(row.dashesThisTurn),
     spellSlotCastsThisTurn: number(row.spellSlotCastsThisTurn),
     damageTakenThisRound: row.damageTakenThisRound === true,
+    nextAttackAdvantage: row.nextAttackAdvantage === true,
+    movementLocked: row.movementLocked === true,
   };
 }
 

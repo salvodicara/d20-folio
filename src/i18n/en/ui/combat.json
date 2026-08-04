@@ -315,6 +315,7 @@
     "blockedReasonSpellcasting": "An active state prevents spellcasting",
     "blockedReasonHeavyArmor": "Heavy armor prevents this state",
     "blockedReasonIncapacitated": "Incapacitated prevents this state",
+    "blockedReasonAlreadyMoved": "Unavailable after moving this turn",
     "statusEffects": "Active effects",
     "spellSlotLimitBadge": "Slot limit",
     "limiterBlockedEconomy": "You can't take {{slots}}",

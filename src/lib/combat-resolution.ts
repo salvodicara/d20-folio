@@ -17,6 +17,7 @@ import {
 } from "@/lib/damage-intake";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
+import type { LocText } from "@/lib/loc-text";
 
 export type CombatResolutionKind = "attack" | "save" | "attack-save" | "automatic";
 export type CombatTargetAffinity = "enemy" | "ally" | "self" | "any";
@@ -75,6 +76,12 @@ export interface CombatDamagePartSpec {
   source?: DamageSource;
   /** Conditional riders are opt-in; the resolver never assumes their trigger fired. */
   optional: boolean;
+  /** Optional rider provenance and its once-per-use resource. */
+  sourceName?: string;
+  sourceLoc?: LocText;
+  resourceTrackerId?: string;
+  round1?: true;
+  requiresRiderTrackerId?: string;
   /** The table fact that gates this component. Hybrid actions can therefore
    * resolve an attack component and a save component independently. */
   resolution: "attack" | "save" | "automatic";
@@ -384,12 +391,20 @@ export function combatDamageParts(action: ResolvedAction): CombatDamagePartSpec[
       typeMode: "fixed",
       ...(source ? { source } : {}),
       optional: true,
+      ...(extra.sourceName ? { sourceName: extra.sourceName } : {}),
+      ...(extra.sourceLoc ? { sourceLoc: extra.sourceLoc } : {}),
+      ...(extra.resourceTrackerId ? { resourceTrackerId: extra.resourceTrackerId } : {}),
+      ...(extra.round1 ? { round1: true as const } : {}),
+      ...(extra.requiresRiderTrackerId
+        ? { requiresRiderTrackerId: extra.requiresRiderTrackerId }
+        : {}),
       resolution: primaryResolution,
       target: "all",
       sharedAmount: false,
       damageOnSave: s.damageOnSave ?? "none",
       damageOnMiss: s.damageOnMiss ?? "none",
       appliesOn: "success",
+      ...(extra.fixedAmount !== undefined ? { fixedAmount: extra.fixedAmount } : {}),
     });
   }
   const graze = s.masteryDetail?.grazeDamage;

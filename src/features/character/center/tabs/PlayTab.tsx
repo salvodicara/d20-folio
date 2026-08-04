@@ -321,6 +321,8 @@ export function PlayTab() {
   const reactionUsed = useCombatStore((s) => s.reactionUsed);
   const reactionUsedId = useCombatStore((s) => s.reactionUsedId);
   const round = useCombatStore((s) => s.round);
+  const nextAttackAdvantage = useCombatStore((s) => s.nextAttackAdvantage);
+  const movementUsedFt = useCombatStore((s) => s.movementUsedFt);
   const togglePinnedAction = useCharacterStore((s) => s.togglePinnedAction);
   // The shared turn-economy owner: commit / undo (one source of the per-slot
   // undo refs), used by BOTH these cards and the center ThisTurnTracker.
@@ -464,12 +466,21 @@ export function PlayTab() {
       // advantage) applies ONLY in combat round 1, then auto-clears from round 2+.
       // A permanent clause has no `round1` flag and always applies.
       .filter((c) => !c.round1 || round === 1);
+    if (nextAttackAdvantage) {
+      attackChips.push({
+        sourceId: "turn-next-attack-advantage",
+        mode: "advantage",
+        rollType: "attack",
+        vs: "next-attack",
+        description: { lit: { en: "Next attack", it: "Prossimo attacco" } },
+      });
+    }
     // PS-J — ONLY a blanket clause (no `scope`) may become the card's verdict; a
     // scoped one is netted against that verdict and stated with its scope instead
     // (`combatGloss`), because the sheet models no enemies and cannot know whether
     // it applies to this swing.
     return deriveAttackRollView(attackChips);
-  }, [character, round]);
+  }, [character, round, nextAttackAdvantage]);
 
   // BG3 grammar (owner ruling 2026-07-10) — Extra Attack's "attacks remaining"
   // carries NO standing text ANYWHERE: while swings remain, every attack-capable
@@ -796,6 +807,9 @@ export function PlayTab() {
 
   const blockedReasonFor_ = useCallback(
     (action: ResolvedAction, depleted: boolean): string | null => {
+      if (action.locksMovement && movementUsedFt > 0) {
+        return t("combat.blockedReasonAlreadyMoved");
+      }
       if (character) {
         if (action.source === "spell" && isSpellcastingBlocked(character)) {
           return t("combat.blockedReasonSpellcasting");
@@ -834,7 +848,15 @@ export function PlayTab() {
         }
       }
     },
-    [character, conditionEffects, conditions, t, locale, weaponAdvisoryFor]
+    [
+      character,
+      conditionEffects,
+      conditions,
+      t,
+      locale,
+      weaponAdvisoryFor,
+      movementUsedFt,
+    ]
   );
 
   // Chromatic slot pips beside the CTA for a slot-costing spell: { level, total,

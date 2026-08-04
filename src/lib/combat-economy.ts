@@ -1,13 +1,12 @@
 /** Pure allocation rules for ordinary and restricted combat-economy slots. */
 
+import type { ActionEconomyCategory } from "@/data/types";
 import type { Grant } from "@/lib/grants";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 
 type ExtraActionGrant = Extract<Grant, { type: "extra-action" }>;
 
-export type EconomyActionCategory = NonNullable<
-  ExtraActionGrant["allowedActions"]
->[number];
+export type EconomyActionCategory = ActionEconomyCategory;
 
 export interface EconomyActionClaim {
   category: EconomyActionCategory | null;
@@ -34,8 +33,9 @@ interface ActionSlot {
 
 /** Stable rules category for an action. `null` means it needs an unrestricted slot. */
 export function economyActionCategory(
-  action: Pick<ResolvedAction, "id" | "source">
+  action: Pick<ResolvedAction, "id" | "source" | "economyCategory">
 ): EconomyActionCategory | null {
+  if (action.economyCategory) return action.economyCategory;
   if (action.source === "weapon") return "attack";
   switch (action.id) {
     case "base-grapple":

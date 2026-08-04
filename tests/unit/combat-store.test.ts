@@ -23,6 +23,8 @@ beforeEach(() =>
     movementUsedFt: 0,
     dashesThisTurn: 0,
     spellSlotCastsThisTurn: 0,
+    nextAttackAdvantage: false,
+    movementLocked: false,
   })
 );
 
@@ -74,6 +76,29 @@ describe("combatStore", () => {
       expect(s().dashesThisTurn).toBe(2);
       boundary();
       expect(s().dashesThisTurn).toBe(0);
+    });
+  });
+
+  describe("turn-scoped next-attack and movement effects", () => {
+    it("arms, consumes, and exactly reverses next-attack Advantage", () => {
+      const undoGrant = s().grantNextAttackAdvantage();
+      expect(s().nextAttackAdvantage).toBe(true);
+      const undoConsume = s().consumeNextAttackAdvantage();
+      expect(s().nextAttackAdvantage).toBe(false);
+      undoConsume?.();
+      expect(s().nextAttackAdvantage).toBe(true);
+      undoGrant();
+      expect(s().nextAttackAdvantage).toBe(false);
+    });
+
+    it("locks movement until the turn boundary and restores the prior state on undo", () => {
+      const undo = s().lockMovement();
+      expect(s().movementLocked).toBe(true);
+      undo();
+      expect(s().movementLocked).toBe(false);
+      s().lockMovement();
+      s().endTurn();
+      expect(s().movementLocked).toBe(false);
     });
   });
 

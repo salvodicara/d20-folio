@@ -123,6 +123,8 @@ describe("Combat sync — async character arrival", () => {
     });
     useCombatStore.getState().useReaction("cutting-words");
     useCombatStore.getState().setMovementUsed(15);
+    useCombatStore.getState().grantNextAttackAdvantage();
+    useCombatStore.getState().lockMovement();
     const persisted = snapshotTurnEconomy(useCombatStore.getState(), key);
     useCombatStore.getState().endCombat();
 
@@ -135,6 +137,8 @@ describe("Combat sync — async character arrival", () => {
     expect(restored.selected.action[0]?.triggerEvents).toEqual(["attack"]);
     expect(restored.reactionUsedId).toBe("cutting-words");
     expect(restored.movementUsedFt).toBe(15);
+    expect(restored.nextAttackAdvantage).toBe(true);
+    expect(restored.movementLocked).toBe(true);
   });
 
   it("never restores a spent action into a different turn pointer", () => {

@@ -1183,11 +1183,22 @@ export interface ActionHeal {
   plus?: HealTerm;
 }
 
+/** Stable semantic category used by restricted/alternate combat-economy actions. */
+export type ActionEconomyCategory = "attack" | "dash" | "disengage" | "hide" | "utilize";
+
 export interface SrdActionDef {
   /** Optional stable suffix when one feature declares several actions of the same type. */
   id?: string;
   /** Action economy cost */
   type: ActionType;
+  /** Rules identity independent of the card id (Cunning Action Dash, Haste, etc.). */
+  economyCategory?: ActionEconomyCategory;
+  /** Flat skill check resolved by this action (Hide: DC 15 Dexterity [Stealth]). */
+  skillCheck?: { dc: number; skill: string };
+  /** This use grants Advantage on the actor's next attack roll this turn. */
+  grantsNextAttackAdvantage?: true;
+  /** This use sets the actor's Speed to 0 for the rest of the current turn. */
+  locksMovement?: true;
   /** Use the caster's spell attack modifier for this granted action. */
   attackType?: "melee" | "ranged";
   /**

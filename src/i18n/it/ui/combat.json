@@ -315,6 +315,7 @@
     "blockedReasonSpellcasting": "Uno stato attivo impedisce di lanciare incantesimi",
     "blockedReasonHeavyArmor": "L'armatura pesante impedisce questo stato",
     "blockedReasonIncapacitated": "Incapacitato impedisce questo stato",
+    "blockedReasonAlreadyMoved": "Non disponibile dopo esserti mosso in questo turno",
     "statusEffects": "Effetti attivi",
     "spellSlotLimitBadge": "Limite slot",
     "limiterBlockedEconomy": "Non puoi usare {{slots}}",

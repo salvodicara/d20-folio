@@ -225,7 +225,7 @@ describe("PlayTab action derivations", () => {
     // economy budget — and dropping the `offhand` guard (which would over-block
     // EVERY non-claimant card the moment an off-hand commits, this one included)
     // is caught right here.
-    expect(ctaButton("Cunning Action")).toBeEnabled();
+    expect(ctaButton("Cunning Action: Dash")).toBeEnabled();
   });
 
   // The off-hand reveal for an EXTRA-ATTACK martial — the most common dual-wield
