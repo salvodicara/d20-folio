@@ -107,6 +107,31 @@ describe("combatResolutionSpec — target shape and outcome", () => {
     });
   });
 
+  it("preserves a damage rider's per-hit type choice as a resolvable component", () => {
+    const parts = combatDamageParts(
+      makeAction("weapon", {
+        damage: "1d12+3",
+        damageType: "slashing",
+        extraDamage: [
+          {
+            dice: "1d6+1",
+            damageType: "radiant",
+            damageTypeChoices: ["radiant", "necrotic"],
+            oncePerTurn: true,
+            sourceName: "Divine Fury",
+          },
+        ],
+      })
+    );
+    expect(parts[1]).toMatchObject({
+      id: "extra-0",
+      formula: "1d6+1",
+      damageTypes: ["radiant", "necrotic"],
+      typeMode: "choice",
+      sourceName: "Divine Fury",
+    });
+  });
+
   it("instances of 1 (or 0) is treated as single-target (never < 1)", () => {
     expect(combatResolutionSpec(makeAction("spell", { instances: 1 })).targetCap).toBe(1);
   });

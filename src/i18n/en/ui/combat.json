@@ -308,6 +308,7 @@
     "riderSpendsResource": "spends 1 use",
     "riderSpendsHitDie": "expends 1 Hit Die",
     "riderScopeAttackOrSpell": "on an attack or a spell",
+    "chosenDamageType": "chosen damage type",
     "attackScope_marked": "vs marked target",
     "attackScope_cursed": "vs cursed target",
     "attackScope_vowed": "vs vowed target",

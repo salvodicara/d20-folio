@@ -278,6 +278,9 @@ function localizeSummary(
     dice: rider.dice,
     ...(rider.fixedAmount !== undefined ? { fixedAmount: rider.fixedAmount } : {}),
     damageType: rider.damageType,
+    ...(rider.damageTypeChoices
+      ? { damageTypeChoices: [...rider.damageTypeChoices] }
+      : {}),
     oncePerTurn: rider.oncePerTurn,
     sourceName: localizeText(rider.source, locale),
     sourceLoc: rider.source,

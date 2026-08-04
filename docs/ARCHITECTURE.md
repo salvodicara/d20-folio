@@ -497,7 +497,13 @@ card ids, so every Dash reaches the one `commitDash` movement seam and every `sk
 one check resolver. On-hit riders become one reviewed damage plan: a tracker-backed rider is selected
 by its entered result; dependent fixed riders use `round1` + `requiresRiderTrackerId`; resource payment,
 shared/solo effects, structured log and undo commit together. No Rogue or Assassin id is branched on in
-the UI/store layers.
+the UI/store layers. A rider may declare either one fixed/weapon-derived type or a non-empty
+`damageTypeChoices` list. The grant evaluator normalizes the latter to a concrete fallback for existing
+readers while preserving the full list through `RawActionSummary` and the presenter; `combatDamageParts`
+then emits a choice component. The resolver requires a type only when that optional rider carries a
+positive entered result, and feeds the chosen type into the same per-component resistance/immunity/
+vulnerability calculation. Divine Fury is data, not a UI special case, and homebrew riders use the same
+pipeline.
 
 **Extra Attack is part of the action economy (the BG3 attack grammar — the count lives on the attack
 AFFORDANCE, the economy just spends).** A hero who makes N weapon attacks per Attack action has

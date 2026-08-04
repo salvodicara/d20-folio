@@ -308,6 +308,7 @@
     "riderSpendsResource": "spende 1 uso",
     "riderSpendsHitDie": "consuma 1 Dado Vita",
     "riderScopeAttackOrSpell": "su un attacco o un incantesimo",
+    "chosenDamageType": "tipo di danno scelto",
     "attackScope_marked": "sul bersaglio marchiato",
     "attackScope_cursed": "sul bersaglio maledetto",
     "attackScope_vowed": "sul bersaglio del voto",

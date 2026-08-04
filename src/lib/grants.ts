@@ -247,6 +247,19 @@ type AttackScopedRoll =
   | { rollType: "save" | "check" | "initiative"; scope?: never }
   | { rollType: "attack"; scope: AttackClauseScope };
 
+/** A damage rider declares either one fixed/weapon-derived type or a non-empty
+ * player choice. The aggregate normalizes both shapes to a concrete fallback
+ * `damageType`, while preserving the choices for the resolution UI. */
+type DamageRiderTypeSpec =
+  | {
+      damageType: DamageType | "same-as-weapon";
+      damageTypeChoices?: never;
+    }
+  | {
+      damageType?: never;
+      damageTypeChoices: readonly [DamageType, ...DamageType[]];
+    };
+
 export type Grant =
   // ── Senses (merge: max per kind) ─────────────────────────────────────────
   | { type: "darkvision"; range: number /* feet */ }
@@ -1572,7 +1585,7 @@ export type Grant =
       ability?: AbilityCode;
       amount?: number;
     }
-  | {
+  | ({
       /**
        * A self-contained extra-damage rider on weapon attacks (Paladin
        * Radiant Strikes: +1d8 Radiant on a Melee weapon hit; Cleric Blessed
@@ -1644,7 +1657,7 @@ export type Grant =
       /** Another selected rider must be applied on the same hit. */
       requiresRiderTrackerId?: string;
       vsMarkedTarget?: MarkedTargetScope;
-      damageType: DamageType | "same-as-weapon";
+      /** The damage type is either fixed/weapon-derived or chosen per hit. */
       /**
        * Which attacks the rider rides:
        *   - `"melee-weapon"` — any Melee weapon OR an Unarmed Strike (skips Ranged).
@@ -1671,7 +1684,7 @@ export type Grant =
       oncePerTurn?: boolean;
       addAbilityMod?: AbilityCode;
       resourceCost?: { trackerId: string };
-    }
+    } & DamageRiderTypeSpec)
   | {
       /**
        * A static bonus added to ONE damage roll of a spell whose damage matches a
@@ -4288,7 +4301,10 @@ export interface AggregatedGrants {
      *  marked / cursed target" (never auto-summed); the token drives the localized
      *  label at the render edge. Absent → an always-applies rider. */
     vsMarkedTarget?: MarkedTargetScope;
+    /** Concrete fallback (the fixed type or the first declared choice). */
     damageType: DamageType | "same-as-weapon";
+    /** Every type the player may choose for this rider when resolving the hit. */
+    damageTypeChoices?: ReadonlyArray<DamageType>;
     appliesTo:
       | "melee-weapon"
       | "weapon"
@@ -5485,7 +5501,10 @@ export function evaluateGrants(
           initiativeBonusFlat += g.amount ?? 0;
         }
         break;
-      case "damage-rider":
+      case "damage-rider": {
+        const damageTypeChoices = g.damageTypeChoices;
+        const damageType = g.damageType ?? damageTypeChoices?.[0];
+        if (!damageType) break;
         damageRiders.push({
           ...(g.dice !== undefined ? { dice: g.dice } : {}),
           ...(g.diceByLevel ? { diceByLevel: g.diceByLevel } : {}),
@@ -5495,7 +5514,8 @@ export function evaluateGrants(
             ? { requiresRiderTrackerId: g.requiresRiderTrackerId }
             : {}),
           ...(g.vsMarkedTarget ? { vsMarkedTarget: g.vsMarkedTarget } : {}),
-          damageType: g.damageType,
+          damageType,
+          ...(damageTypeChoices ? { damageTypeChoices } : {}),
           appliesTo: g.appliesTo,
           oncePerTurn: g.oncePerTurn ?? false,
           ...(g.addAbilityMod ? { addAbilityMod: g.addAbilityMod } : {}),
@@ -5507,6 +5527,7 @@ export function evaluateGrants(
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
         });
         break;
+      }
       case "weapon-damage-bonus":
         // `activeKey` (the applyGrant param) is the wrapping `while-active`
         // toggle when this grant arrived through one — recorded so the damage

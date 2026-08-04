@@ -603,6 +603,41 @@ describe("universal combat resolution", () => {
     );
   });
 
+  it("requires and applies the chosen type for an optional damage rider", () => {
+    render(
+      <CombatResolver
+        action={action({
+          attackBonus: 6,
+          targeting: { affinity: "enemy", maxTargets: 1 },
+          extraDamage: [
+            {
+              dice: "1d6+1",
+              damageType: "radiant",
+              damageTypeChoices: ["radiant", "necrotic"],
+              oncePerTurn: true,
+              sourceName: "Divine Fury",
+            },
+          ],
+        })}
+        sheetCombat={combat([monster("monster-1", "Goblin")])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    const type = screen.getByRole("combobox", {
+      name: /damage type against goblin/i,
+    });
+    fireEvent.change(screen.getByRole("spinbutton", { name: /damage to goblin/i }), {
+      target: { value: "5" },
+    });
+    expect(screen.getByRole("button", { name: "Apply action" })).toBeDisabled();
+    fireEvent.change(type, { target: { value: "necrotic" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+    expectApplied([{ kind: "damage", targetId: "monster-1", amount: 5 }]);
+  });
+
   it("applies Sneak Attack and its round-1 dependent rider atomically", () => {
     const doc = buildScenario({
       name: "Rook",

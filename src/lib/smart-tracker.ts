@@ -348,6 +348,8 @@ export interface ActionSummary {
     dice: string;
     fixedAmount?: number;
     damageType: string;
+    /** Player-selectable types for this rider; `damageType` is the fallback. */
+    damageTypeChoices?: ReadonlyArray<DamageType>;
     oncePerTurn: boolean;
     /** Localized provenance used by the resolution review. */
     sourceName?: string;
@@ -954,9 +956,14 @@ function resolveActiveFormRiders(
               )
             )
           : (g.dice ?? "");
+      const damageType =
+        g.damageTypeChoices?.[0] ??
+        (g.damageType === "same-as-weapon" ? "radiant" : g.damageType);
+      if (!damageType) continue;
       out.push({
         dice,
-        damageType: g.damageType === "same-as-weapon" ? "radiant" : g.damageType,
+        damageType,
+        ...(g.damageTypeChoices ? { damageTypeChoices: [...g.damageTypeChoices] } : {}),
         oncePerTurn: g.oncePerTurn ?? false,
         scope: "attack-or-spell",
         source: traitName,
@@ -1027,6 +1034,8 @@ export interface RawActionSummary extends Omit<
     dice: string;
     fixedAmount?: number;
     damageType: string;
+    /** Player-selectable types for this rider; `damageType` is the fallback. */
+    damageTypeChoices?: ReadonlyArray<DamageType>;
     oncePerTurn: boolean;
     resourceTrackerId?: string;
     round1?: true;
@@ -1920,6 +1929,7 @@ export function weaponDieWhy(
 function riderWhy(rider: {
   dice: string;
   damageType: string;
+  damageTypeChoices?: ReadonlyArray<DamageType>;
   oncePerTurn: boolean;
   /** The tracker each use spends — its id IS the owning feature's ("monk-focus"). */
   trackerId?: string;
@@ -1936,7 +1946,13 @@ function riderWhy(rider: {
     term,
     params: {
       dice: rider.dice,
-      type: { loc: uiText(`srd.damage_${rider.damageType}`) },
+      type: {
+        loc: uiText(
+          rider.damageTypeChoices?.length
+            ? "combat.chosenDamageType"
+            : `srd.damage_${rider.damageType}`
+        ),
+      },
       ...(rider.trackerId ? { tracker: { loc: featureNameLoc(rider.trackerId) } } : {}),
     },
     ...(rider.sourceId ? { rule: { loc: featureNameLoc(rider.sourceId) } } : {}),
@@ -3477,6 +3493,7 @@ export function resolveAttackDamageRiders(
         // "same-as-weapon" (Colossus Slayer) resolves to the attack's OWN damage
         // type so the UI receives a real type, never the sentinel.
         damageType,
+        ...(r.damageTypeChoices ? { damageTypeChoices: [...r.damageTypeChoices] } : {}),
         oncePerTurn: r.oncePerTurn,
         // The plain-language "what is this and when does it apply?" — COMPOSED
         // from this grant's own fields, so every rider (present and future)
@@ -3484,6 +3501,7 @@ export function resolveAttackDamageRiders(
         why: riderWhy({
           dice,
           damageType,
+          ...(r.damageTypeChoices ? { damageTypeChoices: r.damageTypeChoices } : {}),
           oncePerTurn: r.oncePerTurn,
           ...(r.resourceCost ? { trackerId: r.resourceCost.trackerId } : {}),
           sourceId: r.sourceId,

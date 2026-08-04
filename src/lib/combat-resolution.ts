@@ -426,11 +426,14 @@ export function combatDamageParts(action: ResolvedAction): CombatDamagePartSpec[
     });
   }
   for (const [index, extra] of (s.extraDamage ?? []).entries()) {
+    const riderTypes = extra.damageTypeChoices?.length
+      ? [...extra.damageTypeChoices]
+      : [extra.damageType as DamageType];
     parts.push({
       id: `extra-${index}`,
       formula: extra.dice,
-      damageTypes: [extra.damageType as DamageType],
-      typeMode: "fixed",
+      damageTypes: riderTypes,
+      typeMode: extra.damageTypeChoices?.length ? "choice" : "fixed",
       ...(source ? { source } : {}),
       optional: true,
       ...(extra.sourceName ? { sourceName: extra.sourceName } : {}),

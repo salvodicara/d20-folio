@@ -99,6 +99,15 @@ available only while raging, occupying the durable Bonus slot without consuming 
 Feign Death now projects Speed 0, Poisoned immunity and every non-Psychic resistance in addition to its
 two conditions. The non-VTT early exits remain explicit corrections rather than fabricated observation.
 
+**Live-team truth audit — Divine Fury damage choice CLOSED on branch (2026-08-04):** Santaera's
+Zealot rider no longer silently forces Radiant damage. `damage-rider` now models a non-empty
+per-hit type choice as first-class data; aggregation keeps a backward-compatible fallback while the
+shared rider chip shows every option and `CombatResolver` requires the actual choice whenever the
+rider is used. The selected type enters the ordinary per-component defense math, transaction and
+undo path. The primitive is feature-agnostic, so future content and homebrew riders inherit the same
+behavior without a Zealot branch. Public pipeline tests and the imported Santaera contract pin
+weapon and Unarmed Strike parity. The six-fixture deterministic census continues.
+
 **Live-team truth audit — Barbarian/Monk follow-up CLOSED on branch (2026-08-04):** two remaining L3
 facts that were still prose now use reusable engine primitives. Primal Knowledge projects a typed
 optional STR ability onto its five active checks only while Rage is active; the cockpit and PDF share

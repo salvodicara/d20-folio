@@ -599,6 +599,16 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   orphaned find-DC is dropped — never at parse/sanitize time, where the trio is stripped from
   the parent doc.
 
+### Per-hit damage-type choices
+
+`damage-rider` owns its type as an exclusive declaration: either fixed/weapon-derived `damageType`, or
+a non-empty `damageTypeChoices` list. Aggregation normalizes the first choice as a compatibility fallback
+but never discards the list. The shared action presenter renders all choices and the combat resolution
+plan uses `typeMode: "choice"`, so a positive optional rider cannot commit until the player selects the
+type actually dealt. That type participates in the ordinary per-component defense math; no feature id is
+known by the resolver. Zealot Divine Fury is the first consumer (Radiant/Necrotic), and custom content can
+declare the same shape.
+
 ---
 
 ## Cross-cutting design rules
