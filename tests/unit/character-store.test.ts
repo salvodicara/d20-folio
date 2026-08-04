@@ -1126,6 +1126,19 @@ describe("characterStore — rest mechanics", () => {
       }
     });
 
+    it("an Incapacitated-family condition ends every active state declaring that trigger", () => {
+      const char = mockCharacter();
+      char.character.features.push({ srdId: "barbarian-rage" });
+      char.session.activeFeatures = ["barbarian-rage"];
+      useCharacterStore.getState().setCharacter(char);
+
+      useCharacterStore.getState().addCondition("stunned");
+
+      expect(
+        useCharacterStore.getState().character?.session.activeFeatures
+      ).not.toContain("barbarian-rage");
+    });
+
     it("RA-06 — a NON-incapacitating condition (poisoned) leaves Concentration intact", () => {
       const char = mockCharacter();
       char.session.concentration = conc("bless");

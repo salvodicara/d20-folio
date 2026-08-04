@@ -84,6 +84,8 @@ import {
   resolveCunningStrikeOptions,
   resolveReplaceAttackWithCast,
   armorDisadvantageClauses,
+  isSpellcastingBlocked,
+  resolveActiveStateBlocker,
   type ResolvedAction,
 } from "@/lib/smart-tracker";
 
@@ -794,6 +796,17 @@ export function PlayTab() {
 
   const blockedReasonFor_ = useCallback(
     (action: ResolvedAction, depleted: boolean): string | null => {
+      if (character) {
+        if (action.source === "spell" && isSpellcastingBlocked(character)) {
+          return t("combat.blockedReasonSpellcasting");
+        }
+        switch (resolveActiveStateBlocker(character, action)) {
+          case "heavy-armor":
+            return t("combat.blockedReasonHeavyArmor");
+          case "incapacitated":
+            return t("combat.blockedReasonIncapacitated");
+        }
+      }
       // The card's TRUE economy kind is `action.type` (action/bonus/reaction/free)
       // — `getEconomySlot` folds reactions into "free", so it can't be used for
       // the condition gate. A "free" action is never condition-blocked or spent.
@@ -821,7 +834,7 @@ export function PlayTab() {
         }
       }
     },
-    [conditionEffects, conditions, t, locale, weaponAdvisoryFor]
+    [character, conditionEffects, conditions, t, locale, weaponAdvisoryFor]
   );
 
   // Chromatic slot pips beside the CTA for a slot-costing spell: { level, total,

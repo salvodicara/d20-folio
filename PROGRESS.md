@@ -77,6 +77,14 @@ stable source id, and stale commit/redo proposals cannot overdraw live slots or 
 deterministic corpus audit follows as separate, truth-gated milestones; queued UI dogfood remains after
 engine closure. Nothing from this sweep merges to `main` without the owner's final permission.
 
+**Live-team truth audit — Rage contract CLOSED on branch (2026-08-04):** the Santaera fixture exposed
+a stale 2014 maintainer and two missing 2024 restrictions. Rage now declares no-spell/no-Concentration
+and Heavy-armor/Incapacitated incompatibilities as generic active-state data. Every cast route is
+hard-gated, activation ends held Concentration with exact undo, condition/equipment changes end the
+state, and taking damage no longer falsely maintains it. Fixture-driven regressions cover activation,
+duration, blockers, aggregate effects and the composite undo. Monk/Bard/Wizard/Rogue/Paladin fixture
+audits continue as separate truth-gated milestones.
+
 **CODE-COMPLETE encounter correction + battle-resolution overhaul — HELD for owner screenshot approval
 (2026-08-03):** dogfooding found two encounter UI regressions: the light-theme compact single-encounter topbar chip inherited dark
 ink for its nested glyph/count despite the carved socket's correct fixed ink, and the end-encounter

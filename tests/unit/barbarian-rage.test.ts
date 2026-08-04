@@ -2,7 +2,14 @@ import { describe, it, expect } from "vitest";
 import { asRaceId } from "@/data/srd-names";
 import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
-import { resolveTrackers, resolveActions } from "@/lib/smart-tracker";
+import {
+  isSpellcastingBlocked,
+  resolveActions,
+  resolveActiveStateBlocker,
+  resolveActiveStatesEndingOn,
+  resolveTrackers,
+} from "@/lib/smart-tracker";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { getClassTable } from "@/data/classes";
 import type { CharacterDoc } from "@/types/character";
 import { loc } from "../_harness/loc";
@@ -12,6 +19,8 @@ interface MkOpts {
   activeFeatures?: string[];
   /** Extra features beyond `barbarian-rage` (e.g. a feat under test). */
   extraFeatures?: { srdId: string }[];
+  equipment?: CharacterDoc["character"]["equipment"];
+  conditions?: CharacterDoc["session"]["conditions"];
 }
 
 function mk(level: number, opts: MkOpts = {}): CharacterDoc {
@@ -66,7 +75,7 @@ function mk(level: number, opts: MkOpts = {}): CharacterDoc {
       spellSlots: [],
       spells: [],
       weapons: opts.weapons ?? [],
-      equipment: [],
+      equipment: opts.equipment ?? [],
       features: [{ srdId: "barbarian-rage" }, ...(opts.extraFeatures ?? [])],
       combatAlgorithm: [],
       customConditions: [],
@@ -80,7 +89,7 @@ function mk(level: number, opts: MkOpts = {}): CharacterDoc {
       currency: { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 },
       concentration: "",
       initiative: "",
-      conditions: [],
+      conditions: opts.conditions ?? [],
       deathSucc: 0,
       deathFail: 0,
       inspiration: false,
@@ -187,6 +196,50 @@ describe("Rage activation seam (action ⇒ while-active state)", () => {
   it("the Rage bonus action carries activatesKey = barbarian-rage (inferred)", () => {
     const rage = resolveActions(mk(3)).find((a) => a.id === "barbarian-rage-bonus");
     expect(rage?.activatesKey).toBe("barbarian-rage");
+    expect(rage?.activationEndsEarlyOn).toEqual(["heavy-armor", "incapacitated"]);
+  });
+
+  it("active Rage blocks spellcasting and concentration through aggregate facts", () => {
+    const calm = mk(3);
+    const raging = mk(3, { activeFeatures: ["barbarian-rage"] });
+    expect(aggregateCharacterGrants(calm.character, calm.session)).toMatchObject({
+      spellcastingBlocked: false,
+      concentrationBlocked: false,
+    });
+    expect(aggregateCharacterGrants(raging.character, raging.session)).toMatchObject({
+      spellcastingBlocked: true,
+      concentrationBlocked: true,
+    });
+    expect(isSpellcastingBlocked(raging)).toBe(true);
+  });
+
+  it("prevents activation in Heavy armor or while Incapacitated", () => {
+    const heavy = mk(3, {
+      equipment: [{ srdId: "chain-mail", quantity: 1, equipped: true }],
+    });
+    const incapacitated = mk(3, { conditions: ["incapacitated"] });
+    const heavyAction = resolveActions(heavy).find(
+      (a) => a.id === "barbarian-rage-bonus"
+    );
+    const incapacitatedAction = resolveActions(incapacitated).find(
+      (a) => a.id === "barbarian-rage-bonus"
+    );
+    expect(heavyAction && resolveActiveStateBlocker(heavy, heavyAction)).toBe(
+      "heavy-armor"
+    );
+    expect(
+      incapacitatedAction && resolveActiveStateBlocker(incapacitated, incapacitatedAction)
+    ).toBe("incapacitated");
+  });
+
+  it("finds Rage generically when an immediate-drop trigger becomes true", () => {
+    const raging = mk(3, { activeFeatures: ["barbarian-rage"] });
+    expect(resolveActiveStatesEndingOn(raging, "heavy-armor")).toEqual([
+      "barbarian-rage",
+    ]);
+    expect(resolveActiveStatesEndingOn(raging, "incapacitated")).toEqual([
+      "barbarian-rage",
+    ]);
   });
 
   it("a tracker action WITHOUT a while-active grant carries no activatesKey", () => {

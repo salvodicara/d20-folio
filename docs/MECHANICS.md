@@ -410,6 +410,14 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   Rest resets neither, so it never invents a die result or elapsed table time.
   A fixed partial refill declares `longRestRecovery:N` (Spirit Board: 1); the ordinary omission means
   full recovery. The same recovery facts apply to charged casts and activated properties.
+- **Active-state restrictions.** Inner `spellcasting-blocked` and
+  `concentration-blocked` grants declare restrictions that exist only while the wrapper is active;
+  every cast surface reads the aggregate flag. Activating such a state ends held Concentration in
+  the same transaction and undo restores the spell, cast level and standing chips. A maintained
+  duration's `endsEarlyOn` tokens drive both the pre-activation gate and later condition/equipment
+  mutations (`heavy-armor`, `incapacitated`) without naming Rage in UI/store code. Unknown homebrew
+  tokens remain manual overrides. Maintainers consume persisted action `triggerEvents`; merely spending
+  the Action slot (Dash, Help) never impersonates an attack/save event.
 - **USE-APPLIES seam.** Using an action AUTO-APPLIES its deterministic (dice-free) effects with the
   immediate-commit-with-undo model: a `temp-hp` grant carrying a `slot` (Orc Adrenaline Rush, Shifter
   Shifting, Chef) emits a resolved number applied on use; a `while-active.duration` lets the End-Turn

@@ -25,7 +25,8 @@ import { useLibraryStore } from "@/stores/libraryStore";
 import { useUIStore } from "@/stores/uiStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
-import { computeAC } from "@/lib/compute";
+import { computeAC, isHeavyArmorEquipped } from "@/lib/compute";
+import { resolveActiveStatesEndingOn } from "@/lib/smart-tracker";
 import { formatWeight } from "@/lib/utils";
 import { matchesSearch } from "@/lib/search";
 import { getEquipment } from "@/data/equipment";
@@ -409,10 +410,16 @@ export function InventoryTab() {
       getEquipment,
       char.character.features
     );
-    store.setCharacter({
+    const nextCharacter = {
       ...char,
       character: { ...char.character, equipment: equipCopy, ac: newAC },
-    });
+    };
+    store.setCharacter(nextCharacter);
+    if (isHeavyArmorEquipped(equipCopy, getEquipment)) {
+      for (const key of resolveActiveStatesEndingOn(nextCharacter, "heavy-armor")) {
+        store.setActiveFeature(key, false);
+      }
+    }
   }, []);
 
   const updateCurrency = useCallback((key: CurrencyKey, value: number) => {

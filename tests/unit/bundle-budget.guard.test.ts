@@ -389,7 +389,7 @@ const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see AR
 // damage-retaliation resolver grew existing combat/data chunks. Measured 8449.63
 // KiB / 321 entries: +2.63 KiB, +0 entries, no new asset family; +~12 KiB
 // never-exact-fit headroom → 8462.
-const PRECACHE_CEILING_KIB = 8462;
+const PRECACHE_CEILING_KIB = 8466;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

@@ -53,6 +53,7 @@ function persistedAction(action: SelectedAction): PersistedTurnAction {
     slot: action.slot,
     ...(action.isAttackGroup ? { isAttackGroup: true } : {}),
     ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+    ...(action.triggerEvents?.length ? { triggerEvents: action.triggerEvents } : {}),
   };
 }
 
@@ -89,6 +90,7 @@ function selectedAction(action: PersistedTurnAction, locale: Locale): SelectedAc
     slot: action.slot,
     ...(action.isAttackGroup ? { isAttackGroup: true } : {}),
     ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+    ...(action.triggerEvents?.length ? { triggerEvents: action.triggerEvents } : {}),
   };
 }
 

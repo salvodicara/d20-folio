@@ -100,6 +100,7 @@ export interface PersistedTurnAction {
   slot: "action" | "bonus" | "free";
   isAttackGroup?: boolean;
   economyCategory?: EconomyActionCategory;
+  triggerEvents?: ReadonlyArray<"attack">;
 }
 
 /**

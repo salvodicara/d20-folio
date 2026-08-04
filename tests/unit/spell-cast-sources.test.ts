@@ -41,6 +41,15 @@ describe("resolveSpellCastOptions", () => {
     expect(resolveSpellCastOptions(c, "fire-bolt", 0, true, "en", LABELS)).toEqual([]);
   });
 
+  it("offers no slot/free/mastery route while an active state blocks spellcasting", () => {
+    const c = withSlots({
+      spells: [{ srdId: "bless", prepared: true }],
+      features: [{ srdId: "barbarian-rage" }],
+    });
+    c.session.activeFeatures = ["barbarian-rage"];
+    expect(resolveSpellCastOptions(c, "bless", 1, true, "en", LABELS)).toEqual([]);
+  });
+
   it("surfaces a ref-level free cast (Aberrant freeCastSource) at base level", () => {
     const c = withSlots({
       spells: [

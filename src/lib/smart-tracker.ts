@@ -151,7 +151,10 @@ import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 import { resolveSpellAbility } from "@/lib/resolve-spell-ability";
 import { resolveSpellOwningClassId } from "@/lib/spell-owning-class";
 import { isSpellCombatCastable } from "@/lib/spell-combat-castable";
-import { resolveArmorEffects } from "@/lib/condition-effects";
+import {
+  conditionBreaksConcentration,
+  resolveArmorEffects,
+} from "@/lib/condition-effects";
 import { effectiveArmorProficiencies } from "@/lib/feat-prereq";
 import type { CostSpec } from "@/lib/cost-engine";
 
@@ -659,6 +662,9 @@ export interface ResolvedAction {
    * state. Omitted for actions on features with no `while-active` grant.
    */
   activatesKey?: string;
+  /** Immediate-drop triggers declared by the activated state (Rage cannot be
+   * entered in Heavy armor and ends under the Incapacitated family). */
+  activationEndsEarlyOn?: ReadonlyArray<string>;
   /** Source-specific duration for an activated cast state (for example War
    * God's Blessing's concentration-free 1-minute spell). */
   activeDurationRounds?: number;
@@ -4620,10 +4626,13 @@ function resolveFeatureActions(
     // loop flips this key into `session.activeFeatures` (lighting the rail
     // chip + every while-active grant) and clears it on undo.
     let activatesKey: string | undefined;
+    let activationEndsEarlyOn: ReadonlyArray<string> | undefined;
     if ("grants" in srdFeature) {
       for (const g of srdFeature.grants ?? []) {
         if (g.type === "while-active") {
           activatesKey = g.activeKey;
+          activationEndsEarlyOn =
+            g.duration?.kind === "maintained" ? g.duration.endsEarlyOn : undefined;
           break;
         }
       }
@@ -4848,6 +4857,7 @@ function resolveFeatureActions(
         ...(action.alternateCost ? { alternateCost: action.alternateCost } : {}),
         // Using this action establishes its feature's while-active state (Rage).
         ...(activatesKey ? { activatesKey } : {}),
+        ...(activationEndsEarlyOn?.length ? { activationEndsEarlyOn } : {}),
         // USE-APPLIES — deterministic effects this action auto-applies on use
         // (a slot-gated same-source temp-hp grant: Chef's PB temp HP).
         ...(srdUseEffects.length ? { useEffects: srdUseEffects } : {}),
@@ -7086,11 +7096,67 @@ export interface ActiveMaintainedEffect {
   /** Source feature id (provenance — the prompt label resolves off it). */
   sourceId: string;
   /** In-combat events that EXTEND the state for another round. */
-  maintainedBy: ReadonlyArray<"attack" | "bonus-extend" | "damage-taken">;
+  maintainedBy: ReadonlyArray<"attack" | "bonus-extend">;
   /** The cap past which the state auto-ends (Rage = 10 minutes). */
   maxMinutes?: number;
   /** FRONTIER-S3 — the same cap in ROUNDS the turn/round engine counts down. */
   maxRounds?: number;
+}
+
+/** Why an action cannot establish its declared active state right now. The
+ * vocabulary is data-owned (`WhileActiveDuration.endsEarlyOn`), not feature ids. */
+export type ActiveStateBlocker = "heavy-armor" | "incapacitated";
+
+/** Resolve the first currently-known fact that prevents an action's active
+ * state. Unknown/homebrew trigger tokens stay override-first and never block. */
+export function resolveActiveStateBlocker(
+  character: CharacterDoc,
+  action: Pick<ResolvedAction, "activationEndsEarlyOn">
+): ActiveStateBlocker | null {
+  for (const trigger of action.activationEndsEarlyOn ?? []) {
+    if (
+      trigger === "heavy-armor" &&
+      isHeavyArmorEquipped(character.character.equipment, getEquipment)
+    ) {
+      return "heavy-armor";
+    }
+    if (
+      trigger === "incapacitated" &&
+      character.session.conditions.some(conditionBreaksConcentration)
+    ) {
+      return "incapacitated";
+    }
+  }
+  return null;
+}
+
+/** Active states that must end immediately when a known trigger becomes true.
+ * Used by condition/equipment mutation seams; pure and generic. */
+export function resolveActiveStatesEndingOn(
+  character: CharacterDoc,
+  trigger: ActiveStateBlocker
+): string[] {
+  const active = new Set(character.session.activeFeatures ?? []);
+  const ended = new Set<string>();
+  for (const source of resolveAllGrantSources(character.character)) {
+    for (const grant of source.grants ?? []) {
+      if (
+        grant.type === "while-active" &&
+        grant.duration?.kind === "maintained" &&
+        active.has(grant.activeKey) &&
+        grant.duration.endsEarlyOn?.includes(trigger)
+      ) {
+        ended.add(grant.activeKey);
+      }
+    }
+  }
+  return [...ended];
+}
+
+/** One cast-law query shared by the Play and Spells surfaces. */
+export function isSpellcastingBlocked(character: CharacterDoc): boolean {
+  return aggregateCharacterGrants(character.character, character.session)
+    .spellcastingBlocked;
 }
 
 /**

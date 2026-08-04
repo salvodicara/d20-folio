@@ -68,6 +68,9 @@ export interface SelectedAction {
   /** Rules category used to allocate restricted extra actions (for example Haste).
    * Persisted with the turn so route changes cannot reopen an illegal action. */
   economyCategory?: EconomyActionCategory;
+  /** Deterministic turn events this committed action produced. Active-state
+   * duration rules consume these persisted facts after route changes. */
+  triggerEvents?: ReadonlyArray<"attack">;
   /** What resource this action consumed when used (deducted immediately). */
   cost?: {
     type: "spell-slot" | "tracker" | "equipment" | "none";

@@ -27,7 +27,11 @@ import { resolveAllGrantSources, flattenEntryPicks } from "@/lib/resolve-grant-s
 import { grantSourceName, localizeText } from "@/lib/views/srd-i18n";
 import { srdText } from "@/lib/loc-text";
 import { totalLevel as characterLevel } from "@/lib/classes";
-import { resolveTrackers, resolveChargesFormula } from "@/lib/smart-tracker";
+import {
+  isSpellcastingBlocked,
+  resolveTrackers,
+  resolveChargesFormula,
+} from "@/lib/smart-tracker";
 import { spellIndex } from "@/data/spells";
 import { FEATS_BY_ID } from "@/data/feats";
 import { resolveEffectiveSpells } from "@/lib/expanded-spells";
@@ -267,6 +271,7 @@ export function resolveSpellCastOptions(
   locale: keyof BiText,
   labels: CastBadgeLabels
 ): CastLevelOption[] {
+  if (isSpellcastingBlocked(character)) return [];
   if (baseLevel <= 0) return [];
   const ref = character.character.spells.find(
     (s) => !("custom" in s) && s.srdId === spellId

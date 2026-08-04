@@ -338,6 +338,14 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "isTurnEconomyBlocked",
     consumer: "src/features/character/center/TurnEconomyProvider.tsx",
   },
+  "spellcasting-blocked": {
+    via: "isSpellcastingBlocked",
+    consumer: "src/features/character/center/TurnEconomyProvider.tsx",
+  },
+  "concentration-blocked": {
+    via: "concentrationBlocked",
+    consumer: "src/features/character/center/TurnEconomyProvider.tsx",
+  },
   "manifested-weapon": { via: "manifestedWeapons", consumer: "src/lib/smart-tracker.ts" },
   "form-attack": { via: "formAttacks", consumer: "src/lib/smart-tracker.ts" },
   "pact-weapon": { via: "pactWeapons", consumer: "src/lib/smart-tracker.ts" },

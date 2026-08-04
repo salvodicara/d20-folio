@@ -22,6 +22,7 @@ import { primaryClassId } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import { Sparkles, Plus } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useToastStore } from "@/stores/toastStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useUIStore } from "@/stores/uiStore";
 import { registerUndoableToast } from "@/stores/undoStore";
@@ -56,6 +57,7 @@ import { localizeSrd } from "@/i18n/resolver";
 import { buildSpellsViewModel, type SpellCardVM } from "@/lib/views/spells-view";
 import { concentrationValue, customConcentrationValue } from "@/lib/concentration";
 import { confirmConcentrationSwap } from "@/features/character/confirm-concentration";
+import { isSpellcastingBlocked } from "@/lib/smart-tracker";
 import type { SrdSpellData } from "@/data/types";
 import type { CustomSpell, SpellcastingConfig } from "@/types/character";
 import {
@@ -122,7 +124,14 @@ export function SpellsTab() {
     onConfirm: (level: number, opt: CastLevelOption, metamagicIds: string[]) => void;
   } | null>(null);
   const sheetMode = useUIStore((s) => s.sheetMode);
+  const showToast = useToastStore((s) => s.showToast);
   const isEdit = sheetMode === "edit";
+
+  const guardSpellcasting = useCallback((): boolean => {
+    if (!character || !isSpellcastingBlocked(character)) return true;
+    showToast({ message: t("combat.blockedReasonSpellcasting"), duration: 2500 });
+    return false;
+  }, [character, showToast, t]);
 
   /** Resolved class id ("" when character is not loaded). */
   const classId = useMemo(
@@ -493,6 +502,7 @@ export function SpellsTab() {
   const handleCastSrd = useCallback(
     async (vm: SpellCardVM) => {
       if (!character || vm.kind !== "srd" || !vm.data) return;
+      if (!guardSpellcasting()) return;
       const spell = vm.data;
       const level = spell.level;
       const displayName = vm.name;
@@ -651,13 +661,23 @@ export function SpellsTab() {
         onConfirm: dispatch,
       });
     },
-    [character, locale, t, castAtLevel, castFreeAt, castMastery, castCantrip]
+    [
+      character,
+      locale,
+      t,
+      castAtLevel,
+      castFreeAt,
+      castMastery,
+      castCantrip,
+      guardSpellcasting,
+    ]
   );
 
   /** Cast a custom (homebrew) spell. */
   const handleCastCustom = useCallback(
     async (vm: SpellCardVM) => {
       if (!character || vm.kind !== "custom") return;
+      if (!guardSpellcasting()) return;
       const customSpell = vm.ref as CustomSpell;
       if (customSpell.level === 0) return;
       // The shared concentration-conflict gate (golden rule 6) — a custom spell
@@ -705,7 +725,7 @@ export function SpellsTab() {
         },
       });
     },
-    [character, castAtLevel, t, locale]
+    [character, castAtLevel, t, locale, guardSpellcasting]
   );
 
   /** Cast button dispatcher (SRD vs custom). */
@@ -718,6 +738,7 @@ export function SpellsTab() {
   const handleCastRitual = useCallback(
     async (vm: SpellCardVM) => {
       if (!character || vm.kind !== "srd" || !vm.data) return;
+      if (!guardSpellcasting()) return;
       const spell = vm.data;
       if (!spell.ritual || spell.level === 0) return;
       // The shared concentration-conflict gate (golden rule 6) — a ritual cast
@@ -744,7 +765,7 @@ export function SpellsTab() {
         { turnScoped: false }
       );
     },
-    [character, setConcentration, t, locale]
+    [character, setConcentration, t, locale, guardSpellcasting]
   );
 
   const handleDeleteSpell = useCallback(

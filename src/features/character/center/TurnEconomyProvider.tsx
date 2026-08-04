@@ -62,6 +62,8 @@ import {
   resolveReplaceAttackWithCast,
   resolveFreeCastFromList,
   castSourceActiveKey,
+  isSpellcastingBlocked,
+  resolveActiveStateBlocker,
   type ResolvedAction,
   type ActiveMaintainedEffect,
   type ActionCostOption,
@@ -84,7 +86,10 @@ import {
   applyOnCastSlotRegain,
   resolveOnCastSurgeReminder,
 } from "@/lib/on-cast-effects";
-import { activeKeysForConcentration } from "@/lib/aggregate-character";
+import {
+  activeKeysForConcentration,
+  aggregateCharacterGrants,
+} from "@/lib/aggregate-character";
 import {
   localizeActions,
   logTypeForAction,
@@ -202,9 +207,37 @@ function activateActionState(
   const key = action.activatesKey;
   if (!key) return { activated: false, restore: () => undefined };
   const previousLevel = store.character?.session.activeSpellCastLevels?.[key];
+  const previousConcentration = store.character?.session.concentration ?? "";
+  const previousConcentrationCastLevel = store.character?.session.concentrationCastLevel;
+  const previousConcentrationKeys = store.character
+    ? activeKeysForConcentration(
+        store.character.character,
+        store.character.session,
+        previousConcentration
+      )
+    : [];
+  const previousConcentrationKeyLevels = Object.fromEntries(
+    previousConcentrationKeys.flatMap((activeKey) => {
+      const level = store.character?.session.activeSpellCastLevels?.[activeKey];
+      return level === undefined ? [] : [[activeKey, level] as const];
+    })
+  );
   const activated = !(store.character?.session.activeFeatures ?? []).includes(key);
   if (activated) store.setActiveFeature(key, true);
   if (action.source === "spell") store.setActiveSpellCastLevel(key, castLevel);
+  // An activated state can declaratively forbid Concentration (2024 Rage).
+  // End the held spell through the ONE concentration seam so its standing chips
+  // retract and the combat log remains truthful. The surrounding action undo
+  // restores the whole prior concentration state atomically.
+  const activatedCharacter = useCharacterStore.getState().character;
+  const concentrationLogIds =
+    activated &&
+    previousConcentration &&
+    activatedCharacter &&
+    aggregateCharacterGrants(activatedCharacter.character, activatedCharacter.session)
+      .concentrationBlocked
+      ? useCharacterStore.getState().setConcentration("", { undoable: false })
+      : [];
   const restoreTimer = action.activeDurationRounds
     ? store.armEffectTimer(key, action.activeDurationRounds)
     : null;
@@ -212,9 +245,28 @@ function activateActionState(
     activated,
     restore: () => {
       const current = useCharacterStore.getState();
+      const canRestoreConcentration =
+        concentrationLogIds.length > 0 &&
+        current.character?.session.concentration === "" &&
+        (current.character.session.activeFeatures ?? []).includes(key);
       if (activated) current.setActiveFeature(key, false);
       if (action.source === "spell") current.setActiveSpellCastLevel(key, previousLevel);
       restoreTimer?.();
+      if (canRestoreConcentration) {
+        current.setConcentration(previousConcentration, {
+          castLevel: previousConcentrationCastLevel,
+          undoable: false,
+          silent: true,
+        });
+        for (const activeKey of previousConcentrationKeys) {
+          current.setActiveFeature(activeKey, true);
+          current.setActiveSpellCastLevel(
+            activeKey,
+            previousConcentrationKeyLevels[activeKey]
+          );
+        }
+      }
+      for (const id of concentrationLogIds) current.removeLogEntry(id);
     },
   };
 }
@@ -262,6 +314,32 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   const endTurn = useCombatStore((s) => s.endTurn);
   const resetTurn = useCombatStore((s) => s.resetTurn);
   const showToast = useToastStore((s) => s.showToast);
+
+  /** Shared live-state gate for deterministic action restrictions. Cards render
+   * the same reason, while every commit entry point repeats the guard so stale
+   * UI and prepared target flows cannot bypass it. */
+  function actionStateBlockMessage(action: ResolvedAction): string | null {
+    const live = useCharacterStore.getState().character;
+    if (!live) return null;
+    if (action.source === "spell" && isSpellcastingBlocked(live)) {
+      return t("combat.blockedReasonSpellcasting");
+    }
+    switch (resolveActiveStateBlocker(live, action)) {
+      case "heavy-armor":
+        return t("combat.blockedReasonHeavyArmor");
+      case "incapacitated":
+        return t("combat.blockedReasonIncapacitated");
+      default:
+        return null;
+    }
+  }
+
+  function guardActionState(action: ResolvedAction): boolean {
+    const message = actionStateBlockMessage(action);
+    if (!message) return true;
+    showToast({ message, duration: 2500 });
+    return false;
+  }
 
   // Pool-spend prompt state. Ordinary variable-cost actions commit after the
   // amount; dice-healing pools configure their concrete roll first, then rejoin
@@ -757,6 +835,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       nameLoc: action.nameLoc,
       slot,
       ...(economyCategory ? { economyCategory } : {}),
+      ...(action.summary.attackBonus != null || action.summary.saveAbility != null
+        ? { triggerEvents: ["attack"] as const }
+        : {}),
       cost,
     };
   }
@@ -856,6 +937,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             slot: "action",
             isAttackGroup: true,
             economyCategory: "attack",
+            triggerEvents: ["attack"],
           };
           if (
             useCombatStore.getState().commitAttackSwing(groupEntry, action.id) === null
@@ -888,6 +970,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     slot: EconomySlot,
     trackerAmount?: number
   ) {
+    if (!guardActionState(action)) return;
     if (!(await confirmConcentrationBreak(action))) return;
     const applyResolution = pendingResolutionFor(action);
     // USE-APPLIES — when the action auto-applied temp HP, the toast SAYS so (the
@@ -949,6 +1032,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     metamagicIds: ReadonlyArray<string> = [],
     ridesPip = false
   ) {
+    if (!guardActionState(action)) return;
     if (!(await confirmConcentrationBreak(action))) return;
     const applyResolution = pendingResolutionFor(action);
     // ATTACK-PIPS — a pip-riding cast is a counted swing: read the swing position
@@ -1057,6 +1141,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
               slot: "action",
               isAttackGroup: true,
               economyCategory: "attack",
+              triggerEvents: ["attack"],
             };
             if (
               useCombatStore.getState().commitAttackSwing(groupEntry, action.id) === null
@@ -1270,6 +1355,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // the session undo system (the 5s toast · the masthead Undo/Redo · ⌘Z) — the
   // CTA grammar: a card never carries an inline cancel.
   function handleSelect(action: ResolvedAction, onCommitted?: ResolutionApply) {
+    if (!guardActionState(action)) return;
     pendingResolutionRef.current = onCommitted
       ? { actionId: action.id, apply: onCommitted }
       : null;
@@ -1405,6 +1491,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       metamagicIds: ReadonlyArray<string>;
     }
   ) {
+    if (!guardActionState(action)) return;
     pendingResolutionRef.current = onCommitted
       ? { actionId: action.id, apply: onCommitted }
       : null;
@@ -1628,11 +1715,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const c = useCombatStore.getState();
     // USE-APPLIES (Task 2) — Rage-style `maintained` states end at the end of
     // your turn UNLESS a maintaining event happened this round. Two events are
-    // AUTO-tracked, both read from the per-round combat state:
-    //   • `"attack"`  — the ACTION slot was spent (an attack roll or a save-
-    //     forcing action; both consume the Attack/an action this turn).
-    //   • `"damage-taken"` — the character's HP was reduced this round (the HP
-    //     control delegates to `applyDamage`, which flags `damageTakenThisRound`).
+    // AUTO-tracked from the durable per-round action receipts:
+    //   • `"attack"` — an attack-roll or target-save action stamped this event.
+    //     Merely occupying the Action slot (Dash/Help) never qualifies.
     // The `"bonus-extend"` maintainer (the dedicated "spend a Bonus Action to
     // extend") is NOT inferred from an arbitrary bonus action — that would over-
     // maintain; it is the prompt's own `Keep` affordance. A maintained state is
@@ -1644,10 +1729,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // turn prompts AGAIN; a maintaining event clears only ITS round. Computed
     // BEFORE endTurn clears the per-round flags.
     const maintainedThisRound: ReadonlySet<string> = new Set(
-      [
-        c.selected.action.length > 0 ? "attack" : null,
-        c.damageTakenThisRound ? "damage-taken" : null,
-      ].filter((e): e is string => e !== null)
+      Object.values(c.selected)
+        .flat()
+        .flatMap((entry) => entry.triggerEvents ?? [])
     );
     // FRONTIER-S3 — run the turn/round recovery+expiry engine at this seam (the
     // owner's turn just ended → their next turn begins):

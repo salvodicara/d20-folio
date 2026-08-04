@@ -99,7 +99,7 @@ export type WhileActiveDuration =
        * `"heavy-armor"` tokens) names the immediate-drop conditions.
        */
       kind: "maintained";
-      maintainedBy: ReadonlyArray<"attack" | "bonus-extend" | "damage-taken">;
+      maintainedBy: ReadonlyArray<"attack" | "bonus-extend">;
       maxMinutes?: number;
       maxRounds?: number;
       endsEarlyOn?: ReadonlyArray<string>;
@@ -253,6 +253,18 @@ export type Grant =
   | { type: "damage-immunity"; damageType: DamageType }
   | { type: "damage-vulnerability"; damageType: DamageType }
   | { type: "condition-immunity"; condition: ConditionId }
+  | {
+      /** The active state forbids casting spells (Barbarian Rage, Wild Shape).
+       * This is a deterministic self-side rule, so cast surfaces consume one
+       * aggregate flag instead of branching on a feature id. */
+      type: "spellcasting-blocked";
+    }
+  | {
+      /** The active state cannot coexist with Concentration (Barbarian Rage).
+       * Activation ends the currently held spell through the shared
+       * concentration transaction; undo restores it atomically. */
+      type: "concentration-blocked";
+    }
   | {
       /**
        * Resistance keyed to a damage SOURCE rather than a `DamageType` — the
@@ -2117,11 +2129,10 @@ export type Grant =
        *  - `"maintained"` — the state ends at the END OF YOUR TURN unless a
        *    maintaining event happened this round (Barbarian Rage: "lasts until the
        *    end of your next turn"; extend by making an attack roll vs an enemy,
-       *    forcing a save, TAKING DAMAGE, or taking a Bonus Action to extend — up
+       *    forcing a save, or taking a Bonus Action to extend — up
        *    to `maxMinutes`). `maintainedBy` lists the in-combat events the turn loop
-       *    already knows (`"attack"` = the Attack action / forcing a save consumed
-       *    the action slot; `"damage-taken"` = an HP reduction recorded this round,
-       *    auto-detected from the session HP setter; `"bonus-extend"` = the
+       *    already knows (`"attack"` = a committed attack roll / enemy-saving-
+       *    throw action stamped in the durable turn receipt; `"bonus-extend"` = the
        *    dedicated extend bonus action — the prompt's own `Keep`). At End Turn,
        *    a maintained state whose condition wasn't met surfaces a one-tap
        *    keep/end prompt on the turn meter (never a silent kill — a player may
@@ -3807,6 +3818,10 @@ export interface AggregatedGrants {
   damageImmunities: ReadonlySet<DamageType>;
   damageVulnerabilities: ReadonlySet<DamageType>;
   conditionImmunities: ReadonlySet<ConditionId>;
+  /** True while any active grant forbids casting spells. */
+  spellcastingBlocked: boolean;
+  /** True while any active grant forbids maintaining Concentration. */
+  concentrationBlocked: boolean;
   /**
    * Damage SOURCES the character resists (Abjurer Spell Resistance → `"spell"`).
    * Orthogonal to `damageResistances` (which keys on `DamageType`): a source
@@ -4579,6 +4594,8 @@ export function emptyAggregate(): AggregatedGrants {
     damageImmunities: new Set(),
     damageVulnerabilities: new Set(),
     conditionImmunities: new Set(),
+    spellcastingBlocked: false,
+    concentrationBlocked: false,
     damageSourceResistances: new Set(),
     flatDamageReductions: [],
     speedBonusFt: 0,
@@ -4798,6 +4815,8 @@ export function evaluateGrants(
   const damageImmunities = new Set<DamageType>();
   const damageVulnerabilities = new Set<DamageType>();
   const conditionImmunities = new Set<ConditionId>();
+  let spellcastingBlocked = false;
+  let concentrationBlocked = false;
   const damageSourceResistances = new Set<DamageSource>();
   const flatDamageReductions: AggregatedGrants["flatDamageReductions"][number][] = [];
 
@@ -6215,6 +6234,12 @@ export function evaluateGrants(
       case "turn-economy-block":
         turnEconomyBlocked = true;
         break;
+      case "spellcasting-blocked":
+        spellcastingBlocked = true;
+        break;
+      case "concentration-blocked":
+        concentrationBlocked = true;
+        break;
 
       // ── Exhaustiveness guard — a future un-cased Grant kind is a compile
       //    error (g narrows to `never` here only if all members are handled). ─
@@ -6253,6 +6278,8 @@ export function evaluateGrants(
     damageImmunities,
     damageVulnerabilities,
     conditionImmunities,
+    spellcastingBlocked,
+    concentrationBlocked,
     damageSourceResistances,
     flatDamageReductions,
     speedBonusFt,

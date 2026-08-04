@@ -143,14 +143,14 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
         // 2024 RAW (barbarian:main → Duration): "The Rage lasts until the end of
         // your next turn … you can extend the Rage for another round by [making
         // an attack roll against an enemy / forcing an enemy to make a save /
-        // TAKING DAMAGE / taking a Bonus Action to extend it]. … You can maintain
+        // forcing a save / taking a Bonus Action to extend it]. … You can maintain
         // a Rage for up to 10 minutes." Ends early on Heavy armor or the
         // Incapacitated condition. Declared as DATA — the turn loop enforces it
-        // generically (`"damage-taken"` is auto-detected from the HP setter, so a
-        // round in which the barbarian was hit keeps the Rage with zero taps).
+        // generically. 2024 Rage is extended by attacking/forcing a save or by
+        // spending the dedicated Bonus Action; taking damage is NOT a maintainer.
         duration: {
           kind: "maintained",
-          maintainedBy: ["attack", "damage-taken", "bonus-extend"],
+          maintainedBy: ["attack", "bonus-extend"],
           maxMinutes: 10,
           // FRONTIER-S3 — the same 10-minute cap in combat ROUNDS. RAW: "up to 10
           // minutes"; a round is 6 seconds, so 10 min = 100 rounds. The turn/round
@@ -172,6 +172,11 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
             rollType: "save",
             vs: "str",
           },
+          // 2024 RAW "No Concentration or Spells". These active-state facts are
+          // consumed by every cast surface and the concentration transaction;
+          // Rage remains just data, never a feature-id branch.
+          { type: "spellcasting-blocked" },
+          { type: "concentration-blocked" },
           // Rage Damage (#27) — LAST in this list: the advantage-on grants
           // above carry POSITIONAL catalogue description keys
           // (`grants.0.grants.<i>`), so new text-free grants append.

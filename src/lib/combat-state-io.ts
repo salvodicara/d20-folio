@@ -158,6 +158,11 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
             action.economyCategory === "utilize"
               ? action.economyCategory
               : undefined;
+          const triggerEvents = Array.isArray(action.triggerEvents)
+            ? action.triggerEvents.filter(
+                (event): event is "attack" => event === "attack"
+              )
+            : [];
           return [
             {
               id: action.id,
@@ -165,6 +170,7 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
               slot,
               ...(action.isAttackGroup === true ? { isAttackGroup: true } : {}),
               ...(economyCategory ? { economyCategory } : {}),
+              ...(triggerEvents.length ? { triggerEvents } : {}),
             },
           ];
         })

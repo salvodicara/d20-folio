@@ -30,6 +30,7 @@ import {
   getSpellSlotTrackerRecovery,
   resolvePerTurnRecoveryTrackerIds,
   resolveActiveTimedEffects,
+  resolveActiveStatesEndingOn,
   advanceEffectTimers as advanceEffectTimersEngine,
   resolveTrackers,
   potionDurationRounds,
@@ -1350,6 +1351,17 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       get().setConcentration("", {
         undoable: opts?.registerConcentrationUndo !== false,
       });
+    }
+    // Active states use the same data-owned immediate-drop vocabulary. The
+    // Incapacitated family ends Rage (and any future state declaring the same
+    // trigger) at the condition mutation seam — never in a feature-id branch.
+    if (conditionBreaksConcentration(condition)) {
+      const current = get().character;
+      if (current) {
+        for (const key of resolveActiveStatesEndingOn(current, "incapacitated")) {
+          get().setActiveFeature(key, false);
+        }
+      }
     }
     // Persist the whole resulting combat state (offline-safe).
     persistCombat(get);

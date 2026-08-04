@@ -119,6 +119,7 @@ describe("Combat sync — async character arrival", () => {
       name: "Vicious Mockery",
       nameLoc: { custom: "Vicious Mockery" },
       slot: "action",
+      triggerEvents: ["attack"],
     });
     useCombatStore.getState().useReaction("cutting-words");
     useCombatStore.getState().setMovementUsed(15);
@@ -131,6 +132,7 @@ describe("Combat sync — async character arrival", () => {
     expect(restored.selected.action.map((action) => action.id)).toEqual([
       "vicious-mockery",
     ]);
+    expect(restored.selected.action[0]?.triggerEvents).toEqual(["attack"]);
     expect(restored.reactionUsedId).toBe("cutting-words");
     expect(restored.movementUsedFt).toBe(15);
   });
