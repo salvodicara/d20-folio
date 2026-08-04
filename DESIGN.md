@@ -2040,9 +2040,11 @@ backdrop` + `--text-on-backdrop-title` + `--text-on-backdrop-danger` for error/r
        **leaf** element (context-fixed surfaces only — never a wrapper);
      - a **ghost button** → automatic inside `.on-art-scope` (one recipe, surface-excluded), or the
        explicit `.btn.ghost.on-art` leaf (login hero);
-     - **facet chips** (`.fchip`), the wizard **page-turn captions**, **`.text-error`**, and the
-       **RunicEmptyState** family are already in the scope vocabulary (mechanism pins in
-       `on-art-scope.guard.test.ts`).
+   - **facet chips** (`.fchip`), the wizard **page-turn captions**, **`.text-error`**, and the
+     **RunicEmptyState** family are already in the scope vocabulary (mechanism pins in
+     `on-art-scope.guard.test.ts`). Wide page-turn captions use the bright on-art ink; below the
+     1360px gutter breakpoint their self-backed compact pill uses the light field-safe warm ink
+     (the gold seal itself retains the action hierarchy), never the sub-AA gold rubric on stone.
      - **A gilt OBJECT is SELF-BACKED — never background-dependent (gilt-coin rule, 2026-06-30).**
        A struck "coin" (the section count **medallion** `.sec-count`, the disclosure **knob**, any
        seal) is a premium gilt register (§ register ladder) and must read on a card OR on the raw

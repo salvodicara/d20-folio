@@ -108,6 +108,16 @@ describe("ON-ART-INK (owner 2026-06-12) — the canonical scope covers the recur
     ).toBe(true);
   });
 
+  it("the compact light pager uses field-safe ink rather than the sub-AA gold rubric", () => {
+    const compactRule =
+      /@media \(max-width: 1359px\)[\s\S]*?\[data-theme="light"\]\s*\.wiz-pager-btn\.next\s*\.wiz-pager-cap\s*\{[^}]*color:\s*var\(--text-muted\)/;
+    expect(
+      compactRule.test(css),
+      "MISSING: the compact light page-turn caption's field-safe ink. The gold rubric " +
+        "is only 4.04:1 on the Shaded Scriptorium field at the 1280px pager breakpoint."
+    ).toBe(true);
+  });
+
   it("`.text-error` loose in the scope takes the on-backdrop danger ink", () => {
     const rule =
       /\.on-art-scope\s*\.text-error:not\([^{]*\{[^}]*color:\s*var\(--text-on-backdrop-danger\)/;

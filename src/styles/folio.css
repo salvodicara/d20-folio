@@ -19381,6 +19381,12 @@ button.econ-tok-filter:active .econ-disc {
     min-width: 0;
     border-color: color-mix(in oklab, var(--accent-primary) 55%, var(--border-medium));
   }
+  /* The compact pager rests on the light theme's neutral work field, where the
+     deep-gold rubric ink reaches only 4.04:1. Use the existing field-safe warm
+     ink; the struck-gold seal already carries the primary-action hierarchy. */
+  [data-theme="light"] .wiz-pager-btn.next .wiz-pager-cap {
+    color: var(--text-muted);
+  }
   .wiz-pager-btn .wiz-pager-seal {
     flex: none;
     width: 34px;
