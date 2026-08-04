@@ -9,7 +9,6 @@
  * Same visual language as `FeatSpellChoicesPicker` — keep the UI cohesive.
  */
 import { useTranslation } from "react-i18next";
-import { Target } from "lucide-react";
 import { ALL_SKILLS } from "@/lib/compute";
 import { WizardPickList } from "@/features/wizard/pick-list";
 import { SocketSeal } from "@/features/wizard/seals";
@@ -20,11 +19,6 @@ import {
   type SkillOrToolPicks,
   type SkillOrToolSlot,
 } from "@/lib/feat-skill-tool-choices";
-
-// This picker mixes skills + tools; each row's seal signals which it is (the seal
-// replaces the old "S"/"T" text badge — the same mark the dedicated pickers use). Tools
-// further vary their glyph by category (note for instruments, dice for gaming sets).
-const SKILL_SEAL = <SocketSeal icon={Target} />;
 
 interface Props {
   slots: ReadonlyArray<SkillOrToolSlot>;
@@ -63,8 +57,13 @@ function SkillOrToolSlotPicker({
 }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === "it" ? "it" : "en";
+  const skillGroup = t("abilities.skills");
+  const toolGroup = t("equipment.tools");
 
   // Already-owned skills are EXCLUDED (never disabled noise — rule 19).
+  // The visible heading carries the skill/tool family distinction. Skills need
+  // no repeated generic glyph; tool seals remain because they distinguish a
+  // useful second level (artisan tool / instrument / gaming set).
   const skills = ALL_SKILLS.filter(
     (s) => !existingSkillIds.has(s.id) || picked.includes(s.id)
   ).map((s) => {
@@ -72,8 +71,8 @@ function SkillOrToolSlotPicker({
     return {
       id: s.id,
       name: label,
-      searchText: `${label} ${s.name}`,
-      seal: SKILL_SEAL,
+      searchText: `${label} ${s.name} ${skillGroup} Skills`,
+      group: skillGroup,
     };
   });
   // Tool names resolve from the SRD equipment catalogue by id (#107) — the single
@@ -83,7 +82,8 @@ function SkillOrToolSlotPicker({
     return {
       id: tool.id,
       name: label,
-      searchText,
+      searchText: `${searchText} ${toolGroup} Tools`,
+      group: toolGroup,
       seal: <SocketSeal icon={toolSealIcon(tool.category)} />,
     };
   });

@@ -5,17 +5,13 @@
  * empty ("a language of your choice").
  */
 import { useTranslation } from "react-i18next";
-import { Languages } from "lucide-react";
 import { WizardPickList } from "@/features/wizard/pick-list";
-import { SocketSeal } from "@/features/wizard/seals";
 import {
   listAvailableForLanguageSlot,
   type LanguageChoicePicks,
   type LanguageChoiceSlot,
 } from "@/lib/feat-language-choices";
 import { localizeSrd } from "@/i18n/resolver";
-
-const LANGUAGE_SEAL = <SocketSeal icon={Languages} />;
 
 interface Props {
   slots: ReadonlyArray<LanguageChoiceSlot>;
@@ -56,7 +52,6 @@ function LanguageSlotPicker({
     id,
     name: localizeSrd("language", id, "name", locale),
     searchText: `${localizeSrd("language", id, "name", locale)} ${localizeSrd("language", id, "name", "en")}`,
-    seal: LANGUAGE_SEAL,
   }));
 
   function toggle(id: string) {

@@ -19443,6 +19443,20 @@ button.econ-tok-filter:active .econ-disc {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
 }
+.wiz-group {
+  grid-column: 1 / -1;
+  margin: var(--sp-1) 0 0;
+  color: var(--text-muted);
+  font-family: var(--font-numeric);
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.wiz-group:first-child {
+  margin-top: 0;
+}
 
 /* D — off-screen rows skip style/layout/paint entirely (content-visibility),
    so unfolding ONE row never re-lays-out a 300-row pool. The intrinsic size
@@ -19970,6 +19984,9 @@ button.econ-tok-filter:active .econ-disc {
 }
 .wiz-asks .wiz-list.wiz-list-grid {
   grid-template-columns: minmax(0, 1fr);
+}
+.wiz-asks .wiz-group {
+  padding: 2px 0;
 }
 .wiz-asks .wiz-pick-search {
   align-self: stretch;
