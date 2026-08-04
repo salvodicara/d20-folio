@@ -34,6 +34,9 @@ describe("ExpertiseChoicePicker — unified boxless picker", () => {
     // It IS the shared wizard-F pick list (gold-socket `.wiz-row` rows).
     expect(container.querySelector(".wiz-pick")).not.toBeNull();
     expect(container.querySelector(".wiz-row")).not.toBeNull();
+    // A homogeneous skill pool needs no repeated category seal: it would add
+    // no distinction between rows and falsely imply entity-level meaning.
+    expect(container.querySelector(".wiz-socket")).toBeNull();
   });
 
   it("toggles a proficient skill within the slot budget (behaviour unchanged)", () => {
@@ -91,6 +94,7 @@ describe("SkillChoicePicker — folio card recipe", () => {
     ).toBeNull();
     expect(container.querySelector(".wiz-pick")).not.toBeNull();
     expect(container.querySelector(".wiz-row")).not.toBeNull();
+    expect(container.querySelector(".wiz-socket")).toBeNull();
   });
 
   it("keeps the search box and selection toggle working after the refactor", () => {

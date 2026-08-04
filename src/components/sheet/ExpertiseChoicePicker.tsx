@@ -5,17 +5,12 @@
  * in), passed in as `proficientSkillIds`.
  */
 import { useTranslation } from "react-i18next";
-import { Target } from "lucide-react";
 import { ALL_SKILLS } from "@/lib/compute";
 import { WizardPickList } from "@/features/wizard/pick-list";
-import { SocketSeal } from "@/features/wizard/seals";
 import type {
   ExpertiseChoicePicks,
   ExpertiseChoiceSlot,
 } from "@/lib/feat-expertise-choices";
-
-// Expertise is chosen among skills, so it wears the same skill seal.
-const SKILL_SEAL = <SocketSeal icon={Target} />;
 
 interface Props {
   slots: ReadonlyArray<ExpertiseChoiceSlot>;
@@ -61,7 +56,6 @@ function ExpertiseSlotPicker({
   const options = ALL_SKILLS.filter((s) => proficientSkillIds.has(s.id)).map((s) => ({
     id: s.id,
     name: t(`skills.${s.id}`),
-    seal: SKILL_SEAL,
   }));
 
   function toggle(id: string) {

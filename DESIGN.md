@@ -2749,6 +2749,23 @@ is attractive:
    sheet, earned hero moments), never dense combat rows, picker facets, or navigation. Illustration is
    optional enrichment, not data required for correctness.
 
+**Semiotic contract.** Every icon must answer “what information would disappear if this mark were
+removed?” If the answer is “none,” remove it. In particular, a homogeneous fact pool (all skills, all
+languages, all tools) does not repeat one category seal on every row: common region, alignment and the
+pool heading already establish the category, while the repeated mark creates visual noise and falsely
+suggests entity-level meaning. A mixed pool may use category seals only when they visibly distinguish
+its families. An object sign (ring, weapon, armor), an outcome/state sign (miss, selected, disabled),
+and an action sign (add, edit, delete) must not share a glyph within the same task context. Reuse across
+surfaces is desirable only when the referent or verb is unchanged.
+
+**Gestalt + recognition test.** Proximity and common region group related facts; alignment makes rows
+scannable; similarity is reserved for things that behave alike; contrast and enclosure mark hierarchy
+or state, never ornament. Before a new glyph ships, review it at its real 16/20/24px size, monochrome,
+beside its actual neighbours and with labels temporarily hidden as a diagnostic. It need not be
+independently guessable without text, but it must not suggest a competing meaning and must improve
+recognition after one encounter. The localized label remains present in production; no state relies on
+color or icon alone.
+
 **One seam.** `src/components/shared/item-icons.ts` remains the public resolver contract. Lucide is
 the first source; a small vendored SVG subset fills proven semantic gaps behind that resolver, and
 consumers never import asset paths directly. A pack is a source catalogue, never a wholesale visual

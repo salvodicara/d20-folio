@@ -5,16 +5,12 @@
  * grant's `options[]` list; empty options list means "any skill".
  */
 import { useTranslation } from "react-i18next";
-import { Target } from "lucide-react";
 import { WizardPickList } from "@/features/wizard/pick-list";
-import { SocketSeal } from "@/features/wizard/seals";
 import {
   listAvailableForSkillSlot,
   type SkillChoicePicks,
   type SkillChoiceSlot,
 } from "@/lib/feat-skill-choices";
-
-const SKILL_SEAL = <SocketSeal icon={Target} />;
 
 interface Props {
   slots: ReadonlyArray<SkillChoiceSlot>;
@@ -62,7 +58,6 @@ function SkillSlotPicker({
         id: s.id,
         name: label,
         searchText: `${label} ${s.name}`,
-        seal: SKILL_SEAL,
       };
     });
 

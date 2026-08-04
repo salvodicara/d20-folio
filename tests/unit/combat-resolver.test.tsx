@@ -113,6 +113,21 @@ describe("universal combat resolution", () => {
     );
   });
 
+  it("uses a failure sign for miss instead of the neutral choice/object glyph", () => {
+    render(
+      <CombatResolver
+        action={action({ damage: "1d8", attackBonus: 6 })}
+        sheetCombat={combat([monster("monster-1", "Goblin")])}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /goblin/i }));
+    const result = screen.getByRole("group", { name: /attack result for goblin/i });
+    expect(result.querySelector("svg.lucide-circle-x")).not.toBeNull();
+    expect(result.querySelector("svg.lucide-circle-dot")).toBeNull();
+  });
+
   it("cancels without spending or declaring anything", () => {
     const onCommit = vi.fn(commitNow);
     const onDone = vi.fn();

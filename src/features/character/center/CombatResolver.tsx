@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import {
   Check,
   CircleDot,
+  CircleX,
   Heart,
   HeartPulse,
   ShieldCheck,
@@ -947,7 +948,7 @@ export function CombatResolver({
                                 }}
                               >
                                 <Icon
-                                  as={value === "miss" ? CircleDot : Swords}
+                                  as={value === "miss" ? CircleX : Swords}
                                   size="sm"
                                   decorative
                                 />
