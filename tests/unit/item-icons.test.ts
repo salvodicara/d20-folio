@@ -22,6 +22,7 @@ import {
   equipmentSealIconById,
   equipmentCategoryIcon,
 } from "@/components/shared/item-icons";
+import { DiamondRingIcon, WizardStaffIcon } from "@/components/shared/fantasy-icons";
 import type { SrdEquipmentData } from "@/data/types";
 
 const item = (
@@ -71,6 +72,12 @@ describe("magicItemSealIcon", () => {
     expect(magicItemSealIcon("armor")).toBe(armorSealIcon());
     expect(magicItemSealIcon("weapon")).toBe(weaponSealIcon());
     expect(magicItemSealIcon("potion")).toBe(FlaskRound);
+    expect(magicItemSealIcon("ring")).toBe(DiamondRingIcon);
+    expect(magicItemSealIcon("staff")).toBe(WizardStaffIcon);
+    expect(new Set((["rod", "staff", "wand"] as const).map(magicItemSealIcon)).size).toBe(
+      3
+    );
+    expect(magicItemSealIcon("staff")).not.toBe(magicItemSealIcon("wand"));
   });
 });
 
