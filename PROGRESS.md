@@ -395,6 +395,51 @@ footprint barely changes read→edit — both fail on the old fixed box). DESIGN
   an IT player reads "CA 11 + DES" / "CA 13 + DES (max 2)". Regression: the armor-AC row+detail
   cases in `compendium-browse-specs.test.tsx` (real i18next, EN + IT).
 
+## Queued — test-estate consolidation backlog (from the 2026-08-05 six-lane audit)
+
+> The audit's verdict + the fixes already shipped live in the 2026-08-05 "Shipped" entries; this
+> queue holds the remaining ORGANIZATIONAL items — none are false confidence, all keep every
+> pinned fact. Work them as a batch or opportunistically when touching the file anyway.
+
+**Guards (public):** add non-vacuity pins to the negative-only scanners (forbidden-file existence
+in `combat-header-identity-only`; a positive-idiom pin in `touch-target-inset`,
+`branded-id-minters`, `cinzel-no-italic`); merge the four `canonical-*` component guards into one
+table-driven guard with per-row existence pins; write the missing in-file blind-spot notes (~30
+guards satisfy everything else); route `modal-scroll` / `eager-partition` /
+`content-pack-partition` through the shared memoized `src-files` crawl; fold
+`architecture-direction`'s duplicated `[locale]` pin into `no-bitext-indexing` (ONE whitelist);
+trim `i18n-dedup`'s migration-tombstone test.
+
+**Engine files (public):** merge the batch/wave/phase-named correction files
+(`batch-j-*`, `wave2-*`, `raw-2024-tracker-corrections`, `grants-phase-c`, `consumer-seam-cash`)
+into per-entity families; fold the ~25 tiny one-off files into their unit's host file
+(`rogue-sneak-attack`→`smart-tracker`, `attunement-slots`→`grants`, …); merge
+`species-lineage-spells{,-extended}` and the two speed-grant files; drop the arid-terrain twin
+between `circle-of-the-land-2024` and `choice-grant-bundle`; table-drive `compute.test.ts`'s
+abilityModifier/proficiencyBonus head and `srd-data.test.ts`'s ten "unknown ID" repeats (and trim
+its one-line filter smokes).
+
+**Render lane (public):** mount-merge the slow-file clusters (homebrew-library-ui,
+create-cleric-feat-choices, combat-action-derivations, creation-navigate, spells-page,
+cockpit-economy-in-play, level-up-wizard, creation-completeness ≈ −30 s); extract
+`createRequirements` from `CreationWizard.tsx` into a pure module so `quickbuild-path`'s
+per-preset sweep moves to the fast lane (−20–25 s, ONE render witness kept); move
+`encounter-bestiary`'s pure `makeEncounterMonsterSpec` describe to a `.test.ts`.
+
+**E2E:** move the engine-math display tests down to the unit lanes (abilities modifier/skill
+values, equipment attack-bonus/damage-formula, combat's three display-only tests — keep the
+journeys); replace `combat-chronicle`'s 4 `settleForShot` call sites with locator readiness;
+harden `init-editor-no-reflow` / `picker-no-flicker`'s PRE-action settles into polls (their
+post-action sampling windows ARE the assertion — keep); fix `a11y.spec.ts`'s stale header comment.
+
+**Pack side:** route `subclass-wiring`/`wire-2024` hardcoded table sizes (`toHaveLength(10)`/`(9)`
+— they red-bar every legitimate new row) through the external cross-family count guard; dedupe the
+Winter Walker triple-pin, the Artificer Tools-of-the-Trade block, and the artificer/paladin
+`subclassSpellLevels` re-pins to one home each; collapse the 8× while-active unwrap pins to one
+parametrized public pin; merge `team-fixtures-dump` into `team-fixtures-new-export`; scope the
+pack it-name guard's untranslated/retired sweeps to `source !== "SRD"`; `describe.each` the
+`aggregated-primitives` skeleton and unify the subclass expanded-spell maps into one table.
+
 ## Queued — UX feedback batch (owner, 2026-07-31)
 
 1. **BUG — tab search toggle flashes**: clicking the search control in a sheet tab while
@@ -460,6 +505,28 @@ threshold). Owner: "non possiamo mostrare tutta la lista utenti in place".
 | 2 — Social & Campaigns  | Multi-char, campaigns, party view, sharing, snapshots                       | ✅ Shipped + live (v0.15.x) — Party, campaigns, open team sheets, the in-hub party overview + encounter/initiative tracker (single-source combat state), DM invite management, shared-notes reveal lens, admin god-mode                                                                                                                                                                                    |
 | 3 — Chronicle           | Markdown chronicle + version history, Treasury, SharedNotes, Sessions       | ✅ Shipped (v0.15.x) — Chronicle (markdown + version history), Treasury, SharedNotes, Sessions all live. (The AI assistant / AI session recaps once scoped here were **DROPPED** — owner 2026-07-06; see _Open decisions_.)                                                                                                                                                                                |
 | 4 — Polish & Completion | PDF export, command palette, compendium, a11y, perf, onboarding             | 🔄 PDF export (faithful from-scratch recreation of the official 2024 sheet layout — the two-page sheet plus an appended **resource ledger** page listing every consumable pool (class resources + magic-item charges: name · pips-or-count · recovery cadence, paginating when long), EN/IT, copyright-clean), glossary tooltips, perf budget, Cmd+K palette shipped. Guided tour + compendium polish open |
+
+## Shipped — the test-estate audit: six lanes, verdict + repair wave (2026-08-05)
+
+**The whole test estate (670 unit files / 17k tests, 62 e2e specs / 1.4k tests, pack suites) was
+audited by six parallel reviewers** (guards · engine · render · e2e · pack+i18n · cross-lane
+duplication) against the test policy's bar: every test names the regression it catches. **Verdict:
+professional and well-aimed** — ~250/288 engine files load-bearing at the right altitude, the
+guard corpus derives its inputs, the i18n ONE-detector rule holds, pack/public partition clean,
+zero content-count assertions over growing sets, zero `expect(true)` ballast. **What was wrong got
+fixed the same day:** (1) a REAL gate hole — the mobile Playwright project's `testMatch` had
+silently orphaned every `project === "mobile"`-gated spec, so the whole Signet suite (7 tests, the
+mobile management chrome) and three touch-gate coarse halves never ran while reporting green — now
+resurrected and green; (2) two false-confidence unit files that tested a locally re-implemented
+copy of production logic (retroactive-CON HP, Dwarven Toughness) deleted — the real seams were
+already pinned; (3) same-altitude duplicates collapsed to one home (cast-options subset file,
+long/short-rest basics, codec-envelope re-pins, the knockout e2e re-pin, the colocated raw-palette
+guard whose hand-mirrored allowlist had already drifted); (4) `visual-full`'s 344 navigate-only
+duplicate tests left the ambient gate (pixel lane `VISUAL=1` unchanged — a11y + i18n own that
+smoke), ~13 min off the unsharded matrix; (5) every genuine fixed-timeout RACE in
+palette/level-up/rest/anchored specs became a readiness or stable-box poll (the time-WINDOW
+probes, where the wait is the assertion, stay by design). The remaining organizational items are
+tracked in "Queued — test-estate consolidation backlog".
 
 ## Shipped — CI/CD re-architecture: verify ambiently, promote on demand (2026-08-05)
 
