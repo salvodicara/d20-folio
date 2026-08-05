@@ -4,7 +4,11 @@ import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { foldLegacyClass } from "./_helpers";
 import { localizeActions } from "@/lib/views/combat-action-view";
-import { resolveActions, equipmentQuantityOf } from "@/lib/smart-tracker";
+import {
+  resolveActions,
+  equipmentQuantityOf,
+  resolveAttackDamageRiders,
+} from "@/lib/smart-tracker";
 import { SRD_WEAPONS } from "@/data/weapons";
 import { getEquipment } from "@/data/equipment";
 import { buildDevScenario, buildScenario } from "@/lib/dev-scenarios";
@@ -13,6 +17,7 @@ import { combatVerdict } from "@/features/character/center/tabs/combat-card-help
 import { spellInstanceCount } from "@/lib/utils";
 import { concentrationValue } from "@/lib/concentration";
 import type { CharacterDoc } from "@/types/character";
+import type { AggregatedGrants } from "@/lib/grants";
 
 // ─── Minimal character fixture ────────────────────────────────────────────────
 
@@ -103,6 +108,29 @@ function makeChar(
     },
   };
 }
+
+describe("resolveAttackDamageRiders — weapon-or-unarmed scope", () => {
+  const rider: AggregatedGrants["damageRiders"][number] = {
+    dice: "1d6",
+    damageType: "radiant",
+    appliesTo: "weapon-or-unarmed",
+    oncePerTurn: false,
+    sourceId: "test-any-weapon-or-unarmed",
+  };
+  const scores = { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 } as const;
+
+  for (const [label, target] of [
+    ["melee weapon", { kind: "weapon", isRanged: false, damageType: "slashing" }],
+    ["ranged weapon", { kind: "weapon", isRanged: true, damageType: "piercing" }],
+    ["Unarmed Strike", { kind: "unarmed", damageType: "bludgeoning" }],
+  ] as const) {
+    it(`rides ${label}`, () => {
+      expect(resolveAttackDamageRiders([rider], target, makeChar(), scores)).toHaveLength(
+        1
+      );
+    });
+  }
+});
 
 // ─── Dual-Wield Detection ─────────────────────────────────────────────────────
 

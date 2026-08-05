@@ -137,6 +137,13 @@ Energy widens eligible types at L13 (every damage type) through the generic leve
 Public unit contracts and the real Santaera/Bo fixtures lock both behaviors; the wider deterministic
 corpus audit continues.
 
+**Live-team truth audit — Divine Fury attack scope CLOSED on branch (2026-08-04):** the audit caught
+a green-test rules defect: Santaera's Divine Fury was restricted to melee weapons even though the 2024
+feature applies to any weapon or Unarmed Strike. The reusable `weapon-or-unarmed` rider scope now covers
+melee weapons, ranged weapons and Unarmed Strikes through the one shared attack resolver. Public
+SRD-only scope regressions plus Santaera's real Shortbow/Greatsword/Unarmed rows prevent the content
+contract from silently narrowing again.
+
 **Live-team truth audit — Rage contract CLOSED on branch (2026-08-04):** the Barbarian fixture exposed
 a stale 2014 maintainer and two missing 2024 restrictions. Rage now declares no-spell/no-Concentration
 and Heavy-armor/Incapacitated incompatibilities as generic active-state data. Every cast route is

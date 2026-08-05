@@ -3446,6 +3446,8 @@ export function resolveRiderDice(
  *     Unarmed Strike; skips a Ranged weapon.
  *   - `"weapon"` — any WEAPON attack (melee or ranged). Does NOT ride an Unarmed
  *     Strike (it isn't a weapon).
+ *   - `"weapon-or-unarmed"` — any weapon attack (melee or ranged) OR an Unarmed
+ *     Strike.
  *   - `"unarmed"` — an Unarmed Strike only. Never rides a carried weapon.
  *   - `"one-handed-melee"` — a Melee weapon held in ONE hand (Dueling): rides a
  *     melee weapon that is NEITHER Ranged NOR a Two-Handed-property weapon, and
@@ -3479,7 +3481,11 @@ export function resolveAttackDamageRiders(
     .filter((r) => {
       if (r.appliesTo === "attack-or-spell") return false;
       if (target.kind === "unarmed")
-        return r.appliesTo === "melee-weapon" || r.appliesTo === "unarmed";
+        return (
+          r.appliesTo === "melee-weapon" ||
+          r.appliesTo === "weapon-or-unarmed" ||
+          r.appliesTo === "unarmed"
+        );
       if (r.appliesTo === "unarmed") return false;
       if (r.appliesTo === "finesse-or-ranged-weapon")
         return target.isFinesse === true || target.isRanged;
@@ -3488,7 +3494,11 @@ export function resolveAttackDamageRiders(
       // skips ranged. "weapon" rides all.
       if (r.appliesTo === "one-handed-melee")
         return !target.isRanged && !target.isTwoHanded;
-      return r.appliesTo === "weapon" || !target.isRanged;
+      return (
+        r.appliesTo === "weapon" ||
+        r.appliesTo === "weapon-or-unarmed" ||
+        !target.isRanged
+      );
     })
     .map((r) => {
       // Fold an optional ability modifier into the surfaced die (Psi Warrior

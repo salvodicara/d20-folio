@@ -1670,6 +1670,8 @@ export type Grant =
        * Which attacks the rider rides:
        *   - `"melee-weapon"` — any Melee weapon OR an Unarmed Strike (skips Ranged).
        *   - `"weapon"` — any WEAPON attack (melee or ranged); not an Unarmed Strike.
+       *   - `"weapon-or-unarmed"` — any weapon attack (melee or ranged) OR an
+       *     Unarmed Strike (Zealot Divine Fury).
        *   - `"unarmed"` — an Unarmed Strike only; never a carried weapon.
        *   - `"one-handed-melee"` — a Melee weapon held in ONE hand: skips Ranged AND
        *     Two-Handed-property weapons, and never an Unarmed Strike (Dueling: "a
@@ -1685,6 +1687,7 @@ export type Grant =
       appliesTo:
         | "melee-weapon"
         | "weapon"
+        | "weapon-or-unarmed"
         | "unarmed"
         | "finesse-or-ranged-weapon"
         | "one-handed-melee"
@@ -4324,6 +4327,7 @@ export interface AggregatedGrants {
     appliesTo:
       | "melee-weapon"
       | "weapon"
+      | "weapon-or-unarmed"
       | "unarmed"
       | "finesse-or-ranged-weapon"
       | "one-handed-melee"

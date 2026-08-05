@@ -824,7 +824,7 @@ forgotten).
       Fury) never showed on the Monk/Bard Unarmed Strike. Factored into ONE pure helper
       `resolveAttackDamageRiders(damageRiders, target, character, scores)` (`smart-tracker.ts`) fed by
       BOTH the carried-weapon loop AND the `unarmed-strike-die` row — so an applicable rider rides the
-      Unarmed Strike BY CONSTRUCTION (golden rule 6). Scope-respecting: `"melee-weapon"` (Divine Fury)
+      Unarmed Strike BY CONSTRUCTION (golden rule 6). Scope-respecting: `"weapon-or-unarmed"` (Divine Fury)
       rides a melee weapon AND the Unarmed Strike; `"weapon"` rides weapons only (an Unarmed Strike is
       not a weapon); `"attack-or-spell"` rides neither row. The data fix: Divine Fury's `appliesTo`
       `"weapon"` → `"melee-weapon"` (RAW barbarian:path-of-the-zealot — "a weapon OR an Unarmed Strike").
