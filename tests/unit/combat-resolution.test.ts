@@ -25,6 +25,7 @@ import {
   actionRiderConditions,
   combatDamageParts,
   resolveCombatDamage,
+  resolveCombatDamagePackets,
   shouldResolveSoloAction,
 } from "@/lib/combat-resolution";
 import type { DamageDefenses } from "@/lib/damage-intake";
@@ -566,5 +567,32 @@ describe("resolveCombatDamage — typed deterministic consequences", () => {
       defenses
     );
     expect(resolved).toMatchObject({ rawTotal: 6, netTotal: 2 });
+  });
+
+  it("preserves ordered hit packets and binds a once-per-use rider to the first", () => {
+    const action = makeAction("spell", {
+      attackBonus: 7,
+      damage: "1d6",
+      damageType: "fire",
+      secondaryDamage: { dice: "1d8", damageType: "radiant" },
+    });
+    const [primary, rider] = combatDamageParts(action);
+    if (!primary || !rider) throw new Error("missing packet fixture parts");
+
+    const packets = resolveCombatDamagePackets(
+      [
+        { spec: primary, amount: 3, damageType: "fire", instance: 0 },
+        { spec: primary, amount: 5, damageType: "fire", instance: 1 },
+        { spec: rider, amount: 4, damageType: "radiant" },
+      ],
+      { attack: "hit", save: "failed-save" },
+      "none",
+      defenses
+    );
+
+    expect(packets.map(({ rawTotal, netTotal }) => ({ rawTotal, netTotal }))).toEqual([
+      { rawTotal: 7, netTotal: 9 },
+      { rawTotal: 5, netTotal: 2 },
+    ]);
   });
 });

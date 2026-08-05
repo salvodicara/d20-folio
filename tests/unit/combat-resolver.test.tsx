@@ -987,7 +987,10 @@ describe("universal combat resolution", () => {
     fireEvent.change(firstDamageRoll, { target: { value: "5" } });
     fireEvent.change(secondDamageRoll, { target: { value: "6" } });
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
-    expectApplied([{ kind: "damage", targetId: "monster-1", amount: 11 }]);
+    expectApplied([
+      { kind: "damage", targetId: "monster-1", amount: 5, hit: true },
+      { kind: "damage", targetId: "monster-1", amount: 6, hit: true },
+    ]);
   });
 
   it("applies a one-roll bonus to exactly one chosen target", () => {

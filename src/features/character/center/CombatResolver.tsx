@@ -43,7 +43,7 @@ import {
   combatDamageParts,
   combatDamagePartApplies,
   combatResolutionSpec,
-  resolveCombatDamage,
+  resolveCombatDamagePackets,
   tempHpRollFormula,
   type CombatDamagePartSpec,
   type CombatTargetOutcome,
@@ -638,24 +638,35 @@ export function CombatResolver({
     };
   };
 
-  const damageResolutionFor = (key: string) => {
+  const damageResolutionPacketsFor = (key: string) => {
     const target = byKey.get(key);
-    if (!target) return null;
+    if (!target) return [];
     const reduced = damageReductionFor(key);
-    if (reduced) return reduced.resolved;
-    return resolveCombatDamage(
+    if (reduced) return [reduced.resolved];
+    return resolveCombatDamagePackets(
       damagePartsForTarget(key).flatMap((part) =>
         Array.from({ length: damagePartCount(key, part) }, (_, instance) => ({
           spec: part,
           amount:
             part.fixedAmount ?? partAmounts[damageValueKey(key, part, instance)] ?? 0,
           ...(damageTypeFor(key, part) ? { damageType: damageTypeFor(key, part) } : {}),
+          ...(damagePartCount(key, part) > 1 ? { instance } : {}),
         }))
       ),
       outcomeFor(key),
       spec.damageOnSave,
       target.defenses
     );
+  };
+
+  const damageResolutionFor = (key: string) => {
+    const packets = damageResolutionPacketsFor(key);
+    if (packets.length === 0) return null;
+    return {
+      parts: packets.flatMap(({ parts }) => parts),
+      rawTotal: packets.reduce((total, packet) => total + packet.rawTotal, 0),
+      netTotal: packets.reduce((total, packet) => total + packet.netTotal, 0),
+    };
   };
 
   const amountFor = (key: string): number => {
@@ -876,6 +887,10 @@ export function CombatResolver({
               target,
               outcomes: outcomeFor(key),
               amount: amountFor(key),
+              damagePackets:
+                modeForTarget(key) === "damage"
+                  ? damageResolutionPacketsFor(key).map(({ netTotal }) => netTotal)
+                  : [],
               mode: modeForTarget(key),
             },
           ]
@@ -1120,81 +1135,88 @@ export function CombatResolver({
             },
           ];
         });
-        const effects = choices.flatMap(({ target, amount, mode }) => {
-          if (!sheetCombat || target.targetId === sheetCombat.myId) return [];
-          const shared = {
-            targetId: target.targetId,
-            ...(target.kind === "monster" && target.tokenIndex !== undefined
-              ? { tokenIndex: target.tokenIndex }
-              : {}),
-          };
-          const hpEffect =
-            amount <= 0
-              ? []
-              : mode === "healing"
-                ? [{ ...shared, kind: "healing" as const, amount }]
-                : mode === "temp-hp"
-                  ? [{ ...shared, kind: "temp-hp" as const, amount }]
-                  : [
-                      {
-                        ...shared,
-                        kind: "damage" as const,
-                        intake: "resolved" as const,
-                        amount,
-                      },
-                    ];
-          const conditionEffects = (conditions[target.key] ?? [])
-            .filter((conditionId) => !conditionLifetimeFor(conditionId))
-            .map((conditionId) => ({
-              kind: "condition" as const,
+        const effects = choices.flatMap(
+          ({ target, amount, damagePackets, mode, outcomes }) => {
+            if (!sheetCombat || target.targetId === sheetCombat.myId) return [];
+            const shared = {
               targetId: target.targetId,
-              conditionId,
-              active: true,
-            }));
-          const removalEffects = (conditionRemovals[target.key] ?? []).map(
-            (conditionId) => ({
-              kind: "condition" as const,
-              targetId: target.targetId,
-              conditionId,
-              active: false,
-            })
-          );
-          const resourceEffects = action.summary.grantedDie
-            ? [
-                {
-                  kind: "resource" as const,
-                  targetId: target.targetId,
-                  resource: {
-                    kind: "bardic-inspiration-die" as const,
-                    value: action.summary.grantedDie.die,
-                  },
-                },
-              ]
-            : action.summary.grantsHeroicInspiration
+              ...(target.kind === "monster" && target.tokenIndex !== undefined
+                ? { tokenIndex: target.tokenIndex }
+                : {}),
+            };
+            const hpEffect =
+              amount <= 0
+                ? []
+                : mode === "healing"
+                  ? [{ ...shared, kind: "healing" as const, amount }]
+                  : mode === "temp-hp"
+                    ? [{ ...shared, kind: "temp-hp" as const, amount }]
+                    : damagePackets
+                        .filter((packet) => packet > 0)
+                        .map((packet) => ({
+                          ...shared,
+                          kind: "damage" as const,
+                          intake: "resolved" as const,
+                          amount: packet,
+                          ...(outcomes.attack === "hit" &&
+                          damagePackets.length > 1 &&
+                          (spec.kind === "attack" || spec.kind === "attack-save")
+                            ? { hit: true as const }
+                            : {}),
+                        }));
+            const conditionEffects = (conditions[target.key] ?? [])
+              .filter((conditionId) => !conditionLifetimeFor(conditionId))
+              .map((conditionId) => ({
+                kind: "condition" as const,
+                targetId: target.targetId,
+                conditionId,
+                active: true,
+              }));
+            const removalEffects = (conditionRemovals[target.key] ?? []).map(
+              (conditionId) => ({
+                kind: "condition" as const,
+                targetId: target.targetId,
+                conditionId,
+                active: false,
+              })
+            );
+            const resourceEffects = action.summary.grantedDie
               ? [
                   {
                     kind: "resource" as const,
                     targetId: target.targetId,
-                    resource: { kind: "heroic-inspiration" as const },
+                    resource: {
+                      kind: "bardic-inspiration-die" as const,
+                      value: action.summary.grantedDie.die,
+                    },
+                  },
+                ]
+              : action.summary.grantsHeroicInspiration
+                ? [
+                    {
+                      kind: "resource" as const,
+                      targetId: target.targetId,
+                      resource: { kind: "heroic-inspiration" as const },
+                    },
+                  ]
+                : [];
+            const stabilizationEffects = action.summary.stabilize
+              ? [
+                  {
+                    kind: "stabilize" as const,
+                    targetId: target.targetId,
                   },
                 ]
               : [];
-          const stabilizationEffects = action.summary.stabilize
-            ? [
-                {
-                  kind: "stabilize" as const,
-                  targetId: target.targetId,
-                },
-              ]
-            : [];
-          return [
-            ...hpEffect,
-            ...conditionEffects,
-            ...removalEffects,
-            ...resourceEffects,
-            ...stabilizationEffects,
-          ];
-        });
+            return [
+              ...hpEffect,
+              ...conditionEffects,
+              ...removalEffects,
+              ...resourceEffects,
+              ...stabilizationEffects,
+            ];
+          }
+        );
         const hitTargetIds = successful.flatMap(({ target, outcomes, mode }) =>
           mode === "damage" &&
           (spec.kind === "attack" || spec.kind === "attack-save") &&
@@ -1462,8 +1484,24 @@ export function CombatResolver({
                   : linkedSelfHealing > 0
                     ? { healing: linkedSelfHealing }
                     : {}),
-                ...((own?.amount ?? 0) > 0 && own?.mode === "damage"
-                  ? { damage: own.amount }
+                ...(own?.mode === "damage" && own.damagePackets.length > 0
+                  ? {
+                      damagePackets: own.damagePackets.map((amount) => ({
+                        amount,
+                        ...(own.outcomes.attack === "hit" &&
+                        actorRef &&
+                        (spec.kind === "attack" || spec.kind === "attack-save")
+                          ? {
+                              hit: {
+                                attacker: actorRef,
+                                ...(spec.attackMode
+                                  ? { attackMode: spec.attackMode }
+                                  : {}),
+                              },
+                            }
+                          : {}),
+                      })),
+                    }
                   : {}),
                 ...(ownDirectConditions.length
                   ? { addConditions: ownDirectConditions }

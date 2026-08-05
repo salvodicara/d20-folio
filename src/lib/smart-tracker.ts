@@ -7551,8 +7551,9 @@ export function resolveActiveStatesEndingOn(
     for (const grant of source.grants ?? []) {
       if (
         grant.type === "while-active" &&
-        grant.duration?.kind === "maintained" &&
         active.has(grant.activeKey) &&
+        grant.duration !== undefined &&
+        "endsEarlyOn" in grant.duration &&
         grant.duration.endsEarlyOn?.includes(trigger)
       ) {
         ended.add(grant.activeKey);

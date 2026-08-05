@@ -101,6 +101,16 @@ undo/re-arm removes only the matching facts. Follow-ups use typed predicates (`r
 with Deflect Attacks redirect migrated off its former coarse success boolean. Critical hits are admitted by
 the engine contract but remain unproduced until an explicit table input is added to the resolver UI.
 
+**Ordered combat occurrences CLOSED on branch (2026-08-05):** multi-hit attacks, rays and missiles
+now cross defenses, Temporary HP, 0-HP rules, one-shot floors and successful-hit retaliation one entered
+packet at a time instead of collapsing into one total. Death Ward can stop the first qualifying packet
+without erasing later hits; damage at 0 accrues per hit; per-hit retaliation repeats while its exact
+effect remains active. Ordinary actions, Attack swings and Reactions now publish their owner plus all
+validated receipts in one Zustand mutation, and every undo/re-arm removes or restores that pair in the
+same mutation, so the persisted turn writer cannot observe an owner/fact half-state. Fixed and timed
+active states also share the same declarative `endsEarlyOn` trigger consumer. The separate campaign
+effect/inverse transaction remains the next orchestration seam described above.
+
 **Live-team truth audit — activation-scoped resources CLOSED on branch (2026-08-04):** Santaera's
 future Zealot progression exposed a false rest approximation: Fanatical Focus is once per Rage, not
 once per Short Rest. `TrackerSpec.refreshOnActivationOf` now declares that lifecycle using the same

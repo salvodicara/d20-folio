@@ -609,6 +609,10 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
     at either stage: Temporary HP, post-resistance damage transfer, successful-hit retaliation and typed
     zero-HP floors. A floor returns exact consumed occurrence ids and transitional state keys; matching
     `activeKey` representations are consumed together so one Death Ward cannot fire twice locally.
+    Multi-hit attacks, rays and missiles remain ordered packets: each packet independently crosses this
+    kernel, consumed floors/effects leave before the next packet, and retaliation runs once for every
+    successful hit while its source occurrence survives. The engine never sums packets before applying
+    0-HP or on-hit rules.
   - **0-HP rules** (owned by the canonical transition, not either adapter). Crossing to 0 = a fresh dying
     state (track reset 0/0) + the Unconscious condition (SRD "Falling Unconscious"; shed by the
     heal-from-0 seam in `setHP` and by the at-zero "drop to 1 instead" interrupt); remainder past

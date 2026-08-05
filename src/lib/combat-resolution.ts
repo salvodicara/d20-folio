@@ -124,6 +124,9 @@ export interface EnteredCombatDamagePart {
   spec: CombatDamagePartSpec;
   amount: number;
   damageType?: DamageType;
+  /** Zero-based hit/ray/missile occurrence. Parts without one belong to the
+   * first occurrence, which is where once-per-use riders are resolved. */
+  instance?: number;
 }
 
 export type CombatOutcome = "hit" | "miss" | "failed-save" | "saved" | "automatic";
@@ -527,4 +530,28 @@ export function resolveCombatDamage(
     ];
   });
   return resolveDamageIntake(entered, defenses);
+}
+
+/** Resolve ordered hit/ray/missile occurrences independently. Defenses and
+ * zero-HP consequences apply per occurrence; summing these packets before the
+ * HP transition would make Death Ward, damage at 0 HP, and retaliation wrong. */
+export function resolveCombatDamagePackets(
+  parts: ReadonlyArray<EnteredCombatDamagePart>,
+  outcome: CombatTargetOutcome,
+  damageOnSave: SaveDamageOutcome,
+  defenses: DamageDefenses = NO_DEFENSES
+): ResolvedDamageIntake[] {
+  const byInstance = new Map<number, EnteredCombatDamagePart[]>();
+  for (const part of parts) {
+    const instance =
+      part.instance === undefined || !Number.isFinite(part.instance)
+        ? 0
+        : Math.max(0, Math.floor(part.instance));
+    const group = byInstance.get(instance) ?? [];
+    group.push(part);
+    byInstance.set(instance, group);
+  }
+  return [...byInstance.entries()]
+    .sort(([left], [right]) => left - right)
+    .map(([, group]) => resolveCombatDamage(group, outcome, damageOnSave, defenses));
 }

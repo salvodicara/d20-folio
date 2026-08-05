@@ -732,8 +732,11 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   totals are always `resolved`, so Warding Bond resistance cannot be applied twice while its transfer still
   runs. The core event carries both pre-floor `incoming` damage and HP/temp actually `applied`: the local
   character log keeps its established incoming-hit meaning, while the campaign Chronicle records the
-  applied reversible delta. The adapters otherwise only translate returned state/events into persistence
-  and Chronicle shapes.
+  applied reversible delta. `resolveCombatDamagePackets` preserves each entered hit/ray/missile occurrence;
+  adapters reduce those packets in order and remove consumed occurrences before the next packet. Damage
+  at 0 HP, Death Ward, Temporary HP depletion, concentration checks, transfer and retaliation therefore
+  happen at the rules' per-hit boundary rather than once against an action total. The adapters otherwise
+  only translate returned state/events into persistence and Chronicle shapes.
 
   Reviewed combat outcomes are a separate immutable fact stream, never fields stamped onto reusable
   action definitions. `CombatResolver` emits a prepared artifact containing the resolved action plus
@@ -742,6 +745,9 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   can match any successful attack while source-specific follow-ups can require one exact action. Queries
   return both matching receipts and their bound targets for target-constrained riders. `critical-hit` is a
   first-class fact but is never inferred from damage; the current HIT/MISS UI therefore emits none yet.
+  Receipt publication is part of the owning `selectAction`, `commitAttackSwing` or `useReaction` store
+  mutation. Re-arm and undo use those same owner APIs, so no persisted turn snapshot can contain one half
+  of the owner/receipt relation.
 
   Per-spell casting math is independent from class-slot ownership. `resolveSpellAbility` first honors a
   literal per-spell override, then the character's deferred species choice, then the owning class. The
@@ -1554,7 +1560,9 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
     lifetime. At the untrusted read edge, malformed rows and empty identities are dropped, non-finite rolls
     normalize safely, duplicate receipt ids are rejected, and a receipt survives only when an exact
     selected-action/Attack-swing/Reaction owner binds its occurrence to the same action id; a corrupt or
-    stale subdoc therefore cannot reopen an outcome-gated follow-up.
+    stale subdoc therefore cannot reopen an outcome-gated follow-up. Owner creation/removal and its
+    validated receipts occur in one store mutation, including coin re-arm, so the high-frequency writer
+    never persists an intermediate owner-only or receipt-only snapshot.
 - **Edit gate (mirrors the rules).** Direct card correction remains the owning player/DM/admin affordance;
   a co-member writes a peer only after confirming a typed effect in `CombatResolver`, never through a
   generic character editor. Structure edits (add/remove combatant, monster, turn/round, hidden toggle)

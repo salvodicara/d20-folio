@@ -71,7 +71,15 @@ describe("campaign reactive effects", () => {
   it("queues exact retaliation even when a successful melee hit lands 0 damage", () => {
     const result = reduceDirectPcEffects(
       target,
-      [{ kind: "damage", intake: "resolved", targetId: "warlock", amount: 0 }],
+      [
+        {
+          kind: "damage",
+          intake: "resolved",
+          targetId: "warlock",
+          amount: 0,
+          hit: true,
+        },
+      ],
       {
         actorId: "fighter",
         action: { custom: "Unarmed Strike" },
@@ -98,6 +106,41 @@ describe("campaign reactive effects", () => {
         damageSource: "spell",
       },
     ]);
+  });
+
+  it("queues retaliation once for every successful hit packet", () => {
+    const result = reduceDirectPcEffects(
+      target,
+      [
+        {
+          kind: "damage",
+          intake: "resolved",
+          targetId: "warlock",
+          amount: 1,
+          hit: true,
+        },
+        {
+          kind: "damage",
+          intake: "resolved",
+          targetId: "warlock",
+          amount: 1,
+          hit: true,
+        },
+      ],
+      {
+        actorId: "fighter",
+        action: { custom: "Multiattack" },
+        round: 2,
+        persistentEffects: [armor],
+        hit: {
+          attacker: { kind: "monster", combatantId: "fighter" },
+          attackMode: "melee",
+        },
+      }
+    );
+
+    expect(result?.hp).toEqual({ current: 18, temp: 3 });
+    expect(result?.transfers).toHaveLength(2);
   });
 
   it("revokes a temp-HP-bound effect when a stronger pool replaces it", () => {

@@ -253,7 +253,8 @@ interface CombatState {
   commitAttackSwing: (
     groupEntry: SelectedAction,
     swingActionId: string,
-    outcomeOccurrenceId?: string
+    outcomeOccurrenceId?: string,
+    outcomes?: ReadonlyArray<CombatOutcomeReceipt>
   ) => "new-group" | "rode" | null;
   /**
    * ATTACK-PIPS — reverse the most recent attack swing (the per-swing undo toast):
@@ -264,8 +265,6 @@ interface CombatState {
    * swings in any order can never strand a group entry.
    */
   undoAttackSwing: () => void;
-  /** Append exact reviewed facts idempotently; returns their exact inverse. */
-  commitOutcomeReceipts: (receipts: ReadonlyArray<CombatOutcomeReceipt>) => () => void;
   /** Allocate a replayable occurrence id and advance the persisted turn cursor. */
   allocateOutcomeOccurrenceId: (turnKey: string, actionId: string) => string;
   /**
@@ -274,7 +273,10 @@ interface CombatState {
    * (`length < budget`); the free slot is uncapped. A re-commit of the SAME id is
    * idempotent (never double-listed). Returns whether the action was appended.
    */
-  selectAction: (action: SelectedAction) => boolean;
+  selectAction: (
+    action: SelectedAction,
+    outcomes?: ReadonlyArray<CombatOutcomeReceipt>
+  ) => boolean;
   /** Deselect ALL actions in a given slot (clears the slot's list). */
   deselectSlot: (slot: EconomySlot) => void;
   /** Deselect a specific action by ID (finds its slot automatically) */
@@ -284,7 +286,11 @@ interface CombatState {
    * the spending reaction's action id — recorded as `reactionUsedId` so its card
    * keeps the occupant ring while the rest of the group greys to "Used".
    */
-  useReaction: (id: string, outcomeOccurrenceId?: string) => void;
+  useReaction: (
+    id: string,
+    outcomeOccurrenceId?: string,
+    outcomes?: ReadonlyArray<CombatOutcomeReceipt>
+  ) => void;
   /** Undo reaction use — resets reactionUsed without touching selections */
   resetReaction: () => void;
   /** Reset turn without advancing round (clear selections for undo) */
@@ -322,6 +328,28 @@ function slotCapacity(budget: SlotBudget, slot: EconomySlot): number {
   if (slot === "action") return budget.action;
   if (slot === "bonus") return budget.bonus;
   return Infinity; // free actions are uncapped
+}
+
+/** Append only facts owned by the economy occurrence entering the same snapshot. */
+function appendOwnedOutcomes(
+  current: CombatOutcomeReceipt[],
+  outcomes: ReadonlyArray<CombatOutcomeReceipt> | undefined,
+  actionId: string,
+  occurrenceId: string | undefined
+): CombatOutcomeReceipt[] {
+  if (!occurrenceId || !outcomes?.length) return current;
+  const seen = new Set(current.map(({ id }) => id));
+  const added = outcomes.filter((outcome) => {
+    if (
+      outcome.actionId !== actionId ||
+      outcome.occurrenceId !== occurrenceId ||
+      seen.has(outcome.id)
+    )
+      return false;
+    seen.add(outcome.id);
+    return true;
+  });
+  return added.length ? [...current, ...added] : current;
 }
 
 export const useCombatStore = create<CombatState>()((set, get) => ({
@@ -393,7 +421,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     set({ attackBudget });
   },
 
-  commitAttackSwing: (groupEntry, swingActionId, outcomeOccurrenceId) => {
+  commitAttackSwing: (groupEntry, swingActionId, outcomeOccurrenceId, outcomes) => {
     if (sheetReadonly()) return null;
     const { selected, budget, attacksUsed, attackBudget } = get();
     // Guard case: with no Extra Attack the attack-pips model is inert — the caller
@@ -418,6 +446,12 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
             ...(outcomeOccurrenceId ? { outcomeOccurrenceId } : {}),
           },
         ],
+        outcomeReceipts: appendOwnedOutcomes(
+          state.outcomeReceipts,
+          outcomes,
+          swingActionId,
+          outcomeOccurrenceId
+        ),
       }));
       return "new-group";
     }
@@ -431,6 +465,12 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
           ...(outcomeOccurrenceId ? { outcomeOccurrenceId } : {}),
         },
       ],
+      outcomeReceipts: appendOwnedOutcomes(
+        state.outcomeReceipts,
+        outcomes,
+        swingActionId,
+        outcomeOccurrenceId
+      ),
     }));
     return "rode";
   },
@@ -456,32 +496,15 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
         // Pop the last-recorded swing occupant (one id per committed swing).
         attackSwings: state.attackSwings.slice(0, -1),
         selected: { ...state.selected, action },
+        ...(occurrenceId
+          ? {
+              outcomeReceipts: state.outcomeReceipts.filter(
+                (receipt) => receipt.occurrenceId !== occurrenceId
+              ),
+            }
+          : {}),
       };
     });
-    if (occurrenceId) {
-      set((state) => ({
-        outcomeReceipts: state.outcomeReceipts.filter(
-          (receipt) => receipt.occurrenceId !== occurrenceId
-        ),
-      }));
-    }
-  },
-
-  commitOutcomeReceipts: (receipts) => {
-    if (sheetReadonly() || receipts.length === 0) return () => {};
-    const existing = new Set(get().outcomeReceipts.map(({ id }) => id));
-    const added = receipts.filter(({ id }) => {
-      if (existing.has(id)) return false;
-      existing.add(id);
-      return true;
-    });
-    if (added.length === 0) return () => {};
-    set((state) => ({ outcomeReceipts: [...state.outcomeReceipts, ...added] }));
-    const addedIds = new Set(added.map(({ id }) => id));
-    return () =>
-      set((state) => ({
-        outcomeReceipts: state.outcomeReceipts.filter(({ id }) => !addedIds.has(id)),
-      }));
   },
 
   allocateOutcomeOccurrenceId: (turnKey, actionId) => {
@@ -508,7 +531,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     return allocated.id;
   },
 
-  selectAction: (action) => {
+  selectAction: (action, outcomes) => {
     if (sheetReadonly()) return false;
     const { selected, budget } = get();
     const list = selected[action.slot];
@@ -521,6 +544,12 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
         ...state.selected,
         [action.slot]: [...state.selected[action.slot], action],
       },
+      outcomeReceipts: appendOwnedOutcomes(
+        state.outcomeReceipts,
+        outcomes,
+        action.id,
+        action.outcomeOccurrenceId
+      ),
     }));
     return true;
   },
@@ -579,30 +608,53 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     }
   },
 
-  useReaction: (id, outcomeOccurrenceId) => {
+  useReaction: (id, outcomeOccurrenceId, outcomes) => {
     if (sheetReadonly()) return;
-    set({
-      reactionUsed: true,
-      reactionUsedId: id,
-      reactionOutcomeOccurrenceId: outcomeOccurrenceId ?? null,
+    set((state) => {
+      const occurrenceId = outcomeOccurrenceId ?? null;
+      if (
+        state.reactionUsed &&
+        (state.reactionUsedId !== id ||
+          state.reactionOutcomeOccurrenceId !== occurrenceId)
+      )
+        return state;
+      const outcomeReceipts = appendOwnedOutcomes(
+        state.outcomeReceipts,
+        outcomes,
+        id,
+        outcomeOccurrenceId
+      );
+      if (
+        state.reactionUsed &&
+        state.reactionUsedId === id &&
+        state.reactionOutcomeOccurrenceId === occurrenceId &&
+        outcomeReceipts === state.outcomeReceipts
+      )
+        return state;
+      return {
+        reactionUsed: true,
+        reactionUsedId: id,
+        reactionOutcomeOccurrenceId: occurrenceId,
+        outcomeReceipts,
+      };
     });
   },
 
   resetReaction: () => {
     if (sheetReadonly()) return;
     const occurrenceId = get().reactionOutcomeOccurrenceId;
-    set({
+    set((state) => ({
       reactionUsed: false,
       reactionUsedId: null,
       reactionOutcomeOccurrenceId: null,
-    });
-    if (occurrenceId) {
-      set((state) => ({
-        outcomeReceipts: state.outcomeReceipts.filter(
-          (receipt) => receipt.occurrenceId !== occurrenceId
-        ),
-      }));
-    }
+      ...(occurrenceId
+        ? {
+            outcomeReceipts: state.outcomeReceipts.filter(
+              (receipt) => receipt.occurrenceId !== occurrenceId
+            ),
+          }
+        : {}),
+    }));
   },
 
   resetTurn: () =>

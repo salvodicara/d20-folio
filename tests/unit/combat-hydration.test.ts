@@ -125,14 +125,17 @@ describe("Combat sync — async character arrival", () => {
 
   it("restores spent actions, maintenance events, reaction, and movement", () => {
     const key = "encounter:camp:9:3:pc-member";
-    useCombatStore.getState().selectAction({
-      id: "vicious-mockery",
-      name: "Vicious Mockery",
-      nameLoc: { custom: "Vicious Mockery" },
-      slot: "action",
-      triggerEvents: ["attack"],
-      outcomeOccurrenceId: "mockery-1",
-    });
+    useCombatStore.getState().selectAction(
+      {
+        id: "vicious-mockery",
+        name: "Vicious Mockery",
+        nameLoc: { custom: "Vicious Mockery" },
+        slot: "action",
+        triggerEvents: ["attack"],
+        outcomeOccurrenceId: "mockery-1",
+      },
+      [receipt("mockery-1", "vicious-mockery")]
+    );
     useCombatStore.getState().selectAction({
       id: "barbarian-rage-extend",
       name: "Extend Rage",
@@ -140,11 +143,9 @@ describe("Combat sync — async character arrival", () => {
       slot: "bonus",
       triggerEvents: ["bonus-extend"],
     });
-    useCombatStore.getState().useReaction("cutting-words", "reaction-1");
     useCombatStore
       .getState()
-      .commitOutcomeReceipts([
-        receipt("mockery-1", "vicious-mockery"),
+      .useReaction("cutting-words", "reaction-1", [
         receipt("reaction-1", "cutting-words"),
       ]);
     useCombatStore.getState().setMovementUsed(15);

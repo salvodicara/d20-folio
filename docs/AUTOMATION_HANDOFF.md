@@ -73,13 +73,15 @@ What is not yet good enough:
 - `src/lib/smart-tracker.ts` and `src/lib/grants.ts` are large compilers with growing conditional
   surfaces, while `CombatResolver.tsx` and `TurnEconomyProvider.tsx` still mix orchestration with UI;
 - attack/save/damage-reduction receipts now preserve turn occurrence, target and honest exact-vs-aggregate
-  instance identity, but damage-dealt facts and an explicit critical-hit resolver input are still missing;
+  instance identity, and their economy owner commits atomically; damage-dealt facts and an explicit
+  critical-hit resolver input are still missing;
 - the coverage matrices are manually curated and can be green while a declaration has no complete
   runtime consumer;
 - older docs contain closed-audit language that proved too optimistic. Treat them as evidence and
   history, not as a substitute for code/data/source inspection;
-- PC damage now has one pure `reducePcDamage` kernel for open-sheet and fresh-read peer state, but
-  the own-sheet encounter adapter still stops at optimistic projection consumption: it does not yet
+- PC damage now has one pure `reducePcDamage` kernel for open-sheet and fresh-read peer state; multi-hit
+  inputs cross it as ordered packets, so Death Ward, damage at 0 and retaliation are no longer action-total
+  approximations. The own-sheet encounter adapter still stops at optimistic projection consumption: it does not yet
   apply/reverse returned Warding Bond partner transfers or transactionally revoke/restore the consumed
   campaign occurrence. Do not claim that local projection filtering is a reload-durable inverse;
 - the current public + pack matrices still contain many `partial`/`narrative` rows. Some are correct

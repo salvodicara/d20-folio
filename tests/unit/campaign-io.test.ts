@@ -599,6 +599,56 @@ describe("campaign-io — reviewed combat effects", () => {
     expect(result?.events.some((event) => event.kind === "down")).toBe(false);
   });
 
+  it("applies ordered hits after Death Ward instead of letting one ward absorb the total", () => {
+    const ward: ActiveCombatEffect = {
+      id: "death-ward:ordered",
+      actor: {
+        kind: "pc",
+        combatantId: "pc-b",
+        memberUid: "b",
+        characterId: "char-b",
+      },
+      target: {
+        kind: "pc",
+        combatantId: "pc-a",
+        memberUid: "a",
+        characterId: "char-a",
+      },
+      source: { kind: "spell", id: "death-ward", actionId: "cast-ward" },
+      payload: { kind: "grant-group", activeKey: "spell-death-ward" },
+      duration: { kind: "encounter" },
+    };
+    const result = reduceDirectPcEffects(
+      {
+        targetId: "pc-a",
+        memberUid: "a",
+        characterId: "char-a",
+        currentHp: 8,
+        tempHp: 0,
+        maxHp: 20,
+        conditions: [],
+        defenses: NO_DEFENSES,
+      },
+      [
+        { kind: "damage", intake: "resolved", targetId: "pc-a", amount: 20 },
+        { kind: "damage", intake: "resolved", targetId: "pc-a", amount: 2 },
+      ],
+      {
+        actorId: "monster-1",
+        action: { custom: "two hits" },
+        round: 2,
+        persistentEffects: [ward],
+      }
+    );
+
+    expect(result).toMatchObject({
+      hp: { current: 0, temp: 0 },
+      conditions: ["unconscious"],
+      consumedEffectIds: [ward.id],
+    });
+    expect(result?.events.filter((event) => event.kind === "hp-damage")).toHaveLength(2);
+  });
+
   it("does not reapply Warding Bond resistance to resolved damage before transfer", () => {
     const bond: ActiveCombatEffect = {
       id: "warding-bond:1",

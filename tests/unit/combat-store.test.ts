@@ -212,8 +212,7 @@ describe("combatStore", () => {
   });
 
   it("useReaction / resetReaction toggle reactionUsed AND record the occupant id", () => {
-    s().useReaction("shield", "shield-1");
-    s().commitOutcomeReceipts([receipt("shield-1", "shield")]);
+    s().useReaction("shield", "shield-1", [receipt("shield-1", "shield")]);
     expect(s().reactionUsed).toBe(true);
     // CTA grammar — the spending reaction's id is the group's ring occupant.
     expect(s().reactionUsedId).toBe("shield");
@@ -222,6 +221,53 @@ describe("combatStore", () => {
     expect(s().reactionUsed).toBe(false);
     expect(s().reactionUsedId).toBeNull();
     expect(s().reactionOutcomeOccurrenceId).toBeNull();
+    expect(s().outcomeReceipts).toEqual([]);
+  });
+
+  it("commits and removes an ordinary action with its owned outcomes in one mutation", () => {
+    const frames: Array<{ occupied: boolean; receipts: number }> = [];
+    const unsubscribe = useCombatStore.subscribe((state) => {
+      frames.push({
+        occupied: state.selected.action.some(({ id }) => id === "attack"),
+        receipts: state.outcomeReceipts.filter(
+          ({ occurrenceId }) => occurrenceId === "attack-1"
+        ).length,
+      });
+    });
+    const action = { ...act("attack", "action"), outcomeOccurrenceId: "attack-1" };
+
+    expect(s().selectAction(action, [receipt("attack-1", "attack")])).toBe(true);
+    s().deselectAction("attack");
+    unsubscribe();
+
+    expect(frames).toEqual([
+      { occupied: true, receipts: 1 },
+      { occupied: false, receipts: 0 },
+    ]);
+  });
+
+  it("accepts only unique outcomes owned by the committed occurrence", () => {
+    const owned = receipt("attack-1", "attack");
+    expect(
+      s().selectAction({ ...act("attack", "action"), outcomeOccurrenceId: "attack-1" }, [
+        owned,
+        owned,
+        receipt("foreign-occurrence", "attack"),
+        receipt("attack-1", "foreign-action"),
+      ])
+    ).toBe(true);
+    expect(s().outcomeReceipts).toEqual([owned]);
+    expect(
+      s().selectAction({ ...act("attack", "action"), outcomeOccurrenceId: "attack-1" }, [
+        owned,
+      ])
+    ).toBe(false);
+    expect(s().outcomeReceipts).toEqual([owned]);
+
+    s().resetTurn();
+    expect(s().selectAction(act("dash", "action"), [receipt("dangling", "dash")])).toBe(
+      true
+    );
     expect(s().outcomeReceipts).toEqual([]);
   });
 
@@ -444,10 +490,10 @@ describe("combatStore", () => {
     // spent. Every committed swing pushes its card id; every undo pops the last.
     it("attackSwings records each swung card occurrence and pops it on undo", () => {
       s().setAttackBudget(2);
-      s().commitAttackSwing(attackGroup(), "longsword", "swing-1");
-      s().commitAttackSwing(attackGroup(), "dagger", "swing-2");
-      s().commitOutcomeReceipts([
+      s().commitAttackSwing(attackGroup(), "longsword", "swing-1", [
         receipt("swing-1", "longsword"),
+      ]);
+      s().commitAttackSwing(attackGroup(), "dagger", "swing-2", [
         receipt("swing-2", "dagger"),
       ]);
       // Both weapons that consumed a swing are occupants of the spent Attack action.
@@ -465,6 +511,28 @@ describe("combatStore", () => {
       s().undoAttackSwing();
       expect(s().attackSwings).toEqual([]);
       expect(s().outcomeReceipts).toEqual([]);
+    });
+
+    it("publishes and undoes each swing with its outcomes in one mutation", () => {
+      s().setAttackBudget(2);
+      const frames: Array<{ swings: number; receipts: number }> = [];
+      const unsubscribe = useCombatStore.subscribe((state) => {
+        frames.push({
+          swings: state.attackSwings.length,
+          receipts: state.outcomeReceipts.length,
+        });
+      });
+
+      s().commitAttackSwing(attackGroup(), "longsword", "swing-1", [
+        receipt("swing-1", "longsword"),
+      ]);
+      s().undoAttackSwing();
+      unsubscribe();
+
+      expect(frames).toEqual([
+        { swings: 1, receipts: 1 },
+        { swings: 0, receipts: 0 },
+      ]);
     });
 
     it("re-arming the Action coin clears the swing occupant ledger", () => {
@@ -496,6 +564,32 @@ describe("combatStore", () => {
       expect(s().reactionUsed).toBe(false);
       expect(s().reactionUsedId).toBeNull();
     }
+  });
+
+  it("publishes and resets a reaction with its outcomes in one mutation", () => {
+    const frames: Array<{ occupied: boolean; receipts: number }> = [];
+    const unsubscribe = useCombatStore.subscribe((state) => {
+      frames.push({
+        occupied: state.reactionUsed,
+        receipts: state.outcomeReceipts.filter(
+          ({ occurrenceId }) => occurrenceId === "reaction-1"
+        ).length,
+      });
+    });
+
+    s().useReaction("shield", "reaction-1", [receipt("reaction-1", "shield")]);
+    s().useReaction("shield", "reaction-1", [receipt("reaction-1", "shield")]);
+    s().useReaction("counterspell", "reaction-2", [
+      receipt("reaction-2", "counterspell"),
+    ]);
+    s().resetReaction();
+    unsubscribe();
+
+    expect(frames).toEqual([
+      { occupied: true, receipts: 1 },
+      { occupied: false, receipts: 0 },
+    ]);
+    expect(s().outcomeReceipts).toEqual([]);
   });
 
   // P10 GLASS CASE — on a read-only sheet (member/DM/admin viewer) every

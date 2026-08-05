@@ -766,6 +766,8 @@ interface DeclaredAmountEffect {
 type DeclaredDamageEffect = DeclaredAmountEffect & {
   kind: "damage";
   intake: "raw" | "resolved";
+  /** This exact packet came from a successful attack occurrence. */
+  hit?: true;
   crit?: boolean;
   damageType?: DamageType;
   damageSource?: DamageSource;
@@ -977,7 +979,12 @@ export function reduceDirectPcEffects(
     }
   };
 
-  if (provenance.hit) {
+  // Legacy/single-packet callers bind the successful hit at the action context.
+  // Multi-hit callers mark each exact packet so retaliation runs per occurrence.
+  if (
+    provenance.hit &&
+    !effects.some((effect) => effect.kind === "damage" && effect.hit)
+  ) {
     landDamageTransition(
       reducePcDamage({
         state: {
@@ -1066,7 +1073,7 @@ export function reduceDirectPcEffects(
       continue;
     }
     const amount = Math.max(0, Math.round(effect.amount));
-    if (amount === 0) continue;
+    if (amount === 0 && !(effect.kind === "damage" && effect.hit)) continue;
     if (effect.kind === "temp-hp") {
       if (amount > temp) {
         for (const effectId of tempHpBoundEffectIds(provenance.persistentEffects ?? [])) {
@@ -1119,6 +1126,7 @@ export function reduceDirectPcEffects(
                 defenses: target.defenses,
               },
         ...(effect.crit ? { crit: true } : {}),
+        ...(effect.hit && provenance.hit ? { hit: provenance.hit } : {}),
         persistentEffects: (provenance.persistentEffects ?? []).filter(
           (active) => !consumedEffectIds.has(active.id)
         ),
@@ -1165,7 +1173,8 @@ export async function applyDeclaredCombatEffects(
       effect.kind === "condition" ||
       effect.kind === "resource" ||
       effect.kind === "stabilize" ||
-      effect.amount > 0
+      effect.amount > 0 ||
+      (effect.kind === "damage" && effect.hit)
   );
   for (const targetId of context?.hitTargetIds ?? []) {
     if (
@@ -1173,7 +1182,13 @@ export async function applyDeclaredCombatEffects(
         (effect) => effect.kind === "damage" && effect.targetId === targetId
       )
     ) {
-      applicable.push({ kind: "damage", intake: "resolved", targetId, amount: 0 });
+      applicable.push({
+        kind: "damage",
+        intake: "resolved",
+        targetId,
+        amount: 0,
+        hit: true,
+      });
     }
   }
   if (applicable.length === 0 && (context?.consumeEffectIds?.length ?? 0) === 0) return;

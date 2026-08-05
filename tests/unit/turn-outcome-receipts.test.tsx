@@ -94,6 +94,31 @@ function mount(action: ResolvedAction, prepared: PreparedCommitArtifact): void {
   );
 }
 
+function observeOwnership(
+  occurrenceId: string,
+  owns: (state: ReturnType<typeof useCombatStore.getState>) => boolean
+) {
+  const frames: Array<{ owner: boolean; receipts: number }> = [];
+  const unsubscribe = useCombatStore.subscribe((state) => {
+    frames.push({
+      owner: owns(state),
+      receipts: state.outcomeReceipts.filter(
+        (receipt) => receipt.occurrenceId === occurrenceId
+      ).length,
+    });
+  });
+  return {
+    unsubscribe,
+    expectAtomic() {
+      expect(frames).toContainEqual({ owner: true, receipts: 1 });
+      expect(frames).toContainEqual({ owner: false, receipts: 0 });
+      expect(frames.every(({ owner, receipts }) => owner === (receipts === 1))).toBe(
+        true
+      );
+    },
+  };
+}
+
 describe("turn outcome receipt ownership", () => {
   beforeEach(() => {
     stagedCommit = null;
@@ -118,7 +143,13 @@ describe("turn outcome receipt ownership", () => {
     async (_label, action, id) => {
       mount(action, artifact(action, id));
       fireEvent.click(screen.getByRole("button", { name: "Prepare" }));
-      fireEvent.click(await screen.findByRole("button", { name: "Commit" }));
+      const commit = await screen.findByRole("button", { name: "Commit" });
+      const observation = observeOwnership(id, (state) =>
+        state.selected.action.some(
+          (selected) => selected.id === action.id && selected.outcomeOccurrenceId === id
+        )
+      );
+      fireEvent.click(commit);
 
       await waitFor(() =>
         expect(useCombatStore.getState().outcomeReceipts).toHaveLength(1)
@@ -132,6 +163,8 @@ describe("turn outcome receipt ownership", () => {
       act(() => void useUndoStore.getState().redo());
       expect(useCombatStore.getState().outcomeReceipts[0]?.occurrenceId).toBe(id);
       expect(useCombatStore.getState().selected.action[0]?.outcomeOccurrenceId).toBe(id);
+      observation.unsubscribe();
+      observation.expectAtomic();
     }
   );
 
@@ -148,7 +181,13 @@ describe("turn outcome receipt ownership", () => {
     });
     mount(action, artifact(action, "swing-1"));
     fireEvent.click(screen.getByRole("button", { name: "Prepare" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Commit" }));
+    const commit = await screen.findByRole("button", { name: "Commit" });
+    const observation = observeOwnership("swing-1", (state) =>
+      state.attackSwings.some(
+        (swing) => swing.actionId === action.id && swing.outcomeOccurrenceId === "swing-1"
+      )
+    );
+    fireEvent.click(commit);
 
     await waitFor(() => expect(useCombatStore.getState().attacksUsed).toBe(1));
     expect(useCombatStore.getState().attackSwings).toEqual([
@@ -163,13 +202,22 @@ describe("turn outcome receipt ownership", () => {
       "swing-1"
     );
     expect(useCombatStore.getState().outcomeReceipts[0]?.occurrenceId).toBe("swing-1");
+    observation.unsubscribe();
+    observation.expectAtomic();
   });
 
   it("binds a reaction to its exact occurrence through undo and redo", async () => {
     const action = testAction("deflect", "reaction");
     mount(action, artifact(action, "reaction-1"));
     fireEvent.click(screen.getByRole("button", { name: "Prepare" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Commit" }));
+    const commit = await screen.findByRole("button", { name: "Commit" });
+    const observation = observeOwnership(
+      "reaction-1",
+      (state) =>
+        state.reactionUsedId === action.id &&
+        state.reactionOutcomeOccurrenceId === "reaction-1"
+    );
+    fireEvent.click(commit);
 
     await waitFor(() => expect(useCombatStore.getState().reactionUsed).toBe(true));
     expect(useCombatStore.getState().reactionOutcomeOccurrenceId).toBe("reaction-1");
@@ -179,5 +227,7 @@ describe("turn outcome receipt ownership", () => {
     act(() => void useUndoStore.getState().redo());
     expect(useCombatStore.getState().reactionOutcomeOccurrenceId).toBe("reaction-1");
     expect(useCombatStore.getState().outcomeReceipts[0]?.occurrenceId).toBe("reaction-1");
+    observation.unsubscribe();
+    observation.expectAtomic();
   });
 });

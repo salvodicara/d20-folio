@@ -78,7 +78,7 @@ import {
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast, useUndoStore } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
-import type { ActiveCombatEffect } from "@/types/combat-effect";
+import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 import {
   endedEffectSuccessor,
   isEffectActiveAtEncounterPosition,
@@ -284,7 +284,13 @@ interface CharacterState {
    *    A no-op once dead (3 failures).
    *  - Healing from 0 (`setHP`) clears the track AND the Unconscious condition.
    */
-  applyDamage: (amount: number, opts?: { crit?: boolean }) => void;
+  applyDamage: (
+    amount: number,
+    opts?: {
+      crit?: boolean;
+      hit?: { attacker: CombatantRef | null; attackMode?: "melee" | "ranged" };
+    }
+  ) => void;
   /**
    * Apply healing: raise current HP by `amount` (clamped to max). The dedicated
    * healing seam (mirror of {@link applyDamage}) — used by the HP control's heal
@@ -302,6 +308,13 @@ interface CharacterState {
    * The caller composes the returned inverse with the action/resource inverse. */
   applyResolvedCombatEffects: (effects: {
     damage?: number;
+    /** Ordered hit/ray/missile packets. Each packet crosses the 0-HP and
+     * concentration seams independently. */
+    damagePackets?: ReadonlyArray<{
+      amount: number;
+      crit?: boolean;
+      hit?: { attacker: CombatantRef | null; attackMode?: "melee" | "ranged" };
+    }>;
     healing?: number;
     tempHp?: number;
     addConditions?: string[];
@@ -862,6 +875,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       },
       intake: { stage: "resolved", amount },
       ...(opts?.crit ? { crit: true } : {}),
+      ...(opts?.hit ? { hit: opts.hit } : {}),
       persistentEffects,
       stateZeroHpFloors: [...stateFloorByKey.values()],
     });
@@ -1130,7 +1144,16 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       before.session
     ).healingBlocked;
     const damageTakenBefore = useCombatStore.getState().damageTakenThisRound;
-    if (effects.damage) get().applyDamage(effects.damage);
+    if (effects.damagePackets) {
+      for (const packet of effects.damagePackets) {
+        get().applyDamage(packet.amount, {
+          ...(packet.crit ? { crit: true } : {}),
+          ...(packet.hit ? { hit: packet.hit } : {}),
+        });
+      }
+    } else if (effects.damage) {
+      get().applyDamage(effects.damage);
+    }
     if (effects.healing && !healingBlocked) get().applyHealing(effects.healing);
     if (effects.tempHp) get().gainTempHp(effects.tempHp);
     if (effects.bardicInspirationDie !== undefined)

@@ -532,6 +532,23 @@ describe("characterStore — rest mechanics", () => {
       expect(sess()?.conditions).toEqual(["frightened"]);
     });
 
+    it("applies reviewed hit packets sequentially at 0 HP", () => {
+      seed({ current: 0, fail: 0, conditions: ["unconscious"] });
+      const undo = store().applyResolvedCombatEffects({
+        damagePackets: [{ amount: 2 }, { amount: 3 }],
+      });
+
+      expect(sess()?.deathFail).toBe(2);
+      expect(sess()?.conditions).toEqual(["unconscious"]);
+      expect(
+        sess()?.logEntries.filter((entry) => entry.event.kind === "hp-damage")
+      ).toHaveLength(2);
+
+      undo?.();
+      expect(sess()?.deathFail).toBe(0);
+      expect(sess()?.conditions).toEqual(["unconscious"]);
+    });
+
     it("stabilizes at 0 HP without healing and reverses the death track exactly", () => {
       seed({ current: 0, fail: 2, conditions: ["unconscious"] });
       const undo = store().applyResolvedCombatEffects({ stabilize: true });

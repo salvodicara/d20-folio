@@ -243,14 +243,33 @@ export function ThisTurnTracker({
           // silently collide AND clobber the live swing counter (losing the new
           // swing). The re-occupied slot means the rearm was superseded: no-op.
           if (s.selected[slot].length > 0) return;
-          for (const a of snapshot) s.selectAction(a);
-          if (slot === "action")
-            useCombatStore.setState({
-              attacksUsed: prevAttacksUsed,
-              // Restore the exact Attack-group occupant ledger with the swings.
-              attackSwings: prevAttackSwings,
-            });
-          s.commitOutcomeReceipts(outcomeReceipts);
+          const ownedOutcomes = (actionId: string, occurrenceId?: string) =>
+            occurrenceId
+              ? outcomeReceipts.filter(
+                  (receipt) =>
+                    receipt.actionId === actionId && receipt.occurrenceId === occurrenceId
+                )
+              : [];
+          let swingIndex = 0;
+          for (const action of snapshot) {
+            if (slot === "action" && action.isAttackGroup) {
+              const groupSwings = prevAttackSwings.slice(
+                swingIndex,
+                Math.min(swingIndex + s.attackBudget, prevAttacksUsed)
+              );
+              for (const swing of groupSwings) {
+                s.commitAttackSwing(
+                  action,
+                  swing.actionId,
+                  swing.outcomeOccurrenceId,
+                  ownedOutcomes(swing.actionId, swing.outcomeOccurrenceId)
+                );
+              }
+              swingIndex += groupSwings.length;
+              continue;
+            }
+            s.selectAction(action, ownedOutcomes(action.id, action.outcomeOccurrenceId));
+          }
         };
       },
       { turnScoped: true }
@@ -274,12 +293,13 @@ export function ThisTurnTracker({
           : [];
         store.resetReaction();
         return () => {
-          useCombatStore.setState({
-            reactionUsed: true,
-            reactionUsedId: prevReactionId,
-            reactionOutcomeOccurrenceId: prevOccurrenceId,
-          });
-          useCombatStore.getState().commitOutcomeReceipts(outcomeReceipts);
+          useCombatStore
+            .getState()
+            .useReaction(
+              prevReactionId ?? "manual-reaction",
+              prevOccurrenceId ?? undefined,
+              outcomeReceipts
+            );
         };
       },
       { turnScoped: true }

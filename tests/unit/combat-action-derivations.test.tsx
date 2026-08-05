@@ -689,6 +689,22 @@ describe("PlayTab Extra Attack (card-borne attacks-remaining)", () => {
       ],
       outcomeReceipts: [outcomeReceipt("swing-1"), outcomeReceipt("swing-2")],
     });
+    const ownershipFrames: Array<
+      Array<{ occurrenceId: string; owner: boolean; receipt: boolean }>
+    > = [];
+    const unsubscribe = useCombatStore.subscribe((state) => {
+      ownershipFrames.push(
+        ["swing-1", "swing-2"].map((occurrenceId) => ({
+          occurrenceId,
+          owner: state.attackSwings.some(
+            (swing) => swing.outcomeOccurrenceId === occurrenceId
+          ),
+          receipt: state.outcomeReceipts.some(
+            (receipt) => receipt.occurrenceId === occurrenceId
+          ),
+        }))
+      );
+    });
 
     // Re-arm the spent Action coin — slot freed AND the swing counter clears.
     fireEvent.click(screen.getByLabelText("Re-arm Action"));
@@ -706,6 +722,12 @@ describe("PlayTab Extra Attack (card-borne attacks-remaining)", () => {
     expect(
       useCombatStore.getState().outcomeReceipts.map(({ occurrenceId }) => occurrenceId)
     ).toEqual(["swing-1", "swing-2"]);
+    unsubscribe();
+    expect(
+      ownershipFrames.every((frame) =>
+        frame.every(({ owner, receipt }) => owner === receipt)
+      )
+    ).toBe(true);
     await waitFor(() => expect(actionCoin().getAttribute("data-state")).toBe("spent"));
   });
 
@@ -745,8 +767,18 @@ describe("PlayTab Extra Attack (card-borne attacks-remaining)", () => {
       actionId: "shield",
     };
     act(() => {
-      useCombatStore.getState().useReaction("shield", "reaction-1");
-      useCombatStore.getState().commitOutcomeReceipts([reactionReceipt]);
+      useCombatStore.getState().useReaction("shield", "reaction-1", [reactionReceipt]);
+    });
+    const ownershipFrames: Array<{ owner: boolean; receipt: boolean }> = [];
+    const unsubscribe = useCombatStore.subscribe((state) => {
+      ownershipFrames.push({
+        owner:
+          state.reactionUsedId === "shield" &&
+          state.reactionOutcomeOccurrenceId === "reaction-1",
+        receipt: state.outcomeReceipts.some(
+          ({ occurrenceId }) => occurrenceId === "reaction-1"
+        ),
+      });
     });
 
     fireEvent.click(await screen.findByLabelText("Re-arm Reaction"));
@@ -758,6 +790,8 @@ describe("PlayTab Extra Attack (card-borne attacks-remaining)", () => {
     expect(useCombatStore.getState().reactionUsedId).toBe("shield");
     expect(useCombatStore.getState().reactionOutcomeOccurrenceId).toBe("reaction-1");
     expect(useCombatStore.getState().outcomeReceipts).toEqual([reactionReceipt]);
+    unsubscribe();
+    expect(ownershipFrames.every(({ owner, receipt }) => owner === receipt)).toBe(true);
   });
 });
 

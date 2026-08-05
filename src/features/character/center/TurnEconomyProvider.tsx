@@ -553,11 +553,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     pendingResolution: PendingResolution | null
   ): (() => void) => {
     const undoResolution = pendingResolution?.apply();
-    const undoOutcomes = pendingResolution?.outcomes.length
-      ? useCombatStore.getState().commitOutcomeReceipts(pendingResolution.outcomes)
-      : null;
     return () => {
-      undoOutcomes?.();
       undoResolution?.();
       undoAction();
     };
@@ -983,8 +979,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   /** Allocate a proposed Action against the live mix of ordinary and restricted
    * slots. The assignment is order-independent: a Haste-legal Dash taken first
    * cannot accidentally consume the only unrestricted Action needed by a spell. */
-  function appendWithinActionRules(action: SelectedAction): boolean {
-    if (action.slot !== "action") return appendSelectedAction(action);
+  function appendWithinActionRules(
+    action: SelectedAction,
+    outcomes?: ReadonlyArray<CombatOutcomeReceipt>
+  ): boolean {
+    if (action.slot !== "action") return appendSelectedAction(action, outcomes);
     const doc = useCharacterStore.getState().character;
     if (!doc) return false;
     const state = useCombatStore.getState();
@@ -1000,7 +999,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     if (!canAssignActionClaims([...claims, proposed], extraActionRulesThisTurn(doc))) {
       return false;
     }
-    return appendSelectedAction(action);
+    return appendSelectedAction(action, outcomes);
   }
 
   // ATTACK-PIPS — the highest spell level the character may replace an attack with
@@ -1081,7 +1080,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           if (
             useCombatStore
               .getState()
-              .commitAttackSwing(groupEntry, action.id, outcomeOccurrenceId) === null
+              .commitAttackSwing(
+                groupEntry,
+                action.id,
+                outcomeOccurrenceId,
+                applyResolution?.outcomes
+              ) === null
           ) {
             // No Attack action slot free — nothing spent; undo the log and bail.
             undoEffects();
@@ -1141,7 +1145,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           const undoCost = commitAction(action, trackerAmount);
           if (
             !appendWithinActionRules(
-              toSelectedAction(action, slot, undefined, outcomeOccurrenceId)
+              toSelectedAction(action, slot, undefined, outcomeOccurrenceId),
+              applyResolution?.outcomes
             )
           ) {
             undoCost();
@@ -1293,7 +1298,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             if (
               useCombatStore
                 .getState()
-                .commitAttackSwing(groupEntry, action.id, outcomeOccurrenceId) === null
+                .commitAttackSwing(
+                  groupEntry,
+                  action.id,
+                  outcomeOccurrenceId,
+                  applyResolution?.outcomes
+                ) === null
             ) {
               undoLegs();
               return null;
@@ -1306,7 +1316,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           // Append into the slot; bail (refunding) if the budget is already full.
           if (
             !appendWithinActionRules(
-              toSelectedAction(action, slot, opt, outcomeOccurrenceId)
+              toSelectedAction(action, slot, opt, outcomeOccurrenceId),
+              applyResolution?.outcomes
             )
           ) {
             undoLegs();
@@ -1690,7 +1701,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       registerUndoableToast(
         { message },
         () => {
-          markReactionUsed(action.id, outcomeOccurrenceId);
+          markReactionUsed(action.id, outcomeOccurrenceId, applyResolution?.outcomes);
           const characterStore = useCharacterStore.getState();
           // Resolve the slot pool once (normal vs Pact for a pure Warlock) so the
           // spend and the reverse hit the SAME counter (B3).
