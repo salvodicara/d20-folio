@@ -46,13 +46,14 @@ test("standalone: ⌘K → type → ↑↓ → ↵ is a complete keyboard flow",
   // auto-focused there by design, so type/↑↓/↵ must start from an explicit focus).
   await ensurePaletteSearchFocused(page);
 
-  await page.keyboard.type("comp"); // matches "Compendium" section
-  await page.waitForTimeout(150);
+  await page.keyboard.type("comp"); // "Compendium" section + SRD hits
+  // ≥2 results means the lazily-built SRD index has landed (the specs + monster
+  // catalogue load async on first open) — only then can ArrowDown move at all.
+  await expect(page.locator('[role="option"]').nth(1)).toBeVisible();
   const before = await ad(page);
   await page.keyboard.press("ArrowDown");
-  await page.waitForTimeout(100);
+  await expect.poll(async () => ad(page)).not.toBe(before);
   expect(before).not.toBeNull();
-  expect(await ad(page)).not.toBe(before);
 
   // Wrap-around: ArrowUp from the first lands on the last and back.
   await page.keyboard.press("Home");
@@ -89,7 +90,8 @@ test("the palette BODY owns nav: ↑↓ work even when focus is a non-input body
   await page.waitForTimeout(150);
   await ensurePaletteSearchFocused(page);
   await page.keyboard.type("comp");
-  await page.waitForTimeout(150);
+  // Wait for the async SRD index (≥2 results) — ArrowDown needs somewhere to go.
+  await expect(page.locator('[role="option"]').nth(1)).toBeVisible();
 
   // Move focus OFF the input onto a result row (inside the palette body). If the nav
   // handler were bound to the input alone, arrows would now be dead; bound to the
@@ -99,9 +101,8 @@ test("the palette BODY owns nav: ↑↓ work even when focus is a non-input body
   });
   const before = await ad(page);
   await page.locator('[role="option"]').first().press("ArrowDown");
-  await page.waitForTimeout(100);
+  await expect.poll(async () => ad(page)).not.toBe(before);
   expect(before).not.toBeNull();
-  expect(await ad(page)).not.toBe(before);
 });
 
 test("opening the bug reporter from the palette CLOSES the palette (no stuck stack)", async ({

@@ -62,12 +62,13 @@ test("arrow nav + type work in the palette opened over a modal", async ({ page }
           .querySelector('[role="combobox"]')
           ?.getAttribute("aria-activedescendant") ?? null
     );
+  // ≥2 results means the lazily-built SRD index has landed (specs + monster
+  // catalogue load async on first open) — only then can ArrowDown move at all.
+  await expect(page.locator('[role="option"]').nth(1)).toBeVisible();
   const before = await ad();
   await page.keyboard.press("ArrowDown");
-  await page.waitForTimeout(120);
-  const after = await ad();
+  await expect.poll(async () => ad()).not.toBe(before);
   expect(before).not.toBeNull();
-  expect(after).not.toBe(before);
 
   // ↵ activates the highlighted hit → navigates away (palette closes).
   await page.keyboard.press("Enter");

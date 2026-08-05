@@ -476,7 +476,10 @@ The test policy was re-cut in the same wave (`docs/CONTRIBUTING.md` → "The tes
 test must name the regression it catches, lowest-lane placement, one regression test per fix,
 superseded tests deleted with their code. Plus a Dependabot remediation: root overrides bumped
 (`undici` 7.29.0 · `brace-expansion` 5.0.9 · `fast-uri` 3.1.5, same for `functions/`) — both
-trees at ZERO known vulnerabilities, ending the red security-update runs.
+trees at ZERO known vulnerabilities, ending the red security-update runs. Verify's FIRST ambient
+run immediately earned its keep: it caught a latent e2e break sitting invisibly on `main` (the
+palette keyboard specs raced the async SRD index, which the lazy monster-catalogue gate had
+slowed past their fixed timeouts) — fixed by replacing the timeouts with readiness polls.
 
 ## Shipped — the Deterministic Combat Chronicle (2026-07-31)
 
