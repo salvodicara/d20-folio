@@ -1514,7 +1514,12 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
     `turnEconomy`. This makes a
     group↔sheet remount restore the SAME spent budget only when campaign/epoch/round/current-combatant still
     match. Its high-frequency writer merges only `round + turnEconomy`, so navigation/action persistence
-    cannot overwrite HP or conditions another member committed concurrently.
+    cannot overwrite HP or conditions another member committed concurrently. The IO contract is pinned by
+    a strict `parseCombatState(combatStateWriteData(state))` round-trip suite covering every slot/category,
+    localized action-reference shape, cadence fact, success receipt, counter, flag and active-effect
+    lifetime. At the untrusted read edge, malformed rows and empty identities are dropped, non-finite rolls
+    normalize safely, and a reaction-success receipt survives only with an actually spent Reaction and a
+    non-empty reaction id; a corrupt/stale subdoc therefore cannot reopen a success-gated follow-up.
 - **Edit gate (mirrors the rules).** Direct card correction remains the owning player/DM/admin affordance;
   a co-member writes a peer only after confirming a typed effect in `CombatResolver`, never through a
   generic character editor. Structure edits (add/remove combatant, monster, turn/round, hidden toggle)

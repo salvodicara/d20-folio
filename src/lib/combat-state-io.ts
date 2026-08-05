@@ -134,7 +134,10 @@ export function parseCombatState(data: Record<string, unknown>): CombatState {
     ...(typeof data.heroicInspiration === "boolean"
       ? { heroicInspiration: data.heroicInspiration }
       : {}),
-    initiativeRoll: typeof data.initiativeRoll === "number" ? data.initiativeRoll : null,
+    initiativeRoll:
+      typeof data.initiativeRoll === "number" && Number.isFinite(data.initiativeRoll)
+        ? data.initiativeRoll
+        : null,
     deathSaves: { successes: num(ds.successes, 0), failures: num(ds.failures, 0) },
     // Absence-safe: a subdoc written before `round` moved here (or a fresh one) reads as
     // round 1 — a natural default, never a permanent read-shim (rule 10).
@@ -163,7 +166,7 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
           if (typeof candidate !== "object" || candidate === null) return [];
           const action = candidate as Record<string, unknown>;
           const name = parseLocText(action.name);
-          if (typeof action.id !== "string" || !name) return [];
+          if (typeof action.id !== "string" || action.id.length === 0 || !name) return [];
           const economyCategory =
             action.economyCategory === "attack" ||
             action.economyCategory === "dash" ||
@@ -197,6 +200,13 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
     typeof candidate === "number" && Number.isFinite(candidate)
       ? Math.max(0, candidate)
       : 0;
+  const reactionUsed = row.reactionUsed === true;
+  const reactionUsedId =
+    reactionUsed &&
+    typeof row.reactionUsedId === "string" &&
+    row.reactionUsedId.length > 0
+      ? row.reactionUsedId
+      : null;
   return {
     key: row.key,
     selected: {
@@ -206,11 +216,13 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
     },
     attacksUsed: number(row.attacksUsed),
     attackSwingIds: Array.isArray(row.attackSwingIds)
-      ? row.attackSwingIds.filter((id): id is string => typeof id === "string")
+      ? row.attackSwingIds.filter(
+          (id): id is string => typeof id === "string" && id.length > 0
+        )
       : [],
-    reactionUsed: row.reactionUsed === true,
-    reactionUsedId: typeof row.reactionUsedId === "string" ? row.reactionUsedId : null,
-    ...(row.reactionResolutionSucceeded === true
+    reactionUsed,
+    reactionUsedId,
+    ...(reactionUsedId && row.reactionResolutionSucceeded === true
       ? { reactionResolutionSucceeded: true }
       : {}),
     movementUsedFt: number(row.movementUsedFt),
