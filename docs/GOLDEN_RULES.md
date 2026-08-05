@@ -200,8 +200,9 @@ renumber it into the 1–4 sequence. -->
     proved by MUTATION: reintroduce the defect, watch it fail, revert. (owner, 2026-07-25)
 
 14. **Every check runs once, in its one lane.** pre-commit is FAST (~5 s: changeset doc-guard +
-    lint-staged + fast unit lane); pre-push is the FULL authoritative gate (typecheck ∥ lint ∥
-    coverage, then build); deploy runs the full Playwright e2e matrix (LOCAL-primary
+    lint-staged + fast unit lane); topic-branch pre-push is instant (a recoverable remote
+    checkpoint); pre-push to `main` is the FULL authoritative gate (typecheck ∥ lint ∥ coverage,
+    then build); deploy runs the full Playwright e2e matrix (LOCAL-primary
     `just deploy`; `deploy.yml` is its dispatch-only remote twin); remote CI is the lean `ci.yml`
     push/PR gate — ambient only where it's free (self-skipping while the repo is private).
     Never add a slow check to a hook "to be safe" — move it to the deploy/CI lane; never run a

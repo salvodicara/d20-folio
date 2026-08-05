@@ -215,12 +215,14 @@ PRODUCT/UX/design rules live in `docs/PRODUCT_CONSTITUTION.md`. Violating one is
   `PROGRESS.md` current as you ship.
 - **No pull requests.** Finish line = gate green → independent `ponytail-review` convergence
   (golden rule 12) → rebase onto latest `origin/main` → `git push origin HEAD:main` → poll origin
-  for the SHA → `just wt-rm`. The merge push is the ONLY push. Full recipe: `docs/WORKTREES.md`.
+  for the SHA → `just wt-rm`. Topic-branch pushes are optional remote checkpoints; use an explicit
+  branch destination and never a bare push. Full recipe: `docs/WORKTREES.md`.
   `main` integrates; users only get code via an owner-fired deploy (golden rule 22).
 - **Git hooks** (`git config core.hooksPath .githooks` or `just setup`): **pre-commit FAST (~5s)**
-  — changeset doc-guard + `lint-staged` + fast unit lane; **pre-push = the FULL authoritative
-  gate** — typecheck ∥ `lint --max-warnings 0` ∥ `test:coverage` (≥80% lines/stmts/fns, ≥75%
-  branches), then production build. **Never `--no-verify`.**
+  — changeset doc-guard + `lint-staged` + fast unit lane; **topic-branch pre-push is instant**;
+  **pre-push to `main` = the FULL authoritative gate** — typecheck ∥ `lint --max-warnings 0` ∥
+  `test:coverage` (≥80% lines/stmts/fns, ≥75% branches), then production build. **Never
+  `--no-verify`.**
 - **Local CI:** `pnpm tsc -b && pnpm lint --max-warnings 0 && pnpm test --run && pnpm build`.
   Tests must pass with `VITE_FIREBASE_API_KEY` unset — never import `@/lib/firebase`/
   `@/lib/firestore` transitively from a unit test (mock it, or use a pure module).

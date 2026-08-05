@@ -6,9 +6,10 @@
 # THE GATE SPLIT (docs/GOLDEN_RULES.md rule 14; detail in docs/CONTRIBUTING.md
 # → "The gate split"):
 #   pre-commit  → doc-guard + lint-staged + fast unit lane            (~5 s)
-#   pre-push    → typecheck ∥ lint ∥ unit coverage (CONCURRENT), then
-#                 vite build + budget; rules tests when that surface
-#                 changed                                             (THIS hook)
+#   pre-push    → branch push: no gate (remote backup / collaboration)
+#                 main push: typecheck ∥ lint ∥ unit coverage
+#                 (CONCURRENT), then vite build + budget; rules tests when
+#                 that surface changed                                 (THIS hook)
 #   deploy      → the FULL e2e matrix + `firebase deploy`, ALWAYS owner-fired:
 #                 `just deploy` (primary, local) or
 #                 `gh workflow run deploy.yml` (the remote twin)
@@ -36,6 +37,27 @@
 # NEVER use --no-verify to skip this hook.
 
 set -euo pipefail
+
+# Git supplies every ref update on stdin as
+# "<local_ref> <local_sha> <remote_ref> <remote_sha>". Preserve the rows for
+# the change-scoped rules check below, but only pay for the authoritative gate
+# when THIS push updates main. Topic-branch pushes are recoverable remote
+# checkpoints; origin/main is the integration boundary that must stay green.
+ZERO_SHA='0000000000000000000000000000000000000000'
+pushes_main=false
+push_rows=()
+while read -r local_ref local_sha remote_ref remote_sha; do
+  push_rows+=("$local_ref $local_sha $remote_ref $remote_sha")
+  if [ "$remote_ref" = "refs/heads/main" ] && [ "$local_sha" != "$ZERO_SHA" ]; then
+    pushes_main=true
+  fi
+done
+
+if [ "$pushes_main" = false ]; then
+  echo "==> Pre-push: topic branch only — full integration gate skipped."
+  echo "    The authoritative gate runs when pushing to main."
+  exit 0
+fi
 
 echo "==> Pre-push: fast-but-safe gate (typecheck ∥ lint ∥ unit+coverage, then build · budget)..."
 echo ""
@@ -66,10 +88,10 @@ fi
 # (ordinary pushes stay fast). git feeds pre-push the ref list on stdin as
 # "<local_ref> <local_sha> <remote_ref> <remote_sha>" lines.
 RULES_SURFACE_RE='^(firestore\.rules|tests/rules/)'
-ZERO_SHA='0000000000000000000000000000000000000000'
 rules_changed=false
 
-while read -r _local_ref local_sha _remote_ref remote_sha; do
+for push_row in "${push_rows[@]}"; do
+  read -r _local_ref local_sha _remote_ref remote_sha <<<"$push_row"
   if [ "$local_sha" = "$ZERO_SHA" ]; then
     continue # branch deletion — nothing to verify
   fi

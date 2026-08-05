@@ -34,12 +34,13 @@ checks run forever** — long checks cost GitHub Actions minutes AND slow local 
 check still runs MANDATORILY before code reaches a USER, but each runs in exactly ONE lane, never
 on the local critical path, never twice.
 
-| Lane                     | What it runs                                                                                                                     | Cost                           | Where                      |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | -------------------------- |
-| **pre-commit**           | doc-guard + `lint-staged` + fast unit lane                                                                                       | ~5 s                           | `.githooks/pre-commit`     |
-| **pre-push**             | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e** | ~2 min (max of three, not sum) | `.githooks/pre-push`       |
-| **deploy** (owner-fired) | the FULL gate + the **full Playwright e2e matrix** — primary: `just deploy` (local); remote twin: `gh workflow run deploy.yml`   | full matrix, once per deploy   | `justfile`/`deploy.yml`    |
-| **remote CI** (`ci.yml`) | typecheck + lint + unit + build + budget on every push to `main` and every PR — **live since the repo went public (2026-07-17)** | one runner per event           | `.github/workflows/ci.yml` |
+| Lane                        | What it runs                                                                                                                     | Cost                           | Where                      |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | -------------------------- |
+| **pre-commit**              | doc-guard + `lint-staged` + fast unit lane                                                                                       | ~5 s                           | `.githooks/pre-commit`     |
+| **pre-push → topic branch** | no gate — topic branches are recoverable remote checkpoints                                                                      | instant                        | `.githooks/pre-push`       |
+| **pre-push → `main`**       | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e** | ~2 min (max of three, not sum) | `.githooks/pre-push`       |
+| **deploy** (owner-fired)    | the FULL gate + the **full Playwright e2e matrix** — primary: `just deploy` (local); remote twin: `gh workflow run deploy.yml`   | full matrix, once per deploy   | `justfile`/`deploy.yml`    |
+| **remote CI** (`ci.yml`)    | typecheck + lint + unit + build + budget on every push to `main` and every PR — **live since the repo went public (2026-07-17)** | one runner per event           | `.github/workflows/ci.yml` |
 
 > **Why `workers: 1` in CI, not 2.** A 2nd Playwright worker was measured and REJECTED: on the
 > 2-vCPU `ubuntu-latest` runner one worker already saturates the cores (a full-page Chromium render
@@ -342,8 +343,8 @@ in `DESIGN.md` (the single design + UX system of record) + the canonical tokens 
 2. Build from the DESIGN.md system + its shared primitives ONLY; never re-invent a surface.
 3. Reuse the shared design-system primitives so a fix propagates (one component per job; a
    bespoke restyle of an existing job is a defect).
-4. Every commit ships its own `.changeset/*.md` + passes the full pre-push CI (incl. the
-   axe a11y surface gate, light + dark).
+4. Every commit ships its own `.changeset/*.md`; the converged branch passes the full `main`
+   pre-push CI (incl. the axe a11y surface gate, light + dark).
 ```
 
 ### I'm adding a new page / form / wizard step / modal (visual surface coverage)
@@ -516,11 +517,11 @@ OUT of the plain unit suite (which never boots an emulator).
 - **`pnpm test:rules`** runs the full `/campaigns` matrix against the Firestore emulator on a
   `demo-` project (emulator-only — no real Firebase, no cost). Run it whenever you touch the
   rules.
-- **The pre-push hook is the real gate.** It runs `pnpm test:rules` automatically, but ONLY
-  when a push changes the rules surface (`firestore.rules` or `tests/rules/**`); other pushes
-  skip it (no emulator boot → fast). A rules change can never reach the remote unverified,
-  with zero Actions minutes.
-- **There is no remote rules job.** The pre-push hook is the whole gate (it needs a JDK, which
+- **The `main` pre-push hook is the real gate.** It runs `pnpm test:rules` automatically, but ONLY
+  when the integration push changes the rules surface (`firestore.rules` or `tests/rules/**`);
+  other `main` pushes skip it (no emulator boot → fast). Topic branches are checkpoints; a rules
+  change cannot enter `main` unverified, with zero Actions minutes.
+- **There is no remote rules job.** The `main` pre-push hook is the whole gate (it needs a JDK, which
   `asdf install` provides); `deploy.yml`'s e2e-gated deploy ships the rules files themselves.
 
 **Requires a JDK** (the Firestore emulator is a JVM process) plus the Firebase CLI. The JDK is
@@ -550,9 +551,10 @@ hint rather than letting an unverified rules change through — no Homebrew JDK 
 - **No `--no-verify`.** Ever. If a hook fails, fix the issue in the same commit.
 - **No dice rolling.** `Math.random()` is banned. Show formulas; the player rolls externally.
 - **Override-first.** Every derived value can be manually overridden.
-- **Small commits; merge = the only push.** Each commit is one coherent step with its
-  `.changeset/*.md`; a task reaches `origin` only as its converged merge to `main`
-  (`docs/WORKTREES.md` — no PRs, no mid-task branch pushes).
+- **Small commits; sparse milestone pushes.** Each commit is one coherent step with its
+  `.changeset/*.md`; a topic branch may reach `origin` at genuine recoverable milestones, while
+  the converged `HEAD:main` integration remains the only push that runs the full local gate
+  (`docs/WORKTREES.md` — no PRs, never a bare push).
 - **Co-update docs.** A `.changeset/*.md` must be staged on every commit (the pre-commit hook
   enforces it; it feeds `CHANGELOG.md` at release time). Keep `PROGRESS.md` current as you ship.
 - **New surface → new screenshot.** Adding a page / form / wizard step / modal means adding its
@@ -625,7 +627,7 @@ workflows live in `.github/workflows/`:
   commands ARE the SRD-only composition (the presence-based `@pack` seam,
   `scripts/content-pack-mode.ts`). The job **self-skips on a private
   mirror** (`if: !github.event.repository.private`) and has been live since the repo went public
-  (2026-07-17), gating every push/PR on the free public-repo Actions tier; the pre-push hook
+  (2026-07-17), gating every `main` push/PR on the free public-repo Actions tier; the `main` pre-push hook
   remains the authoritative local gate.
 - **Deploy** (`deploy.yml`) — `workflow_dispatch` ONLY, owner-fired (golden rule 22; never on
   push). It mirrors `just deploy` on a runner: compose the private content pack
@@ -637,7 +639,7 @@ workflows live in `.github/workflows/`:
 There is deliberately **no release workflow** — releases are owner-triggered, agent-executed
 (`just release`, synthesized changelog — golden rule 17). There is no remote pixel-diff or
 baseline-regen workflow either: the visual lane is on-demand and local (`VISUAL=1`, no committed
-baselines — see "Visual baselines" above), and the rules-emulator suite gates at pre-push.
+baselines — see "Visual baselines" above), and the rules-emulator suite gates on the `main` pre-push.
 
 Conventions both workflows keep: `node-version-file: .tool-versions` (single-source Node version —
 the asdf pin the app ships from), least-privilege `permissions: contents: read`, a `concurrency`
