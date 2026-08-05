@@ -461,6 +461,23 @@ threshold). Owner: "non possiamo mostrare tutta la lista utenti in place".
 | 3 — Chronicle           | Markdown chronicle + version history, Treasury, SharedNotes, Sessions       | ✅ Shipped (v0.15.x) — Chronicle (markdown + version history), Treasury, SharedNotes, Sessions all live. (The AI assistant / AI session recaps once scoped here were **DROPPED** — owner 2026-07-06; see _Open decisions_.)                                                                                                                                                                                |
 | 4 — Polish & Completion | PDF export, command palette, compendium, a11y, perf, onboarding             | 🔄 PDF export (faithful from-scratch recreation of the official 2024 sheet layout — the two-page sheet plus an appended **resource ledger** page listing every consumable pool (class resources + magic-item charges: name · pips-or-count · recovery cadence, paginating when long), EN/IT, copyright-clean), glossary tooltips, perf budget, Cmd+K palette shipped. Guided tour + compendium polish open |
 
+## Shipped — CI/CD re-architecture: verify ambiently, promote on demand (2026-08-05)
+
+**The pipeline no longer slows development or deployment** (owner mandate 2026-08-05: SOTA CI/CD,
+no useless checks, clear test rules). The lane map (golden rule 14, detail `docs/CONTRIBUTING.md`
+→ "The gate split"): every merge to `main` is now verified remotely, ambiently and free on the
+public runners — `ci.yml` (the SRD-only gate, re-cut as three parallel jobs, ~4 min wall) +
+the NEW `verify.yml` (the composed verdict: pack unit suite + the full 1,458-test Playwright
+matrix **sharded 8×**, ~10 min wall vs the old 48-min unsharded single runner) — and a deploy
+**promotes a verified SHA**: `deploy.yml` waits for green CI + Verify on the exact SHA then
+builds + deploys (~6 min vs the old 59-min run); `just deploy` auto-skips its local e2e leg on
+the same green-Verify condition (the manual `FOLIO_SKIP_E2E` escape hatch deleted — superseded).
+The test policy was re-cut in the same wave (`docs/CONTRIBUTING.md` → "The test policy"): every
+test must name the regression it catches, lowest-lane placement, one regression test per fix,
+superseded tests deleted with their code. Plus a Dependabot remediation: root overrides bumped
+(`undici` 7.29.0 · `brace-expansion` 5.0.9 · `fast-uri` 3.1.5, same for `functions/`) — both
+trees at ZERO known vulnerabilities, ending the red security-update runs.
+
 ## Shipped — the Deterministic Combat Chronicle (2026-07-31)
 
 **The DM's encounter tracker now writes the fight for you** (owner-ratified, hard deadline for the

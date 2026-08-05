@@ -62,19 +62,24 @@ one — reproject with the same script:
 node scripts/release-notes.mjs 0.16.5 > /tmp/rn.md && gh release edit v0.16.5 --notes-file /tmp/rn.md
 ```
 
-## Deploying — `just deploy`
+## Deploying — promote a verified SHA
 
-`just deploy` runs the full gate + the Playwright e2e matrix, then `firebase deploy`
-(hosting + Firestore/Storage rules). **Only with explicit owner permission** (golden rule 22) — never
-deploy on your own initiative.
+A deploy **promotes a SHA that CI + Verify have already proven green** (golden rule 14: every
+merge to `main` runs the SRD-only gate and the composed unit + full sharded e2e matrix remotely,
+ambiently). **Only with explicit owner permission** (golden rule 22) — never deploy on your own
+initiative.
 
-**Local is the primary path.** `just deploy` on the owner's machine is THE ship mechanism;
-`gh workflow run deploy.yml` is its remote twin (the same recipe on a GitHub runner — it composes
-the private content pack first; see `deploy.yml`'s header). While a repo is private, free-tier
-Actions minutes exhaust constantly, so never lean on the remote path to ship there.
-`FOLIO_SKIP_E2E=1 just deploy` is allowed **only when that exact commit already has a green full
-e2e run**; otherwise run the full `just deploy`, which executes the whole Playwright e2e matrix
-locally before `firebase deploy`.
+- **Remote:** `gh workflow run deploy.yml --ref main` — waits for green CI + Verify on the target
+  SHA (up to 40 min if still in flight), then composes the private content pack, builds, checks
+  the bundle budget, and runs `firebase deploy` (hosting + Firestore/Storage rules). ~6 min once
+  the verdicts are in.
+- **Local:** `just deploy` — the full local gate, then it checks origin for a green Verify run on
+  the exact HEAD SHA: green (clean tree, no pack commit newer than the run) → the local e2e leg
+  is skipped automatically; anything else → the full local Playwright matrix runs as the
+  fallback, then `firebase deploy`.
+
+If the SHA's Verify run was superseded (cancelled by a newer merge) or the content pack moved
+after it ran (a pack-only merge), re-verify first: `gh workflow run verify.yml --ref main`.
 
 ## What goes in `CHANGELOG.md`
 

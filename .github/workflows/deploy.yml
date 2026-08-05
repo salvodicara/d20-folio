@@ -1,34 +1,120 @@
 name: Deploy
 
 # Owner-fired, dispatch-ONLY — never on push (golden rule 22: deploys are always
-# explicitly owner-triggered). The PRIMARY deploy path is LOCAL: `just deploy`
-# (full gate + full Playwright e2e matrix + `firebase deploy`, run on the
-# owner's machine). This workflow is the remote equivalent of that exact recipe
-# for when a runner is preferable:  gh workflow run deploy.yml --ref main
+# explicitly owner-triggered):  gh workflow run deploy.yml --ref main
 #
-# It composes the maintainer's PRIVATE content pack before building: the pack
-# repo (salvodicara/d20-folio-content) keeps the pack under `content-pack/`,
-# which this workflow moves to the repo root — where the presence-based `@pack`
-# seam (scripts/content-pack-mode.ts) expects it — so the deployed app is the
-# full composed catalogue, not the SRD-only default. Requires two repo secrets:
-#   CONTENT_PACK_TOKEN       read access to salvodicara/d20-folio-content
-#   FIREBASE_SERVICE_ACCOUNT the Firebase deploy service-account JSON
-# plus the VITE_FIREBASE_* build secrets below.
+# PROMOTE, don't re-verify: every merge to main already runs the SRD-only gate
+# (ci.yml) and the composed unit suite + full sharded e2e matrix (verify.yml).
+# This workflow WAITS for both verdicts on the target SHA (they may still be in
+# flight when the owner fires it), requires them green, then composes the
+# private content pack, builds, checks the bundle budget, and deploys — a few
+# minutes instead of re-running a ~48-minute unsharded matrix. It also refuses
+# to promote a composition Verify never saw: a PACK-ONLY merge changes what
+# deploys without moving this repo's SHA, so the pack head must not postdate
+# the green Verify run. In either case (superseded run, stale composition),
+# re-verify the SHA first:
+#   gh workflow run verify.yml --ref main
+#
+# The local twin is `just deploy` (it also skips its local e2e leg when this
+# SHA already carries a green Verify run). Secrets: CONTENT_PACK_TOKEN (read
+# access to salvodicara/d20-folio-content), FIREBASE_SERVICE_ACCOUNT, and the
+# VITE_FIREBASE_* build secrets below.
 
 on:
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: deploy
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  verify:
+    name: require green CI + Verify
     runs-on: ubuntu-latest
-    timeout-minutes: 120 # the full unsharded e2e matrix is the long pole
+    timeout-minutes: 45
+    steps:
+      - name: Wait for this SHA's CI + Verify verdicts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # ONE 40 × 60 s wait budget shared by both workflows (fits the job
+          # timeout). A freshly-pushed SHA's runs can take a minute to register,
+          # so "no run yet" only fails after a 3-attempt grace window.
+          declare -A ok=()
+          for attempt in $(seq 1 40); do
+            waiting=""
+            for wf in ci.yml verify.yml; do
+              [ "${ok[$wf]:-}" = 1 ] && continue
+              runs="$(gh run list --repo "$REPO" --workflow "$wf" --commit "$SHA" \
+                        --json status,conclusion)"
+              if jq -e 'any(.[]; .conclusion == "success")' <<<"$runs" >/dev/null; then
+                ok[$wf]=1
+                echo "✓ $wf green"
+                continue
+              fi
+              if [ "$(jq 'length' <<<"$runs")" -eq 0 ]; then
+                if [ "$attempt" -ge 3 ]; then
+                  echo "✗ no $wf run exists for $SHA — dispatch one first:"
+                  echo "    gh workflow run $wf --ref main"
+                  exit 1
+                fi
+              elif ! jq -e 'any(.[]; .status != "completed")' <<<"$runs" >/dev/null; then
+                echo "✗ every completed $wf run for $SHA is non-green (failed or"
+                echo "  superseded/cancelled). Fix the failure, or re-verify:"
+                echo "    gh workflow run $wf --ref main"
+                exit 1
+              fi
+              waiting="$waiting $wf"
+            done
+            [ -z "$waiting" ] && break
+            echo "… waiting for:$waiting (attempt $attempt/40) — sleeping 60 s"
+            sleep 60
+          done
+          for wf in ci.yml verify.yml; do
+            [ "${ok[$wf]:-}" = 1 ] || {
+              echo "✗ $wf did not turn green within the wait budget."; exit 1; }
+          done
+
+      # The composed build = this SHA + the pack's CURRENT head. Verify composed
+      # the pack at ITS run time; a pack-only merge after that leaves a composition
+      # no workflow ever tested — refuse to promote it until Verify reruns
+      # (dispatching verify.yml composes the pack's new head against this SHA).
+      - name: Require the verified composition to still be current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACK_TOKEN: ${{ secrets.CONTENT_PACK_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # createdAt (run START), not updatedAt: a pack commit landing MID-run
+          # postdates the checked-out composition yet predates the run's end.
+          verified_at="$(gh run list --repo "$REPO" --workflow verify.yml --commit "$SHA" \
+            --json conclusion,createdAt \
+            --jq '[.[] | select(.conclusion == "success")][0].createdAt')"
+          pack_at="$(GH_TOKEN="$PACK_TOKEN" gh api \
+            repos/salvodicara/d20-folio-content/branches/main \
+            --jq .commit.commit.committer.date)"
+          echo "Verify green at: $verified_at · pack head committed at: $pack_at"
+          # Both are UTC ISO-8601, so lexical comparison orders them.
+          if [[ "$pack_at" > "$verified_at" ]]; then
+            echo "✗ the content pack moved AFTER this SHA's Verify run — the"
+            echo "  composition that would deploy was never tested. Re-verify:"
+            echo "    gh workflow run verify.yml --ref main"
+            exit 1
+          fi
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
       VITE_FIREBASE_AUTH_DOMAIN: "d20-folio.firebaseapp.com"
@@ -61,22 +147,12 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
 
-      # The full gate, mirroring `just deploy` (= `just ci` + the e2e matrix).
-      - name: Typecheck
-        run: pnpm typecheck
-      - name: Lint
-        run: pnpm lint --max-warnings 0
-      - name: Unit tests
-        run: pnpm test
+      # Build the deploy artifact (the i18n leak-lock runs inside the build);
+      # the bundle-budget guard reads the dist/ that actually ships.
       - name: Build
-        run: pnpm exec vite build
+        run: pnpm build
       - name: Bundle budget
         run: pnpm test:budget
-
-      - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
-      - name: E2E matrix (full — chromium + mobile + portrait-sw)
-        run: pnpm exec playwright test
 
       # Same targets as `just deploy`: hosting + Firestore/Storage rules.
       - name: Deploy to Firebase (hosting + rules)

@@ -9,12 +9,14 @@
 #   pre-push    → typecheck ∥ lint ∥ unit coverage (CONCURRENT), then
 #                 vite build + budget; rules tests when that surface
 #                 changed                                             (THIS hook)
-#   deploy      → the FULL e2e matrix + `firebase deploy`, ALWAYS owner-fired:
-#                 `just deploy` (primary, local) or
-#                 `gh workflow run deploy.yml` (the remote twin)
-#   remote CI   → ci.yml (typecheck + lint + unit + build + budget on every
-#                 push to main / PR) — dormant while the repo is private;
-#                 THIS local gate is the authoritative enforcer
+#   per merge   → remote, ambient, free on the public runners:
+#                 ci.yml (the SRD-only gate, push to main + PR) and
+#                 verify.yml (composed unit suite + the FULL Playwright e2e
+#                 matrix sharded across parallel runners)
+#   deploy      → PROMOTES a verified SHA, ALWAYS owner-fired: `just deploy`
+#                 (skips its local e2e leg when the SHA has a green Verify
+#                 run) or `gh workflow run deploy.yml` (waits for both
+#                 verdicts, then builds + deploys)
 #
 # WALL-CLOCK: the three long independent checks (typecheck, lint, unit+coverage)
 # run as CONCURRENT background jobs — each captures to a temp file and the
@@ -26,11 +28,12 @@
 # Build step).
 #
 # WHY e2e is NOT here: profiled 2026-06-12 — the all-projects Playwright suite
-# is ~9 min and was the entire wall-clock (the non-e2e checks total ~90 s).
-# Pushes land on origin, which is NOT user-facing; users only get code via an
-# owner-fired deploy, and BOTH deploy paths run the full e2e matrix as their
-# gate — so every behavioural check still runs MANDATORILY before code reaches
-# a user, just once per deploy instead of once per push.
+# was ~9× the wall-clock of everything else (48 min unsharded on a CI runner).
+# Pushes land on origin, which is NOT user-facing; the full matrix runs
+# remotely on EVERY merge to main (verify.yml, sharded — minutes, not hours),
+# and a deploy requires that green verdict on the exact SHA — so every
+# behavioural check still runs MANDATORILY before code reaches a user, exactly
+# once, off the local critical path.
 #
 # Install: git config core.hooksPath .githooks
 # NEVER use --no-verify to skip this hook.
@@ -182,5 +185,6 @@ pnpm test:budget
 echo ""
 
 echo "==> Pre-push OK (fast-but-safe gate green)."
-echo "    The full Playwright e2e matrix is the DEPLOY gate — the owner fires"
-echo "    \`just deploy\` (primary, local) or \`gh workflow run deploy.yml\` (remote twin)."
+echo "    The full Playwright e2e matrix runs remotely on the merge (verify.yml,"
+echo "    sharded); a deploy then PROMOTES a verified SHA — \`just deploy\` or"
+echo "    \`gh workflow run deploy.yml\` (both owner-fired, golden rule 22)."

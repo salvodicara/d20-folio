@@ -179,8 +179,8 @@ renumber it into the 1–4 sequence. -->
     fact: a pure-function test for an engine fact, ≥1 thin render test per surface for the wiring,
     memoized shared setup, table-driven per-entity families. Integrate assertions into the
     existing unit's file; a new file only for a genuinely new unit. `pnpm lint --max-warnings 0`
-    always passes — no `eslint-disable`, no `any`, no `!`. Detail: `docs/CONTRIBUTING.md` → "Smart
-    test integration".
+    always passes — no `eslint-disable`, no `any`, no `!`. Detail: `docs/CONTRIBUTING.md` → "The
+    test policy".
 
     **A guard DERIVES its inputs from the artifact, and states what it CANNOT see.** Nearly every
     real defect this project has found was hidden behind a GREEN guard, and always the same way:
@@ -200,13 +200,17 @@ renumber it into the 1–4 sequence. -->
     proved by MUTATION: reintroduce the defect, watch it fail, revert. (owner, 2026-07-25)
 
 14. **Every check runs once, in its one lane.** pre-commit is FAST (~5 s: changeset doc-guard +
-    lint-staged + fast unit lane); pre-push is the FULL authoritative gate (typecheck ∥ lint ∥
-    coverage, then build); deploy runs the full Playwright e2e matrix (LOCAL-primary
-    `just deploy`; `deploy.yml` is its dispatch-only remote twin); remote CI is the lean `ci.yml`
-    push/PR gate — ambient only where it's free (self-skipping while the repo is private).
-    Never add a slow check to a hook "to be safe" — move it to the deploy/CI lane; never run a
-    check twice on one path; **never `--no-verify`**. Lane detail + CI economy:
-    `docs/CONTRIBUTING.md` → "The gate split".
+    lint-staged + fast unit lane); pre-push is the FULL local gate (typecheck ∥ lint ∥ coverage,
+    then build) — the last line of defence before a merge lands on `main`. Every merge to `main`
+    is then verified REMOTELY, ambiently and free on the public runners: `ci.yml` (the SRD-only
+    gate, push + PR) and `verify.yml` (the composed unit suite + the FULL Playwright e2e matrix,
+    SHARDED across parallel runners — minutes of wall clock, never an hour). A deploy PROMOTES a
+    verified SHA, it never re-verifies: `deploy.yml` waits for both green verdicts on the exact
+    SHA, then builds + deploys; `just deploy` skips its local e2e leg when the SHA carries a
+    green Verify run and falls back to the full local matrix only when it doesn't (owner-fired
+    either way — rule 22). Never add a slow check to a hook "to be safe" — slow checks live in
+    the per-merge remote lane; never run a check twice on one path; **never `--no-verify`**.
+    Lane detail: `docs/CONTRIBUTING.md` → "The gate split".
 15. **Self-verify everything; the owner only judges taste.** Behavior is real only when SEEN: run
     the app, drive the surface, screenshot it (dark + light, desktop + mobile). If a surface is
     hard to reach, BUILD the seam (scenario injector, screenshot harness); if a test blocks you,

@@ -29,27 +29,30 @@ deferred.
 
 ## The gate split (SAFE but never running forever)
 
-Owner mandate (2026-06-12 — golden rule 14, docs/GOLDEN_RULES.md): **keep the gate SAFE, but never let CI
-checks run forever** — long checks cost GitHub Actions minutes AND slow local development. Every
-check still runs MANDATORILY before code reaches a USER, but each runs in exactly ONE lane, never
-on the local critical path, never twice.
+Owner mandate (2026-06-12 — golden rule 14, docs/GOLDEN_RULES.md): **keep the gate SAFE, but never
+let checks slow development or deployment**. The repo is public, so GitHub Actions minutes are
+free — the heavy lanes run REMOTELY on every merge, off the local critical path. Every check still
+runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twice on one path.
 
-| Lane                     | What it runs                                                                                                                     | Cost                           | Where                      |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | -------------------------- |
-| **pre-commit**           | doc-guard + `lint-staged` + fast unit lane                                                                                       | ~5 s                           | `.githooks/pre-commit`     |
-| **pre-push**             | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e** | ~2 min (max of three, not sum) | `.githooks/pre-push`       |
-| **deploy** (owner-fired) | the FULL gate + the **full Playwright e2e matrix** — primary: `just deploy` (local); remote twin: `gh workflow run deploy.yml`   | full matrix, once per deploy   | `justfile`/`deploy.yml`    |
-| **remote CI** (`ci.yml`) | typecheck + lint + unit + build + budget on every push to `main` and every PR — **live since the repo went public (2026-07-17)** | one runner per event           | `.github/workflows/ci.yml` |
+| Lane                          | What it runs                                                                                                                           | Cost                           | Where                          |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------ |
+| **pre-commit**                | doc-guard + `lint-staged` + fast unit lane                                                                                             | ~5 s                           | `.githooks/pre-commit`         |
+| **pre-push**                  | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e**       | ~3 min (max of three, not sum) | `.githooks/pre-push`           |
+| **per merge — CI** (`ci.yml`) | the SRD-only gate: typecheck + lint ∥ unit ∥ build + budget as **parallel jobs**, every push to `main` + every PR                      | ~4 min wall, free              | `.github/workflows/ci.yml`     |
+| **per merge — Verify**        | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners, every push to `main`    | ~10 min wall, free             | `.github/workflows/verify.yml` |
+| **deploy** (owner-fired)      | **PROMOTES a verified SHA**: requires green CI + Verify on the exact SHA, then build + budget + `firebase deploy` — no re-verification | ~6 min                         | `deploy.yml` / `justfile`      |
 
 > **Why `workers: 1` in CI, not 2.** A 2nd Playwright worker was measured and REJECTED: on the
 > 2-vCPU `ubuntu-latest` runner one worker already saturates the cores (a full-page Chromium render
 > plus the vite DEV server transforming modules on demand), so a second added ~zero throughput
 > (2.75 s/test at workers=2 vs 2.16 s/test at workers=1) and starved slow renders — `.wiz-orbs`
 > `toBeVisible` timed out and flaked the gate red. Parallelism scales through SHARDS
-> (`--shard` on isolated runners), never a shared-runner worker (`playwright.config.ts`).
+> (`--shard` on isolated runners — exactly what `verify.yml` does, 8 ways), never a shared-runner
+> worker (`playwright.config.ts`).
 
 **E2E lane shape (cost-trimmed 2026-06-13, ZERO coverage loss).** The Playwright matrix that
-`just deploy` and remote CI run is the same `playwright.config.ts`, trimmed of provable waste:
+`verify.yml` (and the local fallback in `just deploy`) runs is the same `playwright.config.ts`,
+trimmed of provable waste:
 
 - **The native-mobile project runs only the two width-dependent surface sweeps.** The project is
   allow-listed with `testMatch` to `a11y.spec.ts` and `i18n-sweep.spec.ts`; every other behavioural
@@ -67,30 +70,39 @@ on the local critical path, never twice.
   It fails toward booting (anything not provably SW-free still gets the server), so the SW journey is
   never starved of its origin.
 
-**Why e2e is the DEPLOY gate, not the pre-push gate.** Profiled 2026-06-12: the all-projects
-Playwright suite is ~9 min and was the entire pre-push wall-clock (the non-e2e checks total ~90 s).
-A push lands on `origin`, which is **not user-facing** — nothing deploys off a push (deploys are
-ALWAYS explicitly owner-triggered, golden rule 22). Users only get code through a deploy, and BOTH
-deploy paths run the full e2e matrix as their gate. So the behavioural suite still runs mandatorily
-before a user sees the code — just once per deploy instead of once per push. Nothing is lost; the
-heavy lane moved to the deploy seam.
+**Why e2e is the per-merge REMOTE lane, not the pre-push gate.** The full matrix is ~1,450 tests —
+48 min unsharded on a CI runner (measured 2026-08-03), far beyond any local critical path. A push
+lands on `origin`, which is **not user-facing** — nothing deploys off a push (deploys are ALWAYS
+explicitly owner-triggered, golden rule 22). So the matrix runs remotely on EVERY merge to `main`
+(`verify.yml`, sharded 8× → ~10 min wall clock, free on the public runners), and a deploy requires
+that green verdict on the exact SHA. The behavioural suite still runs mandatorily before a user
+sees the code — exactly once, ambiently, and every merged SHA carries a full verdict instead of
+e2e rot accumulating silently between deploys.
 
-**How to deploy (owner-fired, always).** The **primary path is local**: `just deploy` — the full
-gate + the full Playwright e2e matrix + `firebase deploy --only hosting,firestore:rules,storage`,
-run on the owner's machine. The remote twin is `gh workflow run deploy.yml --ref main`
-(dispatch-only; same recipe on a GitHub runner, composing the private content pack first — see
-`deploy.yml`'s header). When the exact SHA already has a green remote run, skip the redundant
-local e2e with `FOLIO_SKIP_E2E=1 just deploy` — ONE flow, no double-running (golden rule 14).
+**How to deploy (owner-fired, always — a deploy PROMOTES a verified SHA).** The remote path is
+`gh workflow run deploy.yml --ref main`: it WAITS for green CI + Verify on the target SHA (up to
+40 min if they're still in flight), then composes the private content pack, builds, checks the
+bundle budget, and runs `firebase deploy --only hosting,firestore:rules,storage` — ~6 min when the
+verdicts are already in. The local path is `just deploy`: the full local gate, then it checks
+origin for a green Verify run on the exact HEAD SHA — green (with a clean tree and no pack
+commit newer than the run) → the local e2e leg is skipped automatically; anything else → the
+full local matrix runs as the fallback. ONE flow, no double-running (golden rule 14). Both paths
+refuse to promote a composition Verify never saw: a **pack-only merge** changes what deploys
+without moving the public SHA, so after one, re-verify before deploying —
+`gh workflow run verify.yml --ref main` (also the fix when a run was superseded/cancelled by a
+newer merge).
 
-**Remote CI (`ci.yml`) is ambient only where it's free.** The LOCAL gate is the authoritative
-enforcer. `ci.yml` runs typecheck + lint + unit + build + budget on every push to `main` and every
-pull request — but the job self-skips while the repo is **private** (free-tier minutes), so in the
-private repo the hooks stand alone and in the public repo every push/PR is gated remotely with no
-change to the file.
+**The two remote workflows are the two compositions.** `ci.yml` verifies what the public tree IS
+(SRD-only — no secrets, no pack; parallel jobs so the wall clock is the slowest lane) on every
+push to `main` and every PR. `verify.yml` verifies what actually DEPLOYS (the composed build: it
+checks out the private pack via `CONTENT_PACK_TOKEN`, runs the composed unit suite and the full
+sharded e2e matrix) on every push to `main`. Both green = both build modes green, remotely, per
+merge (golden rule 28). The local pre-push hook remains the last line of defence BEFORE a merge
+lands; the remote lanes are the standing verdict every SHA carries after.
 
-> **Never add a slow check to a hook "to be safe."** If a check is slow, it belongs in the deploy
-> recipe or remote CI, not on every push. Keep `--cache` everywhere it helps (eslint `.eslintcache`,
-> tsc incremental) so a no-op re-run is seconds.
+> **Never add a slow check to a hook "to be safe."** If a check is slow, it belongs in the
+> per-merge remote lane (`ci.yml` / `verify.yml`), not on every push. Keep `--cache` everywhere it
+> helps (eslint `.eslintcache`, tsc incremental) so a no-op re-run is seconds.
 
 ### The convergence step (before every merge — golden rule 12)
 
@@ -133,11 +145,30 @@ module — so the parity / empty / English-in-IT rules can never differ between 
 in `scripts/i18n/flat.ts`. (`scripts/**` is the node tsconfig project, kept in strict lockstep with
 the app project so the shared detectors typecheck identically in both.)
 
-### Smart test integration (write the CHEAPEST test that pins the fact)
+### The test policy (write the CHEAPEST test that pins the fact — and only that)
 
 The gate stays fast only if the tests are written at the right altitude. A standing policy (golden
 rule 13, `docs/GOLDEN_RULES.md`) — apply it to every new and touched test:
 
+- **Every test pins a FACT someone could plausibly break — name the regression or don't write
+  it.** A test earns its place by failing when a specific, plausible future change breaks a
+  specific behaviour. If you cannot state that regression in one sentence, the test is ballast:
+  it costs every push forever and catches nothing. Never test the framework (React renders
+  children, Zustand stores update, i18next interpolates), never re-assert a static datum a
+  compile-time type already guarantees, never duplicate an assertion another lane already makes —
+  "every check runs once" (golden rule 14) applies to individual assertions too.
+- **Pick the LOWEST lane that can observe the fact.** The ladder: pure function (fast lane,
+  milliseconds) → store/hook → thin render (`.test.tsx`, jsdom — pays for the DOM + the SRD
+  eager-load) → Playwright e2e (a real browser). E2E is ONLY for what jsdom cannot see — real
+  layout/motion/scroll, focus traversal, the service worker, a full user journey across surfaces,
+  axe sweeps. An engine fact asserted through an e2e journey is the most expensive possible way to
+  pin it and duplicates the unit lane; move it down.
+- **A bug fix ships THE regression test** — one test that fails before the fix and passes after,
+  written at the seam the root cause lives in (rule 2), not at the symptom's surface. A guard
+  counts. One is enough: five tests re-proving one fix from five angles are four tests of ballast.
+- **Superseded tests are DELETED with the code they pinned** (golden rule 10). When a component,
+  format, or mechanic is removed or re-architected, its tests move or die in the same commit —
+  never kept green as fossils asserting a world that no longer exists.
 - **A GUARD DERIVES ITS INPUTS, AND SAYS WHAT IT CANNOT SEE** (golden rule 13). A guard whose
   subjects come from a list maintained beside it is a guard that agrees with itself: derive them
   from the stylesheet, the DOM, the manifest or the data, assert the derived set is non-empty, keep
@@ -369,15 +400,15 @@ in `DESIGN.md` (the single design + UX system of record) + the canonical tokens 
      • _polish-shots.spec.ts captures it for the human-review polish loop.
 ```
 
-> **The final gate (design / i18n / surface work):** the pre-push hook no longer runs e2e
-> (it moved to the deploy lane — see "The gate split"), so before you DEPLOY design / i18n /
-> surface work, run the full both-project suite — `pnpm test:e2e:all` (chromium **and** the
-> Pixel-7 mobile project, navigate-only) — and the visual lane `pnpm test:e2e:all:visual`
-> (the full `{dark,light}×{desktop,mobile}×{en,it}` pixel matrix on both projects), and
-> confirm both are green. A CSS / i18n / layout change can pass desktop yet break at 390px or
-> in the other locale, and the **deploy** gate runs **both** projects — so a regression
-> the chromium-only run misses can't reach users. `pnpm test:e2e:all` is the one command that
-> `just deploy` runs as its e2e gate; remote CI mirrors it when dispatched or on a ready PR.
+> **The final gate (design / i18n / surface work):** the pre-push hook does not run e2e — the
+> full matrix runs remotely on the merge (`verify.yml`, see "The gate split"). So before you
+> MERGE design / i18n / surface work, run the affected e2e specs locally (`pnpm test:e2e` for
+> the chromium leg, `pnpm test:e2e:all` for chromium **and** the Pixel-7 mobile project) and
+> the visual lane `pnpm test:e2e:all:visual` (the full `{dark,light}×{desktop,mobile}×{en,it}`
+> pixel matrix) when pixels moved. A CSS / i18n / layout change can pass desktop yet break at
+> 390px or in the other locale; `verify.yml` runs the full matrix on the merge and a deploy
+> requires that verdict green — so a regression the chromium-only run misses still can't reach
+> users, but catching it BEFORE the merge keeps `main` green for every parallel agent.
 
 **Why a guard:** `tests/unit/route-coverage.guard.test.ts` (a pure unit test) enumerates
 the routes in `src/app/router.tsx` and fails if any navigable route has NO surface in the
@@ -607,33 +638,37 @@ for the genuinely undecidable.
 
 ---
 
-## CI/CD pipeline (two workflows, local-first)
+## CI/CD pipeline (three workflows: verify ambiently, promote on demand)
 
-**The model: the local gate is the authoritative enforcer; remote CI is a lean twin.** Exactly two
-workflows live in `.github/workflows/`:
+**The model: every merge to `main` is fully verified remotely and ambiently (free on the public
+runners); a deploy PROMOTES a verified SHA.** The local pre-push hook is the last line of defence
+BEFORE a merge lands. Exactly three workflows live in `.github/workflows/`:
 
-- **CI** (`ci.yml`) — one job: checkout → pnpm → `pnpm install --frozen-lockfile` → typecheck →
-  lint → unit tests → `vite build` → bundle budget, on every push to `main` and every pull
-  request. It needs no secrets and no mode flags: with no `content-pack/` in the tree the plain
-  commands ARE the SRD-only composition (the presence-based `@pack` seam,
-  `scripts/content-pack-mode.ts`). The job **self-skips on a private
-  mirror** (`if: !github.event.repository.private`) and has been live since the repo went public
-  (2026-07-17), gating every push/PR on the free public-repo Actions tier; the pre-push hook
-  remains the authoritative local gate.
+- **CI** (`ci.yml`) — the SRD-only gate on every push to `main` and every pull request, as three
+  PARALLEL jobs (typecheck + lint ∥ unit ∥ build + budget) so the wall clock is the slowest lane.
+  It needs no secrets and no mode flags: with no `content-pack/` in the tree the plain commands
+  ARE the SRD-only composition (the presence-based `@pack` seam,
+  `scripts/content-pack-mode.ts`).
+- **Verify** (`verify.yml`) — the COMPOSED verdict on every push to `main` (+
+  `workflow_dispatch` to re-verify a superseded SHA): it checks out the private content pack
+  (`salvodicara/d20-folio-content` via the `CONTENT_PACK_TOKEN` secret), runs the composed unit
+  suite (pack suites included) and the **full Playwright e2e matrix sharded 8×** across parallel
+  runners (blob reports, merged into one HTML artifact when a shard fails). Together CI + Verify
+  keep BOTH build modes green remotely, per merge (golden rule 28).
 - **Deploy** (`deploy.yml`) — `workflow_dispatch` ONLY, owner-fired (golden rule 22; never on
-  push). It mirrors `just deploy` on a runner: compose the private content pack
-  (`salvodicara/d20-folio-content` via the `CONTENT_PACK_TOKEN` secret), full gate, full Playwright
-  e2e matrix, then `firebase deploy --only hosting,firestore:rules,storage` with the
-  `FIREBASE_SERVICE_ACCOUNT` secret. **The primary deploy path stays local** (`just deploy`); this
-  is the remote equivalent for when a runner is preferable.
+  push). It WAITS for green CI + Verify on the target SHA, then composes the pack, builds, checks
+  the bundle budget, and runs `firebase deploy --only hosting,firestore:rules,storage` with the
+  `FIREBASE_SERVICE_ACCOUNT` secret — no re-verification, ~6 min. The local twin is
+  `just deploy` (it skips its local e2e leg on the same green-Verify condition).
 
 There is deliberately **no release workflow** — releases are owner-triggered, agent-executed
 (`just release`, synthesized changelog — golden rule 17). There is no remote pixel-diff or
 baseline-regen workflow either: the visual lane is on-demand and local (`VISUAL=1`, no committed
 baselines — see "Visual baselines" above), and the rules-emulator suite gates at pre-push.
 
-Conventions both workflows keep: `node-version-file: .tool-versions` (single-source Node version —
-the asdf pin the app ships from), least-privilege `permissions: contents: read`, a `concurrency`
-group, `timeout-minutes`, and **every third-party action pinned to a full commit SHA**
+Conventions every workflow keeps: `node-version-file: .tool-versions` (single-source Node version —
+the asdf pin the app ships from), least-privilege `permissions` (`contents: read`, plus
+`actions: read` only where a workflow reads run verdicts), a `concurrency` group,
+`timeout-minutes`, and **every third-party action pinned to a full commit SHA**
 (`owner/repo@<40-hex> # vTag` — supply-chain hardening; re-pin with
 `gh api repos/<a>/commits/<tag> -q .sha` when bumping).

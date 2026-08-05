@@ -104,9 +104,11 @@ layer** (`src/components/ui/*` — hand-written folio components on Radix primit
 tooltip, checkbox, radio-group, switch, slot). NOT shadcn/ui — no `shadcn` package is installed.
 Zustand state · React Router v7 · Firebase (Auth Google-only, Firestore, Storage, Hosting) ·
 Vite PWA (Workbox) · react-i18next (EN + IT) · Vitest (unit) + Playwright (E2E) · ESLint + Prettier ·
-`@changesets/cli` · GitHub Actions (two lean workflows: `ci.yml` — push/PR gate, LIVE since the
-repo went public 2026-07-17; `deploy.yml` — the dispatch-only remote twin of `just deploy`. The
-local hook gate is authoritative; deploys are LOCAL-primary, `docs/RELEASE.md`). No server/SSR —
+`@changesets/cli` · GitHub Actions (three workflows — verify ambiently, promote on demand:
+`ci.yml` — the SRD-only push/PR gate, parallel jobs; `verify.yml` — the composed per-merge verdict
+(pack unit suite + the full Playwright e2e matrix sharded 8×); `deploy.yml` — dispatch-only, waits
+for green CI + Verify on the SHA then builds + deploys. The pre-push hook is the last line of
+defence BEFORE a merge; detail in `docs/CONTRIBUTING.md` → "The gate split"). No server/SSR —
 client-side SPA.
 
 **Toolchain pinned via asdf** (`.tool-versions`): **Node 24.16.0** + **Temurin 25** (the JDK the

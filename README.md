@@ -141,7 +141,7 @@ Git hooks in `.githooks/` enforce this: pre-commit is fast (staged-file lint plu
 
 ### Deployment
 
-The app deploys to Firebase Hosting at [d20-folio.web.app](https://d20-folio.web.app) (project `d20-folio`, region `europe-west1`). Deploys are always explicitly owner-triggered (never on push): `just deploy` runs the full gate + e2e matrix locally and deploys, or `gh workflow run deploy.yml` runs the same recipe on a GitHub runner. Hosting serves `dist/` as an SPA (rewrites `**` to `/index.html`), with `firestore.rules` and `storage.rules` for security; Cloud Functions deploy separately.
+The app deploys to Firebase Hosting at [d20-folio.web.app](https://d20-folio.web.app) (project `d20-folio`, region `europe-west1`). Deploys are always explicitly owner-triggered (never on push) and **promote a verified commit**: every merge to `main` is verified remotely by CI (the SRD-only gate) and Verify (the composed unit suite + the full Playwright e2e matrix, sharded), and a deploy — `gh workflow run deploy.yml`, or `just deploy` locally — requires those green verdicts on the exact commit before building and deploying. Hosting serves `dist/` as an SPA (rewrites `**` to `/index.html`), with `firestore.rules` and `storage.rules` for security; Cloud Functions deploy separately.
 
 ## Documentation
 

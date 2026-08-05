@@ -1,7 +1,8 @@
 name: CI
 
-# The one ambient gate: every push to main and every pull request runs the full
-# typecheck + lint + unit + build lane on a single runner.
+# The SRD-only ambient gate: every push to main and every pull request runs
+# typecheck + lint, the unit suite, and the production build — as PARALLEL jobs
+# so the wall clock is the slowest lane (the unit suite), not the sum.
 #
 # SRD-only by construction: the public tree has no `content-pack/`, and the
 # `@pack` alias resolves by directory PRESENCE (scripts/content-pack-mode.ts;
@@ -9,10 +10,8 @@ name: CI
 # the SRD-only composition. No mode flags, no secrets required: the unit suite
 # and the production build both pass with no Firebase env.
 #
-# Dormant while private: the free private tier's Actions minutes exhaust
-# constantly, and the local hook gate (.githooks/pre-push) is authoritative
-# there — so the job self-skips on a private repo and runs unchanged the moment
-# the repo is public.
+# The COMPOSED twin is verify.yml (pack unit suite + the full sharded e2e
+# matrix, per merge to main); deploy.yml promotes a SHA both have verified.
 
 on:
   push:
@@ -27,10 +26,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gate:
-    if: ${{ !github.event.repository.private }}
+  static:
+    name: typecheck + lint
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -45,11 +44,37 @@ jobs:
         run: pnpm typecheck
       - name: Lint
         run: pnpm lint --max-warnings 0
+
+  unit:
+    name: unit (SRD-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
       - name: Unit tests
         run: pnpm test
-      # `vite build` only — the Typecheck step above already ran `tsc -b`
-      # (`pnpm build` would run it twice); dist/ is byte-identical without it.
-      # The build also runs the i18n leak-lock, so an untranslated string fails here.
+
+  build:
+    name: build + budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      # `vite build` only — the static job runs `tsc -b`; dist/ is byte-identical
+      # without it. The build also runs the i18n leak-lock, so an untranslated
+      # string fails here.
       - name: Build
         run: pnpm exec vite build
       # The eager-bundle/precache ceilings guard (golden rule 24) reads dist/,

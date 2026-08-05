@@ -66,32 +66,55 @@ ci-srd-only:
 build:
     pnpm build
 
-# ─── Deploy (the FULL-matrix gate before users get code) ──────────────────────
-# The deploy seam is the natural backstop for the heavy lane the pre-push hook
-# DROPS (owner mandate 2026-06-12 — "keep it SAFE, but don't have CI checks run
-# forever"). Users only get code through a deploy — so the full Playwright e2e
-# matrix (chromium + mobile + portrait-sw) runs at the deploy seam, once per
-# deploy, instead of on every push. Every behavioural check still runs
-# MANDATORILY before a user sees the code. Deploys are ALWAYS explicitly
-# owner-triggered (golden rule 22) — never ambient, never on push.
+# ─── Deploy (promote a VERIFIED SHA — golden rule 14) ─────────────────────────
+# Every merge to main is already fully verified ambiently: ci.yml (SRD-only
+# gate) + verify.yml (composed unit suite + the full sharded Playwright e2e
+# matrix) run per push on the free public runners. Deploying therefore PROMOTES
+# a verified SHA rather than re-running the matrix: this recipe checks origin
+# for a green Verify run on the exact HEAD SHA and only falls back to running
+# the full local e2e matrix when that verdict is missing (offline, superseded
+# run, or a SHA that never reached origin). Every behavioural check still runs
+# MANDATORILY before a user sees the code — exactly once. Deploys are ALWAYS
+# explicitly owner-triggered (golden rule 22) — never ambient, never on push.
 #
-# THIS recipe is the PRIMARY deploy path (local); the remote twin is
-# `gh workflow run deploy.yml --ref main` (the same gate + deploy on a GitHub
-# runner — see .github/workflows/deploy.yml):
+# The remote twin is `gh workflow run deploy.yml --ref main` (waits for the
+# same two verdicts, then builds + deploys on a runner — see deploy.yml).
 #
-#   just deploy                   full gate + full e2e matrix + firebase deploy
-#   FOLIO_SKIP_E2E=1 just deploy  skip the local e2e (use ONLY when this exact
-#                                 SHA already has a green full e2e run
-#                                 — ONE flow, no double-running)
-#
-# Gated deploy: full gate + full Playwright e2e matrix + firebase deploy (reuses `just ci`)
+# Gated deploy: full local gate + verified-SHA e2e (or local fallback) + firebase deploy
 deploy: ci
     #!/usr/bin/env bash
     set -euo pipefail
-    if [ -n "${FOLIO_SKIP_E2E:-}" ]; then
-        echo "→ skipping local e2e (FOLIO_SKIP_E2E set — trusting this commit's remote CI)"
+    # Skip the local e2e leg ONLY when the remote verdict provably covers what
+    # would deploy: clean working tree, a green Verify run on this exact SHA,
+    # and no pack commit newer than that run (a pack-only merge changes the
+    # composition without moving this repo's SHA). Anything else → full local matrix.
+    sha="$(git rev-parse HEAD)"
+    skip=false
+    if [ -z "$(git status --porcelain)" ]; then
+        # createdAt (run START), not updatedAt: a pack commit landing mid-run
+        # postdates the checked-out composition yet predates the run's end.
+        verified_at="$(gh run list --workflow verify.yml --commit "$sha" \
+            --json conclusion,createdAt \
+            --jq '[.[] | select(.conclusion == "success")][0].createdAt' 2>/dev/null || true)"
+        if [ -n "$verified_at" ] && [ "$verified_at" != "null" ]; then
+            pack_at=""
+            pack_clean=true
+            if [ -e content-pack ]; then
+                pack_at="$(git -C content-pack log -1 --format=%cI 2>/dev/null || true)"
+                [ -z "$(git -C content-pack status --porcelain 2>/dev/null)" ] || pack_clean=false
+            fi
+            if [ "$pack_clean" = true ] && { [ -z "$pack_at" ] || [ "$(node -e \
+                'process.stdout.write(String(Date.parse(process.argv[1]) <= Date.parse(process.argv[2])))' \
+                "$pack_at" "$verified_at")" = "true" ]; }; then
+                skip=true
+            fi
+        fi
+    fi
+    if [ "$skip" = true ]; then
+        echo "→ skipping local e2e — clean tree, green remote Verify on $sha, pack unchanged since"
     else
-        echo "→ full e2e matrix (chromium + mobile + portrait-sw) — the deploy gate…"
+        echo "→ no covering remote verdict (dirty tree/pack, no green Verify on $sha, or the"
+        echo "  pack moved since it ran) — running the full local e2e matrix…"
         pnpm exec playwright install chromium >/dev/null 2>&1
         pnpm exec playwright test
     fi
