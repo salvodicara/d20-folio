@@ -299,17 +299,9 @@ test.describe("Combat live-play loop (cockpit)", () => {
     );
   });
 
-  test("dropping to 0 HP surfaces the header dying state + death saves", async ({
-    page,
-  }) => {
-    // 5 temp + 38 HP = 43 effective; 60 damage drops to 0 → the header becomes the
-    // dying affordance (death saves), visible on every tab.
-    const dialog = await openHpPopover(page);
-    await dialog.getByRole("spinbutton", { name: /amount/i }).fill("60");
-    await dialog.getByRole("button", { name: /^Damage$/i }).click();
-
-    await expect(page.getByText(/death saves/i).first()).toBeVisible();
-  });
+  // The knockout → dying-banner journey is pinned ONCE, in damage-dying.spec.ts
+  // (RA-03/10/11 — it continues into crit-at-0 / d20-entry / nat-20 territory);
+  // this file keeps only the fresh-0/0 reset fact below (golden rule 14).
 
   test("a fresh knockout starts a clean 0/0 dying track (stored marks don't carry over)", async ({
     page,

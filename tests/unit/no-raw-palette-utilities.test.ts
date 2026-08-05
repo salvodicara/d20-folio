@@ -45,21 +45,32 @@ const ALLOWLIST = new Set<string>([
 
 // `features/**` is scanned too: the re-homed character molecules (HpBar,
 // GameRail/ResourceRail, DeathSaves, …) and the cockpit live there now, so the
-// palette guard must follow them or coverage silently rots.
+// palette guard must follow them or coverage silently rots. The whole `app/`
+// tree and plain `.ts` modules are in scope as well (folded from the retired
+// duplicate check in folio-card-migration.guard, 2026-08-05 — ONE palette
+// guard, one allowlist, golden rule 14).
 const SCAN_DIRS = [
-  resolve(SRC, "app/routes"),
+  resolve(SRC, "app"),
   resolve(SRC, "components"),
   resolve(SRC, "features"),
 ];
 
 describe("no raw Tailwind palette utilities on player surfaces", () => {
-  const files = SCAN_DIRS.flatMap((d) => srcFiles({ under: d, exts: [".tsx"] }));
+  const files = SCAN_DIRS.flatMap((d) => srcFiles({ under: d, exts: [".ts", ".tsx"] }));
 
   const violations: Record<string, string[]> = {};
   for (const file of files) {
     const rel = relative(root, file);
     if (ALLOWLIST.has(rel)) continue;
+    // Colocated test files are not player surfaces (and a guard's own prose may
+    // name the utilities it forbids).
+    if (rel.endsWith(".test.ts") || rel.endsWith(".test.tsx")) continue;
     const src = readSrc(file);
+    // DEV-ONLY scaffolding (leads with the `// DEV-ONLY (remove before release):`
+    // marker) is dead-code-eliminated from the prod bundle and never a PLAYER
+    // surface — intentionally styled as dev chrome. The marker is the greppable
+    // removal handle, not a per-file allowlist entry that could rot.
+    if (src.startsWith("// DEV-ONLY (remove before release):")) continue;
     const hits = [...src.matchAll(RAW_PALETTE)].map((m) => m[0]);
     if (hits.length > 0) violations[rel] = [...new Set(hits)];
   }

@@ -163,16 +163,18 @@ describe("shortRest — tracker recovery", () => {
     expect(trk["fighter-indomitable"]).toEqual({ used: 1 }); // long-rest → untouched
   });
 
-  it("preserves concentration through a short rest (RAW 2024)", () => {
+  it("preserves concentration and HP through a short rest (RAW 2024)", () => {
     // Regression: short rest used to auto-clear concentration, which
     // silently dropped long-duration spells (Find Familiar, Hex, Tiny Hut,
     // Fly at high levels). Per PHB 2024 p.235 the only triggers are casting
     // another concentration spell, failing a CON save after damage, being
     // incapacitated, or dying — none of which a 1-hour light-activity rest
     // fires. The Long Rest path (sleep = incapacitated) still clears it.
-    store().setCharacter(mk({}, { concentration: conc("fly") }));
+    store().setCharacter(mk({}, { concentration: conc("fly"), hp: { current: 20 } }));
     store().shortRest();
     expect(store().character?.session.concentration).toBe(conc("fly"));
+    // HP management on a short rest is Hit-Die-driven (UI) — never auto-restored.
+    expect(store().character?.session.hp.current).toBe(20);
   });
 
   it("Pact Magic slots reset on a short rest — and ONLY them (B3: pact keys `pact-N`, normal slots persist)", () => {
@@ -237,7 +239,7 @@ describe("shortRest — tracker recovery", () => {
 });
 
 describe("longRest", () => {
-  it("restores HP to max, clears slots/trackers (NOT conditions), reduces exhaustion by 1", () => {
+  it("restores HP to max, clears slots/trackers/concentration/death saves (NOT conditions), reduces exhaustion by 1", () => {
     store().setCharacter(
       mk(
         { features: [{ srdId: "fighter-second-wind" }] },
@@ -247,6 +249,8 @@ describe("longRest", () => {
           spellSlots: { "1": { used: 2 } },
           trackers: { "fighter-second-wind": { used: 1 } },
           conditions: ["poisoned"],
+          concentration: conc("bless"),
+          deathSucc: 2,
           deathFail: 2,
         }
       )
@@ -258,8 +262,10 @@ describe("longRest", () => {
     expect(s?.exhaustion).toBe(2);
     expect(s?.spellSlots).toEqual({});
     expect(s?.trackers).toEqual({});
+    expect(s?.concentration).toBe("");
     // M6 — 2024 RAW: Long Rest doesn't blanket-clear conditions.
     expect(s?.conditions).toEqual(["poisoned"]);
+    expect(s?.deathSucc).toBe(0);
     expect(s?.deathFail).toBe(0);
   });
 

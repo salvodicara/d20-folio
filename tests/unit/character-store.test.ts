@@ -93,141 +93,14 @@ function mockCharacter(overrides?: Partial<CharacterDoc>): CharacterDoc {
   };
 }
 
-describe("characterStore — rest mechanics", () => {
+describe("characterStore — death saves & session state", () => {
   beforeEach(() => {
     useCharacterStore.getState().setCharacter(null);
   });
 
-  describe("longRest", () => {
-    it("restores HP to maximum", () => {
-      const char = mockCharacter();
-      char.session.hp.current = 20;
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().longRest();
-
-      const updated = useCharacterStore.getState().character;
-      expect(updated?.session.hp.current).toBe(44);
-    });
-
-    it("resets all spell slots", () => {
-      const char = mockCharacter();
-      char.session.spellSlots = { "1": { used: 3 }, "2": { used: 1 } };
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().longRest();
-
-      const updated = useCharacterStore.getState().character;
-      expect(updated?.session.spellSlots).toEqual({});
-    });
-
-    it("resets all trackers", () => {
-      const char = mockCharacter();
-      char.session.trackers = { rage: { used: 2 }, "second-wind": { used: 1 } };
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().longRest();
-
-      const updated = useCharacterStore.getState().character;
-      expect(updated?.session.trackers).toEqual({});
-    });
-
-    it("does NOT auto-clear conditions (M6 — 2024 RAW: Long Rest doesn't blanket-remove conditions)", () => {
-      const char = mockCharacter();
-      char.session.conditions = ["poisoned", "frightened"];
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().longRest();
-
-      const updated = useCharacterStore.getState().character;
-      // Conditions are left for the player to clear manually as their cause resolves.
-      expect(updated?.session.conditions).toEqual(["poisoned", "frightened"]);
-    });
-
-    it("clears concentration", () => {
-      const char = mockCharacter();
-      char.session.concentration = conc("bless");
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().longRest();
-
-      const updated = useCharacterStore.getState().character;
-      expect(updated?.session.concentration).toBe("");
-    });
-
-    it("reduces exhaustion by 1", () => {
-      const char = mockCharacter();
-      char.session.exhaustion = 3;
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().longRest();
-
-      const updated = useCharacterStore.getState().character;
-      expect(updated?.session.exhaustion).toBe(2);
-    });
-
-    it("does not reduce exhaustion below 0", () => {
-      const char = mockCharacter();
-      char.session.exhaustion = 0;
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().longRest();
-
-      const updated = useCharacterStore.getState().character;
-      expect(updated?.session.exhaustion).toBe(0);
-    });
-
-    it("resets death saves", () => {
-      const char = mockCharacter();
-      char.session.deathSucc = 2;
-      char.session.deathFail = 1;
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().longRest();
-
-      const updated = useCharacterStore.getState().character;
-      expect(updated?.session.deathSucc).toBe(0);
-      expect(updated?.session.deathFail).toBe(0);
-    });
-
-    it("clears temp HP", () => {
-      const char = mockCharacter();
-      char.session.hp.temp = 10;
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().longRest();
-
-      const updated = useCharacterStore.getState().character;
-      expect(updated?.session.hp.temp).toBe(0);
-    });
-  });
-
-  describe("shortRest", () => {
-    it("preserves concentration (RAW 2024 — short rest is light activity, not incapacitation)", () => {
-      // Regression: short rest used to clear concentration, which silently
-      // dropped long-duration concentration spells (Find Familiar, Hex,
-      // Tiny Hut, etc.) every time the party took a breather. RAW lists
-      // only four triggers and "Short Rest" isn't one of them.
-      const char = mockCharacter();
-      char.session.concentration = conc("hex");
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().shortRest();
-
-      const updated = useCharacterStore.getState().character;
-      expect(updated?.session.concentration).toBe(conc("hex"));
-    });
-
-    it("does not restore HP (HP management is handled by the UI)", () => {
-      const char = mockCharacter();
-      char.session.hp.current = 20;
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().shortRest();
-
-      const updated = useCharacterStore.getState().character;
-      expect(updated?.session.hp.current).toBe(20);
-    });
-
-    it("does not restore spell slots", () => {
-      const char = mockCharacter();
-      char.session.spellSlots = { "1": { used: 3 } };
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().shortRest();
-
-      const updated = useCharacterStore.getState().character;
-      expect(updated?.session.spellSlots).toEqual({ "1": { used: 3 } });
-    });
-  });
+  // Rest behaviour (long + short) is pinned ONCE, in the dedicated rest suite:
+  // tests/unit/character-store-rest.test.ts (golden rule 14 — every check runs
+  // once; the duplicated basics that lived here were removed 2026-08-05).
 
   describe("death saves", () => {
     it("adds successes correctly", () => {

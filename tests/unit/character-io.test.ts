@@ -322,19 +322,9 @@ describe("character-io — import", () => {
     expect(res.doc.shared).toBe(false);
   });
 
-  it("rejects invalid JSON", () => {
-    const res = importCharacter("not json {{{");
-    expect(res.success).toBe(false);
-    if (res.success) return;
-    expect(res.error).toMatch(/JSON/i);
-  });
-
-  it("rejects an unrecognized (schema-less) format", () => {
-    const res = importCharacter(JSON.stringify({ foo: "bar" }));
-    expect(res.success).toBe(false);
-    if (res.success) return;
-    expect(res.error).toMatch(/schema/i);
-  });
+  // Envelope rejections (invalid JSON / schema-less / future schema) are pinned
+  // ONCE, against the codec that owns them — tests/unit/character-codec.test.ts
+  // (`importCharacter` IS that same `parseCharacter`; golden rule 14).
 
   it("rejects a build without a name / class / valid level", () => {
     const noName = importCharacter(
@@ -349,13 +339,6 @@ describe("character-io — import", () => {
       JSON.stringify({ schema: 2, build: { name: "X", class: "monk", level: 99 } })
     );
     expect(badLevel.success).toBe(false);
-  });
-
-  it("rejects a future schema version", () => {
-    const res = importCharacter(JSON.stringify({ schema: 99, build: {}, state: {} }));
-    expect(res.success).toBe(false);
-    if (res.success) return;
-    expect(res.error).toMatch(/schema 99/);
   });
 });
 
