@@ -40,10 +40,10 @@ test("standalone: ⌘K → type → ↑↓ → ↵ is a complete keyboard flow",
   await gotoSheet(page);
   await page.keyboard.press("Meta+k");
   await expect(page.locator('[role="combobox"]')).toBeVisible();
-  await page.waitForTimeout(150);
 
   // Focus is the search field (auto on desktop; tapped on touch — the field is not
   // auto-focused there by design, so type/↑↓/↵ must start from an explicit focus).
+  // ensurePaletteSearchFocused itself polls for the focus to land — no fixed sleep.
   await ensurePaletteSearchFocused(page);
 
   await page.keyboard.type("comp"); // "Compendium" section + SRD hits
@@ -56,12 +56,12 @@ test("standalone: ⌘K → type → ↑↓ → ↵ is a complete keyboard flow",
   expect(before).not.toBeNull();
 
   // Wrap-around: ArrowUp from the first lands on the last and back.
+  const afterDown = await ad(page);
   await page.keyboard.press("Home");
-  await page.waitForTimeout(60);
+  await expect.poll(async () => ad(page)).not.toBe(afterDown);
   const first = await ad(page);
   await page.keyboard.press("ArrowUp");
-  await page.waitForTimeout(60);
-  expect(await ad(page)).not.toBe(first);
+  await expect.poll(async () => ad(page)).not.toBe(first);
 });
 
 test("result rows are not tab stops (focus stays in the combobox flow)", async ({
@@ -69,10 +69,9 @@ test("result rows are not tab stops (focus stays in the combobox flow)", async (
 }) => {
   await gotoSheet(page);
   await page.keyboard.press("Meta+k");
-  await page.waitForTimeout(150);
   await ensurePaletteSearchFocused(page);
   await page.keyboard.type("comp");
-  await page.waitForTimeout(150);
+  await expect(page.locator('[role="option"]').first()).toBeVisible();
   const optionTabIndexes = await page.evaluate(() =>
     [...document.querySelectorAll('[role="option"]')].map(
       (o) => (o as HTMLElement).tabIndex
@@ -87,7 +86,6 @@ test("the palette BODY owns nav: ↑↓ work even when focus is a non-input body
 }) => {
   await gotoSheet(page);
   await page.keyboard.press("Meta+k");
-  await page.waitForTimeout(150);
   await ensurePaletteSearchFocused(page);
   await page.keyboard.type("comp");
   // Wait for the async SRD index (≥2 results) — ArrowDown needs somewhere to go.
@@ -110,10 +108,10 @@ test("opening the bug reporter from the palette CLOSES the palette (no stuck sta
 }) => {
   await gotoSheet(page);
   await page.keyboard.press("Meta+k");
-  await page.waitForTimeout(150);
   await ensurePaletteSearchFocused(page);
   await page.keyboard.type("report");
-  await page.waitForTimeout(200);
+  // The report ACTION row must be in the results before ↵ can activate it.
+  await expect(page.getByRole("option", { name: /report/i }).first()).toBeVisible();
   await page.keyboard.press("Enter");
   // The report action closes the palette before opening the reporter; the palette
   // must not linger underneath with dead keyboard nav.

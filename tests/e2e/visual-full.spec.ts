@@ -10,13 +10,12 @@
  * never drift: one place declares a surface, both suites cover it.
  *
  * ── Gated via the shared visual-gate ─────────────────────────────────────────
- * Baselines are PLATFORM-SPECIFIC and none are committed. The
- * `toHaveScreenshot` assertion only fires when
- * `shouldAssertSnapshots(test.info())` is true — under `--update-snapshots`,
- * or with `VISUAL=1`. Otherwise (no flag) the spec
- * still NAVIGATES + drives each surface's ready/prepare interaction (catching
- * crashes / broken routes), it just skips the pixel diff so the absence of a
- * darwin baseline can't fail the run.
+ * Baselines are PLATFORM-SPECIFIC and none are committed. The whole suite runs
+ * ONLY when `shouldAssertSnapshots(test.info())` is true — under
+ * `--update-snapshots`, or with `VISUAL=1`. Without the flag every test skips:
+ * the navigate-only "crash smoke" it used to run duplicated the a11y + i18n
+ * sweeps, which drive the same SURFACES manifest (with prepare) across both
+ * themes, both locales, and both viewports (2026-08-05 test audit).
  *
  * ── Variant matrix ───────────────────────────────────────────────────────────
  * Per the task brief, the asserted matrix per surface is the CROSS of
@@ -116,6 +115,17 @@ for (const surface of SURFACES) {
   for (const variant of ALL_VARIANTS.filter((v) => keys.has(v.key))) {
     const name = `${surface.slug} — ${variant.locale} ${variant.theme} @ ${variant.device}`;
     test(name, async ({ page }) => {
+      // Pixel lane ONLY (2026-08-05 test audit): without VISUAL=1 this test
+      // used to run navigate-only "crash smoke" — but a11y.spec (every surface
+      // × both themes, with prepare) and i18n-sweep.spec (every surface × both
+      // locales × both viewports, with prepare) already drive the exact same
+      // manifest, so the no-flag pass duplicated ~344 navigations per run for
+      // no unique signal. Blind spot: theme×locale×viewport CROSS combos those
+      // sweeps don't pair (e.g. it+light+mobile) get no ambient crash smoke.
+      test.skip(
+        !shouldAssertSnapshots(test.info()),
+        "pixel-baseline lane — runs under VISUAL=1 / --update-snapshots only"
+      );
       await page.setViewportSize(variant.viewport);
       await seedUI(page, variant.theme, surface.edit ? "edit" : "play");
       await seedLang(page, variant.locale);

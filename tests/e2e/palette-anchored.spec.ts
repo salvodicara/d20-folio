@@ -30,6 +30,24 @@ async function box(locator: Locator) {
   return b;
 }
 
+/**
+ * Wait until the box stops changing (two consecutive polls with identical
+ * rounded y/height) — the result list grows as the async SRD index lands, so a
+ * fixed sleep raced the measurement (2026-08-05 test audit).
+ */
+async function settledBox(locator: Locator): Promise<void> {
+  let prev: string | null = null;
+  await expect
+    .poll(async () => {
+      const b = await locator.boundingBox();
+      const cur = b ? `${Math.round(b.y)}:${Math.round(b.height)}` : "none";
+      const same = cur === prev && cur !== "none";
+      prev = cur;
+      return same;
+    })
+    .toBe(true);
+}
+
 test("the header + search stay anchored while results expand downward", async ({
   page,
 }) => {
@@ -39,13 +57,15 @@ test("the header + search stay anchored while results expand downward", async ({
 
   // A broad query → many result rows → a tall box.
   await search.fill("a");
-  await page.waitForTimeout(150);
+  await expect(page.locator('[role="option"]').nth(1)).toBeVisible();
+  await settledBox(modal);
   const searchTall = await box(search);
   const modalTall = await box(modal);
 
   // A query that matches nothing → the empty state → a short box.
   await search.fill("zzzzzzzzzz");
-  await page.waitForTimeout(150);
+  await expect(page.locator('[role="option"]')).toHaveCount(0);
+  await settledBox(modal);
   const searchShort = await box(search);
   const modalShort = await box(modal);
 

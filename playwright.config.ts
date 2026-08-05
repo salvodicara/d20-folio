@@ -61,10 +61,18 @@ export default defineConfig({
     {
       name: "mobile",
       use: { ...devices["Pixel 7"] },
-      // Only these sweeps intentionally consume the project's native mobile
-      // viewport. Every other width-sensitive spec pins its own viewport under
-      // Chromium; keyboard and desktop-flow specs must not be re-run as touch.
-      testMatch: /(?:a11y|i18n-sweep)\.spec\.ts/,
+      // The specs that need the NATIVE mobile profile: the two width-dependent
+      // surface sweeps, the Signet suite (the mobile management chrome — its
+      // tests skip everywhere else), the ⌘K-chip test in mobile-layout (the
+      // rest of that file self-skips here), and the three touch-gate specs
+      // whose coarse-pointer halves only execute under this profile. Every
+      // other width-sensitive spec pins its own viewport under Chromium;
+      // keyboard and desktop-flow specs must not be re-run as touch. A spec
+      // that self-gates on `project.name === "mobile"` MUST be listed here —
+      // otherwise it silently never runs (the Signet suite shipped dead for
+      // three weeks exactly this way, caught by the 2026-08-05 test audit).
+      testMatch:
+        /(?:a11y|i18n-sweep|signet|mobile-layout|shortcuts-touch-gate|palette-touch-autofocus|palette-tap-nav)\.spec\.ts/,
     },
     // Portrait-export journey — the ONE spec that needs a live service worker (the
     // owner's bug is an opaque SW-cache entry). Its own server registers the REAL

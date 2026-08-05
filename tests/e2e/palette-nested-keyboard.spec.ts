@@ -42,16 +42,14 @@ test("arrow nav + type work in the palette opened over a modal", async ({ page }
   // Open the palette ON TOP of the modal via ⌘K.
   await page.keyboard.press("Meta+k");
   await expect(page.locator('[role="combobox"]')).toBeVisible();
-  await page.waitForTimeout(200);
 
   // The SEARCH FIELD must hold focus (not the close ✕) so typing/arrows reach it —
   // deterministically won by `onOpenAutoFocus` on desktop even stacked over a modal;
   // on touch the field is not auto-focused by design, so tap it (the real gesture).
   await ensurePaletteSearchFocused(page);
 
-  // Typing filters the results.
+  // Typing filters the results (toHaveValue auto-waits — no fixed sleep).
   await page.keyboard.type("char");
-  await page.waitForTimeout(200);
   await expect(page.locator('[role="combobox"]')).toHaveValue("char");
 
   // ↑↓ moves the roving highlight (aria-activedescendant).
@@ -70,8 +68,8 @@ test("arrow nav + type work in the palette opened over a modal", async ({ page }
   await expect.poll(async () => ad()).not.toBe(before);
   expect(before).not.toBeNull();
 
-  // ↵ activates the highlighted hit → navigates away (palette closes).
+  // ↵ activates the highlighted hit → navigates away (palette closes;
+  // toHaveCount auto-waits — no fixed sleep).
   await page.keyboard.press("Enter");
-  await page.waitForTimeout(300);
   await expect(page.locator('[role="combobox"]')).toHaveCount(0);
 });

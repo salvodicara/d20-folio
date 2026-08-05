@@ -109,8 +109,8 @@ test.describe("Rest Flow", () => {
     await expect(shortRestBtn).toBeVisible();
     await shortRestBtn.click();
 
-    // Wait for confirmation phase to render
-    await page.waitForTimeout(300);
+    // (No fixed settle needed: the isVisible timeout below waits for the
+    // confirmation phase itself.)
 
     // Cancel — if no cancel button visible, the rest might not have a cancel flow
     const cancelButton = dialog.getByRole("button", { name: /cancel|annulla/i }).first();

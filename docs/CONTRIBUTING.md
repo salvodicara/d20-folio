@@ -54,15 +54,19 @@ runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twi
 `verify.yml` (and the local fallback in `just deploy`) runs is the same `playwright.config.ts`,
 trimmed of provable waste:
 
-- **The native-mobile project runs only the two width-dependent surface sweeps.** The project is
-  allow-listed with `testMatch` to `a11y.spec.ts` and `i18n-sweep.spec.ts`; every other behavioural
-  journey already runs in chromium, and viewport-pinned sweeps such as `visual-full.spec.ts` enumerate
-  their own desktop/mobile cells. This prevents desktop-only mouse/keyboard journeys and duplicate
-  viewport-pinned cells from being replayed under touch emulation while preserving the real 390px
-  coverage that matters: `i18n-sweep` reads
-  `document.body.innerText`, which at 390px includes the `md:hidden` `MobileBottomNav` labels the
-  desktop pass never renders. Net: the mobile project drops the ~302 redundant duplicate cells, the
-  chromium project is unchanged, no coverage is lost.
+- **The native-mobile project runs only the specs that NEED the touch profile.** The project is
+  allow-listed with `testMatch` to the two width-dependent surface sweeps (`a11y.spec.ts`,
+  `i18n-sweep.spec.ts`), the Signet suite (the mobile management chrome), the ⌘K-chip test in
+  `mobile-layout.spec.ts`, and the three touch-gate specs whose coarse-pointer halves only execute
+  under Pixel-7 emulation. Every other behavioural journey runs in chromium with pinned viewports,
+  so desktop-only mouse/keyboard journeys are never replayed under touch. **A spec that self-gates
+  on `project.name === "mobile"` MUST be in that `testMatch` list** — otherwise it silently never
+  runs anywhere while reporting green (the Signet suite shipped exactly this way for three weeks;
+  caught by the 2026-08-05 test audit).
+- **`visual-full.spec.ts` runs ONLY in the pixel lane (`VISUAL=1` / `--update-snapshots`).** Its
+  no-flag navigate-only pass was retired (2026-08-05): the a11y + i18n sweeps drive the same
+  `SURFACES` manifest (with `prepare`) across both themes, locales, and viewports, so the ambient
+  gate lost ~344 duplicate navigations and zero unique signal.
 - **The service-worker dev server (`:5175`) boots ONLY for the SW projects.** `playwright.config.ts`
   reads the `--project` flags: the SW `webServer` is started only when `portrait-sw` /
   `portrait-sw-mobile` are in the run (or no `--project` filter = the full `just deploy` matrix). The

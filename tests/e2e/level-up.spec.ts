@@ -15,6 +15,25 @@ const HERO_NAME = teamFixtureName("catalion-bard");
 const HERO_FIRST = firstWord(HERO_NAME);
 import { seedLang } from "./surfaces";
 
+/**
+ * Wait until a locator's box stops moving: two consecutive polls with identical
+ * rounded y/height = the FLIP/track animation has settled. Replaces fixed
+ * "the unfold settles" sleeps, which under-wait on a saturated CI shard
+ * (2026-08-05 test audit).
+ */
+async function settled(loc: ReturnType<Page["locator"]>): Promise<void> {
+  let prev: string | null = null;
+  await expect
+    .poll(async () => {
+      const b = await loc.boundingBox();
+      const cur = b ? `${Math.round(b.y)}:${Math.round(b.height)}` : "none";
+      const same = cur === prev && cur !== "none";
+      prev = cur;
+      return same;
+    })
+    .toBe(true);
+}
+
 async function openWizard(page: Page) {
   // DETERMINISM (full-suite contention, 2026-07-01): mirror a reduced-motion OS
   // user BEFORE the first paint so `data-motion="reduced"` collapses every
@@ -199,10 +218,10 @@ test.describe("fb3: asks-column ledger + chrome rhythm + mobile nav", () => {
     await row.click();
     await page.getByRole("button", { name: /Scegli Fabbricante/ }).click();
     await expect(page.locator(".wiz-entry[data-chosen]")).toBeVisible();
-    // Wait for the asks track to settle.
+    // Wait for the asks track to settle (stable-box poll, never a fixed sleep).
     const asksList = page.locator(".wiz-spread-asks .wiz-asks .wiz-list").first();
     await expect(asksList).toBeVisible();
-    await page.waitForTimeout(400);
+    await settled(asksList);
 
     const m = await asksList.evaluate((el) => {
       const rows = [...el.querySelectorAll<HTMLElement>(".wiz-row")];
@@ -238,15 +257,15 @@ test.describe("fb3: asks-column ledger + chrome rhythm + mobile nav", () => {
     const row = page.locator(".wiz-row").filter({ hasText: "Fabbricante" }).first();
     await row.scrollIntoViewIfNeeded();
     await row.click();
-    await page.waitForTimeout(450); // the unfold settles
     const entry = page.locator('[data-fid="crafter"]');
+    await settled(entry); // the unfold settles
     const reading = await entry.boundingBox();
     expect(reading).not.toBeNull();
 
     // Commit — the asks track opens INSIDE the measured height lock.
     await page.getByRole("button", { name: /Scegli Fabbricante/ }).click();
     await expect(page.locator(".wiz-entry[data-chosen]")).toBeVisible();
-    await page.waitForTimeout(450); // the track morph settles
+    await settled(entry); // the track morph settles
     const chosenBox = await entry.boundingBox();
     expect(
       Math.abs((chosenBox?.height ?? 0) - (reading?.height ?? -1))
@@ -257,7 +276,7 @@ test.describe("fb3: asks-column ledger + chrome rhythm + mobile nav", () => {
     await expect(release).toBeVisible();
     // …and releasing reverses to the SAME height too.
     await release.click();
-    await page.waitForTimeout(450);
+    await settled(entry);
     const releasedBox = await entry.boundingBox();
     expect(
       Math.abs((releasedBox?.height ?? 0) - (reading?.height ?? -1))
