@@ -603,6 +603,11 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
         {
           type: "bonus",
           trackerCost: 1,
+          heal: {
+            dice: "classSpecific:martialArtsDie",
+            plus: { kind: "ability-mod", ability: "WIS" },
+          },
+          targeting: { affinity: "self", maxTargets: 1 },
         },
       ],
     },

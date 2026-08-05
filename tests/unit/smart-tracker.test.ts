@@ -1013,6 +1013,27 @@ describe("resolveActions — S8 dice self-heal carries a roll-entry apply field"
     expect(sw?.summary.healApply).toEqual({ dice: "1d10", bonus: 3 });
   });
 
+  it("Open Hand Wholeness of Body applies the Martial Arts die + Wisdom to self", () => {
+    const char = makeChar({
+      classes: [{ classId: "monk", subclassId: "open-hand", level: 6 }],
+      abilityScores: { STR: 10, DEX: 16, CON: 14, INT: 10, WIS: 16, CHA: 8 },
+      features: [{ srdId: "monk-open-hand-wholeness-of-body" }],
+    });
+    const wholeness = localizeActions(char, "en").find(
+      (action) => action.id === "monk-open-hand-wholeness-of-body-bonus"
+    );
+
+    expect(wholeness).toMatchObject({
+      type: "bonus",
+      costTracker: "monk-open-hand-wholeness-of-body",
+      trackerCost: 1,
+      summary: {
+        healApply: { dice: "1d8", bonus: 3 },
+        targeting: { affinity: "self", maxTargets: 1 },
+      },
+    });
+  });
+
   it("a FLAT/string heal (potion) carries NO healApply — only dice-action heals do", () => {
     // A potion sets `summary.healing` (a string), never the structured `heal` —
     // so it gets no roll-entry apply field (it isn't a self-targeting feature heal).

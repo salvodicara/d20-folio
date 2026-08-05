@@ -183,6 +183,12 @@ at the OWNING-class level (`martialArtsDie` → d8 at Monk L10, scaling); `plus`
 applies `entered × multiplier + plus` with max-wins Temporary-HP semantics after review; it never rolls.
 Stable `SrdActionDef.id` values allow free Patient Defense and its paid Focus variant to remain
 independent actions; the paid action's `tempHpRoll.fromLevel` adds only the L10 rider.
+The same generic fields cover standalone feature effects: Open Hand Wholeness of Body declares
+`heal:{ dice:"classSpecific:martialArtsDie", plus:{kind:"ability-mod",ability:"WIS"} }`, while
+Undead Form of Dread declares `tempHpRoll:{rolls:1,die:"d10",plus:{kind:"class-level",classId:"warlock"}}`.
+Both enter the identical reviewed roll/apply/undo transaction; the feature name never participates in
+runtime resolution. `WhileActiveDuration.endsEarlyOn` is shared by maintained and timed states, so
+condition-driven expiry (Rage or Form of Dread becoming Incapacitated) uses the same lifecycle check.
 `ActionTargeting.maxTargets` can be an ability id (modifier, minimum one), and `conditionRemoval`
 declares selectable conditions ended by the
 same reviewed transaction. The identical fields exist on custom `ActionData`; imported action overrides

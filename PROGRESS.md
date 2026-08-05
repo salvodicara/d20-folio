@@ -3423,6 +3423,12 @@ weaponAttackAbilities, isMonkMelee})` (`compute.ts`, REPLACING `resolveWeaponSta
       state) active. Rest completion now expires declared lifetimes generically, clears their timer /
       boundary / cast-level provenance, preserves unknown homebrew toggles, and runs Long-Rest
       Concentration through the canonical teardown so self-Polymorph cannot survive sleep.
+- [x] **Rolled feature-effect closure (2026-08-04)** — the last two recorded dice-entry omissions now
+      use the existing resolver rather than descriptive prose: Open Hand Wholeness of Body applies the
+      reviewed Martial Arts die + WIS heal to self, and Undead Form of Dread applies reviewed 1d10 plus
+      Warlock level Temporary HP, clears Frightened and arms its exact one-minute/ten-round lifetime
+      with early Incapacitated expiry.
+      Targeting, resource spend, max-wins Temp HP, log and undo remain the shared transaction.
 
 ## Deferred / owner-gated
 

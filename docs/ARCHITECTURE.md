@@ -688,7 +688,11 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   Rolled feature effects use the same path: `SrdActionDef` / homebrew `ActionData` project structured
   healing, Temporary HP, condition removal and targeting into the flat action summary before React sees
   them. Class-table dice sentinels and ability/PB-derived target limits resolve to concrete values at that
-  boundary; one shared roll may then heal or ward several reviewed targets. Stable per-action ids permit
+  boundary; one shared roll may then heal or ward several reviewed targets. Wholeness of Body and Form of
+  Dread are data-only consumers of that same boundary (rolled heal vs rolled Temporary HP + condition
+  removal), and a timed `while-active` declaration arms Form of Dread's ten-round expiry through the
+  ordinary lifecycle engine; the same duration metadata ends it early on Incapacitated. Stable
+  per-action ids permit
   multiple variants with the same action economy and let `actionOverrides` replace labels, effects and
   targets without a feature-name branch. The v3 codec preserves those overrides even when the base class
   feature is otherwise inferred, so reload/export cannot silently revert a homebrew table ruling.

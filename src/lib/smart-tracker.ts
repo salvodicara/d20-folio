@@ -4995,7 +4995,9 @@ function resolveFeatureActions(
         if (g.type === "while-active") {
           activatesKey = g.activeKey;
           activationEndsEarlyOn =
-            g.duration?.kind === "maintained" ? g.duration.endsEarlyOn : undefined;
+            g.duration?.kind === "maintained" || g.duration?.kind === "timed"
+              ? g.duration.endsEarlyOn
+              : undefined;
           activeTurnBoundary =
             g.duration?.kind === "turn-boundary"
               ? { phase: g.duration.phase, turns: g.duration.turns }

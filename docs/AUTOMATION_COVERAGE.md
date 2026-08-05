@@ -305,12 +305,12 @@ Audited against `http://dnd2024.wikidot.com/monk:main`. The Focus engine (pool t
 
 #### Warrior of the Open Hand
 
-| Entity              | Lvl | Status    | Modeled via                                 | Notes                                                                                                           |
-| ------------------- | --- | --------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Open Hand Technique | 3   | narrative | desc only                                   | Addle/Push/Topple saves (inflicts-condition=prose); desc is 2024 RAW (Addle = "can't make Opportunity Attacks") |
-| Wholeness of Body   | 6   | automated | bonus action + own `tracker{WIS/long-rest}` | 2024 RAW: WIS/LR own tracker, NO Focus cost (`monk.ts:537`)                                                     |
-| Fleet Step          | 11  | automated | bonus action                                | 2024 RAW: L11 (was data-declared L10), Step of the Wind after another Bonus Action (`monk.ts:558`)              |
-| Quivering Palm      | 17  | automated | free action, focus ×4                       | desc is 2024 RAW: CON save, 10d12 Force (half on success) — was stale 2014 (Necrotic/0-HP/10d10)                |
+| Entity              | Lvl | Status    | Modeled via                                                                                | Notes                                                                                                                       |
+| ------------------- | --- | --------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Open Hand Technique | 3   | narrative | desc only                                                                                  | Addle/Push/Topple saves (inflicts-condition=prose); desc is 2024 RAW (Addle = "can't make Opportunity Attacks")             |
+| Wholeness of Body   | 6   | automated | bonus action + own `tracker{WIS/long-rest}` + `heal{Martial Arts die + WIS}` + self target | 2024 RAW: WIS/LR own tracker, NO Focus cost; the shared resolver applies the entered die result + WIS with undo (`monk.ts`) |
+| Fleet Step          | 11  | automated | bonus action                                                                               | 2024 RAW: L11 (was data-declared L10), Step of the Wind after another Bonus Action (`monk.ts:558`)                          |
+| Quivering Palm      | 17  | automated | free action, focus ×4                                                                      | desc is 2024 RAW: CON save, 10d12 Force (half on success) — was stale 2014 (Necrotic/0-HP/10d10)                            |
 
 ### class:paladin
 

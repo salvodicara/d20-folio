@@ -124,6 +124,8 @@ export type WhileActiveDuration =
         minutes: number;
         maxRounds: number;
       }>;
+      /** Conditions/states that end the timed effect before its cap. */
+      endsEarlyOn?: ReadonlyArray<string>;
     }
   | {
       /**
