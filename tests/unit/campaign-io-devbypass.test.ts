@@ -208,7 +208,8 @@ describe("campaign-io under dev bypass", () => {
 
     await applyDeclaredCombatEffects(
       campaign.id,
-      [{ kind: "damage", targetId: "pc-a", amount: 30 }],
+      // CombatResolver has already applied the ward's resistance: 30 → 15.
+      [{ kind: "damage", intake: "resolved", targetId: "pc-a", amount: 15 }],
       {
         actorId: "pc-b",
         action: { custom: "table action" },
@@ -301,7 +302,14 @@ describe("campaign-io under dev bypass", () => {
 
     await applyDeclaredCombatEffects(
       campaign.id,
-      [{ kind: "damage", targetId: caster.combatantId, amount: 5 }],
+      [
+        {
+          kind: "damage",
+          intake: "resolved",
+          targetId: caster.combatantId,
+          amount: 5,
+        },
+      ],
       {
         actorId: attacker.id,
         action: { custom: "table attack" },

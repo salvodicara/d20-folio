@@ -589,10 +589,27 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   - **Incoming-damage reactions.** `SrdActionDef.damageReduction` declares a physical die, optional
     ability/owning-class-level bonus and level-scaled eligible types. The shared resolver asks only for
     the observed incoming amount/type and rolled die, subtracts the modeled bonus, then sends the
-    remainder through the same defense/Temporary-HP pipeline above. A separate durable success receipt
-    gates `requiresSuccessfulActionThisTurn` follow-ups and survives route/reload; it is true only when
-    the reaction itself reduced the pre-defense remainder to 0.
-  - **0-HP rules** (`characterStore.applyDamage(amount, { crit })`). Crossing to 0 = a fresh dying
+    remainder through the same defense/Temporary-HP pipeline above. A target-bound
+    `damage-reduction` outcome receipt records incoming/reduced/remaining amounts; a typed
+    `requiresOutcomeThisTurn` predicate can require `negated` only when positive incoming damage reached
+    zero. The receipt is committed with the spent Reaction and survives route/reload without copying a
+    success boolean onto the action definition.
+  - **Reviewed outcome receipts** (`types/combat-outcome.ts`, `lib/combat-outcomes.ts`). Attacks, saves and
+    damage reduction compile to immutable locale-free facts keyed by one monotonic turn occurrence, stable
+    action id and exact target. Exact per-instance ordering is recorded only from exact table input;
+    count-only multiattacks use `instance: null` plus a count. Predicates can require an exact action or any
+    matching action, and queries retain matching target bindings. Selected actions, Attack swings and the
+    spent Reaction own occurrence ids; strict IO drops dangling, malformed or cross-action receipts.
+    Critical hits are modeled but never inferred—an explicit resolver input is still required before the
+    production compiler emits one.
+  - **Canonical PC damage transition** (`lib/combat-transition.ts → reducePcDamage`). The local
+    character-store adapter and the remote campaign transaction adapter reduce the same state through this
+    one locale/IO-free kernel. Every packet declares `intake.stage`: `raw` still needs typed defenses;
+    `resolved` is already post-defense and must never be defended again. Persistent consequences still run
+    at either stage: Temporary HP, post-resistance damage transfer, successful-hit retaliation and typed
+    zero-HP floors. A floor returns exact consumed occurrence ids and transitional state keys; matching
+    `activeKey` representations are consumed together so one Death Ward cannot fire twice locally.
+  - **0-HP rules** (owned by the canonical transition, not either adapter). Crossing to 0 = a fresh dying
     state (track reset 0/0) + the Unconscious condition (SRD "Falling Unconscious"; shed by the
     heal-from-0 seam in `setHP` and by the at-zero "drop to 1 instead" interrupt); remainder past
     temp + current ≥ effective max = massive-damage instant death (3 failures — the ONE derived

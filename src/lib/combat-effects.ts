@@ -97,6 +97,10 @@ export function currentHpDeltaForEffect(effect: ActiveCombatEffect): number {
 }
 
 export interface PersistentDamageInput {
+  /** Whether `incomingDamage` still needs target defenses or is already the
+   * post-defense amount accepted by the resolver. Persistent consequences such
+   * as transfer and zero-HP floors run at either stage. */
+  intake: "raw" | "resolved";
   currentHp: number;
   tempHp: number;
   incomingDamage: number;
@@ -105,9 +109,13 @@ export interface PersistentDamageInput {
   damageType?: DamageType;
   damageSource?: DamageSource;
   defenses?: DamageDefenses;
+  /** Active state-backed floors that have not yet migrated to an occurrence. */
+  stateZeroHpFloors?: ReadonlyArray<{ stateKey: string; hitPoints: number }>;
 }
 
 export interface PersistentDamageOutcome {
+  /** Damage after defenses, before a zero-HP floor changes the HP reduction. */
+  resolvedDamage: number;
   /** Damage delivered to the ordinary temp-HP/current-HP reducer. */
   targetDamage: number;
   /** Remote source-side damage caused by target effects such as Warding Bond. */
@@ -118,6 +126,8 @@ export interface PersistentDamageOutcome {
   }>;
   /** Exact one-shot instances to revoke atomically with the damage. */
   consumedEffectIds: ReadonlyArray<string>;
+  /** Exact state-backed floors to switch off atomically with the damage. */
+  consumedStateKeys: ReadonlyArray<string>;
 }
 
 export interface PersistentHitInput {
@@ -228,6 +238,76 @@ export function healingBlockedByEffects(
   );
 }
 
+/** Fold context-free defensive grants into an existing defense view. Numeric,
+ * unconditional flat reductions are safe here; PB- or equipment-gated
+ * reductions still require character context and stay with the character
+ * aggregate. */
+export function mergeDamageDefenseGrants(
+  base: DamageDefenses,
+  grants: ReadonlyArray<Grant>
+): DamageDefenses {
+  let allDamageResistance = base.allDamageResistance;
+  const resistances = new Set(base.resistances);
+  const immunities = new Set(base.immunities);
+  const vulnerabilities = new Set(base.vulnerabilities);
+  const sourceResistances = new Set(base.sourceResistances);
+  const flatReductions = [...base.flatReductions];
+
+  for (const grant of grants) {
+    switch (grant.type) {
+      case "all-damage-resistance":
+        allDamageResistance = true;
+        break;
+      case "damage-resistance":
+        resistances.add(grant.damageType);
+        break;
+      case "damage-immunity":
+        immunities.add(grant.damageType);
+        break;
+      case "damage-vulnerability":
+        vulnerabilities.add(grant.damageType);
+        break;
+      case "damage-resistance-source":
+        sourceResistances.add(grant.source);
+        break;
+      case "flat-damage-reduction":
+        if (
+          grant.condition === undefined &&
+          typeof grant.amount === "number" &&
+          Number.isFinite(grant.amount) &&
+          grant.amount > 0
+        ) {
+          flatReductions.push({
+            damageTypes: grant.damageTypes,
+            amount: grant.amount,
+          });
+        }
+        break;
+    }
+  }
+
+  return {
+    allDamageResistance,
+    resistances,
+    immunities,
+    vulnerabilities,
+    sourceResistances,
+    flatReductions,
+  };
+}
+
+/** Merge defenses projected by exact live effect occurrences into a target's
+ * durable defenses without knowing any spell or feature ids. */
+export function damageDefensesByEffects(
+  base: DamageDefenses,
+  effects: ReadonlyArray<ActiveCombatEffect>
+): DamageDefenses {
+  return mergeDamageDefenseGrants(
+    base,
+    effects.flatMap((effect) => resolveCombatEffectGrants(effect))
+  );
+}
+
 /** Net temporary walking-speed delta projected by live target effects. */
 export function speedAdjustmentByEffects(
   effects: ReadonlyArray<ActiveCombatEffect>
@@ -311,37 +391,57 @@ export function resolvePersistentDamage(
   const resistsAll = rules.some(({ grants }) =>
     grants.some((grant) => grant.type === "all-damage-resistance")
   );
-  const postResistance = input.defenses
-    ? resolveDamageIntake(
-        [
-          {
-            amount: incomingDamage,
-            ...(input.damageType ? { type: input.damageType } : {}),
-            ...(input.damageSource ? { source: input.damageSource } : {}),
-          },
-        ],
-        {
-          ...input.defenses,
-          allDamageResistance: input.defenses.allDamageResistance || resistsAll,
-        }
-      ).netTotal
-    : resistsAll
-      ? Math.floor(incomingDamage / 2)
-      : incomingDamage;
+  const postResistance =
+    input.intake === "resolved"
+      ? incomingDamage
+      : input.defenses
+        ? resolveDamageIntake(
+            [
+              {
+                amount: incomingDamage,
+                ...(input.damageType ? { type: input.damageType } : {}),
+                ...(input.damageSource ? { source: input.damageSource } : {}),
+              },
+            ],
+            {
+              ...input.defenses,
+              allDamageResistance: input.defenses.allDamageResistance || resistsAll,
+            }
+          ).netTotal
+        : resistsAll
+          ? Math.floor(incomingDamage / 2)
+          : incomingDamage;
   const transfers = rules.flatMap(({ effect, grants }) =>
     postResistance > 0 && grants.some((grant) => grant.type === "damage-transfer")
       ? [{ target: effect.actor, amount: postResistance, effectId: effect.id }]
       : []
   );
-  const floor = rules
-    .flatMap(({ effect, grants }) =>
-      grants.flatMap((grant) =>
-        grant.type === "zero-hp-floor"
-          ? [{ effect, hitPoints: Math.max(1, Math.round(grant.hitPoints)) }]
-          : []
-      )
+  const effectFloors = rules.flatMap(({ effect, grants }) =>
+    grants.flatMap((grant) =>
+      grant.type === "zero-hp-floor"
+        ? [
+            {
+              kind: "effect" as const,
+              id: effect.id,
+              activeKey:
+                effect.payload.kind === "grant-group"
+                  ? effect.payload.activeKey
+                  : undefined,
+              hitPoints: Math.max(1, Math.round(grant.hitPoints)),
+            },
+          ]
+        : []
     )
-    .sort((a, b) => b.hitPoints - a.hitPoints)[0];
+  );
+  const floor = [
+    ...effectFloors,
+    ...(input.stateZeroHpFloors ?? []).map((entry) => ({
+      kind: "state" as const,
+      id: entry.stateKey,
+      activeKey: entry.stateKey,
+      hitPoints: Math.max(1, Math.round(entry.hitPoints)),
+    })),
+  ].sort((a, b) => b.hitPoints - a.hitPoints)[0];
   const triggersFloor = Boolean(
     floor &&
     currentHp > 0 &&
@@ -354,13 +454,39 @@ export function resolvePersistentDamage(
       : postResistance;
   const tempHpDepleted = tempHp > 0 && targetDamage >= tempHp;
   const depletedTempHpEffectIds = tempHpDepleted ? tempHpBoundEffectIds(effects) : [];
+  // A local active-key and its campaign projection can briefly describe the SAME
+  // ward. Consume both authorities when that shared key wins; consuming only one
+  // lets the duplicate fire again on the next local reduction.
+  const mirroredStateKey =
+    triggersFloor && floor
+      ? (input.stateZeroHpFloors ?? []).find(
+          (entry) => entry.stateKey === floor.activeKey
+        )?.stateKey
+      : undefined;
+  const mirroredEffectId =
+    triggersFloor && floor
+      ? effectFloors.find((entry) => entry.activeKey === floor.activeKey)?.id
+      : undefined;
   return {
+    resolvedDamage: postResistance,
     targetDamage,
     transfers,
     consumedEffectIds: [
-      ...(triggersFloor && floor ? [floor.effect.id] : []),
+      ...(triggersFloor && floor?.kind === "effect"
+        ? [floor.id]
+        : mirroredEffectId
+          ? [mirroredEffectId]
+          : []),
       ...depletedTempHpEffectIds,
-    ],
+    ].filter((id, index, ids) => ids.indexOf(id) === index),
+    consumedStateKeys:
+      triggersFloor && floor
+        ? floor.kind === "state"
+          ? [floor.id]
+          : mirroredStateKey
+            ? [mirroredStateKey]
+            : []
+        : [],
   };
 }
 

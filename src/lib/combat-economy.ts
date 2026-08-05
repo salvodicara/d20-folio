@@ -26,23 +26,6 @@ export interface EconomyTurnAction {
   economyCategory?: EconomyActionCategory;
 }
 
-/** A reviewed follow-up reads the durable success receipt, so navigation cannot
- * reopen an invalid action (Deflect Attacks redirect). */
-export function successfulActionPrerequisiteMet(
-  action: { requiresSuccessfulActionThisTurn?: string },
-  committed: ReadonlyArray<{ id: string; resolutionSucceeded?: true }>,
-  reaction?: { id: string | null; resolutionSucceeded: boolean }
-): boolean {
-  const prerequisite = action.requiresSuccessfulActionThisTurn;
-  return (
-    prerequisite === undefined ||
-    committed.some(
-      (entry) => entry.id === prerequisite && entry.resolutionSucceeded === true
-    ) ||
-    (reaction?.id === prerequisite && reaction.resolutionSucceeded)
-  );
-}
-
 interface ActionSlot {
   allowed: ReadonlySet<EconomyActionCategory> | null;
   maxAttacks: number;

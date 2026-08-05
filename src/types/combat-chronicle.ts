@@ -56,7 +56,9 @@ export type CombatChronicleEvent =
       kind: "hp-damage";
       /** The combatant that took the hit (`pc-<uid>` / `monster-<n>`). */
       targetId: string;
-      /** Incoming damage (may exceed HP lost when temp HP absorbed some). */
+      /** Current + Temporary HP actually removed. This landed amount is the exact
+       *  reversible delta; the pre-floor/overkill incoming amount belongs to the
+       *  actor's local combat log instead. */
       amount: number;
       /** Portion of `amount` absorbed by temporary HP, for exact one-tap reversal. */
       tempAbsorbed?: number;

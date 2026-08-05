@@ -365,7 +365,11 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
           type: "free",
           costTracker: "monk-focus",
           trackerCost: 1,
-          requiresSuccessfulActionThisTurn: "monk-deflect-attacks-reaction",
+          requiresOutcomeThisTurn: {
+            actionId: "monk-deflect-attacks-reaction",
+            kind: "damage-reduction",
+            result: "negated",
+          },
           maxUsesPerTurn: 1,
           saveAbility: "DEX",
           saveDcAbility: "WIS",

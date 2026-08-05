@@ -82,6 +82,25 @@ stable source id, and stale commit/redo proposals cannot overdraw live slots or 
 deterministic corpus audit follows as separate, truth-gated milestones; queued UI dogfood remains after
 engine closure. Nothing from this sweep merges to `main` without the owner's final permission.
 
+**Canonical PC damage transition CLOSED on branch (2026-08-05):** open-sheet/solo damage and
+fresh-read peer-PC damage now share one pure reducer for resolved-vs-raw intake, Temporary HP, damage at
+0 HP, Stable reset, critical failures, knockout/massive death, Unconscious, Warding Bond transfer and
+Death Ward consumption. Focused adapter-parity tests execute the same packets through both production
+paths. A duplicated local active key + projected occurrence is consumed together and removed from the
+current projection, preventing a second local trigger. **Next orchestration seam:** self-target encounter
+damage must revoke/restore the consumed occurrence in the authoritative campaign ledger and apply/reverse
+returned partner transfers through the shared transaction. The current optimistic projection filter is
+intentionally not claimed as reload-durable or as the complete inverse.
+
+**Occurrence-based combat outcomes CLOSED on branch (2026-08-05):** reviewed attacks, saves and
+damage-reduction reactions now emit locale-free receipts keyed by exact turn, action use, target and,
+when the table supplied it, exact instance. Aggregate hit counts remain explicitly aggregate instead of
+inventing ray/swing order. A monotonic persisted ordinal keeps repeated uses distinct; actions, Attack
+swings and the spent Reaction own their occurrence ids, so hydration rejects dangling/forged receipts and
+undo/re-arm removes only the matching facts. Follow-ups use typed predicates (`requiresOutcomeThisTurn`),
+with Deflect Attacks redirect migrated off its former coarse success boolean. Critical hits are admitted by
+the engine contract but remain unproduced until an explicit table input is added to the resolver UI.
+
 **Live-team truth audit — activation-scoped resources CLOSED on branch (2026-08-04):** Santaera's
 future Zealot progression exposed a false rest approximation: Fanatical Focus is once per Rage, not
 once per Short Rest. `TrackerSpec.refreshOnActivationOf` now declares that lifecycle using the same

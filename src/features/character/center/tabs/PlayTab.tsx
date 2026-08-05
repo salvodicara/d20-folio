@@ -125,7 +125,7 @@ import {
   localizeTrackerUnit,
 } from "@/lib/views/tracker-view";
 import { useTurnEconomy, getEconomySlot, type PreparedCommit } from "../useTurnEconomy";
-import { successfulActionPrerequisiteMet } from "@/lib/combat-economy";
+import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
 import {
@@ -319,12 +319,14 @@ export function PlayTab() {
   // group's token is spent): the Attack group's swung-card ids, and the id of
   // the reaction that spent the round's Reaction. Consistent with the Action /
   // Bonus slots' `selected` occupancy so all three groups mark identically.
-  const attackSwingIds = useCombatStore((s) => s.attackSwingIds);
+  const attackSwings = useCombatStore((s) => s.attackSwings);
+  const attackSwingIds = useMemo(
+    () => attackSwings.map(({ actionId }) => actionId),
+    [attackSwings]
+  );
   const reactionUsed = useCombatStore((s) => s.reactionUsed);
   const reactionUsedId = useCombatStore((s) => s.reactionUsedId);
-  const reactionResolutionSucceeded = useCombatStore(
-    (s) => s.reactionResolutionSucceeded
-  );
+  const outcomeReceipts = useCombatStore((s) => s.outcomeReceipts);
   const round = useCombatStore((s) => s.round);
   const nextAttackAdvantage = useCombatStore((s) => s.nextAttackAdvantage);
   const movementUsedFt = useCombatStore((s) => s.movementUsedFt);
@@ -366,12 +368,15 @@ export function PlayTab() {
         ) {
           setDeclaring({
             action: targetReady,
-            commit: (afterCommit, actionOverride) =>
-              commit(afterCommit, actionOverride ?? targetReady),
+            commit: (afterCommit, artifact) =>
+              commit(afterCommit, {
+                ...artifact,
+                action: artifact?.action ?? targetReady,
+              }),
           });
           return;
         }
-        commit(() => undefined, targetReady);
+        commit(() => undefined, { action: targetReady });
       });
     },
     [prepareResolution, sheetCombat]
@@ -822,11 +827,8 @@ export function PlayTab() {
         return t("combat.blockedReasonPrerequisiteAction");
       }
       if (
-        action.requiresSuccessfulActionThisTurn &&
-        !successfulActionPrerequisiteMet(action, committed, {
-          id: reactionUsedId,
-          resolutionSucceeded: reactionResolutionSucceeded,
-        })
+        action.requiresOutcomeThisTurn &&
+        !combatOutcomePrerequisiteMet(action.requiresOutcomeThisTurn, outcomeReceipts)
       ) {
         return t("combat.blockedReasonSuccessfulPrerequisiteAction");
       }
@@ -895,8 +897,7 @@ export function PlayTab() {
       weaponAdvisoryFor,
       movementUsedFt,
       selected,
-      reactionUsedId,
-      reactionResolutionSucceeded,
+      outcomeReceipts,
     ]
   );
 

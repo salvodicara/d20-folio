@@ -62,6 +62,7 @@ import {
   activeRollDieAdjustments,
   activeIncomingAttackModeAdjustments,
   activeRollModeAdjustments,
+  damageDefensesByEffects,
   effectsByActorSource,
   effectsForTarget,
   healingBlockedByEffects,
@@ -77,9 +78,21 @@ import { effectiveProficiencyBonus, isHeavyArmorEquipped } from "@/lib/compute";
 import { totalLevel } from "@/lib/classes";
 import { getEquipment } from "@/data/equipment";
 import type { PreparedCommit } from "./useTurnEconomy";
+import { compileCombatOutcomeReceipts } from "@/lib/combat-outcomes";
+import type { CombatAbilityCode } from "@/types/combat-outcome";
+import { turnEconomyKey } from "./combat-hydration";
 import "./CombatResolver.css";
 
 type TargetOutcome = "hit" | "miss" | "failed-save" | "saved";
+
+const COMBAT_ABILITIES = new Set<CombatAbilityCode>([
+  "STR",
+  "DEX",
+  "CON",
+  "INT",
+  "WIS",
+  "CHA",
+]);
 
 const OUTCOME_KEY: Record<TargetOutcome, string> = {
   hit: "combat.declareHit",
@@ -128,7 +141,11 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
     phase: "turn-start" as const,
     order: combat.encounter.order ?? combat.view.turnOrderIds,
   };
-  const effectStateFor = (targetId: string, tokenIndex?: number) => {
+  const effectStateFor = (
+    targetId: string,
+    tokenIndex?: number,
+    baseDefenses: DamageDefenses = NO_DEFENSES
+  ) => {
     const effects = effectsForTarget(
       combat.encounter.effectOps,
       targetId,
@@ -136,6 +153,7 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
       tokenIndex
     );
     return {
+      defenses: damageDefensesByEffects(baseDefenses, effects),
       healingBlocked: healingBlockedByEffects(effects),
       speedAdjustmentFt: speedAdjustmentByEffects(effects),
       rollDieAdjustments: activeRollDieAdjustments(effects),
@@ -174,12 +192,11 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         conditions: row.conditions,
         bardicInspirationDie: row.bardicInspirationDie,
         heroicInspiration: row.heroicInspiration ?? false,
-        defenses: row.defenses ?? NO_DEFENSES,
         conditionImmunities: row.conditionImmunities ?? new Set(),
         sourceConditionImmunities: row.sourceConditionImmunities ?? [],
         qualifiedDefenseCount: row.qualifiedDefenseCount ?? 0,
         creatureType: row.creatureType,
-        ...effectStateFor(row.id, index),
+        ...effectStateFor(row.id, index, row.defenses ?? NO_DEFENSES),
       }));
     }
     return [
@@ -206,12 +223,11 @@ function encounterTargets(combat: GlobalCombat): TargetChoice[] {
         conditions: row.conditions,
         bardicInspirationDie: row.bardicInspirationDie,
         heroicInspiration: row.heroicInspiration ?? false,
-        defenses: row.defenses ?? NO_DEFENSES,
         conditionImmunities: row.conditionImmunities ?? new Set(),
         sourceConditionImmunities: row.sourceConditionImmunities ?? [],
         qualifiedDefenseCount: row.qualifiedDefenseCount ?? 0,
         creatureType: row.creatureType,
-        ...effectStateFor(row.id),
+        ...effectStateFor(row.id, undefined, row.defenses ?? NO_DEFENSES),
       },
     ];
   });
@@ -240,6 +256,9 @@ export function CombatResolver({
   const applySoloCombatEffects = useCharacterStore((s) => s.applySoloCombatEffects);
   const showToast = useToastStore((s) => s.showToast);
   const soloRound = useCombatStore((s) => s.round);
+  const allocateOutcomeOccurrenceId = useCombatStore(
+    (s) => s.allocateOutcomeOccurrenceId
+  );
   const spec = useMemo(() => combatResolutionSpec(action), [action]);
   const conditionLifetimeFor = (conditionId: string) =>
     spec.conditionApplication?.lifetimes?.[conditionId] ??
@@ -918,17 +937,91 @@ export function CombatResolver({
             );
           })
         : undefined;
+    const outcomeOccurrenceId = allocateOutcomeOccurrenceId(
+      turnEconomyKey(
+        sheetCombat,
+        sheetCombat?.characterId ?? character?.id ?? "unknown-character",
+        soloRound
+      ),
+      action.id
+    );
+    const saveAbility = COMBAT_ABILITIES.has(
+      action.summary.saveAbility as CombatAbilityCode
+    )
+      ? (action.summary.saveAbility as CombatAbilityCode)
+      : null;
+    const outcomeReceipts = compileCombatOutcomeReceipts({
+      occurrenceId: outcomeOccurrenceId,
+      actionId: action.id,
+      targets: choices.flatMap(({ key, target, outcomes, mode }) => {
+        const targetResolvesOutcome = effectModes.length === 0 || mode === "damage";
+        const targetParts = damagePartsForTarget(key);
+        const needsAttack =
+          targetResolvesOutcome &&
+          (targetParts.some((part) => part.resolution === "attack") ||
+            spec.conditionApplication?.on === "hit");
+        const needsSave =
+          targetResolvesOutcome &&
+          Boolean(saveAbility) &&
+          (targetParts.some((part) => part.resolution === "save") ||
+            spec.conditionApplication?.on === "failed-save" ||
+            spec.kind === "save" ||
+            spec.kind === "attack-save");
+        const instances =
+          Number.isFinite(spec.targetCap) && spec.targetCap > 1 && !spec.area
+            ? Math.max(1, allocations[key] ?? 1)
+            : 1;
+        const reduction = damageReductionFor(key);
+        return needsAttack || needsSave || reduction
+          ? [
+              {
+                target: {
+                  combatantId: target.targetId,
+                  ...(target.tokenIndex !== undefined
+                    ? { tokenIndex: target.tokenIndex }
+                    : {}),
+                },
+                ...(needsAttack
+                  ? {
+                      attack: {
+                        attempts: instances,
+                        hits:
+                          instances > 1
+                            ? Math.min(instances, hitCounts[key] ?? 1)
+                            : outcomes.attack === "hit"
+                              ? 1
+                              : 0,
+                        // The current review captures HIT/MISS (or a hit count) only.
+                        // The receipt model already admits `critical-hit`; no critical
+                        // fact is fabricated until an explicit table input exists.
+                        criticalHits: 0,
+                      },
+                    }
+                  : {}),
+                ...(needsSave && saveAbility
+                  ? {
+                      save: {
+                        ability: saveAbility,
+                        result: outcomes.save === "saved" ? "success" : "failure",
+                        instances,
+                      },
+                    }
+                  : {}),
+                ...(reduction
+                  ? {
+                      damageReduction: {
+                        incoming: reduction.incoming,
+                        remaining: reduction.remainingBeforeDefenses,
+                      },
+                    }
+                  : {}),
+              },
+            ]
+          : [];
+      }),
+    });
     const committedAction: ResolvedAction = {
       ...action,
-      ...(spec.damageReduction &&
-      choices.every(({ key }) => {
-        const reduction = damageReductionFor(key);
-        return Boolean(
-          reduction && reduction.incoming > 0 && reduction.remainingBeforeDefenses === 0
-        );
-      })
-        ? { resolutionSucceeded: true as const }
-        : {}),
       ...(dynamicHpPool ? { trackerCost: totalPoolCost } : {}),
       ...(markTransferEffect
         ? {
@@ -964,522 +1057,538 @@ export function CombatResolver({
         ...consumableActorAttackEffects.map((effect) => [effect.id, effect] as const),
       ]).values(),
     ];
-    onCommit(() => {
-      const consumedRollEffects = consumableRollEffects;
-      const endingActiveKey = action.endsActiveKeyOnSuccessfulSave;
-      const endsOnSave =
-        Boolean(endingActiveKey && action.spellId) &&
-        selected.some((key) => outcomeFor(key).save === "saved");
-      const endedEffects =
-        endsOnSave && sheetCombat && action.spellId
-          ? effectsByActorSource(
-              sheetCombat.encounter.effectOps,
-              sheetCombat.myId,
-              action.spellId
-            )
-          : [];
-      const previousCastLevel = endingActiveKey
-        ? useCharacterStore.getState().character?.session.activeSpellCastLevels?.[
-            endingActiveKey
-          ]
-        : undefined;
-      let endApplied = endsOnSave;
-      const endPromise =
-        endsOnSave && endingActiveKey
-          ? (() => {
-              const store = useCharacterStore.getState();
-              store.setActiveFeature(endingActiveKey, false);
-              store.setActiveSpellCastLevel(endingActiveKey, undefined);
-              return (
-                sheetCombat && action.spellId
-                  ? revokePersistentCombatEffectsBySource(sheetCombat.campaignId, {
-                      actorId: sheetCombat.myId,
-                      sourceId: action.spellId,
-                    })
-                  : Promise.resolve()
-              ).catch((error: unknown) => {
-                endApplied = false;
-                const current = useCharacterStore.getState();
-                current.setActiveFeature(endingActiveKey, true);
-                current.setActiveSpellCastLevel(endingActiveKey, previousCastLevel);
-                showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
-                throw error;
-              });
-            })()
-          : null;
-      const riderUndo = appliedResourceRiders.flatMap(([trackerId, part]) => {
-        const cs = useCharacterStore.getState();
-        cs.useTracker(trackerId, 1);
-        const logId = part.sourceLoc
-          ? cs.logEvent({
-              kind: "rider-use",
-              action: action.nameLoc,
-              rider: part.sourceLoc,
-              effect: "damage",
-            })
-          : null;
-        return [
-          () => {
-            const current = useCharacterStore.getState();
-            current.restoreTracker(trackerId, 1);
-            if (logId) current.removeLogEntry(logId);
-          },
-        ];
-      });
-      const effects = choices.flatMap(({ target, amount, mode }) => {
-        if (!sheetCombat || target.targetId === sheetCombat.myId) return [];
-        const shared = {
-          targetId: target.targetId,
-          ...(target.kind === "monster" && target.tokenIndex !== undefined
-            ? { tokenIndex: target.tokenIndex }
-            : {}),
-        };
-        const hpEffect =
-          amount > 0
-            ? [
-                {
-                  ...shared,
-                  kind:
-                    mode === "healing"
-                      ? ("healing" as const)
-                      : mode === "temp-hp"
-                        ? ("temp-hp" as const)
-                        : ("damage" as const),
-                  amount,
-                },
-              ]
+    onCommit(
+      () => {
+        const consumedRollEffects = consumableRollEffects;
+        const endingActiveKey = action.endsActiveKeyOnSuccessfulSave;
+        const endsOnSave =
+          Boolean(endingActiveKey && action.spellId) &&
+          selected.some((key) => outcomeFor(key).save === "saved");
+        const endedEffects =
+          endsOnSave && sheetCombat && action.spellId
+            ? effectsByActorSource(
+                sheetCombat.encounter.effectOps,
+                sheetCombat.myId,
+                action.spellId
+              )
             : [];
-        const conditionEffects = (conditions[target.key] ?? [])
-          .filter((conditionId) => !conditionLifetimeFor(conditionId))
-          .map((conditionId) => ({
-            kind: "condition" as const,
-            targetId: target.targetId,
-            conditionId,
-            active: true,
-          }));
-        const removalEffects = (conditionRemovals[target.key] ?? []).map(
-          (conditionId) => ({
-            kind: "condition" as const,
-            targetId: target.targetId,
-            conditionId,
-            active: false,
-          })
-        );
-        const resourceEffects = action.summary.grantedDie
-          ? [
-              {
-                kind: "resource" as const,
-                targetId: target.targetId,
-                resource: {
-                  kind: "bardic-inspiration-die" as const,
-                  value: action.summary.grantedDie.die,
-                },
-              },
+        const previousCastLevel = endingActiveKey
+          ? useCharacterStore.getState().character?.session.activeSpellCastLevels?.[
+              endingActiveKey
             ]
-          : action.summary.grantsHeroicInspiration
+          : undefined;
+        let endApplied = endsOnSave;
+        const endPromise =
+          endsOnSave && endingActiveKey
+            ? (() => {
+                const store = useCharacterStore.getState();
+                store.setActiveFeature(endingActiveKey, false);
+                store.setActiveSpellCastLevel(endingActiveKey, undefined);
+                return (
+                  sheetCombat && action.spellId
+                    ? revokePersistentCombatEffectsBySource(sheetCombat.campaignId, {
+                        actorId: sheetCombat.myId,
+                        sourceId: action.spellId,
+                      })
+                    : Promise.resolve()
+                ).catch((error: unknown) => {
+                  endApplied = false;
+                  const current = useCharacterStore.getState();
+                  current.setActiveFeature(endingActiveKey, true);
+                  current.setActiveSpellCastLevel(endingActiveKey, previousCastLevel);
+                  showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+                  throw error;
+                });
+              })()
+            : null;
+        const riderUndo = appliedResourceRiders.flatMap(([trackerId, part]) => {
+          const cs = useCharacterStore.getState();
+          cs.useTracker(trackerId, 1);
+          const logId = part.sourceLoc
+            ? cs.logEvent({
+                kind: "rider-use",
+                action: action.nameLoc,
+                rider: part.sourceLoc,
+                effect: "damage",
+              })
+            : null;
+          return [
+            () => {
+              const current = useCharacterStore.getState();
+              current.restoreTracker(trackerId, 1);
+              if (logId) current.removeLogEntry(logId);
+            },
+          ];
+        });
+        const effects = choices.flatMap(({ target, amount, mode }) => {
+          if (!sheetCombat || target.targetId === sheetCombat.myId) return [];
+          const shared = {
+            targetId: target.targetId,
+            ...(target.kind === "monster" && target.tokenIndex !== undefined
+              ? { tokenIndex: target.tokenIndex }
+              : {}),
+          };
+          const hpEffect =
+            amount <= 0
+              ? []
+              : mode === "healing"
+                ? [{ ...shared, kind: "healing" as const, amount }]
+                : mode === "temp-hp"
+                  ? [{ ...shared, kind: "temp-hp" as const, amount }]
+                  : [
+                      {
+                        ...shared,
+                        kind: "damage" as const,
+                        intake: "resolved" as const,
+                        amount,
+                      },
+                    ];
+          const conditionEffects = (conditions[target.key] ?? [])
+            .filter((conditionId) => !conditionLifetimeFor(conditionId))
+            .map((conditionId) => ({
+              kind: "condition" as const,
+              targetId: target.targetId,
+              conditionId,
+              active: true,
+            }));
+          const removalEffects = (conditionRemovals[target.key] ?? []).map(
+            (conditionId) => ({
+              kind: "condition" as const,
+              targetId: target.targetId,
+              conditionId,
+              active: false,
+            })
+          );
+          const resourceEffects = action.summary.grantedDie
             ? [
                 {
                   kind: "resource" as const,
                   targetId: target.targetId,
-                  resource: { kind: "heroic-inspiration" as const },
+                  resource: {
+                    kind: "bardic-inspiration-die" as const,
+                    value: action.summary.grantedDie.die,
+                  },
+                },
+              ]
+            : action.summary.grantsHeroicInspiration
+              ? [
+                  {
+                    kind: "resource" as const,
+                    targetId: target.targetId,
+                    resource: { kind: "heroic-inspiration" as const },
+                  },
+                ]
+              : [];
+          const stabilizationEffects = action.summary.stabilize
+            ? [
+                {
+                  kind: "stabilize" as const,
+                  targetId: target.targetId,
                 },
               ]
             : [];
-        const stabilizationEffects = action.summary.stabilize
-          ? [
-              {
-                kind: "stabilize" as const,
-                targetId: target.targetId,
-              },
-            ]
-          : [];
-        return [
-          ...hpEffect,
-          ...conditionEffects,
-          ...removalEffects,
-          ...resourceEffects,
-          ...stabilizationEffects,
-        ];
-      });
-      const hitTargetIds = successful.flatMap(({ target, outcomes, mode }) =>
-        mode === "damage" &&
-        (spec.kind === "attack" || spec.kind === "attack-save") &&
-        outcomes.attack === "hit"
-          ? [target.targetId]
-          : []
-      );
-      let consumeSaveAdjustments: Promise<void> | null = null;
-      if (
-        sheetCombat &&
-        (effects.length > 0 ||
-          hitTargetIds.length > 0 ||
-          consumedRollEffects.length > 0) &&
-        !sharedEffectsApplied
-      ) {
-        sharedEffectsApplied = true;
-        const pcTargets = targets.flatMap((target) =>
-          target.kind === "pc" && target.memberUid && target.characterId
-            ? [
-                {
-                  targetId: target.targetId,
-                  memberUid: target.memberUid,
-                  characterId: target.characterId,
-                  currentHp: target.currentHp,
-                  tempHp: target.tempHp,
-                  maxHp: target.maxHp,
-                  conditions: target.conditions,
-                  bardicInspirationDie: target.bardicInspirationDie,
-                  heroicInspiration: target.heroicInspiration,
-                  ...(target.stable ? { deathSaves: { successes: 3, failures: 0 } } : {}),
-                  defenses: target.defenses,
-                },
-              ]
+          return [
+            ...hpEffect,
+            ...conditionEffects,
+            ...removalEffects,
+            ...resourceEffects,
+            ...stabilizationEffects,
+          ];
+        });
+        const hitTargetIds = successful.flatMap(({ target, outcomes, mode }) =>
+          mode === "damage" &&
+          (spec.kind === "attack" || spec.kind === "attack-save") &&
+          outcomes.attack === "hit"
+            ? [target.targetId]
             : []
         );
-        const sharedEffectsApply = applyDeclaredCombatEffects(
-          sheetCombat.campaignId,
-          effects,
-          {
-            actorId: sheetCombat.myId,
-            action: action.nameLoc,
-            round: sheetCombat.round,
-            pcTargets,
-            ...(consumedRollEffects.length > 0
-              ? { consumeEffectIds: consumedRollEffects.map(({ id }) => id) }
-              : {}),
-            ...(hitTargetIds.length > 0 ? { hitTargetIds } : {}),
-            ...(spec.attackMode ? { attackMode: spec.attackMode } : {}),
-          }
-        );
-        void sharedEffectsApply.catch(() => {
-          sharedEffectsApplied = false;
-          showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
-        });
-        consumeSaveAdjustments =
-          consumedRollEffects.length > 0 ? sharedEffectsApply : null;
-      }
-      const actor = sheetCombat
-        ? targets.find((target) => target.targetId === sheetCombat.myId)
-        : undefined;
-      const actorRef: CombatantRef | null =
-        actor?.kind === "pc" && actor.memberUid && actor.characterId
-          ? {
-              kind: "pc",
-              combatantId: actor.targetId,
-              memberUid: actor.memberUid,
-              characterId: actor.characterId,
+        let consumeSaveAdjustments: Promise<void> | null = null;
+        if (
+          sheetCombat &&
+          (effects.length > 0 ||
+            hitTargetIds.length > 0 ||
+            consumedRollEffects.length > 0) &&
+          !sharedEffectsApplied
+        ) {
+          sharedEffectsApplied = true;
+          const pcTargets = targets.flatMap((target) =>
+            target.kind === "pc" && target.memberUid && target.characterId
+              ? [
+                  {
+                    targetId: target.targetId,
+                    memberUid: target.memberUid,
+                    characterId: target.characterId,
+                    currentHp: target.currentHp,
+                    tempHp: target.tempHp,
+                    maxHp: target.maxHp,
+                    conditions: target.conditions,
+                    bardicInspirationDie: target.bardicInspirationDie,
+                    heroicInspiration: target.heroicInspiration,
+                    ...(target.stable
+                      ? { deathSaves: { successes: 3, failures: 0 } }
+                      : {}),
+                    defenses: target.defenses,
+                  },
+                ]
+              : []
+          );
+          const sharedEffectsApply = applyDeclaredCombatEffects(
+            sheetCombat.campaignId,
+            effects,
+            {
+              actorId: sheetCombat.myId,
+              action: action.nameLoc,
+              round: sheetCombat.round,
+              pcTargets,
+              ...(consumedRollEffects.length > 0
+                ? { consumeEffectIds: consumedRollEffects.map(({ id }) => id) }
+                : {}),
+              ...(hitTargetIds.length > 0 ? { hitTargetIds } : {}),
+              ...(spec.attackMode ? { attackMode: spec.attackMode } : {}),
             }
-          : !sheetCombat && character
+          );
+          void sharedEffectsApply.catch(() => {
+            sharedEffectsApplied = false;
+            showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+          });
+          consumeSaveAdjustments =
+            consumedRollEffects.length > 0 ? sharedEffectsApply : null;
+        }
+        const actor = sheetCombat
+          ? targets.find((target) => target.targetId === sheetCombat.myId)
+          : undefined;
+        const actorRef: CombatantRef | null =
+          actor?.kind === "pc" && actor.memberUid && actor.characterId
             ? {
                 kind: "pc",
-                combatantId: "self",
-                memberUid: "self",
-                characterId: character.id,
+                combatantId: actor.targetId,
+                memberUid: actor.memberUid,
+                characterId: actor.characterId,
               }
-            : null;
-      const effectPosition = sheetCombat
-        ? {
-            round: sheetCombat.round,
-            currentCombatantId: sheetCombat.encounter.currentCombatantId,
-            phase: "turn-start" as const,
-            order: sheetCombat.encounter.order ?? sheetCombat.view.turnOrderIds,
-          }
-        : {
-            round: soloRound,
-            currentCombatantId: "self",
-            phase: "turn-start" as const,
-            order: ["self"],
-          };
-      const standingEffect = spec.standingEffect;
-      const persistentEffects: ActiveCombatEffect[] =
-        actorRef && (standingEffect || conditionSourceId)
-          ? successful.flatMap(({ target, mode, amount }) => {
-              if (
-                standingEffect?.requiresAppliedTempHp &&
-                (mode !== "temp-hp" || amount <= target.tempHp)
-              ) {
-                return [];
-              }
-              const targetRef: CombatantRef | null = !sheetCombat
-                ? actorRef
-                : target.kind === "monster"
-                  ? {
-                      kind: "monster",
-                      combatantId: target.targetId,
-                      ...(target.tokenIndex !== undefined
-                        ? { tokenIndex: target.tokenIndex }
-                        : {}),
-                    }
-                  : target.memberUid && target.characterId
+            : !sheetCombat && character
+              ? {
+                  kind: "pc",
+                  combatantId: "self",
+                  memberUid: "self",
+                  characterId: character.id,
+                }
+              : null;
+        const effectPosition = sheetCombat
+          ? {
+              round: sheetCombat.round,
+              currentCombatantId: sheetCombat.encounter.currentCombatantId,
+              phase: "turn-start" as const,
+              order: sheetCombat.encounter.order ?? sheetCombat.view.turnOrderIds,
+            }
+          : {
+              round: soloRound,
+              currentCombatantId: "self",
+              phase: "turn-start" as const,
+              order: ["self"],
+            };
+        const standingEffect = spec.standingEffect;
+        const persistentEffects: ActiveCombatEffect[] =
+          actorRef && (standingEffect || conditionSourceId)
+            ? successful.flatMap(({ target, mode, amount }) => {
+                if (
+                  standingEffect?.requiresAppliedTempHp &&
+                  (mode !== "temp-hp" || amount <= target.tempHp)
+                ) {
+                  return [];
+                }
+                const targetRef: CombatantRef | null = !sheetCombat
+                  ? actorRef
+                  : target.kind === "monster"
                     ? {
-                        kind: "pc",
+                        kind: "monster",
                         combatantId: target.targetId,
-                        memberUid: target.memberUid,
-                        characterId: target.characterId,
+                        ...(target.tokenIndex !== undefined
+                          ? { tokenIndex: target.tokenIndex }
+                          : {}),
                       }
-                    : null;
-              if (!targetRef) return [];
-              const relativeBoundary = standingEffect?.lifetime.turnBoundary
-                ? turnBoundaryAfter(
-                    actorRef.combatantId,
-                    standingEffect.lifetime.turnBoundary.turns,
-                    standingEffect.lifetime.turnBoundary.phase,
-                    effectPosition
-                  )
-                : null;
-              const standingDuration: ActiveCombatEffect["duration"] = markTransferEffect
-                ? markTransferEffect.duration
-                : standingEffect?.lifetime.concentration
-                  ? {
-                      kind: "concentration",
-                      actorId: actorRef.combatantId,
-                      sourceId: standingEffect.source.id,
-                    }
-                  : relativeBoundary
-                    ? relativeBoundary
-                    : standingEffect?.lifetime.maxRounds !== undefined
+                    : target.memberUid && target.characterId
                       ? {
-                          kind: "turn-boundary",
-                          combatantId: actorRef.combatantId,
-                          round: effectPosition.round + standingEffect.lifetime.maxRounds,
-                          phase: "turn-end",
+                          kind: "pc",
+                          combatantId: target.targetId,
+                          memberUid: target.memberUid,
+                          characterId: target.characterId,
                         }
-                      : { kind: "encounter" };
-              const standing = standingEffect
-                ? [
-                    {
-                      id: crypto.randomUUID(),
-                      actor: actorRef,
-                      target: targetRef,
-                      source: standingEffect.source,
-                      payload: standingEffect.payload,
-                      duration: standingDuration,
-                    } satisfies ActiveCombatEffect,
-                  ]
-                : [];
-              const sourceConditions = conditionSourceId
-                ? (conditions[target.key] ?? []).flatMap((conditionId) => {
-                    const conditionLifetime = conditionLifetimeFor(conditionId);
-                    if (!conditionLifetime) return [];
-                    const conditionBoundary =
-                      conditionLifetime.kind === "turn-boundary"
-                        ? turnBoundaryAfter(
-                            conditionLifetime.anchor === "target"
-                              ? targetRef.combatantId
-                              : actorRef.combatantId,
-                            conditionLifetime.turns,
-                            conditionLifetime.phase,
-                            effectPosition
-                          )
-                        : null;
-                    return [
+                      : null;
+                if (!targetRef) return [];
+                const relativeBoundary = standingEffect?.lifetime.turnBoundary
+                  ? turnBoundaryAfter(
+                      actorRef.combatantId,
+                      standingEffect.lifetime.turnBoundary.turns,
+                      standingEffect.lifetime.turnBoundary.phase,
+                      effectPosition
+                    )
+                  : null;
+                const standingDuration: ActiveCombatEffect["duration"] =
+                  markTransferEffect
+                    ? markTransferEffect.duration
+                    : standingEffect?.lifetime.concentration
+                      ? {
+                          kind: "concentration",
+                          actorId: actorRef.combatantId,
+                          sourceId: standingEffect.source.id,
+                        }
+                      : relativeBoundary
+                        ? relativeBoundary
+                        : standingEffect?.lifetime.maxRounds !== undefined
+                          ? {
+                              kind: "turn-boundary",
+                              combatantId: actorRef.combatantId,
+                              round:
+                                effectPosition.round + standingEffect.lifetime.maxRounds,
+                              phase: "turn-end",
+                            }
+                          : { kind: "encounter" };
+                const standing = standingEffect
+                  ? [
                       {
                         id: crypto.randomUUID(),
                         actor: actorRef,
                         target: targetRef,
-                        source: {
-                          kind: action.source === "spell" ? "spell" : "feature",
-                          id: conditionSourceId,
-                          actionId: action.id,
-                          ...(action.slotLevel !== undefined
-                            ? { castLevel: action.slotLevel }
-                            : {}),
-                        },
-                        payload: { kind: "condition", conditionId },
-                        duration:
-                          conditionLifetime.kind === "source" && action.concentration
-                            ? {
-                                kind: "concentration",
-                                actorId: actorRef.combatantId,
-                                sourceId: conditionSourceId,
-                              }
-                            : conditionLifetime.kind === "manual"
-                              ? { kind: "encounter" }
-                              : conditionBoundary
-                                ? conditionBoundary
-                                : {
-                                    kind: "turn-boundary",
-                                    combatantId: actorRef.combatantId,
-                                    round:
-                                      effectPosition.round +
-                                      (conditionLifetime.kind === "timed"
-                                        ? conditionLifetime.maxRounds
-                                        : 0),
-                                    phase: "turn-end",
-                                  },
+                        source: standingEffect.source,
+                        payload: standingEffect.payload,
+                        duration: standingDuration,
                       } satisfies ActiveCombatEffect,
-                    ];
-                  })
-                : [];
-              return [...standing, ...sourceConditions];
-            })
-          : [];
-      const persistentApply =
-        sheetCombat && persistentEffects.length > 0
-          ? (async () => {
-              try {
-                // Sequential by design: if one target fails, no later append can race
-                // the compensation and land after it. Revoking the whole intended batch
-                // is safe because a missing occurrence is an idempotent no-op.
-                for (const effect of persistentEffects) {
-                  await appendPersistentCombatEffect(sheetCombat.campaignId, effect);
-                }
-              } catch (error) {
-                await Promise.allSettled(
-                  persistentEffects.map((effect) =>
-                    revokePersistentCombatEffect(sheetCombat.campaignId, effect.id)
-                  )
-                );
-                throw error;
-              }
-            })()
-          : null;
-      if (persistentApply) {
-        void persistentApply.catch(() => {
-          showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
-        });
-      }
-      const undoSoloEffects =
-        !sheetCombat && persistentEffects.length > 0
-          ? applySoloCombatEffects(persistentEffects)
-          : null;
-      // Own-sheet effects apply locally for immediate solo feedback. In an encounter the
-      // shared batch above writes table-mates' narrow combat slices transactionally, so a
-      // target need not be online; the local branch only avoids applying the actor twice.
-      const own = choices.find(
-        ({ target }) => !sheetCombat || target.targetId === sheetCombat.myId
-      );
-      const ownConditions = own ? (conditions[own.target.key] ?? []) : [];
-      const ownDirectConditions = ownConditions.filter(
-        (conditionId) => !conditionLifetimeFor(conditionId)
-      );
-      const undoOwn =
-        own || linkedSelfHealing > 0
-          ? applyResolvedCombatEffects({
-              ...((own?.amount ?? 0) > 0 && own?.mode === "temp-hp"
-                ? { tempHp: own.amount }
-                : {}),
-              ...((own?.amount ?? 0) > 0 && own?.mode === "healing"
-                ? { healing: own.amount + linkedSelfHealing }
-                : linkedSelfHealing > 0
-                  ? { healing: linkedSelfHealing }
-                  : {}),
-              ...((own?.amount ?? 0) > 0 && own?.mode === "damage"
-                ? { damage: own.amount }
-                : {}),
-              ...(ownDirectConditions.length
-                ? { addConditions: ownDirectConditions }
-                : {}),
-              ...(own && conditionRemovals[own.target.key]?.length
-                ? { removeConditions: conditionRemovals[own.target.key] }
-                : {}),
-              ...(own && action.summary.grantedDie
-                ? { bardicInspirationDie: action.summary.grantedDie.die }
-                : {}),
-              ...(own && action.summary.grantsHeroicInspiration
-                ? { heroicInspiration: true }
-                : {}),
-              ...(own && action.summary.stabilize ? { stabilize: true } : {}),
-            })
-          : null;
-      const appliedRiders = [
-        ...new Set(choices.flatMap(({ target }) => conditions[target.key] ?? [])),
-      ];
-      if (
-        sheetCombat &&
-        ((!spec.damageReduction && spec.hasDamage) || appliedRiders.length > 0)
-      ) {
-        declareAttack({
-          action: action.nameLoc,
-          outcome: successful.length > 0 ? "hit" : "miss",
-          targetIds: choices.map(({ target }) => target.targetId),
-          round: sheetCombat.round,
-          ...(spec.targetCap > 1 && Number.isFinite(spec.targetCap)
-            ? { instances: spec.targetCap }
-            : {}),
-          ...(spec.kind === "save" || spec.kind === "attack-save" ? { save: true } : {}),
-          ...(appliedRiders.length > 0 ? { riders: appliedRiders } : {}),
-        });
-      }
-      if (!closed) {
-        closed = true;
-        onDone();
-      }
-      const undoPersistent =
-        sheetCombat && persistentApply
-          ? () => {
-              void persistentApply
-                .catch(() => undefined)
-                .then(() =>
-                  Promise.all(
+                    ]
+                  : [];
+                const sourceConditions = conditionSourceId
+                  ? (conditions[target.key] ?? []).flatMap((conditionId) => {
+                      const conditionLifetime = conditionLifetimeFor(conditionId);
+                      if (!conditionLifetime) return [];
+                      const conditionBoundary =
+                        conditionLifetime.kind === "turn-boundary"
+                          ? turnBoundaryAfter(
+                              conditionLifetime.anchor === "target"
+                                ? targetRef.combatantId
+                                : actorRef.combatantId,
+                              conditionLifetime.turns,
+                              conditionLifetime.phase,
+                              effectPosition
+                            )
+                          : null;
+                      return [
+                        {
+                          id: crypto.randomUUID(),
+                          actor: actorRef,
+                          target: targetRef,
+                          source: {
+                            kind: action.source === "spell" ? "spell" : "feature",
+                            id: conditionSourceId,
+                            actionId: action.id,
+                            ...(action.slotLevel !== undefined
+                              ? { castLevel: action.slotLevel }
+                              : {}),
+                          },
+                          payload: { kind: "condition", conditionId },
+                          duration:
+                            conditionLifetime.kind === "source" && action.concentration
+                              ? {
+                                  kind: "concentration",
+                                  actorId: actorRef.combatantId,
+                                  sourceId: conditionSourceId,
+                                }
+                              : conditionLifetime.kind === "manual"
+                                ? { kind: "encounter" }
+                                : conditionBoundary
+                                  ? conditionBoundary
+                                  : {
+                                      kind: "turn-boundary",
+                                      combatantId: actorRef.combatantId,
+                                      round:
+                                        effectPosition.round +
+                                        (conditionLifetime.kind === "timed"
+                                          ? conditionLifetime.maxRounds
+                                          : 0),
+                                      phase: "turn-end",
+                                    },
+                        } satisfies ActiveCombatEffect,
+                      ];
+                    })
+                  : [];
+                return [...standing, ...sourceConditions];
+              })
+            : [];
+        const persistentApply =
+          sheetCombat && persistentEffects.length > 0
+            ? (async () => {
+                try {
+                  // Sequential by design: if one target fails, no later append can race
+                  // the compensation and land after it. Revoking the whole intended batch
+                  // is safe because a missing occurrence is an idempotent no-op.
+                  for (const effect of persistentEffects) {
+                    await appendPersistentCombatEffect(sheetCombat.campaignId, effect);
+                  }
+                } catch (error) {
+                  await Promise.allSettled(
                     persistentEffects.map((effect) =>
                       revokePersistentCombatEffect(sheetCombat.campaignId, effect.id)
                     )
+                  );
+                  throw error;
+                }
+              })()
+            : null;
+        if (persistentApply) {
+          void persistentApply.catch(() => {
+            showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+          });
+        }
+        const undoSoloEffects =
+          !sheetCombat && persistentEffects.length > 0
+            ? applySoloCombatEffects(persistentEffects)
+            : null;
+        // Own-sheet effects apply locally for immediate solo feedback. In an encounter the
+        // shared batch above writes table-mates' narrow combat slices transactionally, so a
+        // target need not be online; the local branch only avoids applying the actor twice.
+        const own = choices.find(
+          ({ target }) => !sheetCombat || target.targetId === sheetCombat.myId
+        );
+        const ownConditions = own ? (conditions[own.target.key] ?? []) : [];
+        const ownDirectConditions = ownConditions.filter(
+          (conditionId) => !conditionLifetimeFor(conditionId)
+        );
+        const undoOwn =
+          own || linkedSelfHealing > 0
+            ? applyResolvedCombatEffects({
+                ...((own?.amount ?? 0) > 0 && own?.mode === "temp-hp"
+                  ? { tempHp: own.amount }
+                  : {}),
+                ...((own?.amount ?? 0) > 0 && own?.mode === "healing"
+                  ? { healing: own.amount + linkedSelfHealing }
+                  : linkedSelfHealing > 0
+                    ? { healing: linkedSelfHealing }
+                    : {}),
+                ...((own?.amount ?? 0) > 0 && own?.mode === "damage"
+                  ? { damage: own.amount }
+                  : {}),
+                ...(ownDirectConditions.length
+                  ? { addConditions: ownDirectConditions }
+                  : {}),
+                ...(own && conditionRemovals[own.target.key]?.length
+                  ? { removeConditions: conditionRemovals[own.target.key] }
+                  : {}),
+                ...(own && action.summary.grantedDie
+                  ? { bardicInspirationDie: action.summary.grantedDie.die }
+                  : {}),
+                ...(own && action.summary.grantsHeroicInspiration
+                  ? { heroicInspiration: true }
+                  : {}),
+                ...(own && action.summary.stabilize ? { stabilize: true } : {}),
+              })
+            : null;
+        const appliedRiders = [
+          ...new Set(choices.flatMap(({ target }) => conditions[target.key] ?? [])),
+        ];
+        if (
+          sheetCombat &&
+          ((!spec.damageReduction && spec.hasDamage) || appliedRiders.length > 0)
+        ) {
+          declareAttack({
+            action: action.nameLoc,
+            outcome: successful.length > 0 ? "hit" : "miss",
+            targetIds: choices.map(({ target }) => target.targetId),
+            round: sheetCombat.round,
+            ...(spec.targetCap > 1 && Number.isFinite(spec.targetCap)
+              ? { instances: spec.targetCap }
+              : {}),
+            ...(spec.kind === "save" || spec.kind === "attack-save"
+              ? { save: true }
+              : {}),
+            ...(appliedRiders.length > 0 ? { riders: appliedRiders } : {}),
+          });
+        }
+        if (!closed) {
+          closed = true;
+          onDone();
+        }
+        const undoPersistent =
+          sheetCombat && persistentApply
+            ? () => {
+                void persistentApply
+                  .catch(() => undefined)
+                  .then(() =>
+                    Promise.all(
+                      persistentEffects.map((effect) =>
+                        revokePersistentCombatEffect(sheetCombat.campaignId, effect.id)
+                      )
+                    )
                   )
-                )
-                .catch(() => {
-                  showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
-                });
-            }
-          : null;
-      const undoConsumedSaveAdjustments =
-        sheetCombat && consumeSaveAdjustments
-          ? () => {
-              void consumeSaveAdjustments
-                .then(async () => {
-                  const restored = consumedRollEffects.map((effect) => ({
-                    ...effect,
-                    id: crypto.randomUUID(),
-                  }));
-                  for (const effect of restored) {
-                    await appendPersistentCombatEffect(sheetCombat.campaignId, effect);
-                  }
-                  consumableRollEffects = restored;
-                })
-                .catch(() => {
-                  showToast({
-                    message: t("combat.declareApplyFailed"),
-                    duration: 6000,
+                  .catch(() => {
+                    showToast({
+                      message: t("combat.declareApplyFailed"),
+                      duration: 6000,
+                    });
                   });
-                });
-            }
-          : null;
-      const undoEndedRecurringEffect =
-        endPromise && endingActiveKey
-          ? () => {
-              void endPromise
-                .then(async () => {
-                  if (!endApplied) return;
-                  const current = useCharacterStore.getState();
-                  current.setActiveFeature(endingActiveKey, true);
-                  current.setActiveSpellCastLevel(endingActiveKey, previousCastLevel);
-                  if (!sheetCombat) return;
-                  for (const effect of endedEffects) {
-                    await appendPersistentCombatEffect(sheetCombat.campaignId, {
+              }
+            : null;
+        const undoConsumedSaveAdjustments =
+          sheetCombat && consumeSaveAdjustments
+            ? () => {
+                void consumeSaveAdjustments
+                  .then(async () => {
+                    const restored = consumedRollEffects.map((effect) => ({
                       ...effect,
                       id: crypto.randomUUID(),
+                    }));
+                    for (const effect of restored) {
+                      await appendPersistentCombatEffect(sheetCombat.campaignId, effect);
+                    }
+                    consumableRollEffects = restored;
+                  })
+                  .catch(() => {
+                    showToast({
+                      message: t("combat.declareApplyFailed"),
+                      duration: 6000,
                     });
-                  }
-                })
-                .catch(() => undefined);
+                  });
+              }
+            : null;
+        const undoEndedRecurringEffect =
+          endPromise && endingActiveKey
+            ? () => {
+                void endPromise
+                  .then(async () => {
+                    if (!endApplied) return;
+                    const current = useCharacterStore.getState();
+                    current.setActiveFeature(endingActiveKey, true);
+                    current.setActiveSpellCastLevel(endingActiveKey, previousCastLevel);
+                    if (!sheetCombat) return;
+                    for (const effect of endedEffects) {
+                      await appendPersistentCombatEffect(sheetCombat.campaignId, {
+                        ...effect,
+                        id: crypto.randomUUID(),
+                      });
+                    }
+                  })
+                  .catch(() => undefined);
+              }
+            : null;
+        return undoOwn ||
+          undoSoloEffects ||
+          undoPersistent ||
+          undoConsumedSaveAdjustments ||
+          undoEndedRecurringEffect ||
+          riderUndo.length
+          ? () => {
+              undoPersistent?.();
+              undoConsumedSaveAdjustments?.();
+              undoEndedRecurringEffect?.();
+              undoOwn?.();
+              undoSoloEffects?.();
+              for (const undo of riderUndo) undo();
             }
-          : null;
-      return undoOwn ||
-        undoSoloEffects ||
-        undoPersistent ||
-        undoConsumedSaveAdjustments ||
-        undoEndedRecurringEffect ||
-        riderUndo.length
-        ? () => {
-            undoPersistent?.();
-            undoConsumedSaveAdjustments?.();
-            undoEndedRecurringEffect?.();
-            undoOwn?.();
-            undoSoloEffects?.();
-            for (const undo of riderUndo) undo();
-          }
-        : undefined;
-    }, committedAction);
+          : undefined;
+      },
+      {
+        action: committedAction,
+        outcomeOccurrenceId,
+        outcomes: outcomeReceipts,
+      }
+    );
   };
 
   const summary = [

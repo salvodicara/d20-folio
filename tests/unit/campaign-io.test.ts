@@ -150,7 +150,9 @@ import {
   deleteCampaign,
 } from "@/features/campaigns/campaign-io";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
+import { useCharacterStore } from "@/stores/characterStore";
 import { deleteCampaignBanner } from "@/lib/storage";
+import { makeCharacterDoc } from "./_helpers";
 import type {
   CampaignDoc,
   EncounterCombatant,
@@ -581,7 +583,7 @@ describe("campaign-io — reviewed combat effects", () => {
         conditions: [],
         defenses: NO_DEFENSES,
       },
-      [{ kind: "damage", targetId: "pc-a", amount: 20 }],
+      [{ kind: "damage", intake: "resolved", targetId: "pc-a", amount: 20 }],
       {
         actorId: "monster-1",
         action: { custom: "table action" },
@@ -597,7 +599,7 @@ describe("campaign-io — reviewed combat effects", () => {
     expect(result?.events.some((event) => event.kind === "down")).toBe(false);
   });
 
-  it("applies Warding Bond resistance and transfers the post-resistance damage", () => {
+  it("does not reapply Warding Bond resistance to resolved damage before transfer", () => {
     const bond: ActiveCombatEffect = {
       id: "warding-bond:1",
       actor: {
@@ -627,7 +629,7 @@ describe("campaign-io — reviewed combat effects", () => {
         conditions: [],
         defenses: NO_DEFENSES,
       },
-      [{ kind: "damage", targetId: "pc-a", amount: 9 }],
+      [{ kind: "damage", intake: "resolved", targetId: "pc-a", amount: 4 }],
       {
         actorId: "monster-1",
         action: { custom: "table action" },
@@ -639,6 +641,53 @@ describe("campaign-io — reviewed combat effects", () => {
     expect(result).toMatchObject({
       hp: { current: 16, temp: 0 },
       transfers: [{ target: bond.actor, amount: 4, effectId: bond.id }],
+    });
+  });
+
+  it("applies Warding Bond all-damage resistance exactly once to raw intake", () => {
+    const bond: ActiveCombatEffect = {
+      id: "warding-bond:raw",
+      actor: {
+        kind: "pc",
+        combatantId: "pc-b",
+        memberUid: "b",
+        characterId: "char-b",
+      },
+      target: {
+        kind: "pc",
+        combatantId: "pc-a",
+        memberUid: "a",
+        characterId: "char-a",
+      },
+      source: { kind: "spell", id: "warding-bond", actionId: "cast-bond" },
+      payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+      duration: { kind: "encounter" },
+    };
+    const result = reduceDirectPcEffects(
+      {
+        targetId: "pc-a",
+        memberUid: "a",
+        characterId: "char-a",
+        currentHp: 20,
+        tempHp: 0,
+        maxHp: 20,
+        conditions: [],
+        defenses: NO_DEFENSES,
+      },
+      [{ kind: "damage", intake: "raw", targetId: "pc-a", amount: 9 }],
+      {
+        actorId: "monster-1",
+        action: { custom: "table action" },
+        round: 2,
+        persistentEffects: [bond],
+      }
+    );
+
+    expect(result).toMatchObject({
+      hp: { current: 16, temp: 0 },
+      transfers: [
+        { target: bond.actor, amount: 4, effectId: bond.id, intake: "resolved" },
+      ],
     });
   });
 
@@ -654,7 +703,7 @@ describe("campaign-io — reviewed combat effects", () => {
         conditions: [],
         defenses: NO_DEFENSES,
       },
-      [{ kind: "damage", targetId: "pc-a", amount: 1 }],
+      [{ kind: "damage", intake: "resolved", targetId: "pc-a", amount: 1 }],
       { actorId: "monster-1", action: { custom: "table action" }, round: 2 }
     );
     expect(result?.hp).toEqual({ current: 24, temp: 0 });
@@ -721,7 +770,8 @@ describe("campaign-io — reviewed combat effects", () => {
     );
 
     await applyDeclaredCombatEffects("camp1", [
-      { kind: "damage", targetId: "warded", amount: 50 },
+      // CombatResolver has already applied the ward's resistance: 50 → 25.
+      { kind: "damage", intake: "resolved", targetId: "warded", amount: 25 },
     ]);
 
     expect(update.mock.calls[0]?.[1]).toMatchObject({
@@ -791,7 +841,12 @@ describe("campaign-io — reviewed combat effects", () => {
 
     await applyDeclaredCombatEffects(
       "camp1",
-      monsters.map((targetId) => ({ kind: "damage", targetId, amount: 50 }))
+      monsters.map((targetId) => ({
+        kind: "damage",
+        intake: "resolved",
+        targetId,
+        amount: 50,
+      }))
     );
 
     const written = update.mock.calls[0]?.[1];
@@ -983,7 +1038,7 @@ describe("campaign-io — reviewed combat effects", () => {
       { kind: "temp-hp", targetId: "monster-1", amount: 2 },
     ]);
     const damaged = reduceDeclaredEffects(fortified, [
-      { kind: "damage", targetId: "monster-1", amount: 6 },
+      { kind: "damage", intake: "resolved", targetId: "monster-1", amount: 6 },
     ]);
     expect(damaged.combatants.find((c) => c.id === "monster-1")).toMatchObject({
       tokens: [3],
@@ -996,6 +1051,205 @@ describe("campaign-io — reviewed combat effects", () => {
       amount: 6,
       tempAbsorbed: 4,
     });
+  });
+});
+
+describe("canonical PC damage adapter parity", () => {
+  const target = {
+    kind: "pc" as const,
+    combatantId: "pc-a",
+    memberUid: "a",
+    characterId: "char-a",
+  };
+  const actor = {
+    kind: "pc" as const,
+    combatantId: "pc-b",
+    memberUid: "b",
+    characterId: "char-b",
+  };
+  const deathWard: ActiveCombatEffect = {
+    id: "ward:parity",
+    actor,
+    target,
+    source: { kind: "spell", id: "death-ward", actionId: "cast-ward" },
+    payload: { kind: "grant-group", activeKey: "spell-death-ward" },
+    duration: { kind: "encounter" },
+  };
+  const wardingBond: ActiveCombatEffect = {
+    id: "bond:parity",
+    actor,
+    target,
+    source: { kind: "spell", id: "warding-bond", actionId: "cast-bond" },
+    payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+    duration: { kind: "encounter" },
+  };
+
+  beforeEach(() => {
+    useCharacterStore.setState({
+      encounterEffectProjection: null,
+      combatPersistence: null,
+      combatActiveEffects: [],
+    });
+    useCharacterStore.getState().setCharacter(null);
+  });
+
+  function expectParity(input: {
+    current: number;
+    temp?: number;
+    max: number;
+    amount: number;
+    crit?: boolean;
+    conditions?: string[];
+    successes?: number;
+    failures?: number;
+    activeFeatures?: string[];
+    effects?: ActiveCombatEffect[];
+  }) {
+    const conditions = input.conditions ?? [];
+    const deathSaves = {
+      successes: input.successes ?? 0,
+      failures: input.failures ?? 0,
+    };
+    const local = makeCharacterDoc(
+      { hp: { max: input.max } },
+      {
+        hp: { current: input.current, temp: input.temp ?? 0 },
+        conditions,
+        deathSucc: deathSaves.successes,
+        deathFail: deathSaves.failures,
+        activeFeatures: input.activeFeatures,
+      }
+    );
+    useCharacterStore.getState().setCharacter(local);
+    useCharacterStore.getState().setEncounterEffects(local.id, input.effects ?? []);
+    useCharacterStore
+      .getState()
+      .applyDamage(input.amount, input.crit ? { crit: true } : undefined);
+    const localSession = useCharacterStore.getState().character?.session;
+    const remote = reduceDirectPcEffects(
+      {
+        targetId: target.combatantId,
+        memberUid: target.memberUid,
+        characterId: target.characterId,
+        currentHp: input.current,
+        tempHp: input.temp ?? 0,
+        maxHp: input.max,
+        conditions,
+        deathSaves,
+        defenses: NO_DEFENSES,
+      },
+      [
+        {
+          kind: "damage",
+          intake: "resolved",
+          targetId: target.combatantId,
+          amount: input.amount,
+          ...(input.crit ? { crit: true } : {}),
+        },
+      ],
+      {
+        actorId: "monster-1",
+        action: { custom: "parity hit" },
+        round: 1,
+        persistentEffects: input.effects,
+      }
+    );
+
+    expect(localSession).toBeDefined();
+    expect(remote).not.toBeNull();
+    expect({
+      hp: localSession?.hp,
+      conditions: localSession?.conditions,
+      deathSaves: {
+        successes: localSession?.deathSucc,
+        failures: localSession?.deathFail,
+      },
+    }).toEqual({
+      hp: remote?.hp,
+      conditions: remote?.conditions,
+      deathSaves: remote?.deathSaves ?? deathSaves,
+    });
+    return { localSession, remote };
+  }
+
+  it.each([
+    {
+      name: "Temporary HP absorption",
+      current: 20,
+      temp: 5,
+      max: 20,
+      amount: 7,
+    },
+    {
+      name: "Critical damage at 0 HP resets stability and adds two failures",
+      current: 0,
+      max: 20,
+      amount: 1,
+      crit: true,
+      conditions: ["unconscious"],
+      successes: 3,
+    },
+    {
+      name: "ordinary knockout",
+      current: 5,
+      max: 20,
+      amount: 5,
+    },
+    {
+      name: "massive-damage death",
+      current: 5,
+      max: 20,
+      amount: 25,
+    },
+  ])("lands identical $name state", (input) => {
+    expectParity(input);
+  });
+
+  it("consumes duplicate Death Ward authorities once and lands the same HP", () => {
+    const { localSession, remote } = expectParity({
+      current: 8,
+      max: 20,
+      amount: 20,
+      activeFeatures: ["spell-death-ward"],
+      effects: [deathWard],
+    });
+
+    expect(localSession?.activeFeatures).not.toContain("spell-death-ward");
+    expect(localSession?.encounterEffects ?? []).not.toContainEqual(deathWard);
+    expect(
+      useCharacterStore.getState().encounterEffectProjection?.effects ?? []
+    ).not.toContainEqual(deathWard);
+    expect(remote?.consumedEffectIds).toEqual([deathWard.id]);
+    expect(
+      localSession?.logEntries.find((entry) => entry.event.kind === "hp-damage")?.event
+    ).toMatchObject({ kind: "hp-damage", amount: 20, current: 1 });
+    expect(remote?.events.find((event) => event.kind === "hp-damage")).toMatchObject({
+      kind: "hp-damage",
+      amount: 7,
+      current: 1,
+      max: 20,
+    });
+
+    useCharacterStore.getState().setHP(8);
+    useCharacterStore.getState().applyDamage(20);
+    expect(useCharacterStore.getState().character?.session.hp.current).toBe(0);
+  });
+
+  it("accepts already-resolved Warding Bond damage exactly once in both paths", () => {
+    const { remote } = expectParity({
+      current: 20,
+      max: 20,
+      amount: 4,
+      effects: [wardingBond],
+    });
+    expect(remote?.transfers).toEqual([
+      {
+        target: actor,
+        amount: 4,
+        effectId: wardingBond.id,
+        intake: "resolved",
+      },
+    ]);
   });
 });
 

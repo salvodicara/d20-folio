@@ -3,6 +3,7 @@ import {
   activeRollModeAdjustments,
   concentrationEffectIdsOwnedBy,
   currentHpDeltaForEffect,
+  damageDefensesByEffects,
   endedEffectSuccessor,
   effectsForTarget,
   foldCombatEffectOps,
@@ -10,6 +11,7 @@ import {
   effectsByActorSource,
   expiredCombatEffects,
   maxHpDeltaForEffect,
+  mergeDamageDefenseGrants,
   markedTargetForActor,
   resolvePersistentDamage,
   revokeConditionEffectOps,
@@ -45,6 +47,55 @@ function apply(id: string, value = effect(id)): CombatEffectOp {
 }
 
 describe("persistent combat effects", () => {
+  it("folds every context-free active defense grant without evaluating gated reductions", () => {
+    const defenses = mergeDamageDefenseGrants(NO_DEFENSES, [
+      { type: "all-damage-resistance" },
+      { type: "damage-resistance", damageType: "cold" },
+      { type: "damage-immunity", damageType: "poison" },
+      { type: "damage-vulnerability", damageType: "radiant" },
+      { type: "damage-resistance-source", source: "spell" },
+      {
+        type: "flat-damage-reduction",
+        damageTypes: ["bludgeoning"],
+        amount: 2,
+      },
+      {
+        type: "flat-damage-reduction",
+        damageTypes: ["slashing"],
+        amount: "PB",
+      },
+      {
+        type: "flat-damage-reduction",
+        damageTypes: ["piercing"],
+        amount: 3,
+        condition: "wearing-heavy-armor",
+      },
+    ]);
+
+    expect(defenses.allDamageResistance).toBe(true);
+    expect(defenses.resistances).toEqual(new Set(["cold"]));
+    expect(defenses.immunities).toEqual(new Set(["poison"]));
+    expect(defenses.vulnerabilities).toEqual(new Set(["radiant"]));
+    expect(defenses.sourceResistances).toEqual(new Set(["spell"]));
+    expect(defenses.flatReductions).toEqual([
+      { damageTypes: ["bludgeoning"], amount: 2 },
+    ]);
+  });
+
+  it("projects Warding Bond's catalogue defense through its live occurrence", () => {
+    const bond = effect("bond-defense", {
+      source: {
+        kind: "spell",
+        id: "warding-bond",
+        actionId: "spell-warding-bond",
+      },
+      payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+      duration: { kind: "encounter" },
+    });
+
+    expect(damageDefensesByEffects(NO_DEFENSES, [bond]).allDamageResistance).toBe(true);
+  });
+
   it("folds idempotently and revokes an exact instance", () => {
     const first = apply("one");
     const operations: CombatEffectOp[] = [
@@ -309,11 +360,13 @@ describe("persistent combat effects", () => {
     });
     expect(
       resolvePersistentDamage([bond, ward], {
+        intake: "raw",
         currentHp: 8,
         tempHp: 3,
         incomingDamage: 30,
       })
     ).toEqual({
+      resolvedDamage: 15,
       targetDamage: 10,
       transfers: [
         {
@@ -323,10 +376,12 @@ describe("persistent combat effects", () => {
         },
       ],
       consumedEffectIds: ["ward"],
+      consumedStateKeys: [],
     });
 
     expect(
       resolvePersistentDamage([bond], {
+        intake: "raw",
         currentHp: 20,
         tempHp: 0,
         incomingDamage: 9,
@@ -338,6 +393,7 @@ describe("persistent combat effects", () => {
         },
       })
     ).toEqual({
+      resolvedDamage: 4,
       targetDamage: 4,
       transfers: [
         {
@@ -347,6 +403,7 @@ describe("persistent combat effects", () => {
         },
       ],
       consumedEffectIds: [],
+      consumedStateKeys: [],
     });
   });
 
@@ -362,14 +419,17 @@ describe("persistent combat effects", () => {
     });
     expect(
       resolvePersistentDamage([ward], {
+        intake: "raw",
         currentHp: 1,
         tempHp: 0,
         incomingDamage: 20,
       })
     ).toEqual({
+      resolvedDamage: 20,
       targetDamage: 0,
       transfers: [],
       consumedEffectIds: ["ward-at-one"],
+      consumedStateKeys: [],
     });
   });
 

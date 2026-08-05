@@ -54,7 +54,9 @@ function persistedAction(action: SelectedAction): PersistedTurnAction {
     ...(action.isAttackGroup ? { isAttackGroup: true } : {}),
     ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
     ...(action.triggerEvents?.length ? { triggerEvents: action.triggerEvents } : {}),
-    ...(action.resolutionSucceeded ? { resolutionSucceeded: true } : {}),
+    ...(action.outcomeOccurrenceId
+      ? { outcomeOccurrenceId: action.outcomeOccurrenceId }
+      : {}),
   };
 }
 
@@ -73,10 +75,12 @@ export function snapshotTurnEconomy(
       free: state.selected.free.map(persistedAction),
     },
     attacksUsed: state.attacksUsed,
-    attackSwingIds: state.attackSwingIds,
+    attackSwings: state.attackSwings,
+    outcomeReceipts: state.outcomeReceipts,
+    outcomeOrdinal: state.outcomeOrdinal,
     reactionUsed: state.reactionUsed,
     reactionUsedId: state.reactionUsedId,
-    ...(state.reactionResolutionSucceeded ? { reactionResolutionSucceeded: true } : {}),
+    reactionOutcomeOccurrenceId: state.reactionOutcomeOccurrenceId,
     movementUsedFt: state.movementUsedFt,
     dashesThisTurn: state.dashesThisTurn,
     spellSlotCastsThisTurn: state.spellSlotCastsThisTurn,
@@ -95,7 +99,9 @@ function selectedAction(action: PersistedTurnAction, locale: Locale): SelectedAc
     ...(action.isAttackGroup ? { isAttackGroup: true } : {}),
     ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
     ...(action.triggerEvents?.length ? { triggerEvents: action.triggerEvents } : {}),
-    ...(action.resolutionSucceeded ? { resolutionSucceeded: true } : {}),
+    ...(action.outcomeOccurrenceId
+      ? { outcomeOccurrenceId: action.outcomeOccurrenceId }
+      : {}),
   };
 }
 
@@ -110,10 +116,12 @@ function restoreTurnEconomy(
       free: snapshot.selected.free.map((action) => selectedAction(action, locale)),
     },
     attacksUsed: snapshot.attacksUsed,
-    attackSwingIds: snapshot.attackSwingIds,
+    attackSwings: snapshot.attackSwings,
+    outcomeReceipts: snapshot.outcomeReceipts,
+    outcomeOrdinal: snapshot.outcomeOrdinal,
     reactionUsed: snapshot.reactionUsed,
     reactionUsedId: snapshot.reactionUsedId,
-    reactionResolutionSucceeded: snapshot.reactionResolutionSucceeded ?? false,
+    reactionOutcomeOccurrenceId: snapshot.reactionOutcomeOccurrenceId,
     movementUsedFt: snapshot.movementUsedFt,
     dashesThisTurn: snapshot.dashesThisTurn,
     spellSlotCastsThisTurn: snapshot.spellSlotCastsThisTurn,
@@ -130,6 +138,7 @@ function turnIsBaseline(): boolean {
     state.selected.bonus.length === 0 &&
     state.selected.free.length === 0 &&
     state.attacksUsed === 0 &&
+    state.outcomeReceipts.length === 0 &&
     !state.reactionUsed &&
     state.movementUsedFt === 0 &&
     state.dashesThisTurn === 0 &&

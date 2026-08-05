@@ -18,12 +18,14 @@ import {
   revokePersistentCombatEffectsBySource,
 } from "@/features/character/center/apply-damage";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import { buildScenario } from "@/lib/dev-scenarios";
 import { NO_DEFENSES } from "@/lib/damage-intake";
+import type { PreparedCommitArtifact } from "@/features/character/center/useTurnEconomy";
 
 function monster(id: string, name: string, tokens = [7]): EncounterCombatantView {
   return {
@@ -179,9 +181,17 @@ const revokePersistentSourceMock = vi.mocked(revokePersistentCombatEffectsBySour
 const commitNow = (afterCommit: () => void) => afterCommit();
 
 function expectApplied(effects: unknown[]): void {
+  const stagedEffects = effects.map((effect) =>
+    typeof effect === "object" &&
+    effect !== null &&
+    "kind" in effect &&
+    effect.kind === "damage"
+      ? { ...effect, intake: "resolved" }
+      : effect
+  );
   expect(applyMock).toHaveBeenCalledWith(
     "camp1",
-    effects,
+    stagedEffects,
     expect.objectContaining({
       actorId: "pc-u1",
       action: { custom: "Test action" },
@@ -194,6 +204,7 @@ beforeEach(() => {
   appendPersistentMock.mockClear();
   revokePersistentMock.mockClear();
   revokePersistentSourceMock.mockClear();
+  useCombatStore.getState().endCombat();
   useCharacterStore.setState({
     character: { ...MOCK_CHARACTER },
     readonly: false,
@@ -206,13 +217,15 @@ beforeEach(() => {
 describe("universal combat resolution", () => {
   it("records a successful Deflect Attacks reduction without inventing an attack", () => {
     let committed: ResolvedAction | undefined;
+    let artifact: PreparedCommitArtifact | undefined;
     const before = useCharacterStore.getState().character?.session.hp.current;
     render(
       <CombatResolver
         action={deflectAction()}
         sheetCombat={combat([pc()])}
-        onCommit={(afterCommit, actionOverride) => {
-          committed = actionOverride;
+        onCommit={(afterCommit, prepared) => {
+          artifact = prepared;
+          committed = prepared?.action;
           afterCommit();
         }}
         onDone={() => {}}
@@ -232,7 +245,20 @@ describe("universal combat resolution", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
 
-    expect(committed?.resolutionSucceeded).toBe(true);
+    expect(committed?.id).toBe("monk-deflect-attacks-reaction");
+    expect(artifact?.outcomes).toEqual([
+      expect.objectContaining({
+        occurrenceId: artifact?.outcomeOccurrenceId,
+        actionId: "monk-deflect-attacks-reaction",
+        target: { combatantId: "pc-u1" },
+        fact: {
+          kind: "damage-reduction",
+          incoming: 10,
+          reduced: 10,
+          remaining: 0,
+        },
+      }),
+    ]);
     expect(useCharacterStore.getState().character?.session.hp.current).toBe(before);
     expect(useCharacterStore.getState().combatRecentActions).toEqual([]);
   });
@@ -392,6 +418,59 @@ describe("universal combat resolution", () => {
     );
     undoRedo?.();
     randomUuid.mockRestore();
+  });
+
+  it("resolves damage through a target's live Warding Bond before declaring it resolved", () => {
+    const bond = {
+      id: "active-warding-bond",
+      actor: {
+        kind: "pc" as const,
+        combatantId: "pc-u1",
+        memberUid: "u1",
+        characterId: MOCK_CHARACTER.id,
+      },
+      target: {
+        kind: "pc" as const,
+        combatantId: "pc-u2",
+        memberUid: "u2",
+        characterId: "char-u2",
+      },
+      source: {
+        kind: "spell" as const,
+        id: "warding-bond",
+        actionId: "spell-warding-bond",
+        castLevel: 2,
+      },
+      payload: { kind: "grant-group" as const, activeKey: "spell-warding-bond" },
+      duration: { kind: "encounter" as const },
+    };
+    const runningCombat = combat([pc(), allyPc()]);
+    runningCombat.encounter = {
+      effectOps: [{ id: "apply-warding-bond", kind: "apply", effect: bond }],
+    } as GlobalCombat["encounter"];
+
+    render(
+      <CombatResolver
+        action={action({
+          damage: "1d8",
+          damageType: "fire",
+          damageResolution: "automatic",
+          targeting: { affinity: "ally", excludeSelf: true, maxTargets: 1 },
+        })}
+        sheetCombat={runningCombat}
+        onCommit={commitNow}
+        onDone={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Any creature" }));
+    fireEvent.click(screen.getByRole("button", { name: /borin/i }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: /damage to borin/i }), {
+      target: { value: "9" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply action" }));
+
+    expectApplied([{ kind: "damage", targetId: "pc-u2", amount: 4 }]);
   });
 
   it("compensates every intended target when a multi-target persistent append partially fails", async () => {
@@ -612,8 +691,8 @@ describe("universal combat resolution", () => {
       <CombatResolver
         action={vow}
         sheetCombat={activeCombat}
-        onCommit={(afterCommit, actionOverride) => {
-          committed = actionOverride;
+        onCommit={(afterCommit, artifact) => {
+          committed = artifact?.action;
           afterCommit();
         }}
         onDone={() => {}}
@@ -652,7 +731,14 @@ describe("universal combat resolution", () => {
     expectApplied([{ kind: "damage", targetId: "monster-1", amount: 7 }]);
     expect(applyMock).toHaveBeenCalledWith(
       "camp1",
-      [{ kind: "damage", targetId: "monster-1", amount: 7 }],
+      [
+        {
+          kind: "damage",
+          intake: "resolved",
+          targetId: "monster-1",
+          amount: 7,
+        },
+      ],
       expect.objectContaining({
         hitTargetIds: ["monster-1"],
         attackMode: "melee",
@@ -1192,8 +1278,8 @@ describe("universal combat resolution", () => {
       <CombatResolver
         action={layOnHands}
         sheetCombat={combat([pc(), ally])}
-        onCommit={(afterCommit, actionOverride) => {
-          committed = actionOverride;
+        onCommit={(afterCommit, artifact) => {
+          committed = artifact?.action;
           afterCommit();
         }}
         onDone={() => {}}
@@ -1233,8 +1319,8 @@ describe("universal combat resolution", () => {
       <CombatResolver
         action={layOnHands}
         sheetCombat={null}
-        onCommit={(afterCommit, actionOverride) => {
-          committed = actionOverride;
+        onCommit={(afterCommit, artifact) => {
+          committed = artifact?.action;
           undo = afterCommit();
         }}
         onDone={() => {}}

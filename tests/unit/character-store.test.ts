@@ -98,6 +98,21 @@ function mockCharacter(overrides?: Partial<CharacterDoc>): CharacterDoc {
   };
 }
 
+function armDeathWard(character: CharacterDoc): void {
+  character.character.spells = [
+    ...character.character.spells.filter(
+      (spell) => !("srdId" in spell) || spell.srdId !== "death-ward"
+    ),
+    { srdId: "death-ward", prepared: true },
+  ];
+  character.session.activeFeatures = [
+    ...(character.session.activeFeatures ?? []).filter(
+      (key) => key !== "spell-death-ward"
+    ),
+    "spell-death-ward",
+  ];
+}
+
 function projectedEffect(targetId = "pc-u1"): ActiveCombatEffect {
   return {
     id: "effect-heroism",
@@ -621,7 +636,7 @@ describe("characterStore — rest mechanics", () => {
       const char = mockCharacter();
       char.session.hp.current = 8;
       char.session.hp.temp = 0;
-      char.session.activeFeatures = ["spell-death-ward"];
+      armDeathWard(char);
       useCharacterStore.getState().setCharacter(char);
       // 20 damage would drop 8 → 0; the ward clamps to 1 and ends.
       useCharacterStore.getState().applyDamage(20);
@@ -644,7 +659,7 @@ describe("characterStore — rest mechanics", () => {
       const char = mockCharacter();
       char.session.hp.current = 30;
       char.session.hp.temp = 0;
-      char.session.activeFeatures = ["spell-death-ward"];
+      armDeathWard(char);
       useCharacterStore.getState().setCharacter(char);
       useCharacterStore.getState().applyDamage(5);
       const after = useCharacterStore.getState().character;
@@ -658,7 +673,7 @@ describe("characterStore — rest mechanics", () => {
       const char = mockCharacter();
       char.session.hp.current = 8;
       char.session.hp.temp = 10;
-      char.session.activeFeatures = ["spell-death-ward"];
+      armDeathWard(char);
       useCharacterStore.getState().setCharacter(char);
       useCharacterStore.getState().applyDamage(12);
       const after = useCharacterStore.getState().character;
@@ -672,7 +687,7 @@ describe("characterStore — rest mechanics", () => {
       const char = mockCharacter();
       char.session.hp.current = 8;
       char.session.hp.temp = 0;
-      char.session.activeFeatures = ["spell-death-ward"];
+      armDeathWard(char);
       useCharacterStore.getState().setCharacter(char);
       useCharacterStore.getState().applyDamage(100);
       const after = useCharacterStore.getState().character;

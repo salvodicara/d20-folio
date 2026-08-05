@@ -72,11 +72,16 @@ What is not yet good enough:
   fields and several one-off adapters;
 - `src/lib/smart-tracker.ts` and `src/lib/grants.ts` are large compilers with growing conditional
   surfaces, while `CombatResolver.tsx` and `TurnEconomyProvider.tsx` still mix orchestration with UI;
-- success receipts are not uniformly modeled for attacks, saves and per-swing multiattacks;
+- attack/save/damage-reduction receipts now preserve turn occurrence, target and honest exact-vs-aggregate
+  instance identity, but damage-dealt facts and an explicit critical-hit resolver input are still missing;
 - the coverage matrices are manually curated and can be green while a declaration has no complete
   runtime consumer;
 - older docs contain closed-audit language that proved too optimistic. Treat them as evidence and
   history, not as a substitute for code/data/source inspection;
+- PC damage now has one pure `reducePcDamage` kernel for open-sheet and fresh-read peer state, but
+  the own-sheet encounter adapter still stops at optimistic projection consumption: it does not yet
+  apply/reverse returned Warding Bond partner transfers or transactionally revoke/restore the consumed
+  campaign occurrence. Do not claim that local projection filtering is a reload-durable inverse;
 - the current public + pack matrices still contain many `partial`/`narrative` rows. Some are correct
   table/VTT boundaries, but they have not all been reclassified clause by clause against the actual
   2024 source and runtime.
@@ -96,6 +101,10 @@ The main delivered seams are:
 
 - resilient encounter effect delivery, including offline party members and NPC allies;
 - reactive hit and incoming-damage effects;
+- one pure PC damage transition shared by character-store and peer-campaign reducers, including explicit
+  raw/resolved intake, Temporary HP, dying/knockout/massive-death state and exact zero-HP-floor identity;
+- persisted occurrence-based attack/save/damage-reduction facts with owner-validated hydration and exact
+  action/Attack-swing/Reaction undo;
 - variable-level charged-item casts and activated-item tracker/timer lifecycles;
 - bounded free-cast spell pools routed through ordinary cast resolution;
 - variable healing pools, deterministic condition cures and exact resource undo;

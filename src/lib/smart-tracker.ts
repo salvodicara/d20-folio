@@ -650,11 +650,9 @@ export interface ResolvedAction {
   grantsNextAttackAdvantage?: true;
   locksMovement?: true;
   requiresActionThisTurn?: string;
-  requiresSuccessfulActionThisTurn?: string;
+  requiresOutcomeThisTurn?: SrdActionDef["requiresOutcomeThisTurn"];
   requiresActionCategoryThisTurn?: ActionEconomyCategory;
   maxUsesPerTurn?: number;
-  /** Set only on the committed receipt after a reviewed resolution succeeds. */
-  resolutionSucceeded?: true;
   /** Active state this action explicitly maintains for the current round. */
   maintainsActiveKey?: string;
   economyCategory?: ActionEconomyCategory;
@@ -4806,14 +4804,14 @@ function actionTurnConstraints(
   action: Pick<
     SrdActionDef,
     | "requiresActionThisTurn"
-    | "requiresSuccessfulActionThisTurn"
+    | "requiresOutcomeThisTurn"
     | "requiresActionCategoryThisTurn"
     | "maxUsesPerTurn"
   >
 ): Pick<
   ResolvedAction,
   | "requiresActionThisTurn"
-  | "requiresSuccessfulActionThisTurn"
+  | "requiresOutcomeThisTurn"
   | "requiresActionCategoryThisTurn"
   | "maxUsesPerTurn"
 > {
@@ -4821,8 +4819,8 @@ function actionTurnConstraints(
     ...(action.requiresActionThisTurn
       ? { requiresActionThisTurn: action.requiresActionThisTurn }
       : {}),
-    ...(action.requiresSuccessfulActionThisTurn
-      ? { requiresSuccessfulActionThisTurn: action.requiresSuccessfulActionThisTurn }
+    ...(action.requiresOutcomeThisTurn
+      ? { requiresOutcomeThisTurn: action.requiresOutcomeThisTurn }
       : {}),
     ...(action.requiresActionCategoryThisTurn
       ? { requiresActionCategoryThisTurn: action.requiresActionCategoryThisTurn }

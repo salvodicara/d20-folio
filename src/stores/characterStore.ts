@@ -68,18 +68,8 @@ import {
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { evaluateGrants } from "@/lib/grants";
 import { slotUsageKey } from "@/lib/cast-options";
-import {
-  applyDamage as damageHp,
-  applyHealing as healHp,
-  clampHp,
-  clampTemp,
-} from "@/lib/combat-hp";
-import {
-  deathSaveFailuresFromDamage,
-  isInstantDeathAtZero,
-  isMassiveDamageDeath,
-} from "@/lib/damage-intake";
-import { DEATH_FAIL_LIMIT } from "@/lib/character-status";
+import { applyHealing as healHp, clampHp, clampTemp } from "@/lib/combat-hp";
+import { reducePcDamage } from "@/lib/combat-transition";
 import {
   allBundleSpellIds,
   getAlwaysPreparedFromGrants,
@@ -608,14 +598,6 @@ interface CharacterState {
  * boundary `applyCombatToSession` re-clamps). A no-op with no character / no seam.
  */
 /**
- * The `session.activeFeatures` toggle key Death Ward's `while-active` block lights
- * (the `spell-<id>` convention). Read by `applyDamage`'s 0-HP interrupt (clamp to 1
- * + end the ward) and re-lit by the HP-control undo. The `spell-death-ward` grant
- * declares the SAME key (single source, golden rule 6).
- */
-const DEATH_WARD_ACTIVE_KEY = "spell-death-ward";
-
-/**
  * The Unconscious condition id (RA-10) — auto-applied by `applyDamage` when a
  * character drops to 0 HP (SRD "Falling Unconscious") and auto-shed by the
  * heal-from-0 seam in `setHP` / the at-zero "drop to 1 instead" interrupt. The
@@ -860,47 +842,103 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const { character } = get();
     if (!character) return;
     const { current, temp } = character.session.hp;
-    // D1 — effective max (stored base + hp-flat boons + Aid), see `setHP`.
     const max = effectiveMaxHp(character.character, character.session);
+    const aggregate = aggregateCharacterGrants(character.character, character.session);
+    const persistentEffects = character.session.encounterEffects ?? [];
+    const stateFloorByKey = new Map(
+      aggregate.zeroHpFloors.map((floor) => [
+        floor.activeKey,
+        { stateKey: floor.activeKey, hitPoints: floor.hitPoints },
+      ])
+    );
+    const transition = reducePcDamage({
+      state: {
+        hp: { current, temp, max },
+        conditions: character.session.conditions,
+        deathSaves: {
+          successes: character.session.deathSucc,
+          failures: character.session.deathFail,
+        },
+      },
+      intake: { stage: "resolved", amount },
+      ...(opts?.crit ? { crit: true } : {}),
+      persistentEffects,
+      stateZeroHpFloors: [...stateFloorByKey.values()],
+    });
+    if (!transition.changed) return;
 
-    // ── RA-03 — damage while ALREADY at 0 HP (SRD "Death Saving Throws —
-    // Damage at 0 Hit Points"). HP never drops below 0, so the hit becomes
-    // dying-track marks instead: one failure, two from a Critical Hit, and
-    // instant death (3 failures) when the damage reaches the HP maximum. A hit
-    // while STABLE ends the stability (the successes clear and the death saves
-    // restart). Temp HP still absorbs first (RAW: it's a buffer, but you still
-    // TOOK damage — the same total-damage reading the concentration save uses).
-    // Dead (3 failures) = inert; nothing left to mark.
+    const consumedEffectIds = new Set(transition.consumedEffectIds);
+    const consumedActiveKeys = new Set([
+      ...transition.consumedStateKeys,
+      ...persistentEffects.flatMap((effect) =>
+        consumedEffectIds.has(effect.id) && effect.payload.kind !== "condition"
+          ? [effect.payload.activeKey]
+          : []
+      ),
+    ]);
+    const nextLocalEffects = get().combatActiveEffects.filter(
+      (effect) => !consumedEffectIds.has(effect.id)
+    );
+    const nextEncounterEffects = persistentEffects.filter(
+      (effect) => !consumedEffectIds.has(effect.id)
+    );
+    const encounterProjection = get().encounterEffectProjection;
+    const nextEncounterEffectProjection =
+      consumedEffectIds.size > 0 && encounterProjection?.characterId === character.id
+        ? {
+            ...encounterProjection,
+            effects: encounterProjection.effects.filter(
+              (effect) => !consumedEffectIds.has(effect.id)
+            ),
+          }
+        : encounterProjection;
+    const logTransitionEvents = (): void => {
+      for (const event of transition.events) {
+        if (event.kind === "hp-damage") {
+          get().logEvent({
+            kind: event.kind,
+            amount: event.incoming,
+            current: event.current,
+            max: event.max,
+          });
+        } else if (event.kind === "condition-gain" || event.kind === "condition-loss") {
+          get().logEvent(event);
+        } else if (event.kind === "death-save") {
+          get().logEvent(event);
+        }
+      }
+    };
+
     if (current === 0) {
-      if (character.session.deathFail >= DEATH_FAIL_LIMIT) return;
-      const { temp: newTemp } = damageHp(current, temp, amount);
-      const instantDeath = isInstantDeathAtZero(amount, max);
-      const failures = instantDeath
-        ? DEATH_FAIL_LIMIT
-        : Math.min(
-            DEATH_FAIL_LIMIT,
-            character.session.deathFail + deathSaveFailuresFromDamage(opts?.crit === true)
-          );
       set({
+        combatActiveEffects: nextLocalEffects,
+        encounterEffectProjection: nextEncounterEffectProjection,
         character: {
           ...character,
           session: {
             ...character.session,
-            hp: { ...character.session.hp, temp: newTemp },
-            // A Stable creature that takes damage stops being Stable and must
-            // start making death saves again — its successes clear.
-            deathSucc: 0,
-            deathFail: failures,
+            hp: {
+              ...character.session.hp,
+              current: transition.state.hp.current,
+              temp: transition.state.hp.temp,
+            },
+            conditions: [...transition.state.conditions],
+            deathSucc: transition.state.deathSaves.successes,
+            deathFail: transition.state.deathSaves.failures,
+            ...(consumedEffectIds.size > 0
+              ? { encounterEffects: nextEncounterEffects }
+              : {}),
+            ...(consumedActiveKeys.size > 0
+              ? {
+                  activeFeatures: (character.session.activeFeatures ?? []).filter(
+                    (key) => !consumedActiveKeys.has(key)
+                  ),
+                }
+              : {}),
           },
         },
       });
-      get().logEvent({ kind: "hp-damage", amount, current: 0, max });
-      get().logEvent({
-        kind: "death-save",
-        outcome: "failure",
-        successes: 0,
-        failures,
-      });
+      logTransitionEvents();
       persistCombat(get);
       return;
     }
@@ -911,24 +949,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // the End-Turn maintenance check then treats a hit round as maintained — no
     // banner, zero extra taps. Per-round flag resets in `combatStore.endTurn`.
     useCombatStore.getState().noteDamageTaken();
-
-    // Temp HP absorbs first, then current HP — see `lib/combat-hp`.
-    const { current: rawCurrent, temp: newTemp } = damageHp(current, temp, amount);
-
-    // Death Ward interrupt — a DETERMINISTIC 0-HP save (spell:death-ward, 2024
-    // RAW): "The first time the target would drop to 0 Hit Points before the spell
-    // ends, the target instead drops to 1 Hit Point, and the spell ends." When the
-    // ward toggle is lit and this damage would cross to 0, clamp to 1 and END the
-    // ward (remove its `activeFeatures` key below). This is RAW, not a roll (golden
-    // rule 21). Applied BEFORE the concentration branch so the clamped 1 HP takes
-    // the NORMAL concentration-save path (you took damage but didn't drop to 0), not
-    // the 0-HP auto-break. The HP-control edge owns the undoable damage toast and
-    // re-lights the ward on undo.
-    const wardActive = (character.session.activeFeatures ?? []).includes(
-      DEATH_WARD_ACTIVE_KEY
-    );
-    const wardTriggered = wardActive && rawCurrent <= 0;
-    const newCurrent = wardTriggered ? 1 : rawCurrent;
+    const newCurrent = transition.state.hp.current;
+    const newTemp = transition.state.hp.temp;
 
     // S7 — a Polymorph SELF-form ends the moment its Temporary Hit Points are
     // depleted (2024 RAW's PRIMARY end-trigger: "the spell ends early on the
@@ -977,7 +999,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         // CONCENTRATION-ONLY grant bonus (Bladesong Focus +INT — previously
         // computed but never shown; AX exposure audit).
         const cd = character.character;
-        const agg = aggregateCharacterGrants(cd, character.session);
         // B8 — the ability-keyed save-bonus layers (Aura of Protection +CHA,
         // Increased Toughness +WIS, Bladesong Focus +INT) scale with the CURRENT
         // (effective) score, so an ability-boosting item raises them (RAW 2024).
@@ -985,29 +1006,30 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         // helpers from it — never the raw stored scores (rule 6).
         const effectiveScores = effectiveAbilityScores(
           cd.abilityScores,
-          agg.abilityScoreFloors,
-          agg.itemAbilityScoreBonus,
-          agg.itemAbilityScoreCap
+          aggregate.abilityScoreFloors,
+          aggregate.itemAbilityScoreBonus,
+          aggregate.itemAbilityScoreCap
         );
         const conSave = savingThrowBonus(
           effectiveScores.CON,
           totalLevel(cd),
           // CON-save proficiency = own ∪ granted (inline — engine-core must not
           // import the lib/views presenter that owns the display merge).
-          cd.savingThrows.includes("CON") || agg.saveProficiencies.has("CON"),
+          cd.savingThrows.includes("CON") || aggregate.saveProficiencies.has("CON"),
           cd.savingThrowBonusOverrides?.CON ?? null,
           character.session.exhaustion,
           cd.proficiencyBonusOverride,
-          resolveSaveBonus(agg, effectiveScores, "CON")
+          resolveSaveBonus(aggregate, effectiveScores, "CON")
         );
-        const saveBonus = conSave + resolveConcentrationSaveBonus(agg, effectiveScores);
+        const saveBonus =
+          conSave + resolveConcentrationSaveBonus(aggregate, effectiveScores);
         useToastStore.getState().showToast({
           intent: {
             kind: "concentration-save",
             spell: concentrating,
             dc,
             saveBonus,
-            advantage: hasConcentrationSaveAdvantage(agg),
+            advantage: hasConcentrationSaveAdvantage(aggregate),
           },
           duration: 5000,
         });
@@ -1021,23 +1043,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const retractForm = formEnds;
     const revertBuild = formEnds ? revertBuildFromPrior(activeForm.prior) : undefined;
 
-    // ── RA-03/RA-10 — crossing to 0 HP. A knockout starts a FRESH dying state
-    // (the track resets to 0/0 so a prior episode's marks never carry over), and
-    // per SRD "Falling Unconscious" the character has the Unconscious condition
-    // until they regain HP (removed by the heal-from-0 seam in `setHP`). SRD
-    // "Instant Death — Massive Damage": when the remainder past 0 (after the
-    // temp pool and current HP) reaches the HP maximum, the character dies
-    // outright instead — 3 failures (the one derived death predicate,
-    // `character-status.ts`), and no Unconscious (that condition belongs to
-    // dying, not to a corpse). `current > 0` is guaranteed here (the at-0
-    // branch returned above), so `newCurrent === 0` IS the crossing.
-    const knockout = newCurrent === 0;
-    const massiveDeath = knockout && isMassiveDamageDeath(amount, current, temp, max);
-    const gainsUnconscious =
-      knockout &&
-      !massiveDeath &&
-      !character.session.conditions.includes(UNCONSCIOUS_CONDITION_ID);
+    const endedActiveKeys = new Set([...droppedActiveKeys, ...consumedActiveKeys]);
     set({
+      combatActiveEffects: nextLocalEffects,
+      encounterEffectProjection: nextEncounterEffectProjection,
       character: {
         ...character,
         ...(revertBuild ? { character: { ...character.character, ...revertBuild } } : {}),
@@ -1045,49 +1054,24 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           ...character.session,
           hp: { ...character.session.hp, current: newCurrent, temp: newTemp },
           concentration: newConcentration,
-          // RA-03 — a knockout is a fresh dying state (0/0); massive damage is
-          // instant death (3 failures = the derived dead predicate).
-          ...(knockout
-            ? { deathSucc: 0, deathFail: massiveDeath ? DEATH_FAIL_LIMIT : 0 }
-            : {}),
-          // RA-10 — falling Unconscious at 0 HP (skipped when instantly dead).
-          ...(gainsUnconscious
-            ? {
-                conditions: [...character.session.conditions, UNCONSCIOUS_CONDITION_ID],
-              }
+          conditions: [...transition.state.conditions],
+          deathSucc: transition.state.deathSaves.successes,
+          deathFail: transition.state.deathSaves.failures,
+          ...(consumedEffectIds.size > 0
+            ? { encounterEffects: nextEncounterEffects }
             : {}),
           ...(retractForm ? { polymorphForm: undefined } : {}),
-          // S1 — retract the auto-dropped spell's while-active chips with it, plus
-          // the Death Ward toggle when the ward fired (the spell ends per RAW).
-          ...(droppedActiveKeys.length > 0 || wardTriggered
+          ...(endedActiveKeys.size > 0
             ? {
                 activeFeatures: (character.session.activeFeatures ?? []).filter(
-                  (k) =>
-                    !droppedActiveKeys.includes(k) &&
-                    !(wardTriggered && k === DEATH_WARD_ACTIVE_KEY)
+                  (key) => !endedActiveKeys.has(key)
                 ),
               }
             : {}),
         },
       },
     });
-    // Events-as-data: log the hit as a structured `hp-damage` event (the total
-    // incoming amount + the resulting current/max). The presenter localizes it.
-    get().logEvent({ kind: "hp-damage", amount, current: newCurrent, max });
-    // RA-10 — falling Unconscious is a story beat (the heal-from-0 seam logs the
-    // matching `condition-loss`); massive-damage instant death logs the resolved
-    // dying track (3 failures) so the chronicle carries the death.
-    if (gainsUnconscious) {
-      get().logEvent({ kind: "condition-gain", conditionId: UNCONSCIOUS_CONDITION_ID });
-    }
-    if (massiveDeath) {
-      get().logEvent({
-        kind: "death-save",
-        outcome: "failure",
-        successes: 0,
-        failures: DEATH_FAIL_LIMIT,
-      });
-    }
+    logTransitionEvents();
     // Concentration that ended outright (0-HP break OR a form's Temp-HP depletion)
     // is its own story beat.
     if (concentrating !== "" && newConcentration === "") {

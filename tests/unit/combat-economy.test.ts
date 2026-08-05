@@ -3,7 +3,6 @@ import {
   canAssignActionClaims,
   economyClaimsForTurn,
   economyActionCategory,
-  successfulActionPrerequisiteMet,
   type EconomyActionRule,
 } from "@/lib/combat-economy";
 
@@ -15,26 +14,6 @@ const haste: EconomyActionRule = {
 };
 
 describe("restricted combat economy", () => {
-  it("unlocks a reviewed follow-up only from a successful durable receipt", () => {
-    const redirect = {
-      requiresSuccessfulActionThisTurn: "monk-deflect-attacks-reaction",
-    };
-    expect(
-      successfulActionPrerequisiteMet(redirect, [{ id: "monk-deflect-attacks-reaction" }])
-    ).toBe(false);
-    expect(
-      successfulActionPrerequisiteMet(redirect, [
-        { id: "monk-deflect-attacks-reaction", resolutionSucceeded: true },
-      ])
-    ).toBe(true);
-    expect(
-      successfulActionPrerequisiteMet(redirect, [], {
-        id: "monk-deflect-attacks-reaction",
-        resolutionSucceeded: true,
-      })
-    ).toBe(true);
-  });
-
   it("lets a restricted action happen before or after an unrestricted action", () => {
     const cast = { category: null } as const;
     const dash = { category: "dash" } as const;

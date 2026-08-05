@@ -43,6 +43,19 @@ import { useConfirmStore } from "@/stores/confirmStore";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { buildDevScenario } from "@/lib/dev-scenarios";
+import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
+
+function outcomeReceipt(occurrenceId: string): CombatOutcomeReceipt {
+  return {
+    id: `${occurrenceId}:0`,
+    occurrenceId,
+    actionId: "weapon-longsword",
+    instance: 0,
+    count: 1,
+    target: { combatantId: "monster-1" },
+    fact: { kind: "attack", result: "hit" },
+  };
+}
 
 function load(): void {
   useCharacterStore.setState({
@@ -126,9 +139,12 @@ describe("PlayTab action derivations", () => {
       budget: { action: 1, bonus: 1 },
       attackBudget: 1,
       attacksUsed: 0,
-      attackSwingIds: [],
+      attackSwings: [],
+      outcomeReceipts: [],
+      outcomeOrdinal: 0,
       reactionUsed: false,
       reactionUsedId: null,
+      reactionOutcomeOccurrenceId: null,
     });
     useConfirmStore.setState({ open: false, options: null, _resolve: null });
   });
@@ -258,7 +274,9 @@ describe("PlayTab action derivations", () => {
     expect(useCombatStore.getState().selected.action.map((s) => s.id)).toEqual([
       "attack-group",
     ]);
-    expect(useCombatStore.getState().attackSwingIds).toEqual(["weapon-dagger"]);
+    expect(useCombatStore.getState().attackSwings).toEqual([
+      { actionId: "weapon-dagger" },
+    ]);
 
     // …and BOTH off-hand rows now appear: the gate recognizes the committed Light
     // main attack through the swing ledger, not just `selected.action`.
@@ -271,7 +289,7 @@ describe("PlayTab action derivations", () => {
     // retract (the reveal gate reads the swing ledger reactively).
     act(() => useCombatStore.getState().undoAttackSwing());
     await waitFor(() => {
-      expect(useCombatStore.getState().attackSwingIds).toEqual([]);
+      expect(useCombatStore.getState().attackSwings).toEqual([]);
       expect(screen.queryByLabelText("Attack: Dagger (off-hand)")).toBeNull();
       expect(screen.queryByLabelText("Attack: Shortsword (off-hand)")).toBeNull();
     });
@@ -492,7 +510,7 @@ describe("PlayTab Extra Attack (card-borne attacks-remaining)", () => {
       budget: { action: 1, bonus: 1 },
       attackBudget: 1,
       attacksUsed: 0,
-      attackSwingIds: [],
+      attackSwings: [],
       reactionUsed: false,
       reactionUsedId: null,
     });
@@ -664,11 +682,19 @@ describe("PlayTab Extra Attack (card-borne attacks-remaining)", () => {
     swing();
     await waitFor(() => expect(useCombatStore.getState().attacksUsed).toBe(2));
     expect(actionCoin().getAttribute("data-state")).toBe("spent");
+    useCombatStore.setState({
+      attackSwings: [
+        { actionId: "weapon-longsword", outcomeOccurrenceId: "swing-1" },
+        { actionId: "weapon-longsword", outcomeOccurrenceId: "swing-2" },
+      ],
+      outcomeReceipts: [outcomeReceipt("swing-1"), outcomeReceipt("swing-2")],
+    });
 
     // Re-arm the spent Action coin — slot freed AND the swing counter clears.
     fireEvent.click(screen.getByLabelText("Re-arm Action"));
     expect(useCombatStore.getState().attacksUsed).toBe(0);
     expect(useCombatStore.getState().selected.action).toEqual([]);
+    expect(useCombatStore.getState().outcomeReceipts).toEqual([]);
     expect(actionCoin().getAttribute("data-state")).toBe("open");
 
     // The rearm toast's undo round-trips: group re-added, counter restored to 2.
@@ -677,6 +703,9 @@ describe("PlayTab Extra Attack (card-borne attacks-remaining)", () => {
     rearmToast?.onUndo?.();
     expect(useCombatStore.getState().attacksUsed).toBe(2);
     expect(useCombatStore.getState().selected.action).toHaveLength(1);
+    expect(
+      useCombatStore.getState().outcomeReceipts.map(({ occurrenceId }) => occurrenceId)
+    ).toEqual(["swing-1", "swing-2"]);
     await waitFor(() => expect(actionCoin().getAttribute("data-state")).toBe("spent"));
   });
 
@@ -706,6 +735,29 @@ describe("PlayTab Extra Attack (card-borne attacks-remaining)", () => {
     rearmToast?.onUndo?.();
     expect(useCombatStore.getState().attacksUsed).toBe(1);
     expect(useCombatStore.getState().selected.action).toHaveLength(1);
+  });
+
+  it("reaction re-arm removes and restores only its exact outcome occurrence", async () => {
+    load();
+    renderPage();
+    const reactionReceipt: CombatOutcomeReceipt = {
+      ...outcomeReceipt("reaction-1"),
+      actionId: "shield",
+    };
+    act(() => {
+      useCombatStore.getState().useReaction("shield", "reaction-1");
+      useCombatStore.getState().commitOutcomeReceipts([reactionReceipt]);
+    });
+
+    fireEvent.click(await screen.findByLabelText("Re-arm Reaction"));
+    expect(useCombatStore.getState().reactionUsed).toBe(false);
+    expect(useCombatStore.getState().outcomeReceipts).toEqual([]);
+
+    const toasts = useToastStore.getState().toasts;
+    toasts[toasts.length - 1]?.onUndo?.();
+    expect(useCombatStore.getState().reactionUsedId).toBe("shield");
+    expect(useCombatStore.getState().reactionOutcomeOccurrenceId).toBe("reaction-1");
+    expect(useCombatStore.getState().outcomeReceipts).toEqual([reactionReceipt]);
   });
 });
 

@@ -15,11 +15,20 @@ import type { EconomySlot } from "@/stores/combatStore";
 import type { ResolvedAction, ActiveMaintainedEffect } from "@/lib/smart-tracker";
 import type { RiderVM } from "@/lib/views/rider-view";
 import type { CunningStrikeVM } from "@/lib/views/cunning-strike-view";
+import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 
 type CommitEffect = () => (() => void) | undefined;
+export interface PreparedCommitArtifact {
+  /** Cost/pool adjustments resolved after target review. */
+  action?: ResolvedAction;
+  /** Stable identity of this reviewed use, including receipt-free resolutions. */
+  outcomeOccurrenceId?: string;
+  /** Reviewed table facts, kept separate from the reusable action definition. */
+  outcomes?: ReadonlyArray<CombatOutcomeReceipt>;
+}
 export type PreparedCommit = (
   afterCommit: CommitEffect,
-  actionOverride?: ResolvedAction
+  artifact?: PreparedCommitArtifact
 ) => void;
 
 /** The economy commit surface shared by the center meter + the Play-tab cards. */

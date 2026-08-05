@@ -93,6 +93,7 @@ import {
   resolvePersistentHit,
   tempHpBoundEffectIds,
 } from "@/lib/combat-effects";
+import { reducePcDamage, type PcDamageTransitionResult } from "@/lib/combat-transition";
 import { isActiveCombatEffect } from "@/lib/combat-effect-io";
 import { defaultCombatState, reduceMemberCombatEffects } from "@/lib/combat-state";
 import {
@@ -764,6 +765,8 @@ interface DeclaredAmountEffect {
 
 type DeclaredDamageEffect = DeclaredAmountEffect & {
   kind: "damage";
+  intake: "raw" | "resolved";
+  crit?: boolean;
   damageType?: DamageType;
   damageSource?: DamageSource;
 };
@@ -860,6 +863,7 @@ interface DirectPcEffectResult {
     target: CombatantRef;
     amount: number;
     effectId: string;
+    intake: "raw" | "resolved";
     actorId?: string;
     action?: LocText;
     damageType?: DamageType;
@@ -902,6 +906,91 @@ export function reduceDirectPcEffects(
     id: String(eventIndex++),
     round: provenance.round,
   });
+  const landDamageTransition = (transition: PcDamageTransitionResult): void => {
+    current = transition.state.hp.current;
+    temp = transition.state.hp.temp;
+    conditions = [...transition.state.conditions];
+    if (
+      transition.state.deathSaves.successes !== currentDeathSaves.successes ||
+      transition.state.deathSaves.failures !== currentDeathSaves.failures
+    ) {
+      currentDeathSaves = transition.state.deathSaves;
+      deathSaves = currentDeathSaves;
+    }
+    for (const effectId of transition.consumedEffectIds) {
+      consumedEffectIds.add(effectId);
+    }
+    transfers.push(
+      ...transition.transfers.map((transfer) => ({
+        ...transfer,
+        intake: "resolved" as const,
+      })),
+      ...transition.retaliations.map((retaliation) => ({
+        target: retaliation.target,
+        amount: retaliation.amount,
+        effectId: retaliation.effectId,
+        intake: "raw" as const,
+        actorId: retaliation.actor.combatantId,
+        action: srdText("spell", retaliation.sourceId, "name"),
+        damageType: retaliation.damageType,
+        damageSource: "spell" as const,
+      }))
+    );
+    for (const event of transition.events) {
+      if (event.kind === "hp-damage") {
+        if (event.applied <= 0) continue;
+        events.push(
+          stamp({
+            kind: "hp-damage",
+            targetId: target.targetId,
+            amount: event.applied,
+            current: event.current,
+            max: event.max,
+            ...(event.tempAbsorbed ? { tempAbsorbed: event.tempAbsorbed } : {}),
+            attackerId: provenance.actorId,
+            action: provenance.action,
+          })
+        );
+      } else if (event.kind === "down") {
+        events.push(stamp({ kind: "down", targetId: target.targetId }));
+      } else if (event.kind === "condition-gain") {
+        events.push(
+          stamp({
+            kind: event.kind,
+            targetId: target.targetId,
+            conditionId: event.conditionId,
+            attackerId: provenance.actorId,
+            action: provenance.action,
+          })
+        );
+      } else if (event.kind === "condition-loss") {
+        events.push(
+          stamp({
+            kind: event.kind,
+            targetId: target.targetId,
+            conditionId: event.conditionId,
+            actorId: provenance.actorId,
+            action: provenance.action,
+          })
+        );
+      }
+    }
+  };
+
+  if (provenance.hit) {
+    landDamageTransition(
+      reducePcDamage({
+        state: {
+          hp: { current, temp, max: target.maxHp },
+          conditions,
+          deathSaves: currentDeathSaves,
+        },
+        intake: { stage: "resolved", amount: 0 },
+        persistentEffects: provenance.persistentEffects,
+        hit: provenance.hit,
+      })
+    );
+  }
 
   for (const effect of effects) {
     if (effect.targetId !== target.targetId) continue;
@@ -976,7 +1065,7 @@ export function reduceDirectPcEffects(
       }
       continue;
     }
-    let amount = Math.max(0, Math.round(effect.amount));
+    const amount = Math.max(0, Math.round(effect.amount));
     if (amount === 0) continue;
     if (effect.kind === "temp-hp") {
       if (amount > temp) {
@@ -1012,67 +1101,28 @@ export function reduceDirectPcEffects(
       }
       continue;
     }
-    const outcome = resolvePersistentDamage(
-      (provenance.persistentEffects ?? []).filter(
-        (active) => !consumedEffectIds.has(active.id)
-      ),
-      {
-        currentHp: current,
-        tempHp: temp,
-        incomingDamage: amount,
-        ...(effect.damageType
-          ? {
-              damageType: effect.damageType,
-              damageSource: effect.damageSource,
-              defenses: target.defenses,
-            }
-          : {}),
-      }
-    );
-    amount = outcome.targetDamage;
-    transfers.push(...outcome.transfers);
-    for (const effectId of outcome.consumedEffectIds) consumedEffectIds.add(effectId);
-    const beforeCurrent = current;
-    const beforeTemp = temp;
-    const absorbed = Math.min(temp, amount);
-    temp -= absorbed;
-    current = Math.max(0, current - (amount - absorbed));
-    const landed = beforeCurrent - current + (beforeTemp - temp);
-    if (landed > 0) {
-      events.push(
-        stamp({
-          kind: "hp-damage",
-          targetId: target.targetId,
-          amount: landed,
-          current,
-          max: target.maxHp,
-          ...(absorbed > 0 ? { tempAbsorbed: absorbed } : {}),
-          attackerId: provenance.actorId,
-          action: provenance.action,
-        })
-      );
-      if (beforeCurrent > 0 && current === 0) {
-        events.push(stamp({ kind: "down", targetId: target.targetId }));
-      }
-    }
-  }
-
-  if (provenance.hit) {
-    const retaliations = resolvePersistentHit(provenance.persistentEffects ?? [], {
-      attacker: provenance.hit.attacker,
-      attackMode: provenance.hit.attackMode,
-      tempHp: target.tempHp,
-    });
-    transfers.push(
-      ...retaliations.map((retaliation) => ({
-        target: retaliation.target,
-        amount: retaliation.amount,
-        effectId: retaliation.effectId,
-        actorId: retaliation.actor.combatantId,
-        action: srdText("spell", retaliation.sourceId, "name"),
-        damageType: retaliation.damageType,
-        damageSource: "spell" as const,
-      }))
+    landDamageTransition(
+      reducePcDamage({
+        state: {
+          hp: { current, temp, max: target.maxHp },
+          conditions,
+          deathSaves: currentDeathSaves,
+        },
+        intake:
+          effect.intake === "resolved"
+            ? { stage: "resolved", amount }
+            : {
+                stage: "raw",
+                amount,
+                ...(effect.damageType ? { damageType: effect.damageType } : {}),
+                ...(effect.damageSource ? { damageSource: effect.damageSource } : {}),
+                defenses: target.defenses,
+              },
+        ...(effect.crit ? { crit: true } : {}),
+        persistentEffects: (provenance.persistentEffects ?? []).filter(
+          (active) => !consumedEffectIds.has(active.id)
+        ),
+      })
     );
   }
 
@@ -1123,7 +1173,7 @@ export async function applyDeclaredCombatEffects(
         (effect) => effect.kind === "damage" && effect.targetId === targetId
       )
     ) {
-      applicable.push({ kind: "damage", targetId, amount: 0 });
+      applicable.push({ kind: "damage", intake: "resolved", targetId, amount: 0 });
     }
   }
   if (applicable.length === 0 && (context?.consumeEffectIds?.length ?? 0) === 0) return;
@@ -1377,7 +1427,8 @@ export async function applyDeclaredCombatEffects(
 
     // Shared-damage links resolve from the same fresh snapshots. Each link occurrence
     // transfers at most once per original damage chain, preventing reciprocal bonds from
-    // looping while still allowing the recipient's own resistance/one-shot ward to apply.
+    // looping. A post-mitigation shared packet stays resolved (no second resistance), a
+    // retaliation packet stays raw, and one-shot floors run at either intake stage.
     while (transferQueue.length > 0) {
       const transfer = transferQueue.shift();
       if (!transfer) continue;
@@ -1389,6 +1440,7 @@ export async function applyDeclaredCombatEffects(
           [
             {
               kind: "damage",
+              intake: transfer.intake,
               targetId: target.targetId,
               amount: transfer.amount,
               ...(transfer.damageType ? { damageType: transfer.damageType } : {}),
@@ -1408,6 +1460,7 @@ export async function applyDeclaredCombatEffects(
           chronicle,
           {
             kind: "damage",
+            intake: transfer.intake,
             targetId: transfer.target.combatantId,
             amount: transfer.amount,
             ...(transfer.damageType ? { damageType: transfer.damageType } : {}),
@@ -2072,6 +2125,7 @@ function reducePersistentMonsterDamage(
       })
     : [];
   const outcome = resolvePersistentDamage(persistentEffects, {
+    intake: effect.intake,
     currentHp,
     tempHp: monster.tempHp ?? 0,
     incomingDamage: effect.amount,
@@ -2093,11 +2147,15 @@ function reducePersistentMonsterDamage(
       provenance?.action
     ),
     transfers: [
-      ...outcome.transfers,
+      ...outcome.transfers.map((transfer) => ({
+        ...transfer,
+        intake: "resolved" as const,
+      })),
       ...retaliations.map((entry) => ({
         target: entry.target,
         amount: entry.amount,
         effectId: entry.effectId,
+        intake: "raw" as const,
         actorId: entry.actor.combatantId,
         action: srdText("spell", entry.sourceId, "name"),
         damageType: entry.damageType,
@@ -2412,6 +2470,7 @@ function applyDeclaredEffectsOptimistic(
         [
           {
             kind: "damage",
+            intake: transfer.intake,
             targetId: transfer.target.combatantId,
             amount: transfer.amount,
             ...(transfer.damageType ? { damageType: transfer.damageType } : {}),
@@ -2428,6 +2487,7 @@ function applyDeclaredEffectsOptimistic(
       next,
       {
         kind: "damage",
+        intake: transfer.intake,
         targetId: transfer.target.combatantId,
         amount: transfer.amount,
         ...(transfer.damageType ? { damageType: transfer.damageType } : {}),

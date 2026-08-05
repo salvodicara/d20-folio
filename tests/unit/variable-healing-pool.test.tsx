@@ -42,7 +42,12 @@ function PoolProbe() {
       </button>
       <output>{formula}</output>
       <button
-        onClick={() => preparedCommit?.(() => undefined, preparedAction ?? undefined)}
+        onClick={() =>
+          preparedCommit?.(
+            () => undefined,
+            preparedAction ? { action: preparedAction } : undefined
+          )
+        }
       >
         Commit vitality
       </button>

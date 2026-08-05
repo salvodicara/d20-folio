@@ -10,6 +10,7 @@
 // dependency on the (pure) cost-engine module. `CostSpec` is the canonical,
 // serializable cost shape shared with the immediate-commit combat path.
 import type { CostSpec } from "@/lib/cost-engine";
+import type { CombatAbilityCode, CombatOutcomePredicate } from "@/types/combat-outcome";
 // Type-only — the stable weapon/armor proficiency token brand (golden rule 7 +
 // 22): a class table references a proficiency KIND by id, never a display string.
 import type { ProficiencyToken } from "@/types/ids";
@@ -33,7 +34,7 @@ export interface BiText {
 }
 
 /** D&D ability score codes */
-export type AbilityCode = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
+export type AbilityCode = CombatAbilityCode;
 
 /**
  * Compile-time exhaustiveness for a runtime tuple over a closed string union:
@@ -1272,9 +1273,9 @@ export interface SrdActionDef {
    * Used for follow-ups/replacements such as Hand of Healing inside Flurry of
    * Blows; the turn receipt survives route changes. */
   requiresActionThisTurn?: string;
-  /** Like `requiresActionThisTurn`, but the prerequisite receipt must record a
-   * successful resolution (Deflect Attacks reduced its incoming damage to 0). */
-  requiresSuccessfulActionThisTurn?: string;
+  /** A reviewed, turn-scoped outcome fact that must already exist. The predicate
+   * matches structured per-instance/per-target receipts, never a coarse success bit. */
+  requiresOutcomeThisTurn?: CombatOutcomePredicate;
   /** A previously committed action in this rules category must exist this turn.
    * Unlike an id prerequisite, this accepts any weapon/unarmed/cantrip Attack. */
   requiresActionCategoryThisTurn?: ActionEconomyCategory;

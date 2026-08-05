@@ -65,6 +65,7 @@ import {
 } from "@/lib/combat-state";
 import type { CombatState, PersistedTurnEconomy } from "@/types/combat-state";
 import { conformActiveCombatEffects } from "@/lib/combat-effect-io";
+import { parseCombatOutcomeReceipt } from "@/lib/combat-outcomes";
 
 const DEV_COMBAT_COLLECTION = "combat-state";
 
@@ -189,8 +190,9 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
               ...(action.isAttackGroup === true ? { isAttackGroup: true } : {}),
               ...(economyCategory ? { economyCategory } : {}),
               ...(triggerEvents.length ? { triggerEvents } : {}),
-              ...(action.resolutionSucceeded === true
-                ? { resolutionSucceeded: true as const }
+              ...(typeof action.outcomeOccurrenceId === "string" &&
+              action.outcomeOccurrenceId.length > 0
+                ? { outcomeOccurrenceId: action.outcomeOccurrenceId }
                 : {}),
             },
           ];
@@ -207,24 +209,72 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
     row.reactionUsedId.length > 0
       ? row.reactionUsedId
       : null;
+  const parsedSelected = {
+    action: parseActions(selected.action, "action"),
+    bonus: parseActions(selected.bonus, "bonus"),
+    free: parseActions(selected.free, "free"),
+  };
+  const attackSwings: NonNullable<CombatState["turnEconomy"]>["attackSwings"] =
+    Array.isArray(row.attackSwings)
+      ? row.attackSwings.flatMap((candidate) => {
+          if (typeof candidate !== "object" || candidate === null) return [];
+          const swing = candidate as Record<string, unknown>;
+          if (typeof swing.actionId !== "string" || swing.actionId.length === 0)
+            return [];
+          return [
+            {
+              actionId: swing.actionId,
+              ...(typeof swing.outcomeOccurrenceId === "string" &&
+              swing.outcomeOccurrenceId.length > 0
+                ? { outcomeOccurrenceId: swing.outcomeOccurrenceId }
+                : {}),
+            },
+          ];
+        })
+      : [];
+  const reactionOutcomeOccurrenceId =
+    reactionUsedId &&
+    typeof row.reactionOutcomeOccurrenceId === "string" &&
+    row.reactionOutcomeOccurrenceId.length > 0
+      ? row.reactionOutcomeOccurrenceId
+      : null;
+  const occurrenceOwners = new Map<string, string>();
+  for (const action of Object.values(parsedSelected).flat()) {
+    if (action.outcomeOccurrenceId)
+      occurrenceOwners.set(action.outcomeOccurrenceId, action.id);
+  }
+  for (const swing of attackSwings) {
+    if (swing.outcomeOccurrenceId)
+      occurrenceOwners.set(swing.outcomeOccurrenceId, swing.actionId);
+  }
+  if (reactionUsedId && reactionOutcomeOccurrenceId) {
+    occurrenceOwners.set(reactionOutcomeOccurrenceId, reactionUsedId);
+  }
+  const seenReceiptIds = new Set<string>();
+  const outcomeReceipts = Array.isArray(row.outcomeReceipts)
+    ? row.outcomeReceipts.flatMap((candidate) => {
+        const receipt = parseCombatOutcomeReceipt(candidate);
+        if (
+          !receipt ||
+          seenReceiptIds.has(receipt.id) ||
+          occurrenceOwners.get(receipt.occurrenceId) !== receipt.actionId
+        ) {
+          return [];
+        }
+        seenReceiptIds.add(receipt.id);
+        return [receipt];
+      })
+    : [];
   return {
     key: row.key,
-    selected: {
-      action: parseActions(selected.action, "action"),
-      bonus: parseActions(selected.bonus, "bonus"),
-      free: parseActions(selected.free, "free"),
-    },
-    attacksUsed: number(row.attacksUsed),
-    attackSwingIds: Array.isArray(row.attackSwingIds)
-      ? row.attackSwingIds.filter(
-          (id): id is string => typeof id === "string" && id.length > 0
-        )
-      : [],
+    selected: parsedSelected,
+    attacksUsed: Math.min(number(row.attacksUsed), attackSwings.length),
+    attackSwings,
+    outcomeReceipts,
+    outcomeOrdinal: Math.floor(number(row.outcomeOrdinal)),
     reactionUsed,
     reactionUsedId,
-    ...(reactionUsedId && row.reactionResolutionSucceeded === true
-      ? { reactionResolutionSucceeded: true }
-      : {}),
+    reactionOutcomeOccurrenceId,
     movementUsedFt: number(row.movementUsedFt),
     dashesThisTurn: number(row.dashesThisTurn),
     spellSlotCastsThisTurn: number(row.spellSlotCastsThisTurn),

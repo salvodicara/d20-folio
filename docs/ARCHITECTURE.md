@@ -493,10 +493,13 @@ ordinary player-chosen actions rather than the unconditional `initiative-tracker
 in solo and encounter play instead of being misclassified as enemy actions.
 
 Conditional follow-ups use action provenance, not feature-specific UI state. An authored action can
-declare `requiresActionThisTurn` with the stable id of its prerequisite, or
-`requiresSuccessfulActionThisTurn` when the reviewed outcome itself is the gate. Selected actions and the
-spent Reaction's success receipt persist with turn economy, keeping both gates intact across navigation.
-Their damage/save/target/resource facts then compile through the ordinary resolver. Level-dependent option
+declare `requiresActionThisTurn` with the stable id of its prerequisite, or a typed
+`requiresOutcomeThisTurn` predicate when an observed attack, save or damage-reduction result is the gate.
+`lib/combat-outcomes.ts` compiles immutable receipts with exact occurrence/action/target identity and an
+exact instance only when the table supplied one; count-only multiattacks remain honest aggregates. The
+selected action, structured Attack swing or spent Reaction owns that occurrence id in persisted turn
+economy. Hydration accepts a receipt only when its owner/action association is valid, so navigation,
+undo/re-arm and repeated uses cannot forge or cross-satisfy a follow-up. Level-dependent option
 sets use the generic `pickByLevel` threshold helper shared with dice scaling, so Deflect Attacks' redirect
 widens its eligible damage types at Deflect Energy without a Monk branch in the resolver or UI.
 
@@ -719,6 +722,27 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   Transaction retries compose simultaneous effects from fresh target state, so the app cannot report a
   heal that failed to land (or vice versa).
 
+  PC damage has one pure transition kernel: `lib/combat-transition.ts → reducePcDamage`. Both
+  `characterStore.applyDamage` (the open sheet/solo adapter) and
+  `campaign-io.reduceDirectPcEffects` (the fresh-read peer adapter) pass the same HP, Temporary HP,
+  conditions, dying track, critical-hit fact and persistent-effect occurrences into it. The reducer owns
+  defense-stage routing, Temporary-HP absorption, damage at 0 HP, Stable reset, ordinary knockout,
+  massive-damage death, Unconscious lifecycle, post-resistance transfer/retaliation and one-shot zero-HP
+  floors. Damage declarations say whether their amount is `raw` or already `resolved`; reviewed resolver
+  totals are always `resolved`, so Warding Bond resistance cannot be applied twice while its transfer still
+  runs. The core event carries both pre-floor `incoming` damage and HP/temp actually `applied`: the local
+  character log keeps its established incoming-hit meaning, while the campaign Chronicle records the
+  applied reversible delta. The adapters otherwise only translate returned state/events into persistence
+  and Chronicle shapes.
+
+  Reviewed combat outcomes are a separate immutable fact stream, never fields stamped onto reusable
+  action definitions. `CombatResolver` emits a prepared artifact containing the resolved action plus
+  target-bound receipts; the economy commit publishes both only after cost/effect commit succeeds and
+  returns their exact inverse. `CombatOutcomePredicate` supports an optional action id, so generic rules
+  can match any successful attack while source-specific follow-ups can require one exact action. Queries
+  return both matching receipts and their bound targets for target-constrained riders. `critical-hit` is a
+  first-class fact but is never inferred from damage; the current HIT/MISS UI therefore emits none yet.
+
   Per-spell casting math is independent from class-slot ownership. `resolveSpellAbility` first honors a
   literal per-spell override, then the character's deferred species choice, then the owning class. The
   action compiler recomputes DC/attack whenever that ability diverges **or the character has no class
@@ -757,6 +781,15 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   advance expires deterministic boundaries and emits typed successors (Haste's one-turn lethargy). The
   ledger is capped at 512 operations and conform-read at the campaign boundary; no rule payload or
   localized prose is copied into Firestore.
+
+  A one-shot floor may be visible briefly as both a sheet `activeFeatures` key and its exact campaign
+  occurrence. The damage kernel treats a shared `activeKey` as duplicate authority for one rule and returns
+  both the consumed state key and occurrence id. The sheet adapter removes both its local active key and
+  current projection before another local hit can reduce. The campaign ledger remains authoritative across
+  reloads: self-target encounter damage still needs to route occurrence revocation and returned partner
+  transfers through the shared transaction rather than relying only on that optimistic projection filter.
+  Its inverse must restore the exact occurrence as well as HP/state; these orchestration seams are tracked
+  in `PROGRESS.md`.
 
   Conditions carried by a source are occurrences, not mutations of the manual condition list.
   Encounter occurrences use the ledger's typed `condition` payload; solo play needs only
@@ -1509,17 +1542,19 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
     emits one source/action-attributed Chronicle event, and becomes an idempotent no-op when already Stable.
     Solo play applies the same effect through `characterStore.applyResolvedCombatEffects`, whose snapshot
     undo restores the exact prior death track.
-  - **Turn economy is field-scoped.** The exact current-turn key plus selected actions, attacks, reaction
-    identity/outcome receipt, movement, dashes, slot casts and round damage flag live in optional
+  - **Turn economy is field-scoped.** The exact current-turn key plus selected actions, structured Attack
+    swings, reaction identity, occurrence ordinal, target-bound outcome receipts, movement, dashes, slot
+    casts and round damage flag live in optional
     `turnEconomy`. This makes a
     group↔sheet remount restore the SAME spent budget only when campaign/epoch/round/current-combatant still
     match. Its high-frequency writer merges only `round + turnEconomy`, so navigation/action persistence
     cannot overwrite HP or conditions another member committed concurrently. The IO contract is pinned by
     a strict `parseCombatState(combatStateWriteData(state))` round-trip suite covering every slot/category,
-    localized action-reference shape, cadence fact, success receipt, counter, flag and active-effect
+    localized action-reference shape, cadence fact, outcome receipt, counter, flag and active-effect
     lifetime. At the untrusted read edge, malformed rows and empty identities are dropped, non-finite rolls
-    normalize safely, and a reaction-success receipt survives only with an actually spent Reaction and a
-    non-empty reaction id; a corrupt/stale subdoc therefore cannot reopen a success-gated follow-up.
+    normalize safely, duplicate receipt ids are rejected, and a receipt survives only when an exact
+    selected-action/Attack-swing/Reaction owner binds its occurrence to the same action id; a corrupt or
+    stale subdoc therefore cannot reopen an outcome-gated follow-up.
 - **Edit gate (mirrors the rules).** Direct card correction remains the owning player/DM/admin affordance;
   a co-member writes a peer only after confirming a typed effect in `CombatResolver`, never through a
   generic character editor. Structure edits (add/remove combatant, monster, turn/round, hidden toggle)

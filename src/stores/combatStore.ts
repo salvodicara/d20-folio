@@ -33,6 +33,8 @@ import { create } from "zustand";
 import type { TrackerUnit } from "@/data/types";
 import type { LocText } from "@/lib/loc-text";
 import type { EconomyActionCategory } from "@/lib/combat-economy";
+import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
+import { allocateCombatOutcomeOccurrenceId } from "@/lib/combat-outcomes";
 import { useCharacterStore } from "@/stores/characterStore";
 
 /**
@@ -71,8 +73,8 @@ export interface SelectedAction {
   /** Deterministic turn events this committed action produced. Active-state
    * duration rules consume these persisted facts after route changes. */
   triggerEvents?: ReadonlyArray<"attack" | "bonus-extend">;
-  /** A reviewed prerequisite achieved its deterministic success condition. */
-  resolutionSucceeded?: true;
+  /** Exact reviewed occurrence owned by this economy occupant. */
+  outcomeOccurrenceId?: string;
   /** What resource this action consumed when used (deducted immediately). */
   cost?: {
     type: "spell-slot" | "tracker" | "equipment" | "none";
@@ -152,7 +154,11 @@ interface CombatState {
    * (the "which card spent the token" legibility), while the rest of the group merely
    * greys to "Used". One id is pushed per committed swing and popped per `undoAttackSwing`.
    */
-  attackSwingIds: string[];
+  attackSwings: Array<{ actionId: string; outcomeOccurrenceId?: string }>;
+  /** Reviewed facts from exact action occurrences this turn. */
+  outcomeReceipts: CombatOutcomeReceipt[];
+  /** Monotonic allocator cursor for this exact turn. */
+  outcomeOrdinal: number;
   /** Whether reaction has been used this round */
   reactionUsed: boolean;
   /**
@@ -164,8 +170,8 @@ interface CombatState {
    * never persisted (only round/initiative persist).
    */
   reactionUsedId: string | null;
-  /** Outcome receipt for the spent reaction, used by deterministic follow-ups. */
-  reactionResolutionSucceeded: boolean;
+  /** Exact reviewed occurrence owned by the spent reaction. */
+  reactionOutcomeOccurrenceId: string | null;
   /** Movement spent this turn, in feet (the move-bar depletes by 5-ft segments). */
   movementUsedFt: number;
   /**
@@ -246,7 +252,8 @@ interface CombatState {
    */
   commitAttackSwing: (
     groupEntry: SelectedAction,
-    swingActionId: string
+    swingActionId: string,
+    outcomeOccurrenceId?: string
   ) => "new-group" | "rode" | null;
   /**
    * ATTACK-PIPS — reverse the most recent attack swing (the per-swing undo toast):
@@ -257,6 +264,10 @@ interface CombatState {
    * swings in any order can never strand a group entry.
    */
   undoAttackSwing: () => void;
+  /** Append exact reviewed facts idempotently; returns their exact inverse. */
+  commitOutcomeReceipts: (receipts: ReadonlyArray<CombatOutcomeReceipt>) => () => void;
+  /** Allocate a replayable occurrence id and advance the persisted turn cursor. */
+  allocateOutcomeOccurrenceId: (turnKey: string, actionId: string) => string;
   /**
    * Commit an action into its economy slot (B6 — APPENDS to the slot's list).
    * Budgeted slots (action/bonus) append only while a slot remains free
@@ -273,7 +284,7 @@ interface CombatState {
    * the spending reaction's action id — recorded as `reactionUsedId` so its card
    * keeps the occupant ring while the rest of the group greys to "Used".
    */
-  useReaction: (id: string, resolutionSucceeded?: boolean) => void;
+  useReaction: (id: string, outcomeOccurrenceId?: string) => void;
   /** Undo reaction use — resets reactionUsed without touching selections */
   resetReaction: () => void;
   /** Reset turn without advancing round (clear selections for undo) */
@@ -320,10 +331,12 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   budget: { ...DEFAULT_BUDGET },
   attackBudget: 1,
   attacksUsed: 0,
-  attackSwingIds: [],
+  attackSwings: [],
+  outcomeReceipts: [],
+  outcomeOrdinal: 0,
   reactionUsed: false,
   reactionUsedId: null,
-  reactionResolutionSucceeded: false,
+  reactionOutcomeOccurrenceId: null,
   movementUsedFt: 0,
   dashesThisTurn: 0,
   spellSlotCastsThisTurn: 0,
@@ -380,7 +393,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     set({ attackBudget });
   },
 
-  commitAttackSwing: (groupEntry, swingActionId) => {
+  commitAttackSwing: (groupEntry, swingActionId, outcomeOccurrenceId) => {
     if (sheetReadonly()) return null;
     const { selected, budget, attacksUsed, attackBudget } = get();
     // Guard case: with no Extra Attack the attack-pips model is inert — the caller
@@ -398,14 +411,26 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
         },
         attacksUsed: state.attacksUsed + 1,
         // Record which card rode this swing (the Attack group's occupant ledger).
-        attackSwingIds: [...state.attackSwingIds, swingActionId],
+        attackSwings: [
+          ...state.attackSwings,
+          {
+            actionId: swingActionId,
+            ...(outcomeOccurrenceId ? { outcomeOccurrenceId } : {}),
+          },
+        ],
       }));
       return "new-group";
     }
     // Rides the already-open Attack action — no new slot, just one more swing.
     set((state) => ({
       attacksUsed: state.attacksUsed + 1,
-      attackSwingIds: [...state.attackSwingIds, swingActionId],
+      attackSwings: [
+        ...state.attackSwings,
+        {
+          actionId: swingActionId,
+          ...(outcomeOccurrenceId ? { outcomeOccurrenceId } : {}),
+        },
+      ],
     }));
     return "rode";
   },
@@ -419,6 +444,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     // (order-independent): drop the last group entry when we now have too many.
     const neededGroups = Math.ceil(nextUsed / Math.max(1, attackBudget));
     const groups = selected.action.filter((a) => a.isAttackGroup).length;
+    const occurrenceId = get().attackSwings.at(-1)?.outcomeOccurrenceId;
     set((state) => {
       let action = state.selected.action;
       if (groups > neededGroups) {
@@ -428,10 +454,58 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       return {
         attacksUsed: nextUsed,
         // Pop the last-recorded swing occupant (one id per committed swing).
-        attackSwingIds: state.attackSwingIds.slice(0, -1),
+        attackSwings: state.attackSwings.slice(0, -1),
         selected: { ...state.selected, action },
       };
     });
+    if (occurrenceId) {
+      set((state) => ({
+        outcomeReceipts: state.outcomeReceipts.filter(
+          (receipt) => receipt.occurrenceId !== occurrenceId
+        ),
+      }));
+    }
+  },
+
+  commitOutcomeReceipts: (receipts) => {
+    if (sheetReadonly() || receipts.length === 0) return () => {};
+    const existing = new Set(get().outcomeReceipts.map(({ id }) => id));
+    const added = receipts.filter(({ id }) => {
+      if (existing.has(id)) return false;
+      existing.add(id);
+      return true;
+    });
+    if (added.length === 0) return () => {};
+    set((state) => ({ outcomeReceipts: [...state.outcomeReceipts, ...added] }));
+    const addedIds = new Set(added.map(({ id }) => id));
+    return () =>
+      set((state) => ({
+        outcomeReceipts: state.outcomeReceipts.filter(({ id }) => !addedIds.has(id)),
+      }));
+  },
+
+  allocateOutcomeOccurrenceId: (turnKey, actionId) => {
+    const state = get();
+    const existingIds = new Set([
+      ...state.outcomeReceipts.map(({ occurrenceId }) => occurrenceId),
+      ...Object.values(state.selected)
+        .flat()
+        .flatMap(({ outcomeOccurrenceId }) =>
+          outcomeOccurrenceId ? [outcomeOccurrenceId] : []
+        ),
+      ...state.attackSwings.flatMap(({ outcomeOccurrenceId }) =>
+        outcomeOccurrenceId ? [outcomeOccurrenceId] : []
+      ),
+      ...(state.reactionOutcomeOccurrenceId ? [state.reactionOutcomeOccurrenceId] : []),
+    ]);
+    const allocated = allocateCombatOutcomeOccurrenceId({
+      turnKey,
+      actionId,
+      currentOrdinal: state.outcomeOrdinal,
+      existingIds,
+    });
+    set({ outcomeOrdinal: allocated.nextOrdinal });
+    return allocated.id;
   },
 
   selectAction: (action) => {
@@ -453,15 +527,29 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
 
   deselectSlot: (slot) => {
     if (sheetReadonly()) return;
+    const before = get();
+    const occurrenceIds = new Set([
+      ...before.selected[slot].flatMap(({ outcomeOccurrenceId }) =>
+        outcomeOccurrenceId ? [outcomeOccurrenceId] : []
+      ),
+      ...(slot === "action"
+        ? before.attackSwings.flatMap(({ outcomeOccurrenceId }) =>
+            outcomeOccurrenceId ? [outcomeOccurrenceId] : []
+          )
+        : []),
+    ]);
     set((state) => ({
       selected: { ...state.selected, [slot]: [] },
+      outcomeReceipts: state.outcomeReceipts.filter(
+        ({ occurrenceId }) => !occurrenceIds.has(occurrenceId)
+      ),
       // ATTACK-PIPS — clearing the Action slot releases every Attack-group entry,
       // so the swing counter resets WITH it: a re-armed coin re-opens with an EMPTY
       // pip cluster, and the next swing starts a fresh Attack action. (A stranded
       // counter would show fully-lit pips on an open coin and drift on the next
       // swing.) The rearm undo restores the exact prior counter alongside the
       // snapshot it replays.
-      ...(slot === "action" ? { attacksUsed: 0, attackSwingIds: [] } : {}),
+      ...(slot === "action" ? { attacksUsed: 0, attackSwings: [] } : {}),
     }));
   },
 
@@ -470,33 +558,51 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     const { selected } = get();
     for (const slot of ["action", "bonus", "free"] as EconomySlot[]) {
       if (selected[slot].some((a) => a.id === actionId)) {
+        const occurrenceId = selected[slot].find(
+          (a) => a.id === actionId
+        )?.outcomeOccurrenceId;
         set((state) => ({
           selected: {
             ...state.selected,
             [slot]: state.selected[slot].filter((a) => a.id !== actionId),
           },
+          ...(occurrenceId
+            ? {
+                outcomeReceipts: state.outcomeReceipts.filter(
+                  (receipt) => receipt.occurrenceId !== occurrenceId
+                ),
+              }
+            : {}),
         }));
         return;
       }
     }
   },
 
-  useReaction: (id, resolutionSucceeded = false) => {
+  useReaction: (id, outcomeOccurrenceId) => {
     if (sheetReadonly()) return;
     set({
       reactionUsed: true,
       reactionUsedId: id,
-      reactionResolutionSucceeded: resolutionSucceeded,
+      reactionOutcomeOccurrenceId: outcomeOccurrenceId ?? null,
     });
   },
 
   resetReaction: () => {
     if (sheetReadonly()) return;
+    const occurrenceId = get().reactionOutcomeOccurrenceId;
     set({
       reactionUsed: false,
       reactionUsedId: null,
-      reactionResolutionSucceeded: false,
+      reactionOutcomeOccurrenceId: null,
     });
+    if (occurrenceId) {
+      set((state) => ({
+        outcomeReceipts: state.outcomeReceipts.filter(
+          (receipt) => receipt.occurrenceId !== occurrenceId
+        ),
+      }));
+    }
   },
 
   resetTurn: () =>
@@ -505,10 +611,12 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       budget: { ...DEFAULT_BUDGET },
       attackBudget: 1,
       attacksUsed: 0,
-      attackSwingIds: [],
+      attackSwings: [],
+      outcomeReceipts: [],
+      outcomeOrdinal: 0,
       reactionUsed: false,
       reactionUsedId: null,
-      reactionResolutionSucceeded: false,
+      reactionOutcomeOccurrenceId: null,
       movementUsedFt: 0,
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,
@@ -524,10 +632,12 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       budget: { ...DEFAULT_BUDGET },
       attackBudget: 1,
       attacksUsed: 0,
-      attackSwingIds: [],
+      attackSwings: [],
+      outcomeReceipts: [],
+      outcomeOrdinal: 0,
       reactionUsed: false,
       reactionUsedId: null,
-      reactionResolutionSucceeded: false,
+      reactionOutcomeOccurrenceId: null,
       movementUsedFt: 0,
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,
@@ -553,10 +663,12 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       // the swing counter clears (a fresh turn opens a fresh Attack action).
       attackBudget: 1,
       attacksUsed: 0,
-      attackSwingIds: [],
+      attackSwings: [],
+      outcomeReceipts: [],
+      outcomeOrdinal: 0,
       reactionUsed: false,
       reactionUsedId: null,
-      reactionResolutionSucceeded: false,
+      reactionOutcomeOccurrenceId: null,
       movementUsedFt: 0,
       dashesThisTurn: 0,
       spellSlotCastsThisTurn: 0,

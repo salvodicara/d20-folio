@@ -221,7 +221,20 @@ export function ThisTurnTracker({
         // (deselectSlot resets it with the released Attack-group entries); snapshot
         // it so undo restores the exact prior pip progress alongside the slot.
         const prevAttacksUsed = store.attacksUsed;
-        const prevAttackSwingIds = [...store.attackSwingIds];
+        const prevAttackSwings = [...store.attackSwings];
+        const occurrenceIds = new Set([
+          ...snapshot.flatMap(({ outcomeOccurrenceId }) =>
+            outcomeOccurrenceId ? [outcomeOccurrenceId] : []
+          ),
+          ...(slot === "action"
+            ? prevAttackSwings.flatMap(({ outcomeOccurrenceId }) =>
+                outcomeOccurrenceId ? [outcomeOccurrenceId] : []
+              )
+            : []),
+        ]);
+        const outcomeReceipts = store.outcomeReceipts.filter(({ occurrenceId }) =>
+          occurrenceIds.has(occurrenceId)
+        );
         store.deselectSlot(slot);
         return () => {
           const s = useCombatStore.getState();
@@ -235,8 +248,9 @@ export function ThisTurnTracker({
             useCombatStore.setState({
               attacksUsed: prevAttacksUsed,
               // Restore the exact Attack-group occupant ledger with the swings.
-              attackSwingIds: prevAttackSwingIds,
+              attackSwings: prevAttackSwings,
             });
+          s.commitOutcomeReceipts(outcomeReceipts);
         };
       },
       { turnScoped: true }
@@ -252,12 +266,21 @@ export function ThisTurnTracker({
         // Snapshot the occupant id so undo restores the EXACT reaction that spent
         // the round's Reaction (its card keeps the ring), not just the boolean.
         const prevReactionId = store.reactionUsedId;
+        const prevOccurrenceId = store.reactionOutcomeOccurrenceId;
+        const outcomeReceipts = prevOccurrenceId
+          ? store.outcomeReceipts.filter(
+              ({ occurrenceId }) => occurrenceId === prevOccurrenceId
+            )
+          : [];
         store.resetReaction();
-        return () =>
+        return () => {
           useCombatStore.setState({
             reactionUsed: true,
             reactionUsedId: prevReactionId,
+            reactionOutcomeOccurrenceId: prevOccurrenceId,
           });
+          useCombatStore.getState().commitOutcomeReceipts(outcomeReceipts);
+        };
       },
       { turnScoped: true }
     );

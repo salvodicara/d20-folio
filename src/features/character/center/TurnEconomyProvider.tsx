@@ -74,8 +74,9 @@ import {
   canAssignActionClaims,
   economyActionCategory,
   economyClaimsForTurn,
-  successfulActionPrerequisiteMet,
 } from "@/lib/combat-economy";
+import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
+import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { RiderVM } from "@/lib/views/rider-view";
 import type { CunningStrikeVM } from "@/lib/views/cunning-strike-view";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
@@ -150,9 +151,12 @@ function durableTurnChanged(
   return (
     state.selected !== prev.selected ||
     state.attacksUsed !== prev.attacksUsed ||
-    state.attackSwingIds !== prev.attackSwingIds ||
+    state.attackSwings !== prev.attackSwings ||
+    state.outcomeReceipts !== prev.outcomeReceipts ||
+    state.outcomeOrdinal !== prev.outcomeOrdinal ||
     state.reactionUsed !== prev.reactionUsed ||
     state.reactionUsedId !== prev.reactionUsedId ||
+    state.reactionOutcomeOccurrenceId !== prev.reactionOutcomeOccurrenceId ||
     state.movementUsedFt !== prev.movementUsedFt ||
     state.dashesThisTurn !== prev.dashesThisTurn ||
     state.spellSlotCastsThisTurn !== prev.spellSlotCastsThisTurn ||
@@ -365,11 +369,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       return t("combat.blockedReasonPrerequisiteAction");
     }
     if (
-      action.requiresSuccessfulActionThisTurn &&
-      !successfulActionPrerequisiteMet(action, committed, {
-        id: useCombatStore.getState().reactionUsedId,
-        resolutionSucceeded: useCombatStore.getState().reactionResolutionSucceeded,
-      })
+      action.requiresOutcomeThisTurn &&
+      !combatOutcomePrerequisiteMet(
+        action.requiresOutcomeThisTurn,
+        useCombatStore.getState().outcomeReceipts
+      )
     ) {
       return t("combat.blockedReasonSuccessfulPrerequisiteAction");
     }
@@ -528,13 +532,16 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // spends and applies nothing. Only one modal flow can be active at a time.
   type ResolutionUndo = () => void;
   type ResolutionApply = () => ResolutionUndo | undefined;
-  const pendingResolutionRef = useRef<{
+  type PendingResolution = {
     actionId: string;
     apply: ResolutionApply;
-  } | null>(null);
-  const pendingResolutionFor = (action: ResolvedAction): ResolutionApply | null => {
+    occurrenceId?: string;
+    outcomes: ReadonlyArray<CombatOutcomeReceipt>;
+  };
+  const pendingResolutionRef = useRef<PendingResolution | null>(null);
+  const pendingResolutionFor = (action: ResolvedAction): PendingResolution | null => {
     const pending = pendingResolutionRef.current;
-    return pending?.actionId === action.id ? pending.apply : null;
+    return pending?.actionId === action.id ? pending : null;
   };
   const clearPendingResolution = (action: ResolvedAction): void => {
     const pending = pendingResolutionRef.current;
@@ -543,10 +550,14 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   };
   const withResolutionUndo = (
     undoAction: () => void,
-    applyResolution: ResolutionApply | null
+    pendingResolution: PendingResolution | null
   ): (() => void) => {
-    const undoResolution = applyResolution?.();
+    const undoResolution = pendingResolution?.apply();
+    const undoOutcomes = pendingResolution?.outcomes.length
+      ? useCombatStore.getState().commitOutcomeReceipts(pendingResolution.outcomes)
+      : null;
     return () => {
+      undoOutcomes?.();
       undoResolution?.();
       undoAction();
     };
@@ -924,7 +935,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   function toSelectedAction(
     action: ResolvedAction,
     slot: EconomySlot,
-    castOption?: CastLevelOption
+    castOption?: CastLevelOption,
+    outcomeOccurrenceId?: string
   ): SelectedAction {
     const economyCategory = economyActionCategory(action);
     const cost: SelectedAction["cost"] = castOption
@@ -963,7 +975,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         : action.summary.attackBonus != null || action.summary.saveAbility != null
           ? { triggerEvents: ["attack"] as const }
           : {}),
-      ...(action.resolutionSucceeded ? { resolutionSucceeded: true as const } : {}),
+      ...(outcomeOccurrenceId ? { outcomeOccurrenceId } : {}),
       cost,
     };
   }
@@ -1046,6 +1058,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const n = (store.attacksUsed % total) + 1;
     const message = t("combat.attackSwingToast", { name: action.name, n, total });
     const applyResolution = pendingResolutionFor(action);
+    const outcomeOccurrenceId = applyResolution?.occurrenceId;
     // Register on the undo stack: `execute` logs the swing (via the shared
     // `commitAction`, stamped with the count) + claims/rides an Attack action; it
     // bails (null) when no Attack slot is free (nothing spent). Redo re-runs it.
@@ -1066,7 +1079,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             triggerEvents: ["attack"],
           };
           if (
-            useCombatStore.getState().commitAttackSwing(groupEntry, action.id) === null
+            useCombatStore
+              .getState()
+              .commitAttackSwing(groupEntry, action.id, outcomeOccurrenceId) === null
           ) {
             // No Attack action slot free — nothing spent; undo the log and bail.
             undoEffects();
@@ -1099,6 +1114,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     if (!guardActionState(action)) return;
     if (!(await confirmConcentrationBreak(action))) return;
     const applyResolution = pendingResolutionFor(action);
+    const outcomeOccurrenceId = applyResolution?.occurrenceId;
     // USE-APPLIES — when the action auto-applied temp HP, the toast SAYS so (the
     // player sees the deterministic effect was taken care of), else the plain "X
     // used" line. The gain is the resolved number (temp HP don't stack — what's
@@ -1123,7 +1139,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             if (!tracker || tracker.total - tracker.used < cost) return null;
           }
           const undoCost = commitAction(action, trackerAmount);
-          if (!appendWithinActionRules(toSelectedAction(action, slot))) {
+          if (
+            !appendWithinActionRules(
+              toSelectedAction(action, slot, undefined, outcomeOccurrenceId)
+            )
+          ) {
             undoCost();
             return null;
           }
@@ -1161,6 +1181,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     if (!guardActionState(action)) return;
     if (!(await confirmConcentrationBreak(action))) return;
     const applyResolution = pendingResolutionFor(action);
+    const outcomeOccurrenceId = applyResolution?.occurrenceId;
     // ATTACK-PIPS — a pip-riding cast is a counted swing: read the swing position
     // BEFORE the commit runs so the log line + toast carry "attack n of total".
     const pipStore = ridesPip ? useCombatStore.getState() : null;
@@ -1270,7 +1291,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
               triggerEvents: ["attack"],
             };
             if (
-              useCombatStore.getState().commitAttackSwing(groupEntry, action.id) === null
+              useCombatStore
+                .getState()
+                .commitAttackSwing(groupEntry, action.id, outcomeOccurrenceId) === null
             ) {
               undoLegs();
               return null;
@@ -1281,7 +1304,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             }, applyResolution);
           }
           // Append into the slot; bail (refunding) if the budget is already full.
-          if (!appendWithinActionRules(toSelectedAction(action, slot, opt))) {
+          if (
+            !appendWithinActionRules(
+              toSelectedAction(action, slot, opt, outcomeOccurrenceId)
+            )
+          ) {
             undoLegs();
             return null;
           }
@@ -1482,8 +1509,17 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // CTA grammar: a card never carries an inline cancel.
   function handleSelect(action: ResolvedAction, onCommitted?: ResolutionApply) {
     if (!guardActionState(action)) return;
+    const stagedResolution = pendingResolutionRef.current;
     pendingResolutionRef.current = onCommitted
-      ? { actionId: action.id, apply: onCommitted }
+      ? {
+          actionId: action.id,
+          apply: onCommitted,
+          outcomes:
+            stagedResolution?.actionId === action.id ? stagedResolution.outcomes : [],
+          ...(stagedResolution?.actionId === action.id && stagedResolution.occurrenceId
+            ? { occurrenceId: stagedResolution.occurrenceId }
+            : {}),
+        }
       : null;
     const slot = getEconomySlot(action);
 
@@ -1618,8 +1654,17 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     }
   ) {
     if (!guardActionState(action)) return;
+    const stagedResolution = pendingResolutionRef.current;
     pendingResolutionRef.current = onCommitted
-      ? { actionId: action.id, apply: onCommitted }
+      ? {
+          actionId: action.id,
+          apply: onCommitted,
+          outcomes:
+            stagedResolution?.actionId === action.id ? stagedResolution.outcomes : [],
+          ...(stagedResolution?.actionId === action.id && stagedResolution.occurrenceId
+            ? { occurrenceId: stagedResolution.occurrenceId }
+            : {}),
+        }
       : null;
     // A spent reaction DISABLES every reaction CTA ("Used" — the CTA grammar),
     // so this is unreachable from the UI — a silent defensive bail ("never
@@ -1636,6 +1681,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
 
     if (!(await confirmConcentrationBreak(action))) return;
     const applyResolution = pendingResolutionFor(action);
+    const outcomeOccurrenceId = applyResolution?.occurrenceId;
     const message = t("combat.reactionToast", { name: action.name });
     // Register on the undo stack: `execute` marks the reaction used, deducts the
     // resource, applies concentration + any while-active buff, and logs the row,
@@ -1644,7 +1690,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       registerUndoableToast(
         { message },
         () => {
-          markReactionUsed(action.id, action.resolutionSucceeded);
+          markReactionUsed(action.id, outcomeOccurrenceId);
           const characterStore = useCharacterStore.getState();
           // Resolve the slot pool once (normal vs Pact for a pure Warlock) so the
           // spend and the reverse hit the SAME counter (B3).
@@ -1969,9 +2015,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       // B6 — restore the turn's budget too, so Undo-End-Turn re-allows the same
       // multi-action economy (an Action Surge turn stays a 2-action turn on undo).
       budget: c.budget,
+      attacksUsed: c.attacksUsed,
+      outcomeReceipts: c.outcomeReceipts,
+      outcomeOrdinal: c.outcomeOrdinal,
+      attackSwings: c.attackSwings,
       reactionUsed: c.reactionUsed,
       reactionUsedId: c.reactionUsedId,
-      reactionResolutionSucceeded: c.reactionResolutionSucceeded,
+      reactionOutcomeOccurrenceId: c.reactionOutcomeOccurrenceId,
       movementUsedFt: c.movementUsedFt,
       // Restored on Undo-End-Turn so the maintained-state check re-evaluates the
       // SAME round identically (a hit round stays a hit round through undo).
@@ -2051,8 +2101,16 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // Pool-spend confirm. A plain pool commits now; a dice-healing pool turns the
   // selected dice into a concrete roll formula and continues to target review.
   function commitPreparedAction(defaultAction: ResolvedAction): PreparedCommit {
-    return (afterCommit, actionOverride) => {
-      const action = actionOverride ?? defaultAction;
+    return (afterCommit, artifact) => {
+      const action = artifact?.action ?? defaultAction;
+      pendingResolutionRef.current = {
+        actionId: action.id,
+        apply: afterCommit,
+        ...(artifact?.outcomeOccurrenceId
+          ? { occurrenceId: artifact.outcomeOccurrenceId }
+          : {}),
+        outcomes: artifact?.outcomes ?? [],
+      };
       return action.type === "reaction"
         ? void handleUseReaction(action, afterCommit)
         : handleSelect(action, afterCommit);
@@ -2211,11 +2269,15 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       cost,
       ...(cost !== 1 ? { explicitCost: true as const } : {}),
     };
-    onPrepared(action, (afterCommit, actionOverride) => {
-      const committedAction = actionOverride ?? action;
+    onPrepared(action, (afterCommit, artifact) => {
+      const committedAction = artifact?.action ?? action;
       pendingResolutionRef.current = {
         actionId: committedAction.id,
         apply: afterCommit,
+        ...(artifact?.outcomeOccurrenceId
+          ? { occurrenceId: artifact.outcomeOccurrenceId }
+          : {}),
+        outcomes: artifact?.outcomes ?? [],
       };
       void commitCastOption(committedAction, getEconomySlot(opener), option);
     });
@@ -2290,18 +2352,22 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     }
     if (
       configureSpellCast(action, slot, ridesPip, (finalAction, option, metamagicIds) =>
-        onPrepared(finalAction, (afterCommit, actionOverride) => {
-          const committedAction = actionOverride ?? finalAction;
+        onPrepared(finalAction, (afterCommit, artifact) => {
+          const committedAction = artifact?.action ?? finalAction;
+          pendingResolutionRef.current = {
+            actionId: committedAction.id,
+            apply: afterCommit,
+            ...(artifact?.outcomeOccurrenceId
+              ? { occurrenceId: artifact.outcomeOccurrenceId }
+              : {}),
+            outcomes: artifact?.outcomes ?? [],
+          };
           if (committedAction.type === "reaction") {
             void handleUseReaction(committedAction, afterCommit, {
               option,
               metamagicIds,
             });
           } else {
-            pendingResolutionRef.current = {
-              actionId: committedAction.id,
-              apply: afterCommit,
-            };
             void commitCastOption(committedAction, slot, option, metamagicIds, ridesPip);
           }
         })

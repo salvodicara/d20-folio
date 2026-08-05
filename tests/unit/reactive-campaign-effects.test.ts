@@ -71,7 +71,7 @@ describe("campaign reactive effects", () => {
   it("queues exact retaliation even when a successful melee hit lands 0 damage", () => {
     const result = reduceDirectPcEffects(
       target,
-      [{ kind: "damage", targetId: "warlock", amount: 0 }],
+      [{ kind: "damage", intake: "resolved", targetId: "warlock", amount: 0 }],
       {
         actorId: "fighter",
         action: { custom: "Unarmed Strike" },
@@ -89,6 +89,7 @@ describe("campaign reactive effects", () => {
         target: { kind: "monster", combatantId: "fighter" },
         amount: 5,
         effectId: "armor-1",
+        intake: "raw",
         actorId: "warlock",
         action: {
           srd: { kind: "spell", key: "armor-of-agathys", field: "name" },

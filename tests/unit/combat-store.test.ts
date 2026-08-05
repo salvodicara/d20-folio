@@ -1,12 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { useCombatStore, type SelectedAction } from "@/stores/combatStore";
 import { useCharacterStore } from "@/stores/characterStore";
+import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 
 const s = () => useCombatStore.getState();
 const act = (id: string, slot: SelectedAction["slot"]): SelectedAction => ({
   id,
   name: id,
   slot,
+});
+const receipt = (occurrenceId: string, actionId: string): CombatOutcomeReceipt => ({
+  id: `${occurrenceId}:0`,
+  occurrenceId,
+  actionId,
+  instance: 0,
+  count: 1,
+  target: { combatantId: "monster-1" },
+  fact: { kind: "attack", result: "hit" },
 });
 
 beforeEach(() =>
@@ -17,9 +27,12 @@ beforeEach(() =>
     budget: { action: 1, bonus: 1 },
     attackBudget: 1,
     attacksUsed: 0,
-    attackSwingIds: [],
+    attackSwings: [],
+    outcomeReceipts: [],
+    outcomeOrdinal: 0,
     reactionUsed: false,
     reactionUsedId: null,
+    reactionOutcomeOccurrenceId: null,
     movementUsedFt: 0,
     dashesThisTurn: 0,
     spellSlotCastsThisTurn: 0,
@@ -199,15 +212,30 @@ describe("combatStore", () => {
   });
 
   it("useReaction / resetReaction toggle reactionUsed AND record the occupant id", () => {
-    s().useReaction("shield", true);
+    s().useReaction("shield", "shield-1");
+    s().commitOutcomeReceipts([receipt("shield-1", "shield")]);
     expect(s().reactionUsed).toBe(true);
     // CTA grammar — the spending reaction's id is the group's ring occupant.
     expect(s().reactionUsedId).toBe("shield");
-    expect(s().reactionResolutionSucceeded).toBe(true);
+    expect(s().reactionOutcomeOccurrenceId).toBe("shield-1");
     s().resetReaction();
     expect(s().reactionUsed).toBe(false);
     expect(s().reactionUsedId).toBeNull();
-    expect(s().reactionResolutionSucceeded).toBe(false);
+    expect(s().reactionOutcomeOccurrenceId).toBeNull();
+    expect(s().outcomeReceipts).toEqual([]);
+  });
+
+  it("allocates monotonic, collision-checked occurrence ids from persisted turn state", () => {
+    expect(s().allocateOutcomeOccurrenceId("turn-7", "long sword")).toBe(
+      "turn-7:outcome:1:long%20sword"
+    );
+    expect(s().allocateOutcomeOccurrenceId("turn-7", "long sword")).toBe(
+      "turn-7:outcome:2:long%20sword"
+    );
+    useCombatStore.setState({ outcomeOrdinal: 7 });
+    expect(s().allocateOutcomeOccurrenceId("turn-7", "long sword")).toBe(
+      "turn-7:outcome:8:long%20sword"
+    );
   });
 
   it("resetTurn clears selections + budget + reaction but keeps the round", () => {
@@ -414,33 +442,46 @@ describe("combatStore", () => {
     // CTA grammar (owner 2026-07-11) — the Attack group's OCCUPANT ledger: which
     // attack card(s) rode a swing keep the gold ring once the action is fully
     // spent. Every committed swing pushes its card id; every undo pops the last.
-    it("attackSwingIds records the swung card ids and pops them on undo", () => {
+    it("attackSwings records each swung card occurrence and pops it on undo", () => {
       s().setAttackBudget(2);
-      s().commitAttackSwing(attackGroup(), "longsword"); // swing 1
-      s().commitAttackSwing(attackGroup(), "dagger"); //    swing 2 (multi-weapon)
+      s().commitAttackSwing(attackGroup(), "longsword", "swing-1");
+      s().commitAttackSwing(attackGroup(), "dagger", "swing-2");
+      s().commitOutcomeReceipts([
+        receipt("swing-1", "longsword"),
+        receipt("swing-2", "dagger"),
+      ]);
       // Both weapons that consumed a swing are occupants of the spent Attack action.
-      expect(s().attackSwingIds).toEqual(["longsword", "dagger"]);
+      expect(s().attackSwings).toEqual([
+        { actionId: "longsword", outcomeOccurrenceId: "swing-1" },
+        { actionId: "dagger", outcomeOccurrenceId: "swing-2" },
+      ]);
       s().undoAttackSwing();
-      expect(s().attackSwingIds).toEqual(["longsword"]);
+      expect(s().attackSwings).toEqual([
+        { actionId: "longsword", outcomeOccurrenceId: "swing-1" },
+      ]);
+      expect(s().outcomeReceipts.map(({ occurrenceId }) => occurrenceId)).toEqual([
+        "swing-1",
+      ]);
       s().undoAttackSwing();
-      expect(s().attackSwingIds).toEqual([]);
+      expect(s().attackSwings).toEqual([]);
+      expect(s().outcomeReceipts).toEqual([]);
     });
 
     it("re-arming the Action coin clears the swing occupant ledger", () => {
       s().setAttackBudget(2);
       s().commitAttackSwing(attackGroup(), "longsword");
-      expect(s().attackSwingIds).toEqual(["longsword"]);
+      expect(s().attackSwings).toEqual([{ actionId: "longsword" }]);
       s().deselectSlot("action");
-      expect(s().attackSwingIds).toEqual([]);
+      expect(s().attackSwings).toEqual([]);
     });
 
     it("resetTurn / endTurn / endCombat clear the swing occupant ledger", () => {
       for (const clear of ["resetTurn", "endTurn", "endCombat"] as const) {
         s().setAttackBudget(2);
         s().commitAttackSwing(attackGroup(), "longsword");
-        expect(s().attackSwingIds).toEqual(["longsword"]);
+        expect(s().attackSwings).toEqual([{ actionId: "longsword" }]);
         s()[clear]();
-        expect(s().attackSwingIds).toEqual([]);
+        expect(s().attackSwings).toEqual([]);
       }
     });
   });

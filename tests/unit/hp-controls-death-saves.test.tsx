@@ -47,8 +47,20 @@ function seed(opts: {
   conditions?: string[];
   sessionDefenses?: SessionState["sessionDefenses"];
 }) {
+  const hasDeathWard = opts.activeFeatures?.includes("spell-death-ward") ?? false;
   useCharacterStore.getState().setCharacter({
     ...MOCK_CHARACTER,
+    character: {
+      ...MOCK_CHARACTER.character,
+      spells: hasDeathWard
+        ? [
+            ...MOCK_CHARACTER.character.spells.filter(
+              (spell) => !("srdId" in spell) || spell.srdId !== "death-ward"
+            ),
+            { srdId: "death-ward", prepared: true },
+          ]
+        : MOCK_CHARACTER.character.spells,
+    },
     session: {
       ...MOCK_CHARACTER.session,
       hp: { ...MOCK_CHARACTER.session.hp, current: opts.current, temp: opts.temp ?? 0 },

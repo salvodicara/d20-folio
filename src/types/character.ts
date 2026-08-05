@@ -359,7 +359,7 @@ export interface ActionData {
   costTracker?: string;
   /** Stable prerequisite receipt and per-turn cap, matching SrdActionDef. */
   requiresActionThisTurn?: string;
-  requiresSuccessfulActionThisTurn?: string;
+  requiresOutcomeThisTurn?: SrdActionDef["requiresOutcomeThisTurn"];
   requiresActionCategoryThisTurn?: ActionEconomyCategory;
   maxUsesPerTurn?: number;
   attackSequence?: SrdActionDef["attackSequence"];

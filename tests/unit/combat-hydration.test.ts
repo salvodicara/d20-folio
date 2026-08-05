@@ -25,6 +25,17 @@ import {
   syncCombatFromSession,
 } from "@/features/character/center/combat-hydration";
 import type { CombatState } from "@/types/combat-state";
+import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
+
+const receipt = (occurrenceId: string, actionId: string): CombatOutcomeReceipt => ({
+  id: `${occurrenceId}:0`,
+  occurrenceId,
+  actionId,
+  instance: 0,
+  count: 1,
+  target: { combatantId: "monster-1" },
+  fact: { kind: "attack", result: "hit" },
+});
 
 /**
  * Thin wrapper around the real policy that tracks the "already hydrated" id the way
@@ -120,7 +131,7 @@ describe("Combat sync — async character arrival", () => {
       nameLoc: { custom: "Vicious Mockery" },
       slot: "action",
       triggerEvents: ["attack"],
-      resolutionSucceeded: true,
+      outcomeOccurrenceId: "mockery-1",
     });
     useCombatStore.getState().selectAction({
       id: "barbarian-rage-extend",
@@ -129,7 +140,13 @@ describe("Combat sync — async character arrival", () => {
       slot: "bonus",
       triggerEvents: ["bonus-extend"],
     });
-    useCombatStore.getState().useReaction("cutting-words", true);
+    useCombatStore.getState().useReaction("cutting-words", "reaction-1");
+    useCombatStore
+      .getState()
+      .commitOutcomeReceipts([
+        receipt("mockery-1", "vicious-mockery"),
+        receipt("reaction-1", "cutting-words"),
+      ]);
     useCombatStore.getState().setMovementUsed(15);
     useCombatStore.getState().grantNextAttackAdvantage();
     useCombatStore.getState().lockMovement();
@@ -143,10 +160,11 @@ describe("Combat sync — async character arrival", () => {
       "vicious-mockery",
     ]);
     expect(restored.selected.action[0]?.triggerEvents).toEqual(["attack"]);
-    expect(restored.selected.action[0]?.resolutionSucceeded).toBe(true);
+    expect(restored.selected.action[0]?.outcomeOccurrenceId).toBe("mockery-1");
     expect(restored.selected.bonus[0]?.triggerEvents).toEqual(["bonus-extend"]);
     expect(restored.reactionUsedId).toBe("cutting-words");
-    expect(restored.reactionResolutionSucceeded).toBe(true);
+    expect(restored.reactionOutcomeOccurrenceId).toBe("reaction-1");
+    expect(restored.outcomeReceipts).toHaveLength(2);
     expect(restored.movementUsedFt).toBe(15);
     expect(restored.nextAttackAdvantage).toBe(true);
     expect(restored.movementLocked).toBe(true);

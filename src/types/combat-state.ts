@@ -36,6 +36,7 @@ import type { SessionState } from "@/types/character";
 import type { LocText } from "@/lib/loc-text";
 import type { EconomyActionCategory } from "@/lib/combat-economy";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
+import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 
 /**
  * A player-DECLARED attack in a live campaign encounter — the target(s) the player
@@ -102,7 +103,14 @@ export interface PersistedTurnAction {
   isAttackGroup?: boolean;
   economyCategory?: EconomyActionCategory;
   triggerEvents?: ReadonlyArray<"attack" | "bonus-extend">;
-  resolutionSucceeded?: true;
+  /** Exact reviewed occurrence owned by this economy occupant. */
+  outcomeOccurrenceId?: string;
+}
+
+export interface PersistedAttackSwing {
+  actionId: string;
+  /** Exact reviewed occurrence owned by this one swing. */
+  outcomeOccurrenceId?: string;
 }
 
 /**
@@ -119,10 +127,15 @@ export interface PersistedTurnEconomy {
     free: PersistedTurnAction[];
   };
   attacksUsed: number;
-  attackSwingIds: string[];
+  attackSwings: PersistedAttackSwing[];
+  /** Monotonic allocator cursor for reviewed occurrences in this exact turn. */
+  outcomeOrdinal: number;
+  /** Reviewed per-instance/per-target facts produced this turn. Occurrence ids
+   * keep repeated uses of the same action distinct across hydration and undo. */
+  outcomeReceipts: CombatOutcomeReceipt[];
   reactionUsed: boolean;
   reactionUsedId: string | null;
-  reactionResolutionSucceeded?: boolean;
+  reactionOutcomeOccurrenceId: string | null;
   movementUsedFt: number;
   dashesThisTurn: number;
   spellSlotCastsThisTurn: number;

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LocText } from "@/lib/loc-text";
 import type { CombatState, PersistedTurnAction } from "@/types/combat-state";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
+import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 
 vi.mock("firebase/firestore", () => ({
   doc: (...segments: unknown[]) => ({ path: segments.slice(1).join("/") }),
@@ -13,10 +14,8 @@ vi.mock("@/lib/firebase", () => ({ db: { _type: "firestore" } }));
 vi.mock("@/lib/dev-bypass", () => ({ DEV_BYPASS_AUTH: false }));
 
 import { combatStateWriteData, parseCombatState } from "@/lib/combat-state-io";
-import {
-  economyClaimsForTurn,
-  successfulActionPrerequisiteMet,
-} from "@/lib/combat-economy";
+import { economyClaimsForTurn } from "@/lib/combat-economy";
+import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
 import { syncCombatFromSession } from "@/features/character/center/combat-hydration";
 import { useCombatStore } from "@/stores/combatStore";
 
@@ -34,6 +33,22 @@ function action(
   extra: Partial<PersistedTurnAction> = {}
 ): PersistedTurnAction {
   return { id, slot, name, ...extra };
+}
+
+function receipt(
+  occurrenceId: string,
+  actionId: string,
+  fact: CombatOutcomeReceipt["fact"]
+): CombatOutcomeReceipt {
+  return {
+    id: `${occurrenceId}:0`,
+    occurrenceId,
+    actionId,
+    instance: 0,
+    count: 1,
+    target: { combatantId: "monster-0" },
+    fact,
+  };
 }
 
 const EFFECTS: ActiveCombatEffect[] = [
@@ -143,7 +158,6 @@ function completeState(): CombatState {
             isAttackGroup: true,
             economyCategory: "attack",
             triggerEvents: ["attack", "bonus-extend"],
-            resolutionSucceeded: true,
           }),
           action("dash-action", "action", LOC_TEXTS.srd, {
             economyCategory: "dash",
@@ -156,21 +170,41 @@ function completeState(): CombatState {
           }),
           action("hide-action", "bonus", LOC_TEXTS.ui, {
             economyCategory: "hide",
-            resolutionSucceeded: true,
           }),
         ],
         free: [
           action("utilize-action", "free", LOC_TEXTS.custom, {
             economyCategory: "utilize",
+            outcomeOccurrenceId: "utilize-1",
           }),
           action("uncategorized-action", "free", LOC_TEXTS.lit),
         ],
       },
       attacksUsed: 3,
-      attackSwingIds: ["longsword", "longsword", "fire-bolt"],
+      attackSwings: [
+        { actionId: "longsword", outcomeOccurrenceId: "longsword-1" },
+        { actionId: "longsword", outcomeOccurrenceId: "longsword-2" },
+        { actionId: "fire-bolt", outcomeOccurrenceId: "fire-bolt-1" },
+      ],
+      outcomeReceipts: [
+        receipt("utilize-1", "utilize-action", {
+          kind: "save",
+          ability: "DEX",
+          result: "failure",
+        }),
+        receipt("longsword-1", "longsword", { kind: "attack", result: "hit" }),
+        receipt("longsword-2", "longsword", { kind: "attack", result: "miss" }),
+        receipt("fire-bolt-1", "fire-bolt", { kind: "attack", result: "hit" }),
+        receipt("counterspell-1", "counterspell", {
+          kind: "save",
+          ability: "INT",
+          result: "success",
+        }),
+      ],
+      outcomeOrdinal: 5,
       reactionUsed: true,
       reactionUsedId: "counterspell",
-      reactionResolutionSucceeded: true,
+      reactionOutcomeOccurrenceId: "counterspell-1",
       movementUsedFt: 25,
       dashesThisTurn: 2,
       spellSlotCastsThisTurn: 1,
@@ -222,11 +256,6 @@ describe("combat-state IO — full persistence contract", () => {
     );
 
     const restored = useCombatStore.getState();
-    const committed = [
-      ...restored.selected.action,
-      ...restored.selected.bonus,
-      ...restored.selected.free,
-    ];
     expect(restored.selected.action[0]?.triggerEvents).toEqual([
       "attack",
       "bonus-extend",
@@ -237,21 +266,25 @@ describe("combat-state IO — full persistence contract", () => {
     expect(restored.nextAttackAdvantage).toBe(true);
     expect(restored.movementLocked).toBe(true);
     expect(
-      successfulActionPrerequisiteMet(
-        { requiresSuccessfulActionThisTurn: "attack-action" },
-        committed
+      combatOutcomePrerequisiteMet(
+        { actionId: "longsword", kind: "attack", result: "success" },
+        restored.outcomeReceipts
       )
     ).toBe(true);
     expect(
-      successfulActionPrerequisiteMet(
-        { requiresSuccessfulActionThisTurn: "counterspell" },
-        committed,
+      combatOutcomePrerequisiteMet(
         {
-          id: restored.reactionUsedId,
-          resolutionSucceeded: restored.reactionResolutionSucceeded,
-        }
+          actionId: "counterspell",
+          kind: "save",
+          ability: "INT",
+          result: "success",
+        },
+        restored.outcomeReceipts
       )
     ).toBe(true);
+    expect(restored.attackSwings[0]?.outcomeOccurrenceId).toBe("longsword-1");
+    expect(restored.reactionOutcomeOccurrenceId).toBe("counterspell-1");
+    expect(restored.outcomeOrdinal).toBe(5);
     expect(
       economyClaimsForTurn(restored.selected.action, restored.attacksUsed, 2)
     ).toEqual([{ category: "attack", attackCount: 2 }, { category: "dash" }]);
@@ -296,9 +329,20 @@ describe("combat-state IO — full persistence contract", () => {
           free: [{ id: "missing-name" }],
         },
         attacksUsed: -4,
-        attackSwingIds: ["valid-swing", "", 9, null],
+        attackSwings: [
+          { actionId: "valid-swing", outcomeOccurrenceId: "swing-1" },
+          { actionId: "" },
+          9,
+          null,
+        ],
+        outcomeReceipts: [
+          receipt("swing-1", "wrong-owner", { kind: "attack", result: "hit" }),
+          { id: "broken" },
+        ],
+        outcomeOrdinal: 2.8,
         reactionUsed: false,
         reactionUsedId: "forged-reaction",
+        reactionOutcomeOccurrenceId: "forged-occurrence",
         reactionResolutionSucceeded: true,
         movementUsedFt: Number.POSITIVE_INFINITY,
         dashesThisTurn: -1,
@@ -332,9 +376,12 @@ describe("combat-state IO — full persistence contract", () => {
           free: [],
         },
         attacksUsed: 0,
-        attackSwingIds: ["valid-swing"],
+        attackSwings: [{ actionId: "valid-swing", outcomeOccurrenceId: "swing-1" }],
+        outcomeReceipts: [],
+        outcomeOrdinal: 2,
         reactionUsed: false,
         reactionUsedId: null,
+        reactionOutcomeOccurrenceId: null,
         movementUsedFt: 0,
         dashesThisTurn: 0,
         spellSlotCastsThisTurn: 0,
@@ -344,17 +391,14 @@ describe("combat-state IO — full persistence contract", () => {
       },
     });
     expect(parsed.appliedEncounterEffects).toBeUndefined();
-    expect(parsed.turnEconomy?.reactionResolutionSucceeded).toBeUndefined();
-
-    const committed = parsed.turnEconomy?.selected.action ?? [];
     expect(
-      successfulActionPrerequisiteMet(
-        { requiresSuccessfulActionThisTurn: "forged-reaction" },
-        committed,
+      combatOutcomePrerequisiteMet(
         {
-          id: parsed.turnEconomy?.reactionUsedId ?? null,
-          resolutionSucceeded: parsed.turnEconomy?.reactionResolutionSucceeded ?? false,
-        }
+          actionId: "forged-reaction",
+          kind: "save",
+          result: "success",
+        },
+        parsed.turnEconomy?.outcomeReceipts ?? []
       )
     ).toBe(false);
   });
