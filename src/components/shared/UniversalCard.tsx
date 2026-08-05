@@ -760,6 +760,27 @@ export function UniversalCardHigher({
   );
 }
 
+/** Shared compact classifier row. Compendium and cockpit details consume the
+ * same component so spell classes, item properties, and card tags cannot drift. */
+export function UniversalCardTags({
+  tags,
+  className,
+}: {
+  tags: ReactNode[];
+  className?: string;
+}) {
+  if (tags.length === 0) return null;
+  return (
+    <div className={cn("uc-tags", className)}>
+      {tags.map((tag, i) => (
+        <span key={i} className="uc-tag">
+          {tag}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /** Detail foot: tag list (left) + action button/extra (right). */
 export function UniversalCardFoot({
   tags,
@@ -772,17 +793,7 @@ export function UniversalCardFoot({
   if (!hasTags && children == null) return null;
   return (
     <div className="uc-detail-foot">
-      {hasTags ? (
-        <div className="uc-tags">
-          {tags.map((tag, i) => (
-            <span key={i} className="uc-tag">
-              {tag}
-            </span>
-          ))}
-        </div>
-      ) : (
-        <span />
-      )}
+      {hasTags ? <UniversalCardTags tags={tags} /> : <span />}
       {children}
     </div>
   );

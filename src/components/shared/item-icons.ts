@@ -62,9 +62,8 @@ import {
   Wand2,
 } from "lucide-react";
 import {
-  DartIcon,
   DiamondRingIcon,
-  GlaiveIcon,
+  SpearIcon,
   WizardStaffIcon,
 } from "@/components/shared/fantasy-icons";
 import { SRD_EQUIPMENT } from "@/data/equipment";
@@ -89,7 +88,7 @@ const WEAPON_ICON: Record<string, ItemGlyph> = {
   handaxe: Axe,
   battleaxe: Axe,
   greataxe: Axe,
-  glaive: GlaiveIcon,
+  glaive: Sword,
   halberd: Axe,
   // Hammers
   "light-hammer": Hammer,
@@ -104,10 +103,10 @@ const WEAPON_ICON: Record<string, ItemGlyph> = {
   quarterstaff: Gavel,
   // Picks + thrusting hafted weapons
   "war-pick": Pickaxe,
-  spear: Pickaxe,
-  pike: Pickaxe,
-  lance: Pickaxe,
-  trident: Pickaxe,
+  spear: SpearIcon,
+  pike: SpearIcon,
+  lance: SpearIcon,
+  trident: SpearIcon,
   // Bows + crossbows — one archery family (lucide has no separate crossbow icon,
   // and a crossbow IS a bow-type launcher), so they share the bow-and-arrow glyph.
   shortbow: BowArrow,
@@ -119,10 +118,11 @@ const WEAPON_ICON: Record<string, ItemGlyph> = {
   musket: Crosshair,
   pistol: Crosshair,
   blowgun: Crosshair,
-  // Thrown / sling
+  // Thrown projectiles reuse the archery sign; a family matters more than a
+  // subtype silhouette at 12–16px. The sling keeps its own target-like sign.
   sling: Target,
-  dart: DartIcon,
-  javelin: Target,
+  dart: BowArrow,
+  javelin: BowArrow,
   // Lash
   whip: Zap,
 };

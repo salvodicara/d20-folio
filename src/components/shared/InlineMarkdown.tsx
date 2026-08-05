@@ -20,9 +20,9 @@ interface InlineMarkdownProps {
   /**
    * OPT-IN render-time formatter for the PLAIN text leaves of each line — rules
    * prose passes `highlightRulesText(locale)` (the BG3 colour grammar: damage
-   * phrases / condition names / values / Advantage). It receives only string
-   * leaves (markdown elements pass through untouched), so marks/code/links are
-   * never re-processed. Omitted ⇒ the output is byte-identical to
+   * phrases / condition names / values / Advantage / action economy). It
+   * receives only string leaves (markdown elements pass through untouched), so
+   * marks/code/links are never re-processed. Omitted ⇒ the output is byte-identical to
    * `parseInline(line)` — the shared chronicle/session prose is provably
    * unaffected.
    */

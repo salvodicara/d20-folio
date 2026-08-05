@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
-import { ITEM_ART, itemArtUrl } from "@/data/item-art";
+import { ITEM_ART, ITEM_ART_COMPLETE, itemArtUrl } from "@/data/item-art";
 import { webpSize } from "@tests/helpers/webp";
 
 const ROOT = process.cwd();
@@ -43,6 +43,23 @@ describe("canonical item art guard", () => {
 
     expect(Object.keys(ITEM_ART).sort()).toEqual(fileKeys);
     expect(itemArtUrl("equipment", "missing-item")).toBeNull();
+  });
+
+  it("reveals plates as one complete corpus, never as a partial collection", () => {
+    const expectedKeys = CORPORA.flatMap(({ kind, ids }) =>
+      [...ids].map((id) => `${kind}:${id}`)
+    ).sort();
+    const actualKeys = Object.keys(ITEM_ART).sort();
+    expect(ITEM_ART_COMPLETE).toBe(
+      expectedKeys.length === actualKeys.length &&
+        expectedKeys.every((key, index) => key === actualKeys[index])
+    );
+
+    for (const { kind, ids } of CORPORA) {
+      for (const id of ids) {
+        expect(Boolean(itemArtUrl(kind, id)), `${kind}:${id}`).toBe(ITEM_ART_COMPLETE);
+      }
+    }
   });
 
   it("keeps every plate 4:5, intrinsic-size stable and within the detail budget", () => {

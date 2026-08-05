@@ -15,6 +15,7 @@ export {
   UniversalCardFacts,
   UniversalCardDesc,
   UniversalCardHigher,
+  UniversalCardTags,
   UniversalCardFoot,
   type UniversalCardProps,
   type UniversalCardSlot,

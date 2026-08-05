@@ -15,7 +15,7 @@
 import { describe, it, expect } from "vitest";
 import { isValidElement } from "react";
 import { render } from "@testing-library/react";
-import i18n from "@/i18n";
+import i18n, { ensureSrdKind } from "@/i18n";
 import {
   maneuverSpec,
   metamagicSpec,
@@ -41,6 +41,11 @@ import { SRD_METAMAGIC } from "@/data/metamagic";
 import { SRD_INVOCATIONS } from "@/data/invocations";
 import { makeCharacterDoc } from "./_helpers";
 import type { CharacterDoc } from "@/types/character";
+import { CompendiumDetailBody } from "@/features/compendium/picker/detail";
+
+// The monster wing is lazy in production. Load its catalogue through the same
+// runtime gate before this all-spec anatomy census touches either locale.
+await ensureSrdKind("monster");
 
 // A translator stub that returns the key (or its interpolated defaultValue) so we
 // can assert the spec *resolves* a label without booting i18next.
@@ -450,7 +455,7 @@ describe("equipmentSpec — armor AC stat line localizes (row meta + detail)", (
 });
 
 describe("Compendium item art — reading-leaf only data contract", () => {
-  it("supplies a plate only for mapped items and leaves missing art truly absent", () => {
+  it("keeps every plate hidden until the composed item corpus is complete", () => {
     const longsword = SRD_EQUIPMENT.find((item) => item.id === "longsword");
     const club = SRD_EQUIPMENT.find((item) => item.id === "club");
     const ring = SRD_MAGIC_ITEMS.find((item) => item.id === "ring-of-protection");
@@ -458,15 +463,67 @@ describe("Compendium item art — reading-leaf only data contract", () => {
     if (!longsword || !club || !ring) return;
 
     expect(
-      isValidElement(
-        equipmentSpec.detail(longsword, ctx("en"), { added: false }).entryArt
-      )
-    ).toBe(true);
+      equipmentSpec.detail(longsword, ctx("en"), { added: false }).entryArt
+    ).toBeUndefined();
     expect(
       equipmentSpec.detail(club, ctx("en"), { added: false }).entryArt
     ).toBeUndefined();
     expect(
-      isValidElement(magicItemSpec.detail(ring, ctx("en"), { added: false }).entryArt)
-    ).toBe(true);
+      magicItemSpec.detail(ring, ctx("en"), { added: false }).entryArt
+    ).toBeUndefined();
+  });
+});
+
+describe("Compendium editorial anatomy", () => {
+  it("gives every registered entry a predictable identity and readable body", () => {
+    for (const locale of ["en", "it"] as const) {
+      for (const spec of COMPENDIUM_SPECS) {
+        for (const entry of spec.data) {
+          const context = ctx(locale);
+          const id = spec.getId(entry);
+          expect(
+            spec.getName(entry, context),
+            `${locale} ${spec.id}:${id} name`
+          ).toBeTruthy();
+          expect(
+            spec.row(entry, context).name,
+            `${locale} ${spec.id}:${id} row`
+          ).toBeTruthy();
+
+          const detail = spec.detail(entry, context, { added: false });
+          expect(detail.eyebrow, `${locale} ${spec.id}:${id} identity`).toBeTruthy();
+          if (spec.id === "monster") {
+            expect(detail.extras, `${locale} ${spec.id}:${id} stat block`).toBeTruthy();
+          } else {
+            expect(
+              detail.description?.trim(),
+              `${locale} ${spec.id}:${id} description`
+            ).toBeTruthy();
+          }
+        }
+      }
+    }
+  });
+
+  it("every active equipment entry has a localized description in both locales", () => {
+    for (const locale of ["en", "it"] as const) {
+      const missing = SRD_EQUIPMENT.filter(
+        (item) =>
+          !equipmentSpec.detail(item, ctx(locale), { added: false }).description?.trim()
+      ).map((item) => item.id);
+      expect(missing, `${locale} missing equipment descriptions`).toEqual([]);
+    }
+  });
+
+  it("renders the same description rubric and rules-text seam for every spec", () => {
+    const { container } = render(
+      <CompendiumDetailBody
+        view={{ description: "Use a Bonus Action to deal 1d6 Fire damage." }}
+        locale="en"
+      />
+    );
+    expect(container.querySelector(".cmp-prose-rubric")?.textContent).toBe("Description");
+    expect(container.querySelector(".rt-bonus")?.textContent).toBe("Bonus Action");
+    expect(container.querySelector(".rt-dmg")?.textContent).toBe("1d6 Fire damage");
   });
 });

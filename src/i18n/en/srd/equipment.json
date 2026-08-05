@@ -43,7 +43,8 @@
     "description": "A Basket holds up to 40 pounds within 2 cubic feet."
   },
   "battleaxe": {
-    "name": "Battleaxe"
+    "name": "Battleaxe",
+    "description": "A broad-headed martial axe balanced for one- or two-handed blows."
   },
   "bedroll": {
     "description": "A Bedroll sleeps one Small or Medium creature. While in a Bedroll, you automatically succeed on saving throws against extreme cold.",
@@ -62,7 +63,8 @@
     "description": "A Block and Tackle lets you hoist up to four times the weight you can normally lift."
   },
   "blowgun": {
-    "name": "Blowgun"
+    "name": "Blowgun",
+    "description": "A quiet tube that propels small needles with a controlled breath."
   },
   "blowgun-needles": {
     "description": "Ammunition for blowguns. Sold in bundles of 50.",
@@ -73,7 +75,8 @@
     "name": "Book"
   },
   "breastplate": {
-    "name": "Breastplate"
+    "name": "Breastplate",
+    "description": "A fitted metal cuirass that protects the torso while leaving the limbs relatively free."
   },
   "brewers-supplies": {
     "description": "Brewer's Supplies are used to ferment beverages and purify water.",
@@ -112,10 +115,12 @@
     "name": "Chain"
   },
   "chain-mail": {
-    "name": "Chain Mail"
+    "name": "Chain Mail",
+    "description": "Interlocking metal rings worn over padding form this heavy, reliable suit of armor."
   },
   "chain-shirt": {
-    "name": "Chain Shirt"
+    "name": "Chain Shirt",
+    "description": "A shirt of interlocking metal rings worn beneath outer clothing for discreet protection."
   },
   "climbers-kit": {
     "description": "Includes boot tips, gloves, pitons, and a harness. As a Utilize action, you can anchor yourself; you can't fall more than 25 feet from the anchor point.",
@@ -130,7 +135,8 @@
     "name": "Clothes, Traveler's"
   },
   "club": {
-    "name": "Club"
+    "name": "Club",
+    "description": "A compact wooden bludgeon, easy to handle in close quarters or beside another light weapon."
   },
   "cobblers-tools": {
     "description": "Cobbler's Tools are used to make and repair footwear.",
@@ -157,10 +163,12 @@
     "name": "Crowbar"
   },
   "dagger": {
-    "name": "Dagger"
+    "name": "Dagger",
+    "description": "A small, balanced blade suited to precise strikes, close fighting, or throwing."
   },
   "dart": {
-    "name": "Dart"
+    "name": "Dart",
+    "description": "A weighted throwing point designed for quick, accurate casts at short range."
   },
   "dice-set": {
     "description": "A Dice Set is a gaming set. Proficiency lets you add your Proficiency Bonus to ability checks you make to play a game that uses it.",
@@ -203,7 +211,8 @@
     "name": "Firearm Bullets"
   },
   "flail": {
-    "name": "Flail"
+    "name": "Flail",
+    "description": "A spiked or weighted head joined to a handle by chain, delivering heavy swinging blows."
   },
   "flute": {
     "description": "A Flute is a wind instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
@@ -217,7 +226,8 @@
     "name": "Gaming Set"
   },
   "glaive": {
-    "name": "Glaive"
+    "name": "Glaive",
+    "description": "A long polearm tipped with a single-edged blade, built to cut from beyond ordinary melee reach."
   },
   "glass-bottle": {
     "name": "Glass Bottle",
@@ -232,39 +242,48 @@
     "name": "Grappling Hook"
   },
   "greataxe": {
-    "name": "Greataxe"
+    "name": "Greataxe",
+    "description": "A massive two-handed axe that commits its full weight to powerful sweeping cuts."
   },
   "greatclub": {
-    "name": "Greatclub"
+    "name": "Greatclub",
+    "description": "A heavy two-handed cudgel that turns simple leverage into crushing force."
   },
   "greatsword": {
-    "name": "Greatsword"
+    "name": "Greatsword",
+    "description": "A long, heavy blade wielded with both hands for broad, forceful cuts."
   },
   "halberd": {
-    "name": "Halberd"
+    "name": "Halberd",
+    "description": "A long polearm combining an axe blade, spear point, and hook for versatile reach."
   },
   "half-plate-armor": {
-    "name": "Half Plate Armor"
+    "name": "Half Plate Armor",
+    "description": "Shaped metal plates protect the torso and vital areas while leaving more mobility than a full suit."
   },
   "hand-crossbow": {
-    "name": "Hand Crossbow"
+    "name": "Hand Crossbow",
+    "description": "A compact crossbow that trades power and range for one-handed handling."
   },
   "handaxe": {
-    "name": "Handaxe"
+    "name": "Handaxe",
+    "description": "A light, balanced axe effective in the hand and designed to be thrown when needed."
   },
   "healers-kit": {
     "description": "Has ten uses. As a Utilize action, you can expend one use to stabilize an Unconscious creature at 0 Hit Points without needing a Wisdom (Medicine) check.",
     "name": "Healer's Kit"
   },
   "heavy-crossbow": {
-    "name": "Heavy Crossbow"
+    "name": "Heavy Crossbow",
+    "description": "A powerful two-handed crossbow whose heavy draw sends bolts across long distances."
   },
   "herbalism-kit": {
     "description": "An Herbalism Kit includes pouches to store herbs, clippers and leather gloves for collecting plants, a mortar and pestle, and several vials. Proficiency with it lets you add your Proficiency Bonus to checks made to identify or apply herbs and other natural remedies, and to craft antitoxin and healing potions.",
     "name": "Herbalism Kit"
   },
   "hide-armor": {
-    "name": "Hide Armor"
+    "name": "Hide Armor",
+    "description": "Layers of thick hide and fur provide rugged protection with limited flexibility."
   },
   "holy-symbol": {
     "description": "An amulet, emblem, or reliquary bearing a deity's symbol, usable as a spellcasting focus for cleric and paladin spells.",
@@ -299,7 +318,8 @@
     "description": "Iron Spikes come in bundles of ten. You can hammer one in to jam a door shut or to tie off a Rope or Chain."
   },
   "javelin": {
-    "name": "Javelin"
+    "name": "Javelin",
+    "description": "A light spear balanced to serve both as a thrusting weapon and a long-range throw."
   },
   "jewelers-tools": {
     "description": "Jeweler's Tools are used to cut and set gemstones.",
@@ -314,7 +334,8 @@
     "name": "Lamp"
   },
   "lance": {
-    "name": "Lance"
+    "name": "Lance",
+    "description": "A long cavalry spear built to concentrate a mounted charge into a piercing strike."
   },
   "lantern-bullseye": {
     "description": "Burns Oil to cast Bright Light in a 60-foot Cone and Dim Light for an additional 60 feet.",
@@ -325,27 +346,32 @@
     "name": "Lantern, Hooded"
   },
   "leather-armor": {
-    "name": "Leather Armor"
+    "name": "Leather Armor",
+    "description": "Hardened leather pieces protect the body without restricting agile movement."
   },
   "leatherworkers-tools": {
     "description": "Leatherworker's Tools are used to make and repair leather goods.",
     "name": "Leatherworker's Tools"
   },
   "light-crossbow": {
-    "name": "Light Crossbow"
+    "name": "Light Crossbow",
+    "description": "A two-handed crossbow with a manageable draw and dependable reach."
   },
   "light-hammer": {
-    "name": "Light Hammer"
+    "name": "Light Hammer",
+    "description": "A compact war hammer balanced for quick blows or short throws."
   },
   "lock": {
     "description": "A Lock comes with a key. Without the key, a creature can pick it with Thieves' Tools (DC 15 Dexterity Sleight of Hand check).",
     "name": "Lock"
   },
   "longbow": {
-    "name": "Longbow"
+    "name": "Longbow",
+    "description": "A tall, powerful bow that rewards a full two-handed draw with exceptional range."
   },
   "longsword": {
-    "name": "Longsword"
+    "name": "Longsword",
+    "description": "A balanced martial blade equally at home in one hand or driven with both."
   },
   "lute": {
     "description": "A Lute is a stringed musical instrument. Proficiency with it lets you add your Proficiency Bonus to Charisma (Performance) checks that rely on the lute.",
@@ -356,7 +382,8 @@
     "name": "Lyre"
   },
   "mace": {
-    "name": "Mace"
+    "name": "Mace",
+    "description": "A solid metal-headed bludgeon made to deliver concentrated, punishing impacts."
   },
   "manacles": {
     "description": "As a Utilize action, bind an unwilling creature that has the Grappled, Incapacitated, or Restrained condition (DC 13 Dexterity Sleight of Hand). Escaping requires DC 20 Dexterity (Sleight of Hand); bursting requires DC 25 Strength (Athletics).",
@@ -375,21 +402,24 @@
     "name": "Mason's Tools"
   },
   "maul": {
-    "name": "Maul"
+    "name": "Maul",
+    "description": "An oversized two-handed hammer that brings crushing weight down on its target."
   },
   "mirror": {
     "description": "A handheld steel Mirror useful for personal cosmetics, peeking around corners, and reflecting light as a signal.",
     "name": "Mirror"
   },
   "morningstar": {
-    "name": "Morningstar"
+    "name": "Morningstar",
+    "description": "A one-handed haft topped by a spiked metal head for forceful piercing blows."
   },
   "musical-instrument": {
     "description": "A lute, flute, drum, or other instrument. A bard can use it as a spellcasting focus.",
     "name": "Musical Instrument"
   },
   "musket": {
-    "name": "Musket"
+    "name": "Musket",
+    "description": "A long two-handed firearm that delivers a powerful shot before it must be reloaded."
   },
   "navigators-tools": {
     "description": "Navigator's Tools are used to chart a course and follow navigation charts.",
@@ -404,7 +434,8 @@
     "name": "Oil"
   },
   "padded-armor": {
-    "name": "Padded Armor"
+    "name": "Padded Armor",
+    "description": "Quilted layers of cloth and batting soften impacts, though the bulky folds hinder stealth."
   },
   "painters-supplies": {
     "description": "Painter's Supplies are used to create paintings.",
@@ -427,13 +458,16 @@
     "name": "Perfume"
   },
   "pike": {
-    "name": "Pike"
+    "name": "Pike",
+    "description": "An exceptionally long two-handed spear used to threaten foes well beyond arm's reach."
   },
   "pistol": {
-    "name": "Pistol"
+    "name": "Pistol",
+    "description": "A compact firearm that delivers a powerful one-handed shot at close range."
   },
   "plate-armor": {
-    "name": "Plate Armor"
+    "name": "Plate Armor",
+    "description": "Interlocking shaped plates cover the entire body, offering exceptional protection at the cost of weight and noise."
   },
   "playing-card-set": {
     "description": "A Playing Card Set is a gaming set. Proficiency lets you add your Proficiency Bonus to ability checks you make to play a game that uses it.",
@@ -468,21 +502,24 @@
     "name": "Priest's Pack"
   },
   "quarterstaff": {
-    "name": "Quarterstaff"
+    "name": "Quarterstaff",
+    "description": "A sturdy wooden staff that can strike quickly in one hand or with greater force in two."
   },
   "quiver": {
     "description": "A case that holds up to 20 arrows.",
     "name": "Quiver"
   },
   "rapier": {
-    "name": "Rapier"
+    "name": "Rapier",
+    "description": "A slender thrusting sword designed for precise footwork and agile point control."
   },
   "rations": {
     "description": "Rations consist of travel-ready food for one day, including jerky, dried fruit, hardtack, and nuts.",
     "name": "Rations"
   },
   "ring-mail": {
-    "name": "Ring Mail"
+    "name": "Ring Mail",
+    "description": "Heavy rings sewn onto a leather coat provide straightforward protection but little freedom of movement."
   },
   "robe": {
     "description": "A loose, flowing outer garment, often worn by spellcasters.",
@@ -493,41 +530,48 @@
     "name": "Rope"
   },
   "scale-mail": {
-    "name": "Scale Mail"
+    "name": "Scale Mail",
+    "description": "Overlapping metal scales cover a leather coat, balancing solid protection against weight and noise."
   },
   "scholars-pack": {
     "description": "Contains: Backpack, Book, Ink, Ink Pen, Lamp, 10 flasks of Oil, 10 sheets of Parchment, and Tinderbox.",
     "name": "Scholar's Pack"
   },
   "scimitar": {
-    "name": "Scimitar"
+    "name": "Scimitar",
+    "description": "A light, curved blade shaped for fast, flowing cuts and agile handling."
   },
   "shawm": {
     "description": "A Shawm is a wind instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
     "name": "Shawm"
   },
   "shield": {
-    "name": "Shield"
+    "name": "Shield",
+    "description": "A handheld barrier of wood or metal used to turn aside attacks and reinforce a wielder's defense."
   },
   "shortbow": {
-    "name": "Shortbow"
+    "name": "Shortbow",
+    "description": "A compact two-handed bow that is easy to carry and effective at practical battlefield ranges."
   },
   "shortsword": {
-    "name": "Shortsword"
+    "name": "Shortsword",
+    "description": "A light, straight blade suited to quick thrusts and close-quarters precision."
   },
   "shovel": {
     "description": "Working for 1 hour, you can dig a hole that is 5 feet on each side in soil or similar material.",
     "name": "Shovel"
   },
   "sickle": {
-    "name": "Sickle"
+    "name": "Sickle",
+    "description": "A light hooked blade adapted from a harvesting tool for swift close-range cuts."
   },
   "signal-whistle": {
     "name": "Signal Whistle",
     "description": "When blown as a Utilize action, a Signal Whistle produces a sound heard up to 600 feet away."
   },
   "sling": {
-    "name": "Sling"
+    "name": "Sling",
+    "description": "A simple leather cradle and cord that hurls stones or bullets with surprising force."
   },
   "sling-bullets": {
     "description": "Ammunition for slings. Sold in bundles of 20.",
@@ -538,21 +582,24 @@
     "name": "Smith's Tools"
   },
   "spear": {
-    "name": "Spear"
+    "name": "Spear",
+    "description": "A versatile pointed shaft that can be thrust with one or two hands or cast at a distant foe."
   },
   "spellbook": {
     "description": "Essential for Wizards, a Spellbook is a leather-bound tome with 100 blank vellum pages suitable for recording spells.",
     "name": "Spellbook"
   },
   "splint-armor": {
-    "name": "Splint Armor"
+    "name": "Splint Armor",
+    "description": "Narrow vertical strips of metal fixed over padding form a rigid, heavily protective suit."
   },
   "string": {
     "name": "String",
     "description": "String is 10 feet long. You can tie a knot in it as a Utilize action."
   },
   "studded-leather-armor": {
-    "name": "Studded Leather Armor"
+    "name": "Studded Leather Armor",
+    "description": "Supple leather reinforced with close-set metal fittings improves protection without sacrificing mobility."
   },
   "tent": {
     "description": "A Tent sleeps up to two Small or Medium creatures.",
@@ -575,7 +622,8 @@
     "name": "Torch"
   },
   "trident": {
-    "name": "Trident"
+    "name": "Trident",
+    "description": "A three-pronged spear suited to thrusting, throwing, and powerful two-handed attacks."
   },
   "vial": {
     "name": "Vial",
@@ -586,10 +634,12 @@
     "name": "Viol"
   },
   "war-pick": {
-    "name": "War Pick"
+    "name": "War Pick",
+    "description": "A narrow, reinforced pick concentrates a wielder's force into a single piercing point."
   },
   "warhammer": {
-    "name": "Warhammer"
+    "name": "Warhammer",
+    "description": "A martial hammer balanced for one-handed control or heavier two-handed impacts."
   },
   "waterskin": {
     "description": "A Waterskin holds up to 4 pints of water.",
@@ -600,7 +650,8 @@
     "name": "Weaver's Tools"
   },
   "whip": {
-    "name": "Whip"
+    "name": "Whip",
+    "description": "A flexible lash that trades raw power for finesse and reach."
   },
   "woodcarvers-tools": {
     "description": "Woodcarver's Tools consist of a knife, a gouge, and a small saw. Proficiency with them lets you add your Proficiency Bonus to checks made to carve objects from wood.",

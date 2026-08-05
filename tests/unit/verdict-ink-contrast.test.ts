@@ -44,6 +44,23 @@ function readVar(block: string, name: string): string {
   return m[1];
 }
 
+/** Resolve a token through same-theme aliases, then through the global ramps. */
+function resolveVar(block: string, name: string, seen = new Set<string>()): string {
+  if (seen.has(name)) throw new Error(`circular CSS variable alias: ${name}`);
+  seen.add(name);
+
+  const literal = block.match(new RegExp(`${name}\\s*:\\s*(#[0-9a-fA-F]{3,8})`))?.[1];
+  if (literal) return literal;
+
+  const alias = block.match(new RegExp(`${name}\\s*:\\s*var\\((--[a-z0-9-]+)\\)`))?.[1];
+  if (alias) {
+    const localDeclaration = new RegExp(`${alias}\\s*:`).test(block);
+    return resolveVar(localDeclaration ? block : css, alias, seen);
+  }
+
+  throw new Error(`${name} not defined as a literal or alias`);
+}
+
 function hexToRgb(hex: string): [number, number, number] {
   let h = hex.replace("#", "");
   if (h.length === 3)
@@ -222,9 +239,10 @@ describe("condition-chip ink tokens clear WCAG-AA on the 19% tint", () => {
  * (surface-1 closed cards / surface-2 open cards + the compendium reading
  * pane), not on a hue tint. The `--dmg-*-ink` ramp is already pinned on those
  * grounds above; this pins the grammar's OTHER inks there: every
- * `--cond-*-ink` (`.rt-cond`) and the semantic success/danger pair
- * (`.rt-adv`/`.rt-dis`). `--text-special` (`.rt-value`) is pinned in its own
- * describe below.
+ * `--cond-*-ink` (`.rt-cond`), the semantic success/danger pair
+ * (`.rt-adv`/`.rt-dis`), and the action-economy triad
+ * (`.rt-action`/`.rt-bonus`/`.rt-reaction`). `--text-special` (`.rt-value`) is
+ * pinned in its own describe below.
  */
 describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
   for (const theme of ["dark", "light"] as const) {
@@ -249,6 +267,21 @@ describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
       for (const name of ["--semantic-success", "--semantic-danger"] as const) {
         const raw = block.match(new RegExp(`${name}:\\s*var\\((--[a-z-0-9]+)\\)`))?.[1];
         const ink = raw ? readVar(css, raw) : readVar(block, name);
+        for (const surface of surfaces) {
+          expect(contrast(ink, surface), `${name} on ${surface}`).toBeGreaterThanOrEqual(
+            AA
+          );
+        }
+      }
+    });
+
+    it(`${theme}: every declared action-economy text ink ≥ ${AA}:1 as prose ink`, () => {
+      const names = [...block.matchAll(/(--at-(?:action|bonus|reaction))\s*:/g)]
+        .map((match) => match[1] as string)
+        .sort();
+      expect(names).toEqual(["--at-action", "--at-bonus", "--at-reaction"]);
+      for (const name of names) {
+        const ink = resolveVar(block, name);
         for (const surface of surfaces) {
           expect(contrast(ink, surface), `${name} on ${surface}`).toBeGreaterThanOrEqual(
             AA

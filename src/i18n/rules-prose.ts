@@ -49,6 +49,15 @@ export interface RulesProseVocab {
   /** The Disadvantage defined term (capitalized). */
   disadvantage: string;
   /**
+   * Action-economy phrases. Bonus Action / Reaction are safe as whole defined
+   * terms; the plain Action slot only matches the capitalized defined term or a
+   * named 2024 action ("Attack action" · "azione di Attacco"), never a generic
+   * lowercase use of "action" / "azione".
+   */
+  action: string;
+  bonusAction: string;
+  reaction: string;
+  /**
    * The verb-phrase LOOKBEHIND that unlocks the lowercase Advantage/Disadvantage
    * forms — the SRD writes "has/have/with/gains advantage" (EN) and, in IT, the
    * verb forms "ha/hai/hanno/avere (anche) (s)vantaggio", "con (s)vantaggio",
@@ -109,6 +118,10 @@ export const RULES_PROSE: Record<Locale, RulesProseVocab> = {
       "\\d+(?:[.,]\\d+)*[-\\s](?:foot|feet|ft|inch|inches|mile|hour|minute|round|day)s?",
     advantage: "Advantage",
     disadvantage: "Disadvantage",
+    action:
+      "Action|(?:Attack|Dash|Disengage|Dodge|Help|Hide|Influence|Magic|Ready|Search|Study|Utilize)\\s+action",
+    bonusAction: "[Bb]onus\\s+[Aa]ction",
+    reaction: "[Rr]eaction",
     advGate: "(?:has|have|with|gains?)\\s",
     invisibleContext: "creatures?|condition",
     conditionVariants: {},
@@ -136,6 +149,10 @@ export const RULES_PROSE: Record<Locale, RulesProseVocab> = {
       "\\d+(?:[.,]\\d+)*[-\\s](?:piede|piedi|centimetr[oi]|metr[oi]|chilometr[oi]|migli[oa]|or[ae]|minut[oi]|round|giorn[oi])",
     advantage: "Vantaggio",
     disadvantage: "Svantaggio",
+    action:
+      "Azione|azione\\s+(?:di\\s+Attacco|Scatto|di\\s+Disimpegno|Schivata|di\\s+Aiuto|Nascondersi|di\\s+Influenza|di\\s+Magia|Prepararsi|Cercare|di\\s+Studio|Utilizzo)",
+    bonusAction: "[Aa]zione\\s+[Bb]onus",
+    reaction: "[Rr]eazione",
     advGate:
       "(?:[Hh]a|[Hh]ai|[Hh]anno|[Aa]vere|[Cc]on|[Dd]ispon(?:e|gono)\\s+di|[Ss]ubi(?:sce|scono|re))\\s+(?:anche\\s+)?",
     invisibleContext: null,

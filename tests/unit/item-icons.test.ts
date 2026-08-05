@@ -12,7 +12,6 @@ import {
   Wrench,
   FlaskRound,
   Box,
-  Target,
 } from "lucide-react";
 import {
   weaponSealIcon,
@@ -24,9 +23,8 @@ import {
   equipmentCategoryIcon,
 } from "@/components/shared/item-icons";
 import {
-  DartIcon,
   DiamondRingIcon,
-  GlaiveIcon,
+  SpearIcon,
   WizardStaffIcon,
 } from "@/components/shared/fantasy-icons";
 import type { SrdEquipmentData } from "@/data/types";
@@ -47,9 +45,14 @@ describe("weaponSealIcon", () => {
     expect(weaponSealIcon("light-crossbow")).toBe(BowArrow);
     expect(weaponSealIcon("musket")).toBe(Crosshair);
     expect(weaponSealIcon("greataxe")).toBe(Axe);
-    expect(weaponSealIcon("glaive")).toBe(GlaiveIcon);
-    expect(weaponSealIcon("dart")).toBe(DartIcon);
-    expect(weaponSealIcon("dart")).not.toBe(Target);
+    expect(weaponSealIcon("glaive")).toBe(Sword);
+    expect(weaponSealIcon("dart")).toBe(BowArrow);
+    expect(weaponSealIcon("javelin")).toBe(BowArrow);
+    expect(weaponSealIcon("spear")).toBe(SpearIcon);
+    expect(weaponSealIcon("pike")).toBe(SpearIcon);
+    expect(weaponSealIcon("lance")).toBe(SpearIcon);
+    expect(weaponSealIcon("trident")).toBe(SpearIcon);
+    expect(weaponSealIcon("trident")).not.toBe(weaponSealIcon("war-pick"));
     // The owner's reported collision is fixed: a bow no longer reads as a blade.
     expect(weaponSealIcon("shortbow")).not.toBe(weaponSealIcon("longsword"));
   });

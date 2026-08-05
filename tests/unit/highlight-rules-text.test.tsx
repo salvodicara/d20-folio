@@ -409,6 +409,37 @@ describe("highlightRulesText — Advantage / Disadvantage (.rt-adv / .rt-dis)", 
   });
 });
 
+describe("highlightRulesText — action economy", () => {
+  it("inks EN named/generic Actions, Bonus Actions, and Reactions in separate slots", () => {
+    const c = hl(
+      "en",
+      "Take the Attack action or use a Bonus Action. You can respond with a Reaction."
+    );
+    expect(toks(c, "rt-action").map(([t]) => t)).toEqual(["Attack action"]);
+    expect(toks(c, "rt-bonus").map(([t]) => t)).toEqual(["Bonus Action"]);
+    expect(toks(c, "rt-reaction").map(([t]) => t)).toEqual(["Reaction"]);
+  });
+
+  it("inks IT named actions and both secondary economy slots", () => {
+    const c = hl(
+      "it",
+      "Come azione di Attacco puoi colpire; come Azione Bonus ti muovi e usi la Reazione."
+    );
+    expect(toks(c, "rt-action").map(([t]) => t)).toEqual(["azione di Attacco"]);
+    expect(toks(c, "rt-bonus").map(([t]) => t)).toEqual(["Azione Bonus"]);
+    expect(toks(c, "rt-reaction").map(([t]) => t)).toEqual(["Reazione"]);
+  });
+
+  it("keeps generic lowercase action prose plain", () => {
+    expect(
+      hl("en", "This action has no mechanical slot.").querySelector(".rt-action")
+    ).toBeNull();
+    expect(
+      hl("it", "Questa azione non indica uno slot.").querySelector(".rt-action")
+    ).toBeNull();
+  });
+});
+
 describe("highlightRulesText — mark safety through InlineMarkdown", () => {
   it("(m) keeps markdown structure: **Label.** = one <strong>, code/links never lifted", () => {
     const c = md("en", "**Frightened.** near `1d6` and [1d6](https://x.y). Deal 1d6.");

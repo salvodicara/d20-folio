@@ -11,11 +11,12 @@ import { spells } from "@/data/spells";
 import { primaryClassId, primarySubclassId } from "@/lib/classes";
 import { getSubclassSpellcasting } from "@/lib/subclass-spellcasting";
 import { resolveEffectiveSpells } from "@/lib/expanded-spells";
-import { castingTimeI18nKey, cn } from "@/lib/utils";
+import { castingTimeI18nKey } from "@/lib/utils";
 import { useCharacterStore } from "@/stores/characterStore";
 import { Icon } from "@/components/ui/icon";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { InlineMarkdown } from "@/components/shared/InlineMarkdown";
+import { UniversalCardTags } from "@/components/shared/UniversalCard";
 import { highlightRulesText } from "@/components/shared/highlightRulesText";
 import { FilterChip } from "@/components/sheet/picker-parts";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
@@ -373,21 +374,10 @@ export const spellSpec: CompendiumPickerSpec<SrdSpellData> = {
               />
             </InfoCard>
           )}
-          <div className="mt-4 flex flex-wrap gap-1">
-            {spell.classes.map((cls) => (
-              <span
-                key={cls}
-                className={cn(
-                  "rounded-sm border px-2 py-0.5 text-[length:var(--text-micro)] font-medium",
-                  cls === charClass
-                    ? "border-accent/40 bg-accent/10 text-accent"
-                    : "border-border text-text-secondary"
-                )}
-              >
-                {classLabel(cls, t)}
-              </span>
-            ))}
-          </div>
+          <UniversalCardTags
+            className="mt-4"
+            tags={spell.classes.map((cls) => classLabel(cls, t))}
+          />
         </>
       ),
     };

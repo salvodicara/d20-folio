@@ -9679,23 +9679,6 @@ button.create-need:focus-visible .create-need-chev {
   margin-bottom: -2px;
 }
 
-/* COCKPIT WAYFINDING — the five sheet destinations remain reachable while the
-   active leaf scrolls. Play and Spells are multi-screen working documents; making
-   people return to the masthead merely to change leaf is needless navigation.
-   Keep the EXISTING ARIA tablist (one state owner, one keyboard model) sticky
-   directly beneath the global topbar — the standard local-tabs pattern, not a
-   second mobile-only navigator. The translucent ground is necessary once the
-   tabs detach from the page edge: text scrolling underneath must never show
-   through the 5px tab gaps. At rest it reads as the same calm scene field, so the
-   protruding-index-tab silhouette and active-tab fusion stay unchanged. */
-.wb .content > .tabstrip-shell {
-  position: sticky;
-  top: var(--topbar-h);
-  z-index: calc(var(--z-sticky) - 1);
-  background: color-mix(in oklab, var(--bg-page) 90%, transparent);
-  backdrop-filter: blur(10px);
-}
-
 .cmp-ribbon-shell[data-fade="l"] .cmp-ribbon,
 .tabstrip-shell[data-fade="l"] .tabstrip {
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px);
@@ -10072,6 +10055,33 @@ button.create-need:focus-visible .create-need-chev {
   line-height: 1.75;
   color: var(--text-primary);
 }
+/* One editorial hand across every compendium type: after the fact rubric, the
+   rules body always begins under the same small codex rubric + tapered thread.
+   This is structure, not ornament — readers can predict where prose starts on a
+   spell, feat, item, maneuver, invocation, or mastery leaf. */
+.cmp-prose-rubric {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  font-family: var(--font-numeric);
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+.cmp-prose-rubric::after {
+  content: "";
+  flex: 1;
+  max-width: 15rem;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--accent-primary) 52%, var(--border-medium)),
+    transparent
+  );
+}
 /* ── RULES-TEXT colour grammar (`highlightRulesText`) — BG3's tooltip craft on
    the folio's inks. Opt-in (InlineMarkdown's `highlight` prop), so these
    classes only ever appear in rules prose — compendium descriptions, picker
@@ -10083,14 +10093,20 @@ button.create-need:focus-visible .create-need-chev {
    `.rt-cond` — condition names, inked inline in `--cond-<id>-ink`;
    `.rt-value`— dice · save DC · measured distance/duration, the lit
                 `--text-special` register (BG3's bright-bold numbers);
-   `.rt-adv` / `.rt-dis` — Advantage/Disadvantage, the success/danger inks.
+   `.rt-adv` / `.rt-dis` — Advantage/Disadvantage, the success/danger inks;
+   `.rt-action` / `.rt-bonus` / `.rt-reaction` — the SAME AA text-safe
+                verdigris/lapis/vermilion action-economy triad used by the turn
+                interface (never light's graphic-only `*-vivid` variants).
    All at 600 on the serif (never the shouted UA 700), so a lifted token reads
    emphasized beside real `**bold**` labels, not louder than them. */
 .rt-value,
 .rt-dmg,
 .rt-cond,
 .rt-adv,
-.rt-dis {
+.rt-dis,
+.rt-action,
+.rt-bonus,
+.rt-reaction {
   font-weight: 600;
 }
 .rt-value {
@@ -10101,6 +10117,15 @@ button.create-need:focus-visible .create-need-chev {
 }
 .rt-dis {
   color: var(--semantic-danger);
+}
+.rt-action {
+  color: var(--at-action);
+}
+.rt-bonus {
+  color: var(--at-bonus);
+}
+.rt-reaction {
+  color: var(--at-reaction);
 }
 /* OWN-25 — the command-palette search fills the dialog so its placeholder hint (the
    only cue to WHAT you can search) never clips; the input flexes to the full width. */
