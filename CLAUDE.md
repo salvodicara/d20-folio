@@ -18,8 +18,10 @@ stay owner-gated (golden rule 22), so `main` may run ahead of live at any time. 
 **open-source + split-repo since 2026-07-17** (public SRD-only `salvodicara/d20-folio` + the private
 `content-pack`); the **full-BG3
 identity pivot is COMPLETE** — asset integration closed 2026-07-24 (PROMPT_12–25 all resolved,
-the ASSET-INTEGRATION ledger in `PROGRESS.md`; the tome-leaf remasters closed 2026-08-01). The 100%-automation
-push, the encounter/combat single-source re-architecture, the campaign-hub redesign, admin
+the ASSET-INTEGRATION ledger in `PROGRESS.md`; the tome-leaf remasters closed 2026-08-01). The earlier
+100%-automation push and audit are shipped history, but the 2026-08-04 live-team/corpus audit proved
+that they were not a completion certificate; the active continuation truth and architecture risks are
+recorded in `docs/AUTOMATION_HANDOFF.md`. The encounter/combat single-source re-architecture, the campaign-hub redesign, admin
 god-mode, the initiative single-source re-architecture, the sheet's management-chrome system (the
 Binder's Fob / Signet), and the combat-CTA/reversal grammar are shipped and deployed; the
 mechanical-automation long-tail (seams S1–S13) and the 2024 core-rules SYSTEM-audit (RA-01…RA-35 —
@@ -67,6 +69,7 @@ the canonical set.
 | `docs/MECHANICS.md`            | The declarative-grant taxonomy (every mechanic the engine models).                                                                                                                                                                                                                               |
 | `docs/AUTOMATION_BACKLOG.md`   | The closed automation-audit ledger — the minimum-interaction doctrine, defect-class taxonomy (A–E), the ranked 2024 core-rules SYSTEM-audit record (RA-01…RA-35, all resolved), and the closing seams S1–S13 (companion to the coverage matrix; pack-entity items live in `content-pack/docs/`). |
 | `docs/AUTOMATION_COVERAGE.md`  | The per-entity coverage **matrix** (automated/partial/narrative/override) — companion to the backlog; what's auto-computed vs the gap frontier (pack-entity rows live in `content-pack/docs/`).                                                                                                  |
+| `docs/AUTOMATION_HANDOFF.md`   | **Branch continuation truth for the active combat-automation audit** — exact worktrees/heads, proved scope, known gaps, architecture direction, verification and definition of done. Remove or fold it into the durable docs after the epic is integrated.                                       |
 | `docs/CONTRIBUTING.md`         | Local dev + contribution flow.                                                                                                                                                                                                                                                                   |
 | `docs/RELEASE.md`              | The changeset → release flow.                                                                                                                                                                                                                                                                    |
 | `docs/WORKTREES.md`            | **The work standard** — one worktree + branch-off-`main` per task; NO PRs — agents converge, then merge to `main` (`just wt-new/wt-rm/wt-list`).                                                                                                                                                 |

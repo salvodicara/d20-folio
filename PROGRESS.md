@@ -60,6 +60,11 @@ blocking on owner screenshots):
 
 ## Current state
 
+> **Continuation handoff (2026-08-04):** `docs/AUTOMATION_HANDOFF.md` is the exact branch-level
+> starting point for the next session: worktrees, pushed heads, verified behavior, known gaps,
+> architecture diagnosis and definition of done. The deterministic audit below is substantial but
+> is **not** a corpus-wide completion certificate.
+
 **Deterministic automation gap sweep — ACTIVE (2026-08-04):** six truth-gated milestones are closed and
 branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level
 charged-item casts, activated-item tracker/timer lifecycle, bounded spell-pool execution, and variable
