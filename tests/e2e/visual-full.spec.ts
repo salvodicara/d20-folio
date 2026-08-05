@@ -100,6 +100,22 @@ const ALL_VARIANTS = [
   ...EXTRA_VARIANTS.filter((e) => !VARIANTS.some((v) => v.key === e.key)),
 ];
 
+// Pixel lane ONLY (2026-08-05 test audit): without VISUAL=1 this suite used to
+// run navigate-only "crash smoke" — but a11y.spec (every surface × both themes,
+// with prepare) and i18n-sweep.spec (every surface × both locales × both
+// viewports, with prepare) already drive the exact same manifest, so the
+// no-flag pass duplicated ~344 navigations per run for no unique signal.
+// Blind spot: theme×locale×viewport CROSS combos those sweeps don't pair
+// (e.g. it+light+mobile) get no ambient crash smoke. The skip lives in a
+// beforeEach so it fires BEFORE the page fixture is built — an ambient run
+// never pays 344 browser-context setups just to skip.
+test.beforeEach(() => {
+  test.skip(
+    !shouldAssertSnapshots(test.info()),
+    "pixel-baseline lane — runs under VISUAL=1 / --update-snapshots only"
+  );
+});
+
 for (const surface of SURFACES) {
   // The variant keys this surface CAN run: its allowlist if it has one
   // (overlays / wizard steps / tablet-band states), else the full cross.
@@ -115,17 +131,6 @@ for (const surface of SURFACES) {
   for (const variant of ALL_VARIANTS.filter((v) => keys.has(v.key))) {
     const name = `${surface.slug} — ${variant.locale} ${variant.theme} @ ${variant.device}`;
     test(name, async ({ page }) => {
-      // Pixel lane ONLY (2026-08-05 test audit): without VISUAL=1 this test
-      // used to run navigate-only "crash smoke" — but a11y.spec (every surface
-      // × both themes, with prepare) and i18n-sweep.spec (every surface × both
-      // locales × both viewports, with prepare) already drive the exact same
-      // manifest, so the no-flag pass duplicated ~344 navigations per run for
-      // no unique signal. Blind spot: theme×locale×viewport CROSS combos those
-      // sweeps don't pair (e.g. it+light+mobile) get no ambient crash smoke.
-      test.skip(
-        !shouldAssertSnapshots(test.info()),
-        "pixel-baseline lane — runs under VISUAL=1 / --update-snapshots only"
-      );
       await page.setViewportSize(variant.viewport);
       await seedUI(page, variant.theme, surface.edit ? "edit" : "play");
       await seedLang(page, variant.locale);

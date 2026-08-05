@@ -253,6 +253,10 @@ test("settings rows never crush the label column at phone width", async ({ page 
 test("guided wizard never overflows the page horizontally at narrow widths", async ({
   page,
 }) => {
+  test.skip(
+    test.info().project.name === "mobile",
+    "explicit width sweep — runs once under chromium"
+  );
   await page.addInitScript(() => {
     localStorage.setItem(
       "d20-folio-ui",
@@ -367,6 +371,10 @@ for (const cardWidth of [480, 360]) {
 test("cockpit tablet band (1100px): single column with rail disclosures; 3-col returns at 1180", async ({
   page,
 }) => {
+  test.skip(
+    test.info().project.name === "mobile",
+    "explicit 1100/1180 viewport — runs once under chromium"
+  );
   await seedUI(page, "dark", "play");
   await seedLang(page, "en");
   await page.setViewportSize({ width: 1100, height: 800 });

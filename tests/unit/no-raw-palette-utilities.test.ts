@@ -75,6 +75,12 @@ describe("no raw Tailwind palette utilities on player surfaces", () => {
     if (hits.length > 0) violations[rel] = [...new Set(hits)];
   }
 
+  // Anti-vacuity (golden rule 13): a renamed SCAN_DIRS path must fail loudly,
+  // never silently empty the derived scan set.
+  it("derives a non-empty scan set", () => {
+    expect(files.length).toBeGreaterThan(50);
+  });
+
   it("uses folio @theme token utilities, not raw palette hues", () => {
     expect(violations).toEqual({});
   });

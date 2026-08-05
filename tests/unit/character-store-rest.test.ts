@@ -170,7 +170,9 @@ describe("shortRest — tracker recovery", () => {
     // another concentration spell, failing a CON save after damage, being
     // incapacitated, or dying — none of which a 1-hour light-activity rest
     // fires. The Long Rest path (sleep = incapacitated) still clears it.
-    store().setCharacter(mk({}, { concentration: conc("fly"), hp: { current: 20 } }));
+    store().setCharacter(
+      mk({}, { concentration: conc("fly"), hp: { current: 20, temp: 0 } })
+    );
     store().shortRest();
     expect(store().character?.session.concentration).toBe(conc("fly"));
     // HP management on a short rest is Hit-Die-driven (UI) — never auto-restored.

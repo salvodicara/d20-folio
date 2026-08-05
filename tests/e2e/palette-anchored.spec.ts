@@ -9,7 +9,7 @@
  */
 
 import { test, expect, type Page, type Locator } from "@playwright/test";
-import { ensurePaletteSearchFocused } from "./ready";
+import { ensurePaletteSearchFocused, settledBox } from "./ready";
 
 async function openPalette(page: Page) {
   await page.setViewportSize({ width: 1200, height: 900 });
@@ -28,24 +28,6 @@ async function box(locator: Locator) {
   expect(b).not.toBeNull();
   if (!b) throw new Error("element has no bounding box");
   return b;
-}
-
-/**
- * Wait until the box stops changing (two consecutive polls with identical
- * rounded y/height) — the result list grows as the async SRD index lands, so a
- * fixed sleep raced the measurement (2026-08-05 test audit).
- */
-async function settledBox(locator: Locator): Promise<void> {
-  let prev: string | null = null;
-  await expect
-    .poll(async () => {
-      const b = await locator.boundingBox();
-      const cur = b ? `${Math.round(b.y)}:${Math.round(b.height)}` : "none";
-      const same = cur === prev && cur !== "none";
-      prev = cur;
-      return same;
-    })
-    .toBe(true);
 }
 
 test("the header + search stay anchored while results expand downward", async ({

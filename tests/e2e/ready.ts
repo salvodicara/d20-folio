@@ -45,6 +45,26 @@ export async function waitForStableLayout(page: Page): Promise<void> {
 }
 
 /**
+ * Wait until ONE element's box stops moving: two consecutive polls with
+ * identical rounded y/height = its FLIP/track/result-list animation has
+ * settled. The replacement for fixed "the unfold settles" sleeps, which
+ * under-wait on a saturated CI shard (2026-08-05 test audit). Element-scoped
+ * sibling of `waitForStableLayout` (whole-page fonts+paint).
+ */
+export async function settledBox(loc: Locator): Promise<void> {
+  let prev: string | null = null;
+  await expect
+    .poll(async () => {
+      const b = await loc.boundingBox();
+      const cur = b ? `${Math.round(b.y)}:${Math.round(b.height)}` : "none";
+      const same = cur === prev && cur !== "none";
+      prev = cur;
+      return same;
+    })
+    .toBe(true);
+}
+
+/**
  * Resolve once `document.documentElement.scrollWidth` has stopped changing —
  * i.e. every reflow in the cascade triggered by a font swap, a viewport resize,
  * AND any late async layout shift (e.g. the creation wizard's SRD hydration
