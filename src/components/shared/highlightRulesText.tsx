@@ -14,6 +14,9 @@
  *     `30-foot` · `10 minuti`) → `.rt-value`, the lit special-ink register.
  *   - ADVANTAGE / DISADVANTAGE (capitalized defined terms) → `.rt-adv` /
  *     `.rt-dis`, the success/danger inks.
+ *   - ACTION ECONOMY (Action · Bonus Action · Reaction, including localized
+ *     named actions) → `.rt-action` / `.rt-bonus` / `.rt-reaction`, the SAME
+ *     three pigments the combat economy uses everywhere else.
  *
  * It edits ZERO SRD strings and does NOT touch `parseInline` (the shared
  * tokenizer stays byte-identical): it is OPT-IN via `InlineMarkdown`'s
@@ -132,8 +135,17 @@ function build(locale: Locale): Highlighter {
   const advArm = `\\b${vocab.advantage}\\b|(?<=${vocab.advGate})${vocab.advantage.toLowerCase()}\\b`;
   const disArm = `\\b${vocab.disadvantage}\\b|(?<=${vocab.advGate})${vocab.disadvantage.toLowerCase()}\\b`;
 
+  // Action economy: try the two multi-word / more-specific slots before the
+  // general Action arm, so "Bonus Action" is never split into two differently
+  // inked tokens. These are presentational defined terms only — no mechanics are
+  // inferred from prose.
+  const bonusArm = `\\b(?:${vocab.bonusAction})\\b`;
+  const reactionArm = `\\b(?:${vocab.reaction})\\b`;
+  const actionArm = `\\b(?:${vocab.action})\\b`;
+
   const src =
     `(?<dmg>${dmgArm})|(?<cond>${condArm})` +
+    `|(?<bonus>${bonusArm})|(?<reaction>${reactionArm})|(?<action>${actionArm})` +
     `|(?<adv>${advArm})|(?<dis>${disArm})` +
     `|(?<val>${valArm})`;
 
@@ -227,7 +239,17 @@ function build(locale: Locale): Highlighter {
         );
       } else {
         const cls =
-          g.adv !== undefined ? "rt-adv" : g.dis !== undefined ? "rt-dis" : "rt-value";
+          g.bonus !== undefined
+            ? "rt-bonus"
+            : g.reaction !== undefined
+              ? "rt-reaction"
+              : g.action !== undefined
+                ? "rt-action"
+                : g.adv !== undefined
+                  ? "rt-adv"
+                  : g.dis !== undefined
+                    ? "rt-dis"
+                    : "rt-value";
         out.push(
           <strong key={key++} className={cls}>
             {tok}

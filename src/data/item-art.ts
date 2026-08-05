@@ -7,6 +7,8 @@
  * `{kind}--{id}.webp`; the prefix survives Rolldown's flattened asset metadata.
  */
 import { packItemArt } from "@pack/item-art";
+import { SRD_EQUIPMENT } from "@/data/equipment";
+import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 
 export type ItemArtKind = "equipment" | "magic";
 
@@ -34,7 +36,21 @@ export const ITEM_ART: Readonly<Record<string, string>> = {
   ...packItemArt,
 };
 
-/** Missing art is a first-class state: callers render no well and keep the leaf compact. */
+/**
+ * Art is a corpus, not a progressive enhancement. A partial collection makes
+ * identical item leaves behave unpredictably, so plates unlock automatically
+ * only when EVERY active equipment + magic-item id has a file. The expected set
+ * is derived from the composed data (public + private pack), never hand-kept.
+ */
+const expectedItemArtKeys = [
+  ...SRD_EQUIPMENT.map((item) => `equipment:${item.id}`),
+  ...SRD_MAGIC_ITEMS.map((item) => `magic:${item.id}`),
+];
+
+export const ITEM_ART_COMPLETE = expectedItemArtKeys.every((key) => ITEM_ART[key]);
+
+/** Incomplete corpus ⇒ no item renders a plate; complete corpus ⇒ every item does. */
 export function itemArtUrl(kind: ItemArtKind, id: string): string | null {
+  if (!ITEM_ART_COMPLETE) return null;
   return ITEM_ART[`${kind}:${id}`] ?? null;
 }

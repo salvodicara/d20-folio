@@ -131,7 +131,13 @@ const ENTRY_CEILING_KB = 65; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // the active locale) plus the shared `WhyProse` component and the tip's
 // accordion. Structurally clean: the SAME 14 eager chunk families on both sides,
 // so no lazy chunk became statically reachable. → ~1.3 KB headroom.
-const EAGER_CEILING_KB = 790; // baseline 727.1 → ~+9% (near budget — see ARCHITECTURE P3 frontier #1)
+// 2026-08-05: raised 790 → 794 for the owner-approved compendium editorial
+// anatomy. A same-machine A/B against parent 93646e6 measured 788.01 → 791.53
+// KB gz (+3.52): the SAME 14 eager chunk families, so no lazy boundary leaked.
+// The weight is the previously-empty equipment descriptions in the statically
+// resident EN facts catalogue plus the shared tag / rules-prose reading grammar
+// and 0.11 KB CSS. 794 leaves ~2.5 KB deterministic headroom without exact-fit.
+const EAGER_CEILING_KB = 794; // baseline 727.1 → ~+9% (near budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
 // on demand from the PDF export flow) and correctly precached for offline-first.

@@ -26,8 +26,9 @@ The campaign's first-class workstreams are:
 - a Lucide-first recognition system: preserve the app's existing icon grammar and cherry-pick a
   tiny, licensed fantasy-SVG subset only for proven semantic gaps, with minimal normalization and
   at-a-glance recognition taking precedence over decoration;
-- original item/weapon/armor imagery for compendium discovery and reading surfaces, progressively
-  loaded and never allowed to reduce in-session speed, clarity, accessibility or offline discipline;
+- original item/weapon/armor imagery for compendium reading surfaces, loaded only on inspection,
+  released only as a complete corpus and never allowed to reduce in-session speed, clarity,
+  accessibility or offline discipline;
 - quick dark/light previews before any broad design-direction implementation, then one bounded
   surface wave at a time behind golden rule 25's blocking screenshot approval.
 
@@ -46,15 +47,16 @@ of a multi-screen all-at-once form. Verification: creation unit family 184/184, 
 backdrop guards 221/221, Quick screenshots 5/5 across the canonical EN/IT × dark/light ×
 desktop/mobile variants, targeted axe 2/2, mobile overflow/navigation 1/1. Rule 25 blocks merge until
 the owner approves the delivered before/after screenshots.
-**Wave 3 implemented; screenshot approval pending (2026-08-04):** the character cockpit's existing
-ARIA tablist now remains docked beneath the global topbar while long Combat/Spells/Features leaves
-scroll, preserving the same tab state, horizontal-overflow cue, keyboard model, and zero-jump
-contract instead of adding a duplicate mobile navigator. The visual inventory also gained the real
-signed-out login surface: a dev-only pre-boot seam prevents the usual bypass-user redirect, so the
-welcome now participates in the shared dark/light screenshots, axe, mobile-layout, i18n, and on-art
-guards. Verification: tab no-jump 5/5; login screenshots 5/5; login axe 2/2, mobile 1/1, i18n 2/2,
-on-art 1/1; shared-browser dark/light identity sweep 1/1; tab/route/login unit family 16/16;
-typecheck + zero-warning lint green.
+**Wave 3 corrected; screenshot approval pending (2026-08-05):** the character cockpit's existing
+ARIA tablist is again bound to the tome leaf and consumes the Compendium's protruding-index grammar
+without a sticky override, detached scene-ground, or backdrop blur. A focused regression test pins
+that shared construction. The visual inventory also gained the real signed-out login surface: a
+dev-only pre-boot seam prevents the usual bypass-user redirect, so the welcome participates in the
+shared dark/light screenshots, axe, mobile-layout, i18n, and on-art guards. Generated raster work is
+now frozen to Monsters + Items only; Item art remains all-or-none and broad generation is deferred
+while the app-wide detail/UX audit continues. Compendium spell classes and item properties now
+consume one shared classifier component, and item glyphs communicate a small family vocabulary
+(sword, spear, arrow) rather than one icon per weapon subtype.
 **Wave 4 implemented; screenshot approval pending (2026-08-04):** the level-up feat catalogue no
 longer turns undirected mobile browsing into an 8,462px document. Its unfiltered All view now starts
 with 16 collapsed entries and one in-place Show more action; search and category facets still query
@@ -177,15 +179,13 @@ visual harness also fixed an English-only palette trigger that had silently miss
 overlay. Verification: command-palette screenshots 3/3 across EN/IT, light/dark and desktop/mobile;
 focused shell tests 36/36; targeted axe 2/2, locale sweep 2/2, mobile layout 1/1; typecheck + targeted
 lint green.
-**Wave 16 contextual weapon glyphs (2026-08-04):** the existing Weapon Mastery re-picker now serves
-as the real-size acceptance surface for weapon-family candidates. Two high-confidence Game Icons
-gap-fillers graduated through the shared item resolver: Delapouite's Dart replaces the `Target`
-collision (an object no longer looks like a selection state), and Delapouite's Glaive replaces the
-generic Axe fallback. Both remain labelled, monochrome and legible at the actual 12–16px seal size;
-source geometry is unchanged beyond background removal and `currentColor`. Other nominal candidates
-remain outside production until their own contextual proof. EN/IT legal attribution now names all
-four vendored glyphs. Verification: weapon before/after screenshots 6/6 and legal screenshots 5/5;
-focused icon/i18n tests 72/72; targeted axe 4/4, locale sweep 4/4, mobile layout 2/2; typecheck green.
+**Wave 16 weapon-family grammar corrected (2026-08-05):** the existing Weapon Mastery re-picker is
+the real-size acceptance surface, but subtype specificity is no longer the objective. Glaive reuses
+Sword; dart and javelin reuse BowArrow; spear, pike, lance, and trident share Lorc's Barbed Spear
+through the single item resolver, removing the misleading Pickaxe collision. The smaller vocabulary
+is faster to learn, remains labelled and legible at 12–16px, and keeps Game Icons limited to proven
+semantic gaps. EN/IT legal attribution names the three vendored glyphs; unit invariants pin every
+family and keep trident distinct from the war pick.
 **Owner visual gate (2026-08-04):** Waves 11–16 are approved from the delivered contextual
 before/after comparisons. The approval covers the semantic icon/choice changes shown there; it does
 not close the broader whole-app UI/UX epic or pre-approve the header-ornament direction below.
@@ -259,16 +259,26 @@ amounts now use each metal's existing deep ink in light while border/wash retain
 Verification: initial inline-state screenshots 12/12 plus final Treasury screenshots 3/3 across
 EN/IT, light desktop and dark mobile; campaign/currency/route/i18n tests 29/29; final axe 8/8, locale sweep
 8/8, mobile overflow 4/4; typecheck and lint green.
-**Wave 24 Compendium item-art pilot (2026-08-04):** the unified Items browser now has honest
-first-class reading surfaces for mundane equipment, magic items and the no-art fallback. A typed
+**Wave 24 Compendium editorial consistency + item-art corpus foundation (2026-08-04):** all nine
+Compendium wings now share a guarded editorial anatomy: localized identity, facts, an explicit
+Description rubric with one reading measure, then semantically necessary deeper material (the
+Monster wing deliberately retains its complete statblock). A corpus-derived EN+IT census visits
+every active entry in every registered spec. All 51 previously blank active weapon/armor/shield
+records now have concise bilingual functional descriptions; weapon leaves also surface their
+glossary-backed Mastery fact. The rules-prose grammar adds the already-taught Action / Bonus Action /
+Reaction triad without deriving mechanics from prose.
+
+The unified Items browser also has the foundation for first-class reading surfaces for mundane
+equipment and magic items. A typed
 `equipment:<id>` / `magic:<id>` manifest composes public and private art without touching character
 data, and the full reading leaf alone opts into a restrained 4:5 bookplate; catalogue rows and Add
-Item dialogs remain the existing semantic-icon system with no raster fetch. The initial Longsword
-and Ring of Protection plates are original 672×840 WebPs under the 45 KB detail budget and deliberately
-separate mundane from magical affordance. Item art is excluded from first-install precache and enters
-a bounded one-year CacheFirst cache only after inspection. The Club surface locks the optional no-art
-path so missing coverage never creates an empty well. Pending owner screenshot approval before broad
-corpus generation.
+Item dialogs remain the existing semantic-icon system with no raster fetch. Coverage is now a derived
+all-or-none gate over all 563 active composed items: while the corpus is incomplete, every leaf keeps
+the same no-art anatomy. The original 672×840 WebP calibration set now covers Longsword, Ring of
+Protection, Club, Plate Armor and Acid, all under the 45 KB detail budget; these raw assets remain
+dormant until the corpus closes. Item art stays outside first-install precache and enters a bounded
+one-year CacheFirst cache only after inspection. Pending owner screenshot approval for the editorial
+anatomy and art direction before broad corpus generation.
 **Owner continuation mandate (2026-08-04):** the visual approval closes only this ornament fork.
 The whole-app UI/UX elevation remains active and exhaustive: audit every surface and recurring flow,
 then simplify, clarify or deepen it where evidence shows friction. Nothing is exempt because it is

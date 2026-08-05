@@ -43,7 +43,8 @@
     "description": "Un cesto può contenere fino a 20 chilogrammi in circa 60 litri di volume."
   },
   "battleaxe": {
-    "name": "Ascia da Battaglia"
+    "name": "Ascia da Battaglia",
+    "description": "Un'ampia ascia marziale bilanciata per colpi a una o due mani."
   },
   "bedroll": {
     "description": "Un Giaciglio è sufficiente per una creatura Piccola o Media. Mentre sei in un Giaciglio, superi automaticamente i tiri salvezza contro il freddo estremo.",
@@ -62,7 +63,8 @@
     "description": "Carrucola e paranco consentono di sollevare fino a quattro volte il peso massimo che si solleverebbe normalmente."
   },
   "blowgun": {
-    "name": "Cerbottana"
+    "name": "Cerbottana",
+    "description": "Un tubo silenzioso che proietta piccoli aghi mediante un soffio controllato."
   },
   "blowgun-needles": {
     "description": "Munizioni per cerbottane. Vendute in fasci da 50.",
@@ -73,7 +75,8 @@
     "name": "Libro"
   },
   "breastplate": {
-    "name": "Corazza di Piastre"
+    "name": "Corazza di Piastre",
+    "description": "Un pettorale metallico sagomato protegge il torso lasciando gli arti relativamente liberi."
   },
   "brewers-supplies": {
     "description": "Le Scorte da Birraio servono a fermentare bevande e purificare l'acqua.",
@@ -112,10 +115,12 @@
     "name": "Catena"
   },
   "chain-mail": {
-    "name": "Cotta di Maglia"
+    "name": "Cotta di Maglia",
+    "description": "Anelli metallici intrecciati e indossati sopra un'imbottitura formano questa pesante e affidabile armatura."
   },
   "chain-shirt": {
-    "name": "Giaco di Maglia"
+    "name": "Giaco di Maglia",
+    "description": "Una camicia di anelli metallici intrecciati, indossabile sotto gli abiti per una protezione discreta."
   },
   "climbers-kit": {
     "description": "Include punte per stivali, guanti, chiodi da roccia e un'imbracatura. Come azione Utilizzo, puoi ancorarti; non puoi cadere per più di 7,5 metri dal punto di ancoraggio.",
@@ -130,7 +135,8 @@
     "name": "Abiti da Viaggiatore"
   },
   "club": {
-    "name": "Randello"
+    "name": "Randello",
+    "description": "Una compatta arma contundente di legno, maneggevole negli spazi stretti o accanto a un'altra arma leggera."
   },
   "cobblers-tools": {
     "description": "Gli Strumenti da Calzolaio servono a confezionare e riparare calzature.",
@@ -157,10 +163,12 @@
     "name": "Piede di Porco"
   },
   "dagger": {
-    "name": "Pugnale"
+    "name": "Pugnale",
+    "description": "Una piccola lama bilanciata, adatta a colpi precisi, scontri ravvicinati o lanci."
   },
   "dart": {
-    "name": "Dardo"
+    "name": "Dardo",
+    "description": "Una punta da lancio appesantita, progettata per tiri rapidi e precisi a breve distanza."
   },
   "dice-set": {
     "description": "I Dadi sono un set da gioco. La competenza ti permette di aggiungere il tuo Bonus di Competenza alle prove di caratteristica per giocare a un gioco che li utilizza.",
@@ -203,7 +211,8 @@
     "name": "Proiettili da Arma da Fuoco"
   },
   "flail": {
-    "name": "Mazzafrusto"
+    "name": "Mazzafrusto",
+    "description": "Una testa chiodata o appesantita unita all'impugnatura da una catena, capace di pesanti colpi oscillanti."
   },
   "flute": {
     "description": "Il Flauto è uno strumento a fiato. La competenza ti permette di aggiungere il Bonus di Competenza alle prove per suonarlo.",
@@ -217,7 +226,8 @@
     "name": "Gioco"
   },
   "glaive": {
-    "name": "Falcione"
+    "name": "Falcione",
+    "description": "Un'arma inastata con una lama a filo singolo, pensata per colpire oltre la normale portata in mischia."
   },
   "glass-bottle": {
     "name": "Bottiglia di vetro",
@@ -232,39 +242,48 @@
     "name": "Rampino"
   },
   "greataxe": {
-    "name": "Ascia Bipenne"
+    "name": "Ascia Bipenne",
+    "description": "Un'enorme ascia a due mani che concentra tutto il suo peso in potenti colpi ad arco."
   },
   "greatclub": {
-    "name": "Randello Pesante"
+    "name": "Randello Pesante",
+    "description": "Una pesante mazza a due mani che trasforma la semplice leva in forza devastante."
   },
   "greatsword": {
-    "name": "Spadone"
+    "name": "Spadone",
+    "description": "Una lama lunga e pesante, brandita a due mani per sferrare ampi e vigorosi fendenti."
   },
   "halberd": {
-    "name": "Alabarda"
+    "name": "Alabarda",
+    "description": "Una lunga arma inastata che combina lama d'ascia, punta di lancia e uncino."
   },
   "half-plate-armor": {
-    "name": "Mezza Armatura"
+    "name": "Mezza Armatura",
+    "description": "Piastre metalliche sagomate proteggono il torso e le zone vitali, lasciando più mobilità di un'armatura completa."
   },
   "hand-crossbow": {
-    "name": "Balestra a Mano"
+    "name": "Balestra a Mano",
+    "description": "Una balestra compatta che sacrifica potenza e gittata in favore dell'uso a una mano."
   },
   "handaxe": {
-    "name": "Ascia"
+    "name": "Ascia",
+    "description": "Un'ascia leggera e bilanciata, efficace nel corpo a corpo e progettata per essere lanciata all'occorrenza."
   },
   "healers-kit": {
     "description": "Ha dieci usi. Come azione Utilizzo, puoi spendere un uso per stabilizzare una creatura Priva di Sensi a 0 Punti Ferita senza bisogno di una prova di Saggezza (Medicina).",
     "name": "Borsa del Guaritore"
   },
   "heavy-crossbow": {
-    "name": "Balestra Pesante"
+    "name": "Balestra Pesante",
+    "description": "Una potente balestra a due mani il cui pesante meccanismo scaglia quadrelli a grande distanza."
   },
   "herbalism-kit": {
     "description": "Una Borsa da Erborista include borsette per le erbe, cesoie e guanti di cuoio per raccogliere piante, un mortaio con pestello e alcune fiale. La competenza con essa ti permette di aggiungere il Bonus di Competenza alle prove per identificare o applicare erbe e rimedi naturali, e per fabbricare antitossine e pozioni curative.",
     "name": "Borsa da Erborista"
   },
   "hide-armor": {
-    "name": "Armatura di Pelle"
+    "name": "Armatura di Pelle",
+    "description": "Strati di pelle spessa e pelliccia offrono una protezione robusta ma poco flessibile."
   },
   "holy-symbol": {
     "description": "Un amuleto, un emblema o un reliquiario recante il simbolo di una divinità, utilizzabile come focus per gli incantesimi da chierico e paladino.",
@@ -299,7 +318,8 @@
     "description": "Gli spuntoni di ferro si vendono in fasci da dieci. Conficcandone uno puoi bloccare una porta o assicurarvi una Corda o una Catena."
   },
   "javelin": {
-    "name": "Giavellotto"
+    "name": "Giavellotto",
+    "description": "Una lancia leggera bilanciata sia per affondi ravvicinati sia per lanci a distanza."
   },
   "jewelers-tools": {
     "description": "Gli Strumenti da Gioielliere servono a tagliare e incastonare gemme.",
@@ -314,7 +334,8 @@
     "name": "Lampada"
   },
   "lance": {
-    "name": "Lancia da Cavaliere"
+    "name": "Lancia da Cavaliere",
+    "description": "Una lunga lancia da cavalleria costruita per concentrare la carica di una cavalcatura in un colpo perforante."
   },
   "lantern-bullseye": {
     "description": "Brucia Olio per emettere Luce Intensa in un Cono di 18 metri e Luce Fioca per ulteriori 18 metri.",
@@ -325,27 +346,32 @@
     "name": "Lanterna Schermabile"
   },
   "leather-armor": {
-    "name": "Armatura di Cuoio"
+    "name": "Armatura di Cuoio",
+    "description": "Elementi di cuoio indurito proteggono il corpo senza limitare i movimenti agili."
   },
   "leatherworkers-tools": {
     "description": "Gli Strumenti da Conciatore servono a confezionare e riparare oggetti in cuoio.",
     "name": "Strumenti da Conciatore"
   },
   "light-crossbow": {
-    "name": "Balestra Leggera"
+    "name": "Balestra Leggera",
+    "description": "Una balestra a due mani con un meccanismo gestibile e una gittata affidabile."
   },
   "light-hammer": {
-    "name": "Martello Leggero"
+    "name": "Martello Leggero",
+    "description": "Un compatto martello da guerra bilanciato per colpi rapidi o brevi lanci."
   },
   "lock": {
     "description": "Un Lucchetto viene con una chiave. Senza la chiave, una creatura può scassinarlo con gli Arnesi da Scasso (prova di Destrezza Rapidità di Mano con CD 15).",
     "name": "Serratura"
   },
   "longbow": {
-    "name": "Arco Lungo"
+    "name": "Arco Lungo",
+    "description": "Un arco alto e potente che ricompensa la trazione a due mani con una gittata eccezionale."
   },
   "longsword": {
-    "name": "Spada Lunga"
+    "name": "Spada Lunga",
+    "description": "Una lama marziale bilanciata, ugualmente efficace impugnata a una mano o spinta con entrambe."
   },
   "lute": {
     "description": "Un Liuto è uno strumento musicale a corde. La competenza con esso ti permette di aggiungere il Bonus di Competenza alle prove di Carisma (Esibizione) che si affidano al liuto.",
@@ -356,7 +382,8 @@
     "name": "Lira"
   },
   "mace": {
-    "name": "Mazza"
+    "name": "Mazza",
+    "description": "Una solida arma contundente dalla testa metallica, fatta per concentrare impatti punitivi."
   },
   "manacles": {
     "description": "Come azione Utilizzo, vincola una creatura non consenziente che ha la condizione Afferrato, Incapacitato o Trattenuto (CD 13 Destrezza Rapidità di Mano). Sfuggire richiede CD 20 Destrezza (Rapidità di Mano); spezzarle richiede CD 25 Forza (Atletica).",
@@ -375,21 +402,24 @@
     "name": "Strumenti da Muratore"
   },
   "maul": {
-    "name": "Maglio"
+    "name": "Maglio",
+    "description": "Un enorme martello a due mani che abbatte sul bersaglio un peso schiacciante."
   },
   "mirror": {
     "description": "Uno Specchio d'acciaio portatile utile per la cura personale, sbirciare dietro gli angoli e riflettere la luce come segnale.",
     "name": "Specchio"
   },
   "morningstar": {
-    "name": "Mazza Chiodata"
+    "name": "Mazza Chiodata",
+    "description": "Un'asta a una mano sormontata da una testa metallica chiodata per vigorosi colpi perforanti."
   },
   "musical-instrument": {
     "description": "Un liuto, un flauto, un tamburo o un altro strumento. Un bardo può usarlo come focus per gli incantesimi.",
     "name": "Strumento Musicale"
   },
   "musket": {
-    "name": "Moschetto"
+    "name": "Moschetto",
+    "description": "Una lunga arma da fuoco a due mani che spara un colpo potente prima di dover essere ricaricata."
   },
   "navigators-tools": {
     "description": "Gli Strumenti da Navigatore servono a tracciare una rotta e a seguire le carte di navigazione.",
@@ -404,7 +434,8 @@
     "name": "Olio"
   },
   "padded-armor": {
-    "name": "Armatura Imbottita"
+    "name": "Armatura Imbottita",
+    "description": "Strati trapuntati di tessuto e imbottitura attutiscono gli impatti, ma le pieghe voluminose ostacolano la furtività."
   },
   "painters-supplies": {
     "description": "Gli Strumenti da Pittore servono a realizzare dipinti.",
@@ -427,13 +458,16 @@
     "name": "Profumo"
   },
   "pike": {
-    "name": "Picca"
+    "name": "Picca",
+    "description": "Una lancia a due mani eccezionalmente lunga, usata per minacciare i nemici ben oltre la portata delle braccia."
   },
   "pistol": {
-    "name": "Pistola"
+    "name": "Pistola",
+    "description": "Un'arma da fuoco compatta che spara un potente colpo a una mano a breve distanza."
   },
   "plate-armor": {
-    "name": "Armatura a Piastre"
+    "name": "Armatura a Piastre",
+    "description": "Piastre sagomate e sovrapposte coprono tutto il corpo, offrendo una protezione eccezionale al prezzo di peso e rumore."
   },
   "playing-card-set": {
     "description": "Le Carte da Gioco sono un set da gioco. La competenza ti permette di aggiungere il tuo Bonus di Competenza alle prove di caratteristica per giocare a un gioco che le utilizza.",
@@ -468,21 +502,24 @@
     "name": "Dotazione da Sacerdote"
   },
   "quarterstaff": {
-    "name": "Bastone Ferrato"
+    "name": "Bastone Ferrato",
+    "description": "Un robusto bastone di legno che colpisce rapidamente a una mano o con maggiore forza a due."
   },
   "quiver": {
     "description": "Una custodia che contiene fino a 20 frecce.",
     "name": "Faretra"
   },
   "rapier": {
-    "name": "Stocco"
+    "name": "Stocco",
+    "description": "Una sottile spada da affondo progettata per un gioco di gambe preciso e un agile controllo della punta."
   },
   "rations": {
     "description": "Le Razioni consistono in cibo pronto per il viaggio per un giorno, inclusi carne essiccata, frutta secca, gallette e noci.",
     "name": "Razioni"
   },
   "ring-mail": {
-    "name": "Corazza ad Anelli"
+    "name": "Corazza ad Anelli",
+    "description": "Pesanti anelli cuciti su una veste di cuoio offrono una protezione essenziale ma poca libertà di movimento."
   },
   "robe": {
     "description": "Un'ampia veste esterna fluente, spesso indossata dagli incantatori.",
@@ -493,41 +530,48 @@
     "name": "Corda"
   },
   "scale-mail": {
-    "name": "Corazza a Scaglie"
+    "name": "Corazza a Scaglie",
+    "description": "Scaglie metalliche sovrapposte coprono una veste di cuoio, bilanciando una solida protezione con peso e rumore."
   },
   "scholars-pack": {
     "description": "Contiene: Zaino, Libro, Inchiostro, Penna, Lampada, 10 fiasche di Olio, 10 fogli di Pergamena e Acciarino.",
     "name": "Dotazione da Studioso"
   },
   "scimitar": {
-    "name": "Scimitarra"
+    "name": "Scimitarra",
+    "description": "Una lama leggera e ricurva, concepita per fendenti rapidi e fluidi e un maneggio agile."
   },
   "shawm": {
     "description": "La Ciaramella è uno strumento a fiato. La competenza ti permette di aggiungere il Bonus di Competenza alle prove per suonarla.",
     "name": "Ciaramella"
   },
   "shield": {
-    "name": "Scudo"
+    "name": "Scudo",
+    "description": "Una barriera di legno o metallo impugnata per deviare gli attacchi e rafforzare la difesa."
   },
   "shortbow": {
-    "name": "Arco Corto"
+    "name": "Arco Corto",
+    "description": "Un arco compatto a due mani, facile da trasportare ed efficace alle distanze tipiche di uno scontro."
   },
   "shortsword": {
-    "name": "Spada Corta"
+    "name": "Spada Corta",
+    "description": "Una lama dritta e leggera, adatta ad affondi rapidi e precisi negli scontri ravvicinati."
   },
   "shovel": {
     "description": "Lavorando per 1 ora, puoi scavare una buca di 1,5 metri per lato in terreno o materiale simile.",
     "name": "Pala"
   },
   "sickle": {
-    "name": "Falcetto"
+    "name": "Falcetto",
+    "description": "Una leggera lama uncinata, adattata da un attrezzo agricolo per rapidi fendenti ravvicinati."
   },
   "signal-whistle": {
     "name": "Fischietto da richiamo",
     "description": "Soffiato come azione di Utilizzo, un fischietto da richiamo produce un suono udibile fino a 180 metri di distanza."
   },
   "sling": {
-    "name": "Fionda"
+    "name": "Fionda",
+    "description": "Un semplice alloggiamento di cuoio con corde che scaglia pietre o proiettili con forza sorprendente."
   },
   "sling-bullets": {
     "description": "Munizioni per fionde. Vendute in fasci da 20.",
@@ -538,21 +582,24 @@
     "name": "Strumenti da Fabbro"
   },
   "spear": {
-    "name": "Lancia"
+    "name": "Lancia",
+    "description": "Un'asta appuntita e versatile, utilizzabile per affondi a una o due mani o per colpire un nemico a distanza."
   },
   "spellbook": {
     "description": "Fondamentale per i Maghi, un Libro degli Incantesimi è un tomo rilegato in cuoio con 100 pagine vuote di pergamena adatte alla trascrizione degli incantesimi.",
     "name": "Libro degli Incantesimi"
   },
   "splint-armor": {
-    "name": "Corazza a Strisce"
+    "name": "Corazza a Strisce",
+    "description": "Strette strisce verticali di metallo fissate sopra un'imbottitura formano una corazza rigida e molto protettiva."
   },
   "string": {
     "name": "Spago",
     "description": "Una matassa di spago è lunga 3 metri. Come azione di Utilizzo puoi farvi un nodo."
   },
   "studded-leather-armor": {
-    "name": "Armatura di Cuoio Borchiato"
+    "name": "Armatura di Cuoio Borchiato",
+    "description": "Cuoio flessibile rinforzato da piccoli elementi metallici migliora la protezione senza sacrificare la mobilità."
   },
   "tent": {
     "description": "Una Tenda può ospitare fino a due creature Piccole o Medie.",
@@ -575,7 +622,8 @@
     "name": "Torcia"
   },
   "trident": {
-    "name": "Tridente"
+    "name": "Tridente",
+    "description": "Una lancia a tre punte adatta ad affondi, lanci e potenti colpi a due mani."
   },
   "vial": {
     "name": "Fiala",
@@ -586,10 +634,12 @@
     "name": "Viola"
   },
   "war-pick": {
-    "name": "Piccone da Guerra"
+    "name": "Piccone da Guerra",
+    "description": "Una stretta punta rinforzata concentra la forza di chi lo impugna in un singolo punto perforante."
   },
   "warhammer": {
-    "name": "Martello da Guerra"
+    "name": "Martello da Guerra",
+    "description": "Un martello marziale bilanciato per il controllo a una mano o per impatti più pesanti a due."
   },
   "waterskin": {
     "description": "Un Otre contiene fino a 2 litri d'acqua.",
@@ -600,7 +650,8 @@
     "name": "Strumenti da Tessitore"
   },
   "whip": {
-    "name": "Frusta"
+    "name": "Frusta",
+    "description": "Una sferza flessibile che sacrifica la potenza pura in favore di precisione e portata."
   },
   "woodcarvers-tools": {
     "description": "Gli Strumenti da Intagliatore consistono in un coltello, uno scalpello e una piccola sega. La competenza con questi strumenti ti permette di aggiungere il Bonus di Competenza alle prove per intagliare oggetti in legno.",

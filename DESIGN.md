@@ -1157,11 +1157,9 @@ Selecting a tab that sits past the edge REVEALS it by scrolling only the strip's
 `focus({ preventScroll: true })` — so a tap or arrow-key on an off-screen tab can never jump the page
 (the same anti-jump seam backs the compendium `.cmp-ribbon`). The same one tab primitive serves the
 campaign hub if it adopts tabbed IA — never re-roll a second tab look.
-The cockpit shell stays **sticky directly beneath `--topbar-h`** while its active leaf scrolls: Combat
-and Spells are multi-screen working documents, so changing leaf never requires a return trip to the
-masthead. This is the same ARIA tablist and the same state owner, not a second mobile navigation system;
-its translucent scene-ground only prevents scrolling prose from showing through the gaps after the
-tabs detach from the page edge.
+The cockpit ribbon stays **bound to the tome leaf**, exactly like the Compendium ribbon: it has no
+sticky override, backdrop blur, or detached scene-ground bar. Local wayfinding scrolls with its
+document; the persistent realm navigation remains the only viewport-fixed navigation system.
 
 **The grammar reaches every surface (owner, 2026-07-31 — "niente escluso"):** every page root AND
 every PORTAL root carries the `wb` scope — portals (dialogs, popovers, tooltips, toasts) mount on
@@ -1577,7 +1575,7 @@ legal-page unit tests.
 or item, the mechanically load-bearing tokens read at a glance — the way BG3's tooltips ink "2d6
 Fire" in fire-orange and a status in its own hue. Rules prose runs through `highlightRulesText`
 (`src/components/shared/highlightRulesText.tsx`), a pure, locale-parameterized RENDER-TIME
-formatter with four arms:
+formatter with five arms:
 
 - **DAMAGE PHRASES → the type's own ink** (`.rt-dmg`): the whole phrase — optional dice + type +
   damage noun (`8d6 Fire damage` · `2d6 fire damage` · `8d6 danni da fuoco` · `danni contundenti`)
@@ -1601,6 +1599,11 @@ formatter with four arms:
   number needs dice or a unit to read as a measured fact.
 - **ADVANTAGE / DISADVANTAGE → the success/danger inks** (`.rt-adv`/`.rt-dis`) — BG3's iconic
   green/red fork, capitalized defined terms only.
+- **ACTION ECONOMY → the interaction's own ink** (`.rt-action`/`.rt-bonus`/`.rt-reaction`) —
+  Action, Bonus Action and Reaction reuse the exact verdigris/lapis/vermilion triad already taught
+  by the turn interface. Named actions (for example the Attack action / azione di Attacco) travel
+  as one token; specific Bonus Action and Reaction matches run before generic Action so a phrase
+  can never split into competing colours.
 
 All tokens sit at **font-weight 600** on the serif (never the shouted UA 700), so a lifted token
 reads emphasized beside real `**bold**` labels, not louder. The formatter is **opt-in** via
@@ -1612,7 +1615,7 @@ user-authored CUSTOM/homebrew feature description (FeaturesTab's "custom" group)
 the grammar — a homebrew feature IS rules text, so "8d6 Fire damage" in a player's own feature
 scans exactly like an SRD one. Chronicle, session, and player-note prose stays plain simply because
 the `highlight` prop is never passed there (omit it and the render is byte-identical). Beyond the
-four arms above, three false-positive gates earn their place: a measured number keeps its
+five arms above, three false-positive gates earn their place: a measured number keeps its
 decimal/thousand separators as one token (IT "1,5 metri", EN "1,000 feet"); "invisible" inks only as
 the capitalized defined term or in creature/condition context (objects wear "an invisible barrier"
 without the condition); and Advantage/Disadvantage also ink their lowercase verb-phrase forms ("has
@@ -2211,11 +2214,10 @@ flip at one coherent width.
   - **Stats + Resources:** the desktop rails become two co-located one-tap disclosures before the
     active leaf; neither rail's information disappears.
   - **Center:** the active leaf's full-width progressive-disclosure stack. Its five-destination
-    tablist scrolls horizontally when necessary and remains sticky beneath the realm bar while the
-    long leaf scrolls.
+    tablist scrolls horizontally when necessary and stays bound to the tome leaf.
   - **Bottom nav (`.m-nav`):** exactly the three product realms (Characters · Campaigns ·
     Compendium). It is a realm switcher, not a duplicate sheet-tab bar; local character destinations
-    stay in the sticky tablist above.
+    stay in the local tablist above the active leaf.
 - **Touch:** targets ≥ `--touch-min` 44px; `--safe-bottom` (notch inset) respected on all fixed
   bottom chrome; pages add `--m-nav-h` (58px) + `--safe-bottom` as bottom padding so fixed chrome
   never occludes the last row. The PWA dock (offline strip / install prompt, `.pwa-dock`) joins the
@@ -2819,15 +2821,17 @@ color or icon alone.
 the first source; a small vendored SVG subset fills proven semantic gaps behind that resolver, and
 consumers never import asset paths directly. A pack is a source catalogue, never a wholesale visual
 replacement or a new runtime dependency.
-The contextual proof keeps four normalized Game Icons glyphs in
+The contextual proof keeps three normalized Game Icons glyphs in
 `src/components/shared/fantasy-icons.tsx`: Delapouite's **Diamond Ring** replaces the control-like
-`CircleDot` ring fallback; Lorc's **Wizard Staff** separates Staff from the adjacent Wand facet;
-Delapouite's **Dart** removes the target/selection collision; and Delapouite's **Glaive** stops that
-polearm reading as an axe. All preserve their original geometry; normalization only removes the
-catalogue background and maps the foreground to `currentColor`. Tested invariants keep Rod, Staff
-and Wand distinct and keep Dart distinct from Target. The rejected Winged Scepter candidate is
-intentionally absent: at real chip size its wings collapsed into a trophy/cup reading, despite its
-nominally correct source name.
+`CircleDot` ring fallback; Lorc's **Wizard Staff** separates Staff from the adjacent Wand facet; and
+Lorc's **Barbed Spear** gives spear, pike, lance, and trident one unmistakable thrusting-pole family
+instead of the semantically wrong pickaxe. All preserve their original geometry; normalization only
+removes the catalogue background and maps the foreground to `currentColor`. Tested invariants keep
+Rod, Staff, and Wand distinct and keep the spear family distinct from the war pick. Weapon subtypes
+do not earn bespoke glyphs when a familiar family sign is faster to scan: glaive reuses Sword;
+dart and javelin reuse BowArrow. The rejected Winged Scepter candidate is intentionally absent: at
+real chip size its wings collapsed into a trophy/cup reading, despite its nominally correct source
+name.
 Illustrations resolve from the entity's immutable corpus kind + id through one asset manifest. Image
 references never enter `CharacterDoc`, exports, Firestore, or localized catalogues, so adding/remastering
 art cannot migrate user data or fork SRD/pack rendering.
@@ -2839,15 +2843,26 @@ CacheFirst runtime cache, matching monster-art behavior: an inspected item remai
 gallery is never force-downloaded. Initial targets: ≤12 KiB thumbnail, ≤45 KiB 672×840 detail; re-baseline
 only with measured visual benefit. The no-art path is first-class and screenshot-tested.
 
-**Reading-leaf composition (pilot, 2026-08-04).** Item imagery resolves through
+**Reading-leaf composition + corpus gate (2026-08-04).** Item imagery resolves through
 `src/data/item-art.ts` and appears only when the full Compendium leaf is open. At the two-leaf spread
 it occupies a restrained 4:5 facing bookplate beside the facts; on phone it becomes a centred plate
 before the copy so the 2-column fact rubric never compresses beside it. The image is decorative to
 assist recognition—the localized title remains the accessible identity—and uses intrinsic dimensions,
-lazy decode and a fixed aspect ratio. The mundane Longsword and magical Ring of Protection are the
-first contrast pair: the former carries no magic promise; the latter uses only a restrained internal
-amber reflection. A Club leaf permanently covers the no-art path. This is the template for expansion,
-not permission to add imagery to operational rows or selectors.
+lazy decode and a fixed aspect ratio. Coverage is **all or none per composed item corpus**: the
+expected keys derive from every active equipment + magic-item row (public and private), and no leaf
+shows art until every key resolves. This prevents two otherwise identical entries from changing
+anatomy unpredictably while the 563-plate corpus is authored. Longsword, Ring of Protection, Club,
+Plate Armor and Acid are the first style/semantic calibration set; they remain dormant until the
+corpus gate closes. This is not permission to add imagery to operational rows or selectors.
+
+**One editorial anatomy across the whole Compendium.** Every registered entry exposes a localized
+identity, a stable facts region, then the same explicit Description rubric and rules-prose measure,
+followed by type-specific deeper material. Spells, features, feats, items, maneuvers, metamagic,
+invocations and weapon masteries use that scaffold; Monsters deliberately substitute their complete
+statblock after the shared identity because a generic prose leaf would reduce scan efficiency. A
+corpus-derived EN+IT guard visits every active row in every registered spec, so missing identity or
+body copy fails CI. Equipment's 51 formerly blank weapon/armor/shield entries now carry concise,
+functional bilingual descriptions, and weapon leaves expose Mastery as a glossary-backed fact.
 
 **Accessibility + provenance.** Icons adjacent to text are decorative; icon-only controls keep a
 localized accessible name and 44px target. Color is never the only classifier. Every vendored glyph

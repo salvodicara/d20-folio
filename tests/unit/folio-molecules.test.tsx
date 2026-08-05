@@ -17,6 +17,7 @@ import {
   UniversalCard,
   UniversalCardFacts,
   UniversalCardDesc,
+  UniversalCardTags,
   UniversalCardFoot,
   StatCard,
   Tracker,
@@ -317,6 +318,14 @@ describe("UniversalCard", () => {
         "Passive"
       )
     ).toHaveClass("uc-tag");
+  });
+
+  it("shares one classifier component across detail surfaces", () => {
+    const { container } = render(
+      <UniversalCardTags tags={["Wizard", "Finesse"]} className="mt-4" />
+    );
+    expect(container.querySelector(".uc-tags")).toHaveClass("mt-4");
+    expect(container.querySelectorAll(".uc-tag")).toHaveLength(2);
   });
 });
 

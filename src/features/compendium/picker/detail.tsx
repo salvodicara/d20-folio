@@ -7,6 +7,7 @@
  */
 
 import { AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Icon } from "@/components/ui/icon";
 import { ModalScrollColumn } from "@/components/ui/modal-head";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
@@ -29,6 +30,7 @@ export function CompendiumDetailBody({
   /** The page leaf opts in; add/select modals keep the dense no-art anatomy. */
   showEntryArt?: boolean;
 }) {
+  const { t } = useTranslation();
   const body = (
     <>
       {view.eyebrow && (
@@ -74,11 +76,14 @@ export function CompendiumDetailBody({
           inline markdown (**bold**, *italic*) renders here — paragraph/line
           breaks are handled by the renderer (no `whitespace-pre-wrap`). */}
       {view.description != null && (
-        <InlineMarkdown
-          text={view.description}
-          className="cmp-prose mb-4"
-          highlight={locale ? highlightRulesText(locale) : undefined}
-        />
+        <section className="cmp-prose-section mb-4">
+          <div className="cmp-prose-rubric">{t("common.description")}</div>
+          <InlineMarkdown
+            text={view.description}
+            className="cmp-prose"
+            highlight={locale ? highlightRulesText(locale) : undefined}
+          />
+        </section>
       )}
 
       {view.extras}

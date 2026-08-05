@@ -95,7 +95,7 @@ test("cockpit: selecting a visible sheet tab moves nothing", async ({ page }) =>
   expect(after.stripLeft, "strip must not move for a visible tab").toBe(before.stripLeft);
 });
 
-test("cockpit @ mobile: sheet tabs remain reachable deep in a long leaf", async ({
+test("cockpit @ mobile: ribbon stays bound to its leaf without detached ground", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -105,29 +105,23 @@ test("cockpit @ mobile: sheet tabs remain reachable deep in a long leaf", async 
   await page.goto("/characters/mock-1");
   await page.getByText("Lyra Voss").first().waitFor();
 
-  // Past the identity, disclosures, turn meter, and opening action groups: the
-  // local destinations must still sit immediately beneath the sticky app bar.
-  await page.evaluate(() => window.scrollTo(0, 700));
-  await expect(page.locator(".tabstrip-shell")).toBeInViewport();
-  const tabsTop = await page
-    .locator(".tabstrip-shell")
-    .evaluate((el) => el.getBoundingClientRect().top);
-  const topbarBottom = await page
-    .locator(".topbar")
-    .evaluate((el) => el.getBoundingClientRect().bottom);
-  expect(
-    Math.abs(tabsTop - topbarBottom),
-    "local tabs dock directly below app bar"
-  ).toBeLessThan(2);
+  const shell = page.locator(".tabstrip-shell");
+  const treatment = await shell.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return {
+      position: style.position,
+      backdropFilter: style.backdropFilter,
+      backgroundColor: style.backgroundColor,
+    };
+  });
+  expect(treatment.position).toBe("relative");
+  expect(treatment.backdropFilter).toBe("none");
+  expect(treatment.backgroundColor).toBe("rgba(0, 0, 0, 0)");
 
-  // A deep-leaf switch is still in-place state: no trip to the masthead and no
-  // document-axis jump. Spells is longer than this scroll position, so native
-  // end-of-document clamping cannot mask a regression.
-  const before = await metrics(page, ".tabstrip");
-  await page.getByRole("tab", { name: /spells/i }).click();
-  await page.waitForTimeout(250);
-  const after = await metrics(page, ".tabstrip");
-  expect(after.winY, "deep tab switch must preserve document scroll").toBe(before.winY);
+  // The local ribbon belongs to the tome. It scrolls away with the leaf instead
+  // of becoming a second floating navigation bar over the working document.
+  await page.evaluate(() => window.scrollTo(0, 700));
+  await expect(shell).not.toBeInViewport();
 });
 
 test("compendium @ narrow, entry open: strip scroll survives a type switch", async ({

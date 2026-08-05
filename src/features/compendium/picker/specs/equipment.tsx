@@ -12,16 +12,17 @@ import { itemArtUrl } from "@/data/item-art";
 import { equipmentSealIcon, equipmentCategoryIcon } from "@/components/shared/item-icons";
 import { addEquipmentRef, addWeaponRef } from "@/lib/equipment-add";
 import { formatWeight } from "@/lib/utils";
-import { localizeWeaponProperty } from "@/lib/views/srd-i18n";
+import { localizeWeaponMastery, localizeWeaponProperty } from "@/lib/views/srd-i18n";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { useCharacterStore } from "@/stores/characterStore";
 import { Icon } from "@/components/ui/icon";
 import { ItemArtPlate } from "@/components/shared/ItemArtPlate";
+import { UniversalCardTags } from "@/components/shared/UniversalCard";
 import { FilterChip } from "@/components/sheet/picker-parts";
 import type { SrdEquipmentData, EquipmentCategory } from "@/data/types";
 import type { SrdEquipmentRef, SrdWeaponRef } from "@/types/character";
-import { defineFilter, type CompendiumPickerSpec } from "../types";
+import { defineFilter, type CompendiumPickerSpec, type PickerDetailView } from "../types";
 import { CmpSeal } from "../CmpSeal";
 import { descriptionSearch, nameCorpus } from "./shared";
 
@@ -65,8 +66,9 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
   nameText: (i, { locale }) => nameCorpus("equipment", i.id, itemText(i, "name", locale)),
   searchText: (i, ctx) => [
     ...equipmentSpec.nameText(i, ctx),
-    // Item f — search by description (active locale + EN); many equipment items
-    // have no description field, so the helper's hasSrd guard skips those.
+    // Item f — search by description (active locale + EN). Every active
+    // equipment row is description-complete; the helper's guard remains the
+    // defensive seam for a future custom/incomplete catalogue entry.
     ...descriptionSearch("equipment", i.id, ctx.locale),
   ],
   searchPlaceholder: (t) => t("equipment.searchPlaceholder"),
@@ -148,7 +150,7 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
 
   detail: (item, { t, locale }) => {
     const artUrl = itemArtUrl("equipment", item.id);
-    const meta: { label: string; value: string }[] = [
+    const meta: NonNullable<PickerDetailView["meta"]> = [
       { label: t("equipment.cost"), value: formatCost(item) },
     ];
     if (item.weight != null && item.weight > 0)
@@ -160,6 +162,14 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
       meta.push({
         label: t("equipment.damage"),
         value: `${item.damage.die} ${t(`srd.damage_${item.damage.type.toLowerCase()}`)}`,
+      });
+    if (item.mastery)
+      meta.push({
+        label: t("weaponMastery.eyebrow"),
+        value: localizeWeaponMastery(item.mastery, locale),
+        // The catalogue token is an exhaustive eight-value union, and the
+        // glossary owns the matching masteryCleave…masteryVex entries.
+        term: `mastery${item.mastery}`,
       });
     if (item.ac)
       meta.push({
@@ -207,18 +217,13 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
             <div className="mb-1 text-[length:var(--text-micro)] font-bold uppercase tracking-wider text-text-secondary">
               {t("equipment.properties")}
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {item.properties.map((prop) => (
-                <span
-                  key={prop}
-                  className="rounded-sm bg-bg-tertiary px-2 py-0.5 text-[0.65rem] text-text-primary"
-                >
-                  {/* D3 — localize weapon properties (Finesse→Agile, etc.) via the
-                      shared helper the cockpit already uses. */}
-                  {localizeWeaponProperty(prop, locale)}
-                </span>
-              ))}
-            </div>
+            <UniversalCardTags
+              tags={item.properties.map((prop) =>
+                // D3 — localize weapon properties (Finesse→Agile, etc.) via the
+                // shared helper the cockpit already uses.
+                localizeWeaponProperty(prop, locale)
+              )}
+            />
           </div>
         ) : undefined,
     };
