@@ -200,8 +200,9 @@ renumber it into the 1–4 sequence. -->
     proved by MUTATION: reintroduce the defect, watch it fail, revert. (owner, 2026-07-25)
 
 14. **Every check runs once, in its one lane.** pre-commit is FAST (~5 s: changeset doc-guard +
-    lint-staged + fast unit lane); pre-push is the FULL local gate (typecheck ∥ lint ∥ coverage,
-    then build) — the last line of defence before a merge lands on `main`. Every merge to `main`
+    lint-staged + fast unit lane); topic-branch pre-push is instant (a recoverable checkpoint),
+    while pre-push to `main` is the FULL local gate (typecheck ∥ lint ∥ coverage, then build) —
+    the last line of defence before a merge lands on `main`. Every merge to `main`
     is then verified REMOTELY, ambiently and free on the public runners: `ci.yml` (the SRD-only
     gate, push + PR) and `verify.yml` (the composed unit suite + the FULL Playwright e2e matrix,
     SHARDED across parallel runners — minutes of wall clock, never an hour). A deploy PROMOTES a

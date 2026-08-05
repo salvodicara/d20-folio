@@ -37,7 +37,8 @@ runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twi
 | Lane                          | What it runs                                                                                                                           | Cost                           | Where                          |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------ |
 | **pre-commit**                | doc-guard + `lint-staged` + fast unit lane                                                                                             | ~5 s                           | `.githooks/pre-commit`         |
-| **pre-push**                  | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e**       | ~3 min (max of three, not sum) | `.githooks/pre-push`           |
+| **pre-push → topic branch**   | no gate — topic branches are recoverable remote checkpoints                                                                           | instant                        | `.githooks/pre-push`           |
+| **pre-push → `main`**         | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e**       | ~3 min (max of three, not sum) | `.githooks/pre-push`           |
 | **per merge — CI** (`ci.yml`) | the SRD-only gate: typecheck + lint ∥ unit ∥ build + budget as **parallel jobs**, every push to `main` + every PR                      | ~4 min wall, free              | `.github/workflows/ci.yml`     |
 | **per merge — Verify**        | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners, every push to `main`    | ~10 min wall, free             | `.github/workflows/verify.yml` |
 | **deploy** (owner-fired)      | **PROMOTES a verified SHA**: requires green CI + Verify on the exact SHA, then build + budget + `firebase deploy` — no re-verification | ~6 min                         | `deploy.yml` / `justfile`      |
@@ -377,8 +378,8 @@ in `DESIGN.md` (the single design + UX system of record) + the canonical tokens 
 2. Build from the DESIGN.md system + its shared primitives ONLY; never re-invent a surface.
 3. Reuse the shared design-system primitives so a fix propagates (one component per job; a
    bespoke restyle of an existing job is a defect).
-4. Every commit ships its own `.changeset/*.md` + passes the full pre-push CI (incl. the
-   axe a11y surface gate, light + dark).
+4. Every commit ships its own `.changeset/*.md`; the converged branch passes the full `main`
+   pre-push CI (incl. the axe a11y surface gate, light + dark).
 ```
 
 ### I'm adding a new page / form / wizard step / modal (visual surface coverage)
@@ -551,11 +552,11 @@ OUT of the plain unit suite (which never boots an emulator).
 - **`pnpm test:rules`** runs the full `/campaigns` matrix against the Firestore emulator on a
   `demo-` project (emulator-only — no real Firebase, no cost). Run it whenever you touch the
   rules.
-- **The pre-push hook is the real gate.** It runs `pnpm test:rules` automatically, but ONLY
-  when a push changes the rules surface (`firestore.rules` or `tests/rules/**`); other pushes
-  skip it (no emulator boot → fast). A rules change can never reach the remote unverified,
-  with zero Actions minutes.
-- **There is no remote rules job.** The pre-push hook is the whole gate (it needs a JDK, which
+- **The `main` pre-push hook is the real gate.** It runs `pnpm test:rules` automatically, but ONLY
+  when the integration push changes the rules surface (`firestore.rules` or `tests/rules/**`);
+  other `main` pushes skip it (no emulator boot → fast). Topic branches are checkpoints; a rules
+  change cannot enter `main` unverified, with zero Actions minutes.
+- **There is no remote rules job.** The `main` pre-push hook is the whole gate (it needs a JDK, which
   `asdf install` provides); `deploy.yml`'s e2e-gated deploy ships the rules files themselves.
 
 **Requires a JDK** (the Firestore emulator is a JVM process) plus the Firebase CLI. The JDK is
@@ -585,9 +586,10 @@ hint rather than letting an unverified rules change through — no Homebrew JDK 
 - **No `--no-verify`.** Ever. If a hook fails, fix the issue in the same commit.
 - **No dice rolling.** `Math.random()` is banned. Show formulas; the player rolls externally.
 - **Override-first.** Every derived value can be manually overridden.
-- **Small commits; merge = the only push.** Each commit is one coherent step with its
-  `.changeset/*.md`; a task reaches `origin` only as its converged merge to `main`
-  (`docs/WORKTREES.md` — no PRs, no mid-task branch pushes).
+- **Small commits; sparse milestone pushes.** Each commit is one coherent step with its
+  `.changeset/*.md`; a topic branch may reach `origin` at genuine recoverable milestones, while
+  the converged `HEAD:main` integration remains the only push that runs the full local gate
+  (`docs/WORKTREES.md` — no PRs, never a bare push).
 - **Co-update docs.** A `.changeset/*.md` must be staged on every commit (the pre-commit hook
   enforces it; it feeds `CHANGELOG.md` at release time). Keep `PROGRESS.md` current as you ship.
 - **New surface → new screenshot.** Adding a page / form / wizard step / modal means adding its
@@ -675,7 +677,7 @@ BEFORE a merge lands. Exactly three workflows live in `.github/workflows/`:
 There is deliberately **no release workflow** — releases are owner-triggered, agent-executed
 (`just release`, synthesized changelog — golden rule 17). There is no remote pixel-diff or
 baseline-regen workflow either: the visual lane is on-demand and local (`VISUAL=1`, no committed
-baselines — see "Visual baselines" above), and the rules-emulator suite gates at pre-push.
+baselines — see "Visual baselines" above), and the rules-emulator suite gates on the `main` pre-push.
 
 Conventions every workflow keeps: `node-version-file: .tool-versions` (single-source Node version —
 the asdf pin the app ships from), least-privilege `permissions` (`contents: read`, plus

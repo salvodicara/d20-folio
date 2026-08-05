@@ -53,9 +53,11 @@ just wt-list
 - **Directory:** `../<project>-<slug>` next to the main checkout. The main worktree (`d20-folio`)
   **always stays on `main`**.
 - **Branch:** `<kind>/<slug>` — `kind` ∈ `feat` (default) · `fix` · `chore` · `docs` · `refactor`.
-  Branch **off `origin/main`**, never off another task branch. Branches are local scaffolding for
-  the worktree; they are not pushed — the only push is the final `HEAD:main` merge, so never run a
-  bare mid-task `git push` (the branch tracks `origin/main`, so a bare push targets `main`).
+  Branch **off `origin/main`**, never off another task branch. A topic branch may be pushed as an
+  occasional recoverable milestone (`git push -u origin HEAD:<branch>`); its pre-push is instant.
+  Never run a bare mid-task `git push`: a new worktree initially tracks `origin/main`, so a bare
+  push can target `main`. The final integration remains `git push origin HEAD:main`, which runs the
+  authoritative full gate.
 - **Agent fan-out:** each delegated track gets its OWN worktree (`isolation: "worktree"` for
   `Agent`/`agent()`), never the shared tree. When two tasks run together, split ownership along
   the data↔UI seam (below) so merges stay cheap.
@@ -64,7 +66,7 @@ just wt-list
 - **The `content-pack` symlink is created automatically — composed-by-default.** When the
   maintainer's private pack is available (the main checkout carries a `content-pack` symlink into the
   sibling `../d20-folio-content` checkout), `wt-new` replicates that same relative link into the new
-  worktree, so its pre-push gate runs in **COMPOSED (pack-present) mode** and pack-side breakage — a
+  worktree, so its final `main` pre-push gate runs in **COMPOSED (pack-present) mode** and pack-side breakage — a
   public API change that breaks a pack test — is caught before merge. When no pack sibling exists
   (external contributors), the link is skipped silently and the worktree gates in **SRD-only mode**,
   which is the correct and complete build for a public tree (`docs/CONTRIBUTING.md` → "The two build
@@ -79,7 +81,7 @@ just wt-list
   `PRODUCT.md` + `DESIGN.md`; `DESIGN.md` §15 is the project checklist), so every worktree and
   agent session has them with no install step.
 - **Hooks are shared.** `core.hooksPath=.githooks` lives in the common git config, so every
-  worktree runs the same pre-commit/pre-push gate. **Never `--no-verify`.**
+  worktree runs the same ref-aware pre-commit/pre-push hooks. **Never `--no-verify`.**
 
 ## Splitting parallel tasks to minimize conflicts
 
@@ -107,5 +109,5 @@ git worktree prune                      # drop admin entries for deleted dirs
 
 A worktree locked by a running agent shows `locked`; unlock with `git worktree unlock <path>` (or
 `git worktree remove -f -f <path>` if the locking process is dead). Never remove a worktree while
-a push from it is still gating — the pre-push hook dies when `node_modules` vanishes; poll origin
-for the SHA first (step 5 above).
+a `main` push from it is still gating — the pre-push hook dies when `node_modules` vanishes; poll
+origin for the SHA first (step 5 above).
