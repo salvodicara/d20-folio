@@ -50,10 +50,9 @@ const DEV_HERO_PORTRAIT =
 
 /**
  * Dev-bypass sessions (D28) — newest first, with a populated summary on the latest
- * (so the accordion's rendered read view is exercised), an empty one (the "no
- * summary yet" state), a VERY long one (the CAMPAIGN-NOTES-UX `NoteClamp` reading
- * cap), and enough rows (7 > 5) that the bounded list's "View all" engages. Fixed
- * dates keep screenshots + the a11y/visual suite stable.
+ * (so the live document is exercised), an empty one, a VERY long one (the
+ * content-sized editor cap), and enough rows (7 > 5) that the bounded archive's
+ * "View all" engages. Fixed dates keep screenshots + the a11y/visual suite stable.
  */
 export function makeDevSessions(): SessionLogDoc[] {
   if (devEmpty()) return [];

@@ -6,7 +6,8 @@
  * warning, the chromatic level-seal row, and the exact `{ srdId }` commit.
  */
 
-import { AlertTriangle, Sparkles } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
+import { FolioSpellIcon } from "@/components/shared/folio-icons";
 import { spells } from "@/data/spells";
 import { primaryClassId, primarySubclassId } from "@/lib/classes";
 import { getSubclassSpellcasting } from "@/lib/subclass-spellcasting";
@@ -64,7 +65,7 @@ function isCrossClass(spell: SrdSpellData, ctx: PickerCtx): boolean {
 export const spellSpec: CompendiumPickerSpec<SrdSpellData> = {
   id: "spell",
   label: (t) => t("nav.spells"),
-  icon: Sparkles,
+  icon: FolioSpellIcon,
   // The codex verdict chip — the spell's school in its OWN enamel hue
   // (`--school-*`, COMPENDIUM-LUX), so 421 spells scan by school colour while
   // the seal keeps the chromatic LEVEL rainbow — one hue vocabulary per fact.

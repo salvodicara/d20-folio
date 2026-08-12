@@ -30,6 +30,7 @@ import { ModalShell } from "@/components/shared/ModalShell";
 import { ModalFoot, ModalStage } from "@/components/ui/modal-head";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { IconButton } from "@/components/ui/icon-button";
 import { Spinner } from "@/components/ui/spinner";
 import { PortraitCropErrorBoundary } from "@/components/shared/PortraitCropErrorBoundary";
 import { faceBiasedDefaultCrop, normalizePortraitCrop } from "@/lib/portrait-crop";
@@ -145,8 +146,8 @@ export function PortraitCropModal({
     <ModalShell
       open={open}
       onClose={onClose}
-      rubric={t("portrait.crop.eyebrow")}
-      title={t("portrait.crop.title")}
+      rubric={t(isBanner ? "portrait.crop.banner.eyebrow" : "portrait.crop.eyebrow")}
+      title={t(isBanner ? "portrait.crop.banner.title" : "portrait.crop.title")}
       subtitle={t("portrait.crop.subtitle")}
       // Hug the content: the body is fixed-height (crop stage + slider + actions),
       // so the default 88vh shell left a huge dead void under the actions.
@@ -206,13 +207,13 @@ export function PortraitCropModal({
 
         {/* ── Zoom slider ── */}
         <div className="flex shrink-0 items-center gap-3 border-t border-border-subtle bg-bg-secondary px-5 py-3">
-          <button
+          <IconButton
             onClick={() => setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
             className="text-text-secondary hover:text-text-primary transition-colors"
             aria-label={t("portrait.crop.zoomOut")}
           >
             <ZoomOut className="h-4 w-4" />
-          </button>
+          </IconButton>
           <input
             type="range"
             min={1}
@@ -223,13 +224,13 @@ export function PortraitCropModal({
             className="flex-1 accent-accent h-1.5 rounded cursor-pointer"
             aria-label={t("portrait.crop.zoom")}
           />
-          <button
+          <IconButton
             onClick={() => setZoom((z) => Math.min(3, +(z + 0.1).toFixed(2)))}
             className="text-text-secondary hover:text-text-primary transition-colors"
             aria-label={t("portrait.crop.zoomIn")}
           >
             <ZoomIn className="h-4 w-4" />
-          </button>
+          </IconButton>
         </div>
       </ModalStage>
 
@@ -241,7 +242,7 @@ export function PortraitCropModal({
         </Button>
         <Button onClick={handleConfirm} className="flex-1">
           <Icon as={Check} size="sm" decorative />
-          {t("portrait.crop.confirm")}
+          {t(isBanner ? "portrait.crop.banner.title" : "portrait.crop.confirm")}
         </Button>
       </ModalFoot>
     </ModalShell>

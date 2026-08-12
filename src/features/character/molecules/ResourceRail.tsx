@@ -693,6 +693,7 @@ export function ResourceRail() {
             onClose={() => setOpenCompanionId(null)}
             title={view?.label ?? ""}
             size="sm"
+            compact
           >
             <ModalScrollColumn>
               {view && (

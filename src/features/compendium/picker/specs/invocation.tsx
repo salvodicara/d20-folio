@@ -9,7 +9,7 @@
  * `prerequisite` string stays the engine FACT the eligibility gate parses.
  */
 
-import { Eye } from "lucide-react";
+import { FolioInvocationIcon } from "@/components/shared/folio-icons";
 import { SRD_INVOCATIONS } from "@/data/invocations";
 import { Icon } from "@/components/ui/icon";
 import { FamiliarEnhancementsCard } from "@/components/shared/FamiliarEnhancementsCard";
@@ -30,7 +30,8 @@ const invText = (i: SrdEldritchInvocation, field: string, locale: Locale) =>
 export const invocationSpec: CompendiumPickerSpec<SrdEldritchInvocation> = {
   id: "invocation",
   label: (t) => t("invocations.section"),
-  icon: Eye,
+  icon: FolioInvocationIcon,
+  repeatLeadingInRows: false,
   // No codex verdict — this is a single-source facet (every entry is a Warlock
   // Invocation), so a "Warlock" badge only echoes the tab; the freed width lets
   // the prerequisite subtitle (the row's key differentiator) wrap on mobile.
@@ -50,7 +51,11 @@ export const invocationSpec: CompendiumPickerSpec<SrdEldritchInvocation> = {
 
   row: (i, { t, locale }) => ({
     leading: (
-      <CmpSeal icon={Eye} tone="var(--amethyst-300)" toneInk="var(--amethyst-ink)" />
+      <CmpSeal
+        icon={FolioInvocationIcon}
+        tone="var(--amethyst-300)"
+        toneInk="var(--amethyst-ink)"
+      />
     ),
     name: invText(i, "name", locale),
     meta: hasSrd("invocation", i.id, "prerequisite", locale)
@@ -61,7 +66,7 @@ export const invocationSpec: CompendiumPickerSpec<SrdEldritchInvocation> = {
   detail: (i, { t, locale, character }) => ({
     eyebrow: (
       <span className="inline-flex items-center gap-2">
-        <Icon as={Eye} size="sm" className="text-accent" decorative />
+        <Icon as={FolioInvocationIcon} size="sm" className="text-accent" decorative />
         {t("invocations.eyebrow")}
       </span>
     ),

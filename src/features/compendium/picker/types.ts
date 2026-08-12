@@ -167,6 +167,13 @@ export interface CompendiumPickerSpec<T> {
    */
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
   /**
+   * Whether the spec's category mark repeats on every homogeneous result row.
+   * Defaults to true. Set false when the active ribbon + rubric already establish
+   * the family and the mark carries no per-entry information; EntryView still
+   * reuses `row().leading` once in the opened leaf masthead.
+   */
+  repeatLeadingInRows?: boolean;
+  /**
    * The right-aligned codex "verdict" chip for a row (OWN-5) — the at-a-glance
    * classifier a player scans down the leaf (spell school · item rarity · feat
    * category). Optional: a type with no natural classifier omits it. Returns the

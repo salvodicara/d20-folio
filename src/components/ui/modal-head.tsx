@@ -202,7 +202,7 @@ export function ModalStage({
 }: ComponentPropsWithoutRef<"div">) {
   return (
     <div
-      className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}
+      className={cn("flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", className)}
       {...rest}
     >
       {children}

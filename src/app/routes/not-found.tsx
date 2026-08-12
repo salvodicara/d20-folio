@@ -1,9 +1,9 @@
 /**
  * NotFoundPage — the catch-all for unknown protected routes (C1).
  *
- * A typo'd id, a stale bookmark, or a deleted-character link used to render an
- * empty AppShell outlet with no way back. This mounts on the `path="*"` route
- * inside the shell and offers a single clear recovery: back to the roster.
+ * A mistyped or stale route used to render an empty AppShell outlet with no way
+ * back. Deleted-character links have their own truthful domain states; this
+ * catch-all speaks only about an unknown page and offers one clear recovery.
  *
  * Reuses the shared `RunicEmptyState` hero (one empty-state primitive) and owns
  * its own `<main id="main">` landmark like every other page (AppShell renders

@@ -1,22 +1,10 @@
 /**
- * E2E: the session-summary read↔edit swap does NOT resize/jump the box (D28
- * edit-in-place).
+ * E2E: the live-session summary is a durable, directly editable document.
  *
- * The owner's report: switching a session summary from its rendered read view to
- * the editor felt "traumatic" because the box RESIZED — the read view rendered
- * markdown up to the NoteClamp reading cap, then hard-swapped to a FIXED `rows=4`
- * (min-height 88px) textarea that bore no relation to the content. The fix makes
- * the editor CONTENT-SIZED (`field-sizing: content`, `.sess-notes-edit`) capped at
- * the SAME reading bound, so read and edit share one footprint.
- *
- * jsdom can't measure layout / `field-sizing`, so this lives here (golden rule 15).
- * Two platform-robust facts pin the fix (RELATIVE measurements, not pixel
- * baselines — no committed screenshots):
- *   1. The editor is content-sized: it shows the whole (under-cap) recap with NO
- *      internal scroll (`scrollHeight ≈ clientHeight`). The old fixed 88px box
- *      overflowed and scrolled — this assertion FAILS on it.
- *   2. No jump: the notes region's height barely changes read→edit (the action row
- *      is identical height in both states, so the delta is just the body delta).
+ * jsdom can pin the save calls, but only a browser can prove the real workflow:
+ * write during play, jump to the character realm through the global header, then
+ * return without losing a keystroke. The editor also stays content-sized so the
+ * live desk remains compact rather than becoming a nested scrolling trap.
  */
 
 import { test, expect, type Page } from "@playwright/test";
@@ -29,48 +17,40 @@ async function seedHub(page: Page) {
     );
     localStorage.setItem("i18nextLng", "en");
   });
-  await page.setViewportSize({ width: 1000, height: 900 });
+  await page.setViewportSize({ width: 1180, height: 900 });
   await page.goto("/campaigns/DEVCAMPAIGN24");
 }
 
-test("the summary editor is content-sized and the read↔edit swap keeps one footprint", async ({
+test("the live recap survives a campaign → character → campaign round trip", async ({
   page,
 }) => {
   await seedHub(page);
 
-  // The latest session (fixed panel, always visible) carries a multi-block recap.
-  const item = page
-    .locator('section[aria-labelledby="sessions-head"] .sess-item')
-    .first();
-  await item.waitFor();
-  await item.locator(".sess-toggle").click();
-  await item.locator(".sess-prose").waitFor();
-  await page.evaluate(() => document.fonts.ready.then(() => undefined));
-
-  const notes = item.locator(".sess-notes");
-  const readRegion = await notes.evaluate((el) =>
-    Math.round(el.getBoundingClientRect().height)
-  );
-
-  // Reveal the editor on intent (the single button in the read action row).
-  await item.locator(".sess-notes-actions button").first().click();
-  const editor = item.locator("textarea.sess-notes-edit");
+  const editor = page.getByRole("textbox", { name: /session summary/i });
   await editor.waitFor();
+  await expect(editor).toHaveValue(/The party crossed at dawn/);
+
+  const recap = "The party reached the sealed gate; Bren is holding the key.";
+  await editor.fill(recap);
+  await expect
+    .poll(() =>
+      page.evaluate(() => localStorage.getItem("d20.sessionDraft.DEVCAMPAIGN24.sess-7"))
+    )
+    .toBe(recap);
 
   const box = await editor.evaluate((el) => {
-    const ta = el as HTMLTextAreaElement;
-    return { scroll: ta.scrollHeight, client: ta.clientHeight };
+    const textarea = el as HTMLTextAreaElement;
+    return { scroll: textarea.scrollHeight, client: textarea.clientHeight };
   });
-  const editRegion = await notes.evaluate((el) =>
-    Math.round(el.getBoundingClientRect().height)
-  );
-
-  // 1. Content-sized: the whole under-cap recap fits with no internal scroll (the
-  //    old fixed 88px box overflowed — this fails on it). Tiny box-model tolerance.
   expect(box.scroll - box.client).toBeLessThanOrEqual(4);
 
-  // 2. No jump: the notes region's footprint barely changes across the swap (the
-  //    raw markdown is a touch taller than the rendered prose, never the hundreds
-  //    of px the old fixed-box swap moved).
-  expect(Math.abs(editRegion - readRegion)).toBeLessThanOrEqual(70);
+  // This is the owner's real route: use the global header to consult the character,
+  // then return. The campaign component unmounts, but the local draft must restore.
+  await page.locator('a[href="/characters"]').first().click();
+  await expect(page).toHaveURL(/\/characters$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/campaigns\/DEVCAMPAIGN24$/);
+  await expect(page.getByRole("textbox", { name: /session summary/i })).toHaveValue(
+    recap
+  );
 });

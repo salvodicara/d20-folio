@@ -115,19 +115,11 @@ describe("CommandPalette — sections navigator (C7)", () => {
 
   it("uses the same stable realm signs as the mobile navigator", () => {
     renderPalette();
-    expect(
-      screen
-        .getByRole("option", { name: /characters/i })
-        .querySelector(".lucide-scroll-text")
-    ).not.toBeNull();
-    expect(
-      screen.getByRole("option", { name: /campaigns/i }).querySelector(".lucide-tent")
-    ).not.toBeNull();
-    expect(
-      screen
-        .getByRole("option", { name: /compendium/i })
-        .querySelector(".lucide-book-open")
-    ).not.toBeNull();
+    for (const name of [/characters/i, /campaigns/i, /compendium/i]) {
+      const glyph = screen.getByRole("option", { name }).querySelector("svg");
+      expect(glyph).toHaveAttribute("viewBox", "0 0 512 512");
+      expect(glyph).toHaveAttribute("fill", "currentColor");
+    }
   });
 
   it("offers Legal as an (ungated) section so every routed surface is reachable (D7)", () => {

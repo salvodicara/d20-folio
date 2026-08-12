@@ -2,7 +2,7 @@
   "errorBoundary": {
     "eyebrow": "Errore",
     "title": "Qualcosa è andato storto",
-    "message": "Si è verificato un errore imprevisto. I tuoi dati sono al sicuro. Prova a ricaricare.",
+    "message": "Si è verificato un errore imprevisto. I dati già salvati sono al sicuro; ricarica l'app per continuare.",
     "reload": "Ricarica l'app",
     "retry": "Riprova",
     "details": "Dettagli errore",

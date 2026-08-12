@@ -1,26 +1,26 @@
 /**
  * Class-role glyph map — the component-layer (React glyph) seal each class wears
  * in the wizard's class grid + preview card. The presenter carries the stable
- * class id; this maps it to a Lucide icon + a role string. Mirrors the inventory
+ * class id; this maps it to a fantasy icon + a role string. Mirrors the inventory
  * slice's `item-seal.ts` (icon resolution stays in the component layer so the
  * pure presenter never imports React glyphs).
  */
+import { ShieldQuestion } from "lucide-react";
 import {
-  Swords,
-  Music,
-  Sun,
-  Leaf,
-  Shield,
-  Hand,
-  Scale,
-  Crosshair,
-  VenetianMask,
-  Wand2,
-  Eye,
-  Cog,
-  BookOpen,
-  ShieldQuestion,
-} from "lucide-react";
+  ClassArtificerIcon,
+  ClassBarbarianIcon,
+  ClassBardIcon,
+  ClassClericIcon,
+  ClassDruidIcon,
+  ClassFighterIcon,
+  ClassMonkIcon,
+  ClassPaladinIcon,
+  ClassRangerIcon,
+  ClassRogueIcon,
+  ClassSorcererIcon,
+  ClassWarlockIcon,
+  ClassWizardIcon,
+} from "@/components/shared/folio-icons";
 import type { ComponentType, SVGProps } from "react";
 
 type ClassIcon = ComponentType<SVGProps<SVGSVGElement>>;
@@ -43,24 +43,24 @@ export const CLASS_ROLE_IDS = [
 type ClassRole = Capitalize<(typeof CLASS_ROLE_IDS)[number]>;
 
 const CLASS_ROLES: Record<string, { icon: ClassIcon; role: ClassRole }> = {
-  barbarian: { icon: Swords, role: "Martial" },
-  bard: { icon: Music, role: "Support" },
-  cleric: { icon: Sun, role: "Divine" },
-  druid: { icon: Leaf, role: "Nature" },
-  fighter: { icon: Shield, role: "Martial" },
-  monk: { icon: Hand, role: "Martial" },
-  paladin: { icon: Scale, role: "Divine" },
-  ranger: { icon: Crosshair, role: "Martial" },
-  rogue: { icon: VenetianMask, role: "Martial" },
-  sorcerer: { icon: Wand2, role: "Arcane" },
-  warlock: { icon: Eye, role: "Arcane" },
-  wizard: { icon: BookOpen, role: "Arcane" },
-  artificer: { icon: Cog, role: "Arcane" },
+  barbarian: { icon: ClassBarbarianIcon, role: "Martial" },
+  bard: { icon: ClassBardIcon, role: "Support" },
+  cleric: { icon: ClassClericIcon, role: "Divine" },
+  druid: { icon: ClassDruidIcon, role: "Nature" },
+  fighter: { icon: ClassFighterIcon, role: "Martial" },
+  monk: { icon: ClassMonkIcon, role: "Martial" },
+  paladin: { icon: ClassPaladinIcon, role: "Divine" },
+  ranger: { icon: ClassRangerIcon, role: "Martial" },
+  rogue: { icon: ClassRogueIcon, role: "Martial" },
+  sorcerer: { icon: ClassSorcererIcon, role: "Arcane" },
+  warlock: { icon: ClassWarlockIcon, role: "Arcane" },
+  wizard: { icon: ClassWizardIcon, role: "Arcane" },
+  artificer: { icon: ClassArtificerIcon, role: "Arcane" },
 };
 
 const CLASS_ROLE_FALLBACK = { icon: ShieldQuestion, role: "Martial" } as const;
 
-/** The Lucide glyph + role for a class id (a stable fallback for unknown ids). */
+/** The fantasy glyph + role for a class id (a stable fallback for unknown ids). */
 export function classRoleSeal(classId: string): { icon: ClassIcon; role: ClassRole } {
   return CLASS_ROLES[classId] ?? CLASS_ROLE_FALLBACK;
 }

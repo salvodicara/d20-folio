@@ -1717,6 +1717,23 @@ export function CreationWizard() {
                 />
               </FormField>
 
+              {/* Randomize affects the whole Quick Start build, so it stays in the
+                  global quick controls instead of hiding inside the Class chapter. */}
+              <div className="wiz-reroll flex items-center justify-end gap-3">
+                <p className="on-art text-xs text-text-muted">
+                  {t("create.randomizeHint")}
+                </p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={randomizeQuickbuild}
+                  title={t("create.randomizeHint")}
+                >
+                  <Icon as={Shuffle} size="sm" decorative />
+                  {t("create.randomize")}
+                </Button>
+              </div>
+
               <div className="quick-chapters">
                 <QuickChapter
                   step="class"
@@ -1726,20 +1743,6 @@ export function CreationWizard() {
                   open={!quickStepComplete.class || quickOpenSteps.has("class")}
                   onToggle={() => toggleQuickStep("class")}
                 >
-                  <div className="wiz-reroll flex items-center justify-end gap-3">
-                    <p className="on-art text-xs text-text-muted">
-                      {t("create.randomizeHint")}
-                    </p>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={randomizeQuickbuild}
-                      title={t("create.randomizeHint")}
-                    >
-                      <Icon as={Shuffle} size="sm" decorative />
-                      {t("create.randomize")}
-                    </Button>
-                  </div>
                   <FormField label={t("create.classLabel")}>
                     <ClassPlaques selected={selectedClass} onPick={requestClassPrefill} />
                   </FormField>

@@ -2448,56 +2448,82 @@ function ClassForkGallery({
 }) {
   const { t } = useTranslation();
   return (
-    // B3 (owner round 2) — the body rhythm (sp-6) separates this section.
-    // fb3: the rubric breathes sp-5 ABOVE its cards (it was crowding them);
-    // the air above it stays the body's sp-6. NO ad-hoc top margin.
-    <section className="mx-auto w-full max-w-[900px] space-y-5">
-      <p className="wiz-asks-head on-art justify-center">
-        <Icon as={Sparkles} size="xs" decorative />
-        {t("levelUp.advanceWhich")}
-      </p>
-      <PlaqueGrid label={t("levelUp.advanceWhich")}>
-        {ownedEntries.map((entry) => {
-          const Glyph = classRoleSeal(entry.classId).icon;
-          const die = getClassTable(entry.classId)?.hitDie;
-          return (
-            <PlaqueCard
-              key={entry.classId}
-              glyph={<Icon as={Glyph} size="sm" decorative />}
-              name={className(entry.classId, locale)}
-              gloss={classTip(entry.classId, t)}
-              eyebrow={t("levelUp.advanceTo", { level: entry.level + 1 })}
-              badge={die ? `d${die}` : undefined}
-              chosen={selectedClassId === entry.classId}
-              onClick={() => onPick(entry.classId)}
-            />
-          );
-        })}
-        {newClassIds.map((id) => {
-          const Glyph = classRoleSeal(id).icon;
-          const die = getClassTable(id)?.hitDie;
-          return (
-            <PlaqueCard
-              key={id}
-              glyph={<Icon as={Glyph} size="sm" decorative />}
-              name={className(id, locale)}
-              gloss={classTip(id, t)}
-              eyebrow={t("levelUp.newClassL1")}
-              badge={die ? `d${die}` : undefined}
-              chosen={selectedClassId === id}
-              onClick={() => onPick(id)}
-            />
-          );
-        })}
-      </PlaqueGrid>
-      {/* §2.7.3 — the classes the prerequisite filter HID, with their cause. */}
-      {filterReport && (
+    <section className="lvl-class-fork mx-auto w-full max-w-[900px]">
+      <div className="lvl-owned-classes">
+        <p className="wiz-asks-head on-art justify-center">
+          <Icon as={Sparkles} size="xs" decorative />
+          {t("levelUp.advanceWhich")}
+        </p>
+        <PlaqueGrid label={t("levelUp.advanceWhich")}>
+          {ownedEntries.map((entry) => {
+            const Glyph = classRoleSeal(entry.classId).icon;
+            const die = getClassTable(entry.classId)?.hitDie;
+            return (
+              <PlaqueCard
+                key={entry.classId}
+                glyph={<Icon as={Glyph} size="sm" decorative />}
+                name={className(entry.classId, locale)}
+                gloss={classTip(entry.classId, t)}
+                eyebrow={t("levelUp.advanceTo", { level: entry.level + 1 })}
+                badge={die ? `d${die}` : undefined}
+                chosen={selectedClassId === entry.classId}
+                onClick={() => onPick(entry.classId)}
+              />
+            );
+          })}
+        </PlaqueGrid>
+      </div>
+
+      {/* Starting another class is the low-frequency branch. Keep owned-class
+          advancement direct; disclose the broader multiclass catalogue on demand. */}
+      {newClassIds.length > 0 ? (
+        <details
+          className="lvl-multiclass-options"
+          open={newClassIds.includes(selectedClassId)}
+        >
+          <Button asChild variant="secondary">
+            <summary className="lvl-multiclass-summary">
+              <Icon as={ChevronRight} size="sm" decorative />
+              {t("levelUp.exploreMulticlass", { count: newClassIds.length })}
+            </summary>
+          </Button>
+          <div className="lvl-multiclass-body">
+            <PlaqueGrid
+              label={t("levelUp.exploreMulticlass", { count: newClassIds.length })}
+            >
+              {newClassIds.map((id) => {
+                const Glyph = classRoleSeal(id).icon;
+                const die = getClassTable(id)?.hitDie;
+                return (
+                  <PlaqueCard
+                    key={id}
+                    glyph={<Icon as={Glyph} size="sm" decorative />}
+                    name={className(id, locale)}
+                    gloss={classTip(id, t)}
+                    eyebrow={t("levelUp.newClassL1")}
+                    badge={die ? `d${die}` : undefined}
+                    chosen={selectedClassId === id}
+                    onClick={() => onPick(id)}
+                  />
+                );
+              })}
+            </PlaqueGrid>
+            {filterReport && (
+              <MulticlassFilteredCause
+                report={filterReport}
+                eligibleCount={newClassIds.length}
+                locale={locale}
+              />
+            )}
+          </div>
+        </details>
+      ) : filterReport ? (
         <MulticlassFilteredCause
           report={filterReport}
-          eligibleCount={newClassIds.length}
+          eligibleCount={0}
           locale={locale}
         />
-      )}
+      ) : null}
     </section>
   );
 }

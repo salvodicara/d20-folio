@@ -96,6 +96,12 @@ the chip reads a number — plus an optional locale-aware `plus` term. The **sav
 (`attack: ActionAttack`, S11) declares the dealt damage: fixed `dice`, level-scaled `diceByLevel`, or
 the SAME variable **`diceCount` + `dieFace`** (S11b — Cleric Sear Undead's "WIS modifier d8s, min 1d8"),
 with the type a fixed `damageType` / player-pick `damageTypeChoices` / ancestry-bundle `damageTypeFromBundle`.
+
+**Turn-ledger lifetime.** The action/bonus/reaction/movement ledger is transient client state, but
+its character binding is store-scoped rather than component-scoped. Remounting the same character
+after visiting its campaign reconciles durable round/initiative without re-arming the turn; only a
+real turn boundary or a different character resets the ledger. This preserves the immediate-commit
+contract without adding per-action persistence.
 S11b adds three **additive/mode** fields, each resolved to a NUMBER at emission (the chip reads "1d8+3",
 never a value the player computes): **`addMod: AbilityCode`** folds that ability's modifier onto the rolled
 total via `appendAbilityModToDice` (Cleric Divine Spark "Nd8 + WIS"); **`addLevel: true`** folds the

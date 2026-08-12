@@ -22,7 +22,7 @@
     "metricCharacters_other": "Chars",
     "metricCampaigns_one": "Camp",
     "metricCampaigns_other": "Camps",
-    "metricDm": "DM",
+    "metricDm": "DM role",
     "charactersAria": "Characters: {{count}}",
     "campaignsAria": "Campaigns: {{count}}",
     "dmAria": "Dungeon Master of {{count}}",
@@ -63,6 +63,13 @@
     "searchingCharacters": "Searching characters…",
     "matchCharacterAria": "Matched character: {{name}}",
     "matchCampaignAria": "Matched campaign: {{name}}",
-    "showMore": "Show {{count}} more"
+    "showMore": "Show {{count}} more",
+    "tools": "Admin tools",
+    "exampleCharacter": "Example character",
+    "exampleCharacterHint": "Add a fresh copy of Lyra Voss to smoke-test every character-sheet surface.",
+    "loadExample": "Load example character",
+    "examplePreviewBlocked": "Loading the example isn't available in the local preview",
+    "exampleLoaded": "Loaded the example character",
+    "exampleFailed": "Couldn't load the example character"
   }
 }

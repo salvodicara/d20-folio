@@ -32,7 +32,10 @@ import {
   type EconomySlot,
   type SelectedAction,
 } from "@/stores/combatStore";
-import { syncCombatFromSession } from "@/features/character/center/combat-hydration";
+import {
+  syncCombatFromSession,
+  syncCombatTurnContext,
+} from "@/features/character/center/combat-hydration";
 import { useToastStore } from "@/stores/toastStore";
 import {
   useUndoStore,
@@ -40,11 +43,8 @@ import {
   registerUndoableResult,
   MAX_UNDO_DEPTH,
 } from "@/stores/undoStore";
-import {
-  useCombatStatusStore,
-  turnStartKey,
-  shouldToastTurnStart,
-} from "@/features/campaigns/global-combat-context";
+import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useLocale } from "@/hooks/useLocale";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import {
@@ -168,7 +168,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   const markReactionUsed = useCombatStore((s) => s.useReaction);
   const resetReaction = useCombatStore((s) => s.resetReaction);
   const endTurn = useCombatStore((s) => s.endTurn);
-  const resetTurn = useCombatStore((s) => s.resetTurn);
   const showToast = useToastStore((s) => s.showToast);
 
   // Pool spend prompt state. Immediate-commit model: a variable-cost (pool)
@@ -263,7 +262,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // region and never unmounts mid-session. That move is what lets the in-progress
   // turn survive leaving and returning to Play: the hydrate-once guard lives on a
   // component that doesn't remount, so coming back to Play re-reads the still-
-  // intact combatStore instead of re-hydrating (and resetting) it.
+  // intact combatStore instead of re-hydrating (and resetting) it. The character
+  // binding itself lives in combatStore, so the same guarantee also survives leaving
+  // the cockpit route for the campaign hub and returning before End Turn.
   //
   // Sync combatStore from the persisted session on every snapshot (the payload
   // arrives async from Firestore, so this keys on the character — not the mount).
@@ -272,7 +273,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // remotely-edited roll must re-sync onto the open sheet, never stay stale until
   // reload) while the solo round bookkeeping stays put. Both cases route through the
   // one shared policy (`syncCombatFromSession`); no extra listener (golden rule 24).
-  const hydratedCharIdRef = useRef<string | null>(null);
   // The target resolver can finish before an upcast/payment picker. Hold its reviewed
   // consequences until the action truly commits; cancelling a later picker therefore
   // spends and applies nothing. Only one modal flow can be active at a time.
@@ -309,8 +309,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       // store as `combatRound` (the session no longer carries it); initiative reconciles
       // from the same subdoc via `session.initiative`.
       useCharacterStore.getState().combatRound,
-      character.session.initiative,
-      hydratedCharIdRef.current
+      character.session.initiative
     );
     if (fresh) {
       // Switching characters finalizes the previous character's turn: clear the
@@ -318,7 +317,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       // so a stale reverse-applier from character A can never fire against character
       // B (whose resources/log it would corrupt) — the §1.4 character-switch fence.
       useUndoStore.getState().clear(character.id);
-      hydratedCharIdRef.current = character.id;
     }
   }, [character]);
 
@@ -346,68 +344,21 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  // C5 — RESET THE PER-TURN ECONOMY AT TURN-START (encounter). The action / bonus /
-  // reaction / movement budget refreshes when the SHARED turn pointer LANDS on this
-  // PC (the start of YOUR turn), not when you press End Turn — so it is always fresh
-  // even if you never formally end your turn (the DM advances you, you go AFK, the DM
-  // rewinds, you join mid-combat). REUSES the C4 turn-start signal (`turnStartKey` +
-  // `shouldToastTurnStart` — the SAME pure transition the pip's "it's your turn" toast
-  // fires on, never a second isMyTurn detector); we observe it HERE too because this
-  // provider owns the transient per-slot undo refs the reset must finalize alongside
-  // `resetTurn`. A NON-reactive store subscription (never a selector), so the provider
-  // doesn't re-render on a combat tick (§7.2 render-isolation) — mirroring the
-  // round/initiative persistence subscription above. Solo (status always null →
-  // `turnStartKey` always null) this never fires; the solo End-Turn `endTurn()` resets
-  // the economy there (every turn is yours), so there is no double-reset.
+  // C5 — reconcile the ledger's ENCOUNTER + OWN-TURN identity at mount and on every
+  // shared-status update. The identity lives in combatStore, so a provider remount can
+  // distinguish "returned during the same turn" (preserve) from "a whole turn cycle /
+  // encounter end happened while away" (reset). This one subscription replaces the old
+  // component-local turn-start and encounter-end detectors.
   useEffect(() => {
-    // Prime to the CURRENT key (not `undefined`) so a reload while already on your
-    // turn never spuriously resets — the reset fires only on a genuine entry into a
-    // NEW turn (the key moving to a fresh non-null value).
-    let seenTurnKey = turnStartKey(useCombatStatusStore.getState().status);
-    return useCombatStatusStore.subscribe((s) => {
-      const key = turnStartKey(s.status);
-      if (shouldToastTurnStart(seenTurnKey, key)) {
-        resetTurn();
-        // Finalize the just-ended turn's undo machinery: PURGE the turn-scoped
-        // entries (dismissing their lingering toasts) — the economy they reversed was
-        // reset by the DM-driven turn cycle, so un-committing a last-turn action would
-        // refund resources while its slot-legs no-op (an asymmetric half-undo).
-        // Character-state entries (HP, conditions) SURVIVE: their reverse-appliers
-        // don't touch the per-turn economy (§1.4 encounter turn-start).
-        useUndoStore.getState().purgeTurnScoped();
-      }
-      seenTurnKey = key;
-    });
-  }, [resetTurn]);
-
-  // ENCOUNTER ENDED → SOLO AT BASELINE (owner-ratified 2026-07-03). When the OPEN hero's
-  // encounter ends (the DM ends the fight, or this PC is removed), the shell status for this
-  // sheet drops to absent, so the band reverts to solo. The sheet must return to BASELINE —
-  // round 1, economy re-armed, movement full, initiative cleared — even if the sheet was open
-  // when it happened (no stuck `waiting` economy): the encounter WAS the combat, so no stale
-  // pre-encounter solo state resumes. `endCombat()` resets the whole combat-turn store (round
-  // / selected / budget / reaction / movement / initiative); the round+initiative persistence
-  // subscription writes the baseline back. A NON-reactive store subscription (never a
-  // selector) so the provider doesn't re-render on a combat tick (§7.2), mirroring the
-  // turn-start reset above. Scoped to the OPEN hero (`characterId` match) so ending ANOTHER
-  // hero's fight — while a non-encounter hero of the same user is open — never resets this
-  // sheet. A character SWITCH is owned by the hydrate effect (it doesn't fire here — a switch
-  // changes the open id, not the status). Solo throughout (status always null) → never fires.
-  useEffect(() => {
-    const matches = (
+    const reconcile = (
       status: ReturnType<typeof useCombatStatusStore.getState>["status"]
-    ): boolean => {
+    ): void => {
       const openId = useCharacterStore.getState().character?.id ?? null;
-      return status != null && status.characterId === openId;
+      const result = syncCombatTurnContext(sheetEncounter(status, openId));
+      if (result !== null) useUndoStore.getState().purgeTurnScoped();
     };
-    return useCombatStatusStore.subscribe((s, prev) => {
-      // The open hero WAS in this encounter and now is not → return to solo baseline.
-      if (!matches(prev.status) || matches(s.status)) return;
-      useCombatStore.getState().endCombat();
-      // Encounter ended / PC removed → purge the turn-scoped economy entries
-      // (same reasoning as turn-start; §1.4). Character-state undos survive.
-      useUndoStore.getState().purgeTurnScoped();
-    });
+    reconcile(useCombatStatusStore.getState().status);
+    return useCombatStatusStore.subscribe((s) => reconcile(s.status));
   }, []);
 
   // B6 — derive the per-turn ACTION/BONUS budget from the active extra-action

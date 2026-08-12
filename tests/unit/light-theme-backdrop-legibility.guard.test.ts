@@ -83,8 +83,7 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
   it("#7 — light gilt coins (count medallion + disclosure knob) strike an OPAQUE disc", () => {
     // The deep-gold numeral self-backs ONLY if the coin paints an opaque struck base;
     // a translucent fill lets the candlelit backdrop bleed through (the brown medallion).
-    // Pin the MECHANISM: a `[data-theme=light]` rule grouping `.sec-count` +
-    // `.section-disclosure-knob` that sets an OPAQUE `--gold-leaf` background-color base.
+    // Pin the MECHANISM: one light rule gives both coins an opaque gold-leaf base.
     const rule =
       /\[data-theme="light"\]\s*:is\(\s*\.sec-count\s*,\s*\.section-disclosure-knob\s*\)\s*\{[^}]*background-color:\s*var\(--gold-leaf-/;
     expect(

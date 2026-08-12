@@ -143,6 +143,12 @@ export interface UniversalCardProps {
    * keeping the kind's medallion pigment. Ignored when `spellLevel` is set.
    */
   sealIcon?: ComponentType<SVGProps<SVGSVGElement>>;
+  /**
+   * Suppress the category seal when a surrounding labelled group already
+   * establishes the kind. The action border, name and facts remain; use this
+   * only to remove redundant repetition from homogeneous ledgers.
+   */
+  showSeal?: boolean;
   /** Serif lemma (the name). */
   name: string;
   /** Action-economy slot for the left-border colour. Default "nothing". */
@@ -298,6 +304,7 @@ export interface UniversalCardProps {
 export function UniversalCard({
   kind,
   sealIcon,
+  showSeal = true,
   name,
   slot = "nothing",
   spellLevel,
@@ -370,6 +377,7 @@ export function UniversalCard({
         active && "is-active",
         isOpen && "is-open",
         isEdit && "is-edit",
+        !showSeal && "without-seal",
         unprepared && !isOpen && "is-dim",
         className
       )}
@@ -401,7 +409,7 @@ export function UniversalCard({
         )}
 
         {/* Seal — chromatic spell-level OR kind medallion */}
-        {isSpell ? (
+        {showSeal && isSpell ? (
           <span
             className={cn("uc-seal", "lvl", isCantrip && "cantrip")}
             style={{
@@ -412,11 +420,11 @@ export function UniversalCard({
           >
             {isCantrip ? cantripSealLabel : seal}
           </span>
-        ) : (
+        ) : showSeal ? (
           <span className="uc-seal kind" data-kind={kind} aria-hidden>
             <Icon as={SealGlyph} decorative />
           </span>
-        )}
+        ) : null}
 
         {/* Name cell — lemma + magical/conc/ritual/qty marks */}
         <span className="uc-name-cell">

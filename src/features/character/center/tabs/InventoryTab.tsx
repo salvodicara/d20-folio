@@ -19,7 +19,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Backpack } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -43,6 +43,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Icon } from "@/components/ui/icon";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
+import { FolioInventoryIcon } from "@/components/shared/folio-icons";
 import { WeaponCard, type ItemFieldValue } from "./inventory/WeaponCard";
 import { ArmorCard } from "./inventory/ArmorCard";
 import { GearCard } from "./inventory/GearCard";
@@ -559,7 +560,7 @@ export function InventoryTab() {
       {/* Empty pack teaches; a fruitless search says so (honest blanks). */}
       {ownedRows === 0 ? (
         <RunicEmptyState
-          glyph={Backpack}
+          glyph={FolioInventoryIcon}
           eyebrow={t("equipment.title")}
           title={t("equipment.emptyTitle")}
           blurb={t("equipment.emptyBlurb")}
@@ -572,7 +573,7 @@ export function InventoryTab() {
         />
       ) : matchedRows === 0 ? (
         <RunicEmptyState
-          glyph={Backpack}
+          glyph={FolioInventoryIcon}
           size="sm"
           title={t("equipment.noItemsMatch")}
           blurb={t("common.searchMissHint")}

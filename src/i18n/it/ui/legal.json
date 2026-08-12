@@ -16,7 +16,7 @@
       "srdDesc": "Le regole, gli incantesimi, le classi e gli altri dati di gioco provengono dai System Reference Document 5.2.1 e 5.1, ciascuno usato secondo la licenza di attribuzione 4.0 Internazionale di Creative Commons.",
       "appTerm": "Codice sorgente di d20 Folio",
       "appDesc": "L'applicazione stessa, il suo codice e il suo design, è rilasciata sotto la GNU Affero General Public License v3.0 (AGPL-3.0-or-later).",
-      "iconsDesc": "L'icona Diamond Ring di Delapouite e le icone Wizard Staff e Barbed Spear di Lorc provengono da Game Icons con licenza CC BY 3.0."
+      "iconsDesc": "Alcuni glifi di Game Icons sono usati con licenza CC BY 3.0: Diamond Ring, Sickle, Bo, Wood Club, Flail, War Pick, Slingshot, Hatchet, 3D Hammer, Crowbar, Dice Six Faces Five, Lockpicks, Scroll Quill, Camping Tent, Spell Book, Backpack, Ribbon Medal, Warlock Eye, Lunar Wand, Spiked Dragon Head, Barbarian, Oak Leaf e Checklist di Delapouite; Wizard Staff, Broadsword, Pocket Bow, Spiked Mace, Whip, Manacles, Breastplate, Compass, Potion Ball, Campfire, Open Book, Crossed Swords, Cut Diamond, Lyre, Prayer, Meditation, Winged Shield, Rogue, Magic Swirl, Anvil Impact, Music Spell, Heart Bottle, Bordered Shield, Heavy Lightning, Windy Stripes, On Target e Dread Skull di Lorc; Crossbow di Carl Olsen; Musket di Skoll; e Pistol Gun di John Colburn. Il glifo semplificato della Lancia deriva dalla Spear CC0 di SVG Repo."
     },
     "trademarks": {
       "heading": "Marchi",
@@ -40,6 +40,8 @@
     "privacy": {
       "heading": "Informativa sulla privacy",
       "effective": "In vigore dal 2 agosto 2026 · Titolare del trattamento: Salvatore Di Cara · salvodicara@gmail.com",
+      "openLabel": "Leggi l'informativa sulla privacy",
+      "closeLabel": "Nascondi l'informativa sulla privacy",
       "intro": "d20 Folio raccoglie il minimo indispensabile per funzionare, e nient'altro. Niente analytics, niente pubblicità, niente tracker: i tuoi dati esistono perché il tuo tavolo possa giocare.",
       "collectT": "Cosa raccogliamo",
       "collectD": "Il profilo del tuo account Google quando accedi (nome, indirizzo email, avatar) e i contenuti che crei: personaggi, campagne, note, ritratti e le eventuali segnalazioni che invii. Firebase Authentication conserva lo stato di accesso nella memoria locale del tuo browser: non esistono cookie pubblicitari o di analisi.",
@@ -61,6 +63,8 @@
     "terms": {
       "heading": "Termini di utilizzo",
       "effective": "In vigore dal 2 agosto 2026",
+      "openLabel": "Leggi i termini di utilizzo",
+      "closeLabel": "Nascondi i termini di utilizzo",
       "intro": "La versione breve: d20 Folio è gratuito, i tuoi contenuti sono tuoi, e il tavolo merita correttezza.",
       "serviceT": "Il servizio",
       "serviceD": "d20 Folio è un'app companion gratuita per giocare alla quinta edizione, offerta così com'è e secondo disponibilità, senza garanzie di alcun tipo. È in sviluppo attivo: le funzionalità possono cambiare e la disponibilità non è garantita.",

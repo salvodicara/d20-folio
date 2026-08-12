@@ -60,7 +60,7 @@ export function ErrorFallback({
         "flex flex-col items-center justify-center p-6",
         variant === "region"
           ? "wb on-art-scope min-h-[60vh]"
-          : "wb crash-field min-h-screen bg-bg-primary"
+          : "wb crash-field on-art-scope min-h-screen"
       )}
     >
       <RunicEmptyState

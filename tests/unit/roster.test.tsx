@@ -24,25 +24,20 @@ type RosterResult = {
 
 // Hoisted alongside the vi.mock factories (the factories run on the hoisted
 // ESM imports below, before any non-hoisted const would initialize).
-const { navigateMock, useCharactersMock, actionsMock, loadExampleMock, isAdminState } =
-  vi.hoisted(() => ({
-    navigateMock: vi.fn(),
-    useCharactersMock: vi.fn<() => RosterResult>(),
-    // The card's data hook is mocked so these CharacterCard tests stay PURE VIEW
-    // tests — they assert the menu dispatches to the hook; the hook's own logic
-    // is covered in use-roster-actions.test.tsx.
-    actionsMock: {
-      exportJson: vi.fn(() => Promise.resolve()),
-      clone: vi.fn(() => Promise.resolve()),
-      retire: vi.fn(() => Promise.resolve()),
-      restore: vi.fn(() => Promise.resolve()),
-      remove: vi.fn(() => Promise.resolve()),
-    },
-    // Page-level admin "Load example" action + the admin gate (both mocked so the
-    // RosterPage tests can flip admin on/off without touching env or Firestore).
-    loadExampleMock: vi.fn(() => Promise.resolve()),
-    isAdminState: { value: false },
-  }));
+const { navigateMock, useCharactersMock, actionsMock } = vi.hoisted(() => ({
+  navigateMock: vi.fn(),
+  useCharactersMock: vi.fn<() => RosterResult>(),
+  // The card's data hook is mocked so these CharacterCard tests stay PURE VIEW
+  // tests — they assert the menu dispatches to the hook; the hook's own logic
+  // is covered in use-roster-actions.test.tsx.
+  actionsMock: {
+    exportJson: vi.fn(() => Promise.resolve()),
+    clone: vi.fn(() => Promise.resolve()),
+    retire: vi.fn(() => Promise.resolve()),
+    restore: vi.fn(() => Promise.resolve()),
+    remove: vi.fn(() => Promise.resolve()),
+  },
+}));
 
 vi.mock("react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react-router")>();
@@ -55,11 +50,6 @@ vi.mock("@/hooks/useCharacters", () => ({
 
 vi.mock("@/features/roster/use-roster-actions", () => ({
   useRosterActions: () => actionsMock,
-  useLoadExample: () => loadExampleMock,
-}));
-
-vi.mock("@/hooks/useIsAdmin", () => ({
-  useIsAdmin: () => isAdminState.value,
 }));
 
 // `useCharacters` is mocked, so Firestore is never touched at runtime — but the
@@ -87,8 +77,6 @@ beforeEach(() => {
   actionsMock.retire.mockClear();
   actionsMock.restore.mockClear();
   actionsMock.remove.mockClear();
-  loadExampleMock.mockClear();
-  isAdminState.value = false;
 });
 
 describe("RosterPage", () => {
@@ -140,11 +128,11 @@ describe("RosterPage", () => {
     expect(
       screen.getByRole("heading", { name: /your folio awaits/i })
     ).toBeInTheDocument();
-    // The welcome ACTS: a Create CTA lives in the header AND inside the hero
-    // itself (the empty state is the surface — P8), both on the wizard route.
+    // The empty hero owns the ONE primary Create CTA. Repeating it in the empty
+    // header would create two equal actions before the user has any roster to manage.
     const creates = screen.getAllByRole("button", { name: /create character/i });
-    expect(creates.length).toBe(2);
-    const inHero = creates[creates.length - 1];
+    expect(creates).toHaveLength(1);
+    const inHero = creates[0];
     if (!inHero) throw new Error("empty-state Create CTA missing");
     fireEvent.click(inHero);
     expect(navigateMock).toHaveBeenCalledWith("/characters/new");
@@ -232,34 +220,6 @@ describe("RosterPage", () => {
     // A non-matching query yields the honest-blank "no match" state.
     fireEvent.change(search, { target: { value: "zzzznope" } });
     expect(screen.getByText(/no characters match/i)).toBeInTheDocument();
-  });
-
-  it("hides the admin 'Load example' button for non-admins", () => {
-    isAdminState.value = false;
-    useCharactersMock.mockReturnValue({
-      characters: [makeDoc()],
-      loading: false,
-      error: null,
-    });
-    renderRoster();
-    expect(
-      screen.queryByRole("button", { name: /load example/i })
-    ).not.toBeInTheDocument();
-  });
-
-  it("shows the admin 'Load example' button for the admin and dispatches the action", () => {
-    isAdminState.value = true;
-    useCharactersMock.mockReturnValue({
-      characters: [makeDoc()],
-      loading: false,
-      error: null,
-    });
-    renderRoster();
-
-    const btn = screen.getByRole("button", { name: /load example/i });
-    expect(btn).toBeInTheDocument();
-    fireEvent.click(btn);
-    expect(loadExampleMock).toHaveBeenCalledTimes(1);
   });
 });
 

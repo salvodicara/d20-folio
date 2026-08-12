@@ -405,6 +405,33 @@ test.describe("Compendium browse", () => {
     await expect(page).not.toHaveURL(/sel=/);
   });
 
+  test("reveals a deep-linked entry in the persistent index", async ({ page }) => {
+    // `wish` sits well beyond the first virtual window. A palette hit opens this
+    // same URL shape, so the index must window + reveal the selected row instead
+    // of staying stranded at the beginning of the spell list.
+    await page.goto("/compendium?type=spell&sel=wish");
+    const list = page.locator(".cmp-list");
+    const current = list.locator('.pick-row[aria-current="true"]');
+
+    await expect(current).toHaveAttribute("aria-label", /wish/i);
+    await expect(current).toBeInViewport();
+    await expect.poll(() => list.evaluate((el) => el.scrollTop)).toBeGreaterThan(500);
+    await expect
+      .poll(() =>
+        current.evaluate((row) => {
+          const listRect = row.closest(".cmp-list")?.getBoundingClientRect();
+          return listRect ? row.getBoundingClientRect().top - listRect.top : -1;
+        })
+      )
+      .toBeGreaterThanOrEqual(6);
+    expect(
+      await current.evaluate((row) => {
+        const listRect = row.closest(".cmp-list")?.getBoundingClientRect();
+        return listRect ? row.getBoundingClientRect().top - listRect.top : 999;
+      })
+    ).toBeLessThan(20);
+  });
+
   test("the page never grows with the codex (the tome scrolls, not the page)", async ({
     page,
   }) => {

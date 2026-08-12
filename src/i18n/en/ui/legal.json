@@ -16,7 +16,7 @@
       "srdDesc": "The rules, spells, classes, and other game facts are drawn from the System Reference Documents 5.2.1 and 5.1, each used under the Creative Commons Attribution 4.0 International License.",
       "appTerm": "d20 Folio source code",
       "appDesc": "The application itself, its code and its design, is released under the GNU Affero General Public License v3.0 (AGPL-3.0-or-later).",
-      "iconsDesc": "The Diamond Ring icon by Delapouite and Wizard Staff and Barbed Spear icons by Lorc come from Game Icons under CC BY 3.0."
+      "iconsDesc": "Selected Game Icons glyphs are used under CC BY 3.0: Diamond Ring, Sickle, Bo, Wood Club, Flail, War Pick, Slingshot, Hatchet, 3D Hammer, Crowbar, Dice Six Faces Five, Lockpicks, Scroll Quill, Camping Tent, Spell Book, Backpack, Ribbon Medal, Warlock Eye, Lunar Wand, Spiked Dragon Head, Barbarian, Oak Leaf, and Checklist by Delapouite; Wizard Staff, Broadsword, Pocket Bow, Spiked Mace, Whip, Manacles, Breastplate, Compass, Potion Ball, Campfire, Open Book, Crossed Swords, Cut Diamond, Lyre, Prayer, Meditation, Winged Shield, Rogue, Magic Swirl, Anvil Impact, Music Spell, Heart Bottle, Bordered Shield, Heavy Lightning, Windy Stripes, On Target, and Dread Skull by Lorc; Crossbow by Carl Olsen; Musket by Skoll; and Pistol Gun by John Colburn. The simplified Spear glyph derives from SVG Repo's CC0 Spear."
     },
     "trademarks": {
       "heading": "Trademarks",
@@ -40,6 +40,8 @@
     "privacy": {
       "heading": "Privacy Policy",
       "effective": "Effective 2 August 2026 · Data controller: Salvatore Di Cara · salvodicara@gmail.com",
+      "openLabel": "Read the privacy policy",
+      "closeLabel": "Hide the privacy policy",
       "intro": "d20 Folio collects the minimum it needs to run, and nothing more. No analytics, no advertising, no trackers: your data exists so your table can play.",
       "collectT": "What we collect",
       "collectD": "Your Google account profile when you sign in (name, email address, avatar) and the content you create: characters, campaigns, notes, portraits, and any bug reports you send. Firebase Authentication keeps your sign-in state in your browser's local storage; there are no advertising or analytics cookies.",
@@ -61,6 +63,8 @@
     "terms": {
       "heading": "Terms of Use",
       "effective": "Effective 2 August 2026",
+      "openLabel": "Read the terms of use",
+      "closeLabel": "Hide the terms of use",
       "intro": "The short version: d20 Folio is free, your content is yours, and the table deserves fair play.",
       "serviceT": "The service",
       "serviceD": "d20 Folio is a free companion app for fifth-edition play, offered as-is and as-available, without warranties of any kind. It is in active development: features may change and availability is not guaranteed.",

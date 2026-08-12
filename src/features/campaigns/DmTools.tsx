@@ -4,13 +4,13 @@
  * Renders only for the campaign's DM (`uid === dmUid`) or the admin — for everyone else
  * it returns null, so the campaign hub simply ends at the utility pair (no phantom foot
  * card). ROLE + DANGER only: roster management (yield DM · remove member) and the
- * delete-campaign danger zone, laid out 2-up behind one low-frequency disclosure. The
- * resting panel names the scope without keeping destructive controls in the campaign's
- * everyday reading path. The lock-new-members kill switch moved to
+ * delete-campaign danger zone, laid out in one compact, always-visible manager panel.
+ * The DM workspace tab is already the disclosure boundary; nesting another reveal here
+ * would hide a small toolset and leave a misleading empty card. The lock-new-members kill switch moved to
  * the Access section (CampaignInvite) to sit with the link it disables (golden rule 6);
  * the party overview + encounter tracker live in the Party section. It rides
  * {@link SectionPanel} so it shares the one desk-card rubric, and spans both dashboard
- * columns (`lg:col-span-2`) as the full-width foot.
+ * grid as the full-width manager workspace.
  */
 
 import { useState } from "react";
@@ -186,13 +186,9 @@ export function DmTools() {
   }
 
   return (
-    <SectionPanel
-      sectionId="dm"
-      className="lg:col-span-2"
-      title={t("campaignHub.dmTools")}
-      showLabel={t("campaignHub.showDmTools")}
-      hideLabel={t("campaignHub.hideDmTools")}
-      detail={
+    <SectionPanel sectionId="dm" title={t("campaignHub.dmTools")} framed>
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-text-secondary">{t("campaignHub.dmToolsSummary")}</p>
         <div className="grid gap-3 sm:grid-cols-2 sm:items-start">
           {/* D29 — hand the DM crown to another member (shown only when there's
               someone to promote). */}
@@ -279,9 +275,7 @@ export function DmTools() {
             </div>
           </InfoCard>
         </div>
-      }
-    >
-      <p className="text-sm text-text-secondary">{t("campaignHub.dmToolsSummary")}</p>
+      </div>
     </SectionPanel>
   );
 }

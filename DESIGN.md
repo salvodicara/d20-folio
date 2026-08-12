@@ -988,6 +988,17 @@ anchored to nowhere). The three anchors:
   desktop; the avatar ring brightens to accent when the trigger is avatar-only (mobile). The
   account menu marks the current row (`aria-current="page"`), one grammar shared with the palette's
   Section rows (gilt ink + a leading gold diamond).
+  Its one-click Theme and Language accelerators always name the **destination** they will apply
+  ("Switch to Light Mode", "Passa a Italiano"), never the current state. A cycling control whose
+  label describes what it is about to replace is a false affordance; the full Settings page remains
+  the direct, visible three-way theme chooser.
+- **Primary roster actions:** the roster masthead contains only character-acquisition actions
+  (Import, Create). Administrative smoke-test utilities never enter this daily path or force its
+  mobile action cluster to wrap; they live under a clearly labelled, low-frequency Tools section
+  in the role-gated Admin console.
+- **Wordmark material:** wordmark text always uses a solid, theme-safe gilt ink. Material depth
+  belongs to the faceted d20 mark and surrounding scene, not to gradient-clipped letterforms; hero
+  and persistent chrome therefore share one typographic material.
 - **The colophon leaf** (`/legal`) → the footer's "Legal & attribution" link (gilt-current).
 
 **The mobile bottom nav stays exactly 3 realms (D6).** It is a realm _switcher_, not a location bar:
@@ -1202,6 +1213,15 @@ in a void: last ink → panel edge = strip → panel edge.
     host from the source tree, rejects a missing body primitive and raw nested scrollers, and keeps
     `ModalStage` behind a reasoned exact allowlist — so a new dialog cannot silently lose the
     frame's safe field, dissolve, keyboard scroll, or footer rhythm.
+  - **Height follows the reading task.** Long documents and searchable corpora use the default tall
+    `ModalShell` plus `ModalScrollColumn`; short statblocks and compact decisions opt into the
+    existing `compact` tier and hug their content under the same 88vh cap. Width is not evidence
+    that a dialog should be tall: a short `size="sm"` companion card must never inherit a vacant
+    full-height reading chamber.
+  - **The viewport always wins intrinsic width.** The shared modal card has `min-width: 0`; compound
+    stages do too. A crop canvas, long localized CTA or two-button footer may wrap or shrink inside
+    the frame, but may never impose the desktop modal width on a phone. Square portrait and 16:9
+    campaign crop are separately enrolled visual states and name their different destination.
   - **Cancelled drafts do not survive reopening.** A transactional picker mounts only while its
     request exists (or explicitly resets against a stable request key), so Cancel/Escape discards
     provisional steppers, selections, and filters. Reopening starts from the current committed
@@ -1440,13 +1460,32 @@ treatment, in the token's own semantic hue, never monochrome gold — the disc g
 **Quick Start composition.** Quick Start is the Guided journey folded, never a parallel form. The
 character name remains the one compact always-visible input; every completed `GuidedStep` becomes a
 44px summary chapter, and only a genuinely unresolved decision is forced open. Desktop pairs the
-chapters with a sticky live character/choices rail; mobile keeps that rail in document flow. Summary
-rows reopen their owning chapter. Completion is derived from the existing Guided gates plus final
-requirements — no second store, context, validation model, or duplicated business logic.
+chapters with a sticky live character/choices rail. Below 900px the rail returns to document flow,
+keeps the live character preview and unresolved requirements, and drops its choice ledger because
+the chapter summaries directly above already provide the same index. The one whole-build Randomize
+action sits with the always-visible Quick Start controls, never hidden inside a chapter. Desktop
+summary rows reopen their owning chapter. Completion is derived from the existing Guided gates plus
+final requirements — no second store, context, validation model, or duplicated business logic.
+
+**Creation journey closure.** Quick Start and Guided must be judged together, including the dense
+spell, equipment, ability-score and final-review chapters. On phone the active journey owns one
+persistent previous/next control above realm navigation, while the document reserves enough scroll
+clearance that it never hides the last decision. The final review leads with build identity and
+first-glance combat facts, then the editable choice ledger, secondary setup and one explicit
+remaining-requirements register. A full-page test capture may show fixed chrome crossing later
+document content; acceptance is the real viewport and reachable scroll clearance, not flattening a
+persistent action into the document merely to beautify the capture.
 
 The ONE F-family picker for every in-wizard choice pool (`WizardPickList` in
 `src/features/wizard/pick-list.tsx`; its large-feat-pool sibling `feat-list.tsx`; spells in
 `spell-list.tsx`). It implements the Picker Doctrine (Constitution §2.7) as one recipe:
+
+- **Level-up class fork:** advancing an owned class is the direct, always-visible path. RAW-legal
+  new classes are a low-frequency branch behind one native “Explore multiclass options” disclosure;
+  selecting one keeps that disclosure open, and filtered prerequisites remain beside that pool.
+  This preserves multiclass discovery without making the routine level-up scan every class card.
+  The fork shares one centered axis: rubric → a seal-aware optical gap → owned-class plaque →
+  centered disclosure. Protruding wax never consumes the heading's breathing room.
 
 - **Three states, one geometry:** every entry keeps ONE header and ONE body through
   collapsed · reading · chosen. A tap unfolds the reading spread (free browsing — an exploratory
@@ -1460,6 +1499,10 @@ The ONE F-family picker for every in-wizard choice pool (`WizardPickList` in
   `UniversalCardFacts` icon-anchored fact rows (range · damage · save · duration · components —
   the SAME glyph vocabulary as the cockpit spell card; casting time + concentration already ride
   the header eyebrow) before the prose, so a player weighs the choice without leaving the row.
+- **A large spell corpus is scan-sized too:** an undirected slot mounts the first 16 rows and one
+  quiet Show more action reveals the remainder in place. Search always ranks the full eligible
+  corpus, and a picked deep result remains visible after the query clears. This is the feat-pool
+  doctrine applied at the shared spell seam, not a Level-up-only pagination fork.
 - **Asks open under their cause:** a chosen entry's follow-up choices animate open as the
   `.wiz-spread` asks column (gold-thread separator), or — for cross-component cascades — render in
   a `.cause-block` ("From <feat>" rubric) directly beneath the choice that spawned them.
@@ -1531,7 +1574,11 @@ the index depth on Back. The recipe's parts:
   quiet facing page, never louder than the content it awaits.
 - **Seated selection:** the open entry's index row wears the active-tab idiom (accent edge +
   seated illumination + `--text-special` title) with `aria-current` — the index always shows which
-  page the book is open to.
+  page the book is open to. A route/deep-link selection (including a command-palette result) must
+  reveal that row even when it begins outside the mounted virtual window: the virtualizer computes
+  the row offset, adds only the trailing runway a last-page result needs, and seats the selected row
+  at the index's top reading edge with an 8px breath. Existing scroll depth remains untouched when
+  the current row is already visible.
 - **Leaf chrome by model:** the phone leaf leads with a labelled Back; the spread's recto closes
   with a quiet corner ✕ (the index never left, so "Back" would lie). Esc mirrors both.
 - **Keyboard roam:** ↓ from the search field drops into the first result, ↑/↓ roam the rows, ↑
@@ -1643,7 +1690,7 @@ canonical recipes, never re-rolled:
   they are always visible; recency stays scannable without an unbounded page.
 - **Section COUNT → struck gilt MEDALLION** (`.sec-count`, `SectionHeader count={n}`): a NUMERIC
   section count (sessions, notes, chapters) renders as an "illuminated premium" coin docked BESIDE the
-  title — in `SectionHeader`'s 4-column `.has-count` grid it sits in **column 3, between the title and
+  title — in `SectionHeader`'s `.has-count` grid it sits in **column 3, between the title and
   the fading rule** (NOT a bare number floating in a thin far-right box, which read weak on parchment).
   The coin is a deliberately-designed object in BOTH themes: a saturated gilt radial fill from
   `--accent-primary-bright` (bright gold on dark, rich gold-500 on light), a full-colour gold border, a
@@ -1651,31 +1698,16 @@ canonical recipes, never re-rolled:
   (gold-leaf-300 on dark, deep gold-leaf-900 on light) → gilt-on-dark / dark-gold-on-gilt, never a flat
   box. **Counts only** — a string TOTAL/hint ("120 gp", "168 mo in totale") stays on `meta`, which keeps
   the far-right `.sec-meta` slot (the two are mutually exclusive per header).
-- **Hub section → `SectionPanel` with a CHEVRON disclosure** (`src/features/campaigns/SectionPanel.tsx`):
-  a static `SectionHeader` rubric (diamond · title · count medallion · rule — never a control) over an
-  always-rendered fixed panel (the at-a-glance signal), and the bulky secondary list folded behind a
-  **compact, centred chevron expander**. A collapsible section is **ONE card** (`.section-card` — the same
-  `.info-card` struck-vellum surface, trailing margin dropped) that ENCLOSES the fixed panel + the
-  disclosure + the expandable detail: the chevron docks at the card's **BOTTOM EDGE**, inside the surface,
-  a hairline divider above it; the detail (`.section-detail-wrap`) reveals **IN PLACE inside the SAME card**
-  (it grows taller) through the single `grid-template-rows: 0fr → 1fr` reveal — **never** a strip floating
-  in the gap beneath the card (owner: the gilt knob must sit ON the card, not float below it). A
-  NON-collapsible section (no `detail`) renders its children directly, keeping whatever surface they bring
-  (Chronicle's book-spread, DM Tools' card grid) — EXCEPT a bare-content section (Sessions' rows, the
-  notes board's empty line), which passes `framed` so the SAME `.section-card` frame holds without a
-  chevron: a 0/1-item Sessions/Notes otherwise floated card-less on the backdrop while its populated
-  sibling wore the card (the Treasury empty-ledger bug class; pinned in `section-panel.test.tsx`). The
-  control (`.section-disclosure`: ≥44px tap target) is **icon-only, with no
-  visible label** — the header count medallion already carries the number — just a refined gilt `knob`
-  struck from the SAME illuminated-premium coin material as `.sec-count` (`.section-disclosure-knob`: a
-  saturated `--accent-primary-bright` radial fill, full-colour gold border, top emboss + gold glow, and
-  an engraved `::before` ring; the `--accent-text` chevron reads on BOTH themes where the old worded pill
-  failed) that brightens on hover/focus and rotates a satisfying 180° when open. The per-section worded
-  intent ("Show transactions (12)" / "Hide transactions") rides as the button's `aria-label` (a11y only)
-  — never visible text (owner explicitly rejected worded disclosure pills: "just an intuitive chevron in
-  the box"). The disclosure is on the CARD, never the header (owner: a toggle on the header "is NOT
-  intuitive"). The keyboard focus halo is moved onto the knob so it matches the compact affordance. Sticky
-  open/closed per `campaignId × sectionId`.
+- **Hub section → one `SectionPanel` action grammar** (`src/features/campaigns/SectionPanel.tsx`):
+  a static `SectionHeader` rubric (diamond · title · optional count medallion · fading rule) owns one
+  trailing creation action. Sessions and Shared Notes use the same compact on-art ghost button here, so
+  creation is predictable without introducing a new heavy button tier. Archive disclosure deliberately
+  remains the owner-approved gilt knob docked at the card's bottom edge: icon-only, bilingual
+  `aria-label`, `aria-expanded`/`aria-controls`, ≥44px target and rotating glyph. The fixed panel,
+  disclosure and expandable detail remain in **ONE card** (`.section-card`), growing in place through the
+  single `grid-template-rows: 0fr → 1fr` reveal. A non-collapsible section keeps its own surface; bare
+  Sessions/Notes content may still pass `framed` for a stable empty/one-item card. Open state remains
+  sticky per `campaignId × sectionId`.
   EVERY desk card rides this one chrome — Chronicle, Sessions, Shared-notes, Treasury, **Access**
   (the compressed invite + lock), and **DM Tools** — via the optional `className` prop (the full-width
   bands pass `lg:col-span-2`); no parallel section component exists.
@@ -1688,9 +1720,10 @@ canonical recipes, never re-rolled:
   phantom cell). Chronicle + DM Tools span both tracks via `lg:col-span-2` on their own panel root;
   every grid child is pinned `min-width: 0` so a wide child never forces a sideways scroll. **DM Tools
   is low-frequency and destructive:** its fixed panel is one plain-language scope summary; transfer,
-  removal and deletion live together in the standard `SectionPanel` detail, closed by default and sticky
-  per campaign. The controls and their confirmation seams are unchanged when opened. Never keep a danger
-  zone expanded in the campaign's everyday story/session reading path.
+  removal and deletion live together in the manager-only DM workspace. Because the DM tab is already the
+  navigation boundary and currently holds only three compact groups, its framed toolset stays directly
+  visible: do not nest a second disclosure or leave an empty resting card. Reintroduce grouping only when
+  the tool count creates demonstrated scan pressure. The confirmation seams remain unchanged.
 - **Campaign inline work states are part of the surface, not implementation detail** (2026-08-04):
   Chronicle edit, Session-summary edit, Shared-note edit, and Treasury transaction each participate in
   the screenshot/axe/i18n/mobile census. They transform their existing card in place; none opens a
@@ -2151,6 +2184,17 @@ test.ts` READS the live `.cp-dest-chip` declaration out of `folio.css`, resolves
      Encounter is the sole destructive control (named icon on phones). The attached Chronicle is a
      real drawer edge when collapsed and a bounded gilt-spine timeline when expanded; round markers
      and event diamonds make the causal record scannable without adding another card or shadow.
+   - ✅ **The campaign hub is a task workspace, not one always-open long page.** Its sticky local
+     tablist switches four table contexts: Live (Party/Encounter beside the current session recap),
+     Journal (Chronicle + Shared Notes), Resources (Treasury + Access), and manager-only DM. These
+     are real tabs, not section anchors: inactive panels leave layout and the accessibility tree but
+     remain mounted, so editors and disclosures survive a task switch; the chosen view is remembered
+     per campaign. Selecting a different task aligns its shared workspace boundary below the sticky
+     topbar + local tab plate, so a scroll position inherited from a long recap can never hide the new
+     panel's title; mounted editor/disclosure state is unaffected. On desktop, Live is a compact split desk; from 1280px Journal becomes a true
+     Chronicle + Shared Notes spread (the old full-width span residue is forbidden), and each closed
+     combatant places identity plus glanceable vitals on one tactical row. Phones and narrower desktop
+     windows keep the touch-safe single-column composition.
    - ✅ **Battle resolution is one compact decision surface.** The shared `ModalShell` resolver leads
      with the action name and its mechanical summary, shows independently targetable creature cards,
      then exposes only the outcome controls that action needs: hit/miss, per-target save, shared area
@@ -2282,17 +2326,15 @@ editable **on intent** — never wrapped in standing edit boxes.
   everywhere; see the Product Constitution.)
 - **Editing happens IN PLACE.** Never force users to a sub-page to edit a visible field. Use
   `InlineEditable` / `OverrideControl` everywhere a value is shown.
-- **Prose editors are CONTENT-SIZED, not fixed-row boxes** (the session-summary `.sess-notes-edit`
-  recipe; D28). A `<textarea>` for authored prose (a session recap) uses `field-sizing: content`
-  capped at the SAME reading bound as its rendered read view (`NoteClamp --reading` →
-  `min(420px, 55vh)`), off a ~2-line floor and with `resize: none` — so the read↔edit swap keeps ONE
-  footprint and the box never resizes/jumps (the owner's "traumatic" report; past the cap it scrolls
-  natively while authoring). Focus is placed with `preventScroll` (no scroll-yank). The three states —
-  empty / read / edit — share one structure: a body region over a right-aligned `.sess-notes-actions`
-  row whose height is identical whether it holds one button or two, so the affordance never resizes the
-  surface. Prose commits explicitly (Save / Cancel — safe against blur-loss); only short
-  always-complete tokens (the session NAME) commit-on-blur via `InlineEditable`. Guard:
-  `tests/e2e/session-edit-no-jump.spec.ts`.
+- **The live-session recap is a durable living document, not a read/edit form.** Its content-sized
+  `.sess-notes-edit` textarea uses `field-sizing: content`, a ~2-line floor, `resize: none`, and a
+  `min(420px, 55vh)` cap, so compact recaps grow naturally and long ones scroll only inside their
+  authoring surface. Every keystroke first mirrors to a campaign/session-scoped local draft; Firestore
+  writes debounce at 900ms, serialize in authoring order, and flush on blur, page hide, visibility loss,
+  and route unmount. A local draft survives the transition and is reconciled only after a matching
+  confirmed state is observed. Returning from a character route therefore restores every keystroke even offline or after interruption. Save
+  status is quiet; deletion belongs only to the selected document footer, never every archive row.
+  Guard: `tests/unit/sessions-section.test.tsx` + `tests/e2e/session-edit-no-jump.spec.ts`.
 - A page-level edit toggle gates campaign-hub editing (cleaner separation of concerns for multi-actor
   Phase 2) rather than the character-scoped global sheet mode.
 
@@ -2538,7 +2580,10 @@ error string), and edit/active/selected.
 Desktop and mobile serve different purposes (Product Constitution §3): desktop is optimized for
 active gameplay, combat, management (full density, multi-column, tables); mobile is optimized for
 reading, reviewing, between-session use (cards, ≥44px touch targets, stacked layout) — a deliberate
-mobile design, never a collapsed desktop layout.
+mobile design, never a collapsed desktop layout. An icon may remain optically 16–32px, but its
+interactive owner must reuse `IconButton` or the canonical `--touch-min` hit-slop; the visible glyph
+is never the entire target. Controls that must remain visually tiny (inline reset, tracker release)
+expand invisibly rather than forcing every dense ledger row taller.
 
 ### 15.5 Dark + Light — Each Designed, Not Adapted
 
@@ -2797,7 +2842,13 @@ suggests entity-level meaning. A mixed pool first uses explicit localized group 
 common region and alignment establish the families without making the player decode a legend. A row
 seal remains only when it communicates a useful level below that heading (for example an instrument,
 gaming set or artisan tool inside **Tools**); a generic family seal repeated beside every member is
-still redundant. Search indexes both the localized and English group names, and a filtered result
+still redundant. The Features ledger is the canonical implementation: its labelled class, subclass,
+race and feat groups suppress the UniversalCard category seal, while Inventory retains recognizable
+object-family glyphs and Spells retain preparation plus level marks. The Compendium applies the same
+rule declaratively: homogeneous Feature, Feat, Maneuver, Metamagic, Invocation and Mastery specs omit
+their repeated row mark but retain it once in the reading masthead; spell level, item family and monster
+CR remain because each varies per entity. Search indexes both the localized and English group names,
+and a filtered result
 retains its group heading so context never disappears. An object sign (ring, weapon, armor), an
 outcome/state sign (miss, selected, disabled),
 and an action sign (add, edit, delete) must not share a glyph within the same task context. Reuse across
@@ -2817,21 +2868,58 @@ independently guessable without text, but it must not suggest a competing meanin
 recognition after one encounter. The localized label remains present in production; no state relies on
 color or icon alone.
 
-**One seam.** `src/components/shared/item-icons.ts` remains the public resolver contract. Lucide is
-the first source; a small vendored SVG subset fills proven semantic gaps behind that resolver, and
-consumers never import asset paths directly. A pack is a source catalogue, never a wholesale visual
-replacement or a new runtime dependency.
-The contextual proof keeps three normalized Game Icons glyphs in
-`src/components/shared/fantasy-icons.tsx`: Delapouite's **Diamond Ring** replaces the control-like
-`CircleDot` ring fallback; Lorc's **Wizard Staff** separates Staff from the adjacent Wand facet; and
-Lorc's **Barbed Spear** gives spear, pike, lance, and trident one unmistakable thrusting-pole family
-instead of the semantically wrong pickaxe. All preserve their original geometry; normalization only
-removes the catalogue background and maps the foreground to `currentColor`. Tested invariants keep
-Rod, Staff, and Wand distinct and keep the spear family distinct from the war pick. Weapon subtypes
-do not earn bespoke glyphs when a familiar family sign is faster to scan: glaive reuses Sword;
-dart and javelin reuse BowArrow. The rejected Winged Scepter candidate is intentionally absent: at
-real chip size its wings collapsed into a trophy/cup reading, despite its nominally correct source
-name.
+**One seam, two semantic grammars.** `src/components/shared/item-icons.ts` remains the public
+resolver contract. Lucide's outline vocabulary is the baseline for verbs, controls and ordinary UI
+concepts. Item object nouns form one separate fantasy vocabulary: filled, monochrome silhouettes in
+the same optical box. Weapons keep recognizable handling families; armor, tools, mundane gear, packs
+and magic items use a deliberately coarse set of literal family signs. Mixing an outline box or shirt
+with a filled weapon inside one item list is not acceptable similarity; the distinction is semantic
+(action versus object), never accidental per-item styling. Consumers never import asset paths
+directly. A pack is a source catalogue, never a wholesale visual replacement or a new runtime
+dependency.
+
+**The fantasy vocabulary is product-wide, not item-only.** The high-frequency identity spine uses
+the same filled, monochrome Game Icons material through bounded existing seams: `realm-icons.ts`
+owns Characters/Campaigns/Compendium, `tab-defs.ts` owns Combat/Spells/Inventory/Features/Bio, and
+each Compendium spec owns its entity kind. Matching concepts reuse matching signs across those
+surfaces (Spell Book, Backpack, Crossed Swords, Scroll Quill); controls such as close, search, add,
+back, expand, upload and delete remain familiar Lucide outline verbs. This semantic division creates
+one D&D-native world without disguising standard interaction controls or replacing the shared
+`Icon` size/accessibility atom. Class identity follows the same law through `class-roles.tsx`: every
+class receives a literal archetype sign (lyre, prayer, oak leaf, meditation, winged shield, bow,
+rogue mask, magic swirl, warlock eye, spell book, anvil) instead of a mixed outline assortment.
+The configurable Combat Algorithm vocabulary follows the same domain-noun rule through
+`icon-registry.ts`: control, support, melee, defend, burst, magic, move, focus, danger and checklist
+are one filled fantasy family with literal, distinct silhouettes; legacy stored emoji still resolve
+to the same stable semantic ids. The icon picker retains labels/tooltips, so the glyph accelerates
+recognition without becoming a puzzle.
+Ancestry, condition and resource families join only after the same real-size semantic review;
+fantasy styling never licenses an attractive but misleading sign.
+The contextual proof keeps a deliberately small normalized Game Icons subset in
+`src/components/shared/fantasy-icons.tsx`. Diamond Ring and Wizard Staff close the two magic-item
+gaps; the weapon vocabulary uses Broadsword, Hatchet, 3D Hammer, Pocket Bow, Sickle, Bo/staff,
+Wood Club, Spiked Mace, Flail, War Pick, Crossbow, Musket, Pistol Gun, Slingshot and Whip. The spear
+family instead uses SVG Repo's vertical CC0 Spear, reduced to a large leaf head, collar and
+uninterrupted shaft so the 16px sign reads as a long pole weapon rather than a feathered ornament or
+diagonal slash. Crowbar and Manacles extend the same literal-sign test to gear; Breastplate, Compass,
+Dice Six Faces Five, Lockpicks, Potion Ball and Campfire close the remaining high-frequency
+armor/tool/gear family gaps without adding a runtime icon dependency.
+They replace courtroom gavel, mining pickaxe, target, lightning-bolt and crossed-swords readings.
+The Game Icons glyphs preserve their original geometry; normalization only removes the catalogue
+background and maps the foreground to `currentColor`. The family map stays intentionally coarser
+than the catalogue: ordinary one-handed and great swords share Broadsword; clubs/greatclubs,
+maces/morningstars and flails form three recognizable handling families; glaive shares Broadsword
+and halberd shares Hatchet; dart and blowgun remain in the filled Pocket Bow projectile family;
+javelin joins Spear. The rejected Sling asset is intentionally absent: its cord-and-pouch scene
+collapsed into a fish-like spiral at 16px, while Slingshot preserves immediate recognition. The
+rejected Winged Scepter candidate is likewise absent because its wings collapsed into a trophy/cup.
+`/legal` names every admitted glyph and author under CC BY 3.0.
+The same literal-sign test covers non-weapon gear through coarse, stable families: focuses and holy
+symbols use Spell Book, ammunition uses Pocket Bow, light/fire uses Campfire, liquids use Potion
+Ball, camp/clothing/general gear uses Backpack, artisan work uses Anvil Impact, instruments use Lyre,
+healing kits use Heart Bottle, and security tools use literal Lockpicks/Manacles/Crowbar. The label
+continues to carry the exact noun; the glyph accelerates recognition without pretending every SRD
+object needs a bespoke miniature.
 Illustrations resolve from the entity's immutable corpus kind + id through one asset manifest. Image
 references never enter `CharacterDoc`, exports, Firestore, or localized catalogues, so adding/remastering
 art cannot migrate user data or fork SRD/pack rendering.
@@ -2894,3 +2982,38 @@ tokens:
 The next visual identity (the BG3 corpus-studied grammar) replaces this section
 wholesale when it ships; until then the appendix is the ONLY sanctioned place for
 post-v0.22.0 chrome.
+
+### Account-less and recovery surfaces
+
+Public links, unknown routes, and crash recovery share the same Scriptorium world
+and runic-state grammar as the signed-in product. Copy must name the state it can
+prove: a catch-all 404 never speculates about a deleted character, and recovery
+promises only that already-saved data is safe. Long legal registers use native,
+keyboard-accessible disclosure beneath an always-visible attribution and license
+frontispiece; both resting and expanded states belong in the surface census.
+
+### Roster journey
+
+The roster scales from welcome to gallery without changing its interaction grammar.
+The empty hero owns the single Create CTA at the point of attention while Import
+stays the alternate masthead path. List controls appear only when they can act:
+search after the scan-at-a-glance threshold, Select only with multiple visible
+cards. Selection replaces each card's overflow slot with the checkbox, never
+covers identity or portrait content, and uses one floating contextual bar above
+mobile navigation. Gallery, no-results, empty, open-menu, and selected states are
+first-class census surfaces.
+
+### Account and global-tool journey
+
+The account cluster is one predictable ladder: its popover provides fast destination and preference
+actions; `/settings` provides explicit durable choices; `/admin` owns privileged operations. A safe
+session action belongs to the identity it affects, so Sign Out sits inside the Account card rather
+than in a detached page footer or danger register. Admin's resting user rows show identity and scan
+metrics only; dates, character drill-down and consequential controls remain in the row's native
+disclosure. Both collapsed and expanded states are first-class census surfaces.
+
+Global tools keep one route and one interaction grammar at every width. Search opens the command
+palette, `?` opens the keyboard reference, and bug/idea reporting opens from the account menu with
+the same complete, bilingual form on desktop and mobile. Visual verification must drive these tools
+through their visible localized product path; an English-only shortcut in a harness is not evidence
+that the Italian interaction works.

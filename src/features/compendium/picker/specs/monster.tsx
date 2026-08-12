@@ -13,7 +13,7 @@
  * this graph — the bestiary corpus stays lazy.
  */
 
-import { Skull } from "lucide-react";
+import { FolioMonsterIcon } from "@/components/shared/folio-icons";
 import { MONSTERS } from "@/data/monsters";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { srdKey } from "@/i18n/srd-key";
@@ -97,7 +97,7 @@ function monsterProse(m: MonsterStatBlock, locale: Locale): string[] {
 export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
   id: "monster",
   label: (t) => t("compendium.monsters"),
-  icon: Skull,
+  icon: FolioMonsterIcon,
   // The codex verdict — the CR, in the folio gilt (D-8): CR is a power classifier,
   // not a domain vocabulary, so it wears the one quiet accent chip, never a hue set.
   verdict: (m, { t }) => ({

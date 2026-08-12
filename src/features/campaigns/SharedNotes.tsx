@@ -250,7 +250,7 @@ export function SharedNotes() {
             {t("common.cancel")}
           </Button>
           <Button
-            variant="secondary"
+            variant="ghost"
             onClick={() => saveEdit(n)}
             disabled={editTitle.trim() === "" && editContent.trim() === ""}
           >
@@ -366,6 +366,14 @@ export function SharedNotes() {
       sectionId="notes"
       title={t("campaignHub.notes")}
       count={notes.length || undefined}
+      headerAction={
+        showAdd || editingId ? undefined : (
+          <Button variant="secondary" size="sm" onClick={() => setShowAdd(true)}>
+            <Icon as={Plus} size="sm" decorative />
+            {t("campaignHub.addNote")}
+          </Button>
+        )
+      }
       framed
       detail={notesDetail}
       showLabel={t("campaignHub.allNotes", { count: notes.length })}
@@ -425,14 +433,7 @@ export function SharedNotes() {
               </Button>
             </div>
           </InfoCard>
-        ) : (
-          <div className="flex justify-start">
-            <Button variant="secondary" onClick={() => setShowAdd(true)}>
-              <Icon as={Plus} size="sm" decorative />
-              {t("campaignHub.addNote")}
-            </Button>
-          </div>
-        )}
+        ) : null}
       </div>
     </SectionPanel>
   );

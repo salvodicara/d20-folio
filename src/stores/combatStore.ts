@@ -92,6 +92,19 @@ export interface SlotBudget {
 const DEFAULT_BUDGET: SlotBudget = { action: 1, bonus: 1 };
 
 interface CombatState {
+  /**
+   * Character whose transient turn economy this store belongs to. Kept in the store
+   * (rather than a component ref) so route navigation can unmount/remount the cockpit
+   * without making the same character look like a character switch.
+   */
+  hydratedCharacterId: string | null;
+  /** Active campaign encounter this ledger belongs to (`campaignId:epoch`), or solo. */
+  encounterKey: string | null;
+  /** Most recent own-turn identity observed in that encounter (`campaignId:round`). */
+  ownTurnKey: string | null;
+  /** The shared pointer was observed away from this character. The next own-turn
+   *  observation is therefore a real turn start even if no prior ownTurnKey exists. */
+  awaitingOwnTurn: boolean;
   /** Current round number */
   round: number;
   /** Initiative roll value */
@@ -291,6 +304,10 @@ function slotCapacity(budget: SlotBudget, slot: EconomySlot): number {
 }
 
 export const useCombatStore = create<CombatState>()((set, get) => ({
+  hydratedCharacterId: null,
+  encounterKey: null,
+  ownTurnKey: null,
+  awaitingOwnTurn: false,
   round: 1,
   initiative: "",
   selected: emptySelected(),

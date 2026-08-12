@@ -6,7 +6,7 @@
  * everything else → `equipment[]` with the gear/pack `tracked` flag).
  */
 
-import { Backpack } from "lucide-react";
+import { FolioInventoryIcon } from "@/components/shared/folio-icons";
 import { SRD_EQUIPMENT } from "@/data/equipment";
 import { itemArtUrl } from "@/data/item-art";
 import { equipmentSealIcon, equipmentCategoryIcon } from "@/components/shared/item-icons";
@@ -53,7 +53,7 @@ const itemText = (i: SrdEquipmentData, field: string, locale: Locale) =>
 export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
   id: "equipment",
   label: (t) => t("equipment.tabEquipment"),
-  icon: Backpack,
+  icon: FolioInventoryIcon,
   // The codex verdict — the item's category (weapon · armor · gear …), quietly
   // tinted (mundane gear, no loud colour).
   verdict: (item, { t }) => ({

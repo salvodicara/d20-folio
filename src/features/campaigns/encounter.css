@@ -20,6 +20,39 @@
     inset 0 1px 0 color-mix(in oklab, var(--accent-primary) 20%, transparent),
     var(--elev-resting);
 }
+
+/* Desktop combat order — one dense tactical row per combatant. The shared card keeps
+   its disclosure/body and every live control, but the identity and glanceable vitals
+   sit on the SAME line while closed. This is the DDB tracker economy with the app's
+   BG3-inspired turn frame: more of the initiative order stays visible, yet long names
+   wrap the flex row honestly instead of truncating. Phones retain the proven stacked
+   card because touch width, not vertical density, is the limiting resource there. */
+@media (min-width: 768px) {
+  .encounter-command-stack {
+    gap: var(--sp-3);
+  }
+  .encounter-turn-order {
+    gap: 6px;
+  }
+  .encounter-turn-order .party-card {
+    gap: var(--sp-2);
+    padding: 10px 12px;
+  }
+  .encounter-turn-order .combatant-resting {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px 10px;
+  }
+  .encounter-turn-order .party-card-head {
+    flex: 1 1 20rem;
+    min-width: 0;
+  }
+  .encounter-turn-order .party-vitals {
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+  }
+}
 .encounter-dossier::before {
   content: "";
   position: absolute;

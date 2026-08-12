@@ -22,7 +22,7 @@
     "metricCharacters_other": "PG",
     "metricCampaigns_one": "Camp",
     "metricCampaigns_other": "Camp",
-    "metricDm": "DM",
+    "metricDm": "Ruolo DM",
     "charactersAria": "Personaggi: {{count}}",
     "campaignsAria": "Campagne: {{count}}",
     "dmAria": "Dungeon Master di {{count}}",
@@ -63,6 +63,13 @@
     "searchingCharacters": "Ricerca tra i personaggi…",
     "matchCharacterAria": "Personaggio corrispondente: {{name}}",
     "matchCampaignAria": "Campagna corrispondente: {{name}}",
-    "showMore": "Mostra altri {{count}}"
+    "showMore": "Mostra altri {{count}}",
+    "tools": "Strumenti admin",
+    "exampleCharacter": "Personaggio di esempio",
+    "exampleCharacterHint": "Aggiungi una nuova copia di Lyra Voss per verificare tutte le superfici della scheda.",
+    "loadExample": "Carica personaggio di esempio",
+    "examplePreviewBlocked": "Il caricamento dell'esempio non è disponibile nell'anteprima locale",
+    "exampleLoaded": "Personaggio di esempio caricato",
+    "exampleFailed": "Impossibile caricare il personaggio di esempio"
   }
 }

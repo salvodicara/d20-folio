@@ -68,7 +68,8 @@ vi.mock("@/stores/authStore", () => ({
     selector({ user: { uid: "u1" } }),
 }));
 
-import { useRosterActions, useLoadExample } from "@/features/roster/use-roster-actions";
+import { useLoadExample } from "@/features/account/use-load-example";
+import { useRosterActions } from "@/features/roster/use-roster-actions";
 import { rosterProjectionFromDoc } from "@/lib/character-cache";
 
 /** The roster card receives the SRD-free PROJECTION (Layer 2). Export/clone re-read

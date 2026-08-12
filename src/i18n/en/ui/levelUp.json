@@ -105,6 +105,7 @@
     "doneEyebrow": "Level up complete",
     "hpTaken": "HP +{{hp}} taken",
     "advanceWhich": "Which class advances?",
+    "exploreMulticlass": "Explore multiclass options ({{count}})",
     "advanceTo": "Advance to level {{level}}",
     "newClassL1": "New class · level 1",
     "multiclassGains": "<g>Multiclassing</g> into {{class}} grants: {{gains}}",

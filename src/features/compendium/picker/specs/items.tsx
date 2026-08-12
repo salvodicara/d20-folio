@@ -28,7 +28,8 @@
  * merge unifies to stay-open for consistency.)
  */
 
-import { Backpack, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { FolioInventoryIcon } from "@/components/shared/folio-icons";
 import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { equipmentCategoryIcon, magicItemSealIcon } from "@/components/shared/item-icons";
@@ -150,7 +151,7 @@ function magicContext(all: Record<string, unknown>): boolean {
 export const itemsSpec: CompendiumPickerSpec<ItemEntry> = {
   id: "items",
   label: (t) => t("items.tab"),
-  icon: Backpack,
+  icon: FolioInventoryIcon,
   data: ITEMS,
   getId: (e) => (e.kind === "magic" ? `m:${e.item.id}` : `e:${e.item.id}`),
   getName: (e, ctx) =>

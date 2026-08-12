@@ -77,7 +77,7 @@ interface Offender {
 const MIN_ON_ART_LUMINANCE = 0.45;
 
 /**
- * A gilt COIN (the struck count medallion + disclosure knob) on the backdrop must
+ * A gilt coin (count medallion or disclosure knob) on the backdrop must
  * paint a disc at least this opaque to genuinely carry its deep-gold ink. The old
  * translucent fill (`color-mix(…, transparent)`, alpha ≈ 0.16–0.30) let the dark
  * art bleed through; the fixed opaque disc paints alpha 1. The threshold cleanly
@@ -314,7 +314,7 @@ for (const surface of SURFACES) {
       .join("\n");
     expect(
       coins,
-      `Gilt COIN (count medallion / disclosure knob) on the backdrop art in LIGHT ` +
+      `Gilt coin (count medallion / disclosure knob) on the backdrop art in LIGHT ` +
         `theme whose translucent disc lets the dark art bleed through — the deep-gold ` +
         `numeral reads BROWN/illegible. A premium gilt register must SELF-BACK (DESIGN ` +
         `§10): strike it as an OPAQUE struck disc (opaque background-color base + sheen ` +

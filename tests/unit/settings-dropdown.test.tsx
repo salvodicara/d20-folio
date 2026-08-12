@@ -138,15 +138,36 @@ describe("SettingsDropdown — reconcile", () => {
     expect(navigateMock).toHaveBeenCalledWith("/admin");
   });
 
-  it("the quick theme toggle still dispatches to the store (dark → light)", () => {
+  it("names the quick theme destination and dispatches dark → light", () => {
     open();
-    fireEvent.click(screen.getByRole("menuitem", { name: /dark mode/i }));
+    expect(
+      screen.queryByRole("menuitem", { name: /^dark mode$/i })
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("menuitem", { name: /switch to light mode/i }));
     expect(setThemeMock).toHaveBeenCalledWith("light");
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  });
+
+  it("names every next theme in the three-state cycle", () => {
+    uiState.theme = "light";
+    open();
+    fireEvent.click(screen.getByRole("menuitem", { name: /follow system theme/i }));
+    expect(setThemeMock).toHaveBeenCalledWith("system");
+  });
+
+  it("names the destination language instead of the current locale", () => {
+    open();
+    expect(
+      screen.queryByRole("menuitem", { name: /language: en/i })
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("menuitem", { name: /passa a italiano/i }));
+    expect(toggleLanguageMock).toHaveBeenCalled();
   });
 
   it("the quick language toggle delegates to the shared useLocale", () => {
+    localeState.language = "it";
     open();
-    fireEvent.click(screen.getByRole("menuitem", { name: /language/i }));
+    fireEvent.click(screen.getByRole("menuitem", { name: /switch to english/i }));
     expect(toggleLanguageMock).toHaveBeenCalled();
   });
 

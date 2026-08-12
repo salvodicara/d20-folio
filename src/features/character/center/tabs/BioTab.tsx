@@ -78,12 +78,13 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { PortraitCropModal } from "@/components/shared/PortraitCropModal";
 import { PortraitLightbox } from "@/components/shared/PortraitLightbox";
 import { PortraitEditMenu } from "@/components/shared/PortraitEditMenu";
-import { BookOpen, Camera, Pencil } from "lucide-react";
+import { Camera, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { FolioBookIcon } from "@/components/shared/folio-icons";
 import { Input, Textarea } from "@/components/ui/input";
 import type { CharacterDoc } from "@/types/character";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
@@ -855,7 +856,7 @@ export function BioTab() {
             (rule 3), and it ACTS: one tap flips to edit mode to start writing. */}
         {!isEdit && !hasPersonality && !lore.backstory && !hasAppearance && (
           <RunicEmptyState
-            glyph={BookOpen}
+            glyph={FolioBookIcon}
             size="sm"
             title={t("lore.emptyTitle")}
             blurb={t("lore.emptyBlurb")}

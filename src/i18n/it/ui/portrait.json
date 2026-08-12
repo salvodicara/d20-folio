@@ -2,7 +2,7 @@
   "portrait": {
     "crop": {
       "title": "Imposta Ritratto",
-      "subtitle": "Trascina per riposizionare · Pizzica o scrolla per lo zoom",
+      "subtitle": "Trascina · Pizzica o scorri per zoomare",
       "add": "Aggiungi foto",
       "confirm": "Imposta Ritratto",
       "zoom": "Zoom",
@@ -12,7 +12,11 @@
       "invalidCrop": "Impossibile applicare questo ritaglio. Riprova.",
       "saveError": "Impossibile salvare il ritratto. Controlla la connessione e riprova.",
       "cropperError": "Si è verificato un errore caricando lo strumento di ritaglio.",
-      "eyebrow": "Ritratto"
+      "eyebrow": "Ritratto",
+      "banner": {
+        "eyebrow": "Immagine campagna",
+        "title": "Imposta Immagine"
+      }
     },
     "menu": {
       "edit": "Modifica ritratto",

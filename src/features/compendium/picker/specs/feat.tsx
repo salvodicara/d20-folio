@@ -5,7 +5,7 @@
  * picker simply reads. Facets by category; the mechanics block mirrors features.
  */
 
-import { Award } from "lucide-react";
+import { FolioFeatIcon } from "@/components/shared/folio-icons";
 import { SRD_FEATS } from "@/data/feats";
 import { Icon } from "@/components/ui/icon";
 import { InfoCard } from "@/components/shared/InfoCard";
@@ -34,7 +34,8 @@ function categoryLabel(cat: FeatCategory, t: TFn): string {
 export const featSpec: CompendiumPickerSpec<SrdFeatData> = {
   id: "feat",
   label: (t) => t("feats.feats"),
-  icon: Award,
+  icon: FolioFeatIcon,
+  repeatLeadingInRows: false,
   // The codex verdict — the feat category, in the amethyst "feat" voice (matching
   // the seal + the existing `.uc-seal kind[data-kind="feat"]` pigment).
   verdict: (feat, { t }) => ({
@@ -84,7 +85,11 @@ export const featSpec: CompendiumPickerSpec<SrdFeatData> = {
 
   row: (feat, { t, locale }) => ({
     leading: (
-      <CmpSeal icon={Award} tone="var(--amethyst-300)" toneInk="var(--amethyst-ink)" />
+      <CmpSeal
+        icon={FolioFeatIcon}
+        tone="var(--amethyst-300)"
+        toneInk="var(--amethyst-ink)"
+      />
     ),
     name: featText(feat, "name", locale),
     // The category now reads as the right-aligned verdict chip; the gloss carries
@@ -114,7 +119,7 @@ export const featSpec: CompendiumPickerSpec<SrdFeatData> = {
     return {
       eyebrow: (
         <span className="inline-flex items-center gap-2">
-          <Icon as={Award} size="sm" className="text-accent" decorative />
+          <Icon as={FolioFeatIcon} size="sm" className="text-accent" decorative />
           {categoryLabel(feat.category, t)}
           {feat.repeatable && ` · ${t("feats.repeatable")}`}
         </span>

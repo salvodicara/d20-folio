@@ -1,51 +1,11 @@
 /**
- * SectionPanel — the ONE hub-section chrome for the campaign MANAGE band.
+ * SectionPanel — the campaign workspace's one section anatomy.
  *
- * Replaces the retired all-or-nothing `CollapsibleSection` (which folded the WHOLE
- * section, so a folded Treasury showed NOTHING — bug C). The model is now:
- *
- *   • a FIXED panel — the key at-a-glance signal + the primary actions, ALWAYS
- *     rendered (the `children`); never hidden by a fold;
- *   • an optional DETAIL slot — the bulky secondary list (a ledger, a session list,
- *     older chapters, the note board) — the ONLY thing that collapses. It expands
- *     INLINE in place through the SINGLE `grid-template-rows: 0fr → 1fr` reveal
- *     (`.section-detail-wrap` / `.section-detail`, the app's one height recipe) —
- *     NOT a ResizeObserver `AutoAnimateHeight`. So a section with its own nested
- *     reveal (Sessions' per-row accordion) has ONE animator per gesture instead of
- *     two stacked height animators fighting (bug B — the sticky/janky feel).
- *
- * The fixed panel, the disclosure, and the expandable detail all live INSIDE ONE
- * `.info-card` surface (`.section-card`) — owner: the gilt-knob chevron must sit ON
- * the card, never float in the gap BELOW it. The chevron docks at the card's BOTTOM
- * EDGE (a hairline divider above it, inside the surface) and the detail reveals IN
- * PLACE inside the SAME card (the card grows taller) through the single grid-rows
- * reveal — NOT a separate strip floating beneath the card. A section that has NO
- * `detail` (a static header) instead renders its `children` directly, so it keeps
- * whatever surface they bring (Chronicle's book-spread, DM Tools' card grid) — only
- * the collapsible sections are wrapped in the one section card.
- *
- * The disclosure is a CLEAN, compact CHEVRON expander docked centred at the card
- * bottom (a hairline divider above it) — NOT on the header (B5/D4 — owner: a toggle
- * on the header "is NOT intuitive") and NO LONGER a worded full-width footer pill
- * (owner: those were "not even readable on light/dark theme" — "just an intuitive
- * chevron in the box and expand that"). The header is a static {@link SectionHeader}
- * rubric; its `meta` count/total badge stays visible whether the detail is open or
- * closed (folding never hides signal) and already carries the count, so the chevron
- * shows NO visible label. A down-chevron invites expand; it rotates up when open.
- * The per-section worded `showLabel`/`hideLabel` (kept for i18n) ride as the button's
- * `aria-label` so assistive tech still hears the full intent + count. The control
- * carries `aria-expanded` / `aria-controls` for the detail region. When no `detail`
- * is supplied (an empty ledger, a one-note board) the chevron is absent — an honest
- * static header over the fixed panel.
- *
- * STICKY per campaign (localStorage): the detail's open/closed choice persists per
- * `campaignId × sectionId`, so a folded ledger stays folded on the next visit to
- * THIS campaign without leaking the preference to another. Defaults CLOSED so the
- * panels stay SHORT and the whole campaign reads at a glance (especially the
- * single-column mobile stack); the detail grows on intent.
- *
- * Party is NEVER a SectionPanel (it's the always-open PLAY band); only the MANAGE
- * sections ride this.
+ * The fixed at-a-glance body always renders; only the bulky archive/detail folds.
+ * Creation actions share the trailing header cluster; archive disclosure keeps the
+ * owner-approved gilt knob docked inside the card. The chevron keeps its full bilingual
+ * aria intent and the detail reveals through the single grid-rows animation. Open state remains
+ * sticky per campaign × section; a section without detail has no dishonest toggle.
  */
 
 import { useState, type ReactNode } from "react";
@@ -71,6 +31,7 @@ export function SectionPanel({
   title,
   count,
   meta,
+  headerAction,
   children,
   detail,
   showLabel,
@@ -90,6 +51,8 @@ export function SectionPanel({
   /** A NON-count at-a-glance signal kept visible whether the detail is open or closed
    *  (a gold total like "145 gp", a status badge). Rendered far-right. */
   meta?: ReactNode;
+  /** Primary section action, seated consistently in the rubric's trailing controls. */
+  headerAction?: ReactNode;
   /** The FIXED panel — the key signal + primary actions, always rendered. */
   children: ReactNode;
   /** The optional collapsible detail (the bulky secondary list). Omit it to render a
@@ -144,21 +107,29 @@ export function SectionPanel({
     });
   }
 
+  const headerControls =
+    meta || headerAction ? (
+      <span className="section-head-controls">
+        {meta}
+        {headerAction}
+      </span>
+    ) : undefined;
+
   return (
     <section aria-labelledby={headId} className={cn("section-panel", className)}>
-      <SectionHeader as="h2" tight id={headId} title={title} count={count} meta={meta} />
+      <SectionHeader
+        as="h2"
+        tight
+        id={headId}
+        title={title}
+        count={count}
+        meta={headerControls}
+      />
       {detail ? (
-        // ONE card encloses the fixed panel + the disclosure + the expandable detail
-        // (owner: the gilt-knob chevron sits ON the card, never floats below it). The
-        // chevron docks at the card's BOTTOM EDGE; the detail reveals IN PLACE inside
-        // the SAME card (the card grows taller) via the single grid-rows reveal. The
-        // canonical `.info-card` surface comes from the shared <InfoCard>.
+        // ONE card encloses the fixed panel + expandable detail. The header owns the
+        // controls; the detail still grows this same surface in place.
         <InfoCard className="section-card">
           {children}
-          {/* The chevron disclosure (B5/D4): a compact, centred, ≥44px tap-target
-              chevron docked at the card's bottom edge, above the detail it reveals — no
-              visible label (the header meta badge carries the count); the worded
-              showLabel/hideLabel ride as the aria-label. */}
           <button
             type="button"
             className="section-disclosure"

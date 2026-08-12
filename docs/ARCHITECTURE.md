@@ -411,6 +411,14 @@ no private round bump; the per-turn economy resets at **turn-START**, when the s
 on your PC, not on End Turn — so it is always fresh at the start of your turn even if you never formally
 end it. See the combat-subdoc + campaign section below.) The economy strip is a **budget meter derived
 from the plan, not a commit queue.**
+A turn's transient economy is bound to its character inside `combatStore` itself. The binding
+deliberately survives cockpit route unmounts, so navigating sheet → campaign → the same sheet
+preserves every spent action/bonus/reaction until the shared turn pointer genuinely returns to that
+PC (or solo End Turn runs). A different character id still resets the ledger before hydration. The
+store retains both the last own-turn identity and whether the pointer was observed away: a same-turn
+remount preserves, an observed away→own transition resets, and a later own-turn key catches an entire
+cycle missed while unmounted. The ledger remains client-only: route survival adds no listener and no
+per-action Firestore write.
 A committed action that ESTABLISHES a while-active state (Rage, Bladesong — its resolved action
 carries an inferred `activatesKey`, see `docs/MECHANICS.md` "Activation seam") also flips that key
 into `session.activeFeatures` — the rail chip lights automatically, the state's grants (Rage's

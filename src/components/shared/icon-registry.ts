@@ -2,47 +2,47 @@
  * Folio icon registry — the ONE icon-authoring vocabulary (non-component module so
  * the `IconPicker` component file can stay fast-refresh-clean).
  *
- * A FIXED subset of lucide glyphs is the only authoring + rendering vocabulary for
- * any user-chosen icon (combat-algorithm steps AND custom features). The engine
+ * A FIXED subset of filled fantasy glyphs is the only authoring + rendering vocabulary
+ * for any user-chosen icon (combat-algorithm steps AND custom features). The engine
  * field stays a string, but we never paint a raw OS emoji: every stored value
  * resolves to one of these glyphs (legacy emoji seeds + the stable ids both map
  * here, so old data renders without a migration; unknown → the default burst).
  */
 
+import type { ComponentType, SVGProps } from "react";
 import {
-  Music,
-  HeartPulse,
-  Swords,
-  Shield,
-  Zap,
-  Sparkles,
-  Wind,
-  Target,
-  Skull,
-  ListChecks,
-  type LucideIcon,
-} from "lucide-react";
+  ClassSorcererIcon,
+  FolioBurstIcon,
+  FolioChecklistIcon,
+  FolioCombatIcon,
+  FolioControlIcon,
+  FolioDangerIcon,
+  FolioDefendIcon,
+  FolioFocusIcon,
+  FolioMoveIcon,
+  FolioSupportIcon,
+} from "./folio-icons";
 
 export interface AlgoIcon {
   /** Stable key + the string persisted into the `emoji` field. */
   id: string;
-  glyph: LucideIcon;
+  glyph: ComponentType<SVGProps<SVGSVGElement>>;
 }
 
-/** `burst` (Zap) is the neutral fallback + new-step / new-feature seed. */
-export const DEFAULT_ALGO_ICON: AlgoIcon = { id: "burst", glyph: Zap };
+/** `burst` is the neutral fallback + new-step / new-feature seed. */
+export const DEFAULT_ALGO_ICON: AlgoIcon = { id: "burst", glyph: FolioBurstIcon };
 
 export const ALGO_ICONS: readonly AlgoIcon[] = [
-  { id: "control", glyph: Music },
-  { id: "support", glyph: HeartPulse },
-  { id: "melee", glyph: Swords },
-  { id: "defend", glyph: Shield },
+  { id: "control", glyph: FolioControlIcon },
+  { id: "support", glyph: FolioSupportIcon },
+  { id: "melee", glyph: FolioCombatIcon },
+  { id: "defend", glyph: FolioDefendIcon },
   DEFAULT_ALGO_ICON,
-  { id: "magic", glyph: Sparkles },
-  { id: "move", glyph: Wind },
-  { id: "focus", glyph: Target },
-  { id: "danger", glyph: Skull },
-  { id: "checklist", glyph: ListChecks },
+  { id: "magic", glyph: ClassSorcererIcon },
+  { id: "move", glyph: FolioMoveIcon },
+  { id: "focus", glyph: FolioFocusIcon },
+  { id: "danger", glyph: FolioDangerIcon },
+  { id: "checklist", glyph: FolioChecklistIcon },
 ] as const;
 
 const LEGACY_EMOJI_MAP: Record<string, string> = {

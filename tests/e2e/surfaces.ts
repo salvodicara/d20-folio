@@ -18,6 +18,8 @@
  */
 
 import { expect, type Page } from "@playwright/test";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { SURFACE_ROUTES, type SurfaceRoute } from "./surface-manifest";
 import { firstWord, teamFixtureName } from "./team-fixture";
 
@@ -28,6 +30,10 @@ export type Locale = "en" | "it";
 /** Desktop = 1440w (design target); mobile = 390w (iPhone-class). */
 export const DESKTOP = { width: 1440, height: 900 } as const;
 export const MOBILE = { width: 390, height: 844 } as const;
+const VISUAL_FIXTURE = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "fixtures/portrait.png"
+);
 
 /**
  * Seed the uiStore persist key BEFORE the app boots so the first paint is
@@ -280,8 +286,8 @@ export const OVERLAY_VARIANTS = [
   "it-dark-mobile",
 ];
 
-/** Overlays whose trigger lives in the desktop topbar (account menu): the two
- *  desktop lenses (EN + IT) + a dark-desktop lens. */
+/** Representative subset for overlays whose trigger genuinely exists only in
+ * the desktop construction (for example the wide sheet History action). */
 export const DESKTOP_OVERLAY_VARIANTS = [
   "en-light-desktop",
   "it-light-desktop",
@@ -401,6 +407,44 @@ export function surfaceCaptureFullPage(surface: Surface): boolean {
 
 type SurfaceRuntime = Omit<Surface, "slug" | "route">;
 
+/** Swap the dev-bypass roster to its production-shaped gallery and wait for the
+ * lazy scenario corpus to replace the single mock tile. */
+async function openRosterGallery(page: Page): Promise<void> {
+  await page.evaluate(() => window.localStorage.setItem("d20-dev-roster", "1"));
+  await page.reload();
+  await page.waitForFunction(() => document.querySelectorAll(".ch-card").length >= 7);
+}
+
+/** Expand the first shared reading card and prove its inline detail painted. */
+async function openFirstUniversalCard(page: Page): Promise<void> {
+  const card = page.locator(".uc").first();
+  await card.locator(".uc-chevron").click();
+  await expect(card).toHaveClass(/is-open/);
+}
+
+/** Drive the seeded Bard 9→10 journey through its two required spell picks.
+ * The helper stops on the optional swap chapter so Spells, Swap, Review and
+ * completion surfaces all exercise one real journey instead of bespoke state. */
+async function advanceBardToSwap(page: Page): Promise<void> {
+  const next = page.locator(".wiz-pager-btn.next");
+  const learnFirst = async () => {
+    const row = page.locator(".wiz-row").first();
+    await row.waitFor({ timeout: 5000 });
+    await row.click();
+    await page.locator(".wiz-entry[data-open] .wiz-read-act button").first().click();
+  };
+
+  await next.click(); // hp → spells
+  await learnFirst();
+  const cantripTab = page.locator(".wiz-fork-tab").last();
+  if (await cantripTab.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await cantripTab.click();
+    await learnFirst();
+  }
+  await next.click(); // spells → swap
+  await page.locator(".wiz-pick").first().waitFor({ timeout: 5000 });
+}
+
 const RUNTIME: Record<string, SurfaceRuntime> = {
   // ─── Pre-auth ───────────────────────────────────────────────────────────────
   login: {
@@ -414,14 +458,89 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   // Roster: anchor on the seeded character card (proper noun, never translated)
   // rather than the EN "Your characters" heading — proves the list resolved too.
   home: { edit: false, ready: readyByName },
+  "roster-gallery": {
+    edit: false,
+    ready: readyByName,
+    prepare: openRosterGallery,
+  },
+  "roster-selection": {
+    edit: false,
+    ready: readyByName,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    prepare: async (page) => {
+      await openRosterGallery(page);
+      await page.getByRole("button", { name: /^select$|^seleziona$/i }).click();
+      await page.locator(".roster-bulkbar").waitFor({ timeout: 5000 });
+      await page.locator(".ch-open").first().click();
+      await expect(page.locator(".ch-card").first()).toHaveAttribute(
+        "data-selected",
+        "true"
+      );
+    },
+  },
+  "roster-no-results": {
+    edit: false,
+    ready: readyByName,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    prepare: async (page) => {
+      await openRosterGallery(page);
+      const search = page.locator(".roster-toolbar-search input");
+      await search.fill("no-character-can-match-this");
+      await readyByEmptyState(page);
+    },
+  },
+  "roster-empty": {
+    edit: false,
+    ready: readyByName,
+    prepare: async (page) => {
+      await page.evaluate(() => window.localStorage.setItem("d20-dev-empty-roster", "1"));
+      await page.reload();
+      await readyByEmptyState(page);
+    },
+  },
   character: { edit: false, ready: readyByName },
   "character-bio": { edit: false, ready: readyByName },
   "character-features": { edit: false, ready: readyByName },
   "character-inventory": { edit: false, ready: readyByName },
   "character-spells": { edit: false, ready: readyByName },
+  "character-feature-expanded": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    ready: readyByName,
+    prepare: openFirstUniversalCard,
+  },
+  "character-item-expanded": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    ready: readyByName,
+    prepare: openFirstUniversalCard,
+  },
+  "character-spell-expanded": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    ready: readyByName,
+    prepare: openFirstUniversalCard,
+  },
   // Cockpit in EDIT mode (#60): seeds sheetMode "edit" so the design-source amber
   // frame + the textual "Editing" banner are present for the axe scan.
   "character-edit": { edit: true, ready: readyByName },
+  "character-portrait-crop": {
+    edit: true,
+    variants: OVERLAY_VARIANTS,
+    ready: readyByName,
+    prepare: async (page) => {
+      await page
+        .locator('#main input[type="file"][accept="image/*"]')
+        .first()
+        .setInputFiles(VISUAL_FIXTURE);
+      await page.locator(".reactEasyCrop_Container").waitFor({ timeout: 10000 });
+    },
+  },
   "character-spell-add": {
     edit: true,
     variants: OVERLAY_VARIANTS,
@@ -750,6 +869,19 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   // The level-up wizard route (wizard F). The eyebrow carries the character's
   // proper-noun name, so readyByName proves the chrome painted.
   "level-up": { edit: false, ready: readyByName },
+  // The low-frequency new-class catalogue, explicitly expanded. It is an inline
+  // disclosure state, not an overlay, so the capture remains a full page.
+  "level-up-multiclass": {
+    edit: false,
+    ready: readyByName,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    prepare: async (page) => {
+      const disclosure = page.locator(".lvl-multiclass-options");
+      await disclosure.locator("summary").click();
+      await expect(disclosure).toHaveAttribute("open", "", { timeout: 5000 });
+    },
+  },
   "level-up-boon": {
     edit: false,
     ready: readyText(/Sable/),
@@ -800,33 +932,42 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       await page.waitForTimeout(250);
     },
   },
+  "level-up-spells": {
+    edit: false,
+    ready: readyByName,
+    prepare: async (page) => {
+      await page.locator(".wiz-pager-btn.next").click(); // hp → spells
+      await page.waitForTimeout(250);
+    },
+  },
   // B5 — the spell-swap step: walk hp → spells (learn the required picks via
   // the read-then-Learn list + slot tabs) → swap. Locale-invariant locators.
   "level-up-swap": {
     edit: false,
     ready: readyByName,
     prepare: async (page) => {
-      const next = page.locator(".wiz-pager-btn.next");
-      const learnFirst = async () => {
-        const row = page.locator(".wiz-row").first();
-        if (await row.isVisible({ timeout: 4000 }).catch(() => false)) {
-          await row.click().catch(() => {});
-          await page
-            .locator(".wiz-entry[data-open] .wiz-read-act button")
-            .first()
-            .click({ timeout: 4000 })
-            .catch(() => {});
-        }
-      };
-      await next.click().catch(() => {}); // hp → spells
-      await learnFirst();
-      const cantripTab = page.locator(".wiz-fork-tab").last();
-      if (await cantripTab.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await cantripTab.click().catch(() => {});
-        await learnFirst();
-      }
-      await next.click().catch(() => {}); // spells → swap
+      await advanceBardToSwap(page);
       await page.waitForTimeout(250);
+    },
+  },
+  "level-up-review": {
+    edit: false,
+    ready: readyByName,
+    prepare: async (page) => {
+      await advanceBardToSwap(page);
+      await page.locator(".wiz-pager-btn.next").click(); // swap → review (skip)
+      await page.locator(".wiz-summary").waitFor({ timeout: 5000 });
+    },
+  },
+  "level-up-complete": {
+    edit: false,
+    ready: readyByName,
+    prepare: async (page) => {
+      await advanceBardToSwap(page);
+      const next = page.locator(".wiz-pager-btn.next");
+      await next.click(); // swap → review
+      await next.click(); // commit
+      await page.locator(".wiz-done").waitFor({ timeout: 10000 });
     },
   },
   // Campaigns realm: under dev-bypass the list is now populated with the seeded
@@ -870,18 +1011,25 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   // campaign resolves — so it is both locale-invariant and proof the hub body
   // painted (not the loading spinner).
   "campaign-hub": { edit: false, ready: readyText(/starless keep/i) },
+  "campaign-banner-crop": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    ready: readyText(/starless keep/i),
+    prepare: async (page) => {
+      await page
+        .locator('input[type="file"][accept="image/*"]')
+        .first()
+        .setInputFiles(VISUAL_FIXTURE);
+      await page.locator(".reactEasyCrop_Container").waitFor({ timeout: 10000 });
+    },
+  },
   "campaign-hub-dm-tools": {
     edit: false,
     variants: OVERLAY_VARIANTS,
     overlay: false,
     ready: readyText(/starless keep/i),
     prepare: async (page) => {
-      const disclosure = page
-        .getByRole("button", {
-          name: /show dm tools|mostra gli strumenti del dm/i,
-        })
-        .first();
-      await disclosure.click();
+      await page.getByRole("tab", { name: /^(dm tools|strumenti del dm)$/i }).click();
       await page
         .getByRole("button", { name: /delete campaign|elimina campagna/i })
         .waitFor({ timeout: 5000 });
@@ -893,6 +1041,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     overlay: false,
     ready: readyText(/starless keep/i),
     prepare: async (page) => {
+      await page.getByRole("tab", { name: /^journal$|^diario$/i }).click();
       await page
         .getByRole("button", { name: /^edit$|^modifica$/i })
         .first()
@@ -907,16 +1056,6 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     ready: readyText(/starless keep/i),
     prepare: async (page) => {
       await page
-        .getByRole("button", {
-          name: /show session details|mostra i dettagli della sessione/i,
-        })
-        .first()
-        .click();
-      await page
-        .getByRole("button", { name: /edit summary|modifica riassunto/i })
-        .first()
-        .click();
-      await page
         .getByRole("textbox", { name: /session summary|riassunto della sessione/i })
         .waitFor({ timeout: 5000 });
     },
@@ -927,6 +1066,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     overlay: false,
     ready: readyText(/starless keep/i),
     prepare: async (page) => {
+      await page.getByRole("tab", { name: /^journal$|^diario$/i }).click();
       await page
         .getByRole("button", { name: /edit note|modifica nota/i })
         .first()
@@ -943,6 +1083,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     overlay: false,
     ready: readyText(/starless keep/i),
     prepare: async (page) => {
+      await page.getByRole("tab", { name: /^resources$|^risorse$/i }).click();
       await page
         .getByRole("button", { name: /^add coins$|^aggiungi monete$/i })
         .first()
@@ -1123,6 +1264,19 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   // every other surface (owner 2026-07-07). The realm bottom-nav IS present, so it is
   // NOT shellless and the m-nav assertion applies (see src/app/router.tsx).
   "legal-page": { edit: false, ready: readyByH1 },
+  "legal-page-expanded": {
+    edit: false,
+    ready: readyByH1,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    prepare: async (page) => {
+      const disclosures = page.locator(".colophon-disclosure");
+      for (const disclosure of await disclosures.all()) {
+        await disclosure.locator("summary").click();
+        await expect(disclosure).toHaveAttribute("open", "", { timeout: 5000 });
+      }
+    },
+  },
   // The PUBLIC share-link sheet — the read-only cockpit as a stranger with no
   // account sees it. Same `readyByName` anchor as the owner cockpit (the mock's
   // proper noun, never translated): the name present ⇒ the sheet body painted, so
@@ -1162,9 +1316,31 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     },
   },
   "admin-page": { edit: false, ready: readyByH1 },
+  // Admin's resting ledger deliberately hides dates, character drill-down and
+  // privileged actions. Capture that operational state too: auditing only the
+  // collapsed page would miss the highest-consequence part of the surface.
+  "admin-user-expanded": {
+    edit: false,
+    variants: OVERLAY_VARIANTS,
+    overlay: false,
+    ready: readyByH1,
+    prepare: async (page) => {
+      const userDisclosure = page.locator('main button[aria-expanded="false"]').first();
+      if (await userDisclosure.isVisible({ timeout: 4000 }).catch(() => false)) {
+        await userDisclosure.click();
+        await page
+          .locator('main button[aria-expanded="true"]')
+          .first()
+          .waitFor({ timeout: 5000 });
+      }
+    },
+  },
   "account-menu": {
     edit: false,
-    variants: DESKTOP_OVERLAY_VARIANTS,
+    // The account avatar persists on desktop AND mobile (DESIGN.md's account
+    // ring). Treating this as desktop-only hid the phone's top-right anchoring
+    // and overflow path from the visual/a11y/i18n census.
+    variants: OVERLAY_VARIANTS,
     ready: readyByName,
     prepare: async (page) => {
       const trigger = page.getByRole("button", { name: /account/i }).first();
@@ -1186,7 +1362,9 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     variants: OVERLAY_VARIANTS,
     ready: readyByName,
     prepare: async (page) => {
-      const trigger = page.getByRole("button", { name: /more actions/i }).first();
+      const trigger = page
+        .getByRole("button", { name: /more actions|altre azioni/i })
+        .first();
       if (await trigger.isVisible({ timeout: 4000 }).catch(() => false)) {
         await trigger.click().catch(() => {});
         await page
@@ -1197,20 +1375,23 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       }
     },
   },
-  // OWN-37 — the in-app bug/feature reporter, reached by typing "bug" in the "Search
-  // the Folio" palette. Locks the OPEN reporter (its on-rails pickers + fields) as
-  // axe-covered in dark + light. The DETAILS textarea is unique to this dialog (the
-  // palette has none), so it's a locale-robust "the reporter painted" signal.
+  // OWN-37 — the in-app bug/feature reporter, reached through the account menu.
+  // This is the visible, locale-stable product path (the palette's search terms are
+  // intentionally localized). Locks the OPEN reporter as axe-covered in dark +
+  // light. The DETAILS textarea is unique to this dialog, so it remains a robust
+  // "the reporter painted" signal.
   "report-dialog": {
     edit: false,
     variants: OVERLAY_VARIANTS,
     ready: readyByName,
     prepare: async (page) => {
-      const trigger = page.getByRole("button", { name: /search the folio/i }).first();
+      const trigger = page.getByRole("button", { name: /account/i }).first();
       if (await trigger.isVisible({ timeout: 4000 }).catch(() => false)) {
         await trigger.click().catch(() => {});
-        await page.keyboard.type("bug");
-        await page.keyboard.press("Enter").catch(() => {});
+        const report = page
+          .getByRole("menuitem", { name: /report a bug|segnala un problema/i })
+          .first();
+        await report.click().catch(() => {});
         await page
           .locator('[role="dialog"] textarea')
           .first()

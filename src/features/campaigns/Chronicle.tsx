@@ -144,7 +144,6 @@ export function Chronicle({
   return (
     <SectionPanel
       sectionId="chronicle"
-      className="lg:col-span-2"
       title={t("campaignHub.chronicle")}
       count={hasText ? chapters.length : undefined}
     >

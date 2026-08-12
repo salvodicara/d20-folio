@@ -2,7 +2,7 @@
   "notFound": {
     "eyebrow": "404",
     "title": "Questa pagina è fuori mappa",
-    "blurb": "La pagina che cerchi non esiste, oppure il personaggio a cui puntava non è più nel tuo folio.",
+    "blurb": "L'indirizzo potrebbe essere errato, oppure la pagina potrebbe essere stata spostata. I tuoi personaggi sono al sicuro nel folio.",
     "back": "Torna ai tuoi personaggi"
   }
 }

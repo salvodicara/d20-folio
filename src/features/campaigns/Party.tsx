@@ -789,7 +789,7 @@ function CombatLayer({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="encounter-command-stack flex flex-col gap-4">
       {/* FIX 1 — the DM control banner heads the combat layer too: identity (every
           viewer) + the DM-only assembly controls, ONE tight row: the Add-monster trigger
           and (during the gathering phase) Begin-turns sit as a right-aligned pair on the
@@ -906,7 +906,7 @@ function CombatLayer({
         />
       )}
 
-      <ul ref={listRef} className="flex flex-col gap-2">
+      <ul ref={listRef} className="encounter-turn-order flex flex-col gap-2">
         {displayRows.map((row) => {
           if (row.kind === "pc") {
             const uid = row.memberUid;

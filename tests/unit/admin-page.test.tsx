@@ -27,6 +27,7 @@ const {
   listBugReportsMock,
   purgeBugReportsMock,
   getClosedIssueNumbersMock,
+  loadExampleMock,
 } = vi.hoisted(() => ({
   navigateMock: vi.fn(),
   isAdminState: { value: true },
@@ -50,6 +51,7 @@ const {
   getClosedIssueNumbersMock: vi.fn<() => Promise<ReadonlySet<number> | null>>(() =>
     Promise.resolve(new Set<number>())
   ),
+  loadExampleMock: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock("react-router", async (importOriginal) => {
@@ -72,6 +74,9 @@ vi.mock("@/hooks/useIsAdmin", () => ({ useIsAdmin: () => isAdminState.value }));
 vi.mock("@/stores/authStore", () => ({
   useAuthStore: (selector: (s: Record<string, unknown>) => unknown) =>
     selector({ user: authState.user }),
+}));
+vi.mock("@/features/account/use-load-example", () => ({
+  useLoadExample: () => loadExampleMock,
 }));
 
 import { AdminPage } from "@/features/account/AdminPage";
@@ -146,6 +151,7 @@ beforeEach(() => {
   getClosedIssueNumbersMock.mockReset().mockResolvedValue(new Set<number>());
   isAdminState.value = true;
   authState.user = { uid: "admin-uid", email: "admin@example.com" };
+  loadExampleMock.mockClear();
 });
 
 /** Three reports: an OPEN issue (#10), a CLOSED issue (#11), a STRANDED error (no issue). */
@@ -238,13 +244,23 @@ describe("AdminPage", () => {
     expect(screen.getByText("eve@example.com")).toBeInTheDocument();
   });
 
+  it("keeps the example-character smoke test in low-frequency admin tools", () => {
+    renderPage();
+    const action = screen.getByRole("button", { name: /load example character/i });
+    fireEvent.click(action);
+    expect(loadExampleMock).toHaveBeenCalledTimes(1);
+  });
+
   it("shows each user's per-user metrics (characters · campaigns · DM)", async () => {
     renderPage();
     // Bob (u2): 5 characters, member of both campaigns, DMs one. The aria-labels
     // carry the full reading; the visible chips are abbreviated.
     const characterMetric = await screen.findByLabelText("Characters: 5");
     expect(characterMetric).toBeInTheDocument();
-    expect(characterMetric.querySelector(".lucide-scroll-text")).not.toBeNull();
+    expect(characterMetric.querySelector("svg")).toHaveAttribute(
+      "viewBox",
+      "0 0 512 512"
+    );
     expect(screen.getByLabelText("Campaigns: 2")).toBeInTheDocument();
     // Two DMs in the fixture (the admin and Bob); Eve DMs none, so no DM chip there.
     expect(screen.getAllByLabelText(/dungeon master of 1/i)).toHaveLength(2);

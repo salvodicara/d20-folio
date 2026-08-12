@@ -20,7 +20,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { primaryClassId } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
-import { Sparkles, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -31,6 +31,7 @@ import { Icon } from "@/components/ui/icon";
 import { CollapsibleSearch } from "@/components/shared/CollapsibleSearch";
 import { Button } from "@/components/ui/button";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
+import { FolioSpellIcon } from "@/components/shared/folio-icons";
 import { WizardSpellChoices } from "./WizardSpellChoices";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
@@ -1057,7 +1058,7 @@ export function SpellsTab() {
 
       {view.spellCount === 0 ? (
         <RunicEmptyState
-          glyph={Sparkles}
+          glyph={FolioSpellIcon}
           eyebrow={t("spells.spellbook")}
           title={t("spells.emptyTitle")}
           blurb={t("spells.emptyBlurb")}
@@ -1072,7 +1073,7 @@ export function SpellsTab() {
         />
       ) : filteredLevels.length === 0 ? (
         <RunicEmptyState
-          glyph={Sparkles}
+          glyph={FolioSpellIcon}
           size="sm"
           title={t("spells.noSpellsMatch")}
           blurb={t("spells.noSpellsFilter")}

@@ -8,7 +8,7 @@
 > - **The open gap frontier** (per-seam, per-entity) → `docs/AUTOMATION_BACKLOG.md`.
 > - **How it works today** (incl. the architecture invariants the R1–R8 campaign locked in) → `docs/ARCHITECTURE.md`.
 
-## Active epic — UI/UX perfection: the open-source D&D Beyond alternative (owner-ratified 2026-08-04)
+## Closure gate — UI/UX perfection: the open-source D&D Beyond alternative (owner-ratified 2026-08-04)
 
 The owner has reopened the WHOLE product experience for a fresh, evidence-led redesign campaign:
 the shipped app is a strong baseline, but no prior attempt to “elevate” it is authoritative. Audit
@@ -31,6 +31,46 @@ The campaign's first-class workstreams are:
   accessibility or offline discipline;
 - quick dark/light previews before any broad design-direction implementation, then one bounded
   surface wave at a time behind golden rule 25's blocking screenshot approval.
+
+**First-census ledger — complete, but not epic closure.** The shared manifest now declares 90 named
+surfaces plus 10 Guided-step states (100 total). Every family survived one holistic pass, but the
+owner's continuation mandate explicitly reopened refinement: census coverage is evidence, not a
+claim of perfection or authorization to integrate into `main`.
+
+| Surface family                                    | Status       | Remaining closure work                                                                                                                                                     |
+| ------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Global shell · login · account · settings · admin | **CENSUSED** | Login, topbar/nav, command palette, account menu, settings, shortcuts, reporter and Admin resting/expanded states now form one verified shell journey.                     |
+| Roster                                            | **CENSUSED** | One-card, gallery, overflow, empty, no-results and selected journeys now share a truthful responsive grammar; shared loader/error states remain canonical.                 |
+| Creation                                          | **CENSUSED** | Quick Start is the progressive fold of Guided; all ten chapters, dense choice steps and the final review now survive one coherent responsive journey.                      |
+| Level-up                                          | **CENSUSED** | HP/class fork, subclass, boon, mixed choices, spells, optional swap, editable review/commit and persistent completion now form one verified journey.                       |
+| Character cockpit                                 | **CENSUSED** | Play/Bio/Features/Inventory/Spells, reading states, management dialogs and persistent rails now share one verified grammar without redundant marks.                        |
+| Campaigns · encounter · member sheet              | **CENSUSED** | Realm list, create/join, hub work states, DM disclosure, encounter/picker/statblock and read-only member cockpit now survive one verified end-to-end journey.              |
+| Compendium                                        | **CENSUSED** | Every wing now shares one browse/read anatomy; only per-entry facts earn row marks, monster first-glance mechanics are restored, and item art remains coherently all-none. |
+| Public share · legal · 404 · error recovery       | **CENSUSED** | Public/dead links, truthful 404 copy, progressive legal registers and both crash nets now share one verified recovery grammar.                                             |
+| Shared primitives · theme · responsive · motion   | **CENSUSED** | Both themes, responsive families, focus/motion laws, touch targets and content-sized/tall modal tiers now converge through the shared primitives.                          |
+
+**Second-pass refinement ledger — IMPLEMENTATION COMPLETE (2026-08-12):** recognition/semantics,
+cross-surface high-frequency task efficiency, content density/copy, edge-state predictability and
+dark/light optical convergence have all completed their second pass. The item resolver now carries
+one filled fantasy object-noun family across weapons, armor, tools, gear, packs and magic items while
+standard action verbs remain Lucide; campaign workspace switches begin at the selected task's readable
+boundary without losing mounted drafts; account preference actions close consistently; the unfinished
+turn ledger survives route remounts. The owner-review checkpoint contains 26 refreshed EN/IT ×
+dark/light × desktop/mobile captures across the cockpit, dense roster, Compendium item reading, live
+session editing, DM tools and public sheet. No `main` integration until golden rule 25's explicit
+owner approval.
+
+**Stability checkpoint (2026-08-12):** an unfinished encounter turn now survives the real
+sheet → campaign → same-sheet round trip. The per-turn ledger binds to the character in
+`combatStore`, not to a remounting provider ref, so returning to the same hero reconciles only
+round/initiative and never silently re-arms a spent action; switching heroes and genuine turn
+boundaries still reset it. A focused regression pins the navigation-remount case with no new
+listener or per-action write.
+
+**Integration watch (2026-08-05):** `origin/main` now carries the parallel test-estate convergence
+wave (duplicate retirement, settled-box sharing, mobile gates and race fixes). The UI epic remains
+isolated; its final rebase must preserve those new test owners and reconcile this branch's surface
+manifest/harness edits against them before any integration decision.
 
 **Wave 1 direction approved (owner, 2026-08-04):** **Shaded Scriptorium** replaces the washed
 golden-hour light field. The same daylight scenes now frame a neutral stone/linen work plane in
@@ -179,13 +219,31 @@ visual harness also fixed an English-only palette trigger that had silently miss
 overlay. Verification: command-palette screenshots 3/3 across EN/IT, light/dark and desktop/mobile;
 focused shell tests 36/36; targeted axe 2/2, locale sweep 2/2, mobile layout 1/1; typecheck + targeted
 lint green.
-**Wave 16 weapon-family grammar corrected (2026-08-05):** the existing Weapon Mastery re-picker is
-the real-size acceptance surface, but subtype specificity is no longer the objective. Glaive reuses
-Sword; dart and javelin reuse BowArrow; spear, pike, lance, and trident share Lorc's Barbed Spear
-through the single item resolver, removing the misleading Pickaxe collision. The smaller vocabulary
-is faster to learn, remains labelled and legible at 12–16px, and keeps Game Icons limited to proven
-semantic gaps. EN/IT legal attribution names the three vendored glyphs; unit invariants pin every
-family and keep trident distinct from the war pick.
+**Wave 16 weapon-family grammar corrected (2026-08-05, reopened after owner review):** the first
+pass fixed the spear family but left several category signs naming the wrong object, then mixed
+Lucide outline signs with filled fantasy silhouettes in the same list. The Sling asset also collapsed
+into a fish-like spiral at inventory size. The single resolver now gives every weapon noun one filled,
+monochrome fantasy grammar while retaining Lucide outline icons for actions and controls. Ordinary
+and great swords share Broadsword; axes and hammers use matching filled signs; sickle, staff, club,
+mace, flail, war-pick, spear, bow, crossbow, long-gun, pistol, slingshot and whip retain recognizable
+family silhouettes; glaive shares Broadsword, halberd shares Hatchet, dart/blowgun share Pocket Bow,
+and javelin shares Spear. Exact Game Icons geometry stays behind the resolver, with complete EN/IT
+CC BY 3.0 attribution. Contextual compendium, creation and inventory screenshots remain the
+acceptance gate.
+**Wave 16b product-wide icon identity (2026-08-05):** owner review broadened fantasy pictograms from
+an item-gap exception into the app's domain-noun identity. The first coherent spine now replaces
+mixed outline nouns across realm navigation, cockpit tabs and every Compendium kind with one filled,
+monochrome Game Icons vocabulary. Shared meanings reuse shared signs—Spell Book, Backpack, Crossed
+Swords and Scroll Quill—while standard action/control verbs stay Lucide for familiarity. The work
+uses the existing realm, tab and spec registries plus the unchanged `Icon` atom; no runtime icon
+dependency or mega-registry was added. Ancestry, condition and resource families remain the next
+semantic-review waves rather than inheriting decorative guesses.
+**Wave 16c class identity vocabulary (2026-08-05):** the creation class gallery now resolves every
+SRD/pack class through one filled fantasy archetype family instead of mixing Lucide music, sun, leaf,
+hand, scales, reticle, mask, wand, eye, book and cog outlines. Barbarian, lyre, prayer, oak leaf,
+crossed swords, meditation, winged shield, bow, rogue, magic swirl, warlock eye, spell book and anvil
+remain individually literal at 20px; the unknown-class fallback deliberately keeps the standard
+question-shield state rather than pretending to know an archetype.
 **Owner visual gate (2026-08-04):** Waves 11–16 are approved from the delivered contextual
 before/after comparisons. The approval covers the semantic icon/choice changes shown there; it does
 not close the broader whole-app UI/UX epic or pre-approve the header-ornament direction below.
@@ -279,6 +337,213 @@ Protection, Club, Plate Armor and Acid, all under the 45 KB detail budget; these
 dormant until the corpus closes. Item art stays outside first-install precache and enters a bounded
 one-year CacheFirst cache only after inspection. Pending owner screenshot approval for the editorial
 anatomy and art direction before broad corpus generation.
+**Wave 25 account-menu predictability (2026-08-05):** the two fast preference accelerators no
+longer label their current state while silently applying another. Theme now names and pictures the
+next explicit destination across Dark → Light → System, and Language names the destination locale
+in its own language. The full Settings page remains the familiar direct chooser; no submenu or
+parallel preference state was introduced. The account overlay also joins the mobile screenshot
+lens: its trigger persists in the phone topbar, so classifying it desktop-only had hidden its most
+constrained anchoring path from the shared visual/a11y/i18n census. The same shell/account pass
+removes the admin-only example-character smoke test from the roster masthead: the daily path is now
+the predictable Import + Create pair at every width, while the unchanged utility lives in a labelled
+Tools section inside the role-gated Admin console.
+**Wave 26 Quick Start information economy (2026-08-05):** the existing progressive-disclosure
+creation path now exposes its whole-build Randomize action beside the always-visible quick controls
+instead of hiding it inside the already-complete Class chapter. When the desktop recap rail collapses
+into normal flow below 900px, its repeated choice ledger disappears while the live character preview
+and unresolved-requirement guidance remain. The desktop sticky ledger still provides useful
+orientation and chapter jumps; mobile no longer rereads the same nine decisions twice. No creation
+state, validation, confirmation or Guided flow changed.
+**Wave 27 wordmark material convergence (2026-08-05):** the login hero no longer gives “d20” a
+gradient-clipped text material while persistent chrome uses solid gilt. One theme-safe gold ink now
+carries the wordmark everywhere; the faceted d20 mark and scene retain the dimensional metal. This
+removes a purely decorative anti-pattern and simplifies the shared brand recipe without altering
+layout, typography, copy or authentication.
+**Wave 28 level-up multiclass disclosure (2026-08-05):** the HP step keeps owned-class advancement
+direct and preselected, but no longer expands every RAW-legal new class through the routine path.
+One native “Explore multiclass options (N)” disclosure contains the existing new-class plaques and
+their filtered-prerequisite explanation; choosing a new class keeps that branch open. Engine math,
+selection state, HP morphing and the forward gate remain unchanged.
+The collapsed routine state and expanded multiclass catalogue are separate first-class visual,
+responsive, a11y and locale surfaces; coverage can no longer infer one from the other.
+
+**Wave 29 public trust + recovery (2026-08-05):** the account-less and failure family now speaks
+one truthful visual language. The generic 404 no longer speculates about a deleted character (the
+revoked share link already owns that exact state), crash copy promises only already-saved data, and
+the shell-less root fallback now keeps the active Scriptorium scene instead of collapsing to a flat
+theme field. The legal colophon keeps attribution and licenses immediately visible while Privacy and
+Terms rest behind native, keyboard-accessible disclosures; their expanded twin is a first-class
+surface, so progressive disclosure never trades scanability for unverified content. The family is
+verified across EN/IT, dark/light and desktop/mobile and is CLOSED in the epic ledger.
+
+**Wave 30 roster journey closure (2026-08-05):** the roster census no longer mistakes the lone
+dev mock for the whole product. A production-shaped gallery, selection state, no-results state and
+first-run empty state now join the existing resting card and open overflow menu as first-class
+surfaces. The honest matrix exposed and fixed three interaction faults: first-run duplicated the
+Create CTA in the masthead and hero, no-results still offered Select with nothing actionable, and
+selection checkboxes covered portraits instead of replacing the reserved overflow slot. The
+Italian overflow capture was also a false green because its driver recognized only the English
+trigger; the bilingual driver now proves the actual menu. Loading and hard-error remain the shared
+FolioLoader/RunicEmptyState recipes already verified by the global state family. The roster family
+is CLOSED across EN/IT, dark/light, desktop/mobile and realistic 10-character density.
+
+**Wave 31 global-shell closure (2026-08-05):** the shell family now includes its operational states,
+not only its resting pages. Settings groups the safe Sign Out action with the signed-in identity it
+affects instead of marooning it in a detached footer register against mobile navigation. The bug
+reporter harness follows the real bilingual account-menu route, proving its six-way type picker and
+complete form in Italian as well as English. Admin gained an expanded-user census state covering
+dates, character drill-down and privileged actions; that state exposed and removed a duplicate-key
+warning from the intentionally shared dev route. Command palette, account menu, keyboard reference,
+login and the responsive navigation grammar required no further chrome. The family is CLOSED across
+EN/IT, dark/light, desktop/mobile; the manifest now holds 92 total states.
+
+**Wave 32 cockpit cross-tab closure (2026-08-05):** Bio, Features, Inventory and Spells were compared
+as one system in both themes and widths, including their actual inline reading states rather than
+only collapsed ledgers. The common UniversalCard anatomy already keeps names, glosses, verdicts,
+facts, highlighted rules prose and actions predictable across item/spell/feature domains. The one
+false similarity was the Features ledger: it repeated a generic class/race/feat seal on every row
+after the labelled section and source rail had already established that family. A shared optional
+seal suppression now removes that noise only for homogeneous grouped ledgers, reclaiming name width
+without forking the card component; Inventory retains useful object-family glyphs and Spells retains
+level/preparation marks. Feature, item and spell expanded states are now first-class census entries,
+bringing the manifest to 95 total states. The cockpit family is CLOSED across EN/IT, dark/light,
+desktop/mobile.
+
+**Wave 33 campaign journey closure (2026-08-05):** Campaign list, Create, Join, hub overview,
+expanded DM controls, running encounter and read-only member sheet were re-evaluated as one journey
+after the earlier inline-editor and danger-disclosure work. The current grammar survives: primary
+and alternate entry actions are obvious; party identity leads; Chronicle, Sessions, Notes, Treasury
+and Access form predictable bounded registers; privileged controls remain disclosed; a running
+encounter replaces the Party overview in place; and member inspection reuses the same cockpit in a
+clearly labelled read-only mode. No ornamental rewrite earned its cost. The family is CLOSED across
+EN/IT, dark/light and desktop/mobile, including the previously enrolled editor, picker and statblock
+states.
+
+**Wave 34 Compendium closure (2026-08-05):** the whole codex was compared across Spells, Features,
+Feats, Items, Maneuvers, Metamagic, Invocations, Weapon Mastery and Monsters, including filters,
+opened spell/item/monster leaves and the explicit no-item-art state. One declarative spec flag now
+suppresses repeated category seals in homogeneous Feature, Feat, Maneuver, Metamagic, Invocation and
+Mastery result ledgers while preserving the same seal once in an opened leaf's masthead. Spells keep
+level marks, Items keep object-family glyphs and Monsters keep CR because those marks carry per-entry
+information. The monster phone leaf also reduces only its Compendium portrait plate from 15rem to
+12rem, so the hero image and first mechanical line share the opening viewport; wider leaves and
+encounter modals keep the full plate. The dormant item-art calibration remains correctly all-or-none
+across the composed corpus, so every active item leaf has the same no-art anatomy today. The family
+is CLOSED across EN/IT, dark/light and desktop/mobile.
+
+**Wave 35 Creation journey closure (2026-08-05):** Quick Start and all ten Guided chapters were
+re-evaluated as one journey, with a focused comparison of the densest Spell, Equipment, Ability
+Score and Review states across themes and widths. The progressive Quick Start chapters expose only
+unfinished work while Guided retains the deliberate one-decision-at-a-time route; both resolve
+through the same state, gates and final requirements. Searchable spell rows, semantic equipment
+families, point-buy feedback, the live build summary and the single remaining-requirement register
+all remain legible on phone without inventing a second mobile workflow. The persistent phone CTA
+sits above realm navigation by design and the document provides the required scroll clearance. No
+new ornament or component fork earned its cost. The family is CLOSED across EN/IT, dark/light and
+desktop/mobile.
+
+**Wave 36 Level-up journey closure (2026-08-05):** the HP/class fork, disclosed multiclass pool,
+subclass enthronement, boon/feat branches, mixed follow-up choices, spell acquisition, optional
+spell swap, editable review/commit and post-save ceremony were re-evaluated as one journey. Spell,
+Review and Completion are now first-class census states rather than inferred transitions. That
+coverage exposed a 16,253px phone spell document: the shared creation/level-up spell picker now
+mounts a 16-row discovery window, searches the complete eligible corpus, keeps deep selections
+visible after query clearing and expands the remainder in place. The review remains a one-tap
+return ledger and the completion ceremony remains persistent until its single sheet CTA. The family
+is CLOSED across EN/IT, dark/light and desktop/mobile; the manifest now holds 100 total states.
+
+**Wave 37 shared-system convergence and epic closure (2026-08-05):** the completed surface census
+was reconciled against the canonical focus, reduced-motion, responsive, touch-target and overlay
+contracts. Theme behavior remains token-owned and no new light/dark exception was required. Two
+legacy icon-only control families bypassed the existing `IconButton`: portrait-crop zoom and
+companion HP now reuse its compact visual plus 44px hit area, while the optically tiny inline reset
+keeps its 22px face and gains the standard invisible hit-slop. The same pass exposed a short
+companion statblock stretched into an 88vh reading modal; it now opts into `ModalShell`'s existing
+content-sized tier, while the genuinely long familiar document retains the tall keyboard-scrollable
+tier. No new primitive, token or motion fork was introduced. The shared family and the
+whole-product first census are CLOSED across EN/IT, dark/light and desktop/mobile; owner review,
+second-pass refinement and final integration discipline remain separate gates.
+
+**Wave 38 cropper census closure (2026-08-05):** a graph-assisted comparison of shared overlay
+consumers against the visual manifest found that portrait cropping had a dedicated functional
+regression journey but no owner-reviewable visual state. Square character portrait and 16:9 campaign
+art are now separately enrolled, bringing the manifest to exactly 100 states. Their first phone
+captures exposed the shared modal grid item's intrinsic 32rem width: the frame escaped rightward and
+clipped Close and Commit. `ModalShell` and its compound stage now explicitly yield intrinsic width
+to the viewport, while desktop geometry remains unchanged. Campaign art receives its own bilingual
+eyebrow/title/commit semantics instead of masquerading as a portrait, and both Italian instructions
+fit without ellipsis. Dark/light desktop and Italian phone captures are green; the shared family and
+first census remain CLOSED.
+
+**Wave 39 recognition-system second pass (2026-08-05–12, IMPLEMENTATION COMPLETE; owner gate pending):** owner review rejected the
+first weapon vocabulary as still too confusing. The single resolver now removes every competing
+reading visible in its frequent lists: courtroom gavel, mining pickaxe, target, lightning bolt,
+crossed-swords combat and sight-reticle signs no longer stand for weapon types. Literal club, mace,
+flail, staff, sickle, war-pick, crossbow, firearm, sling and whip families coexist with the coarser
+requested reuse (glaive → Sword, halberd → Axe, dart/blowgun → projectile, javelin → Spear). The
+follow-on gear audit replaces five more wrong nouns with the Lucide baseline (Chain → Link, Shovel →
+Shovel, Healer's Kit → medical case, Climber's Kit → Mountain, Holy Symbol → neutral radiance) and
+admits only exact Crowbar and Manacles Game Icons gaps. Every vendored author/title is bilingual on
+`/legal`. Contextual weapon evidence is 9/9 across Add Item, Weapon Mastery and Guided Equipment;
+gear-context evidence now closes the acceptance gate: object nouns use one filled family in the real
+Compendium/item surfaces, while familiar outline verbs remain visually distinct controls.
+
+The contextual owner gate then rejected Game Icons' Barbed Spear: at 16px its curved mass read as a
+feather or hand, not a pole weapon. A first diagonal CC0 candidate also collapsed to a plain slash.
+The family now uses a vertical CC0 SVG Repo spear reduced to a leaf head, collar and uninterrupted
+shaft. This is a deliberate semantic correction, not an
+ornamental variation; spear, javelin, pike, lance and trident keep one coarse, unmistakable family
+sign while their text labels carry the exact noun.
+
+The final optical pass groups rubric and owned plaque with a seal-aware gap and centers the
+multiclass disclosure on the same axis, removing the accidental heading/seal collision.
+
+The product-wide pass now also removes the conspicuous Lucide/fantasy mix from the user-authored
+Combat Algorithm. Its ten stable semantic ids keep backward-compatible storage, but resolve to one
+filled Game Icons family: music spell (control), heart bottle (support), crossed swords (melee),
+bordered shield (defend), heavy lightning (burst), magic swirl, windy stripes, on-target, dread
+skull and checklist. Standard edit/reorder/delete/import verbs remain Lucide. A contextual edit-mode
+capture verifies the complete picker at its real size; focused algorithm + registry tests are 25/25.
+The cockpit then closes five same-referent seams: the Spells, Inventory, Features and Bio empty/search
+states reuse their tab's Spell Book, Backpack, Ribbon Medal and Open Book instead of falling back to
+Sparkles, outline Backpack, Gem and outline Book; the persistent combat pip reuses the same filled
+Crossed Swords as the Combat tab. No new signs or resolver were introduced.
+
+Command-palette Compendium jumps now complete their navigation contract: the selected entry is not
+only opened on the reading leaf, but also revealed and marked current in the persistent left index.
+The fix lives inside the shared windowed result list because a far selected row has no DOM node for
+`scrollIntoView`; it computes the virtual offset, adds only the trailing runway needed by a last-page
+result, and seats the target at the index's top edge with an 8px breath, without moving an
+already-visible selection or breaking Back scroll memory. A far-end `Wish`
+deep-link passes the focused Chromium regression and screenshot gate.
+
+Campaigns now begin their premium information-architecture pass. The hub is a compact task workspace:
+real local tabs separate Live (Party/Encounter + current recap), Journal (Chronicle + Notes), Resources
+(Treasury + Access), and manager-only DM work. Inactive panels leave layout but stay mounted, so local
+view changes preserve editors and disclosure state; the selected view is remembered per campaign. The
+Live desk puts play state and the current session document side by side on desktop. That recap is
+directly editable and loss-resistant: every keystroke is mirrored locally, remote writes debounce and
+serialize, blur/background/route changes flush, and the local draft survives until matching confirmed
+state is observed. During combat, closed desktop combatants place identity and AC/HP/speed on one dense
+tactical row while retaining the same disclosure, live controls, reorder behavior and mobile stack.
+Focused tests and refreshed EN/IT, light/dark, desktop/mobile screenshots gate this checkpoint. A
+workspace switch now also aligns the selected task beneath the sticky navigation, preventing a long
+Live recap offset from opening Journal/Resources/DM halfway through their content; mounted drafts and
+disclosures remain intact. The broader campaign interaction audit is complete.
+
+The campaign section chrome now converges creation at the shared seam: Sessions and Shared Notes place
+“New session” / “Add note” as the same compact on-art ghost action in the trailing rubric slot. The first
+attempt also replaced the existing gilt disclosure with an unrelated square header button; owner feedback
+rejected that regression immediately. The owner-approved gold knob is restored at the card's bottom edge,
+where its material and spatial meaning were already coherent across campaign sections.
+
+The Journal workspace also sheds the old dashboard's `lg:col-span-2` residue: at ≥1280px Chronicle
+and Shared Notes now occupy the intended reading + reference spread; below that threshold they stack
+to protect Chronicle's chapter rail and prose measure. DM tools drops the same obsolete span class.
+The manager-only DM tab is now the sole disclosure boundary for its three tool groups: role transfer,
+member removal and campaign deletion render immediately in one compact framed panel. This removes the
+redundant chevron and the empty-card state while preserving an explicit extension point if the toolset
+later grows enough to require grouping.
 **Owner continuation mandate (2026-08-04):** the visual approval closes only this ornament fork.
 The whole-app UI/UX elevation remains active and exhaustive: audit every surface and recurring flow,
 then simplify, clarify or deepen it where evidence shows friction. Nothing is exempt because it is
@@ -639,7 +904,8 @@ falls to the ErrorBoundary instead of looping (`chunk-recovery.ts`). Regressions
 `roster-boot-resilience.test.tsx`, `boot-resilience-utils.test.ts`, the `campaign-io` server-confirm +
 timeout-propagation cases. Detail: `docs/ARCHITECTURE.md` → "Boot data-resilience".
 
-**Session-summary edit-in-place — the read↔edit "resize jump" (2026-07-21, rule 27).** The owner
+**Session-summary edit-in-place — the read↔edit "resize jump" (2026-07-21, rule 27; superseded
+2026-08-05).** The owner
 reported the Campaign → Sessions summary swap felt "traumatic": the read view rendered markdown up to
 the `NoteClamp --reading` cap, then hard-swapped to a FIXED `rows=4` (min-height 88px) textarea that
 bore no relation to the content — a big instant geometry jump, compounded by an `autoFocus` scroll-yank
@@ -648,11 +914,16 @@ is now CONTENT-SIZED (`field-sizing: content`, `.sess-notes-edit`) seeded off th
 capped at the SAME reading bound, so read and edit share ONE footprint (no fixed rows, no drag handle);
 focus is placed with `preventScroll`; and empty / read / edit are unified into one structure (a body
 region over a right-aligned `.sess-notes-actions` row whose height is identical whether it holds one
-button — Edit / Add — or two — Cancel / Save). The commit stays an explicit Save/Cancel (a recap is
-authored prose — the safe choice against blur-loss; only short always-complete tokens like the session
-NAME commit-on-blur). Regressions: `sessions-section.test.tsx` (seed-on-edit + Cancel-discards) and the
+button — Edit / Add — or two — Cancel / Save). That checkpoint used explicit Save/Cancel; the direct
+autosave document below supersedes that interaction. Its historical regressions were
+`sessions-section.test.tsx` (seed-on-edit + Cancel-discards) and the
 `session-edit-no-jump.spec.ts` e2e (the editor is content-sized with no internal scroll; the region
-footprint barely changes read→edit — both fail on the old fixed box). DESIGN.md §12.
+footprint barely changes read→edit — both fail on the old fixed box). On 2026-08-05 the owner clarified
+the real live-session workflow: the read/edit ceremony itself was the remaining defect. Sessions now
+open the latest recap as a direct living document, persist every keystroke to a local draft, debounce
+and serialize Firestore writes, flush on blur/background/unmount, and restore the draft after a
+campaign→character→campaign round trip. The destructive action moved from every archive row into the
+selected document footer. The same e2e now pins route-survival rather than a state swap. DESIGN.md §12.
 
 **Add-item picker — scroll-preserve + AC i18n (rule 27, 2026-07-21).**
 
@@ -717,32 +988,12 @@ parametrized public pin; merge `team-fixtures-dump` into `team-fixtures-new-expo
 pack it-name guard's untranslated/retired sweeps to `source !== "SRD"`; `describe.each` the
 `aggregated-primitives` skeleton and unify the subclass expanded-spell maps into one table.
 
-## Queued — UX feedback batch (owner, 2026-07-31)
-
-1. **BUG — tab search toggle flashes**: clicking the search control in a sheet tab while
-   its search is OPEN must CLOSE it; today it flashes (likely blur-close + click-reopen
-   race). Reproduce with a failing test first.
-2. **Command palette must feel mobile-native on mobile**: desktop-only entries and keyboard
-   shortcut hints (⌘K etc.) must not show on mobile; desktop stays untouched — optimum on
-   both platforms.
-3. **Mobile horizontal-stretch doubt (design exploration)**: full-width HP/vitals tiles and
-   roster cards on mobile — is it state of the art? Desktop HP is compact. Owner wants
-   SOTA/industry-standard professional mobile layouts; explore via impeccable + proposals
-   with screenshots.
-   4b. **Cockpit tail spacing** (owner, 2026-07-31): the collapsed "Combat Algorithm" /
-   "Rules Reference" sections at the sheet's foot carry huge unjustified margins — bring
-   the rhythm in line with the rest of the app (professional, standard).
-4. **Tab selection must not jump (Compendium type tabs + sheet tabs)**: selecting a tab —
-   especially one reached by scrolling — currently causes a jump; the tab must stay exactly
-   where it is. GRILLED with the owner before implementation (see the golden rule below).
-
-## Queued — Admin panel rework (owner request, 2026-07-31)
-
-The users list will grow: the admin panel needs (1) a POWERFUL user search ("trovare subito
-gli utenti") and (2) progressive disclosure instead of the full in-place list — the
-campaigns hub's expandable-section pattern, applied coherently. Requirements to grill when
-the unit opens (sort/filter axes, per-user actions surface, pagination vs disclosure
-threshold). Owner: "non possiamo mostrare tutta la lista utenti in place".
+**Resolved feedback reconciliation (2026-08-12):** the 2026-07-31 UX/Admin queue is closed. The shared
+collapsible search is a true no-flash toggle; coarse-pointer palette chrome omits keyboard-only hints;
+sheet and Compendium tab selection preserve page position while their own strips reveal the active
+tab; phone vitals/cards and the compact cockpit tail survived the refreshed responsive review; Admin
+ships omni-search, bounded results and one-row-at-a-time disclosure. These are implemented contracts
+with focused regressions, not remaining roadmap work.
 
 ## Open decisions (owner)
 

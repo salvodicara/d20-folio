@@ -7,7 +7,7 @@
  * commit (charges / attunement / potion flags), and close-on-add.
  */
 
-import { Gem } from "lucide-react";
+import { FolioMagicItemIcon } from "@/components/shared/folio-icons";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { itemArtUrl } from "@/data/item-art";
 import { cn } from "@/lib/utils";
@@ -61,7 +61,7 @@ const miText = (i: SrdMagicItemData, field: string, locale: Locale) =>
 export const magicItemSpec: CompendiumPickerSpec<SrdMagicItemData> = {
   id: "magic-item",
   label: (t) => t("equipment.tabMagicItems"),
-  icon: Gem,
+  icon: FolioMagicItemIcon,
   // The codex verdict — the item's RARITY, tinted to the rarity scale (the single
   // most inviting at-a-glance fact: is this a legendary?). Rare items glow gold/red.
   verdict: (item, { t }) => ({

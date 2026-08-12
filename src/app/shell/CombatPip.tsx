@@ -41,7 +41,8 @@
 import { useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Swords, ChevronRight, Users } from "lucide-react";
+import { ChevronRight, Users } from "lucide-react";
+import { FolioCombatIcon } from "@/components/shared/folio-icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { InitVital } from "@/features/campaigns/init-vital";
@@ -168,7 +169,7 @@ export function CombatPip() {
   const lead = (
     <>
       <span className="cp-glyph" aria-hidden="true">
-        <Swords width={13} height={13} />
+        <FolioCombatIcon width={13} height={13} />
       </span>
       <span className="cp-round tnum" aria-hidden="true">
         <span className="cp-r">R</span>
@@ -342,7 +343,7 @@ export function CombatPip() {
                   steps aside and this chip stands alone (⚔ N → chooser). The glyph is
                   hidden on desktop, where the full primary pip already carries it. */}
               <span className="cp-count-glyph" aria-hidden="true">
-                <Swords width={13} height={13} />
+                <FolioCombatIcon width={13} height={13} />
               </span>
               <span className="tnum">{pip.entries.length}</span>
             </button>
@@ -360,7 +361,7 @@ export function CombatPip() {
                     onClick={() => setPin(e.campaignId)}
                   >
                     <span className="cp-row-glyph" aria-hidden="true">
-                      <Swords width={14} height={14} />
+                      <FolioCombatIcon width={14} height={14} />
                     </span>
                     <span className="cp-row-main">
                       <span className="cp-row-title">

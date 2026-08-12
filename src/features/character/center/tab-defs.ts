@@ -3,12 +3,18 @@
  * shared by `TabStrip` (icon + label) and `TabBody` (the panel component) so the
  * two relocatable halves stay in lockstep on one ordered source of truth.
  *
- * A pure data module: it only holds component REFERENCES (lucide icons + the tab
+ * A pure data module: it only holds component REFERENCES (folio icons + the tab
  * panels), never renders them, so it stays JSX-free `.ts`.
  */
 
 import type { ComponentType, SVGProps } from "react";
-import { Backpack, ScrollText, Sparkles, Star, Swords } from "lucide-react";
+import {
+  FolioCombatIcon,
+  FolioFeatIcon,
+  FolioInventoryIcon,
+  FolioScrollIcon,
+  FolioSpellIcon,
+} from "@/components/shared/folio-icons";
 import { PlayTab } from "./tabs/PlayTab";
 import { SpellsTab } from "./tabs/SpellsTab";
 import { InventoryTab } from "./tabs/InventoryTab";
@@ -34,35 +40,35 @@ export const TAB_DEFS: TabDef[] = [
     id: "combat",
     labelKey: "character.tabs.combat",
     defaultLabel: "Combat",
-    icon: Swords,
+    icon: FolioCombatIcon,
     Panel: PlayTab,
   },
   {
     id: "spells",
     labelKey: "character.tabs.spells",
     defaultLabel: "Spells",
-    icon: Sparkles,
+    icon: FolioSpellIcon,
     Panel: SpellsTab,
   },
   {
     id: "inventory",
     labelKey: "character.tabs.inventory",
     defaultLabel: "Inventory",
-    icon: Backpack,
+    icon: FolioInventoryIcon,
     Panel: InventoryTab,
   },
   {
     id: "features",
     labelKey: "character.tabs.features",
     defaultLabel: "Features",
-    icon: Star,
+    icon: FolioFeatIcon,
     Panel: FeaturesTab,
   },
   {
     id: "bio",
     labelKey: "character.tabs.bio",
     defaultLabel: "Bio",
-    icon: ScrollText,
+    icon: FolioScrollIcon,
     Panel: BioTab,
   },
 ];

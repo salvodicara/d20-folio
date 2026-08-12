@@ -31,17 +31,11 @@ describe("MobileBottomNav", () => {
       "href",
       "/compendium"
     );
-    expect(
-      screen
-        .getByRole("link", { name: /characters/i })
-        .querySelector(".lucide-scroll-text")
-    ).not.toBeNull();
-    expect(
-      screen.getByRole("link", { name: /campaigns/i }).querySelector(".lucide-tent")
-    ).not.toBeNull();
-    expect(
-      screen.getByRole("link", { name: /compendium/i }).querySelector(".lucide-book-open")
-    ).not.toBeNull();
+    for (const name of [/characters/i, /campaigns/i, /compendium/i]) {
+      const glyph = screen.getByRole("link", { name }).querySelector("svg");
+      expect(glyph).toHaveAttribute("viewBox", "0 0 512 512");
+      expect(glyph).toHaveAttribute("fill", "currentColor");
+    }
   });
 
   it("keeps Characters active on a cockpit sub-route", () => {

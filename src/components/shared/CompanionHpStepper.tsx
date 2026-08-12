@@ -10,6 +10,7 @@
 
 import { Plus, Minus } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
+import { IconButton } from "@/components/ui/icon-button";
 
 export interface CompanionHpStepperProps {
   /** The companion's localized name — the ± buttons' accessible label. */
@@ -29,27 +30,25 @@ export function CompanionHpStepper({
   return (
     <span className="inline-flex items-center gap-1 text-[0.68rem] text-text-secondary">
       {onChange && (
-        <button
-          type="button"
+        <IconButton
           onClick={() => onChange(current - 1)}
-          className="flex h-4 w-4 items-center justify-center rounded border border-border text-text-secondary hover:border-danger hover:text-danger"
+          className="companion-hp-step hover:border-danger hover:text-danger"
           aria-label={`−1 HP ${label}`}
         >
-          <Icon as={Minus} size="sm" decorative />
-        </button>
+          <Icon as={Minus} size="xs" decorative />
+        </IconButton>
       )}
       <span className="font-mono font-semibold text-text-primary">
         {current} / {max}
       </span>
       {onChange && (
-        <button
-          type="button"
+        <IconButton
           onClick={() => onChange(Math.min(max, current + 1))}
-          className="flex h-4 w-4 items-center justify-center rounded border border-border text-text-secondary hover:border-success hover:text-success"
+          className="companion-hp-step hover:border-success hover:text-success"
           aria-label={`+1 HP ${label}`}
         >
-          <Icon as={Plus} size="sm" decorative />
-        </button>
+          <Icon as={Plus} size="xs" decorative />
+        </IconButton>
       )}
     </span>
   );

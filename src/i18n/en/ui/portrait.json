@@ -2,7 +2,7 @@
   "portrait": {
     "crop": {
       "title": "Set Portrait",
-      "subtitle": "Drag to reposition · Pinch or scroll to zoom",
+      "subtitle": "Drag · Pinch or scroll to zoom",
       "add": "Add photo",
       "confirm": "Set Portrait",
       "zoom": "Zoom",
@@ -12,7 +12,11 @@
       "invalidCrop": "Could not apply that crop. Please try again.",
       "saveError": "Couldn't save the portrait. Check your connection and try again.",
       "cropperError": "Something went wrong loading the cropper.",
-      "eyebrow": "Portrait"
+      "eyebrow": "Portrait",
+      "banner": {
+        "eyebrow": "Campaign art",
+        "title": "Set Art"
+      }
     },
     "menu": {
       "edit": "Edit portrait",

@@ -101,7 +101,7 @@ import { InlineMarkdown } from "@/components/shared/InlineMarkdown";
 import { highlightRulesText } from "@/components/shared/highlightRulesText";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
-import { Gem } from "lucide-react";
+import { FolioFeatIcon } from "@/components/shared/folio-icons";
 import { KindSeal } from "@/components/shared/KindSeal";
 import { weaponSealIcon } from "@/components/shared/item-icons";
 import {
@@ -878,7 +878,7 @@ export function FeaturesTab() {
       {/* A fruitless search says so (honest blanks — the inventory recipe). */}
       {search.trim() !== "" && filteredFeatures.length === 0 && (
         <RunicEmptyState
-          glyph={Gem}
+          glyph={FolioFeatIcon}
           size="sm"
           title={t("features.noMatch")}
           blurb={t("common.searchMissHint")}
@@ -952,6 +952,7 @@ export function FeaturesTab() {
                   key={feature.id}
                   mode="library"
                   kind={sealKind(feature.group)}
+                  showSeal={false}
                   name={feature.name}
                   slot={slot}
                   gloss={gloss}

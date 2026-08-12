@@ -11,7 +11,7 @@
  * (EN + IT), so they're fully bilingual like every other compendium entry.
  */
 
-import { Swords } from "lucide-react";
+import { FolioCombatIcon } from "@/components/shared/folio-icons";
 import { Icon } from "@/components/ui/icon";
 import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
@@ -49,7 +49,8 @@ const mText = (e: MasteryEntry, field: string, locale: Locale) =>
 export const weaponMasterySpec: CompendiumPickerSpec<MasteryEntry> = {
   id: "weapon-mastery",
   label: (t) => t("abilities.weaponMastery"),
-  icon: Swords,
+  icon: FolioCombatIcon,
+  repeatLeadingInRows: false,
   // No codex verdict — this is a single-source facet (every entry IS a Weapon
   // Mastery), so a "Mastery" badge only echoes the tab + header + seal. The freed
   // row width goes to the subtitle's effect summary (the actual differentiator).
@@ -70,7 +71,7 @@ export const weaponMasterySpec: CompendiumPickerSpec<MasteryEntry> = {
   filters: [],
 
   row: (e, { locale }) => ({
-    leading: <CmpSeal icon={Swords} tone="var(--at-action)" />,
+    leading: <CmpSeal icon={FolioCombatIcon} tone="var(--at-action)" />,
     name: mText(e, "name", locale),
     // The differentiator, not the redundant "Weapon Mastery" rubric: a short
     // effect summary (id-keyed SRD catalogue, EN + IT) so a row says what the
@@ -81,7 +82,7 @@ export const weaponMasterySpec: CompendiumPickerSpec<MasteryEntry> = {
   detail: (e, { t, locale }) => ({
     eyebrow: (
       <span className="inline-flex items-center gap-2">
-        <Icon as={Swords} size="sm" className="text-accent" decorative />
+        <Icon as={FolioCombatIcon} size="sm" className="text-accent" decorative />
         {t("weaponMastery.eyebrow")}
       </span>
     ),

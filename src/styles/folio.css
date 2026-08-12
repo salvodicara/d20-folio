@@ -227,7 +227,7 @@ svg.icon[stroke],
    a deliberately-designed, SELF-CONTAINED OBJECT in BOTH themes: an ENGRAVED inner
    ring (`::before`), a full-colour gold border, a top emboss + gold glow. Used ONLY
    for NUMERIC section counts; string totals ("145 gp") keep the far-right `.sec-meta`.
-   The header gains the `.has-count` 4-column grid so the rule still fans out to the
+   The header gains the `.has-count` grid so the rule still fans out to the
    panel edge after the coin. The numerals take `--accent-text` (gold-leaf-300 on dark,
    deep gold-leaf-900 on light).
 
@@ -237,10 +237,13 @@ svg.icon[stroke],
    OPAQUE gilt DISC (the `[data-theme="light"]` rule below) so the DEEP gold numeral
    self-backs and never depends on what's behind it — the campaign-hub section counts
    render ON the candlelit backdrop, where the old translucent fill let the dark art
-   bleed through and the deep-gold numeral read BROWN. Same struck-coin material as the
-   disclosure knob (`.section-disclosure-knob`); ONE light recipe strikes both. ── */
+   bleed through and the deep-gold numeral read BROWN. The disclosure knob uses the
+   same self-backed light-theme strike. ── */
 .sec-head.has-count {
   grid-template-columns: auto auto auto 1fr;
+}
+.sec-head.has-count.has-meta {
+  grid-template-columns: auto auto auto 1fr auto;
 }
 .sec-count {
   position: relative;
@@ -285,8 +288,7 @@ svg.icon[stroke],
    sheen that reads as struck metal, a deep gold-700 rim for the edge on cream, and the
    `--accent-glow` halo (`--gilt-glow-sm`, DESIGN §10.3) so the coin kindles on cream.
    The numeral/glyph stays the deep `--accent-text` (gold-900) — deep-gold ENGRAVING on
-   bright gilt (≥6:1), the intended struck-coin look, NEVER background-dependent. ONE
-   rule strikes the count medallion AND the disclosure knob (the same coin material).
+   bright gilt (≥6:1), the intended struck-coin look, NEVER background-dependent.
    Guarded against regressing to a translucent fill by the gilt-coin disc probe in
    tests/e2e/on-art-ink.spec.ts + light-theme-backdrop-legibility.guard.test.ts (#7). */
 [data-theme="light"] :is(.sec-count, .section-disclosure-knob) {
@@ -2274,6 +2276,10 @@ button.pr-dot.lg::before {
      the ModalScroll primitive. */
   position: relative;
   width: 100%;
+  /* A grid item defaults to min-width:auto; a compound child (crop canvas +
+     two labelled footer actions) could therefore impose its 32rem min-content
+     width on a phone. The frame, not its children, owns the viewport cap. */
+  min-width: 0;
   max-width: 32rem;
   /* Material comes from the `.wb .modal` leather-plate twin (every dialog
      shell stamps `wb` on its portal overlay) + the elevation restore block.
@@ -3253,21 +3259,22 @@ button.pr-dot.lg::before {
 [data-theme="light"] .runic-ring.inner {
   border-color: color-mix(in oklab, var(--es-c) 60%, transparent);
 }
-/* LIGHT — the fullscreen crash net (app-root fatal error, no shell art behind it)
-   grounds on a DESIGNED field, not a flat mustard slab (light-craft audit). A warm
-   corner vignette + a soft inset gutter give the bare parchment field depth so the
-   fatal-error surface reads composed. Dark's near-black field already reads
-   grounded, so this is light-only; the region variant sits on the shell backdrop
-   and is unaffected. */
+/* The root crash net sits outside AppShell, but recovery must still feel like d20
+   Folio. Reuse the active theme's Scriptorium plate behind a strong veil: the
+   fallback remains legible and recognisable without importing another asset or
+   inventing a separate visual world for failure. */
+.crash-field {
+  background:
+    linear-gradient(rgba(8, 5, 2, 0.72), rgba(8, 5, 2, 0.88)),
+    var(--asset-home-hero) center / cover no-repeat,
+    var(--bg-page);
+  box-shadow: inset 0 0 140px 30px rgba(0, 0, 0, 0.42);
+}
 [data-theme="light"] .crash-field {
   background:
-    radial-gradient(
-      ellipse 132% 104% at 50% 36%,
-      transparent 40%,
-      rgba(58, 40, 10, 0.34) 100%
-    ),
+    linear-gradient(rgba(40, 27, 8, 0.52), rgba(20, 13, 4, 0.78)),
+    var(--asset-home-hero) center / cover no-repeat,
     var(--bg-page);
-  box-shadow: inset 0 0 140px 26px rgba(46, 30, 6, 0.28);
 }
 .es-eyebrow {
   font-family: var(--font-numeric);
@@ -6166,32 +6173,15 @@ button.trk-pip:active {
 }
 /* No font-style: italic here (or on ANY --font-title context): Cinzel ships no
    italic, so the browser synthesizes a faux oblique that shears glyph ink outside
-   the layout box — and the background-clip:text fill can't paint there, truncating
-   the "0" (owner-reported 2026-07-02). The "d20" emphasis is carried by weight
-   (800 vs 700) + the gold gradient fill instead. */
+   the layout box (owner-reported 2026-07-02). Weight + one solid gilt ink carry
+   the "d20" emphasis without giving hero and chrome two different materials. */
 .brand-word-d20 {
   font-weight: 800;
-  background: linear-gradient(
-    180deg,
-    var(--gold-leaf-100),
-    var(--gold-leaf-300) 45%,
-    var(--gold-leaf-500)
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--accent-primary-bright);
 }
-/* Light theme: the bright gold-leaf gradient washes out on vellum — anchor
-   the clipped fill to the deeper, AA-safe end of the ramp. */
+/* Light theme: the deep gilt ink is the AA-safe wordmark voice on vellum. */
 [data-theme="light"] .brand-word-d20 {
-  background: linear-gradient(
-    180deg,
-    var(--gold-leaf-500),
-    var(--gold-leaf-700) 55%,
-    var(--gold-leaf-900)
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: var(--accent-text);
 }
 .brand-word-folio {
   color: var(--text-primary);
@@ -6201,9 +6191,6 @@ button.trk-pip:active {
    reserved for the large HERO. The cream "Folio" read low-contrast /
    less-branded in the topbar. */
 .brand-tone-chrome .brand-word-d20 {
-  background: none;
-  -webkit-background-clip: border-box;
-  background-clip: border-box;
   color: var(--accent-primary-bright);
 }
 .brand-tone-chrome .brand-word-folio {
@@ -6218,14 +6205,7 @@ button.trk-pip:active {
    with the crisp dark outline so they pop on the busy scene (the vellum-deep light
    defaults above would vanish here). */
 [data-theme="light"] .brand-intro .brand-word-d20 {
-  background: linear-gradient(
-    180deg,
-    var(--gold-leaf-100),
-    var(--gold-leaf-300) 45%,
-    var(--gold-leaf-500)
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: var(--accent-primary-bright);
 }
 [data-theme="light"] .brand-intro .brand-word-folio {
   color: #f8f1de;
@@ -8391,7 +8371,7 @@ button.create-need:focus-visible .create-need-chev {
 .ch-card .ch-select {
   position: absolute;
   top: 10px;
-  left: 10px;
+  right: 10px;
   z-index: 2;
   width: 22px;
   height: 22px;
@@ -8987,6 +8967,7 @@ button.create-need:focus-visible .create-need-chev {
 }
 .inline-edit-reset {
   all: unset;
+  position: relative;
   cursor: pointer;
   display: inline-grid;
   place-items: center;
@@ -8998,10 +8979,22 @@ button.create-need:focus-visible .create-need-chev {
     color var(--m-fast),
     background var(--m-fast);
 }
+.inline-edit-reset::before {
+  content: "";
+  position: absolute;
+  inset: calc((var(--touch-min) - 100%) / -2);
+}
 .inline-edit-reset:hover,
 .inline-edit-reset:focus-visible {
   color: var(--accent-text);
   background: color-mix(in oklab, var(--accent-primary) 10%, transparent);
+}
+
+/* Companion HP uses the shared icon-button atom: a compact 32px visual with
+   the atom's standard 44px touch hit-slop, rather than a 16px bare button. */
+.companion-hp-step {
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
 }
 
 /* Per-card pinned note (read-only play mode) — inscribed-vellum chip. */
@@ -11155,12 +11148,72 @@ button.create-need:focus-visible .create-need-chev {
   margin-top: var(--sp-6);
 }
 .colophon-effective {
-  margin: 0 0 var(--sp-2);
+  margin: 0;
   font-family: var(--font-numeric);
   font-size: var(--text-2xs);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
+}
+.colophon-disclosure {
+  margin-top: var(--sp-2);
+  border-block: 1px solid var(--border-soft);
+}
+.colophon-disclosure > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--touch-min);
+  padding: var(--sp-2) var(--sp-1);
+  color: var(--accent-text);
+  list-style: none;
+}
+.colophon-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.colophon-disclosure > summary::before {
+  content: "›";
+  flex: 0 0 auto;
+  font-family: var(--font-numeric);
+  font-size: var(--text-lg);
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform var(--m-fast) var(--ease-standard);
+}
+.colophon-disclosure[open] > summary::before {
+  transform: rotate(90deg);
+}
+.colophon-disclosure > summary:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.colophon-disclosure-copy {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: 100%;
+  min-width: 0;
+}
+.colophon-disclosure-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+.colophon-disclosure-label.when-open {
+  display: none;
+}
+.colophon-disclosure[open] .colophon-disclosure-label.when-closed {
+  display: none;
+}
+.colophon-disclosure[open] .colophon-disclosure-label.when-open {
+  display: inline;
+}
+.colophon-disclosure[open] > summary {
+  border-bottom: 1px solid var(--border-soft);
+}
+.colophon-disclosure[open] > .colophon-body {
+  margin-top: var(--sp-4);
 }
 .colophon-clauses {
   margin: var(--sp-4) 0 0;
@@ -11193,6 +11246,11 @@ button.create-need:focus-visible .create-need-chev {
 @media (max-width: 720px) {
   .colophon {
     padding: var(--sp-5) var(--sp-4);
+  }
+  .colophon-disclosure-copy {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--sp-1);
   }
 }
 
@@ -11355,6 +11413,14 @@ button.create-need:focus-visible .create-need-chev {
   border-bottom: 1px solid var(--border-soft);
   padding: var(--sp-2) var(--sp-3);
   transition: background var(--m-fast) var(--ease-standard);
+}
+/* A labelled homogeneous ledger (the Features tab groups class/subclass/race/
+   feat explicitly) does not repeat its category glyph on every row. Preserve
+   the UniversalCard grid contract with a zero-width first track while reclaiming
+   most of the seal width for long names on phones. */
+.uc.without-seal .uc-head {
+  grid-template-columns: 0 minmax(0, 1fr) max-content auto;
+  column-gap: var(--sp-2);
 }
 .uc:last-child .uc-head {
   border-bottom: none;
@@ -11724,6 +11790,9 @@ button.uc-chevron::before {
 /* When an edit action is present the chevron slides to its own (5th) column. */
 .uc-head:has(.uc-edit-action) {
   grid-template-columns: 34px minmax(0, 1fr) max-content auto auto;
+}
+.uc.without-seal .uc-head:has(.uc-edit-action) {
+  grid-template-columns: 0 minmax(0, 1fr) max-content auto auto;
 }
 .uc-head:has(.uc-edit-action) .uc-chevron {
   grid-column: 5;
@@ -12143,14 +12212,166 @@ button.uc-chevron::before {
   margin: 0;
 }
 
-/* ── Campaign hub MANAGE dashboard — the two-column band grid. The gap rhythm +
-   columns are Tailwind utilities (`lg:grid-cols-2`, `gap-x-6 gap-y-12`); the full-
-   width bands (Chronicle, DM Tools) span both tracks via `lg:col-span-2` on their own
-   panel root. Pin every grid child to `min-width: 0` so a wide child (a long chronicle
-   line, a mono invite link) can never blow a `1fr` track past its share and force a
-   horizontal scroll. ── */
-.campaign-hub-grid > * {
+/* ── Campaign workspace — real local tabs, not an index above an always-open long
+   page. All panels remain mounted so drafts and disclosures survive view changes;
+   `[hidden]` removes every inactive task-context from layout and the accessibility
+   tree. The selected tab is a filled gilt plate, not a colour-only underline. ── */
+.campaign-table-nav {
+  position: sticky;
+  top: calc(var(--topbar-h) + var(--sp-2));
+  z-index: var(--z-sticky);
+  margin: var(--sp-4) 0 var(--sp-6);
+  padding: 3px;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--accent-primary) 32%, var(--border-medium));
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--bg-surface-2) 92%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--text-primary) 7%, transparent),
+    var(--elev-raised);
+  backdrop-filter: blur(12px) saturate(1.08);
+}
+.campaign-workspace {
+  /* A newly selected task aligns below the persistent topbar + local tab plate,
+     so its section heading is never hidden by either sticky layer. */
+  scroll-margin-top: calc(var(--topbar-h) + var(--sp-16));
+}
+.campaign-table-nav-track {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  min-width: max-content;
+}
+.campaign-table-nav-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 42px;
+  padding: 0 var(--sp-3);
+  border-radius: calc(var(--radius-lg) - 3px);
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    color var(--m-fast) var(--ease-standard),
+    background var(--m-fast) var(--ease-standard),
+    box-shadow var(--m-fast) var(--ease-standard);
+}
+.campaign-table-nav-item:hover {
+  color: var(--accent-text);
+  background: color-mix(in oklab, var(--accent-primary) 9%, transparent);
+}
+.campaign-table-nav-item[aria-selected="true"] {
+  color: var(--accent-text);
+  background: color-mix(in oklab, var(--accent-glow) 17%, var(--bg-surface-2));
+  box-shadow: inset 0 -2px 0
+    color-mix(in oklab, var(--accent-primary-bright) 74%, transparent);
+}
+.campaign-table-nav-item[data-live] {
+  color: var(--text-primary);
+}
+.campaign-table-nav-item[data-live] .campaign-table-nav-seal {
+  color: var(--semantic-danger);
+  border-color: color-mix(in oklab, var(--semantic-danger) 45%, var(--border-medium));
+}
+.campaign-table-nav-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border: 1px solid color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium));
+  border-radius: var(--radius-pill);
+  color: var(--accent-text);
+  background: color-mix(in oklab, var(--accent-glow) 9%, var(--bg-recessed));
+}
+.campaign-table-nav-item:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+.campaign-workspace-panel[hidden] {
+  display: none;
+}
+.campaign-workspace-panel {
   min-width: 0;
+}
+.campaign-workspace-panel > * {
+  min-width: 0;
+}
+.campaign-live-grid,
+.campaign-journal-grid,
+.campaign-resources-grid {
+  display: grid;
+  align-items: start;
+  gap: var(--sp-6);
+}
+@media (min-width: 1100px) {
+  .campaign-live-grid {
+    grid-template-columns: minmax(0, 1.65fr) minmax(21rem, 0.72fr);
+  }
+  .campaign-resources-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .campaign-live-grid .sess-notes-edit {
+    min-height: clamp(11rem, 32vh, 24rem);
+  }
+  .campaign-live-recap {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--sp-16));
+  }
+}
+@media (min-width: 1280px) {
+  .campaign-journal-grid {
+    grid-template-columns: minmax(0, 1.55fr) minmax(19rem, 0.65fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .campaign-table-nav {
+    top: calc(var(--topbar-h) + var(--sp-2));
+    margin-top: var(--sp-3);
+    margin-bottom: var(--sp-5);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .campaign-table-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .campaign-table-nav-track {
+    min-width: 100%;
+    padding-right: var(--sp-2);
+  }
+  .campaign-table-nav::after {
+    content: "";
+    position: sticky;
+    right: 0;
+    display: block;
+    width: 18px;
+    height: 46px;
+    margin: -46px 0 0 auto;
+    pointer-events: none;
+    background: linear-gradient(to right, transparent, var(--bg-surface-2));
+  }
+  .campaign-table-nav-item {
+    min-width: 0;
+    min-height: 46px;
+    flex: 1 1 0;
+    padding-inline: var(--sp-2);
+  }
+  .campaign-table-nav-item > span:last-child {
+    display: inline;
+    font-size: var(--text-2xs);
+  }
+  .campaign-table-nav-seal {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 /* ── Chronicle book-spread (premium re-layout) — on the full-width hub band the
@@ -12495,7 +12716,7 @@ h6.bm-heading {
   flex: none;
   color: var(--text-secondary);
 }
-/* Editable name + delete must sit ABOVE the toggle's stretched hit area. */
+/* The editable name must sit ABOVE the toggle's stretched hit area. */
 .sess-label {
   position: relative;
   z-index: 1;
@@ -12508,32 +12729,6 @@ h6.bm-heading {
   font-size: var(--text-sm);
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
-}
-.sess-del {
-  position: relative;
-  z-index: 1;
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: color var(--m-fast) var(--ease-standard);
-}
-/* Touch hit-slop — the bare 26px delete control reaches the 44px floor
-   (var(--touch-min)) via the standard invisible ::before (negative inset grows
-   outward — the /-2 idiom, pinned by touch-target-inset.guard). The action is
-   confirm-guarded, so the grown box can never destroy on a stray tap. */
-.sess-del::before {
-  content: "";
-  position: absolute;
-  inset: calc((var(--touch-min) - 100%) / -2);
-}
-.sess-del:hover {
-  color: var(--semantic-danger);
 }
 .sess-teaser {
   margin: 2px 0 0;
@@ -12561,11 +12756,10 @@ h6.bm-heading {
   padding-bottom: var(--sp-3);
 }
 
-/* ── Session summary (D28 edit-in-place) — empty / read / edit share ONE
-   footprint: a body region (rendered markdown · content-sized editor · empty
-   placeholder) over a right-aligned action row whose height is identical whether
-   it holds one button (Edit / Add) or two (Cancel / Save). Switching state never
-   resizes the surface (the owner's "traumatic" jump). ── */
+/* ── Session summary — a directly editable living document. The content-sized
+   editor owns the body; save state stays quiet at left and the selected document's
+   destructive action sits at right. There is no read→edit ceremony or explicit
+   Save button: local durability is immediate and remote persistence is debounced. ── */
 .sess-notes {
   display: flex;
   flex-direction: column;
@@ -12574,22 +12768,40 @@ h6.bm-heading {
 }
 .sess-notes-actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--sp-2);
+}
+.sess-save-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: var(--text-2xs);
+}
+.sess-save-state[data-state="error"] {
+  color: var(--semantic-warning);
+}
+.sess-delete-action {
+  margin-left: auto;
+  color: var(--text-muted);
+}
+.sess-delete-action:hover,
+.sess-delete-action:focus-visible {
+  color: var(--semantic-danger);
 }
 .sess-notes-empty {
   margin: 0;
   font-size: var(--text-sm);
   color: var(--text-muted);
 }
-/* The editor is CONTENT-SIZED (never the fixed 88px / rows=4 box) and capped at
-   the SAME reading bound as the rendered read view (NoteClamp `--reading` →
-   min(420px, 55vh)), so read↔edit share one footprint and the box never jumps.
-   `field-sizing: content` grows it with the text off a ~2-line floor (seeding to
-   the read content's height); past the cap it scrolls natively — a textarea's own
+/* The editor is CONTENT-SIZED (never the old fixed 88px / rows=4 box) and capped at
+   min(420px, 55vh). `field-sizing: content` grows it with the text off a ~2-line
+   floor; past the cap it scrolls natively — a textarea's own
    authoring overflow, not the D27 reading anti-pattern. No drag handle: the height
    is content-owned, not hand-dragged, so there is no geometry to yank. A gentle
-   fade-in marks "now editing" without animating layout (the `.sess-bodywrap`
+   fade-in marks document selection without animating layout (the `.sess-bodywrap`
    grid-rows reveal stays the ONE height animator per the file header); the global
    `[data-motion="reduced"]` gate (index.css) collapses it for reduced motion. */
 textarea.input.sess-notes-edit {
@@ -12661,17 +12873,18 @@ textarea.input.sess-notes-edit {
   margin-top: calc(-1 * var(--sp-3));
 }
 
-/* ── Section disclosure (B5/D4) — the campaign SectionPanel's detail toggle: a CLEAN,
-   compact CHEVRON expander docked centred at the card's BOTTOM EDGE, INSIDE the
-   `.section-card` surface (owner: the chevron must sit ON the card, not float in the
-   gap below it; the old worded footer pill was "not even readable on light/dark theme"
-   → "just an intuitive chevron in the box and expand that"). The header meta badge
-   already carries the count, so there's NO visible label — just a high-contrast chevron
-   knob in a faint gilt circle that brightens on hover/focus. The full button stays a
-   ≥44px tap target; the visible affordance is the small centred knob, NOT a full-width
-   bar. A hairline divider (spanning the card's inner width) separates it from the fixed
-   panel content above; the detail (`.section-detail-wrap`) reveals IN PLACE below it,
-   still inside the same card. ── */
+/* Campaign section creation actions share one compact trailing header cluster. */
+.section-head-controls {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+.section-head-controls > .btn {
+  min-height: 40px;
+}
+
+/* The archive disclosure keeps the owner-approved gilt knob docked inside the card. */
 .section-disclosure {
   position: relative;
   display: flex;
@@ -12685,8 +12898,6 @@ textarea.input.sess-notes-edit {
   background: none;
   cursor: pointer;
 }
-/* The docking hairline — a gold-fading rule above the chevron (the `.sec-rule` idiom,
-   centred), separating the disclosure from the fixed panel above it. */
 .section-disclosure::before {
   content: "";
   position: absolute;
@@ -12708,15 +12919,6 @@ textarea.input.sess-notes-edit {
     transparent
   );
 }
-/* The chevron knob — a refined gilt KNOB struck from the same "illuminated premium"
-   coin material as the count medallion: a saturated gilt radial fill from
-   `--accent-primary-bright`, a full-colour gold border, a top emboss + gold glow, and
-   an ENGRAVED inner ring (`::before`). ICON-ONLY by design (owner rejected worded
-   disclosure pills — "just an intuitive chevron in the box"); the header count carries
-   the number, the worded showLabel/hideLabel ride only as the button aria-label. The
-   glyph takes `--accent-text` (gold-leaf-300 on dark, deep gold-leaf-900 on light) so
-   it reads on BOTH themes where the old muted pill text failed over the parchment. It
-   brightens on hover/focus and rotates a satisfying 180° when the detail opens. */
 .section-disclosure-knob {
   position: relative;
   display: inline-flex;
@@ -12740,7 +12942,6 @@ textarea.input.sess-notes-edit {
     border-color var(--m-fast) var(--ease-standard),
     box-shadow var(--m-fast) var(--ease-standard);
 }
-/* The engraved inner ring — the struck-coin detail. */
 .section-disclosure-knob::before {
   content: "";
   position: absolute;
@@ -12760,9 +12961,6 @@ textarea.input.sess-notes-edit {
   color: var(--accent-text);
   transition: transform var(--m-normal) var(--ease-standard);
 }
-/* Move the keyboard focus halo OFF the full-width button onto the small knob, so the
-   visible focus matches the compact affordance (not a page-wide rectangle). The coin's
-   own emboss + glow persist (the hover/focus rule above keeps them) under the ring. */
 .section-disclosure:focus-visible {
   outline: none;
   box-shadow: none;
@@ -12770,6 +12968,11 @@ textarea.input.sess-notes-edit {
 .section-disclosure:focus-visible .section-disclosure-knob {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
+}
+@media (max-width: 720px) {
+  .section-head-controls > .btn {
+    min-height: 44px;
+  }
 }
 
 .uc-higher h5 {
@@ -17664,6 +17867,50 @@ button.econ-tok-filter:active .econ-disc {
   padding: var(--sp-2) var(--sp-3);
 }
 
+/* Level-up class fork: owned classes are the direct path; starting a new class
+   is a native, low-frequency disclosure. No second accordion state. */
+.lvl-class-fork {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+.lvl-owned-classes {
+  display: flex;
+  flex-direction: column;
+  /* The plaque's wax seal protrudes upward by roughly half its diameter. The
+     full 28px gap leaves a deliberate optical 16px between seal and rubric. */
+  gap: var(--sp-7);
+}
+.lvl-multiclass-options {
+  width: 100%;
+}
+.lvl-owned-classes .wiz-grid {
+  grid-template-columns: repeat(auto-fit, minmax(176px, 216px));
+  justify-content: center;
+}
+.lvl-multiclass-summary {
+  display: flex;
+  width: fit-content;
+  min-height: var(--touch-min);
+  margin-inline: auto;
+  list-style: none;
+}
+.lvl-multiclass-summary::-webkit-details-marker {
+  display: none;
+}
+.lvl-multiclass-summary svg {
+  transition: transform var(--m-fast) var(--ease-standard);
+}
+.lvl-multiclass-options[open] .lvl-multiclass-summary svg {
+  transform: rotate(90deg);
+}
+.lvl-multiclass-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin-top: var(--sp-5);
+}
+
 /* Selectable option — replaces `border-accent bg-accent/10`. Rest reads as a
    quiet embossed tile; selected fills with the STEP pigment (tinted face +
    full accent border + inset glow + accent text), so the chosen option is
@@ -18872,6 +19119,12 @@ button.econ-tok-filter:active .econ-disc {
   }
   .quick-aside {
     position: static;
+  }
+  /* Once the sticky rail collapses into document flow, its choice ledger merely
+     repeats the chapter summaries directly above it. Keep the live character
+     preview and missing-requirements guidance; drop only the duplicate index. */
+  .quick-aside .review-ledger {
+    display: none;
   }
 }
 
@@ -21384,6 +21637,16 @@ body:has(.fob) .toast-region {
    block begins (owner: proper margin between the header separator and the content). */
 .cmp-entry .mon-ref {
   margin-block-start: var(--sp-3);
+}
+/* The phone leaf deliberately keeps its one internal codex scroll, but the
+   15rem portrait plate consumed almost the entire first reading viewport and
+   left only faded stat labels below it. Keep the image as the recognition hero
+   while revealing the start of the mechanical statblock on open. Encounter
+   modals and wider leaves retain the full 15rem plate. */
+@media (max-width: 720px) {
+  .cmp-entry .mon-top--art .mon-portrait-slot {
+    width: min(100%, 12rem);
+  }
 }
 @container mon-ref (min-width: 34rem) {
   .mon-top--art {

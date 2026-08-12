@@ -18,14 +18,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import {
-  Plus,
-  TriangleAlert,
-  Users,
-  FlaskConical,
-  SearchX,
-  ListChecks,
-} from "lucide-react";
+import { Plus, TriangleAlert, Users, SearchX, ListChecks } from "lucide-react";
 import { primaryClassName, primarySubclassName } from "@/lib/classes";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
 import { Button } from "@/components/ui/button";
@@ -35,12 +28,10 @@ import { PickerSearch } from "@/components/sheet/picker-parts";
 import { matchesSearch } from "@/lib/search";
 import { FREE_TIER_LIMITS } from "@/lib/limits";
 import { useCharacters } from "@/hooks/useCharacters";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useRealmBackdrop } from "@/hooks/useRealmBackdrop";
 import { CharacterCard } from "./CharacterCard";
 import { ImportJsonButton } from "./ImportJsonButton";
-import { useLoadExample } from "./use-roster-actions";
 import { useRosterSelection } from "./use-roster-selection";
 import { useRosterBulkActions } from "./use-roster-bulk-actions";
 import { RosterBulkBar } from "./RosterBulkBar";
@@ -58,8 +49,6 @@ export function RosterPage() {
   useRealmBackdrop("var(--asset-roster-scene)");
   const navigate = useNavigate();
   const { characters, loading, error, hpReady } = useCharacters();
-  const isAdmin = useIsAdmin();
-  const loadExample = useLoadExample();
   const [query, setQuery] = useState("");
 
   // ─── Multi-select (owner 2026-06-07) — select N characters, bulk-delete now;
@@ -90,6 +79,10 @@ export function RosterPage() {
   // Free-tier cap (#29): bound the per-user character count. At the cap the Create
   // affordance is disabled with an explaining tooltip (never a silent dead-end).
   const atCharCap = characters.length >= FREE_TIER_LIMITS.characters;
+  // In the genuine first-run state the empty-state hero owns the primary Create
+  // action at the point of attention. Keep Import in the masthead as the alternate
+  // path, but do not show two identical Create buttons in one viewport.
+  const emptyRoster = !loading && !error && characters.length === 0;
   const capLabel = t("roster.atCharCap", {
     max: FREE_TIER_LIMITS.characters,
   });
@@ -132,26 +125,19 @@ export function RosterPage() {
         // toggles, so there is simply no reflow to engineer around: zero jump, no hiding.
         actions={
           <>
-            {/* Admin-only test tool — seeds the bundled example character. Hidden for
-                everyone else (and in the dev-bypass preview, whose uid is never the
-                admin uid). */}
-            {isAdmin ? (
-              <Button variant="ghost" onClick={() => void loadExample()}>
-                <Icon as={FlaskConical} size="sm" decorative />
-                {t("roster.loadExample")}
-              </Button>
-            ) : null}
             {/* "Select" lives on the grid toolbar below (it acts on the LIST, not the
                 page) — the header keeps only the "add a character" CTAs. */}
             <ImportJsonButton />
-            <Button
-              onClick={goCreate}
-              disabled={atCharCap}
-              title={atCharCap ? capLabel : undefined}
-            >
-              <Icon as={Plus} size="sm" decorative />
-              {createLabel}
-            </Button>
+            {!emptyRoster && (
+              <Button
+                onClick={goCreate}
+                disabled={atCharCap}
+                title={atCharCap ? capLabel : undefined}
+              >
+                <Icon as={Plus} size="sm" decorative />
+                {createLabel}
+              </Button>
+            )}
           </>
         }
       />
@@ -240,7 +226,7 @@ export function RosterPage() {
                 id="roster-select" is the focus-restore target. Long-press / ⌘-click on a
                 card is the accelerator. (`visibility:hidden` also drops it from tab
                 order + a11y.) */}
-            {characters.length > 1 && (
+            {filtered.length > 1 && (
               <Button
                 id="roster-select"
                 variant="ghost"

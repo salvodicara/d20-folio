@@ -41,6 +41,7 @@ function session(id: string, label: string): SessionLogDoc {
 }
 
 beforeEach(() => {
+  localStorage.clear();
   listMock.mockReset().mockResolvedValue([]);
   createMock.mockReset().mockResolvedValue("new-session-id");
   updateMock.mockClear();
@@ -72,62 +73,49 @@ describe("Sessions", () => {
     expect(await screen.findByText("Session 1")).toBeInTheDocument();
   });
 
-  it("expands to a read view and persists the summary on Save (D28 accordion)", async () => {
+  it("opens the live desk on the latest session as a directly editable document", async () => {
     listMock.mockResolvedValue([session("s1", "Session 1")]);
-    render(<Sessions campaignId="c1" />);
-    await screen.findByText("Session 1");
-    // Collapsed: the editor is not mounted until the row is expanded.
-    expect(screen.queryByLabelText(/session summary/i)).not.toBeInTheDocument();
-    // Expand the row, then reveal the editor on intent.
-    fireEvent.click(screen.getByRole("button", { name: /show session details/i }));
-    fireEvent.click(screen.getByRole("button", { name: /add a summary/i }));
+    render(<Sessions campaignId="c1" liveDesk />);
     const notes = await screen.findByLabelText(/session summary/i);
+    expect(notes).toHaveValue("");
     fireEvent.change(notes, { target: { value: "Slew the goblin boss." } });
-    // typing alone does not write — Save is the single commit point
+    expect(localStorage.getItem("d20.sessionDraft.c1.s1")).toBe("Slew the goblin boss.");
+    // The draft is durable immediately; blur is the explicit flush boundary.
     expect(updateMock).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: /^save$/i }));
-    expect(updateMock).toHaveBeenCalledWith("c1", "s1", {
-      notes: "Slew the goblin boss.",
-    });
+    fireEvent.blur(notes);
+    await waitFor(() =>
+      expect(updateMock).toHaveBeenCalledWith("c1", "s1", {
+        notes: "Slew the goblin boss.",
+      })
+    );
+    expect(localStorage.getItem("d20.sessionDraft.c1.s1")).toBe("Slew the goblin boss.");
   });
 
-  it("edit-in-place — seeds the editor with the existing summary and persists an edit on Save", async () => {
+  it("restores a crash-safe local draft over the last confirmed remote summary", async () => {
     listMock.mockResolvedValue([
       { ...session("s1", "Session 1"), notes: "The party crossed the bridge." },
     ]);
-    render(<Sessions campaignId="c1" />);
-    await screen.findByText("Session 1");
-    fireEvent.click(screen.getByRole("button", { name: /show session details/i }));
-    // Read view first; the editor mounts only on "Edit summary".
-    expect(screen.queryByLabelText(/session summary/i)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /edit summary/i }));
-    // The content-sized editor is SEEDED with the current notes (no blank re-type).
+    localStorage.setItem(
+      "d20.sessionDraft.c1.s1",
+      "The party crossed the bridge and met a scout."
+    );
+    render(<Sessions campaignId="c1" liveDesk />);
     const notes = await screen.findByLabelText<HTMLTextAreaElement>(/session summary/i);
-    expect(notes.value).toBe("The party crossed the bridge.");
-    fireEvent.change(notes, {
-      target: { value: "The party crossed the bridge and met a scout." },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /^save$/i }));
-    expect(updateMock).toHaveBeenCalledWith("c1", "s1", {
-      notes: "The party crossed the bridge and met a scout.",
-    });
+    expect(notes.value).toBe("The party crossed the bridge and met a scout.");
   });
 
-  it("edit-in-place — Cancel discards the draft and writes nothing", async () => {
+  it("uses the same direct editor when an archived session is selected", async () => {
     listMock.mockResolvedValue([
       { ...session("s1", "Session 1"), notes: "Original recap." },
     ]);
     render(<Sessions campaignId="c1" />);
     await screen.findByText("Session 1");
     fireEvent.click(screen.getByRole("button", { name: /show session details/i }));
-    fireEvent.click(screen.getByRole("button", { name: /edit summary/i }));
-    const notes = await screen.findByLabelText(/session summary/i);
-    fireEvent.change(notes, { target: { value: "throwaway edit" } });
-    fireEvent.click(screen.getByRole("button", { name: /^cancel$/i }));
-    // Back to the read view, nothing persisted, the original text intact.
-    expect(updateMock).not.toHaveBeenCalled();
-    expect(screen.queryByLabelText(/session summary/i)).not.toBeInTheDocument();
-    expect(screen.getByText("Original recap.")).toBeInTheDocument();
+    expect(await screen.findByLabelText(/session summary/i)).toHaveValue(
+      "Original recap."
+    );
+    // Destruction is a document action, not a competing control on every list row.
+    expect(screen.getByRole("button", { name: /delete session/i })).toBeInTheDocument();
   });
 
   it("CAMPAIGN-NOTES-UX — bounds the list to the latest 5 sessions behind View all", async () => {
@@ -146,17 +134,13 @@ describe("Sessions", () => {
     expect(screen.queryByText("Session 1")).not.toBeInTheDocument();
   });
 
-  it("renders an existing summary as block markdown when expanded", async () => {
+  it("preserves markdown source directly in the living document", async () => {
     listMock.mockResolvedValue([
       { ...session("s1", "Session 1"), notes: "### The bridge\n\n- found a door" },
     ]);
-    render(<Sessions campaignId="c1" />);
-    await screen.findByText("Session 1");
-    fireEvent.click(screen.getByRole("button", { name: /show session details/i }));
-    // The ### becomes a heading (not literal text); the bullet becomes a list item.
-    expect(
-      await screen.findByRole("heading", { name: "The bridge" })
-    ).toBeInTheDocument();
-    expect(screen.getByText("found a door").closest("li")).toBeInTheDocument();
+    render(<Sessions campaignId="c1" liveDesk />);
+    expect(await screen.findByLabelText(/session summary/i)).toHaveValue(
+      "### The bridge\n\n- found a door"
+    );
   });
 });

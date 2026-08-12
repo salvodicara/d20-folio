@@ -19,7 +19,16 @@ import { useState, useRef } from "react";
 import { useDismissOnOutside } from "@/hooks/useDismissOnOutside";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Globe, Moon, Sun, Settings, LogOut, ShieldCheck, Bug } from "lucide-react";
+import {
+  Globe,
+  MonitorCog,
+  Moon,
+  Sun,
+  Settings,
+  LogOut,
+  ShieldCheck,
+  Bug,
+} from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Portrait } from "@/components/shared/Portrait";
 import { useUIStore } from "@/stores/uiStore";
@@ -60,11 +69,11 @@ export function SettingsDropdown({ current }: SettingsDropdownProps) {
     setOpen(false);
   }
 
+  const nextTheme = theme === "dark" ? "light" : theme === "light" ? "system" : "dark";
+
   function cycleTheme() {
-    const order: Array<"dark" | "light" | "system"> = ["dark", "light", "system"];
-    const idx = order.indexOf(theme);
-    const next = order[(idx + 1) % order.length] ?? "dark";
-    setTheme(next);
+    setTheme(nextTheme);
+    setOpen(false);
   }
 
   function handleLogout() {
@@ -72,7 +81,19 @@ export function SettingsDropdown({ current }: SettingsDropdownProps) {
     void signOut();
   }
 
-  const ThemeIcon = theme === "dark" ? Moon : Sun;
+  // A one-click cycle must name and picture its DESTINATION, not its current
+  // state. Otherwise "Dark Mode" + a moon silently activating Light is a false
+  // affordance; the full Settings page remains the direct three-way chooser.
+  const ThemeIcon =
+    nextTheme === "dark" ? Moon : nextTheme === "light" ? Sun : MonitorCog;
+  const nextThemeLabel =
+    nextTheme === "dark"
+      ? t("settings.useDarkTheme")
+      : nextTheme === "light"
+        ? t("settings.useLightTheme")
+        : t("settings.useSystemTheme");
+  const nextLanguageLabel =
+    language === "en" ? t("settings.switchToItalian") : t("settings.switchToEnglish");
 
   // The visible name (shown on wide screens) must be part of the button's ACCESSIBLE
   // name too (WCAG 2.5.3 Label in Name) — so the aria-label leads with it when present.
@@ -151,7 +172,7 @@ export function SettingsDropdown({ current }: SettingsDropdownProps) {
               onClick={toggleLanguage}
             >
               <Icon as={Globe} decorative />
-              {t("settings.language")}: {language.toUpperCase()}
+              {nextLanguageLabel}
             </button>
             <button
               type="button"
@@ -160,11 +181,7 @@ export function SettingsDropdown({ current }: SettingsDropdownProps) {
               onClick={cycleTheme}
             >
               <Icon as={ThemeIcon} decorative />
-              {theme === "dark"
-                ? t("settings.darkMode")
-                : theme === "light"
-                  ? t("settings.lightMode")
-                  : t("settings.systemMode")}
+              {nextThemeLabel}
             </button>
             <div className="menu-div" role="separator" />
             <button

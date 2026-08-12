@@ -11,24 +11,20 @@
  * Under dev-bypass the listener opens nothing; a fixture is seeded so the hub (and
  * the create/join → hub flow) renders locally + in e2e (see `dev-fixture.ts`).
  *
- * IA — a TWO-BAND dashboard (CAMP-2/3), NOT a cockpit of mutually-exclusive panels (it
- * deliberately does NOT use the cockpit `TabStrip`):
- *   • PLAY band — the Party, full-width on top, always open. The thing the table reads
- *     every session (live HP/AC/conditions + the encounter layer).
- *   • MANAGE band — below, a `lg:grid-cols-2` dashboard (one column on mobile) read
- *     top-to-bottom in read-frequency order. CHRONICLE leads, full width, as a book-
- *     spread (reading column + chapter rail); then the SESSIONS | SHARED-NOTES pair
- *     (latest-item + add); then the compact TREASURY | ACCESS utility pair; and DM Tools
- *     (role / danger only) as the full-width foot. Each MANAGE section is a FIXED
- *     at-a-glance panel + a collapsible DETAIL slot, sticky per campaign
- *     ({@link SectionPanel}); Party never collapses.
+ * IA — a compact campaign WORKSPACE, not one permanently expanded document. Real local
+ * tabs separate Live (Party/Encounter + current recap), Journal (Chronicle + Notes),
+ * Resources (Treasury + Access), and manager-only DM tasks. Inactive panels remain mounted
+ * so drafts and disclosures survive task switches; the selected workspace is remembered per
+ * campaign. This is navigation by table activity, not a decorative anchor index.
  */
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import "./encounter.css";
 import { useTranslation } from "react-i18next";
 import { Navigate, useParams } from "react-router";
-import { AlertTriangle, Users } from "lucide-react";
+import { AlertTriangle, Coins, Crown, Users } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
+import { FolioBookIcon, FolioCombatIcon } from "@/components/shared/folio-icons";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { InlineEditable } from "@/components/shared/InlineEditable";
@@ -160,6 +156,207 @@ function IsolatedSection({ children }: { children: ReactNode }) {
   );
 }
 
+type CampaignWorkspaceView = "live" | "journal" | "resources" | "dm";
+
+/**
+ * CampaignWorkspaceNav — the campaign's compact local workspace switcher.
+ *
+ * These are real tabs: only one task-context participates in layout, while every panel
+ * remains mounted so an in-progress editor survives local view changes. The selected
+ * view is remembered per campaign; no domain state is copied into the navigation.
+ */
+function CampaignWorkspaceNav({
+  value,
+  onChange,
+  encounterRunning,
+  canManage,
+}: {
+  value: CampaignWorkspaceView;
+  onChange: (view: CampaignWorkspaceView) => void;
+  encounterRunning: boolean;
+  canManage: boolean;
+}) {
+  const { t } = useTranslation();
+
+  const items = [
+    {
+      id: "live" as const,
+      label: t("campaignHub.workspaceLive"),
+      icon: encounterRunning ? FolioCombatIcon : Users,
+      live: encounterRunning,
+    },
+    {
+      id: "journal" as const,
+      label: t("campaignHub.workspaceJournal"),
+      icon: FolioBookIcon,
+    },
+    {
+      id: "resources" as const,
+      label: t("campaignHub.workspaceResources"),
+      icon: Coins,
+    },
+    ...(canManage
+      ? [
+          {
+            id: "dm" as const,
+            label: t("campaignHub.dmTools"),
+            icon: Crown,
+          },
+        ]
+      : []),
+  ];
+
+  return (
+    <div
+      className="campaign-table-nav"
+      role="tablist"
+      aria-label={t("campaignHub.workspaceNavAria")}
+    >
+      <div className="campaign-table-nav-track">
+        {items.map((item) => (
+          <button
+            type="button"
+            role="tab"
+            key={item.id}
+            id={`campaign-tab-${item.id}`}
+            aria-controls={`campaign-panel-${item.id}`}
+            aria-selected={value === item.id}
+            aria-label={item.label}
+            className="campaign-table-nav-item"
+            data-live={item.live || undefined}
+            onClick={() => onChange(item.id)}
+          >
+            <span className="campaign-table-nav-seal" aria-hidden>
+              <Icon as={item.icon} size="sm" decorative />
+            </span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function readWorkspace(campaignId: string): CampaignWorkspaceView {
+  try {
+    const value = localStorage.getItem(`d20.campaignWorkspace.${campaignId}`);
+    return value === "journal" || value === "resources" || value === "dm"
+      ? value
+      : "live";
+  } catch {
+    return "live";
+  }
+}
+
+function CampaignWorkspace({
+  campaignId,
+  campaignName,
+  encounterRunning,
+  canManage,
+}: {
+  campaignId: string;
+  campaignName: string;
+  encounterRunning: boolean;
+  canManage: boolean;
+}) {
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState<CampaignWorkspaceView>(() => {
+    const remembered = readWorkspace(campaignId);
+    return remembered === "dm" && !canManage ? "live" : remembered;
+  });
+  const activeView = view === "dm" && !canManage ? "live" : view;
+
+  function selectView(next: CampaignWorkspaceView): void {
+    const safe = next === "dm" && !canManage ? "live" : next;
+    if (safe === activeView) return;
+    setView(safe);
+    try {
+      localStorage.setItem(`d20.campaignWorkspace.${campaignId}`, safe);
+    } catch {
+      // Storage-disabled browsers still retain the view for this mount.
+    }
+    // A newly selected task must begin at its own readable start. Without this,
+    // switching from a long Live recap inherited the old page offset and could
+    // open Journal/Resources/DM halfway down, with the section title hidden above
+    // the sticky workspace bar. Panels remain mounted, so drafts and disclosure
+    // state survive; only the viewport returns to the shared task boundary.
+    workspaceRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
+  }
+
+  return (
+    <>
+      <CampaignWorkspaceNav
+        value={activeView}
+        onChange={selectView}
+        encounterRunning={encounterRunning}
+        canManage={canManage}
+      />
+      <div ref={workspaceRef} className="on-art-scope campaign-workspace">
+        <section
+          id="campaign-panel-live"
+          role="tabpanel"
+          aria-labelledby="campaign-tab-live"
+          hidden={activeView !== "live"}
+          className="campaign-workspace-panel campaign-live-grid"
+        >
+          <IsolatedSection>
+            <Party />
+          </IsolatedSection>
+          <IsolatedSection>
+            <div className="campaign-live-recap">
+              <Sessions campaignId={campaignId} liveDesk />
+            </div>
+          </IsolatedSection>
+        </section>
+
+        <section
+          id="campaign-panel-journal"
+          role="tabpanel"
+          aria-labelledby="campaign-tab-journal"
+          hidden={activeView !== "journal"}
+          className="campaign-workspace-panel campaign-journal-grid"
+        >
+          <IsolatedSection>
+            <Chronicle campaignId={campaignId} campaignName={campaignName} />
+          </IsolatedSection>
+          <IsolatedSection>
+            <SharedNotes />
+          </IsolatedSection>
+        </section>
+
+        <section
+          id="campaign-panel-resources"
+          role="tabpanel"
+          aria-labelledby="campaign-tab-resources"
+          hidden={activeView !== "resources"}
+          className="campaign-workspace-panel campaign-resources-grid"
+        >
+          <IsolatedSection>
+            <Treasury />
+          </IsolatedSection>
+          <IsolatedSection>
+            <CampaignInvite canManage={canManage} />
+          </IsolatedSection>
+        </section>
+
+        {canManage && (
+          <section
+            id="campaign-panel-dm"
+            role="tabpanel"
+            aria-labelledby="campaign-tab-dm"
+            hidden={activeView !== "dm"}
+            className="campaign-workspace-panel"
+          >
+            <IsolatedSection>
+              <DmTools />
+            </IsolatedSection>
+          </section>
+        )}
+      </div>
+    </>
+  );
+}
+
 /** Dev-bypass only: seed a fixture campaign so the hub renders without Firestore. */
 function useDevCampaignSeed(campaignId: string): void {
   useEffect(() => {
@@ -267,48 +464,13 @@ function CampaignHub({ campaignId }: { campaignId: string }) {
           </IsolatedSection>
         }
       />
-      <div className="on-art-scope flex flex-col gap-12">
-        {/* PLAY band — the Party leads, full-width + always open (never collapsible). */}
-        <IsolatedSection>
-          <Party />
-        </IsolatedSection>
-        {/* MANAGE band — a two-column dashboard read top-to-bottom in read-frequency
-            order. The grid flows: Chronicle (full-width book-spread) · Sessions /
-            Shared-notes (the latest-item pair) · Treasury / Access (the compact utility
-            pair) · DM Tools (full-width foot, role/danger only). Chronicle + DM Tools
-            span both columns (`lg:col-span-2`, applied to their own panel root); DM
-            Tools renders null for a non-manager, so the page simply ends at the utility
-            pair (no phantom trailing cell). Each cell takes its own height (items-start)
-            so a folded section never stretches to its neighbour. */}
-        <div className="campaign-hub-grid grid gap-x-6 gap-y-12 lg:grid-cols-2 lg:items-start">
-          {/* CHRONICLE — the shared story, full width; inside, a book-spread (reading
-              column + chapter rail) on desktop. */}
-          <IsolatedSection>
-            <Chronicle campaignId={campaignId} campaignName={campaign.name} />
-          </IsolatedSection>
-          {/* SESSIONS | SHARED NOTES — the latest-item + add pair. */}
-          <IsolatedSection>
-            <Sessions campaignId={campaignId} />
-          </IsolatedSection>
-          <IsolatedSection>
-            <SharedNotes />
-          </IsolatedSection>
-          {/* TREASURY | ACCESS — the compact utility pair. Access (invite/share) is
-              UNGATED (every member grows the table); its lock-joins kill switch is
-              DM/admin-gated and sits with the link it disables. */}
-          <IsolatedSection>
-            <Treasury />
-          </IsolatedSection>
-          <IsolatedSection>
-            <CampaignInvite canManage={canManage} />
-          </IsolatedSection>
-          {/* DM Tools (role / danger only) — full-width foot; renders null for
-              non-managers, so it never reserves a grid cell for a player. */}
-          <IsolatedSection>
-            <DmTools />
-          </IsolatedSection>
-        </div>
-      </div>
+      <CampaignWorkspace
+        key={campaignId}
+        campaignId={campaignId}
+        campaignName={campaign.name}
+        encounterRunning={campaign.encounter !== null}
+        canManage={canManage}
+      />
     </main>
   );
 }

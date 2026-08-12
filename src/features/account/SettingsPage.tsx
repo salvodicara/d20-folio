@@ -140,27 +140,41 @@ export function SettingsPage() {
 
         {/* ── Account: the signed-in identity ───────────────────────────────── */}
         <Section title={t("common.account")}>
-          <InfoCard className="flex items-center gap-3">
-            {/* One avatar primitive (#45/#92): Google photo or the per-seed tinted
-                initial — consistent with the topbar + roster + admin. */}
-            <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full">
-              <Portrait
-                src={profile?.photoURL}
-                remote
-                name={identityName}
-                seed={user?.uid ?? identityName}
-              />
-            </span>
-            <div className="flex min-w-0 flex-col">
-              <span className="truncate font-display font-bold text-text-primary">
-                {identityName}
+          <InfoCard className="flex flex-wrap items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              {/* One avatar primitive (#45/#92): Google photo or the per-seed tinted
+                  initial — consistent with the topbar + roster + admin. */}
+              <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full">
+                <Portrait
+                  src={profile?.photoURL}
+                  remote
+                  name={identityName}
+                  seed={user?.uid ?? identityName}
+                />
               </span>
-              {displayName && email ? (
-                <span className="truncate font-mono text-xs text-text-secondary">
-                  {email}
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate font-display font-bold text-text-primary">
+                  {identityName}
                 </span>
-              ) : null}
+                {displayName && email ? (
+                  <span className="truncate font-mono text-xs text-text-secondary">
+                    {email}
+                  </span>
+                ) : null}
+              </div>
             </div>
+
+            {/* Session action belongs to the account it affects. Keeping it in
+                this card removes the detached footer register and shortens the
+                mobile journey without giving a safe action destructive dress. */}
+            <Button
+              variant="secondary"
+              onClick={() => void signOut()}
+              className="ml-auto shrink-0 max-sm:w-full max-sm:justify-center"
+            >
+              <Icon as={LogOut} size="sm" decorative />
+              {t("nav.signOut")}
+            </Button>
           </InfoCard>
         </Section>
 
@@ -177,20 +191,6 @@ export function SettingsPage() {
             </Button>
           </Section>
         ) : null}
-
-        {/* ── Sign out ──────────────────────────────────────────────────────── */}
-        {/* Quiet register: signing out is SAFE and reversible — the filled
-            danger dress is reserved for destructive acts (register rule). */}
-        <div className="mt-10 border-t border-dashed border-border-subtle pt-6">
-          <Button
-            variant="secondary"
-            onClick={() => void signOut()}
-            className="w-full justify-center sm:w-auto"
-          >
-            <Icon as={LogOut} size="sm" decorative />
-            {t("nav.signOut")}
-          </Button>
-        </div>
       </div>
     </main>
   );

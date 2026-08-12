@@ -7,7 +7,7 @@
  * No facets — the 10-option list is short; search covers it.
  */
 
-import { Wand2 } from "lucide-react";
+import { FolioMetamagicIcon } from "@/components/shared/folio-icons";
 import { SRD_METAMAGIC } from "@/data/metamagic";
 import { Icon } from "@/components/ui/icon";
 import { localizeSrd } from "@/i18n/resolver";
@@ -24,7 +24,8 @@ const mmText = (m: SrdMetamagicOption, field: string, locale: Locale) =>
 export const metamagicSpec: CompendiumPickerSpec<SrdMetamagicOption> = {
   id: "metamagic",
   label: (t) => t("metamagic.section"),
-  icon: Wand2,
+  icon: FolioMetamagicIcon,
+  repeatLeadingInRows: false,
   // No codex verdict — this is a single-source facet (every entry is a Sorcerer
   // Metamagic option), so a "Sorcerer" badge only echoes the tab; the subtitle
   // already carries the differentiator (the sorcery-point cost).
@@ -44,7 +45,11 @@ export const metamagicSpec: CompendiumPickerSpec<SrdMetamagicOption> = {
 
   row: (m, { t, locale }) => ({
     leading: (
-      <CmpSeal icon={Wand2} tone="var(--amethyst-300)" toneInk="var(--amethyst-ink)" />
+      <CmpSeal
+        icon={FolioMetamagicIcon}
+        tone="var(--amethyst-300)"
+        toneInk="var(--amethyst-ink)"
+      />
     ),
     name: mmText(m, "name", locale),
     meta: t("levelUp.metamagicCost", { cost: m.cost }),
@@ -53,7 +58,7 @@ export const metamagicSpec: CompendiumPickerSpec<SrdMetamagicOption> = {
   detail: (m, { t, locale }) => ({
     eyebrow: (
       <span className="inline-flex items-center gap-2">
-        <Icon as={Wand2} size="sm" className="text-accent" decorative />
+        <Icon as={FolioMetamagicIcon} size="sm" className="text-accent" decorative />
         {t("metamagic.eyebrow")}
       </span>
     ),

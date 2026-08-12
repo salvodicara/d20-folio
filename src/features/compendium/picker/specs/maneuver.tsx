@@ -7,7 +7,7 @@
  * Features-tab re-picker's "More" affordance. Faceted by action economy.
  */
 
-import { Swords } from "lucide-react";
+import { FolioCombatIcon } from "@/components/shared/folio-icons";
 import { MANEUVER_SLOTS, SRD_MANEUVERS } from "@/data/maneuvers";
 import { Icon } from "@/components/ui/icon";
 import { FilterChip } from "@/components/sheet/picker-parts";
@@ -33,7 +33,8 @@ function slotTone(slot: Slot): string {
 export const maneuverSpec: CompendiumPickerSpec<SrdManeuver> = {
   id: "maneuver",
   label: (t) => t("maneuvers.section"),
-  icon: Swords,
+  icon: FolioCombatIcon,
+  repeatLeadingInRows: false,
   // The codex verdict — the maneuver's action economy, in its action-type colour
   // (bonus = lapis, reaction = vermilion, free = muted), the cockpit convention.
   verdict: (m, { t }) => ({
@@ -79,7 +80,7 @@ export const maneuverSpec: CompendiumPickerSpec<SrdManeuver> = {
   ],
 
   row: (m, { t, locale }) => ({
-    leading: <CmpSeal icon={Swords} tone={slotTone(m.slot)} />,
+    leading: <CmpSeal icon={FolioCombatIcon} tone={slotTone(m.slot)} />,
     name: mvText(m, "name", locale),
     // The slot reads as the verdict chip; the subtitle stays UNIFORM (the source —
     // the subclass name) so the rows don't fork, and a maneuver that forces a save
@@ -92,7 +93,7 @@ export const maneuverSpec: CompendiumPickerSpec<SrdManeuver> = {
   detail: (m, { t, locale }) => ({
     eyebrow: (
       <span className="inline-flex items-center gap-2">
-        <Icon as={Swords} size="sm" className="text-accent" decorative />
+        <Icon as={FolioCombatIcon} size="sm" className="text-accent" decorative />
         {t("maneuvers.eyebrow")} · {t(`combat.${m.slot}`)}
       </span>
     ),

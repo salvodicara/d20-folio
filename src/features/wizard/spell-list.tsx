@@ -40,6 +40,8 @@ import { WizardForkTab } from "./chrome";
 import { useEnthroneAnchor } from "./use-enthrone-anchor";
 import { WizardFold } from "./fold";
 
+const INITIAL_SPELL_ROWS = 16;
+
 /** One learnable slot (a pool + how many it requires). */
 export interface SpellListSlot {
   id: string;
@@ -69,6 +71,9 @@ export function WizardSpellList({
   const [query, setQuery] = useState("");
   const [focusId, setFocusId] = useState<string | null>(null);
   const [readSpell, setReadSpell] = useState<SpellPickVM | null>(null);
+  const [expandedSlots, setExpandedSlots] = useState<ReadonlySet<string>>(
+    () => new Set()
+  );
 
   const slot = slots.find((sl) => sl.id === activeId) ?? slots[0];
   const slotPicks = (slot && picks[slot.id]) ?? [];
@@ -81,6 +86,22 @@ export function WizardSpellList({
         (sp) => sp.searchDesc
       )
     : [];
+  // An undirected spell corpus opens scan-sized, like the large feat picker.
+  // Search still covers and renders every match. Any already-picked deep row is
+  // appended to the bounded window so clearing a query never makes a choice
+  // appear to vanish.
+  const bounded =
+    slot && query.trim() === "" && !expandedSlots.has(slot.id)
+      ? visible.slice(0, INITIAL_SPELL_ROWS)
+      : visible;
+  const shown = slot
+    ? [
+        ...bounded,
+        ...slot.pool.filter(
+          (sp) => slotPicks.includes(sp.id) && !bounded.some((row) => row.id === sp.id)
+        ),
+      ]
+    : [];
 
   const onHeader = useCallback(
     (id: string) => {
@@ -91,17 +112,11 @@ export function WizardSpellList({
   );
   const slotId = slot?.id ?? "";
   const slotAmount = slot?.amount ?? 0;
-  const onCommit = useCallback(
-    (id: string) => onToggle(slotId, id, slotAmount),
-    [onToggle, slotId, slotAmount]
-  );
-  const onRead = useCallback(
-    (id: string) => {
-      const found = slot?.pool.find((sp) => sp.id === id) ?? null;
-      setReadSpell(found);
-    },
-    [slot]
-  );
+  const onCommit = (id: string) => onToggle(slotId, id, slotAmount);
+  const onRead = (id: string) => {
+    const found = slot?.pool.find((sp) => sp.id === id) ?? null;
+    setReadSpell(found);
+  };
 
   if (!slot) return null;
 
@@ -145,7 +160,7 @@ export function WizardSpellList({
 
       {/* Disclosure entries, not options — see WizardFeatList. */}
       <div className="wiz-list" ref={scopeRef} aria-label={slot.label}>
-        {visible.map((sp) => (
+        {shown.map((sp) => (
           <SpellEntry
             key={sp.id}
             sp={sp}
@@ -158,6 +173,17 @@ export function WizardSpellList({
         ))}
         {visible.length === 0 && <p className="wiz-empty">{t("common.noResults")}</p>}
       </div>
+      {shown.length < visible.length && (
+        <div className="mt-4 flex justify-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setExpandedSlots((current) => new Set([...current, slot.id]))}
+          >
+            {t("common.showMore")}
+          </Button>
+        </div>
+      )}
 
       {/* The shared compendium read view — ONE source of truth for a spell's
           details, opened from a picked row's open-book affordance. */}

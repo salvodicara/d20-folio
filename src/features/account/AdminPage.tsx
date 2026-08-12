@@ -36,6 +36,7 @@ import {
   Eye,
   ChevronDown,
   Bug,
+  FlaskConical,
   ExternalLink,
   AlertTriangle,
 } from "lucide-react";
@@ -76,6 +77,7 @@ import {
 } from "@/lib/firestore";
 import { getClosedIssueNumbers } from "@/lib/github-issue-state";
 import { reconcileBugReports } from "@/lib/bug-report-reconcile";
+import { useLoadExample } from "./use-load-example";
 
 const PAGE_SIZE = 25;
 const LAST_VISIT_KEY = "admin_last_visit";
@@ -110,6 +112,7 @@ export function AdminPage() {
   const navigate = useNavigate();
   const isAdmin = useIsAdmin();
   const user = useAuthStore((s) => s.user);
+  const loadExample = useLoadExample();
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -494,6 +497,29 @@ export function AdminPage() {
         )}
       </Section>
 
+      {/* Low-frequency smoke-test actions belong in the admin console, never in
+          the roster's daily creation path. */}
+      <Section title={t("admin.tools")}>
+        <InfoCard className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h3 className="font-semibold text-text-primary">
+              {t("admin.exampleCharacter")}
+            </h3>
+            <p className="mt-1 text-sm text-text-secondary">
+              {t("admin.exampleCharacterHint")}
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            className="shrink-0"
+            onClick={() => void loadExample()}
+          >
+            <Icon as={FlaskConical} size="sm" decorative />
+            {t("admin.loadExample")}
+          </Button>
+        </InfoCard>
+      </Section>
+
       {/* ── Bug inbox ─────────────────────────────────────────────────────── */}
       <Section title={t("admin.bugInbox")}>
         <BugInbox reports={bugReports} closureUnknown={bugClosureUnknown} users={users} />
@@ -853,7 +879,10 @@ function CharacterDrillDown({
       ) : (
         <ul className="flex flex-col gap-1.5">
           {roster.map((c) => (
-            <li key={c.id}>
+            // Production ids are unique per roster. The admin's deliberately
+            // shared dev route can represent several named fixtures with the
+            // same `mock-1` id, so identity needs both stable fields.
+            <li key={`${c.id}:${c.name}`}>
               <button
                 type="button"
                 onClick={() => onOpenSheet(c.id)}

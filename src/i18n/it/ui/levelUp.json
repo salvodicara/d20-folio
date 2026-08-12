@@ -105,6 +105,7 @@
     "doneEyebrow": "Aumento di livello completato",
     "hpTaken": "PF +{{hp}} guadagnati",
     "advanceWhich": "Quale classe avanza?",
+    "exploreMulticlass": "Esplora opzioni multiclasse ({{count}})",
     "advanceTo": "Avanza al liv. {{level}}",
     "newClassL1": "Nuova classe · liv. 1",
     "multiclassGains": "<g>Multiclassare</g> in {{class}} concede: {{gains}}",

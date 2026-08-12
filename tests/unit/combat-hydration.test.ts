@@ -20,25 +20,47 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { useCombatStore } from "@/stores/combatStore";
-import { syncCombatFromSession } from "@/features/character/center/combat-hydration";
+import {
+  syncCombatFromSession,
+  syncCombatTurnContext,
+} from "@/features/character/center/combat-hydration";
+import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
+
+function encounter(round: number, isMyTurn = true): GlobalCombat {
+  return {
+    campaignId: "campaign-1",
+    encounter: { epoch: 7 } as GlobalCombat["encounter"],
+    view: {} as GlobalCombat["view"],
+    myId: "pc-user-1",
+    characterId: "char-1",
+    gathering: false,
+    isMyTurn,
+    initiativeBonus: 3,
+    initiativeRoll: 15,
+    round,
+  };
+}
 
 /**
- * Thin wrapper around the real policy that tracks the "already hydrated" id the way
- * `TurnEconomyProvider`'s ref does, so each `arrive` reads like one Firestore snapshot.
- * `round` is the value hydrated from the `combat/state` subdoc (`characterStore.combatRound`).
+ * Thin wrapper around the real policy, so each `arrive` reads like one Firestore snapshot.
+ * The bound character id lives in combatStore itself: unlike a provider ref it survives
+ * a route remount. `round` is hydrated from the `combat/state` subdoc.
  */
 function makeArriver() {
-  let hydratedId: string | null = null;
   return function arrive(id: string, round: number, init: string): boolean {
-    const fresh = syncCombatFromSession(id, round, init, hydratedId);
-    if (fresh) hydratedId = id;
-    return fresh;
+    return syncCombatFromSession(id, round, init);
   };
 }
 
 describe("Combat sync — async character arrival", () => {
   beforeEach(() => {
     useCombatStore.getState().endCombat();
+    useCombatStore.setState({
+      hydratedCharacterId: null,
+      encounterKey: null,
+      ownTurnKey: null,
+      awaitingOwnTurn: false,
+    });
   });
 
   it("hydrates from the subdoc round + initiative on first arrival of a character", () => {
@@ -67,6 +89,56 @@ describe("Combat sync — async character arrival", () => {
     expect(arrive("char-2", 3, "Bron +1")).toBe(true);
     expect(useCombatStore.getState().round).toBe(3);
     expect(useCombatStore.getState().initiative).toBe("Bron +1");
+  });
+
+  it("keeps an unfinished turn when the same character cockpit remounts after campaign navigation", () => {
+    const arrive = makeArriver();
+    arrive("char-1", 4, "15");
+    syncCombatTurnContext(encounter(4));
+    expect(
+      useCombatStore.getState().selectAction({
+        id: "quarterstaff",
+        name: "Quarterstaff",
+        slot: "action",
+      })
+    ).toBe(true);
+
+    // A route change destroys and recreates TurnEconomyProvider, but not Zustand.
+    // Re-arriving at the same character must reconcile durable round/initiative only.
+    expect(arrive("char-1", 4, "15")).toBe(false);
+    expect(syncCombatTurnContext(encounter(4))).toBeNull();
+    expect(useCombatStore.getState().selected.action.map((action) => action.id)).toEqual([
+      "quarterstaff",
+    ]);
+  });
+
+  it("resets a ledger missed while unmounted when the next own turn has begun", () => {
+    const arrive = makeArriver();
+    arrive("char-1", 4, "15");
+    syncCombatTurnContext(encounter(4));
+    useCombatStore.getState().selectAction({
+      id: "quarterstaff",
+      name: "Quarterstaff",
+      slot: "action",
+    });
+
+    expect(syncCombatTurnContext(encounter(5))).toBe("turn-start");
+    expect(useCombatStore.getState().selected.action).toEqual([]);
+  });
+
+  it("returns to baseline when the encounter ended while the cockpit was unmounted", () => {
+    const arrive = makeArriver();
+    arrive("char-1", 4, "15");
+    syncCombatTurnContext(encounter(4));
+    useCombatStore.getState().selectAction({
+      id: "quarterstaff",
+      name: "Quarterstaff",
+      slot: "action",
+    });
+
+    expect(syncCombatTurnContext(null)).toBe("encounter-ended");
+    expect(useCombatStore.getState().selected.action).toEqual([]);
+    expect(useCombatStore.getState().round).toBe(1);
   });
 
   it("character switch resets in-memory round even if character B's subdoc round is 1", () => {
@@ -99,6 +171,12 @@ describe("Combat sync — async character arrival", () => {
 describe("Combat sync — remote reconcile (issue #41)", () => {
   beforeEach(() => {
     useCombatStore.getState().endCombat();
+    useCombatStore.setState({
+      hydratedCharacterId: null,
+      encounterKey: null,
+      ownTurnKey: null,
+      awaitingOwnTurn: false,
+    });
   });
 
   it("reconciles a REMOTE initiative change on the SAME character; an unchanged round survives", () => {

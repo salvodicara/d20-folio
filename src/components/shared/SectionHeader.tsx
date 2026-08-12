@@ -6,10 +6,8 @@
  * that want just the rubric use it directly, so the ~8-line `.sec-head` markup
  * stops being re-declared in every tab/modal (it was hand-rolled in ~15 places plus
  * two private `SectionHeader` copies in LevelUpModal + BioTab). Purely presentational
- * by default — a header is a rubric. The campaign hub's disclosure (the
- * {@link "@/features/campaigns/SectionPanel"} detail toggle) keeps its chevron on a
- * button docked at the card's BOTTOM edge, NOT on this header, because it always
- * shows a fixed panel and only folds the BULKY detail (B5/D4).
+ * by default — a header is a rubric. Campaign `SectionPanel` composes its own compact
+ * trailing action/disclosure cluster through `meta`; this atom stays presentational.
  *
  * The one OPT-IN control mode is `disclosure`: for a section whose WHOLE body is
  * on-demand reference (the Play tab's collapsed-by-default combat playbook + rules
@@ -24,7 +22,7 @@
  * "illuminated premium" coin (`.sec-count`). That treatment is for COUNTS only — string
  * totals ("120 gp") stay on `meta`, which keeps the far-right `.sec-meta` slot. The two
  * are mutually exclusive in practice (a header is either counting items or showing a
- * total/hint); when `count` is set the header switches to the 4-column `.has-count` grid.
+ * total/hint); when `count` is set the header switches to the `.has-count` grid.
  *
  * Usage:
  *   <SectionHeader title="Spells" />
@@ -96,6 +94,7 @@ export function SectionHeader({
         "sec-head",
         tight && "tight",
         count != null && "has-count",
+        meta && "has-meta",
         disclosure && "is-toggle",
         className
       )}

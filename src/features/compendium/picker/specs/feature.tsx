@@ -6,7 +6,8 @@
  * mechanics detail block, and the exact `{ srdId }` commit.
  */
 
-import { Sparkles, ScrollText } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { FolioScrollIcon } from "@/components/shared/folio-icons";
 import { classFeatures } from "@/data/classes";
 import { primaryClassId, totalLevel } from "@/lib/classes";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -44,7 +45,8 @@ function charLevelOf(ctx: PickerCtx): number {
 export const featureSpec: CompendiumPickerSpec<SrdClassFeatureData> = {
   id: "feature",
   label: (t) => t("nav.features"),
-  icon: ScrollText,
+  icon: FolioScrollIcon,
+  repeatLeadingInRows: false,
   // The codex verdict — the source class (the at-a-glance classifier on a feature
   // leaf), in the gold "feature" voice the cockpit seal uses.
   verdict: (feature, { t }) => ({
@@ -154,7 +156,7 @@ export const featureSpec: CompendiumPickerSpec<SrdClassFeatureData> = {
     return {
       leading: (
         <CmpSeal
-          icon={ScrollText}
+          icon={FolioScrollIcon}
           tone="var(--accent-primary)"
           toneInk="var(--accent-text)"
         />

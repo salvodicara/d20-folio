@@ -2,17 +2,15 @@
  * SectionPanel — the campaign hub's MANAGE-band chrome (replaces CollapsibleSection).
  *
  * The contract this pins: the FIXED panel (`children`) is ALWAYS rendered; the DETAIL
- * is the only collapsible part, revealed by a compact CHEVRON button (the disclosure is
- * on the CARD, never the header — B5/D4) with NO visible label (the worded
+ * is the only collapsible part, revealed by a compact gilt CHEVRON docked inside the
+ * card with NO visible label (the worded
  * showLabel/hideLabel ride as its aria-label) carrying aria-expanded / aria-controls +
  * the CSS `grid-template-rows` reveal (`.section-detail-wrap`); the open/closed choice
  * is sticky per campaign×section in localStorage (defaults CLOSED so the panel stays
  * short); and with NO `detail` there is no disclosure at all (a static header).
  *
- * The PLACEMENT contract (owner): a collapsible section is ONE `.info-card`/`.section-card`
- * that ENCLOSES the fixed panel + the disclosure + the expandable detail — the chevron
- * sits ON the card, never floats in the gap below it; a NON-collapsible section renders
- * its children directly (no section card), so it keeps whatever surface they bring.
+ * A collapsible section keeps the fixed panel + chevron + expandable detail in ONE
+ * `.info-card`/`.section-card`.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -41,7 +39,7 @@ describe("SectionPanel", () => {
     );
     // The fixed body renders regardless of fold state (bug C: never hidden).
     expect(screen.getByText("always-on coins")).toBeInTheDocument();
-    // The header is a STATIC rubric — never a control (no header toggle).
+    // The title remains a static heading; only the card's chevron is a control.
     expect(screen.queryByRole("button", { name: "Treasury" })).not.toBeInTheDocument();
     // The detail is the disclosure target — collapsed by default (data-open absent).
     const wrap = container.querySelector(".section-detail-wrap");
@@ -53,12 +51,10 @@ describe("SectionPanel", () => {
     expect(toggle).toHaveClass("section-disclosure");
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(toggle).toHaveAttribute("aria-controls", "x-detail");
-    // No visible text — only the chevron knob (the worded label is aria-only).
+    // No visible text — only the gilt chevron knob (the worded label is aria-only).
     expect(toggle.textContent).toBe("");
     expect(toggle.querySelector(".section-disclosure-knob")).not.toBeNull();
-    // PLACEMENT — ONE card encloses the fixed panel + the disclosure + the detail (the
-    // chevron sits ON the card, never floats below it). The fixed body, the chevron, and
-    // the detail-wrap all share the same `.section-card` ancestor.
+    // PLACEMENT — ONE card encloses the fixed panel, disclosure and detail.
     const card = container.querySelector(".section-card");
     expect(card).not.toBeNull();
     expect(card).toHaveClass("info-card");

@@ -36,6 +36,8 @@ const OVERSCAN = 10;
 /** The first-frame slice, before the viewport is measured — bounded so cold open never
  *  reconciles the whole pool, yet ample so the initial screenful is always covered. */
 const INITIAL_WINDOW = 40;
+/** Breathing room above a route-revealed row: seated at the start, not glued to it. */
+const REVEAL_TOP_GAP = 8;
 
 /** The nearest scrollable ancestor — the `ModalScroll` body in a modal, the page's
  *  `.cmp-list` in bare mode — i.e. the element the list scrolls against. */
@@ -51,6 +53,12 @@ interface VirtualRowsProps<T> {
   items: readonly T[];
   getKey: (item: T) => string;
   renderItem: (item: T) => ReactNode;
+  /**
+   * The route-selected entry in the persistent Compendium index. It may sit
+   * outside the mounted virtual window, so revealing it has to happen here —
+   * a row-level `scrollIntoView` cannot target DOM that does not exist yet.
+   */
+  revealKey?: string;
 }
 
 /**
@@ -64,7 +72,7 @@ interface VirtualRowsProps<T> {
  * and SSR-less first paint still show the whole list. A real browser measures a
  * positive height and switches to the windowed path.
  */
-function VirtualRows<T>({ items, getKey, renderItem }: VirtualRowsProps<T>) {
+function VirtualRows<T>({ items, getKey, renderItem, revealKey }: VirtualRowsProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLElement | null>(null);
   const count = items.length;
@@ -75,6 +83,14 @@ function VirtualRows<T>({ items, getKey, renderItem }: VirtualRowsProps<T>) {
     start: 0,
     end: Math.min(count, INITIAL_WINDOW),
   });
+  // A far deep-link near the END of the corpus needs a short trailing runway or
+  // the browser physically cannot scroll that row to the top (it clamps at the
+  // content bottom). Ordinary visible row clicks never earn this spacer.
+  const [revealRunway, setRevealRunway] = useState<{
+    key: string;
+    px: number;
+    align: boolean;
+  } | null>(null);
 
   // Runs only from effects / scroll+resize handlers (never during render), so reading
   // the scroll-box ref here is safe. Depends on the state it reads, so it re-derives.
@@ -144,6 +160,50 @@ function VirtualRows<T>({ items, getKey, renderItem }: VirtualRowsProps<T>) {
     recompute();
   }, [recompute]);
 
+  // A palette/deep-link selection can be hundreds of rows beyond the initial
+  // virtual window. Give a near-end row only the trailing runway it needs, move
+  // it to the START of the index with a small optical inset, then re-window so
+  // the highlighted row mounts there. An ordinary click on an already-visible
+  // row preserves the reader's position.
+  useLayoutEffect(() => {
+    if (!revealKey) return;
+    const cont = containerRef.current;
+    const sc = scrollRef.current;
+    if (!cont || !sc || sc.clientHeight <= 0) return;
+    const index = items.findIndex((item) => getKey(item) === revealKey);
+    if (index < 0) return;
+
+    const scRect = sc.getBoundingClientRect();
+    const contRect = cont.getBoundingClientRect();
+    const targetTop = contRect.top + index * stride;
+    const targetBottom = targetTop + Math.max(1, stride - ROW_GAP);
+    if (revealRunway?.key !== revealKey) {
+      const alreadyVisible =
+        targetTop >= scRect.top + REVEAL_TOP_GAP && targetBottom <= scRect.bottom;
+      const trailingRows = count - index - 1;
+      setRevealRunway({
+        key: revealKey,
+        align: !alreadyVisible,
+        px: alreadyVisible
+          ? 0
+          : Math.max(
+              0,
+              sc.clientHeight -
+                (stride - ROW_GAP) -
+                REVEAL_TOP_GAP -
+                trailingRows * stride
+            ),
+      });
+      return;
+    }
+    if (!revealRunway.align) return;
+
+    const next = Math.max(0, sc.scrollTop + targetTop - scRect.top - REVEAL_TOP_GAP);
+    if (Math.abs(next - sc.scrollTop) < 1) return;
+    sc.scrollTop = next;
+    recomputeRef.current();
+  }, [count, getKey, items, revealKey, revealRunway, stride]);
+
   if (range === null) {
     return (
       <div ref={containerRef} className="flex flex-col gap-1.5">
@@ -178,10 +238,15 @@ function VirtualRows<T>({ items, getKey, renderItem }: VirtualRowsProps<T>) {
       </div>
     );
   }
+  const runwayPx = revealRunway && revealRunway.key === revealKey ? revealRunway.px : 0;
   return (
     <div
       ref={containerRef}
-      style={{ position: "relative", height: count * stride, width: "100%" }}
+      style={{
+        position: "relative",
+        height: count * stride + runwayPx,
+        width: "100%",
+      }}
     >
       {slice}
     </div>
@@ -215,7 +280,12 @@ export function CompendiumResultList<T>({
     <CompendiumResultRow entry={entry} picker={picker} spec={spec} />
   );
   const rows = (
-    <VirtualRows items={picker.filtered} getKey={spec.getId} renderItem={renderItem} />
+    <VirtualRows
+      items={picker.filtered}
+      getKey={spec.getId}
+      renderItem={renderItem}
+      revealKey={bare && picker.selected ? spec.getId(picker.selected) : undefined}
+    />
   );
 
   if (bare) {
@@ -266,7 +336,7 @@ function CompendiumResultRow<T>({
 
   return (
     <PickerRow
-      leading={base.leading}
+      leading={spec.repeatLeadingInRows === false ? undefined : base.leading}
       name={base.name}
       meta={base.meta}
       state={added ? "added" : base.state}

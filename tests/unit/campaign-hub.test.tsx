@@ -9,7 +9,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useSearchParams } from "react-router";
 import type { CampaignDoc } from "@/types/campaign";
 
@@ -121,6 +121,7 @@ function renderHubAt(path: string) {
 
 describe("CampaignHubPage", () => {
   beforeEach(() => {
+    localStorage.clear();
     order.length = 0;
     onDataRef.fn = null;
     subscribeMock.mockClear();
@@ -142,14 +143,20 @@ describe("CampaignHubPage", () => {
     );
   });
 
-  it("renders the campaign + sections once a snapshot arrives", () => {
+  it("renders a real task workspace and switches context without leaving the campaign", () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
     renderHubAt("/campaigns/c1");
     act(() => onDataRef.fn?.(makeCampaign({ id: "c1", name: "Gildenmoor" })));
     expect(
       screen.getByRole("heading", { name: "Gildenmoor", level: 1 })
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /party/i })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /treasury/i })).toBeNull();
+    fireEvent.click(screen.getByRole("tab", { name: /resources/i }));
     expect(screen.getByRole("heading", { name: /treasury/i })).toBeInTheDocument();
+    expect(localStorage.getItem("d20.campaignWorkspace.c1")).toBe("resources");
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "auto" });
   });
 
   it("detaches the listener on unmount, flushing the pending write FIRST", () => {

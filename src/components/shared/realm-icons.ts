@@ -1,8 +1,12 @@
-/** Stable glyph vocabulary shared by every top-level realm navigator. */
-import { BookOpen, ScrollText, Tent } from "lucide-react";
+/** Stable fantasy glyph vocabulary shared by every top-level realm navigator. */
+import {
+  FolioBookIcon,
+  FolioScrollIcon,
+  FolioTentIcon,
+} from "@/components/shared/folio-icons";
 
 export const REALM_ICONS = {
-  characters: ScrollText,
-  campaigns: Tent,
-  compendium: BookOpen,
+  characters: FolioScrollIcon,
+  campaigns: FolioTentIcon,
+  compendium: FolioBookIcon,
 } as const;

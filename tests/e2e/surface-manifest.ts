@@ -65,6 +65,12 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   { slug: "login", route: "/login?devSignedOut=1" }, // signed-out welcome + Google CTA
   // ─── Shell realms (Phase-1: stubs + re-mounted creation) ─────────────────────
   { slug: "home", route: "/characters" }, // My Characters roster (canonical; `/` redirects here)
+  // The production-shaped gallery unlocks the list tools hidden on a one-card
+  // roster. Its derived interaction states keep filtering and bulk selection honest.
+  { slug: "roster-gallery", route: "/characters" },
+  { slug: "roster-selection", route: "/characters" },
+  { slug: "roster-no-results", route: "/characters" },
+  { slug: "roster-empty", route: "/characters" },
   { slug: "character", route: "/characters/mock-1" }, // character cockpit (Play tab — default)
   // Cockpit tabs — in-view `?tab=` STATE on the same character route (each is a
   // re-homed sheet domain; the surface captures that tab's center panel).
@@ -72,7 +78,13 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   { slug: "character-features", route: "/characters/mock-1?tab=features" }, // Features tab
   { slug: "character-inventory", route: "/characters/mock-1?tab=inventory" }, // Inventory tab
   { slug: "character-spells", route: "/characters/mock-1?tab=spells" }, // Spells tab
+  { slug: "character-feature-expanded", route: "/characters/mock-1?tab=features" },
+  { slug: "character-item-expanded", route: "/characters/mock-1?tab=inventory" },
+  { slug: "character-spell-expanded", route: "/characters/mock-1?tab=spells" },
   { slug: "character-edit", route: "/characters/mock-1" }, // cockpit in EDIT mode — frame + banner (#60)
+  // The shared cropper's square character-portrait anatomy. Banner crop is
+  // enrolled separately because its viewport and framing contract differ.
+  { slug: "character-portrait-crop", route: "/characters/mock-1?tab=bio" },
   // The three high-frequency add-library dialogs: each is a distinct decision
   // surface, not adequately covered by its resting cockpit tab.
   { slug: "character-spell-add", route: "/characters/mock-1?tab=spells" },
@@ -161,6 +173,10 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   // step on the Bard mock (hp + spells steps); `level-up-boon` drives an
   // ASI-level character (Rogue 7→8) to the boon step's feat morph list.
   { slug: "level-up", route: "/characters/mock-1/level-up" },
+  {
+    slug: "level-up-multiclass",
+    route: "/characters/mock-1/level-up",
+  },
   { slug: "level-up-boon", route: "/characters/scn-soulknife-rogue/level-up" },
   { slug: "level-up-skilled", route: "/characters/scn-fighter-3/level-up" },
   // P7 — the SUBCLASS step's hero altar (the chosen oath enthroned with its
@@ -169,17 +185,23 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
     slug: "level-up-subclass",
     route: "/characters/scn-blessed-paladin-2/level-up",
   },
+  // The Bard 9→10 journey's remaining chapters: spell acquisition, editable
+  // recap/commit, and the persistent post-save ceremony.
+  { slug: "level-up-spells", route: "/characters/mock-1/level-up" },
   // B5 — the spell SWAP step (its own orb on swap-capable casters).
   { slug: "level-up-swap", route: "/characters/mock-1/level-up" },
+  { slug: "level-up-review", route: "/characters/mock-1/level-up" },
+  { slug: "level-up-complete", route: "/characters/mock-1/level-up" },
   { slug: "campaigns", route: "/campaigns" }, // campaigns realm
   { slug: "campaign-create", route: "/campaigns" }, // create-campaign modal
   { slug: "campaign-join", route: "/campaigns" }, // join-campaign modal
   // The campaign hub — the unified Party section rests on the party OVERVIEW by
   // default (the dev fixture seeds no encounter).
   { slug: "campaign-hub", route: "/campaigns/mock-1" },
-  // The low-frequency DM role/member/danger controls intentionally rest folded;
-  // this inline twin opens the real SectionPanel disclosure so both states remain
-  // first-class screenshot/a11y/i18n/mobile evidence.
+  { slug: "campaign-banner-crop", route: "/campaigns/mock-1" },
+  // The manager-only DM workspace is already the disclosure boundary: its
+  // role/member/danger controls render directly, without a redundant inner
+  // chevron. This state keeps that complete manager desk first-class evidence.
   { slug: "campaign-hub-dm-tools", route: "/campaigns/mock-1" },
   // The hub's four everyday inline editing/transaction states. They transform the
   // existing section in place (no dialog), so each needs its own truthful visual,
@@ -247,6 +269,9 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   { slug: "compendium-monster-entry", route: "/compendium?type=monster&sel=mimic" },
   { slug: "settings-page", route: "/settings" }, // settings page
   { slug: "legal-page", route: "/legal" }, // legal & attribution (linked from the footer)
+  // The two long legal registers intentionally rest folded so the colophon stays
+  // scannable. This twin proves both native disclosures remain readable when open.
+  { slug: "legal-page-expanded", route: "/legal" },
   // The PUBLIC share-link sheet + its dead-link twin. Both are genuinely
   // ACCOUNT-LESS surfaces in production, so they earn their own baselines: the
   // read-only cockpit rendered for a stranger, and the quiet "no longer shared"
@@ -268,6 +293,7 @@ export const SURFACE_ROUTES: readonly SurfaceRoute[] = [
   // ─── Global shell overlays ───────────────────────────────────────────────────
   { slug: "command-palette", route: "/characters" }, // "Search the Folio" palette
   { slug: "admin-page", route: "/admin" },
+  { slug: "admin-user-expanded", route: "/admin" },
   { slug: "account-menu", route: "/characters" }, // account + theme dropdown (topbar)
   { slug: "roster-card-menu", route: "/characters" }, // roster card overflow ("⋯") row-actions menu
   { slug: "report-dialog", route: "/characters" }, // OWN-37 bug/feature reporter (palette → "bug")

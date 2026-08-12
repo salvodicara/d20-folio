@@ -35,12 +35,13 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useConfirmStore } from "@/stores/confirmStore";
-import { Plus, Trash2, ChevronUp, ChevronDown, ListChecks, Upload } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, Upload } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { CheckboxField } from "@/components/ui/selection";
 import { IconPicker } from "@/components/shared/icon-picker";
+import { FolioChecklistIcon } from "@/components/shared/folio-icons";
 import { resolveAlgoIcon, DEFAULT_ALGO_ICON } from "@/components/shared/icon-registry";
 import {
   parseAlgorithmJson,
@@ -248,7 +249,7 @@ export function CombatAlgorithm() {
       >
         <InfoCard className="algo-empty">
           <span className="ai-glyph" aria-hidden>
-            <Icon as={ListChecks} size="lg" decorative />
+            <Icon as={FolioChecklistIcon} size="lg" decorative />
           </span>
           <p>{t("algorithm.empty")}</p>
         </InfoCard>
@@ -279,7 +280,7 @@ export function CombatAlgorithm() {
       {/* Intro — the playbook gloss */}
       <div className="algo-intro">
         <span className="ai-glyph" aria-hidden>
-          <Icon as={ListChecks} size="lg" decorative />
+          <Icon as={FolioChecklistIcon} size="lg" decorative />
         </span>
         <p>{t("algorithm.subtitle")}</p>
       </div>

@@ -1,5 +1,5 @@
 /**
- * item-icons — the SINGLE source of truth for the lucide glyph that represents a
+ * item-icons — the SINGLE source of truth for the glyph that represents a
  * weapon / armor / shield / tool / gear / pack / magic item across the whole app
  * (D35). Every surface that draws an item seal — the inventory page, the
  * compendium, the Add-Item picker, the creation/level-up wizards, the weapon-
@@ -7,65 +7,51 @@
  * with the SAME glyph everywhere (consistency by design) and a tweak propagates
  * from one place.
  *
- * Lucide remains the baseline. A proven semantic gap may use one normalized,
- * attributed fantasy glyph behind this same resolver; consumers never import it
- * directly. Icon-only helpers (no JSX) so callers wrap them in `<KindSeal>` /
- * `<Icon>` / `<UniversalCard sealIcon>`.
+ * Lucide remains the action/control baseline. Object nouns that must read as
+ * fantasy equipment use one normalized, attributed filled-glyph vocabulary behind
+ * this resolver; consumers never import it directly. Icon-only helpers (no JSX)
+ * so callers wrap them in `<KindSeal>` / `<Icon>` / `<UniversalCard sealIcon>`.
  */
 import type { ComponentType, SVGProps } from "react";
 import {
-  // weapons
-  Sword,
-  Swords,
-  Axe,
-  Hammer,
-  Gavel,
-  Pickaxe,
-  BowArrow,
-  Crosshair,
-  Target,
-  Zap,
-  // armor / shields
-  Shirt,
-  Shield,
-  // tools (one glyph per category — artisan/instrument/gaming/kit/navigator/thieves)
-  Wrench,
-  Music,
-  Dice5,
-  Briefcase,
-  Compass,
-  KeyRound,
-  // gear families
-  Backpack,
-  Package,
-  Box,
-  Flame,
-  Lamp,
-  FlaskRound,
-  FlaskConical,
-  Sparkles,
-  Leaf,
-  Cross,
-  Stethoscope,
-  BookOpen,
-  ScrollText,
-  Bed,
-  Tent,
-  Utensils,
-  Droplet,
-  Bell,
-  Lock,
-  Anchor,
-  PenTool,
-  Drama,
-  Wand,
-  Wand2,
-} from "lucide-react";
-import {
+  BreastplateIcon,
+  CampfireIcon,
+  ClubIcon,
+  CompassIcon,
+  CrowbarIcon,
+  CrossbowIcon,
   DiamondRingIcon,
+  DiceIcon,
+  FlailIcon,
+  LockpicksIcon,
+  MaceIcon,
+  ManaclesIcon,
+  MusketIcon,
+  PistolIcon,
+  PotionIcon,
+  SickleIcon,
+  SlingIcon,
   SpearIcon,
+  StaffIcon,
+  WarPickIcon,
+  WeaponAxeIcon,
+  WeaponBowIcon,
+  WeaponHammerIcon,
+  WeaponSwordIcon,
+  WhipIcon,
   WizardStaffIcon,
 } from "@/components/shared/fantasy-icons";
+import {
+  ClassArtificerIcon,
+  ClassBardIcon,
+  FolioDefendIcon,
+  FolioInventoryIcon,
+  FolioMagicItemIcon,
+  FolioMetamagicIcon,
+  FolioScrollIcon,
+  FolioSpellIcon,
+  FolioSupportIcon,
+} from "@/components/shared/folio-icons";
 import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_TOOLS_2024, type ToolCategory } from "@/lib/feat-skill-tool-choices";
 import type { SrdEquipmentData, EquipmentCategory, MagicItemType } from "@/data/types";
@@ -73,69 +59,72 @@ import type { SrdEquipmentData, EquipmentCategory, MagicItemType } from "@/data/
 export type ItemGlyph = ComponentType<SVGProps<SVGSVGElement>>;
 
 // ── Weapons — by stable SRD weapon id, grouped into the families a player
-//    recognises (closest reused lucide glyphs). ────────────────────────────────
+//    recognises. Every weapon noun uses the same filled fantasy grammar. ──────
 const WEAPON_ICON: Record<string, ItemGlyph> = {
   // Blades — one-handed swords + knives
-  longsword: Sword,
-  shortsword: Sword,
-  rapier: Sword,
-  scimitar: Sword,
-  sickle: Sword,
-  dagger: Sword,
-  // Heavy / two blades
-  greatsword: Swords,
+  longsword: WeaponSwordIcon,
+  shortsword: WeaponSwordIcon,
+  rapier: WeaponSwordIcon,
+  scimitar: WeaponSwordIcon,
+  sickle: SickleIcon,
+  dagger: WeaponSwordIcon,
+  // Heavy blades retain the same single-sword family sign: crossed swords read
+  // as "combat", not as the weapon itself.
+  greatsword: WeaponSwordIcon,
   // Axes + axe-bladed polearms
-  handaxe: Axe,
-  battleaxe: Axe,
-  greataxe: Axe,
-  glaive: Sword,
-  halberd: Axe,
+  handaxe: WeaponAxeIcon,
+  battleaxe: WeaponAxeIcon,
+  greataxe: WeaponAxeIcon,
+  glaive: WeaponSwordIcon,
+  halberd: WeaponAxeIcon,
   // Hammers
-  "light-hammer": Hammer,
-  warhammer: Hammer,
-  maul: Hammer,
-  // Bludgeons — maces, clubs, flails, staves
-  club: Gavel,
-  greatclub: Gavel,
-  mace: Gavel,
-  morningstar: Gavel,
-  flail: Gavel,
-  quarterstaff: Gavel,
+  "light-hammer": WeaponHammerIcon,
+  warhammer: WeaponHammerIcon,
+  maul: WeaponHammerIcon,
+  // Bludgeons retain the handling distinction a player must recognize; the
+  // quarterstaff keeps its own straight-haft sign instead of a courtroom gavel.
+  club: ClubIcon,
+  greatclub: ClubIcon,
+  mace: MaceIcon,
+  morningstar: MaceIcon,
+  flail: FlailIcon,
+  quarterstaff: StaffIcon,
   // Picks + thrusting hafted weapons
-  "war-pick": Pickaxe,
+  "war-pick": WarPickIcon,
   spear: SpearIcon,
   pike: SpearIcon,
   lance: SpearIcon,
   trident: SpearIcon,
-  // Bows + crossbows — one archery family (lucide has no separate crossbow icon,
-  // and a crossbow IS a bow-type launcher), so they share the bow-and-arrow glyph.
-  shortbow: BowArrow,
-  longbow: BowArrow,
-  "light-crossbow": BowArrow,
-  "hand-crossbow": BowArrow,
-  "heavy-crossbow": BowArrow,
-  // Firearms + blowgun — ranged, but not bows
-  musket: Crosshair,
-  pistol: Crosshair,
-  blowgun: Crosshair,
-  // Thrown projectiles reuse the archery sign; a family matters more than a
-  // subtype silhouette at 12–16px. The sling keeps its own target-like sign.
-  sling: Target,
-  dart: BowArrow,
-  javelin: BowArrow,
+  // Bows and crossbows are different handling models and different silhouettes;
+  // the distinction earns a separate family sign in a weapon list.
+  shortbow: WeaponBowIcon,
+  longbow: WeaponBowIcon,
+  "light-crossbow": CrossbowIcon,
+  "hand-crossbow": CrossbowIcon,
+  "heavy-crossbow": CrossbowIcon,
+  // A sight marks a target, not a weapon. Long gun and pistol therefore keep
+  // literal silhouettes; the blowgun follows its dart-projectile family.
+  musket: MusketIcon,
+  pistol: PistolIcon,
+  blowgun: WeaponBowIcon,
+  // Thrown projectiles reuse the filled archery sign; a family matters more than
+  // a subtype silhouette at 12–16px. The sling uses a literal Y-shaped sign.
+  sling: SlingIcon,
+  dart: WeaponBowIcon,
+  javelin: SpearIcon,
   // Lash
-  whip: Zap,
+  whip: WhipIcon,
 };
 
 /** Per-weapon-type glyph (undefined / custom / manifested / pact → generic sword). */
 export function weaponSealIcon(weaponId?: string): ItemGlyph {
-  return (weaponId && WEAPON_ICON[weaponId]) || Sword;
+  return (weaponId && WEAPON_ICON[weaponId]) || WeaponSwordIcon;
 }
 
 // ── Armor — body armor is a worn garment; shields are shields. Mundane + magic
 //    armor share this so the armor glyph is identical everywhere. ──────────────
 export function armorSealIcon(armorCategory?: string): ItemGlyph {
-  return armorCategory === "shield" ? Shield : Shirt;
+  return armorCategory === "shield" ? FolioDefendIcon : BreastplateIcon;
 }
 
 // ── Tools — by tool category (the wizard tool picker passes the category; the
@@ -145,17 +134,17 @@ export function armorSealIcon(armorCategory?: string): ItemGlyph {
 export function toolSealIcon(category: ToolCategory): ItemGlyph {
   switch (category) {
     case "artisan":
-      return Wrench;
+      return ClassArtificerIcon;
     case "instrument":
-      return Music;
+      return ClassBardIcon;
     case "gaming":
-      return Dice5;
+      return DiceIcon;
     case "kit":
-      return Briefcase;
+      return FolioInventoryIcon;
     case "navigator":
-      return Compass;
+      return CompassIcon;
     case "thieves":
-      return KeyRound;
+      return LockpicksIcon;
   }
 }
 
@@ -169,55 +158,55 @@ const TOOL_CATEGORY_BY_ID = new Map<string, ToolCategory>(
 //    neutral box. Grouped by what the item IS so a bag of gear reads at a glance. ─
 const GEAR_ICON: Record<string, ItemGlyph> = {
   // Arcane / divine focuses + books
-  "arcane-focus": Sparkles,
-  "druidic-focus": Leaf,
-  "holy-symbol": Cross,
-  "component-pouch": Sparkles,
-  spellbook: BookOpen,
+  "arcane-focus": FolioSpellIcon,
+  "druidic-focus": FolioSpellIcon,
+  "holy-symbol": FolioSpellIcon,
+  "component-pouch": FolioSpellIcon,
+  spellbook: FolioSpellIcon,
   // Ammunition — lucide has no dedicated arrow/bullet glyph, so arrows/bolts/quiver
   // share the archery bow-and-arrow icon (the same family as the bows that fire them).
-  arrows: BowArrow,
-  "crossbow-bolts": BowArrow,
-  quiver: BowArrow,
+  arrows: WeaponBowIcon,
+  "crossbow-bolts": WeaponBowIcon,
+  quiver: WeaponBowIcon,
   // Light + fire
-  candle: Flame,
-  torch: Flame,
-  tinderbox: Flame,
-  "alchemists-fire": Flame,
-  lamp: Lamp,
-  "lantern-bullseye": Lamp,
-  "lantern-hooded": Lamp,
+  candle: CampfireIcon,
+  torch: CampfireIcon,
+  tinderbox: CampfireIcon,
+  "alchemists-fire": CampfireIcon,
+  lamp: CampfireIcon,
+  "lantern-bullseye": CampfireIcon,
+  "lantern-hooded": CampfireIcon,
   // Flasks / alchemy / liquids
-  oil: FlaskRound,
-  acid: FlaskConical,
-  antitoxin: FlaskRound,
-  "holy-water": FlaskRound,
-  "poison-basic": FlaskConical,
-  waterskin: Droplet,
-  perfume: Droplet,
+  oil: PotionIcon,
+  acid: PotionIcon,
+  antitoxin: PotionIcon,
+  "holy-water": PotionIcon,
+  "poison-basic": PotionIcon,
+  waterskin: PotionIcon,
+  perfume: PotionIcon,
   // Camp + provisions
-  backpack: Backpack,
-  bedroll: Bed,
-  blanket: Bed,
-  tent: Tent,
-  rations: Utensils,
+  backpack: FolioInventoryIcon,
+  bedroll: FolioInventoryIcon,
+  blanket: FolioInventoryIcon,
+  tent: FolioInventoryIcon,
+  rations: FolioInventoryIcon,
   // Clothing
-  "clothes-fine": Shirt,
-  "clothes-travelers": Shirt,
-  costume: Drama,
+  "clothes-fine": FolioInventoryIcon,
+  "clothes-travelers": FolioInventoryIcon,
+  costume: FolioInventoryIcon,
   // Bindings / security / utility
-  bell: Bell,
-  lock: Lock,
-  manacles: Lock,
-  chain: Lock,
-  "grappling-hook": Anchor,
-  crowbar: Wrench,
-  shovel: Pickaxe,
-  "tinkers-tools": Wrench,
-  "healers-kit": Stethoscope,
-  "climbers-kit": Briefcase,
-  ink: PenTool,
-  "musical-instrument": Music,
+  bell: FolioInventoryIcon,
+  lock: LockpicksIcon,
+  manacles: ManaclesIcon,
+  chain: ManaclesIcon,
+  "grappling-hook": FolioInventoryIcon,
+  crowbar: CrowbarIcon,
+  shovel: ClassArtificerIcon,
+  "tinkers-tools": ClassArtificerIcon,
+  "healers-kit": FolioSupportIcon,
+  "climbers-kit": FolioInventoryIcon,
+  ink: FolioScrollIcon,
+  "musical-instrument": ClassBardIcon,
 };
 
 /** Glyph for a gear/tool item by id (tools route through the shared tool-category
@@ -227,7 +216,7 @@ const GEAR_ICON: Record<string, ItemGlyph> = {
 function gearSealIcon(item: SrdEquipmentData): ItemGlyph {
   const toolCategory = TOOL_CATEGORY_BY_ID.get(item.id);
   if (toolCategory) return toolSealIcon(toolCategory);
-  return GEAR_ICON[item.id] ?? Box;
+  return GEAR_ICON[item.id] ?? FolioInventoryIcon;
 }
 
 // ── Magic items — by type. Armor + weapon reuse the mundane resolvers so a magic
@@ -239,20 +228,20 @@ export function magicItemSealIcon(type: MagicItemType): ItemGlyph {
     case "weapon":
       return weaponSealIcon();
     case "potion":
-      return FlaskRound;
+      return PotionIcon;
     case "ring":
       return DiamondRingIcon;
     case "rod":
-      return Wand;
+      return FolioMetamagicIcon;
     case "scroll":
-      return ScrollText;
+      return FolioScrollIcon;
     case "staff":
       return WizardStaffIcon;
     case "wand":
-      return Wand2;
+      return FolioMetamagicIcon;
     case "wondrous":
     default:
-      return Sparkles;
+      return FolioMagicItemIcon;
   }
 }
 
@@ -265,9 +254,9 @@ export function equipmentSealIcon(item: SrdEquipmentData): ItemGlyph {
     case "armor":
       return armorSealIcon(item.armorCategory);
     case "shield":
-      return Shield;
+      return FolioDefendIcon;
     case "pack":
-      return Package;
+      return FolioInventoryIcon;
     case "gear":
     case "tool":
       return gearSealIcon(item);
@@ -278,12 +267,12 @@ export function equipmentSealIcon(item: SrdEquipmentData): ItemGlyph {
  *  Add-Item picker + compendium) — mirrors the magic-item type facet so both
  *  read with a leading glyph. Body armor = the garment; gear = a neutral box. */
 const CATEGORY_ICON: Record<EquipmentCategory, ItemGlyph> = {
-  weapon: Sword,
-  armor: Shirt,
-  shield: Shield,
-  gear: Box,
-  tool: Wrench,
-  pack: Package,
+  weapon: WeaponSwordIcon,
+  armor: BreastplateIcon,
+  shield: FolioDefendIcon,
+  gear: FolioInventoryIcon,
+  tool: ClassArtificerIcon,
+  pack: FolioInventoryIcon,
 };
 
 export function equipmentCategoryIcon(category: EquipmentCategory): ItemGlyph {
@@ -297,7 +286,7 @@ const EQUIPMENT_BY_ID = new Map<string, SrdEquipmentData>(
 /** Glyph for an SRD equipment id (when only the id is in hand — e.g. the creation
  *  wizard's starting-gear list). Unknown / custom ids → neutral box. */
 export function equipmentSealIconById(srdId?: string): ItemGlyph {
-  if (!srdId) return Box;
+  if (!srdId) return FolioInventoryIcon;
   const item = EQUIPMENT_BY_ID.get(srdId);
-  return item ? equipmentSealIcon(item) : Box;
+  return item ? equipmentSealIcon(item) : FolioInventoryIcon;
 }

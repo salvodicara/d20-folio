@@ -2,7 +2,7 @@
   "errorBoundary": {
     "eyebrow": "Error",
     "title": "Something went wrong",
-    "message": "An unexpected error occurred. Your data is safe. Try reloading.",
+    "message": "An unexpected error occurred. Your saved data is safe; reload the app to continue.",
     "reload": "Reload app",
     "retry": "Try again",
     "details": "Error details",
