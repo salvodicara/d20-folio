@@ -16,7 +16,6 @@ import { useEffect, useState, lazy, Suspense } from "react";
 import { Outlet } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Topbar } from "./shell/Topbar";
-import { CommandPalette } from "./shell/CommandPalette";
 import { ScrollRestorer } from "./ScrollRestorer";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
@@ -29,6 +28,13 @@ const ShortcutsSheet = lazy(() =>
   import("@/components/shared/ShortcutsSheet").then((m) => ({
     default: m.ShortcutsSheet,
   }))
+);
+
+// The palette is global chrome but not visible until requested. Keep its search
+// catalogue and dialog graph out of the first render; warm the chunk after mount so
+// the first keyboard invocation remains effectively instant.
+const CommandPalette = lazy(() =>
+  import("./shell/CommandPalette").then((m) => ({ default: m.CommandPalette }))
 );
 
 // INIT-2 — the shell-level combat status subscription is RENDERLESS and lazy-loaded, so
@@ -59,6 +65,8 @@ import { DevActAsDock } from "./shell/DevActAsDock";
 export function AppShell() {
   const { t } = useTranslation();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteEverOpened, setPaletteEverOpened] = useState(false);
+  if (paletteOpen && !paletteEverOpened) setPaletteEverOpened(true);
   const shortcutsOpen = useUIStore((s) => s.shortcutsOpen);
   // Sticky-mount latch: the sheet's chunk stays off the eager bundle (nothing loads
   // until the first `?`), but once opened the sheet STAYS mounted so closing drives
@@ -77,6 +85,7 @@ export function AppShell() {
   // the cockpit / campaigns / compendium is instant instead of a cold fetch.
   useEffect(() => {
     prefetchLikelyRoutes();
+    void import("./shell/CommandPalette");
   }, []);
 
   return (
@@ -143,7 +152,11 @@ export function AppShell() {
       {/* Global "Search the Folio" palette. The other global overlays (UndoToasts,
           ConfirmDialog) are lifted here from the router body during the Step-2
           router swap. */}
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      {paletteEverOpened && (
+        <Suspense fallback={null}>
+          <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+        </Suspense>
+      )}
 
       {/* The `?` keyboard-shortcuts reference. Open state lives in uiStore, so the
           `?` key, the palette action, and the footer chip all drive this one sheet.

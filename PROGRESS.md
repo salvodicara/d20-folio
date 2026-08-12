@@ -8,7 +8,7 @@
 > - **The open gap frontier** (per-seam, per-entity) → `docs/AUTOMATION_BACKLOG.md`.
 > - **How it works today** (incl. the architecture invariants the R1–R8 campaign locked in) → `docs/ARCHITECTURE.md`.
 
-## Closure gate — UI/UX perfection: the open-source D&D Beyond alternative (owner-ratified 2026-08-04)
+## CLOSED — UI/UX perfection: the open-source D&D Beyond alternative (owner-ratified 2026-08-04; approved 2026-08-12)
 
 The owner has reopened the WHOLE product experience for a fresh, evidence-led redesign campaign:
 the shipped app is a strong baseline, but no prior attempt to “elevate” it is authoritative. Audit
@@ -57,8 +57,16 @@ standard action verbs remain Lucide; campaign workspace switches begin at the se
 boundary without losing mounted drafts; account preference actions close consistently; the unfinished
 turn ledger survives route remounts. The owner-review checkpoint contains 26 refreshed EN/IT ×
 dark/light × desktop/mobile captures across the cockpit, dense roster, Compendium item reading, live
-session editing, DM tools and public sheet. No `main` integration until golden rule 25's explicit
-owner approval.
+session editing, DM tools and public sheet. The owner explicitly approved that checkpoint and
+authorized `main` integration on 2026-08-12; the closure gate is satisfied. The complete item-art
+corpus remains a separate future content-production epic and is not a UI-closure blocker.
+
+**Integration-gate closure (2026-08-12):** the authoritative pre-push gate caught the shared
+fantasy-icon authoring catalogue in the eager entry. The final architecture keeps the approved
+glyphs unchanged, isolates the four persistent shell glyphs, and warms the command palette through
+a dynamic boundary; entry and eager closure remain under their existing ratchets. The measured lazy
+UI/CSS and bilingual-contract growth is recorded as the new 8532 KiB precache ceiling in
+`docs/ARCHITECTURE.md`, with runtime-cached item/monster plates still outside first install.
 
 **Stability checkpoint (2026-08-12):** an unfinished encounter turn now survives the real
 sheet → campaign → same-sheet round trip. The per-turn ledger binds to the character in

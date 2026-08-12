@@ -390,7 +390,13 @@ const EAGER_CEILING_KB = 794; // baseline 727.1 → ~+9% (near budget — see AR
 // and three permanent screenshot-surface contracts; +12.7 KiB headroom keeps
 // the guard off exact-fit noise while any accidental art precache would still
 // exceed it by at least one 41 KiB plate.
-const PRECACHE_CEILING_KIB = 8420;
+// 2026-08-12 (whole-product UI/UX closure): raised 8420 → 8532 only after the
+// shared 52 KiB fantasy-icon module was removed from the eager entry. The shell
+// now owns four tiny stable glyphs and the palette warms through a dynamic import;
+// entry + eager closure are back below their existing ceilings. The remaining
+// measured 8519.13 KiB / 329 entries is genuine lazy UI/CSS + bilingual contract
+// weight from the completed epic; +12.87 KiB preserves never-exact-fit headroom.
+const PRECACHE_CEILING_KIB = 8532;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

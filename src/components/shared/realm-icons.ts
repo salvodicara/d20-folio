@@ -1,12 +1,12 @@
 /** Stable fantasy glyph vocabulary shared by every top-level realm navigator. */
 import {
-  FolioBookIcon,
-  FolioScrollIcon,
-  FolioTentIcon,
-} from "@/components/shared/folio-icons";
+  FolioShellBookIcon,
+  FolioShellScrollIcon,
+  FolioShellTentIcon,
+} from "@/components/shared/folio-shell-icons";
 
 export const REALM_ICONS = {
-  characters: FolioScrollIcon,
-  campaigns: FolioTentIcon,
-  compendium: FolioBookIcon,
+  characters: FolioShellScrollIcon,
+  campaigns: FolioShellTentIcon,
+  compendium: FolioShellBookIcon,
 } as const;
