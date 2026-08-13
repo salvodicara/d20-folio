@@ -8,7 +8,7 @@
 #
 # THE GATE SPLIT (docs/GOLDEN_RULES.md rule 14; detail in docs/CONTRIBUTING.md
 # → "The gate split"):
-#   pre-commit  → doc-guard + lint-staged + fast unit lane            (~5 s)
+#   pre-commit  → doc-guard + lint-staged only
 #   branch push → checkpoint only; no gate
 #   main push   → typecheck ∥ lint ∥ unit coverage (CONCURRENT), then
 #                 vite build + budget; rules tests when that surface
@@ -198,6 +198,6 @@ echo "--- Bundle budget (eager entry + precache ceilings) ---"
 pnpm test:budget
 echo ""
 
-echo "==> Pre-push OK (fast-but-safe gate green)."
+echo "==> Final main pre-push OK (full gate green)."
 echo "    The full Playwright e2e matrix is the DEPLOY gate — the owner fires"
 echo "    \`just deploy\` (primary, local) or \`gh workflow run deploy.yml\` (remote twin)."

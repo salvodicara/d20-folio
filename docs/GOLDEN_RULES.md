@@ -201,8 +201,9 @@ renumber it into the 1–4 sequence. -->
     artifact, and an unstated blind spot is read by the next person as coverage. Every guard is
     proved by MUTATION: reintroduce the defect, watch it fail, revert. (owner, 2026-07-25)
 
-14. **Every check runs once, in its one lane.** pre-commit is FAST (~5 s: changeset doc-guard +
-    lint-staged + fast unit lane); branch checkpoint pushes run NO gate; only a push targeting
+14. **Every check runs once, in its one lane.** pre-commit runs only the changeset doc-guard +
+    lint-staged; branch checkpoint pushes run NO gate; focused tests are chosen while engineering
+    the changed kernel, and only a push targeting
     `main` runs the FULL authoritative gate, exactly once after final convergence + rebase
     (typecheck ∥ lint ∥ coverage, then build); deploy runs the full Playwright e2e matrix
     (published Release by default;

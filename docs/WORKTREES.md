@@ -83,8 +83,9 @@ just wt-list
   [pbakaus/impeccable](https://github.com/pbakaus/impeccable) design skill, which reads root
   `PRODUCT.md` + `DESIGN.md`; `DESIGN.md` §15 is the project checklist), so every worktree and
   agent session has them with no install step.
-- **Hooks are shared.** `core.hooksPath=.githooks` lives in the common git config. Pre-commit stays
-  fast; pre-push exits immediately for checkpoint refs and runs the complete gate only for a
+- **Hooks are shared.** `core.hooksPath=.githooks` lives in the common git config. Pre-commit checks
+  only the staged changeset + staged-file lint; pre-push exits immediately for checkpoint refs and
+  runs the complete gate only for a
   `main` target. **Never `--no-verify`.**
 
 ## Splitting parallel tasks to minimize conflicts

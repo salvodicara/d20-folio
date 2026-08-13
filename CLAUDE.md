@@ -220,8 +220,8 @@ PRODUCT/UX/design rules live in `docs/PRODUCT_CONSTITUTION.md`. Violating one is
   `docs/WORKTREES.md`.
   `main` integrates; users only get code via an owner-published release or owner-fired manual
   deploy (golden rule 22).
-- **Git hooks** (`git config core.hooksPath .githooks` or `just setup`): **pre-commit FAST (~5s)**
-  — changeset doc-guard + `lint-staged` + fast unit lane; branch pre-push = immediate checkpoint;
+- **Git hooks** (`git config core.hooksPath .githooks` or `just setup`): pre-commit = changeset
+  doc-guard + `lint-staged` only; focused tests are engineering probes, not a gate; branch pre-push = immediate checkpoint;
   only a `main`-targeting pre-push runs the FULL authoritative gate — typecheck ∥
   `lint --max-warnings 0` ∥ `test:coverage` (≥80% lines/stmts/fns, ≥75% branches), then production
   build. **Never `--no-verify`.**

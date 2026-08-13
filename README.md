@@ -137,7 +137,9 @@ Configuration goes in `.env.local` (uncommitted; copy from `.env.example`). The 
 pnpm tsc -b && pnpm lint --max-warnings 0 && pnpm test --run && pnpm build
 ```
 
-Git hooks in `.githooks/` enforce this: pre-commit is fast (staged-file lint plus a changeset doc-guard), pre-push runs the full gate. A `justfile` collects common recipes.
+Git hooks in `.githooks/` enforce this: pre-commit is fast (staged-file lint plus a changeset
+doc-guard), branch checkpoint pushes are immediate, and pre-push runs the full gate only for the
+finished push to `main`. A `justfile` collects common recipes.
 
 ### Deployment
 

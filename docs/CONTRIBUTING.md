@@ -36,7 +36,7 @@ on the local critical path, never twice.
 
 | Lane                     | What it runs                                                                                                                     | Cost                         | Where                      |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | -------------------------- |
-| **pre-commit**           | doc-guard + `lint-staged` + fast unit lane                                                                                       | ~5 s                         | `.githooks/pre-commit`     |
+| **pre-commit**           | changeset doc-guard + `lint-staged` only                                                                                         | staged files only            | `.githooks/pre-commit`     |
 | **branch checkpoint**    | no verification; an explicit `HEAD:<branch>` push is only a recoverable checkpoint                                               | immediate                    | `.githooks/pre-push`       |
 | **final `main` push**    | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e** | once, after convergence      | `.githooks/pre-push`       |
 | **deploy** (owner-fired) | the FULL gate + the **full Playwright e2e matrix** — default: published Release; manual: workflow dispatch / `just deploy`       | full matrix, once per deploy | `justfile`/`deploy.yml`    |
@@ -92,6 +92,10 @@ change to the file.
 > **Never add a slow check to a branch checkpoint "to be safe."** The complete local gate runs
 > once, on the finished `HEAD:main` push. Keep `--cache` everywhere it helps (eslint
 > `.eslintcache`, tsc incremental) so a necessary retry is cheap.
+
+During implementation, run only the focused tests and lint targets that prove the kernel being
+changed. Those are engineering probes, not a second mandatory gate; the repository-wide suite runs
+once after convergence and rebase, immediately before the final push to `main`.
 
 ### The convergence step (before every merge — golden rule 12)
 
