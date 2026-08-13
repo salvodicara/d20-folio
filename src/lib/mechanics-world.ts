@@ -1,5 +1,9 @@
 import { materialRefKey } from "@/lib/action-journal";
-import { canonicalJson } from "@/lib/canonical-fingerprint";
+import {
+  canonicalFingerprint,
+  canonicalJson,
+  conformCanonicalFingerprint,
+} from "@/lib/canonical-fingerprint";
 import { projectCreatureConditions } from "@/lib/condition";
 import {
   isEffectOccurrence,
@@ -10,15 +14,28 @@ import {
   parseSharedMaterialState,
 } from "@/lib/material-state";
 import {
+  conformClockRef,
+  conformEntityRef,
+  conformOccurrenceGenerationRef,
+  entityRefKey,
+  occurrenceGenerationRefKey,
+} from "@/lib/mechanics-reference-schema";
+import {
   createBetweenTurnsEconomyState,
   createTurnEconomyState,
 } from "@/lib/turn-economy";
-import type { EndRule, MechanicOccurrence } from "@/types/mechanic-occurrence";
+import type {
+  EndRule,
+  MechanicOccurrence,
+  MechanicsEndCause,
+  ObservedMechanicsBoundary,
+} from "@/types/mechanic-occurrence";
 import type { MechanicsSourceRef } from "@/types/mechanics-authority-ref";
 import type {
   ClockRef,
   EntityRef,
   MaterialRef,
+  OccurrenceGenerationRef,
   OccurrenceRef,
 } from "@/types/mechanics-reference";
 import type { ConditionInstance } from "@/types/condition";
@@ -30,19 +47,29 @@ import type {
 import type { CreatureVitals } from "@/types/vitals";
 import type {
   EncounterSeed,
+  InventorySourceLease,
+  MechanicsBoundaryCheckpoint,
+  MechanicsBoundaryCompletion,
   MechanicsBoundaryCommand,
+  MechanicsBoundaryContinuation,
+  MechanicsBoundaryCursor,
+  MechanicsBoundaryEncounterCursor,
+  MechanicsBoundaryParticipantCursor,
+  MechanicsBoundaryResult,
+  MechanicsCausalState,
+  MechanicsCausalStateResult,
   MechanicsClosureRequest,
-  MechanicsClosureResolver,
   MechanicsDocument,
   MechanicsEndCandidate,
-  MechanicsEndCause,
   MechanicsEndDiscoveryResult,
+  MechanicsEndWaveLatchResult,
+  MechanicsEndWaveCheckpoint,
+  MechanicsEndWaveReceipt,
   MechanicsWorld,
   MechanicsWorldInvalidReason,
   MechanicsWorldParseResult,
   MechanicsWorldSimulationRejection,
   MechanicsWorldSimulationResult,
-  ObservedMechanicsBoundary,
 } from "@/types/mechanics-world";
 import type {
   CharacterMaterialRef,
@@ -51,6 +78,8 @@ import type {
 
 const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 const MAX_ID_LENGTH = 256;
+const MAX_WORLD_DOCUMENTS = 256;
+const MAX_ENCOUNTER_PARTICIPANTS = 256;
 
 type MutableDocument =
   | {
@@ -95,6 +124,30 @@ function isExactRecord(
   });
 }
 
+function ownDataProperty(value: object, key: string): unknown {
+  const descriptor = Object.getOwnPropertyDescriptor(value, key);
+  return descriptor?.enumerable === true && "value" in descriptor
+    ? (descriptor.value as unknown)
+    : undefined;
+}
+
+function isClosureRequestShape(value: unknown): value is MechanicsClosureRequest {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value) ||
+    Object.getPrototypeOf(value) !== Object.prototype
+  ) {
+    return false;
+  }
+  const allowed = new Set(["boundaries", "endRequests", "inventorySourceLeases"]);
+  return Reflect.ownKeys(value).every((key) => {
+    if (typeof key !== "string" || !allowed.has(key)) return false;
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return descriptor?.enumerable === true && "value" in descriptor;
+  });
+}
+
 function isDenseArray(value: unknown): value is unknown[] {
   if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype)
     return false;
@@ -126,6 +179,10 @@ function isCounter(value: unknown): value is number {
   );
 }
 
+function isPositiveCounter(value: unknown): value is number {
+  return isCounter(value) && value > 0;
+}
+
 function isMaterialRef(value: unknown): value is MaterialRef {
   if (isExactRecord(value, ["kind", "uid", "characterId"])) {
     return value.kind === "character-play" && isId(value.uid) && isId(value.characterId);
@@ -137,12 +194,206 @@ function isMaterialRef(value: unknown): value is MaterialRef {
   );
 }
 
-function sameMaterial(left: MaterialRef, right: MaterialRef): boolean {
-  return materialRefKey(left) === materialRefKey(right);
+function conformObservedMechanicsBoundary(
+  value: unknown
+): Readonly<ObservedMechanicsBoundary> | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  const kind = ownDataProperty(value, "kind");
+  if (kind === "time-reached") {
+    if (!isExactRecord(value, ["clock", "elapsedSeconds", "kind"])) return null;
+    const clock = conformClockRef(value.clock);
+    return clock && isCounter(value.elapsedSeconds)
+      ? freezeDeep({ clock, elapsedSeconds: value.elapsedSeconds, kind })
+      : null;
+  }
+  if (kind === "combat-end") {
+    if (!isExactRecord(value, ["clock", "kind"])) return null;
+    const clock = conformClockRef(value.clock);
+    return clock ? freezeDeep({ clock, kind }) : null;
+  }
+  if (kind === "turn-boundary") {
+    if (!isExactRecord(value, ["clock", "combatant", "kind", "phase", "round"])) {
+      return null;
+    }
+    const clock = conformClockRef(value.clock);
+    const combatant = conformEntityRef(value.combatant);
+    return clock &&
+      combatant &&
+      (value.phase === "start" || value.phase === "end") &&
+      isPositiveCounter(value.round)
+      ? freezeDeep({
+          clock,
+          combatant,
+          kind,
+          phase: value.phase,
+          round: value.round,
+        })
+      : null;
+  }
+  if (kind === "rest-completed") {
+    if (!isExactRecord(value, ["clock", "combatant", "kind", "rest"])) {
+      return null;
+    }
+    const clock = conformClockRef(value.clock);
+    const combatant = conformEntityRef(value.combatant);
+    return clock && combatant && (value.rest === "short" || value.rest === "long")
+      ? freezeDeep({ clock, combatant, kind, rest: value.rest })
+      : null;
+  }
+  if (kind === "day-phase") {
+    if (!isExactRecord(value, ["clock", "kind", "phase"])) return null;
+    const clock = conformClockRef(value.clock);
+    return clock && (value.phase === "dawn" || value.phase === "dusk")
+      ? freezeDeep({ clock, kind, phase: value.phase })
+      : null;
+  }
+  return null;
 }
 
-function entityRefKey(value: EntityRef): string {
-  return JSON.stringify([materialRefKey(value.material), value.entityId]);
+function conformEncounterSeed(value: unknown): Readonly<EncounterSeed> | null {
+  if (
+    !isExactRecord(value, [
+      "currentCombatantId",
+      "nextCombatantOrdinal",
+      "order",
+      "participants",
+      "phase",
+      "round",
+    ]) ||
+    !(value.currentCombatantId === null || isId(value.currentCombatantId)) ||
+    !isPositiveCounter(value.nextCombatantOrdinal) ||
+    !isDenseArray(value.order) ||
+    value.order.length > MAX_ENCOUNTER_PARTICIPANTS ||
+    !value.order.every(isId) ||
+    new Set(value.order).size !== value.order.length ||
+    (value.phase !== "initiative" && value.phase !== "turns") ||
+    !isPositiveCounter(value.round) ||
+    typeof value.participants !== "object" ||
+    value.participants === null ||
+    Array.isArray(value.participants) ||
+    Object.getPrototypeOf(value.participants) !== Object.prototype
+  ) {
+    return null;
+  }
+  const participantKeys = Reflect.ownKeys(value.participants);
+  if (
+    participantKeys.length > MAX_ENCOUNTER_PARTICIPANTS ||
+    participantKeys.some((key) => typeof key !== "string" || !isId(key))
+  ) {
+    return null;
+  }
+  const participants: Record<string, EncounterSeed["participants"][string]> = {};
+  for (const key of participantKeys as string[]) {
+    const descriptor = Object.getOwnPropertyDescriptor(value.participants, key);
+    const participant = descriptor?.value as unknown;
+    if (
+      descriptor?.enumerable !== true ||
+      !("value" in descriptor) ||
+      !isExactRecord(participant, [
+        "combatant",
+        "initiativeRoll",
+        "ordinal",
+        "skipped",
+      ]) ||
+      !isPositiveCounter(participant.ordinal) ||
+      !(
+        participant.initiativeRoll === null ||
+        (isPositiveCounter(participant.initiativeRoll) &&
+          participant.initiativeRoll <= 20)
+      ) ||
+      typeof participant.skipped !== "boolean"
+    ) {
+      return null;
+    }
+    const combatant = conformEntityRef(participant.combatant);
+    if (!combatant) return null;
+    participants[key] = {
+      combatant,
+      initiativeRoll: participant.initiativeRoll,
+      ordinal: participant.ordinal,
+      skipped: participant.skipped,
+    };
+  }
+  return freezeDeep({
+    currentCombatantId: value.currentCombatantId,
+    nextCombatantOrdinal: value.nextCombatantOrdinal,
+    order: [...value.order],
+    participants,
+    phase: value.phase,
+    round: value.round,
+  });
+}
+
+/** Exact hostile-input boundary for the sole world-clock/encounter command. */
+export function conformMechanicsBoundaryCommand(
+  value: unknown
+): Readonly<MechanicsBoundaryCommand> | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  const kind = ownDataProperty(value, "kind");
+  if (kind === "advance-time") {
+    if (!isExactRecord(value, ["clock", "elapsedSeconds", "kind"])) return null;
+    const clock = conformClockRef(value.clock);
+    return clock && isPositiveCounter(value.elapsedSeconds)
+      ? freezeDeep({ clock, elapsedSeconds: value.elapsedSeconds, kind })
+      : null;
+  }
+  if (kind === "complete-rest") {
+    if (!isExactRecord(value, ["input", "kind"])) return null;
+    const boundary = conformObservedMechanicsBoundary({
+      ...(isExactRecord(value.input, ["clock", "combatant", "rest"]) ? value.input : {}),
+      kind: "rest-completed",
+    });
+    return boundary?.kind === "rest-completed"
+      ? freezeDeep({
+          input: {
+            clock: boundary.clock,
+            combatant: boundary.combatant,
+            rest: boundary.rest,
+          },
+          kind,
+        })
+      : null;
+  }
+  if (kind === "observe-day-phase") {
+    if (!isExactRecord(value, ["input", "kind"])) return null;
+    const boundary = conformObservedMechanicsBoundary({
+      ...(isExactRecord(value.input, ["clock", "phase"]) ? value.input : {}),
+      kind: "day-phase",
+    });
+    return boundary?.kind === "day-phase"
+      ? freezeDeep({
+          input: { clock: boundary.clock, phase: boundary.phase },
+          kind,
+        })
+      : null;
+  }
+  if (kind === "complete-turn" || kind === "end-encounter") {
+    if (!isExactRecord(value, ["kind", "material"]) || !isMaterialRef(value.material)) {
+      return null;
+    }
+    return freezeDeep({ kind, material: structuredClone(value.material) });
+  }
+  if (kind === "start-encounter") {
+    if (
+      !isExactRecord(value, ["kind", "material", "seed"]) ||
+      !isMaterialRef(value.material)
+    ) {
+      return null;
+    }
+    const seed = conformEncounterSeed(value.seed);
+    return seed
+      ? freezeDeep({ kind, material: structuredClone(value.material), seed })
+      : null;
+  }
+  return null;
+}
+
+function sameMaterial(left: MaterialRef, right: MaterialRef): boolean {
+  return materialRefKey(left) === materialRefKey(right);
 }
 
 function sameEntity(left: EntityRef, right: EntityRef): boolean {
@@ -178,7 +429,7 @@ function documentFor(
   );
 }
 
-function occurrenceFor(
+function occurrenceAtAddress(
   world: Pick<MechanicsWorld, "documents"> | MutableWorld,
   reference: OccurrenceRef
 ): MechanicOccurrence | null {
@@ -186,6 +437,14 @@ function occurrenceFor(
     documentFor(world, reference.material)?.state.occurrences[reference.occurrenceId] ??
     null
   );
+}
+
+function occurrenceAtGeneration(
+  world: Pick<MechanicsWorld, "documents"> | MutableWorld,
+  reference: OccurrenceGenerationRef
+): MechanicOccurrence | null {
+  const occurrence = occurrenceAtAddress(world, reference.occurrence);
+  return occurrence?.ordinal === reference.ordinal ? occurrence : null;
 }
 
 function entityPresent(
@@ -196,7 +455,7 @@ function entityPresent(
   if (!document) return false;
   if (entityRef.entityId === "self") return document.kind === "character";
   const entity = document.state.entities[entityRef.entityId];
-  return entity?.availability === "present";
+  return entity?.ordinal === entityRef.ordinal && entity.availability === "present";
 }
 
 function creaturePresent(
@@ -207,7 +466,11 @@ function creaturePresent(
   if (!document) return false;
   if (entityRef.entityId === "self") return document.kind === "character";
   const entity = document.state.entities[entityRef.entityId];
-  return entity?.kind === "creature" && entity.availability === "present";
+  return (
+    entity?.ordinal === entityRef.ordinal &&
+    entity.kind === "creature" &&
+    entity.availability === "present"
+  );
 }
 
 function clockResolves(
@@ -302,10 +565,10 @@ function occurrenceClocksResolve(
 
 function holderMatchesOccurrence(
   world: MechanicsWorld,
-  reference: OccurrenceRef,
+  reference: OccurrenceGenerationRef,
   holder: EntityRef
 ): boolean {
-  const occurrence = occurrenceFor(world, reference);
+  const occurrence = occurrenceAtGeneration(world, reference);
   return (
     occurrence !== null &&
     isEffectOccurrence(occurrence) &&
@@ -382,7 +645,11 @@ function validateReferences(
       }
     }
     for (const [entityId, entity] of Object.entries(document.state.entities)) {
-      const holder = { material: document.material, entityId } satisfies EntityRef;
+      const holder = {
+        material: document.material,
+        entityId,
+        ordinal: entity.ordinal,
+      } satisfies EntityRef;
       const linkedInventory =
         entity.kind === "object" && entity.template.kind === "inventory-item"
           ? documentFor(world, entity.template.owner)
@@ -493,6 +760,15 @@ function validateWorldInvariants(
   world: MechanicsWorld,
   inventorySourceLeases: ReadonlySet<string> = new Set()
 ): MechanicsWorldInvalidReason | null {
+  if (
+    world.documents.some((document) =>
+      Object.values(document.state.occurrences).some(
+        (occurrence) => occurrence.ending !== null
+      )
+    )
+  ) {
+    return "invalid-ending";
+  }
   return validateReferences(world, inventorySourceLeases) ?? validateLeases(world);
 }
 
@@ -502,7 +778,8 @@ function parseMechanicsWorldStructure(value: unknown): MechanicsWorldParseResult
     !isExactRecord(value, ["scope", "documents"]) ||
     !isMaterialRef(value.scope) ||
     !isDenseArray(value.documents) ||
-    value.documents.length === 0
+    value.documents.length === 0 ||
+    value.documents.length > MAX_WORLD_DOCUMENTS
   ) {
     return { ok: false, reason: "invalid-shape" };
   }
@@ -547,10 +824,15 @@ function parseMechanicsWorldStructure(value: unknown): MechanicsWorldParseResult
     return { ok: false, reason: "missing-scope" };
   }
   const world = { scope: { ...scope }, documents } satisfies MechanicsWorld;
+  try {
+    canonicalJson(world);
+  } catch {
+    return { ok: false, reason: "invalid-shape" };
+  }
   return { ok: true, value: freezeDeep(world) };
 }
 
-/** Parse and prove a complete, causally closed mechanics transaction snapshot. */
+/** Parse the exact physical world and every live reference; causal proof is separate. */
 export function parseMechanicsWorld(value: unknown): MechanicsWorldParseResult {
   const structured = parseMechanicsWorldStructure(value);
   if (!structured.ok) return structured;
@@ -651,13 +933,16 @@ function observedBoundaryValid(
     );
   }
   if (boundary.kind === "combat-end" || boundary.kind === "turn-boundary") {
-    if (!clockResolves(world, boundary.clock, "encounter")) return false;
+    const document = documentFor(world, boundary.clock.material);
+    if (
+      !document ||
+      boundary.clock.epoch <= 0 ||
+      boundary.clock.epoch >= document.state.nextEncounterEpoch
+    ) {
+      return false;
+    }
     if (boundary.kind === "turn-boundary") {
-      return (
-        creaturePresent(world, boundary.combatant) &&
-        Number.isSafeInteger(boundary.round) &&
-        boundary.round > 0
-      );
+      return Number.isSafeInteger(boundary.round) && boundary.round > 0;
     }
     return true;
   }
@@ -670,6 +955,31 @@ function observedBoundaryValid(
   return clockResolves(world, boundary.clock, "timeline");
 }
 
+function observedBoundaryHistoricallyValid(
+  basis: MechanicsWorld,
+  current: MechanicsWorld,
+  boundary: ObservedMechanicsBoundary
+): boolean {
+  if (observedBoundaryValid(current, boundary)) return true;
+  if (boundary.kind !== "combat-end" && boundary.kind !== "turn-boundary") {
+    return false;
+  }
+  const original = documentFor(basis, boundary.clock.material);
+  if (
+    !original ||
+    original.state.encounter?.epoch !== boundary.clock.epoch ||
+    (boundary.kind === "turn-boundary" && !creaturePresent(basis, boundary.combatant))
+  ) {
+    return false;
+  }
+  const live = documentFor(current, boundary.clock.material);
+  return (
+    live !== null &&
+    live.state.nextEncounterEpoch === original.state.nextEncounterEpoch &&
+    live.state.encounter?.epoch !== boundary.clock.epoch
+  );
+}
+
 function occurrenceDependencyIds(occurrence: MechanicOccurrence): string[] {
   const ids = isEffectOccurrence(occurrence) ? [occurrence.parentId] : [];
   for (const rule of occurrence.endRules) {
@@ -680,65 +990,14 @@ function occurrenceDependencyIds(occurrence: MechanicOccurrence): string[] {
   return ids;
 }
 
-function temporaryHitPointsFor(world: MutableWorld, target: EntityRef): number | null {
-  return creatureVitalsFor(world, target)?.hitPoints.temporary.current ?? null;
-}
-
-function creatureVitalsFor(
-  world: Pick<MechanicsWorld, "documents"> | MutableWorld,
-  target: EntityRef
-): CreatureVitals | null {
-  const document = documentFor(world, target.material);
-  if (!document) return null;
-  if (target.entityId === "self") {
-    return document.kind === "character" ? document.state.vitals : null;
-  }
-  const entity = document.state.entities[target.entityId];
-  return entity?.kind === "creature" ? entity.vitals : null;
-}
-
-function conditionInstancesFor(
-  world: MutableWorld,
-  target: EntityRef
-): ConditionInstance[] {
-  const targetKey = entityRefKey(target);
-  const instances: ConditionInstance[] = [];
-  for (const document of world.documents) {
-    for (const [occurrenceId, occurrence] of Object.entries(document.state.occurrences)) {
-      if (
-        occurrence.kind === "condition" &&
-        entityRefKey(occurrence.target) === targetKey
-      ) {
-        instances.push({
-          conditionId: occurrence.conditionId,
-          identity: {
-            kind: "occurrence",
-            ref: { material: document.material, occurrenceId },
-          },
-          source: null,
-        });
-      }
-    }
-  }
-  return instances;
-}
-
-function breaksConcentration(world: MutableWorld, target: EntityRef): boolean {
-  const vitals = creatureVitalsFor(world, target);
-  return (
-    vitals !== null &&
-    projectCreatureConditions(conditionInstancesFor(world, target), target, vitals)
-      ?.breaksConcentration === true
-  );
-}
-
 function withoutMissingTemporaryHitPointSource(
   world: MutableWorld,
   vitals: CreatureVitals
 ): CreatureVitals | null {
   const temporary = vitals.hitPoints.temporary;
   const reference = temporary.sourceOccurrence;
-  if (reference === null || occurrenceFor(world, reference) !== null) return null;
+  if (reference === null || occurrenceAtGeneration(world, reference) !== null)
+    return null;
   return {
     hitPoints: {
       current: vitals.hitPoints.current,
@@ -868,10 +1127,14 @@ function cleanEndedMaterial(
         for (const [instanceId, instance] of Object.entries(document.state.inventory)) {
           if (
             instance.ownerOccurrence !== null &&
-            occurrenceFor(world, instance.ownerOccurrence) === null
+            occurrenceAtGeneration(world, instance.ownerOccurrence) === null
           ) {
             const sourceKey = `${materialRefKey(document.material)}\u0000${instanceId}\u0000${instance.ordinal}`;
-            if (instance.quantity.current === 0 && activeItemSources.has(sourceKey)) {
+            if (
+              activeItemSources.has(sourceKey) ||
+              inventorySourceLeases.has(sourceKey)
+            ) {
+              instance.quantity.current = 0;
               instance.ownerOccurrence = null;
             } else {
               Reflect.deleteProperty(document.state.inventory, instanceId);
@@ -906,7 +1169,7 @@ function cleanEndedMaterial(
       for (const [entityId, entity] of Object.entries(document.state.entities)) {
         if (
           entity.ownerOccurrence !== null &&
-          occurrenceFor(world, entity.ownerOccurrence) === null
+          occurrenceAtGeneration(world, entity.ownerOccurrence) === null
         ) {
           Reflect.deleteProperty(document.state.entities, entityId);
           changed = true;
@@ -967,6 +1230,20 @@ function projectWorld(
   inventorySourceLeases: ReadonlySet<string>,
   requireCausalClosure: boolean
 ): MechanicsWorldSimulationResult {
+  if (
+    !sameMaterial(original.scope, candidate.scope) ||
+    original.documents.length !== candidate.documents.length ||
+    candidate.documents.some((document, index) => {
+      const prior = original.documents[index];
+      return (
+        !prior ||
+        prior.kind !== document.kind ||
+        !sameMaterial(prior.material, document.material)
+      );
+    })
+  ) {
+    return rejected(original, "invalid-transition");
+  }
   let changed = false;
   for (const document of candidate.documents) {
     const before = documentFor(original, document.material);
@@ -1005,30 +1282,44 @@ function finalize(
 
 function projectBoundaryMutation(
   original: Readonly<MechanicsWorld>,
-  candidate: MutableWorld
+  candidate: MutableWorld,
+  inventorySourceLeases: ReadonlySet<string> = new Set()
 ): MechanicsWorldSimulationResult {
-  return projectWorld(original, candidate, new Set(), false);
+  return projectWorld(original, candidate, inventorySourceLeases, false);
 }
 
 function parseClosureRequest(
   world: MechanicsWorld,
-  request: MechanicsClosureRequest
+  request: MechanicsClosureRequest,
+  historicalBasis: MechanicsWorld | null = null
 ): {
   boundaries: ObservedMechanicsBoundary[];
+  endRequests: Map<string, OccurrenceGenerationRef>;
   inventorySourceLeases: Set<string>;
-  removals: Map<string, Set<string>>;
 } | null {
   if (
-    !isExactRecord(request, ["boundaries", "inventorySourceLeases", "removals"]) ||
+    !isExactRecord(request, ["boundaries", "endRequests", "inventorySourceLeases"]) ||
     !isDenseArray(request.boundaries) ||
-    !request.boundaries.every((boundary) =>
-      observedBoundaryValid(world, boundary as ObservedMechanicsBoundary)
-    ) ||
-    !isDenseArray(request.inventorySourceLeases) ||
-    !isDenseArray(request.removals)
+    !isDenseArray(request.endRequests) ||
+    !isDenseArray(request.inventorySourceLeases)
   ) {
     return null;
   }
+  const boundaries: ObservedMechanicsBoundary[] = [];
+  for (const value of request.boundaries) {
+    const boundary = conformObservedMechanicsBoundary(value);
+    if (
+      !boundary ||
+      !(historicalBasis
+        ? observedBoundaryHistoricallyValid(historicalBasis, world, boundary)
+        : observedBoundaryValid(world, boundary))
+    ) {
+      return null;
+    }
+    boundaries.push(structuredClone(boundary));
+  }
+  const boundaryKeys = boundaries.map((boundary) => canonicalJson(boundary));
+  if (new Set(boundaryKeys).size !== boundaryKeys.length) return null;
   const inventorySourceLeases = new Set<string>();
   for (const entry of request.inventorySourceLeases) {
     if (
@@ -1052,27 +1343,18 @@ function parseClosureRequest(
     if (inventorySourceLeases.has(key)) return null;
     inventorySourceLeases.add(key);
   }
-  const removals = new Map<string, Set<string>>();
-  for (const entry of request.removals) {
-    if (
-      !isExactRecord(entry, ["material", "occurrenceIds"]) ||
-      !isMaterialRef(entry.material) ||
-      !documentFor(world, entry.material) ||
-      !isDenseArray(entry.occurrenceIds) ||
-      !entry.occurrenceIds.every(isId)
-    ) {
-      return null;
-    }
-    const ids = new Set(entry.occurrenceIds);
-    if (ids.size !== entry.occurrenceIds.length) return null;
-    const key = materialRefKey(entry.material);
-    if (removals.has(key)) return null;
-    removals.set(key, ids);
+  const endRequests = new Map<string, OccurrenceGenerationRef>();
+  for (const value of request.endRequests) {
+    const entry = conformOccurrenceGenerationRef(value);
+    if (!entry || occurrenceAtGeneration(world, entry) === null) return null;
+    const key = occurrenceGenerationRefKey(entry);
+    if (endRequests.has(key)) return null;
+    endRequests.set(key, structuredClone(entry));
   }
   return {
-    boundaries: [...(request.boundaries as ObservedMechanicsBoundary[])],
+    boundaries,
+    endRequests,
     inventorySourceLeases,
-    removals,
   };
 }
 
@@ -1089,8 +1371,8 @@ export function parseMechanicsWorldTransactionState(
   if (!structured.ok) return structured;
   const closure = parseClosureRequest(structured.value, {
     boundaries: [],
+    endRequests: [],
     inventorySourceLeases,
-    removals: [],
   });
   if (!closure) return { ok: false, reason: "invalid-lease" };
   const invalid = validateWorldInvariants(
@@ -1100,221 +1382,885 @@ export function parseMechanicsWorldTransactionState(
   return invalid ? { ok: false, reason: invalid } : { ok: true, value: structured.value };
 }
 
-function occurrenceRefKey(reference: OccurrenceRef): string {
-  return `${materialRefKey(reference.material)}\u0000${reference.occurrenceId}`;
+function leaseKey(lease: Readonly<InventorySourceLease>): string {
+  return `${materialRefKey(lease.material)}\u0000${lease.instanceId}\u0000${lease.instanceOrdinal}`;
+}
+
+function normalizeInventorySourceLeases(
+  world: Readonly<MechanicsWorld>,
+  values: readonly Readonly<InventorySourceLease>[]
+): readonly Readonly<InventorySourceLease>[] | null {
+  try {
+    const unique = [...new Map(values.map((lease) => [leaseKey(lease), lease])).values()];
+    const normalized = normalizedClosureRequest({
+      inventorySourceLeases: unique,
+    }).inventorySourceLeases;
+    const closure = parseClosureRequest(world, {
+      boundaries: [],
+      endRequests: [],
+      inventorySourceLeases: normalized,
+    });
+    return closure ? freezeDeep(structuredClone(normalized)) : null;
+  } catch {
+    return null;
+  }
+}
+
+type LatchedEndWaveResult =
+  | {
+      readonly ok: true;
+      readonly value: Readonly<MechanicsEndWaveCheckpoint>;
+    }
+  | {
+      readonly ok: false;
+      readonly reason: MechanicsWorldSimulationRejection;
+    };
+
+function latchAndRediscoverEndWave(
+  world: Readonly<MechanicsWorld>,
+  wave: Readonly<MechanicsEndWaveReceipt>,
+  historicalBasis: Readonly<MechanicsWorld> | null = null
+): LatchedEndWaveResult {
+  const latched = historicalBasis
+    ? latchHistoricalMechanicsEndWave(historicalBasis, world, wave)
+    : latchMechanicsEndWave(world, wave);
+  if (latched.status === "rejected") {
+    return { ok: false, reason: latched.reason };
+  }
+  const current = historicalBasis
+    ? discoverHistoricalMechanicsEndWave(historicalBasis, latched.world, wave.request)
+    : discoverMechanicsEndWave(latched.world, wave.request);
+  if (current.status === "rejected") {
+    return { ok: false, reason: current.reason };
+  }
+  if (!latchedEndingsMatchWave(current.world, current.wave)) {
+    return { ok: false, reason: "invalid-end-wave" };
+  }
+  const finalization = historicalBasis
+    ? finalizeHistoricalMechanicsEndWave(historicalBasis, current.world, current.wave)
+    : finalizeMechanicsEndWave(current.world, current.wave);
+  if (finalization.status === "rejected") {
+    return { ok: false, reason: finalization.reason };
+  }
+  return {
+    ok: true,
+    value: freezeDeep({ wave: current.wave, world: current.world }),
+  };
+}
+
+function preservesLatchedEndings(
+  prior: Readonly<MechanicsWorld>,
+  candidate: Readonly<MechanicsWorld>,
+  allowAdditional = false
+): boolean {
+  try {
+    const priorEndingCount = prior.documents.reduce(
+      (count, document) =>
+        count +
+        Object.values(document.state.occurrences).filter(
+          (occurrence) => occurrence.ending !== null
+        ).length,
+      0
+    );
+    const candidateEndingCount = candidate.documents.reduce(
+      (count, document) =>
+        count +
+        Object.values(document.state.occurrences).filter(
+          (occurrence) => occurrence.ending !== null
+        ).length,
+      0
+    );
+    if (
+      (allowAdditional
+        ? candidateEndingCount < priorEndingCount
+        : priorEndingCount !== candidateEndingCount) ||
+      materialRefKey(prior.scope) !== materialRefKey(candidate.scope) ||
+      canonicalJson(prior.documents.map(({ material }) => material)) !==
+        canonicalJson(candidate.documents.map(({ material }) => material))
+    ) {
+      return false;
+    }
+    for (const document of prior.documents) {
+      const next = documentFor(candidate, document.material);
+      if (!next) return false;
+      for (const [occurrenceId, occurrence] of Object.entries(
+        document.state.occurrences
+      )) {
+        if (occurrence.ending === null) continue;
+        const nextOccurrence = next.state.occurrences[occurrenceId];
+        if (
+          !nextOccurrence ||
+          nextOccurrence.ordinal !== occurrence.ordinal ||
+          canonicalJson(nextOccurrence.ending) !== canonicalJson(occurrence.ending)
+        ) {
+          return false;
+        }
+      }
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function kernelCausalState(
+  world: Readonly<MechanicsWorld>,
+  context: Readonly<MechanicsCausalState["context"]>
+): Readonly<MechanicsCausalState> {
+  return freezeDeep({ context, world }) as unknown as Readonly<MechanicsCausalState>;
+}
+
+/** The only hostile causal entry: one causally closed persisted world, no leases. */
+export function beginMechanicsCausalState(value: unknown): MechanicsCausalStateResult {
+  const closed = parseMechanicsWorld(value);
+  if (!closed.ok) return { ok: false, reason: "invalid-world" };
+  const discovery = discoverMechanicsEndWave(closed.value);
+  if (discovery.status === "rejected" || discovery.wave.candidates.length !== 0) {
+    return { ok: false, reason: "invalid-end-wave" };
+  }
+  return {
+    ok: true,
+    value: kernelCausalState(closed.value, {
+      endWave: null,
+      request: discovery.wave.request,
+    }),
+  };
+}
+
+/**
+ * Re-prove a mutated source-readable state, monotonically extending its exact
+ * end wave and keeping every causal inventory lease alive. The finalized world
+ * is used only as a closure oracle; sources remain readable in the returned state.
+ */
+export function rebaseMechanicsCausalState(
+  value: Readonly<MechanicsWorld>,
+  priorState: Readonly<MechanicsCausalState>,
+  additionalLeases: readonly Readonly<InventorySourceLease>[] = []
+): MechanicsCausalStateResult {
+  const structured = parseMechanicsWorldStructure(value);
+  if (!structured.ok) return { ok: false, reason: "invalid-world" };
+  if (
+    !isExactRecord(priorState, ["context", "world"]) ||
+    !isExactRecord(priorState.context, ["endWave", "request"]) ||
+    !isDenseArray(additionalLeases)
+  ) {
+    return { ok: false, reason: "invalid-end-wave" };
+  }
+  const priorWorld = parseMechanicsWorldStructure(priorState.world);
+  if (!priorWorld.ok || !preservesLatchedEndings(priorWorld.value, structured.value)) {
+    return { ok: false, reason: "invalid-end-wave" };
+  }
+  const priorValue = priorState.context.endWave;
+  let prior: Readonly<MechanicsEndWaveCheckpoint> | null = null;
+  if (priorValue !== null) {
+    if (
+      !isExactRecord(priorValue, ["wave", "world"]) ||
+      canonicalJson(priorValue.world) !== canonicalJson(priorWorld.value) ||
+      !isMechanicsEndWaveReceiptForWorld(priorWorld.value, priorValue.wave) ||
+      !latchedEndingsMatchWave(priorWorld.value, priorValue.wave) ||
+      priorValue.wave.candidates.length === 0 ||
+      canonicalJson(priorValue.wave.request) !== canonicalJson(priorState.context.request)
+    ) {
+      return { ok: false, reason: "invalid-end-wave" };
+    }
+    prior = { wave: priorValue.wave, world: priorWorld.value };
+  } else {
+    const closedPrior = parseMechanicsWorldTransactionState(
+      priorWorld.value,
+      priorState.context.request.inventorySourceLeases
+    );
+    if (!closedPrior.ok) return { ok: false, reason: "invalid-end-wave" };
+    const priorDiscovery = discoverMechanicsEndWave(
+      closedPrior.value,
+      priorState.context.request
+    );
+    if (
+      priorDiscovery.status === "rejected" ||
+      priorDiscovery.wave.candidates.length !== 0
+    ) {
+      return { ok: false, reason: "invalid-end-wave" };
+    }
+  }
+  const leases = normalizeInventorySourceLeases(structured.value, [
+    ...priorState.context.request.inventorySourceLeases,
+    ...(prior?.wave.request.inventorySourceLeases ?? []),
+    ...additionalLeases,
+  ]);
+  if (!leases) return { ok: false, reason: "invalid-end-wave" };
+  const request = mergeClosureRequests(
+    prior?.wave.request ?? priorState.context.request,
+    normalizedClosureRequest({ inventorySourceLeases: leases })
+  );
+  const discovery = discoverMechanicsEndWave(structured.value, request);
+  if (discovery.status === "rejected") {
+    return { ok: false, reason: discovery.reason };
+  }
+  const latched = latchAndRediscoverEndWave(discovery.world, discovery.wave);
+  if (!latched.ok) return latched;
+  return {
+    ok: true,
+    value: kernelCausalState(latched.value.world, {
+      endWave: latched.value.wave.candidates.length === 0 ? null : latched.value,
+      request: latched.value.wave.request,
+    }),
+  };
 }
 
 function causeKey(cause: MechanicsEndCause): string {
   return canonicalJson(cause);
 }
 
-function causesForOccurrence(
-  basisWorld: Readonly<MechanicsWorld>,
-  projectedWorld: Readonly<MechanicsWorld>,
-  material: MaterialRef,
-  occurrenceId: string,
-  occurrence: MechanicOccurrence,
-  closure: NonNullable<ReturnType<typeof parseClosureRequest>>,
-  ended: ReadonlySet<string>
-): MechanicsEndCause[] {
-  const causes: MechanicsEndCause[] = [];
-  if (closure.removals.get(materialRefKey(material))?.has(occurrenceId)) {
-    causes.push({ kind: "requested" });
-  }
-  for (const rule of occurrence.endRules) {
-    for (const boundary of closure.boundaries) {
-      if (isEndRuleDue(rule, boundary)) {
-        causes.push({ boundary: structuredClone(boundary), kind: "explicit-boundary" });
-      }
-    }
-  }
-  if (
-    occurrence.kind === "concentration" &&
-    breaksConcentration(basisWorld as MutableWorld, occurrence.target)
-  ) {
-    causes.push({ kind: "concentration-broken" });
-  }
-  for (const dependencyId of occurrenceDependencyIds(occurrence)) {
-    const dependency = { material, occurrenceId: dependencyId } satisfies OccurrenceRef;
-    const dependencyDocument = documentFor(basisWorld, material);
-    if (
-      !dependencyDocument?.state.occurrences[dependencyId] ||
-      ended.has(occurrenceRefKey(dependency))
-    ) {
-      causes.push({ dependency: structuredClone(dependency), kind: "dependency-ended" });
-    }
-  }
-  if (
-    occurrence.endRules.some((rule) => rule.kind === "temporary-hp-empty") &&
-    isEffectOccurrence(occurrence) &&
-    temporaryHitPointsFor(projectedWorld as MutableWorld, occurrence.target) === 0
-  ) {
-    causes.push({ kind: "temporary-hit-points-empty" });
-  }
-  for (const entity of occurrenceLiveEntities(occurrence)) {
-    if (!entityPresent(projectedWorld, entity)) {
-      causes.push({ entity: structuredClone(entity), kind: "live-entity-missing" });
-    }
-  }
-  return [...new Map(causes.map((cause) => [causeKey(cause), cause])).values()].sort(
-    (left, right) => causeKey(left).localeCompare(causeKey(right))
-  );
+function compareCanonical(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 function candidateKey(candidate: MechanicsEndCandidate): string {
-  return occurrenceRefKey(candidate.occurrence);
+  return occurrenceGenerationRefKey(candidate.occurrence);
 }
 
 function discoverCandidates(
   world: Readonly<MechanicsWorld>,
   closure: NonNullable<ReturnType<typeof parseClosureRequest>>
 ): readonly MechanicsEndCandidate[] {
-  const ended = new Set<string>();
-  const causes = new Map<string, MechanicsEndCause[]>();
-  let changed = true;
-  while (changed) {
-    changed = false;
-    const projectedWorld = mutableWorld(world);
-    for (const key of ended) {
-      for (const document of projectedWorld.documents) {
-        for (const occurrenceId of Object.keys(document.state.occurrences)) {
-          if (occurrenceRefKey({ material: document.material, occurrenceId }) === key) {
-            Reflect.deleteProperty(document.state.occurrences, occurrenceId);
-          }
-        }
-      }
-    }
-    cleanEndedMaterial(projectedWorld, closure.inventorySourceLeases);
-    for (const document of world.documents) {
-      for (const [occurrenceId, occurrence] of Object.entries(
-        document.state.occurrences
-      )) {
-        const occurrenceRef = { material: document.material, occurrenceId };
-        const key = occurrenceRefKey(occurrenceRef);
-        const found = causesForOccurrence(
-          world,
-          projectedWorld,
-          document.material,
-          occurrenceId,
-          occurrence,
-          closure,
-          ended
-        );
-        if (found.length === 0) continue;
-        if (!ended.has(key)) {
-          ended.add(key);
-          changed = true;
-        }
-        causes.set(key, found);
-      }
-    }
-  }
-
-  const projectedWorld = mutableWorld(world);
-  for (const document of projectedWorld.documents) {
-    for (const occurrenceId of Object.keys(document.state.occurrences)) {
-      if (ended.has(occurrenceRefKey({ material: document.material, occurrenceId }))) {
-        Reflect.deleteProperty(document.state.occurrences, occurrenceId);
-      }
-    }
-  }
-  cleanEndedMaterial(projectedWorld, closure.inventorySourceLeases);
-  for (const document of world.documents) {
-    for (const [occurrenceId, occurrence] of Object.entries(document.state.occurrences)) {
-      const key = occurrenceRefKey({ material: document.material, occurrenceId });
-      if (!ended.has(key)) continue;
-      causes.set(
-        key,
-        causesForOccurrence(
-          world,
-          projectedWorld,
-          document.material,
-          occurrenceId,
-          occurrence,
-          closure,
-          ended
-        )
-      );
-    }
-  }
-
-  const candidates = [...ended].map((key) => {
-    for (const document of world.documents) {
-      for (const occurrenceId of Object.keys(document.state.occurrences)) {
-        const occurrence = { material: document.material, occurrenceId };
-        if (occurrenceRefKey(occurrence) === key) {
-          return { causes: causes.get(key) ?? [], occurrence };
-        }
-      }
-    }
-    throw new TypeError("Discovered occurrence disappeared from immutable world");
-  });
-  const dependentDepth = (candidate: MechanicsEndCandidate): number => {
-    const occurrence = occurrenceFor(world, candidate.occurrence);
-    if (!occurrence) return 0;
-    return occurrenceDependencyIds(occurrence).reduce((depth, dependencyId) => {
-      const dependencyKey = occurrenceRefKey({
-        material: candidate.occurrence.material,
-        occurrenceId: dependencyId,
-      });
-      const dependency = candidates.find(
-        (entry) => candidateKey(entry) === dependencyKey
-      );
-      return dependency ? Math.max(depth, dependentDepth(dependency) + 1) : depth;
-    }, 0);
+  type OccurrenceNode = {
+    readonly directCauses: Map<string, MechanicsEndCause>;
+    readonly generation: OccurrenceGenerationRef;
+    readonly key: string;
+    readonly liveEntities: readonly EntityRef[];
+    readonly materialKey: string;
+    readonly occurrence: MechanicOccurrence;
+    readonly sourceInventoryKey: string | null;
+    dependencies: readonly OccurrenceNode[];
   };
+  type EntityNode = {
+    readonly availability: string;
+    readonly inventoryKey: string | null;
+    readonly key: string;
+    readonly ownerKey: string | null;
+    removed: boolean;
+  };
+  type InventoryNode = {
+    activeSources: number;
+    readonly key: string;
+    readonly leased: boolean;
+    ownerKey: string | null;
+    quantity: number;
+    removed: boolean;
+  };
+  type TemporaryHitPointsNode = {
+    cleared: boolean;
+    readonly current: number;
+    readonly holderKey: string;
+    readonly sourceKey: string | null;
+  };
+
+  const addToSetMap = <Value>(
+    index: Map<string, Set<Value>>,
+    key: string,
+    value: Value
+  ): void => {
+    const values = index.get(key);
+    if (values) values.add(value);
+    else index.set(key, new Set([value]));
+  };
+  const clockKey = (clock: ClockRef): string =>
+    JSON.stringify([materialRefKey(clock.material), clock.epoch]);
+  const documents = new Map(
+    world.documents.map((document) => [materialRefKey(document.material), document])
+  );
+  const exactBoundaries = new Map<string, ObservedMechanicsBoundary>();
+  const timeBoundaries = new Map<
+    string,
+    Extract<ObservedMechanicsBoundary, { kind: "time-reached" }>[]
+  >();
+  for (const boundary of closure.boundaries) {
+    if (boundary.kind === "time-reached") {
+      const key = clockKey(boundary.clock);
+      const values = timeBoundaries.get(key);
+      if (values) values.push(boundary);
+      else timeBoundaries.set(key, [boundary]);
+    } else {
+      exactBoundaries.set(canonicalJson(boundary), boundary);
+    }
+  }
+  for (const boundaries of timeBoundaries.values()) {
+    boundaries.sort(
+      (left, right) =>
+        left.elapsedSeconds - right.elapsedSeconds ||
+        compareCanonical(canonicalJson(left), canonicalJson(right))
+    );
+  }
+
+  const entityNodes = new Map<string, EntityNode>();
+  const inventoryNodes = new Map<string, InventoryNode>();
+  const temporaryHitPoints = new Map<string, TemporaryHitPointsNode>();
+  const characterSelfKeys = new Set<string>();
+  const entitiesOwnedByOccurrence = new Map<string, Set<string>>();
+  const entitiesBackedByInventory = new Map<string, Set<string>>();
+  const inventoryOwnedByOccurrence = new Map<string, Set<string>>();
+  const temporaryHitPointsBySource = new Map<string, Set<string>>();
+
+  const addTemporaryHitPoints = (holder: EntityRef, vitals: CreatureVitals): void => {
+    const holderKey = entityRefKey(holder);
+    const source = vitals.hitPoints.temporary.sourceOccurrence;
+    const sourceKey = source ? occurrenceGenerationRefKey(source) : null;
+    temporaryHitPoints.set(holderKey, {
+      cleared: false,
+      current: vitals.hitPoints.temporary.current,
+      holderKey,
+      sourceKey,
+    });
+    if (sourceKey) addToSetMap(temporaryHitPointsBySource, sourceKey, holderKey);
+  };
+
+  for (const document of world.documents) {
+    const materialKey = materialRefKey(document.material);
+    if (document.kind === "character") {
+      const self = { entityId: "self", material: document.material } satisfies EntityRef;
+      characterSelfKeys.add(entityRefKey(self));
+      addTemporaryHitPoints(self, document.state.vitals);
+      for (const [instanceId, instance] of Object.entries(document.state.inventory)) {
+        const key = `${materialKey}\u0000${instanceId}\u0000${instance.ordinal}`;
+        const ownerKey = instance.ownerOccurrence
+          ? occurrenceGenerationRefKey(instance.ownerOccurrence)
+          : null;
+        inventoryNodes.set(key, {
+          activeSources: 0,
+          key,
+          leased: closure.inventorySourceLeases.has(key),
+          ownerKey,
+          quantity: instance.quantity.current,
+          removed: false,
+        });
+        if (ownerKey) addToSetMap(inventoryOwnedByOccurrence, ownerKey, key);
+      }
+    }
+    for (const [entityId, entity] of Object.entries(document.state.entities)) {
+      // `self` is resolved by document kind, never by the entity collection.
+      if (entityId === "self") continue;
+      const reference = {
+        entityId,
+        material: document.material,
+        ordinal: entity.ordinal,
+      } satisfies EntityRef;
+      const key = entityRefKey(reference);
+      const ownerKey = entity.ownerOccurrence
+        ? occurrenceGenerationRefKey(entity.ownerOccurrence)
+        : null;
+      const inventoryKey =
+        entity.kind === "object" && entity.template.kind === "inventory-item"
+          ? `${materialRefKey(entity.template.owner)}\u0000${entity.template.instanceId}\u0000${entity.template.instanceOrdinal}`
+          : null;
+      entityNodes.set(key, {
+        availability: entity.availability,
+        inventoryKey,
+        key,
+        ownerKey,
+        removed: false,
+      });
+      if (ownerKey) addToSetMap(entitiesOwnedByOccurrence, ownerKey, key);
+      if (inventoryKey) addToSetMap(entitiesBackedByInventory, inventoryKey, key);
+      if (entity.kind === "creature") addTemporaryHitPoints(reference, entity.vitals);
+    }
+  }
+
+  const occurrenceNodes = new Map<string, OccurrenceNode>();
+  const dependents = new Map<string, Set<string>>();
+  const liveEntityWatchers = new Map<string, Set<string>>();
+  const temporaryHitPointWatchers = new Map<string, Set<string>>();
+  const conditionInstances = new Map<string, ConditionInstance[]>();
+  const activeInventorySources = new Map<string, number>();
+
+  for (const document of world.documents) {
+    const materialKey = materialRefKey(document.material);
+    for (const [occurrenceId, occurrence] of Object.entries(document.state.occurrences)) {
+      const generation = {
+        occurrence: { material: document.material, occurrenceId },
+        ordinal: occurrence.ordinal,
+      } satisfies OccurrenceGenerationRef;
+      const key = occurrenceGenerationRefKey(generation);
+      const source = inventoryItemSource(document.state, occurrenceId);
+      const sourceInventoryKey = source ? inventorySourceKey(source) : null;
+      const liveEntities = occurrenceLiveEntities(occurrence);
+      occurrenceNodes.set(key, {
+        dependencies: [],
+        directCauses: new Map(
+          (occurrence.ending?.causes ?? []).map((cause) => [
+            causeKey(cause),
+            structuredClone(cause),
+          ])
+        ),
+        generation,
+        key,
+        liveEntities,
+        materialKey,
+        occurrence,
+        sourceInventoryKey,
+      });
+      if (sourceInventoryKey) {
+        activeInventorySources.set(
+          sourceInventoryKey,
+          (activeInventorySources.get(sourceInventoryKey) ?? 0) + 1
+        );
+      }
+      if (occurrence.kind === "condition") {
+        const targetKey = entityRefKey(occurrence.target);
+        const instances = conditionInstances.get(targetKey);
+        const instance = {
+          conditionId: occurrence.conditionId,
+          identity: { kind: "occurrence", ref: generation },
+          source: null,
+        } satisfies ConditionInstance;
+        if (instances) instances.push(instance);
+        else conditionInstances.set(targetKey, [instance]);
+      }
+      for (const entity of liveEntities) {
+        addToSetMap(liveEntityWatchers, entityRefKey(entity), key);
+      }
+      if (
+        isEffectOccurrence(occurrence) &&
+        occurrence.endRules.some((rule) => rule.kind === "temporary-hp-empty")
+      ) {
+        addToSetMap(temporaryHitPointWatchers, entityRefKey(occurrence.target), key);
+      }
+    }
+  }
+
+  const addDirectCause = (node: OccurrenceNode, cause: MechanicsEndCause): void => {
+    node.directCauses.set(causeKey(cause), cause);
+  };
+  for (const node of occurrenceNodes.values()) {
+    const dependencyNodes = [...new Set(occurrenceDependencyIds(node.occurrence))].map(
+      (occurrenceId) => {
+        const dependencyDocument = documents.get(node.materialKey);
+        const dependencyOccurrence = dependencyDocument?.state.occurrences[occurrenceId];
+        if (!dependencyOccurrence) {
+          throw new TypeError(
+            "Occurrence dependency disappeared from the readable basis"
+          );
+        }
+        const dependencyKey = occurrenceGenerationRefKey({
+          occurrence: {
+            material: node.generation.occurrence.material,
+            occurrenceId,
+          },
+          ordinal: dependencyOccurrence.ordinal,
+        });
+        const dependency = occurrenceNodes.get(dependencyKey);
+        if (!dependency || dependency.occurrence.ordinal >= node.occurrence.ordinal) {
+          throw new TypeError("Occurrence dependency order is invalid");
+        }
+        addToSetMap(dependents, dependencyKey, node.key);
+        return dependency;
+      }
+    );
+    node.dependencies = dependencyNodes;
+
+    if (closure.endRequests.has(node.key)) {
+      addDirectCause(node, { kind: "requested" });
+    }
+    const earliestTimeRules = new Map<string, number>();
+    for (const rule of node.occurrence.endRules) {
+      if (rule.kind === "time-reached") {
+        const key = clockKey(rule.clock);
+        earliestTimeRules.set(
+          key,
+          Math.min(earliestTimeRules.get(key) ?? rule.elapsedSeconds, rule.elapsedSeconds)
+        );
+      } else if (
+        rule.kind === "combat-end" ||
+        rule.kind === "turn-boundary" ||
+        rule.kind === "rest-completed" ||
+        rule.kind === "day-phase"
+      ) {
+        const boundary = exactBoundaries.get(canonicalJson(rule));
+        if (boundary) {
+          addDirectCause(node, {
+            boundary: structuredClone(boundary),
+            kind: "explicit-boundary",
+          });
+        }
+      }
+    }
+    for (const [key, earliest] of earliestTimeRules) {
+      const boundaries = timeBoundaries.get(key) ?? [];
+      let low = 0;
+      let high = boundaries.length;
+      while (low < high) {
+        const middle = low + Math.floor((high - low) / 2);
+        if ((boundaries[middle]?.elapsedSeconds ?? 0) < earliest) {
+          low = middle + 1;
+        } else {
+          high = middle;
+        }
+      }
+      for (let index = low; index < boundaries.length; index += 1) {
+        const boundary = boundaries[index];
+        if (boundary) {
+          addDirectCause(node, {
+            boundary: structuredClone(boundary),
+            kind: "explicit-boundary",
+          });
+        }
+      }
+    }
+  }
+
+  const vitalsFor = (target: EntityRef): CreatureVitals | null => {
+    const document = documents.get(materialRefKey(target.material));
+    if (!document) return null;
+    if (target.entityId === "self") {
+      return document.kind === "character" ? document.state.vitals : null;
+    }
+    const entity = document.state.entities[target.entityId];
+    return entity?.ordinal === target.ordinal && entity.kind === "creature"
+      ? entity.vitals
+      : null;
+  };
+  const concentrationBroken = new Map<string, boolean>();
+  for (const node of occurrenceNodes.values()) {
+    if (node.occurrence.kind !== "concentration") continue;
+    const target = node.occurrence.target;
+    const targetKey = entityRefKey(target);
+    let broken = concentrationBroken.get(targetKey);
+    if (broken === undefined) {
+      const vitals = vitalsFor(target);
+      broken =
+        vitals !== null &&
+        projectCreatureConditions(conditionInstances.get(targetKey) ?? [], target, vitals)
+          ?.breaksConcentration === true;
+      concentrationBroken.set(targetKey, broken);
+    }
+    if (broken) addDirectCause(node, { kind: "concentration-broken" });
+  }
+
+  for (const [key, count] of activeInventorySources) {
+    const inventory = inventoryNodes.get(key);
+    if (inventory) inventory.activeSources = count;
+  }
+
+  const ended = new Set<string>();
+  const endQueue: string[] = [];
+  const endOccurrence = (key: string): void => {
+    if (!occurrenceNodes.has(key) || ended.has(key)) return;
+    ended.add(key);
+    endQueue.push(key);
+  };
+  const entityExists = (key: string): boolean =>
+    characterSelfKeys.has(key) || entityNodes.get(key)?.removed === false;
+  const entityIsPresent = (key: string): boolean =>
+    characterSelfKeys.has(key) ||
+    (entityNodes.get(key)?.removed === false &&
+      entityNodes.get(key)?.availability === "present");
+  const temporaryHitPointValue = (holderKey: string): number | null => {
+    const temporary = temporaryHitPoints.get(holderKey);
+    return temporary && entityExists(holderKey)
+      ? temporary.cleared
+        ? 0
+        : temporary.current
+      : null;
+  };
+  const notifyTemporaryHitPoints = (holderKey: string): void => {
+    if (temporaryHitPointValue(holderKey) !== 0) return;
+    for (const occurrenceKey of temporaryHitPointWatchers.get(holderKey) ?? []) {
+      endOccurrence(occurrenceKey);
+    }
+  };
+  const removeEntity = (key: string): void => {
+    const entity = entityNodes.get(key);
+    if (!entity || entity.removed) return;
+    entity.removed = true;
+    for (const occurrenceKey of liveEntityWatchers.get(key) ?? []) {
+      endOccurrence(occurrenceKey);
+    }
+  };
+  const removeInventory = (key: string): void => {
+    const inventory = inventoryNodes.get(key);
+    if (!inventory || inventory.removed) return;
+    inventory.removed = true;
+    for (const entityKey of entitiesBackedByInventory.get(key) ?? []) {
+      removeEntity(entityKey);
+    }
+  };
+  const reevaluateInventory = (key: string): void => {
+    const inventory = inventoryNodes.get(key);
+    if (!inventory || inventory.removed) return;
+    const ownerMissing =
+      inventory.ownerKey !== null &&
+      (!occurrenceNodes.has(inventory.ownerKey) || ended.has(inventory.ownerKey));
+    if (ownerMissing) {
+      if (inventory.activeSources > 0 || inventory.leased) {
+        inventory.quantity = 0;
+        inventory.ownerKey = null;
+      } else {
+        removeInventory(key);
+        return;
+      }
+    }
+    if (inventory.quantity === 0 && inventory.activeSources === 0 && !inventory.leased) {
+      removeInventory(key);
+    }
+  };
+
+  // Baseline cleanup is part of every projection, even before an occurrence ends.
+  for (const key of inventoryNodes.keys()) reevaluateInventory(key);
+  for (const entity of entityNodes.values()) {
+    if (
+      (entity.ownerKey !== null && !occurrenceNodes.has(entity.ownerKey)) ||
+      (entity.inventoryKey !== null &&
+        inventoryNodes.get(entity.inventoryKey)?.removed !== false)
+    ) {
+      removeEntity(entity.key);
+    }
+  }
+  for (const temporary of temporaryHitPoints.values()) {
+    if (temporary.sourceKey && !occurrenceNodes.has(temporary.sourceKey)) {
+      temporary.cleared = true;
+    }
+    notifyTemporaryHitPoints(temporary.holderKey);
+  }
+  for (const node of occurrenceNodes.values()) {
+    if (node.directCauses.size > 0) endOccurrence(node.key);
+    if (node.liveEntities.some((entity) => !entityIsPresent(entityRefKey(entity)))) {
+      endOccurrence(node.key);
+    }
+    if (
+      isEffectOccurrence(node.occurrence) &&
+      node.occurrence.endRules.some((rule) => rule.kind === "temporary-hp-empty") &&
+      temporaryHitPointValue(entityRefKey(node.occurrence.target)) === 0
+    ) {
+      endOccurrence(node.key);
+    }
+  }
+
+  for (let cursor = 0; cursor < endQueue.length; cursor += 1) {
+    const key = endQueue[cursor];
+    if (!key) throw new RangeError("Closure queue overflow");
+    const node = occurrenceNodes.get(key);
+    if (!node) throw new TypeError("Discovered occurrence disappeared");
+    for (const dependentKey of dependents.get(key) ?? []) {
+      endOccurrence(dependentKey);
+    }
+    if (node.sourceInventoryKey) {
+      const inventory = inventoryNodes.get(node.sourceInventoryKey);
+      if (inventory && inventory.activeSources > 0) {
+        inventory.activeSources -= 1;
+        reevaluateInventory(inventory.key);
+      }
+    }
+    for (const inventoryKey of inventoryOwnedByOccurrence.get(key) ?? []) {
+      reevaluateInventory(inventoryKey);
+    }
+    for (const entityKey of entitiesOwnedByOccurrence.get(key) ?? []) {
+      removeEntity(entityKey);
+    }
+    for (const holderKey of temporaryHitPointsBySource.get(key) ?? []) {
+      const temporary = temporaryHitPoints.get(holderKey);
+      if (!temporary || temporary.cleared) continue;
+      temporary.cleared = true;
+      notifyTemporaryHitPoints(holderKey);
+    }
+  }
+
+  // Encounter pruning and clock detachment cannot add a cause: explicit rules use
+  // the immutable basis. The finalizer applies those terminal material mutations.
+  const canonicalCauses = (values: readonly MechanicsEndCause[]) =>
+    [...new Map(values.map((cause) => [causeKey(cause), cause])).entries()]
+      .sort(([left], [right]) => compareCanonical(left, right))
+      .map(([, cause]) => cause);
+  const depths = new Map<string, number>();
+  const endedNodes = [...ended].map((key) => {
+    const node = occurrenceNodes.get(key);
+    if (!node) throw new TypeError("Discovered occurrence disappeared");
+    return node;
+  });
+  endedNodes.sort(
+    (left, right) =>
+      compareCanonical(left.materialKey, right.materialKey) ||
+      left.occurrence.ordinal - right.occurrence.ordinal ||
+      compareCanonical(left.key, right.key)
+  );
+  for (const node of endedNodes) {
+    let depth = 0;
+    for (const dependency of node.dependencies) {
+      if (!ended.has(dependency.key)) continue;
+      const dependencyDepth = depths.get(dependency.key);
+      if (dependencyDepth === undefined) {
+        throw new TypeError("Occurrence dependency order is invalid");
+      }
+      depth = Math.max(depth, dependencyDepth + 1);
+    }
+    depths.set(node.key, depth);
+  }
+
+  const candidates = endedNodes.map((node) => {
+    const causes = [...node.directCauses.values()];
+    for (const dependency of node.dependencies) {
+      if (ended.has(dependency.key)) {
+        causes.push({
+          dependency: structuredClone(dependency.generation),
+          kind: "dependency-ended",
+        });
+      }
+    }
+    if (
+      isEffectOccurrence(node.occurrence) &&
+      node.occurrence.endRules.some((rule) => rule.kind === "temporary-hp-empty") &&
+      temporaryHitPointValue(entityRefKey(node.occurrence.target)) === 0
+    ) {
+      causes.push({ kind: "temporary-hit-points-empty" });
+    }
+    for (const entity of node.liveEntities) {
+      if (!entityIsPresent(entityRefKey(entity))) {
+        causes.push({
+          entity: structuredClone(entity),
+          kind: "live-entity-missing",
+        });
+      }
+    }
+    const canonical = canonicalCauses(causes);
+    if (canonical.length === 0) {
+      throw new TypeError("Ended occurrence has no final cause");
+    }
+    return { causes: canonical, occurrence: node.generation };
+  });
   candidates.sort(
     (left, right) =>
-      dependentDepth(right) - dependentDepth(left) ||
-      candidateKey(left).localeCompare(candidateKey(right))
+      (depths.get(candidateKey(right)) ?? 0) - (depths.get(candidateKey(left)) ?? 0) ||
+      compareCanonical(candidateKey(left), candidateKey(right))
   );
-  return freezeDeep(structuredClone(candidates));
+  const result = freezeDeep(structuredClone(candidates));
+  canonicalJson(result);
+  return result;
 }
 
 function normalizedClosureRequest(
   request: MechanicsClosureRequest
-): MechanicsClosureRequest {
+): Required<MechanicsClosureRequest> {
   return {
-    boundaries: request.boundaries ?? [],
-    inventorySourceLeases: request.inventorySourceLeases ?? [],
-    removals: request.removals ?? [],
+    boundaries: [...(request.boundaries ?? [])].sort((left, right) =>
+      compareCanonical(canonicalJson(left), canonicalJson(right))
+    ),
+    endRequests: [...(request.endRequests ?? [])].sort((left, right) =>
+      compareCanonical(
+        occurrenceGenerationRefKey(left),
+        occurrenceGenerationRefKey(right)
+      )
+    ),
+    inventorySourceLeases: [...(request.inventorySourceLeases ?? [])].sort(
+      (left, right) => compareCanonical(canonicalJson(left), canonicalJson(right))
+    ),
   };
 }
 
-/** Discover the complete causal end wave without mutating or removing its sources. */
+function mergeClosureRequests(
+  left: Required<MechanicsClosureRequest>,
+  right: Required<MechanicsClosureRequest>
+): Required<MechanicsClosureRequest> {
+  const merge = <Value>(
+    values: readonly Value[],
+    additions: readonly Value[],
+    key: (value: Value) => string
+  ): Value[] => [
+    ...new Map([...values, ...additions].map((value) => [key(value), value])).values(),
+  ];
+  return normalizedClosureRequest({
+    boundaries: merge(left.boundaries, right.boundaries, canonicalJson),
+    endRequests: merge(left.endRequests, right.endRequests, occurrenceGenerationRefKey),
+    inventorySourceLeases: merge(
+      left.inventorySourceLeases,
+      right.inventorySourceLeases,
+      canonicalJson
+    ),
+  });
+}
+
+/** Discover the exact causal end wave for one readable world without removing sources. */
 export function discoverMechanicsEndWave(
   value: Readonly<MechanicsWorld>,
-  request: MechanicsClosureRequest = { boundaries: [], removals: [] }
+  request: MechanicsClosureRequest = {}
 ): MechanicsEndDiscoveryResult {
   const parsed = parseMechanicsWorldStructure(value);
   if (!parsed.ok) return { reason: "invalid-world", status: "rejected", world: value };
-  const closure = parseClosureRequest(parsed.value, normalizedClosureRequest(request));
+  let normalized: Required<MechanicsClosureRequest>;
+  let closure: NonNullable<ReturnType<typeof parseClosureRequest>>;
+  try {
+    if (!isClosureRequestShape(request)) {
+      return { reason: "invalid-boundary", status: "rejected", world: parsed.value };
+    }
+    normalized = normalizedClosureRequest(request);
+    const parsedClosure = parseClosureRequest(parsed.value, normalized);
+    if (!parsedClosure) {
+      return { reason: "invalid-boundary", status: "rejected", world: parsed.value };
+    }
+    closure = parsedClosure;
+  } catch {
+    return { reason: "invalid-boundary", status: "rejected", world: parsed.value };
+  }
+  try {
+    const wave = freezeDeep({
+      basis: canonicalFingerprint(parsed.value),
+      candidates: discoverCandidates(parsed.value, closure),
+      request: normalized,
+      schema: 1 as const,
+    });
+    canonicalJson(wave);
+    return {
+      status: "discovered",
+      wave,
+      world: parsed.value,
+    };
+  } catch (error) {
+    if (error instanceof RangeError || error instanceof TypeError) {
+      return { reason: "overflow", status: "rejected", world: parsed.value };
+    }
+    return { reason: "invalid-end-wave", status: "rejected", world: parsed.value };
+  }
+}
+
+function discoverHistoricalMechanicsEndWave(
+  basis: Readonly<MechanicsWorld>,
+  value: Readonly<MechanicsWorld>,
+  request: Required<MechanicsClosureRequest>
+): MechanicsEndDiscoveryResult {
+  const parsedBasis = parseMechanicsWorldStructure(basis);
+  const parsed = parseMechanicsWorldStructure(value);
+  if (!parsedBasis.ok || !parsed.ok) {
+    return { reason: "invalid-world", status: "rejected", world: value };
+  }
+  const closure = parseClosureRequest(parsed.value, request, parsedBasis.value);
   if (!closure) {
     return { reason: "invalid-boundary", status: "rejected", world: parsed.value };
   }
   try {
-    return {
+    const wave = freezeDeep({
+      basis: canonicalFingerprint(parsed.value),
       candidates: discoverCandidates(parsed.value, closure),
-      status: "discovered",
+      request,
+      schema: 1 as const,
+    });
+    canonicalJson(wave);
+    return { status: "discovered", wave, world: parsed.value };
+  } catch (error) {
+    return {
+      reason:
+        error instanceof RangeError || error instanceof TypeError
+          ? "overflow"
+          : "invalid-end-wave",
+      status: "rejected",
       world: parsed.value,
     };
-  } catch (error) {
-    if (error instanceof RangeError) {
-      return { reason: "overflow", status: "rejected", world: parsed.value };
-    }
-    throw error;
   }
 }
 
-function candidatesEqual(
-  left: readonly MechanicsEndCandidate[],
-  right: readonly MechanicsEndCandidate[]
-): boolean {
-  return canonicalJson(left) === canonicalJson(right);
-}
-
 function isPlainDataTree(value: unknown, ancestors = new WeakSet<object>()): boolean {
-  if (value === null || typeof value !== "object") return true;
+  if (value === null || typeof value === "string" || typeof value === "boolean") {
+    return true;
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value) && !Object.is(value, -0);
+  }
+  if (typeof value !== "object") return false;
   if (ancestors.has(value)) return false;
   ancestors.add(value);
   if (Array.isArray(value)) {
@@ -1337,12 +2283,10 @@ function isPlainDataTree(value: unknown, ancestors = new WeakSet<object>()): boo
   return valid;
 }
 
-function isOccurrenceRefValue(value: unknown): value is OccurrenceRef {
-  return (
-    isExactRecord(value, ["material", "occurrenceId"]) &&
-    isMaterialRef(value.material) &&
-    isId(value.occurrenceId)
-  );
+function isOccurrenceGenerationRefValue(
+  value: unknown
+): value is OccurrenceGenerationRef {
+  return conformOccurrenceGenerationRef(value) !== null;
 }
 
 function isEndCause(value: unknown): value is MechanicsEndCause {
@@ -1358,20 +2302,21 @@ function isEndCause(value: unknown): value is MechanicsEndCause {
     return isExactRecord(value, ["kind"]);
   }
   if (kind === "explicit-boundary") {
-    return isExactRecord(value, ["kind", "boundary"]);
+    return (
+      isExactRecord(value, ["kind", "boundary"]) &&
+      conformObservedMechanicsBoundary(value.boundary) !== null
+    );
   }
   if (kind === "dependency-ended") {
     return (
       isExactRecord(value, ["kind", "dependency"]) &&
-      isOccurrenceRefValue(value.dependency)
+      isOccurrenceGenerationRefValue(value.dependency)
     );
   }
   return (
     kind === "live-entity-missing" &&
     isExactRecord(value, ["kind", "entity"]) &&
-    isExactRecord(value.entity, ["material", "entityId"]) &&
-    isMaterialRef(value.entity.material) &&
-    isId(value.entity.entityId)
+    conformEntityRef(value.entity) !== null
   );
 }
 
@@ -1379,7 +2324,7 @@ function isEndCandidate(value: unknown): value is MechanicsEndCandidate {
   if (
     !isPlainDataTree(value) ||
     !isExactRecord(value, ["occurrence", "causes"]) ||
-    !isOccurrenceRefValue(value.occurrence) ||
+    !isOccurrenceGenerationRefValue(value.occurrence) ||
     !isDenseArray(value.causes) ||
     value.causes.length === 0 ||
     !value.causes.every(isEndCause)
@@ -1395,51 +2340,245 @@ function isEndCandidate(value: unknown): value is MechanicsEndCandidate {
   return true;
 }
 
-/** Apply one exact previously discovered wave, then perform material cleanup. */
-export function finalizeMechanicsEndWave(
+function isEndWaveReceipt(value: unknown): value is MechanicsEndWaveReceipt {
+  if (
+    !isPlainDataTree(value) ||
+    !isExactRecord(value, ["basis", "candidates", "request", "schema"]) ||
+    value.schema !== 1 ||
+    conformCanonicalFingerprint(value.basis) === null ||
+    !isDenseArray(value.candidates) ||
+    !value.candidates.every(isEndCandidate) ||
+    !isExactRecord(value.request, ["boundaries", "endRequests", "inventorySourceLeases"])
+  ) {
+    return false;
+  }
+  try {
+    if (
+      canonicalJson(value.request) !==
+        canonicalJson(normalizedClosureRequest(value.request)) ||
+      canonicalJson(value).length === 0
+    ) {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+  const keys = value.candidates.map(candidateKey);
+  return new Set(keys).size === keys.length;
+}
+
+/** Prove that one hostile receipt is the exact complete wave for this readable world. */
+export function isMechanicsEndWaveReceiptForWorld(
+  value: unknown,
+  wave: unknown
+): wave is Readonly<MechanicsEndWaveReceipt> {
+  try {
+    const parsed = parseMechanicsWorldStructure(value);
+    if (
+      !parsed.ok ||
+      !isEndWaveReceipt(wave) ||
+      wave.basis !== canonicalFingerprint(parsed.value)
+    ) {
+      return false;
+    }
+    const closure = parseClosureRequest(parsed.value, wave.request);
+    if (!closure) return false;
+    return (
+      canonicalJson(discoverCandidates(parsed.value, closure)) ===
+      canonicalJson(wave.candidates)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isMechanicsEndWaveReceiptForHistoricalWorld(
+  basis: Readonly<MechanicsWorld>,
   value: Readonly<MechanicsWorld>,
-  request: MechanicsClosureRequest,
-  orderedCandidates: readonly MechanicsEndCandidate[]
-): MechanicsWorldSimulationResult {
+  wave: unknown
+): wave is Readonly<MechanicsEndWaveReceipt> {
+  try {
+    const parsedBasis = parseMechanicsWorldStructure(basis);
+    const parsed = parseMechanicsWorldStructure(value);
+    if (
+      !parsedBasis.ok ||
+      !parsed.ok ||
+      !isEndWaveReceipt(wave) ||
+      wave.basis !== canonicalFingerprint(parsed.value)
+    ) {
+      return false;
+    }
+    const closure = parseClosureRequest(parsed.value, wave.request, parsedBasis.value);
+    return (
+      closure !== null &&
+      canonicalJson(discoverCandidates(parsed.value, closure)) ===
+        canonicalJson(wave.candidates)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function latchedEndingsMatchWave(
+  world: Readonly<MechanicsWorld>,
+  wave: Readonly<MechanicsEndWaveReceipt>
+): boolean {
+  const candidates = new Map(
+    wave.candidates.map((candidate) => [candidateKey(candidate), candidate])
+  );
+  let endingCount = 0;
+  for (const document of world.documents) {
+    for (const [occurrenceId, occurrence] of Object.entries(document.state.occurrences)) {
+      if (occurrence.ending === null) continue;
+      endingCount += 1;
+      const key = occurrenceGenerationRefKey({
+        occurrence: { material: document.material, occurrenceId },
+        ordinal: occurrence.ordinal,
+      });
+      const candidate = candidates.get(key);
+      if (
+        !candidate ||
+        canonicalJson(occurrence.ending.causes) !== canonicalJson(candidate.causes)
+      ) {
+        return false;
+      }
+    }
+  }
+  return endingCount === wave.candidates.length;
+}
+
+/**
+ * Purely latch one exact current wave into its occurrence generations. The
+ * returned world remains readable but is intentionally invalid at the closed
+ * persistence boundary until the wave is finalized.
+ */
+export function latchMechanicsEndWave(
+  value: Readonly<MechanicsWorld>,
+  wave: Readonly<MechanicsEndWaveReceipt>
+): MechanicsEndWaveLatchResult {
+  return latchVerifiedMechanicsEndWave(value, wave, (world, receipt) =>
+    isMechanicsEndWaveReceiptForWorld(world, receipt)
+  );
+}
+
+function latchHistoricalMechanicsEndWave(
+  basis: Readonly<MechanicsWorld>,
+  value: Readonly<MechanicsWorld>,
+  wave: Readonly<MechanicsEndWaveReceipt>
+): MechanicsEndWaveLatchResult {
+  return latchVerifiedMechanicsEndWave(value, wave, (world, receipt) =>
+    isMechanicsEndWaveReceiptForHistoricalWorld(basis, world, receipt)
+  );
+}
+
+function latchVerifiedMechanicsEndWave(
+  value: Readonly<MechanicsWorld>,
+  wave: Readonly<MechanicsEndWaveReceipt>,
+  verify: (
+    world: Readonly<MechanicsWorld>,
+    wave: Readonly<MechanicsEndWaveReceipt>
+  ) => boolean
+): MechanicsEndWaveLatchResult {
   const parsed = parseMechanicsWorldStructure(value);
   if (!parsed.ok) return rejected(value, "invalid-world");
-  const closure = parseClosureRequest(parsed.value, normalizedClosureRequest(request));
-  if (
-    !closure ||
-    !isDenseArray(orderedCandidates) ||
-    !orderedCandidates.every(isEndCandidate)
-  ) {
-    return rejected(parsed.value, "invalid-end-wave");
-  }
-  const expected = discoverCandidates(parsed.value, closure);
-  if (!candidatesEqual(expected, orderedCandidates)) {
+  if (!verify(parsed.value, wave)) {
     return rejected(parsed.value, "invalid-end-wave");
   }
   const candidate = mutableWorld(parsed.value);
-  for (const ending of expected) {
-    const document = documentFor(candidate, ending.occurrence.material);
-    if (!document) return rejected(parsed.value, "invalid-end-wave");
-    Reflect.deleteProperty(document.state.occurrences, ending.occurrence.occurrenceId);
+  let changed = false;
+  for (const ending of wave.candidates) {
+    const reference = ending.occurrence;
+    const document = documentFor(candidate, reference.occurrence.material);
+    const occurrence = document?.state.occurrences[reference.occurrence.occurrenceId];
+    if (!occurrence || occurrence.ordinal !== reference.ordinal) {
+      return rejected(parsed.value, "invalid-end-wave");
+    }
+    const nextEnding = { causes: structuredClone(ending.causes) };
+    if (canonicalJson(occurrence.ending) !== canonicalJson(nextEnding)) {
+      occurrence.ending = nextEnding;
+      changed = true;
+    }
+  }
+  const latched = parseMechanicsWorldStructure(candidate);
+  if (!latched.ok) return rejected(parsed.value, "invalid-end-wave");
+  return changed
+    ? { status: "latched", world: latched.value }
+    : { status: "already-latched", world: latched.value };
+}
+
+/** Apply one exact latched wave, then perform material cleanup once. */
+export function finalizeMechanicsEndWave(
+  value: Readonly<MechanicsWorld>,
+  wave: Readonly<MechanicsEndWaveReceipt>
+): MechanicsWorldSimulationResult {
+  return finalizeVerifiedMechanicsEndWave(
+    value,
+    wave,
+    (world, receipt) => isMechanicsEndWaveReceiptForWorld(world, receipt),
+    null
+  );
+}
+
+function finalizeHistoricalMechanicsEndWave(
+  basis: Readonly<MechanicsWorld>,
+  value: Readonly<MechanicsWorld>,
+  wave: Readonly<MechanicsEndWaveReceipt>
+): MechanicsWorldSimulationResult {
+  return finalizeVerifiedMechanicsEndWave(
+    value,
+    wave,
+    (world, receipt) =>
+      isMechanicsEndWaveReceiptForHistoricalWorld(basis, world, receipt),
+    basis
+  );
+}
+
+function finalizeVerifiedMechanicsEndWave(
+  value: Readonly<MechanicsWorld>,
+  wave: Readonly<MechanicsEndWaveReceipt>,
+  verify: (
+    world: Readonly<MechanicsWorld>,
+    wave: Readonly<MechanicsEndWaveReceipt>
+  ) => boolean,
+  historicalBasis: Readonly<MechanicsWorld> | null
+): MechanicsWorldSimulationResult {
+  const parsed = parseMechanicsWorldStructure(value);
+  if (!parsed.ok) return rejected(value, "invalid-world");
+  if (!verify(parsed.value, wave) || !latchedEndingsMatchWave(parsed.value, wave)) {
+    return rejected(parsed.value, "invalid-end-wave");
+  }
+  const parsedHistoricalBasis = historicalBasis
+    ? parseMechanicsWorldStructure(historicalBasis)
+    : null;
+  if (parsedHistoricalBasis && !parsedHistoricalBasis.ok) {
+    return rejected(parsed.value, "invalid-end-wave");
+  }
+  const closure = parseClosureRequest(
+    parsed.value,
+    wave.request,
+    parsedHistoricalBasis?.ok ? parsedHistoricalBasis.value : null
+  );
+  if (!closure) return rejected(parsed.value, "invalid-end-wave");
+  const candidate = mutableWorld(parsed.value);
+  for (const ending of wave.candidates) {
+    const reference = ending.occurrence;
+    const document = documentFor(candidate, reference.occurrence.material);
+    if (
+      !document ||
+      document.state.occurrences[reference.occurrence.occurrenceId]?.ordinal !==
+        reference.ordinal
+    ) {
+      return rejected(parsed.value, "invalid-end-wave");
+    }
+    Reflect.deleteProperty(document.state.occurrences, reference.occurrence.occurrenceId);
   }
   try {
     cleanEndedMaterial(candidate, closure.inventorySourceLeases);
   } catch (error) {
     if (error instanceof RangeError) return rejected(parsed.value, "overflow");
-    throw error;
+    return rejected(parsed.value, "invalid-end-wave");
   }
   return finalize(parsed.value, candidate, closure.inventorySourceLeases);
-}
-
-/** Deterministic fixed-point removal across every loaded mechanics document. */
-export function closeMechanicsWorld(
-  value: Readonly<MechanicsWorld>,
-  request: MechanicsClosureRequest = { boundaries: [], removals: [] }
-): MechanicsWorldSimulationResult {
-  const discovery = discoverMechanicsEndWave(value, request);
-  if (discovery.status === "rejected") {
-    return rejected(discovery.world, discovery.reason);
-  }
-  return finalizeMechanicsEndWave(discovery.world, request, discovery.candidates);
 }
 
 /**
@@ -1453,46 +2592,13 @@ export function finalizeMechanicsMaterialCleanup(
   const structured = parseMechanicsWorldStructure(value);
   if (!structured.ok) return rejected(value, "invalid-world");
   const candidate = mutableWorld(structured.value);
-  cleanEndedMaterial(candidate, new Set());
+  try {
+    cleanEndedMaterial(candidate, new Set());
+  } catch (error) {
+    if (error instanceof RangeError) return rejected(structured.value, "overflow");
+    return rejected(structured.value, "invalid-transition");
+  }
   return finalize(structured.value, candidate);
-}
-
-function resolveBoundaryCheckpoint(
-  world: Readonly<MechanicsWorld>,
-  request: MechanicsClosureRequest,
-  ordinal: number,
-  resolveClosure: MechanicsClosureResolver
-): MechanicsWorldSimulationResult {
-  const discovery = discoverMechanicsEndWave(world, request);
-  if (discovery.status === "rejected") {
-    return rejected(discovery.world, discovery.reason);
-  }
-  const resolution = resolveClosure({
-    candidates: discovery.candidates,
-    ordinal,
-    request: normalizedClosureRequest(request),
-    world: discovery.world,
-  });
-  if (resolution.status === "rejected") {
-    return rejected(discovery.world, resolution.reason);
-  }
-  const parsed = parseMechanicsWorld(resolution.world);
-  if (!parsed.ok) return rejected(discovery.world, "invalid-transition");
-  if (
-    discovery.candidates.some(
-      (candidate) => occurrenceFor(parsed.value, candidate.occurrence) !== null
-    )
-  ) {
-    return rejected(discovery.world, "invalid-end-wave");
-  }
-  return finalize(discovery.world, mutableWorld(parsed.value));
-}
-
-function finishBoundary(
-  original: Readonly<MechanicsWorld>,
-  current: Readonly<MechanicsWorld>
-): MechanicsWorldSimulationResult {
-  return finalize(original, mutableWorld(current));
 }
 
 function currentTurnBoundary(
@@ -1519,434 +2625,1015 @@ function currentTurnBoundary(
     : null;
 }
 
-/**
- * Sole causal entry for table-clock and encounter boundaries. Checkpoints are
- * resolved while every ending source and referenced clock remains readable.
- */
-export function applyMechanicsBoundary(
-  value: Readonly<MechanicsWorld>,
-  command: Readonly<MechanicsBoundaryCommand>,
-  resolveClosure: MechanicsClosureResolver
-): MechanicsWorldSimulationResult {
-  const parsed = parseMechanicsWorld(value);
-  if (!parsed.ok) return rejected(value, "invalid-world");
-  if (command.kind === "complete-rest") {
-    return resolveBoundaryCheckpoint(
-      parsed.value,
-      { boundaries: [{ kind: "rest-completed", ...command.input }], removals: [] },
-      0,
-      resolveClosure
-    );
+function boundaryRejected(
+  reason: MechanicsWorldSimulationRejection
+): MechanicsBoundaryResult {
+  return { reason, status: "rejected" };
+}
+
+function finishBoundary(
+  basis: Readonly<MechanicsWorld>,
+  current: Readonly<MechanicsWorld>
+): MechanicsBoundaryResult {
+  const cleanup = finalizeMechanicsMaterialCleanup(current);
+  if (cleanup.status === "rejected") {
+    return boundaryRejected(cleanup.reason);
   }
-  if (command.kind === "observe-day-phase") {
-    return resolveBoundaryCheckpoint(
-      parsed.value,
-      { boundaries: [{ kind: "day-phase", ...command.input }], removals: [] },
-      0,
-      resolveClosure
-    );
+  const terminal = finalize(basis, mutableWorld(cleanup.world));
+  return terminal.status === "rejected"
+    ? boundaryRejected(terminal.reason)
+    : { outcome: terminal.status, status: "complete", world: terminal.world };
+}
+
+function participantCursor(
+  participantId: string,
+  participant: EncounterState["participants"][string]
+): MechanicsBoundaryParticipantCursor {
+  return {
+    combatant: structuredClone(participant.combatant),
+    participantId,
+    participantOrdinal: participant.ordinal,
+  };
+}
+
+function encounterCursor(
+  encounter: EncounterState
+): Readonly<MechanicsBoundaryEncounterCursor> {
+  return freezeDeep({
+    currentCombatantId: encounter.currentCombatantId,
+    epoch: encounter.epoch,
+    order: [...encounter.order],
+    participants: Object.entries(encounter.participants)
+      .map(([participantId, participant]) =>
+        participantCursor(participantId, participant)
+      )
+      .sort((left, right) => compareCanonical(left.participantId, right.participantId)),
+    phase: encounter.phase,
+    round: encounter.round,
+  });
+}
+
+function conformBoundaryParticipantCursor(
+  value: unknown
+): Readonly<MechanicsBoundaryParticipantCursor> | null {
+  if (
+    !isExactRecord(value, ["combatant", "participantId", "participantOrdinal"]) ||
+    !isId(value.participantId) ||
+    !isPositiveCounter(value.participantOrdinal)
+  ) {
+    return null;
   }
-  if (command.kind === "advance-time") {
-    if (!isCounter(command.elapsedSeconds) || command.elapsedSeconds === 0) {
-      return rejected(parsed.value, "invalid-transition");
+  const combatant = conformEntityRef(value.combatant);
+  return combatant
+    ? freezeDeep({
+        combatant,
+        participantId: value.participantId,
+        participantOrdinal: value.participantOrdinal,
+      })
+    : null;
+}
+
+function conformBoundaryEncounterCursor(
+  value: unknown
+): Readonly<MechanicsBoundaryEncounterCursor> | null {
+  if (
+    !isExactRecord(value, [
+      "currentCombatantId",
+      "epoch",
+      "order",
+      "participants",
+      "phase",
+      "round",
+    ]) ||
+    !(value.currentCombatantId === null || isId(value.currentCombatantId)) ||
+    !isPositiveCounter(value.epoch) ||
+    !isPositiveCounter(value.round) ||
+    (value.phase !== "initiative" && value.phase !== "turns") ||
+    !isDenseArray(value.order) ||
+    !value.order.every(isId) ||
+    new Set(value.order).size !== value.order.length ||
+    !isDenseArray(value.participants)
+  ) {
+    return null;
+  }
+  const participants: MechanicsBoundaryParticipantCursor[] = [];
+  let previous: string | null = null;
+  for (const entry of value.participants) {
+    const participant = conformBoundaryParticipantCursor(entry);
+    if (!participant || (previous !== null && previous >= participant.participantId)) {
+      return null;
     }
-    if (!clockResolves(parsed.value, command.clock, "timeline")) {
-      return rejected(parsed.value, "clock-conflict");
-    }
-    const candidate = mutableWorld(parsed.value);
-    const document = documentFor(candidate, command.clock.material);
-    if (!document) return rejected(parsed.value, "missing-document");
+    previous = participant.participantId;
+    participants.push(participant);
+  }
+  const ids = new Set(participants.map(({ participantId }) => participantId));
+  if (
+    !value.order.every((participantId) => ids.has(participantId)) ||
+    (value.currentCombatantId !== null && !ids.has(value.currentCombatantId))
+  ) {
+    return null;
+  }
+  return freezeDeep({
+    currentCombatantId: value.currentCombatantId,
+    epoch: value.epoch,
+    order: [...value.order],
+    participants,
+    phase: value.phase,
+    round: value.round,
+  });
+}
+
+function conformBoundaryCursor(value: unknown): Readonly<MechanicsBoundaryCursor> | null {
+  if (isExactRecord(value, ["kind"]) && value.kind === "finish") {
+    return freezeDeep({ kind: "finish" });
+  }
+  if (
+    isExactRecord(value, [
+      "encounter",
+      "expectedRound",
+      "expectedTimelineSeconds",
+      "kind",
+      "lastSelected",
+      "phase",
+      "scanOffset",
+      "selected",
+    ]) &&
+    value.kind === "complete-turn" &&
+    isPositiveCounter(value.expectedRound) &&
+    isCounter(value.expectedTimelineSeconds) &&
+    (value.phase === "after-end" ||
+      value.phase === "after-time" ||
+      value.phase === "after-start") &&
+    isPositiveCounter(value.scanOffset)
+  ) {
+    const encounter = conformBoundaryEncounterCursor(value.encounter);
+    const lastSelected =
+      value.lastSelected === null
+        ? null
+        : conformBoundaryParticipantCursor(value.lastSelected);
+    const selected =
+      value.selected === null ? null : conformBoundaryParticipantCursor(value.selected);
     if (
-      document.state.timeline.elapsedSeconds >
-      Number.MAX_SAFE_INTEGER - command.elapsedSeconds
-    ) {
-      return rejected(parsed.value, "overflow");
-    }
-    document.state.timeline.elapsedSeconds += command.elapsedSeconds;
-    const projected = projectBoundaryMutation(parsed.value, candidate);
-    if (projected.status === "rejected") return projected;
-    const resolved = resolveBoundaryCheckpoint(
-      projected.world,
-      {
-        boundaries: [
-          {
-            clock: command.clock,
-            elapsedSeconds: document.state.timeline.elapsedSeconds,
-            kind: "time-reached",
-          },
-        ],
-        removals: [],
-      },
-      0,
-      resolveClosure
-    );
-    return resolved.status === "rejected"
-      ? resolved
-      : finishBoundary(parsed.value, resolved.world);
-  }
-  if (command.kind === "complete-turn") {
-    const document = documentFor(parsed.value, command.material);
-    const end = document ? currentTurnBoundary(document, "end") : null;
-    if (!document || !end) return rejected(parsed.value, "encounter-conflict");
-    const priorEncounter = document.state.encounter;
-    if (!priorEncounter || priorEncounter.currentCombatantId === null) {
-      return rejected(parsed.value, "encounter-conflict");
-    }
-    const priorOrder = [...priorEncounter.order];
-    const priorCurrentId = priorEncounter.currentCombatantId;
-    const priorTimelineSeconds = document.state.timeline.elapsedSeconds;
-    const checkpoint = resolveBoundaryCheckpoint(
-      parsed.value,
-      { boundaries: [end], removals: [] },
-      0,
-      resolveClosure
-    );
-    if (checkpoint.status === "rejected") return checkpoint;
-    const live = documentFor(checkpoint.world, command.material);
-    const encounter = live?.state.encounter;
-    if (
-      !live ||
       !encounter ||
-      encounter.epoch !== priorEncounter.epoch ||
-      encounter.round !== priorEncounter.round ||
-      live.state.timeline.elapsedSeconds !== priorTimelineSeconds
+      (value.lastSelected !== null && !lastSelected) ||
+      (value.selected !== null && !selected) ||
+      (value.phase === "after-start") !== (selected !== null)
     ) {
-      return rejected(checkpoint.world, "invalid-transition");
+      return null;
     }
-    if (encounter.phase === "initiative") {
-      return finishBoundary(parsed.value, checkpoint.world);
-    }
-    let world = checkpoint.world;
-    let ordinal = 1;
-    let scanOffset = 1;
-    let roundAdvanced = false;
-    let expectedRound = encounter.round;
-    let expectedTimelineSeconds = priorTimelineSeconds;
-    let lastSelectedId: string | null = null;
-
-    while (scanOffset <= priorOrder.length) {
-      const beforeStart = documentFor(world, command.material);
-      const beforeStartEncounter = beforeStart?.state.encounter;
-      if (
-        !beforeStart ||
-        !beforeStartEncounter ||
-        beforeStartEncounter.epoch !== priorEncounter.epoch ||
-        beforeStartEncounter.round !== expectedRound ||
-        beforeStart.state.timeline.elapsedSeconds !== expectedTimelineSeconds
-      ) {
-        return rejected(world, "invalid-transition");
-      }
-      if (beforeStartEncounter.phase === "initiative") {
-        return finishBoundary(parsed.value, world);
-      }
-
-      const nextTurn = nextSurvivingParticipant(
-        priorOrder,
-        priorCurrentId,
-        beforeStartEncounter,
-        scanOffset
-      );
-      if (!nextTurn) return rejected(world, "encounter-conflict");
-
-      if (nextTurn.wraps && !roundAdvanced) {
-        if (
-          expectedRound === Number.MAX_SAFE_INTEGER ||
-          expectedTimelineSeconds > Number.MAX_SAFE_INTEGER - 6
-        ) {
-          return rejected(world, "overflow");
-        }
-        const wrapCandidate = mutableWorld(world);
-        const mutableWrap = documentFor(wrapCandidate, command.material);
-        const wrapEncounter = mutableWrap?.state.encounter;
-        if (!mutableWrap || !wrapEncounter) {
-          return rejected(world, "encounter-conflict");
-        }
-        const prior = wrapEncounter.participants[priorCurrentId];
-        if (prior) prior.economy = { ...prior.economy, phase: "between-turns" };
-        if (lastSelectedId !== null) {
-          const lastSelected = wrapEncounter.participants[lastSelectedId];
-          if (lastSelected) {
-            lastSelected.economy = {
-              ...lastSelected.economy,
-              phase: "between-turns",
-            };
-          }
-        }
-        wrapEncounter.round += 1;
-        mutableWrap.state.timeline.elapsedSeconds += 6;
-        expectedRound = wrapEncounter.round;
-        expectedTimelineSeconds = mutableWrap.state.timeline.elapsedSeconds;
-        const advanced = projectBoundaryMutation(world, wrapCandidate);
-        if (advanced.status === "rejected") return advanced;
-        const timed = resolveBoundaryCheckpoint(
-          advanced.world,
-          {
-            boundaries: [
-              {
-                clock: timelineClock(mutableWrap),
-                elapsedSeconds: expectedTimelineSeconds,
-                kind: "time-reached",
-              },
-            ],
-            removals: [],
-          },
-          ordinal,
-          resolveClosure
-        );
-        if (timed.status === "rejected") return timed;
-        world = timed.world;
-        ordinal += 1;
-        roundAdvanced = true;
-        continue;
-      }
-
-      const startCandidate = mutableWorld(world);
-      const mutableStart = documentFor(startCandidate, command.material);
-      const startEncounter = mutableStart?.state.encounter;
-      const next = startEncounter?.participants[nextTurn.participantId];
-      if (!startEncounter || !next) return rejected(world, "encounter-conflict");
-      const prior = startEncounter.participants[priorCurrentId];
-      if (prior) prior.economy = { ...prior.economy, phase: "between-turns" };
-      if (lastSelectedId !== null) {
-        const lastSelected = startEncounter.participants[lastSelectedId];
-        if (lastSelected) {
-          lastSelected.economy = {
-            ...lastSelected.economy,
-            phase: "between-turns",
-          };
-        }
-      }
-      startEncounter.currentCombatantId = nextTurn.participantId;
-      next.economy = ownTurnEconomy(
-        startEncounter.epoch,
-        startEncounter.round,
-        next.ordinal
-      );
-      const started = finalize(world, startCandidate);
-      if (started.status === "rejected") return started;
-      const startedDocument = documentFor(started.world, command.material);
-      const start = startedDocument
-        ? currentTurnBoundary(startedDocument, "start")
-        : null;
-      if (!start) return rejected(started.world, "encounter-conflict");
-      const resolvedStart = resolveBoundaryCheckpoint(
-        started.world,
-        { boundaries: [start], removals: [] },
-        ordinal,
-        resolveClosure
-      );
-      if (resolvedStart.status === "rejected") return resolvedStart;
-      ordinal += 1;
-
-      const afterStart = documentFor(resolvedStart.world, command.material);
-      const afterStartEncounter = afterStart?.state.encounter;
-      if (
-        !afterStart ||
-        !afterStartEncounter ||
-        afterStartEncounter.epoch !== priorEncounter.epoch ||
-        afterStartEncounter.round !== expectedRound ||
-        afterStart.state.timeline.elapsedSeconds !== expectedTimelineSeconds
-      ) {
-        return rejected(resolvedStart.world, "invalid-transition");
-      }
-      if (afterStartEncounter.phase === "initiative") {
-        return finishBoundary(parsed.value, resolvedStart.world);
-      }
-      const selectedSurvives =
-        afterStartEncounter.order.includes(nextTurn.participantId) &&
-        afterStartEncounter.participants[nextTurn.participantId] !== undefined;
-      if (selectedSurvives) {
-        if (afterStartEncounter.currentCombatantId !== nextTurn.participantId) {
-          return rejected(resolvedStart.world, "invalid-transition");
-        }
-        return finishBoundary(parsed.value, resolvedStart.world);
-      }
-
-      const skippedCandidate = mutableWorld(resolvedStart.world);
-      const skipped = documentFor(skippedCandidate, command.material)?.state.encounter
-        ?.participants[nextTurn.participantId];
-      if (skipped) {
-        skipped.economy = { ...skipped.economy, phase: "between-turns" };
-      }
-      const cleaned = projectBoundaryMutation(resolvedStart.world, skippedCandidate);
-      if (cleaned.status === "rejected") return cleaned;
-      world = cleaned.world;
-      lastSelectedId = nextTurn.participantId;
-      scanOffset = nextTurn.offset + 1;
-    }
-    return rejected(world, "encounter-conflict");
+    return freezeDeep({
+      encounter,
+      expectedRound: value.expectedRound,
+      expectedTimelineSeconds: value.expectedTimelineSeconds,
+      kind: value.kind,
+      lastSelected,
+      phase: value.phase,
+      scanOffset: value.scanOffset,
+      selected,
+    });
   }
-  if (command.kind === "start-encounter") {
-    const document = documentFor(parsed.value, command.material);
-    if (!document || document.state.encounter !== null) {
-      return rejected(parsed.value, "encounter-conflict");
+  if (
+    isExactRecord(value, [
+      "characterMaterials",
+      "kind",
+      "nextIndex",
+      "pendingEncounter",
+    ]) &&
+    value.kind === "start-shared-encounter" &&
+    isDenseArray(value.characterMaterials) &&
+    isCounter(value.nextIndex) &&
+    value.nextIndex < value.characterMaterials.length
+  ) {
+    const materials: CharacterMaterialRef[] = [];
+    let previous: string | null = null;
+    for (const entry of value.characterMaterials) {
+      if (!isMaterialRef(entry) || entry.kind !== "character-play") return null;
+      const key = materialRefKey(entry);
+      if (previous !== null && previous >= key) return null;
+      previous = key;
+      materials.push(structuredClone(entry));
     }
-    if (document.kind === "character") {
-      if (
-        document.state.clockBinding.encounter !== null ||
-        !sameMaterial(document.state.clockBinding.timeline.material, command.material)
-      ) {
-        return rejected(parsed.value, "encounter-conflict");
-      }
-      const candidate = mutableWorld(parsed.value);
-      const mutable = documentFor(candidate, command.material);
-      if (!mutable || mutable.kind !== "character") {
-        return rejected(parsed.value, "missing-document");
-      }
-      const clock = startEncounterOnDocument(mutable, command.seed);
-      if (!clock) return rejected(parsed.value, "encounter-conflict");
-      mutable.state.clockBinding.encounter = clock;
-      const started = finalize(parsed.value, candidate);
-      if (started.status === "rejected") return started;
-      const startedDocument = documentFor(started.world, command.material);
-      const boundary = startedDocument
-        ? currentTurnBoundary(startedDocument, "start")
-        : null;
-      if (!boundary) return started;
-      const resolved = resolveBoundaryCheckpoint(
-        started.world,
-        { boundaries: [boundary], removals: [] },
-        0,
-        resolveClosure
-      );
-      return resolved.status === "rejected"
-        ? resolved
-        : finishBoundary(parsed.value, resolved.world);
+    const pendingEncounter = conformBoundaryEncounterCursor(value.pendingEncounter);
+    if (!pendingEncounter) {
+      return null;
     }
+    return freezeDeep({
+      characterMaterials: materials,
+      kind: value.kind,
+      nextIndex: value.nextIndex,
+      pendingEncounter,
+    });
+  }
+  if (isExactRecord(value, ["encounter", "kind"]) && value.kind === "end-encounter") {
+    const encounter = conformBoundaryEncounterCursor(value.encounter);
+    return encounter ? freezeDeep({ encounter, kind: value.kind }) : null;
+  }
+  return null;
+}
 
-    let current = parsed.value;
-    let ordinal = 0;
-    const prospectiveLeases = leasedCharacterMaterials(command.seed);
-    for (const characterMaterial of prospectiveLeases) {
-      const character = documentFor(current, characterMaterial);
-      if (!character || character.kind !== "character") {
-        return rejected(current, "missing-document");
-      }
-      if (character.state.clockBinding.timeline.material.kind === "shared-combat") {
-        return rejected(current, "encounter-conflict");
-      }
-      const localClock = encounterClock(character);
-      if (!localClock) continue;
-      const ended = resolveBoundaryCheckpoint(
-        current,
-        { boundaries: [{ clock: localClock, kind: "combat-end" }], removals: [] },
-        ordinal,
-        resolveClosure
-      );
-      if (ended.status === "rejected") return ended;
-      ordinal += 1;
-      const after = documentFor(ended.world, characterMaterial);
-      if (
-        !after ||
-        after.kind !== "character" ||
-        !after.state.encounter ||
-        after.state.encounter.epoch !== localClock.epoch
-      ) {
-        return rejected(ended.world, "invalid-transition");
-      }
-      const clearedCandidate = mutableWorld(ended.world);
-      const cleared = documentFor(clearedCandidate, characterMaterial);
-      if (!cleared || cleared.kind !== "character") {
-        return rejected(ended.world, "missing-document");
-      }
-      cleared.state.encounter = null;
-      cleared.state.clockBinding.encounter = null;
-      const clearedResult = finalize(ended.world, clearedCandidate);
-      if (clearedResult.status === "rejected") return clearedResult;
-      current = clearedResult.world;
-    }
+function sameParticipantCursor(
+  participant: EncounterState["participants"][string],
+  cursor: MechanicsBoundaryParticipantCursor
+): boolean {
+  return (
+    participant.ordinal === cursor.participantOrdinal &&
+    sameEntity(participant.combatant, cursor.combatant)
+  );
+}
 
-    const candidate = mutableWorld(current);
-    const mutableShared = documentFor(candidate, command.material);
-    if (!mutableShared || mutableShared.kind !== "shared") {
-      return rejected(current, "missing-document");
-    }
-    const sharedEncounterClock = startEncounterOnDocument(mutableShared, command.seed);
-    if (!sharedEncounterClock || !mutableShared.state.encounter) {
-      return rejected(current, "encounter-conflict");
-    }
-    normalizeEncounter(candidate, mutableShared.state.encounter);
+function encounterIdentityCompatible(
+  encounter: EncounterState,
+  cursor: MechanicsBoundaryEncounterCursor
+): boolean {
+  if (encounter.epoch !== cursor.epoch) return false;
+  const expected = new Map(
+    cursor.participants.map((participant) => [participant.participantId, participant])
+  );
+  for (const [participantId, participant] of Object.entries(encounter.participants)) {
+    const prior = expected.get(participantId);
+    if (!prior || !sameParticipantCursor(participant, prior)) return false;
+  }
+  return encounter.order.every((participantId) => expected.has(participantId));
+}
+
+function sameDocumentSet(
+  left: Readonly<MechanicsWorld>,
+  right: Readonly<MechanicsWorld>
+): boolean {
+  return (
+    sameMaterial(left.scope, right.scope) &&
+    left.documents.length === right.documents.length &&
+    left.documents.every((document, index) => {
+      const candidate = right.documents[index];
+      return (
+        candidate !== undefined &&
+        candidate.kind === document.kind &&
+        sameMaterial(candidate.material, document.material)
+      );
+    })
+  );
+}
+
+function protectedJournalsMatch(
+  left: Readonly<MechanicsWorld>,
+  right: Readonly<MechanicsWorld>
+): boolean {
+  return (
+    sameDocumentSet(left, right) &&
+    left.documents.every((document) => {
+      const candidate = documentFor(right, document.material);
+      return (
+        candidate !== null &&
+        candidate.state.epoch === document.state.epoch &&
+        candidate.state.revision === document.state.revision &&
+        canonicalJson(candidate.state.actions) === canonicalJson(document.state.actions)
+      );
+    })
+  );
+}
+
+function boundaryOwnedFactsMatch(
+  left: Readonly<MechanicsWorld>,
+  right: Readonly<MechanicsWorld>
+): boolean {
+  return (
+    sameDocumentSet(left, right) &&
+    left.documents.every((document) => {
+      const candidate = documentFor(right, document.material);
+      if (!candidate || candidate.kind !== document.kind) return false;
+      const shared =
+        canonicalJson(candidate.state.timeline) ===
+          canonicalJson(document.state.timeline) &&
+        canonicalJson(candidate.state.encounter) ===
+          canonicalJson(document.state.encounter) &&
+        candidate.state.nextEncounterEpoch === document.state.nextEncounterEpoch;
+      return (
+        shared &&
+        (document.kind === "shared" ||
+          (candidate.kind === "character" &&
+            canonicalJson(candidate.state.clockBinding) ===
+              canonicalJson(document.state.clockBinding)))
+      );
+    })
+  );
+}
+
+function checkpointStateValid(
+  checkpoint: unknown,
+  historicalBasis: Readonly<MechanicsWorld> | null = null
+): checkpoint is Readonly<MechanicsBoundaryCheckpoint> {
+  if (
+    !isExactRecord(checkpoint, ["ordinal", "state", "wave"]) ||
+    !isCounter(checkpoint.ordinal) ||
+    !isExactRecord(checkpoint.state, ["context", "world"]) ||
+    !(historicalBasis
+      ? isMechanicsEndWaveReceiptForHistoricalWorld(
+          historicalBasis,
+          checkpoint.state.world,
+          checkpoint.wave
+        )
+      : isMechanicsEndWaveReceiptForWorld(checkpoint.state.world, checkpoint.wave))
+  ) {
+    return false;
+  }
+  const wave: Readonly<MechanicsEndWaveReceipt> = checkpoint.wave;
+  const state = checkpoint.state as unknown as Readonly<MechanicsCausalState>;
+  if (
+    !isExactRecord(state.context, ["endWave", "request"]) ||
+    canonicalJson(state.context.request) !== canonicalJson(wave.request)
+  ) {
+    return false;
+  }
+  if (wave.candidates.length === 0) {
+    return state.context.endWave === null;
+  }
+  return (
+    isExactRecord(state.context.endWave, ["wave", "world"]) &&
+    canonicalJson(state.context.endWave.wave) === canonicalJson(wave) &&
+    canonicalJson(state.context.endWave.world) === canonicalJson(state.world) &&
+    latchedEndingsMatchWave(state.world, wave)
+  );
+}
+
+function completionStateValid(
+  checkpoint: Readonly<MechanicsBoundaryCheckpoint>,
+  state: Readonly<MechanicsCausalState>,
+  historicalBasis: Readonly<MechanicsWorld>
+): boolean {
+  if (
+    !isExactRecord(state, ["context", "world"]) ||
+    !isExactRecord(state.context, ["endWave", "request"])
+  ) {
+    return false;
+  }
+  const parsed = parseMechanicsWorldStructure(state.world);
+  if (
+    !parsed.ok ||
+    canonicalJson(parsed.value) !== canonicalJson(state.world) ||
+    !protectedJournalsMatch(checkpoint.state.world, parsed.value) ||
+    !boundaryOwnedFactsMatch(checkpoint.state.world, parsed.value) ||
+    !preservesLatchedEndings(checkpoint.state.world, parsed.value, true)
+  ) {
+    return false;
+  }
+  let cumulative: Required<MechanicsClosureRequest>;
+  try {
+    cumulative = mergeClosureRequests(checkpoint.wave.request, state.context.request);
     if (
-      mutableShared.state.encounter.phase === "turns" &&
-      mutableShared.state.encounter.currentCombatantId !== null
+      canonicalJson(cumulative) !== canonicalJson(state.context.request) ||
+      canonicalJson(state.context.request.boundaries) !==
+        canonicalJson(checkpoint.wave.request.boundaries)
     ) {
-      const currentParticipant =
-        mutableShared.state.encounter.participants[
-          mutableShared.state.encounter.currentCombatantId
-        ];
-      if (!currentParticipant) return rejected(current, "encounter-conflict");
-      currentParticipant.economy = ownTurnEconomy(
-        mutableShared.state.encounter.epoch,
-        mutableShared.state.encounter.round,
-        currentParticipant.ordinal
+      return false;
+    }
+  } catch {
+    return false;
+  }
+  const leases = normalizeInventorySourceLeases(parsed.value, [
+    ...checkpoint.state.context.request.inventorySourceLeases,
+    ...state.context.request.inventorySourceLeases,
+  ]);
+  if (
+    !leases ||
+    canonicalJson(leases) !== canonicalJson(state.context.request.inventorySourceLeases)
+  ) {
+    return false;
+  }
+  if (state.context.endWave === null) {
+    return checkpoint.wave.candidates.length === 0;
+  }
+  if (
+    !isExactRecord(state.context.endWave, ["wave", "world"]) ||
+    canonicalJson(state.context.endWave.world) !== canonicalJson(parsed.value) ||
+    !isMechanicsEndWaveReceiptForHistoricalWorld(
+      historicalBasis,
+      parsed.value,
+      state.context.endWave.wave
+    ) ||
+    !latchedEndingsMatchWave(parsed.value, state.context.endWave.wave)
+  ) {
+    return false;
+  }
+  try {
+    return (
+      canonicalJson(cumulative) === canonicalJson(state.context.request) &&
+      canonicalJson(state.context.endWave.wave.request) ===
+        canonicalJson(state.context.request)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function cursorMatchesCommand(
+  command: MechanicsBoundaryCommand,
+  cursor: MechanicsBoundaryCursor
+): boolean {
+  if (command.kind === "complete-turn") return cursor.kind === "complete-turn";
+  if (command.kind === "end-encounter") return cursor.kind === "end-encounter";
+  if (command.kind === "start-encounter") {
+    return cursor.kind === "finish" || cursor.kind === "start-shared-encounter";
+  }
+  return cursor.kind === "finish";
+}
+
+function continuationValid(
+  value: unknown
+): value is Readonly<MechanicsBoundaryContinuation> {
+  if (!isExactRecord(value, ["basis", "checkpoint", "command", "cursor", "request"])) {
+    return false;
+  }
+  const basis = parseMechanicsWorld(value.basis);
+  const command = conformMechanicsBoundaryCommand(value.command);
+  const cursor = conformBoundaryCursor(value.cursor);
+  if (!basis.ok || !command || !cursor || !cursorMatchesCommand(command, cursor)) {
+    return false;
+  }
+  if (!checkpointStateValid(value.checkpoint, basis.value)) return false;
+  try {
+    const normalized = normalizedClosureRequest(value.request as MechanicsClosureRequest);
+    return (
+      isExactRecord(value.request, [
+        "boundaries",
+        "endRequests",
+        "inventorySourceLeases",
+      ]) &&
+      value.request.endRequests.length === 0 &&
+      canonicalJson(normalized) === canonicalJson(value.request) &&
+      canonicalJson(value.request.boundaries) ===
+        canonicalJson(value.checkpoint.wave.request.boundaries) &&
+      canonicalJson(value.request.inventorySourceLeases) ===
+        canonicalJson(value.checkpoint.wave.request.inventorySourceLeases) &&
+      protectedJournalsMatch(basis.value, value.checkpoint.state.world)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function emitBoundaryCheckpoint(
+  basis: Readonly<MechanicsWorld>,
+  current: Readonly<MechanicsWorld>,
+  command: Readonly<MechanicsBoundaryCommand>,
+  cursor: Readonly<MechanicsBoundaryCursor>,
+  priorRequest: Required<MechanicsClosureRequest>,
+  boundary: Readonly<ObservedMechanicsBoundary>,
+  ordinal: number
+): MechanicsBoundaryResult {
+  let request: Required<MechanicsClosureRequest>;
+  try {
+    request = mergeClosureRequests(
+      priorRequest,
+      normalizedClosureRequest({ boundaries: [boundary] })
+    );
+  } catch {
+    return boundaryRejected("invalid-boundary");
+  }
+  const discovery = discoverHistoricalMechanicsEndWave(basis, current, request);
+  if (discovery.status === "rejected") {
+    return boundaryRejected(discovery.reason);
+  }
+  const latched = latchAndRediscoverEndWave(discovery.world, discovery.wave, basis);
+  if (!latched.ok) return boundaryRejected(latched.reason);
+  const state = kernelCausalState(latched.value.world, {
+    endWave:
+      latched.value.wave.candidates.length === 0
+        ? null
+        : { wave: latched.value.wave, world: latched.value.world },
+    request: latched.value.wave.request,
+  });
+  const checkpoint = freezeDeep({
+    ordinal,
+    state,
+    wave: latched.value.wave,
+  });
+  const continuation = freezeDeep({
+    basis,
+    checkpoint,
+    command,
+    cursor,
+    request: latched.value.wave.request,
+  }) as unknown as Readonly<MechanicsBoundaryContinuation>;
+  return { checkpoint, continuation, status: "checkpoint" };
+}
+
+function leaseSet(request: Required<MechanicsClosureRequest>): ReadonlySet<string> {
+  return new Set(request.inventorySourceLeases.map(leaseKey));
+}
+
+function completionWorld(
+  continuation: Readonly<MechanicsBoundaryContinuation>,
+  state: Readonly<MechanicsCausalState>
+):
+  | {
+      readonly ok: true;
+      readonly request: Required<MechanicsClosureRequest>;
+      readonly world: Readonly<MechanicsWorld>;
+    }
+  | {
+      readonly ok: "checkpoint";
+      readonly state: Readonly<MechanicsCausalState>;
+    }
+  | {
+      readonly ok: false;
+      readonly reason: MechanicsWorldSimulationRejection;
+      readonly world: Readonly<MechanicsWorld>;
+    } {
+  const leases = normalizeInventorySourceLeases(state.world, [
+    ...continuation.request.inventorySourceLeases,
+    ...state.context.request.inventorySourceLeases,
+    ...(state.context.endWave?.wave.request.inventorySourceLeases ?? []),
+  ]);
+  if (!leases) return { ok: false, reason: "invalid-end-wave", world: state.world };
+  const request = mergeClosureRequests(
+    continuation.request,
+    normalizedClosureRequest({
+      boundaries: state.context.request.boundaries,
+      endRequests: state.context.request.endRequests,
+      inventorySourceLeases: leases,
+    })
+  );
+  if (state.context.endWave !== null) {
+    const nextWave = state.context.endWave.wave;
+    if (canonicalJson(nextWave) !== canonicalJson(continuation.checkpoint.wave)) {
+      return { ok: "checkpoint", state };
+    }
+  }
+  if (state.context.endWave === null) {
+    const discovery = discoverHistoricalMechanicsEndWave(
+      continuation.basis,
+      state.world,
+      request
+    );
+    if (discovery.status === "rejected") {
+      return { ok: false, reason: discovery.reason, world: state.world };
+    }
+    if (discovery.wave.candidates.length === 0) {
+      return {
+        ok: true,
+        request: normalizedClosureRequest({
+          boundaries: request.boundaries,
+          inventorySourceLeases: request.inventorySourceLeases,
+        }),
+        world: discovery.world,
+      };
+    }
+    const latched = latchAndRediscoverEndWave(
+      discovery.world,
+      discovery.wave,
+      continuation.basis
+    );
+    if (!latched.ok) {
+      return { ok: false, reason: latched.reason, world: discovery.world };
+    }
+    return {
+      ok: "checkpoint",
+      state: kernelCausalState(latched.value.world, {
+        endWave: latched.value,
+        request: latched.value.wave.request,
+      }),
+    };
+  }
+  const wave = state.context.endWave.wave;
+  try {
+    const expected = mergeClosureRequests(request, wave.request);
+    if (canonicalJson(expected) !== canonicalJson(wave.request)) {
+      return { ok: false, reason: "invalid-end-wave", world: state.world };
+    }
+  } catch {
+    return { ok: false, reason: "invalid-end-wave", world: state.world };
+  }
+  const finalized = finalizeHistoricalMechanicsEndWave(
+    continuation.basis,
+    state.world,
+    wave
+  );
+  return finalized.status === "rejected"
+    ? { ok: false, reason: finalized.reason, world: finalized.world }
+    : {
+        ok: true,
+        request: normalizedClosureRequest({
+          boundaries: request.boundaries,
+          inventorySourceLeases: request.inventorySourceLeases,
+        }),
+        world: finalized.world,
+      };
+}
+
+function nextParticipant(
+  cursor: Extract<MechanicsBoundaryCursor, { kind: "complete-turn" }>,
+  encounter: EncounterState
+):
+  | {
+      readonly offset: number;
+      readonly participant: MechanicsBoundaryParticipantCursor;
+      readonly wraps: boolean;
+    }
+  | { readonly conflict: true }
+  | null {
+  const currentId = cursor.encounter.currentCombatantId;
+  if (currentId === null) return null;
+  const currentIndex = cursor.encounter.order.indexOf(currentId);
+  if (currentIndex < 0) return null;
+  const byId = new Map(
+    cursor.encounter.participants.map((participant) => [
+      participant.participantId,
+      participant,
+    ])
+  );
+  for (
+    let offset = cursor.scanOffset;
+    offset <= cursor.encounter.order.length;
+    offset += 1
+  ) {
+    const index = (currentIndex + offset) % cursor.encounter.order.length;
+    const participantId = cursor.encounter.order[index];
+    if (!participantId || !encounter.order.includes(participantId)) continue;
+    const participant = encounter.participants[participantId];
+    const expected = byId.get(participantId);
+    if (!participant || !expected) continue;
+    if (!sameParticipantCursor(participant, expected)) return { conflict: true };
+    return {
+      offset,
+      participant: expected,
+      wraps: currentIndex + offset >= cursor.encounter.order.length,
+    };
+  }
+  return null;
+}
+
+function setBetweenTurns(
+  encounter: EncounterState,
+  cursor: MechanicsBoundaryParticipantCursor | null
+): boolean {
+  if (!cursor) return true;
+  const participant = encounter.participants[cursor.participantId];
+  if (!participant) return true;
+  if (!sameParticipantCursor(participant, cursor)) return false;
+  participant.economy = { ...participant.economy, phase: "between-turns" };
+  return true;
+}
+
+function continueCompleteTurn(
+  basis: Readonly<MechanicsWorld>,
+  current: Readonly<MechanicsWorld>,
+  command: Extract<MechanicsBoundaryCommand, { kind: "complete-turn" }>,
+  cursorValue: Extract<MechanicsBoundaryCursor, { kind: "complete-turn" }>,
+  request: Required<MechanicsClosureRequest>,
+  ordinal: number
+): MechanicsBoundaryResult {
+  let world = current;
+  let cursor = cursorValue;
+  const leases = leaseSet(request);
+  const afterCheckpoint = documentFor(world, command.material);
+  const afterEncounter = afterCheckpoint?.state.encounter;
+  if (
+    !afterCheckpoint ||
+    !afterEncounter ||
+    afterEncounter.epoch !== cursor.encounter.epoch ||
+    afterEncounter.round !== cursor.expectedRound ||
+    afterCheckpoint.state.timeline.elapsedSeconds !== cursor.expectedTimelineSeconds ||
+    !encounterIdentityCompatible(afterEncounter, cursor.encounter)
+  ) {
+    return boundaryRejected("invalid-transition");
+  }
+  if (afterEncounter.phase === "initiative") return finishBoundary(basis, world);
+
+  if (cursor.phase === "after-start") {
+    const selected = cursor.selected;
+    if (!selected) return boundaryRejected("invalid-transition");
+    const live = afterEncounter.participants[selected.participantId];
+    if (live && !sameParticipantCursor(live, selected)) {
+      return boundaryRejected("invalid-transition");
+    }
+    if (live && afterEncounter.order.includes(selected.participantId)) {
+      return afterEncounter.currentCombatantId === selected.participantId
+        ? finishBoundary(basis, world)
+        : boundaryRejected("invalid-transition");
+    }
+    const skippedCandidate = mutableWorld(world);
+    const skippedEncounter = documentFor(skippedCandidate, command.material)?.state
+      .encounter;
+    if (!skippedEncounter || !setBetweenTurns(skippedEncounter, selected)) {
+      return boundaryRejected("invalid-transition");
+    }
+    const cleaned = projectBoundaryMutation(world, skippedCandidate, leases);
+    if (cleaned.status === "rejected") {
+      return boundaryRejected(cleaned.reason);
+    }
+    world = cleaned.world;
+    cursor = {
+      ...cursor,
+      lastSelected: selected,
+      phase: "after-time",
+      selected: null,
+    };
+  }
+
+  while (cursor.scanOffset <= cursor.encounter.order.length) {
+    const before = documentFor(world, command.material);
+    const encounter = before?.state.encounter;
+    if (
+      !before ||
+      !encounter ||
+      encounter.epoch !== cursor.encounter.epoch ||
+      encounter.round !== cursor.expectedRound ||
+      before.state.timeline.elapsedSeconds !== cursor.expectedTimelineSeconds ||
+      !encounterIdentityCompatible(encounter, cursor.encounter)
+    ) {
+      return boundaryRejected("invalid-transition");
+    }
+    if (encounter.phase === "initiative") return finishBoundary(basis, world);
+    const next = nextParticipant(cursor, encounter);
+    if (!next) return boundaryRejected("encounter-conflict");
+    if ("conflict" in next) return boundaryRejected("invalid-transition");
+
+    if (next.wraps && cursor.expectedRound === cursor.encounter.round) {
+      if (
+        cursor.expectedRound === Number.MAX_SAFE_INTEGER ||
+        cursor.expectedTimelineSeconds > Number.MAX_SAFE_INTEGER - 6
+      ) {
+        return boundaryRejected("overflow");
+      }
+      const candidate = mutableWorld(world);
+      const document = documentFor(candidate, command.material);
+      const mutableEncounter = document?.state.encounter;
+      const originalCurrent = cursor.encounter.currentCombatantId;
+      const original = cursor.encounter.participants.find(
+        ({ participantId }) => participantId === originalCurrent
+      );
+      if (
+        !document ||
+        !mutableEncounter ||
+        !setBetweenTurns(mutableEncounter, original ?? null) ||
+        !setBetweenTurns(mutableEncounter, cursor.lastSelected)
+      ) {
+        return boundaryRejected("invalid-transition");
+      }
+      mutableEncounter.round += 1;
+      document.state.timeline.elapsedSeconds += 6;
+      const advanced = projectBoundaryMutation(world, candidate, leases);
+      if (advanced.status === "rejected") {
+        return boundaryRejected(advanced.reason);
+      }
+      const nextCursor = freezeDeep({
+        ...cursor,
+        expectedRound: mutableEncounter.round,
+        expectedTimelineSeconds: document.state.timeline.elapsedSeconds,
+        phase: "after-time" as const,
+        selected: null,
+      });
+      return emitBoundaryCheckpoint(
+        basis,
+        advanced.world,
+        command,
+        nextCursor,
+        request,
+        {
+          clock: timelineClock(document),
+          elapsedSeconds: document.state.timeline.elapsedSeconds,
+          kind: "time-reached",
+        },
+        ordinal
       );
     }
-    const sharedTimeline = {
-      clock: timelineClock(mutableShared),
-      elapsedSeconds: mutableShared.state.timeline.elapsedSeconds,
-    };
-    try {
-      for (const characterMaterial of leasedCharacterMaterials(
-        mutableShared.state.encounter
-      )) {
-        const character = documentFor(candidate, characterMaterial);
-        if (
-          !character ||
-          character.kind !== "character" ||
-          character.state.encounter !== null ||
-          character.state.clockBinding.encounter !== null ||
-          character.state.clockBinding.timeline.material.kind === "shared-combat"
-        ) {
-          return rejected(current, "encounter-conflict");
-        }
-        const sourceTimeline = {
-          clock: timelineClock(character),
-          elapsedSeconds: character.state.timeline.elapsedSeconds,
-        };
-        rebaseTimelineRules(character.state, sourceTimeline, sharedTimeline);
-        character.state.clockBinding = {
-          timeline: sharedTimeline.clock,
-          encounter: sharedEncounterClock,
-        };
-      }
-    } catch (error) {
-      if (error instanceof RangeError) return rejected(current, "overflow");
-      throw error;
+
+    const candidate = mutableWorld(world);
+    const document = documentFor(candidate, command.material);
+    const mutableEncounter = document?.state.encounter;
+    const selected = mutableEncounter?.participants[next.participant.participantId];
+    const originalCurrent = cursor.encounter.currentCombatantId;
+    const original = cursor.encounter.participants.find(
+      ({ participantId }) => participantId === originalCurrent
+    );
+    if (
+      !document ||
+      !mutableEncounter ||
+      !selected ||
+      !sameParticipantCursor(selected, next.participant) ||
+      !setBetweenTurns(mutableEncounter, original ?? null) ||
+      !setBetweenTurns(mutableEncounter, cursor.lastSelected)
+    ) {
+      return boundaryRejected("invalid-transition");
     }
-    const started = finalize(current, candidate);
-    if (started.status === "rejected") return started;
+    mutableEncounter.currentCombatantId = next.participant.participantId;
+    selected.economy = ownTurnEconomy(
+      mutableEncounter.epoch,
+      mutableEncounter.round,
+      selected.ordinal
+    );
+    const started = finalize(world, candidate, leases);
+    if (started.status === "rejected") {
+      return boundaryRejected(started.reason);
+    }
     const startedDocument = documentFor(started.world, command.material);
     const boundary = startedDocument
       ? currentTurnBoundary(startedDocument, "start")
       : null;
-    if (!boundary) return finishBoundary(parsed.value, started.world);
-    const resolved = resolveBoundaryCheckpoint(
+    if (!boundary) return boundaryRejected("encounter-conflict");
+    return emitBoundaryCheckpoint(
+      basis,
       started.world,
-      { boundaries: [boundary], removals: [] },
-      ordinal,
-      resolveClosure
+      command,
+      freezeDeep({
+        ...cursor,
+        phase: "after-start" as const,
+        scanOffset: next.offset + 1,
+        selected: next.participant,
+      }),
+      request,
+      boundary,
+      ordinal
     );
-    return resolved.status === "rejected"
-      ? resolved
-      : finishBoundary(parsed.value, resolved.world);
   }
-  const document = documentFor(parsed.value, command.material);
-  const clock = document ? encounterClock(document) : null;
-  if (!document || !clock) return rejected(parsed.value, "encounter-conflict");
-  const ended = resolveBoundaryCheckpoint(
-    parsed.value,
-    { boundaries: [{ clock, kind: "combat-end" }], removals: [] },
-    0,
-    resolveClosure
-  );
-  if (ended.status === "rejected") return ended;
-  const after = documentFor(ended.world, command.material);
-  if (!after || !after.state.encounter || after.state.encounter.epoch !== clock.epoch) {
-    return rejected(ended.world, "invalid-transition");
+  return boundaryRejected("encounter-conflict");
+}
+
+function startSharedEncounter(
+  basis: Readonly<MechanicsWorld>,
+  current: Readonly<MechanicsWorld>,
+  command: Extract<MechanicsBoundaryCommand, { kind: "start-encounter" }>,
+  characterMaterials: readonly CharacterMaterialRef[],
+  nextIndex: number,
+  request: Required<MechanicsClosureRequest>,
+  ordinal: number
+): MechanicsBoundaryResult {
+  const leases = leaseSet(request);
+  for (let index = nextIndex; index < characterMaterials.length; index += 1) {
+    const characterMaterial = characterMaterials[index];
+    if (!characterMaterial) return boundaryRejected("invalid-transition");
+    const character = documentFor(current, characterMaterial);
+    if (!character || character.kind !== "character") {
+      return boundaryRejected("missing-document");
+    }
+    if (character.state.clockBinding.timeline.material.kind === "shared-combat") {
+      return boundaryRejected("encounter-conflict");
+    }
+    const localClock = encounterClock(character);
+    if (!localClock) continue;
+    const localEncounter = character.state.encounter;
+    if (!localEncounter) return boundaryRejected("encounter-conflict");
+    return emitBoundaryCheckpoint(
+      basis,
+      current,
+      command,
+      freezeDeep({
+        characterMaterials: [...characterMaterials],
+        kind: "start-shared-encounter" as const,
+        nextIndex: index,
+        pendingEncounter: encounterCursor(localEncounter),
+      }),
+      request,
+      { clock: localClock, kind: "combat-end" },
+      ordinal
+    );
   }
-  const candidate = mutableWorld(ended.world);
+
+  const candidate = mutableWorld(current);
+  const mutableShared = documentFor(candidate, command.material);
+  if (!mutableShared || mutableShared.kind !== "shared") {
+    return boundaryRejected("missing-document");
+  }
+  const sharedEncounterClock = startEncounterOnDocument(mutableShared, command.seed);
+  if (!sharedEncounterClock || !mutableShared.state.encounter) {
+    return boundaryRejected("encounter-conflict");
+  }
+  normalizeEncounter(candidate, mutableShared.state.encounter);
+  if (
+    mutableShared.state.encounter.phase === "turns" &&
+    mutableShared.state.encounter.currentCombatantId !== null
+  ) {
+    const active =
+      mutableShared.state.encounter.participants[
+        mutableShared.state.encounter.currentCombatantId
+      ];
+    if (!active) return boundaryRejected("encounter-conflict");
+    active.economy = ownTurnEconomy(
+      mutableShared.state.encounter.epoch,
+      mutableShared.state.encounter.round,
+      active.ordinal
+    );
+  }
+  const sharedTimeline = {
+    clock: timelineClock(mutableShared),
+    elapsedSeconds: mutableShared.state.timeline.elapsedSeconds,
+  };
+  try {
+    for (const characterMaterial of leasedCharacterMaterials(
+      mutableShared.state.encounter
+    )) {
+      const character = documentFor(candidate, characterMaterial);
+      if (
+        !character ||
+        character.kind !== "character" ||
+        character.state.encounter !== null ||
+        character.state.clockBinding.encounter !== null ||
+        character.state.clockBinding.timeline.material.kind === "shared-combat"
+      ) {
+        return boundaryRejected("encounter-conflict");
+      }
+      const sourceTimeline = {
+        clock: timelineClock(character),
+        elapsedSeconds: character.state.timeline.elapsedSeconds,
+      };
+      rebaseTimelineRules(character.state, sourceTimeline, sharedTimeline);
+      character.state.clockBinding = {
+        timeline: sharedTimeline.clock,
+        encounter: sharedEncounterClock,
+      };
+    }
+  } catch (error) {
+    if (error instanceof RangeError) return boundaryRejected("overflow");
+    throw error;
+  }
+  const started = finalize(current, candidate, leases);
+  if (started.status === "rejected") {
+    return boundaryRejected(started.reason);
+  }
+  const startedDocument = documentFor(started.world, command.material);
+  const boundary = startedDocument ? currentTurnBoundary(startedDocument, "start") : null;
+  return boundary
+    ? emitBoundaryCheckpoint(
+        basis,
+        started.world,
+        command,
+        { kind: "finish" },
+        request,
+        boundary,
+        ordinal
+      )
+    : finishBoundary(basis, started.world);
+}
+
+function resumeStartSharedEncounter(
+  basis: Readonly<MechanicsWorld>,
+  current: Readonly<MechanicsWorld>,
+  command: Extract<MechanicsBoundaryCommand, { kind: "start-encounter" }>,
+  cursor: Extract<MechanicsBoundaryCursor, { kind: "start-shared-encounter" }>,
+  request: Required<MechanicsClosureRequest>,
+  ordinal: number
+): MechanicsBoundaryResult {
+  if (
+    command.material.kind !== "shared-combat" ||
+    canonicalJson(leasedCharacterMaterials(command.seed)) !==
+      canonicalJson(cursor.characterMaterials)
+  ) {
+    return boundaryRejected("invalid-transition");
+  }
+  const pendingMaterial = cursor.characterMaterials[cursor.nextIndex];
+  if (!pendingMaterial) return boundaryRejected("invalid-transition");
+  const character = documentFor(current, pendingMaterial);
+  const encounter = character?.state.encounter;
+  if (
+    !character ||
+    character.kind !== "character" ||
+    !encounter ||
+    !encounterIdentityCompatible(encounter, cursor.pendingEncounter) ||
+    encounter.epoch !== cursor.pendingEncounter.epoch
+  ) {
+    return boundaryRejected("invalid-transition");
+  }
+  const candidate = mutableWorld(current);
+  const cleared = documentFor(candidate, pendingMaterial);
+  if (!cleared || cleared.kind !== "character") {
+    return boundaryRejected("missing-document");
+  }
+  cleared.state.encounter = null;
+  cleared.state.clockBinding.encounter = null;
+  const clearedResult = finalize(current, candidate, leaseSet(request));
+  return clearedResult.status === "rejected"
+    ? boundaryRejected(clearedResult.reason)
+    : startSharedEncounter(
+        basis,
+        clearedResult.world,
+        command,
+        cursor.characterMaterials,
+        cursor.nextIndex + 1,
+        request,
+        ordinal
+      );
+}
+
+function resumeEndEncounter(
+  basis: Readonly<MechanicsWorld>,
+  current: Readonly<MechanicsWorld>,
+  command: Extract<MechanicsBoundaryCommand, { kind: "end-encounter" }>,
+  cursor: Extract<MechanicsBoundaryCursor, { kind: "end-encounter" }>,
+  request: Required<MechanicsClosureRequest>
+): MechanicsBoundaryResult {
+  const after = documentFor(current, command.material);
+  const encounter = after?.state.encounter;
+  if (
+    !after ||
+    !encounter ||
+    encounter.epoch !== cursor.encounter.epoch ||
+    !encounterIdentityCompatible(encounter, cursor.encounter)
+  ) {
+    return boundaryRejected("invalid-transition");
+  }
+  const candidate = mutableWorld(current);
   const mutable = documentFor(candidate, command.material);
-  if (!mutable) return rejected(ended.world, "missing-document");
+  if (!mutable) return boundaryRejected("missing-document");
   if (mutable.kind === "character") {
     mutable.state.encounter = null;
     mutable.state.clockBinding.encounter = null;
@@ -1975,14 +3662,255 @@ export function applyMechanicsBoundary(
         };
       }
     } catch (error) {
-      if (error instanceof RangeError) return rejected(ended.world, "overflow");
+      if (error instanceof RangeError) return boundaryRejected("overflow");
       throw error;
     }
   }
-  const cleared = finalize(ended.world, candidate);
+  const cleared = finalize(current, candidate, leaseSet(request));
   return cleared.status === "rejected"
-    ? cleared
-    : finishBoundary(parsed.value, cleared.world);
+    ? boundaryRejected(cleared.reason)
+    : finishBoundary(basis, cleared.world);
+}
+
+/** Start one table boundary from a closed hostile world. */
+export function beginMechanicsBoundary(
+  value: Readonly<MechanicsWorld>,
+  commandValue: unknown
+): MechanicsBoundaryResult {
+  const begun = beginMechanicsCausalState(value);
+  if (!begun.ok) return boundaryRejected(begun.reason);
+  const basis = begun.value.world;
+  const command = conformMechanicsBoundaryCommand(commandValue);
+  if (!command) return boundaryRejected("invalid-transition");
+  const request = normalizedClosureRequest({});
+
+  if (command.kind === "complete-rest") {
+    return emitBoundaryCheckpoint(
+      basis,
+      basis,
+      command,
+      { kind: "finish" },
+      request,
+      { kind: "rest-completed", ...command.input },
+      0
+    );
+  }
+  if (command.kind === "observe-day-phase") {
+    return emitBoundaryCheckpoint(
+      basis,
+      basis,
+      command,
+      { kind: "finish" },
+      request,
+      { kind: "day-phase", ...command.input },
+      0
+    );
+  }
+  if (command.kind === "advance-time") {
+    if (!clockResolves(basis, command.clock, "timeline")) {
+      return boundaryRejected("clock-conflict");
+    }
+    const candidate = mutableWorld(basis);
+    const document = documentFor(candidate, command.clock.material);
+    if (!document) return boundaryRejected("missing-document");
+    if (
+      document.state.timeline.elapsedSeconds >
+      Number.MAX_SAFE_INTEGER - command.elapsedSeconds
+    ) {
+      return boundaryRejected("overflow");
+    }
+    document.state.timeline.elapsedSeconds += command.elapsedSeconds;
+    const projected = projectBoundaryMutation(basis, candidate);
+    if (projected.status === "rejected") {
+      return boundaryRejected(projected.reason);
+    }
+    return emitBoundaryCheckpoint(
+      basis,
+      projected.world,
+      command,
+      { kind: "finish" },
+      request,
+      {
+        clock: command.clock,
+        elapsedSeconds: document.state.timeline.elapsedSeconds,
+        kind: "time-reached",
+      },
+      0
+    );
+  }
+  if (command.kind === "complete-turn") {
+    const document = documentFor(basis, command.material);
+    const boundary = document ? currentTurnBoundary(document, "end") : null;
+    const encounter = document?.state.encounter;
+    if (!document || !boundary || !encounter || !encounter.currentCombatantId) {
+      return boundaryRejected("encounter-conflict");
+    }
+    return emitBoundaryCheckpoint(
+      basis,
+      basis,
+      command,
+      {
+        encounter: encounterCursor(encounter),
+        expectedRound: encounter.round,
+        expectedTimelineSeconds: document.state.timeline.elapsedSeconds,
+        kind: "complete-turn",
+        lastSelected: null,
+        phase: "after-end",
+        scanOffset: 1,
+        selected: null,
+      },
+      request,
+      boundary,
+      0
+    );
+  }
+  if (command.kind === "start-encounter") {
+    const document = documentFor(basis, command.material);
+    if (!document || document.state.encounter !== null) {
+      return boundaryRejected("encounter-conflict");
+    }
+    if (document.kind === "shared") {
+      const materials = leasedCharacterMaterials(command.seed);
+      return startSharedEncounter(basis, basis, command, materials, 0, request, 0);
+    }
+    if (
+      document.state.clockBinding.encounter !== null ||
+      !sameMaterial(document.state.clockBinding.timeline.material, command.material)
+    ) {
+      return boundaryRejected("encounter-conflict");
+    }
+    const candidate = mutableWorld(basis);
+    const mutable = documentFor(candidate, command.material);
+    if (!mutable || mutable.kind !== "character") {
+      return boundaryRejected("missing-document");
+    }
+    const clock = startEncounterOnDocument(mutable, command.seed);
+    if (!clock) return boundaryRejected("encounter-conflict");
+    mutable.state.clockBinding.encounter = clock;
+    const started = finalize(basis, candidate);
+    if (started.status === "rejected") {
+      return boundaryRejected(started.reason);
+    }
+    const startedDocument = documentFor(started.world, command.material);
+    const boundary = startedDocument
+      ? currentTurnBoundary(startedDocument, "start")
+      : null;
+    return boundary
+      ? emitBoundaryCheckpoint(
+          basis,
+          started.world,
+          command,
+          { kind: "finish" },
+          request,
+          boundary,
+          0
+        )
+      : finishBoundary(basis, started.world);
+  }
+  const document = documentFor(basis, command.material);
+  const clock = document ? encounterClock(document) : null;
+  const encounter = document?.state.encounter;
+  if (!document || !clock || !encounter) {
+    return boundaryRejected("encounter-conflict");
+  }
+  return emitBoundaryCheckpoint(
+    basis,
+    basis,
+    command,
+    { encounter: encounterCursor(encounter), kind: "end-encounter" },
+    request,
+    { clock, kind: "combat-end" },
+    0
+  );
+}
+
+/** Advance only the exact checkpoint named by one coordinator-issued completion. */
+export function advanceMechanicsBoundary(
+  continuationValue: Readonly<MechanicsBoundaryContinuation>,
+  completionValue: Readonly<MechanicsBoundaryCompletion>
+): MechanicsBoundaryResult {
+  try {
+    if (
+      !continuationValid(continuationValue) ||
+      !isExactRecord(completionValue, ["continuation", "state"]) ||
+      conformCanonicalFingerprint(completionValue.continuation) === null ||
+      completionValue.continuation !== canonicalFingerprint(continuationValue) ||
+      !completionStateValid(
+        continuationValue.checkpoint,
+        completionValue.state,
+        continuationValue.basis
+      )
+    ) {
+      return boundaryRejected("invalid-transition");
+    }
+    const completed = completionWorld(continuationValue, completionValue.state);
+    if (completed.ok === "checkpoint") {
+      const ordinal = continuationValue.checkpoint.ordinal + 1;
+      if (!Number.isSafeInteger(ordinal)) {
+        return boundaryRejected("overflow");
+      }
+      const checkpoint = freezeDeep({
+        ordinal,
+        state: completed.state,
+        wave: completed.state.context.endWave?.wave,
+      });
+      if (!checkpoint.wave) {
+        return boundaryRejected("invalid-end-wave");
+      }
+      const continuation = freezeDeep({
+        ...continuationValue,
+        checkpoint,
+        request: normalizedClosureRequest({
+          boundaries: completed.state.context.request.boundaries,
+          inventorySourceLeases: completed.state.context.request.inventorySourceLeases,
+        }),
+      }) as unknown as Readonly<MechanicsBoundaryContinuation>;
+      return { checkpoint, continuation, status: "checkpoint" };
+    }
+    if (!completed.ok) {
+      return boundaryRejected(completed.reason);
+    }
+    const nextOrdinal = continuationValue.checkpoint.ordinal + 1;
+    if (!Number.isSafeInteger(nextOrdinal)) {
+      return boundaryRejected("overflow");
+    }
+    const { basis, command, cursor } = continuationValue;
+    if (cursor.kind === "finish") {
+      return finishBoundary(basis, completed.world);
+    }
+    if (cursor.kind === "complete-turn" && command.kind === "complete-turn") {
+      return continueCompleteTurn(
+        basis,
+        completed.world,
+        command,
+        cursor,
+        completed.request,
+        nextOrdinal
+      );
+    }
+    if (cursor.kind === "start-shared-encounter" && command.kind === "start-encounter") {
+      return resumeStartSharedEncounter(
+        basis,
+        completed.world,
+        command,
+        cursor,
+        completed.request,
+        nextOrdinal
+      );
+    }
+    if (cursor.kind === "end-encounter" && command.kind === "end-encounter") {
+      return resumeEndEncounter(
+        basis,
+        completed.world,
+        command,
+        cursor,
+        completed.request
+      );
+    }
+    return boundaryRejected("invalid-transition");
+  } catch {
+    return { reason: "invalid-transition", status: "rejected" };
+  }
 }
 
 function encounterClock(document: MechanicsDocument | MutableDocument): ClockRef | null {
@@ -2075,6 +4003,6 @@ function leasedCharacterMaterials(
     );
   }
   return [...byKey.values()].sort((left, right) =>
-    materialRefKey(left).localeCompare(materialRefKey(right))
+    compareCanonical(materialRefKey(left), materialRefKey(right))
   );
 }

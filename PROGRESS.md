@@ -87,6 +87,23 @@ suspension replay, full SRD+pack transcription, UI/store/Firestore cutover, auto
 legacy deletion remain active. Branch checkpoints run no global gate; the sole authoritative gate stays
 reserved for the final rebased push to `main`.
 
+**Canonical causal-kernel hardening checkpoint CLOSED on branch (2026-08-12; compiler/coordinator
+ACTIVE):** operation authority is independently resolved from the trusted capability snapshot or exact
+persisted root generation, never accepted inside a cause; actor ownership and immutable
+definition/installation guards fail closed. Every mutable non-self entity and every occurrence authority
+carries its physical generation, closing same-id ABA across targets, actors, owners, participants,
+durations and delayed events. Ending causes and the one cumulative closure request live in explicit pure
+transient causal state. Table progression is now a `begin`/`advance` state machine whose continuation is
+bound to its complete checkpoint; a wave created or extended during event delivery always produces a new
+source-readable checkpoint before finalization. The old resolver-returned-world API is deleted. The
+authentic event surface is deliberately closed to damage taken, zero HP, resource depletion and source
+ending; finalization re-proves the exact wave and returns the resulting world without synthetic catch-all
+events. The universal physical-D20 dependency is branch-complete too: exact inputs reject numeric aliases,
+and table-entered two-failure Death Saves retain provenance distinct from a natural 1. Focused cross-seam
+verification is green (408 tests across 20 directly affected suites); by owner rule no
+global branch gate ran. The next active milestone is the single step compiler plus fixed-point
+subscriber/suspension coordinator and one final journal draft.
+
 **Deterministic automation gap sweep — ACTIVE (2026-08-04):** six truth-gated milestones are closed and
 branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level
 charged-item casts, activated-item tracker/timer lifecycle, bounded spell-pool execution, and variable

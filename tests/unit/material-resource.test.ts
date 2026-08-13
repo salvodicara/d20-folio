@@ -7,7 +7,11 @@ import {
   replaceResolvedMaterialResource,
 } from "@/lib/material-resource";
 import { createEmptyCharacterMaterialState } from "@/lib/material-state";
-import { closeMechanicsWorld, parseMechanicsWorld } from "@/lib/mechanics-world";
+import {
+  discoverMechanicsEndWave,
+  finalizeMechanicsEndWave,
+  parseMechanicsWorld,
+} from "@/lib/mechanics-world";
 import type { CharacterMaterialState } from "@/types/material-state";
 import type { MechanicsWorld } from "@/types/mechanics-world";
 import type { CountResourceCell, ResourceRef } from "@/types/resource";
@@ -115,7 +119,7 @@ describe("physical material resource locator", () => {
     [
       {
         kind: "pool",
-        owner: { entityId: "familiar", material: CHARACTER },
+        owner: { entityId: "familiar", material: CHARACTER, ordinal: 1 },
         resourceId: "commands",
       },
       ["entities", "familiar", "resources", "commands"],
@@ -187,7 +191,10 @@ describe("physical material resource locator", () => {
       ok: false,
       reason: "missing-reference",
     });
-    const closed = closeMechanicsWorld(candidate);
+    const discovery = discoverMechanicsEndWave(candidate);
+    expect(discovery.status).toBe("discovered");
+    if (discovery.status !== "discovered") return;
+    const closed = finalizeMechanicsEndWave(discovery.world, discovery.wave);
     expect(closed.status).toBe("applied");
     if (closed.status !== "applied") return;
     expect(closed.world.documents[0]?.state.inventory).not.toHaveProperty("wand");
@@ -217,7 +224,7 @@ describe("physical material resource locator", () => {
     { kind: "pool", owner: SELF, resourceId: "new-focus" },
     {
       kind: "pool",
-      owner: { entityId: "familiar", material: CHARACTER },
+      owner: { entityId: "familiar", material: CHARACTER, ordinal: 1 },
       resourceId: "new-command",
     },
     { character: CHARACTER, kind: "standard-spell-slot", level: 2 },
@@ -305,6 +312,21 @@ describe("physical material resource locator", () => {
     expect(
       inserted && locateMaterialResource(inserted, currentSecondary)?.cell
     ).toMatchObject({ current: 4 });
+  });
+
+  it("keeps stale pool refs dead when an entity id is recreated", () => {
+    const recreated = world();
+    const stalePool = {
+      kind: "pool",
+      owner: { entityId: "familiar", material: CHARACTER, ordinal: 2 },
+      resourceId: "commands",
+    } as const satisfies ResourceRef;
+    const staleNewPool = { ...stalePool, resourceId: "new-command" } as const;
+
+    expect(locateMaterialResource(recreated, stalePool)).toBeNull();
+    expect(replaceResolvedMaterialResource(recreated, stalePool, count(0))).toBeNull();
+    expect(removeResolvedMaterialResource(recreated, stalePool)).toBeNull();
+    expect(insertResolvedMaterialResource(recreated, staleNewPool, count(1))).toBeNull();
   });
 
   it("uses null as the pact-slot absence state", () => {

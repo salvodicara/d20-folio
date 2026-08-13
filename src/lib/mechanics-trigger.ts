@@ -10,7 +10,7 @@ import {
   conformClockRef,
   conformEntityRef,
   conformMechanicId,
-  conformOccurrenceRef,
+  conformOccurrenceGenerationRef,
 } from "@/lib/mechanics-reference-schema";
 import { conformResourceRef } from "@/lib/resources";
 import type { MechanicsTriggerEvidence } from "@/types/mechanics-trigger";
@@ -24,7 +24,7 @@ const TRIGGER_CONTEXT: ExactSchemaContext<
     "damage-resolution": conformDamageResolution,
     "entity-ref": conformEntityRef,
     id: conformMechanicId,
-    "occurrence-ref": conformOccurrenceRef,
+    "occurrence-generation-ref": conformOccurrenceGenerationRef,
     "positive-integer": (value) =>
       typeof value === "number" &&
       Number.isSafeInteger(value) &&

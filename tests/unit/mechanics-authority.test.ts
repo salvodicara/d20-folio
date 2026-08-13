@@ -58,7 +58,12 @@ const MATERIAL = {
   uid: "user-1",
 } as const;
 const ENTITY = { entityId: "self", material: MATERIAL } as const;
-const OTHER_ENTITY = { entityId: "other", material: MATERIAL } as const;
+const OTHER_ENTITY = { entityId: "other", material: MATERIAL, ordinal: 1 } as const;
+const MATERIAL_ENTITY = {
+  entityId: "familiar",
+  material: MATERIAL,
+  ordinal: 13,
+} as const;
 const TABLE_OWNER = {
   authority: "table",
   kind: "material-authority",
@@ -95,8 +100,7 @@ const ENTITY_DEFINITION = {
   generation: 11,
   kind: "homebrew",
   owner: {
-    entity: ENTITY,
-    entityOrdinal: 13,
+    entity: MATERIAL_ENTITY,
     kind: "material-entity",
   },
 } as const;
@@ -309,7 +313,10 @@ describe("mechanics authority exact identity", () => {
     const installed = { installation: INSTALLATION, kind: "installed-capability" };
     const program = {
       kind: "program-root",
-      occurrence: { material: MATERIAL, occurrenceId: "program-1" },
+      occurrence: {
+        occurrence: { material: MATERIAL, occurrenceId: "program-1" },
+        ordinal: 1,
+      },
     };
     expect(conformMechanicsInvocationRef(installed)).toEqual(installed);
     expect(conformMechanicsInvocationRef(program)).toEqual(program);
@@ -377,6 +384,12 @@ describe("mechanics authority exact identity", () => {
     ).toBeNull();
     expect(
       conformMechanicsDefinitionRef({ ...INVENTORY_DEFINITION, generation: 0 })
+    ).toBeNull();
+    expect(
+      conformMechanicsDefinitionRef({
+        ...ENTITY_DEFINITION,
+        owner: { ...ENTITY_DEFINITION.owner, entityOrdinal: 13 },
+      })
     ).toBeNull();
     expect(
       conformMechanicsDefinitionRef({
@@ -485,7 +498,10 @@ describe("mechanics authority stable keys", () => {
     expect(mechanicsDefinitionRefKey(ENTITY_DEFINITION)).not.toBe(
       mechanicsDefinitionRefKey({
         ...ENTITY_DEFINITION,
-        owner: { ...ENTITY_DEFINITION.owner, entityOrdinal: 14 },
+        owner: {
+          ...ENTITY_DEFINITION.owner,
+          entity: { ...ENTITY_DEFINITION.owner.entity, ordinal: 14 },
+        },
       })
     );
     expect(mechanicsDefinitionRefKey(TABLE_DEFINITION)).not.toBe(
@@ -560,7 +576,7 @@ describe("mechanics authority fact addresses", () => {
         "character-play",
         "user-1",
         "character-1",
-        "self",
+        "familiar",
         "13",
         "11",
       ],
@@ -841,7 +857,7 @@ describe("mechanics authority closure", () => {
     expect(
       conformMechanicsAuthorityDefinition({
         ...definition,
-        owner: { ...ENTITY, entityId: "other" },
+        owner: OTHER_ENTITY,
       })
     ).toBeNull();
     expect(

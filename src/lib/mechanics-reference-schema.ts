@@ -1,5 +1,6 @@
 /** Exact structural grammar for universal mechanics references. */
 
+import { canonicalJson } from "@/lib/canonical-fingerprint";
 import {
   customSchema,
   discriminatedUnionSchema,
@@ -7,6 +8,7 @@ import {
   literalSchema,
   objectSchema,
   refSchema,
+  unionSchema,
   type ExactSchemaContext,
   type InferExactSchema,
 } from "@/lib/exact-schema";
@@ -27,6 +29,12 @@ export function conformMechanicId(value: unknown): string | null {
 const ID_SCHEMA = customSchema<"id", string>("id");
 const NONNEGATIVE_INTEGER_SCHEMA = customSchema<"nonnegative-integer", number>(
   "nonnegative-integer"
+);
+const POSITIVE_INTEGER_SCHEMA = customSchema<"positive-integer", number>(
+  "positive-integer"
+);
+const MATERIAL_ENTITY_ID_SCHEMA = customSchema<"material-entity-id", string>(
+  "material-entity-id"
 );
 
 export const CHARACTER_MATERIAL_REF_SCHEMA = objectSchema({
@@ -81,18 +89,57 @@ export function conformClockRef(value: unknown): Readonly<ClockRefSchemaShape> |
   return conformClockRefStructure(value);
 }
 
-export const ENTITY_REF_SCHEMA = objectSchema({
-  entityId: ID_SCHEMA,
-  material: MATERIAL_REF,
+export const SELF_ENTITY_REF_SCHEMA = objectSchema({
+  entityId: literalSchema("self"),
+  material: CHARACTER_MATERIAL_REF_SCHEMA,
 });
 
+export const MATERIAL_ENTITY_REF_SCHEMA = objectSchema({
+  entityId: MATERIAL_ENTITY_ID_SCHEMA,
+  material: MATERIAL_REF,
+  ordinal: POSITIVE_INTEGER_SCHEMA,
+});
+
+/** One exact physical entity identity; character self is its material generation. */
+export const ENTITY_REF_SCHEMA = unionSchema([
+  SELF_ENTITY_REF_SCHEMA,
+  MATERIAL_ENTITY_REF_SCHEMA,
+]);
+
 export type EntityRefSchemaShape = InferExactSchema<typeof ENTITY_REF_SCHEMA>;
+export type SelfEntityRefSchemaShape = InferExactSchema<typeof SELF_ENTITY_REF_SCHEMA>;
+export type MaterialEntityRefSchemaShape = InferExactSchema<
+  typeof MATERIAL_ENTITY_REF_SCHEMA
+>;
+
+/** Entity ids are reusable logical slots; only non-self ids need a material ordinal. */
+export function conformMaterialEntityId(value: unknown): string | null {
+  const id = conformMechanicId(value);
+  return id === "self" ? null : id;
+}
+
+function conformPositiveInteger(value: unknown): number | null {
+  return typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value > 0 &&
+    !Object.is(value, -0)
+    ? value
+    : null;
+}
 
 const ENTITY_REF_SCHEMA_CONTEXT: ExactSchemaContext<
-  { readonly id: string },
+  {
+    readonly id: string;
+    readonly "material-entity-id": string;
+    readonly "positive-integer": number;
+  },
   { readonly "material-ref": MaterialRefSchemaShape }
 > = {
-  customs: { id: conformMechanicId },
+  customs: {
+    id: conformMechanicId,
+    "material-entity-id": conformMaterialEntityId,
+    "positive-integer": conformPositiveInteger,
+  },
   refs: { "material-ref": MATERIAL_REF_SCHEMA },
 };
 
@@ -104,6 +151,13 @@ const conformEntityRefStructure = exactConformer(
 /** Strict universal entity-reference boundary, independent of material state. */
 export function conformEntityRef(value: unknown): Readonly<EntityRefSchemaShape> | null {
   return conformEntityRefStructure(value);
+}
+
+/** Canonical collision/deduplication key for one exact entity generation. */
+export function entityRefKey(value: Readonly<EntityRefSchemaShape>): string {
+  const reference = conformEntityRef(value);
+  if (!reference) throw new TypeError("Invalid entity reference");
+  return canonicalJson(reference);
 }
 
 export const OCCURRENCE_REF_SCHEMA = objectSchema({
@@ -123,4 +177,45 @@ export function conformOccurrenceRef(
   value: unknown
 ): Readonly<OccurrenceRefSchemaShape> | null {
   return conformOccurrenceRefStructure(value);
+}
+
+/**
+ * Exact identity of one active generation occupying an occurrence address.
+ * `OccurrenceRef` alone is only a logical slot and must never authorize a
+ * causal runtime transition because that slot can be reused after removal.
+ */
+export const OCCURRENCE_GENERATION_REF_SCHEMA = objectSchema({
+  occurrence: OCCURRENCE_REF_SCHEMA,
+  ordinal: POSITIVE_INTEGER_SCHEMA,
+});
+
+export type OccurrenceGenerationRefSchemaShape = InferExactSchema<
+  typeof OCCURRENCE_GENERATION_REF_SCHEMA
+>;
+
+const conformOccurrenceGenerationRefStructure = exactConformer(
+  OCCURRENCE_GENERATION_REF_SCHEMA,
+  {
+    customs: {
+      id: conformMechanicId,
+      "positive-integer": conformPositiveInteger,
+    },
+    refs: { "material-ref": MATERIAL_REF_SCHEMA },
+  }
+);
+
+/** Strict anti-ABA occurrence identity, independent of current world state. */
+export function conformOccurrenceGenerationRef(
+  value: unknown
+): Readonly<OccurrenceGenerationRefSchemaShape> | null {
+  return conformOccurrenceGenerationRefStructure(value);
+}
+
+/** Canonical collision/deduplication key for one exact occurrence generation. */
+export function occurrenceGenerationRefKey(
+  value: Readonly<OccurrenceGenerationRefSchemaShape>
+): string {
+  const reference = conformOccurrenceGenerationRef(value);
+  if (!reference) throw new TypeError("Invalid occurrence generation reference");
+  return canonicalJson(reference);
 }

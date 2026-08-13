@@ -27,8 +27,8 @@ const material = {
   kind: "character-play",
   uid: "uid-1",
 } as const;
-const charmer: EntityRef = { entityId: "charmer", material };
-const otherSource: EntityRef = { entityId: "other-source", material };
+const charmer: EntityRef = { entityId: "charmer", material, ordinal: 1 };
+const otherSource: EntityRef = { entityId: "other-source", material, ordinal: 2 };
 
 function instance(
   conditionId: NonExhaustionConditionId,
@@ -39,14 +39,17 @@ function instance(
     conditionId,
     identity: {
       kind: "occurrence",
-      ref: { material, occurrenceId: instanceId },
+      ref: { occurrence: { material, occurrenceId: instanceId }, ordinal: 1 },
     },
     source,
   };
 }
 
 function occurrenceIdentity(occurrenceId: string): ConditionInstance["identity"] {
-  return { kind: "occurrence", ref: { material, occurrenceId } };
+  return {
+    kind: "occurrence",
+    ref: { occurrence: { material, occurrenceId }, ordinal: 1 },
+  };
 }
 
 function effects(conditionId: NonExhaustionConditionId) {
@@ -533,7 +536,9 @@ describe("closure, multiplicity, provenance and non-stacking projection", () => 
     expect(speedZero).toHaveLength(1);
     expect(
       speedZero?.[0]?.provenance.map(({ identity }) =>
-        identity.kind === "occurrence" ? identity.ref.occurrenceId : identity.kind
+        identity.kind === "occurrence"
+          ? identity.ref.occurrence.occurrenceId
+          : identity.kind
       )
     ).toEqual(["grapple-a", "grapple-b", "restraint-a"]);
     expect(projection?.instances).toHaveLength(3);

@@ -29,7 +29,9 @@ function creatureVitalsFor(
     return document.kind === "character" ? document.state.vitals : null;
   }
   const entity = document.state.entities[target.entityId];
-  return entity?.kind === "creature" ? entity.vitals : null;
+  return entity?.ordinal === target.ordinal && entity.kind === "creature"
+    ? entity.vitals
+    : null;
 }
 
 function directConditionInstances(
@@ -50,7 +52,10 @@ function directConditionInstances(
         conditionId: occurrence.conditionId,
         identity: {
           kind: "occurrence",
-          ref: { material: document.material, occurrenceId },
+          ref: {
+            occurrence: { material: document.material, occurrenceId },
+            ordinal: occurrence.ordinal,
+          },
         },
         source: null,
       });

@@ -19,6 +19,7 @@ import {
 } from "@/lib/mechanics-authority-ref-schema";
 import {
   MATERIAL_REF_SCHEMA,
+  conformMaterialEntityId,
   conformMechanicId,
   type MaterialRefSchemaShape,
 } from "@/lib/mechanics-reference-schema";
@@ -32,7 +33,11 @@ import type {
   MechanicsSourceRef,
   TableDeclarationMechanicsDefinitionRef,
 } from "@/types/mechanics-authority-ref";
-import type { EntityRef, MaterialRef } from "@/types/mechanics-reference";
+import type {
+  EntityRef,
+  MaterialEntityRef,
+  MaterialRef,
+} from "@/types/mechanics-reference";
 
 type MechanicsAuthorityRefSchemaRefTypes = {
   readonly "material-ref": MaterialRefSchemaShape;
@@ -51,6 +56,7 @@ function conformPositiveInteger(value: unknown): number | null {
 export const MECHANICS_AUTHORITY_REF_SCHEMA_CUSTOMS: ExactSchemaCustomConformers<MechanicsAuthorityRefSchemaCustomTypes> =
   {
     id: conformMechanicId,
+    "material-entity-id": conformMaterialEntityId,
     "mechanics-revision": conformCanonicalFingerprint,
     "positive-integer": conformPositiveInteger,
   };
@@ -186,8 +192,12 @@ function materialAddressSegments(material: MaterialRef): readonly string[] {
     : [material.kind, material.campaignId];
 }
 
-function entityAddressSegments(entity: EntityRef): readonly string[] {
-  return [...materialAddressSegments(entity.material), entity.entityId];
+function entityAddressSegments(entity: MaterialEntityRef): readonly string[] {
+  return [
+    ...materialAddressSegments(entity.material),
+    entity.entityId,
+    positiveIntegerSegment(entity.ordinal),
+  ];
 }
 
 function positiveIntegerSegment(value: number): string {
@@ -298,7 +308,6 @@ export function mechanicsDefinitionFactAddress(
     ...prefix,
     definition.owner.kind,
     ...entityAddressSegments(definition.owner.entity),
-    positiveIntegerSegment(definition.owner.entityOrdinal),
     generation,
   ]);
 }

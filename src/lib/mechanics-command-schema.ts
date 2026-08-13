@@ -17,7 +17,7 @@ import type { D20TestObservation } from "@/types/d20-test";
 import type { DiceObservation } from "@/types/dice-formula";
 import type { MechanicsInvocationRef } from "@/types/mechanics-authority-ref";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
-import type { EntityRef, OccurrenceRef } from "@/types/mechanics-reference";
+import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type { ResourceRef } from "@/types/resource";
 
 const ID_SCHEMA = customSchema<"id", string>("id");
@@ -32,9 +32,10 @@ const FINGERPRINT_SCHEMA = customSchema<"fingerprint", MechanicsFingerprintSchem
   "fingerprint"
 );
 const ENTITY_REF_SCHEMA = customSchema<"entity-ref", EntityRef>("entity-ref");
-const OCCURRENCE_REF_SCHEMA = customSchema<"occurrence-ref", OccurrenceRef>(
-  "occurrence-ref"
-);
+const OCCURRENCE_GENERATION_REF_SCHEMA = customSchema<
+  "occurrence-generation-ref",
+  OccurrenceGenerationRef
+>("occurrence-generation-ref");
 const RESOURCE_REF_SCHEMA = customSchema<"resource-ref", ResourceRef>("resource-ref");
 const D20_OBSERVATION_SCHEMA = customSchema<"d20-observation", D20TestObservation>(
   "d20-observation"
@@ -190,14 +191,13 @@ export const PROGRAM_ROOT_RECEIPT_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("create"),
     materialEpoch: NONNEGATIVE_INTEGER_SCHEMA,
     next: PHASE_EXECUTION_RECEIPT_SCHEMA,
-    ordinal: POSITIVE_INTEGER_SCHEMA,
-    root: OCCURRENCE_REF_SCHEMA,
+    root: OCCURRENCE_GENERATION_REF_SCHEMA,
   }),
   advance: objectSchema({
     expected: PHASE_EXECUTION_RECEIPT_SCHEMA,
     kind: literalSchema("advance"),
     next: PHASE_EXECUTION_RECEIPT_SCHEMA,
-    root: OCCURRENCE_REF_SCHEMA,
+    root: OCCURRENCE_GENERATION_REF_SCHEMA,
   }),
 });
 
@@ -268,7 +268,7 @@ export type MechanicsCommandSchemaCustomTypes = {
   >;
   readonly "invocation-ref": MechanicsInvocationRef;
   readonly "nonnegative-integer": number;
-  readonly "occurrence-ref": OccurrenceRef;
+  readonly "occurrence-generation-ref": OccurrenceGenerationRef;
   readonly "positive-integer": number;
   readonly "program-authority-receipt": MechanicsProgramAuthorityReceipt;
   readonly "resource-ref": ResourceRef;

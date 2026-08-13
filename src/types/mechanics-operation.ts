@@ -12,11 +12,7 @@ import {
   type InferExactSchema,
 } from "@/lib/exact-schema";
 import type { CanonicalFingerprint } from "@/lib/canonical-fingerprint";
-import type {
-  ActionFactGuard,
-  JournalActionDraft,
-  JournalActorRef,
-} from "@/types/action-journal";
+import type { ActionFactGuard, JournalActorRef } from "@/types/action-journal";
 import type { DamageResolution } from "@/types/damage";
 import { EXHAUSTION_LEVEL_SCHEMA, type ExhaustionLevel } from "@/types/condition";
 import type { DiceObservation, DiceRollRequirement } from "@/types/dice-formula";
@@ -28,9 +24,13 @@ import {
   PROGRAM_PHASE_STATE_SCHEMA,
 } from "@/lib/mechanic-occurrence-schema";
 import type { MechanicsInvocationRef } from "@/types/mechanics-authority-ref";
-import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
-import type { EntityRef, MaterialRef, OccurrenceRef } from "@/types/mechanics-reference";
-import type { MechanicsWorld } from "@/types/mechanics-world";
+import type { MechanicsAuthoritySnapshot } from "@/types/mechanics-authority";
+import type {
+  EntityRef,
+  MaterialRef,
+  OccurrenceGenerationRef,
+} from "@/types/mechanics-reference";
+import type { MechanicsCausalState } from "@/types/mechanics-world";
 import {
   RESOURCE_INITIALIZATION_OBSERVATIONS_SCHEMA,
   type ResourceCell,
@@ -77,9 +77,10 @@ const NEW_PROGRAM_OCCURRENCE_SCHEMA = objectSchema({
   phaseState: PROGRAM_PHASE_STATE_SCHEMA,
   registers: recordSchema("string", JSON_SCALAR_SCHEMA),
 });
-const OCCURRENCE_REF_VALUE_SCHEMA = customSchema<"occurrence-ref", OccurrenceRef>(
-  "occurrence-ref"
-);
+const OCCURRENCE_GENERATION_REF_VALUE_SCHEMA = customSchema<
+  "occurrence-generation-ref",
+  OccurrenceGenerationRef
+>("occurrence-generation-ref");
 const INTEGER_BINDINGS_VALUE_SCHEMA = customSchema<"integer-bindings", IntegerBindings>(
   "integer-bindings"
 );
@@ -105,12 +106,7 @@ const MECHANICS_INVOCATION_REF_VALUE_SCHEMA = customSchema<
   "mechanics-invocation-ref",
   MechanicsInvocationRef
 >("mechanics-invocation-ref");
-const MECHANICS_PROGRAM_AUTHORITY_RECEIPT_VALUE_SCHEMA = customSchema<
-  "mechanics-program-authority-receipt",
-  MechanicsProgramAuthorityReceipt
->("mechanics-program-authority-receipt");
 export const MECHANICS_OPERATION_CAUSE_SCHEMA = objectSchema({
-  authority: MECHANICS_PROGRAM_AUTHORITY_RECEIPT_VALUE_SCHEMA,
   causeId: CANONICAL_FINGERPRINT_SCHEMA,
   invocation: MECHANICS_INVOCATION_REF_VALUE_SCHEMA,
 });
@@ -120,7 +116,6 @@ export type MechanicsOperationCause = InferExactSchema<
   {
     readonly "canonical-fingerprint": CanonicalFingerprint;
     readonly "mechanics-invocation-ref": MechanicsInvocationRef;
-    readonly "mechanics-program-authority-receipt": MechanicsProgramAuthorityReceipt;
   }
 >;
 const MECHANICS_OPERATION_CAUSE_VALUE_SCHEMA = customSchema<
@@ -282,12 +277,13 @@ export const MECHANICS_OPERATION_SCHEMA = discriminatedUnionSchema("kind", {
       material: MATERIAL_REF_VALUE_SCHEMA,
       occurrence: NEW_EFFECT_OCCURRENCE_VALUE_SCHEMA,
       occurrenceId: ID_SCHEMA,
+      parent: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
     }),
   ]),
   "occurrence-end": objectSchema({
     ...OPERATION_COMMON_SCHEMA,
     kind: literalSchema("occurrence-end"),
-    occurrence: OCCURRENCE_REF_VALUE_SCHEMA,
+    occurrence: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
   }),
   "exhaustion-transition": objectSchema({
     ...TARGETED_OPERATION_SCHEMA,
@@ -350,12 +346,12 @@ export type MechanicsOperationSchemaCustomTypes = {
   readonly "integer-bindings": IntegerBindings;
   readonly "journal-actor": JournalActorRef;
   readonly "material-ref": MaterialRef;
+  readonly "material-entity-id": string;
   readonly "mechanics-invocation-ref": MechanicsInvocationRef;
   readonly "mechanics-operation-cause": MechanicsOperationCause;
-  readonly "mechanics-program-authority-receipt": MechanicsProgramAuthorityReceipt;
   readonly "new-effect-occurrence": NewEffectOccurrence;
   readonly "nonnegative-integer": number;
-  readonly "occurrence-ref": OccurrenceRef;
+  readonly "occurrence-generation-ref": OccurrenceGenerationRef;
   readonly "positive-integer": number;
   readonly "resource-operation": ResourceOperation;
   readonly "resource-ref": ResourceRef;
@@ -383,13 +379,16 @@ export type MechanicsOperationRejection =
   | "resource-fixed-shape"
   | "occurrence-collision"
   | "concentration-replacement-required"
+  | "invalid-override"
   | `resource-${ResourceRejection}`
-  | "fact-conflict"
-  | "action-planner-rejected";
+  | "fact-conflict";
 
-export interface OccurrenceTransitionFacts {
-  readonly created: Readonly<OccurrenceRef> | null;
-  readonly ended: readonly Readonly<OccurrenceRef>[];
+export interface OccurrenceCreateFacts {
+  readonly created: Readonly<OccurrenceGenerationRef>;
+}
+
+export interface OccurrenceEndRequestFacts {
+  readonly requested: Readonly<OccurrenceGenerationRef>;
 }
 
 export interface ExhaustionTransitionFacts {
@@ -421,8 +420,8 @@ export interface MechanicsOperationFactsByKind {
   readonly "creature-death-save": null;
   readonly "creature-maximum-sync": Readonly<CreatureMaximumSyncFacts>;
   readonly "object-maximum-sync": Readonly<ObjectMaximumSyncFacts>;
-  readonly "occurrence-create": Readonly<OccurrenceTransitionFacts>;
-  readonly "occurrence-end": Readonly<OccurrenceTransitionFacts>;
+  readonly "occurrence-create": Readonly<OccurrenceCreateFacts>;
+  readonly "occurrence-end": Readonly<OccurrenceEndRequestFacts>;
   readonly "exhaustion-transition": Readonly<ExhaustionTransitionFacts>;
   readonly "resource-transition": Readonly<ResourceTransitionFacts>;
   readonly "resource-initialize": Readonly<ResourceInitializationFacts>;
@@ -441,10 +440,24 @@ export type MechanicsOperationExecution = {
 
 /** One applied terminal step and its exact transient state boundary. */
 export interface MechanicsOperationStage {
-  readonly after: Readonly<MechanicsWorld>;
-  readonly before: Readonly<MechanicsWorld>;
+  readonly after: Readonly<MechanicsCausalState>;
+  readonly before: Readonly<MechanicsCausalState>;
   readonly execution: Readonly<MechanicsOperationExecution>;
 }
+
+/** Trusted pure-kernel inputs that never enter public command JSON. */
+export interface MechanicsTransactionSimulationContext {
+  readonly authoritySnapshot: Readonly<MechanicsAuthoritySnapshot>;
+  readonly state: Readonly<MechanicsCausalState>;
+}
+
+/** A validated request that the higher-level executor must resolve causally. */
+export type MechanicsOperationConsequence = {
+  readonly causeId: CanonicalFingerprint;
+  readonly kind: "occurrence-end";
+  readonly occurrence: Readonly<OccurrenceGenerationRef>;
+  readonly operationId: string;
+};
 
 export interface MechanicsOperationNoChangeReasonByKind {
   readonly "creature-damage": "zero-effective-damage";
@@ -483,23 +496,27 @@ export type MechanicsOperationNoChange = {
   };
 }[MechanicsOperation["kind"]];
 
-export type MechanicsTransactionResult =
+export type MechanicsTransactionSimulationResult =
   | {
-      readonly action: JournalActionDraft;
+      readonly actionFacts: readonly Readonly<ActionFactGuard>[];
+      readonly consequences: readonly Readonly<MechanicsOperationConsequence>[];
       readonly executions: readonly (
         | MechanicsOperationExecution
         | MechanicsOperationNoChange
       )[];
       readonly stages: readonly MechanicsOperationStage[];
-      readonly status: "planned";
+      readonly state: Readonly<MechanicsCausalState>;
+      readonly status: "simulated";
       readonly transaction: Readonly<MechanicsTransaction>;
-      readonly world: Readonly<MechanicsWorld>;
     }
   | {
+      readonly actionFacts: readonly [];
+      readonly consequences: readonly [];
       readonly executions: readonly MechanicsOperationNoChange[];
+      readonly stages: readonly [];
+      readonly state: Readonly<MechanicsCausalState>;
       readonly status: "no-change";
       readonly transaction: Readonly<MechanicsTransaction>;
-      readonly world: Readonly<MechanicsWorld>;
     }
   | {
       readonly boundary: "capacity" | "initial" | "record-roll" | "recovery";

@@ -16,6 +16,7 @@ import { DAMAGE_TYPES, type DamageDefenseSelector } from "@/types/damage";
 const target = {
   entityId: "target",
   material: { campaignId: "campaign", kind: "shared-combat" },
+  ordinal: 1,
 } as const;
 
 const all = {

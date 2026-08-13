@@ -10,7 +10,11 @@ import {
   type InferExactSchema,
 } from "@/lib/exact-schema";
 import type { DamageResolution } from "@/types/damage";
-import type { ClockRef, EntityRef, OccurrenceRef } from "@/types/mechanics-reference";
+import type {
+  ClockRef,
+  EntityRef,
+  OccurrenceGenerationRef,
+} from "@/types/mechanics-reference";
 import type { ResourceRef } from "@/types/resource";
 
 const ID_SCHEMA = customSchema<"id", string>("id");
@@ -19,9 +23,10 @@ const POSITIVE_INTEGER_SCHEMA = customSchema<"positive-integer", number>(
 );
 const CLOCK_REF_SCHEMA = customSchema<"clock-ref", ClockRef>("clock-ref");
 const ENTITY_REF_SCHEMA = customSchema<"entity-ref", EntityRef>("entity-ref");
-const OCCURRENCE_REF_SCHEMA = customSchema<"occurrence-ref", OccurrenceRef>(
-  "occurrence-ref"
-);
+const OCCURRENCE_GENERATION_REF_SCHEMA = customSchema<
+  "occurrence-generation-ref",
+  OccurrenceGenerationRef
+>("occurrence-generation-ref");
 const RESOURCE_REF_SCHEMA = customSchema<"resource-ref", ResourceRef>("resource-ref");
 const DAMAGE_RESOLUTION_SCHEMA = customSchema<"damage-resolution", DamageResolution>(
   "damage-resolution"
@@ -65,16 +70,16 @@ export const MECHANICS_TRIGGER_EVIDENCE_SCHEMA = discriminatedUnionSchema("kind"
   }),
   "source-end": objectSchema({
     kind: literalSchema("source-end"),
-    occurrence: OCCURRENCE_REF_SCHEMA,
+    occurrence: OCCURRENCE_GENERATION_REF_SCHEMA,
   }),
   "program-phase-end": objectSchema({
     execution: POSITIVE_INTEGER_SCHEMA,
     kind: literalSchema("program-phase-end"),
-    occurrence: OCCURRENCE_REF_SCHEMA,
+    occurrence: OCCURRENCE_GENERATION_REF_SCHEMA,
     phaseId: ID_SCHEMA,
   }),
   "area-boundary": objectSchema({
-    area: OCCURRENCE_REF_SCHEMA,
+    area: OCCURRENCE_GENERATION_REF_SCHEMA,
     boundary: unionSchema([literalSchema("enter"), literalSchema("leave")]),
     entity: ENTITY_REF_SCHEMA,
     kind: literalSchema("area-boundary"),
@@ -96,7 +101,7 @@ export type MechanicsTriggerSchemaCustomTypes = {
   readonly "damage-resolution": DamageResolution;
   readonly "entity-ref": EntityRef;
   readonly id: string;
-  readonly "occurrence-ref": OccurrenceRef;
+  readonly "occurrence-generation-ref": OccurrenceGenerationRef;
   readonly "positive-integer": number;
   readonly "resource-ref": ResourceRef;
 };

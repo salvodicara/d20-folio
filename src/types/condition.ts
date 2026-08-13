@@ -10,7 +10,7 @@ import {
 } from "@/lib/exact-schema";
 import type { AbilityCode } from "@/types/ability";
 import type { DamageDefenseRule } from "@/types/damage";
-import type { EntityRef, OccurrenceRef } from "@/types/mechanics-reference";
+import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
 
 export const CONDITION_IDS = [
   "blinded",
@@ -72,7 +72,7 @@ const CONDITION_INSTANCE_IDENTITY_SCHEMA = customSchema<
 const NULL_SCHEMA = literalSchema(null);
 
 export type ConditionInstanceIdentity =
-  | { readonly kind: "occurrence"; readonly ref: OccurrenceRef }
+  | { readonly kind: "occurrence"; readonly ref: OccurrenceGenerationRef }
   | { readonly kind: "zero-hit-points"; readonly target: EntityRef };
 
 /** Exhaustion never enters this occurrence shape; it is the separate level above. */

@@ -1,24 +1,23 @@
 /** Transient contracts for simultaneous terminal mechanics resolution. */
 
-import type {
-  ActionFactGuard,
-  JournalActionDraft,
-  JournalActorRef,
-} from "@/types/action-journal";
-import type { NonExhaustionConditionId } from "@/types/condition";
+import type { ActionFactGuard } from "@/types/action-journal";
 import type { DamageResolution } from "@/types/damage";
 import type { DiceRollRequirement } from "@/types/dice-formula";
-import type { EntityRef, MaterialRef, OccurrenceRef } from "@/types/mechanics-reference";
-import type { MechanicsInvocationRef } from "@/types/mechanics-authority-ref";
+import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type {
   MechanicsOperation,
-  MechanicsOperationCause,
+  MechanicsOperationConsequence,
   MechanicsOperationExecution,
   MechanicsOperationNoChange,
   MechanicsOperationRejection,
+  MechanicsOperationStage,
   MechanicsTransaction,
 } from "@/types/mechanics-operation";
-import type { MechanicsWorld } from "@/types/mechanics-world";
+import type {
+  MechanicsCausalState,
+  MechanicsWorld,
+  MechanicsWorldSimulationRejection,
+} from "@/types/mechanics-world";
 import type { ResourceRef } from "@/types/resource";
 
 export interface GroupProposal {
@@ -26,9 +25,8 @@ export interface GroupProposal {
   readonly proposalId: string;
 }
 
-/** All proposals observe `basis`; this value is never a sequential execution plan. */
+/** Proposals share the causal state supplied by the trusted execution context. */
 export interface ResolutionGroup {
-  readonly basis: Readonly<MechanicsWorld>;
   readonly groupId: string;
   readonly proposals: readonly [Readonly<GroupProposal>, ...Readonly<GroupProposal>[]];
 }
@@ -40,18 +38,6 @@ export interface OrderingObservation {
     readonly proposalIds: readonly string[];
   }[];
   readonly requestId: string;
-}
-
-/** Internal envelope resolved from authority; it is never a public client command. */
-export interface ResolutionGroupContext {
-  readonly actionId: string;
-  readonly actor: JournalActorRef;
-  readonly causes: readonly [
-    Readonly<MechanicsOperationCause>,
-    ...Readonly<MechanicsOperationCause>[],
-  ];
-  readonly factGuards: readonly Readonly<ActionFactGuard>[];
-  readonly ordering: Readonly<OrderingObservation> | null;
 }
 
 export interface ResolutionPartition {
@@ -76,10 +62,6 @@ export type ResolutionGroupAnalysis =
       readonly reason: "invalid-group" | "unsupported-operation";
     };
 
-export interface SubscriberSnapshot {
-  readonly subscribers: readonly Readonly<MechanicsInvocationRef>[];
-}
-
 interface MechanicsEventBase {
   readonly eventId: string;
   readonly operationId: string;
@@ -101,43 +83,19 @@ export type MechanicsEvent =
       readonly resource: ResourceRef;
     })
   | (MechanicsEventBase & {
-      readonly kind: "occurrence-ended" | "source-ended";
-      readonly occurrence: OccurrenceRef;
-    })
-  | (MechanicsEventBase & {
-      readonly conditionId: NonExhaustionConditionId;
-      readonly kind: "condition-changed";
-      readonly present: boolean;
-      readonly target: EntityRef;
-    })
-  | (MechanicsEventBase & {
-      readonly entity: EntityRef;
-      readonly kind: "entity-changed";
-    })
-  | (MechanicsEventBase & {
-      readonly instanceId: string;
-      readonly instanceOrdinal: number;
-      readonly kind: "inventory-changed";
-      readonly owner: Extract<MaterialRef, { readonly kind: "character-play" }>;
-    })
-  | (MechanicsEventBase & {
-      readonly combatant: EntityRef;
-      readonly kind: "turn-changed";
-    })
-  | (MechanicsEventBase & {
-      readonly kind: "register-changed";
-      readonly program: OccurrenceRef;
-      readonly registerId: string;
+      readonly kind: "source-ending";
+      readonly occurrence: OccurrenceGenerationRef;
     });
 
-export interface CapturedMechanicsEvent {
-  readonly event: Readonly<MechanicsEvent>;
-  readonly subscribers: Readonly<SubscriberSnapshot>;
-}
+/** Events emitted by an operation stage, never by either occurrence-end phase. */
+export type MechanicsPostEvent = Exclude<
+  MechanicsEvent,
+  { readonly kind: "source-ending" }
+>;
 
 export type AppliedMechanicsOperation = Readonly<MechanicsOperationExecution>;
 
-export type ResolutionGroupPlanResult =
+export type ResolutionGroupSimulationResult =
   | {
       readonly analysis: Extract<
         ResolutionGroupAnalysis,
@@ -162,28 +120,34 @@ export type ResolutionGroupPlanResult =
       readonly orderedProposalIds: readonly string[];
       readonly requirement: Readonly<DiceRollRequirement>;
       readonly status: "needs-observation";
+      readonly transaction: Readonly<MechanicsTransaction>;
     }
   | {
-      readonly action: Readonly<JournalActionDraft>;
+      readonly actionFacts: readonly Readonly<ActionFactGuard>[];
       readonly analysis: Exclude<ResolutionGroupAnalysis, { readonly kind: "rejected" }>;
-      readonly events: readonly Readonly<MechanicsEvent>[];
+      readonly consequences: readonly Readonly<MechanicsOperationConsequence>[];
+      readonly events: readonly Readonly<MechanicsPostEvent>[];
       readonly executions: readonly (
         | Readonly<MechanicsOperationExecution>
         | Readonly<MechanicsOperationNoChange>
       )[];
       readonly orderedProposalIds: readonly string[];
-      readonly status: "planned";
+      readonly stages: readonly Readonly<MechanicsOperationStage>[];
+      readonly state: Readonly<MechanicsCausalState>;
+      readonly status: "simulated";
       readonly transaction: Readonly<MechanicsTransaction>;
-      readonly world: Readonly<MechanicsWorld>;
     }
   | {
+      readonly actionFacts: readonly [];
       readonly analysis: Exclude<ResolutionGroupAnalysis, { readonly kind: "rejected" }>;
+      readonly consequences: readonly [];
       readonly events: readonly [];
       readonly executions: readonly Readonly<MechanicsOperationNoChange>[];
       readonly orderedProposalIds: readonly string[];
+      readonly stages: readonly [];
+      readonly state: Readonly<MechanicsCausalState>;
       readonly status: "no-change";
       readonly transaction: Readonly<MechanicsTransaction>;
-      readonly world: Readonly<MechanicsWorld>;
     }
   | {
       readonly operationId: string | null;
@@ -193,19 +157,30 @@ export type ResolutionGroupPlanResult =
         | "invalid-context"
         | "unexpected-ordering"
         | "invalid-ordering"
-        | "post-event-derivation"
         | MechanicsOperationRejection;
       readonly status: "rejected";
     };
 
-export type MechanicsPostEventDerivationResult =
-  | { readonly events: readonly Readonly<MechanicsEvent>[]; readonly status: "derived" }
+export type MechanicsSourceEndingEventDerivationResult =
   | {
-      readonly reason: "invalid-before" | "invalid-after" | "execution-mismatch";
+      readonly events: readonly Readonly<
+        Extract<MechanicsEvent, { kind: "source-ending" }>
+      >[];
+      readonly status: "derived";
+    }
+  | {
+      readonly reason: "invalid-end-wave";
       readonly status: "rejected";
     };
 
-export interface MechanicsEndWaveEvents {
-  readonly events: readonly Readonly<MechanicsEvent>[];
-  readonly status: "derived";
-}
+/** Exact kernel finalization plus its ratified (currently empty) event grammar. */
+export type MechanicsEndWaveFinalizationResult =
+  | {
+      readonly events: readonly [];
+      readonly status: "finalized";
+      readonly world: Readonly<MechanicsWorld>;
+    }
+  | {
+      readonly reason: MechanicsWorldSimulationRejection;
+      readonly status: "rejected";
+    };

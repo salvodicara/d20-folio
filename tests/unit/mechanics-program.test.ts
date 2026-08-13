@@ -24,7 +24,10 @@ const HERO = {
   uid: "user",
 } as const;
 const SELF = { entityId: "self", material: HERO } as const;
-const ROOT = { material: HERO, occurrenceId: "root-1" } as const;
+const ROOT = {
+  occurrence: { material: HERO, occurrenceId: "root-1" },
+  ordinal: 1,
+} as const;
 const FIXED_ONE = { kind: "fixed", value: 1 } as const;
 const ROLL_8D6 = {
   terms: [
@@ -101,6 +104,60 @@ function world(nextOccurrenceOrdinal = 1, materialEpoch = 0): MechanicsWorld {
   return parsed.value;
 }
 
+function worldWithFamiliar(ordinal: number): MechanicsWorld {
+  const base = createEmptyCharacterMaterialState(5, HERO, {
+    hitPoints: {
+      current: 20,
+      temporary: { current: 0, sourceOccurrence: null },
+    },
+    zeroHitPoints: null,
+  });
+  const parsed = parseMechanicsWorld({
+    documents: [
+      {
+        kind: "character",
+        material: HERO,
+        state: {
+          ...base,
+          entities: {
+            familiar: {
+              availability: "present",
+              exhaustion: 0,
+              kind: "creature",
+              label: "",
+              ordinal,
+              overrides: {
+                armorClass: null,
+                hitPointMaximum: null,
+                initiativeBonus: null,
+                speedFt: null,
+              },
+              ownerOccurrence: null,
+              resources: {},
+              template: {
+                kind: "catalogue-companion",
+                sourceId: "familiar",
+                variantId: "owl",
+              },
+              vitals: {
+                hitPoints: {
+                  current: 1,
+                  temporary: { current: 0, sourceOccurrence: null },
+                },
+                zeroHitPoints: null,
+              },
+            },
+          },
+          nextEntityOrdinal: ordinal + 1,
+        },
+      },
+    ],
+    scope: HERO,
+  });
+  if (!parsed.ok) throw new Error(parsed.reason);
+  return parsed.value;
+}
+
 function worldWithProgramRoot(
   program: MechanicsProgram,
   phaseState: ProgramPhaseState,
@@ -129,6 +186,7 @@ function worldWithProgramRoot(
             "root-1": {
               authority,
               endRules: [],
+              ending: null,
               kind: "program",
               ordinal,
               phaseState,
@@ -163,7 +221,6 @@ function intent(
         kind: "create",
         materialEpoch: 0,
         next: { execution: 1, phaseId: "resolve", triggerEventId: null },
-        ordinal: 1,
         root: ROOT,
       },
       trigger: { kind: "invocation" },
@@ -214,6 +271,51 @@ function conformed(value: unknown): MechanicsProgram {
 }
 
 describe("MechanicsProgram terminal kernel", () => {
+  it("rejects an entity answer from a replaced physical generation", () => {
+    const program = conformed({
+      id: "exact-entity-answer",
+      phases: [
+        {
+          inputs: [
+            {
+              eligibility: "creature",
+              inputId: "target",
+              kind: "entities",
+              maximum: FIXED_ONE,
+              minimum: FIXED_ONE,
+              multiplicity: "set",
+              when: null,
+            },
+          ],
+          phaseId: "resolve",
+          steps: [],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    });
+    const snapshot = worldWithFamiliar(2);
+    const request = intent(program);
+    const answer = {
+      inputId: "target",
+      kind: "entities" as const,
+      targets: [{ entityId: "familiar", material: HERO, ordinal: 1 }],
+    };
+
+    expect(reviewMechanicsIntent(request, [answer], snapshot)).toMatchObject({
+      reason: "invalid-answer",
+      status: "rejected",
+    });
+    expect(
+      reviewMechanicsIntent(
+        request,
+        [{ ...answer, targets: [{ ...answer.targets[0], ordinal: 2 }] }],
+        snapshot
+      ).status
+    ).toBe("reviewed");
+  });
+
   it("is exact, canonical, frozen, bounded and rejects dangling dice references", () => {
     const authored = {
       id: "exact-program",
@@ -451,7 +553,10 @@ describe("MechanicsProgram terminal kernel", () => {
     expect(
       deriveMechanicsRequirements(
         withFrame(proposed, {
-          rootReceipt: { ...proposed.frame.rootReceipt, ordinal: 2 },
+          rootReceipt: {
+            ...proposed.frame.rootReceipt,
+            root: { ...proposed.frame.rootReceipt.root, ordinal: 2 },
+          },
         }),
         after
       )
@@ -495,6 +600,21 @@ describe("MechanicsProgram terminal kernel", () => {
     );
 
     expect(deriveMechanicsRequirements(proposed, snapshot).status).toBe("derived");
+    expect(
+      deriveMechanicsRequirements(
+        withFrame(proposed, {
+          invocation: {
+            kind: "program-root",
+            occurrence: { ...ROOT, ordinal: 2 },
+          },
+          rootReceipt: {
+            ...proposed.frame.rootReceipt,
+            root: { ...ROOT, ordinal: 2 },
+          },
+        }),
+        snapshot
+      )
+    ).toMatchObject({ reason: "invalid-root-occurrence", status: "rejected" });
     expect(
       deriveMechanicsRequirements(
         withFrame(proposed, {

@@ -850,7 +850,7 @@ describe("flat bounded action journal", () => {
 
     const next = actionDraft(sharedOnlyWorld, {
       id: "later-shared-only-write",
-      actor: { material: SHARED, entityId: "shared-actor" },
+      actor: { material: SHARED, entityId: "shared-actor", ordinal: 1 },
       mutations: [
         {
           target: SHARED,
@@ -895,6 +895,9 @@ describe("flat bounded action journal", () => {
     for (const actor of [
       { kind: "material-authority", material: SHARED, authority: "environment" },
       { kind: "material-authority", material: CHARACTER, authority: "system" },
+      { material: SHARED, entityId: "shared-actor" },
+      { material: SHARED, entityId: "self" },
+      { material: CHARACTER, entityId: "self", ordinal: 1 },
       {
         kind: "material-authority",
         material: CHARACTER,

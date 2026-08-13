@@ -2,7 +2,7 @@
 
 import { exactConformer, type ExactSchemaContext } from "@/lib/exact-schema";
 import { materialRefKey } from "@/lib/action-journal";
-import { conformOccurrenceRef } from "@/lib/mechanics-reference-schema";
+import { conformOccurrenceGenerationRef } from "@/lib/mechanics-reference-schema";
 import {
   CREATURE_DAMAGE_INPUT_SCHEMA,
   CREATURE_HEALING_INPUT_SCHEMA,
@@ -76,7 +76,7 @@ const VITALS_CONTEXT: ExactSchemaContext<
   customs: {
     "death-save-count": (value) => integer(value, 0, 2),
     "nonnegative-integer": (value) => integer(value, 0, MAX_HIT_POINTS),
-    "occurrence-ref": conformOccurrenceRef,
+    "occurrence-generation-ref": conformOccurrenceGenerationRef,
     "positive-integer": (value) => integer(value, 1, MAX_HIT_POINTS),
   },
   refs: {},
@@ -129,8 +129,10 @@ function sameOccurrence(
     left === right ||
     (left !== null &&
       right !== null &&
-      left.occurrenceId === right.occurrenceId &&
-      materialRefKey(left.material) === materialRefKey(right.material))
+      left.ordinal === right.ordinal &&
+      left.occurrence.occurrenceId === right.occurrence.occurrenceId &&
+      materialRefKey(left.occurrence.material) ===
+        materialRefKey(right.occurrence.material))
   );
 }
 

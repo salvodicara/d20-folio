@@ -24,7 +24,10 @@ const material = {
   kind: "character-play",
   uid: "user",
 } as const;
-const source = { material, occurrenceId: "ward" } as const;
+const source = {
+  occurrence: { material, occurrenceId: "ward" },
+  ordinal: 1,
+} as const;
 
 function alive(current = 10, temporary = 0): CreatureVitals {
   return {
@@ -260,7 +263,10 @@ describe("healing, THP, stabilization, and death saves", () => {
     expect(
       clearTemporaryHitPoints(alive(10, 5), {
         kind: "source",
-        sourceOccurrence: { material, occurrenceId: "other" },
+        sourceOccurrence: {
+          occurrence: { material, occurrenceId: "other" },
+          ordinal: 1,
+        },
       })
     ).toMatchObject({ status: "already-applied" });
     expect(

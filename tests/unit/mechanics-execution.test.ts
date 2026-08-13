@@ -1,27 +1,50 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { resolveDamage } from "@/lib/damage";
 import { addOccurrence } from "@/lib/mechanic-occurrences";
 import {
+  mechanicsAuthorityDefinitionFingerprint,
+  mechanicsAuthorityDefinitionKey,
+} from "@/lib/mechanics-authority";
+import {
+  mechanicsDefinitionFactAddress,
+  mechanicsInstallationFactAddress,
+} from "@/lib/mechanics-authority-ref";
+import { mechanicsCapabilitySnapshotFingerprint } from "@/lib/mechanics-capability";
+import {
   analyzeResolutionGroup,
   conformOrderingObservation,
   conformResolutionGroup,
-  deriveMechanicsEndWaveEvents,
-  deriveMechanicsPostEvents,
+  deriveMechanicsSourceEndingEvents,
+  finalizeMechanicsEndWaveWithEvents,
   orderResolutionPartitions,
-  planResolutionGroup,
+  simulateResolutionGroup,
 } from "@/lib/mechanics-execution";
 import { createEmptyCharacterMaterialState } from "@/lib/material-state";
-import { parseMechanicsWorld } from "@/lib/mechanics-world";
+import {
+  beginMechanicsCausalState,
+  discoverMechanicsEndWave,
+  finalizeMechanicsEndWave,
+  latchMechanicsEndWave,
+  parseMechanicsWorld,
+} from "@/lib/mechanics-world";
 import type { MechanicsInvocationRef } from "@/types/mechanics-authority-ref";
-import type { EntityRef } from "@/types/mechanics-reference";
+import type {
+  MechanicsAuthorityDefinition,
+  MechanicsAuthoritySnapshot,
+} from "@/types/mechanics-authority";
+import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type {
   MechanicsOperation,
   MechanicsOperationCause,
 } from "@/types/mechanics-operation";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
-import type { MechanicsWorld } from "@/types/mechanics-world";
+import type {
+  MechanicsCausalState,
+  MechanicsEndWaveReceipt,
+  MechanicsWorld,
+} from "@/types/mechanics-world";
 import type { ResourceRef, ResourceSpec } from "@/types/resource";
 import type { CreatureVitals } from "@/types/vitals";
 
@@ -31,8 +54,16 @@ const MATERIAL = {
   uid: "user-1",
 } as const;
 const SELF = { entityId: "self", material: MATERIAL } as const satisfies EntityRef;
-const FIRST = { entityId: "first", material: MATERIAL } as const satisfies EntityRef;
-const SECOND = { entityId: "second", material: MATERIAL } as const satisfies EntityRef;
+const FIRST = {
+  entityId: "first",
+  material: MATERIAL,
+  ordinal: 1,
+} as const satisfies EntityRef;
+const SECOND = {
+  entityId: "second",
+  material: MATERIAL,
+  ordinal: 2,
+} as const satisfies EntityRef;
 const MECHANICS_REVISION = canonicalFingerprint({ fixture: "mechanics-execution" });
 const CAPABILITY = {
   capabilityId: "execution",
@@ -83,15 +114,87 @@ const AUTHORITY = {
   staticBindings: {},
 } as const satisfies MechanicsProgramAuthorityReceipt;
 
+const AUTHORITIES_BY_CAUSE = new Map<
+  string,
+  Readonly<MechanicsProgramAuthorityReceipt>
+>();
+
+function compareCodeUnits(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
+function authorityDefinition(
+  authority: Readonly<MechanicsProgramAuthorityReceipt>
+): MechanicsAuthorityDefinition {
+  const definition: MechanicsAuthorityDefinition = {
+    actorSpec: { kind: "role", role: "owner" },
+    anchors: authority.anchors,
+    definitionGuards: [
+      {
+        address: mechanicsDefinitionFactAddress(authority.snapshot.ref.definition),
+        expected: {
+          present: true,
+          value: mechanicsCapabilitySnapshotFingerprint(authority.snapshot),
+        },
+        lifecycle: "commit",
+        owner: authority.installation.owner,
+      },
+    ],
+    installation: authority.installation,
+    installationGuards: [],
+    owner: authority.installation.owner,
+    snapshot: authority.snapshot,
+    source: authority.source,
+    staticBindings: authority.staticBindings,
+  };
+  return {
+    ...definition,
+    installationGuards: [
+      {
+        address: mechanicsInstallationFactAddress(authority.installation),
+        expected: {
+          present: true,
+          value: mechanicsAuthorityDefinitionFingerprint(definition),
+        },
+        lifecycle: "commit",
+        owner: authority.installation.owner,
+      },
+    ],
+  };
+}
+
+function authoritySnapshotFor(
+  causes: readonly Readonly<MechanicsOperationCause>[]
+): MechanicsAuthoritySnapshot {
+  const definitions = [
+    ...new Map(
+      causes.flatMap((cause) => {
+        if (cause.invocation.kind !== "installed-capability") return [];
+        const authority = AUTHORITIES_BY_CAUSE.get(cause.causeId);
+        if (!authority) return [];
+        const definition = authorityDefinition(authority);
+        return [[mechanicsAuthorityDefinitionKey(definition), definition] as const];
+      })
+    ).values(),
+  ].sort((left, right) =>
+    compareCodeUnits(
+      mechanicsAuthorityDefinitionKey(left),
+      mechanicsAuthorityDefinitionKey(right)
+    )
+  );
+  return { definitions };
+}
+
 function operationCause(
   authority: MechanicsProgramAuthorityReceipt,
   invocation: MechanicsInvocationRef
 ): MechanicsOperationCause {
-  return {
-    authority,
+  const cause: MechanicsOperationCause = {
     causeId: canonicalFingerprint({ authority, invocation }),
     invocation,
   };
+  AUTHORITIES_BY_CAUSE.set(cause.causeId, authority);
+  return cause;
 }
 
 function installedCause(
@@ -103,10 +206,10 @@ function installedCause(
   });
 }
 
-function programRootCause(occurrenceId: string): MechanicsOperationCause {
+function programRootCause(occurrence: OccurrenceGenerationRef): MechanicsOperationCause {
   return operationCause(AUTHORITY, {
     kind: "program-root",
-    occurrence: { material: MATERIAL, occurrenceId },
+    occurrence,
   });
 }
 
@@ -175,13 +278,13 @@ function world(): Readonly<MechanicsWorld> {
   return parsed.value;
 }
 
-function worldWithProgramRoot(): Readonly<MechanicsWorld> {
+function worldWithProgramRoot(nextOccurrenceOrdinal = 1): Readonly<MechanicsWorld> {
   const basis = world();
   const document = basis.documents[0];
   if (document?.kind !== "character") throw new Error("character fixture");
   const occurrences = addOccurrence(
     {
-      nextOccurrenceOrdinal: document.state.nextOccurrenceOrdinal,
+      nextOccurrenceOrdinal,
       occurrences: document.state.occurrences,
     },
     "root",
@@ -199,6 +302,46 @@ function worldWithProgramRoot(): Readonly<MechanicsWorld> {
   });
   if (!parsed.ok) throw new Error("program-root fixture");
   return parsed.value;
+}
+
+function occurrenceGeneration(
+  value: Readonly<MechanicsWorld>,
+  occurrenceId: string
+): OccurrenceGenerationRef {
+  const occurrence = value.documents[0]?.state.occurrences[occurrenceId];
+  if (!occurrence) throw new Error("occurrence fixture");
+  return {
+    occurrence: { material: MATERIAL, occurrenceId },
+    ordinal: occurrence.ordinal,
+  };
+}
+
+function requestedRootWave(
+  value: Readonly<MechanicsWorld>
+): Readonly<MechanicsEndWaveReceipt> {
+  const discovery = discoverMechanicsEndWave(value, {
+    endRequests: [occurrenceGeneration(value, "root")],
+  });
+  if (discovery.status !== "discovered") throw new Error("end-wave fixture");
+  return discovery.wave;
+}
+
+function dueRootWorld(): {
+  readonly due: Readonly<MechanicsWorld>;
+  readonly wave: Readonly<MechanicsEndWaveReceipt>;
+} {
+  const due = structuredClone(worldWithProgramRoot());
+  const root = due.documents[0]?.state.occurrences.root;
+  if (!root) throw new Error("program-root fixture");
+  const boundary = {
+    clock: { epoch: 0, material: MATERIAL },
+    elapsedSeconds: 0,
+    kind: "time-reached",
+  } as const;
+  root.endRules = [boundary];
+  const discovery = discoverMechanicsEndWave(due, { boundaries: [boundary] });
+  if (discovery.status !== "discovered") throw new Error("deadline-wave fixture");
+  return { due: discovery.world, wave: discovery.wave };
 }
 
 function damageOperation(
@@ -262,19 +405,31 @@ function group(
     proposalId: string;
   }[]
 ) {
-  return { basis: world(), groupId: "group-1", proposals };
+  return { groupId: "group-1", proposals };
+}
+
+function causalState(value: unknown = world()): Readonly<MechanicsCausalState> {
+  const result = beginMechanicsCausalState(value);
+  if (!result.ok) throw new Error(`invalid causal fixture: ${result.reason}`);
+  return result.value;
 }
 
 function context(
   ordering: unknown = null,
-  causes: readonly MechanicsOperationCause[] = [INSTALLED_CAUSE]
+  causes: readonly MechanicsOperationCause[] = [INSTALLED_CAUSE],
+  overrides: {
+    readonly authoritySnapshot?: Readonly<MechanicsAuthoritySnapshot>;
+    readonly state?: Readonly<MechanicsCausalState>;
+  } = {}
 ) {
   return {
     actionId: "action-1",
     actor: SELF,
+    authoritySnapshot: overrides.authoritySnapshot ?? authoritySnapshotFor(causes),
     causes,
     factGuards: [],
     ordering,
+    state: overrides.state ?? causalState(),
   };
 }
 
@@ -300,7 +455,6 @@ describe("simultaneous resolution groups", () => {
   it("keeps Fireball targets disjoint against one immutable basis", () => {
     const basis = world();
     const value = {
-      basis,
       groupId: "fireball",
       proposals: [
         { operation: damageOperation("damage-a", FIRST), proposalId: "target-a" },
@@ -309,25 +463,54 @@ describe("simultaneous resolution groups", () => {
     };
     const result = analyzeResolutionGroup(value);
     expect(result.kind).toBe("disjoint");
-    expect(JSON.stringify(basis)).toBe(JSON.stringify(value.basis));
+    expect(JSON.stringify(basis)).toBe(JSON.stringify(world()));
   });
 
-  it("plans a disjoint group as one atomic action and derives each target event", () => {
-    const basis = world();
-    const result = planResolutionGroup(
+  it("orders Unicode partitions by code unit without consulting the host locale", () => {
+    const value = group([
       {
-        basis,
+        operation: damageOperation("danno-é", { ...FIRST, entityId: "éclair" }),
+        proposalId: "bersaglio-é",
+      },
+      {
+        operation: damageOperation("danno-Ω", { ...SECOND, entityId: "Ωmega" }),
+        proposalId: "bersaglio-Ω",
+      },
+    ]);
+    const localeCompare = vi
+      .spyOn(String.prototype, "localeCompare")
+      .mockImplementation(() => {
+        throw new Error("locale collation must not order mechanics receipts");
+      });
+    try {
+      const result = analyzeResolutionGroup(value);
+      expect(result.kind).toBe("disjoint");
+      if (result.kind !== "disjoint") return;
+      const collisionKeys = result.partitions.map(
+        ({ collisionKeys: [collisionKey] }) => collisionKey
+      );
+      expect(collisionKeys).toEqual([...collisionKeys].sort());
+    } finally {
+      localeCompare.mockRestore();
+    }
+  });
+
+  it("simulates a disjoint group without drafting an action or cleaning its world", () => {
+    const basis = world();
+    const result = simulateResolutionGroup(
+      {
         groupId: "fireball",
         proposals: [
           { operation: damageOperation("damage-a", FIRST), proposalId: "target-a" },
           { operation: damageOperation("damage-b", SECOND), proposalId: "target-b" },
         ],
       },
-      context()
+      context(null, [INSTALLED_CAUSE], { state: causalState(basis) })
     );
-    expect(result.status).toBe("planned");
-    if (result.status !== "planned") return;
-    expect(result.action.id).toBe("action-1");
+    expect(result.status).toBe("simulated");
+    if (result.status !== "simulated") return;
+    expect(result).not.toHaveProperty("action");
+    expect(result.stages).toHaveLength(2);
     expect(result.transaction.causes).toEqual([INSTALLED_CAUSE]);
     expect(
       result.transaction.operations.every(
@@ -343,24 +526,61 @@ describe("simultaneous resolution groups", () => {
 
   it("creates a program root from its exact authority cause without fabricating target events", () => {
     const operation = programRootCreateOperation();
-    const result = planResolutionGroup(
+    const result = simulateResolutionGroup(
       {
-        basis: world(),
         groupId: "program-root",
         proposals: [{ operation, proposalId: "root" }],
       },
       context()
     );
-    expect(result.status).toBe("planned");
-    if (result.status !== "planned") return;
+    expect(result.status).toBe("simulated");
+    if (result.status !== "simulated") return;
     expect(result.events).toEqual([]);
-    const root = result.world.documents[0]?.state.occurrences.root;
+    const root = result.state.world.documents[0]?.state.occurrences.root;
     expect(root).toMatchObject({ authority: AUTHORITY, kind: "program" });
     expect(root).not.toHaveProperty("target");
   });
 
-  it("derives condition events only for effect occurrences under a live program root", () => {
-    const cause = programRootCause("root");
+  it("returns an exact occurrence-end consequence without removing or announcing the source", () => {
+    const basis = worldWithProgramRoot();
+    const occurrence = occurrenceGeneration(basis, "root");
+    const operation = {
+      causeId: INSTALLED_CAUSE.causeId,
+      kind: "occurrence-end",
+      occurrence,
+      operationId: "request-root-end",
+    } as const satisfies MechanicsOperation;
+    const result = simulateResolutionGroup(
+      {
+        groupId: "request-root-end",
+        proposals: [{ operation, proposalId: "root-end" }],
+      },
+      context(null, [INSTALLED_CAUSE], { state: causalState(basis) })
+    );
+
+    expect(result.status).toBe("simulated");
+    if (result.status !== "simulated") return;
+    expect(result).not.toHaveProperty("action");
+    const definition = authorityDefinition(AUTHORITY);
+    expect(result.actionFacts).toEqual([
+      ...definition.definitionGuards,
+      ...definition.installationGuards,
+    ]);
+    expect(result.consequences).toEqual([
+      {
+        causeId: INSTALLED_CAUSE.causeId,
+        kind: "occurrence-end",
+        occurrence,
+        operationId: "request-root-end",
+      },
+    ]);
+    expect(result.events).toEqual([]);
+    expect(occurrenceGeneration(result.state.world, "root")).toEqual(occurrence);
+  });
+
+  it("does not invent an event for a condition projection change", () => {
+    const basis = worldWithProgramRoot();
+    const cause = programRootCause(occurrenceGeneration(basis, "root"));
     const operation = {
       causeId: cause.causeId,
       conditionImmunityOverride: null,
@@ -375,25 +595,18 @@ describe("simultaneous resolution groups", () => {
       },
       occurrenceId: "blind-first",
       operationId: "create-blind-first",
+      parent: occurrenceGeneration(basis, "root"),
     } as const satisfies MechanicsOperation;
-    const result = planResolutionGroup(
+    const result = simulateResolutionGroup(
       {
-        basis: worldWithProgramRoot(),
         groupId: "condition-effect",
         proposals: [{ operation, proposalId: "condition" }],
       },
-      context(null, [cause])
+      context(null, [cause], { state: causalState(basis) })
     );
-    expect(result.status).toBe("planned");
-    if (result.status !== "planned") return;
-    expect(result.events).toMatchObject([
-      {
-        conditionId: "blinded",
-        kind: "condition-changed",
-        present: true,
-        target: FIRST,
-      },
-    ]);
+    expect(result.status).toBe("simulated");
+    if (result.status !== "simulated") return;
+    expect(result.events).toEqual([]);
   });
 
   it("requires ordering for two damage packets against the same target", () => {
@@ -425,7 +638,7 @@ describe("simultaneous resolution groups", () => {
       { operation: damageOperation("damage-a", FIRST), proposalId: "a" },
       { operation: damageOperation("damage-b", FIRST), proposalId: "b" },
     ]);
-    const pending = planResolutionGroup(value, context());
+    const pending = simulateResolutionGroup(value, context());
     expect(pending.status).toBe("needs-ordering");
     if (pending.status !== "needs-ordering") return;
     const ordering = {
@@ -436,11 +649,11 @@ describe("simultaneous resolution groups", () => {
       })),
       requestId: pending.request.requestId,
     };
-    const planned = planResolutionGroup(value, context(ordering));
-    expect(planned.status).toBe("planned");
-    if (planned.status !== "planned") return;
-    expect(planned.orderedProposalIds).toEqual(["b", "a"]);
-    expect(planned.events.map(({ operationId }) => operationId)).toEqual([
+    const simulated = simulateResolutionGroup(value, context(ordering));
+    expect(simulated.status).toBe("simulated");
+    if (simulated.status !== "simulated") return;
+    expect(simulated.orderedProposalIds).toEqual(["b", "a"]);
+    expect(simulated.events.map(({ operationId }) => operationId)).toEqual([
       "damage-b",
       "damage-a",
     ]);
@@ -451,7 +664,7 @@ describe("simultaneous resolution groups", () => {
       { operation: damageOperation("damage-a", FIRST), proposalId: "a" },
     ]);
     expect(
-      planResolutionGroup(
+      simulateResolutionGroup(
         disjoint,
         context({ kind: "ordering", partitions: [], requestId: "stale" })
       )
@@ -461,18 +674,18 @@ describe("simultaneous resolution groups", () => {
     const missing = {
       entityId: "missing",
       material: MATERIAL,
+      ordinal: 99,
     } as const satisfies EntityRef;
     expect(
-      planResolutionGroup(
+      simulateResolutionGroup(
         {
-          basis,
           groupId: "atomic-rejection",
           proposals: [
             { operation: damageOperation("valid", FIRST), proposalId: "valid" },
             { operation: damageOperation("invalid", missing), proposalId: "invalid" },
           ],
         },
-        context()
+        context(null, [INSTALLED_CAUSE], { state: causalState(basis) })
       )
     ).toMatchObject({ reason: "missing-target", status: "rejected" });
     expect(JSON.stringify(basis)).toBe(JSON.stringify(world()));
@@ -481,22 +694,17 @@ describe("simultaneous resolution groups", () => {
   it("rejects missing, forged, excess, and unused authority causes at the context boundary", () => {
     const operation = damageOperation("damage", FIRST);
     const value = group([{ operation, proposalId: "damage" }]);
-    const missingCauses = {
-      actionId: "action-1",
-      actor: SELF,
-      factGuards: [],
-      ordering: null,
-    };
-    expect(planResolutionGroup(value, missingCauses)).toMatchObject({
+    const missingCauses = { ...context(), causes: undefined };
+    expect(simulateResolutionGroup(value, missingCauses)).toMatchObject({
       reason: "invalid-context",
       status: "rejected",
     });
-    expect(planResolutionGroup(value, { ...context(), causes: [] })).toMatchObject({
+    expect(simulateResolutionGroup(value, { ...context(), causes: [] })).toMatchObject({
       reason: "invalid-context",
       status: "rejected",
     });
     expect(
-      planResolutionGroup(value, {
+      simulateResolutionGroup(value, {
         ...context(),
         causes: [
           {
@@ -506,7 +714,9 @@ describe("simultaneous resolution groups", () => {
         ],
       })
     ).toMatchObject({ reason: "invalid-context", status: "rejected" });
-    expect(planResolutionGroup(value, { ...context(), unexpected: true })).toMatchObject({
+    expect(
+      simulateResolutionGroup(value, { ...context(), unexpected: true })
+    ).toMatchObject({
       reason: "invalid-context",
       status: "rejected",
     });
@@ -516,10 +726,26 @@ describe("simultaneous resolution groups", () => {
       staticBindings: { unused: 1 },
     });
     const causes = [INSTALLED_CAUSE, unused].sort((left, right) =>
-      left.causeId.localeCompare(right.causeId)
+      compareCodeUnits(left.causeId, right.causeId)
     );
-    expect(planResolutionGroup(value, context(null, causes))).toMatchObject({
+    expect(simulateResolutionGroup(value, context(null, causes))).toMatchObject({
       reason: "invalid-context",
+      status: "rejected",
+    });
+  });
+
+  it("rejects an installed cause when the trusted authority snapshot is empty", () => {
+    const operation = damageOperation("damage", FIRST);
+    expect(
+      simulateResolutionGroup(
+        group([{ operation, proposalId: "damage" }]),
+        context(null, [INSTALLED_CAUSE], {
+          authoritySnapshot: { definitions: [] },
+        })
+      )
+    ).toMatchObject({
+      operationId: operation.operationId,
+      reason: "invalid-cause",
       status: "rejected",
     });
   });
@@ -539,121 +765,240 @@ describe("simultaneous resolution groups", () => {
     });
   });
 
-  it("emits one damage-taken event for one multipart packet", () => {
-    const before = world();
+  it("emits one authentic damage event from its exact transaction stage", () => {
+    const basis = world();
     const operation = damageOperation("mixed", FIRST, "mixed-packet", [3, 4]);
-    const result = deriveMechanicsPostEvents(before, before, [
+    const simulationContext = context();
+    const result = simulateResolutionGroup(
       {
-        facts: {
-          becameDead: false,
-          concentrationDifficultyClass: 10,
-          damageTaken: 7,
-          deathSaveFailuresAdded: 0,
-          hitPointsLost: 7,
-          instantDeath: false,
-          overflowDamage: 0,
-          remainedAtOne: false,
-          temporaryHitPointsLost: 0,
-          wouldDropToZero: false,
-        },
-        kind: "creature-damage",
-        operation,
-        operationId: operation.operationId,
-        status: "applied",
+        groupId: "mixed-damage",
+        proposals: [{ operation, proposalId: "mixed" }],
       },
-    ]);
-    expect(result).toMatchObject({
-      events: [
-        {
-          attacker: null,
-          criticalHit: false,
-          kind: "damage-taken",
-          resolution: {
-            packet: {
-              packetId: "mixed-packet",
-              target: FIRST,
-            },
+      { ...simulationContext, state: causalState(basis) }
+    );
+
+    expect(result.status).toBe("simulated");
+    if (result.status !== "simulated") return;
+    expect(result.stages).toHaveLength(1);
+    const stage = result.stages[0];
+    expect(stage).toBeDefined();
+    if (!stage) return;
+    expect(stage.execution).toBe(result.executions[0]);
+    expect(stage.before.world).toEqual(basis);
+    expect(stage.after).toBe(result.state);
+    expect(stage.before).not.toEqual(stage.after);
+    expect(stage.before).toEqual(result.stages[0]?.before);
+    expect(stage.after).toBe(result.state);
+    expect(result.events).toMatchObject([
+      {
+        attacker: null,
+        criticalHit: false,
+        kind: "damage-taken",
+        resolution: {
+          packet: {
+            packetId: "mixed-packet",
+            target: FIRST,
           },
         },
-      ],
-      status: "derived",
-    });
+      },
+    ]);
+  });
+
+  it("does not expose a boundary for caller-attested execution receipts", async () => {
+    const publicApi = await import("@/lib/mechanics-execution");
+    expect(publicApi).not.toHaveProperty("deriveMechanicsPostEvents");
   });
 
   it("carries authoritative attacker/critical evidence into one damage event", () => {
-    const before = world();
     const operation = damageOperation("strike", FIRST, "strike-packet", [5], {
       attacker: SECOND,
       criticalHit: true,
       delivery: "attack",
     });
-    const result = deriveMechanicsPostEvents(before, before, [
+    const result = simulateResolutionGroup(
       {
-        facts: {
-          becameDead: false,
-          concentrationDifficultyClass: 10,
-          damageTaken: 5,
-          deathSaveFailuresAdded: 0,
-          hitPointsLost: 5,
-          instantDeath: false,
-          overflowDamage: 0,
-          remainedAtOne: false,
-          temporaryHitPointsLost: 0,
-          wouldDropToZero: false,
-        },
-        kind: "creature-damage",
-        operation,
-        operationId: operation.operationId,
-        status: "applied",
+        groupId: "strike-damage",
+        proposals: [{ operation, proposalId: "strike" }],
       },
+      context()
+    );
+    expect(result.status).toBe("simulated");
+    if (result.status !== "simulated") return;
+    expect(result.events).toEqual([
+      expect.objectContaining({
+        attacker: SECOND,
+        criticalHit: true,
+        kind: "damage-taken",
+      }),
     ]);
-    expect(result).toMatchObject({
-      events: [
-        expect.objectContaining({
-          attacker: SECOND,
-          criticalHit: true,
-          kind: "damage-taken",
-        }),
-      ],
-      status: "derived",
-    });
   });
 
-  it("derives source-end events before the source occurrence is removed", () => {
-    const before = worldWithProgramRoot();
-    const result = deriveMechanicsEndWaveEvents(
-      before,
-      [
+  it("binds damage event identity to the full resolution, attacker, and critical fact", () => {
+    const damageEventId = (
+      operation: Extract<MechanicsOperation, { kind: "creature-damage" }>
+    ): string => {
+      const result = simulateResolutionGroup(
         {
-          causes: [{ kind: "requested" }],
-          occurrence: { material: MATERIAL, occurrenceId: "root" },
+          groupId: "damage-event-identity",
+          proposals: [{ operation, proposalId: "damage" }],
         },
-      ],
-      "end-wave"
-    );
-    expect(result).toMatchObject({
+        context()
+      );
+      if (result.status !== "simulated") throw new Error("damage must simulate");
+      const event = result.events.find(({ kind }) => kind === "damage-taken");
+      if (!event) throw new Error("damage event must exist");
+      return event.eventId;
+    };
+
+    const identities = [
+      damageEventId(
+        damageOperation("same-operation", FIRST, "same-packet", [5], {
+          delivery: "attack",
+        })
+      ),
+      damageEventId(
+        damageOperation("same-operation", FIRST, "same-packet", [5], {
+          attacker: SECOND,
+          delivery: "attack",
+        })
+      ),
+      damageEventId(
+        damageOperation("same-operation", FIRST, "same-packet", [5], {
+          criticalHit: true,
+          delivery: "attack",
+        })
+      ),
+      damageEventId(
+        damageOperation("same-operation", FIRST, "same-packet", [6], {
+          delivery: "attack",
+        })
+      ),
+    ];
+
+    expect(new Set(identities).size).toBe(identities.length);
+  });
+
+  it("delivers source-ending while readable and authenticates the exact empty finalization grammar", () => {
+    expect(finalizeMechanicsEndWaveWithEvents(null, null)).toMatchObject({
+      reason: "invalid-world",
+      status: "rejected",
+    });
+    const before = worldWithProgramRoot();
+    const occurrence = occurrenceGeneration(before, "root");
+    const wave = requestedRootWave(before);
+    const sourceEnding = deriveMechanicsSourceEndingEvents(before, wave, "end-wave");
+    expect(sourceEnding).toMatchObject({
       events: [
         {
-          kind: "source-ended",
-          occurrence: { material: MATERIAL, occurrenceId: "root" },
+          kind: "source-ending",
+          occurrence,
           operationId: "end-wave",
         },
       ],
       status: "derived",
     });
     expect(before.documents[0]?.state.occurrences.root).toBeDefined();
+    expect(finalizeMechanicsEndWaveWithEvents(before, wave)).toMatchObject({
+      reason: "invalid-end-wave",
+      status: "rejected",
+    });
+
+    const latched = latchMechanicsEndWave(before, wave);
+    expect(latched.status).toBe("latched");
+    if (latched.status === "rejected") return;
+    const current = discoverMechanicsEndWave(latched.world, wave.request);
+    expect(current.status).toBe("discovered");
+    if (current.status === "rejected") return;
+    const finalized = finalizeMechanicsEndWave(latched.world, current.wave);
+    expect(finalized.status).toBe("applied");
+    if (finalized.status === "rejected") return;
+    const finalization = finalizeMechanicsEndWaveWithEvents(latched.world, current.wave);
+    expect(finalization).toMatchObject({ events: [], status: "finalized" });
+    if (finalization.status !== "finalized") return;
+    expect(finalization.world).toEqual(finalized.world);
+  });
+
+  it("derives source-ending from a proved readable checkpoint that is not a closed world", () => {
+    const { due, wave } = dueRootWorld();
+    expect(parseMechanicsWorld(due)).toMatchObject({
+      ok: false,
+      reason: "invalid-clock",
+    });
+
+    expect(deriveMechanicsSourceEndingEvents(due, wave, "deadline-wave")).toMatchObject({
+      events: [
+        {
+          kind: "source-ending",
+          occurrence: occurrenceGeneration(due, "root"),
+        },
+      ],
+      status: "derived",
+    });
+    expect(due.documents[0]?.state.occurrences.root).toBeDefined();
+  });
+
+  it("does not accept a caller-serialized causal context in place of kernel state", () => {
+    const { due, wave } = dueRootWorld();
+    const operation = damageOperation("damage-during-ending", FIRST);
+    const serialized = {
+      ...context(),
+      causal: {
+        endWave: { wave, world: due },
+        request: wave.request,
+      },
+    };
+    Reflect.deleteProperty(serialized, "state");
     expect(
-      deriveMechanicsEndWaveEvents(
-        before,
-        [
-          {
-            causes: [{ kind: "requested" }],
-            occurrence: { material: MATERIAL, occurrenceId: "missing" },
-          },
-        ],
-        "end-wave"
+      simulateResolutionGroup(
+        {
+          groupId: "damage-during-ending",
+          proposals: [{ operation, proposalId: "damage" }],
+        },
+        serialized
       )
-    ).toBeNull();
+    ).toMatchObject({ reason: "invalid-context", status: "rejected" });
+  });
+
+  it("refuses raw, forged, excess, and stale end-wave evidence", () => {
+    const before = worldWithProgramRoot();
+    const wave = requestedRootWave(before);
+    const forged = {
+      ...wave,
+      candidates: wave.candidates.map((candidate) => ({
+        ...candidate,
+        causes: [{ kind: "concentration-broken" as const }],
+      })),
+    };
+
+    for (const hostile of [wave.candidates, forged, { ...wave, excess: true }]) {
+      expect(
+        deriveMechanicsSourceEndingEvents(before, hostile, "end-wave")
+      ).toMatchObject({ reason: "invalid-end-wave", status: "rejected" });
+    }
+    expect(
+      deriveMechanicsSourceEndingEvents(worldWithProgramRoot(2), wave, "end-wave")
+    ).toMatchObject({ reason: "invalid-end-wave", status: "rejected" });
+  });
+
+  it("binds delayed event ids to the exact occurrence ordinal", () => {
+    const first = worldWithProgramRoot(1);
+    const second = worldWithProgramRoot(2);
+    const firstEvents = deriveMechanicsSourceEndingEvents(
+      first,
+      requestedRootWave(first),
+      "end-wave"
+    );
+    const secondEvents = deriveMechanicsSourceEndingEvents(
+      second,
+      requestedRootWave(second),
+      "end-wave"
+    );
+    expect(firstEvents.status).toBe("derived");
+    expect(secondEvents.status).toBe("derived");
+    if (firstEvents.status !== "derived" || secondEvents.status !== "derived") return;
+    expect(firstEvents.events[0]).toMatchObject({ occurrence: { ordinal: 1 } });
+    expect(secondEvents.events[0]).toMatchObject({ occurrence: { ordinal: 2 } });
+    expect(firstEvents.events[0]?.eventId).not.toBe(secondEvents.events[0]?.eventId);
   });
 
   it("requires table ordering even when colliding resource arithmetic commutes", () => {
@@ -711,14 +1056,11 @@ describe("simultaneous resolution groups", () => {
       })
     ).toBeNull();
     const hostile = Object.create(null) as Record<string, unknown>;
-    hostile.basis = world();
     hostile.groupId = "group";
     hostile.proposals = [{ operation, proposalId: "a" }];
     expect(conformResolutionGroup(hostile)).toBeNull();
     const sparse = Array(1) as unknown[];
-    expect(
-      conformResolutionGroup({ basis: world(), groupId: "group", proposals: sparse })
-    ).toBeNull();
+    expect(conformResolutionGroup({ groupId: "group", proposals: sparse })).toBeNull();
     expect(
       conformResolutionGroup(
         group([
@@ -729,7 +1071,6 @@ describe("simultaneous resolution groups", () => {
     ).toBeNull();
     expect(
       conformResolutionGroup({
-        basis: world(),
         groupId: "group",
         proposals: Array.from({ length: 513 }, (_, index) => ({
           operation: damageOperation(`damage-${index}`, FIRST),

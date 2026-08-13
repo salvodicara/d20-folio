@@ -14,7 +14,11 @@ import {
   isEffectOccurrence,
   parseOccurrenceState,
 } from "@/lib/mechanic-occurrences";
-import { conformEntityRef } from "@/lib/mechanics-reference-schema";
+import {
+  conformEntityRef,
+  conformOccurrenceGenerationRef,
+  entityRefKey,
+} from "@/lib/mechanics-reference-schema";
 import { conformResourceCell, conformResourceSpec } from "@/lib/resources";
 import { conformTurnEconomyState } from "@/lib/turn-economy";
 import { conformCreatureVitals, conformObjectVitals } from "@/lib/vitals";
@@ -30,7 +34,7 @@ import type {
   ClockRef,
   EntityRef,
   MaterialRef,
-  OccurrenceRef,
+  OccurrenceGenerationRef,
 } from "@/types/mechanics-reference";
 import {
   MATERIAL_STATE_SCHEMA,
@@ -245,15 +249,9 @@ function freezeDeep<T>(value: T): Readonly<T> {
   return value;
 }
 
-function parseOccurrenceRef(value: unknown): OccurrenceRef | null {
-  if (
-    !isExactRecord(value, ["material", "occurrenceId"]) ||
-    !isId(value.occurrenceId) ||
-    (!isCharacterMaterialRef(value.material) && !isSharedMaterialRef(value.material))
-  ) {
-    return null;
-  }
-  return { material: { ...value.material }, occurrenceId: value.occurrenceId };
+function parseOccurrenceGenerationRef(value: unknown): OccurrenceGenerationRef | null {
+  const reference = conformOccurrenceGenerationRef(value);
+  return reference ? structuredClone(reference) : null;
 }
 
 function parseCountCell(value: unknown): CountResourceCell | null {
@@ -584,7 +582,9 @@ function parseInventoryInstance(value: unknown): InventoryInstance | null {
   const quantity = parseCountCell(value.quantity);
   const tags = parseTags(value.tags);
   const ownerOccurrence =
-    value.ownerOccurrence === null ? null : parseOccurrenceRef(value.ownerOccurrence);
+    value.ownerOccurrence === null
+      ? null
+      : parseOccurrenceGenerationRef(value.ownerOccurrence);
   const overrides = parseItemOverrides(value.overrides);
   const resources = parseMap(value.resources, parseResourceCell);
   if (
@@ -1013,7 +1013,9 @@ function parseMaterialEntityBase(
   "ordinal" | "ownerOccurrence" | "availability" | "label" | "resources"
 > | null {
   const ownerOccurrence =
-    value.ownerOccurrence === null ? null : parseOccurrenceRef(value.ownerOccurrence);
+    value.ownerOccurrence === null
+      ? null
+      : parseOccurrenceGenerationRef(value.ownerOccurrence);
   const resources = parseMap(value.resources, parseResourceCell);
   if (
     !isPositiveInteger(value.ordinal) ||
@@ -1110,15 +1112,17 @@ function parseParticipant(value: unknown): EncounterParticipant | null {
 }
 
 function occurrenceRefTargets(
-  reference: OccurrenceRef,
+  reference: OccurrenceGenerationRef,
   currentMaterial: MaterialRef,
   occurrences: Readonly<Record<string, MechanicOccurrence>>,
   matches: (ref: EntityRef) => boolean
 ): boolean {
-  if (materialRefKey(reference.material) !== materialRefKey(currentMaterial)) return true;
-  const occurrence = occurrences[reference.occurrenceId];
+  if (materialRefKey(reference.occurrence.material) !== materialRefKey(currentMaterial))
+    return true;
+  const occurrence = occurrences[reference.occurrence.occurrenceId];
   return (
     occurrence !== undefined &&
+    occurrence.ordinal === reference.ordinal &&
     isEffectOccurrence(occurrence) &&
     matches(occurrence.target)
   );
@@ -1203,7 +1207,8 @@ function characterRefResolves(
   entities: Readonly<Record<string, MaterialEntity>>
 ): boolean {
   if (materialRefKey(ref.material) !== materialRefKey(material)) return true;
-  return ref.entityId === "self" || Object.hasOwn(entities, ref.entityId);
+  if (ref.entityId === "self") return true;
+  return entities[ref.entityId]?.ordinal === ref.ordinal;
 }
 
 function sharedRefResolves(
@@ -1215,7 +1220,7 @@ function sharedRefResolves(
   return (
     materialRefKey(ref.material) === materialRefKey(material) &&
     ref.entityId !== "self" &&
-    Object.hasOwn(entities, ref.entityId)
+    entities[ref.entityId]?.ordinal === ref.ordinal
   );
 }
 
@@ -1260,7 +1265,7 @@ function temporaryHitPointSourceTargets(
   const source = vitals.hitPoints.temporary.sourceOccurrence;
   if (
     source === null ||
-    materialRefKey(source.material) !== materialRefKey(currentMaterial)
+    materialRefKey(source.occurrence.material) !== materialRefKey(currentMaterial)
   )
     return true;
   return occurrenceRefTargets(source, currentMaterial, occurrences, matches);
@@ -1409,7 +1414,8 @@ export function parseCharacterMaterialState(
           occurrenceResult.value.occurrences,
           (ref) =>
             materialRefKey(ref.material) === materialRefKey(material) &&
-            ref.entityId === instanceId
+            ref.entityId === instanceId &&
+            ref.ordinal === entity.ordinal
         )) ||
       (entity.kind === "creature" &&
         !temporaryHitPointSourceTargets(
@@ -1418,7 +1424,8 @@ export function parseCharacterMaterialState(
           occurrenceResult.value.occurrences,
           (ref) =>
             materialRefKey(ref.material) === materialRefKey(material) &&
-            ref.entityId === instanceId
+            ref.entityId === instanceId &&
+            ref.ordinal === entity.ordinal
         ))
     ) {
       return { ok: false };
@@ -1445,7 +1452,8 @@ export function parseCharacterMaterialState(
   const isCreature = (ref: EntityRef): boolean =>
     materialRefKey(ref.material) !== materialRefKey(material) ||
     ref.entityId === "self" ||
-    entities[ref.entityId]?.kind === "creature";
+    (entities[ref.entityId]?.ordinal === ref.ordinal &&
+      entities[ref.entityId]?.kind === "creature");
   if (
     !allOccurrenceRefsResolve(occurrenceResult.value.occurrences, resolves) ||
     !creatureOnlyOccurrenceRefsAreValid(occurrenceResult.value.occurrences, isCreature) ||
@@ -1535,7 +1543,7 @@ function parseEncounter(
       return { ok: false };
     }
     ordinals.add(participant.ordinal);
-    const combatantKey = `${materialRefKey(participant.combatant.material)}\u0000${participant.combatant.entityId}`;
+    const combatantKey = entityRefKey(participant.combatant);
     if (combatantKeys.has(combatantKey)) return { ok: false };
     combatantKeys.add(combatantKey);
     const ownsSharedEntity = materialRefKey(participant.combatant.material) === sharedKey;
@@ -1543,7 +1551,8 @@ function parseEncounter(
       const participantExists =
         participant.combatant.entityId === "self"
           ? material.kind === "character-play"
-          : Object.hasOwn(entities, participant.combatant.entityId) &&
+          : entities[participant.combatant.entityId]?.ordinal ===
+              participant.combatant.ordinal &&
             entities[participant.combatant.entityId]?.kind === "creature" &&
             entities[participant.combatant.entityId]?.availability === "present";
       if (!participantExists) {
@@ -1653,14 +1662,20 @@ export function parseSharedMaterialState(
           entity.ownerOccurrence,
           material,
           occurrenceResult.value.occurrences,
-          (ref) => materialRefKey(ref.material) === sharedKey && ref.entityId === entityId
+          (ref) =>
+            materialRefKey(ref.material) === sharedKey &&
+            ref.entityId === entityId &&
+            ref.ordinal === entity.ordinal
         )) ||
       (entity.kind === "creature" &&
         !temporaryHitPointSourceTargets(
           entity.vitals,
           material,
           occurrenceResult.value.occurrences,
-          (ref) => materialRefKey(ref.material) === sharedKey && ref.entityId === entityId
+          (ref) =>
+            materialRefKey(ref.material) === sharedKey &&
+            ref.entityId === entityId &&
+            ref.ordinal === entity.ordinal
         ))
     ) {
       return { ok: false };
@@ -1679,6 +1694,7 @@ export function parseSharedMaterialState(
   const isCreature = (ref: EntityRef): boolean =>
     ref.material.kind === "character-play" ||
     (materialRefKey(ref.material) === sharedKey &&
+      entities[ref.entityId]?.ordinal === ref.ordinal &&
       entities[ref.entityId]?.kind === "creature");
   if (
     !allOccurrenceRefsResolve(occurrenceResult.value.occurrences, resolves) ||

@@ -7,10 +7,11 @@ const MATERIAL = {
   campaignId: "campaign-1",
   kind: "shared-combat",
 } as const;
-const TARGET = { entityId: "target", material: MATERIAL } as const;
-const ATTACKER = { entityId: "attacker", material: MATERIAL } as const;
+const TARGET = { entityId: "target", material: MATERIAL, ordinal: 1 } as const;
+const ATTACKER = { entityId: "attacker", material: MATERIAL, ordinal: 2 } as const;
 const CLOCK = { epoch: 4, material: MATERIAL } as const;
 const OCCURRENCE = { material: MATERIAL, occurrenceId: "occurrence-1" } as const;
+const OCCURRENCE_GENERATION = { occurrence: OCCURRENCE, ordinal: 7 } as const;
 const RESOURCE = {
   kind: "pool",
   owner: TARGET,
@@ -57,15 +58,15 @@ const TRIGGERS = [
     rest: "long",
   },
   { clock: CLOCK, kind: "day-phase", phase: "dawn" },
-  { kind: "source-end", occurrence: OCCURRENCE },
+  { kind: "source-end", occurrence: OCCURRENCE_GENERATION },
   {
     execution: 3,
     kind: "program-phase-end",
-    occurrence: OCCURRENCE,
+    occurrence: OCCURRENCE_GENERATION,
     phaseId: "pulse",
   },
   {
-    area: OCCURRENCE,
+    area: OCCURRENCE_GENERATION,
     boundary: "enter",
     entity: TARGET,
     kind: "area-boundary",
@@ -128,7 +129,10 @@ describe("mechanics trigger evidence", () => {
     expect(
       conformMechanicsTriggerEvidence({
         kind: "source-end",
-        occurrence: { material: MATERIAL, occurrenceId: "__proto__" },
+        occurrence: {
+          occurrence: { material: MATERIAL, occurrenceId: "__proto__" },
+          ordinal: 1,
+        },
       })
     ).toBeNull();
     expect(

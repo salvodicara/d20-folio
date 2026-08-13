@@ -9,6 +9,12 @@ import {
   mechanicsInstallationFactAddress,
   mechanicsInvocationRefKey,
 } from "@/lib/mechanics-authority-ref";
+import {
+  conformEntityRef,
+  conformOccurrenceGenerationRef,
+  entityRefKey,
+  occurrenceGenerationRefKey,
+} from "@/lib/mechanics-reference-schema";
 
 const MATERIAL = {
   characterId: "character-1",
@@ -34,6 +40,40 @@ const INSTALLATION = {
 } as const;
 
 describe("low-dependency mechanics authority references", () => {
+  it("uses the character material as self identity and ordinals for every other entity", () => {
+    const first = { entityId: "familiar", material: MATERIAL, ordinal: 1 } as const;
+    const replacement = { ...first, ordinal: 2 } as const;
+
+    expect(conformEntityRef(ENTITY)).toEqual(ENTITY);
+    expect(conformEntityRef(first)).toEqual(first);
+    expect(entityRefKey(first)).not.toBe(entityRefKey(replacement));
+    expect(conformEntityRef({ ...ENTITY, ordinal: 1 })).toBeNull();
+    expect(
+      conformEntityRef({
+        entityId: "self",
+        material: { campaignId: "campaign-1", kind: "shared-combat" },
+      })
+    ).toBeNull();
+    expect(conformEntityRef({ entityId: "familiar", material: MATERIAL })).toBeNull();
+    expect(conformEntityRef({ ...first, ordinal: 0 })).toBeNull();
+    expect(conformEntityRef({ ...first, ordinal: -0 })).toBeNull();
+  });
+
+  it("separates a reusable occurrence address from its exact active generation", () => {
+    const address = { material: MATERIAL, occurrenceId: "program-1" } as const;
+    const first = { occurrence: address, ordinal: 1 } as const;
+    const replacement = { occurrence: address, ordinal: 2 } as const;
+
+    expect(conformOccurrenceGenerationRef(first)).toEqual(first);
+    expect(occurrenceGenerationRefKey(first)).not.toBe(
+      occurrenceGenerationRefKey(replacement)
+    );
+    expect(conformOccurrenceGenerationRef(address)).toBeNull();
+    expect(
+      conformOccurrenceGenerationRef({ occurrence: address, ordinal: 0 })
+    ).toBeNull();
+  });
+
   it("conforms exact immutable invocation identity and its canonical key", () => {
     const input = {
       installation: structuredClone(INSTALLATION),
@@ -53,6 +93,23 @@ describe("low-dependency mechanics authority references", () => {
       })
     );
     expect(conformMechanicsInvocationRef({ ...input, program: {} })).toBeNull();
+  });
+
+  it("rejects a stale logical program-root address without its generation", () => {
+    const occurrence = {
+      occurrence: { material: MATERIAL, occurrenceId: "program-1" },
+      ordinal: 9,
+    } as const;
+    expect(conformMechanicsInvocationRef({ kind: "program-root", occurrence })).toEqual({
+      kind: "program-root",
+      occurrence,
+    });
+    expect(
+      conformMechanicsInvocationRef({
+        kind: "program-root",
+        occurrence: occurrence.occurrence,
+      })
+    ).toBeNull();
   });
 
   it("owns installation semantic addresses without importing installed closures", () => {
@@ -101,15 +158,17 @@ describe("low-dependency mechanics authority references", () => {
   });
 
   it("keeps command and subscriber identity boundaries off high authority", () => {
-    const files = [
+    const commandFiles = [
       "src/lib/mechanics-command-schema.ts",
       "src/lib/mechanics-command-boundary.ts",
-      "src/types/mechanics-execution.ts",
     ];
+    const files = [...commandFiles, "src/types/mechanics-execution.ts"];
 
     for (const file of files) {
       const source = readFileSync(resolve(__dirname, "../..", file), "utf8");
-      expect(source).toContain("mechanics-authority-ref");
+      if (commandFiles.includes(file)) {
+        expect(source).toContain("mechanics-authority-ref");
+      }
       expect(source).not.toMatch(/from\s+["']@\/(?:lib|types)\/mechanics-authority["']/);
     }
   });

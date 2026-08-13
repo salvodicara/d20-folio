@@ -17,7 +17,7 @@ const MATERIAL = {
   uid: "user-1",
 } as const;
 const ENTITY = { entityId: "self", material: MATERIAL } as const;
-const OTHER_ENTITY = { entityId: "other", material: MATERIAL } as const;
+const OTHER_ENTITY = { entityId: "other", material: MATERIAL, ordinal: 1 } as const;
 const DEFINITION = {
   catalogueKind: "spell",
   entityId: "spell.fireball",

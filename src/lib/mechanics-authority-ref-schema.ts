@@ -12,8 +12,9 @@ import {
 import {
   CHARACTER_MATERIAL_REF_SCHEMA,
   ENTITY_REF_SCHEMA,
+  MATERIAL_ENTITY_REF_SCHEMA,
   MATERIAL_REF_SCHEMA,
-  OCCURRENCE_REF_SCHEMA,
+  OCCURRENCE_GENERATION_REF_SCHEMA,
 } from "@/lib/mechanics-reference-schema";
 
 const ID_SCHEMA = customSchema<"id", string>("id");
@@ -30,6 +31,7 @@ export type MechanicsRevisionSchemaShape = CanonicalFingerprint;
 
 export type MechanicsAuthorityRefSchemaCustomTypes = {
   readonly id: string;
+  readonly "material-entity-id": string;
   readonly "mechanics-revision": MechanicsRevisionSchemaShape;
   readonly "positive-integer": number;
 };
@@ -83,8 +85,7 @@ export const HOMEBREW_DEFINITION_OWNER_REF_SCHEMA = discriminatedUnionSchema("ki
     kind: literalSchema("inventory-item"),
   }),
   "material-entity": objectSchema({
-    entity: ENTITY_REF_SCHEMA,
-    entityOrdinal: POSITIVE_INTEGER_SCHEMA,
+    entity: MATERIAL_ENTITY_REF_SCHEMA,
     kind: literalSchema("material-entity"),
   }),
 });
@@ -182,7 +183,7 @@ export const MECHANICS_INVOCATION_REF_SCHEMA = discriminatedUnionSchema("kind", 
   }),
   "program-root": objectSchema({
     kind: literalSchema("program-root"),
-    occurrence: OCCURRENCE_REF_SCHEMA,
+    occurrence: OCCURRENCE_GENERATION_REF_SCHEMA,
   }),
 });
 

@@ -450,15 +450,22 @@ character and shared-combat documents. Every executable capability resolves to a
 `MechanicsProgramAuthorityReceipt`; a durable program-root occurrence is the sole carrier of that
 authority, while every effect occurrence is a direct child identified by `parentId`. Roots never
 duplicate actor/source/target/program identity, and effects never carry a second authority. Inventory
-and entity references include monotonic physical ordinals so deleting and recreating an id cannot make
-an old command, resource address or occurrence authority valid again.
+and item/occurrence references include monotonic physical ordinals so deleting and recreating an id cannot
+make an old command, resource address or occurrence authority valid again. `EntityRef` is one exact union:
+character `self` is identified by its already-physical character material, while every mutable non-self
+entity carries its positive entity ordinal. A bare mutable entity id is only a storage slot and never a
+runtime reference.
 
 Public mechanics commands contain only invocation identity or answers to engine-issued requests. The
 trusted adapter constructs a complete, recoverable execution frame containing the authority receipt,
 invocation, exact root create/advance CAS receipt and typed trigger evidence. Terminal operations carry
-one canonical cause id whose cause contains that authority and invocation; a transaction rejects missing,
-unused, duplicate or forged causes before simulation. The same envelope will produce one reversible
-`JournalActionDraft` for the whole causal action, never one draft per reaction or target.
+one canonical cause id whose public cause contains only the invocation. The kernel independently resolves
+installed authority from the trusted `MechanicsAuthoritySnapshot`, or program authority from the exact
+persisted root generation, then recomputes the id over `(authority, invocation)`. It also binds every
+operation to the installation owner and injects definition/installation guards; authority is therefore
+never self-attested by command JSON. A transaction rejects missing, unused, duplicate or forged causes
+before simulation. The same envelope will produce one reversible `JournalActionDraft` for the whole
+causal action, never one draft per reaction or target.
 
 Operation mutation and causal closure are deliberately separate. A terminal change first preserves
 every active source so post-events and `source-end` subscribers can still resolve their authority. Only
@@ -468,9 +475,34 @@ therefore an explicit barrier, not an eager delete hidden inside occurrence crea
 inventory tombstones are legal only under exact instance-id + ordinal leases and cannot escape as a
 persisted world.
 
-This foundation is implemented and covered by focused hostile-input tests, but the cutover is not yet a
-production runtime: the MechanicsProgram step compiler, event/subscriber coordinator, complete
-suspension worklist, persistence adapters and corpus transcription remain open. The existing combat
+The only hostile causal entry begins from a closed `MechanicsWorld`; typed continuations are produced and
+advanced only by the kernel. Ending candidates are latched explicitly on their still-readable occurrences
+as canonical causes. One canonical closure request owns all observed boundaries, explicit end requests and
+inventory leases, including a checkpoint whose current wave is empty. This is pure serializable transient
+state—not a caller-supplied history, hidden object identity or persisted compatibility model—and the
+closed-world parser rejects it. After every operation the kernel monotonically extends that request and
+its latches, so newly due dependencies join the same causal action while ending sources remain readable. A
+suspension stores fenced inputs and observations and replays from the closed basis; it never serializes a
+purportedly trusted continuation. End discovery is one bounded indexed worklist over dependency, boundary,
+Concentration, ownership, inventory, live-entity and Temporary-HP edges; it emits a deterministic
+dependent-first wave without recursive deletion or repeated whole-world scans.
+
+Table time/rest/turn/encounter progression uses the pure `beginMechanicsBoundary` /
+`advanceMechanicsBoundary` state machine. A completion is bound to the complete continuation fingerprint
+and can preserve boundary-owned facts only; same-wave completion may finalize, while a wave created or
+extended during subscriber delivery must surface as another checkpoint first. Historical boundary proofs
+survive only the exact clock/encounter hand-off performed by that state machine. There is no injected
+resolver and no API through which a caller can return a replacement world.
+
+The authentic post-event set is intentionally small: `damage-taken`, `hit-points-zero` and
+`resource-depleted` derive only from exact applied operation stages; `source-ending` derives only from a
+re-proved readable end wave. Occurrence removal and condition/entity/inventory/turn/register/Temporary-HP
+cleanup do not invent generic semantic events because no authored trigger consumes them; their complete
+effect is the verified finalization delta and ultimately the single journal draft.
+
+This hardened foundation is implemented and covered by focused hostile-input tests, but the cutover is
+not yet a production runtime: the MechanicsProgram step compiler, fixed-point event/subscriber
+coordinator, complete suspension worklist, persistence adapters and corpus transcription remain open. The existing combat
 executors stay temporary migration inputs until those consumers move; they are deleted, not retained as
 fallbacks, at the one-model cutover.
 
@@ -1566,7 +1598,9 @@ id/number-only JSON; its IO (`src/lib/combat-state-io.ts`) is the only combat-st
 - **Entered D20 Tests** — `types/d20-test.ts` + `lib/d20-test.ts` are the locale-free universal kernel:
   callers provide the physical d20 face(s), optional replacement/adjustment dice and consumed-resource
   ids; the kernel validates JSON-plain input, nets Advantage/Disadvantage, selects one natural face and
-  resolves totals/outcomes without rolling. `lib/character-d20-tests.ts` is the live-character adapter.
+  resolves totals/outcomes without rolling. Table overrides are exact, attributed facts: their reviewed
+  outcome is retained beside the computed outcome, and a declared two-failure Death Save is not mislabeled
+  as a natural 1. `lib/character-d20-tests.ts` is the live-character adapter.
   Death Saves and Concentration maintenance are the first production consumers. Damage while a living
   character concentrates appends one `PendingConcentrationSave` per ordered damage packet (never per
   typed component) to `CombatState.pendingConcentrationSaves`; its stored spell ref, damage and capped DC

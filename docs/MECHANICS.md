@@ -44,10 +44,30 @@ Typed command answers carry only irreducible table facts (physical rolls, select
 explicit overrides). Actor, roles, source, program, bindings, root identity and phase execution are
 always derived from the receipt/frame, never accepted from command JSON.
 
+An operation cause carries only its invocation plus a digest. Installed invocations are resolved against
+the trusted authority snapshot; program invocations are resolved from the exact live root generation.
+The kernel recomputes the digest over that independently resolved receipt, requires the actor to equal the
+installation owner and contributes immutable definition/installation fact guards. No client-supplied
+authority can authorize itself.
+
 An occurrence ending is a causal protocol, not a deletion helper. The runtime keeps the ending source
-readable, derives and delivers `source-end` events, recursively compiles their consequences, then removes
-the exact dependent-first wave and cleans unreachable entities/items/resources. This is required for
-real reactions at effect end, Concentration replacement, expiring summons and final-use item tombstones.
+readable, latches its canonical causes on the exact occurrence generation, derives and delivers
+`source-ending` events, recursively compiles their consequences, then removes the dependent-first wave and
+cleans unreachable material. The latches are explicit pure transient state: the persisted/hostile parser
+accepts only a closed world, while one canonical request cumulatively owns observed boundaries, explicit
+end requests and inventory leases even when its current wave is empty. Suspension replays fenced inputs
+from that closed basis instead of storing a continuation. This is required for real reactions at effect end, Concentration replacement, expiring
+summons and final-use item tombstones. One bounded indexed worklist finds all direct and cascading causes;
+ordinary post-events, source-ending delivery and the verified complete finalization delta are explicit
+stages rather than hidden mutations. A boundary can advance only through a kernel-produced continuation,
+never through a callback that supplies replacement state. Its completion is bound to the entire
+continuation; if subscriber work creates or extends the wave, the kernel exposes a new readable checkpoint
+before any finalization.
+
+Authentic events are not an open-ended change log. Applied operation stages alone emit `damage-taken`,
+`hit-points-zero` and `resource-depleted`; an exact readable wave alone emits `source-ending`. Terminal
+cleanup is represented by its proved world delta and the final reversible journal action, not generic
+condition/entity/inventory/register events that no authored trigger consumes.
 The compiler/coordinator and corpus transcription are still active work; legacy authoring/executors must
 not be treated as a second supported model and will be removed once the sole runtime consumes the full
 corpus.
@@ -664,7 +684,9 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
     rolls: an observation contains the exact physical face(s), later replacements/adjustment dice and
     consumed resource ids. One strict JSON-plain kernel nets Advantage/Disadvantage (both cancel to one
     face), selects the natural face, applies deterministic terms exactly once and returns both computed
-    and reviewed outcomes. Natural-1/critical/death-save policies inspect only that selected face;
+    and reviewed outcomes. Overrides retain their source/reason and exact semantic result; in particular,
+    a table-declared two-failure Death Save remains distinct from the computed natural-1 rule.
+    Natural-1/critical/death-save policies inspect only that selected face;
     ordinary success uses the modified total. `character-d20-tests.ts` rebuilds live character facts at
     commit, so undo/redo never replays a captured modifier.
   - **Death-save roll entry.** The live adapter folds all-save bonuses over effective scores,

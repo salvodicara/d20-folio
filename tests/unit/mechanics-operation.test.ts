@@ -1,10 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { materialRefKey, reduceActionJournal } from "@/lib/action-journal";
-import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
+import { canonicalFingerprint, canonicalJson } from "@/lib/canonical-fingerprint";
 import { resolveDamage, withDamageTableOverride } from "@/lib/damage";
 import { evaluateDiceFormula } from "@/lib/dice-formula";
 import { addOccurrence } from "@/lib/mechanic-occurrences";
+import {
+  mechanicsAuthorityDefinitionFingerprint,
+  mechanicsAuthorityDefinitionKey,
+} from "@/lib/mechanics-authority";
+import {
+  mechanicsDefinitionFactAddress,
+  mechanicsInstallationFactAddress,
+} from "@/lib/mechanics-authority-ref";
+import { mechanicsCapabilitySnapshotFingerprint } from "@/lib/mechanics-capability";
 import {
   locateResolvedMaterialResource,
   resourceDefinitionFactGuard,
@@ -13,20 +21,22 @@ import { createEmptyCharacterMaterialState } from "@/lib/material-state";
 import {
   conformMechanicsOperation,
   conformMechanicsTransaction,
-  planMechanicsTransaction,
+  simulateMechanicsTransaction as simulateKernelTransaction,
 } from "@/lib/mechanics-operation";
-import { discoverMechanicsEndWave, parseMechanicsWorld } from "@/lib/mechanics-world";
-import type {
-  ActionFactGuard,
-  ActionJournalWorld,
-  JournalActionDraft,
-  JsonValue,
-  ResolvedActionFact,
-} from "@/types/action-journal";
+import {
+  beginMechanicsCausalState,
+  discoverMechanicsEndWave,
+  parseMechanicsWorld,
+} from "@/lib/mechanics-world";
+import type { ActionFactGuard } from "@/types/action-journal";
 import type { DamageDefenseRule, DamagePart, DamageResolution } from "@/types/damage";
 import type { DiceFormula, DiceObservation } from "@/types/dice-formula";
 import type { MechanicsInvocationRef } from "@/types/mechanics-authority-ref";
-import type { EntityRef } from "@/types/mechanics-reference";
+import type {
+  MechanicsAuthorityDefinition,
+  MechanicsAuthoritySnapshot,
+} from "@/types/mechanics-authority";
+import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type {
   CreatureMaterialEntity,
   MaterialEntity,
@@ -36,7 +46,7 @@ import type {
   MechanicsOperation,
   MechanicsOperationCause,
   MechanicsTransaction,
-  MechanicsTransactionResult,
+  MechanicsTransactionSimulationResult,
 } from "@/types/mechanics-operation";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 import type { MechanicsWorld } from "@/types/mechanics-world";
@@ -103,15 +113,195 @@ const AUTHORITY = {
   staticBindings: {},
 } as const satisfies MechanicsProgramAuthorityReceipt;
 
+const TABLE_OWNER = {
+  authority: "table",
+  kind: "material-authority",
+  material: CHARACTER,
+} as const;
+const TABLE_DEFINITION = {
+  authority: "table",
+  declarationId: "condition-immunity-override",
+  generation: 1,
+  kind: "table-declaration",
+  material: CHARACTER,
+} as const;
+const TABLE_CAPABILITY = {
+  capabilityId: "condition-immunity-override",
+  definition: TABLE_DEFINITION,
+  kind: "program",
+} as const;
+const TABLE_AUTHORITY = {
+  anchors: {
+    activator: null,
+    caster: null,
+    owner: null,
+    source: null,
+    target: null,
+  },
+  installation: {
+    capability: TABLE_CAPABILITY,
+    generation: 1,
+    installationId: "condition-immunity-override",
+    owner: TABLE_OWNER,
+  },
+  schema: 1,
+  snapshot: {
+    grantGroups: {},
+    program: {
+      id: TABLE_CAPABILITY.capabilityId,
+      phases: [
+        {
+          inputs: [],
+          phaseId: "invoke",
+          steps: [],
+          trigger: { kind: "invocation" },
+        },
+      ],
+      registers: [],
+      version: 1,
+    },
+    ref: TABLE_CAPABILITY,
+    resources: {},
+    schema: 1,
+  },
+  source: TABLE_DEFINITION,
+  staticBindings: {},
+} as const satisfies MechanicsProgramAuthorityReceipt;
+
+const AUTHORITIES_BY_CAUSE = new Map<
+  string,
+  Readonly<MechanicsProgramAuthorityReceipt>
+>();
+
+function compareCodeUnits(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
+function authorityDefinition(
+  authority: Readonly<MechanicsProgramAuthorityReceipt>
+): MechanicsAuthorityDefinition {
+  const definition: MechanicsAuthorityDefinition = {
+    actorSpec: { kind: "role", role: "owner" },
+    anchors: authority.anchors,
+    definitionGuards: [
+      {
+        address: mechanicsDefinitionFactAddress(authority.snapshot.ref.definition),
+        expected: {
+          present: true,
+          value: mechanicsCapabilitySnapshotFingerprint(authority.snapshot),
+        },
+        lifecycle: "commit",
+        owner: authority.installation.owner,
+      },
+    ],
+    installation: authority.installation,
+    installationGuards: [],
+    owner: authority.installation.owner,
+    snapshot: authority.snapshot,
+    source: authority.source,
+    staticBindings: authority.staticBindings,
+  };
+  return {
+    ...definition,
+    installationGuards: [
+      {
+        address: mechanicsInstallationFactAddress(authority.installation),
+        expected: {
+          present: true,
+          value: mechanicsAuthorityDefinitionFingerprint(definition),
+        },
+        lifecycle: "commit",
+        owner: authority.installation.owner,
+      },
+    ],
+  };
+}
+
+function expectedInstalledFacts(
+  facts: readonly Readonly<ActionFactGuard>[] = [],
+  authority: Readonly<MechanicsProgramAuthorityReceipt> = AUTHORITY
+): readonly Readonly<ActionFactGuard>[] {
+  const definition = authorityDefinition(authority);
+  return [
+    ...facts,
+    ...definition.definitionGuards,
+    ...definition.installationGuards,
+  ].sort((left, right) =>
+    compareCodeUnits(
+      `${canonicalJson(left.owner)}\u0000${canonicalJson(left.address)}`,
+      `${canonicalJson(right.owner)}\u0000${canonicalJson(right.address)}`
+    )
+  );
+}
+
+function authoritySnapshotFor(transactionValue: unknown): MechanicsAuthoritySnapshot {
+  const causeValues =
+    typeof transactionValue === "object" && transactionValue !== null
+      ? (transactionValue as Record<string, unknown>).causes
+      : null;
+  const causes: readonly unknown[] = Array.isArray(causeValues)
+    ? (causeValues as readonly unknown[])
+    : [];
+  const definitions = [
+    ...new Map(
+      causes.flatMap((cause) => {
+        if (typeof cause !== "object" || cause === null || !("causeId" in cause)) {
+          return [];
+        }
+        if (
+          !("invocation" in cause) ||
+          cause.invocation.kind !== "installed-capability"
+        ) {
+          return [];
+        }
+        const causeId = cause.causeId;
+        if (typeof causeId !== "string") return [];
+        const authority = AUTHORITIES_BY_CAUSE.get(causeId);
+        if (!authority) return [];
+        const definition = authorityDefinition(authority);
+        return [[mechanicsAuthorityDefinitionKey(definition), definition] as const];
+      })
+    ).values(),
+  ].sort((left, right) =>
+    compareCodeUnits(
+      mechanicsAuthorityDefinitionKey(left),
+      mechanicsAuthorityDefinitionKey(right)
+    )
+  );
+  return { definitions };
+}
+
+function causalState(worldValue: unknown) {
+  const result = beginMechanicsCausalState(worldValue);
+  if (!result.ok) throw new Error(`Invalid causal-state fixture: ${result.reason}`);
+  return result.value;
+}
+
+function simulationContext(worldValue: unknown, transactionValue: unknown) {
+  return {
+    authoritySnapshot: authoritySnapshotFor(transactionValue),
+    state: causalState(worldValue),
+  } as const;
+}
+
+function simulateMechanicsTransaction(
+  worldValue: unknown,
+  transactionValue: unknown,
+  contextValue: unknown = simulationContext(worldValue, transactionValue)
+): MechanicsTransactionSimulationResult {
+  return simulateKernelTransaction(
+    transactionValue,
+    contextValue as Parameters<typeof simulateKernelTransaction>[1]
+  );
+}
+
 function operationCause(
   authority: MechanicsProgramAuthorityReceipt,
   invocation: MechanicsInvocationRef
 ): MechanicsOperationCause {
-  return {
-    authority,
-    causeId: canonicalFingerprint({ authority, invocation }),
-    invocation,
-  };
+  const cause = { causeId: canonicalFingerprint({ authority, invocation }), invocation };
+  AUTHORITIES_BY_CAUSE.set(cause.causeId, authority);
+  return cause;
 }
 
 function installedCause(
@@ -125,12 +315,23 @@ function installedCause(
 
 function programRootCause(
   authority: MechanicsProgramAuthorityReceipt,
-  occurrenceId: string
+  occurrenceId: string,
+  ordinal = 1
 ): MechanicsOperationCause {
   return operationCause(authority, {
     kind: "program-root",
-    occurrence: { material: CHARACTER, occurrenceId },
+    occurrence: occurrenceGeneration(occurrenceId, ordinal),
   });
+}
+
+function occurrenceGeneration(
+  occurrenceId: string,
+  ordinal: number
+): OccurrenceGenerationRef {
+  return {
+    occurrence: { material: CHARACTER, occurrenceId },
+    ordinal,
+  };
 }
 
 function inventoryAuthority(
@@ -160,6 +361,12 @@ function orderedCauses(
 }
 
 const INSTALLED_CAUSE = installedCause(AUTHORITY);
+function emptyAuthorityContext(worldValue: unknown) {
+  return {
+    authoritySnapshot: { definitions: [] },
+    state: causalState(worldValue),
+  } as const;
+}
 const SELECTOR = {
   damageTypes: [],
   deliveries: [],
@@ -446,10 +653,17 @@ function conditionCreate(
   operationId: string,
   occurrenceId: string,
   conditionId: "paralyzed" | "poisoned",
-  conditionImmunityOverride: { reasonId: string } | null = null
+  conditionImmunityOverride: { reasonId: string } | null = null,
+  options: {
+    cause?: MechanicsOperationCause;
+    parentId?: string;
+    parentOrdinal?: number;
+  } = {}
 ): MechanicsOperation {
+  const cause = options.cause ?? INSTALLED_CAUSE;
+  const parentId = options.parentId ?? "root";
   return {
-    causeId: INSTALLED_CAUSE.causeId,
+    causeId: cause.causeId,
     conditionImmunityOverride,
     kind: "occurrence-create",
     material: CHARACTER,
@@ -457,11 +671,12 @@ function conditionCreate(
       conditionId,
       endRules: [],
       kind: "condition",
-      parentId: "root",
+      parentId,
       target: SELF,
     },
     occurrenceId,
     operationId,
+    parent: occurrenceGeneration(parentId, options.parentOrdinal ?? 1),
   };
 }
 
@@ -489,7 +704,8 @@ function standingCreate(
   operationId: string,
   occurrenceId: string,
   parentId: string,
-  cause: MechanicsOperationCause
+  cause: MechanicsOperationCause,
+  parentOrdinal = 1
 ): Extract<MechanicsOperation, { readonly kind: "occurrence-create" }> {
   return {
     causeId: cause.causeId,
@@ -505,6 +721,7 @@ function standingCreate(
     },
     occurrenceId,
     operationId,
+    parent: occurrenceGeneration(parentId, parentOrdinal),
   };
 }
 
@@ -549,11 +766,11 @@ function transaction(
   };
 }
 
-function planned(
-  result: MechanicsTransactionResult
-): Extract<MechanicsTransactionResult, { status: "planned" }> {
-  if (result.status !== "planned") {
-    throw new Error(`Expected plan, got ${JSON.stringify(result)}`);
+function simulated(
+  result: MechanicsTransactionSimulationResult
+): Extract<MechanicsTransactionSimulationResult, { status: "simulated" }> {
+  if (result.status !== "simulated") {
+    throw new Error(`Expected simulation, got ${JSON.stringify(result)}`);
   }
   return result;
 }
@@ -562,99 +779,6 @@ function state(world: Readonly<MechanicsWorld>) {
   const document = world.documents[0];
   if (!document || document.kind !== "character") throw new Error("fixture");
   return document.state;
-}
-
-function toJournalWorld(world: Readonly<MechanicsWorld>): ActionJournalWorld {
-  return {
-    documents: world.documents.map(({ material, state: materialState }) => {
-      const { actions, epoch, revision } = materialState;
-      const data = structuredClone(materialState) as unknown as Record<string, JsonValue>;
-      for (const key of ["actions", "buildRevision", "epoch", "revision", "schema"]) {
-        Reflect.deleteProperty(data, key);
-      }
-      return { data, journal: { actions, epoch, revision }, material };
-    }),
-    scope: world.scope,
-  };
-}
-
-function resolvedFacts(
-  action: JournalActionDraft,
-  phase: "commit" | "redo" = "commit"
-): readonly ResolvedActionFact[] {
-  return action.guards.facts
-    .filter((guard) => phase === "commit" || guard.lifecycle === "commit-redo")
-    .map(({ address, expected, owner }) => ({
-      actual: expected,
-      address,
-      owner,
-    }));
-}
-
-function currentDocuments(
-  world: ActionJournalWorld,
-  action: JournalActionDraft
-): JournalActionDraft["guards"]["documents"] {
-  return action.guards.documents.map(({ material }) => {
-    const document = world.documents.find(
-      (candidate) => materialRefKey(candidate.material) === materialRefKey(material)
-    );
-    if (!document) throw new Error("fixture");
-    return {
-      epoch: document.journal.epoch,
-      material,
-      revision: document.journal.revision,
-    };
-  });
-}
-
-function journalData(world: Readonly<ActionJournalWorld>) {
-  return world.documents.map(({ data, material }) => ({ data, material }));
-}
-
-/** Prove that the generated mechanics diff owns every closure mutation exactly. */
-function expectExactActionRoundTrip(
-  before: Readonly<MechanicsWorld>,
-  result: Extract<MechanicsTransactionResult, { readonly status: "planned" }>
-): void {
-  const journalBefore = toJournalWorld(before);
-  const journalAfter = toJournalWorld(result.world);
-  const committed = reduceActionJournal(
-    journalBefore,
-    { action: result.action, kind: "commit" },
-    resolvedFacts(result.action)
-  );
-  expect(committed.status).toBe("applied");
-  if (committed.status !== "applied") return;
-  expect(journalData(committed.world)).toEqual(journalData(journalAfter));
-
-  const undone = reduceActionJournal(
-    committed.world,
-    {
-      action: result.action,
-      documents: currentDocuments(committed.world, result.action),
-      expectedGeneration: 1,
-      kind: "undo",
-    },
-    []
-  );
-  expect(undone.status).toBe("applied");
-  if (undone.status !== "applied") return;
-  expect(journalData(undone.world)).toEqual(journalData(journalBefore));
-
-  const redone = reduceActionJournal(
-    undone.world,
-    {
-      action: result.action,
-      documents: currentDocuments(undone.world, result.action),
-      expectedGeneration: 2,
-      kind: "redo",
-    },
-    resolvedFacts(result.action, "redo")
-  );
-  expect(redone.status).toBe("applied");
-  if (redone.status !== "applied") return;
-  expect(journalData(redone.world)).toEqual(journalData(journalAfter));
 }
 
 describe("atomic mechanics transactions", () => {
@@ -721,7 +845,7 @@ describe("atomic mechanics transactions", () => {
 
     const many = Array.from({ length: 513 }, (_, seed) =>
       installedCause(authorityVariant(seed + 1))
-    ).sort((left, right) => left.causeId.localeCompare(right.causeId));
+    ).sort((left, right) => compareCodeUnits(left.causeId, right.causeId));
     expect(
       conformMechanicsTransaction({
         ...transaction(
@@ -747,18 +871,174 @@ describe("atomic mechanics transactions", () => {
       }),
       causeId: mismatched.causeId,
     };
+    const value = {
+      ...transaction([operation]),
+      causes: [mismatched],
+    };
+    expect(conformMechanicsTransaction(value)).toEqual(value);
+    expect(simulateMechanicsTransaction(parsedWorld(alive(10)), value)).toEqual({
+      operationId: "damage",
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+  });
+
+  it("authenticates installed causes from the independent authority snapshot", () => {
+    const before = parsedWorld(alive(10));
+    const operation = creatureDamage("damage", SELF, 1, {
+      maximumHitPoints: { kind: "fact", value: 10 },
+    });
+    const value = transaction([operation]);
+
+    expect(simulateKernelTransaction(value, emptyAuthorityContext(before))).toEqual({
+      operationId: "damage",
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+
+    const exactContext = {
+      authoritySnapshot: { definitions: [authorityDefinition(AUTHORITY)] },
+      state: causalState(before),
+    } as const;
+    const exact = simulated(simulateKernelTransaction(value, exactContext));
+    expect(exact.actionFacts).toEqual(
+      expectedInstalledFacts([
+        {
+          address: ["hit-point-maximum"],
+          expected: { present: true, value: 10 },
+          lifecycle: "commit-redo",
+          owner: SELF,
+        },
+      ])
+    );
+
+    const foe = { entityId: "foe", material: CHARACTER, ordinal: 1 } as const;
+    const foeWorld = parsedWorld(alive(10), { foe: creature(alive(10)) });
+    expect(
+      simulateKernelTransaction(transaction([operation], { actor: foe }), {
+        authoritySnapshot: exactContext.authoritySnapshot,
+        state: causalState(foeWorld),
+      })
+    ).toEqual({
+      operationId: "damage",
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+
+    const fabricatedAuthority = authorityVariant(70_001);
+    const fabricatedCause = installedCause(fabricatedAuthority);
+    const fabricatedOperation = {
+      ...operation,
+      causeId: fabricatedCause.causeId,
+    };
+    expect(
+      simulateKernelTransaction(
+        transaction([fabricatedOperation], { causes: [fabricatedCause] }),
+        exactContext
+      )
+    ).toEqual({
+      operationId: "damage",
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+
     expect(
       conformMechanicsTransaction({
-        ...transaction([operation]),
-        causes: [mismatched],
+        ...value,
+        causes: [{ ...INSTALLED_CAUSE, authority: AUTHORITY }],
       })
     ).toBeNull();
   });
 
+  it("rejects caller facts that conflict with injected authority guards", () => {
+    const definition = authorityDefinition(AUTHORITY);
+    const guard = definition.definitionGuards[0];
+    if (!guard) throw new Error("authority definition guard fixture");
+    const operation = creatureDamage("damage", SELF, 1, {
+      maximumHitPoints: { kind: "fact", value: 10 },
+    });
+
+    expect(
+      simulateKernelTransaction(
+        transaction([operation], {
+          factGuards: [
+            {
+              ...guard,
+              expected: { present: true, value: "forged-definition" },
+            },
+          ],
+        }),
+        {
+          authoritySnapshot: { definitions: [definition] },
+          state: causalState(parsedWorld(alive(10))),
+        }
+      )
+    ).toEqual({ operationId: null, reason: "fact-conflict", status: "rejected" });
+  });
+
+  it("resolves program-root authority only at the exact occurrence generation", () => {
+    const original = state(worldWithRoots([["root", AUTHORITY]]));
+    const root = original.occurrences.root;
+    if (!root || root.kind !== "program") throw new Error("program root fixture");
+    const recreated = parsedCharacterState({
+      ...structuredClone(original),
+      nextOccurrenceOrdinal: 3,
+      occurrences: {
+        ...structuredClone(original.occurrences),
+        root: { ...root, ordinal: 2 },
+      },
+    });
+    const exactCause = programRootCause(AUTHORITY, "root", 2);
+    const exactOperation = {
+      ...creatureDamage("exact-root", SELF, 1, {
+        maximumHitPoints: { kind: "fact", value: 10 },
+      }),
+      causeId: exactCause.causeId,
+    };
+    expect(
+      simulateKernelTransaction(
+        transaction([exactOperation], { causes: [exactCause] }),
+        emptyAuthorityContext(recreated)
+      )
+    ).toMatchObject({ status: "simulated" });
+
+    const foe = { entityId: "foe", material: CHARACTER, ordinal: 1 } as const;
+    const recreatedWithFoe = parsedCharacterState({
+      ...structuredClone(state(recreated)),
+      entities: { foe: creature(alive(10)) },
+      nextEntityOrdinal: 2,
+    });
+    expect(
+      simulateKernelTransaction(
+        transaction([exactOperation], { actor: foe, causes: [exactCause] }),
+        emptyAuthorityContext(recreatedWithFoe)
+      )
+    ).toEqual({
+      operationId: "exact-root",
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+
+    const staleCause = programRootCause(AUTHORITY, "root", 1);
+    expect(
+      simulateKernelTransaction(
+        transaction([{ ...exactOperation, causeId: staleCause.causeId }], {
+          causes: [staleCause],
+        }),
+        emptyAuthorityContext(recreated)
+      )
+    ).toEqual({
+      operationId: "exact-root",
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+  });
+
   it("derives durable root authority from an installed cause before creating effects", () => {
     const authority = authorityVariant(7);
-    const cause = installedCause(authority);
-    const root = programCreate("create-root", "root", cause);
+    const installed = installedCause(authority);
+    const rootCause = programRootCause(authority, "root");
+    const root = programCreate("create-root", "root", installed);
     expect(root).not.toHaveProperty("authority");
     expect(root.occurrence).not.toHaveProperty("authority");
     expect(root).not.toHaveProperty("conditionImmunityOverride");
@@ -768,23 +1048,34 @@ describe("atomic mechanics transactions", () => {
         occurrence: { ...root.occurrence, authority },
       })
     ).toBeNull();
+    expect(
+      conformMechanicsOperation({ ...root, parent: occurrenceGeneration("root", 1) })
+    ).toBeNull();
+    const effect = standingCreate("create-effect", "effect", "root", rootCause);
+    expect(conformMechanicsOperation(effect)).toEqual(effect);
+    const missingParent: Record<string, unknown> = { ...effect };
+    delete missingParent.parent;
+    expect(conformMechanicsOperation(missingParent)).toBeNull();
 
-    const result = planned(
-      planMechanicsTransaction(
+    const result = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(alive(10)),
-        transaction([root, standingCreate("create-effect", "effect", "root", cause)], {
-          causes: [cause],
-        })
+        transaction([root, effect], { causes: orderedCauses(installed, rootCause) })
       )
     );
-    expect(state(result.world).occurrences.root).toMatchObject({ authority });
-    expect(state(result.world).occurrences.effect).toMatchObject({ parentId: "root" });
+    expect(state(result.state.world).occurrences.root).toMatchObject({ authority });
+    expect(state(result.state.world).occurrences.effect).toMatchObject({
+      parentId: "root",
+    });
+    expect(result.executions[0]).toMatchObject({
+      facts: { created: occurrenceGeneration("root", 1) },
+    });
   });
 
   it("rejects child-before-root, root creation from a root, and unrelated parents", () => {
     const cause = installedCause(AUTHORITY);
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         parsedWorld(alive(10)),
         transaction(
           [
@@ -803,7 +1094,7 @@ describe("atomic mechanics transactions", () => {
     const rooted = worldWithRoots([["root", AUTHORITY]]);
     const rootCause = programRootCause(AUTHORITY, "root");
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         rooted,
         transaction([programCreate("forged-root", "second-root", rootCause)], {
           causes: [rootCause],
@@ -815,9 +1106,30 @@ describe("atomic mechanics transactions", () => {
       status: "rejected",
     });
 
+    const wrongParentMaterial = {
+      ...standingCreate("wrong-material", "effect", "root", cause),
+      parent: {
+        occurrence: {
+          material: { campaignId: "campaign-1", kind: "shared-combat" },
+          occurrenceId: "root",
+        },
+        ordinal: 1,
+      },
+    } as const;
+    expect(
+      simulateMechanicsTransaction(
+        rooted,
+        transaction([wrongParentMaterial], { causes: [cause] })
+      )
+    ).toEqual({
+      operationId: "wrong-material",
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+
     const unrelated = installedCause(authorityVariant(8));
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         rooted,
         transaction([standingCreate("unrelated", "effect", "root", unrelated)], {
           causes: [unrelated],
@@ -825,6 +1137,19 @@ describe("atomic mechanics transactions", () => {
       )
     ).toEqual({
       operationId: "unrelated",
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+
+    expect(
+      simulateMechanicsTransaction(
+        rooted,
+        transaction([standingCreate("stale-parent", "effect", "root", cause, 2)], {
+          causes: [cause],
+        })
+      )
+    ).toEqual({
+      operationId: "stale-parent",
       reason: "invalid-cause",
       status: "rejected",
     });
@@ -842,22 +1167,22 @@ describe("atomic mechanics transactions", () => {
     ).toBeNull();
   });
 
-  it("requires exact existing root authority but permits it to end another root", () => {
+  it("requires exact root generations and emits readable end requests", () => {
     const otherAuthority = authorityVariant(9);
     const before = worldWithRoots([
       ["causing-root", AUTHORITY],
       ["other-root", otherAuthority],
     ]);
     const cause = programRootCause(AUTHORITY, "causing-root");
-    const ended = planned(
-      planMechanicsTransaction(
+    const ended = simulated(
+      simulateMechanicsTransaction(
         before,
         transaction(
           [
             {
               causeId: cause.causeId,
               kind: "occurrence-end",
-              occurrence: { material: CHARACTER, occurrenceId: "other-root" },
+              occurrence: occurrenceGeneration("other-root", 2),
               operationId: "dispel-other",
             },
           ],
@@ -865,20 +1190,35 @@ describe("atomic mechanics transactions", () => {
         )
       )
     );
-    expect(state(ended.world).occurrences).toHaveProperty("causing-root");
-    expect(state(ended.world).occurrences).not.toHaveProperty("other-root");
+    expect(ended.state.world).toEqual(before);
+    expect(state(ended.state.world).occurrences).toHaveProperty("causing-root");
+    expect(state(ended.state.world).occurrences).toHaveProperty("other-root");
     expect(ended.transaction.operations[0].causeId).toBe(cause.causeId);
+    expect(ended.executions[0]).toMatchObject({
+      facts: { requested: occurrenceGeneration("other-root", 2) },
+      status: "applied",
+    });
+    expect(ended.consequences).toEqual([
+      {
+        causeId: cause.causeId,
+        kind: "occurrence-end",
+        occurrence: occurrenceGeneration("other-root", 2),
+        operationId: "dispel-other",
+      },
+    ]);
+    expect(ended.stages[0]?.after).toBe(ended.stages[0]?.before);
+    expect(ended).not.toHaveProperty("action");
 
     const mismatched = programRootCause(otherAuthority, "causing-root");
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction(
           [
             {
               causeId: mismatched.causeId,
               kind: "occurrence-end",
-              occurrence: { material: CHARACTER, occurrenceId: "other-root" },
+              occurrence: occurrenceGeneration("other-root", 2),
               operationId: "forged-dispatch",
             },
           ],
@@ -890,18 +1230,58 @@ describe("atomic mechanics transactions", () => {
       reason: "invalid-cause",
       status: "rejected",
     });
+
+    const staleCause = programRootCause(AUTHORITY, "causing-root", 3);
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction(
+          [
+            {
+              causeId: staleCause.causeId,
+              kind: "occurrence-end",
+              occurrence: occurrenceGeneration("other-root", 2),
+              operationId: "stale-cause",
+            },
+          ],
+          { causes: [staleCause] }
+        )
+      )
+    ).toEqual({
+      operationId: "stale-cause",
+      reason: "invalid-cause",
+      status: "rejected",
+    });
+
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([
+          {
+            causeId: INSTALLED_CAUSE.causeId,
+            kind: "occurrence-end",
+            occurrence: occurrenceGeneration("other-root", 1),
+            operationId: "stale-end",
+          },
+        ])
+      )
+    ).toMatchObject({
+      executions: [{ reason: "occurrence-not-active", status: "no-change" }],
+      state: { world: before },
+      status: "no-change",
+    });
   });
 
-  it("plans multi-target damage as one journal action and aborts the whole batch", () => {
-    const first = { entityId: "first", material: CHARACTER } as const;
-    const second = { entityId: "second", material: CHARACTER } as const;
+  it("plans multi-target damage as one kernel batch and aborts atomically", () => {
+    const first = { entityId: "first", material: CHARACTER, ordinal: 1 } as const;
+    const second = { entityId: "second", material: CHARACTER, ordinal: 2 } as const;
     const before = parsedWorld(alive(10), {
       first: creature(alive(10)),
       second: creature(alive(10, 2), true, 2),
     });
     const snapshot = JSON.stringify(before);
-    const result = planned(
-      planMechanicsTransaction(
+    const result = simulated(
+      simulateMechanicsTransaction(
         before,
         transaction([
           creatureDamage("first-hit", first, 4),
@@ -916,22 +1296,19 @@ describe("atomic mechanics transactions", () => {
       ["first-hit", "applied"],
       ["second-hit", "applied"],
     ]);
-    expect(state(result.world).entities.first?.vitals.hitPoints.current).toBe(6);
-    expect(state(result.world).entities.second?.vitals.hitPoints).toMatchObject({
+    expect(state(result.state.world).entities.first?.vitals.hitPoints.current).toBe(6);
+    expect(state(result.state.world).entities.second?.vitals.hitPoints).toMatchObject({
       current: 7,
       temporary: { current: 0 },
     });
-    expect(result.action.id).toBe("action-1");
-    expect(result.action.mutations.map(({ path }) => path)).toEqual([
-      ["entities", "first", "vitals", "hitPoints", "current"],
-      ["entities", "second", "vitals", "hitPoints", "current"],
-      ["entities", "second", "vitals", "hitPoints", "temporary", "current"],
-    ]);
+    expect(result.stages).toHaveLength(2);
+    expect(result.consequences).toEqual([]);
+    expect(result).not.toHaveProperty("action");
     expect(JSON.stringify(before)).toBe(snapshot);
 
-    const missing = { entityId: "missing", material: CHARACTER } as const;
+    const missing = { entityId: "missing", material: CHARACTER, ordinal: 99 } as const;
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction([
           creatureDamage("would-apply", first, 4),
@@ -944,17 +1321,41 @@ describe("atomic mechanics transactions", () => {
       status: "rejected",
     });
     expect(JSON.stringify(before)).toBe(snapshot);
+
+    const staleFirst = { ...first, ordinal: 99 } as const;
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([creatureDamage("stale-generation", staleFirst, 1)])
+      )
+    ).toEqual({
+      operationId: "stale-generation",
+      reason: "missing-target",
+      status: "rejected",
+    });
+    expect(
+      simulateMechanicsTransaction(
+        before,
+        transaction([creatureDamage("stale-actor", second, 1)], {
+          actor: staleFirst,
+        })
+      )
+    ).toEqual({
+      operationId: null,
+      reason: "missing-actor",
+      status: "rejected",
+    });
   });
 
-  it("simulates ordered consequences, retains no-change receipts, and diffs once", () => {
+  it("simulates ordered operations and retains no-change receipts", () => {
     const immunity: DamageDefenseRule = {
       kind: "immunity",
       selector: SELECTOR,
       sourceId: "immunity",
     };
     const before = parsedWorld(alive(10));
-    const result = planned(
-      planMechanicsTransaction(
+    const result = simulated(
+      simulateMechanicsTransaction(
         before,
         transaction([
           creatureDamage("immune", SELF, 20, {
@@ -981,20 +1382,21 @@ describe("atomic mechanics transactions", () => {
       "applied",
       "applied",
     ]);
-    expect(state(result.world).vitals.hitPoints.current).toBe(9);
-    expect(result.action.mutations).toHaveLength(1);
-    expect(result.action.mutations[0]?.path).toEqual(["vitals", "hitPoints", "current"]);
-    expect(result.action.guards.facts).toEqual([
-      {
-        address: ["hit-point-maximum"],
-        expected: { present: true, value: 10 },
-        lifecycle: "commit-redo",
-        owner: SELF,
-      },
-    ]);
+    expect(state(result.state.world).vitals.hitPoints.current).toBe(9);
+    expect(result.stages).toHaveLength(2);
+    expect(result.actionFacts).toEqual(
+      expectedInstalledFacts([
+        {
+          address: ["hit-point-maximum"],
+          expected: { present: true, value: 10 },
+          lifecycle: "commit-redo",
+          owner: SELF,
+        },
+      ])
+    );
 
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction([
           creatureDamage("immune", SELF, 20, {
@@ -1003,7 +1405,7 @@ describe("atomic mechanics transactions", () => {
           }),
         ])
       )
-    ).toMatchObject({ status: "no-change", world: before });
+    ).toMatchObject({ state: { world: before }, status: "no-change" });
   });
 
   it("uses the effective table override while retaining computed damage evidence", () => {
@@ -1014,8 +1416,8 @@ describe("atomic mechanics transactions", () => {
       reasonId: "table-ruling",
     });
     if (!overridden) throw new Error("fixture");
-    const result = planned(
-      planMechanicsTransaction(
+    const result = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(alive(10, 3)),
         transaction([
           {
@@ -1040,12 +1442,12 @@ describe("atomic mechanics transactions", () => {
       hitPointsLost: 0,
       temporaryHitPointsLost: 2,
     });
-    expect(state(result.world).vitals.hitPoints.temporary.current).toBe(1);
+    expect(state(result.state.world).vitals.hitPoints.temporary.current).toBe(1);
   });
 
   it("covers every terminal creature and object vitality transition", () => {
-    const heal = planned(
-      planMechanicsTransaction(
+    const heal = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(alive(4)),
         transaction([
           {
@@ -1059,10 +1461,10 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(heal.world).vitals.hitPoints.current).toBe(10);
+    expect(state(heal.state.world).vitals.hitPoints.current).toBe(10);
 
-    const granted = planned(
-      planMechanicsTransaction(
+    const granted = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(alive(10)),
         transaction([
           {
@@ -1075,10 +1477,10 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(granted.world).vitals.hitPoints.temporary.current).toBe(6);
-    const cleared = planned(
-      planMechanicsTransaction(
-        granted.world,
+    expect(state(granted.state.world).vitals.hitPoints.temporary.current).toBe(6);
+    const cleared = simulated(
+      simulateMechanicsTransaction(
+        granted.state.world,
         transaction([
           {
             clear: { kind: "all" },
@@ -1090,10 +1492,10 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(cleared.world).vitals.hitPoints.temporary.current).toBe(0);
+    expect(state(cleared.state.world).vitals.hitPoints.temporary.current).toBe(0);
 
-    const stable = planned(
-      planMechanicsTransaction(
+    const stable = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(dying(1)),
         transaction([
           {
@@ -1105,10 +1507,10 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(stable.world).vitals.zeroHitPoints).toEqual({ kind: "stable" });
+    expect(state(stable.state.world).vitals.zeroHitPoints).toEqual({ kind: "stable" });
 
-    const killed = planned(
-      planMechanicsTransaction(
+    const killed = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(alive(10, 4)),
         transaction([
           {
@@ -1120,7 +1522,7 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(killed.world).vitals).toEqual({
+    expect(state(killed.state.world).vitals).toEqual({
       hitPoints: {
         current: 0,
         temporary: { current: 4, sourceOccurrence: null },
@@ -1128,8 +1530,8 @@ describe("atomic mechanics transactions", () => {
       zeroHitPoints: { kind: "dead" },
     });
 
-    const reduced = planned(
-      planMechanicsTransaction(
+    const reduced = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(alive(5, 2)),
         transaction([
           {
@@ -1143,7 +1545,7 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(reduced.world).vitals).toEqual({
+    expect(state(reduced.state.world).vitals).toEqual({
       hitPoints: {
         current: 0,
         temporary: { current: 2, sourceOccurrence: null },
@@ -1151,8 +1553,8 @@ describe("atomic mechanics transactions", () => {
       zeroHitPoints: { failures: 0, kind: "dying", successes: 0 },
     });
 
-    const revived = planned(
-      planMechanicsTransaction(
+    const revived = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(dead()),
         transaction([
           {
@@ -1166,10 +1568,10 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(revived.world).vitals).toEqual(alive(12));
+    expect(state(revived.state.world).vitals).toEqual(alive(12));
 
-    const deathSave = planned(
-      planMechanicsTransaction(
+    const deathSave = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(dying()),
         transaction([
           {
@@ -1182,10 +1584,10 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(deathSave.world).vitals).toEqual(alive(1));
+    expect(state(deathSave.state.world).vitals).toEqual(alive(1));
 
-    const creatureSync = planned(
-      planMechanicsTransaction(
+    const creatureSync = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(alive(12, 3)),
         transaction([
           {
@@ -1198,11 +1600,11 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(creatureSync.world).vitals.hitPoints.current).toBe(7);
+    expect(state(creatureSync.state.world).vitals.hitPoints.current).toBe(7);
 
-    const door = { entityId: "door", material: CHARACTER } as const;
-    const objectResult = planned(
-      planMechanicsTransaction(
+    const door = { entityId: "door", material: CHARACTER, ordinal: 1 } as const;
+    const objectResult = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(alive(10), { door: object(7) }),
         transaction([
           {
@@ -1234,34 +1636,34 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(objectResult.world).entities.door?.vitals).toEqual({
+    expect(state(objectResult.state.world).entities.door?.vitals).toEqual({
       hitPoints: { current: 0 },
     });
     expect(objectResult.executions).toHaveLength(3);
   });
 
   it("models damage at zero, critical failures, and instant death from raw damage", () => {
-    const target = { entityId: "foe", material: CHARACTER } as const;
-    const critical = planned(
-      planMechanicsTransaction(
+    const target = { entityId: "foe", material: CHARACTER, ordinal: 1 } as const;
+    const critical = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(alive(10), { foe: creature(dying(1)) }),
         transaction([creatureDamage("critical", target, 1, { criticalHit: true })])
       )
     );
-    expect(state(critical.world).entities.foe?.vitals).toEqual(dead());
+    expect(state(critical.state.world).entities.foe?.vitals).toEqual(dead());
 
-    const instant = planned(
-      planMechanicsTransaction(
+    const instant = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(alive(10), { foe: creature(dying()) }),
         transaction([creatureDamage("instant", target, 10)])
       )
     );
-    expect(state(instant.world).entities.foe?.vitals).toEqual(dead());
+    expect(state(instant.state.world).entities.foe?.vitals).toEqual(dead());
   });
 
   it("keeps Concentration readable until its causal end wave is delivered", () => {
-    const result = planned(
-      planMechanicsTransaction(
+    const result = simulated(
+      simulateMechanicsTransaction(
         concentratingWorld(alive(3)),
         transaction([
           creatureDamage("drop", SELF, 3, {
@@ -1271,32 +1673,55 @@ describe("atomic mechanics transactions", () => {
       )
     );
 
-    expect(state(result.world).vitals.zeroHitPoints?.kind).toBe("dying");
-    expect(state(result.world).occurrences).toHaveProperty("root");
-    expect(state(result.world).occurrences).toHaveProperty("focus");
-    expect(result.action.mutations.map(({ path }) => path)).not.toContainEqual([
-      "occurrences",
-      "focus",
+    expect(state(result.state.world).vitals.zeroHitPoints?.kind).toBe("dying");
+    expect(state(result.state.world).occurrences).toHaveProperty("root");
+    expect(state(result.state.world).occurrences).toHaveProperty("focus");
+    expect(result).not.toHaveProperty("action");
+    expect(result.state.context.endWave).toMatchObject({
+      wave: {
+        candidates: [
+          {
+            causes: [{ kind: "concentration-broken" }],
+            occurrence: occurrenceGeneration("focus", 2),
+          },
+        ],
+      },
+      world: result.state.world,
+    });
+    const withoutCheckpoint = transaction([
+      creatureDamage("without-checkpoint", SELF, 1),
     ]);
-    expect(discoverMechanicsEndWave(result.world)).toMatchObject({
-      candidates: [
-        {
-          causes: [{ kind: "concentration-broken" }],
-          occurrence: { material: CHARACTER, occurrenceId: "focus" },
-        },
-      ],
+    expect(
+      simulateKernelTransaction(withoutCheckpoint, {
+        authoritySnapshot: authoritySnapshotFor(withoutCheckpoint),
+        state: result.state.world as never,
+      })
+    ).toEqual({
+      operationId: null,
+      reason: "invalid-world",
+      status: "rejected",
+    });
+    expect(discoverMechanicsEndWave(result.state.world)).toMatchObject({
       status: "discovered",
+      wave: {
+        candidates: [
+          {
+            causes: [{ kind: "concentration-broken" }],
+            occurrence: occurrenceGeneration("focus", 2),
+          },
+        ],
+      },
     });
   });
 
   it("creates universal occurrences and defers their causal closure", () => {
-    const paralyzed = planned(
-      planMechanicsTransaction(
+    const paralyzed = simulated(
+      simulateMechanicsTransaction(
         concentratingWorld(alive(10)),
         transaction([conditionCreate("paralyze", "paralysis", "paralyzed")])
       )
     );
-    expect(Object.keys(state(paralyzed.world).occurrences)).toEqual([
+    expect(Object.keys(state(paralyzed.state.world).occurrences)).toEqual([
       "root",
       "focus",
       "paralysis",
@@ -1304,18 +1729,30 @@ describe("atomic mechanics transactions", () => {
     const paralyzeExecution = paralyzed.executions[0];
     expect(paralyzeExecution?.status).toBe("applied");
     if (paralyzeExecution?.status !== "applied") return;
-    expect(paralyzeExecution.facts).toMatchObject({
-      created: { material: CHARACTER, occurrenceId: "paralysis" },
-      ended: [],
+    expect(paralyzeExecution.facts).toEqual({
+      created: occurrenceGeneration("paralysis", 3),
     });
-    expect(discoverMechanicsEndWave(paralyzed.world)).toMatchObject({
-      candidates: [
-        {
-          causes: [{ kind: "concentration-broken" }],
-          occurrence: { material: CHARACTER, occurrenceId: "focus" },
-        },
-      ],
+    expect(paralyzed.state.context.endWave).toMatchObject({
+      wave: {
+        candidates: [
+          {
+            causes: [{ kind: "concentration-broken" }],
+            occurrence: occurrenceGeneration("focus", 2),
+          },
+        ],
+      },
+      world: paralyzed.state.world,
+    });
+    expect(discoverMechanicsEndWave(paralyzed.state.world)).toMatchObject({
       status: "discovered",
+      wave: {
+        candidates: [
+          {
+            causes: [{ kind: "concentration-broken" }],
+            occurrence: occurrenceGeneration("focus", 2),
+          },
+        ],
+      },
     });
 
     const immuneState = structuredClone(
@@ -1342,9 +1779,16 @@ describe("atomic mechanics transactions", () => {
       parentId: "root",
       target: SELF,
     });
-    const immuneWorld = parsedCharacterState({ ...immuneState, ...immuneOccurrence });
+    const tableRoot = addOccurrence(immuneOccurrence, "table-root", {
+      authority: TABLE_AUTHORITY,
+      endRules: [],
+      kind: "program",
+      phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
+      registers: {},
+    });
+    const immuneWorld = parsedCharacterState({ ...immuneState, ...tableRoot });
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         immuneWorld,
         transaction([conditionCreate("poison", "poisoned", "poisoned")])
       )
@@ -1353,8 +1797,8 @@ describe("atomic mechanics transactions", () => {
       status: "no-change",
     });
 
-    const overridden = planned(
-      planMechanicsTransaction(
+    expect(
+      simulateMechanicsTransaction(
         immuneWorld,
         transaction([
           conditionCreate("poison-override", "poisoned", "poisoned", {
@@ -1362,11 +1806,38 @@ describe("atomic mechanics transactions", () => {
           }),
         ])
       )
+    ).toEqual({
+      operationId: "poison-override",
+      reason: "invalid-override",
+      status: "rejected",
+    });
+
+    const tableCause = programRootCause(TABLE_AUTHORITY, "table-root", 3);
+    const overridden = simulated(
+      simulateMechanicsTransaction(
+        immuneWorld,
+        transaction(
+          [
+            conditionCreate(
+              "table-poison-override",
+              "poisoned",
+              "poisoned",
+              { reasonId: "table-overrides-immunity" },
+              {
+                cause: tableCause,
+                parentId: "table-root",
+                parentOrdinal: 3,
+              }
+            ),
+          ],
+          { actor: TABLE_OWNER, causes: [tableCause] }
+        )
+      )
     );
-    expect(state(overridden.world).occurrences).toHaveProperty("poisoned");
+    expect(state(overridden.state.world).occurrences).toHaveProperty("poisoned");
   });
 
-  it("requires an explicit Concentration barrier and ends dependency cascades", () => {
+  it("defers occurrence closure and material cleanup to the higher-level executor", () => {
     const replacement: MechanicsOperation = {
       causeId: INSTALLED_CAUSE.causeId,
       conditionImmunityOverride: null,
@@ -1380,28 +1851,34 @@ describe("atomic mechanics transactions", () => {
       },
       occurrenceId: "new-focus",
       operationId: "replace-focus",
+      parent: occurrenceGeneration("root", 1),
     };
     const concentrating = concentratingWorld(alive(10));
-    expect(planMechanicsTransaction(concentrating, transaction([replacement]))).toEqual({
+    expect(
+      simulateMechanicsTransaction(concentrating, transaction([replacement]))
+    ).toEqual({
       operationId: "replace-focus",
       reason: "concentration-replacement-required",
       status: "rejected",
     });
-    const replaced = planned(
-      planMechanicsTransaction(
+    expect(
+      simulateMechanicsTransaction(
         concentrating,
         transaction([
           {
             causeId: INSTALLED_CAUSE.causeId,
             kind: "occurrence-end",
-            occurrence: { material: CHARACTER, occurrenceId: "focus" },
+            occurrence: occurrenceGeneration("focus", 2),
             operationId: "end-old-focus",
           },
           replacement,
         ])
       )
-    );
-    expect(Object.keys(state(replaced.world).occurrences)).toEqual(["root", "new-focus"]);
+    ).toEqual({
+      operationId: null,
+      reason: "invalid-transaction",
+      status: "rejected",
+    });
 
     const rootState = structuredClone(
       createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
@@ -1430,30 +1907,37 @@ describe("atomic mechanics transactions", () => {
       target: SELF,
     });
     const cascadeWorld = parsedCharacterState({ ...rootState, ...child });
-    const ended = planned(
-      planMechanicsTransaction(
+    const ended = simulated(
+      simulateMechanicsTransaction(
         cascadeWorld,
         transaction([
           {
             causeId: INSTALLED_CAUSE.causeId,
             kind: "occurrence-end",
-            occurrence: { material: CHARACTER, occurrenceId: "root" },
+            occurrence: occurrenceGeneration("root", 1),
             operationId: "end-root",
           },
         ])
       )
     );
-    expect(state(ended.world).occurrences).toEqual({});
+    expect(ended.state.world).toEqual(cascadeWorld);
+    expect(ended.stages[0]?.after).toBe(ended.stages[0]?.before);
+    expect(Object.keys(state(ended.state.world).occurrences)).toEqual(["root", "child"]);
     const endExecution = ended.executions[0];
     expect(endExecution?.status).toBe("applied");
     if (endExecution?.status !== "applied") return;
-    expect(endExecution.facts).toMatchObject({
-      ended: [
-        { material: CHARACTER, occurrenceId: "child" },
-        { material: CHARACTER, occurrenceId: "root" },
-      ],
+    expect(endExecution.facts).toEqual({
+      requested: occurrenceGeneration("root", 1),
     });
-    expectExactActionRoundTrip(cascadeWorld, ended);
+    expect(ended.consequences).toEqual([
+      {
+        causeId: INSTALLED_CAUSE.causeId,
+        kind: "occurrence-end",
+        occurrence: occurrenceGeneration("root", 1),
+        operationId: "end-root",
+      },
+    ]);
+    expect(ended).not.toHaveProperty("action");
   });
 
   it("kills at Exhaustion 6 and permits ordered removal before revival", () => {
@@ -1462,8 +1946,8 @@ describe("atomic mechanics transactions", () => {
       exhaustion: 5 as const,
     };
     const exhaustedWorld = parsedCharacterState(exhaustedState);
-    const killed = planned(
-      planMechanicsTransaction(
+    const killed = simulated(
+      simulateMechanicsTransaction(
         exhaustedWorld,
         transaction([
           {
@@ -1476,14 +1960,14 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(killed.world)).toMatchObject({
+    expect(state(killed.state.world)).toMatchObject({
       exhaustion: 6,
       vitals: { zeroHitPoints: { kind: "dead" } },
     });
 
-    const restored = planned(
-      planMechanicsTransaction(
-        killed.world,
+    const restored = simulated(
+      simulateMechanicsTransaction(
+        killed.state.world,
         transaction([
           {
             kind: "exhaustion-transition",
@@ -1503,7 +1987,7 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(restored.world)).toMatchObject({
+    expect(state(restored.state.world)).toMatchObject({
       exhaustion: 5,
       vitals: { hitPoints: { current: 4 }, zeroHitPoints: null },
     });
@@ -1516,8 +2000,8 @@ describe("atomic mechanics transactions", () => {
       owner: SELF,
       resourceId: "focus",
     } as const satisfies ResourceRef;
-    const result = planned(
-      planMechanicsTransaction(
+    const result = simulated(
+      simulateMechanicsTransaction(
         before,
         transaction(
           [
@@ -1545,7 +2029,7 @@ describe("atomic mechanics transactions", () => {
       )
     );
 
-    expect(state(result.world).resources.pools.focus).toMatchObject({ current: 0 });
+    expect(state(result.state.world).resources.pools.focus).toMatchObject({ current: 0 });
     expect(result.executions.map(({ status }) => status)).toEqual(["applied", "applied"]);
     const facts = result.executions.flatMap((execution) =>
       execution.status === "applied" && execution.kind === "resource-transition"
@@ -1568,12 +2052,10 @@ describe("atomic mechanics transactions", () => {
         spentResolution: null,
       },
     ]);
-    expect(result.action.mutations.map(({ path }) => path)).toEqual([
-      ["resources", "pools", "focus", "current"],
-    ]);
+    expect(result.stages).toHaveLength(2);
 
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction([
           {
@@ -1594,7 +2076,7 @@ describe("atomic mechanics transactions", () => {
     });
   });
 
-  it("keeps resource definitions commit-only so later definition drift cannot block redo", () => {
+  it("exposes resource definition facts without drafting a journal action", () => {
     const before = resourceWorld();
     const resource = {
       kind: "pool",
@@ -1602,8 +2084,8 @@ describe("atomic mechanics transactions", () => {
       resourceId: "focus",
     } as const satisfies ResourceRef;
     const definition = resourceDefinitionFact(before, resource);
-    const result = planned(
-      planMechanicsTransaction(
+    const result = simulated(
+      simulateMechanicsTransaction(
         before,
         transaction(
           [
@@ -1621,53 +2103,10 @@ describe("atomic mechanics transactions", () => {
         )
       )
     );
-    expect(result.action.guards.facts).toEqual([{ ...definition, lifecycle: "commit" }]);
-
-    const committed = reduceActionJournal(
-      toJournalWorld(before),
-      { action: result.action, kind: "commit" },
-      resolvedFacts(result.action)
+    expect(result.actionFacts).toEqual(
+      expectedInstalledFacts([{ ...definition, lifecycle: "commit" }])
     );
-    expect(committed.status).toBe("applied");
-    if (committed.status !== "applied") return;
-    const undone = reduceActionJournal(
-      committed.world,
-      {
-        action: result.action,
-        documents: currentDocuments(committed.world, result.action),
-        expectedGeneration: 1,
-        kind: "undo",
-      },
-      []
-    );
-    expect(undone.status).toBe("applied");
-    if (undone.status !== "applied") return;
-    const redo = {
-      action: result.action,
-      documents: currentDocuments(undone.world, result.action),
-      expectedGeneration: 2,
-      kind: "redo",
-    } as const;
-    const driftedDefinition: ResolvedActionFact = {
-      actual: { present: true, value: "changed-definition" },
-      address: definition.address,
-      owner: definition.owner,
-    };
-    expect(reduceActionJournal(undone.world, redo, [driftedDefinition])).toMatchObject({
-      reason: "fact-conflict",
-      status: "rejected",
-    });
-
-    const redone = reduceActionJournal(
-      undone.world,
-      redo,
-      resolvedFacts(result.action, "redo")
-    );
-    expect(redone.status).toBe("applied");
-    if (redone.status !== "applied") return;
-    expect(redone.world.documents[0]?.data).toMatchObject({
-      resources: { pools: { focus: { current: 2 } } },
-    });
+    expect(result).not.toHaveProperty("action");
   });
 
   it("aborts cumulative resource overdraw and propagates missing roll input", () => {
@@ -1688,7 +2127,7 @@ describe("atomic mechanics transactions", () => {
       transition: { amount: 2, kind: "spend" },
     });
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction([spend("first"), spend("overdraw")], {
           factGuards: [fact],
@@ -1723,7 +2162,7 @@ describe("atomic mechanics transactions", () => {
         },
       ],
     } as const satisfies ResourceSpec;
-    const recovery = planMechanicsTransaction(
+    const recovery = simulateMechanicsTransaction(
       before,
       transaction(
         [
@@ -1800,7 +2239,7 @@ describe("atomic mechanics transactions", () => {
     } as const satisfies ResourceRef;
 
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction([initializeOperation("collision", focus)])
       )
@@ -1810,7 +2249,7 @@ describe("atomic mechanics transactions", () => {
       status: "rejected",
     });
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction([
           {
@@ -1838,7 +2277,7 @@ describe("atomic mechanics transactions", () => {
         } satisfies MechanicsOperation,
       ],
     ] as const) {
-      expect(planMechanicsTransaction(before, transaction([operation]))).toEqual({
+      expect(simulateMechanicsTransaction(before, transaction([operation]))).toEqual({
         operationId,
         reason: "resource-fixed-shape",
         status: "rejected",
@@ -1863,7 +2302,7 @@ describe("atomic mechanics transactions", () => {
     const before = parsedWorld(alive(10));
     const snapshot = structuredClone(before);
 
-    const capacity = planMechanicsTransaction(
+    const capacity = simulateMechanicsTransaction(
       before,
       transaction([initializeOperation("initialize", resource, spec)])
     );
@@ -1875,7 +2314,7 @@ describe("atomic mechanics transactions", () => {
     expect(capacity).not.toHaveProperty("action");
     expect(capacity).not.toHaveProperty("world");
 
-    const initial = planMechanicsTransaction(
+    const initial = simulateMechanicsTransaction(
       before,
       transaction([
         initializeOperation("initialize", resource, spec, {
@@ -1890,7 +2329,7 @@ describe("atomic mechanics transactions", () => {
     });
 
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction([
           initializeOperation("invalid-roll", resource, spec, {
@@ -1905,8 +2344,8 @@ describe("atomic mechanics transactions", () => {
       status: "rejected",
     });
 
-    const result = planned(
-      planMechanicsTransaction(
+    const result = simulated(
+      simulateMechanicsTransaction(
         before,
         transaction([
           initializeOperation("initialize", resource, spec, {
@@ -1916,7 +2355,7 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(result.world).resources.pools[resource.resourceId]).toMatchObject({
+    expect(state(result.state.world).resources.pools[resource.resourceId]).toMatchObject({
       capacity: { base: { kind: "formula", resolution: { total: 4 } } },
       current: 2,
     });
@@ -1947,7 +2386,7 @@ describe("atomic mechanics transactions", () => {
       id: "formula-resource",
       initial: { kind: "empty" },
     } as const satisfies ResourceSpec;
-    const result = planMechanicsTransaction(
+    const result = simulateMechanicsTransaction(
       before,
       transaction([
         creatureDamage("would-apply", SELF, 3, {
@@ -1975,8 +2414,8 @@ describe("atomic mechanics transactions", () => {
       resourceId: "focus",
     } as const satisfies ResourceRef;
     const emptyWorld = parsedWorld(alive(10));
-    const initializedAndSpent = planned(
-      planMechanicsTransaction(
+    const initializedAndSpent = simulated(
+      simulateMechanicsTransaction(
         emptyWorld,
         transaction([
           initializeOperation("initialize", resource),
@@ -1992,7 +2431,7 @@ describe("atomic mechanics transactions", () => {
         ])
       )
     );
-    expect(state(initializedAndSpent.world).resources.pools.focus).toMatchObject({
+    expect(state(initializedAndSpent.state.world).resources.pools.focus).toMatchObject({
       current: 2,
     });
     expect(
@@ -2003,8 +2442,8 @@ describe("atomic mechanics transactions", () => {
     ]);
 
     const populatedWorld = resourceWorld();
-    const transitionedAndRemoved = planned(
-      planMechanicsTransaction(
+    const transitionedAndRemoved = simulated(
+      simulateMechanicsTransaction(
         populatedWorld,
         transaction(
           [
@@ -2028,7 +2467,7 @@ describe("atomic mechanics transactions", () => {
         )
       )
     );
-    expect(state(transitionedAndRemoved.world).resources.pools).not.toHaveProperty(
+    expect(state(transitionedAndRemoved.state.world).resources.pools).not.toHaveProperty(
       "focus"
     );
     expect(transitionedAndRemoved.executions[1]).toMatchObject({
@@ -2036,13 +2475,11 @@ describe("atomic mechanics transactions", () => {
       kind: "resource-remove",
       status: "applied",
     });
-    expect(transitionedAndRemoved.action.mutations.map(({ path }) => path)).toEqual([
-      ["resources", "pools", "focus"],
-    ]);
+    expect(transitionedAndRemoved.stages).toHaveLength(2);
     expect(state(populatedWorld).resources.pools.focus).toMatchObject({ current: 3 });
   });
 
-  it("deletes the final item quantity through resource closure", () => {
+  it("leaves final item cleanup to the higher-level executor", () => {
     const material = structuredClone(
       createEmptyCharacterMaterialState(1, CHARACTER, alive(10))
     );
@@ -2079,8 +2516,8 @@ describe("atomic mechanics transactions", () => {
       ...COUNT_RESOURCE_SPEC,
       id: "item-quantity",
     } as const satisfies ResourceSpec;
-    const result = planned(
-      planMechanicsTransaction(
+    const result = simulated(
+      simulateMechanicsTransaction(
         before,
         transaction(
           [
@@ -2101,10 +2538,9 @@ describe("atomic mechanics transactions", () => {
         )
       )
     );
-    expect(state(result.world).inventory).not.toHaveProperty("potion");
-    expect(result.action.mutations.map(({ path }) => path)).toEqual([
-      ["inventory", "potion"],
-    ]);
+    expect(state(result.state.world).inventory.potion?.quantity.current).toBe(0);
+    expect(state(result.state.world).inventory).toHaveProperty("potion");
+    expect(result).not.toHaveProperty("action");
   });
 
   it("rejects ABA reuse when one inventory id names a new physical ordinal", () => {
@@ -2141,7 +2577,10 @@ describe("atomic mechanics transactions", () => {
       causeId: staleCause.causeId,
     };
     expect(
-      planMechanicsTransaction(before, transaction([operation], { causes: [staleCause] }))
+      simulateMechanicsTransaction(
+        before,
+        transaction([operation], { causes: [staleCause] })
+      )
     ).toEqual({
       operationId: "stale-wand",
       reason: "invalid-cause",
@@ -2187,8 +2626,8 @@ describe("atomic mechanics transactions", () => {
       ...COUNT_RESOURCE_SPEC,
       id: "item-quantity",
     } as const satisfies ResourceSpec;
-    const activated = planned(
-      planMechanicsTransaction(
+    const activated = simulated(
+      simulateMechanicsTransaction(
         before,
         transaction(
           [
@@ -2230,6 +2669,7 @@ describe("atomic mechanics transactions", () => {
               },
               occurrenceId: "potion-effect",
               operationId: "apply-effect",
+              parent: occurrenceGeneration("potion-root", 1),
             },
           ],
           {
@@ -2239,13 +2679,13 @@ describe("atomic mechanics transactions", () => {
         )
       )
     );
-    expect(state(activated.world).inventory.potion?.quantity.current).toBe(0);
-    expect(state(activated.world).occurrences).toHaveProperty("potion-root");
-    expect(state(activated.world).occurrences).toHaveProperty("potion-effect");
+    expect(state(activated.state.world).inventory.potion?.quantity.current).toBe(0);
+    expect(state(activated.state.world).occurrences).toHaveProperty("potion-root");
+    expect(state(activated.state.world).occurrences).toHaveProperty("potion-effect");
 
     expect(
-      planMechanicsTransaction(
-        activated.world,
+      simulateMechanicsTransaction(
+        activated.state.world,
         transaction(
           [
             {
@@ -2265,15 +2705,15 @@ describe("atomic mechanics transactions", () => {
     });
 
     const rootCause = programRootCause(authority, "potion-root");
-    const ended = planned(
-      planMechanicsTransaction(
-        activated.world,
+    const ended = simulated(
+      simulateMechanicsTransaction(
+        activated.state.world,
         transaction(
           [
             {
               causeId: rootCause.causeId,
               kind: "occurrence-end",
-              occurrence: { material: CHARACTER, occurrenceId: "potion-root" },
+              occurrence: occurrenceGeneration("potion-root", 1),
               operationId: "end-potion-effect",
             },
           ],
@@ -2281,10 +2721,19 @@ describe("atomic mechanics transactions", () => {
         )
       )
     );
-    expect(state(ended.world).occurrences).not.toHaveProperty("potion-root");
-    expect(state(ended.world).occurrences).not.toHaveProperty("potion-effect");
-    expect(state(ended.world).inventory).not.toHaveProperty("potion");
-    expectExactActionRoundTrip(activated.world, ended);
+    expect(ended.state.world).toEqual(activated.state.world);
+    expect(ended.stages[0]?.after).toBe(ended.stages[0]?.before);
+    expect(state(ended.state.world).occurrences).toHaveProperty("potion-root");
+    expect(state(ended.state.world).occurrences).toHaveProperty("potion-effect");
+    expect(state(ended.state.world).inventory.potion?.quantity.current).toBe(0);
+    expect(ended.consequences).toEqual([
+      {
+        causeId: rootCause.causeId,
+        kind: "occurrence-end",
+        occurrence: occurrenceGeneration("potion-root", 1),
+        operationId: "end-potion-effect",
+      },
+    ]);
   });
 
   it("rejects bad authority, targets, kinds, and maximum evidence", () => {
@@ -2292,9 +2741,13 @@ describe("atomic mechanics transactions", () => {
       dismissed: creature(alive(5), false),
       door: object(7, 2),
     });
-    const missingActor = { entityId: "missing", material: CHARACTER } as const;
+    const missingActor = {
+      entityId: "missing",
+      material: CHARACTER,
+      ordinal: 99,
+    } as const;
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction(
           [
@@ -2316,7 +2769,7 @@ describe("atomic mechanics transactions", () => {
       causeId: missingCause.causeId,
     };
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction([missingAuthorityOperation], { causes: [missingCause] })
       )
@@ -2326,9 +2779,13 @@ describe("atomic mechanics transactions", () => {
       status: "rejected",
     });
 
-    const unavailable = { entityId: "dismissed", material: CHARACTER } as const;
+    const unavailable = {
+      entityId: "dismissed",
+      material: CHARACTER,
+      ordinal: 1,
+    } as const;
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction([creatureDamage("unavailable", unavailable, 1)])
       )
@@ -2338,9 +2795,9 @@ describe("atomic mechanics transactions", () => {
       status: "rejected",
     });
 
-    const door = { entityId: "door", material: CHARACTER } as const;
+    const door = { entityId: "door", material: CHARACTER, ordinal: 2 } as const;
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction([creatureDamage("wrong-kind", door, 1)])
       )
@@ -2351,7 +2808,7 @@ describe("atomic mechanics transactions", () => {
     });
 
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction([
           creatureDamage("stale", SELF, 1, {
@@ -2365,7 +2822,7 @@ describe("atomic mechanics transactions", () => {
       status: "rejected",
     });
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         before,
         transaction([creatureDamage("missing-max", SELF, 1)])
       )
@@ -2386,16 +2843,16 @@ describe("atomic mechanics transactions", () => {
     const operation = creatureDamage("damage", SELF, 1, {
       maximumHitPoints: { kind: "fact", value: 10 },
     });
-    const result = planned(
-      planMechanicsTransaction(
+    const result = simulated(
+      simulateMechanicsTransaction(
         parsedWorld(alive(10)),
         transaction([operation], { factGuards: [maximum] })
       )
     );
-    expect(result.action.guards.facts).toEqual([maximum]);
+    expect(result.actionFacts).toEqual(expectedInstalledFacts([maximum]));
 
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         parsedWorld(alive(10)),
         transaction([operation], {
           factGuards: [
@@ -2409,7 +2866,7 @@ describe("atomic mechanics transactions", () => {
     ).toEqual({ operationId: null, reason: "fact-conflict", status: "rejected" });
 
     expect(
-      planMechanicsTransaction(
+      simulateMechanicsTransaction(
         parsedWorld(alive(10)),
         transaction([operation], {
           factGuards: [{ ...maximum, lifecycle: "commit" }],
@@ -2418,10 +2875,10 @@ describe("atomic mechanics transactions", () => {
     ).toEqual({ operationId: null, reason: "fact-conflict", status: "rejected" });
   });
 
-  it("commits once, fences stale state, and undo-redoes the complete batch", () => {
+  it("returns ordered stages and raw action facts without a journal draft", () => {
     const before = parsedWorld(alive(10));
-    const result = planned(
-      planMechanicsTransaction(
+    const result = simulated(
+      simulateMechanicsTransaction(
         before,
         transaction(
           [
@@ -2441,77 +2898,25 @@ describe("atomic mechanics transactions", () => {
         )
       )
     );
-    const journalBefore = toJournalWorld(before);
-    const facts = resolvedFacts(result.action);
-    const stale: ActionJournalWorld = {
-      ...journalBefore,
-      documents: journalBefore.documents.map((document) => ({
-        ...document,
-        journal: { ...document.journal, revision: document.journal.revision + 1 },
-      })),
-    };
     expect(
-      reduceActionJournal(stale, { action: result.action, kind: "commit" }, facts)
-    ).toMatchObject({ reason: "document-conflict", status: "rejected" });
-
-    const committed = reduceActionJournal(
-      journalBefore,
-      { action: result.action, kind: "commit" },
-      facts
-    );
-    expect(committed.status).toBe("applied");
-    if (committed.status !== "applied") return;
-    expect(committed.world.documents[0]?.data).toMatchObject({
-      vitals: { hitPoints: { current: 7 } },
-    });
-
-    const undone = reduceActionJournal(
-      committed.world,
-      {
-        action: result.action,
-        documents: currentDocuments(committed.world, result.action),
-        expectedGeneration: 1,
-        kind: "undo",
-      },
-      facts
-    );
-    expect(undone.status).toBe("applied");
-    if (undone.status !== "applied") return;
-    expect(undone.world.documents[0]?.data).toMatchObject({
-      vitals: { hitPoints: { current: 10 } },
-    });
-
-    const staleRedoFacts = resolvedFacts(result.action, "redo").map((fact) => ({
-      ...fact,
-      actual: { present: true, value: 11 } as const,
-    }));
-    expect(
-      reduceActionJournal(
-        undone.world,
+      result.stages.map(({ after, before: stageBefore }) => [
+        state(stageBefore.world).vitals.hitPoints.current,
+        state(after.world).vitals.hitPoints.current,
+      ])
+    ).toEqual([
+      [10, 6],
+      [6, 7],
+    ]);
+    expect(result.actionFacts).toEqual(
+      expectedInstalledFacts([
         {
-          action: result.action,
-          documents: currentDocuments(undone.world, result.action),
-          expectedGeneration: 2,
-          kind: "redo",
+          address: ["hit-point-maximum"],
+          expected: { present: true, value: 10 },
+          lifecycle: "commit-redo",
+          owner: SELF,
         },
-        staleRedoFacts
-      )
-    ).toMatchObject({ reason: "fact-conflict", status: "rejected" });
-
-    const redone = reduceActionJournal(
-      undone.world,
-      {
-        action: result.action,
-        documents: currentDocuments(undone.world, result.action),
-        expectedGeneration: 2,
-        kind: "redo",
-      },
-      resolvedFacts(result.action, "redo")
+      ])
     );
-    expect(redone.status).toBe("applied");
-    if (redone.status !== "applied") return;
-    expect(redone.world.documents[0]?.data).toMatchObject({
-      vitals: { hitPoints: { current: 7 } },
-    });
+    expect(result).not.toHaveProperty("action");
   });
 });

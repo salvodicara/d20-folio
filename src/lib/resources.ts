@@ -17,7 +17,7 @@ import {
   evaluateIntegerExpression,
   type IntegerBindings,
 } from "@/lib/integer-expression";
-import { conformEntityRef } from "@/lib/mechanics-reference-schema";
+import { conformEntityRef, entityRefKey } from "@/lib/mechanics-reference-schema";
 import type { CharacterMaterialRef, EntityRef } from "@/types/mechanics-reference";
 import {
   RESOURCE_CELL_SCHEMA,
@@ -231,12 +231,7 @@ function characterParts(character: CharacterMaterialRef): readonly string[] {
 export function resourceRefKey(ref: ResourceRef): string {
   switch (ref.kind) {
     case "pool": {
-      const material = ref.owner.material;
-      const materialParts =
-        material.kind === "character-play"
-          ? [material.kind, material.uid, material.characterId]
-          : [material.kind, material.campaignId];
-      return framed([ref.kind, ...materialParts, ref.owner.entityId, ref.resourceId]);
+      return framed([ref.kind, entityRefKey(ref.owner), ref.resourceId]);
     }
     case "standard-spell-slot":
       return framed([ref.kind, ...characterParts(ref.character), String(ref.level)]);

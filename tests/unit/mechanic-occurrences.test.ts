@@ -47,8 +47,16 @@ const MATERIAL = {
 } as const;
 const SHARED_MATERIAL = { campaignId: "campaign-1", kind: "shared-combat" } as const;
 const ACTOR: EntityRef = { entityId: "self", material: MATERIAL };
-const COMPANION: EntityRef = { entityId: "companion-1", material: MATERIAL };
-const MONSTER: EntityRef = { entityId: "monster-1", material: SHARED_MATERIAL };
+const COMPANION: EntityRef = {
+  entityId: "companion-1",
+  material: MATERIAL,
+  ordinal: 1,
+};
+const MONSTER: EntityRef = {
+  entityId: "monster-1",
+  material: SHARED_MATERIAL,
+  ordinal: 1,
+};
 const TIMELINE_CLOCK = { epoch: 0, material: MATERIAL } as const;
 const ENCOUNTER_CLOCK = { epoch: 1, material: MATERIAL } as const;
 
@@ -431,6 +439,37 @@ describe("one-model occurrence boundary", () => {
     input.nextOccurrenceOrdinal = 99;
     expect(parsed.value.nextOccurrenceOrdinal).toBe(3);
   });
+
+  it("owns one exact transient ending field without a legacy read shim", () => {
+    const allocated = stateWithRoot();
+    expect(allocated.occurrences.root?.ending).toBeNull();
+    expect(conformNewMechanicOccurrence({ ...program(), ending: null })).toBeNull();
+
+    const missing = mutableState(allocated);
+    Reflect.deleteProperty(missing.occurrences.root as object, "ending");
+    expect(parseOccurrenceState(missing)).toEqual({ ok: false });
+
+    const ending = mutableState(allocated);
+    const root = ending.occurrences.root;
+    if (!root) throw new Error("root fixture");
+    root.ending = {
+      causes: [{ kind: "requested" }, { kind: "concentration-broken" }],
+    };
+    const parsed = parseOccurrenceState(ending);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.occurrences.root?.ending?.causes).toEqual([
+      { kind: "concentration-broken" },
+      { kind: "requested" },
+    ]);
+    expect(Object.isFrozen(parsed.value.occurrences.root?.ending?.causes)).toBe(true);
+
+    const duplicate = mutableState(ending);
+    const duplicateRoot = duplicate.occurrences.root;
+    if (!duplicateRoot?.ending) throw new Error("ending fixture");
+    duplicateRoot.ending.causes = [{ kind: "requested" }, { kind: "requested" }];
+    expect(parseOccurrenceState(duplicate)).toEqual({ ok: false });
+  });
 });
 
 describe("immutable allocation, ordinals and cascades", () => {
@@ -456,6 +495,27 @@ describe("immutable allocation, ordinals and cascades", () => {
     const usedHighWater = mutableState(two);
     usedHighWater.nextOccurrenceOrdinal = 3;
     expect(parseOccurrenceState(usedHighWater)).toEqual({ ok: false });
+  });
+
+  it("rejects stale local edges that bind to a replacement at the same id", () => {
+    let original = stateWithRoot();
+    original = addOccurrence(original, "child", condition("prone"));
+    original = addOccurrence(original, "dependent", {
+      ...condition("stunned"),
+      endRules: [{ kind: "occurrence-end", occurrenceId: "child" }],
+    });
+
+    const staleParent = mutableState(original);
+    const root = staleParent.occurrences.root as ProgramOccurrence;
+    root.ordinal = 4;
+    staleParent.nextOccurrenceOrdinal = 5;
+    expect(parseOccurrenceState(staleParent)).toEqual({ ok: false });
+
+    const staleDependency = mutableState(original);
+    const child = staleDependency.occurrences.child as EffectOccurrence;
+    child.ordinal = 4;
+    staleDependency.nextOccurrenceOrdinal = 5;
+    expect(parseOccurrenceState(staleDependency)).toEqual({ ok: false });
   });
 
   it("cascades program children and transitive lifetime dependencies", () => {

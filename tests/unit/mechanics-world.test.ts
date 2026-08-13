@@ -1,14 +1,20 @@
 import { describe, expect, it } from "vitest";
 
 import { materialRefKey } from "@/lib/action-journal";
+import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { addOccurrence } from "@/lib/mechanic-occurrences";
 import {
-  applyMechanicsBoundary,
-  closeMechanicsWorld,
+  advanceMechanicsBoundary,
+  beginMechanicsBoundary,
+  beginMechanicsCausalState,
   discoverMechanicsEndWave,
   finalizeMechanicsEndWave,
+  finalizeMechanicsMaterialCleanup,
   isEndRuleDue,
+  isMechanicsEndWaveReceiptForWorld,
+  latchMechanicsEndWave,
   parseMechanicsWorld,
+  rebaseMechanicsCausalState,
 } from "@/lib/mechanics-world";
 import {
   createEmptyCharacterMaterialState,
@@ -36,11 +42,12 @@ import type { NewMechanicOccurrence } from "@/types/mechanic-occurrence";
 import type { MechanicsProgramAuthorityReceipt } from "@/types/mechanics-program-receipt";
 import type {
   EncounterSeed,
+  MechanicsBoundaryCheckpoint,
+  MechanicsBoundaryCompletion,
   MechanicsBoundaryCommand,
-  MechanicsClosureCheckpoint,
   MechanicsClosureRequest,
-  MechanicsClosureResolver,
-  MechanicsEndCandidate,
+  MechanicsCausalState,
+  MechanicsEndWaveReceipt,
   MechanicsDocument,
   MechanicsWorld,
 } from "@/types/mechanics-world";
@@ -319,14 +326,26 @@ function addRoot<State extends MutableMaterialState>(
   return addToState(state, id, program(material, id, authority));
 }
 
+function generation(
+  state: MutableMaterialState,
+  material: MaterialRef,
+  occurrenceId: string
+) {
+  const occurrence = state.occurrences[occurrenceId];
+  if (!occurrence) throw new Error(`Missing occurrence ${occurrenceId}`);
+  return { occurrence: { material, occurrenceId }, ordinal: occurrence.ordinal } as const;
+}
+
 function shared(): SharedMaterialState {
   return structuredClone(createEmptySharedMaterialState());
 }
 
 function sorted(documents: MechanicsDocument[]): MechanicsDocument[] {
-  return documents.sort((left, right) =>
-    materialRefKey(left.material).localeCompare(materialRefKey(right.material))
-  );
+  return documents.sort((left, right) => {
+    const leftKey = materialRefKey(left.material);
+    const rightKey = materialRefKey(right.material);
+    return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
+  });
 }
 
 function world(
@@ -344,28 +363,53 @@ function world(
   };
 }
 
-function causalResolver(
-  checkpoints: MechanicsClosureCheckpoint[] = []
-): MechanicsClosureResolver {
-  return (checkpoint) => {
-    checkpoints.push(checkpoint);
-    const finalized = finalizeMechanicsEndWave(
-      checkpoint.world,
-      checkpoint.request,
-      checkpoint.candidates
-    );
-    return finalized.status === "rejected"
-      ? { reason: finalized.reason, status: "rejected" }
-      : { status: "resolved", world: finalized.world };
-  };
+function worldGeneration(
+  value: Readonly<MechanicsWorld>,
+  material: MaterialRef,
+  occurrenceId: string
+) {
+  const document = value.documents.find(
+    (entry) => materialRefKey(entry.material) === materialRefKey(material)
+  );
+  const occurrence = document?.state.occurrences[occurrenceId];
+  if (!occurrence) throw new Error(`Missing occurrence ${occurrenceId}`);
+  return { occurrence: { material, occurrenceId }, ordinal: occurrence.ordinal } as const;
+}
+
+function finalizeDiscoveredWave(
+  value: Readonly<MechanicsWorld>,
+  request: MechanicsClosureRequest = {}
+) {
+  const discovery = discoverMechanicsEndWave(value, request);
+  if (discovery.status === "rejected") return discovery;
+  const latched = latchMechanicsEndWave(discovery.world, discovery.wave);
+  if (latched.status === "rejected") return latched;
+  const current = discoverMechanicsEndWave(latched.world, discovery.wave.request);
+  return current.status === "rejected"
+    ? current
+    : finalizeMechanicsEndWave(current.world, current.wave);
 }
 
 function applyBoundary(
   value: Readonly<MechanicsWorld>,
   command: Readonly<MechanicsBoundaryCommand>,
-  checkpoints: MechanicsClosureCheckpoint[] = []
+  checkpoints: MechanicsBoundaryCheckpoint[] = []
 ) {
-  return applyMechanicsBoundary(value, command, causalResolver(checkpoints));
+  let result = beginMechanicsBoundary(value, command);
+  let remaining = 32;
+  while (result.status === "checkpoint" && remaining > 0) {
+    checkpoints.push(result.checkpoint);
+    const completion = {
+      continuation: canonicalFingerprint(result.continuation),
+      state: result.checkpoint.state,
+    } as unknown as MechanicsBoundaryCompletion;
+    result = advanceMechanicsBoundary(result.continuation, completion);
+    remaining -= 1;
+  }
+  if (result.status === "checkpoint") throw new Error("boundary fixture did not settle");
+  return result.status === "complete"
+    ? { status: result.outcome, world: result.world }
+    : result;
 }
 
 function initiativeSeed(...participants: CharacterMaterialRef[]): EncounterSeed {
@@ -406,7 +450,7 @@ function turnsEncounter(
       },
       ally: {
         ordinal: 2,
-        combatant: { material, entityId: "ally" },
+        combatant: { material, entityId: "ally", ordinal: 1 },
         economy: betweenTurns("ally-waiting"),
         initiativeRoll: 10,
         skipped: false,
@@ -462,33 +506,42 @@ describe("canonical mechanics world and clocks", () => {
     const snapshot = structuredClone(initial);
     const request = {
       boundaries: [],
-      removals: [{ material: HERO, occurrenceIds: ["root"] }],
+      endRequests: [worldGeneration(initial, HERO, "root")],
     } satisfies MechanicsClosureRequest;
     const discovery = discoverMechanicsEndWave(initial, request);
     expect(discovery.status).toBe("discovered");
     if (discovery.status !== "discovered") return;
 
-    expect(discovery.candidates.map(({ occurrence }) => occurrence.occurrenceId)).toEqual(
-      ["child", "root"]
-    );
-    expect(discovery.candidates[0]?.causes).toContainEqual({
-      dependency: { material: HERO, occurrenceId: "root" },
+    expect(
+      discovery.wave.candidates.map(
+        ({ occurrence }) => occurrence.occurrence.occurrenceId
+      )
+    ).toEqual(["child", "root"]);
+    expect(discovery.wave.candidates[0]?.causes).toContainEqual({
+      dependency: worldGeneration(initial, HERO, "root"),
       kind: "dependency-ended",
     });
-    expect(discovery.candidates[1]?.causes).toEqual([{ kind: "requested" }]);
+    expect(discovery.wave.candidates[1]?.causes).toEqual([{ kind: "requested" }]);
     expect(
       discovery.world.documents.find((document) => document.kind === "character")?.state
         .occurrences
     ).toHaveProperty("root");
     expect(initial).toEqual(snapshot);
-    expect(Object.isFrozen(discovery.candidates)).toBe(true);
-    expect(discovery.candidates[0]?.occurrence.material).not.toBe(
-      request.removals[0]?.material
+    expect(Object.isFrozen(discovery.wave.candidates)).toBe(true);
+    expect(discovery.wave.candidates[0]?.occurrence.occurrence.material).not.toBe(
+      request.endRequests[0]?.occurrence.material
     );
 
-    const finalized = finalizeMechanicsEndWave(initial, request, discovery.candidates);
-    const composed = closeMechanicsWorld(initial, request);
-    expect(finalized).toEqual(composed);
+    const latched = latchMechanicsEndWave(initial, discovery.wave);
+    expect(latched.status).toBe("latched");
+    if (latched.status === "rejected") return;
+    expect(parseMechanicsWorld(latched.world)).toMatchObject({
+      ok: false,
+      reason: "invalid-ending",
+    });
+    const current = discoverMechanicsEndWave(latched.world, discovery.wave.request);
+    if (current.status !== "discovered") throw new Error("latched wave fixture");
+    const finalized = finalizeMechanicsEndWave(current.world, current.wave);
     expect(finalized.status).toBe("applied");
     if (finalized.status !== "applied") return;
     expect(finalized.world.documents[0]?.state.occurrences).toEqual({});
@@ -519,66 +572,501 @@ describe("canonical mechanics world and clocks", () => {
     } as const;
     const discovery = discoverMechanicsEndWave(initial, {
       boundaries: [boundary],
-      removals: [{ material: HERO, occurrenceIds: ["triple"] }],
+      endRequests: [worldGeneration(initial, HERO, "triple")],
     });
     expect(discovery.status).toBe("discovered");
     if (discovery.status !== "discovered") return;
-    expect(discovery.candidates).toEqual([
+    expect(discovery.wave.candidates).toEqual([
       {
         causes: [
           { boundary, kind: "explicit-boundary" },
           { kind: "requested" },
           { kind: "temporary-hit-points-empty" },
         ],
-        occurrence: { material: HERO, occurrenceId: "triple" },
+        occurrence: worldGeneration(initial, HERO, "triple"),
       },
     ]);
   });
 
   it("rejects malformed, missing, excess, duplicate, reordered and stale end waves", () => {
     const initial = programEndWaveWorld();
+    expect(
+      discoverMechanicsEndWave(initial, {
+        endRequests: [worldGeneration(initial, HERO, "root")],
+        future: true,
+      } as never)
+    ).toMatchObject({ reason: "invalid-boundary", status: "rejected" });
+    expect(
+      discoverMechanicsEndWave(initial, {
+        endRequests: [
+          worldGeneration(initial, HERO, "root"),
+          worldGeneration(initial, HERO, "root"),
+        ],
+      })
+    ).toMatchObject({ reason: "invalid-boundary", status: "rejected" });
     const request = {
       boundaries: [],
-      removals: [{ material: HERO, occurrenceIds: ["root"] }],
+      endRequests: [worldGeneration(initial, HERO, "root")],
     } satisfies MechanicsClosureRequest;
     const discovery = discoverMechanicsEndWave(initial, request);
     if (discovery.status !== "discovered") throw new Error("discovery fixture");
-    const candidates = discovery.candidates;
-    const invalid = (value: readonly MechanicsEndCandidate[]) =>
-      expect(finalizeMechanicsEndWave(initial, request, value)).toMatchObject({
+    const wave = discovery.wave;
+    const invalid = (value: unknown) =>
+      expect(
+        finalizeMechanicsEndWave(initial, value as MechanicsEndWaveReceipt)
+      ).toMatchObject({
         reason: "invalid-end-wave",
         status: "rejected",
       });
 
-    invalid(candidates.slice(1));
-    invalid([...candidates, candidates[0] as MechanicsEndCandidate]);
-    invalid([...candidates].reverse());
-    invalid([
-      candidates[0] as MechanicsEndCandidate,
-      candidates[0] as MechanicsEndCandidate,
-    ]);
-    invalid([
-      {
-        ...(candidates[0] as MechanicsEndCandidate),
-        causes: [{ kind: "requested" }],
-      },
-      candidates[1] as MechanicsEndCandidate,
-    ]);
-    invalid([
-      {
-        ...(candidates[0] as MechanicsEndCandidate),
-        future: true,
-      } as MechanicsEndCandidate,
-      candidates[1] as MechanicsEndCandidate,
-    ]);
+    invalid({ ...wave, candidates: wave.candidates.slice(1) });
+    invalid({ ...wave, candidates: [...wave.candidates, wave.candidates[0]] });
+    invalid({ ...wave, candidates: [...wave.candidates].reverse() });
+    invalid({
+      ...wave,
+      candidates: [wave.candidates[0], wave.candidates[0]],
+    });
+    invalid({
+      ...wave,
+      candidates: [
+        { ...wave.candidates[0], causes: [{ kind: "requested" }] },
+        wave.candidates[1],
+      ],
+    });
+    invalid({ ...wave, future: true });
 
     const stale = structuredClone(initial);
     const staleHero = stale.documents.find((document) => document.kind === "character");
     if (staleHero?.kind !== "character") throw new Error("stale fixture");
     Reflect.set(staleHero.state, "occurrences", {});
-    expect(finalizeMechanicsEndWave(stale, request, candidates)).toMatchObject({
+    expect(finalizeMechanicsEndWave(stale, wave)).toMatchObject({
       reason: "invalid-end-wave",
       status: "rejected",
+    });
+  });
+
+  it("fails malformed boundary commands and hostile BigInt receipts closed", () => {
+    const initial = programEndWaveWorld();
+    for (const command of [
+      {
+        clock: { epoch: 0, material: HERO },
+        elapsedSeconds: 1n,
+        kind: "advance-time",
+      },
+      {
+        input: {
+          clock: { epoch: 0n, material: HERO },
+          combatant: self(),
+          rest: "long",
+        },
+        kind: "complete-rest",
+      },
+      { kind: "complete-turn", material: HERO, unexpected: true },
+    ]) {
+      expect(beginMechanicsBoundary(initial, command)).toMatchObject({
+        reason: "invalid-transition",
+        status: "rejected",
+      });
+    }
+
+    const discovery = discoverMechanicsEndWave(initial, {
+      endRequests: [worldGeneration(initial, HERO, "root")],
+    });
+    if (discovery.status !== "discovered") throw new Error("discovery fixture");
+    const candidate = discovery.wave.candidates[0];
+    if (!candidate) throw new Error("candidate fixture");
+    const forged = {
+      ...discovery.wave,
+      candidates: [
+        {
+          ...candidate,
+          occurrence: { ...candidate.occurrence, ordinal: 1n },
+        },
+      ],
+    };
+    expect(isMechanicsEndWaveReceiptForWorld(initial, forged)).toBe(false);
+    expect(
+      finalizeMechanicsEndWave(initial, forged as unknown as MechanicsEndWaveReceipt)
+    ).toMatchObject({ reason: "invalid-end-wave", status: "rejected" });
+  });
+
+  it("binds receipts and end requests to one exact occurrence generation", () => {
+    const initialHero = addRoot(character(), HERO);
+    const initial = world(initialHero);
+    const oldGeneration = worldGeneration(initial, HERO, "root");
+    const discovery = discoverMechanicsEndWave(initial, {
+      endRequests: [oldGeneration],
+    });
+    if (discovery.status !== "discovered") throw new Error("discovery fixture");
+
+    const advancedHero = structuredClone(initialHero);
+    advancedHero.timeline.elapsedSeconds = 1;
+    const advanced = world(advancedHero);
+    expect(finalizeMechanicsEndWave(advanced, discovery.wave)).toMatchObject({
+      reason: "invalid-end-wave",
+      status: "rejected",
+    });
+
+    const recreatedHero = structuredClone(initialHero);
+    const replacement = recreatedHero.occurrences.root;
+    if (!replacement) throw new Error("occurrence fixture");
+    Reflect.set(replacement, "ordinal", recreatedHero.nextOccurrenceOrdinal);
+    recreatedHero.nextOccurrenceOrdinal += 1;
+    const recreated = world(recreatedHero);
+    expect(parseMechanicsWorld(recreated).ok).toBe(true);
+    expect(finalizeMechanicsEndWave(recreated, discovery.wave)).toMatchObject({
+      reason: "invalid-end-wave",
+      status: "rejected",
+    });
+    expect(
+      discoverMechanicsEndWave(recreated, { endRequests: [oldGeneration] })
+    ).toMatchObject({ reason: "invalid-boundary", status: "rejected" });
+  });
+
+  it("keeps a transient ending latched while its source remains readable", () => {
+    const concentrating = addToState(addRoot(character(), HERO), "focus", {
+      endRules: [],
+      kind: "concentration",
+      parentId: "root",
+      target: self(),
+    });
+    const campaign = addToState(addRoot(shared(), CAMPAIGN), "paralysis", {
+      conditionId: "paralyzed",
+      endRules: [],
+      kind: "condition",
+      parentId: "root",
+      target: self(),
+    });
+    const first = discoverMechanicsEndWave(world(concentrating, campaign));
+    if (first.status !== "discovered") throw new Error("first wave fixture");
+    const latched = latchMechanicsEndWave(first.world, first.wave);
+    if (latched.status === "rejected") throw new Error("latch fixture");
+    const restored = structuredClone(latched.world);
+    const restoredCampaign = restored.documents.find(
+      (document) => document.kind === "shared"
+    );
+    if (restoredCampaign?.kind !== "shared") throw new Error("campaign fixture");
+    restoredCampaign.state = shared();
+    const extended = discoverMechanicsEndWave(restored, first.wave.request);
+    expect(extended.status).toBe("discovered");
+    if (extended.status !== "discovered") return;
+    expect(extended.wave.candidates).toEqual([
+      {
+        causes: [{ kind: "concentration-broken" }],
+        occurrence: worldGeneration(restored, HERO, "focus"),
+      },
+    ]);
+    expect(extended.wave.request.endRequests).toEqual([]);
+    expect(isMechanicsEndWaveReceiptForWorld(restored, extended.wave)).toBe(true);
+    expect(finalizeMechanicsEndWave(restored, extended.wave).status).toBe("applied");
+  });
+
+  it("unions new causes into a latched candidate without rewriting provenance", () => {
+    let hero = addRoot(character(), HERO);
+    hero = addToState(hero, "focus", {
+      endRules: [
+        {
+          clock: { material: HERO, epoch: 0 },
+          elapsedSeconds: 0,
+          kind: "time-reached",
+        },
+      ],
+      kind: "concentration",
+      parentId: "root",
+      target: self(),
+    });
+    const campaign = addToState(addRoot(shared(), CAMPAIGN), "paralysis", {
+      conditionId: "paralyzed",
+      endRules: [],
+      kind: "condition",
+      parentId: "root",
+      target: self(),
+    });
+    const initial = world(hero, campaign);
+    const first = discoverMechanicsEndWave(initial);
+    if (first.status !== "discovered") throw new Error("first wave fixture");
+    const latched = latchMechanicsEndWave(first.world, first.wave);
+    if (latched.status === "rejected") throw new Error("latch fixture");
+    const boundary = {
+      clock: { material: HERO, epoch: 0 },
+      elapsedSeconds: 0,
+      kind: "time-reached",
+    } as const;
+    const restored = structuredClone(latched.world);
+    const restoredCampaign = restored.documents.find(
+      (document) => document.kind === "shared"
+    );
+    if (restoredCampaign?.kind !== "shared") throw new Error("campaign fixture");
+    restoredCampaign.state = shared();
+    const extended = discoverMechanicsEndWave(restored, { boundaries: [boundary] });
+    expect(extended.status).toBe("discovered");
+    if (extended.status !== "discovered") return;
+    expect(extended.wave.candidates).toEqual([
+      {
+        causes: [
+          { boundary, kind: "explicit-boundary" },
+          { kind: "concentration-broken" },
+        ],
+        occurrence: worldGeneration(restored, HERO, "focus"),
+      },
+    ]);
+    expect(extended.wave.request.endRequests).toEqual([]);
+    expect(isMechanicsEndWaveReceiptForWorld(restored, extended.wave)).toBe(true);
+    expect(finalizeMechanicsEndWave(restored, extended.wave)).toMatchObject({
+      reason: "invalid-end-wave",
+      status: "rejected",
+    });
+    const extendedLatch = latchMechanicsEndWave(restored, extended.wave);
+    if (extendedLatch.status === "rejected") throw new Error("extended latch fixture");
+    const current = discoverMechanicsEndWave(extendedLatch.world, extended.wave.request);
+    if (current.status !== "discovered") throw new Error("current fixture");
+    expect(finalizeMechanicsEndWave(current.world, current.wave).status).toBe("applied");
+    const cloned = JSON.parse(JSON.stringify(extended.wave)) as MechanicsEndWaveReceipt;
+    expect(isMechanicsEndWaveReceiptForWorld(restored, cloned)).toBe(true);
+  });
+
+  it("adds a child created under a latched ending source to the extended wave", () => {
+    const initialHero = addRoot(character(), HERO);
+    const initial = world(initialHero);
+    const first = discoverMechanicsEndWave(initial, {
+      endRequests: [worldGeneration(initial, HERO, "root")],
+    });
+    if (first.status !== "discovered") throw new Error("first wave fixture");
+    const latched = latchMechanicsEndWave(first.world, first.wave);
+    if (latched.status === "rejected") throw new Error("latch fixture");
+    const latchedHero = latched.world.documents.find(
+      (document) => document.kind === "character"
+    );
+    if (latchedHero?.kind !== "character") throw new Error("hero fixture");
+    const extendedHero = addToState(structuredClone(latchedHero.state), "late-child", {
+      endRules: [],
+      fact: { key: "late-child", kind: "active-key" },
+      kind: "standing",
+      parentId: "root",
+      target: self(),
+    });
+    const extendedWorld = world(extendedHero);
+    const extended = discoverMechanicsEndWave(extendedWorld, first.wave.request);
+    expect(extended.status).toBe("discovered");
+    if (extended.status !== "discovered") return;
+    expect(
+      extended.wave.candidates.map(({ occurrence }) => occurrence.occurrence.occurrenceId)
+    ).toEqual(["late-child", "root"]);
+    expect(extended.wave.candidates[0]?.causes).toEqual([
+      {
+        dependency: worldGeneration(extendedWorld, HERO, "root"),
+        kind: "dependency-ended",
+      },
+    ]);
+    const extendedLatch = latchMechanicsEndWave(extendedWorld, extended.wave);
+    if (extendedLatch.status === "rejected") throw new Error("extended latch fixture");
+    const current = discoverMechanicsEndWave(extendedLatch.world, extended.wave.request);
+    if (current.status !== "discovered") throw new Error("current fixture");
+    expect(finalizeMechanicsEndWave(current.world, current.wave).status).toBe("applied");
+  });
+
+  it("admits hostile causal input only through one closed-world constructor", () => {
+    const initial = programEndWaveWorld();
+    const begun = beginMechanicsCausalState(initial);
+    expect(begun.ok).toBe(true);
+    if (!begun.ok) return;
+    expect(Reflect.ownKeys(begun.value)).toEqual(["context", "world"]);
+    expect(begun.value.context).toEqual({
+      endWave: null,
+      request: { boundaries: [], endRequests: [], inventorySourceLeases: [] },
+    });
+    // @ts-expect-error The non-exported required brand blocks structural construction.
+    const structurallyForged: MechanicsCausalState = {
+      context: begun.value.context,
+      world: begun.value.world,
+    };
+    expect(beginMechanicsCausalState(structurallyForged)).toEqual({
+      ok: false,
+      reason: "invalid-world",
+    });
+
+    const discovery = discoverMechanicsEndWave(initial, {
+      endRequests: [worldGeneration(initial, HERO, "root")],
+    });
+    if (discovery.status !== "discovered") throw new Error("discovery fixture");
+    const latched = latchMechanicsEndWave(discovery.world, discovery.wave);
+    if (latched.status === "rejected") throw new Error("latch fixture");
+    expect(beginMechanicsCausalState(latched.world)).toEqual({
+      ok: false,
+      reason: "invalid-world",
+    });
+    expect(
+      beginMechanicsCausalState({
+        context: {
+          endWave: { wave: discovery.wave, world: latched.world },
+          request: { boundaries: [], endRequests: [], inventorySourceLeases: [] },
+        },
+        world: latched.world,
+      })
+    ).toEqual({ ok: false, reason: "invalid-world" });
+
+    const forged = structuredClone(initial);
+    const forgedHero = forged.documents.find((document) => document.kind === "character");
+    const forgedRoot = forgedHero?.state.occurrences.root;
+    if (!forgedRoot) throw new Error("root fixture");
+    forgedRoot.ending = { causes: [{ kind: "requested" }] };
+    const forgedDiscovery = discoverMechanicsEndWave(forged, {
+      endRequests: [worldGeneration(forged, HERO, "root")],
+    });
+    expect(forgedDiscovery.status).toBe("discovered");
+    if (forgedDiscovery.status !== "discovered") return;
+    expect(isMechanicsEndWaveReceiptForWorld(forged, forgedDiscovery.wave)).toBe(true);
+    expect(beginMechanicsCausalState(forged)).toEqual({
+      ok: false,
+      reason: "invalid-world",
+    });
+  });
+
+  it("latches only a current receipt and exposes a distinct transient result", () => {
+    const initial = programEndWaveWorld();
+    const discovery = discoverMechanicsEndWave(initial, {
+      endRequests: [worldGeneration(initial, HERO, "root")],
+    });
+    if (discovery.status !== "discovered") throw new Error("discovery fixture");
+
+    const stale = structuredClone(initial);
+    const staleHero = stale.documents.find((document) => document.kind === "character");
+    if (staleHero?.kind !== "character") throw new Error("hero fixture");
+    staleHero.state.timeline.elapsedSeconds += 1;
+    expect(latchMechanicsEndWave(stale, discovery.wave)).toMatchObject({
+      reason: "invalid-end-wave",
+      status: "rejected",
+    });
+
+    const latched = latchMechanicsEndWave(initial, discovery.wave);
+    expect(latched.status).toBe("latched");
+    if (latched.status === "rejected") return;
+    const current = discoverMechanicsEndWave(latched.world, discovery.wave.request);
+    if (current.status !== "discovered") throw new Error("current fixture");
+    expect(latchMechanicsEndWave(current.world, current.wave).status).toBe(
+      "already-latched"
+    );
+    expect(parseMechanicsWorld(current.world)).toMatchObject({
+      ok: false,
+      reason: "invalid-ending",
+    });
+  });
+
+  it("rebases a branded causal state by monotonically unioning exact causes", () => {
+    let hero = addRoot(character(), HERO);
+    hero.vitals.hitPoints.temporary = { current: 5, sourceOccurrence: null };
+    hero = addToState(hero, "focus", {
+      endRules: [{ kind: "temporary-hp-empty" }],
+      kind: "concentration",
+      parentId: "root",
+      target: self(),
+    });
+    const initial = world(hero);
+    const begun = beginMechanicsCausalState(initial);
+    if (!begun.ok) throw new Error("causal entry fixture");
+
+    const incapacitated = structuredClone(begun.value.world);
+    const campaignDocument = incapacitated.documents.find(
+      (document) => document.kind === "shared"
+    );
+    if (campaignDocument?.kind !== "shared") throw new Error("campaign fixture");
+    let campaign = addRoot(structuredClone(campaignDocument.state), CAMPAIGN);
+    campaign = addToState(campaign, "paralysis", {
+      conditionId: "paralyzed",
+      endRules: [],
+      kind: "condition",
+      parentId: "root",
+      target: self(),
+    });
+    campaignDocument.state = campaign;
+    const first = rebaseMechanicsCausalState(incapacitated, begun.value);
+    expect(first.ok).toBe(true);
+    if (!first.ok || first.value.context.endWave === null) return;
+    expect(first.value.context.endWave.wave.candidates).toEqual([
+      {
+        causes: [{ kind: "concentration-broken" }],
+        occurrence: worldGeneration(first.value.world, HERO, "focus"),
+      },
+    ]);
+
+    const depleted = structuredClone(first.value.world);
+    const heroDocument = depleted.documents.find(
+      (document) => document.kind === "character"
+    );
+    if (heroDocument?.kind !== "character") throw new Error("hero fixture");
+    heroDocument.state.vitals.hitPoints.temporary = {
+      current: 0,
+      sourceOccurrence: null,
+    };
+    const second = rebaseMechanicsCausalState(depleted, first.value);
+    expect(second.ok).toBe(true);
+    if (!second.ok || second.value.context.endWave === null) return;
+    expect(second.value.context.endWave.wave.candidates).toEqual([
+      {
+        causes: [
+          { kind: "concentration-broken" },
+          { kind: "temporary-hit-points-empty" },
+        ],
+        occurrence: worldGeneration(second.value.world, HERO, "focus"),
+      },
+    ]);
+
+    const exact = finalizeMechanicsEndWave(
+      second.value.world,
+      second.value.context.endWave.wave
+    );
+    expect(exact.status).toBe("applied");
+    const mismatched = structuredClone(second.value.context.endWave.wave);
+    const candidate = mismatched.candidates[0];
+    if (!candidate) throw new Error("candidate fixture");
+    Reflect.set(candidate, "causes", [{ kind: "concentration-broken" }]);
+    expect(finalizeMechanicsEndWave(second.value.world, mismatched)).toMatchObject({
+      reason: "invalid-end-wave",
+      status: "rejected",
+    });
+  });
+
+  it("treats a reused entity id as a different physical generation", () => {
+    let hero = addRoot(character(), HERO);
+    hero = addToState(hero, "watcher", {
+      endRules: [],
+      fact: { key: "watcher", kind: "active-key" },
+      kind: "standing",
+      parentId: "root",
+      target: { entityId: "ally", material: CAMPAIGN, ordinal: 1 },
+    });
+    const campaign = shared();
+    campaign.nextEntityOrdinal = 2;
+    campaign.entities = { ally: monster(1) };
+    const initial = world(hero, campaign);
+    expect(parseMechanicsWorld(initial).ok).toBe(true);
+
+    const replacement = structuredClone(initial);
+    const replacementCampaign = replacement.documents.find(
+      (document) => document.kind === "shared"
+    );
+    if (replacementCampaign?.kind !== "shared") throw new Error("campaign fixture");
+    replacementCampaign.state.entities.ally = monster(2);
+    replacementCampaign.state.nextEntityOrdinal = 3;
+    expect(parseMechanicsWorld(replacement)).toMatchObject({
+      ok: false,
+      reason: "missing-reference",
+    });
+    const discovery = discoverMechanicsEndWave(replacement);
+    expect(discovery).toMatchObject({
+      status: "discovered",
+      wave: {
+        candidates: [
+          {
+            causes: [
+              {
+                entity: { entityId: "ally", material: CAMPAIGN, ordinal: 1 },
+                kind: "live-entity-missing",
+              },
+            ],
+          },
+        ],
+      },
     });
   });
 
@@ -603,6 +1091,46 @@ describe("canonical mechanics world and clocks", () => {
     expect(
       parseMechanicsWorld({ ...valid, documents: [...valid.documents].reverse() })
     ).toMatchObject({ ok: false, reason: "invalid-order" });
+  });
+
+  it("rejects worlds above the canonical document bound", () => {
+    const document = world().documents[0];
+    if (!document) throw new Error("document fixture");
+    expect(
+      parseMechanicsWorld({
+        scope: document.material,
+        documents: Array.from({ length: 257 }, () => document),
+      })
+    ).toEqual({ ok: false, reason: "invalid-shape" });
+  });
+
+  it("rejects completion document substitution", () => {
+    const initial = world();
+    const replacement = {
+      kind: "character-play",
+      uid: "other-user",
+      characterId: "other-character",
+    } as const satisfies CharacterMaterialRef;
+    const begun = beginMechanicsBoundary(initial, {
+      input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
+      kind: "observe-day-phase",
+    });
+    if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
+    const result = advanceMechanicsBoundary(begun.continuation, {
+      continuation: canonicalFingerprint(begun.continuation),
+      state: {
+        ...begun.checkpoint.state,
+        world: {
+          scope: CAMPAIGN,
+          documents: sorted([
+            { kind: "character", material: replacement, state: character(replacement) },
+            { kind: "shared", material: CAMPAIGN, state: shared() },
+          ]),
+        },
+      },
+    } as unknown as MechanicsBoundaryCompletion);
+
+    expect(result).toMatchObject({ reason: "invalid-transition", status: "rejected" });
   });
 
   it("rejects stale epochs, double combat leases, and global exclusive-state duplicates", () => {
@@ -680,15 +1208,17 @@ describe("canonical mechanics world and clocks", () => {
     const concentratingWorld = world(concentrating, campaign);
     const concentrationWave = discoverMechanicsEndWave(concentratingWorld);
     expect(concentrationWave).toMatchObject({
-      candidates: [
-        {
-          causes: [{ kind: "concentration-broken" }],
-          occurrence: { material: HERO, occurrenceId: "focus" },
-        },
-      ],
       status: "discovered",
+      wave: {
+        candidates: [
+          {
+            causes: [{ kind: "concentration-broken" }],
+            occurrence: worldGeneration(concentratingWorld, HERO, "focus"),
+          },
+        ],
+      },
     });
-    const incapacitated = closeMechanicsWorld(concentratingWorld);
+    const incapacitated = finalizeDiscoveredWave(concentratingWorld);
     expect(incapacitated.status).toBe("applied");
     if (incapacitated.status !== "applied") return;
     const incapacitatedHero = incapacitated.world.documents.find(
@@ -713,7 +1243,7 @@ describe("canonical mechanics world and clocks", () => {
       },
       zeroHitPoints: { kind: "dead" },
     };
-    const died = closeMechanicsWorld(world(deadHero));
+    const died = finalizeDiscoveredWave(world(deadHero));
     expect(died.status).toBe("applied");
     if (died.status !== "applied") return;
     expect(died.world.documents[0]?.state.occurrences).not.toHaveProperty("focus");
@@ -815,19 +1345,11 @@ describe("canonical mechanics world and clocks", () => {
 
   it("selects the next live successor when end-turn closure removes the current combatant", () => {
     let hero = addRoot(character(), HERO);
-    hero.nextEntityOrdinal = 3;
-    hero.entities = {
-      ally: monster(),
-      summon: {
-        ...monster(2),
-        ownerOccurrence: { material: HERO, occurrenceId: "summon" },
-      },
-    };
     hero = addToState(hero, "summon", {
       endRules: [
         {
           clock: { material: HERO, epoch: 1 },
-          combatant: { material: HERO, entityId: "summon" },
+          combatant: { material: HERO, entityId: "summon", ordinal: 2 },
           kind: "turn-boundary",
           phase: "end",
           round: 1,
@@ -836,8 +1358,16 @@ describe("canonical mechanics world and clocks", () => {
       fact: { key: "summon", kind: "active-key" },
       kind: "standing",
       parentId: "root",
-      target: { material: HERO, entityId: "summon" },
+      target: { material: HERO, entityId: "summon", ordinal: 2 },
     });
+    hero.nextEntityOrdinal = 3;
+    hero.entities = {
+      ally: monster(),
+      summon: {
+        ...monster(2),
+        ownerOccurrence: generation(hero, HERO, "summon"),
+      },
+    };
     hero.nextEncounterEpoch = 2;
     hero.encounter = {
       epoch: 1,
@@ -852,14 +1382,14 @@ describe("canonical mechanics world and clocks", () => {
         },
         summon: {
           ordinal: 2,
-          combatant: { material: HERO, entityId: "summon" },
+          combatant: { material: HERO, entityId: "summon", ordinal: 2 },
           economy: turn("summon-turn"),
           initiativeRoll: 15,
           skipped: false,
         },
         ally: {
           ordinal: 3,
-          combatant: { material: HERO, entityId: "ally" },
+          combatant: { material: HERO, entityId: "ally", ordinal: 1 },
           economy: betweenTurns("ally-waiting"),
           initiativeRoll: 10,
           skipped: false,
@@ -875,33 +1405,16 @@ describe("canonical mechanics world and clocks", () => {
       scope: HERO,
       documents: [{ kind: "character", material: HERO, state: hero }],
     } as const;
-    let afterEndClosure: Readonly<MechanicsWorld> | null = null;
-    const result = applyMechanicsBoundary(
+    const checkpoints: MechanicsBoundaryCheckpoint[] = [];
+    const result = applyBoundary(
       local,
       {
         kind: "complete-turn",
         material: HERO,
       },
-      (checkpoint) => {
-        const finalized = finalizeMechanicsEndWave(
-          checkpoint.world,
-          checkpoint.request,
-          checkpoint.candidates
-        );
-        if (finalized.status === "rejected") {
-          return { reason: finalized.reason, status: "rejected" };
-        }
-        if (checkpoint.ordinal === 0) afterEndClosure = finalized.world;
-        return { status: "resolved", world: finalized.world };
-      }
+      checkpoints
     );
 
-    expect(afterEndClosure).not.toBeNull();
-    const postEndDocument = (afterEndClosure as Readonly<MechanicsWorld>).documents[0];
-    expect(postEndDocument?.state.encounter?.currentCombatantId).toBe("ally");
-    expect(postEndDocument?.state.encounter?.participants.ally?.economy.phase).toBe(
-      "between-turns"
-    );
     expect(result.status === "rejected" ? result.reason : result.status).toBe("applied");
     if (result.status !== "applied") return;
     const encounter = result.world.documents[0]?.state.encounter;
@@ -909,22 +1422,31 @@ describe("canonical mechanics world and clocks", () => {
     expect(encounter?.currentCombatantId).toBe("ally");
     expect(encounter?.participants.ally?.economy.phase).toBe("own-turn");
     expect(result.world.documents[0]?.state.timeline.elapsedSeconds).toBe(0);
+    expect(result.world.documents[0]?.state.entities).not.toHaveProperty("summon");
+    expect(checkpoints).toHaveLength(2);
+    expect(checkpoints.at(-1)?.wave.request.boundaries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          combatant: { material: HERO, entityId: "summon", ordinal: 2 },
+          kind: "turn-boundary",
+          phase: "end",
+        }),
+        expect.objectContaining({
+          combatant: { material: HERO, entityId: "ally", ordinal: 1 },
+          kind: "turn-boundary",
+          phase: "start",
+        }),
+      ])
+    );
   });
 
   it("continues start-turn selection when an occurrence-owned combatant expires", () => {
     let hero = addRoot(character(), HERO);
-    hero.nextEntityOrdinal = 2;
-    hero.entities = {
-      ally: {
-        ...monster(),
-        ownerOccurrence: { material: HERO, occurrenceId: "vanishing-ally" },
-      },
-    };
     hero = addToState(hero, "vanishing-ally", {
       endRules: [
         {
           clock: { material: HERO, epoch: 1 },
-          combatant: { material: HERO, entityId: "ally" },
+          combatant: { material: HERO, entityId: "ally", ordinal: 1 },
           kind: "turn-boundary",
           phase: "start",
           round: 1,
@@ -933,12 +1455,19 @@ describe("canonical mechanics world and clocks", () => {
       fact: { key: "vanishing-ally", kind: "active-key" },
       kind: "standing",
       parentId: "root",
-      target: { material: HERO, entityId: "ally" },
+      target: { material: HERO, entityId: "ally", ordinal: 1 },
     });
+    hero.nextEntityOrdinal = 2;
+    hero.entities = {
+      ally: {
+        ...monster(),
+        ownerOccurrence: generation(hero, HERO, "vanishing-ally"),
+      },
+    };
     hero.nextEncounterEpoch = 2;
     hero.encounter = turnsEncounter(1);
     hero.clockBinding.encounter = { material: HERO, epoch: 1 };
-    const checkpoints: MechanicsClosureCheckpoint[] = [];
+    const checkpoints: MechanicsBoundaryCheckpoint[] = [];
     const result = applyBoundary(
       {
         scope: HERO,
@@ -950,7 +1479,18 @@ describe("canonical mechanics world and clocks", () => {
 
     expect(result.status === "rejected" ? result.reason : result.status).toBe("applied");
     if (result.status !== "applied") return;
-    expect(checkpoints.map((checkpoint) => checkpoint.request.boundaries[0])).toEqual([
+    const observed = new Set<string>();
+    expect(
+      checkpoints.map((checkpoint) => {
+        const boundary = checkpoint.wave.request.boundaries.find((candidate) => {
+          const key = JSON.stringify(candidate);
+          if (observed.has(key)) return false;
+          observed.add(key);
+          return true;
+        });
+        return boundary;
+      })
+    ).toEqual([
       {
         clock: { material: HERO, epoch: 1 },
         combatant: self(),
@@ -960,7 +1500,7 @@ describe("canonical mechanics world and clocks", () => {
       },
       {
         clock: { material: HERO, epoch: 1 },
-        combatant: { material: HERO, entityId: "ally" },
+        combatant: { material: HERO, entityId: "ally", ordinal: 1 },
         kind: "turn-boundary",
         phase: "start",
         round: 1,
@@ -1073,6 +1613,260 @@ describe("canonical mechanics world and clocks", () => {
     expect(deadline.world.documents[0]?.state.occurrences).not.toHaveProperty("deadline");
   });
 
+  it.each(["epoch", "revision"] as const)(
+    "rejects completion mutation of protected journal %s",
+    (field) => {
+      const initial = world();
+      const begun = beginMechanicsBoundary(initial, {
+        input: {
+          clock: { material: HERO, epoch: 0 },
+          combatant: self(),
+          rest: "long",
+        },
+        kind: "complete-rest",
+      });
+      if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
+      const mutated = structuredClone(begun.checkpoint.state);
+      const hero = mutated.world.documents.find(
+        (document) => document.kind === "character"
+      );
+      if (hero?.kind !== "character") throw new Error("character fixture");
+      if (field === "epoch") hero.state.epoch = 1;
+      else hero.state.revision = 1;
+      const result = advanceMechanicsBoundary(begun.continuation, {
+        continuation: canonicalFingerprint(begun.continuation),
+        state: mutated,
+      } as unknown as MechanicsBoundaryCompletion);
+
+      expect(result).toMatchObject({
+        reason: "invalid-transition",
+        status: "rejected",
+      });
+    }
+  );
+
+  it("rejects a completion bound to another checkpoint", () => {
+    const begun = beginMechanicsBoundary(world(), {
+      input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
+      kind: "observe-day-phase",
+    });
+    if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
+    const result = advanceMechanicsBoundary(begun.continuation, {
+      continuation: canonicalFingerprint({
+        ...begun.continuation,
+        checkpoint: { ...begun.checkpoint, ordinal: 1 },
+      }),
+      state: begun.checkpoint.state,
+    } as unknown as MechanicsBoundaryCompletion);
+
+    expect(result).toMatchObject({ reason: "invalid-transition", status: "rejected" });
+  });
+
+  it("rejects command and cursor substitution after a checkpoint", () => {
+    const hero = character();
+    hero.nextEntityOrdinal = 2;
+    hero.entities = { ally: monster() };
+    hero.nextEncounterEpoch = 2;
+    hero.encounter = turnsEncounter(1);
+    hero.clockBinding.encounter = { material: HERO, epoch: 1 };
+    const begun = beginMechanicsBoundary(
+      {
+        scope: HERO,
+        documents: [{ kind: "character", material: HERO, state: hero }],
+      },
+      { kind: "complete-turn", material: HERO }
+    );
+    if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
+    const completion = {
+      continuation: canonicalFingerprint(begun.continuation),
+      state: begun.checkpoint.state,
+    } as unknown as MechanicsBoundaryCompletion;
+    if (begun.continuation.cursor.kind !== "complete-turn") {
+      throw new Error("cursor fixture");
+    }
+    const forged = {
+      ...begun.continuation,
+      cursor: { ...begun.continuation.cursor, scanOffset: 2 },
+    };
+
+    expect(
+      advanceMechanicsBoundary(forged as unknown as typeof begun.continuation, completion)
+    ).toMatchObject({ reason: "invalid-transition", status: "rejected" });
+  });
+
+  it("fails a malformed completion closed without dereferencing it", () => {
+    const begun = beginMechanicsBoundary(world(), {
+      input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
+      kind: "observe-day-phase",
+    });
+    if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
+    expect(
+      advanceMechanicsBoundary(
+        begun.continuation,
+        null as unknown as MechanicsBoundaryCompletion
+      )
+    ).toEqual({ reason: "invalid-transition", status: "rejected" });
+  });
+
+  it("carries an empty-wave boundary into event-created ending discovery", () => {
+    const initial = world();
+    const begun = beginMechanicsBoundary(initial, {
+      input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
+      kind: "observe-day-phase",
+    });
+    if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
+    expect(begun.checkpoint.wave.candidates).toEqual([]);
+    expect(begun.checkpoint.state.context.request.boundaries).toEqual([
+      { clock: { material: CAMPAIGN, epoch: 0 }, kind: "day-phase", phase: "dawn" },
+    ]);
+
+    const mutated = structuredClone(begun.checkpoint.state.world);
+    const campaign = mutated.documents.find((document) => document.kind === "shared");
+    if (campaign?.kind !== "shared") throw new Error("campaign fixture");
+    campaign.state = addRoot(campaign.state, CAMPAIGN);
+    campaign.state = addToState(campaign.state, "dawn-child", {
+      endRules: [
+        {
+          clock: { material: CAMPAIGN, epoch: 0 },
+          kind: "day-phase",
+          phase: "dawn",
+        },
+      ],
+      fact: { key: "dawn-child", kind: "active-key" },
+      kind: "standing",
+      parentId: "root",
+      target: self(),
+    });
+    const rebased = rebaseMechanicsCausalState(mutated, begun.checkpoint.state);
+    if (!rebased.ok) throw new Error(`rebase fixture: ${rebased.reason}`);
+    expect(rebased.value.context.endWave?.wave.candidates).toHaveLength(1);
+    const result = advanceMechanicsBoundary(begun.continuation, {
+      continuation: canonicalFingerprint(begun.continuation),
+      state: rebased.value,
+    } as unknown as MechanicsBoundaryCompletion);
+
+    expect(result.status).toBe("checkpoint");
+    if (result.status !== "checkpoint") return;
+    expect(result.checkpoint.wave.candidates).toHaveLength(1);
+    const settled = advanceMechanicsBoundary(result.continuation, {
+      continuation: canonicalFingerprint(result.continuation),
+      state: result.checkpoint.state,
+    } as unknown as MechanicsBoundaryCompletion);
+    expect(settled.status).toBe("complete");
+    if (settled.status !== "complete") return;
+    const finalCampaign = settled.world.documents.find(
+      (document) => document.kind === "shared"
+    );
+    expect(finalCampaign?.state.occurrences).not.toHaveProperty("dawn-child");
+  });
+
+  it("turns a naturally extended nonempty wave into a second checkpoint", () => {
+    let campaign = addRoot(shared(), CAMPAIGN);
+    campaign = addToState(campaign, "first-dawn-child", {
+      endRules: [
+        {
+          clock: { material: CAMPAIGN, epoch: 0 },
+          kind: "day-phase",
+          phase: "dawn",
+        },
+      ],
+      fact: { key: "first-dawn-child", kind: "active-key" },
+      kind: "standing",
+      parentId: "root",
+      target: self(),
+    });
+    const begun = beginMechanicsBoundary(world(character(), campaign), {
+      input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
+      kind: "observe-day-phase",
+    });
+    if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
+    expect(begun.checkpoint.wave.candidates).toHaveLength(1);
+
+    const mutated = structuredClone(begun.checkpoint.state.world);
+    const currentCampaign = mutated.documents.find(
+      (document) => document.kind === "shared"
+    );
+    if (currentCampaign?.kind !== "shared") throw new Error("campaign fixture");
+    currentCampaign.state = addToState(currentCampaign.state, "second-dawn-child", {
+      endRules: [
+        {
+          clock: { material: CAMPAIGN, epoch: 0 },
+          kind: "day-phase",
+          phase: "dawn",
+        },
+      ],
+      fact: { key: "second-dawn-child", kind: "active-key" },
+      kind: "standing",
+      parentId: "root",
+      target: self(),
+    });
+    const rebased = rebaseMechanicsCausalState(mutated, begun.checkpoint.state);
+    if (!rebased.ok) throw new Error(`rebase fixture: ${rebased.reason}`);
+    expect(rebased.value.context.endWave?.wave.candidates).toHaveLength(2);
+
+    const extended = advanceMechanicsBoundary(begun.continuation, {
+      continuation: canonicalFingerprint(begun.continuation),
+      state: rebased.value,
+    } as unknown as MechanicsBoundaryCompletion);
+    expect(extended.status).toBe("checkpoint");
+    if (extended.status !== "checkpoint") return;
+    expect(extended.checkpoint.wave.candidates).toHaveLength(2);
+
+    const settled = advanceMechanicsBoundary(extended.continuation, {
+      continuation: canonicalFingerprint(extended.continuation),
+      state: extended.checkpoint.state,
+    } as unknown as MechanicsBoundaryCompletion);
+    expect(settled.status).toBe("complete");
+    if (settled.status !== "complete") return;
+    const finalCampaign = settled.world.documents.find(
+      (document) => document.kind === "shared"
+    );
+    expect(finalCampaign?.state.occurrences).not.toHaveProperty("first-dawn-child");
+    expect(finalCampaign?.state.occurrences).not.toHaveProperty("second-dawn-child");
+  });
+
+  it("turns a completion-added end request into a second checkpoint", () => {
+    const initial = world(addRoot(character(), HERO));
+    const begun = beginMechanicsBoundary(initial, {
+      input: { clock: { material: CAMPAIGN, epoch: 0 }, phase: "dawn" },
+      kind: "observe-day-phase",
+    });
+    if (begun.status !== "checkpoint") throw new Error("checkpoint fixture");
+    const requested = discoverMechanicsEndWave(begun.checkpoint.state.world, {
+      boundaries: begun.checkpoint.state.context.request.boundaries,
+      endRequests: [worldGeneration(initial, HERO, "root")],
+    });
+    if (requested.status !== "discovered") throw new Error("request fixture");
+    const latched = latchMechanicsEndWave(requested.world, requested.wave);
+    if (latched.status === "rejected") throw new Error("latch fixture");
+    const current = discoverMechanicsEndWave(latched.world, requested.wave.request);
+    if (current.status !== "discovered") throw new Error("current fixture");
+    const completionState = {
+      context: {
+        endWave: { wave: current.wave, world: current.world },
+        request: current.wave.request,
+      },
+      world: current.world,
+    } as unknown as MechanicsCausalState;
+    const next = advanceMechanicsBoundary(begun.continuation, {
+      continuation: canonicalFingerprint(begun.continuation),
+      state: completionState,
+    } as unknown as MechanicsBoundaryCompletion);
+
+    expect(next.status === "rejected" ? next.reason : next.status).toBe("checkpoint");
+    if (next.status !== "checkpoint") return;
+    expect(next.checkpoint.wave.request.endRequests).toEqual([
+      worldGeneration(initial, HERO, "root"),
+    ]);
+    const settled = advanceMechanicsBoundary(next.continuation, {
+      continuation: canonicalFingerprint(next.continuation),
+      state: next.checkpoint.state,
+    } as unknown as MechanicsBoundaryCompletion);
+    expect(settled.status).toBe("complete");
+    if (settled.status !== "complete") return;
+    expect(settled.world.documents[0]?.state.occurrences).not.toHaveProperty("root");
+  });
+
   it("rebases an eight-hour effect local to shared and back without freezing its lifetime", () => {
     let hero = addRoot(character(), HERO);
     hero.timeline.elapsedSeconds = 100;
@@ -1139,6 +1933,37 @@ describe("canonical mechanics world and clocks", () => {
     }
   });
 
+  it("keeps a finalized local combat boundary cumulative while starting shared combat", () => {
+    const hero = character();
+    hero.nextEntityOrdinal = 2;
+    hero.entities = { ally: monster() };
+    hero.nextEncounterEpoch = 2;
+    hero.encounter = turnsEncounter(1);
+    hero.clockBinding.encounter = { material: HERO, epoch: 1 };
+    const checkpoints: MechanicsBoundaryCheckpoint[] = [];
+    const result = applyBoundary(
+      world(hero),
+      {
+        kind: "start-encounter",
+        material: CAMPAIGN,
+        seed: initiativeSeed(HERO),
+      },
+      checkpoints
+    );
+
+    expect(result.status).toBe("applied");
+    expect(
+      checkpoints
+        .at(-1)
+        ?.wave.request.boundaries.some(
+          (boundary) =>
+            boundary.kind === "combat-end" &&
+            materialRefKey(boundary.clock.material) === materialRefKey(HERO) &&
+            boundary.clock.epoch === 1
+        )
+    ).toBe(true);
+  });
+
   it("fails a clock handoff closed when its source deadline is already due", () => {
     let hero = addRoot(character(), HERO);
     hero.timeline.elapsedSeconds = 100;
@@ -1155,7 +1980,7 @@ describe("canonical mechanics world and clocks", () => {
       parentId: "root",
       target: self(),
     });
-    const checkpoints: MechanicsClosureCheckpoint[] = [];
+    const checkpoints: MechanicsBoundaryCheckpoint[] = [];
     const result = applyBoundary(
       world(hero),
       {
@@ -1177,7 +2002,7 @@ describe("canonical mechanics world and clocks", () => {
       fact: { kind: "active-key", key: "child" },
       kind: "standing",
       parentId: "root",
-      target: { material: CAMPAIGN, entityId: "summon" },
+      target: { material: CAMPAIGN, entityId: "summon", ordinal: 1 },
     });
     hero = addToState(hero, "material-owner", {
       endRules: [],
@@ -1188,18 +2013,18 @@ describe("canonical mechanics world and clocks", () => {
     });
     hero.nextInventoryOrdinal = 2;
     hero.inventory = {
-      blade: item({ material: HERO, occurrenceId: "material-owner" }),
+      blade: item(generation(hero, HERO, "material-owner")),
     };
     Reflect.set(hero.vitals.hitPoints, "temporary", {
       current: 5,
-      sourceOccurrence: { material: HERO, occurrenceId: "material-owner" },
+      sourceOccurrence: generation(hero, HERO, "material-owner"),
     });
     const campaign = shared();
     campaign.nextEntityOrdinal = 2;
     campaign.entities = {
       summon: {
         ...monster(),
-        ownerOccurrence: { material: HERO, occurrenceId: "child" },
+        ownerOccurrence: generation(hero, HERO, "child"),
       },
     };
     campaign.nextEncounterEpoch = 2;
@@ -1216,7 +2041,7 @@ describe("canonical mechanics world and clocks", () => {
         },
         summon: {
           ordinal: 2,
-          combatant: { material: CAMPAIGN, entityId: "summon" },
+          combatant: { material: CAMPAIGN, entityId: "summon", ordinal: 1 },
           economy: betweenTurns("summon-pending"),
           initiativeRoll: null,
           skipped: false,
@@ -1231,9 +2056,10 @@ describe("canonical mechanics world and clocks", () => {
       timeline: { material: CAMPAIGN, epoch: 0 },
       encounter: { material: CAMPAIGN, epoch: 1 },
     };
-    const closed = closeMechanicsWorld(world(hero, campaign), {
+    const initial = world(hero, campaign);
+    const closed = finalizeDiscoveredWave(initial, {
       boundaries: [],
-      removals: [{ material: HERO, occurrenceIds: ["root"] }],
+      endRequests: [worldGeneration(initial, HERO, "root")],
     });
     expect(closed.status === "rejected" ? closed.reason : closed.status).toBe("applied");
     if (closed.status !== "applied") return;
@@ -1268,13 +2094,13 @@ describe("canonical mechanics world and clocks", () => {
       fact: { kind: "active-key", key: "summoned" },
       kind: "standing",
       parentId: "root",
-      target: { material: HERO, entityId: "familiar" },
+      target: { material: HERO, entityId: "familiar", ordinal: 1 },
     });
     hero.nextEntityOrdinal = 2;
     hero.entities = {
       familiar: {
         ...monster(),
-        ownerOccurrence: { material: HERO, occurrenceId: "summon" },
+        ownerOccurrence: generation(hero, HERO, "summon"),
       },
     };
     const campaign = shared();
@@ -1285,7 +2111,7 @@ describe("canonical mechanics world and clocks", () => {
       participants: {
         familiar: {
           ordinal: 1,
-          combatant: { material: HERO, entityId: "familiar" },
+          combatant: { material: HERO, entityId: "familiar", ordinal: 1 },
           economy: betweenTurns("familiar-pending"),
           initiativeRoll: null,
           skipped: false,
@@ -1300,9 +2126,10 @@ describe("canonical mechanics world and clocks", () => {
       timeline: { material: CAMPAIGN, epoch: 0 },
       encounter: { material: CAMPAIGN, epoch: 1 },
     };
-    const closed = closeMechanicsWorld(world(hero, campaign), {
+    const initial = world(hero, campaign);
+    const closed = finalizeDiscoveredWave(initial, {
       boundaries: [],
-      removals: [{ material: HERO, occurrenceIds: ["root"] }],
+      endRequests: [worldGeneration(initial, HERO, "root")],
     });
     expect(closed.status).toBe("applied");
     if (closed.status !== "applied") return;
@@ -1328,7 +2155,7 @@ describe("canonical mechanics world and clocks", () => {
     });
     hero.nextInventoryOrdinal = 2;
     hero.inventory = {
-      blade: item({ material: HERO, occurrenceId: "conjure" }),
+      blade: item(generation(hero, HERO, "conjure")),
     };
     hero.nextEntityOrdinal = 2;
     hero.entities = { bladeObject: inventoryObject("blade") };
@@ -1341,8 +2168,9 @@ describe("canonical mechanics world and clocks", () => {
       reason: "invalid-document",
     });
 
-    const closed = closeMechanicsWorld(world(hero), {
-      removals: [{ material: HERO, occurrenceIds: ["root"] }],
+    const initial = world(hero);
+    const closed = finalizeDiscoveredWave(initial, {
+      endRequests: [worldGeneration(initial, HERO, "root")],
     });
     expect(closed.status).toBe("applied");
     if (closed.status !== "applied") return;
@@ -1367,7 +2195,7 @@ describe("canonical mechanics world and clocks", () => {
     hero.nextInventoryOrdinal = 2;
     hero.inventory = {
       potion: {
-        ...item({ material: HERO, occurrenceId: "conjured-source" }),
+        ...item(generation(hero, HERO, "conjured-source")),
         definition: { kind: "catalogue", itemId: "potion-of-healing" },
         quantity: countCell(0),
       },
@@ -1416,8 +2244,9 @@ describe("canonical mechanics world and clocks", () => {
       reason: "missing-reference",
     });
 
-    const sourceEnded = closeMechanicsWorld(world(hero), {
-      removals: [{ material: HERO, occurrenceIds: ["conjured-root"] }],
+    const initial = world(hero);
+    const sourceEnded = finalizeDiscoveredWave(initial, {
+      endRequests: [worldGeneration(initial, HERO, "conjured-root")],
     });
     expect(sourceEnded.status).toBe("applied");
     if (sourceEnded.status !== "applied") return;
@@ -1431,8 +2260,8 @@ describe("canonical mechanics world and clocks", () => {
     });
     expect(retained.state.occurrences["lingering-effect"]).toBeDefined();
 
-    const effectEnded = closeMechanicsWorld(sourceEnded.world, {
-      removals: [{ material: HERO, occurrenceIds: ["lingering-root"] }],
+    const effectEnded = finalizeDiscoveredWave(sourceEnded.world, {
+      endRequests: [worldGeneration(sourceEnded.world, HERO, "lingering-root")],
     });
     expect(effectEnded.status).toBe("applied");
     if (effectEnded.status !== "applied") return;
@@ -1441,6 +2270,123 @@ describe("canonical mechanics world and clocks", () => {
     );
     if (cleaned?.kind !== "character") throw new Error("missing character");
     expect(cleaned.state.inventory).toEqual({});
+  });
+
+  it("turns remaining owned quantity into a tombstone while its authority stays active", () => {
+    let hero = addRoot(character(), HERO, "conjured-root");
+    hero = addToState(hero, "conjured-source", {
+      endRules: [],
+      fact: { kind: "active-key", key: "conjured-source" },
+      kind: "standing",
+      parentId: "conjured-root",
+      target: self(),
+    });
+    hero.nextInventoryOrdinal = 2;
+    hero.inventory = {
+      potion: {
+        ...item(generation(hero, HERO, "conjured-source")),
+        definition: { kind: "catalogue", itemId: "potion-of-healing" },
+        quantity: countCell(1),
+      },
+    };
+    hero = addRoot(
+      hero,
+      HERO,
+      "lingering-root",
+      inventoryAuthority("potion", 1, "lingering-root")
+    );
+    hero = addToState(hero, "lingering-effect", {
+      endRules: [],
+      fact: { kind: "active-key", key: "lingering-effect" },
+      kind: "standing",
+      parentId: "lingering-root",
+      target: self(),
+    });
+
+    const initial = world(hero);
+    const parsedInitial = parseMechanicsWorld(initial);
+    expect(parsedInitial.ok ? "ok" : parsedInitial.reason).toBe("ok");
+    const ownerEnded = finalizeDiscoveredWave(initial, {
+      endRequests: [worldGeneration(initial, HERO, "conjured-root")],
+    });
+    expect(ownerEnded.status === "rejected" ? ownerEnded.reason : ownerEnded.status).toBe(
+      "applied"
+    );
+    if (ownerEnded.status !== "applied") return;
+    const retained = ownerEnded.world.documents.find(
+      (document) => document.kind === "character"
+    );
+    if (retained?.kind !== "character") throw new Error("missing character");
+    expect(retained.state.inventory.potion).toMatchObject({
+      ownerOccurrence: null,
+      quantity: countCell(0),
+    });
+    expect(retained.state.occurrences["lingering-root"]).toBeDefined();
+    expect(retained.state.occurrences["lingering-effect"]).toBeDefined();
+
+    const authorityEnded = finalizeDiscoveredWave(ownerEnded.world, {
+      endRequests: [worldGeneration(ownerEnded.world, HERO, "lingering-root")],
+    });
+    expect(authorityEnded.status).toBe("applied");
+    if (authorityEnded.status !== "applied") return;
+    const cleaned = authorityEnded.world.documents.find(
+      (document) => document.kind === "character"
+    );
+    expect(cleaned?.kind === "character" ? cleaned.state.inventory : null).toEqual({});
+  });
+
+  it("leases an owner-orphaned inventory tombstone only until terminal cleanup", () => {
+    let hero = character();
+    hero = addRoot(
+      hero,
+      HERO,
+      "potion-root",
+      inventoryAuthority("potion", 1, "potion-root")
+    );
+    hero = addToState(hero, "potion-owner", {
+      endRules: [],
+      fact: { key: "potion-owner", kind: "active-key" },
+      kind: "standing",
+      parentId: "potion-root",
+      target: self(),
+    });
+    hero.nextInventoryOrdinal = 2;
+    hero.inventory = {
+      potion: {
+        ...item(generation(hero, HERO, "potion-owner")),
+        definition: { kind: "catalogue", itemId: "potion-of-healing" },
+        quantity: countCell(0),
+      },
+    };
+    const initial = world(hero);
+    const lease = { material: HERO, instanceId: "potion", instanceOrdinal: 1 } as const;
+    const discovery = discoverMechanicsEndWave(initial, {
+      endRequests: [worldGeneration(initial, HERO, "potion-root")],
+      inventorySourceLeases: [lease],
+    });
+    if (discovery.status !== "discovered") throw new Error("discovery fixture");
+
+    const latched = latchMechanicsEndWave(discovery.world, discovery.wave);
+    if (latched.status === "rejected") throw new Error("latched wave fixture");
+    const current = discoverMechanicsEndWave(latched.world, discovery.wave.request);
+    if (current.status !== "discovered") throw new Error("current wave fixture");
+    const finalized = finalizeMechanicsEndWave(current.world, current.wave);
+    expect(finalized.status).toBe("applied");
+    if (finalized.status !== "applied") return;
+    const retained = finalized.world.documents.find(
+      (document) => document.kind === "character"
+    );
+    expect(
+      retained?.kind === "character" ? retained.state.inventory.potion : null
+    ).toMatchObject({ ownerOccurrence: null, quantity: countCell(0) });
+
+    const terminal = finalizeMechanicsMaterialCleanup(finalized.world);
+    expect(terminal.status).toBe("applied");
+    if (terminal.status !== "applied") return;
+    const cleaned = terminal.world.documents.find(
+      (document) => document.kind === "character"
+    );
+    expect(cleaned?.kind === "character" ? cleaned.state.inventory : null).toEqual({});
   });
 
   it("uses the same coordinator to start and end local combat", () => {

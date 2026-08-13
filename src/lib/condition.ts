@@ -2,7 +2,10 @@
 
 import { conformDamageDefenseRule } from "@/lib/damage";
 import { exactConformer, type ExactSchemaContext } from "@/lib/exact-schema";
-import { conformEntityRef, conformOccurrenceRef } from "@/lib/mechanics-reference-schema";
+import {
+  conformEntityRef,
+  conformOccurrenceGenerationRef,
+} from "@/lib/mechanics-reference-schema";
 import { conformCreatureVitals } from "@/lib/vitals";
 import {
   CONDITION_INSTANCES_SCHEMA,
@@ -77,7 +80,7 @@ function exactRecord(
 
 function conformConditionIdentity(value: unknown): ConditionInstanceIdentity | null {
   if (exactRecord(value, ["kind", "ref"]) && value.kind === "occurrence") {
-    const ref = conformOccurrenceRef(value.ref);
+    const ref = conformOccurrenceGenerationRef(value.ref);
     return ref ? { kind: "occurrence", ref: structuredClone(ref) } : null;
   }
   if (exactRecord(value, ["kind", "target"]) && value.kind === "zero-hit-points") {

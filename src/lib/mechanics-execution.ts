@@ -1,41 +1,58 @@
 /** Pure simultaneous-group validation and collision analysis. */
 
-import { materialRefKey } from "@/lib/action-journal";
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
-import { projectResolvedEntityConditions } from "@/lib/condition-projection";
-import { parseMechanicsWorld } from "@/lib/mechanics-world";
+import { conformMechanicsAuthoritySnapshot } from "@/lib/mechanics-authority";
+import {
+  finalizeMechanicsEndWave,
+  isMechanicsEndWaveReceiptForWorld,
+  rebaseMechanicsCausalState,
+} from "@/lib/mechanics-world";
 import {
   conformMechanicsOperation,
   conformMechanicsTransaction,
-  planMechanicsTransaction,
+  simulateMechanicsTransaction,
 } from "@/lib/mechanics-operation";
-import {
-  conformMechanicId,
-  conformOccurrenceRef,
-} from "@/lib/mechanics-reference-schema";
+import { conformMechanicId } from "@/lib/mechanics-reference-schema";
+import type { ActionFactGuard, JournalActorRef } from "@/types/action-journal";
+import type { MechanicsAuthoritySnapshot } from "@/types/mechanics-authority";
 import type {
   GroupProposal,
-  MechanicsEndWaveEvents,
   MechanicsEvent,
-  MechanicsPostEventDerivationResult,
+  MechanicsEndWaveFinalizationResult,
+  MechanicsPostEvent,
+  MechanicsSourceEndingEventDerivationResult,
   OrderingObservation,
   ResolutionGroup,
   ResolutionGroupAnalysis,
-  ResolutionGroupContext,
-  ResolutionGroupPlanResult,
+  ResolutionGroupSimulationResult,
   ResolutionPartition,
 } from "@/types/mechanics-execution";
 import type {
   MechanicsOperation,
+  MechanicsOperationCause,
   MechanicsOperationExecution,
+  MechanicsOperationStage,
 } from "@/types/mechanics-operation";
-import type { EntityRef, OccurrenceRef } from "@/types/mechanics-reference";
-import type { MechanicsWorld } from "@/types/mechanics-world";
-import type { MechanicsEndCandidate } from "@/types/mechanics-world";
+import type { EntityRef } from "@/types/mechanics-reference";
+import type { MechanicsCausalState, MechanicsWorld } from "@/types/mechanics-world";
 
 const MAX_ID_LENGTH = 256;
 const MAX_PROPOSALS = 512;
 const UNSAFE_IDS = new Set(["__proto__", "constructor", "prototype"]);
+
+/** Trusted transient input owned by this execution module, never a public command. */
+interface ResolutionGroupContext {
+  readonly actionId: string;
+  readonly actor: JournalActorRef;
+  readonly authoritySnapshot: Readonly<MechanicsAuthoritySnapshot>;
+  readonly causes: readonly [
+    Readonly<MechanicsOperationCause>,
+    ...Readonly<MechanicsOperationCause>[],
+  ];
+  readonly factGuards: readonly Readonly<ActionFactGuard>[];
+  readonly ordering: Readonly<OrderingObservation> | null;
+  readonly state: Readonly<MechanicsCausalState>;
+}
 
 function id(value: unknown): value is string {
   return (
@@ -45,6 +62,10 @@ function id(value: unknown): value is string {
     value.trim() === value &&
     !UNSAFE_IDS.has(value)
   );
+}
+
+function compareCodeUnits(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 function exactRecord(
@@ -96,13 +117,11 @@ function freezeDeep<T>(value: T): Readonly<T> {
   return value;
 }
 
-/** Exact hostile-input boundary; accepted output owns no aliases with the input. */
 export function conformResolutionGroup(value: unknown): Readonly<ResolutionGroup> | null {
-  if (!exactRecord(value, ["basis", "groupId", "proposals"]) || !id(value.groupId)) {
+  if (!exactRecord(value, ["groupId", "proposals"]) || !id(value.groupId)) {
     return null;
   }
-  const parsedBasis = parseMechanicsWorld(value.basis);
-  if (!parsedBasis.ok || !denseArray(value.proposals)) return null;
+  if (!denseArray(value.proposals)) return null;
   if (value.proposals.length < 1 || value.proposals.length > MAX_PROPOSALS) return null;
 
   const proposals: GroupProposal[] = [];
@@ -123,7 +142,6 @@ export function conformResolutionGroup(value: unknown): Readonly<ResolutionGroup
     proposals.push({ operation, proposalId: proposalValue.proposalId });
   }
   return freezeDeep({
-    basis: parsedBasis.value,
     groupId: value.groupId,
     proposals,
   }) as Readonly<ResolutionGroup>;
@@ -191,10 +209,9 @@ function eventId(
   return `event:${canonicalFingerprint({ kind, operationId, subject })}`;
 }
 
-/** Analyze collisions against one shared basis without applying any proposal. */
-export function analyzeResolutionGroup(value: unknown): ResolutionGroupAnalysis {
-  const group = conformResolutionGroup(value);
-  if (!group) return { kind: "rejected", reason: "invalid-group" };
+function analyzeConformedResolutionGroup(
+  group: Readonly<ResolutionGroup>
+): ResolutionGroupAnalysis {
   const byKey = new Map<string, GroupProposal[]>();
   for (const proposal of group.proposals) {
     const key = mechanicsOperationCollisionKey(proposal.operation);
@@ -204,13 +221,13 @@ export function analyzeResolutionGroup(value: unknown): ResolutionGroupAnalysis 
     byKey.set(key, bucket);
   }
   const partitions = [...byKey.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
     .map(([collisionKey, proposals]) => ({
       collisionKeys: [collisionKey],
-      proposalIds: proposals.map(({ proposalId }) => proposalId).sort(),
+      proposalIds: proposals.map(({ proposalId }) => proposalId).sort(compareCodeUnits),
     }));
   const collisions = [...byKey.entries()].filter(([, proposals]) => proposals.length > 1);
-  const collisionKeys = collisions.map(([key]) => key).sort();
+  const collisionKeys = collisions.map(([key]) => key).sort(compareCodeUnits);
   if (collisions.length === 0) return { collisionKeys, kind: "disjoint", partitions };
   return {
     collisionKeys,
@@ -221,6 +238,14 @@ export function analyzeResolutionGroup(value: unknown): ResolutionGroupAnalysis 
       partitions.filter(({ proposalIds }) => proposalIds.length > 1)
     ),
   };
+}
+
+/** Analyze collisions without applying any proposal. */
+export function analyzeResolutionGroup(value: unknown): ResolutionGroupAnalysis {
+  const group = conformResolutionGroup(value);
+  return group
+    ? analyzeConformedResolutionGroup(group)
+    : { kind: "rejected", reason: "invalid-group" };
 }
 
 /** Validate the exact player/DM ordering independently inside each collision partition. */
@@ -259,8 +284,11 @@ export function conformOrderingObservation(
       raw.proposalIds.length !== expected.proposalIds.length ||
       new Set(raw.proposalIds).size !== raw.proposalIds.length ||
       [...raw.proposalIds]
-        .sort()
-        .some((entry, index) => entry !== [...expected.proposalIds].sort()[index])
+        .sort(compareCodeUnits)
+        .some(
+          (entry, index) =>
+            entry !== [...expected.proposalIds].sort(compareCodeUnits)[index]
+        )
     ) {
       return null;
     }
@@ -306,11 +334,26 @@ function conformResolutionGroupContext(
   operations: readonly Readonly<MechanicsOperation>[]
 ): Readonly<ResolutionGroupContext> | null {
   if (
-    !exactRecord(value, ["actionId", "actor", "causes", "factGuards", "ordering"]) ||
+    !exactRecord(value, [
+      "actionId",
+      "actor",
+      "authoritySnapshot",
+      "causes",
+      "factGuards",
+      "ordering",
+      "state",
+    ]) ||
     (value.ordering !== null && typeof value.ordering !== "object")
   ) {
     return null;
   }
+  const authoritySnapshot = conformMechanicsAuthoritySnapshot(value.authoritySnapshot);
+  if (!authoritySnapshot || typeof value.state !== "object" || value.state === null) {
+    return null;
+  }
+  const candidateState = value.state as Readonly<MechanicsCausalState>;
+  const causalState = rebaseMechanicsCausalState(candidateState.world, candidateState);
+  if (!causalState.ok) return null;
   const transaction = conformMechanicsTransaction({
     actionId: value.actionId,
     actor: value.actor,
@@ -322,9 +365,11 @@ function conformResolutionGroupContext(
   return freezeDeep({
     actionId: transaction.actionId,
     actor: transaction.actor,
+    authoritySnapshot,
     causes: transaction.causes,
     factGuards: transaction.factGuards,
     ordering: value.ordering === null ? null : structuredClone(value.ordering),
+    state: causalState.value,
   }) as Readonly<ResolutionGroupContext>;
 }
 
@@ -334,15 +379,31 @@ function conformResolutionGroupContext(
  * table ordering before any operation is simulated: arithmetic commutativity
  * cannot erase causal ordering, depletion triggers, or capacity failures.
  */
-export function planResolutionGroup(
+export function simulateResolutionGroup(
   groupValue: unknown,
   contextValue: unknown
-): ResolutionGroupPlanResult {
+): ResolutionGroupSimulationResult {
+  if (!exactRecord(groupValue, ["groupId", "proposals"])) {
+    return { operationId: null, reason: "invalid-group", status: "rejected" };
+  }
+  if (
+    !exactRecord(contextValue, [
+      "actionId",
+      "actor",
+      "authoritySnapshot",
+      "causes",
+      "factGuards",
+      "ordering",
+      "state",
+    ])
+  ) {
+    return { operationId: null, reason: "invalid-context", status: "rejected" };
+  }
   const group = conformResolutionGroup(groupValue);
   if (!group) {
     return { operationId: null, reason: "invalid-group", status: "rejected" };
   }
-  const analysis = analyzeResolutionGroup(group);
+  const analysis = analyzeConformedResolutionGroup(group);
   if (analysis.kind === "rejected") {
     return { operationId: null, reason: analysis.reason, status: "rejected" };
   }
@@ -389,13 +450,16 @@ export function planResolutionGroup(
     return { operationId: null, reason: "invalid-group", status: "rejected" };
   }
 
-  const result = planMechanicsTransaction(group.basis, {
-    actionId: context.actionId,
-    actor: context.actor,
-    causes: context.causes,
-    factGuards: context.factGuards,
-    operations,
-  });
+  const result = simulateMechanicsTransaction(
+    {
+      actionId: context.actionId,
+      actor: context.actor,
+      causes: context.causes,
+      factGuards: context.factGuards,
+      operations,
+    },
+    { authoritySnapshot: context.authoritySnapshot, state: context.state }
+  );
   if (result.status === "rejected") {
     return {
       operationId: result.operationId,
@@ -411,95 +475,46 @@ export function planResolutionGroup(
       orderedProposalIds: freezeDeep([...orderedProposalIds]),
       requirement: result.requirement,
       status: "needs-observation",
+      transaction: result.transaction,
     };
   }
   if (result.status === "no-change") {
     return {
+      actionFacts: [],
       analysis,
+      consequences: [],
       events: [],
       executions: result.executions,
       orderedProposalIds: freezeDeep([...orderedProposalIds]),
+      stages: [],
+      state: result.state,
       status: "no-change",
       transaction: result.transaction,
-      world: result.world,
     };
   }
 
-  const events: MechanicsEvent[] = [];
+  const events: MechanicsPostEvent[] = [];
   for (const stage of result.stages) {
-    const derived = deriveMechanicsPostEvents(stage.before, stage.after, [
-      stage.execution,
-    ]);
-    if (derived.status === "rejected") {
-      return {
-        operationId: stage.execution.operationId,
-        reason: "post-event-derivation",
-        status: "rejected",
-      };
-    }
-    events.push(...derived.events);
+    events.push(...deriveMechanicsPostEvents(stage));
   }
   return {
-    action: result.action,
+    actionFacts: result.actionFacts,
     analysis,
+    consequences: result.consequences,
     events: freezeDeep(events),
     executions: result.executions,
     orderedProposalIds: freezeDeep([...orderedProposalIds]),
-    status: "planned",
+    stages: result.stages,
+    state: result.state,
+    status: "simulated",
     transaction: result.transaction,
-    world: result.world,
   };
-}
-
-function occurrenceAt(world: Readonly<MechanicsWorld>, ref: Readonly<OccurrenceRef>) {
-  return world.documents.find(
-    ({ material }) => materialRefKey(material) === materialRefKey(ref.material)
-  )?.state.occurrences[ref.occurrenceId];
-}
-
-function conditions(
-  world: Readonly<MechanicsWorld>,
-  target: Readonly<EntityRef>
-): ReadonlySet<string> {
-  return new Set(
-    projectResolvedEntityConditions(world, target)?.projection.effective.map(
-      ({ conditionId }) => conditionId
-    ) ?? []
-  );
-}
-
-function conditionEvents(
-  before: Readonly<MechanicsWorld>,
-  after: Readonly<MechanicsWorld>,
-  operationId: string,
-  target: Readonly<EntityRef>
-): MechanicsEvent[] {
-  const prior = conditions(before, target);
-  const next = conditions(after, target);
-  return [...new Set([...prior, ...next])].sort().flatMap((conditionId) =>
-    prior.has(conditionId) === next.has(conditionId)
-      ? []
-      : [
-          {
-            conditionId,
-            eventId: eventId("condition-changed", operationId, {
-              conditionId,
-              present: next.has(conditionId),
-              target,
-            }),
-            kind: "condition-changed" as const,
-            operationId,
-            present: next.has(conditionId),
-            target,
-          },
-        ]
-  ) as MechanicsEvent[];
 }
 
 function hpZeroEvent(
   operation: Readonly<MechanicsOperationExecution>,
   target: Readonly<EntityRef>
-): MechanicsEvent[] {
+): MechanicsPostEvent[] {
   const becameZero =
     operation.kind === "creature-damage"
       ? operation.facts.wouldDropToZero && !operation.facts.remainedAtOne
@@ -522,45 +537,11 @@ function hpZeroEvent(
     : [];
 }
 
-function executionFactsMatch(execution: Readonly<MechanicsOperationExecution>): boolean {
-  switch (execution.kind) {
-    case "creature-damage":
-      return (
-        Number.isSafeInteger(execution.facts.damageTaken) &&
-        execution.facts.damageTaken >= 0 &&
-        typeof execution.facts.wouldDropToZero === "boolean" &&
-        typeof execution.facts.remainedAtOne === "boolean"
-      );
-    case "object-damage":
-      return (
-        Number.isSafeInteger(execution.facts.hitPointsLost) &&
-        execution.facts.hitPointsLost >= 0
-      );
-    case "resource-transition":
-      return typeof execution.facts.becameEmpty === "boolean";
-    case "occurrence-create":
-    case "occurrence-end":
-      return (
-        execution.facts.ended.every(
-          (reference) => conformOccurrenceRef(reference) !== null
-        ) &&
-        (execution.facts.created === null ||
-          conformOccurrenceRef(execution.facts.created) !== null)
-      );
-    case "creature-maximum-sync":
-      return typeof execution.facts.maximumReachedZero === "boolean";
-    case "exhaustion-transition":
-      return typeof execution.facts.becameDead === "boolean";
-    default:
-      return true;
-  }
-}
-
-function eventsForExecution(
-  before: Readonly<MechanicsWorld>,
-  after: Readonly<MechanicsWorld>,
-  execution: Readonly<MechanicsOperationExecution>
-): MechanicsEvent[] {
+/** Ordinary post-events can consume only a transaction-kernel stage. */
+function deriveMechanicsPostEvents(
+  stage: Readonly<MechanicsOperationStage>
+): MechanicsPostEvent[] {
+  const { execution } = stage;
   if (execution.kind === "creature-damage") {
     const operation = execution.operation;
     const target = operation.damage.computed.target;
@@ -569,15 +550,15 @@ function eventsForExecution(
         attacker: operation.attacker,
         criticalHit: operation.criticalHit,
         eventId: eventId("damage-taken", operation.operationId, {
-          packetId: operation.damage.computed.packetId,
-          target,
+          attacker: operation.attacker,
+          criticalHit: operation.criticalHit,
+          resolution: operation.damage,
         }),
         kind: "damage-taken",
         operationId: operation.operationId,
         resolution: operation.damage,
       },
       ...hpZeroEvent(execution, target),
-      ...conditionEvents(before, after, operation.operationId, target),
     ];
   }
   if (execution.kind === "object-damage") {
@@ -587,8 +568,9 @@ function eventsForExecution(
         attacker: operation.attacker,
         criticalHit: operation.criticalHit,
         eventId: eventId("damage-taken", operation.operationId, {
-          packetId: operation.damage.computed.packetId,
-          target: operation.damage.computed.target,
+          attacker: operation.attacker,
+          criticalHit: operation.criticalHit,
+          resolution: operation.damage,
         }),
         kind: "damage-taken",
         operationId: operation.operationId,
@@ -608,30 +590,9 @@ function eventsForExecution(
     ];
   }
   if (execution.kind === "occurrence-create") {
-    const operation = execution.operation;
-    return operation.occurrence.kind !== "program"
-      ? conditionEvents(before, after, operation.operationId, operation.occurrence.target)
-      : [];
+    return [];
   }
-  if (execution.kind === "occurrence-end") {
-    const operation = execution.operation;
-    const ended = execution.facts.ended.map((occurrence) => ({
-      eventId: eventId("occurrence-ended", operation.operationId, occurrence),
-      kind: "occurrence-ended" as const,
-      occurrence,
-      operationId: operation.operationId,
-    }));
-    const targets = execution.facts.ended.flatMap((occurrence) => {
-      const prior = occurrenceAt(before, occurrence);
-      return prior?.kind === "condition" ? [prior.target] : [];
-    });
-    return [
-      ...ended,
-      ...targets.flatMap((target) =>
-        conditionEvents(before, after, operation.operationId, target)
-      ),
-    ];
-  }
+  if (execution.kind === "occurrence-end") return [];
   if (
     execution.kind === "creature-healing" ||
     execution.kind === "temporary-hit-points-grant" ||
@@ -645,88 +606,57 @@ function eventsForExecution(
     execution.kind === "exhaustion-transition"
   ) {
     const operation = execution.operation;
-    return [
-      ...hpZeroEvent(execution, operation.target),
-      ...conditionEvents(before, after, operation.operationId, operation.target),
-    ];
+    return hpZeroEvent(execution, operation.target);
   }
   return [];
 }
 
-/** Derive post-resolution facts only; it neither executes operations nor captures subscribers. */
-export function deriveMechanicsPostEvents(
-  beforeValue: unknown,
-  afterValue: unknown,
-  executions: readonly Readonly<MechanicsOperationExecution>[]
-): MechanicsPostEventDerivationResult {
-  const before = parseMechanicsWorld(beforeValue);
-  if (!before.ok) return { reason: "invalid-before", status: "rejected" };
-  const after = parseMechanicsWorld(afterValue);
-  if (!after.ok) return { reason: "invalid-after", status: "rejected" };
-  if (!denseArray(executions)) {
-    return { reason: "execution-mismatch", status: "rejected" };
+/**
+ * Convert an exact discovered receipt into pre-finalization events. World-core
+ * re-proves the complete wave against its readable basis before anything fires.
+ */
+export function deriveMechanicsSourceEndingEvents(
+  worldValue: unknown,
+  waveValue: unknown,
+  operationId: string
+): MechanicsSourceEndingEventDerivationResult {
+  if (conformMechanicId(operationId) === null) {
+    return { reason: "invalid-end-wave", status: "rejected" };
   }
-  const operationIds = new Set<string>();
-  const accepted: MechanicsOperationExecution[] = [];
-  for (const execution of executions) {
-    if (
-      !exactRecord(execution, ["facts", "kind", "operation", "operationId", "status"]) ||
-      conformMechanicId(execution.operationId) === null ||
-      operationIds.has(execution.operationId) ||
-      execution.kind !== execution.operation.kind ||
-      execution.operationId !== execution.operation.operationId ||
-      !conformMechanicsOperation(execution.operation) ||
-      !executionFactsMatch(execution)
-    ) {
-      return { reason: "execution-mismatch", status: "rejected" };
-    }
-    operationIds.add(execution.operationId);
-    accepted.push(execution);
+  if (!isMechanicsEndWaveReceiptForWorld(worldValue, waveValue)) {
+    return { reason: "invalid-end-wave", status: "rejected" };
   }
-  const events = accepted.flatMap((execution) =>
-    eventsForExecution(before.value, after.value, execution)
-  );
-  return { events: freezeDeep(events), status: "derived" };
-}
-
-function occurrenceRefKey(reference: Readonly<OccurrenceRef>): string {
-  return `${materialRefKey(reference.material)}\u0000${reference.occurrenceId}`;
+  const wave = waveValue;
+  return {
+    events: freezeDeep(
+      wave.candidates.map(({ occurrence }) => ({
+        eventId: eventId("source-ending", operationId, occurrence),
+        kind: "source-ending" as const,
+        occurrence,
+        operationId,
+      }))
+    ),
+    status: "derived",
+  };
 }
 
 /**
- * Convert a previously discovered end wave into causal events while every
- * source occurrence is still readable. The coordinator must deliver these
- * events to the captured subscribers before calling `finalizeMechanicsEndWave`.
+ * Finalize one exact latched wave. The ratified post-finalization event grammar
+ * is empty; state cleanup remains represented by the action journal.
  */
-export function deriveMechanicsEndWaveEvents(
+export function finalizeMechanicsEndWaveWithEvents(
   beforeValue: unknown,
-  candidates: readonly Readonly<MechanicsEndCandidate>[],
-  operationId: string
-): MechanicsEndWaveEvents | null {
-  const before = parseMechanicsWorld(beforeValue);
-  if (!before.ok || conformMechanicId(operationId) === null || !denseArray(candidates)) {
-    return null;
-  }
-  const seen = new Set<string>();
-  const events: MechanicsEvent[] = [];
-  for (const candidate of candidates) {
-    const key = occurrenceRefKey(candidate.occurrence);
-    const occurrence = occurrenceAt(before.value, candidate.occurrence);
-    if (
-      seen.has(key) ||
-      !occurrence ||
-      !denseArray(candidate.causes) ||
-      candidate.causes.length === 0
-    ) {
-      return null;
-    }
-    seen.add(key);
-    events.push({
-      eventId: eventId("source-ended", operationId, candidate.occurrence),
-      kind: "source-ended",
-      occurrence: candidate.occurrence,
-      operationId,
-    });
-  }
-  return { events: freezeDeep(events), status: "derived" };
+  waveValue: unknown
+): MechanicsEndWaveFinalizationResult {
+  const finalized = finalizeMechanicsEndWave(
+    beforeValue as Readonly<MechanicsWorld>,
+    waveValue as Parameters<typeof finalizeMechanicsEndWave>[1]
+  );
+  return finalized.status === "rejected"
+    ? { reason: finalized.reason, status: "rejected" }
+    : freezeDeep({
+        events: [] as const,
+        status: "finalized" as const,
+        world: finalized.world,
+      });
 }

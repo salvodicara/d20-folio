@@ -27,6 +27,11 @@ const CAMPAIGN = {
   kind: "shared-combat",
 } as const satisfies SharedMaterialRef;
 const HERO_REF = { entityId: "self", material: HERO } as const satisfies EntityRef;
+const FAMILIAR_REF = {
+  entityId: "familiar",
+  material: HERO,
+  ordinal: 1,
+} as const satisfies EntityRef;
 
 type NewProgramOccurrence = Extract<NewMechanicOccurrence, { kind: "program" }>;
 type NewConditionOccurrence = Extract<NewMechanicOccurrence, { kind: "condition" }>;
@@ -183,11 +188,17 @@ describe("world condition projection", () => {
     const identities = result?.projection.instances.map(({ identity }) => identity);
     expect(identities).toContainEqual({
       kind: "occurrence",
-      ref: { material: HERO, occurrenceId: "same-id" },
+      ref: {
+        occurrence: { material: HERO, occurrenceId: "same-id" },
+        ordinal: 2,
+      },
     });
     expect(identities).toContainEqual({
       kind: "occurrence",
-      ref: { material: CAMPAIGN, occurrenceId: "same-id" },
+      ref: {
+        occurrence: { material: CAMPAIGN, occurrenceId: "same-id" },
+        ordinal: 2,
+      },
     });
   });
 
@@ -208,6 +219,51 @@ describe("world condition projection", () => {
     );
 
     expect(result?.projection.instances).toEqual([]);
+  });
+
+  it("does not project a replacement entity through a stale generation ref", () => {
+    const hero = character();
+    hero.nextEntityOrdinal = 2;
+    hero.entities.familiar = {
+      availability: "present",
+      exhaustion: 0,
+      kind: "creature",
+      label: "",
+      ordinal: 1,
+      overrides: {
+        armorClass: null,
+        hitPointMaximum: null,
+        initiativeBonus: null,
+        speedFt: null,
+      },
+      ownerOccurrence: null,
+      resources: {},
+      template: {
+        kind: "catalogue-companion",
+        sourceId: "familiar",
+        variantId: "owl",
+      },
+      vitals: vitals(),
+    };
+    const root = addOccurrence(
+      {
+        nextOccurrenceOrdinal: hero.nextOccurrenceOrdinal,
+        occurrences: hero.occurrences,
+      },
+      "familiar-root",
+      program(authority(FAMILIAR_REF))
+    );
+    const child = addOccurrence(
+      root,
+      "familiar-condition",
+      condition("poisoned", FAMILIAR_REF, "familiar-root")
+    );
+    const currentWorld = world({ ...hero, ...child }, shared());
+
+    expect(projectResolvedEntityConditions(currentWorld, FAMILIAR_REF)).not.toBeNull();
+    expect(
+      projectResolvedEntityConditions(currentWorld, { ...FAMILIAR_REF, ordinal: 2 })
+    ).toBeNull();
   });
 
   it("derives zero-HP Unconscious once and retains independent Prone identity", () => {

@@ -53,7 +53,7 @@ export interface ActionFactGuard {
 export interface ActionGuards {
   /** Sorted by physical material identity; every observed document appears once. */
   documents: readonly ActionDocumentGuard[];
-  /** Sorted by logical owner then address. Required even when empty. */
+  /** Sorted by exact owner then address. Required even when empty. */
   facts: readonly ActionFactGuard[];
 }
 

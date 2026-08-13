@@ -32,7 +32,11 @@ const SHARED = {
   kind: "shared-combat",
 } as const satisfies SharedMaterialRef;
 const SELF: EntityRef = { entityId: "self", material: CHARACTER };
-const GHOST: EntityRef = { entityId: "not-present", material: CHARACTER };
+const GHOST: EntityRef = {
+  entityId: "not-present",
+  material: CHARACTER,
+  ordinal: 1,
+};
 
 type NewProgramOccurrence = Extract<NewMechanicOccurrence, { kind: "program" }>;
 type NewStandingOccurrence = Extract<NewMechanicOccurrence, { kind: "standing" }>;
@@ -390,7 +394,7 @@ describe("material state schema 3", () => {
       state.entities.hazard = creature(1);
       state = withProgram(
         state,
-        { entityId: "hazard", material: SHARED },
+        { entityId: "hazard", material: SHARED, ordinal: 1 },
         tableAuthority(authority)
       );
       expect(parseSharedMaterialState(state, SHARED).ok).toBe(true);
@@ -421,12 +425,16 @@ describe("material state schema 3", () => {
   });
 
   it("requires entity ownership to name a local effect targeting that exact entity", () => {
-    const target = { entityId: "familiar", material: CHARACTER } as const;
+    const target = {
+      entityId: "familiar",
+      material: CHARACTER,
+      ordinal: 1,
+    } as const;
     const valid = withProgram(characterState(), target);
     valid.nextEntityOrdinal = 2;
     valid.entities.familiar = creature(1, {
-      material: CHARACTER,
-      occurrenceId: "child",
+      occurrence: { material: CHARACTER, occurrenceId: "child" },
+      ordinal: 2,
     });
     const parsed = parseCharacterMaterialState(valid, CHARACTER);
     expect(parsed.ok).toBe(true);
@@ -439,11 +447,17 @@ describe("material state schema 3", () => {
     const rootOwned = structuredClone(valid);
     if (rootOwned.entities.familiar) {
       rootOwned.entities.familiar.ownerOccurrence = {
-        material: CHARACTER,
-        occurrenceId: "root",
+        occurrence: { material: CHARACTER, occurrenceId: "root" },
+        ordinal: 1,
       };
     }
     expect(parseCharacterMaterialState(rootOwned, CHARACTER)).toEqual({ ok: false });
+
+    const staleTarget = structuredClone(valid);
+    const staleChild = staleTarget.occurrences.child;
+    if (staleChild?.kind !== "standing") throw new Error("expected owned effect fixture");
+    staleChild.target = { ...target, ordinal: 2 };
+    expect(parseCharacterMaterialState(staleTarget, CHARACTER)).toEqual({ ok: false });
 
     const wrongTarget = structuredClone(valid);
     const child = wrongTarget.occurrences.child;
@@ -457,15 +471,18 @@ describe("material state schema 3", () => {
     valid.nextInventoryOrdinal = 2;
     valid.inventory.sword = {
       ...item(1),
-      ownerOccurrence: { material: CHARACTER, occurrenceId: "child" },
+      ownerOccurrence: {
+        occurrence: { material: CHARACTER, occurrenceId: "child" },
+        ordinal: 2,
+      },
     };
     expect(parseCharacterMaterialState(valid, CHARACTER).ok).toBe(true);
 
     const rootOwned = structuredClone(valid);
     if (rootOwned.inventory.sword) {
       rootOwned.inventory.sword.ownerOccurrence = {
-        material: CHARACTER,
-        occurrenceId: "root",
+        occurrence: { material: CHARACTER, occurrenceId: "root" },
+        ordinal: 1,
       };
     }
     expect(parseCharacterMaterialState(rootOwned, CHARACTER)).toEqual({ ok: false });

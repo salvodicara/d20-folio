@@ -41,12 +41,15 @@ const SHARED_MATERIAL = {
   kind: "shared-combat",
 } as const;
 const OWNER = { entityId: "self", material: MATERIAL } as const;
-const TARGET = { entityId: "target-1", material: MATERIAL } as const;
+const TARGET = { entityId: "target-1", material: MATERIAL, ordinal: 1 } as const;
 const OTHER_OWNER = { entityId: "self", material: OTHER_MATERIAL } as const;
-const ROOT = { material: MATERIAL, occurrenceId: "root-1" } as const;
+const ROOT = {
+  occurrence: { material: MATERIAL, occurrenceId: "root-1" },
+  ordinal: 4,
+} as const;
 const OTHER_ROOT = {
-  material: OTHER_MATERIAL,
-  occurrenceId: "root-1",
+  occurrence: { material: OTHER_MATERIAL, occurrenceId: "root-1" },
+  ordinal: 4,
 } as const;
 const REVISION = canonicalFingerprint({ catalogue: "spell.test-program" });
 const OBSERVATION_KEY = canonicalFingerprint({ observation: "request-1" });
@@ -147,7 +150,6 @@ function createRootReceipt(
     kind: "create",
     materialEpoch: 7,
     next: { execution: 1, phaseId: "invoke", triggerEventId: null },
-    ordinal: 4,
     root: ROOT,
     ...overrides,
   };
@@ -676,7 +678,9 @@ describe("mechanics command suspension boundary", () => {
       answers: [{ kind: "boolean", requestId: "request-2", value: false }],
     });
     const frameChanged = createSuspension({
-      frame: createFrame({ rootReceipt: createRootReceipt({ ordinal: 5 }) }),
+      frame: createFrame({
+        rootReceipt: createRootReceipt({ root: { ...ROOT, ordinal: 5 } }),
+      }),
     });
     const fenceChanged = createSuspension({
       documentFences: [{ epoch: 7, material: MATERIAL, revision: 12 }],

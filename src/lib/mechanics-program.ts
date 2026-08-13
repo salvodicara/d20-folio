@@ -53,7 +53,7 @@ import type {
   CharacterMaterialRef,
   EntityRef,
   MaterialRef,
-  OccurrenceRef,
+  OccurrenceGenerationRef,
 } from "@/types/mechanics-reference";
 import type {
   ManualInstruction,
@@ -212,6 +212,10 @@ function exactEqual(left: unknown, right: unknown): boolean {
   return canonicalJson(left) === canonicalJson(right);
 }
 
+function compareCodeUnits(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
 interface MechanicsExecutionContext {
   readonly actor: JournalActorRef;
   readonly authority: MechanicsIntent["frame"]["authority"];
@@ -221,7 +225,7 @@ interface MechanicsExecutionContext {
   readonly phaseId: string;
   readonly program: MechanicsProgram;
   readonly roles: MechanicsRoles;
-  readonly rootOccurrence: OccurrenceRef;
+  readonly rootOccurrence: OccurrenceGenerationRef;
   readonly rootReceipt: MechanicsIntent["frame"]["rootReceipt"];
   readonly trigger: MechanicsTriggerEvidence;
   readonly triggerEventId: string | null;
@@ -311,19 +315,39 @@ function worldEntity(world: MechanicsWorld, ref: EntityRef): WorldEntity | null 
       : null;
   }
   const entity = document.state.entities[ref.entityId];
-  return entity?.availability === "present"
+  return entity?.ordinal === ref.ordinal && entity.availability === "present"
     ? { document, entity, kind: entity.kind, ref }
     : null;
 }
 
 function occurrenceFor(
   world: MechanicsWorld,
-  reference: OccurrenceRef
+  reference: OccurrenceGenerationRef
 ): MechanicOccurrence | null {
-  return (
-    documentFor(world, reference.material)?.state.occurrences[reference.occurrenceId] ??
-    null
-  );
+  const occurrence =
+    documentFor(world, reference.occurrence.material)?.state.occurrences[
+      reference.occurrence.occurrenceId
+    ] ?? null;
+  return occurrence?.ordinal === reference.ordinal ? occurrence : null;
+}
+
+function resolvedProgramRootGeneration(
+  world: MechanicsWorld,
+  reference: OccurrenceGenerationRef
+): OccurrenceGenerationRef | null {
+  const occurrence = occurrenceFor(world, reference);
+  if (!occurrence) return null;
+  if (occurrence.kind === "program") return reference;
+  const rootOccurrence = {
+    material: reference.occurrence.material,
+    occurrenceId: occurrence.parentId,
+  };
+  const root = documentFor(world, rootOccurrence.material)?.state.occurrences[
+    rootOccurrence.occurrenceId
+  ];
+  return root?.kind === "program"
+    ? { occurrence: rootOccurrence, ordinal: root.ordinal }
+    : null;
 }
 
 function roleEntity(
@@ -677,9 +701,10 @@ function programRoot(
   intent: MechanicsExecutionContext,
   world: MechanicsWorld
 ): ProgramRootLookup {
-  const document = documentFor(world, intent.rootOccurrence.material);
+  const document = documentFor(world, intent.rootOccurrence.occurrence.material);
   if (!document) return { kind: "invalid", root: null };
-  const occurrence = document.state.occurrences[intent.rootOccurrence.occurrenceId];
+  const occurrence =
+    document.state.occurrences[intent.rootOccurrence.occurrence.occurrenceId];
   if (!occurrence) {
     return {
       kind: "absent",
@@ -717,13 +742,13 @@ function executionMode(
   if (receipt.kind === "create") {
     if (lookup.kind === "absent") {
       return lookup.materialEpoch === receipt.materialEpoch &&
-        lookup.nextOccurrenceOrdinal === receipt.ordinal
+        lookup.nextOccurrenceOrdinal === receipt.root.ordinal
         ? "new"
         : null;
     }
     if (
       lookup.kind !== "present" ||
-      lookup.root.ordinal !== receipt.ordinal ||
+      lookup.root.ordinal !== receipt.root.ordinal ||
       !rootIdentityMatches(intent, lookup.root)
     ) {
       return null;
@@ -732,7 +757,11 @@ function executionMode(
     return state && phaseStateMatches(state, receipt.next) ? "replay" : null;
   }
 
-  if (lookup.kind !== "present" || !rootIdentityMatches(intent, lookup.root)) {
+  if (
+    lookup.kind !== "present" ||
+    lookup.root.ordinal !== receipt.root.ordinal ||
+    !rootIdentityMatches(intent, lookup.root)
+  ) {
     return null;
   }
   const state = lookup.root.phaseState[phase.phaseId];
@@ -822,7 +851,13 @@ function triggerMatches(
     case "day-phase":
       return evidence.kind === "day-phase" && trigger.phase === evidence.phase;
     case "source-end":
-      return evidence.kind === "source-end";
+      return (
+        evidence.kind === "source-end" &&
+        exactEqual(
+          resolvedProgramRootGeneration(world, evidence.occurrence),
+          intent.rootOccurrence
+        )
+      );
     case "program-phase-end":
       if (evidence.kind !== "program-phase-end" || trigger.phaseId !== evidence.phaseId) {
         return false;
@@ -893,7 +928,7 @@ function validateIntentAgainstWorld(
   if (mode === null) {
     return {
       reason: "invalid-root-occurrence",
-      referenceId: execution.rootOccurrence.occurrenceId,
+      referenceId: execution.rootOccurrence.occurrence.occurrenceId,
     };
   }
   const root = lookup.root;
@@ -1619,7 +1654,7 @@ function resolveAnswer(
       const targets =
         requirement.multiplicity === "set"
           ? [...answer.targets].sort((left, right) =>
-              entityRefKey(left).localeCompare(entityRefKey(right))
+              compareCodeUnits(entityRefKey(left), entityRefKey(right))
             )
           : answer.targets;
       return { inputId: answer.inputId, kind: "entities", targets };

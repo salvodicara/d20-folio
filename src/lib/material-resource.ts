@@ -46,6 +46,15 @@ function documentFor(
   return document ? { document, index } : null;
 }
 
+function exactMaterialEntity(
+  document: Readonly<MechanicsDocument>,
+  owner: Readonly<EntityRef>
+): Readonly<MaterialEntity> | null {
+  if (owner.entityId === "self") return null;
+  const entity = document.state.entities[owner.entityId];
+  return entity?.ordinal === owner.ordinal ? entity : null;
+}
+
 /** Resolve one exact physical cell and its journal address from a conformed world. */
 export function locateResolvedMaterialResource(
   world: Readonly<MechanicsWorld>,
@@ -67,7 +76,7 @@ export function locateResolvedMaterialResource(
           }
         : null;
     }
-    const entity = located.document.state.entities[resource.owner.entityId];
+    const entity = exactMaterialEntity(located.document, resource.owner);
     const cell = entity?.resources[resource.resourceId];
     return cell
       ? {
@@ -211,7 +220,7 @@ export function replaceResolvedMaterialResource(
           },
         };
       }
-      const entity = document.state.entities[resource.owner.entityId];
+      const entity = exactMaterialEntity(document, resource.owner);
       if (!entity) return document;
       return {
         ...document,
@@ -348,6 +357,13 @@ export function insertResolvedMaterialResource(
     resource.kind === "pool" ? resource.owner.material : resource.character;
   const located = documentFor(world, material);
   if (!located) return null;
+  if (
+    resource.kind === "pool" &&
+    resource.owner.entityId !== "self" &&
+    exactMaterialEntity(located.document, resource.owner) === null
+  ) {
+    return null;
+  }
   const documents = world.documents.map((document, index) => {
     if (index !== located.index) return document;
     if (resource.kind === "pool") {
@@ -364,7 +380,7 @@ export function insertResolvedMaterialResource(
           },
         };
       }
-      const entity = document.state.entities[resource.owner.entityId];
+      const entity = exactMaterialEntity(document, resource.owner);
       if (!entity) return document;
       return {
         ...document,
@@ -479,7 +495,7 @@ export function removeResolvedMaterialResource(
           },
         };
       }
-      const entity = document.state.entities[resource.owner.entityId];
+      const entity = exactMaterialEntity(document, resource.owner);
       if (!entity) return document;
       return {
         ...document,

@@ -62,6 +62,37 @@ world operation, root/phase/register transition and ordered dependency. The next
 coordinator that compiles all triggered frames and end waves into one transaction/draft, followed by the
 corpus and application cutover and deletion of every old effect-program/handwritten executor path.
 
+### 2026-08-12 causal-kernel hardening — checkpoint closed
+
+The operation cause no longer accepts an authority receipt. Installed authority is independently resolved
+from a trusted immutable snapshot; program authority comes from the exact persisted root generation; the
+kernel then binds the recomputed cause to the installation owner and adds definition/installation guards.
+Resolution groups simulate one ordered atomic transaction and retain a before/after causal context for
+every applied operation so ordinary post-events are derived from exact stages.
+
+The adversarial pass withheld closure until the final invariant became stricter:
+the only hostile entry begins from a closed world; ending causes are latched as explicit pure transient
+state on their exact occurrence generations; and only typed kernel-produced continuations may advance an
+operation or table boundary. No self-declared history, hidden `WeakMap`, serialized continuation or
+resolver-returned replacement world is authoritative. Suspensions replay their fenced inputs and answers
+from the closed basis. Every mutable non-self `EntityRef` also carries its ordinal so a same-id replacement
+cannot satisfy an old target, actor, owner, encounter participant, duration rule or event.
+
+Closure uses one bounded indexed worklist and one cumulative request for observed boundaries, explicit end
+requests and leases. `beginMechanicsBoundary` / `advanceMechanicsBoundary` replace the deleted closure
+callback: a completion is bound to the whole continuation; an empty wave retains its boundary; and any
+wave created or extended while subscribers run becomes another source-readable checkpoint before removal.
+Historical clock evidence remains valid only across the exact encounter hand-off owned by the cursor.
+
+The authentic event census is closed: operation stages emit damage taken, zero HP and resource depletion;
+re-proved end waves emit source ending. Finalization re-proves the exact wave, returns its resulting world
+and does not fabricate generic change events with no authored consumer. The universal physical-D20 kernel
+is included as a direct program-runtime dependency; it rejects non-canonical numeric aliases and records a
+table-declared two-failure Death Save separately from a natural 1. Focused verification passed 408 tests
+across the 20 directly affected suites. The active work now moves to the single `MechanicsProgram` step
+compiler plus fixed-point coordinator, suspension replay and one final journal draft. By owner rule no
+global branch gate ran for this checkpoint.
+
 ## Product doctrine
 
 The target is a table companion, not a VTT:

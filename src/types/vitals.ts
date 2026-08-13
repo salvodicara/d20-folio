@@ -9,7 +9,7 @@ import {
   unionSchema,
   type InferExactSchema,
 } from "@/lib/exact-schema";
-import type { OccurrenceRef } from "@/types/mechanics-reference";
+import type { OccurrenceGenerationRef } from "@/types/mechanics-reference";
 
 const NONNEGATIVE_INTEGER_SCHEMA = customSchema<"nonnegative-integer", number>(
   "nonnegative-integer"
@@ -20,14 +20,15 @@ const POSITIVE_INTEGER_SCHEMA = customSchema<"positive-integer", number>(
 const DEATH_SAVE_COUNT_SCHEMA = customSchema<"death-save-count", number>(
   "death-save-count"
 );
-const OCCURRENCE_REF_VALUE_SCHEMA = customSchema<"occurrence-ref", OccurrenceRef>(
-  "occurrence-ref"
-);
+const OCCURRENCE_GENERATION_REF_VALUE_SCHEMA = customSchema<
+  "occurrence-generation-ref",
+  OccurrenceGenerationRef
+>("occurrence-generation-ref");
 const NULL_SCHEMA = literalSchema(null);
 
 export const TEMPORARY_HIT_POINTS_SCHEMA = objectSchema({
   current: NONNEGATIVE_INTEGER_SCHEMA,
-  sourceOccurrence: unionSchema([OCCURRENCE_REF_VALUE_SCHEMA, NULL_SCHEMA]),
+  sourceOccurrence: unionSchema([OCCURRENCE_GENERATION_REF_VALUE_SCHEMA, NULL_SCHEMA]),
 });
 export type TemporaryHitPoints = InferExactSchema<typeof TEMPORARY_HIT_POINTS_SCHEMA>;
 
@@ -117,7 +118,7 @@ export type ObjectHitPointInput = InferExactSchema<typeof OBJECT_HIT_POINT_INPUT
 export const TEMPORARY_HIT_POINTS_GRANT_SCHEMA = objectSchema({
   amount: POSITIVE_INTEGER_SCHEMA,
   decision: unionSchema([literalSchema("keep"), literalSchema("replace")]),
-  sourceOccurrence: unionSchema([OCCURRENCE_REF_VALUE_SCHEMA, NULL_SCHEMA]),
+  sourceOccurrence: unionSchema([OCCURRENCE_GENERATION_REF_VALUE_SCHEMA, NULL_SCHEMA]),
 });
 export type TemporaryHitPointsGrant = InferExactSchema<
   typeof TEMPORARY_HIT_POINTS_GRANT_SCHEMA
@@ -127,7 +128,7 @@ export const TEMPORARY_HIT_POINTS_CLEAR_SCHEMA = discriminatedUnionSchema("kind"
   all: objectSchema({ kind: literalSchema("all") }),
   source: objectSchema({
     kind: literalSchema("source"),
-    sourceOccurrence: OCCURRENCE_REF_VALUE_SCHEMA,
+    sourceOccurrence: OCCURRENCE_GENERATION_REF_VALUE_SCHEMA,
   }),
 });
 export type TemporaryHitPointsClear = InferExactSchema<
@@ -145,7 +146,7 @@ export type DeathSaveOutcome = InferExactSchema<typeof DEATH_SAVE_OUTCOME_SCHEMA
 export type VitalsSchemaCustomTypes = {
   readonly "death-save-count": number;
   readonly "nonnegative-integer": number;
-  readonly "occurrence-ref": OccurrenceRef;
+  readonly "occurrence-generation-ref": OccurrenceGenerationRef;
   readonly "positive-integer": number;
 };
 

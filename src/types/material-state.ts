@@ -16,7 +16,7 @@ import type {
   CharacterMaterialRef,
   ClockRef,
   EntityRef,
-  OccurrenceRef,
+  OccurrenceGenerationRef,
 } from "@/types/mechanics-reference";
 import type {
   CountResourceCell,
@@ -107,7 +107,7 @@ export interface InventoryInstance {
   attuned: boolean;
   notes: string;
   tags: MaterialTag[];
-  ownerOccurrence: OccurrenceRef | null;
+  ownerOccurrence: OccurrenceGenerationRef | null;
   overrides: ItemInstanceOverrides;
   resources: Record<string, ResourceCell>;
   disposition: "magical" | "nonmagical";
@@ -144,7 +144,7 @@ export interface EntityStatOverrides {
 
 interface MaterialEntityBase {
   ordinal: number;
-  ownerOccurrence: OccurrenceRef | null;
+  ownerOccurrence: OccurrenceGenerationRef | null;
   availability: "present" | "dismissed";
   label: string;
   resources: Record<string, ResourceCell>;

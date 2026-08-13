@@ -313,6 +313,7 @@ describe("resource authoring and identity boundaries", () => {
       owner: {
         entityId: "a",
         material: { campaignId: "campaign", kind: "shared-combat" },
+        ordinal: 1,
       },
       resourceId: "b:c",
     });
@@ -321,13 +322,22 @@ describe("resource authoring and identity boundaries", () => {
       owner: {
         entityId: "a:b",
         material: { campaignId: "campaign", kind: "shared-combat" },
+        ordinal: 1,
       },
       resourceId: "c",
     });
     expect(first).not.toBeNull();
     expect(second).not.toBeNull();
     if (!first || !second) throw new Error("expected canonical resource refs");
+    if (first.kind !== "pool") throw new Error("expected pool resource ref");
     expect(resourceRefKey(first)).not.toBe(resourceRefKey(second));
+    const replacement = conformResourceRef({
+      ...first,
+      owner: { ...first.owner, ordinal: 2 },
+    });
+    expect(replacement).not.toBeNull();
+    if (!replacement) throw new Error("expected replacement resource ref");
+    expect(resourceRefKey(first)).not.toBe(resourceRefKey(replacement));
     expect(
       conformResourceRef({
         character: { characterId: "hero", kind: "character-play", uid: "u" },

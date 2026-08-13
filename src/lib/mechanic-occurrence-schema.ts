@@ -18,9 +18,11 @@ import {
   CLOCK_REF_SCHEMA,
   ENTITY_REF_SCHEMA,
   MATERIAL_REF_SCHEMA,
+  OCCURRENCE_GENERATION_REF_SCHEMA,
   type ClockRefSchemaShape,
   type EntityRefSchemaShape,
   type MaterialRefSchemaShape,
+  type OccurrenceGenerationRefSchemaShape,
 } from "@/lib/mechanics-reference-schema";
 import { NON_EXHAUSTION_CONDITION_ID_SCHEMA } from "@/types/condition";
 import { DAMAGE_DEFENSE_RULE_SCHEMA, type DamageDefenseRule } from "@/types/damage";
@@ -45,8 +47,7 @@ const PROGRAM_AUTHORITY = customSchema<
   MechanicsProgramAuthorityReceipt
 >("mechanics-program-authority-receipt");
 
-/** Resolved runtime expirations; program phase rules freeze one execution. */
-export const END_RULE_SCHEMA = discriminatedUnionSchema("kind", {
+const OBSERVED_MECHANICS_BOUNDARY_VARIANTS = {
   "combat-end": objectSchema({
     clock: CLOCK_REF,
     kind: literalSchema("combat-end"),
@@ -56,23 +57,12 @@ export const END_RULE_SCHEMA = discriminatedUnionSchema("kind", {
     kind: literalSchema("day-phase"),
     phase: unionSchema([literalSchema("dawn"), literalSchema("dusk")]),
   }),
-  "occurrence-end": objectSchema({
-    kind: literalSchema("occurrence-end"),
-    occurrenceId: ID_SCHEMA,
-  }),
-  "program-phase-end": objectSchema({
-    execution: POSITIVE_INTEGER_SCHEMA,
-    kind: literalSchema("program-phase-end"),
-    occurrenceId: ID_SCHEMA,
-    phaseId: ID_SCHEMA,
-  }),
   "rest-completed": objectSchema({
     clock: CLOCK_REF,
     combatant: ENTITY_REF,
     kind: literalSchema("rest-completed"),
     rest: unionSchema([literalSchema("short"), literalSchema("long")]),
   }),
-  "temporary-hp-empty": objectSchema({ kind: literalSchema("temporary-hp-empty") }),
   "time-reached": objectSchema({
     clock: CLOCK_REF,
     elapsedSeconds: NONNEGATIVE_INTEGER_SCHEMA,
@@ -85,10 +75,75 @@ export const END_RULE_SCHEMA = discriminatedUnionSchema("kind", {
     phase: unionSchema([literalSchema("start"), literalSchema("end")]),
     round: POSITIVE_INTEGER_SCHEMA,
   }),
+} as const;
+
+/** Resolved runtime expirations; program phase rules freeze one execution. */
+export const END_RULE_SCHEMA = discriminatedUnionSchema("kind", {
+  ...OBSERVED_MECHANICS_BOUNDARY_VARIANTS,
+  "occurrence-end": objectSchema({
+    kind: literalSchema("occurrence-end"),
+    occurrenceId: ID_SCHEMA,
+  }),
+  "program-phase-end": objectSchema({
+    execution: POSITIVE_INTEGER_SCHEMA,
+    kind: literalSchema("program-phase-end"),
+    occurrenceId: ID_SCHEMA,
+    phaseId: ID_SCHEMA,
+  }),
+  "temporary-hp-empty": objectSchema({ kind: literalSchema("temporary-hp-empty") }),
 });
 
 export type EndRuleSchemaShape = InferExactSchema<typeof END_RULE_SCHEMA>;
 const END_RULE = refSchema<"end-rule", EndRuleSchemaShape>("end-rule");
+
+export const OBSERVED_MECHANICS_BOUNDARY_SCHEMA = discriminatedUnionSchema("kind", {
+  ...OBSERVED_MECHANICS_BOUNDARY_VARIANTS,
+});
+
+export type ObservedMechanicsBoundarySchemaShape = InferExactSchema<
+  typeof OBSERVED_MECHANICS_BOUNDARY_SCHEMA
+>;
+const OBSERVED_MECHANICS_BOUNDARY = refSchema<
+  "observed-mechanics-boundary",
+  ObservedMechanicsBoundarySchemaShape
+>("observed-mechanics-boundary");
+const OCCURRENCE_GENERATION_REF = refSchema<
+  "occurrence-generation-ref",
+  OccurrenceGenerationRefSchemaShape
+>("occurrence-generation-ref");
+
+export const MECHANICS_END_CAUSE_SCHEMA = discriminatedUnionSchema("kind", {
+  "concentration-broken": objectSchema({
+    kind: literalSchema("concentration-broken"),
+  }),
+  "dependency-ended": objectSchema({
+    dependency: OCCURRENCE_GENERATION_REF,
+    kind: literalSchema("dependency-ended"),
+  }),
+  "explicit-boundary": objectSchema({
+    boundary: OBSERVED_MECHANICS_BOUNDARY,
+    kind: literalSchema("explicit-boundary"),
+  }),
+  "live-entity-missing": objectSchema({
+    entity: ENTITY_REF,
+    kind: literalSchema("live-entity-missing"),
+  }),
+  requested: objectSchema({ kind: literalSchema("requested") }),
+  "temporary-hit-points-empty": objectSchema({
+    kind: literalSchema("temporary-hit-points-empty"),
+  }),
+});
+
+export type MechanicsEndCauseSchemaShape = InferExactSchema<
+  typeof MECHANICS_END_CAUSE_SCHEMA
+>;
+const MECHANICS_END_CAUSE = refSchema<
+  "mechanics-end-cause",
+  MechanicsEndCauseSchemaShape
+>("mechanics-end-cause");
+const OCCURRENCE_ENDING_SCHEMA = objectSchema({
+  causes: arraySchema(MECHANICS_END_CAUSE, 1),
+});
 
 export const JSON_SCALAR_SCHEMA = unionSchema([
   stringSchema,
@@ -198,6 +253,7 @@ function occurrenceSchema<
 
 export const NEW_MECHANIC_OCCURRENCE_SCHEMA = occurrenceSchema({});
 export const MECHANIC_OCCURRENCE_SCHEMA = occurrenceSchema({
+  ending: unionSchema([OCCURRENCE_ENDING_SCHEMA, NULL_SCHEMA]),
   ordinal: POSITIVE_INTEGER_SCHEMA,
 });
 
@@ -218,6 +274,7 @@ export type OccurrenceStateSchemaShape = InferExactSchema<typeof OCCURRENCE_STAT
 export type MechanicOccurrenceSchemaCustomTypes = {
   readonly "flat-adjustment": number;
   readonly id: string;
+  readonly "material-entity-id": string;
   readonly "mechanics-program-authority-receipt": MechanicsProgramAuthorityReceipt;
   readonly "nonnegative-integer": number;
   readonly "positive-integer": number;
@@ -229,6 +286,9 @@ export type MechanicOccurrenceSchemaRefTypes = {
   readonly "entity-ref": EntityRefSchemaShape;
   readonly "end-rule": EndRuleSchemaShape;
   readonly "material-ref": MaterialRefSchemaShape;
+  readonly "mechanics-end-cause": MechanicsEndCauseSchemaShape;
+  readonly "observed-mechanics-boundary": ObservedMechanicsBoundarySchemaShape;
+  readonly "occurrence-generation-ref": OccurrenceGenerationRefSchemaShape;
   readonly "standing-fact": StandingFactSchemaShape;
 };
 
@@ -238,5 +298,8 @@ export const MECHANIC_OCCURRENCE_SCHEMA_REFS = {
   "entity-ref": ENTITY_REF_SCHEMA,
   "end-rule": END_RULE_SCHEMA,
   "material-ref": MATERIAL_REF_SCHEMA,
+  "mechanics-end-cause": MECHANICS_END_CAUSE_SCHEMA,
+  "observed-mechanics-boundary": OBSERVED_MECHANICS_BOUNDARY_SCHEMA,
+  "occurrence-generation-ref": OCCURRENCE_GENERATION_REF_SCHEMA,
   "standing-fact": STANDING_FACT_SCHEMA,
 } as const;

@@ -24,7 +24,7 @@ import {
   conformClockRef,
   conformEntityRef,
   conformMechanicId,
-  conformOccurrenceRef,
+  conformOccurrenceGenerationRef,
 } from "@/lib/mechanics-reference-schema";
 import { conformResourceRef } from "@/lib/resources";
 import type {
@@ -104,7 +104,7 @@ const COMMAND_CONTEXT: ExactSchemaContext<
     "installed-invocation-ref": installedInvocation,
     "invocation-ref": conformMechanicsInvocationRef,
     "nonnegative-integer": (value) => counter(value, false),
-    "occurrence-ref": conformOccurrenceRef,
+    "occurrence-generation-ref": conformOccurrenceGenerationRef,
     "positive-integer": (value) => counter(value, true),
     "program-authority-receipt": conformMechanicsProgramAuthorityReceipt,
     "resource-ref": conformResourceRef,
@@ -383,7 +383,7 @@ function frameSemantics(frame: Readonly<MechanicsExecutionFrame>): boolean {
   );
   if (!phase || !phaseTriggerMatches(phase.trigger, trigger, authority)) return false;
 
-  const rootMaterial = rootReceipt.root.material;
+  const rootMaterial = rootReceipt.root.occurrence.material;
   if (!sameCanonical(rootMaterial, authority.installation.owner.material)) return false;
 
   if (rootReceipt.kind === "create") {
@@ -447,7 +447,7 @@ export function conformMechanicsCommandSuspension(
   }
 
   const { invocation, rootReceipt } = suspension.frame;
-  const rootKey = materialRefKey(rootReceipt.root.material);
+  const rootKey = materialRefKey(rootReceipt.root.occurrence.material);
   const rootFence = suspension.documentFences.find(
     ({ material }) => materialRefKey(material) === rootKey
   );
@@ -463,8 +463,8 @@ export function conformMechanicsCommandSuspension(
   if (
     rootReceipt.kind === "advance" &&
     (invocation.kind !== "program-root" ||
-      materialRefKey(invocation.occurrence.material) !== rootKey ||
-      invocation.occurrence.occurrenceId !== rootReceipt.root.occurrenceId)
+      materialRefKey(invocation.occurrence.occurrence.material) !== rootKey ||
+      !sameCanonical(invocation.occurrence, rootReceipt.root))
   ) {
     return null;
   }

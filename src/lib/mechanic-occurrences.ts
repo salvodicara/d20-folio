@@ -8,7 +8,10 @@ import {
   type MechanicOccurrenceSchemaRefTypes,
 } from "@/lib/mechanic-occurrence-schema";
 import { conformMechanicsProgramAuthorityReceipt } from "@/lib/mechanics-program-receipt";
-import { conformMechanicId } from "@/lib/mechanics-reference-schema";
+import {
+  conformMaterialEntityId,
+  conformMechanicId,
+} from "@/lib/mechanics-reference-schema";
 import type { DamageDefenseProfile, DamageDefenseRule } from "@/types/damage";
 import type {
   EffectOccurrence,
@@ -87,6 +90,7 @@ const OCCURRENCE_SCHEMA_CONTEXT: ExactSchemaContext<
   customs: {
     "flat-adjustment": conformSafeInteger,
     id: conformId,
+    "material-entity-id": conformMaterialEntityId,
     "mechanics-program-authority-receipt": conformMechanicsProgramAuthorityReceipt,
     "nonnegative-integer": (value) => conformIntegerAtLeast(value, 0),
     "positive-integer": (value) => conformIntegerAtLeast(value, 1),
@@ -140,6 +144,10 @@ function uniqueSemanticEntries(values: ReadonlyArray<JsonValue>): boolean {
     seen.add(key);
   }
   return true;
+}
+
+function compareCanonical(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 export function isEffectOccurrence(
@@ -222,6 +230,7 @@ function validStateInvariants(state: OccurrenceState): boolean {
       !occurrence ||
       ordinals.has(occurrence.ordinal) ||
       !uniqueSemanticEntries(occurrence.endRules) ||
+      (occurrence.ending !== null && !uniqueSemanticEntries(occurrence.ending.causes)) ||
       (occurrence.kind === "program" && !validProgramState(occurrence, false))
     ) {
       return false;
@@ -249,17 +258,20 @@ function validStateInvariants(state: OccurrenceState): boolean {
 
     if (isEffectOccurrence(occurrence)) {
       const parent = state.occurrences[occurrence.parentId];
-      if (!parent || parent.kind !== "program") return false;
+      if (!parent || parent.kind !== "program" || parent.ordinal >= occurrence.ordinal)
+        return false;
     }
 
     for (const rule of occurrence.endRules) {
       if (rule.kind === "occurrence-end") {
-        if (!state.occurrences[rule.occurrenceId]) return false;
+        const dependency = state.occurrences[rule.occurrenceId];
+        if (!dependency || dependency.ordinal >= occurrence.ordinal) return false;
       } else if (rule.kind === "program-phase-end") {
         const program = state.occurrences[rule.occurrenceId];
         if (
           !program ||
           program.kind !== "program" ||
+          program.ordinal >= occurrence.ordinal ||
           !Object.hasOwn(program.phaseState, rule.phaseId) ||
           !isEffectOccurrence(occurrence) ||
           occurrence.parentId !== rule.occurrenceId
@@ -275,9 +287,17 @@ function validStateInvariants(state: OccurrenceState): boolean {
 function canonicalOccurrence(occurrence: MechanicOccurrence): MechanicOccurrence {
   const clone = canonicalClone(occurrence) as unknown as MechanicOccurrence;
   const endRules = [...clone.endRules].sort((left, right) =>
-    canonicalKey(left).localeCompare(canonicalKey(right))
+    compareCanonical(canonicalKey(left), canonicalKey(right))
   );
-  return { ...clone, endRules };
+  const ending =
+    clone.ending === null
+      ? null
+      : {
+          causes: [...clone.ending.causes].sort((left, right) =>
+            compareCanonical(canonicalKey(left), canonicalKey(right))
+          ),
+        };
+  return { ...clone, ending, endRules };
 }
 
 function canonicalState(state: OccurrenceState): Readonly<OccurrenceState> {
@@ -285,7 +305,7 @@ function canonicalState(state: OccurrenceState): Readonly<OccurrenceState> {
     .map(([id, occurrence]) => [id, canonicalOccurrence(occurrence)] as const)
     .sort(
       ([leftId, left], [rightId, right]) =>
-        left.ordinal - right.ordinal || leftId.localeCompare(rightId)
+        left.ordinal - right.ordinal || compareCanonical(leftId, rightId)
     );
   return deepFreeze({
     nextOccurrenceOrdinal: state.nextOccurrenceOrdinal,
@@ -353,6 +373,7 @@ export function addOccurrence(
       ...current.occurrences,
       [id]: {
         ...conformed,
+        ending: null,
         ordinal: current.nextOccurrenceOrdinal,
       },
     },
@@ -409,7 +430,7 @@ export function selectOccurrenceEntries(
     .sort(
       (left, right) =>
         left.occurrence.ordinal - right.occurrence.ordinal ||
-        left.id.localeCompare(right.id)
+        compareCanonical(left.id, right.id)
     );
 }
 

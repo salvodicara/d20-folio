@@ -1,4 +1,5 @@
 import { canonicalJson } from "@/lib/canonical-fingerprint";
+import { conformEntityRef } from "@/lib/mechanics-reference-schema";
 import type { EntityRef, MaterialRef } from "@/types/mechanics-reference";
 import type {
   ActionDocumentGuard,
@@ -157,11 +158,7 @@ function isMaterialRef(value: unknown): value is MaterialRef {
 }
 
 function isEntityRef(value: unknown): value is EntityRef {
-  return (
-    isExactRecord(value, ["material", "entityId"]) &&
-    isMaterialRef(value.material) &&
-    isNonEmptyString(value.entityId)
-  );
+  return conformEntityRef(value) !== null;
 }
 
 function isJournalActorRef(value: unknown): value is JournalActorRef {
@@ -205,9 +202,7 @@ export function materialRefKey(material: MaterialRef): string {
   return canonicalJson(material);
 }
 
-export function entityRefKey(owner: EntityRef): string {
-  return canonicalJson(owner);
-}
+export { entityRefKey } from "@/lib/mechanics-reference-schema";
 
 export function journalActorRefKey(owner: JournalActorRef): string {
   return canonicalJson(owner);
