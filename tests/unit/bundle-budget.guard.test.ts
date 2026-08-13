@@ -425,7 +425,10 @@ const EAGER_CEILING_KB = 792; // baseline 727.1 → ~+9% (near budget — see AR
 // 2026-08-04 (incoming-damage reactions): raised 8527 → 8534 after the generic
 // reduction transaction and durable success receipt grew existing chunks to
 // 8530.75 KiB / the same 317 entries; +~3 KiB deterministic headroom.
-const PRECACHE_CEILING_KIB = 8534;
+// 2026-08-12 (ordered outcome occurrences): raised 8534 → 8545 after the
+// canonical multi-occurrence damage/outcome receipt contract grew only existing
+// JS chunks to 8541.85 KiB / the same 317 entries; +~3 KiB build headroom.
+const PRECACHE_CEILING_KIB = 8545;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

@@ -2241,6 +2241,11 @@ The generic reduction transaction, durable success receipt, exact undo and bilin
 grew existing JS/i18n chunks to 8530.75 KiB across the same 317 entries; the eager closure stayed below
 its unchanged ceiling and the new baseline keeps about 3 KiB of deterministic-build headroom.
 
+The 2026-08-12 ordered-outcome checkpoint raised only the precache ceiling 8534 → 8545 KiB. Canonical
+multi-occurrence damage/outcome receipts grew existing JS chunks to 8541.85 KiB across the same 317
+entries; no asset or chunk family entered the precache, and the baseline retains about 3 KiB of
+deterministic-build headroom.
+
 The 2026-08-04 breakdown WHY layer raised the eager closure 788 → 790 KB and the precache 8390 →
 8392 KiB. Both sides were MEASURED with the guard (main `cd1f93f` built into a throwaway worktree,
 then the branch), so the cost is a real diff rather than a delta against a stale record: eager
