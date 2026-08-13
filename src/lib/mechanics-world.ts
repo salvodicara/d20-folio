@@ -1,6 +1,10 @@
 import { materialRefKey } from "@/lib/action-journal";
 import { conformMechanicsExecutionFrame } from "@/lib/mechanics-command-boundary";
 import {
+  consumeMechanicsSubscriberSelection,
+  mechanicsSubscriberSelectionFiber,
+} from "@/lib/mechanics-event-selection";
+import {
   canonicalFingerprint,
   canonicalJson,
   conformCanonicalFingerprint,
@@ -974,7 +978,7 @@ function pendingFramePermit(
   readonly frame: Readonly<MechanicsPendingFrame>;
   readonly permit: PendingFramePermit;
 } | null {
-  if (!isExactRecord(value, ["cursor", "frame"])) return null;
+  if (!isExactRecord(value, ["cursor", "frame", "selectedEvent"])) return null;
   const frame = conformMechanicsExecutionFrame(value.frame);
   const program = frame?.authority.snapshot.program;
   const phase = program?.phases.find(
@@ -982,11 +986,17 @@ function pendingFramePermit(
   );
   if (!frame || !program || !phase || !exactEqual(frame, value.frame)) return null;
   const cursor = conformPendingFrameCursor(value.cursor, phase.steps.length);
-  if (!cursor || !exactEqual(cursor, value.cursor)) return null;
+  if (
+    !cursor ||
+    !exactEqual(cursor, value.cursor) ||
+    typeof value.selectedEvent !== "boolean"
+  ) {
+    return null;
+  }
   const root = occurrenceAtGeneration(world, frame.rootReceipt.root);
   if (
     root?.kind !== "program" ||
-    root.ending !== null ||
+    (root.ending !== null && !value.selectedEvent) ||
     !exactEqual(root.authority, frame.authority)
   ) {
     return null;
@@ -1001,7 +1011,11 @@ function pendingFramePermit(
     return null;
   }
   return {
-    frame: freezeDeep({ cursor, frame }),
+    frame: freezeDeep({
+      cursor,
+      frame,
+      selectedEvent: value.selectedEvent,
+    }),
     permit: {
       execution: frame.rootReceipt.next.execution,
       phaseId: phase.phaseId,
@@ -2285,10 +2299,18 @@ function rebaseMechanicsCausalStateWithFrames(
     nextPendingFrames
   );
   if (invalid) return { ok: false, reason: "invalid-end-wave" };
-  const openPendingRootKeys = new Set(
+  const openPendingRoots = new Map(
     nextPendingFrames
       .filter(({ cursor }) => cursor.stage !== "phase-complete")
-      .map(({ frame }) => occurrenceGenerationRefKey(frame.rootReceipt.root))
+      .map((pending) => [
+        occurrenceGenerationRefKey(pending.frame.rootReceipt.root),
+        pending,
+      ])
+  );
+  const priorCandidateKeys = new Set(
+    prior?.wave.candidates.map(({ occurrence }) =>
+      occurrenceGenerationRefKey(occurrence)
+    ) ?? []
   );
   const discovery = discoverMechanicsEndWave(structured.value, request);
   if (discovery.status === "rejected") {
@@ -2303,9 +2325,13 @@ function rebaseMechanicsCausalStateWithFrames(
   );
   if (!latched.ok) return latched;
   if (
-    latched.value.wave.candidates.some((candidate) =>
-      openPendingRootKeys.has(occurrenceGenerationRefKey(candidate.occurrence))
-    )
+    latched.value.wave.candidates.some((candidate) => {
+      const key = occurrenceGenerationRefKey(candidate.occurrence);
+      const pending = openPendingRoots.get(key);
+      return (
+        pending !== undefined && (!pending.selectedEvent || !priorCandidateKeys.has(key))
+      );
+    })
   ) {
     return { ok: false, reason: "invalid-end-wave" };
   }
@@ -2382,7 +2408,10 @@ function replacePendingTop(
   if (!top || !exactEqual(top.frame, frame)) {
     return { ok: false, reason: "invalid-transition" };
   }
-  const pendingFrames = [...state.context.pendingFrames.slice(0, -1), { cursor, frame }];
+  const pendingFrames = [
+    ...state.context.pendingFrames.slice(0, -1),
+    { cursor, frame, selectedEvent: top.selectedEvent },
+  ];
   const conformed = conformPendingFrames(state.world, pendingFrames);
   if (!conformed || !exactEqual(conformed, pendingFrames)) {
     return { ok: false, reason: "invalid-transition" };
@@ -2390,30 +2419,76 @@ function replacePendingTop(
   return rebaseMechanicsCausalStateWithFrames(state.world, state, [], [], conformed);
 }
 
-/** Push one already-created exact root at its receipt's expected phase state. */
-export function pushMechanicsPendingFrame(
-  stateValue: unknown,
-  frameValue: unknown
+function pushPendingFrame(
+  state: Readonly<MechanicsCausalState>,
+  frame: Readonly<MechanicsExecutionFrame>,
+  selectedEvent: boolean
 ): MechanicsCausalStateResult {
-  const state = exactCausalState(stateValue);
-  const frame = exactExecutionFrame(frameValue);
-  const program = frame?.authority.snapshot.program;
+  const program = frame.authority.snapshot.program;
   const phase = program?.phases.find(
     ({ phaseId }) => phaseId === frame.rootReceipt.next.phaseId
   );
-  if (!state || !frame || !program || !phase) {
+  if (!program || !phase) {
     return { ok: false, reason: "invalid-transition" };
   }
   const cursor: MechanicsPendingFrameCursor =
     phase.steps.length === 0
       ? { stage: "phase-transition" }
       : { nextSlot: 1, stage: "step", stepIndex: 0 };
-  const pendingFrames = [...state.context.pendingFrames, { cursor, frame }];
+  const pendingFrames = [
+    ...state.context.pendingFrames,
+    { cursor, frame, selectedEvent },
+  ];
   const conformed = conformPendingFrames(state.world, pendingFrames);
   if (!conformed || !exactEqual(conformed, pendingFrames)) {
     return { ok: false, reason: "invalid-transition" };
   }
   return rebaseMechanicsCausalStateWithFrames(state.world, state, [], [], conformed);
+}
+
+/** Push one already-created exact active root at its receipt's expected phase state. */
+export function pushMechanicsPendingFrame(
+  stateValue: unknown,
+  frameValue: unknown
+): MechanicsCausalStateResult {
+  const state = exactCausalState(stateValue);
+  const frame = exactExecutionFrame(frameValue);
+  return state && frame
+    ? pushPendingFrame(state, frame, false)
+    : { ok: false, reason: "invalid-transition" };
+}
+
+/**
+ * Trusted event-dispatch seam. The private selection fiber binds every frame
+ * identity field; the ordinary push can never grant selected-event authority.
+ */
+export function pushMechanicsSelectedEventPendingFrame(
+  stateValue: unknown,
+  frameValue: unknown,
+  selectionValue: unknown
+): MechanicsCausalStateResult {
+  const state = exactCausalState(stateValue);
+  const frame = exactExecutionFrame(frameValue);
+  const selection = mechanicsSubscriberSelectionFiber(selectionValue);
+  const root =
+    state && frame ? occurrenceAtGeneration(state.world, frame.rootReceipt.root) : null;
+  if (
+    !state ||
+    !frame ||
+    !selection ||
+    root?.kind !== "program" ||
+    !exactEqual(frame.rootReceipt.root, selection.root) ||
+    frame.rootReceipt.next.phaseId !== selection.phaseId ||
+    frame.rootReceipt.next.triggerEventId !== selection.eventId ||
+    !exactEqual(frame.authority, selection.authority) ||
+    !exactEqual(frame.trigger, selection.evidence)
+  ) {
+    return { ok: false, reason: "invalid-transition" };
+  }
+  const pushed = pushPendingFrame(state, frame, true);
+  return pushed.ok && consumeMechanicsSubscriberSelection(selectionValue)
+    ? pushed
+    : { ok: false, reason: "invalid-transition" };
 }
 
 /** Advance only the top frame's exact expansion slot. */
@@ -2500,7 +2575,7 @@ export function acceptMechanicsPendingFramePhaseTransition(
   if (
     root?.kind !== "program" ||
     root.ordinal !== frame.rootReceipt.root.ordinal ||
-    root.ending !== null
+    (root.ending !== null && !top.selectedEvent)
   ) {
     return { ok: false, reason: "invalid-transition" };
   }
@@ -2512,7 +2587,11 @@ export function acceptMechanicsPendingFramePhaseTransition(
   }
   const pendingFrames = [
     ...state.context.pendingFrames.slice(0, -1),
-    { cursor: { stage: "phase-complete" } as const, frame },
+    {
+      cursor: { stage: "phase-complete" } as const,
+      frame,
+      selectedEvent: top.selectedEvent,
+    },
   ];
   const conformed = conformPendingFrames(candidate.value, pendingFrames);
   if (
@@ -3655,6 +3734,9 @@ export function finalizeMechanicsCausalEndWave(
   const state = exactCausalState(stateValue);
   if (!state) return { ok: false, reason: "invalid-end-wave" };
   if (state.context.endWave === null) return { ok: true, value: state };
+  if (state.context.pendingFrames.some(({ selectedEvent }) => selectedEvent)) {
+    return { ok: false, reason: "invalid-end-wave" };
+  }
   const finalized = finalizeMechanicsEndWave(state.world, state.context.endWave.wave);
   if (finalized.status === "rejected") {
     return { ok: false, reason: finalized.reason };

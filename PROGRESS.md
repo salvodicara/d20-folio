@@ -196,6 +196,17 @@ the final post-convergence, post-rebase push to `main`. Payment, vitality, mater
 fixed-point subscriber/end-wave coordinator, remaining audited prerequisites, corpus transcription,
 persistence/UI cutover and complete deletion of superseded executors remain active.
 
+**Exact event-audience/dispatch checkpoint CLOSED on branch (2026-08-12; coordinator ACTIVE):** every
+event is now an opaque process-local emission paired with its producing stage's exact `after` world, or
+for `source-ending`, the re-proved readable end-wave world. Full semantic trigger proof freezes a canonical
+root-generation/phase audience at emission; dispatch later allocates the current phase CAS, re-proves the
+exact live root generation and authority, and does not re-evaluate mutable predicates. Only kernel-issued
+selected-event frames may execute on readable-ending roots, `source-ending` children must resolve their
+owning root, and those frames pin finalization through `phase-complete` until exact LIFO pop. Clones,
+forgeries, reuse, ABA, stale authority and roots/phases created after emission fail closed. Only focused
+affected-suite verification ran; by owner rule no global gate ran. The bounded fixed-point state
+coordinator and the remaining compiler/runtime cutover are still active; this is not engine completion.
+
 **Deterministic automation gap sweep — ACTIVE (2026-08-04):** six truth-gated milestones are closed and
 branch-pushed: persistent/reactive-effect lifecycle, target-bound on-hit retaliation, variable-level
 charged-item casts, activated-item tracker/timer lifecycle, bounded spell-pool execution, and variable

@@ -119,6 +119,8 @@ export type MechanicsPendingFrameCursor =
 export interface MechanicsPendingFrame {
   readonly cursor: Readonly<MechanicsPendingFrameCursor>;
   readonly frame: Readonly<MechanicsExecutionFrame>;
+  /** Kernel-issued only when an authentic emission selected this exact frame. */
+  readonly selectedEvent: boolean;
 }
 
 declare const MECHANICS_CAUSAL_STATE: unique symbol;

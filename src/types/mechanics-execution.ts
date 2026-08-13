@@ -3,6 +3,7 @@
 import type { ActionFactGuard } from "@/types/action-journal";
 import type { DamageResolution } from "@/types/damage";
 import type { DiceRollRequirement } from "@/types/dice-formula";
+import type { MechanicsExecutionFrame } from "@/types/mechanics-command";
 import type { EntityRef, OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type {
   MechanicsOperation,
@@ -17,7 +18,6 @@ import type {
   MechanicsBoundaryCommand,
   MechanicsCausalState,
   MechanicsWorld,
-  MechanicsWorldSimulationRejection,
 } from "@/types/mechanics-world";
 import type { ResourceRef } from "@/types/resource";
 
@@ -122,6 +122,55 @@ export type MechanicsPostEvent = Exclude<
   { readonly kind: "source-ending" }
 >;
 
+declare const MECHANICS_EVENT_EMISSION: unique symbol;
+
+/** One authentic event paired with the exact world immediately after its producing stage. */
+export interface MechanicsEventEmission<Event extends MechanicsEvent = MechanicsEvent> {
+  readonly [MECHANICS_EVENT_EMISSION]: true;
+  readonly emissionWorld: Readonly<MechanicsWorld>;
+  readonly event: Readonly<Event>;
+}
+
+export type MechanicsPostEventEmission = MechanicsEventEmission<MechanicsPostEvent>;
+export type MechanicsSourceEndingEventEmission = MechanicsEventEmission<
+  Extract<MechanicsEvent, { readonly kind: "source-ending" }>
+>;
+
+declare const MECHANICS_SUBSCRIBER_SELECTION: unique symbol;
+
+/** Process-local proof that one root/phase belonged to an event's emission-time audience. */
+export interface MechanicsSubscriberSelection {
+  readonly [MECHANICS_SUBSCRIBER_SELECTION]: true;
+  readonly eventId: string;
+  readonly phaseId: string;
+  readonly root: Readonly<OccurrenceGenerationRef>;
+}
+
+export type MechanicsSubscriberSelectionResult =
+  | {
+      readonly selections: readonly Readonly<MechanicsSubscriberSelection>[];
+      readonly status: "selected";
+    }
+  | {
+      readonly reason: "invalid-emission" | "subscriber-overflow";
+      readonly status: "rejected";
+    };
+
+export type MechanicsSubscriberDispatchResult =
+  | {
+      readonly frame: Readonly<MechanicsExecutionFrame>;
+      readonly state: Readonly<MechanicsCausalState>;
+      readonly status: "dispatched";
+    }
+  | {
+      readonly reason:
+        | "invalid-selection"
+        | "invalid-state"
+        | "stale-subscriber"
+        | "execution-overflow";
+      readonly status: "rejected";
+    };
+
 export type AppliedMechanicsOperation = Readonly<MechanicsOperationExecution>;
 
 export type ResolutionGroupSimulationResult =
@@ -165,7 +214,7 @@ export type ResolutionGroupSimulationResult =
       readonly actionFacts: readonly Readonly<ActionFactGuard>[];
       readonly analysis: Exclude<ResolutionGroupAnalysis, { readonly kind: "rejected" }>;
       readonly consequences: readonly Readonly<MechanicsOperationConsequence>[];
-      readonly events: readonly Readonly<MechanicsPostEvent>[];
+      readonly emissions: readonly Readonly<MechanicsPostEventEmission>[];
       readonly executions: readonly (
         | Readonly<MechanicsOperationExecution>
         | Readonly<MechanicsOperationNoChange>
@@ -180,7 +229,7 @@ export type ResolutionGroupSimulationResult =
       readonly actionFacts: readonly [];
       readonly analysis: Exclude<ResolutionGroupAnalysis, { readonly kind: "rejected" }>;
       readonly consequences: readonly [];
-      readonly events: readonly [];
+      readonly emissions: readonly [];
       readonly executions: readonly Readonly<MechanicsOperationNoChange>[];
       readonly orderedProposalIds: readonly string[];
       readonly stages: readonly [];
@@ -202,24 +251,10 @@ export type ResolutionGroupSimulationResult =
 
 export type MechanicsSourceEndingEventDerivationResult =
   | {
-      readonly events: readonly Readonly<
-        Extract<MechanicsEvent, { kind: "source-ending" }>
-      >[];
+      readonly emissions: readonly Readonly<MechanicsSourceEndingEventEmission>[];
       readonly status: "derived";
     }
   | {
       readonly reason: "invalid-end-wave";
-      readonly status: "rejected";
-    };
-
-/** Exact kernel finalization plus its ratified (currently empty) event grammar. */
-export type MechanicsEndWaveFinalizationResult =
-  | {
-      readonly events: readonly [];
-      readonly status: "finalized";
-      readonly world: Readonly<MechanicsWorld>;
-    }
-  | {
-      readonly reason: MechanicsWorldSimulationRejection;
       readonly status: "rejected";
     };

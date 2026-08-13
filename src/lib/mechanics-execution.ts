@@ -1,9 +1,12 @@
 /** Pure simultaneous-group validation and collision analysis. */
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
+import {
+  isAuthenticMechanicsEventEmission,
+  issueMechanicsEventEmission,
+} from "@/lib/mechanics-event-selection";
 import { conformMechanicsAuthoritySnapshot } from "@/lib/mechanics-authority";
 import {
-  finalizeMechanicsEndWave,
   isMechanicsEndWaveReceiptForWorld,
   rebaseMechanicsCausalState,
 } from "@/lib/mechanics-world";
@@ -19,7 +22,7 @@ import type {
   GroupProposal,
   MechanicsOperationAccessFootprint,
   MechanicsEvent,
-  MechanicsEndWaveFinalizationResult,
+  MechanicsPostEventEmission,
   MechanicsPostEvent,
   MechanicsSourceEndingEventDerivationResult,
   OrderingObservation,
@@ -150,6 +153,8 @@ function freezeDeep<T>(value: T): Readonly<T> {
   Object.freeze(value);
   return value;
 }
+
+export { isAuthenticMechanicsEventEmission };
 
 function conformResolutionGroupValue(value: unknown): Readonly<ResolutionGroup> | null {
   const record = exactRecordSnapshot(value, ["groupId", "proposals"]);
@@ -1121,7 +1126,7 @@ export function simulateResolutionGroup(
       actionFacts: [],
       analysis,
       consequences: [],
-      events: [],
+      emissions: [],
       executions: result.executions,
       orderedProposalIds: freezeDeep([...orderedProposalIds]),
       stages: [],
@@ -1135,7 +1140,7 @@ export function simulateResolutionGroup(
     actionFacts: result.actionFacts,
     analysis,
     consequences: result.consequences,
-    events: deriveMechanicsPostEvents(result.stages),
+    emissions: deriveMechanicsPostEventEmissions(result.stages),
     executions: result.executions,
     orderedProposalIds: freezeDeep([...orderedProposalIds]),
     stages: result.stages,
@@ -1273,14 +1278,22 @@ function deriveMechanicsStagePostEvents(
   return [];
 }
 
-/** Derive one transaction's events, with phase completion trailing ordinary events. */
-export function deriveMechanicsPostEvents(
+/**
+ * Derive one transaction's emissions. Phase completion trails ordinary events,
+ * while every event retains its own producing stage's exact `after` world.
+ */
+export function deriveMechanicsPostEventEmissions(
   stages: readonly Readonly<MechanicsOperationStage>[]
-): readonly Readonly<MechanicsPostEvent>[] {
-  const events = stages.flatMap(deriveMechanicsStagePostEvents);
+): readonly Readonly<MechanicsPostEventEmission>[] {
+  const emissions: readonly Readonly<MechanicsPostEventEmission>[] = stages.flatMap(
+    (stage) =>
+      deriveMechanicsStagePostEvents(stage).map((event) =>
+        issueMechanicsEventEmission<MechanicsPostEvent>(stage.after, event)
+      )
+  );
   return freezeDeep([
-    ...events.filter(({ kind }) => kind !== "program-phase-end"),
-    ...events.filter(({ kind }) => kind === "program-phase-end"),
+    ...emissions.filter(({ event }) => event.kind !== "program-phase-end"),
+    ...emissions.filter(({ event }) => event.kind === "program-phase-end"),
   ]);
 }
 
@@ -1301,35 +1314,16 @@ export function deriveMechanicsSourceEndingEvents(
   }
   const wave = waveValue;
   return {
-    events: freezeDeep(
-      wave.candidates.map(({ occurrence }) => ({
-        eventId: eventId("source-ending", operationId, occurrence),
-        kind: "source-ending" as const,
-        occurrence,
-        operationId,
-      }))
+    emissions: freezeDeep(
+      wave.candidates.map(({ occurrence }) =>
+        issueMechanicsEventEmission(worldValue as Readonly<MechanicsWorld>, {
+          eventId: eventId("source-ending", operationId, occurrence),
+          kind: "source-ending" as const,
+          occurrence,
+          operationId,
+        })
+      )
     ),
     status: "derived",
   };
-}
-
-/**
- * Finalize one exact latched wave. The ratified post-finalization event grammar
- * is empty; state cleanup remains represented by the action journal.
- */
-export function finalizeMechanicsEndWaveWithEvents(
-  beforeValue: unknown,
-  waveValue: unknown
-): MechanicsEndWaveFinalizationResult {
-  const finalized = finalizeMechanicsEndWave(
-    beforeValue as Readonly<MechanicsWorld>,
-    waveValue as Parameters<typeof finalizeMechanicsEndWave>[1]
-  );
-  return finalized.status === "rejected"
-    ? { reason: finalized.reason, status: "rejected" }
-    : freezeDeep({
-        events: [] as const,
-        status: "finalized" as const,
-        world: finalized.world,
-      });
 }

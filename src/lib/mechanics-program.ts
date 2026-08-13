@@ -22,7 +22,15 @@ import {
 import { exactConformer, type ExactSchemaContext } from "@/lib/exact-schema";
 import { evaluateIntegerExpression } from "@/lib/integer-expression";
 import { conformMechanicsExecutionFrame } from "@/lib/mechanics-command-boundary";
-import { conformEntityRef } from "@/lib/mechanics-reference-schema";
+import {
+  isAuthenticMechanicsEventEmission,
+  issueMechanicsSubscriberSelection,
+  mechanicsSubscriberSelectionFiber,
+} from "@/lib/mechanics-event-selection";
+import {
+  conformEntityRef,
+  occurrenceGenerationRefKey,
+} from "@/lib/mechanics-reference-schema";
 import {
   MECHANICS_ANSWERS_SCHEMA,
   MECHANICS_INTENT_SCHEMA,
@@ -30,7 +38,10 @@ import {
 } from "@/lib/mechanics-program-schema";
 import { type MechanicsD20RequestSpec } from "@/lib/mechanics-program-authoring";
 import { locateResolvedMaterialResource } from "@/lib/material-resource";
-import { conformMechanicsCausalState } from "@/lib/mechanics-world";
+import {
+  conformMechanicsCausalState,
+  pushMechanicsSelectedEventPendingFrame,
+} from "@/lib/mechanics-world";
 import { conformResourceRef, resourceRefKey } from "@/lib/resources";
 import type { JournalActorRef } from "@/types/action-journal";
 import type { D20TestObservation, D20TestRequest, D20TestResult } from "@/types/d20-test";
@@ -39,6 +50,12 @@ import type {
   ResolvedDiceReplacementRule,
   ResolvedDiceTrail,
 } from "@/types/dice-formula";
+import type {
+  MechanicsEvent,
+  MechanicsSubscriberDispatchResult,
+  MechanicsSubscriberSelection,
+  MechanicsSubscriberSelectionResult,
+} from "@/types/mechanics-execution";
 import type {
   EffectOccurrence,
   MechanicOccurrence,
@@ -117,6 +134,7 @@ const MAX_BINDINGS = 256;
 const MAX_TARGETS = 256;
 const MAX_PAYMENTS = 64;
 const MAX_RESOURCE_AMOUNT = 1_000_000_000;
+const MAX_EVENT_SUBSCRIBERS = 2_048;
 const ROLES = new Set<MechanicsRole>([
   "owner",
   "source",
@@ -126,6 +144,11 @@ const ROLES = new Set<MechanicsRole>([
   "triggering-attacker",
   "victim",
 ]);
+const mechanicsEventSubscriberAudiences = new WeakMap<
+  object,
+  Readonly<MechanicsSubscriberSelectionResult>
+>();
+
 function freezeDeep<T>(value: T): Readonly<T> {
   const visited = new WeakSet<object>();
   const visit = (entry: unknown): void => {
@@ -694,7 +717,7 @@ type ProgramRootLookup =
   | { readonly kind: "present"; readonly root: ProgramOccurrence }
   | { readonly kind: "invalid"; readonly root: null };
 
-type MechanicsExecutionMode = "new" | "replay";
+type MechanicsExecutionMode = "new" | "replay" | "selected-event";
 
 function phaseStateMatches(
   state: ProgramOccurrence["phaseState"][string],
@@ -795,7 +818,7 @@ function executionMode(
     top.cursor.stage !== "phase-complete" &&
     phaseStateMatches(state, receipt.expected)
   ) {
-    return "new";
+    return top.selectedEvent ? "selected-event" : "new";
   }
   return phaseStateMatches(state, receipt.next) ? "replay" : null;
 }
@@ -928,6 +951,279 @@ function triggerMatches(
   }
 }
 
+function eventTriggerEvidence(
+  event: Readonly<MechanicsEvent>
+): Readonly<MechanicsTriggerEvidence> {
+  switch (event.kind) {
+    case "damage-taken":
+      return freezeDeep({
+        attacker: event.attacker,
+        criticalHit: event.criticalHit,
+        kind: event.kind,
+        resolution: event.resolution,
+        triggerEventId: event.eventId,
+      });
+    case "hit-points-zero":
+      return freezeDeep({
+        kind: event.kind,
+        target: event.target,
+        triggerEventId: event.eventId,
+      });
+    case "resource-depleted":
+      return freezeDeep({
+        kind: event.kind,
+        resource: event.resource,
+        triggerEventId: event.eventId,
+      });
+    case "program-phase-end":
+      return freezeDeep({
+        execution: event.execution,
+        kind: event.kind,
+        occurrence: event.occurrence,
+        phaseId: event.phaseId,
+        triggerEventId: event.eventId,
+      });
+    case "source-ending":
+      return freezeDeep({
+        kind: "source-end" as const,
+        occurrence: event.occurrence,
+        triggerEventId: event.eventId,
+      });
+  }
+}
+
+function eventSelectionContext(
+  root: Readonly<ProgramOccurrence>,
+  rootRef: Readonly<OccurrenceGenerationRef>,
+  phase: Readonly<MechanicsProgramPhase>,
+  evidence: Readonly<MechanicsTriggerEvidence>,
+  eventId: string
+): MechanicsExecutionContext | null {
+  const expected = root.phaseState[phase.phaseId];
+  if (!expected || expected.execution >= Number.MAX_SAFE_INTEGER) return null;
+  const intent = {
+    actionId: eventId,
+    factGuards: [],
+    frame: {
+      authority: root.authority,
+      invocation: { kind: "program-root", occurrence: rootRef },
+      rootReceipt: {
+        expected: {
+          execution: expected.execution,
+          phaseId: phase.phaseId,
+          triggerEventId: expected.lastTriggerEventId,
+        },
+        kind: "advance",
+        next: {
+          execution: expected.execution + 1,
+          phaseId: phase.phaseId,
+          triggerEventId: eventId,
+        },
+        root: rootRef,
+      },
+      trigger: evidence,
+    },
+  } as const satisfies MechanicsIntent;
+  return executionContext(intent);
+}
+
+/**
+ * Freeze the complete emission-time subscriber audience. Only root generation
+ * and phase identity survive selection; the execution CAS is allocated later
+ * when the depth-first dispatcher reaches that member.
+ */
+export function selectMechanicsEventSubscribers(
+  emissionValue: unknown
+): Readonly<MechanicsSubscriberSelectionResult> {
+  if (!isAuthenticMechanicsEventEmission(emissionValue)) {
+    return freezeDeep({
+      reason: "invalid-emission" as const,
+      status: "rejected" as const,
+    });
+  }
+  const emission = emissionValue;
+  const existing = mechanicsEventSubscriberAudiences.get(emission);
+  if (existing) return existing;
+  const evidence = eventTriggerEvidence(emission.event);
+  const selected: {
+    readonly key: string;
+    readonly phaseId: string;
+    readonly root: OccurrenceGenerationRef;
+  }[] = [];
+
+  for (const document of emission.emissionWorld.documents) {
+    for (const [occurrenceId, occurrence] of Object.entries(document.state.occurrences)) {
+      if (
+        occurrence.kind !== "program" ||
+        (occurrence.ending !== null && emission.event.kind !== "source-ending")
+      ) {
+        continue;
+      }
+      const root = {
+        occurrence: { material: document.material, occurrenceId },
+        ordinal: occurrence.ordinal,
+      } as const;
+      for (const phase of occurrence.authority.snapshot.program?.phases ?? []) {
+        const context = eventSelectionContext(
+          occurrence,
+          root,
+          phase,
+          evidence,
+          emission.event.eventId
+        );
+        if (!context || !triggerMatches(context, phase, emission.emissionWorld)) {
+          continue;
+        }
+        selected.push({
+          key: `${occurrenceGenerationRefKey(root)}\u0000${phase.phaseId}`,
+          phaseId: phase.phaseId,
+          root,
+        });
+        if (selected.length > MAX_EVENT_SUBSCRIBERS) {
+          const result = freezeDeep({
+            reason: "subscriber-overflow" as const,
+            status: "rejected" as const,
+          });
+          mechanicsEventSubscriberAudiences.set(emission, result);
+          return result;
+        }
+      }
+    }
+  }
+
+  selected.sort((left, right) => compareCodeUnits(left.key, right.key));
+  const selections = selected.map(({ phaseId, root }) => {
+    const occurrence = occurrenceFor(emission.emissionWorld, root);
+    return occurrence?.kind === "program"
+      ? issueMechanicsSubscriberSelection(emission, {
+          authority: occurrence.authority,
+          eventId: emission.event.eventId,
+          evidence,
+          phaseId,
+          root,
+        })
+      : null;
+  });
+  if (selections.some((selection) => selection === null)) {
+    const result = freezeDeep({
+      reason: "invalid-emission" as const,
+      status: "rejected" as const,
+    });
+    mechanicsEventSubscriberAudiences.set(emission, result);
+    return result;
+  }
+  const result = freezeDeep({
+    selections: selections as readonly Readonly<MechanicsSubscriberSelection>[],
+    status: "selected" as const,
+  });
+  mechanicsEventSubscriberAudiences.set(emission, result);
+  return result;
+}
+
+/**
+ * Consume one frozen audience member and allocate its phase CAS against the
+ * current causal world. Emission-time trigger membership is not re-evaluated;
+ * exact root generation and current phase state still are.
+ */
+export function dispatchMechanicsEventSubscriber(
+  selectionValue: unknown,
+  stateValue: unknown
+): Readonly<MechanicsSubscriberDispatchResult> {
+  if (typeof selectionValue !== "object" || selectionValue === null) {
+    return freezeDeep({
+      reason: "invalid-selection" as const,
+      status: "rejected" as const,
+    });
+  }
+  const fiber = mechanicsSubscriberSelectionFiber(selectionValue);
+  if (!fiber) {
+    return freezeDeep({
+      reason: "invalid-selection" as const,
+      status: "rejected" as const,
+    });
+  }
+  const conformed = conformMechanicsCausalState(stateValue);
+  if (!conformed.ok) {
+    return freezeDeep({ reason: "invalid-state" as const, status: "rejected" as const });
+  }
+  const state = conformed.value;
+  const root = occurrenceFor(state.world, fiber.root);
+  if (root?.kind !== "program" || !exactEqual(root.authority, fiber.authority)) {
+    return freezeDeep({
+      reason: "stale-subscriber" as const,
+      status: "rejected" as const,
+    });
+  }
+  const phase = root.authority.snapshot.program?.phases.find(
+    ({ phaseId }) => phaseId === fiber.phaseId
+  );
+  const expected = root.phaseState[fiber.phaseId];
+  if (!phase || !expected) {
+    return freezeDeep({
+      reason: "stale-subscriber" as const,
+      status: "rejected" as const,
+    });
+  }
+  if (expected.execution >= Number.MAX_SAFE_INTEGER) {
+    return freezeDeep({
+      reason: "execution-overflow" as const,
+      status: "rejected" as const,
+    });
+  }
+  if (expected.lastTriggerEventId === fiber.eventId) {
+    return freezeDeep({
+      reason: "stale-subscriber" as const,
+      status: "rejected" as const,
+    });
+  }
+  if (
+    fiber.evidence.kind === "source-end" &&
+    (occurrenceFor(state.world, fiber.evidence.occurrence) === null ||
+      !exactEqual(
+        resolvedProgramRootGeneration(state.world, fiber.evidence.occurrence),
+        fiber.root
+      ))
+  ) {
+    return freezeDeep({
+      reason: "stale-subscriber" as const,
+      status: "rejected" as const,
+    });
+  }
+  const frame = conformMechanicsExecutionFrame({
+    authority: fiber.authority,
+    invocation: { kind: "program-root", occurrence: fiber.root },
+    rootReceipt: {
+      expected: {
+        execution: expected.execution,
+        phaseId: fiber.phaseId,
+        triggerEventId: expected.lastTriggerEventId,
+      },
+      kind: "advance",
+      next: {
+        execution: expected.execution + 1,
+        phaseId: fiber.phaseId,
+        triggerEventId: fiber.eventId,
+      },
+      root: fiber.root,
+    },
+    trigger: fiber.evidence,
+  });
+  if (!frame) {
+    return freezeDeep({
+      reason: "stale-subscriber" as const,
+      status: "rejected" as const,
+    });
+  }
+  const pushed = pushMechanicsSelectedEventPendingFrame(state, frame, selectionValue);
+  if (!pushed.ok) {
+    return freezeDeep({
+      reason: "stale-subscriber" as const,
+      status: "rejected" as const,
+    });
+  }
+  return freezeDeep({ frame, state: pushed.value, status: "dispatched" as const });
+}
+
 type ValidatedMechanicsIntent = {
   readonly bindings: Readonly<Record<string, number>>;
   readonly execution: MechanicsExecutionContext;
@@ -968,14 +1264,16 @@ function validateIntentAgainstReadableWorld(
     };
   }
   const root = lookup.root;
-  for (const role of ROLES) {
-    const entity = roleEntity(execution, role);
-    if (entity !== null && !worldEntity(world, entity)) {
-      return { reason: "missing-entity", referenceId: role };
+  if (mode !== "selected-event") {
+    for (const role of ROLES) {
+      const entity = roleEntity(execution, role);
+      if (entity !== null && !worldEntity(world, entity)) {
+        return { reason: "missing-entity", referenceId: role };
+      }
     }
-  }
-  if (mode === "new" && !triggerMatches(execution, phase, world)) {
-    return { reason: "trigger-mismatch", referenceId: phase.phaseId };
+    if (mode === "new" && !triggerMatches(execution, phase, world)) {
+      return { reason: "trigger-mismatch", referenceId: phase.phaseId };
+    }
   }
   const bindings = bindingsFor(execution, root);
   if (!bindings) return { reason: "invalid-intent", referenceId: "bindings" };
@@ -1009,7 +1307,7 @@ export function refreshMechanicsProgramCompilationContext(
     state.value.world,
     state.value.context.pendingFrames
   );
-  if ("reason" in validated || validated.executionMode !== "new") return null;
+  if ("reason" in validated || validated.executionMode === "replay") return null;
   return freezeDeep({
     bindings: validated.bindings,
     execution: validated.execution.execution,

@@ -149,7 +149,21 @@ reversible journal action, not generic condition/entity/inventory/register event
 consumes.
 Every non-invocation evidence carries the authentic event id, and its program-root CAS receipt must repeat
 that same id. A transaction publishes ordinary post-events first and phase-completion events last, in
-deterministic order; `compileMechanicsFrame` exposes exactly that canonical event sequence.
+deterministic order. Simulation/compiler results expose that canonical sequence only as opaque
+process-local emissions: each post-event is paired with its producing stage's exact `after` world, and
+each `source-ending` event with its exact re-proved readable end-wave world. A cloned, serialized or
+reconstructed event is not authentic.
+
+The complete subscriber audience is frozen at emission. Selection fully proves every semantic trigger
+against that emission world and returns exact root/phase capabilities in canonical root-generation/phase
+order. Dispatch later allocates the selected phase's current expected→next CAS against the current causal
+state, re-proving the exact root generation and immutable authority without re-evaluating mutable trigger
+predicates. A root/phase created after emission was never selected; forged or cloned selections, reuse,
+stale authority, same-id ABA and repeat delivery fail closed. A `source-ending` child must still resolve
+to the selected owning program root. Only a kernel-issued selected-event frame may execute on a
+readable-ending root, and that permit blocks finalization through `phase-complete` until the exact LIFO top
+is popped. The state coordinator that drains these audiences remains open.
+
 The compiler/coordinator and corpus transcription are still active work. Root allocation is a standalone
 physical segment; only after its zeroed root is re-proved may the coordinator push the exact process-local
 frame. `compileMechanicsFrame` is the only intended program-to-transaction seam: it consumes only that

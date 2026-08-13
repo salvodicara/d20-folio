@@ -3,7 +3,7 @@
 import { materialRefKey } from "@/lib/action-journal";
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { evaluateIntegerExpression } from "@/lib/integer-expression";
-import { deriveMechanicsPostEvents } from "@/lib/mechanics-execution";
+import { deriveMechanicsPostEventEmissions } from "@/lib/mechanics-execution";
 import {
   projectMechanicsTransaction,
   simulateMechanicsTransaction,
@@ -881,7 +881,7 @@ export function compileMechanicsFrame(
     const segment: MechanicsCompiledSegment = {
       actionFacts: [],
       consequences: [],
-      events: [],
+      emissions: [],
       manual,
       state: advanced.value,
       trace,
@@ -913,7 +913,7 @@ export function compileMechanicsFrame(
     const segment: MechanicsCompiledSegment = {
       actionFacts: simulation.actionFacts,
       consequences: simulation.consequences,
-      events: deriveMechanicsPostEvents(simulation.stages),
+      emissions: deriveMechanicsPostEventEmissions(simulation.stages),
       manual: [],
       state: advanced.value,
       trace: [
@@ -954,7 +954,7 @@ export function compileMechanicsFrame(
     const segment: MechanicsCompiledSegment = {
       actionFacts: simulation.actionFacts,
       consequences: simulation.consequences,
-      events: deriveMechanicsPostEvents(simulation.stages),
+      emissions: deriveMechanicsPostEventEmissions(simulation.stages),
       manual: [],
       state: simulation.state,
       trace: [],

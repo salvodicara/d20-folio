@@ -673,7 +673,7 @@ describe("compileMechanicsFrame segmented SSOT", () => {
     expect(topMechanicsPendingFrame(phase.state)?.cursor).toEqual({
       stage: "phase-complete",
     });
-    expect(phase.events).toMatchObject([
+    expect(phase.emissions.map(({ event }) => event)).toMatchObject([
       {
         execution: 1,
         kind: "program-phase-end",
@@ -789,7 +789,7 @@ describe("compileMechanicsFrame segmented SSOT", () => {
     expect(manual.transaction).toBeNull();
     expect(manual.actionFacts).toEqual([]);
     expect(manual.consequences).toEqual([]);
-    expect(manual.events).toEqual([]);
+    expect(manual.emissions).toEqual([]);
     expect(manual.manual).toEqual([
       {
         instructionId: "move",

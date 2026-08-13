@@ -4,7 +4,7 @@ import type { ActionFactGuard } from "@/types/action-journal";
 import type { DamageAllocationObservation, DamageTableOverride } from "@/types/damage";
 import type { DiceObservation } from "@/types/dice-formula";
 import type { MechanicsAuthoritySnapshot } from "@/types/mechanics-authority";
-import type { MechanicsPostEvent } from "@/types/mechanics-execution";
+import type { MechanicsPostEventEmission } from "@/types/mechanics-execution";
 import type { OccurrenceGenerationRef } from "@/types/mechanics-reference";
 import type {
   MechanicsOperationExecution,
@@ -128,14 +128,14 @@ export interface MechanicsCompilerContinuation {
 
 /**
  * One authentic compiler-owned transition. The coordinator consumes this
- * segment, delivers its events/consequences, then invokes the compiler again
+ * segment, delivers its emissions/consequences, then invokes the compiler again
  * with the returned causal state. No projected world or second progress cursor
  * can cross this seam.
  */
 export interface MechanicsCompiledSegment {
   readonly actionFacts: readonly Readonly<ActionFactGuard>[];
   readonly consequences: readonly Readonly<MechanicsOperationConsequence>[];
-  readonly events: readonly Readonly<MechanicsPostEvent>[];
+  readonly emissions: readonly Readonly<MechanicsPostEventEmission>[];
   readonly manual: readonly ManualInstruction[];
   readonly state: Readonly<MechanicsCausalState>;
   readonly trace: readonly MechanicsCompiledStepTrace[];

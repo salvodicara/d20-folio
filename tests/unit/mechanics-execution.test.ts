@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
+import { compileMechanicsFrame } from "@/lib/mechanics-compiler";
 import { resolveDamage } from "@/lib/damage";
 import { addOccurrence } from "@/lib/mechanic-occurrences";
 import {
@@ -16,25 +17,34 @@ import {
   analyzeResolutionGroup,
   conformOrderingObservation,
   conformResolutionGroup,
-  deriveMechanicsPostEvents,
+  deriveMechanicsPostEventEmissions,
   deriveMechanicsSourceEndingEvents,
-  finalizeMechanicsEndWaveWithEvents,
   mechanicsOperationAccessFootprint,
   orderResolutionPartitions,
   simulateResolutionGroup,
 } from "@/lib/mechanics-execution";
 import { createEmptyCharacterMaterialState } from "@/lib/material-state";
 import { simulateMechanicsTransaction } from "@/lib/mechanics-operation";
+import {
+  deriveMechanicsRequirements,
+  dispatchMechanicsEventSubscriber,
+  reviewMechanicsIntent,
+  selectMechanicsEventSubscribers,
+} from "@/lib/mechanics-program";
+import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
 import { createTurnEconomyState } from "@/lib/turn-economy";
 import {
   advanceMechanicsPendingFrameStep,
   beginMechanicsCausalState,
   discoverMechanicsEndWave,
+  finalizeMechanicsCausalEndWave,
   finalizeMechanicsEndWave,
   latchMechanicsEndWave,
   parseMechanicsWorld,
   popMechanicsPendingFrame,
   pushMechanicsPendingFrame,
+  pushMechanicsSelectedEventPendingFrame,
+  rebaseMechanicsCausalState,
   topMechanicsPendingFrame,
 } from "@/lib/mechanics-world";
 import type { MechanicsExecutionFrame } from "@/types/mechanics-command";
@@ -578,6 +588,83 @@ function worldWithProgramRoot(nextOccurrenceOrdinal = 1): Readonly<MechanicsWorl
   return parsed.value;
 }
 
+function worldWithAuthorityProgramRoot(
+  authority: Readonly<MechanicsProgramAuthorityReceipt>,
+  nextOccurrenceOrdinal = 1
+): Readonly<MechanicsWorld> {
+  const basis = world();
+  const document = basis.documents[0];
+  const program = authority.snapshot.program;
+  if (document?.kind !== "character" || !program) {
+    throw new Error("authority program-root fixture");
+  }
+  const occurrences = addOccurrence(
+    {
+      nextOccurrenceOrdinal,
+      occurrences: document.state.occurrences,
+    },
+    "root",
+    {
+      authority,
+      endRules: [],
+      kind: "program",
+      phaseState: Object.fromEntries(
+        program.phases.map(({ phaseId }) => [
+          phaseId,
+          { execution: 0, lastTriggerEventId: null },
+        ])
+      ),
+      registers: Object.fromEntries(
+        program.registers.map(({ initial, registerId }) => [registerId, initial])
+      ),
+    }
+  );
+  const invoked = structuredClone(occurrences);
+  const root = invoked.occurrences.root;
+  const invocationPhase = program.phases.find(
+    ({ trigger }) => trigger.kind === "invocation"
+  );
+  if (!root || root.kind !== "program" || !invocationPhase) {
+    throw new Error("authority program invocation fixture");
+  }
+  root.phaseState[invocationPhase.phaseId] = {
+    execution: 1,
+    lastTriggerEventId: null,
+  };
+  const parsed = parseMechanicsWorld({
+    ...basis,
+    documents: [{ ...document, state: { ...document.state, ...invoked } }],
+  });
+  if (!parsed.ok) throw new Error(`authority program-root: ${parsed.reason}`);
+  return parsed.value;
+}
+
+function authorityWithReactivePhase(
+  trigger: Exclude<
+    NonNullable<
+      MechanicsProgramAuthorityReceipt["snapshot"]["program"]
+    >["phases"][number]["trigger"],
+    { readonly kind: "invocation" }
+  >
+): MechanicsProgramAuthorityReceipt {
+  const program = conformMechanicsProgram({
+    ...AUTHORITY.snapshot.program,
+    phases: [
+      ...AUTHORITY.snapshot.program.phases,
+      { inputs: [], phaseId: "react", steps: [], trigger },
+    ],
+  });
+  if (!program) throw new Error("reactive program fixture");
+  return {
+    ...AUTHORITY,
+    anchors: { ...AUTHORITY.anchors, target: FIRST },
+    snapshot: {
+      ...AUTHORITY.snapshot,
+      program,
+    },
+  };
+}
+
 function worldWithZeroedProgramRoot(): Readonly<MechanicsWorld> {
   const basis = world();
   const document = basis.documents[0];
@@ -805,6 +892,25 @@ function context(
   };
 }
 
+function emitDamage(state: Readonly<MechanicsCausalState>, operationId: string) {
+  const result = simulateResolutionGroup(
+    {
+      groupId: `emit-${operationId}`,
+      proposals: [
+        {
+          operation: damageOperation(operationId, FIRST),
+          proposalId: operationId,
+        },
+      ],
+    },
+    context(null, [INSTALLED_CAUSE], { state })
+  );
+  if (result.status !== "simulated") throw new Error("damage emission fixture");
+  const emission = result.emissions.find(({ event }) => event.kind === "damage-taken");
+  if (!emission) throw new Error("damage emission fixture");
+  return { emission, state: result.state } as const;
+}
+
 function programRootCreateOperation(
   occurrenceId = "root"
 ): Extract<MechanicsOperation, { kind: "program-root-create" }> {
@@ -869,7 +975,7 @@ describe("simultaneous resolution groups", () => {
       group([{ operation: first, proposalId: "a" }]),
       context(null, [INSTALLED_CAUSE], { state: causalState(basis) })
     );
-    expect(result).toMatchObject({ events: [], status: "simulated" });
+    expect(result).toMatchObject({ emissions: [], status: "simulated" });
   });
 
   it("orders a null-controller entity creation before a link to that generation", () => {
@@ -1421,7 +1527,9 @@ describe("simultaneous resolution groups", () => {
         ({ causeId }) => causeId === INSTALLED_CAUSE.causeId
       )
     ).toBe(true);
-    const damageEvents = result.events.filter((event) => event.kind === "damage-taken");
+    const damageEvents = result.emissions
+      .map(({ event }) => event)
+      .filter((event) => event.kind === "damage-taken");
     expect(
       damageEvents.map(({ resolution }) => resolution.packet.target.entityId).sort()
     ).toEqual(["first", "second"]);
@@ -1447,7 +1555,7 @@ describe("simultaneous resolution groups", () => {
     );
     expect(allocation.status).toBe("simulated");
     if (allocation.status !== "simulated") return;
-    expect(deriveMechanicsPostEvents(allocation.stages)).toEqual([]);
+    expect(deriveMechanicsPostEventEmissions(allocation.stages)).toEqual([]);
     expect(allocation.state.world.documents[0]?.state.occurrences.root).toMatchObject({
       phaseState: { invoke: { execution: 0, lastTriggerEventId: null } },
     });
@@ -1473,7 +1581,9 @@ describe("simultaneous resolution groups", () => {
       facts: { root: createRoot.root },
       kind: "program-root-create",
     });
-    expect(deriveMechanicsPostEvents(result.stages)).toEqual([
+    expect(
+      deriveMechanicsPostEventEmissions(result.stages).map(({ event }) => event)
+    ).toEqual([
       {
         eventId: `event:${canonicalFingerprint({
           kind: "program-phase-end",
@@ -1603,7 +1713,7 @@ describe("simultaneous resolution groups", () => {
         operationId: "request-root-end",
       },
     ]);
-    expect(result.events).toEqual([]);
+    expect(result.emissions).toEqual([]);
     expect(occurrenceGeneration(result.state.world, "root")).toEqual(occurrence);
   });
 
@@ -1643,7 +1753,7 @@ describe("simultaneous resolution groups", () => {
     );
     expect(result.status).toBe("simulated");
     if (result.status !== "simulated") return;
-    expect(result.events).toEqual([]);
+    expect(result.emissions).toEqual([]);
   });
 
   it("requires ordering for two damage packets against the same target", () => {
@@ -1690,7 +1800,7 @@ describe("simultaneous resolution groups", () => {
     expect(simulated.status).toBe("simulated");
     if (simulated.status !== "simulated") return;
     expect(simulated.orderedProposalIds).toEqual(["b", "a"]);
-    expect(simulated.events.map(({ operationId }) => operationId)).toEqual([
+    expect(simulated.emissions.map(({ event }) => event.operationId)).toEqual([
       "damage-b",
       "damage-a",
     ]);
@@ -1826,7 +1936,7 @@ describe("simultaneous resolution groups", () => {
     expect(stage.before).not.toEqual(stage.after);
     expect(stage.before).toEqual(result.stages[0]?.before);
     expect(stage.after).toEqual(result.state.world);
-    expect(result.events).toMatchObject([
+    expect(result.emissions.map(({ event }) => event)).toMatchObject([
       {
         attacker: null,
         criticalHit: false,
@@ -1900,9 +2010,12 @@ describe("simultaneous resolution groups", () => {
       "program-phase-transition",
     ]);
 
-    const events = deriveMechanicsPostEvents(stages);
-    expect(events.map(({ kind }) => kind)).toEqual(["damage-taken", "program-phase-end"]);
-    expect(events.at(-1)).toEqual({
+    const emissions = deriveMechanicsPostEventEmissions(stages);
+    expect(emissions.map(({ event }) => event.kind)).toEqual([
+      "damage-taken",
+      "program-phase-end",
+    ]);
+    expect(emissions.at(-1)?.event).toEqual({
       eventId: `event:${canonicalFingerprint({
         kind: "program-phase-end",
         operationId: phase.operationId,
@@ -1918,7 +2031,9 @@ describe("simultaneous resolution groups", () => {
       operationId: phase.operationId,
       phaseId: "invoke",
     });
-    expect(Object.isFrozen(events)).toBe(true);
+    expect(Object.isFrozen(emissions)).toBe(true);
+    expect(emissions[0]?.emissionWorld).toBe(damaged.stages[0]?.after);
+    expect(emissions[1]?.emissionWorld).toBe(simulation.stages[0]?.after);
   });
 
   it("carries authoritative attacker/critical evidence into one damage event", () => {
@@ -1936,7 +2051,7 @@ describe("simultaneous resolution groups", () => {
     );
     expect(result.status).toBe("simulated");
     if (result.status !== "simulated") return;
-    expect(result.events).toEqual([
+    expect(result.emissions.map(({ event }) => event)).toEqual([
       expect.objectContaining({
         attacker: SECOND,
         criticalHit: true,
@@ -1957,7 +2072,9 @@ describe("simultaneous resolution groups", () => {
         context()
       );
       if (result.status !== "simulated") throw new Error("damage must simulate");
-      const event = result.events.find(({ kind }) => kind === "damage-taken");
+      const event = result.emissions
+        .map(({ event }) => event)
+        .find(({ kind }) => kind === "damage-taken");
       if (!event) throw new Error("damage event must exist");
       return event.eventId;
     };
@@ -1990,31 +2107,473 @@ describe("simultaneous resolution groups", () => {
     expect(new Set(identities).size).toBe(identities.length);
   });
 
-  it("delivers source-ending while readable and authenticates the exact empty finalization grammar", () => {
-    expect(finalizeMechanicsEndWaveWithEvents(null, null)).toMatchObject({
-      reason: "invalid-world",
+  it("freezes a canonical subscriber audience on the event's own emission world", () => {
+    const authority = authorityWithReactivePhase({
+      kind: "damage-taken",
+      target: "target",
+    });
+    const basis = worldWithAuthorityProgramRoot(authority);
+    const result = simulateResolutionGroup(
+      {
+        groupId: "freeze-damage-audience",
+        proposals: [
+          {
+            operation: damageOperation("audience-damage", FIRST),
+            proposalId: "damage",
+          },
+        ],
+      },
+      context(null, [INSTALLED_CAUSE], { state: causalState(basis) })
+    );
+    expect(result.status).toBe("simulated");
+    if (result.status !== "simulated") return;
+    const emission = result.emissions.find(({ event }) => event.kind === "damage-taken");
+    expect(emission?.emissionWorld).toBe(result.stages[0]?.after);
+    if (!emission) return;
+
+    const audience = selectMechanicsEventSubscribers(emission);
+    expect(audience).toMatchObject({
+      selections: [
+        {
+          eventId: emission.event.eventId,
+          phaseId: "react",
+          root: occurrenceGeneration(basis, "root"),
+        },
+      ],
+      status: "selected",
+    });
+    if (audience.status !== "selected" || !audience.selections[0]) return;
+    const reread = selectMechanicsEventSubscribers(emission);
+    expect(reread).toBe(audience);
+    const selection = audience.selections[0];
+    for (const hostile of [
+      structuredClone(selection),
+      {
+        eventId: selection.eventId,
+        phaseId: selection.phaseId,
+        root: selection.root,
+      },
+    ]) {
+      expect(dispatchMechanicsEventSubscriber(hostile, result.state)).toEqual({
+        reason: "invalid-selection",
+        status: "rejected",
+      });
+    }
+    const dispatched = dispatchMechanicsEventSubscriber(selection, result.state);
+    expect(dispatched).toMatchObject({
+      frame: {
+        rootReceipt: {
+          expected: { execution: 0, triggerEventId: null },
+          next: { execution: 1, triggerEventId: emission.event.eventId },
+        },
+      },
+      state: {
+        context: {
+          pendingFrames: [{ selectedEvent: true }],
+        },
+      },
+      status: "dispatched",
+    });
+    if (dispatched.status !== "dispatched") return;
+    expect(
+      pushMechanicsSelectedEventPendingFrame(result.state, dispatched.frame, selection)
+    ).toEqual({ ok: false, reason: "invalid-transition" });
+    expect(
+      dispatchMechanicsEventSubscriber(
+        reread.status === "selected" ? reread.selections[0] : null,
+        result.state
+      )
+    ).toEqual({ reason: "invalid-selection", status: "rejected" });
+    expect(selectMechanicsEventSubscribers(structuredClone(emission))).toEqual({
+      reason: "invalid-emission",
       status: "rejected",
     });
+  });
+
+  it("event audience adversarial: dispatches after the selected root becomes readable-ending", () => {
+    const authority = authorityWithReactivePhase({
+      kind: "damage-taken",
+      target: "target",
+    });
+    const emitted = emitDamage(
+      causalState(worldWithAuthorityProgramRoot(authority)),
+      "ending-after-emission"
+    );
+    const audience = selectMechanicsEventSubscribers(emitted.emission);
+    if (audience.status !== "selected" || !audience.selections[0]) {
+      throw new Error("event audience fixture");
+    }
+    const root = audience.selections[0].root;
+    const latched = rebaseMechanicsCausalState(
+      emitted.state.world,
+      emitted.state,
+      [],
+      [root]
+    );
+    if (!latched.ok) throw new Error("readable-ending fixture");
+    expect(
+      latched.value.world.documents[0]?.state.occurrences.root?.ending
+    ).not.toBeNull();
+
+    expect(
+      dispatchMechanicsEventSubscriber(audience.selections[0], latched.value)
+    ).toMatchObject({
+      frame: {
+        rootReceipt: {
+          next: { triggerEventId: emitted.emission.event.eventId },
+          root,
+        },
+      },
+      state: { context: { pendingFrames: [{ selectedEvent: true }] } },
+      status: "dispatched",
+    });
+  });
+
+  it("event audience adversarial: rejects a selected root generation after ABA replacement", () => {
+    const authority = authorityWithReactivePhase({
+      kind: "damage-taken",
+      target: "target",
+    });
+    const emitted = emitDamage(
+      causalState(worldWithAuthorityProgramRoot(authority)),
+      "before-root-aba"
+    );
+    const audience = selectMechanicsEventSubscribers(emitted.emission);
+    if (audience.status !== "selected" || !audience.selections[0]) {
+      throw new Error("event audience fixture");
+    }
+    const replacement = worldWithAuthorityProgramRoot(authority, 2);
+    expect(occurrenceGeneration(replacement, "root").ordinal).toBe(2);
+
+    expect(
+      dispatchMechanicsEventSubscriber(audience.selections[0], causalState(replacement))
+    ).toEqual({ reason: "stale-subscriber", status: "rejected" });
+  });
+
+  it("event audience adversarial: allocates successive live phase CAS receipts", () => {
+    const authority = authorityWithReactivePhase({
+      kind: "damage-taken",
+      target: "target",
+    });
+    const firstEmission = emitDamage(
+      causalState(worldWithAuthorityProgramRoot(authority)),
+      "phase-cas-first"
+    );
+    const secondEmission = emitDamage(firstEmission.state, "phase-cas-second");
+    const firstAudience = selectMechanicsEventSubscribers(firstEmission.emission);
+    const secondAudience = selectMechanicsEventSubscribers(secondEmission.emission);
+    if (
+      firstAudience.status !== "selected" ||
+      secondAudience.status !== "selected" ||
+      !firstAudience.selections[0] ||
+      !secondAudience.selections[0]
+    ) {
+      throw new Error("event audience fixture");
+    }
+
+    const first = dispatchMechanicsEventSubscriber(
+      firstAudience.selections[0],
+      secondEmission.state
+    );
+    if (first.status !== "dispatched") throw new Error("first dispatch fixture");
+    expect(first.frame.rootReceipt).toMatchObject({
+      expected: { execution: 0, triggerEventId: null },
+      next: { execution: 1, triggerEventId: firstEmission.emission.event.eventId },
+    });
+    const reviewed = reviewMechanicsIntent(
+      { actionId: "complete-first-subscriber", factGuards: [], frame: first.frame },
+      [],
+      first.state
+    );
+    if (reviewed.status !== "reviewed") throw new Error("first review fixture");
+    const committed = compileMechanicsFrame({
+      authoritySnapshot: { definitions: [] },
+      facts: [],
+      responses: [],
+      reviewed: reviewed.reviewed,
+      state: first.state,
+    });
+    if (committed.status !== "compiled") throw new Error("first commit fixture");
+    const popped = popMechanicsPendingFrame(committed.segment.state, first.frame);
+    if (!popped.ok) throw new Error("first pop fixture");
+
+    const second = dispatchMechanicsEventSubscriber(
+      secondAudience.selections[0],
+      popped.value
+    );
+    expect(second).toMatchObject({
+      frame: {
+        rootReceipt: {
+          expected: {
+            execution: 1,
+            triggerEventId: firstEmission.emission.event.eventId,
+          },
+          next: {
+            execution: 2,
+            triggerEventId: secondEmission.emission.event.eventId,
+          },
+        },
+      },
+      status: "dispatched",
+    });
+  });
+
+  it("event audience adversarial: excludes a root installed only after emission", () => {
+    const authority = authorityWithReactivePhase({
+      kind: "damage-taken",
+      target: "target",
+    });
+    const emitted = emitDamage(causalState(), "before-subscriber-install");
+    const audience = selectMechanicsEventSubscribers(emitted.emission);
+    expect(audience).toMatchObject({ selections: [], status: "selected" });
+    const cause = installedCause(authority);
+    const installed = simulateMechanicsTransaction(
+      {
+        actionId: "install-after-emission",
+        actor: SELF,
+        causes: [cause],
+        factGuards: [],
+        operations: [{ ...programRootCreateOperation(), causeId: cause.causeId }],
+      },
+      {
+        authoritySnapshot: authoritySnapshotFor([cause]),
+        state: emitted.state,
+      }
+    );
+    expect(installed.status).toBe("simulated");
+    if (installed.status !== "simulated") return;
+    expect(installed.state.world.documents[0]?.state.occurrences.root).toBeDefined();
+    expect(selectMechanicsEventSubscribers(emitted.emission)).toBe(audience);
+    expect(audience).toMatchObject({ selections: [], status: "selected" });
+  });
+
+  it("keeps emission-time eligibility after an earlier mutation invalidates the live predicate", () => {
+    const authority = authorityWithReactivePhase({
+      kind: "hit-points-zero",
+      target: "target",
+    });
+    const basis = worldWithAuthorityProgramRoot(authority);
+    const damaged = simulateResolutionGroup(
+      {
+        groupId: "zero-before-heal",
+        proposals: [
+          {
+            operation: damageOperation("drop-target", FIRST, "drop-packet", [10]),
+            proposalId: "damage",
+          },
+        ],
+      },
+      context(null, [INSTALLED_CAUSE], { state: causalState(basis) })
+    );
+    expect(damaged.status).toBe("simulated");
+    if (damaged.status !== "simulated") return;
+    const emission = damaged.emissions.find(
+      ({ event }) => event.kind === "hit-points-zero"
+    );
+    if (!emission) throw new Error("zero-hit-point emission fixture");
+    const audience = selectMechanicsEventSubscribers(emission);
+    expect(audience.status).toBe("selected");
+    if (audience.status !== "selected" || !audience.selections[0]) return;
+
+    const healed = simulateMechanicsTransaction(
+      {
+        actionId: "heal-before-subscriber",
+        actor: SELF,
+        causes: [INSTALLED_CAUSE],
+        factGuards: [],
+        operations: [
+          {
+            causeId: INSTALLED_CAUSE.causeId,
+            input: { amount: 1, maximumHitPoints: 10 },
+            kind: "creature-healing",
+            maximumHitPointsSource: { kind: "fact" },
+            operationId: "heal-target",
+            target: FIRST,
+          },
+        ],
+      },
+      {
+        authoritySnapshot: authoritySnapshotFor([INSTALLED_CAUSE]),
+        state: damaged.state,
+      }
+    );
+    expect(healed.status).toBe("simulated");
+    if (healed.status !== "simulated") return;
+
+    const dispatched = dispatchMechanicsEventSubscriber(
+      audience.selections[0],
+      healed.state
+    );
+    expect(dispatched).toMatchObject({
+      state: { context: { pendingFrames: [{ selectedEvent: true }] } },
+      status: "dispatched",
+    });
+    if (dispatched.status !== "dispatched") return;
+    const subscriberIntent = {
+      actionId: "zero-subscriber",
+      factGuards: [],
+      frame: dispatched.frame,
+    } as const;
+    expect(deriveMechanicsRequirements(subscriberIntent, dispatched.state)).toMatchObject(
+      { status: "derived" }
+    );
+    expect(reviewMechanicsIntent(subscriberIntent, [], dispatched.state)).toMatchObject({
+      status: "reviewed",
+    });
+  });
+
+  it("selects the owning root's source-end phase while that root is readable-ending", () => {
+    const authority = authorityWithReactivePhase({ kind: "source-end" });
+    const before = worldWithAuthorityProgramRoot(authority);
+    const root = occurrenceGeneration(before, "root");
+    const latched = rebaseMechanicsCausalState(before, causalState(before), [], [root]);
+    expect(latched.ok).toBe(true);
+    if (!latched.ok || !latched.value.context.endWave) return;
+    const derived = deriveMechanicsSourceEndingEvents(
+      latched.value.world,
+      latched.value.context.endWave.wave,
+      "source-end-audience"
+    );
+    expect(derived.status).toBe("derived");
+    if (derived.status !== "derived") return;
+    const emission = derived.emissions[0];
+    expect(emission?.emissionWorld).toBe(latched.value.world);
+    if (!emission) return;
+
+    const audience = selectMechanicsEventSubscribers(emission);
+    expect(audience).toMatchObject({
+      selections: [
+        {
+          eventId: emission.event.eventId,
+          phaseId: "react",
+          root,
+        },
+      ],
+      status: "selected",
+    });
+    if (audience.status !== "selected" || !audience.selections[0]) return;
+    const dispatched = dispatchMechanicsEventSubscriber(
+      audience.selections[0],
+      latched.value
+    );
+    expect(dispatched).toMatchObject({
+      state: {
+        context: { pendingFrames: [{ selectedEvent: true }] },
+      },
+      status: "dispatched",
+    });
+    if (dispatched.status !== "dispatched") return;
+    if (dispatched.frame.rootReceipt.kind !== "advance") {
+      throw new Error("event subscriber must advance an existing root");
+    }
+    expect(finalizeMechanicsCausalEndWave(dispatched.state)).toEqual({
+      ok: false,
+      reason: "invalid-end-wave",
+    });
+
+    const subscriberIntent = {
+      actionId: "source-end-handler",
+      factGuards: [],
+      frame: dispatched.frame,
+    } as const;
+    const reviewed = reviewMechanicsIntent(subscriberIntent, [], dispatched.state);
+    expect(reviewed.status).toBe("reviewed");
+    if (reviewed.status !== "reviewed") return;
+    const committed = compileMechanicsFrame({
+      authoritySnapshot: { definitions: [] },
+      facts: [],
+      responses: [],
+      reviewed: reviewed.reviewed,
+      state: dispatched.state,
+    });
+    expect(committed.status).toBe("compiled");
+    if (committed.status !== "compiled") return;
+    expect(topMechanicsPendingFrame(committed.segment.state)).toMatchObject({
+      cursor: { stage: "phase-complete" },
+      selectedEvent: true,
+    });
+    expect(finalizeMechanicsCausalEndWave(committed.segment.state)).toEqual({
+      ok: false,
+      reason: "invalid-end-wave",
+    });
+    const popped = popMechanicsPendingFrame(committed.segment.state, dispatched.frame);
+    expect(popped.ok).toBe(true);
+    if (!popped.ok) return;
+    const finalized = finalizeMechanicsCausalEndWave(popped.value);
+    expect(finalized.ok).toBe(true);
+    if (!finalized.ok) return;
+    expect(finalized.value.world.documents[0]?.state.occurrences).not.toHaveProperty(
+      "root"
+    );
+  });
+
+  it("event audience adversarial: routes an ending child to its active owning root", () => {
+    const authority = authorityWithReactivePhase({ kind: "source-end" });
+    const basis = worldWithAuthorityProgramRoot(authority);
+    const document = basis.documents[0];
+    if (document?.kind !== "character") throw new Error("child source fixture");
+    const childState = addOccurrence(
+      {
+        nextOccurrenceOrdinal: document.state.nextOccurrenceOrdinal,
+        occurrences: document.state.occurrences,
+      },
+      "ending-child",
+      occurrenceCreateOperation("create-ending-child", "ending-child", 2).occurrence
+    );
+    const parsed = parseMechanicsWorld({
+      ...basis,
+      documents: [{ ...document, state: { ...document.state, ...childState } }],
+    });
+    if (!parsed.ok) throw new Error("child source fixture");
+    const root = occurrenceGeneration(parsed.value, "root");
+    const child = occurrenceGeneration(parsed.value, "ending-child");
+    const latched = rebaseMechanicsCausalState(
+      parsed.value,
+      causalState(parsed.value),
+      [],
+      [child]
+    );
+    if (!latched.ok || !latched.value.context.endWave) {
+      throw new Error("child ending fixture");
+    }
+    expect(latched.value.world.documents[0]?.state.occurrences.root?.ending).toBeNull();
+    expect(
+      latched.value.world.documents[0]?.state.occurrences["ending-child"]?.ending
+    ).not.toBeNull();
+    const derived = deriveMechanicsSourceEndingEvents(
+      latched.value.world,
+      latched.value.context.endWave.wave,
+      "ending-child-wave"
+    );
+    if (derived.status !== "derived" || !derived.emissions[0]) {
+      throw new Error("child source emission fixture");
+    }
+    expect(derived.emissions[0].event.occurrence).toEqual(child);
+
+    expect(selectMechanicsEventSubscribers(derived.emissions[0])).toMatchObject({
+      selections: [{ phaseId: "react", root }],
+      status: "selected",
+    });
+  });
+
+  it("delivers source-ending while readable before exact finalization", () => {
     const before = worldWithProgramRoot();
     const occurrence = occurrenceGeneration(before, "root");
     const wave = requestedRootWave(before);
     const sourceEnding = deriveMechanicsSourceEndingEvents(before, wave, "end-wave");
     expect(sourceEnding).toMatchObject({
-      events: [
+      emissions: [
         {
-          kind: "source-ending",
-          occurrence,
-          operationId: "end-wave",
+          event: {
+            kind: "source-ending",
+            occurrence,
+            operationId: "end-wave",
+          },
         },
       ],
       status: "derived",
     });
     expect(before.documents[0]?.state.occurrences.root).toBeDefined();
-    expect(finalizeMechanicsEndWaveWithEvents(before, wave)).toMatchObject({
-      reason: "invalid-end-wave",
-      status: "rejected",
-    });
-
     const latched = latchMechanicsEndWave(before, wave);
     expect(latched.status).toBe("latched");
     if (latched.status === "rejected") return;
@@ -2024,10 +2583,7 @@ describe("simultaneous resolution groups", () => {
     const finalized = finalizeMechanicsEndWave(latched.world, current.wave);
     expect(finalized.status).toBe("applied");
     if (finalized.status === "rejected") return;
-    const finalization = finalizeMechanicsEndWaveWithEvents(latched.world, current.wave);
-    expect(finalization).toMatchObject({ events: [], status: "finalized" });
-    if (finalization.status !== "finalized") return;
-    expect(finalization.world).toEqual(finalized.world);
+    expect(finalized.world.documents[0]?.state.occurrences).not.toHaveProperty("root");
   });
 
   it("derives source-ending from a proved readable checkpoint that is not a closed world", () => {
@@ -2038,10 +2594,12 @@ describe("simultaneous resolution groups", () => {
     });
 
     expect(deriveMechanicsSourceEndingEvents(due, wave, "deadline-wave")).toMatchObject({
-      events: [
+      emissions: [
         {
-          kind: "source-ending",
-          occurrence: occurrenceGeneration(due, "root"),
+          event: {
+            kind: "source-ending",
+            occurrence: occurrenceGeneration(due, "root"),
+          },
         },
       ],
       status: "derived",
@@ -2108,9 +2666,15 @@ describe("simultaneous resolution groups", () => {
     expect(firstEvents.status).toBe("derived");
     expect(secondEvents.status).toBe("derived");
     if (firstEvents.status !== "derived" || secondEvents.status !== "derived") return;
-    expect(firstEvents.events[0]).toMatchObject({ occurrence: { ordinal: 1 } });
-    expect(secondEvents.events[0]).toMatchObject({ occurrence: { ordinal: 2 } });
-    expect(firstEvents.events[0]?.eventId).not.toBe(secondEvents.events[0]?.eventId);
+    expect(firstEvents.emissions[0]?.event).toMatchObject({
+      occurrence: { ordinal: 1 },
+    });
+    expect(secondEvents.emissions[0]?.event).toMatchObject({
+      occurrence: { ordinal: 2 },
+    });
+    expect(firstEvents.emissions[0]?.event.eventId).not.toBe(
+      secondEvents.emissions[0]?.event.eventId
+    );
   });
 
   it("requires table ordering even when colliding resource arithmetic commutes", () => {

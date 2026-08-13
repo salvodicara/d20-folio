@@ -617,10 +617,28 @@ lifetime made due by that transition is latched in the same returned state befor
 non-invocation trigger evidence carries that emitted event's exact id, and the phase CAS receipt must carry
 the same id, so evidence cannot be replayed under an invented identity. Phase-completion events trail all
 ordinary events from the same complete transaction while retaining deterministic order among themselves;
-the sole frame compiler returns that canonical event list with its simulated segment.
+simulation/compiler results expose that sequence only as opaque process-local emissions: every ordinary
+event is paired with its producing stage's exact `after` world, while `source-ending` is paired with the
+exact re-proved readable end-wave world. A clone, serialization or reconstructed event is not an emission.
 Occurrence removal and condition/entity/inventory/turn/register/Temporary-HP cleanup do not invent generic
 semantic events because no authored trigger consumes them; their complete effect is the verified
 finalization delta and ultimately the single journal draft.
+
+Subscriber selection freezes the complete emission-time audience. The selector proves each authored
+trigger against the emission world, then orders exact root generations and phases canonically; its public
+capability retains only that root/phase membership while a private immutable fiber binds the authentic
+emission, trigger evidence and authority. Dispatch does not re-evaluate mutable trigger predicates. When
+the depth-first coordinator reaches a selected member, dispatch re-proves the exact live root generation
+and immutable authority and allocates that phase's current expected→next CAS at that moment. A root or
+phase created after emission was never in the audience, and clones, forgeries, selection reuse, stale
+generation/authority, same-id ABA and repeated event delivery all fail closed.
+
+Only the kernel's selected-event push may admit one of those frames on a readable-ending root, including
+an ordinary-event subscriber selected while that root was still active. For `source-ending`, if the event
+names a child, its exact owning program root must still be that selected root. The selected-event permit
+remains on the LIFO frame through `phase-complete`, preventing end-wave finalization until the exact
+completed top is popped. An ordinary frame cannot acquire that exception. The bounded state coordinator
+that drains these frozen audiences remains open.
 
 This hardened foundation is implemented and covered by focused hostile-input tests, but the cutover is
 not yet a production runtime. A bounded, unforgeable `MechanicsCausalState` owns the exact LIFO stack of

@@ -228,6 +228,26 @@ remains reserved for the final convergence, rebase and push to `main`. Remaining
 fixed-point coordinator, payment/vitality/material/resource compilation, the other audited prerequisites,
 corpus transcription, persistence/application cutover and complete deletion of superseded executors.
 
+### 2026-08-12 exact event audience and dispatch — checkpoint closed
+
+Every authentic event is now an opaque process-local emission paired with the exact world that can prove
+its meaning: an ordinary event carries its producing operation stage's `after` world, and
+`source-ending` carries the re-proved readable end-wave world. The selector proves complete semantic
+trigger eligibility on that emission world and freezes the audience in canonical root-generation/phase
+order. Compiler/simulation results therefore expose authenticated emissions, not a bare event list.
+
+Dispatch allocates the selected phase's current expected→next CAS only when the coordinator reaches that
+audience member. It re-proves exact root generation and immutable authority but deliberately does not
+re-evaluate mutable predicates whose emission-time truth selected the subscriber. Only a kernel-issued
+selected-event frame may run on a readable-ending root; a `source-ending` child must resolve that exact
+owning program root, and the frame pins end-wave finalization through `phase-complete` until its exact LIFO
+pop. Cloned or forged emissions/selections, reuse, stale authority, same-id ABA, repeated delivery and
+roots/phases created after emission all fail closed.
+
+Only focused affected-suite verification ran; by owner rule no global branch gate ran. The bounded
+fixed-point state coordinator that drains these audiences and end waves remains open, together with the
+other runtime-cutover work above. This checkpoint is not an engine-completion claim.
+
 ## Product doctrine
 
 The target is a table companion, not a VTT:
